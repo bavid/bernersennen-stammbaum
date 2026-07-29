@@ -1,0 +1,85 @@
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+
+const testDbPath = path.join(__dirname, 'auth.test.tmp.db')
+process.env.DB_PATH = testDbPath
+process.env.JWT_SECRET = 'test-secret'
+
+const express = require('express')
+const cookieParser = require('cookie-parser')
+const authRoutes = require('../routes/auth')
+const { requireAuth } = require('../middleware/auth')
+const db = require('../db')
+
+test.after(() => {
+  db.close()
+  for (const suffix of ['', '-wal', '-shm']) {
+    const file = testDbPath + suffix
+    if (fs.existsSync(file)) fs.unlinkSync(file)
+  }
+})
+
+function buildApp() {
+  const app = express()
+  app.use(express.json())
+  app.use(cookieParser())
+  app.use('/api', authRoutes)
+  app.get('/api/protected', requireAuth, (req, res) => res.json({ familyId: req.familyId }))
+  return app
+}
+
+function getCookie(res) {
+  const setCookie = res.headers.get('set-cookie') || ''
+  return setCookie.split(';')[0]
+}
+
+test('family creation, login and session protection', async (t) => {
+  const app = buildApp()
+  const server = app.listen(0)
+  const base = `http://localhost:${server.address().port}`
+
+  await t.test('creates a family and sets a session cookie', async () => {
+    const res = await fetch(`${base}/api/families`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Familie Hermes', password: 'geheim123' })
+    })
+    assert.equal(res.status, 201)
+    assert.ok(getCookie(res).startsWith('session='))
+  })
+
+  await t.test('logs in with the correct password', async () => {
+    const res = await fetch(`${base}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: 'geheim123' })
+    })
+    assert.equal(res.status, 200)
+    const cookie = getCookie(res)
+
+    const protectedRes = await fetch(`${base}/api/protected`, {
+      headers: { Cookie: cookie }
+    })
+    assert.equal(protectedRes.status, 200)
+    const body = await protectedRes.json()
+    assert.equal(typeof body.familyId, 'number')
+  })
+
+  await t.test('rejects an incorrect password', async () => {
+    const res = await fetch(`${base}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: 'falsch' })
+    })
+    assert.equal(res.status, 401)
+  })
+
+  await t.test('rejects protected route without cookie', async () => {
+    const res = await fetch(`${base}/api/protected`)
+    assert.equal(res.status, 401)
+  })
+
+  server.close()
+})
