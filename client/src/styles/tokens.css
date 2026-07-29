@@ -1,0 +1,60 @@
+:root {
+  --color-bg: #f6efe4;
+  --color-surface: #fffcf6;
+  --color-surface-raised: #ffffff;
+  --color-text: #241a12;
+  --color-text-muted: #6f6154;
+  --color-border: #e2d5c1;
+
+  --color-ink: #1c140f;
+  --color-rust: #9c3d20;
+  --color-rust-dark: #7a2e17;
+  --color-tan: #c98f4a;
+  --color-forest: #384333;
+
+  --color-danger: #b3261e;
+  --color-danger-bg: #fbeae8;
+
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.5rem;
+  --text-display: clamp(2rem, 1.5rem + 2vw, 3.25rem);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  --shadow-card: 0 1px 2px rgba(28, 20, 15, 0.06), 0 8px 24px -12px rgba(28, 20, 15, 0.22);
+  --shadow-raised: 0 12px 32px -12px rgba(28, 20, 15, 0.35);
+
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #17130f;
+    --color-surface: #221b15;
+    --color-surface-raised: #2a221a;
+    --color-text: #f2e9dc;
+    --color-text-muted: #b9ac9a;
+    --color-border: #3a2f24;
+
+    --color-tan: #d9a563;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  }
+}
