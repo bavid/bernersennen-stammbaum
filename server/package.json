@@ -10,7 +10,8 @@
     "test": "node --test \"test/**/*.test.js\"",
     "seed": "node scripts/seed.js",
     "db:reset": "node scripts/reset.js",
-    "family:delete": "node scripts/delete-family.js"
+    "family:delete": "node scripts/delete-family.js",
+    "admin:hash": "node scripts/admin-hash.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

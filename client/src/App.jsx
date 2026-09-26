@@ -10,6 +10,7 @@ import DogDetailPage from './pages/DogDetailPage.jsx'
 import BreedingPage from './pages/BreedingPage.jsx'
 import CollagePage from './pages/CollagePage.jsx'
 import PinboardPage from './pages/PinboardPage.jsx'
+import AdminPage from './pages/AdminPage.jsx'
 
 const NAV_ITEMS = [
   { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
@@ -50,6 +51,7 @@ function AppHeader({ family, onLogout }) {
 
 export default function App() {
   const [family, setFamily] = useState(undefined)
+  const { pathname } = useLocation()
 
   useEffect(() => {
     setUnauthorizedHandler(() => setFamily(null))
@@ -66,6 +68,9 @@ export default function App() {
       setFamily(null)
     }
   }
+
+  // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login
+  if (pathname.startsWith('/admin')) return <AdminPage />
 
   if (family === undefined) {
     return (

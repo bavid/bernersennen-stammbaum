@@ -11,6 +11,7 @@
 #   backup         Snapshot von DB + Fotos nach $APP_DIR/backups/*.tgz
 #   seed <pw>      Demo-Rudel mit Testbildern anlegen (Passwort <pw>)
 #   wipe --yes     ALLE Daten löschen (DB + Fotos)
+#   admin <hash>   Admin-Zugang setzen (Hash von `npm run admin:hash`), Benutzer "admin"
 #
 # Die App lauscht nur auf 127.0.0.1:$HTTPS_PORT. HTTPS nach außen (Let's Encrypt, Port 80 für die
 # Zertifikatsprüfung) macht der gemeinsame Caddy des Servers in /opt/proxy (Repo "server").
@@ -172,6 +173,20 @@ case "$cmd" in
     [ -n "${2:-}" ] || fail "Passwort fehlt: seed <passwort>"
     cd "$APP_DIR"
     $COMPOSE exec -T chronik node scripts/seed.js --password "$2"
+    ;;
+  admin)
+    [[ "${2:-}" =~ ^scrypt:[0-9a-f]+:[0-9a-f]+$ ]] || fail "Hash fehlt oder ist ungültig: admin <scrypt:…>"
+    cd "$APP_DIR"
+    env_default ADMIN_USERNAME admin
+    if grep -q '^ADMIN_PASSWORD_HASH=' .env; then
+      sed -i "s|^ADMIN_PASSWORD_HASH=.*|ADMIN_PASSWORD_HASH=$2|" .env
+    else
+      printf 'ADMIN_PASSWORD_HASH=%s
+' "$2" >> .env
+    fi
+    $COMPOSE up -d chronik
+    wait_healthy
+    log "Admin-Zugang gesetzt: $(site_url)/admin (Benutzer: $(env_value ADMIN_USERNAME))"
     ;;
   wipe)
     [ "${2:-}" = "--yes" ] || fail "Löscht ALLE Daten. Bestätigen mit: wipe --yes"

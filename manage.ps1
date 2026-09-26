@@ -79,6 +79,14 @@ function Invoke-Action {
             if ((Read-Host "  Zum Bestätigen LOESCHEN eintippen") -eq 'LOESCHEN') { Invoke-Remote 'wipe' '--yes' }
         }
         { $_ -in '9', 'setup' } { Invoke-Remote 'setup' }
+        { $_ -in '10', 'admin' } {
+            # Passwort bleibt lokal: gehasht wird hier, zum Server geht nur der Hash
+            $secure = Read-Host "  Neues Admin-Passwort (min. 10 Zeichen)" -AsSecureString
+            $plain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure))
+            $hash = (node (Join-Path $PSScriptRoot 'server/scripts/admin-hash.js') $plain).Trim()
+            $plain = $null
+            if ($hash -like 'scrypt:*') { Invoke-Remote 'admin' $hash } else { Write-Host "  Hash konnte nicht erzeugt werden." -ForegroundColor Red }
+        }
         default { Write-Host "  Unbekannte Auswahl: $Choice" -ForegroundColor Red }
     }
 }
@@ -104,6 +112,7 @@ while ($true) {
     Write-Host "  [7]  Demo-Rudel mit Testbildern einspielen" -ForegroundColor Cyan
     Write-Host "  [8]  ALLE Daten löschen" -ForegroundColor Red
     Write-Host "  [9]  Erstinstallation (Docker + App)" -ForegroundColor Blue
+    Write-Host "  [10] Admin-Passwort setzen (Benutzer: admin)" -ForegroundColor Blue
     Write-Host "  [0]  Beenden" -ForegroundColor DarkGray
     Write-Host ""
     $choice = Read-Host "  Auswahl"

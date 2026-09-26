@@ -32,7 +32,7 @@ async function request(path, options = {}) {
     } catch {
       // Antwort ohne JSON-Body
     }
-    if (res.status === 401 && path !== '/me' && path !== '/login') onUnauthorized()
+    if (res.status === 401 && !path.startsWith('/admin') && path !== '/me' && path !== '/login') onUnauthorized()
     throw new ApiError(message, res.status)
   }
 
@@ -69,6 +69,14 @@ export const api = {
   deleteNote: (id) => request(`/notes/${id}`, { method: 'DELETE' }),
   createReply: (noteId, payload) => request(`/notes/${noteId}/replies`, json('POST', payload)),
   deleteReply: (noteId, replyId) => request(`/notes/${noteId}/replies/${replyId}`, { method: 'DELETE' }),
+
+  admin: {
+    me: () => request('/admin/me'),
+    login: (username, password) => request('/admin/login', json('POST', { username, password })),
+    logout: () => request('/admin/logout', { method: 'POST' }),
+    overview: () => request('/admin/overview'),
+    family: (id) => request(`/admin/families/${id}`)
+  },
 
   listBreedingEvents: () => request('/breeding'),
   createBreedingEvent: (payload) => request('/breeding', json('POST', payload)),

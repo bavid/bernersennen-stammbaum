@@ -39,5 +39,8 @@ module.exports = {
   trustProxy: readTrustProxy(),
   corsOrigin: readCorsOrigin(),
   loginRateLimit: Number(process.env.LOGIN_RATE_LIMIT) || 20,
-  uploadRateLimit: Number(process.env.UPLOAD_RATE_LIMIT) || 200
+  uploadRateLimit: Number(process.env.UPLOAD_RATE_LIMIT) || 200,
+  adminUsername: process.env.ADMIN_USERNAME || 'admin',
+  // "scrypt:<salt>:<key>", erzeugt mit `npm run admin:hash -- <passwort>`; leer = kein Admin-Zugang
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || ''
 }
