@@ -98,7 +98,14 @@ export default function CollagePageView({ page, interactive = false, selectedPho
       <div className="cpage-tricolor cpage-tricolor-top" />
       <div
         className="cpage-title"
-        style={{ left: pct(MARGIN, PAGE.width), right: pct(MARGIN, PAGE.width), fontSize: `${(titleSize / PAGE.width) * 100}cqw` }}
+        style={{
+          left: pct(MARGIN, PAGE.width),
+          right: pct(MARGIN, PAGE.width),
+          fontSize: `${(titleSize / PAGE.width) * 100}cqw`,
+          // Optische Größe wie im Export (dort = Schriftgröße in Seiteneinheiten), sonst würde die
+          // kleine Vorschau breitere Buchstaben rendern und der Titel nicht mehr passen
+          fontVariationSettings: `'opsz' ${titleSize}`
+        }}
       >
         {page.title}
       </div>

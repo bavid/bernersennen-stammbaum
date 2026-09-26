@@ -351,6 +351,7 @@
 .cpage-footer {
   position: absolute;
   top: 93.4%;
+  font-variation-settings: 'opsz' 26;
   display: flex;
   justify-content: space-between;
   gap: 2cqw;
