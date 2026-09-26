@@ -94,7 +94,7 @@ export default function App() {
           <Route path="/hund/:id" element={<DogDetailPage family={family} />} />
           <Route path="/pinnwand" element={<PinboardPage />} />
           <Route path="/zuchtbuch" element={<BreedingPage />} />
-          <Route path="/collage" element={<CollagePage />} />
+          <Route path="/collage" element={<CollagePage family={family} />} />
           <Route path="*" element={<Navigate to="/stammbaum" replace />} />
         </Routes>
       </main>

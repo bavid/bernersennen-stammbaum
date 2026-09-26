@@ -374,3 +374,10 @@
   right: var(--space-2);
   transform: translateY(-50%);
 }
+
+/* Am Handy über der unteren Navigationsleiste statt darauf */
+@media (max-width: 720px) {
+  .toast {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+}
