@@ -3,18 +3,38 @@
 Eine kleine Web-App, mit der Familien ihr Berner-Sennenhund-Rudel gemeinsam dokumentieren:
 Stammbaum über Generationen, eine Chronik pro Hund, Zuchtbuch und druckbare Collagen.
 
-- **Stammbaum**: Generationen werden automatisch berechnet, Eltern und Würfe mit Linien verbunden.
-  Beim Überfahren eines Hundes wird seine Familie hervorgehoben, ein Klick öffnet seine Seite.
+![Stammbaum über fünf Generationen mit Rassen und Wurfdatum](docs/screenshots/stammbaum.jpg)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/hund.jpg" alt="Hundeseite mit Rasse, Eltern und Chronik"></td>
+    <td width="50%"><img src="docs/screenshots/timeline.jpg" alt="Nachgetragener Eintrag landet automatisch am richtigen Datum"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/login.jpg" alt="Login-Seite"></td>
+    <td align="center"><img src="docs/screenshots/mobil.jpg" alt="Stammbaum auf dem Handy" width="260"></td>
+  </tr>
+</table>
+
+## Funktionen
+
+- **Stammbaum**: Generationen werden automatisch berechnet, Eltern und Würfe mit Linien verbunden,
+  jede Generation zeigt ihr Geburtsdatum bzw. ihre Geburtsjahre. Beim Überfahren eines Hundes wird
+  seine Familie hervorgehoben, ein Klick öffnet seine Seite.
+- **Rasse & unbekannte Vorfahren**: Jeder Hund hat eine Rasse (auch Mischungen wie
+  „Berner × Hovawart"). Vorfahren ohne bekannten Namen lassen sich mit „Name unbekannt" anlegen
+  und erscheinen trotzdem als eigene Karte im Baum.
 - **Chronik pro Hund**: Einträge mit Datum, Text und Fotos. Das Datum bestimmt die Position.
   Ein Eintrag von 2018, der heute nachgetragen wird, landet automatisch zwischen 2017 und 2019.
   Geburt, Deckakte und Nachwuchs erscheinen als automatische Meilensteine.
-- **Zuchtbuch**: Deckakte und Würfe, auch mit Rüden aus anderen Rudeln oder als Freitext.
+- **Zuchtbuch**: Deckakte und Würfe, Rüden aus dem eigenen Rudel oder als Freitext.
 - **Collage**: A4-Collage aus Porträt, Chronik-Fotos und Eltern, Download als PNG.
-- **Rudel mit Passwort**: Jedes Rudel hat ein gemeinsames Passwort. Optional braucht man zum
-  Anlegen eines neuen Rudels einen Einladungscode.
+- **Rudel mit Passwort**: Jedes Rudel hat ein gemeinsames Passwort und sieht nur seine eigenen
+  Hunde, Einträge und Fotos. Zum Anlegen eines neuen Rudels braucht man optional einen Einladungscode.
+- **Handy-tauglich**: kompakte Stammbaum-Karten, Navigation unten, Fotos werden vor dem Upload verkleinert.
 
-Stack: Node.js/Express + SQLite (better-sqlite3), React + Vite, keine externen Dienste.
-Schriften werden selbst gehostet (keine Google-Fonts-Aufrufe).
+Stack: Node.js/Express + SQLite (better-sqlite3), React + Vite, Caddy für HTTPS, keine externen
+Dienste. Schriften werden selbst gehostet (keine Google-Fonts-Aufrufe).
 
 ## Lokal starten
 
@@ -84,11 +104,13 @@ Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen – das Zertifikat gilt dann
 
 ## Sicherheit
 
+- HTTPS mit Let's-Encrypt-Zertifikat (Caddy), Cookies nur über HTTPS
+- Strikte Trennung der Rudel: fremde Hunde sind per geänderter URL nicht abrufbar (404),
+  Fotos nur mit Login
 - Passwörter mit bcrypt gehasht, Session als httpOnly-Cookie (JWT, 30 Tage)
 - Rate-Limit auf Login und Rudel-Anlage
 - Uploads nur als JPG/PNG/WebP/GIF, Dateiname und Endung vergibt der Server
 - Security-Header (CSP, nosniff, frame-ancestors) per helmet
-- Jedes Rudel sieht und ändert nur seine eigenen Hunde und Einträge
 
 ## Projektstruktur
 
