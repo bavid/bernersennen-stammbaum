@@ -181,8 +181,7 @@ case "$cmd" in
     if grep -q '^ADMIN_PASSWORD_HASH=' .env; then
       sed -i "s|^ADMIN_PASSWORD_HASH=.*|ADMIN_PASSWORD_HASH=$2|" .env
     else
-      printf 'ADMIN_PASSWORD_HASH=%s
-' "$2" >> .env
+      printf 'ADMIN_PASSWORD_HASH=%s\n' "$2" >> .env
     fi
     $COMPOSE up -d chronik
     wait_healthy
