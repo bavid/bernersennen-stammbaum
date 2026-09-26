@@ -1,60 +1,105 @@
+/* Berner-Dreifarb: warmes Schwarz, Rost, Schneeweiß auf Papier-Creme */
 :root {
-  --color-bg: #f6efe4;
-  --color-surface: #fffcf6;
-  --color-surface-raised: #ffffff;
-  --color-text: #241a12;
-  --color-text-muted: #6f6154;
-  --color-border: #e2d5c1;
+  color-scheme: light;
 
-  --color-ink: #1c140f;
-  --color-rust: #9c3d20;
-  --color-rust-dark: #7a2e17;
-  --color-tan: #c98f4a;
-  --color-forest: #384333;
+  --paper: #f6efe4;
+  --paper-deep: #ecdfcc;
+  --surface: #fffcf7;
+  --surface-sunk: #f9f3ea;
+  --ink: #1c1511;
+  --ink-soft: #3a2e25;
+  --text: #2a211a;
+  --muted: #74665a;
+  --line: #e3d5c1;
+  --line-strong: #cdb99f;
 
-  --color-danger: #b3261e;
-  --color-danger-bg: #fbeae8;
+  --rust: #a4431d;
+  --rust-deep: #7d3014;
+  --rust-wash: rgba(164, 67, 29, 0.1);
+  --tan: #d49a5b;
+  --snow: #fffaf2;
+  --on-rust: #fffaf2;
+  --alpine: #3f4b39;
+  --alpine-wash: rgba(63, 75, 57, 0.1);
 
-  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --danger: #b3261e;
+  --danger-wash: #fbe9e7;
+  --success: #2f6b3f;
+
+  --hero-bg: #1c1511;
+  --hero-text: #f6ecdd;
+  --hero-muted: #bda892;
+
+  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
-  --text-lg: 1.15rem;
-  --text-xl: 1.5rem;
-  --text-display: clamp(2rem, 1.5rem + 2vw, 3.25rem);
+  --text-lg: 1.1875rem;
+  --text-xl: clamp(1.35rem, 1.2rem + 0.6vw, 1.75rem);
+  --text-2xl: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  --text-display: clamp(2.4rem, 1.6rem + 3.4vw, 4.5rem);
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
+  --space-10: 2.5rem;
   --space-12: 3rem;
+  --space-16: 4rem;
 
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
 
-  --shadow-card: 0 1px 2px rgba(28, 20, 15, 0.06), 0 8px 24px -12px rgba(28, 20, 15, 0.22);
-  --shadow-raised: 0 12px 32px -12px rgba(28, 20, 15, 0.35);
+  --shadow-sm: 0 1px 2px rgba(28, 21, 17, 0.07);
+  --shadow-card: 0 1px 2px rgba(28, 21, 17, 0.06), 0 10px 28px -16px rgba(28, 21, 17, 0.28);
+  --shadow-raised: 0 2px 4px rgba(28, 21, 17, 0.06), 0 22px 44px -18px rgba(28, 21, 17, 0.42);
+  --focus-ring: 0 0 0 3px rgba(164, 67, 29, 0.28);
 
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 140ms;
+  --duration-normal: 260ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --header-height: 4.25rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #17130f;
-    --color-surface: #221b15;
-    --color-surface-raised: #2a221a;
-    --color-text: #f2e9dc;
-    --color-text-muted: #b9ac9a;
-    --color-border: #3a2f24;
+    color-scheme: dark;
 
-    --color-tan: #d9a563;
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+    --paper: #14100d;
+    --paper-deep: #1d1713;
+    --surface: #1f1914;
+    --surface-sunk: #191410;
+    --ink: #f5ecdf;
+    --ink-soft: #e2d4c2;
+    --text: #eadfd0;
+    --muted: #ae9e8c;
+    --line: #342a21;
+    --line-strong: #4a3c2f;
+
+    --rust: #e27b4f;
+    --rust-deep: #f09a72;
+    --rust-wash: rgba(226, 123, 79, 0.14);
+    --on-rust: #1a120d;
+    --tan: #e2b079;
+    --alpine: #a9bb9c;
+    --alpine-wash: rgba(169, 187, 156, 0.12);
+
+    --danger: #f2877f;
+    --danger-wash: rgba(242, 135, 127, 0.12);
+    --success: #8fd19e;
+
+    --hero-bg: #0d0a08;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -16px rgba(0, 0, 0, 0.8);
+    --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.4), 0 22px 44px -18px rgba(0, 0, 0, 0.9);
+    --focus-ring: 0 0 0 3px rgba(226, 123, 79, 0.35);
   }
 }

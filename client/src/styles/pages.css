@@ -1,0 +1,163 @@
+/* Zuchtbuch */
+
+.breeding-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+  gap: clamp(var(--space-6), 4vw, var(--space-12));
+  align-items: start;
+}
+
+.breeding-form {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-6));
+}
+
+.breeding-form h2 {
+  font-size: var(--text-xl);
+}
+
+.breeding-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breeding-event {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--rust);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.breeding-date {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.breeding-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.breeding-pair a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.breeding-pair a:hover {
+  color: var(--rust);
+}
+
+.breeding-pair svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--rust);
+  fill: var(--rust);
+}
+
+.breeding-info {
+  color: var(--ink-soft);
+  white-space: pre-line;
+}
+
+.breeding-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.breeding-actions .btn {
+  min-height: 2.1rem;
+  padding: 0 var(--space-4);
+}
+
+@media (max-width: 860px) {
+  .breeding-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .breeding-form {
+    position: static;
+  }
+}
+
+/* Collage */
+
+.collage-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  gap: clamp(var(--space-6), 4vw, var(--space-12));
+  align-items: start;
+}
+
+.collage-controls {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-6));
+}
+
+.collage-preview {
+  display: grid;
+  place-items: center;
+  min-height: 24rem;
+  padding: var(--space-8);
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunk);
+}
+
+.collage-preview canvas {
+  display: none;
+  width: 100%;
+  max-width: 34rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-raised);
+}
+
+.collage-preview.has-image {
+  border-style: solid;
+  border-color: var(--line);
+}
+
+.collage-preview.has-image canvas {
+  display: block;
+}
+
+.collage-preview p {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+
+.collage-preview p svg {
+  width: 3rem;
+  height: 3rem;
+  opacity: 0.5;
+}
+
+@media (max-width: 760px) {
+  .collage-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .collage-controls {
+    position: static;
+  }
+
+  .collage-preview {
+    padding: var(--space-4);
+  }
+}

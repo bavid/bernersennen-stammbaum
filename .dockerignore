@@ -1,0 +1,13 @@
+**/node_modules
+**/.claude
+.git
+.env
+.deploy.env
+backups
+docs
+client/dist
+server/data
+server/data.db*
+server/uploads
+server/test
+*.log

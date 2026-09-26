@@ -1,7 +1,9 @@
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 const Database = require('better-sqlite3')
+const { dbPath } = require('./config')
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'data.db')
+fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 const db = new Database(dbPath)
 
 db.pragma('journal_mode = WAL')
@@ -54,6 +56,12 @@ db.exec(`
     foto_urls TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE INDEX IF NOT EXISTS idx_dogs_family ON dogs(family_id);
+  CREATE INDEX IF NOT EXISTS idx_dogs_mother ON dogs(mother_dog_id);
+  CREATE INDEX IF NOT EXISTS idx_dogs_father ON dogs(father_dog_id);
+  CREATE INDEX IF NOT EXISTS idx_timeline_dog ON timeline_entries(dog_id, datum);
+  CREATE INDEX IF NOT EXISTS idx_breeding_family ON breeding_events(family_id, datum);
 `)
 
 module.exports = db

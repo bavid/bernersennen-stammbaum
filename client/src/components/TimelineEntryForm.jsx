@@ -1,97 +1,107 @@
 import { useState } from 'react'
-import { api } from '../api'
+import PhotoPicker from './PhotoPicker.jsx'
+import ConfirmButton from './ConfirmButton.jsx'
+import { todayIso } from '../lib/dates.js'
+import { readSetting, writeSetting } from '../lib/storage.js'
 
-export default function TimelineEntryForm({ dogId, onCreated }) {
-  const [autorName, setAutorName] = useState('')
-  const [titel, setTitel] = useState('')
-  const [text, setText] = useState('')
-  const [datum, setDatum] = useState(() => new Date().toISOString().slice(0, 10))
-  const [fotos, setFotos] = useState([])
+// Neuer oder bearbeiteter Timeline-Eintrag. Das Datum bestimmt die Position in der Chronik.
+export default function TimelineEntryForm({ entry, onSubmit, onDelete, onCancel }) {
+  const [autorName, setAutorName] = useState(() => entry?.autor_name || readSetting('autorName', ''))
+  const [datum, setDatum] = useState(() => entry?.datum || todayIso())
+  const [titel, setTitel] = useState(entry?.titel || '')
+  const [text, setText] = useState(entry?.text || '')
+  const [fotos, setFotos] = useState(entry?.foto_urls || [])
   const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
 
-  async function handleFileChange(e) {
-    const files = Array.from(e.target.files || [])
-    if (!files.length) return
-    setUploading(true)
-    setError(null)
-    try {
-      const uploaded = await Promise.all(files.map((file) => api.upload(file)))
-      setFotos((prev) => [...prev, ...uploaded.map((u) => u.url)])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault()
+  async function handleSubmit(event) {
+    event.preventDefault()
     setError(null)
     setSaving(true)
     try {
-      const entry = await api.createTimelineEntry({
-        dogId,
-        autorName,
-        titel,
-        text,
-        datum,
-        fotoUrls: fotos
-      })
-      onCreated(entry)
-      setTitel('')
-      setText('')
-      setFotos([])
+      writeSetting('autorName', autorName.trim())
+      await onSubmit({ autorName, datum, titel, text, fotoUrls: fotos })
     } catch (err) {
       setError(err.message)
-    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    setError(null)
+    setSaving(true)
+    try {
+      await onDelete()
+    } catch (err) {
+      setError(err.message)
       setSaving(false)
     }
   }
 
   return (
-    <form className="form-stack" onSubmit={handleSubmit}>
-      {error && <div className="error-banner">{error}</div>}
-      <div className="form-row-inline">
-        <div className="form-row">
-          <label htmlFor="autorName">Dein Name</label>
-          <input id="autorName" value={autorName} onChange={(e) => setAutorName(e.target.value)} required />
+    <form className="form-grid entry-form" onSubmit={handleSubmit}>
+      {error && (
+        <div className="error-banner span-2" role="alert">
+          {error}
         </div>
-        <div className="form-row">
-          <label htmlFor="datum">Datum</label>
-          <input
-            id="datum"
-            type="date"
-            value={datum}
-            onChange={(e) => setDatum(e.target.value)}
-            required
-          />
-        </div>
+      )}
+      <div className="field span-2">
+        <label className="field-label" htmlFor="entry-title">
+          Was ist passiert?
+        </label>
+        <input
+          id="entry-title"
+          value={titel}
+          onChange={(e) => setTitel(e.target.value)}
+          placeholder="z. B. Erster Tag am See"
+          maxLength={120}
+          required
+          autoFocus={!entry}
+        />
       </div>
-      <div className="form-row">
-        <label htmlFor="titel">Titel</label>
-        <input id="titel" value={titel} onChange={(e) => setTitel(e.target.value)} required />
+      <div className="field">
+        <label className="field-label" htmlFor="entry-date">
+          Datum
+        </label>
+        <input id="entry-date" type="date" value={datum} onChange={(e) => setDatum(e.target.value)} required />
+        <span className="field-hint">Der Eintrag wird automatisch an dieser Stelle einsortiert.</span>
       </div>
-      <div className="form-row">
-        <label htmlFor="text">Text</label>
-        <textarea id="text" value={text} onChange={(e) => setText(e.target.value)} />
+      <div className="field">
+        <label className="field-label" htmlFor="entry-author">
+          Dein Name
+        </label>
+        <input
+          id="entry-author"
+          value={autorName}
+          onChange={(e) => setAutorName(e.target.value)}
+          maxLength={60}
+          autoComplete="name"
+          required
+        />
       </div>
-      <div className="form-row">
-        <label htmlFor="fotos">Fotos</label>
-        <input id="fotos" type="file" accept="image/*" multiple onChange={handleFileChange} />
-        {uploading && <span className="dog-card-meta">Lade hoch...</span>}
-        {fotos.length > 0 && (
-          <div className="timeline-photos">
-            {fotos.map((url) => (
-              <img src={url} alt="" key={url} />
-            ))}
-          </div>
+      <div className="field span-2">
+        <label className="field-label" htmlFor="entry-text">
+          Erzähl mehr <span className="muted">(optional)</span>
+        </label>
+        <textarea id="entry-text" value={text} onChange={(e) => setText(e.target.value)} maxLength={5000} />
+      </div>
+      <div className="field span-2">
+        <span className="field-label">Fotos</span>
+        <PhotoPicker value={fotos} onChange={setFotos} label="Fotos" onBusyChange={setUploading} onError={setError} />
+      </div>
+      <div className="form-actions span-2">
+        {onDelete && <ConfirmButton onConfirm={handleDelete} label="Eintrag löschen" disabled={saving} />}
+        <span className="form-actions-spacer" />
+        {onCancel && (
+          <button type="button" className="btn btn-ghost" onClick={onCancel}>
+            Abbrechen
+          </button>
         )}
+        <button className="btn btn-primary" type="submit" disabled={saving || uploading}>
+          {saving ? 'Speichere …' : entry ? 'Speichern' : 'In die Chronik eintragen'}
+        </button>
       </div>
-      <button className="btn btn-primary" type="submit" disabled={saving || uploading}>
-        {saving ? 'Speichere...' : 'Eintrag hinzufügen'}
-      </button>
     </form>
   )
 }

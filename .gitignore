@@ -1,6 +1,18 @@
 node_modules/
-server/data.db
+client/dist/
+
+# Laufzeitdaten
+server/data.db*
+server/data/
 server/uploads/*
 !server/uploads/.gitkeep
-client/dist/
+server/test/*.tmp.db*
+data/
+backups/
+
+# Secrets / lokale Konfiguration
 .env
+.deploy.env
+.claude/
+server/.claude/
+*.log

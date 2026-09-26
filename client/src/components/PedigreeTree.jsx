@@ -1,52 +1,137 @@
-import { useMemo } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import DogCard from './DogCard.jsx'
+import { collectNodes, computeUnions, layoutPedigree } from '../lib/pedigree.js'
 
-function computeGenerations(dogs) {
-  const byId = new Map(dogs.map((dog) => [dog.id, dog]))
-  const generationById = new Map()
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 
-  function generationOf(dogId, visiting = new Set()) {
-    if (generationById.has(dogId)) return generationById.get(dogId)
-    if (visiting.has(dogId)) return 0 // Zyklus-Schutz
-    visiting.add(dogId)
-
-    const dog = byId.get(dogId)
-    const parentGenerations = [dog.mother_dog_id, dog.father_dog_id]
-      .filter((parentId) => parentId && byId.has(parentId))
-      .map((parentId) => generationOf(parentId, visiting))
-
-    const generation = parentGenerations.length ? Math.max(...parentGenerations) + 1 : 0
-    generationById.set(dogId, generation)
-    return generation
+function measure(container, cardRefs) {
+  const origin = container.getBoundingClientRect()
+  const boxes = new Map()
+  for (const [id, element] of cardRefs.current) {
+    if (!element) continue
+    const rect = element.getBoundingClientRect()
+    boxes.set(id, {
+      cx: rect.left - origin.left + rect.width / 2,
+      top: rect.top - origin.top,
+      bottom: rect.bottom - origin.top
+    })
   }
-
-  dogs.forEach((dog) => generationOf(dog.id))
-  return generationById
+  return { boxes, width: container.scrollWidth, height: container.scrollHeight }
 }
 
-export default function PedigreeTree({ dogs }) {
-  const generations = useMemo(() => {
-    if (!dogs.length) return []
-    const generationById = computeGenerations(dogs)
-    const maxGeneration = Math.max(...generationById.values())
-    const rows = Array.from({ length: maxGeneration + 1 }, () => [])
-    dogs.forEach((dog) => rows[generationById.get(dog.id)].push(dog))
-    return rows
-  }, [dogs])
+// Eltern -> Knotenpunkt -> Kinder, als weiche Kurven.
+function unionPaths(union, boxes) {
+  const parents = union.parents.map((id) => boxes.get(id)).filter(Boolean)
+  const children = union.children.map((id) => boxes.get(id)).filter(Boolean)
+  if (!parents.length || !children.length) return null
 
-  if (!dogs.length) {
-    return <p className="empty-state">Noch keine Hunde erfasst. Lege den ersten Hund an.</p>
+  const parentBottom = Math.max(...parents.map((p) => p.bottom))
+  const childTop = Math.min(...children.map((c) => c.top))
+  const joint = {
+    x: parents.reduce((sum, p) => sum + p.cx, 0) / parents.length,
+    y: parentBottom + (childTop - parentBottom) * 0.45
+  }
+  const curve = (x1, y1, x2, y2) => {
+    const midY = (y1 + y2) / 2
+    return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`
+  }
+  return {
+    joint,
+    paths: [
+      ...parents.map((p) => curve(p.cx, p.bottom, joint.x, joint.y)),
+      ...children.map((c) => curve(joint.x, joint.y, c.cx, c.top))
+    ]
+  }
+}
+
+export default function PedigreeTree({ dogs, allDogs }) {
+  const nodes = useMemo(() => collectNodes(dogs, allDogs), [dogs, allDogs])
+  const rows = useMemo(() => layoutPedigree(nodes), [nodes])
+  const unions = useMemo(() => computeUnions(nodes), [nodes])
+
+  const scrollRef = useRef(null)
+  const containerRef = useRef(null)
+  const cardRefs = useRef(new Map())
+  const [geometry, setGeometry] = useState(null)
+  const [hoveredId, setHoveredId] = useState(null)
+
+  const remeasure = useCallback(() => {
+    if (containerRef.current) setGeometry(measure(containerRef.current, cardRefs))
+  }, [])
+
+  // Ist der Baum breiter als der Bildschirm, mittig starten statt links abgeschnitten
+  useLayoutEffect(() => {
+    const scroller = scrollRef.current
+    scroller.scrollLeft = (scroller.scrollWidth - scroller.clientWidth) / 2
+  }, [rows])
+
+  useLayoutEffect(() => {
+    remeasure()
+    const observer = new ResizeObserver(remeasure)
+    observer.observe(containerRef.current)
+    document.fonts?.ready.then(remeasure)
+    return () => observer.disconnect()
+  }, [rows, remeasure])
+
+  const related = useMemo(() => {
+    if (!hoveredId) return null
+    const ids = new Set([hoveredId])
+    for (const union of unions) {
+      if (union.parents.includes(hoveredId) || union.children.includes(hoveredId)) {
+        union.parents.forEach((id) => ids.add(id))
+        union.children.forEach((id) => ids.add(id))
+      }
+    }
+    return ids
+  }, [hoveredId, unions])
+
+  const setCardRef = (id) => (element) => {
+    if (element) cardRefs.current.set(id, element)
+    else cardRefs.current.delete(id)
   }
 
   return (
-    <div>
-      {generations.map((rowDogs, index) => (
-        <div className="pedigree-generation" data-label={`Generation ${index + 1}`} key={index}>
-          {rowDogs.map((dog) => (
-            <DogCard dog={dog} key={dog.id} />
-          ))}
-        </div>
-      ))}
+    <div className="pedigree-scroll" ref={scrollRef}>
+      <div className="pedigree" ref={containerRef}>
+        {geometry && (
+          <svg className="pedigree-lines" width={geometry.width} height={geometry.height} aria-hidden="true">
+            {unions.map((union) => {
+              const drawn = unionPaths(union, geometry.boxes)
+              if (!drawn) return null
+              const active = related && [...union.parents, ...union.children].includes(hoveredId)
+              return (
+                <g key={union.key} className={active ? 'is-active' : related ? 'is-muted' : ''}>
+                  {drawn.paths.map((d, i) => (
+                    <path key={i} d={d} />
+                  ))}
+                  <circle cx={drawn.joint.x} cy={drawn.joint.y} r="4.5" />
+                </g>
+              )
+            })}
+          </svg>
+        )}
+
+        {rows.map((row, index) => (
+          <section className="pedigree-row" key={index} aria-label={`Generation ${index + 1}`}>
+            <div className="pedigree-gen" aria-hidden="true">
+              <span className="pedigree-gen-num">{ROMAN[index] || index + 1}</span>
+              <span className="pedigree-gen-label">Generation</span>
+            </div>
+            <div className="pedigree-cards">
+              {row.map((dog) => (
+                <DogCard
+                  key={dog.id}
+                  ref={setCardRef(dog.id)}
+                  dog={dog}
+                  highlighted={related?.has(dog.id)}
+                  dimmed={related && !related.has(dog.id)}
+                  onHover={setHoveredId}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   )
 }

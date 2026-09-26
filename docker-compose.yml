@@ -1,0 +1,18 @@
+services:
+  chronik:
+    build: .
+    image: bernersennen-stammbaum:latest
+    container_name: bernersennen-stammbaum
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    env_file:
+      - .env
+    volumes:
+      # SQLite-Datenbank und hochgeladene Fotos (Host-Ordner muss UID 1000 gehören)
+      - ./data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

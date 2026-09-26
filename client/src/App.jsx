@@ -1,30 +1,61 @@
-import { useEffect, useState, createContext, useContext } from 'react'
-import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom'
-import { api } from './api'
+import { useEffect, useState } from 'react'
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { api, setUnauthorizedHandler } from './api'
+import BernerMark from './components/BernerMark.jsx'
+import Icon from './components/Icon.jsx'
 import LoginPage from './pages/LoginPage.jsx'
-import CreateFamilyPage from './pages/CreateFamilyPage.jsx'
 import OverviewPage from './pages/OverviewPage.jsx'
 import DogDetailPage from './pages/DogDetailPage.jsx'
-import BreedingFormPage from './pages/BreedingFormPage.jsx'
+import BreedingPage from './pages/BreedingPage.jsx'
 import CollagePage from './pages/CollagePage.jsx'
 
-const FamilyContext = createContext(null)
+const NAV_ITEMS = [
+  { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
+  { to: '/zuchtbuch', icon: 'book', label: 'Zuchtbuch' },
+  { to: '/collage', icon: 'collage', label: 'Collage' }
+]
 
-export function useFamily() {
-  return useContext(FamilyContext)
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => window.scrollTo(0, 0), [pathname])
+  return null
 }
 
-function RequireFamily({ family, children }) {
-  const location = useLocation()
-  if (family === undefined) return null
-  if (!family) return <Navigate to="/" state={{ from: location }} replace />
-  return children
+function AppHeader({ family, onLogout }) {
+  const { pathname } = useLocation()
+  // Hundeseiten gehören zum Stammbaum
+  const isActive = (item, active) => active || (item.to === '/stammbaum' && pathname.startsWith('/hund/'))
+  return (
+    <header className="app-header">
+      <div className="app-header-inner">
+        <Link to="/stammbaum" className="brand">
+          <BernerMark size={40} />
+          <span className="brand-text">
+            <span className="brand-name">Familienchronik</span>
+            <span className="brand-sub">{family.name}</span>
+          </span>
+        </Link>
+        <nav className="app-nav" aria-label="Hauptnavigation">
+          {NAV_ITEMS.map((item) => (
+            <NavLink key={item.to} to={item.to} className={({ isActive: active }) => (isActive(item, active) ? 'active' : '')}>
+              <Icon name={item.icon} />
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+        <button type="button" className="icon-btn app-logout" onClick={onLogout} aria-label="Abmelden" title="Abmelden">
+          <Icon name="logout" />
+        </button>
+      </div>
+    </header>
+  )
 }
 
 export default function App() {
   const [family, setFamily] = useState(undefined)
 
   useEffect(() => {
+    setUnauthorizedHandler(() => setFamily(null))
     api
       .me()
       .then(setFamily)
@@ -32,69 +63,42 @@ export default function App() {
   }, [])
 
   async function handleLogout() {
-    await api.logout()
-    setFamily(null)
+    try {
+      await api.logout()
+    } finally {
+      setFamily(null)
+    }
+  }
+
+  if (family === undefined) {
+    return (
+      <div className="splash" aria-busy="true">
+        <BernerMark size={72} />
+      </div>
+    )
+  }
+
+  if (!family) {
+    return <LoginPage onLogin={setFamily} />
   }
 
   return (
-    <FamilyContext.Provider value={family}>
-      <div className="app-shell">
-        <header className="app-header">
-          <Link to={family ? '/stammbaum' : '/'} className="brand">
-            <span className="brand-mark">🐾</span> Familienchronik
-          </Link>
-          {family && (
-            <nav className="app-nav">
-              <span className="pill pill-rust">{family.name}</span>
-              <Link to="/stammbaum">Stammbaum</Link>
-              <Link to="/deckakt-erfassen">Deckakt erfassen</Link>
-              <Link to="/collage">Collage</Link>
-              <button className="btn btn-ghost" onClick={handleLogout}>
-                Abmelden
-              </button>
-            </nav>
-          )}
-        </header>
-
-        <main className="app-main">
-          <Routes>
-            <Route path="/" element={<LoginPage family={family} onLogin={setFamily} />} />
-            <Route path="/neue-familie" element={<CreateFamilyPage onCreated={setFamily} />} />
-            <Route
-              path="/stammbaum"
-              element={
-                <RequireFamily family={family}>
-                  <OverviewPage />
-                </RequireFamily>
-              }
-            />
-            <Route
-              path="/hund/:id"
-              element={
-                <RequireFamily family={family}>
-                  <DogDetailPage />
-                </RequireFamily>
-              }
-            />
-            <Route
-              path="/deckakt-erfassen"
-              element={
-                <RequireFamily family={family}>
-                  <BreedingFormPage />
-                </RequireFamily>
-              }
-            />
-            <Route
-              path="/collage"
-              element={
-                <RequireFamily family={family}>
-                  <CollagePage />
-                </RequireFamily>
-              }
-            />
-          </Routes>
-        </main>
-      </div>
-    </FamilyContext.Provider>
+    <div className="app-shell">
+      <ScrollToTop />
+      <AppHeader family={family} onLogout={handleLogout} />
+      <main className="app-main">
+        <Routes>
+          <Route path="/stammbaum" element={<OverviewPage family={family} />} />
+          <Route path="/hund/:id" element={<DogDetailPage family={family} />} />
+          <Route path="/zuchtbuch" element={<BreedingPage />} />
+          <Route path="/collage" element={<CollagePage />} />
+          <Route path="*" element={<Navigate to="/stammbaum" replace />} />
+        </Routes>
+      </main>
+      <footer className="app-footer">
+        <div className="tricolor" aria-hidden="true" />
+        <p>Familienchronik · mit Liebe fürs Rudel geführt</p>
+      </footer>
+    </div>
   )
 }

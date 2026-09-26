@@ -1,61 +1,61 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
+import { shortName } from '../lib/timeline.js'
 
-export default function ParentPicker({ label, dogs, dogId, freitext, onChange }) {
-  const [mode, setMode] = useState(freitext ? 'freitext' : 'liste')
+// Elternteil wählen: aus der Liste (auch rudelübergreifend) oder als Freitext.
+export default function ParentPicker({ label, sex, dogs, value, onChange, excludeId, ownFamilyId }) {
+  const id = useId()
+  const [mode, setMode] = useState(value.freitext ? 'freitext' : 'liste')
 
   const options = useMemo(
-    () => [...dogs].sort((a, b) => a.name.localeCompare(b.name)),
-    [dogs]
+    () =>
+      dogs
+        .filter((dog) => dog.geschlecht === sex && dog.id !== excludeId)
+        .sort((a, b) => a.name.localeCompare(b.name, 'de')),
+    [dogs, sex, excludeId]
   )
 
-  function setMode_(next) {
+  function switchMode(next) {
     setMode(next)
-    if (next === 'liste') {
-      onChange({ dogId: dogId || '', freitext: '' })
-    } else {
-      onChange({ dogId: '', freitext: freitext || '' })
-    }
+    onChange({ dogId: '', freitext: '' })
   }
 
   return (
-    <div className="form-row">
-      <label>{label}</label>
-      <div className="form-row-inline" style={{ marginBottom: 'var(--space-1)' }}>
-        <label style={{ fontWeight: 400 }}>
-          <input
-            type="radio"
-            checked={mode === 'liste'}
-            onChange={() => setMode_('liste')}
-          />{' '}
-          Aus Liste wählen
+    <div className="field">
+      <div className="field-row">
+        <label className="field-label" htmlFor={id}>
+          {label}
         </label>
-        <label style={{ fontWeight: 400 }}>
-          <input
-            type="radio"
-            checked={mode === 'freitext'}
-            onChange={() => setMode_('freitext')}
-          />{' '}
-          Hund nicht gelistet
-        </label>
+        <div className="segmented segmented-sm" role="group" aria-label={`${label} angeben`}>
+          <button type="button" aria-pressed={mode === 'liste'} onClick={() => switchMode('liste')}>
+            Aus Liste
+          </button>
+          <button type="button" aria-pressed={mode === 'freitext'} onClick={() => switchMode('freitext')}>
+            Nicht erfasst
+          </button>
+        </div>
       </div>
 
       {mode === 'liste' ? (
         <select
-          value={dogId || ''}
+          id={id}
+          value={value.dogId || ''}
           onChange={(e) => onChange({ dogId: e.target.value ? Number(e.target.value) : '', freitext: '' })}
         >
-          <option value="">– kein Elternteil ausgewählt –</option>
+          <option value="">– unbekannt –</option>
           {options.map((dog) => (
             <option key={dog.id} value={dog.id}>
-              {dog.name}
-              {dog.familyName ? ` (${dog.familyName})` : ''}
+              {shortName(dog.name)}
+              {dog.name !== shortName(dog.name) ? ` (${dog.name})` : ''}
+              {ownFamilyId && dog.family_id !== ownFamilyId ? ` · ${dog.familyName}` : ''}
             </option>
           ))}
         </select>
       ) : (
         <input
-          placeholder="Name, optional Zwinger/Züchter"
-          value={freitext || ''}
+          id={id}
+          placeholder="Name, gern mit Zwinger – z. B. Balu vom Schwarzwaldhof"
+          value={value.freitext || ''}
+          maxLength={120}
           onChange={(e) => onChange({ dogId: '', freitext: e.target.value })}
         />
       )}

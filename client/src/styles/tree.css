@@ -1,0 +1,246 @@
+.pedigree-scroll {
+  overflow-x: auto;
+  margin: 0 calc(-1 * clamp(var(--space-4), 4vw, var(--space-8)));
+  padding: var(--space-2) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-6);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.pedigree {
+  position: relative;
+  display: grid;
+  gap: 4.5rem;
+  width: max-content;
+  min-width: 100%;
+}
+
+.pedigree-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pedigree-lines g {
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.pedigree-lines path {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke var(--duration-normal) var(--ease-out), stroke-width var(--duration-normal) var(--ease-out);
+}
+
+.pedigree-lines circle {
+  fill: var(--paper);
+  stroke: var(--rust);
+  stroke-width: 2.5;
+}
+
+.pedigree-lines g.is-active path {
+  stroke: var(--rust);
+  stroke-width: 2.75;
+}
+
+.pedigree-lines g.is-active circle {
+  fill: var(--rust);
+}
+
+.pedigree-lines g.is-muted {
+  opacity: 0.25;
+}
+
+.pedigree-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  align-items: center;
+}
+
+.pedigree-gen {
+  display: grid;
+  line-height: 1;
+}
+
+.pedigree-gen-num {
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--rust);
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+}
+
+.pedigree-gen-label {
+  margin-top: var(--space-1);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pedigree-cards {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5) var(--space-6);
+}
+
+.dog-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 15rem;
+  padding: var(--space-2) var(--space-5) var(--space-2) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 3rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+  text-decoration: none;
+  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out);
+}
+
+.dog-card:hover {
+  color: var(--text);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-raised);
+  border-color: var(--tan);
+}
+
+.dog-card.is-highlighted {
+  border-color: var(--rust);
+  box-shadow: 0 0 0 3px var(--rust-wash), var(--shadow-raised);
+}
+
+.dog-card.is-dimmed {
+  opacity: 0.45;
+}
+
+.dog-card.is-external {
+  border-style: dashed;
+  border-color: var(--line-strong);
+  background: var(--surface-sunk);
+}
+
+.dog-card-body {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.dog-card-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dog-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dog-card-meta .sex-label + span::before {
+  content: '· ';
+}
+
+.dog-card-tag {
+  margin-top: 3px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--rust);
+}
+
+.sex-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sex-huendin {
+  background: var(--rust);
+}
+
+.sex-ruede {
+  background: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--tan);
+}
+
+@media (max-width: 720px) {
+  .pedigree {
+    gap: 3rem;
+  }
+
+  .pedigree-row {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+
+  .pedigree-gen-num {
+    font-size: 1.4rem;
+  }
+
+  .pedigree-gen-label {
+    display: none;
+  }
+
+  .pedigree-cards {
+    gap: var(--space-3);
+  }
+
+  /* Kompakte Medaillons: Foto oben, Name darunter */
+  .dog-card {
+    flex-direction: column;
+    gap: var(--space-2);
+    width: 6.25rem;
+    padding: var(--space-3) var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    text-align: center;
+  }
+
+  .dog-card .avatar {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .dog-card-body {
+    justify-items: center;
+    width: 100%;
+  }
+
+  .dog-card-name {
+    max-width: 100%;
+    font-size: 1rem;
+  }
+
+  .dog-card-meta {
+    gap: var(--space-1);
+    font-size: 0.68rem;
+  }
+
+  .dog-card-meta .sex-label {
+    display: none;
+  }
+
+  .dog-card-meta .sex-label + span::before {
+    content: none;
+  }
+
+  .dog-card-tag {
+    display: none;
+  }
+}

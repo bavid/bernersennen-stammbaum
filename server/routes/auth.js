@@ -1,52 +1,92 @@
+const crypto = require('node:crypto')
 const express = require('express')
 const bcrypt = require('bcryptjs')
+const rateLimit = require('express-rate-limit')
 const db = require('../db')
-const { signSession, requireAuth } = require('../middleware/auth')
+const config = require('../config')
+const { requireAuth, setSessionCookie, clearSessionCookie } = require('../middleware/auth')
 
 const router = express.Router()
 
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  sameSite: 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000
-}
+const MIN_PASSWORD_LENGTH = 6
+const MAX_NAME_LENGTH = 80
+const BCRYPT_ROUNDS = 10
 
-router.post('/families', (req, res) => {
-  const { name, password } = req.body || {}
-  if (!name?.trim() || !password?.trim()) {
-    return res.status(400).json({ error: 'Familienname und Passwort sind erforderlich' })
-  }
-
-  const passwordHash = bcrypt.hashSync(password, 10)
-  const result = db
-    .prepare('INSERT INTO families (name, password_hash) VALUES (?, ?)')
-    .run(name.trim(), passwordHash)
-
-  const token = signSession(result.lastInsertRowid)
-  res.cookie('session', token, COOKIE_OPTIONS)
-  res.status(201).json({ id: result.lastInsertRowid, name: name.trim() })
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: config.loginRateLimit,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Zu viele Versuche. Bitte warte ein paar Minuten und probiere es dann erneut.' }
 })
 
-router.post('/login', (req, res) => {
-  const { password } = req.body || {}
-  if (!password) {
-    return res.status(400).json({ error: 'Passwort ist erforderlich' })
-  }
+function safeEqual(a, b) {
+  const hashA = crypto.createHash('sha256').update(String(a ?? '')).digest()
+  const hashB = crypto.createHash('sha256').update(String(b ?? '')).digest()
+  return crypto.timingSafeEqual(hashA, hashB)
+}
 
+async function findFamilyByPassword(password) {
   const families = db.prepare('SELECT id, name, password_hash FROM families').all()
-  const match = families.find((f) => bcrypt.compareSync(password, f.password_hash))
-
-  if (!match) {
-    return res.status(401).json({ error: 'Falsches Passwort' })
+  for (const family of families) {
+    if (await bcrypt.compare(password, family.password_hash)) return family
   }
+  return null
+}
 
-  const token = signSession(match.id)
-  res.cookie('session', token, COOKIE_OPTIONS)
-  res.json({ id: match.id, name: match.name })
+router.get('/config', (req, res) => {
+  res.json({ inviteRequired: Boolean(config.inviteCode) })
+})
+
+router.post('/families', authLimiter, async (req, res, next) => {
+  try {
+    const { name, password, inviteCode } = req.body || {}
+    const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
+    if (!trimmedName || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        error: `Rudelname und ein Passwort mit mindestens ${MIN_PASSWORD_LENGTH} Zeichen sind erforderlich`
+      })
+    }
+    if (config.inviteCode && !safeEqual(inviteCode, config.inviteCode)) {
+      return res.status(403).json({ error: 'Der Einladungscode stimmt nicht' })
+    }
+    if (await findFamilyByPassword(password)) {
+      return res.status(409).json({ error: 'Dieses Passwort ist schon vergeben. Bitte wähle ein anderes.' })
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
+    const result = db
+      .prepare('INSERT INTO families (name, password_hash) VALUES (?, ?)')
+      .run(trimmedName, passwordHash)
+
+    setSessionCookie(res, result.lastInsertRowid)
+    res.status(201).json({ id: result.lastInsertRowid, name: trimmedName })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/login', authLimiter, async (req, res, next) => {
+  try {
+    const { password } = req.body || {}
+    if (typeof password !== 'string' || !password) {
+      return res.status(400).json({ error: 'Passwort ist erforderlich' })
+    }
+
+    const match = await findFamilyByPassword(password)
+    if (!match) {
+      return res.status(401).json({ error: 'Dieses Passwort kennen wir nicht' })
+    }
+
+    setSessionCookie(res, match.id)
+    res.json({ id: match.id, name: match.name })
+  } catch (err) {
+    next(err)
+  }
 })
 
 router.post('/logout', (req, res) => {
-  res.clearCookie('session')
+  clearSessionCookie(res)
   res.status(204).end()
 })
 

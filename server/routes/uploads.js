@@ -1,35 +1,56 @@
+const crypto = require('node:crypto')
+const fs = require('node:fs')
 const express = require('express')
 const multer = require('multer')
-const path = require('node:path')
-const { v4: uuidv4 } = require('uuid')
+const rateLimit = require('express-rate-limit')
 const { requireAuth } = require('../middleware/auth')
+const { uploadDir, uploadRateLimit } = require('../config')
 
 const router = express.Router()
 
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, '..', 'uploads'),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname)
-    cb(null, `${uuidv4()}${ext}`)
-  }
+const MAX_FILE_BYTES = 15 * 1024 * 1024
+
+// Dateiendung kommt ausschließlich aus dieser Whitelist, nie vom Client-Dateinamen.
+const EXTENSION_BY_MIME = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif'
+}
+
+// Schützt den gemeinsamen Speicher: Uploads pro Rudel und Stunde begrenzen
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: uploadRateLimit,
+  keyGenerator: (req) => `family-${req.familyId}`,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Zu viele Fotos in kurzer Zeit. Bitte später weitermachen.' }
 })
 
+fs.mkdirSync(uploadDir, { recursive: true })
+
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  storage: multer.diskStorage({
+    destination: uploadDir,
+    filename: (req, file, cb) => cb(null, `${crypto.randomUUID()}.${EXTENSION_BY_MIME[file.mimetype]}`)
+  }),
+  limits: { fileSize: MAX_FILE_BYTES, files: 1 },
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-      return cb(new Error('Nur Bilddateien sind erlaubt'))
+    if (!EXTENSION_BY_MIME[file.mimetype]) {
+      const error = new Error('Nur Fotos (JPG, PNG, WebP, GIF) sind erlaubt')
+      error.status = 400
+      return cb(error)
     }
     cb(null, true)
   }
 })
 
-router.post('/', requireAuth, upload.single('file'), (req, res) => {
+router.post('/', requireAuth, uploadLimiter, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Keine Datei hochgeladen' })
   }
   res.status(201).json({ url: `/uploads/${req.file.filename}` })
 })
 
-module.exports = router
+module.exports = { router, MAX_FILE_BYTES }

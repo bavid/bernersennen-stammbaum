@@ -1,27 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import PedigreeTree from '../components/PedigreeTree.jsx'
-import ParentPicker from '../components/ParentPicker.jsx'
+import DogForm from '../components/DogForm.jsx'
+import Modal from '../components/Modal.jsx'
+import Icon from '../components/Icon.jsx'
+import BernerMark from '../components/BernerMark.jsx'
+import { useToast } from '../components/Toast.jsx'
+import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
 
-const emptyForm = {
-  name: '',
-  geschlecht: 'huendin',
-  geburtsdatum: '',
-  farbeMarkings: '',
-  beschreibung: '',
-  mother: { dogId: '', freitext: '' },
-  father: { dogId: '', freitext: '' }
+function Stats({ dogs, allDogs }) {
+  const generations = useMemo(() => layoutPedigree(collectNodes(dogs, allDogs)).length, [dogs, allDogs])
+  const entries = dogs.reduce((sum, dog) => sum + (dog.timeline_count || 0), 0)
+  const items = [
+    { value: dogs.length, label: dogs.length === 1 ? 'Hund' : 'Hunde' },
+    { value: generations, label: generations === 1 ? 'Generation' : 'Generationen' },
+    { value: entries, label: entries === 1 ? 'Erinnerung' : 'Erinnerungen' }
+  ]
+  return (
+    <dl className="stats">
+      {items.map((item) => (
+        <div key={item.label}>
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
 }
 
-export default function OverviewPage() {
+export default function OverviewPage({ family }) {
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
-  const [form, setForm] = useState(emptyForm)
-  const [foto, setFoto] = useState(null)
-  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const [showForm, setShowForm] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
+  const navigate = useNavigate()
+  const toast = useToast()
 
   async function loadDogs() {
     const [own, all] = await Promise.all([api.listDogs(), api.listAllDogs()])
@@ -33,148 +47,52 @@ export default function OverviewPage() {
     loadDogs().catch((err) => setError(err.message))
   }, [])
 
-  async function handleFotoChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    setError(null)
-    try {
-      const uploaded = await api.upload(file)
-      setFoto(uploaded.url)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setError(null)
-    setSaving(true)
-    try {
-      await api.createDog({
-        name: form.name,
-        geschlecht: form.geschlecht,
-        geburtsdatum: form.geburtsdatum || null,
-        farbeMarkings: form.farbeMarkings || null,
-        beschreibung: form.beschreibung || null,
-        fotoUrl: foto,
-        motherDogId: form.mother.dogId || null,
-        motherFreitext: form.mother.freitext || null,
-        fatherDogId: form.father.dogId || null,
-        fatherFreitext: form.father.freitext || null
-      })
-      setForm(emptyForm)
-      setFoto(null)
-      setShowForm(false)
-      await loadDogs()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
+  async function handleCreate(payload) {
+    const dog = await api.createDog(payload)
+    setFormOpen(false)
+    toast(`${dog.name} ist jetzt Teil des Stammbaums`)
+    navigate(`/hund/${dog.id}`)
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="eyebrow">Euer Rudel</div>
-        <h1>Stammbaum</h1>
-        <p>Übersicht aller erfassten Hunde und ihrer Verwandtschaft.</p>
-      </div>
-
-      {error && <div className="error-banner" style={{ marginBottom: 'var(--space-4)' }}>{error}</div>}
-
-      {dogs && <PedigreeTree dogs={dogs} />}
-
-      <div style={{ marginTop: 'var(--space-8)' }}>
-        {!showForm ? (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            + Neuen Hund anlegen
+    <div className="page">
+      <header className="page-hero">
+        <div>
+          <span className="eyebrow">Stammbaum</span>
+          <h1>{family.name}</h1>
+          <p className="page-lede">
+            Alle Hunde eures Rudels über die Generationen. Ein Klick auf einen Hund öffnet seine Chronik mit allen
+            Erinnerungen.
+          </p>
+        </div>
+        <div className="page-hero-side">
+          {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} />}
+          <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
+            <Icon name="plus" />
+            Hund hinzufügen
           </button>
-        ) : (
-          <form className="form-stack card" onSubmit={handleSubmit}>
-            <h2>Neuen Hund anlegen</h2>
-            <div className="form-row">
-              <label htmlFor="dogName">Name</label>
-              <input
-                id="dogName"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="geschlecht">Geschlecht</label>
-              <select
-                id="geschlecht"
-                value={form.geschlecht}
-                onChange={(e) => setForm({ ...form, geschlecht: e.target.value })}
-              >
-                <option value="huendin">Hündin</option>
-                <option value="ruede">Rüde</option>
-              </select>
-            </div>
-            <div className="form-row">
-              <label htmlFor="geburtsdatum">Geburtsdatum</label>
-              <input
-                id="geburtsdatum"
-                type="date"
-                value={form.geburtsdatum}
-                onChange={(e) => setForm({ ...form, geburtsdatum: e.target.value })}
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="farbe">Farbe/Abzeichen</label>
-              <input
-                id="farbe"
-                value={form.farbeMarkings}
-                onChange={(e) => setForm({ ...form, farbeMarkings: e.target.value })}
-              />
-            </div>
+        </div>
+      </header>
 
-            <ParentPicker
-              label="Mutter"
-              dogs={allDogs}
-              dogId={form.mother.dogId}
-              freitext={form.mother.freitext}
-              onChange={(mother) => setForm({ ...form, mother })}
-            />
-            <ParentPicker
-              label="Vater"
-              dogs={allDogs}
-              dogId={form.father.dogId}
-              freitext={form.father.freitext}
-              onChange={(father) => setForm({ ...form, father })}
-            />
+      {error && <div className="error-banner" role="alert">{error}</div>}
 
-            <div className="form-row">
-              <label htmlFor="foto">Foto</label>
-              <input id="foto" type="file" accept="image/*" onChange={handleFotoChange} />
-              {uploading && <span className="dog-card-meta">Lade hoch...</span>}
-            </div>
+      {dogs && dogs.length === 0 && (
+        <div className="empty-state">
+          <BernerMark size={72} />
+          <h3>Euer Stammbaum ist noch leer</h3>
+          <p>Fangt mit dem ältesten Hund an, den ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
+          <button type="button" className="btn btn-primary" onClick={() => setFormOpen(true)}>
+            <Icon name="plus" />
+            Ersten Hund anlegen
+          </button>
+        </div>
+      )}
 
-            <div className="form-row">
-              <label htmlFor="beschreibung">Beschreibung</label>
-              <textarea
-                id="beschreibung"
-                value={form.beschreibung}
-                onChange={(e) => setForm({ ...form, beschreibung: e.target.value })}
-              />
-            </div>
+      {dogs && dogs.length > 0 && <PedigreeTree dogs={dogs} allDogs={allDogs} />}
 
-            <div className="form-row-inline">
-              <button className="btn btn-primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Speichere...' : 'Hund anlegen'}
-              </button>
-              <button className="btn btn-ghost" type="button" onClick={() => setShowForm(false)}>
-                Abbrechen
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
+      <Modal open={formOpen} title="Neuen Hund anlegen" onClose={() => setFormOpen(false)}>
+        <DogForm allDogs={allDogs} ownFamilyId={family.id} onSubmit={handleCreate} onCancel={() => setFormOpen(false)} />
+      </Modal>
     </div>
   )
 }
