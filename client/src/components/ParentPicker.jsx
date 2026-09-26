@@ -2,16 +2,16 @@ import { useId, useMemo, useState } from 'react'
 import { dogLabel, shortName } from '../lib/timeline.js'
 
 // Elternteil wählen: aus der Liste (auch rudelübergreifend) oder als Freitext.
-export default function ParentPicker({ label, sex, dogs, value, onChange, excludeId, ownFamilyId }) {
+export default function ParentPicker({ label, sex, tierart = 'hund', dogs, value, onChange, excludeId, ownFamilyId }) {
   const id = useId()
   const [mode, setMode] = useState(value.freitext ? 'freitext' : 'liste')
 
   const options = useMemo(
     () =>
       dogs
-        .filter((dog) => dog.geschlecht === sex && dog.id !== excludeId)
+        .filter((dog) => dog.geschlecht === sex && (dog.tierart || 'hund') === tierart && dog.id !== excludeId)
         .sort((a, b) => a.name.localeCompare(b.name, 'de')),
-    [dogs, sex, excludeId]
+    [dogs, sex, tierart, excludeId]
   )
 
   function switchMode(next) {

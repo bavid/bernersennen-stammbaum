@@ -135,7 +135,7 @@ router.get('/families/:id', requireAdmin, (req, res) => {
 
   const dogs = db
     .prepare(
-      `SELECT d.id, d.name, d.name_unbekannt, d.rasse, d.geschlecht, d.geburtsdatum, d.foto_url, d.created_at,
+      `SELECT d.id, d.name, d.name_unbekannt, d.rasse, d.tierart, d.geschlecht, d.geburtsdatum, d.foto_url, d.created_at,
               d.mother_freitext, d.father_freitext,
               m.name AS mother_name, m.name_unbekannt AS mother_unbekannt, m.rasse AS mother_rasse,
               v.name AS father_name, v.name_unbekannt AS father_unbekannt, v.rasse AS father_rasse,

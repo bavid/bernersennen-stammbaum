@@ -2,6 +2,9 @@ import { useState } from 'react'
 import ParentPicker from './ParentPicker.jsx'
 import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
+import { dogLabel, sexLabel, speciesLabel } from '../lib/timeline.js'
+
+const SPECIES = ['hund', 'katze', 'anderes']
 
 const BREED_SUGGESTIONS = [
   'Berner Sennenhund',
@@ -19,6 +22,8 @@ function initialState(dog) {
     name: dog?.name_unbekannt ? '' : dog?.name || '',
     nameUnbekannt: Boolean(dog?.name_unbekannt),
     rasse: dog?.rasse || '',
+    tierart: dog?.tierart || 'hund',
+    housemateId: '',
     geschlecht: dog?.geschlecht || 'huendin',
     geburtsdatum: dog?.geburtsdatum || '',
     farbeMarkings: dog?.farbe_markings || '',
@@ -34,6 +39,8 @@ function toPayload(form) {
     name: form.nameUnbekannt ? '' : form.name,
     nameUnbekannt: form.nameUnbekannt,
     rasse: form.rasse || null,
+    tierart: form.tierart,
+    housemateId: form.housemateId || null,
     geschlecht: form.geschlecht,
     geburtsdatum: form.geburtsdatum || null,
     farbeMarkings: form.farbeMarkings || null,
@@ -143,14 +150,39 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
         </datalist>
       </div>
 
+      <div className="field span-2">
+        <span className="field-label">Tierart</span>
+        <div className="segmented" role="group" aria-label="Tierart">
+          {SPECIES.map((tierart) => (
+            <button
+              type="button"
+              key={tierart}
+              aria-pressed={form.tierart === tierart}
+              onClick={() =>
+                update({
+                  tierart,
+                  // Eltern anderer Tierart passen nicht mehr
+                  ...(tierart !== form.tierart && {
+                    mother: { dogId: '', freitext: form.mother.freitext },
+                    father: { dogId: '', freitext: form.father.freitext }
+                  })
+                })
+              }
+            >
+              {speciesLabel(tierart)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="field">
         <span className="field-label">Geschlecht</span>
         <div className="segmented" role="group" aria-label="Geschlecht">
           <button type="button" aria-pressed={form.geschlecht === 'huendin'} onClick={() => update({ geschlecht: 'huendin' })}>
-            Hündin
+            {sexLabel('huendin', form.tierart)}
           </button>
           <button type="button" aria-pressed={form.geschlecht === 'ruede'} onClick={() => update({ geschlecht: 'ruede' })}>
-            Rüde
+            {sexLabel('ruede', form.tierart)}
           </button>
         </div>
       </div>
@@ -180,9 +212,27 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
         />
       </div>
 
+      {!dog && (
+        <div className="field span-2">
+          <label className="field-label" htmlFor="dog-housemate">
+            Lebt zusammen mit <span className="muted">(optional, z. B. Adoptiv-Geschwister)</span>
+          </label>
+          <select id="dog-housemate" value={form.housemateId} onChange={(e) => update({ housemateId: e.target.value ? Number(e.target.value) : '' })}>
+            <option value="">– niemandem –</option>
+            {allDogs.map((other) => (
+              <option key={other.id} value={other.id}>
+                {dogLabel(other)}
+              </option>
+            ))}
+          </select>
+          <span className="field-hint">Ohne Verwandtschaft – im Stammbaum erscheint eine eigene Linie „lebt zusammen“.</span>
+        </div>
+      )}
+
       <ParentPicker
         label="Mutter"
         sex="huendin"
+        tierart={form.tierart}
         dogs={allDogs}
         value={form.mother}
         onChange={(mother) => update({ mother })}
@@ -192,6 +242,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       <ParentPicker
         label="Vater"
         sex="ruede"
+        tierart={form.tierart}
         dogs={allDogs}
         value={form.father}
         onChange={(father) => update({ father })}

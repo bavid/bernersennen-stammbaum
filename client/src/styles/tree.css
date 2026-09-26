@@ -221,7 +221,12 @@
     row-gap: var(--space-2);
   }
 
+  /* Bleibt beim seitlichen Scrollen am linken Rand sichtbar */
   .pedigree-gen {
+    position: sticky;
+    left: var(--space-3);
+    z-index: 1;
+    justify-self: start;
     display: flex;
     align-items: baseline;
     gap: var(--space-2);
@@ -296,5 +301,104 @@
 
   .dog-card-tag {
     display: none;
+  }
+}
+
+/* "Lebt zusammen mit" – Adoptiv-Geschwister, andere Tiere */
+
+.pedigree-lines g.housemate path {
+  stroke: var(--tan);
+  stroke-width: 2.5;
+  stroke-dasharray: 5 6;
+}
+
+.pedigree-lines g.housemate circle {
+  fill: var(--paper);
+  stroke: var(--tan);
+  stroke-width: 2;
+}
+
+.pedigree-lines g.housemate .housemate-icon {
+  fill: none;
+  stroke: var(--rust);
+  stroke-width: 1.6;
+  stroke-dasharray: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pedigree-lines g.housemate.is-active path {
+  stroke: var(--rust);
+}
+
+.pedigree-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.legend-line {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.8rem;
+  height: 0;
+  border-top: 2px solid var(--line-strong);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.legend-line.legend-housemate {
+  border-top: 2.5px dashed var(--tan);
+}
+
+.dog-card-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.species-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.dog-card.is-adoptive {
+  border-style: dashed;
+  border-color: var(--tan);
+}
+
+.dog-card-adoptive {
+  color: #9a6a2f;
+}
+
+@media (max-width: 720px) {
+  .species-badge {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.7rem;
+  }
+
+  .dog-card-adoptive {
+    display: block !important;
+    font-size: 0.6rem;
+    line-height: 1.25;
   }
 }

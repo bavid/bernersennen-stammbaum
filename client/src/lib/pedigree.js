@@ -79,11 +79,40 @@ function barycenterSort(row, neighbourIds, pos) {
   return scored.map((s) => s.node)
 }
 
+// Verbindungen "lebt zusammen mit" zwischen Tieren, die im Baum stehen
+export function housematePairs(links = [], nodes) {
+  const ids = new Set(nodes.map((n) => n.id))
+  return links.filter((l) => ids.has(l.dog_a_id) && ids.has(l.dog_b_id)).map((l) => [l.dog_a_id, l.dog_b_id])
+}
+
+const linkedTo = (id, pairs) => pairs.flatMap(([a, b]) => (a === id ? [b] : b === id ? [a] : []))
+
+// Tiere ohne Abstammung im Baum (keine Eltern, keine Kinder), die mit jemandem zusammenleben –
+// z. B. Adoptiv-Geschwister. Liefert Map: id -> id des Tieres, bei dem sie wohnen.
+export function adoptiveAnchors(nodes, links = []) {
+  const ids = new Set(nodes.map((n) => n.id))
+  const pairs = housematePairs(links, nodes)
+  const hasPedigree = (node) =>
+    parentIds(node, ids).length > 0 || nodes.some((c) => c.mother_dog_id === node.id || c.father_dog_id === node.id)
+  const anchors = new Map()
+  for (const node of nodes) {
+    if (hasPedigree(node)) continue
+    const partner = linkedTo(node.id, pairs)
+      .map((id) => nodes.find((n) => n.id === id))
+      .find((other) => other && hasPedigree(other))
+    if (partner) anchors.set(node.id, partner.id)
+  }
+  return anchors
+}
+
 // Liefert Zeilen (je Generation) in einer Reihenfolge mit möglichst wenig Kreuzungen.
-export function layoutPedigree(nodes) {
+// Adoptiv-Tiere landen in der Generation ihres Mitbewohners, direkt daneben.
+export function layoutPedigree(nodes, links = []) {
   if (!nodes.length) return []
   const nodeIds = new Set(nodes.map((n) => n.id))
   const generation = computeGenerations(nodes)
+  const anchors = adoptiveAnchors(nodes, links)
+  for (const [id, anchorId] of anchors) generation.set(id, generation.get(anchorId))
   const rowCount = Math.max(...generation.values()) + 1
   let rows = Array.from({ length: rowCount }, () => [])
   nodes.forEach((n) => rows[generation.get(n.id)].push(n))
@@ -100,6 +129,18 @@ export function layoutPedigree(nodes) {
       rows[g] = barycenterSort(rows[g], childrenOf, positionsOf(rows))
     }
   }
+
+  // Adoptiv-Tiere rechts neben ihren Mitbewohner setzen
+  rows = rows.map((row) => {
+    const adoptive = row.filter((n) => anchors.has(n.id))
+    const result = row.filter((n) => !anchors.has(n.id))
+    for (const node of adoptive) {
+      const at = result.findIndex((n) => n.id === anchors.get(node.id))
+      const insertAt = at === -1 ? result.length : at + 1 + result.slice(at + 1).filter((n) => anchors.get(n.id) === anchors.get(node.id)).length
+      result.splice(insertAt, 0, node)
+    }
+    return result
+  })
   return rows.filter((row) => row.length)
 }
 

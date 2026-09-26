@@ -12,11 +12,14 @@ import { nextTermin } from '../lib/notes.js'
 import { useToast } from '../components/Toast.jsx'
 import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
 
-function Stats({ dogs, allDogs }) {
-  const generations = useMemo(() => layoutPedigree(collectNodes(dogs, allDogs)).length, [dogs, allDogs])
+function Stats({ dogs, allDogs, links }) {
+  const generations = useMemo(() => layoutPedigree(collectNodes(dogs, allDogs), links).length, [dogs, allDogs, links])
   const entries = dogs.reduce((sum, dog) => sum + (dog.timeline_count || 0), 0)
+  const dogCount = dogs.filter((dog) => (dog.tierart || 'hund') === 'hund').length
+  const others = dogs.length - dogCount
   const items = [
-    { value: dogs.length, label: dogs.length === 1 ? 'Hund' : 'Hunde' },
+    { value: dogCount, label: dogCount === 1 ? 'Hund' : 'Hunde' },
+    ...(others ? [{ value: others, label: others === 1 ? 'weiteres Tier' : 'weitere Tiere' }] : []),
     { value: generations, label: generations === 1 ? 'Generation' : 'Generationen' },
     { value: entries, label: entries === 1 ? 'Erinnerung' : 'Erinnerungen' }
   ]
@@ -35,6 +38,7 @@ function Stats({ dogs, allDogs }) {
 export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
+  const [links, setLinks] = useState([])
   const [activity, setActivity] = useState(null)
   const [error, setError] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -43,14 +47,16 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const toast = useToast()
 
   async function loadDogs() {
-    const [own, all, recent, notes] = await Promise.all([
+    const [own, all, recent, notes, dogLinks] = await Promise.all([
       api.listDogs(),
       api.listAllDogs(),
       api.recentActivity(4),
-      api.listNotes()
+      api.listNotes(),
+      api.listLinks()
     ])
     setDogs(own)
     setAllDogs(all)
+    setLinks(dogLinks)
     setActivity({ entries: recent, termin: nextTermin(notes) })
   }
 
@@ -64,8 +70,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
     toast(`Das Rudel heißt jetzt „${renamed.name}“`)
   }
 
-  async function handleCreate(payload) {
+  async function handleCreate({ housemateId, ...payload }) {
     const dog = await api.createDog(payload)
+    if (housemateId) await api.addHousemate(dog.id, housemateId)
     setFormOpen(false)
     toast(`${dog.name} ist jetzt Teil des Stammbaums`)
     navigate(`/hund/${dog.id}`)
@@ -94,7 +101,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
           </p>
         </div>
         <div className="page-hero-side">
-          {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} />}
+          {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}
           <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
             <Icon name="plus" />
             Hund hinzufügen
@@ -122,7 +129,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
 
       {dogs && dogs.length > 0 && activity && <ActivityFeed entries={activity.entries} termin={activity.termin} />}
 
-      {dogs && dogs.length > 0 && <PedigreeTree dogs={dogs} allDogs={allDogs} />}
+      {dogs && dogs.length > 0 && <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} />}
 
       <Modal open={renameOpen} title="Rudelname ändern" onClose={() => setRenameOpen(false)}>
         <RenameFamilyForm family={family} onRenamed={handleRenamed} onCancel={() => setRenameOpen(false)} />

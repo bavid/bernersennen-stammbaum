@@ -196,6 +196,8 @@
 
 .page {
   display: grid;
+  /* minmax(0, …): breite Inhalte (Stammbaum) scrollen in sich, statt die Seite zu verbreitern */
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(var(--space-8), 4vw, var(--space-12));
 }
 
@@ -242,7 +244,8 @@
 
 .stats {
   display: flex;
-  gap: var(--space-8);
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-8);
   margin: 0;
 }
 

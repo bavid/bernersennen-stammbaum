@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { collectNodes, computeUnions, generationDates, layoutPedigree } from './pedigree.js'
+import { adoptiveAnchors, collectNodes, computeUnions, generationDates, housematePairs, layoutPedigree } from './pedigree.js'
 
 const dog = (id, name, extra = {}) => ({ id, name, geburtsdatum: null, mother_dog_id: null, father_dog_id: null, ...extra })
 
@@ -48,6 +48,41 @@ describe('layoutPedigree', () => {
 
   test('returns no rows for an empty pack', () => {
     expect(layoutPedigree([])).toEqual([])
+  })
+})
+
+describe('adoptive siblings', () => {
+  const family = [
+    dog(1, 'Emma'),
+    dog(2, 'Dante'),
+    dog(3, 'Hermes', { mother_dog_id: 1, father_dog_id: 2 }),
+    dog(4, 'Ida', { mother_dog_id: 1, father_dog_id: 2 }),
+    dog(5, 'Max'),
+    dog(6, 'Minka')
+  ]
+  const links = [
+    { dog_a_id: 3, dog_b_id: 5 },
+    { dog_a_id: 3, dog_b_id: 6 }
+  ]
+
+  test('an animal without pedigree is anchored at its housemate', () => {
+    expect([...adoptiveAnchors(family, links)]).toEqual([
+      [5, 3],
+      [6, 3]
+    ])
+  })
+
+  test('adoptive siblings share the generation and sit right next to their housemate', () => {
+    const rows = layoutPedigree(family, links).map((row) => row.map((d) => d.name))
+    expect(rows).toHaveLength(2)
+    const pups = rows[1]
+    expect(pups.indexOf('Max')).toBe(pups.indexOf('Hermes') + 1)
+    expect(pups.indexOf('Minka')).toBe(pups.indexOf('Hermes') + 2)
+  })
+
+  test('without links nothing changes and pairs outside the tree are ignored', () => {
+    expect(adoptiveAnchors(family, []).size).toBe(0)
+    expect(housematePairs([{ dog_a_id: 3, dog_b_id: 99 }], family)).toEqual([])
   })
 })
 

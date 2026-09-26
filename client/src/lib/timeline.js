@@ -2,8 +2,30 @@ import { yearOf } from './dates.js'
 
 const TYPE_ORDER = { birth: 0, breeding: 1, litter: 2, entry: 3 }
 
-export function sexLabel(geschlecht) {
-  return geschlecht === 'ruede' ? 'Rüde' : 'Hündin'
+const SEX_LABELS = {
+  hund: { ruede: 'Rüde', huendin: 'Hündin' },
+  katze: { ruede: 'Kater', huendin: 'Katze' },
+  anderes: { ruede: 'männlich', huendin: 'weiblich' }
+}
+
+const SPECIES_LABELS = { hund: 'Hund', katze: 'Katze', anderes: 'Anderes Tier' }
+
+// "Rüde"/"Hündin", bei Katzen "Kater"/"Katze", sonst "männlich"/"weiblich"
+export function sexLabel(geschlecht, tierart = 'hund') {
+  return (SEX_LABELS[tierart] || SEX_LABELS.hund)[geschlecht] || ''
+}
+
+export function speciesLabel(tierart = 'hund') {
+  return SPECIES_LABELS[tierart] || SPECIES_LABELS.hund
+}
+
+// "Adoptiv-Bruder", "Adoptiv-Schwester", "Adoptiv-Kater", "Adoptiv-Katze", "Adoptiv-Geschwister"
+export function adoptiveTitle(dog) {
+  const titles = {
+    hund: { ruede: 'Adoptiv-Bruder', huendin: 'Adoptiv-Schwester' },
+    katze: { ruede: 'Adoptiv-Kater', huendin: 'Adoptiv-Katze' }
+  }
+  return titles[dog.tierart || 'hund']?.[dog.geschlecht] || 'Adoptiv-Geschwister'
 }
 
 export function shortName(name = '') {

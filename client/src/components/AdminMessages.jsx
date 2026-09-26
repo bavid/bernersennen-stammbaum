@@ -36,7 +36,7 @@ function Message({ message, onStatus, onDelete }) {
           <Icon name={message.type === 'problem' ? 'alert' : 'heart'} />
           {message.type === 'problem' ? 'Problem' : 'Feedback'}
         </span>
-        <strong>{message.autor_name}</strong>
+        {message.autor_name ? <strong>{message.autor_name}</strong> : <em className="muted">anonym</em>}
         <span className="muted">
           {message.family_name} · {relativeTime(message.created_at)}
         </span>

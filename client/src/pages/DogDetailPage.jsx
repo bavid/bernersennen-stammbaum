@@ -6,10 +6,11 @@ import Avatar from '../components/Avatar.jsx'
 import Modal from '../components/Modal.jsx'
 import Lightbox from '../components/Lightbox.jsx'
 import DogForm from '../components/DogForm.jsx'
+import Housemates from '../components/Housemates.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
-import { buildTimeline, displayName, dogLabel, genitive, sexLabel, shortName } from '../lib/timeline.js'
+import { adoptiveTitle, buildTimeline, displayName, dogLabel, genitive, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
@@ -27,7 +28,15 @@ function ParentLink({ parent, freitext }) {
   return <span className={freitext ? '' : 'muted'}>{freitext || 'unbekannt'}</span>
 }
 
-function DogHero({ dog, onEdit, onAddEntry, onOpenPhoto }) {
+// "Adoptiv-Bruder von Hermes" – für Tiere ohne eigene Abstammung, die mit jemandem zusammenleben
+function adoptiveLine(dog) {
+  const hasPedigree = dog.mother_dog_id || dog.father_dog_id || dog.mother_freitext || dog.father_freitext || dog.children.length
+  if (hasPedigree || !dog.housemates.length) return null
+  return `${adoptiveTitle(dog)} von ${dog.housemates.map(displayName).join(' & ')}`
+}
+
+function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onRemoveHousemate }) {
+  const adoptive = adoptiveLine(dog)
   const age = dog.geburtsdatum ? ageText(dog.geburtsdatum) : null
   return (
     <header className="dog-hero">
@@ -43,10 +52,16 @@ function DogHero({ dog, onEdit, onAddEntry, onOpenPhoto }) {
 
       <div className="dog-hero-body">
         <span className="eyebrow">
-          {sexLabel(dog.geschlecht)} · {dog.familyName}
+          {dog.tierart === 'anderes' ? `${speciesLabel(dog.tierart)} · ` : ''}
+          {sexLabel(dog.geschlecht, dog.tierart)} · {dog.familyName}
         </span>
         <h1 className={dog.name_unbekannt ? 'is-unknown' : undefined}>{displayName(dog)}</h1>
         {!dog.name_unbekannt && dog.name !== shortName(dog.name) && <p className="dog-hero-fullname">{dog.name}</p>}
+        {adoptive && (
+          <p className="dog-hero-adoptive">
+            <Icon name="heart" /> {adoptive}
+          </p>
+        )}
 
         <dl className="facts">
           <div className="facts-wide">
@@ -78,6 +93,13 @@ function DogHero({ dog, onEdit, onAddEntry, onOpenPhoto }) {
               <ParentLink parent={dog.father} freitext={dog.father_freitext} />
             </dd>
           </div>
+          <Housemates
+            dog={dog}
+            allDogs={allDogs}
+            canEdit={dog.isOwn}
+            onAdd={onAddHousemate}
+            onRemove={onRemoveHousemate}
+          />
           {dog.children.length > 0 && (
             <div className="facts-wide">
               <dt>Nachwuchs</dt>
@@ -220,7 +242,27 @@ export default function DogDetailPage({ family }) {
     toast('Eintrag gelöscht')
   }
 
-  async function handleUpdateDog(payload) {
+  async function handleAddHousemate(otherId) {
+    try {
+      const housemates = await api.addHousemate(dog.id, otherId)
+      setDog((current) => ({ ...current, housemates }))
+      toast('Verbindung „lebt zusammen“ hinzugefügt')
+    } catch (err) {
+      toast(err.message)
+    }
+  }
+
+  async function handleRemoveHousemate(mate) {
+    try {
+      await api.removeHousemate(dog.id, mate.id)
+      setDog((current) => ({ ...current, housemates: current.housemates.filter((h) => h.id !== mate.id) }))
+      toast(`Verbindung zu ${dogLabel(mate)} entfernt`)
+    } catch (err) {
+      toast(err.message)
+    }
+  }
+
+  async function handleUpdateDog({ housemateId, ...payload }) {
     await api.updateDog(dog.id, payload)
     setEditingDog(false)
     await load()
@@ -249,6 +291,9 @@ export default function DogDetailPage({ family }) {
 
       <DogHero
         dog={dog}
+        allDogs={allDogs}
+        onAddHousemate={handleAddHousemate}
+        onRemoveHousemate={handleRemoveHousemate}
         onEdit={() => setEditingDog(true)}
         onAddEntry={() => {
           setComposerOpen(true)

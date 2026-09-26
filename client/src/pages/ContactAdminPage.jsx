@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import { useToast } from '../components/Toast.jsx'
-import { relativeTime } from '../lib/dates.js'
-import { readSetting, writeSetting } from '../lib/storage.js'
 
 const TYPES = {
   feedback: {
@@ -21,12 +19,11 @@ const TYPES = {
   }
 }
 
-const STATUS_LABEL = { offen: 'offen', erledigt: 'erledigt' }
-
 function MessageForm({ fromPage, onSent }) {
   const [type, setType] = useState('feedback')
   const [text, setText] = useState('')
-  const [autorName, setAutorName] = useState(() => readSetting('autorName', ''))
+  // Bewusst nicht vorausgefüllt: ohne Namen kommt die Nachricht anonym an
+  const [autorName, setAutorName] = useState('')
   const [contact, setContact] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -37,10 +34,8 @@ function MessageForm({ fromPage, onSent }) {
     setError(null)
     setSaving(true)
     try {
-      writeSetting('autorName', autorName.trim())
-      const sent = await api.sendMessage({ type, text, autorName, contact, page: type === 'problem' ? fromPage : undefined })
-      onSent(sent)
-      setText('')
+      await api.sendMessage({ type, text, autorName, contact, page: type === 'problem' ? fromPage : undefined })
+      onSent()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -75,13 +70,19 @@ function MessageForm({ fromPage, onSent }) {
       <div className="form-grid">
         <div className="field">
           <label className="field-label" htmlFor="contact-name">
-            Dein Name
+            Dein Name <span className="muted">(freiwillig)</span>
           </label>
-          <input id="contact-name" value={autorName} onChange={(e) => setAutorName(e.target.value)} maxLength={60} required />
+          <input
+            id="contact-name"
+            value={autorName}
+            onChange={(e) => setAutorName(e.target.value)}
+            placeholder="leer lassen = anonym"
+            maxLength={60}
+          />
         </div>
         <div className="field">
           <label className="field-label" htmlFor="contact-reach">
-            Wie erreicht dich der Admin? <span className="muted">(optional)</span>
+            Wie erreicht dich der Admin? <span className="muted">(freiwillig)</span>
           </label>
           <input
             id="contact-reach"
@@ -106,21 +107,44 @@ function MessageForm({ fromPage, onSent }) {
   )
 }
 
+function SentNotice({ onAgain }) {
+  return (
+    <div className="card contact-sent" role="status">
+      <span className="contact-sent-icon">
+        <Icon name="check" />
+      </span>
+      <h2>Danke, ist angekommen!</h2>
+      <p className="muted">Deine Nachricht liegt jetzt beim Admin – und nur dort.</p>
+      <button type="button" className="btn btn-ghost" onClick={onAgain}>
+        <Icon name="plus" /> Noch etwas schreiben
+      </button>
+    </div>
+  )
+}
+
+function PrivacyNote() {
+  return (
+    <aside className="contact-privacy" aria-labelledby="contact-privacy-title">
+      <h2 id="contact-privacy-title">
+        <Icon name="lock" /> Bleibt unter uns
+      </h2>
+      <ul>
+        <li>Nur der Admin liest deine Nachricht. Die anderen im Rudel sehen sie nicht – auch nicht hinterher.</li>
+        <li>Dein Name ist freiwillig. Lässt du ihn leer, kommt die Nachricht anonym an.</li>
+        <li>Wenn du eine Antwort möchtest, hinterlass einfach eine E-Mail oder Telefonnummer.</li>
+      </ul>
+    </aside>
+  )
+}
+
 export default function ContactAdminPage() {
   const location = useLocation()
   const fromPage = location.state?.from || null
-  const [messages, setMessages] = useState(null)
+  const [sent, setSent] = useState(false)
   const toast = useToast()
 
-  useEffect(() => {
-    api
-      .listMessages()
-      .then(setMessages)
-      .catch(() => setMessages([]))
-  }, [])
-
-  function handleSent(message) {
-    setMessages((current) => [message, ...(current || [])])
+  function handleSent() {
+    setSent(true)
     toast('Danke! Deine Nachricht ist beim Admin angekommen.')
   }
 
@@ -138,31 +162,8 @@ export default function ContactAdminPage() {
       </header>
 
       <div className="contact-layout">
-        <MessageForm fromPage={fromPage} onSent={handleSent} />
-
-        <section aria-labelledby="contact-history" className="contact-history">
-          <h2 id="contact-history" className="section-title">
-            Eure Nachrichten
-          </h2>
-          {messages && messages.length === 0 && <p className="muted">Aus eurem Rudel wurde noch nichts geschrieben.</p>}
-          {messages && messages.length > 0 && (
-            <ul className="contact-list">
-              {messages.map((message) => (
-                <li key={message.id} className={`contact-item is-${message.status}`}>
-                  <span className={`pill ${message.type === 'problem' ? 'pill-rust' : ''}`}>{TYPES[message.type].label}</span>
-                  <span className={`contact-status is-${message.status}`}>
-                    {message.status === 'erledigt' && <Icon name="check" />}
-                    {STATUS_LABEL[message.status]}
-                  </span>
-                  <p className="contact-text">{message.text}</p>
-                  <p className="contact-meta">
-                    {message.autor_name} · {relativeTime(message.created_at)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        {sent ? <SentNotice onAgain={() => setSent(false)} /> : <MessageForm fromPage={fromPage} onSent={handleSent} />}
+        <PrivacyNote />
       </div>
     </div>
   )

@@ -101,6 +101,19 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_admin_messages_status ON admin_messages(status, created_at);
+
+  -- "Lebt zusammen mit": Adoptiv-Geschwister und andere Tiere im selben Zuhause (ohne Abstammung).
+  -- Ungerichtet, gespeichert mit dog_a_id < dog_b_id.
+  CREATE TABLE IF NOT EXISTS dog_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_id INTEGER NOT NULL REFERENCES families(id),
+    dog_a_id INTEGER NOT NULL REFERENCES dogs(id),
+    dog_b_id INTEGER NOT NULL REFERENCES dogs(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (dog_a_id, dog_b_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_dog_links_family ON dog_links(family_id);
   CREATE INDEX IF NOT EXISTS idx_timeline_family_created ON timeline_entries(family_id, created_at);
 `)
 
@@ -112,5 +125,6 @@ function addColumnIfMissing(table, column, definition) {
 
 addColumnIfMissing('dogs', 'rasse', 'TEXT')
 addColumnIfMissing('dogs', 'name_unbekannt', 'INTEGER NOT NULL DEFAULT 0')
+addColumnIfMissing('dogs', 'tierart', "TEXT NOT NULL DEFAULT 'hund'")
 
 module.exports = db

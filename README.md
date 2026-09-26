@@ -30,6 +30,9 @@ Pinnwand für Treffen und Notizen, Zuchtbuch und druckbaren Collagen.
 - **Rasse & unbekannte Vorfahren**: Jeder Hund hat eine Rasse (auch Mischungen wie
   „Berner × Hovawart"). Vorfahren ohne bekannten Namen lassen sich mit „Name unbekannt" anlegen
   und erscheinen trotzdem als eigene Karte im Baum.
+- **Adoptiv-Geschwister & andere Tiere**: „Lebt zusammen mit" verbindet Tiere ohne gemeinsame
+  Abstammung, etwa einen Adoptiv-Bruder oder eine Katze. Sie stehen direkt neben ihrem Mitbewohner,
+  verbunden mit einer gestrichelten Linie, und tragen z. B. „Adoptiv-Katze von Hermes".
 - **Chronik pro Hund**: Einträge mit Datum, Text und Fotos. Das Datum bestimmt die Position.
   Ein Eintrag von 2018, der heute nachgetragen wird, landet automatisch zwischen 2017 und 2019.
   Geburt, Deckakte und Nachwuchs erscheinen als automatische Meilensteine.
@@ -39,6 +42,8 @@ Pinnwand für Treffen und Notizen, Zuchtbuch und druckbaren Collagen.
   stehen oben, vergangene rutschen ans Ende.
 - **Zuchtbuch**: Deckakte und Würfe, Rüden aus dem eigenen Rudel oder als Freitext.
 - **Collage**: A4-Collage aus Porträt, Chronik-Fotos und Eltern, Download als PNG.
+- **Schreib dem Admin**: Feedback und Problemmeldungen gehen nur an den Admin – die anderen im
+  Rudel sehen sie nicht. Der Name ist freiwillig, ohne Namen kommt die Nachricht anonym an.
 - **Rudel mit Passwort**: Jedes Rudel hat ein gemeinsames Passwort und sieht nur seine eigenen
   Hunde, Einträge und Fotos. Zum Anlegen eines neuen Rudels braucht man optional einen Einladungscode.
 - **Handy-tauglich**: kompakte Stammbaum-Karten, Navigation unten, Fotos werden vor dem Upload verkleinert.

@@ -7,13 +7,14 @@ const { dogLabel } = require('../lib/labels')
 const router = express.Router()
 
 const SEXES = ['ruede', 'huendin']
+const SPECIES = ['hund', 'katze', 'anderes']
 const PARENTS = [
   { idKey: 'motherDogId', textKey: 'motherFreitext', idCol: 'mother_dog_id', textCol: 'mother_freitext', sex: 'huendin', label: 'Mutter' },
   { idKey: 'fatherDogId', textKey: 'fatherFreitext', idCol: 'father_dog_id', textCol: 'father_freitext', sex: 'ruede', label: 'Vater' }
 ]
 
 const UNKNOWN_NAME = 'Unbekannt'
-const SUMMARY_COLUMNS = `dogs.id, dogs.name, dogs.name_unbekannt, dogs.rasse, dogs.geschlecht, dogs.geburtsdatum,
+const SUMMARY_COLUMNS = `dogs.id, dogs.name, dogs.name_unbekannt, dogs.rasse, dogs.tierart, dogs.geschlecht, dogs.geburtsdatum,
   dogs.foto_url, dogs.family_id, families.name AS familyName`
 
 const hasKey = (body, key) => Object.prototype.hasOwnProperty.call(body, key)
@@ -37,6 +38,7 @@ function buildDogRecord(body, existing = {}) {
     name: nameUnbekannt ? UNKNOWN_NAME : cleanText(pick(body, 'name', existing.name), 80),
     name_unbekannt: nameUnbekannt ? 1 : 0,
     rasse: cleanText(pick(body, 'rasse', existing.rasse), 120),
+    tierart: pick(body, 'tierart', existing.tierart || 'hund'),
     geschlecht: pick(body, 'geschlecht', existing.geschlecht),
     geburtsdatum: cleanText(pick(body, 'geburtsdatum', existing.geburtsdatum), 10),
     farbe_markings: cleanText(pick(body, 'farbeMarkings', existing.farbe_markings), 200),
@@ -62,6 +64,7 @@ function validateParent(record, parent, dogId, familyId) {
 
   const parentDog = findDog.get(parentId)
   if (!parentDog || parentDog.family_id !== familyId) return `${parent.label} muss ein Hund des eigenen Rudels sein`
+  if (parentDog.tierart !== record.tierart) return `${parent.label} muss dieselbe Tierart haben`
   if (parentDog.geschlecht !== parent.sex) {
     return `${parent.label} muss ${parent.sex === 'huendin' ? 'eine Hündin' : 'ein Rüde'} sein`
   }
@@ -74,6 +77,7 @@ function validateParent(record, parent, dogId, familyId) {
 function validateDogRecord(record, dogId, familyId) {
   if (!record.name) return 'Name ist erforderlich (oder „Name unbekannt“ wählen)'
   if (!SEXES.includes(record.geschlecht)) return 'Geschlecht muss ruede oder huendin sein'
+  if (!SPECIES.includes(record.tierart)) return 'Tierart muss hund, katze oder anderes sein'
   if (record.geburtsdatum && !isIsoDate(record.geburtsdatum)) return 'Geburtsdatum ist ungültig'
   if (record.foto_url && !isUploadUrl(record.foto_url)) return 'Foto-URL ist ungültig'
   for (const parent of PARENTS) {
@@ -115,6 +119,21 @@ router.get('/all', requireAuth, (req, res) => {
   res.json(dogs)
 })
 
+// Alle "lebt zusammen mit"-Verbindungen des Rudels (für die Linien im Stammbaum)
+router.get('/links', requireAuth, (req, res) => {
+  const links = db.prepare('SELECT dog_a_id, dog_b_id FROM dog_links WHERE family_id = ? ORDER BY id').all(req.familyId)
+  res.json(links)
+})
+
+const findHousemates = db.prepare(
+  `SELECT ${SUMMARY_COLUMNS}
+   FROM dog_links l
+   JOIN dogs ON dogs.id = CASE WHEN l.dog_a_id = @id THEN l.dog_b_id ELSE l.dog_a_id END
+   JOIN families ON families.id = dogs.family_id
+   WHERE (l.dog_a_id = @id OR l.dog_b_id = @id) AND l.family_id = @familyId
+   ORDER BY dogs.name`
+)
+
 router.get('/:id', requireAuth, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
@@ -139,8 +158,34 @@ router.get('/:id', requireAuth, (req, res) => {
     isOwn: dog.family_id === req.familyId,
     mother: dog.mother_dog_id ? summary.get(dog.mother_dog_id, req.familyId) ?? null : null,
     father: dog.father_dog_id ? summary.get(dog.father_dog_id, req.familyId) ?? null : null,
-    children
+    children,
+    housemates: findHousemates.all({ id: dog.id, familyId: req.familyId })
   })
+})
+
+// Adoptiv-Geschwister / Mitbewohner verbinden – beide müssen zum eigenen Rudel gehören
+router.post('/:id/housemates', requireAuth, (req, res) => {
+  const dog = loadOwnDog(req, res)
+  if (!dog) return
+  const otherId = cleanId((req.body || {}).otherDogId)
+  if (!otherId || Number.isNaN(otherId)) return res.status(400).json({ error: 'Bitte ein Tier auswählen' })
+  if (otherId === dog.id) return res.status(400).json({ error: 'Ein Tier kann nicht mit sich selbst zusammenwohnen' })
+  const other = findDog.get(otherId)
+  if (!other || other.family_id !== req.familyId) return res.status(404).json({ error: 'Tier nicht gefunden' })
+
+  const [a, b] = dog.id < other.id ? [dog.id, other.id] : [other.id, dog.id]
+  db.prepare('INSERT OR IGNORE INTO dog_links (family_id, dog_a_id, dog_b_id) VALUES (?, ?, ?)').run(req.familyId, a, b)
+  res.status(201).json(findHousemates.all({ id: dog.id, familyId: req.familyId }))
+})
+
+router.delete('/:id/housemates/:otherId', requireAuth, (req, res) => {
+  const dog = loadOwnDog(req, res)
+  if (!dog) return
+  const otherId = cleanId(req.params.otherId)
+  if (!otherId || Number.isNaN(otherId)) return res.status(400).json({ error: 'Ungültiges Tier' })
+  const [a, b] = dog.id < otherId ? [dog.id, otherId] : [otherId, dog.id]
+  db.prepare('DELETE FROM dog_links WHERE dog_a_id = ? AND dog_b_id = ? AND family_id = ?').run(a, b, req.familyId)
+  res.status(204).end()
 })
 
 router.post('/', requireAuth, (req, res) => {
@@ -151,9 +196,9 @@ router.post('/', requireAuth, (req, res) => {
   const result = db
     .prepare(
       `INSERT INTO dogs
-        (family_id, name, name_unbekannt, rasse, geschlecht, geburtsdatum, farbe_markings,
+        (family_id, name, name_unbekannt, rasse, tierart, geschlecht, geburtsdatum, farbe_markings,
          mother_dog_id, father_dog_id, mother_freitext, father_freitext, foto_url, beschreibung)
-       VALUES (@family_id, @name, @name_unbekannt, @rasse, @geschlecht, @geburtsdatum, @farbe_markings,
+       VALUES (@family_id, @name, @name_unbekannt, @rasse, @tierart, @geschlecht, @geburtsdatum, @farbe_markings,
          @mother_dog_id, @father_dog_id, @mother_freitext, @father_freitext, @foto_url, @beschreibung)`
     )
     .run({ ...record, family_id: req.familyId })
@@ -171,7 +216,7 @@ router.put('/:id', requireAuth, (req, res) => {
 
   db.prepare(
     `UPDATE dogs SET
-       name = @name, name_unbekannt = @name_unbekannt, rasse = @rasse,
+       name = @name, name_unbekannt = @name_unbekannt, rasse = @rasse, tierart = @tierart,
        geschlecht = @geschlecht, geburtsdatum = @geburtsdatum,
        farbe_markings = @farbe_markings, mother_dog_id = @mother_dog_id,
        father_dog_id = @father_dog_id, mother_freitext = @mother_freitext,
@@ -191,6 +236,7 @@ const deleteDog = db.transaction((dog) => {
   db.prepare('UPDATE breeding_events SET vater_dog_id = NULL, vater_freitext = ? WHERE vater_dog_id = ?').run(label, dog.id)
   db.prepare('DELETE FROM breeding_events WHERE mutter_dog_id = ?').run(dog.id)
   db.prepare('DELETE FROM timeline_entries WHERE dog_id = ?').run(dog.id)
+  db.prepare('DELETE FROM dog_links WHERE dog_a_id = ? OR dog_b_id = ?').run(dog.id, dog.id)
   db.prepare('DELETE FROM dogs WHERE id = ?').run(dog.id)
 })
 

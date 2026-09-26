@@ -30,13 +30,13 @@ function validateEvent(body, familyId) {
   }
   if (fotoUrls === null) return { status: 400, error: 'Fotoliste ist ungültig' }
 
-  const mutter = db.prepare('SELECT family_id, geschlecht FROM dogs WHERE id = ?').get(mutterId)
+  const mutter = db.prepare('SELECT family_id, geschlecht, tierart FROM dogs WHERE id = ?').get(mutterId)
   if (!mutter || mutter.family_id !== familyId || mutter.geschlecht !== 'huendin') {
     return { status: 403, error: 'Mutter muss eine Hündin des eigenen Rudels sein' }
   }
   if (vaterId) {
-    const vater = db.prepare('SELECT family_id, geschlecht FROM dogs WHERE id = ?').get(vaterId)
-    if (!vater || vater.family_id !== familyId || vater.geschlecht !== 'ruede') {
+    const vater = db.prepare('SELECT family_id, geschlecht, tierart FROM dogs WHERE id = ?').get(vaterId)
+    if (!vater || vater.family_id !== familyId || vater.geschlecht !== 'ruede' || vater.tierart !== mutter.tierart) {
       return { status: 400, error: 'Vater muss ein Rüde des eigenen Rudels sein (sonst als Freitext angeben)' }
     }
   }

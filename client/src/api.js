@@ -59,6 +59,9 @@ export const api = {
   createDog: (payload) => request('/dogs', json('POST', payload)),
   updateDog: (id, payload) => request(`/dogs/${id}`, json('PUT', payload)),
   deleteDog: (id) => request(`/dogs/${id}`, { method: 'DELETE' }),
+  listLinks: () => request('/dogs/links'),
+  addHousemate: (dogId, otherDogId) => request(`/dogs/${dogId}/housemates`, json('POST', { otherDogId })),
+  removeHousemate: (dogId, otherDogId) => request(`/dogs/${dogId}/housemates/${otherDogId}`, { method: 'DELETE' }),
 
   listTimeline: (dogId) => request(`/timeline${dogId ? `?dogId=${encodeURIComponent(dogId)}` : ''}`),
   createTimelineEntry: (payload) => request('/timeline', json('POST', payload)),
@@ -67,7 +70,6 @@ export const api = {
 
   recentActivity: (limit = 5) => request(`/timeline/recent?limit=${limit}`),
 
-  listMessages: () => request('/messages'),
   sendMessage: (payload) => request('/messages', json('POST', payload)),
 
   listNotes: () => request('/notes'),
