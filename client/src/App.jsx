@@ -3,6 +3,7 @@ import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-route
 import { api, setUnauthorizedHandler } from './api'
 import BernerMark from './components/BernerMark.jsx'
 import Icon from './components/Icon.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import OverviewPage from './pages/OverviewPage.jsx'
 import DogDetailPage from './pages/DogDetailPage.jsx'
@@ -14,12 +15,6 @@ const NAV_ITEMS = [
   { to: '/zuchtbuch', icon: 'book', label: 'Zuchtbuch' },
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
-
-function ScrollToTop() {
-  const { pathname } = useLocation()
-  useEffect(() => window.scrollTo(0, 0), [pathname])
-  return null
-}
 
 function AppHeader({ family, onLogout }) {
   const { pathname } = useLocation()

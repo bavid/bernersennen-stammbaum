@@ -40,12 +40,21 @@ function computeGenerations(nodes) {
   }
   nodes.filter((n) => !n.external).forEach((n) => generationOf(n.id, new Set()))
 
-  // Externe Eltern sitzen eine Generation über ihrem frühesten Kind.
-  for (const node of nodes.filter((n) => n.external)) {
-    const childGens = nodes
+  const childGenerations = (node) =>
+    nodes
       .filter((c) => !c.external && (c.mother_dog_id === node.id || c.father_dog_id === node.id))
       .map((c) => generation.get(c.id))
-    generation.set(node.id, Math.min(...childGens) - 1)
+
+  // Hunde ohne erfasste Eltern rücken direkt über ihr frühestes Kind (neben den Partner),
+  // statt ganz oben zu stehen und mit langen Linien durch fremde Karten zu laufen.
+  for (const node of nodes.filter((n) => !n.external && !parentIds(n, ownIds).length)) {
+    const childGens = childGenerations(node)
+    if (childGens.length) generation.set(node.id, Math.max(generation.get(node.id), Math.min(...childGens) - 1))
+  }
+
+  // Externe Eltern sitzen ebenso eine Generation über ihrem frühesten Kind.
+  for (const node of nodes.filter((n) => n.external)) {
+    generation.set(node.id, Math.min(...childGenerations(node)) - 1)
   }
 
   const minGen = Math.min(0, ...generation.values())

@@ -22,8 +22,9 @@ Get-Content $DeployEnvPath | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=\s*([^#]
     $cfg[$Matches[1]] = $Matches[2].Trim()
 }
 $Server = "$(if ($cfg.DEPLOY_USER) { $cfg.DEPLOY_USER } else { 'root' })@$($cfg.DEPLOY_HOST)"
-$HostPort = if ($cfg.HOST_PORT) { $cfg.HOST_PORT } else { '3000' }
-$RemoteEnv = "APP_DIR='$($cfg.APP_DIR)' REPO_URL='$($cfg.REPO_URL)' BRANCH='$($cfg.BRANCH)' HOST_PORT='$HostPort'"
+$HttpsPort = if ($cfg.HTTPS_PORT) { $cfg.HTTPS_PORT } else { '3010' }
+$SiteHost = if ($cfg.DEPLOY_DOMAIN) { $cfg.DEPLOY_DOMAIN } else { $cfg.DEPLOY_HOST }
+$RemoteEnv = "APP_DIR='$($cfg.APP_DIR)' REPO_URL='$($cfg.REPO_URL)' BRANCH='$($cfg.BRANCH)' HTTPS_PORT='$HttpsPort' DEPLOY_DOMAIN='$($cfg.DEPLOY_DOMAIN)'"
 
 function Invoke-Remote {
     param([string]$Action, [string]$Argument = '')
@@ -91,7 +92,7 @@ while ($true) {
     Clear-Host
     Write-Host ""
     Write-Host "  ============================================" -ForegroundColor DarkYellow
-    Write-Host "    Familienchronik  |  $Server  |  :$HostPort" -ForegroundColor DarkYellow
+    Write-Host "    Familienchronik  |  https://${SiteHost}:$HttpsPort" -ForegroundColor DarkYellow
     Write-Host "  ============================================" -ForegroundColor DarkYellow
     Write-Host ""
     Write-Host "  [1]  SSH-Konsole öffnen"

@@ -28,6 +28,19 @@ describe('layoutPedigree', () => {
     expect(childParentOrder).toEqual(parentOrder)
   })
 
+  test('places a founder next to their mate instead of the top row', () => {
+    const nodes = [
+      dog(1, 'Shila'),
+      dog(2, 'Ronja', { mother_dog_id: 1 }),
+      dog(3, 'Kalle'),
+      dog(4, 'Trude', { mother_dog_id: 2, father_dog_id: 3 }),
+      dog(5, 'Bruno'),
+      dog(6, 'Hermes', { mother_dog_id: 4, father_dog_id: 5 })
+    ]
+    const rows = layoutPedigree(nodes).map((r) => r.map((d) => d.name).sort())
+    expect(rows).toEqual([['Shila'], ['Kalle', 'Ronja'], ['Bruno', 'Trude'], ['Hermes']])
+  })
+
   test('survives cycles without hanging', () => {
     const nodes = [dog(1, 'A', { mother_dog_id: 2 }), dog(2, 'B', { mother_dog_id: 1 })]
     expect(layoutPedigree(nodes).flat()).toHaveLength(2)

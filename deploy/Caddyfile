@@ -1,0 +1,25 @@
+# HTTPS per Let's Encrypt vor der App. Caddy holt und erneuert das Zertifikat automatisch.
+#
+# SITE_ADDRESS kommt aus der .env, z. B.
+#   https://203.0.113.10:3010   (Zertifikat direkt für die Server-IP)
+#   chronik.example.de          (sobald es eine Domain gibt)
+#
+# IP-Zertifikate gibt es bei Let's Encrypt nur mit dem Profil "shortlived" (ca. 6 Tage gültig).
+# Die Prüfung läuft über HTTP-01 auf Port 80, der deshalb erreichbar sein muss.
+
+{$SITE_ADDRESS} {
+	tls {
+		issuer acme {
+			profile shortlived
+			disable_tlsalpn_challenge
+		}
+	}
+
+	encode zstd gzip
+	reverse_proxy chronik:3000
+
+	log {
+		output stdout
+		format console
+	}
+}

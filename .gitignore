@@ -16,3 +16,4 @@ backups/
 .claude/
 server/.claude/
 *.log
+caddy/

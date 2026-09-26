@@ -34,28 +34,37 @@ Unter Windows startet `start.bat` dasselbe per Doppelklick.
 | `npm run build`                 | Produktions-Build der Oberfläche               |
 | `npm run seed`                  | Demo-Rudel mit Testbildern anlegen             |
 | `npm run db:reset -- -- --yes`  | Lokale Datenbank und Fotos löschen             |
+| `npm --prefix server run family:delete -- "Name" --yes` | Ein Rudel samt Hunden und Fotos löschen |
 
-## Auf einem Server betreiben (Docker)
+## Auf einem Server betreiben (Docker + HTTPS)
 
-Ein Container liefert API und Oberfläche auf einem Port aus (Standard 3000). Datenbank und Fotos
-liegen im Ordner `data/` neben der `docker-compose.yml`.
+Zwei Container: die App (nur intern erreichbar) und davor **Caddy**, das automatisch ein
+Zertifikat von [Let's Encrypt](https://letsencrypt.org/getting-started/) holt und erneuert.
+Ohne eigene Domain bekommt direkt die Server-IP ein Zertifikat (Let's-Encrypt-Profil
+`shortlived`, ca. 6 Tage gültig, Caddy erneuert selbstständig). Standard-Adresse:
+`https://SERVER-IP:3010`. Datenbank und Fotos liegen in `data/`, Zertifikate in `caddy/`.
+
+Auf dem Server müssen **Port 80** (Zertifikatsprüfung) und **Port 3010** (HTTPS) erreichbar sein.
 
 ### Mit `manage.ps1` (Windows)
 
 1. `.deploy.env.example` nach `.deploy.env` kopieren und Server-IP eintragen.
 2. `.\manage.ps1` starten, **[9] Erstinstallation** wählen. Das Skript installiert Docker,
    klont dieses Repo nach `/opt/bernersennen-stammbaum`, erzeugt eine `.env` mit zufälligem
-   `JWT_SECRET` und Einladungscode und startet den Container.
+   `JWT_SECRET` und Einladungscode und startet alles.
 3. Später: **[3] Deploy** holt den neuesten Stand von GitHub und baut neu.
 
 Weitere Menüpunkte: Status, Logs, Backup herunterladen, Einladungscode anzeigen,
 Demo-Rudel einspielen, alle Daten löschen (mit automatischem Backup vorher).
 
+Ein einzelnes Rudel löschen (auf dem Server im App-Ordner):
+`docker compose exec chronik node scripts/delete-family.js "Name des Rudels" --yes`
+
 ### Manuell
 
 ```bash
 git clone https://github.com/bavid/bernersennen-stammbaum.git && cd bernersennen-stammbaum
-cp .env.example .env   # JWT_SECRET setzen!
+cp .env.example .env   # JWT_SECRET und SITE_ADDRESS setzen!
 mkdir -p data && sudo chown 1000:1000 data
 docker compose up -d --build
 ```
@@ -65,14 +74,14 @@ docker compose up -d --build
 | Variable             | Bedeutung                                                              |
 | -------------------- | ---------------------------------------------------------------------- |
 | `JWT_SECRET`         | **Pflicht.** Zufälliges Secret für Session-Cookies                     |
+| `SITE_ADDRESS`       | **Pflicht.** Öffentliche Adresse, z. B. `https://1.2.3.4:3010` oder eine Domain |
+| `HTTPS_PORT`         | Port für HTTPS nach außen (Standard 3010)                               |
 | `FAMILY_INVITE_CODE` | Code zum Anlegen neuer Rudel (leer = jeder darf anlegen)               |
-| `COOKIE_SECURE`      | `true`, sobald die Seite nur über HTTPS läuft                          |
-| `TRUST_PROXY`        | `1` hinter Caddy/nginx, damit das Login-Rate-Limit echte IPs sieht      |
-| `HOST_PORT`          | Port auf dem Server (Standard 3000)                                    |
+| `COOKIE_SECURE`      | `true` – Cookies nur über HTTPS                                        |
+| `TRUST_PROXY`        | `1` – App steht hinter Caddy, Rate-Limit sieht echte IPs               |
 
-Ohne Domain läuft die App per `http://SERVER-IP:3000`. Für HTTPS eine Domain auf den Server
-zeigen lassen und einen Reverse-Proxy wie Caddy davorsetzen (`reverse_proxy localhost:3000`),
-danach `COOKIE_SECURE=true` und `TRUST_PROXY=1` setzen.
+Mit Domain: `SITE_ADDRESS=chronik.example.de` (dann Standard-HTTPS auf 443 – in dem Fall
+in `docker-compose.yml` zusätzlich `443:443` freigeben).
 
 ## Sicherheit
 
@@ -92,5 +101,6 @@ server/          Express-API + SQLite
   seed/          Demo-Daten und Testbilder
   scripts/       seed.js, reset.js
 deploy/remote.sh Server-Befehle (setup, deploy, backup, seed, wipe …)
+deploy/Caddyfile HTTPS-Proxy mit Let's Encrypt
 manage.ps1       Windows-Menü für den Server
 ```

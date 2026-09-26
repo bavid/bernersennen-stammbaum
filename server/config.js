@@ -17,6 +17,14 @@ function readCorsOrigin() {
   return isProduction ? false : 'http://localhost:5173'
 }
 
+// "1" -> 1 (Anzahl Proxy-Hops), "true"/"false" -> boolean, sonst IP/Subnetz-Liste für Express
+function readTrustProxy() {
+  const value = (process.env.TRUST_PROXY || '').trim()
+  if (!value || value === 'false') return false
+  if (value === 'true') return true
+  return /^\d+$/.test(value) ? Number(value) : value
+}
+
 const dataDir = process.env.DATA_DIR || __dirname
 
 module.exports = {
@@ -28,7 +36,7 @@ module.exports = {
   clientDist: process.env.CLIENT_DIST || path.join(__dirname, '..', 'client', 'dist'),
   cookieSecure: process.env.COOKIE_SECURE === 'true',
   inviteCode: process.env.FAMILY_INVITE_CODE || '',
-  trustProxy: process.env.TRUST_PROXY || false,
+  trustProxy: readTrustProxy(),
   corsOrigin: readCorsOrigin(),
   loginRateLimit: Number(process.env.LOGIN_RATE_LIMIT) || 20,
   uploadRateLimit: Number(process.env.UPLOAD_RATE_LIMIT) || 200

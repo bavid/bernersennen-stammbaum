@@ -11,16 +11,21 @@
 #   backup         Snapshot von DB + Fotos nach $APP_DIR/backups/*.tgz
 #   seed <pw>      Demo-Rudel mit Testbildern anlegen (Passwort <pw>)
 #   wipe --yes     ALLE Daten löschen (DB + Fotos)
+#
+# Öffentlich erreichbar ist nur Caddy: HTTPS auf $HTTPS_PORT (Let's Encrypt), Port 80 für die
+# Zertifikatsprüfung. Die App selbst lauscht nur im Docker-Netz.
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/bernersennen-stammbaum}"
 REPO_URL="${REPO_URL:-https://github.com/bavid/bernersennen-stammbaum.git}"
 BRANCH="${BRANCH:-main}"
-HOST_PORT="${HOST_PORT:-3000}"
+HTTPS_PORT="${HTTPS_PORT:-3010}"
+DEPLOY_DOMAIN="${DEPLOY_DOMAIN:-}"
 CONTAINER_UID=1000
 COMPOSE="docker compose"
 
 log() { printf '==> %s\n' "$*"; }
+warn() { printf 'WARNUNG: %s\n' "$*" >&2; }
 fail() { printf 'FEHLER: %s\n' "$*" >&2; exit 1; }
 
 install_docker() {
@@ -48,34 +53,67 @@ checkout() {
   log "Stand: $(git log -1 --format='%h %s')"
 }
 
+default_site_address() {
+  if [ -n "$DEPLOY_DOMAIN" ]; then
+    echo "https://$DEPLOY_DOMAIN:$HTTPS_PORT"
+  else
+    echo "https://$(hostname -I | awk '{print $1}'):$HTTPS_PORT"
+  fi
+}
+
+# Setzt KEY=VALUE in .env, falls KEY noch fehlt (bestehende Werte bleiben unangetastet)
+env_default() {
+  grep -q "^$1=" .env || printf '%s=%s\n' "$1" "$2" >> .env
+}
+
+env_value() {
+  grep "^$1=" "$APP_DIR/.env" | cut -d= -f2-
+}
+
 ensure_env() {
   cd "$APP_DIR"
-  if [ ! -f .env ]; then
-    log "Erzeuge .env mit neuen Secrets"
-    (
-      umask 077
-      cat > .env <<EOF
-JWT_SECRET=$(openssl rand -hex 32)
-FAMILY_INVITE_CODE=$(openssl rand -hex 4)
-COOKIE_SECURE=false
-HOST_PORT=$HOST_PORT
-EOF
-    )
-  fi
-  mkdir -p data backups
+  (
+    umask 077
+    touch .env
+    env_default JWT_SECRET "$(openssl rand -hex 32)"
+    env_default FAMILY_INVITE_CODE "$(openssl rand -hex 4)"
+    env_default SITE_ADDRESS "$(default_site_address)"
+    env_default HTTPS_PORT "$HTTPS_PORT"
+    env_default COOKIE_SECURE true
+    env_default TRUST_PROXY 1
+  )
+  chmod 600 .env
+  mkdir -p data backups caddy/data caddy/config
   chown "$CONTAINER_UID:$CONTAINER_UID" data
 }
 
 wait_healthy() {
+  cd "$APP_DIR"
+  local ok=''
   for _ in $(seq 1 45); do
-    if curl -fsS "http://127.0.0.1:$HOST_PORT/health" >/dev/null 2>&1; then
-      log "Läuft: http://$(hostname -I | awk '{print $1}'):$HOST_PORT"
-      return 0
+    if $COMPOSE exec -T chronik wget -qO- http://127.0.0.1:3000/health >/dev/null 2>&1; then
+      ok=1
+      break
     fi
     sleep 2
   done
-  $COMPOSE logs --tail 60 || true
-  fail "Health-Check nach 90 s nicht erfolgreich"
+  if [ -z "$ok" ]; then
+    $COMPOSE logs --tail 60 chronik || true
+    fail "App antwortet nach 90 s nicht"
+  fi
+
+  # Erstes Zertifikat kann ein paar Sekunden dauern
+  local site
+  site="$(env_value SITE_ADDRESS)"
+  for _ in $(seq 1 30); do
+    if curl -fsS --max-time 5 "$site/health" >/dev/null 2>&1; then
+      log "Läuft mit gültigem HTTPS-Zertifikat: $site"
+      return 0
+    fi
+    sleep 3
+  done
+  $COMPOSE logs --tail 40 caddy || true
+  warn "App läuft, aber $site ist (noch) nicht per HTTPS erreichbar. Ports 80 und $HTTPS_PORT offen?"
 }
 
 start() {
@@ -105,7 +143,7 @@ case "$cmd" in
     checkout
     ensure_env
     start
-    log "Einladungscode für neue Rudel: $(grep '^FAMILY_INVITE_CODE=' "$APP_DIR/.env" | cut -d= -f2)"
+    log "Einladungscode für neue Rudel: $(env_value FAMILY_INVITE_CODE)"
     ;;
   deploy)
     checkout
@@ -115,14 +153,14 @@ case "$cmd" in
   status)
     cd "$APP_DIR"
     $COMPOSE ps
-    curl -fsS "http://127.0.0.1:$HOST_PORT/health" && echo
+    curl -fsS --max-time 5 "$(env_value SITE_ADDRESS)/health" && echo
     ;;
   logs)
     cd "$APP_DIR"
     $COMPOSE logs --tail 200
     ;;
   invite)
-    grep '^FAMILY_INVITE_CODE=' "$APP_DIR/.env" | cut -d= -f2
+    env_value FAMILY_INVITE_CODE
     ;;
   backup)
     backup
@@ -136,9 +174,9 @@ case "$cmd" in
     [ "${2:-}" = "--yes" ] || fail "Löscht ALLE Daten. Bestätigen mit: wipe --yes"
     cd "$APP_DIR"
     backup
-    $COMPOSE stop
+    $COMPOSE stop chronik
     rm -rf data/data.db data/data.db-wal data/data.db-shm data/uploads
-    $COMPOSE start
+    $COMPOSE start chronik
     wait_healthy
     log "Alle Daten gelöscht (Backup liegt in backups/)"
     ;;
