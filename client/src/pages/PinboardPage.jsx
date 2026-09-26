@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
-import ConfirmButton from '../components/ConfirmButton.jsx'
+import PinboardNote from '../components/PinboardNote.jsx'
 import { useToast } from '../components/Toast.jsx'
-import { formatTermin, relativeTime } from '../lib/dates.js'
-import { isPastTermin, sortNotes } from '../lib/notes.js'
+import { formatTermin } from '../lib/dates.js'
+import { sortNotes } from '../lib/notes.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
 const EMPTY_NOTE = { text: '', terminDatum: '', terminZeit: '' }
@@ -88,29 +88,6 @@ function NoteComposer({ onCreated }) {
   )
 }
 
-function Note({ note, onDelete }) {
-  const past = isPastTermin(note)
-  return (
-    <article className={`note note-tone-${note.id % 4} ${past ? 'is-past' : ''}`}>
-      <span className="note-pin" aria-hidden="true" />
-      {note.termin_datum && (
-        <p className="note-termin">
-          <Icon name="calendar" />
-          {formatTermin(note.termin_datum, note.termin_zeit)}
-          {past && <span className="note-past-label">vorbei</span>}
-        </p>
-      )}
-      <p className="note-text">{note.text}</p>
-      <footer className="note-footer">
-        <span>
-          {note.autor_name} · {relativeTime(note.created_at)}
-        </span>
-        <ConfirmButton onConfirm={() => onDelete(note)} label="Abnehmen" confirmLabel="Wirklich?" />
-      </footer>
-    </article>
-  )
-}
-
 export default function PinboardPage() {
   const [notes, setNotes] = useState(null)
   const [error, setError] = useState(null)
@@ -128,6 +105,17 @@ export default function PinboardPage() {
   function handleCreated(note) {
     setNotes((current) => [note, ...current])
     toast(note.termin_datum ? `Termin angepinnt: ${formatTermin(note.termin_datum, note.termin_zeit)}` : 'Zettel angepinnt')
+  }
+
+  const updateNote = (noteId, change) =>
+    setNotes((current) => current.map((note) => (note.id === noteId ? change(note) : note)))
+
+  function handleReplyAdded(noteId, reply) {
+    updateNote(noteId, (note) => ({ ...note, replies: [...note.replies, reply] }))
+  }
+
+  function handleReplyDeleted(noteId, replyId) {
+    updateNote(noteId, (note) => ({ ...note, replies: note.replies.filter((r) => r.id !== replyId) }))
   }
 
   async function handleDelete(note) {
@@ -166,9 +154,26 @@ export default function PinboardPage() {
             </div>
           )}
           {sorted.length > 0 && (
+            // Zwei feste Spalten statt CSS-columns: ein aufklappendes Antwortfeld verschiebt
+            // so keine Zettel in die andere Spalte. Am Handy sorgt "order" für die Reihenfolge.
             <div className="board">
-              {sorted.map((note) => (
-                <Note key={note.id} note={note} onDelete={handleDelete} />
+              {[0, 1].map((column) => (
+                <div className="board-col" key={column}>
+                  {sorted.map(
+                    (note, index) =>
+                      index % 2 === column && (
+                        <PinboardNote
+                          key={note.id}
+                          note={note}
+                          order={index}
+                          onDelete={handleDelete}
+                          onReplyAdded={handleReplyAdded}
+                          onReplyDeleted={handleReplyDeleted}
+                          onError={setError}
+                        />
+                      )
+                  )}
+                </div>
               ))}
             </div>
           )}

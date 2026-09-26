@@ -74,6 +74,17 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_notes_family ON notes(family_id, created_at);
+
+  CREATE TABLE IF NOT EXISTS note_replies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    note_id INTEGER NOT NULL REFERENCES notes(id),
+    family_id INTEGER NOT NULL REFERENCES families(id),
+    autor_name TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_note_replies_note ON note_replies(note_id, created_at);
   CREATE INDEX IF NOT EXISTS idx_timeline_family_created ON timeline_entries(family_id, created_at);
 `)
 

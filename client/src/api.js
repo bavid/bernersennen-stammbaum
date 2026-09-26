@@ -66,6 +66,8 @@ export const api = {
   listNotes: () => request('/notes'),
   createNote: (payload) => request('/notes', json('POST', payload)),
   deleteNote: (id) => request(`/notes/${id}`, { method: 'DELETE' }),
+  createReply: (noteId, payload) => request(`/notes/${noteId}/replies`, json('POST', payload)),
+  deleteReply: (noteId, replyId) => request(`/notes/${noteId}/replies/${replyId}`, { method: 'DELETE' }),
 
   listBreedingEvents: () => request('/breeding'),
   createBreedingEvent: (payload) => request('/breeding', json('POST', payload)),

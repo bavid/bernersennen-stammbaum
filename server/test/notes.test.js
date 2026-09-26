@@ -45,6 +45,43 @@ test('pinboard notes and recent activity', async (t) => {
     assert.equal(own.status, 204)
   })
 
+  await t.test('notes carry a conversation of replies with author names', async () => {
+    const note = (await post('/api/notes', { autorName: 'David', text: 'Wer kommt Sonntag in den Park?' })).data
+    assert.deepEqual(note.replies, [])
+
+    const first = await post(`/api/notes/${note.id}/replies`, { autorName: 'Anna', text: 'Wir sind dabei!' })
+    assert.equal(first.status, 201)
+    await post(`/api/notes/${note.id}/replies`, { autorName: 'Familie Keller', text: 'Wir kommen später nach.' })
+
+    const { data } = await call(base, '/api/notes', { cookie })
+    const listed = data.find((n) => n.id === note.id)
+    assert.deepEqual(listed.replies.map((r) => [r.autor_name, r.text]), [
+      ['Anna', 'Wir sind dabei!'],
+      ['Familie Keller', 'Wir kommen später nach.']
+    ])
+  })
+
+  await t.test('replies are validated and stay inside the own pack', async () => {
+    const { data } = await call(base, '/api/notes', { cookie })
+    const note = data.find((n) => n.replies.length)
+    assert.equal((await post(`/api/notes/${note.id}/replies`, { autorName: 'X', text: '' })).status, 400)
+    assert.equal((await post(`/api/notes/${note.id}/replies`, { autorName: 'Fremd', text: 'Hallo' }, otherCookie)).status, 404)
+
+    const reply = note.replies[0]
+    const foreignDelete = await call(base, `/api/notes/${note.id}/replies/${reply.id}`, { method: 'DELETE', cookie: otherCookie })
+    assert.equal(foreignDelete.status, 404)
+    const ownDelete = await call(base, `/api/notes/${note.id}/replies/${reply.id}`, { method: 'DELETE', cookie })
+    assert.equal(ownDelete.status, 204)
+  })
+
+  await t.test('deleting a note removes its replies', async () => {
+    const { data } = await call(base, '/api/notes', { cookie })
+    const note = data.find((n) => n.replies.length)
+    await call(base, `/api/notes/${note.id}`, { method: 'DELETE', cookie })
+    const db = require('../db')
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM note_replies WHERE note_id = ?').get(note.id).c, 0)
+  })
+
   await t.test('recent activity shows newest entries across all dogs with dog info', async () => {
     const hermes = (await post('/api/dogs', { name: 'Hermes', geschlecht: 'ruede', rasse: 'Berner-Mix' })).data
     const trude = (await post('/api/dogs', { name: 'Trude', geschlecht: 'huendin' })).data

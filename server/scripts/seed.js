@@ -82,8 +82,17 @@ const seed = db.transaction((password, copyImage) => {
     `INSERT INTO notes (family_id, autor_name, text, termin_datum, termin_zeit, created_at)
      VALUES (?, ?, ?, ?, ?, datetime('now', ?))`
   )
+  const insertReply = db.prepare(
+    `INSERT INTO note_replies (note_id, family_id, autor_name, text, created_at)
+     VALUES (?, ?, ?, ?, datetime('now', ?))`
+  )
   for (const note of NOTES) {
-    insertNote.run(familyId, note.autor, note.text, note.terminDatum || null, note.terminZeit || null, `-${note.hoursAgo} hours`)
+    const noteId = insertNote.run(
+      familyId, note.autor, note.text, note.terminDatum || null, note.terminZeit || null, `-${note.hoursAgo} hours`
+    ).lastInsertRowid
+    for (const reply of note.replies || []) {
+      insertReply.run(noteId, familyId, reply.autor, reply.text, `-${reply.hoursAgo} hours`)
+    }
   }
 
   const insertBreeding = db.prepare(

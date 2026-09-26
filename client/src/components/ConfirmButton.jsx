@@ -4,7 +4,7 @@ import Icon from './Icon.jsx'
 const ARM_TIMEOUT_MS = 3500
 
 // Zweistufiger Löschen-Knopf: erst scharf schalten, dann bestätigen.
-export default function ConfirmButton({ onConfirm, label = 'Löschen', confirmLabel = 'Wirklich löschen?', disabled }) {
+export default function ConfirmButton({ onConfirm, label = 'Löschen', confirmLabel = 'Wirklich löschen?', disabled, className = '', ariaLabel }) {
   const [armed, setArmed] = useState(false)
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function ConfirmButton({ onConfirm, label = 'Löschen', confirmLa
   }
 
   return (
-    <button type="button" className={`btn btn-danger ${armed ? 'is-armed' : ''}`} onClick={handleClick} disabled={disabled}>
+    <button type="button" className={`btn btn-danger ${className} ${armed ? 'is-armed' : ''}`} onClick={handleClick} disabled={disabled} aria-label={armed ? confirmLabel : ariaLabel || undefined}>
       <Icon name="trash" />
       {armed ? confirmLabel : label}
     </button>

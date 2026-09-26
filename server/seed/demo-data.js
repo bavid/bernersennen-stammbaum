@@ -138,9 +138,24 @@ const BREEDING = [
 
 // hoursAgo steuert, wann der Zettel "geschrieben" wurde (für die Reihenfolge auf der Pinnwand)
 const NOTES = [
-  { autor: 'Anna', hoursAgo: 3, text: 'Geschwistertreffen am Thunersee! Wer bringt den großen Wassernapf mit?', terminDatum: '2026-10-18', terminZeit: '14:00' },
+  {
+    autor: 'Anna',
+    hoursAgo: 3,
+    text: 'Geschwistertreffen am Thunersee! Wer bringt den großen Wassernapf mit?',
+    terminDatum: '2026-10-18',
+    terminZeit: '14:00',
+    replies: [
+      { autor: 'Familie Keller', hoursAgo: 2, text: 'Wir sind dabei – Finn freut sich schon! Napf bringen wir mit.' },
+      { autor: 'David', hoursAgo: 1, text: 'Hermes und ich kommen auch. Treffpunkt wieder am Parkplatz?' }
+    ]
+  },
   { autor: 'Familie Keller', hoursAgo: 20, text: 'Finn hat eine neue Lieblingswiese entdeckt – hinter dem Bahnhof, perfekt zum Toben.' },
-  { autor: 'David', hoursAgo: 50, text: 'Hermes braucht bald die Auffrischimpfung. Kennt jemand eine gute Tierärztin in der Nähe?' },
+  {
+    autor: 'David',
+    hoursAgo: 50,
+    text: 'Hermes braucht bald die Auffrischimpfung. Kennt jemand eine gute Tierärztin in der Nähe?',
+    replies: [{ autor: 'Anna', hoursAgo: 30, text: 'Dr. Brunner in Thun – sehr geduldig mit großen Hunden.' }]
+  },
   { autor: 'Anna', hoursAgo: 900, text: 'Sommerfest war großartig – danke an alle fürs Mitbringen!', terminDatum: '2026-08-15', terminZeit: '16:00' }
 ]
 
