@@ -561,3 +561,61 @@ textarea {
     transform: translate(-50%, 16px);
   }
 }
+
+/* Warnhinweis, z. B. vor dem Umbenennen des Rudels */
+
+.warning-banner {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--tan) 60%, transparent);
+  border-left: 4px solid var(--tan);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--tan) 14%, var(--surface));
+  font-size: var(--text-sm);
+}
+
+.warning-banner svg {
+  flex-shrink: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 2px;
+  color: var(--rust);
+}
+
+.warning-banner strong {
+  color: var(--ink);
+}
+
+.warning-banner p {
+  margin-top: var(--space-1);
+  color: var(--ink-soft);
+}
+
+.btn-warning {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tan) 55%, transparent);
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: var(--ink-soft);
+  color: var(--paper);
+}
+
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.title-edit {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.page-title-row:hover .title-edit,
+.title-edit:focus-visible {
+  opacity: 1;
+}

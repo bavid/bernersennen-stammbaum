@@ -7,6 +7,7 @@ import Modal from '../components/Modal.jsx'
 import Icon from '../components/Icon.jsx'
 import BernerMark from '../components/BernerMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
+import RenameFamilyForm from '../components/RenameFamilyForm.jsx'
 import { nextTermin } from '../lib/notes.js'
 import { useToast } from '../components/Toast.jsx'
 import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
@@ -31,12 +32,13 @@ function Stats({ dogs, allDogs }) {
   )
 }
 
-export default function OverviewPage({ family }) {
+export default function OverviewPage({ family, onFamilyChange }) {
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
   const [activity, setActivity] = useState(null)
   const [error, setError] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
+  const [renameOpen, setRenameOpen] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -56,6 +58,12 @@ export default function OverviewPage({ family }) {
     loadDogs().catch((err) => setError(err.message))
   }, [])
 
+  function handleRenamed(renamed) {
+    setRenameOpen(false)
+    onFamilyChange(renamed)
+    toast(`Das Rudel heißt jetzt „${renamed.name}“`)
+  }
+
   async function handleCreate(payload) {
     const dog = await api.createDog(payload)
     setFormOpen(false)
@@ -68,7 +76,18 @@ export default function OverviewPage({ family }) {
       <header className="page-hero">
         <div>
           <span className="eyebrow">Stammbaum</span>
-          <h1>{family.name}</h1>
+          <div className="page-title-row">
+            <h1>{family.name}</h1>
+            <button
+              type="button"
+              className="icon-btn title-edit"
+              onClick={() => setRenameOpen(true)}
+              aria-label="Rudelname ändern"
+              title="Rudelname ändern"
+            >
+              <Icon name="edit" />
+            </button>
+          </div>
           <p className="page-lede">
             Damit wir wissen, was die anderen treiben: Klick einen Hund an und schau nach, wie es ihm geht – oder erzähl,
             was er gerade erlebt.
@@ -100,6 +119,10 @@ export default function OverviewPage({ family }) {
       {dogs && dogs.length > 0 && activity && <ActivityFeed entries={activity.entries} termin={activity.termin} />}
 
       {dogs && dogs.length > 0 && <PedigreeTree dogs={dogs} allDogs={allDogs} />}
+
+      <Modal open={renameOpen} title="Rudelname ändern" onClose={() => setRenameOpen(false)}>
+        <RenameFamilyForm family={family} onRenamed={handleRenamed} onCancel={() => setRenameOpen(false)} />
+      </Modal>
 
       <Modal open={formOpen} title="Neuen Hund anlegen" onClose={() => setFormOpen(false)}>
         <DogForm allDogs={allDogs} ownFamilyId={family.id} onSubmit={handleCreate} onCancel={() => setFormOpen(false)} />

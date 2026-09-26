@@ -90,6 +90,18 @@ router.post('/logout', (req, res) => {
   res.status(204).end()
 })
 
+// Rudel umbenennen – betrifft alle, die das gemeinsame Passwort nutzen (Warnung im Frontend)
+router.put('/family', requireAuth, (req, res) => {
+  const { name } = req.body || {}
+  const trimmedName = typeof name === 'string' ? name.trim() : ''
+  if (!trimmedName) return res.status(400).json({ error: 'Der Rudelname darf nicht leer sein' })
+  if (trimmedName.length > MAX_NAME_LENGTH) {
+    return res.status(400).json({ error: `Der Rudelname darf höchstens ${MAX_NAME_LENGTH} Zeichen haben` })
+  }
+  db.prepare('UPDATE families SET name = ? WHERE id = ?').run(trimmedName, req.familyId)
+  res.json({ id: req.familyId, name: trimmedName })
+})
+
 router.get('/me', requireAuth, (req, res) => {
   const family = db.prepare('SELECT id, name FROM families WHERE id = ?').get(req.familyId)
   res.json(family)

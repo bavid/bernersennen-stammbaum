@@ -48,6 +48,7 @@ export const api = {
   login: (password) => request('/login', json('POST', { password })),
   createFamily: (payload) => request('/families', json('POST', payload)),
   logout: () => request('/logout', { method: 'POST' }),
+  renameFamily: (name) => request('/family', json('PUT', { name })),
 
   listDogs: () => request('/dogs'),
   listAllDogs: () => request('/dogs/all'),

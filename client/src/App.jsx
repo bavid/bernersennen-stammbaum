@@ -85,7 +85,7 @@ export default function App() {
       <AppHeader family={family} onLogout={handleLogout} />
       <main className="app-main">
         <Routes>
-          <Route path="/stammbaum" element={<OverviewPage family={family} />} />
+          <Route path="/stammbaum" element={<OverviewPage family={family} onFamilyChange={setFamily} />} />
           <Route path="/hund/:id" element={<DogDetailPage family={family} />} />
           <Route path="/pinnwand" element={<PinboardPage />} />
           <Route path="/zuchtbuch" element={<BreedingPage />} />
