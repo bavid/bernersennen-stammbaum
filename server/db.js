@@ -85,6 +85,22 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_note_replies_note ON note_replies(note_id, created_at);
+
+  CREATE TABLE IF NOT EXISTS admin_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_id INTEGER NOT NULL REFERENCES families(id),
+    type TEXT CHECK(type IN ('feedback','problem')) NOT NULL,
+    autor_name TEXT NOT NULL,
+    contact TEXT,
+    text TEXT NOT NULL,
+    page TEXT,
+    user_agent TEXT,
+    status TEXT CHECK(status IN ('offen','erledigt')) NOT NULL DEFAULT 'offen',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_admin_messages_status ON admin_messages(status, created_at);
   CREATE INDEX IF NOT EXISTS idx_timeline_family_created ON timeline_entries(family_id, created_at);
 `)
 

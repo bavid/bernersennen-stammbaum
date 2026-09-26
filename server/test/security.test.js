@@ -35,6 +35,14 @@ test('security and deployment behaviour', async (t) => {
     cookie = withCode.cookie
   })
 
+  await t.test('members can look up the invite code to pass it on, strangers cannot', async () => {
+    const member = await call(base, '/api/invite', { cookie })
+    assert.equal(member.status, 200)
+    assert.equal(member.data.inviteCode, 'berner-2026')
+    const stranger = await call(base, '/api/invite')
+    assert.equal(stranger.status, 401)
+  })
+
   await t.test('rejects short and duplicate passwords', async () => {
     const short = await createFamily(base, 'Rudel Y', '123', { inviteCode: 'berner-2026' })
     assert.equal(short.status, 400)

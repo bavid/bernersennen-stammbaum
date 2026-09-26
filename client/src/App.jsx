@@ -11,6 +11,9 @@ import BreedingPage from './pages/BreedingPage.jsx'
 import CollagePage from './pages/CollagePage.jsx'
 import PinboardPage from './pages/PinboardPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
+import ContactAdminPage from './pages/ContactAdminPage.jsx'
+import Modal from './components/Modal.jsx'
+import InviteDialog from './components/InviteDialog.jsx'
 
 const NAV_ITEMS = [
   { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
@@ -41,6 +44,15 @@ function AppHeader({ family, onLogout }) {
             </NavLink>
           ))}
         </nav>
+        <Link
+          to="/admin-schreiben"
+          state={{ from: pathname }}
+          className={`app-contact ${pathname === '/admin-schreiben' ? 'active' : ''}`}
+          title="Schreib dem Admin"
+        >
+          <Icon name="message" />
+          <span>Schreib dem Admin</span>
+        </Link>
         <button type="button" className="icon-btn app-logout" onClick={onLogout} aria-label="Abmelden" title="Abmelden">
           <Icon name="logout" />
         </button>
@@ -51,6 +63,7 @@ function AppHeader({ family, onLogout }) {
 
 export default function App() {
   const [family, setFamily] = useState(undefined)
+  const [inviteOpen, setInviteOpen] = useState(false)
   const { pathname } = useLocation()
 
   useEffect(() => {
@@ -70,7 +83,7 @@ export default function App() {
   }
 
   // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login
-  if (pathname.startsWith('/admin')) return <AdminPage />
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return <AdminPage />
 
   if (family === undefined) {
     return (
@@ -90,10 +103,14 @@ export default function App() {
       <AppHeader family={family} onLogout={handleLogout} />
       <main className="app-main">
         <Routes>
-          <Route path="/stammbaum" element={<OverviewPage family={family} onFamilyChange={setFamily} />} />
+          <Route
+            path="/stammbaum"
+            element={<OverviewPage family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />}
+          />
           <Route path="/hund/:id" element={<DogDetailPage family={family} />} />
           <Route path="/pinnwand" element={<PinboardPage />} />
           <Route path="/zuchtbuch" element={<BreedingPage />} />
+          <Route path="/admin-schreiben" element={<ContactAdminPage />} />
           <Route path="/collage" element={<CollagePage family={family} />} />
           <Route path="*" element={<Navigate to="/stammbaum" replace />} />
         </Routes>
@@ -101,7 +118,13 @@ export default function App() {
       <footer className="app-footer">
         <div className="tricolor" aria-hidden="true" />
         <p>Familienchronik · damit wir wissen, wie es den anderen geht</p>
+        <button type="button" className="footer-link" onClick={() => setInviteOpen(true)}>
+          Jemanden einladen
+        </button>
       </footer>
+      <Modal open={inviteOpen} title="Jemanden einladen" onClose={() => setInviteOpen(false)}>
+        <InviteDialog family={family} />
+      </Modal>
     </div>
   )
 }

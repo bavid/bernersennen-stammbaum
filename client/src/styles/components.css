@@ -619,3 +619,35 @@ textarea {
 .title-edit:focus-visible {
   opacity: 1;
 }
+
+/* Feld-Fehler direkt am Eingabefeld, z. B. "Passwort belegt" */
+.field.has-error input {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-wash);
+}
+
+.field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.field-error svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 2px;
+}
+
+/* Honeypot gegen Bots: aus dem sichtbaren Bereich geschoben (nicht display:none,
+   das erkennen manche Bots) */
+.honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

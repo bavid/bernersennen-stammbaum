@@ -1,7 +1,8 @@
 export class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, details = {}) {
     super(message)
     this.status = status
+    this.details = details
   }
 }
 
@@ -26,14 +27,15 @@ async function request(path, options = {}) {
 
   if (!res.ok) {
     let message = `Fehler ${res.status}`
+    let details = {}
     try {
-      const data = await res.json()
-      message = data.error || message
+      details = await res.json()
+      message = details.error || message
     } catch {
       // Antwort ohne JSON-Body
     }
     if (res.status === 401 && !path.startsWith('/admin') && path !== '/me' && path !== '/login') onUnauthorized()
-    throw new ApiError(message, res.status)
+    throw new ApiError(message, res.status, details)
   }
 
   if (res.status === 204) return null
@@ -45,10 +47,11 @@ const json = (method, body) => ({ method, body: JSON.stringify(body) })
 export const api = {
   config: () => request('/config'),
   me: () => request('/me'),
-  login: (password) => request('/login', json('POST', { password })),
+  login: (password, website = '') => request('/login', json('POST', { password, website })),
   createFamily: (payload) => request('/families', json('POST', payload)),
   logout: () => request('/logout', { method: 'POST' }),
   renameFamily: (name) => request('/family', json('PUT', { name })),
+  invite: () => request('/invite'),
 
   listDogs: () => request('/dogs'),
   listAllDogs: () => request('/dogs/all'),
@@ -64,6 +67,9 @@ export const api = {
 
   recentActivity: (limit = 5) => request(`/timeline/recent?limit=${limit}`),
 
+  listMessages: () => request('/messages'),
+  sendMessage: (payload) => request('/messages', json('POST', payload)),
+
   listNotes: () => request('/notes'),
   createNote: (payload) => request('/notes', json('POST', payload)),
   deleteNote: (id) => request(`/notes/${id}`, { method: 'DELETE' }),
@@ -75,7 +81,11 @@ export const api = {
     login: (username, password) => request('/admin/login', json('POST', { username, password })),
     logout: () => request('/admin/logout', { method: 'POST' }),
     overview: () => request('/admin/overview'),
-    family: (id) => request(`/admin/families/${id}`)
+    family: (id) => request(`/admin/families/${id}`),
+    messages: ({ type = '', status = '' } = {}) =>
+      request(`/admin/messages?${new URLSearchParams({ type, status }).toString()}`),
+    updateMessage: (id, status) => request(`/admin/messages/${id}`, json('PATCH', { status })),
+    deleteMessage: (id) => request(`/admin/messages/${id}`, { method: 'DELETE' })
   },
 
   listBreedingEvents: () => request('/breeding'),

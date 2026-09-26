@@ -32,7 +32,7 @@ function Stats({ dogs, allDogs }) {
   )
 }
 
-export default function OverviewPage({ family, onFamilyChange }) {
+export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
   const [activity, setActivity] = useState(null)
@@ -98,6 +98,10 @@ export default function OverviewPage({ family, onFamilyChange }) {
           <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
             <Icon name="plus" />
             Hund hinzufügen
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={onInvite}>
+            <Icon name="send" />
+            Jemanden einladen
           </button>
         </div>
       </header>

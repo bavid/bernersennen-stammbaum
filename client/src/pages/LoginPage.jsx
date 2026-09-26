@@ -5,10 +5,20 @@ import Icon from '../components/Icon.jsx'
 
 const MIN_PASSWORD_LENGTH = 6
 
-function PasswordField({ id, label, value, onChange, autoFocus, autoComplete, minLength }) {
+// Unsichtbar für Menschen (auch für Screenreader), Bots füllen es trotzdem aus
+function Honeypot({ value, onChange }) {
+  return (
+    <div className="honeypot" aria-hidden="true">
+      <label htmlFor="website">Website</label>
+      <input id="website" name="website" tabIndex={-1} autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  )
+}
+
+function PasswordField({ id, label, value, onChange, autoFocus, autoComplete, minLength, error }) {
   const [visible, setVisible] = useState(false)
   return (
-    <div className="field">
+    <div className={`field ${error ? 'has-error' : ''}`}>
       <label className="field-label" htmlFor={id}>
         {label}
       </label>
@@ -21,6 +31,8 @@ function PasswordField({ id, label, value, onChange, autoFocus, autoComplete, mi
           autoFocus={autoFocus}
           autoComplete={autoComplete}
           minLength={minLength}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
           required
         />
         <button
@@ -32,12 +44,18 @@ function PasswordField({ id, label, value, onChange, autoFocus, autoComplete, mi
           <Icon name={visible ? 'eyeOff' : 'eye'} />
         </button>
       </div>
+      {error && (
+        <p className="field-error" id={`${id}-error`} role="alert">
+          <Icon name="alert" /> {error}
+        </p>
+      )}
     </div>
   )
 }
 
 function LoginForm({ onLogin }) {
   const [password, setPassword] = useState('')
+  const [website, setWebsite] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -46,7 +64,7 @@ function LoginForm({ onLogin }) {
     setError(null)
     setLoading(true)
     try {
-      onLogin(await api.login(password))
+      onLogin(await api.login(password, website))
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -56,6 +74,7 @@ function LoginForm({ onLogin }) {
   return (
     <form className="form-stack" onSubmit={handleSubmit}>
       {error && <div className="error-banner" role="alert">{error}</div>}
+      <Honeypot value={website} onChange={setWebsite} />
       <PasswordField
         id="login-password"
         label="Rudel-Passwort"
@@ -75,17 +94,22 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
+  const [website, setWebsite] = useState('')
+  const [passwordError, setPasswordError] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
     setError(null)
+    setPasswordError(null)
     setLoading(true)
     try {
-      onLogin(await api.createFamily({ name, password, inviteCode: inviteCode || undefined }))
+      onLogin(await api.createFamily({ name, password, inviteCode: inviteCode || undefined, website }))
     } catch (err) {
-      setError(err.message)
+      // "Passwort belegt" direkt am Passwortfeld zeigen, alles andere oben
+      if (err.details?.field === 'password') setPasswordError(err.message)
+      else setError(err.message)
       setLoading(false)
     }
   }
@@ -107,13 +131,18 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
           required
         />
       </div>
+      <Honeypot value={website} onChange={setWebsite} />
       <PasswordField
         id="family-password"
         label="Gemeinsames Passwort"
         value={password}
-        onChange={setPassword}
+        onChange={(value) => {
+          setPassword(value)
+          setPasswordError(null)
+        }}
         autoComplete="new-password"
         minLength={MIN_PASSWORD_LENGTH}
+        error={passwordError}
       />
       <p className="field-hint">
         Mindestens {MIN_PASSWORD_LENGTH} Zeichen. Alle, die das Passwort kennen, können die Chronik mitpflegen.
@@ -124,6 +153,10 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
             Einladungscode
           </label>
           <input id="invite-code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} required />
+          <span className="field-hint">
+            Den Code bekommst du von der Person, die dich eingeladen hat – jedes Mitglied eines Rudels findet ihn in der
+            Chronik unter „Jemanden einladen“.
+          </span>
         </div>
       )}
       <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading}>

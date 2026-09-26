@@ -14,8 +14,10 @@ const timelineRoutes = require('./routes/timeline')
 const breedingRoutes = require('./routes/breeding')
 const notesRoutes = require('./routes/notes')
 const adminRoutes = require('./routes/admin')
+const messagesRoutes = require('./routes/messages')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireFamilyOrAdmin } = require('./middleware/admin')
+const { apiLimiter, photoLimiter, limitWrites } = require('./middleware/abuse')
 
 const PHOTO_CACHE = 'private, max-age=2592000, immutable'
 
@@ -82,6 +84,7 @@ function createApp() {
   // Fotos nur mit Login (Rudel oder Admin); "private", damit keine geteilten Caches sie speichern
   app.use(
     '/uploads',
+    photoLimiter,
     requireFamilyOrAdmin,
     express.static(config.uploadDir, {
       fallthrough: false,
@@ -89,11 +92,14 @@ function createApp() {
     })
   )
 
+  app.use('/api', apiLimiter)
+  app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding'], limitWrites)
   app.use('/api', authRoutes)
   app.use('/api/dogs', dogsRoutes)
   app.use('/api/timeline', timelineRoutes)
   app.use('/api/breeding', breedingRoutes)
   app.use('/api/notes', notesRoutes)
+  app.use('/api/messages', messagesRoutes)
   app.use('/api/admin', adminRoutes)
   app.use('/api/uploads', uploadsRoutes)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))

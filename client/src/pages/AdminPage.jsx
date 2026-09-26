@@ -4,6 +4,7 @@ import { api } from '../api'
 import BernerMark from '../components/BernerMark.jsx'
 import Icon from '../components/Icon.jsx'
 import AdminFamilyDetails from '../components/AdminFamilyDetails.jsx'
+import AdminMessages from '../components/AdminMessages.jsx'
 import { relativeTime } from '../lib/dates.js'
 
 const BYTES_PER_MB = 1024 * 1024
@@ -67,6 +68,7 @@ function AdminLogin({ onLogin }) {
 
 function StatsGrid({ stats }) {
   const items = [
+    ['Offene Nachrichten', stats.openMessages],
     ['Rudel', stats.families],
     ['Hunde', stats.dogs],
     ['Einträge', stats.entries],
@@ -124,6 +126,15 @@ function Dashboard({ onLogout }) {
         {overview && (
           <>
             <StatsGrid stats={overview.stats} />
+
+            <AdminMessages
+              onCountChange={(delta) =>
+                setOverview((current) => ({
+                  ...current,
+                  stats: { ...current.stats, openMessages: Math.max(0, current.stats.openMessages + delta) }
+                }))
+              }
+            />
 
             <div className="admin-invite card">
               <span className="field-label">Einladungscode für neue Rudel</span>

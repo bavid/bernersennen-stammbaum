@@ -57,6 +57,44 @@ function uploadStats() {
 
 const count = (table) => db.prepare(`SELECT COUNT(*) AS c FROM ${table}`).get().c
 
+// Nachrichten aus "Schreib dem Admin" – offene zuerst, darin die neuesten oben
+router.get('/messages', requireAdmin, (req, res) => {
+  const where = []
+  const params = []
+  if (['feedback', 'problem'].includes(req.query.type)) {
+    where.push('m.type = ?')
+    params.push(req.query.type)
+  }
+  if (['offen', 'erledigt'].includes(req.query.status)) {
+    where.push('m.status = ?')
+    params.push(req.query.status)
+  }
+  const messages = db
+    .prepare(
+      `SELECT m.*, f.name AS family_name
+       FROM admin_messages m JOIN families f ON f.id = m.family_id
+       ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+       ORDER BY m.status = 'erledigt', m.created_at DESC, m.id DESC`
+    )
+    .all(...params)
+  res.json(messages)
+})
+
+router.patch('/messages/:id', requireAdmin, (req, res) => {
+  const { status } = req.body || {}
+  if (!['offen', 'erledigt'].includes(status)) return res.status(400).json({ error: 'Status muss offen oder erledigt sein' })
+  const resolvedAt = status === 'erledigt' ? "datetime('now')" : 'NULL'
+  const result = db.prepare(`UPDATE admin_messages SET status = ?, resolved_at = ${resolvedAt} WHERE id = ?`).run(status, req.params.id)
+  if (!result.changes) return res.status(404).json({ error: 'Nachricht nicht gefunden' })
+  res.json(db.prepare('SELECT * FROM admin_messages WHERE id = ?').get(req.params.id))
+})
+
+router.delete('/messages/:id', requireAdmin, (req, res) => {
+  const result = db.prepare('DELETE FROM admin_messages WHERE id = ?').run(req.params.id)
+  if (!result.changes) return res.status(404).json({ error: 'Nachricht nicht gefunden' })
+  res.status(204).end()
+})
+
 router.get('/overview', requireAdmin, (req, res) => {
   const families = db
     .prepare(
@@ -83,6 +121,7 @@ router.get('/overview', requireAdmin, (req, res) => {
       notes: count('notes'),
       replies: count('note_replies'),
       breeding: count('breeding_events'),
+      openMessages: db.prepare("SELECT COUNT(*) AS c FROM admin_messages WHERE status = 'offen'").get().c,
       uploads: uploadStats()
     },
     inviteCode: config.inviteCode || null,

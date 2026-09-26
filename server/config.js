@@ -40,6 +40,10 @@ module.exports = {
   corsOrigin: readCorsOrigin(),
   loginRateLimit: Number(process.env.LOGIN_RATE_LIMIT) || 20,
   uploadRateLimit: Number(process.env.UPLOAD_RATE_LIMIT) || 200,
+  // Anfragen pro IP je 5 Minuten (API bzw. Fotos) und Schreibzugriffe pro Rudel je 10 Minuten
+  apiRateLimit: Number(process.env.API_RATE_LIMIT) || 900,
+  photoRateLimit: Number(process.env.PHOTO_RATE_LIMIT) || 3000,
+  writeRateLimit: Number(process.env.WRITE_RATE_LIMIT) || 150,
   adminUsername: process.env.ADMIN_USERNAME || 'admin',
   // "scrypt:<salt>:<key>", erzeugt mit `npm run admin:hash -- <passwort>`; leer = kein Admin-Zugang
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || ''

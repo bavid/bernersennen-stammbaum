@@ -4,6 +4,7 @@ const express = require('express')
 const multer = require('multer')
 const rateLimit = require('express-rate-limit')
 const { requireAuth } = require('../middleware/auth')
+const { requireFreeDisk } = require('../middleware/abuse')
 const { uploadDir, uploadRateLimit } = require('../config')
 
 const router = express.Router()
@@ -35,7 +36,7 @@ const upload = multer({
     destination: uploadDir,
     filename: (req, file, cb) => cb(null, `${crypto.randomUUID()}.${EXTENSION_BY_MIME[file.mimetype]}`)
   }),
-  limits: { fileSize: MAX_FILE_BYTES, files: 1 },
+  limits: { fileSize: MAX_FILE_BYTES, files: 1, fields: 5, fieldSize: 1024, parts: 6 },
   fileFilter: (req, file, cb) => {
     if (!EXTENSION_BY_MIME[file.mimetype]) {
       const error = new Error('Nur Fotos (JPG, PNG, WebP, GIF) sind erlaubt')
@@ -46,7 +47,7 @@ const upload = multer({
   }
 })
 
-router.post('/', requireAuth, uploadLimiter, upload.single('file'), (req, res) => {
+router.post('/', requireAuth, uploadLimiter, requireFreeDisk, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Keine Datei hochgeladen' })
   }

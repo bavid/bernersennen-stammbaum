@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
 const { requireAuth, setSessionCookie, clearSessionCookie } = require('../middleware/auth')
+const { rejectHoneypot } = require('../middleware/abuse')
 
 const router = express.Router()
 
@@ -38,7 +39,7 @@ router.get('/config', (req, res) => {
   res.json({ inviteRequired: Boolean(config.inviteCode) })
 })
 
-router.post('/families', authLimiter, async (req, res, next) => {
+router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => {
   try {
     const { name, password, inviteCode } = req.body || {}
     const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
@@ -51,7 +52,10 @@ router.post('/families', authLimiter, async (req, res, next) => {
       return res.status(403).json({ error: 'Der Einladungscode stimmt nicht' })
     }
     if (await findFamilyByPassword(password)) {
-      return res.status(409).json({ error: 'Dieses Passwort ist schon vergeben. Bitte wähle ein anderes.' })
+      return res.status(409).json({
+        error: 'Passwort belegt – dieses Passwort nutzt schon ein anderes Rudel. Bitte wähle ein anderes.',
+        field: 'password'
+      })
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
@@ -66,7 +70,7 @@ router.post('/families', authLimiter, async (req, res, next) => {
   }
 })
 
-router.post('/login', authLimiter, async (req, res, next) => {
+router.post('/login', authLimiter, rejectHoneypot, async (req, res, next) => {
   try {
     const { password } = req.body || {}
     if (typeof password !== 'string' || !password) {
@@ -100,6 +104,11 @@ router.put('/family', requireAuth, (req, res) => {
   }
   db.prepare('UPDATE families SET name = ? WHERE id = ?').run(trimmedName, req.familyId)
   res.json({ id: req.familyId, name: trimmedName })
+})
+
+// Einladungscode für eingeloggte Mitglieder – damit sie ihn an Bekannte weitergeben können
+router.get('/invite', requireAuth, (req, res) => {
+  res.json({ inviteCode: config.inviteCode || null })
 })
 
 router.get('/me', requireAuth, (req, res) => {
