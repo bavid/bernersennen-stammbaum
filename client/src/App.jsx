@@ -9,9 +9,11 @@ import OverviewPage from './pages/OverviewPage.jsx'
 import DogDetailPage from './pages/DogDetailPage.jsx'
 import BreedingPage from './pages/BreedingPage.jsx'
 import CollagePage from './pages/CollagePage.jsx'
+import PinboardPage from './pages/PinboardPage.jsx'
 
 const NAV_ITEMS = [
   { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
+  { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
   { to: '/zuchtbuch', icon: 'book', label: 'Zuchtbuch' },
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
@@ -85,6 +87,7 @@ export default function App() {
         <Routes>
           <Route path="/stammbaum" element={<OverviewPage family={family} />} />
           <Route path="/hund/:id" element={<DogDetailPage family={family} />} />
+          <Route path="/pinnwand" element={<PinboardPage />} />
           <Route path="/zuchtbuch" element={<BreedingPage />} />
           <Route path="/collage" element={<CollagePage />} />
           <Route path="*" element={<Navigate to="/stammbaum" replace />} />
@@ -92,7 +95,7 @@ export default function App() {
       </main>
       <footer className="app-footer">
         <div className="tricolor" aria-hidden="true" />
-        <p>Familienchronik · mit Liebe fürs Rudel geführt</p>
+        <p>Familienchronik · damit wir wissen, wie es den anderen geht</p>
       </footer>
     </div>
   )

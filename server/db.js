@@ -62,6 +62,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_dogs_father ON dogs(father_dog_id);
   CREATE INDEX IF NOT EXISTS idx_timeline_dog ON timeline_entries(dog_id, datum);
   CREATE INDEX IF NOT EXISTS idx_breeding_family ON breeding_events(family_id, datum);
+
+  CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_id INTEGER NOT NULL REFERENCES families(id),
+    autor_name TEXT NOT NULL,
+    text TEXT NOT NULL,
+    termin_datum TEXT,
+    termin_zeit TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_notes_family ON notes(family_id, created_at);
+  CREATE INDEX IF NOT EXISTS idx_timeline_family_created ON timeline_entries(family_id, created_at);
 `)
 
 // Spalten, die nach dem ersten Release dazukamen – bestehende Datenbanken werden ergänzt.

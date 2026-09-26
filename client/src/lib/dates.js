@@ -59,3 +59,30 @@ export function ageText(birthIso, atIso = todayIso()) {
   const weeks = Math.floor(days / 7)
   return `${weeks} ${weeks === 1 ? 'Woche' : 'Wochen'}`
 }
+
+const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
+
+// "Sa, 18. Oktober 2026 · 14:00 Uhr" – mit short ohne Jahr: "Sa, 18. Oktober · 14:00 Uhr"
+export function formatTermin(dateIso, time, { short = false } = {}) {
+  const p = parts(dateIso)
+  if (!p) return ''
+  const weekday = WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()]
+  const day = short ? formatDayMonth(dateIso) : formatDateLong(dateIso)
+  return `${weekday}, ${day}${time ? ` · ${time} Uhr` : ''}`
+}
+
+// SQLite-Zeitstempel ("2026-09-26 11:22:33", UTC) als "gerade eben", "heute", "gestern", "vor 3 Tagen", "12. Mai 2026"
+export function relativeTime(sqliteTimestamp, now = new Date()) {
+  const then = new Date(`${sqliteTimestamp.replace(' ', 'T')}Z`)
+  if (Number.isNaN(then.getTime())) return ''
+  const minutes = Math.floor((now - then) / 60_000)
+  if (minutes < 2) return 'gerade eben'
+  if (minutes < 60) return `vor ${minutes} Minuten`
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const days = Math.round((startOfDay(now) - startOfDay(then)) / 86_400_000)
+  if (days === 0) return 'heute'
+  if (days === 1) return 'gestern'
+  if (days < 7) return `vor ${days} Tagen`
+  const pad = (n) => String(n).padStart(2, '0')
+  return formatDateLong(`${then.getFullYear()}-${pad(then.getMonth() + 1)}-${pad(then.getDate())}`)
+}

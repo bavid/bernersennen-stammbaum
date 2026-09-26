@@ -149,28 +149,28 @@ export default function LoginPage({ onLogin }) {
       <section className="login-hero" aria-hidden="true">
         <div className="login-hero-inner">
           <BernerMark size={88} className="login-mark" />
-          <p className="login-kicker">Berner Sennenhunde · seit Generationen</p>
+          <p className="login-kicker">Eine Familie · viele Zuhause</p>
           <p className="login-headline">
-            Die Chronik
+            Wie geht’s
             <br />
-            <em>eures Rudels.</em>
+            <em>den anderen?</em>
           </p>
           <p className="login-lede">
-            Stammbaum, Erinnerungen und Würfe – an einem Ort, für die ganze Familie. Jeder Hund bekommt seine eigene
-            Geschichte, Jahr für Jahr.
+            Geschwister, Eltern und Großeltern leben in verschiedenen Familien. Hier bleibt ihr verbunden: Klickt einen
+            Hund an und schaut nach, was er so treibt.
           </p>
           <ul className="login-facts">
             <li>
               <strong>Stammbaum</strong>
-              <span>über Generationen verknüpft</span>
+              <span>wer mit wem verwandt ist</span>
             </li>
             <li>
-              <strong>Timeline</strong>
-              <span>jeder Eintrag landet am richtigen Tag</span>
+              <strong>Chronik</strong>
+              <span>was jeder Hund erlebt</span>
             </li>
             <li>
-              <strong>Collagen</strong>
-              <span>zum Ausdrucken und Verschenken</span>
+              <strong>Pinnwand</strong>
+              <span>Treffen und Notizen für alle</span>
             </li>
           </ul>
         </div>
@@ -184,7 +184,7 @@ export default function LoginPage({ onLogin }) {
             <h1>{mode === 'login' ? 'Anmelden' : 'Rudel anlegen'}</h1>
             <p className="muted">
               {mode === 'login'
-                ? 'Mit dem Passwort eures Rudels öffnet sich euer Stammbaum.'
+                ? 'Mit dem gemeinsamen Passwort seht ihr, was sich bei allen tut.'
                 : 'Gebt eurem Rudel einen Namen und ein gemeinsames Passwort.'}
             </p>
           </div>

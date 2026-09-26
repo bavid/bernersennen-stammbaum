@@ -26,6 +26,7 @@ function deleteFamily(db, familyId) {
       db.prepare('UPDATE breeding_events SET vater_dog_id = NULL, vater_freitext = ? WHERE vater_dog_id = ? AND family_id != ?').run(label, dog.id, familyId)
     }
     db.prepare('DELETE FROM timeline_entries WHERE family_id = ?').run(familyId)
+    db.prepare('DELETE FROM notes WHERE family_id = ?').run(familyId)
     db.prepare('DELETE FROM breeding_events WHERE family_id = ?').run(familyId)
     db.prepare('UPDATE dogs SET mother_dog_id = NULL, father_dog_id = NULL WHERE family_id = ?').run(familyId)
     db.prepare('DELETE FROM dogs WHERE family_id = ?').run(familyId)

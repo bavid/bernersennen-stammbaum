@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -115,6 +115,7 @@ function DogHero({ dog, onEdit, onAddEntry, onOpenPhoto }) {
 export default function DogDetailPage({ family }) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { hash } = useLocation()
   const toast = useToast()
 
   const [dog, setDog] = useState(null)
@@ -157,6 +158,14 @@ export default function DogDetailPage({ family }) {
       current = false
     }
   }, [load])
+
+  // Aus "Neu im Rudel" verlinkt (#entry-12): einmalig direkt zum Eintrag springen
+  const handledHash = useRef(null)
+  useEffect(() => {
+    if (!dog || !hash.startsWith('#entry-') || handledHash.current === hash) return
+    handledHash.current = hash
+    setHighlightKey(hash.slice(1))
+  }, [dog, hash])
 
   // Nach dem Speichern zum Eintrag springen – dorthin, wo ihn das Datum einsortiert hat.
   useEffect(() => {

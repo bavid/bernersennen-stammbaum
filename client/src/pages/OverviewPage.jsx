@@ -6,6 +6,8 @@ import DogForm from '../components/DogForm.jsx'
 import Modal from '../components/Modal.jsx'
 import Icon from '../components/Icon.jsx'
 import BernerMark from '../components/BernerMark.jsx'
+import ActivityFeed from '../components/ActivityFeed.jsx'
+import { nextTermin } from '../lib/notes.js'
 import { useToast } from '../components/Toast.jsx'
 import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
 
@@ -32,15 +34,22 @@ function Stats({ dogs, allDogs }) {
 export default function OverviewPage({ family }) {
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
+  const [activity, setActivity] = useState(null)
   const [error, setError] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
 
   async function loadDogs() {
-    const [own, all] = await Promise.all([api.listDogs(), api.listAllDogs()])
+    const [own, all, recent, notes] = await Promise.all([
+      api.listDogs(),
+      api.listAllDogs(),
+      api.recentActivity(4),
+      api.listNotes()
+    ])
     setDogs(own)
     setAllDogs(all)
+    setActivity({ entries: recent, termin: nextTermin(notes) })
   }
 
   useEffect(() => {
@@ -61,8 +70,8 @@ export default function OverviewPage({ family }) {
           <span className="eyebrow">Stammbaum</span>
           <h1>{family.name}</h1>
           <p className="page-lede">
-            Alle Hunde eures Rudels über die Generationen. Ein Klick auf einen Hund öffnet seine Chronik mit allen
-            Erinnerungen.
+            Damit wir wissen, was die anderen treiben: Klick einen Hund an und schau nach, wie es ihm geht – oder erzähl,
+            was er gerade erlebt.
           </p>
         </div>
         <div className="page-hero-side">
@@ -87,6 +96,8 @@ export default function OverviewPage({ family }) {
           </button>
         </div>
       )}
+
+      {dogs && dogs.length > 0 && activity && <ActivityFeed entries={activity.entries} termin={activity.termin} />}
 
       {dogs && dogs.length > 0 && <PedigreeTree dogs={dogs} allDogs={allDogs} />}
 

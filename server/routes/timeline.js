@@ -35,6 +35,25 @@ function loadOwnEntry(req, res) {
   return entry
 }
 
+const RECENT_DEFAULT = 6
+const RECENT_MAX = 20
+
+// "Was treiben die anderen?": zuletzt geschriebene Einträge aller Hunde des Rudels
+router.get('/recent', requireAuth, (req, res) => {
+  const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || RECENT_DEFAULT, 1), RECENT_MAX)
+  const rows = db
+    .prepare(
+      `SELECT t.*, d.name AS dog_name, d.name_unbekannt AS dog_name_unbekannt, d.rasse AS dog_rasse,
+              d.foto_url AS dog_foto_url
+       FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id
+       WHERE t.family_id = ?
+       ORDER BY t.created_at DESC, t.id DESC
+       LIMIT ?`
+    )
+    .all(req.familyId, limit)
+  res.json(rows.map(toEntry))
+})
+
 // Chronologisch aufsteigend: die Timeline erzählt das Leben von der Geburt an.
 router.get('/', requireAuth, (req, res) => {
   const dogId = cleanId(req.query.dogId)

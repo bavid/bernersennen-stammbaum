@@ -7,7 +7,7 @@ const path = require('node:path')
 const bcrypt = require('bcryptjs')
 const { uploadDir } = require('../config')
 const db = require('../db')
-const { FAMILY_NAME, DOGS, TIMELINE, BREEDING } = require('../seed/demo-data')
+const { FAMILY_NAME, DOGS, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const DEFAULT_PASSWORD = 'sonnenhang'
@@ -76,6 +76,14 @@ const seed = db.transaction((password, copyImage) => {
   for (const entry of TIMELINE) {
     const fotos = (entry.fotos || []).map(copyImage)
     insertEntry.run(ids[entry.dog], familyId, entry.autor, entry.datum, entry.titel, entry.text || null, JSON.stringify(fotos))
+  }
+
+  const insertNote = db.prepare(
+    `INSERT INTO notes (family_id, autor_name, text, termin_datum, termin_zeit, created_at)
+     VALUES (?, ?, ?, ?, ?, datetime('now', ?))`
+  )
+  for (const note of NOTES) {
+    insertNote.run(familyId, note.autor, note.text, note.terminDatum || null, note.terminZeit || null, `-${note.hoursAgo} hours`)
   }
 
   const insertBreeding = db.prepare(

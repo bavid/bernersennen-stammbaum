@@ -1,7 +1,9 @@
 # Familienchronik – Berner Sennenhund Stammbaum
 
-Eine kleine Web-App, mit der Familien ihr Berner-Sennenhund-Rudel gemeinsam dokumentieren:
-Stammbaum über Generationen, eine Chronik pro Hund, Zuchtbuch und druckbare Collagen.
+**Wie geht’s den anderen?** Geschwister, Eltern und Großeltern eines Wurfs leben meist in
+verschiedenen Familien. Diese kleine Web-App hält sie verbunden: Klick einen Hund an und schau nach,
+was er so treibt – mit Stammbaum über Generationen, einer Chronik pro Hund, einer gemeinsamen
+Pinnwand für Treffen und Notizen, Zuchtbuch und druckbaren Collagen.
 
 ![Stammbaum über fünf Generationen mit Rassen und Wurfdatum](docs/screenshots/stammbaum.jpg)
 
@@ -11,7 +13,11 @@ Stammbaum über Generationen, eine Chronik pro Hund, Zuchtbuch und druckbare Col
     <td width="50%"><img src="docs/screenshots/timeline.jpg" alt="Nachgetragener Eintrag landet automatisch am richtigen Datum"></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/login.jpg" alt="Login-Seite"></td>
+    <td><img src="docs/screenshots/pinnwand.jpg" alt="Pinnwand mit Treffen und Notizen"></td>
+    <td><img src="docs/screenshots/neu-im-rudel.jpg" alt="Neu im Rudel: nächstes Treffen und neueste Einträge"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/login.jpg" alt="Login: Wie geht’s den anderen?"></td>
     <td align="center"><img src="docs/screenshots/mobil.jpg" alt="Stammbaum auf dem Handy" width="260"></td>
   </tr>
 </table>
@@ -27,6 +33,10 @@ Stammbaum über Generationen, eine Chronik pro Hund, Zuchtbuch und druckbare Col
 - **Chronik pro Hund**: Einträge mit Datum, Text und Fotos. Das Datum bestimmt die Position.
   Ein Eintrag von 2018, der heute nachgetragen wird, landet automatisch zwischen 2017 und 2019.
   Geburt, Deckakte und Nachwuchs erscheinen als automatische Meilensteine.
+- **Neu im Rudel**: Über dem Stammbaum stehen das nächste Treffen und die zuletzt geschriebenen
+  Einträge aller Hunde – ein Klick springt direkt zum Eintrag.
+- **Pinnwand**: Einfache Zettel für alle, optional mit Termin (Datum, Uhrzeit). Kommende Treffen
+  stehen oben, vergangene rutschen ans Ende.
 - **Zuchtbuch**: Deckakte und Würfe, Rüden aus dem eigenen Rudel oder als Freitext.
 - **Collage**: A4-Collage aus Porträt, Chronik-Fotos und Eltern, Download als PNG.
 - **Rudel mit Passwort**: Jedes Rudel hat ein gemeinsames Passwort und sieht nur seine eigenen

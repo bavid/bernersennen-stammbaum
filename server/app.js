@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth')
 const dogsRoutes = require('./routes/dogs')
 const timelineRoutes = require('./routes/timeline')
 const breedingRoutes = require('./routes/breeding')
+const notesRoutes = require('./routes/notes')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireAuth } = require('./middleware/auth')
 
@@ -91,6 +92,7 @@ function createApp() {
   app.use('/api/dogs', dogsRoutes)
   app.use('/api/timeline', timelineRoutes)
   app.use('/api/breeding', breedingRoutes)
+  app.use('/api/notes', notesRoutes)
   app.use('/api/uploads', uploadsRoutes)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))
 

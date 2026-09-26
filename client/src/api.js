@@ -61,6 +61,12 @@ export const api = {
   updateTimelineEntry: (id, payload) => request(`/timeline/${id}`, json('PUT', payload)),
   deleteTimelineEntry: (id) => request(`/timeline/${id}`, { method: 'DELETE' }),
 
+  recentActivity: (limit = 5) => request(`/timeline/recent?limit=${limit}`),
+
+  listNotes: () => request('/notes'),
+  createNote: (payload) => request('/notes', json('POST', payload)),
+  deleteNote: (id) => request(`/notes/${id}`, { method: 'DELETE' }),
+
   listBreedingEvents: () => request('/breeding'),
   createBreedingEvent: (payload) => request('/breeding', json('POST', payload)),
   deleteBreedingEvent: (id) => request(`/breeding/${id}`, { method: 'DELETE' }),
