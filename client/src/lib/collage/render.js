@@ -44,13 +44,25 @@ function drawTricolor(ctx, y) {
   })
 }
 
-function drawHeader(ctx, page) {
+const MIN_TITLE_SIZE = 48
+let measureContext = null
+
+// Größte Titelschrift (in Seiteneinheiten), bei der der Titel in eine Zeile passt –
+// gemeinsam genutzt von Vorschau und Export, damit beide gleich umbrechen.
+export function titleFontSize(title, ctx = null) {
+  const context = ctx || (measureContext ??= document.createElement('canvas').getContext('2d'))
   let size = TITLE_SIZE
-  ctx.font = `600 ${size}px ${DISPLAY_FONT}`
-  while (size > 48 && ctx.measureText(page.title).width > PAGE.width - MARGIN * 2) {
+  context.font = `600 ${size}px ${DISPLAY_FONT}`
+  while (size > MIN_TITLE_SIZE && context.measureText(title).width > PAGE.width - MARGIN * 2) {
     size -= 4
-    ctx.font = `600 ${size}px ${DISPLAY_FONT}`
+    context.font = `600 ${size}px ${DISPLAY_FONT}`
   }
+  return size
+}
+
+function drawHeader(ctx, page) {
+  const size = titleFontSize(page.title, ctx)
+  ctx.font = `600 ${size}px ${DISPLAY_FONT}`
   ctx.fillStyle = COLORS.ink
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'

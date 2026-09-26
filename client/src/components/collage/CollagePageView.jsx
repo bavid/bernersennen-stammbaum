@@ -1,6 +1,6 @@
-import { useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CAPTION_HEIGHT, MARGIN, PAGE, computeFrames, dragFocus } from '../../lib/collage/layout.js'
-import { hasCaptions } from '../../lib/collage/render.js'
+import { hasCaptions, titleFontSize } from '../../lib/collage/render.js'
 
 const pct = (value, total) => `${(value / total) * 100}%`
 
@@ -78,14 +78,28 @@ function Frame({ photo, frame, interactive, selected, onSelect, onChange }) {
 }
 
 // Eine Collage-Seite. interactive=false für Vorschaubilder in der Seitenleiste.
+// Neu messen, sobald die Schriften geladen sind (vorher misst der Browser mit der Ersatzschrift)
+function useFontsReady() {
+  const [ready, setReady] = useState(() => document.fonts?.status === 'loaded')
+  useEffect(() => {
+    if (!ready) document.fonts?.ready.then(() => setReady(true))
+  }, [ready])
+  return ready
+}
+
 export default function CollagePageView({ page, interactive = false, selectedPhotoId, onSelectPhoto, onPhotoChange }) {
   const withCaptions = hasCaptions(page)
   const frames = computeFrames(page.photos.length, { withCaptions })
+  const fontsReady = useFontsReady()
+  const titleSize = useMemo(() => titleFontSize(page.title), [page.title, fontsReady])
 
   return (
     <div className={`cpage ${interactive ? 'is-interactive' : ''}`}>
       <div className="cpage-tricolor cpage-tricolor-top" />
-      <div className="cpage-title" style={{ left: pct(MARGIN, PAGE.width), right: pct(MARGIN, PAGE.width) }}>
+      <div
+        className="cpage-title"
+        style={{ left: pct(MARGIN, PAGE.width), right: pct(MARGIN, PAGE.width), fontSize: `${(titleSize / PAGE.width) * 100}cqw` }}
+      >
         {page.title}
       </div>
       <div className="cpage-subtitle" style={{ left: pct(MARGIN, PAGE.width), right: pct(MARGIN, PAGE.width) }}>
