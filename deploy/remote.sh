@@ -12,8 +12,8 @@
 #   seed <pw>      Demo-Rudel mit Testbildern anlegen (Passwort <pw>)
 #   wipe --yes     ALLE Daten löschen (DB + Fotos)
 #
-# Öffentlich erreichbar ist nur Caddy: HTTPS auf $HTTPS_PORT (Let's Encrypt), Port 80 für die
-# Zertifikatsprüfung. Die App selbst lauscht nur im Docker-Netz.
+# Die App lauscht nur auf 127.0.0.1:$HTTPS_PORT. HTTPS nach außen (Let's Encrypt, Port 80 für die
+# Zertifikatsprüfung) macht der gemeinsame Caddy des Servers in /opt/proxy (Repo "server").
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/bernersennen-stammbaum}"
@@ -87,7 +87,7 @@ ensure_env() {
     env_default TRUST_PROXY 1
   )
   chmod 600 .env
-  mkdir -p data backups caddy/data caddy/config
+  mkdir -p data backups
   chown "$CONTAINER_UID:$CONTAINER_UID" data
 }
 
@@ -116,8 +116,7 @@ wait_healthy() {
     fi
     sleep 3
   done
-  $COMPOSE logs --tail 40 caddy || true
-  warn "App läuft, aber $site ist (noch) nicht per HTTPS erreichbar. Ports 80 und $HTTPS_PORT offen?"
+  warn "App läuft, aber $site ist (noch) nicht per HTTPS erreichbar. Läuft der Server-Proxy? (cd /opt/proxy && docker compose logs --tail 40)"
 }
 
 start() {

@@ -68,13 +68,16 @@ Unter Windows startet `start.bat` dasselbe per Doppelklick.
 
 ## Auf einem Server betreiben (Docker + HTTPS)
 
-Zwei Container: die App (nur intern erreichbar) und davor **Caddy**, das automatisch ein
-Zertifikat von [Let's Encrypt](https://letsencrypt.org/getting-started/) holt und erneuert.
-Ohne eigene Domain bekommt direkt die Server-IP ein Zertifikat (Let's-Encrypt-Profil
-`shortlived`, ca. 6 Tage gültig, Caddy erneuert selbstständig). Standard-Adresse:
-`https://SERVER-IP:3010`. Datenbank und Fotos liegen in `data/`, Zertifikate in `caddy/`.
+Die App läuft als Container und lauscht nur auf `127.0.0.1:3010`. HTTPS davor macht der
+**gemeinsame Caddy des Servers** (eigenes Repo `server`, auf dem Server in `/opt/proxy`), der
+auch die anderen Projekte auf dem Server bedient. Er holt automatisch ein Zertifikat von
+[Let's Encrypt](https://letsencrypt.org/getting-started/) für die Server-IP (Profil
+`shortlived`, ca. 6 Tage gültig, Caddy erneuert selbstständig) und leitet
+`https://SERVER-IP:3010` an die App weiter. Datenbank und Fotos liegen in `data/`.
 
 Auf dem Server müssen **Port 80** (Zertifikatsprüfung) und **Port 3010** (HTTPS) erreichbar sein.
+Ohne den Server-Proxy ist die App nur per SSH-Tunnel erreichbar:
+`ssh -L 3010:127.0.0.1:3010 root@SERVER-IP` → `http://localhost:3010`.
 
 ### Mit `manage.ps1` (Windows)
 
@@ -104,13 +107,13 @@ docker compose up -d --build
 | Variable             | Bedeutung                                                              |
 | -------------------- | ---------------------------------------------------------------------- |
 | `JWT_SECRET`         | **Pflicht.** Zufälliges Secret für Session-Cookies                     |
-| `PUBLIC_HOST`        | **Pflicht.** Server-IP oder Domain, für die das Zertifikat ausgestellt wird |
-| `HTTPS_PORT`         | Port für HTTPS nach außen (Standard 3010)                               |
+| `PUBLIC_HOST`        | Server-IP oder Domain (für den HTTPS-Check nach dem Deploy)            |
+| `HTTPS_PORT`         | Port der Seite (Standard 3010): App auf `127.0.0.1`, HTTPS außen per Server-Proxy |
 | `FAMILY_INVITE_CODE` | Code zum Anlegen neuer Rudel (leer = jeder darf anlegen)               |
 | `COOKIE_SECURE`      | `true` – Cookies nur über HTTPS                                        |
 | `TRUST_PROXY`        | `1` – App steht hinter Caddy, Rate-Limit sieht echte IPs               |
 
-Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen – das Zertifikat gilt dann für die Domain.
+Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen und die Domain im Server-Proxy eintragen.
 
 ## Sicherheit
 
@@ -132,6 +135,5 @@ server/          Express-API + SQLite
   seed/          Demo-Daten und Testbilder
   scripts/       seed.js, reset.js
 deploy/remote.sh Server-Befehle (setup, deploy, backup, seed, wipe …)
-deploy/Caddyfile HTTPS-Proxy mit Let's Encrypt
 manage.ps1       Windows-Menü für den Server
 ```

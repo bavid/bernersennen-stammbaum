@@ -4,34 +4,18 @@ services:
     image: bernersennen-stammbaum:latest
     container_name: bernersennen-stammbaum
     restart: unless-stopped
-    # Nur intern erreichbar – nach außen spricht ausschließlich Caddy (HTTPS)
-    expose:
-      - "3000"
+    # Nur auf localhost erreichbar. HTTPS nach außen macht der gemeinsame Caddy des Servers
+    # (Repo "server", /opt/proxy): er lauscht auf der öffentlichen IP unter demselben Port
+    # und leitet https://SERVER-IP:HTTPS_PORT an 127.0.0.1:HTTPS_PORT weiter.
+    ports:
+      - "127.0.0.1:${HTTPS_PORT:-3010}:3000"
     env_file:
       - .env
     volumes:
       # SQLite-Datenbank und hochgeladene Fotos (Host-Ordner muss UID 1000 gehören)
       - ./data:/data
-    logging: &logging
+    logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-
-  caddy:
-    image: caddy:2
-    container_name: bernersennen-stammbaum-caddy
-    restart: unless-stopped
-    depends_on:
-      - chronik
-    ports:
-      - "80:80" # Let's-Encrypt-Prüfung (HTTP-01)
-      - "${HTTPS_PORT:-3010}:${HTTPS_PORT:-3010}"
-    environment:
-      PUBLIC_HOST: ${PUBLIC_HOST:?PUBLIC_HOST in .env setzen (Server-IP oder Domain)}
-      HTTPS_PORT: ${HTTPS_PORT:-3010}
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./caddy/data:/data
-      - ./caddy/config:/config
-    logging: *logging
