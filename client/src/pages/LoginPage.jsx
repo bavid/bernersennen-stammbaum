@@ -6,11 +6,25 @@ import Icon from '../components/Icon.jsx'
 const MIN_PASSWORD_LENGTH = 6
 
 // Unsichtbar für Menschen (auch für Screenreader), Bots füllen es trotzdem aus
+// Nur bei der Rudel-Anlage und bewusst nach dem Passwortfeld: Passwort-Manager halten ein Textfeld
+// vor dem Passwort für den Benutzernamen und füllen es sonst aus. Die data-Attribute bitten
+// LastPass, 1Password, Bitwarden & Co., das Feld zu ignorieren.
 function Honeypot({ value, onChange }) {
   return (
     <div className="honeypot" aria-hidden="true">
-      <label htmlFor="website">Website</label>
-      <input id="website" name="website" tabIndex={-1} autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} />
+      <label htmlFor="hp-feld">Bitte leer lassen</label>
+      <input
+        id="hp-feld"
+        name="hp_feld"
+        tabIndex={-1}
+        autoComplete="off"
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-bwignore="true"
+        data-form-type="other"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   )
 }
@@ -55,7 +69,6 @@ function PasswordField({ id, label, value, onChange, autoFocus, autoComplete, mi
 
 function LoginForm({ onLogin }) {
   const [password, setPassword] = useState('')
-  const [website, setWebsite] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -64,7 +77,7 @@ function LoginForm({ onLogin }) {
     setError(null)
     setLoading(true)
     try {
-      onLogin(await api.login(password, website))
+      onLogin(await api.login(password))
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -74,7 +87,6 @@ function LoginForm({ onLogin }) {
   return (
     <form className="form-stack" onSubmit={handleSubmit}>
       {error && <div className="error-banner" role="alert">{error}</div>}
-      <Honeypot value={website} onChange={setWebsite} />
       <PasswordField
         id="login-password"
         label="Rudel-Passwort"
@@ -131,7 +143,6 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
           required
         />
       </div>
-      <Honeypot value={website} onChange={setWebsite} />
       <PasswordField
         id="family-password"
         label="Gemeinsames Passwort"
@@ -147,6 +158,7 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
       <p className="field-hint">
         Mindestens {MIN_PASSWORD_LENGTH} Zeichen. Alle, die das Passwort kennen, können die Chronik mitpflegen.
       </p>
+      <Honeypot value={website} onChange={setWebsite} />
       {inviteRequired && (
         <div className="field">
           <label className="field-label" htmlFor="invite-code">

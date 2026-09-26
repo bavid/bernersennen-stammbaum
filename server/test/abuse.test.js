@@ -25,11 +25,14 @@ test('spam and flood protection', async (t) => {
     assert.match(res.data.error, /Passwort belegt/)
   })
 
-  await t.test('bots filling the hidden honeypot field are rejected', async () => {
+  await t.test('bots filling the hidden honeypot field cannot register a pack', async () => {
     const signup = await createFamily(base, 'Bot-Rudel', 'botpasswort', { website: 'http://spam.example' })
     assert.equal(signup.status, 400)
-    const login = await call(base, '/api/login', { method: 'POST', body: { password: 'passwortA', website: 'x' } })
-    assert.equal(login.status, 400)
+  })
+
+  await t.test('login ignores the honeypot – password managers autofill it with the saved username', async () => {
+    const login = await call(base, '/api/login', { method: 'POST', body: { password: 'passwortA', website: 'Rudel A' } })
+    assert.equal(login.status, 200)
   })
 
   await t.test('writes per pack are rate limited', async () => {

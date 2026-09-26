@@ -70,7 +70,9 @@ router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => 
   }
 })
 
-router.post('/login', authLimiter, rejectHoneypot, async (req, res, next) => {
+// Kein Honeypot beim Login: Passwort-Manager füllen das versteckte Feld mit dem gespeicherten
+// Benutzernamen und sperren sonst echte Menschen aus. Schutz hier: authLimiter.
+router.post('/login', authLimiter, async (req, res, next) => {
   try {
     const { password } = req.body || {}
     if (typeof password !== 'string' || !password) {

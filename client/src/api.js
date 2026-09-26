@@ -47,7 +47,7 @@ const json = (method, body) => ({ method, body: JSON.stringify(body) })
 export const api = {
   config: () => request('/config'),
   me: () => request('/me'),
-  login: (password, website = '') => request('/login', json('POST', { password, website })),
+  login: (password) => request('/login', json('POST', { password })),
   createFamily: (payload) => request('/families', json('POST', payload)),
   logout: () => request('/logout', { method: 'POST' }),
   renameFamily: (name) => request('/family', json('PUT', { name })),
