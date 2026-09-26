@@ -26,7 +26,8 @@ Pinnwand für Treffen und Notizen, Zuchtbuch und druckbaren Collagen.
 
 - **Stammbaum**: Generationen werden automatisch berechnet, Eltern und Würfe mit Linien verbunden,
   jede Generation zeigt ihr Geburtsdatum bzw. ihre Geburtsjahre. Beim Überfahren eines Hundes wird
-  seine Familie hervorgehoben, ein Klick öffnet seine Seite.
+  seine Familie hervorgehoben, ein Klick öffnet seine Seite. Große Bäume lassen sich zoomen
+  (Knöpfe oder Strg + Mausrad), mit der Maus verschieben, einpassen und im Vollbild ansehen.
 - **Rasse & unbekannte Vorfahren**: Jeder Hund hat eine Rasse (auch Mischungen wie
   „Berner × Hovawart"). Vorfahren ohne bekannten Namen lassen sich mit „Name unbekannt" anlegen
   und erscheinen trotzdem als eigene Karte im Baum.

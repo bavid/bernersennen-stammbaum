@@ -1,80 +1,65 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import DogCard from './DogCard.jsx'
-import { adoptiveAnchors, collectNodes, computeUnions, generationDates, housematePairs, layoutPedigree } from '../lib/pedigree.js'
+import PedigreeToolbar from './PedigreeToolbar.jsx'
+import usePanZoom from '../hooks/usePanZoom.js'
+import {
+  adoptiveAnchors,
+  collectNodes,
+  computeUnions,
+  generationDates,
+  housemateGroups,
+  housematePairs,
+  layoutPedigree
+} from '../lib/pedigree.js'
+import { crossRowPath, householdPath, unionPaths } from '../lib/pedigreeLines.js'
 import { adoptiveTitle, displayName } from '../lib/timeline.js'
+import { fitZoom, zoomIn, zoomOut } from '../lib/zoom.js'
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 const HOUSE_PATH = 'M-6,1 L0,-5 L6,1 M-4,-0.5 L-4,5 L4,5 L4,-0.5'
-const ADJACENT_GAP = 70 // bis zu diesem Abstand gelten zwei Karten als Nachbarn
-const ARC_DEPTH = 30
 const PHONE_QUERY = '(max-width: 720px)' // wie der Handy-Umbruch in tree.css
 
+// Position einer Karte im Baum, unabhängig vom Zoom (offset* ignoriert transform)
+function offsetBox(element, container) {
+  let left = 0
+  let top = 0
+  let node = element
+  while (node && node !== container) {
+    left += node.offsetLeft
+    top += node.offsetTop
+    node = node.offsetParent
+  }
+  if (node !== container) return null
+  const { offsetWidth: width, offsetHeight: height } = element
+  return { left, right: left + width, top, bottom: top + height, cx: left + width / 2, cy: top + height / 2 }
+}
+
 function measure(container, cardRefs) {
-  const origin = container.getBoundingClientRect()
   const boxes = new Map()
   for (const [id, element] of cardRefs.current) {
-    if (!element) continue
-    const rect = element.getBoundingClientRect()
-    boxes.set(id, {
-      left: rect.left - origin.left,
-      right: rect.right - origin.left,
-      cx: rect.left - origin.left + rect.width / 2,
-      cy: rect.top - origin.top + rect.height / 2,
-      top: rect.top - origin.top,
-      bottom: rect.bottom - origin.top
-    })
+    const box = element && offsetBox(element, container)
+    if (box) boxes.set(id, box)
   }
-  return { boxes, width: container.scrollWidth, height: container.scrollHeight }
+  return { boxes, width: container.offsetWidth, height: container.offsetHeight }
 }
 
-// Eltern -> Knotenpunkt -> Kinder, als weiche Kurven.
-function unionPaths(union, boxes) {
-  const parents = union.parents.map((id) => boxes.get(id)).filter(Boolean)
-  const children = union.children.map((id) => boxes.get(id)).filter(Boolean)
-  if (!parents.length || !children.length) return null
-
-  const parentBottom = Math.max(...parents.map((p) => p.bottom))
-  const childTop = Math.min(...children.map((c) => c.top))
-  const joint = {
-    x: parents.reduce((sum, p) => sum + p.cx, 0) / parents.length,
-    y: parentBottom + (childTop - parentBottom) * 0.45
-  }
-  const curve = (x1, y1, x2, y2) => {
-    const midY = (y1 + y2) / 2
-    return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`
-  }
+// Innenfläche des Rahmens ohne Innenabstand
+function innerSize(scroller) {
+  const style = getComputedStyle(scroller)
+  const pad = (a, b) => (parseFloat(style[a]) || 0) + (parseFloat(style[b]) || 0)
   return {
-    joint,
-    paths: [
-      ...parents.map((p) => curve(p.cx, p.bottom, joint.x, joint.y)),
-      ...children.map((c) => curve(joint.x, joint.y, c.cx, c.top))
-    ]
+    width: scroller.clientWidth - pad('paddingLeft', 'paddingRight'),
+    height: scroller.clientHeight - pad('paddingTop', 'paddingBottom')
   }
 }
 
-// "Lebt zusammen mit": gestrichelte Linie zwischen zwei Karten, Haus-Symbol in der Mitte
-function housematePath(a, b) {
-  if (Math.abs(a.cy - b.cy) < 12) {
-    const [left, right] = a.cx < b.cx ? [a, b] : [b, a]
-    // Direkte Nachbarn: kurze Linie zwischen den Karten
-    if (right.left - left.right < ADJACENT_GAP) {
-      const y = left.cy
-      return { d: `M${left.right},${y} L${right.left},${y}`, mid: { x: (left.right + right.left) / 2, y } }
-    }
-    // Weiter auseinander: Bogen unter den Karten, damit die Linie nicht hinter anderen Karten verschwindet
-    const bottom = Math.max(left.bottom, right.bottom)
-    const depth = bottom + ARC_DEPTH
-    return {
-      d: `M${left.cx},${left.bottom} C${left.cx},${depth} ${right.cx},${depth} ${right.cx},${right.bottom}`,
-      mid: { x: (left.cx + right.cx) / 2, y: bottom + ARC_DEPTH * 0.75 }
-    }
-  }
-  const [upper, lower] = a.cy < b.cy ? [a, b] : [b, a]
-  const midY = (upper.bottom + lower.top) / 2
-  return {
-    d: `M${upper.cx},${upper.bottom} C${upper.cx},${midY} ${lower.cx},${midY} ${lower.cx},${lower.top}`,
-    mid: { x: (upper.cx + lower.cx) / 2, y: midY }
-  }
+function HouseMarker({ x, y }) {
+  return (
+    <g transform={`translate(${x}, ${y})`}>
+      <circle r="10" />
+      <path className="housemate-icon" d={HOUSE_PATH} />
+    </g>
+  )
 }
 
 export default function PedigreeTree({ dogs, allDogs, links = [] }) {
@@ -82,6 +67,10 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
   const rows = useMemo(() => layoutPedigree(nodes, links), [nodes, links])
   const unions = useMemo(() => computeUnions(nodes), [nodes])
   const pairs = useMemo(() => housematePairs(links, nodes), [links, nodes])
+  const groups = useMemo(() => {
+    const rowOf = new Map(rows.flatMap((row, index) => row.map((dog) => [dog.id, index])))
+    return housemateGroups(pairs, rowOf)
+  }, [pairs, rows])
   const adoptiveLabels = useMemo(() => {
     const byId = new Map(nodes.map((n) => [n.id, n]))
     const labels = new Map()
@@ -94,28 +83,91 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
   const scrollRef = useRef(null)
   const containerRef = useRef(null)
   const cardRefs = useRef(new Map())
+  const initialScrollPending = useRef(true)
+  const zoomBeforeExpand = useRef(null)
   const [geometry, setGeometry] = useState(null)
+  const [availableWidth, setAvailableWidth] = useState(0)
   const [hoveredId, setHoveredId] = useState(null)
+  const [expanded, setExpanded] = useState(false)
+  const { zoom, zoomTo, syncLabels } = usePanZoom(scrollRef, containerRef)
 
   const remeasure = useCallback(() => {
     if (containerRef.current) setGeometry(measure(containerRef.current, cardRefs))
   }, [])
 
-  // Ist der Baum breiter als der Bildschirm: am Handy mittig starten (Generationen stehen über den Karten),
-  // am Desktop links, damit die Generationsspalte die erste Karte nicht verdeckt
   useLayoutEffect(() => {
-    const scroller = scrollRef.current
-    const centered = window.matchMedia?.(PHONE_QUERY).matches
-    scroller.scrollLeft = centered ? (scroller.scrollWidth - scroller.clientWidth) / 2 : 0
-  }, [rows])
-
-  useLayoutEffect(() => {
+    initialScrollPending.current = true
     remeasure()
     const observer = new ResizeObserver(remeasure)
     observer.observe(containerRef.current)
     document.fonts?.ready.then(remeasure)
     return () => observer.disconnect()
   }, [rows, remeasure])
+
+  // Breite Bäume: am Handy mittig starten (Generationen stehen über den Karten), am Desktop links
+  useLayoutEffect(() => {
+    if (!geometry || !initialScrollPending.current) return
+    initialScrollPending.current = false
+    const scroller = scrollRef.current
+    const centered = window.matchMedia?.(PHONE_QUERY).matches
+    scroller.scrollLeft = centered ? (scroller.scrollWidth - scroller.clientWidth) / 2 : 0
+    syncLabels()
+  }, [geometry, syncLabels])
+
+  // Schmale Bäume bleiben mittig: die Ebene ist mindestens so breit wie der sichtbare Rahmen
+  useLayoutEffect(() => {
+    const scroller = scrollRef.current
+    const update = () => setAvailableWidth(innerSize(scroller).width)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(scroller)
+    return () => observer.disconnect()
+  }, [])
+
+  const fit = useCallback(() => {
+    const layer = containerRef.current
+    const previous = layer.style.minWidth
+    layer.style.minWidth = '0px' // eigentliche Breite des Baums, ohne Mindestbreite
+    const content = { width: layer.offsetWidth, height: layer.offsetHeight }
+    layer.style.minWidth = previous
+    const available = innerSize(scrollRef.current)
+    zoomTo(fitZoom(content, expanded ? available : { width: available.width }))
+  }, [expanded, zoomTo])
+
+  const collapse = useCallback(() => {
+    setExpanded(false)
+    if (zoomBeforeExpand.current !== null) zoomTo(zoomBeforeExpand.current)
+    zoomBeforeExpand.current = null
+  }, [zoomTo])
+
+  function toggleExpanded() {
+    if (expanded) {
+      collapse()
+      return
+    }
+    zoomBeforeExpand.current = zoom
+    setExpanded(true)
+  }
+
+  // Vollbild öffnet passend eingezoomt – nur beim Öffnen, nicht bei jeder Größenänderung
+  const fitRef = useRef(fit)
+  fitRef.current = fit
+  useLayoutEffect(() => {
+    if (expanded) fitRef.current()
+  }, [expanded])
+
+  // Im Vollbild scrollt die Seite dahinter nicht, Escape schließt
+  useEffect(() => {
+    if (!expanded) return undefined
+    const { overflow } = document.body.style
+    document.body.style.overflow = 'hidden'
+    const onKey = (event) => event.key === 'Escape' && collapse()
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = overflow
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [expanded, collapse])
 
   const related = useMemo(() => {
     if (!hoveredId) return null
@@ -126,84 +178,114 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
         union.children.forEach((id) => ids.add(id))
       }
     }
-    for (const [a, b] of pairs) {
+    for (const members of groups.households) {
+      if (members.includes(hoveredId)) members.forEach((id) => ids.add(id))
+    }
+    for (const [a, b] of groups.crossRow) {
       if (a === hoveredId) ids.add(b)
       if (b === hoveredId) ids.add(a)
     }
     return ids
-  }, [hoveredId, unions, pairs])
+  }, [hoveredId, unions, groups])
 
   const setCardRef = (id) => (element) => {
     if (element) cardRefs.current.set(id, element)
     else cardRefs.current.delete(id)
   }
 
-  return (
-    <div className="pedigree-wrap">
-      <div className="pedigree-scroll" ref={scrollRef}>
-        <div className="pedigree" ref={containerRef}>
-          {geometry && (
-            <svg className="pedigree-lines" width={geometry.width} height={geometry.height} aria-hidden="true">
-              {unions.map((union) => {
-                const drawn = unionPaths(union, geometry.boxes)
-                if (!drawn) return null
-                const active = related && [...union.parents, ...union.children].includes(hoveredId)
-                return (
-                  <g key={union.key} className={active ? 'is-active' : related ? 'is-muted' : ''}>
-                    {drawn.paths.map((d, i) => (
-                      <path key={i} d={d} />
-                    ))}
-                    <circle cx={drawn.joint.x} cy={drawn.joint.y} r="4.5" />
-                  </g>
-                )
-              })}
-              {pairs.map(([a, b]) => {
-                const boxA = geometry.boxes.get(a)
-                const boxB = geometry.boxes.get(b)
-                if (!boxA || !boxB) return null
-                const { d, mid } = housematePath(boxA, boxB)
-                const active = related && (a === hoveredId || b === hoveredId)
-                return (
-                  <g key={`${a}-${b}`} className={`housemate ${active ? 'is-active' : related ? 'is-muted' : ''}`}>
-                    <path d={d} />
-                    <g transform={`translate(${mid.x}, ${mid.y})`}>
-                      <circle r="10" />
-                      <path className="housemate-icon" d={HOUSE_PATH} />
-                    </g>
-                  </g>
-                )
-              })}
-            </svg>
-          )}
+  const lineState = (ids) => (related ? (ids.includes(hoveredId) ? 'is-active' : 'is-muted') : '')
+  const hasHousemates = groups.households.length > 0 || groups.crossRow.length > 0
 
-          {rows.map((row, index) => {
-            const born = generationDates(row)
-            return (
-              <section className="pedigree-row" key={index} aria-label={`Generation ${index + 1}`}>
-                <div className="pedigree-gen" aria-hidden="true">
-                  <span className="pedigree-gen-num">{ROMAN[index] || index + 1}</span>
-                  <span className="pedigree-gen-label">Generation</span>
-                  {born && <span className="pedigree-gen-date">{born}</span>}
-                </div>
-                <div className="pedigree-cards">
-                  {row.map((dog) => (
-                    <DogCard
-                      key={dog.id}
-                      ref={setCardRef(dog.id)}
-                      dog={dog}
-                      adoptiveLabel={adoptiveLabels.get(dog.id)}
-                      highlighted={related?.has(dog.id)}
-                      dimmed={related && !related.has(dog.id)}
-                      onHover={setHoveredId}
-                    />
-                  ))}
-                </div>
-              </section>
-            )
-          })}
+  return (
+    <div className={`pedigree-wrap ${expanded ? 'is-expanded' : ''}`}>
+      <PedigreeToolbar
+        zoom={zoom}
+        expanded={expanded}
+        onZoomIn={() => zoomTo(zoomIn(zoom))}
+        onZoomOut={() => zoomTo(zoomOut(zoom))}
+        onReset={() => zoomTo(1)}
+        onFit={fit}
+        onToggleExpand={toggleExpanded}
+      />
+      <div className="pedigree-scroll" ref={scrollRef}>
+        <div
+          className="pedigree-sizer"
+          style={geometry ? { width: geometry.width * zoom, height: geometry.height * zoom } : undefined}
+        >
+          <div
+            className={`pedigree ${hasHousemates ? 'has-housemates' : ''}`}
+            ref={containerRef}
+            style={{ transform: `scale(${zoom})`, minWidth: availableWidth ? availableWidth / zoom : undefined }}
+          >
+            {geometry && (
+              <svg className="pedigree-lines" width={geometry.width} height={geometry.height} aria-hidden="true">
+                {unions.map((union) => {
+                  const drawn = unionPaths(union, geometry.boxes)
+                  if (!drawn) return null
+                  return (
+                    <g key={union.key} className={lineState([...union.parents, ...union.children])}>
+                      {drawn.paths.map((d, i) => (
+                        <path key={i} d={d} />
+                      ))}
+                      <circle cx={drawn.joint.x} cy={drawn.joint.y} r="4.5" />
+                    </g>
+                  )
+                })}
+                {groups.households.map((members) => {
+                  const boxes = members.map((id) => geometry.boxes.get(id)).filter(Boolean)
+                  if (boxes.length < 2) return null
+                  const { d, icon } = householdPath(boxes)
+                  return (
+                    <g key={members.join('-')} className={`housemate ${lineState(members)}`} data-members={members.length}>
+                      <path d={d} />
+                      <HouseMarker {...icon} />
+                    </g>
+                  )
+                })}
+                {groups.crossRow.map(([a, b]) => {
+                  const boxA = geometry.boxes.get(a)
+                  const boxB = geometry.boxes.get(b)
+                  if (!boxA || !boxB) return null
+                  const { d, icon } = crossRowPath(boxA, boxB)
+                  return (
+                    <g key={`${a}-${b}`} className={`housemate ${lineState([a, b])}`} data-members="2">
+                      <path d={d} />
+                      <HouseMarker {...icon} />
+                    </g>
+                  )
+                })}
+              </svg>
+            )}
+
+            {rows.map((row, index) => {
+              const born = generationDates(row)
+              return (
+                <section className="pedigree-row" key={index} aria-label={`Generation ${index + 1}`}>
+                  <div className="pedigree-gen" aria-hidden="true">
+                    <span className="pedigree-gen-num">{ROMAN[index] || index + 1}</span>
+                    <span className="pedigree-gen-label">Generation</span>
+                    {born && <span className="pedigree-gen-date">{born}</span>}
+                  </div>
+                  <div className="pedigree-cards">
+                    {row.map((dog) => (
+                      <DogCard
+                        key={dog.id}
+                        ref={setCardRef(dog.id)}
+                        dog={dog}
+                        adoptiveLabel={adoptiveLabels.get(dog.id)}
+                        highlighted={related?.has(dog.id)}
+                        dimmed={related && !related.has(dog.id)}
+                        onHover={setHoveredId}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
         </div>
       </div>
-      {pairs.length > 0 && (
+      {hasHousemates && (
         <p className="pedigree-legend">
           <span className="legend-item">
             <span className="legend-line legend-family" /> Abstammung

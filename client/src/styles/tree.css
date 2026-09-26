@@ -4,14 +4,39 @@
   padding: var(--space-2) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-6);
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
+/* Maus: Baum zum Verschieben greifen */
+@media (hover: hover) and (pointer: fine) {
+  .pedigree-scroll {
+    cursor: grab;
+  }
+
+  .pedigree-scroll.is-dragging,
+  .pedigree-scroll.is-dragging .dog-card {
+    cursor: grabbing;
+  }
+}
+
+/* Nimmt die skalierte Größe des Baums ein, damit Scrollbalken und Seitenhöhe stimmen */
+.pedigree-sizer {
+  position: relative;
+}
+
+/* Die Ebene wird per transform: scale() gezoomt; Breite ohne Zoom, Mindestbreite setzt JS */
 .pedigree {
   position: relative;
   display: grid;
   gap: 4.5rem;
   width: max-content;
-  min-width: 100%;
+  transform-origin: 0 0;
+}
+
+/* Platz für die "lebt zusammen"-Klammer unter der letzten Reihe */
+.pedigree.has-housemates {
+  padding-bottom: 2.25rem;
 }
 
 .pedigree-lines {
@@ -61,18 +86,24 @@
   align-items: center;
 }
 
-/* Bleibt links stehen, wenn der Baum breiter als der Bildschirm ist und seitlich scrollt */
+/* Bleibt links stehen, wenn der Baum seitlich scrollt: --label-shift setzt usePanZoom
+   (position: sticky rechnet in gezoomten Ebenen falsch) */
 .pedigree-gen {
-  position: sticky;
-  left: 0;
+  position: relative;
   z-index: 2;
   align-self: stretch;
   display: grid;
   align-content: center;
   line-height: 1;
-  background: linear-gradient(90deg, var(--paper) 78%, transparent);
-  /* deckt auch den Innenabstand links daneben ab, damit dort keine Karte hervorschaut */
-  box-shadow: calc(-1 * var(--space-8)) 0 0 var(--paper);
+  transform: translateX(var(--label-shift, 0px));
+}
+
+/* Erst beim Scrollen ein Hintergrund, damit darunter laufende Karten die Schrift nicht stören */
+.pedigree-scroll.is-scrolled .pedigree-gen {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--paper) 88%, transparent) 78%, transparent);
+  box-shadow: calc(-1 * var(--space-8)) 0 0 color-mix(in srgb, var(--paper) 88%, transparent);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
 }
 
 .pedigree-gen-num {
@@ -230,16 +261,19 @@
     row-gap: var(--space-2);
   }
 
-  /* Bleibt beim seitlichen Scrollen am linken Rand sichtbar */
   .pedigree-gen {
-    left: var(--space-3);
     justify-self: start;
     align-self: auto;
     display: flex;
     align-items: baseline;
     gap: var(--space-2);
+  }
+
+  .pedigree-scroll.is-scrolled .pedigree-gen {
     background: none;
     box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .pedigree-gen-num {
@@ -318,8 +352,9 @@
 
 .pedigree-lines g.housemate path {
   stroke: var(--tan);
-  stroke-width: 2.5;
-  stroke-dasharray: 5 6;
+  stroke-width: 2.25;
+  stroke-dasharray: 6 5;
+  stroke-linejoin: round;
 }
 
 .pedigree-lines g.housemate circle {
@@ -411,4 +446,131 @@
     font-size: 0.6rem;
     line-height: 1.25;
   }
+}
+
+/* Ansicht: Zoom, Einpassen, Vollbild */
+
+.pedigree-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.pedigree-hint {
+  margin-right: auto;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+@media (hover: none) {
+  .pedigree-hint {
+    display: none;
+  }
+}
+
+.zoom-group {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 2.2rem;
+  height: 2.2rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.tool-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.tool-btn:hover:not(:disabled) {
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.tool-btn:disabled {
+  opacity: 0.35;
+}
+
+.tool-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.zoom-value {
+  min-width: 3.6rem;
+  border-inline: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-btn-label {
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+}
+
+.tool-btn-label[aria-pressed='true'] {
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+/* Schmale Handys: Knöpfe kompakter, damit alles in eine Zeile passt */
+@media (max-width: 480px) {
+  .tool-btn {
+    min-width: 2rem;
+    height: 2rem;
+  }
+
+  .zoom-value {
+    min-width: 3.1rem;
+    font-size: var(--text-xs);
+  }
+
+  .tool-btn-label {
+    gap: var(--space-1);
+    padding: 0 var(--space-2);
+    font-size: var(--text-xs);
+  }
+}
+
+/* Vollbild: der Baum füllt den Bildschirm und scrollt in beide Richtungen */
+.pedigree-wrap.is-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3) var(--space-4) var(--space-3);
+  background: var(--paper);
+}
+
+.pedigree-wrap.is-expanded .pedigree-scroll {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.pedigree-wrap.is-expanded .pedigree-legend {
+  margin-bottom: 0;
 }

@@ -130,18 +130,64 @@ export function layoutPedigree(nodes, links = []) {
     }
   }
 
-  // Adoptiv-Tiere rechts neben ihren Mitbewohner setzen
-  rows = rows.map((row) => {
-    const adoptive = row.filter((n) => anchors.has(n.id))
-    const result = row.filter((n) => !anchors.has(n.id))
-    for (const node of adoptive) {
-      const at = result.findIndex((n) => n.id === anchors.get(node.id))
-      const insertAt = at === -1 ? result.length : at + 1 + result.slice(at + 1).filter((n) => anchors.get(n.id) === anchors.get(node.id)).length
-      result.splice(insertAt, 0, node)
-    }
+  rows = rows.map((row) => placeAdoptive(row, anchors, nodeIds))
+  return rows.filter((row) => row.length)
+}
+
+const litterKey = (node, nodeIds) => parentIds(node, nodeIds).join('+') || `solo-${node.id}`
+
+// Adoptiv-Tiere an den Rand des Wurfs ihres Mitbewohners setzen: Der Wurf bleibt zusammen und die
+// Abstammungslinien laufen nicht quer über Adoptiv-Karten. Zwei Mitbewohner im Wurf: einer links, einer rechts.
+function placeAdoptive(row, anchors, nodeIds) {
+  const adoptive = row.filter((n) => anchors.has(n.id))
+  if (!adoptive.length) return row
+  const matesOf = (id) => adoptive.filter((n) => anchors.get(n.id) === id)
+
+  const blocks = []
+  for (const node of row.filter((n) => !anchors.has(n.id))) {
+    const key = litterKey(node, nodeIds)
+    const last = blocks[blocks.length - 1]
+    if (last?.key === key) last.nodes.push(node)
+    else blocks.push({ key, nodes: [node] })
+  }
+
+  const placed = blocks.flatMap((block, index) => {
+    const hosts = block.nodes.filter((n) => matesOf(n.id).length)
+    if (!hosts.length) return block.nodes
+    const leftFirst = hosts.length === 1 && index === 0 && blocks.length > 1
+    const onLeft = hosts.length > 1 || leftFirst ? hosts[0] : null
+    const onRight = onLeft && hosts.length === 1 ? null : hosts[hosts.length - 1]
+    const result = onLeft ? [...matesOf(onLeft.id).reverse(), onLeft] : []
+    for (const node of block.nodes.filter((n) => n !== onLeft && n !== onRight)) result.push(node, ...matesOf(node.id))
+    if (onRight) result.push(onRight, ...matesOf(onRight.id))
     return result
   })
-  return rows.filter((row) => row.length)
+  const placedIds = new Set(placed.map((n) => n.id))
+  return [...placed, ...adoptive.filter((n) => !placedIds.has(n.id))]
+}
+
+// Fasst "lebt zusammen"-Paare einer Reihe zu Haushalten zusammen (eine Klammer statt vieler Bögen).
+// Paare über Generationen hinweg bleiben einzeln.
+export function housemateGroups(pairs, rowOf) {
+  const root = new Map()
+  const find = (id) => {
+    let current = id
+    while (root.get(current) !== current) current = root.get(current)
+    return current
+  }
+  const crossRow = []
+  for (const [a, b] of pairs) {
+    if (rowOf.get(a) !== rowOf.get(b)) {
+      crossRow.push([a, b])
+      continue
+    }
+    for (const id of [a, b]) if (!root.has(id)) root.set(id, id)
+    root.set(find(a), find(b))
+  }
+  const groups = new Map()
+  for (const id of root.keys()) groups.set(find(id), [...(groups.get(find(id)) || []), id])
+  const households = [...groups.values()].map((ids) => ids.sort((x, y) => x - y)).sort((x, y) => x[0] - y[0])
+  return { households, crossRow }
 }
 
 // Geburtsangabe einer Generation: gemeinsames Datum ("14.05.2026"), ein Jahr oder eine Spanne.
