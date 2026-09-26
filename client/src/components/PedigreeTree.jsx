@@ -7,6 +7,7 @@ const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 const HOUSE_PATH = 'M-6,1 L0,-5 L6,1 M-4,-0.5 L-4,5 L4,5 L4,-0.5'
 const ADJACENT_GAP = 70 // bis zu diesem Abstand gelten zwei Karten als Nachbarn
 const ARC_DEPTH = 30
+const PHONE_QUERY = '(max-width: 720px)' // wie der Handy-Umbruch in tree.css
 
 function measure(container, cardRefs) {
   const origin = container.getBoundingClientRect()
@@ -100,10 +101,12 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
     if (containerRef.current) setGeometry(measure(containerRef.current, cardRefs))
   }, [])
 
-  // Ist der Baum breiter als der Bildschirm, mittig starten statt links abgeschnitten
+  // Ist der Baum breiter als der Bildschirm: am Handy mittig starten (Generationen stehen über den Karten),
+  // am Desktop links, damit die Generationsspalte die erste Karte nicht verdeckt
   useLayoutEffect(() => {
     const scroller = scrollRef.current
-    scroller.scrollLeft = (scroller.scrollWidth - scroller.clientWidth) / 2
+    const centered = window.matchMedia?.(PHONE_QUERY).matches
+    scroller.scrollLeft = centered ? (scroller.scrollWidth - scroller.clientWidth) / 2 : 0
   }, [rows])
 
   useLayoutEffect(() => {

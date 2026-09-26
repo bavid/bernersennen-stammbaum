@@ -72,4 +72,22 @@ test('adoptive siblings and other animals living together', async (t) => {
   await t.test('links of other packs stay invisible', async () => {
     assert.deepEqual((await call(base, '/api/dogs/links', { cookie: otherCookie })).data, [])
   })
+
+  await t.test('quick add: creating an animal with housemateId links it in one step', async () => {
+    const res = await createDog({ name: 'Hoppel', geschlecht: 'ruede', tierart: 'anderes', rasse: 'Kaninchen', housemateId: hermes.id })
+    assert.equal(res.status, 201)
+    assert.equal(res.data.rasse, 'Kaninchen')
+    const { data } = await call(base, `/api/dogs/${hermes.id}`, { cookie })
+    assert.deepEqual(data.housemates.map((h) => h.name), ['Hoppel'])
+  })
+
+  await t.test('quick add rejects foreign or invalid housemates without creating the animal', async () => {
+    const countDogs = async () => (await call(base, '/api/dogs', { cookie })).data.length
+    const before = await countDogs()
+    const foreignMate = await createDog({ name: 'Spion', geschlecht: 'ruede', housemateId: foreign.id })
+    assert.equal(foreignMate.status, 400)
+    assert.equal((await createDog({ name: 'Kaputt', geschlecht: 'ruede', housemateId: 'abc' })).status, 400)
+    assert.equal(await countDogs(), before)
+    assert.deepEqual((await call(base, '/api/dogs/links', { cookie: otherCookie })).data, [])
+  })
 })

@@ -57,13 +57,22 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
+  grid-template-columns: 5.25rem minmax(0, 1fr);
   align-items: center;
 }
 
+/* Bleibt links stehen, wenn der Baum breiter als der Bildschirm ist und seitlich scrollt */
 .pedigree-gen {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  align-self: stretch;
   display: grid;
+  align-content: center;
   line-height: 1;
+  background: linear-gradient(90deg, var(--paper) 78%, transparent);
+  /* deckt auch den Innenabstand links daneben ab, damit dort keine Karte hervorschaut */
+  box-shadow: calc(-1 * var(--space-8)) 0 0 var(--paper);
 }
 
 .pedigree-gen-num {
@@ -223,13 +232,14 @@
 
   /* Bleibt beim seitlichen Scrollen am linken Rand sichtbar */
   .pedigree-gen {
-    position: sticky;
     left: var(--space-3);
-    z-index: 1;
     justify-self: start;
+    align-self: auto;
     display: flex;
     align-items: baseline;
     gap: var(--space-2);
+    background: none;
+    box-shadow: none;
   }
 
   .pedigree-gen-num {

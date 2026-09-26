@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { adoptiveTitle, buildTimeline, displayName, dogLabel, genitive, groupByYear, sexLabel, shortName } from './timeline.js'
+import { adoptiveTitle, animalKind, buildTimeline, displayName, dogLabel, genitive, groupByYear, sexLabel, shortName, speciesNoun } from './timeline.js'
 import { ageText, formatDateLong, formatDateShort } from './dates.js'
 
 const dog = { id: 1, name: 'Aiko vom Sonnenhang', geburtsdatum: '2014-05-12' }
@@ -88,6 +88,20 @@ describe('dates', () => {
     expect(adoptiveTitle({ geschlecht: 'ruede', tierart: 'hund' })).toBe('Adoptiv-Bruder')
     expect(adoptiveTitle({ geschlecht: 'huendin', tierart: 'katze' })).toBe('Adoptiv-Katze')
     expect(adoptiveTitle({ geschlecht: 'huendin', tierart: 'anderes' })).toBe('Adoptiv-Geschwister')
+  })
+
+  test('speciesNoun names the animal for buttons like "Katze anlegen"', () => {
+    expect(speciesNoun('hund')).toBe('Hund')
+    expect(speciesNoun('katze')).toBe('Katze')
+    expect(speciesNoun('anderes')).toBe('Tier')
+    expect(speciesNoun(undefined)).toBe('Hund')
+  })
+
+  test('animalKind describes non-dogs, using the free text for other animals', () => {
+    expect(animalKind({ tierart: 'hund', rasse: 'Labrador' })).toBeNull()
+    expect(animalKind({ tierart: 'katze' })).toBe('Katze')
+    expect(animalKind({ tierart: 'anderes', rasse: 'Kaninchen' })).toBe('Kaninchen')
+    expect(animalKind({ tierart: 'anderes', rasse: null })).toBe('Anderes Tier')
   })
 
   test('genitive uses an apostrophe after s-sounds', () => {

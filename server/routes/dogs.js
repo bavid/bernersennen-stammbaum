@@ -21,6 +21,14 @@ const hasKey = (body, key) => Object.prototype.hasOwnProperty.call(body, key)
 const pick = (body, key, fallback) => (hasKey(body, key) ? body[key] : fallback)
 
 const findDog = db.prepare('SELECT * FROM dogs WHERE id = ?')
+const insertDog = db.prepare(
+  `INSERT INTO dogs
+    (family_id, name, name_unbekannt, rasse, tierart, geschlecht, geburtsdatum, farbe_markings,
+     mother_dog_id, father_dog_id, mother_freitext, father_freitext, foto_url, beschreibung)
+   VALUES (@family_id, @name, @name_unbekannt, @rasse, @tierart, @geschlecht, @geburtsdatum, @farbe_markings,
+     @mother_dog_id, @father_dog_id, @mother_freitext, @father_freitext, @foto_url, @beschreibung)`
+)
+const insertLink = db.prepare('INSERT OR IGNORE INTO dog_links (family_id, dog_a_id, dog_b_id) VALUES (?, ?, ?)')
 const findDescendant = db.prepare(`
   WITH RECURSIVE descendants(id) AS (
     SELECT id FROM dogs WHERE mother_dog_id = :root OR father_dog_id = :root
@@ -173,8 +181,7 @@ router.post('/:id/housemates', requireAuth, (req, res) => {
   const other = findDog.get(otherId)
   if (!other || other.family_id !== req.familyId) return res.status(404).json({ error: 'Tier nicht gefunden' })
 
-  const [a, b] = dog.id < other.id ? [dog.id, other.id] : [other.id, dog.id]
-  db.prepare('INSERT OR IGNORE INTO dog_links (family_id, dog_a_id, dog_b_id) VALUES (?, ?, ?)').run(req.familyId, a, b)
+  insertLink.run(req.familyId, Math.min(dog.id, other.id), Math.max(dog.id, other.id))
   res.status(201).json(findHousemates.all({ id: dog.id, familyId: req.familyId }))
 })
 
@@ -188,22 +195,30 @@ router.delete('/:id/housemates/:otherId', requireAuth, (req, res) => {
   res.status(204).end()
 })
 
+// Neues Tier samt "lebt zusammen mit" in einem Schritt – schlägt eins fehl, bleibt nichts zurück
+const createDog = db.transaction((record, familyId, housemateId) => {
+  const id = Number(insertDog.run({ ...record, family_id: familyId }).lastInsertRowid)
+  if (housemateId) insertLink.run(familyId, Math.min(id, housemateId), Math.max(id, housemateId))
+  return id
+})
+
+function validateHousemate(housemateId, familyId) {
+  if (housemateId === null) return null
+  if (Number.isNaN(housemateId)) return 'Mitbewohner: ungültige Auswahl'
+  const mate = findDog.get(housemateId)
+  if (!mate || mate.family_id !== familyId) return 'Mitbewohner muss ein Tier des eigenen Rudels sein'
+  return null
+}
+
 router.post('/', requireAuth, (req, res) => {
-  const record = buildDogRecord(req.body || {})
-  const error = validateDogRecord(record, null, req.familyId)
+  const body = req.body || {}
+  const record = buildDogRecord(body)
+  const housemateId = cleanId(body.housemateId)
+  const error = validateDogRecord(record, null, req.familyId) || validateHousemate(housemateId, req.familyId)
   if (error) return res.status(400).json({ error })
 
-  const result = db
-    .prepare(
-      `INSERT INTO dogs
-        (family_id, name, name_unbekannt, rasse, tierart, geschlecht, geburtsdatum, farbe_markings,
-         mother_dog_id, father_dog_id, mother_freitext, father_freitext, foto_url, beschreibung)
-       VALUES (@family_id, @name, @name_unbekannt, @rasse, @tierart, @geschlecht, @geburtsdatum, @farbe_markings,
-         @mother_dog_id, @father_dog_id, @mother_freitext, @father_freitext, @foto_url, @beschreibung)`
-    )
-    .run({ ...record, family_id: req.familyId })
-
-  res.status(201).json(findDog.get(result.lastInsertRowid))
+  const id = createDog(record, req.familyId, housemateId)
+  res.status(201).json(findDog.get(id))
 })
 
 router.put('/:id', requireAuth, (req, res) => {

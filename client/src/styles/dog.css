@@ -211,3 +211,51 @@
   padding: 0 var(--space-3);
   font-size: var(--text-sm);
 }
+
+/* Schnellerfassung eines Mitbewohners */
+
+.quick-add {
+  display: grid;
+  gap: var(--space-3);
+  flex-basis: 100%;
+  margin-top: var(--space-1);
+  padding: var(--space-4);
+  border: 1.5px dashed var(--tan);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  font-weight: 400;
+}
+
+.quick-add-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.quick-add .segmented {
+  justify-self: start;
+}
+
+.quick-add-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-3);
+}
+
+.quick-add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.quick-add-existing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}

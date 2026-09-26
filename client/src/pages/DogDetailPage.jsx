@@ -35,7 +35,7 @@ function adoptiveLine(dog) {
   return `${adoptiveTitle(dog)} von ${dog.housemates.map(displayName).join(' & ')}`
 }
 
-function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onRemoveHousemate }) {
+function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
   const adoptive = adoptiveLine(dog)
   const age = dog.geburtsdatum ? ageText(dog.geburtsdatum) : null
   return (
@@ -98,6 +98,7 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
             allDogs={allDogs}
             canEdit={dog.isOwn}
             onAdd={onAddHousemate}
+            onCreate={onCreateHousemate}
             onRemove={onRemoveHousemate}
           />
           {dog.children.length > 0 && (
@@ -252,6 +253,13 @@ export default function DogDetailPage({ family }) {
     }
   }
 
+  // Schnellerfassung: Fehler landen im Formular, deshalb hier kein try/catch
+  async function handleCreateHousemate(payload) {
+    const created = await api.createDog({ ...payload, housemateId: dog.id })
+    await load()
+    toast(`${displayName(created)} lebt jetzt mit ${displayName(dog)} zusammen`)
+  }
+
   async function handleRemoveHousemate(mate) {
     try {
       await api.removeHousemate(dog.id, mate.id)
@@ -293,6 +301,7 @@ export default function DogDetailPage({ family }) {
         dog={dog}
         allDogs={allDogs}
         onAddHousemate={handleAddHousemate}
+        onCreateHousemate={handleCreateHousemate}
         onRemoveHousemate={handleRemoveHousemate}
         onEdit={() => setEditingDog(true)}
         onAddEntry={() => {

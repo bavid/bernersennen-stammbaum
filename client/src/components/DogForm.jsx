@@ -2,9 +2,16 @@ import { useState } from 'react'
 import ParentPicker from './ParentPicker.jsx'
 import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
-import { dogLabel, sexLabel, speciesLabel } from '../lib/timeline.js'
+import { dogLabel, sexLabel, speciesLabel, speciesNoun } from '../lib/timeline.js'
 
-const SPECIES = ['hund', 'katze', 'anderes']
+export const SPECIES = ['hund', 'katze', 'anderes']
+
+// Beschriftungen, die sich nach der Tierart richten
+export const SPECIES_FIELDS = {
+  hund: { nameLabel: 'Name (mit Zwinger)', namePlaceholder: 'z. B. Aiko vom Sonnenhang', kindLabel: 'Rasse', kindPlaceholder: 'z. B. Berner Sennenhund oder Berner × Hovawart' },
+  katze: { nameLabel: 'Name', namePlaceholder: 'z. B. Minka', kindLabel: 'Rasse', kindPlaceholder: 'z. B. Europäisch Kurzhaar' },
+  anderes: { nameLabel: 'Name', namePlaceholder: 'z. B. Hoppel', kindLabel: 'Welches Tier?', kindPlaceholder: 'z. B. Kaninchen, Wellensittich, Pferd' }
+}
 
 const BREED_SUGGESTIONS = [
   'Berner Sennenhund',
@@ -53,7 +60,7 @@ function toPayload(form) {
   }
 }
 
-// Anlegen und Bearbeiten eines Hundes. onSubmit bekommt das API-Payload.
+// Anlegen und Bearbeiten eines Tiers (meist Hund). onSubmit bekommt das API-Payload.
 export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete, onCancel }) {
   const [form, setForm] = useState(() => initialState(dog))
   const [error, setError] = useState(null)
@@ -61,6 +68,8 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
   const [uploading, setUploading] = useState(false)
 
   const update = (patch) => setForm((current) => ({ ...current, ...patch }))
+  const fields = SPECIES_FIELDS[form.tierart] || SPECIES_FIELDS.hund
+  const noun = speciesNoun(form.tierart)
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -106,51 +115,6 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       </div>
 
       <div className="field span-2">
-        <div className="field-row">
-          <label className="field-label" htmlFor="dog-name">
-            Name (mit Zwinger)
-          </label>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={form.nameUnbekannt}
-              onChange={(e) => update({ nameUnbekannt: e.target.checked })}
-            />
-            Name unbekannt
-          </label>
-        </div>
-        <input
-          id="dog-name"
-          value={form.nameUnbekannt ? '' : form.name}
-          onChange={(e) => update({ name: e.target.value })}
-          placeholder={form.nameUnbekannt ? 'Wird als „Unbekannt“ geführt' : 'z. B. Aiko vom Sonnenhang'}
-          maxLength={80}
-          required={!form.nameUnbekannt}
-          disabled={form.nameUnbekannt}
-          autoFocus={!dog}
-        />
-      </div>
-
-      <div className="field span-2">
-        <label className="field-label" htmlFor="dog-breed">
-          Rasse
-        </label>
-        <input
-          id="dog-breed"
-          list="breed-suggestions"
-          value={form.rasse}
-          onChange={(e) => update({ rasse: e.target.value })}
-          placeholder="z. B. Berner Sennenhund oder Berner × Hovawart"
-          maxLength={120}
-        />
-        <datalist id="breed-suggestions">
-          {BREED_SUGGESTIONS.map((breed) => (
-            <option key={breed} value={breed} />
-          ))}
-        </datalist>
-      </div>
-
-      <div className="field span-2">
         <span className="field-label">Tierart</span>
         <div className="segmented" role="group" aria-label="Tierart">
           {SPECIES.map((tierart) => (
@@ -173,6 +137,51 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="field span-2">
+        <div className="field-row">
+          <label className="field-label" htmlFor="dog-name">
+            {fields.nameLabel}
+          </label>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={form.nameUnbekannt}
+              onChange={(e) => update({ nameUnbekannt: e.target.checked })}
+            />
+            Name unbekannt
+          </label>
+        </div>
+        <input
+          id="dog-name"
+          value={form.nameUnbekannt ? '' : form.name}
+          onChange={(e) => update({ name: e.target.value })}
+          placeholder={form.nameUnbekannt ? 'Wird als „Unbekannt“ geführt' : fields.namePlaceholder}
+          maxLength={80}
+          required={!form.nameUnbekannt}
+          disabled={form.nameUnbekannt}
+          autoFocus={!dog}
+        />
+      </div>
+
+      <div className="field span-2">
+        <label className="field-label" htmlFor="dog-breed">
+          {fields.kindLabel}
+        </label>
+        <input
+          id="dog-breed"
+          list={form.tierart === 'hund' ? 'breed-suggestions' : undefined}
+          value={form.rasse}
+          onChange={(e) => update({ rasse: e.target.value })}
+          placeholder={fields.kindPlaceholder}
+          maxLength={120}
+        />
+        <datalist id="breed-suggestions">
+          {BREED_SUGGESTIONS.map((breed) => (
+            <option key={breed} value={breed} />
+          ))}
+        </datalist>
       </div>
 
       <div className="field">
@@ -264,13 +273,13 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       </div>
 
       <div className="form-actions span-2">
-        {onDelete && <ConfirmButton onConfirm={handleDelete} label="Hund löschen" disabled={saving} />}
+        {onDelete && <ConfirmButton onConfirm={handleDelete} label={`${noun} löschen`} disabled={saving} />}
         <span className="form-actions-spacer" />
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
           Abbrechen
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
-          {saving ? 'Speichere …' : dog ? 'Änderungen speichern' : 'Hund anlegen'}
+          {saving ? 'Speichere …' : dog ? 'Änderungen speichern' : `${noun} anlegen`}
         </button>
       </div>
     </form>

@@ -19,6 +19,21 @@ export function speciesLabel(tierart = 'hund') {
   return SPECIES_LABELS[tierart] || SPECIES_LABELS.hund
 }
 
+const SPECIES_NOUNS = { hund: 'Hund', katze: 'Katze', anderes: 'Tier' }
+
+// Für Beschriftungen wie "Katze anlegen" oder "Tier löschen"
+export function speciesNoun(tierart = 'hund') {
+  return SPECIES_NOUNS[tierart] || SPECIES_NOUNS.hund
+}
+
+// Was für ein Tier? Hunde brauchen keinen Zusatz, bei "anderes" steht die Art im Freitext (z. B. "Kaninchen")
+export function animalKind(dog) {
+  const tierart = dog.tierart || 'hund'
+  if (tierart === 'hund') return null
+  if (tierart === 'anderes') return dog.rasse || speciesLabel('anderes')
+  return speciesLabel(tierart)
+}
+
 // "Adoptiv-Bruder", "Adoptiv-Schwester", "Adoptiv-Kater", "Adoptiv-Katze", "Adoptiv-Geschwister"
 export function adoptiveTitle(dog) {
   const titles = {

@@ -70,9 +70,8 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
     toast(`Das Rudel heißt jetzt „${renamed.name}“`)
   }
 
-  async function handleCreate({ housemateId, ...payload }) {
+  async function handleCreate(payload) {
     const dog = await api.createDog(payload)
-    if (housemateId) await api.addHousemate(dog.id, housemateId)
     setFormOpen(false)
     toast(`${dog.name} ist jetzt Teil des Stammbaums`)
     navigate(`/hund/${dog.id}`)
@@ -104,7 +103,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
           {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}
           <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
             <Icon name="plus" />
-            Hund hinzufügen
+            Tier hinzufügen
           </button>
           <button type="button" className="btn btn-ghost" onClick={onInvite}>
             <Icon name="send" />
@@ -135,7 +134,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
         <RenameFamilyForm family={family} onRenamed={handleRenamed} onCancel={() => setRenameOpen(false)} />
       </Modal>
 
-      <Modal open={formOpen} title="Neuen Hund anlegen" onClose={() => setFormOpen(false)}>
+      <Modal open={formOpen} title="Neues Tier anlegen" onClose={() => setFormOpen(false)}>
         <DogForm allDogs={allDogs} ownFamilyId={family.id} onSubmit={handleCreate} onCancel={() => setFormOpen(false)} />
       </Modal>
     </div>
