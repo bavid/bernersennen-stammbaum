@@ -9,7 +9,7 @@ import DogForm from '../components/DogForm.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
-import { buildTimeline, genitive, sexLabel, shortName } from '../lib/timeline.js'
+import { buildTimeline, displayName, dogLabel, genitive, sexLabel, shortName } from '../lib/timeline.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
@@ -20,7 +20,7 @@ function ParentLink({ parent, freitext }) {
     return (
       <Link to={`/hund/${parent.id}`} className="chip">
         <Avatar dog={parent} size={24} />
-        {shortName(parent.name)}
+        {dogLabel(parent)}
       </Link>
     )
   }
@@ -45,10 +45,14 @@ function DogHero({ dog, onEdit, onAddEntry, onOpenPhoto }) {
         <span className="eyebrow">
           {sexLabel(dog.geschlecht)} · {dog.familyName}
         </span>
-        <h1>{shortName(dog.name)}</h1>
-        {dog.name !== shortName(dog.name) && <p className="dog-hero-fullname">{dog.name}</p>}
+        <h1 className={dog.name_unbekannt ? 'is-unknown' : undefined}>{displayName(dog)}</h1>
+        {!dog.name_unbekannt && dog.name !== shortName(dog.name) && <p className="dog-hero-fullname">{dog.name}</p>}
 
         <dl className="facts">
+          <div className="facts-wide">
+            <dt>Rasse</dt>
+            <dd>{dog.rasse || <span className="muted">nicht angegeben</span>}</dd>
+          </div>
           <div>
             <dt>Geboren</dt>
             <dd>
@@ -81,7 +85,7 @@ function DogHero({ dog, onEdit, onAddEntry, onOpenPhoto }) {
                 {dog.children.map((child) => (
                   <Link key={child.id} to={`/hund/${child.id}`} className="chip">
                     <Avatar dog={child} size={24} />
-                    {shortName(child.name)}
+                    {dogLabel(child)}
                   </Link>
                 ))}
               </dd>
@@ -225,7 +229,8 @@ export default function DogDetailPage({ family }) {
     writeSetting('newestFirst', !newestFirst)
   }
 
-  const firstName = shortName(dog.name)
+  const firstName = displayName(dog)
+  const about = dog.name_unbekannt ? 'diesem Hund' : firstName
 
   return (
     <div className="page">
@@ -247,7 +252,7 @@ export default function DogDetailPage({ family }) {
         <div className="chronicle-head">
           <div>
             <span className="eyebrow">Chronik</span>
-            <h2 id="chronicle-title">{genitive(firstName)} Geschichte</h2>
+            <h2 id="chronicle-title">{dog.name_unbekannt ? 'Geschichte' : `${genitive(firstName)} Geschichte`}</h2>
           </div>
           {items.length > 1 && (
             <button type="button" className="btn btn-ghost" onClick={toggleOrder}>
@@ -267,13 +272,13 @@ export default function DogDetailPage({ family }) {
           <div id="composer" className={`composer ${composerOpen ? 'is-open' : ''}`}>
             {composerOpen ? (
               <>
-                <h3 className="composer-title">Neue Erinnerung für {firstName}</h3>
+                <h3 className="composer-title">Neue Erinnerung zu {about}</h3>
                 <TimelineEntryForm onSubmit={handleCreateEntry} onCancel={() => setComposerOpen(false)} />
               </>
             ) : (
               <button type="button" className="composer-trigger" onClick={() => setComposerOpen(true)}>
                 <Avatar dog={dog} size={40} />
-                <span>Was gibt’s Neues von {firstName}?</span>
+                <span>Was gibt’s Neues von {about}?</span>
                 <Icon name="plus" />
               </button>
             )}

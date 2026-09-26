@@ -64,7 +64,7 @@ Ein einzelnes Rudel löschen (auf dem Server im App-Ordner):
 
 ```bash
 git clone https://github.com/bavid/bernersennen-stammbaum.git && cd bernersennen-stammbaum
-cp .env.example .env   # JWT_SECRET und SITE_ADDRESS setzen!
+cp .env.example .env   # JWT_SECRET und PUBLIC_HOST setzen!
 mkdir -p data && sudo chown 1000:1000 data
 docker compose up -d --build
 ```
@@ -74,14 +74,13 @@ docker compose up -d --build
 | Variable             | Bedeutung                                                              |
 | -------------------- | ---------------------------------------------------------------------- |
 | `JWT_SECRET`         | **Pflicht.** Zufälliges Secret für Session-Cookies                     |
-| `SITE_ADDRESS`       | **Pflicht.** Öffentliche Adresse, z. B. `https://1.2.3.4:3010` oder eine Domain |
+| `PUBLIC_HOST`        | **Pflicht.** Server-IP oder Domain, für die das Zertifikat ausgestellt wird |
 | `HTTPS_PORT`         | Port für HTTPS nach außen (Standard 3010)                               |
 | `FAMILY_INVITE_CODE` | Code zum Anlegen neuer Rudel (leer = jeder darf anlegen)               |
 | `COOKIE_SECURE`      | `true` – Cookies nur über HTTPS                                        |
 | `TRUST_PROXY`        | `1` – App steht hinter Caddy, Rate-Limit sieht echte IPs               |
 
-Mit Domain: `SITE_ADDRESS=chronik.example.de` (dann Standard-HTTPS auf 443 – in dem Fall
-in `docker-compose.yml` zusätzlich `443:443` freigeben).
+Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen – das Zertifikat gilt dann für die Domain.
 
 ## Sicherheit
 

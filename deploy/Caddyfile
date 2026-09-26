@@ -1,13 +1,17 @@
 # HTTPS per Let's Encrypt vor der App. Caddy holt und erneuert das Zertifikat automatisch.
 #
-# SITE_ADDRESS kommt aus der .env, z. B.
-#   https://203.0.113.10:3010   (Zertifikat direkt für die Server-IP)
-#   chronik.example.de          (sobald es eine Domain gibt)
+# PUBLIC_HOST (Server-IP oder Domain) und HTTPS_PORT kommen aus der .env.
 #
 # IP-Zertifikate gibt es bei Let's Encrypt nur mit dem Profil "shortlived" (ca. 6 Tage gültig).
 # Die Prüfung läuft über HTTP-01 auf Port 80, der deshalb erreichbar sein muss.
 
-{$SITE_ADDRESS} {
+{
+	# Browser schicken bei IP-Adressen kein SNI im TLS-Handshake. Ohne default_sni wüsste
+	# Caddy nicht, welches Zertifikat gemeint ist, und bricht mit "internal error" ab.
+	default_sni {$PUBLIC_HOST}
+}
+
+https://{$PUBLIC_HOST}:{$HTTPS_PORT} {
 	tls {
 		issuer acme {
 			profile shortlived

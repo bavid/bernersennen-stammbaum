@@ -71,6 +71,38 @@ test('pedigree rules and dog lifecycle', async (t) => {
     assert.equal(gone.status, 404)
   })
 
+  await t.test('stores breed and supports dogs with unknown name', async () => {
+    const unknown = await createDog({ name: '', nameUnbekannt: true, geschlecht: 'ruede', rasse: 'Hovawart' })
+    assert.equal(unknown.status, 201)
+    assert.equal(unknown.data.name, 'Unbekannt')
+    assert.equal(unknown.data.name_unbekannt, 1)
+    assert.equal(unknown.data.rasse, 'Hovawart')
+
+    const pup = await createDog({ name: 'Ronja', geschlecht: 'huendin', rasse: 'Berner × Hovawart', fatherDogId: unknown.data.id })
+    const { data: detail } = await call(base, `/api/dogs/${pup.data.id}`, { cookie })
+    assert.equal(detail.father.rasse, 'Hovawart')
+    assert.equal(detail.father.name_unbekannt, 1)
+
+    const { data: all } = await call(base, '/api/dogs/all', { cookie })
+    assert.equal(all.find((d) => d.id === pup.data.id).rasse, 'Berner × Hovawart')
+
+    const renamed = await call(base, `/api/dogs/${unknown.data.id}`, { method: 'PUT', cookie, body: { nameUnbekannt: false, name: 'Hektor' } })
+    assert.equal(renamed.data.name, 'Hektor')
+    assert.equal(renamed.data.name_unbekannt, 0)
+    assert.equal(renamed.data.rasse, 'Hovawart')
+
+    const missingName = await createDog({ name: '', geschlecht: 'ruede' })
+    assert.equal(missingName.status, 400)
+  })
+
+  await t.test('deleting an unknown-named parent keeps the breed on the child', async () => {
+    const unknown = await createDog({ nameUnbekannt: true, geschlecht: 'huendin', rasse: 'Appenzeller' })
+    const kid = await createDog({ name: 'Shila', geschlecht: 'huendin', motherDogId: unknown.data.id })
+    await call(base, `/api/dogs/${unknown.data.id}`, { method: 'DELETE', cookie })
+    const { data } = await call(base, `/api/dogs/${kid.data.id}`, { cookie })
+    assert.equal(data.mother_freitext, 'Unbekannt (Appenzeller)')
+  })
+
   await t.test('overview lists dogs with timeline counts', async () => {
     const { data } = await call(base, '/api/dogs', { cookie })
     assert.ok(data.every((dog) => typeof dog.timeline_count === 'number'))

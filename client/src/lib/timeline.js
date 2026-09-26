@@ -10,6 +10,17 @@ export function shortName(name = '') {
   return name.split(/\s+(vom|von|aus|zum|zur)\s+/i)[0]
 }
 
+// Name für Karten und Überschriften; Hunde mit unbekanntem Namen heißen "Unbekannt"
+export function displayName(dog) {
+  return dog.name_unbekannt ? 'Unbekannt' : shortName(dog.name)
+}
+
+// Wie displayName, aber bei unbekanntem Namen mit Rasse – für Listen, Links und Auswahlfelder
+export function dogLabel(dog) {
+  if (!dog.name_unbekannt) return shortName(dog.name)
+  return dog.rasse ? `Unbekannt (${dog.rasse})` : 'Unbekannt'
+}
+
 // "Aikos", aber "Hermes’"
 export function genitive(name) {
   return /[sxzß]$/i.test(name) ? `${name}’` : `${name}s`
@@ -31,7 +42,7 @@ function litterItems(children = []) {
     type: 'litter',
     key: `litter-${datum}`,
     datum,
-    titel: `Nachwuchs: ${litter.map((c) => shortName(c.name)).join(', ')}`,
+    titel: `Nachwuchs: ${litter.map(dogLabel).join(', ')}`,
     children: litter
   }))
 }

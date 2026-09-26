@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { buildTimeline, genitive, groupByYear, shortName } from './timeline.js'
+import { buildTimeline, displayName, dogLabel, genitive, groupByYear, shortName } from './timeline.js'
 import { ageText, formatDateLong, formatDateShort } from './dates.js'
 
 const dog = { id: 1, name: 'Aiko vom Sonnenhang', geburtsdatum: '2014-05-12' }
@@ -72,6 +72,13 @@ describe('dates', () => {
     expect(ageText('2023-02-14', '2023-09-20')).toBe('7 Monate')
     expect(ageText('2023-02-14', '2023-03-01')).toBe('2 Wochen')
     expect(ageText('2023-02-14', '2022-01-01')).toBeNull()
+  })
+
+  test('unknown-named dogs are labelled by breed', () => {
+    const unknown = { name: 'Unbekannt', name_unbekannt: 1, rasse: 'Hovawart' }
+    expect(displayName(unknown)).toBe('Unbekannt')
+    expect(dogLabel(unknown)).toBe('Unbekannt (Hovawart)')
+    expect(dogLabel({ name: 'Trude vom Hof', name_unbekannt: 0 })).toBe('Trude')
   })
 
   test('genitive uses an apostrophe after s-sounds', () => {

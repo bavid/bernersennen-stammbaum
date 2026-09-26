@@ -1,5 +1,6 @@
 const fs = require('node:fs')
 const path = require('node:path')
+const { dogLabel } = require('./labels')
 
 function photoUrlsOf(db, familyId) {
   const dogPhotos = db.prepare('SELECT foto_url FROM dogs WHERE family_id = ? AND foto_url IS NOT NULL').all(familyId)
@@ -17,11 +18,12 @@ function deleteFamily(db, familyId) {
   const photos = photoUrlsOf(db, familyId)
 
   db.transaction(() => {
-    const dogs = db.prepare('SELECT id, name FROM dogs WHERE family_id = ?').all(familyId)
+    const dogs = db.prepare('SELECT id, name, name_unbekannt, rasse FROM dogs WHERE family_id = ?').all(familyId)
     for (const dog of dogs) {
-      db.prepare('UPDATE dogs SET mother_dog_id = NULL, mother_freitext = ? WHERE mother_dog_id = ? AND family_id != ?').run(dog.name, dog.id, familyId)
-      db.prepare('UPDATE dogs SET father_dog_id = NULL, father_freitext = ? WHERE father_dog_id = ? AND family_id != ?').run(dog.name, dog.id, familyId)
-      db.prepare('UPDATE breeding_events SET vater_dog_id = NULL, vater_freitext = ? WHERE vater_dog_id = ? AND family_id != ?').run(dog.name, dog.id, familyId)
+      const label = dogLabel(dog)
+      db.prepare('UPDATE dogs SET mother_dog_id = NULL, mother_freitext = ? WHERE mother_dog_id = ? AND family_id != ?').run(label, dog.id, familyId)
+      db.prepare('UPDATE dogs SET father_dog_id = NULL, father_freitext = ? WHERE father_dog_id = ? AND family_id != ?').run(label, dog.id, familyId)
+      db.prepare('UPDATE breeding_events SET vater_dog_id = NULL, vater_freitext = ? WHERE vater_dog_id = ? AND family_id != ?').run(label, dog.id, familyId)
     }
     db.prepare('DELETE FROM timeline_entries WHERE family_id = ?').run(familyId)
     db.prepare('DELETE FROM breeding_events WHERE family_id = ?').run(familyId)

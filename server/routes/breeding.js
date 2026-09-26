@@ -35,8 +35,10 @@ function validateEvent(body, familyId) {
     return { status: 403, error: 'Mutter muss eine Hündin des eigenen Rudels sein' }
   }
   if (vaterId) {
-    const vater = db.prepare('SELECT geschlecht FROM dogs WHERE id = ?').get(vaterId)
-    if (!vater || vater.geschlecht !== 'ruede') return { status: 400, error: 'Vater muss ein Rüde sein' }
+    const vater = db.prepare('SELECT family_id, geschlecht FROM dogs WHERE id = ?').get(vaterId)
+    if (!vater || vater.family_id !== familyId || vater.geschlecht !== 'ruede') {
+      return { status: 400, error: 'Vater muss ein Rüde des eigenen Rudels sein (sonst als Freitext angeben)' }
+    }
   }
 
   return {

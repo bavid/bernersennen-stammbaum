@@ -103,7 +103,7 @@ test('dogs API pedigree linking and family isolation', async (t) => {
       headers: { 'Content-Type': 'application/json', Cookie: cookieB },
       body: JSON.stringify({ name: 'Uebernommen' })
     })
-    assert.equal(res.status, 403)
+    assert.equal(res.status, 404)
   })
 
   server.close()

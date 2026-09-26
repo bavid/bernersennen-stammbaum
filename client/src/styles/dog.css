@@ -58,6 +58,11 @@
   padding-top: var(--space-2);
 }
 
+.dog-hero-body h1.is-unknown {
+  font-style: italic;
+  color: var(--muted);
+}
+
 .dog-hero-fullname {
   margin-top: calc(-1 * var(--space-2));
   font-family: var(--font-display);

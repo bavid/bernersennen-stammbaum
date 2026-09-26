@@ -28,7 +28,8 @@ services:
       - "80:80" # Let's-Encrypt-Prüfung (HTTP-01)
       - "${HTTPS_PORT:-3010}:${HTTPS_PORT:-3010}"
     environment:
-      SITE_ADDRESS: ${SITE_ADDRESS:?SITE_ADDRESS in .env setzen, z. B. https://1.2.3.4:3010}
+      PUBLIC_HOST: ${PUBLIC_HOST:?PUBLIC_HOST in .env setzen (Server-IP oder Domain)}
+      HTTPS_PORT: ${HTTPS_PORT:-3010}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/data:/data

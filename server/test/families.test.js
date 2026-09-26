@@ -16,7 +16,9 @@ test('deleting a family keeps other families intact', async (t) => {
 
   const mother = (await post(a.cookie, '/api/dogs', { name: 'Bella', geschlecht: 'huendin', fotoUrl: '/uploads/a1.jpg' })).data
   await post(a.cookie, '/api/timeline', { dogId: mother.id, autorName: 'A', datum: '2020-01-01', titel: 'X', fotoUrls: ['/uploads/a2.jpg'] })
-  const child = (await post(b.cookie, '/api/dogs', { name: 'Cora', geschlecht: 'huendin', motherDogId: mother.id, fotoUrl: '/uploads/b1.jpg' })).data
+  // Rudelübergreifende Verknüpfungen sind über die API nicht mehr möglich – hier Altdaten simulieren
+  const child = (await post(b.cookie, '/api/dogs', { name: 'Cora', geschlecht: 'huendin', fotoUrl: '/uploads/b1.jpg' })).data
+  db.prepare('UPDATE dogs SET mother_dog_id = ? WHERE id = ?').run(mother.id, child.id)
 
   const orphaned = deleteFamily(db, a.data.id)
 

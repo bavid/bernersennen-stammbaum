@@ -3,9 +3,22 @@ import ParentPicker from './ParentPicker.jsx'
 import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 
+const BREED_SUGGESTIONS = [
+  'Berner Sennenhund',
+  'Appenzeller Sennenhund',
+  'Entlebucher Sennenhund',
+  'Großer Schweizer Sennenhund',
+  'Hovawart',
+  'Berner × Appenzeller',
+  'Berner × Hovawart',
+  'Mischling'
+]
+
 function initialState(dog) {
   return {
-    name: dog?.name || '',
+    name: dog?.name_unbekannt ? '' : dog?.name || '',
+    nameUnbekannt: Boolean(dog?.name_unbekannt),
+    rasse: dog?.rasse || '',
     geschlecht: dog?.geschlecht || 'huendin',
     geburtsdatum: dog?.geburtsdatum || '',
     farbeMarkings: dog?.farbe_markings || '',
@@ -18,7 +31,9 @@ function initialState(dog) {
 
 function toPayload(form) {
   return {
-    name: form.name,
+    name: form.nameUnbekannt ? '' : form.name,
+    nameUnbekannt: form.nameUnbekannt,
+    rasse: form.rasse || null,
     geschlecht: form.geschlecht,
     geburtsdatum: form.geburtsdatum || null,
     farbeMarkings: form.farbeMarkings || null,
@@ -84,18 +99,48 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       </div>
 
       <div className="field span-2">
-        <label className="field-label" htmlFor="dog-name">
-          Name (mit Zwinger)
-        </label>
+        <div className="field-row">
+          <label className="field-label" htmlFor="dog-name">
+            Name (mit Zwinger)
+          </label>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={form.nameUnbekannt}
+              onChange={(e) => update({ nameUnbekannt: e.target.checked })}
+            />
+            Name unbekannt
+          </label>
+        </div>
         <input
           id="dog-name"
-          value={form.name}
+          value={form.nameUnbekannt ? '' : form.name}
           onChange={(e) => update({ name: e.target.value })}
-          placeholder="z. B. Aiko vom Sonnenhang"
+          placeholder={form.nameUnbekannt ? 'Wird als „Unbekannt“ geführt' : 'z. B. Aiko vom Sonnenhang'}
           maxLength={80}
-          required
+          required={!form.nameUnbekannt}
+          disabled={form.nameUnbekannt}
           autoFocus={!dog}
         />
+      </div>
+
+      <div className="field span-2">
+        <label className="field-label" htmlFor="dog-breed">
+          Rasse
+        </label>
+        <input
+          id="dog-breed"
+          list="breed-suggestions"
+          value={form.rasse}
+          onChange={(e) => update({ rasse: e.target.value })}
+          placeholder="z. B. Berner Sennenhund oder Berner × Hovawart"
+          maxLength={120}
+        />
+        <datalist id="breed-suggestions">
+          {BREED_SUGGESTIONS.map((breed) => (
+            <option key={breed} value={breed} />
+          ))}
+        </datalist>
       </div>
 
       <div className="field">

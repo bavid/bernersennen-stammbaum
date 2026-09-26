@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import Avatar from './Avatar.jsx'
-import { groupByYear, shortName } from '../lib/timeline.js'
+import { dogLabel, groupByYear } from '../lib/timeline.js'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 
 const MILESTONE_ICONS = { birth: 'star', breeding: 'heart', litter: 'sprout' }
@@ -33,7 +33,7 @@ function Milestone({ item, onOpenPhoto }) {
             {item.children.map((child) => (
               <Link key={child.id} to={`/hund/${child.id}`} className="chip">
                 <Avatar dog={child} size={24} />
-                {shortName(child.name)}
+                {dogLabel(child)}
               </Link>
             ))}
           </div>

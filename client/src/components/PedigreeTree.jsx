@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import DogCard from './DogCard.jsx'
-import { collectNodes, computeUnions, layoutPedigree } from '../lib/pedigree.js'
+import { collectNodes, computeUnions, generationDates, layoutPedigree } from '../lib/pedigree.js'
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 
@@ -111,11 +111,14 @@ export default function PedigreeTree({ dogs, allDogs }) {
           </svg>
         )}
 
-        {rows.map((row, index) => (
+        {rows.map((row, index) => {
+          const born = generationDates(row)
+          return (
           <section className="pedigree-row" key={index} aria-label={`Generation ${index + 1}`}>
             <div className="pedigree-gen" aria-hidden="true">
               <span className="pedigree-gen-num">{ROMAN[index] || index + 1}</span>
               <span className="pedigree-gen-label">Generation</span>
+              {born && <span className="pedigree-gen-date">{born}</span>}
             </div>
             <div className="pedigree-cards">
               {row.map((dog) => (
@@ -130,7 +133,8 @@ export default function PedigreeTree({ dogs, allDogs }) {
               ))}
             </div>
           </section>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

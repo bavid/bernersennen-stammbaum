@@ -75,6 +75,15 @@
   font-variation-settings: 'SOFT' 100, 'WONK' 1;
 }
 
+.pedigree-gen-date {
+  margin-top: var(--space-2);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--rust);
+  white-space: nowrap;
+}
+
 .pedigree-gen-label {
   margin-top: var(--space-1);
   font-size: 0.65rem;
@@ -157,6 +166,26 @@
   content: '· ';
 }
 
+/* Bis zu zwei Zeilen, genug Zeilenhöhe für Unterlängen (g, p, y) */
+.dog-card-breed {
+  display: -webkit-box;
+  overflow: hidden;
+  /* Kursive Glyphen ragen rechts über die Box – ohne Polster würde "d" zu "a" beschnitten */
+  padding: 0 0.25em 1px 0;
+  font-size: 0.74rem;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--ink-soft);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.dog-card.is-unknown .dog-card-name {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--muted);
+}
+
 .dog-card-tag {
   margin-top: 3px;
   font-size: 0.7rem;
@@ -186,12 +215,24 @@
     gap: 3rem;
   }
 
+  /* Generation + Datum als Zeile über den Karten */
   .pedigree-row {
-    grid-template-columns: 2rem minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+
+  .pedigree-gen {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
   }
 
   .pedigree-gen-num {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
+  }
+
+  .pedigree-gen-date {
+    margin-top: 0;
   }
 
   .pedigree-gen-label {
@@ -238,6 +279,19 @@
 
   .dog-card-meta .sex-label + span::before {
     content: none;
+  }
+
+  .dog-card-breed {
+    max-width: 100%;
+    font-size: 0.64rem;
+  }
+
+  /* Beschriftung liegt über den Verbindungslinien statt von ihnen durchkreuzt */
+  .pedigree-gen {
+    justify-self: start;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
   }
 
   .dog-card-tag {

@@ -1,4 +1,5 @@
 // Reine Layout-Logik für den Stammbaum: Generationen, Reihenfolge und Verbindungen.
+import { formatDateShort, yearOf } from './dates.js'
 
 function byBirthThenName(a, b) {
   const da = a.geburtsdatum || '9999'
@@ -100,6 +101,16 @@ export function layoutPedigree(nodes) {
     }
   }
   return rows.filter((row) => row.length)
+}
+
+// Geburtsangabe einer Generation: gemeinsames Datum ("14.05.2026"), ein Jahr oder eine Spanne.
+export function generationDates(row) {
+  const dates = row.map((dog) => dog.geburtsdatum).filter(Boolean).sort()
+  if (!dates.length) return null
+  if (dates[0] === dates[dates.length - 1]) return formatDateShort(dates[0])
+  const first = yearOf(dates[0])
+  const last = yearOf(dates[dates.length - 1])
+  return first === last ? String(first) : `${first}–${last}`
 }
 
 // Gruppiert Kinder nach Elternpaar -> eine Verbindung ("Union") pro Wurf/Paar.

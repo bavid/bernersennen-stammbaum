@@ -64,4 +64,13 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_breeding_family ON breeding_events(family_id, datum);
 `)
 
+// Spalten, die nach dem ersten Release dazukamen – bestehende Datenbanken werden ergänzt.
+function addColumnIfMissing(table, column, definition) {
+  const exists = db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column)
+  if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+}
+
+addColumnIfMissing('dogs', 'rasse', 'TEXT')
+addColumnIfMissing('dogs', 'name_unbekannt', 'INTEGER NOT NULL DEFAULT 0')
+
 module.exports = db

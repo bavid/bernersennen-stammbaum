@@ -63,7 +63,7 @@ test('security and deployment behaviour', async (t) => {
     assert.equal(png.status, 201)
     assert.match(png.data.url, /^\/uploads\/[\w-]+\.png$/)
 
-    const served = await fetch(`${base}${png.data.url}`)
+    const served = await fetch(`${base}${png.data.url}`, { headers: { Cookie: cookie } })
     assert.equal(served.status, 200)
     assert.equal(served.headers.get('x-content-type-options'), 'nosniff')
   })

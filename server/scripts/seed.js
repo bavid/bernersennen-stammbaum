@@ -46,9 +46,9 @@ const seed = db.transaction((password, copyImage) => {
     .run(FAMILY_NAME, bcrypt.hashSync(password, 10)).lastInsertRowid
 
   const insertDog = db.prepare(
-    `INSERT INTO dogs (family_id, name, geschlecht, geburtsdatum, farbe_markings, mother_dog_id, father_dog_id,
+    `INSERT INTO dogs (family_id, name, rasse, geschlecht, geburtsdatum, farbe_markings, mother_dog_id, father_dog_id,
        mother_freitext, father_freitext, foto_url, beschreibung)
-     VALUES (@familyId, @name, @geschlecht, @geburtsdatum, @farbe, @motherId, @fatherId,
+     VALUES (@familyId, @name, @rasse, @geschlecht, @geburtsdatum, @farbe, @motherId, @fatherId,
        @motherFreitext, @fatherFreitext, @fotoUrl, @beschreibung)`
   )
   const ids = {}
@@ -56,6 +56,7 @@ const seed = db.transaction((password, copyImage) => {
     ids[dog.key] = insertDog.run({
       familyId,
       name: dog.name,
+      rasse: dog.rasse || 'Berner Sennenhund',
       geschlecht: dog.geschlecht,
       geburtsdatum: dog.geburtsdatum,
       farbe: dog.farbe,

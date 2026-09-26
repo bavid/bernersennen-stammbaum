@@ -13,6 +13,9 @@ const dogsRoutes = require('./routes/dogs')
 const timelineRoutes = require('./routes/timeline')
 const breedingRoutes = require('./routes/breeding')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
+const { requireAuth } = require('./middleware/auth')
+
+const PHOTO_CACHE = 'private, max-age=2592000, immutable'
 
 // Kein upgrade-insecure-requests/HSTS: die App läuft auch per http://IP:PORT ohne TLS.
 const securityHeaders = helmet({
@@ -74,7 +77,15 @@ function createApp() {
     res.json({ status: 'ok' })
   })
 
-  app.use('/uploads', express.static(config.uploadDir, { maxAge: '30d', immutable: true, fallthrough: false }))
+  // Fotos nur mit Login; "private", damit keine geteilten Caches sie speichern
+  app.use(
+    '/uploads',
+    requireAuth,
+    express.static(config.uploadDir, {
+      fallthrough: false,
+      setHeaders: (res) => res.setHeader('Cache-Control', PHOTO_CACHE)
+    })
+  )
 
   app.use('/api', authRoutes)
   app.use('/api/dogs', dogsRoutes)

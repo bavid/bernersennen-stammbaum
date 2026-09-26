@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { collectNodes, computeUnions, layoutPedigree } from './pedigree.js'
+import { collectNodes, computeUnions, generationDates, layoutPedigree } from './pedigree.js'
 
 const dog = (id, name, extra = {}) => ({ id, name, geburtsdatum: null, mother_dog_id: null, father_dog_id: null, ...extra })
 
@@ -48,6 +48,23 @@ describe('layoutPedigree', () => {
 
   test('returns no rows for an empty pack', () => {
     expect(layoutPedigree([])).toEqual([])
+  })
+})
+
+describe('generationDates', () => {
+  test('shows the shared birth date of a litter', () => {
+    const litter = [dog(1, 'Hermes', { geburtsdatum: '2026-05-14' }), dog(2, 'Milo', { geburtsdatum: '2026-05-14' })]
+    expect(generationDates(litter)).toBe('14.05.2026')
+  })
+
+  test('shows a year range for mixed births and ignores unknown dates', () => {
+    const row = [dog(1, 'A', { geburtsdatum: '2017-06-18' }), dog(2, 'B'), dog(3, 'C', { geburtsdatum: '2020-04-09' })]
+    expect(generationDates(row)).toBe('2017–2020')
+    expect(generationDates([dog(4, 'D', { geburtsdatum: '2020-01-01' }), dog(5, 'E', { geburtsdatum: '2020-09-01' })])).toBe('2020')
+  })
+
+  test('returns null when no birth date is known', () => {
+    expect(generationDates([dog(1, 'Shila')])).toBeNull()
   })
 })
 

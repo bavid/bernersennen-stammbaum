@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import { formatDateLong } from '../lib/dates.js'
-import { sexLabel, shortName } from '../lib/timeline.js'
+import { displayName, sexLabel, shortName } from '../lib/timeline.js'
 
 const CANVAS_WIDTH = 1240
 const CANVAS_HEIGHT = 1754 // A4 bei 150 dpi
@@ -83,11 +83,15 @@ async function renderCollage(canvas, dog, entries) {
 
   ctx.fillStyle = COLORS.ink
   ctx.font = `600 104px ${DISPLAY_FONT}`
-  ctx.fillText(shortName(dog.name), MARGIN, 230)
+  ctx.fillText(displayName(dog), MARGIN, 230)
 
   ctx.fillStyle = COLORS.muted
   ctx.font = `500 30px ${BODY_FONT}`
-  const subtitle = [dog.name !== shortName(dog.name) ? dog.name : null, dog.geburtsdatum ? `geboren am ${formatDateLong(dog.geburtsdatum)}` : null]
+  const subtitle = [
+    dog.rasse,
+    !dog.name_unbekannt && dog.name !== shortName(dog.name) ? dog.name : null,
+    dog.geburtsdatum ? `geboren am ${formatDateLong(dog.geburtsdatum)}` : null
+  ]
   ctx.fillText(subtitle.filter(Boolean).join('  ·  '), MARGIN, 285)
 
   drawPhotos(ctx, images, 340, 1150)

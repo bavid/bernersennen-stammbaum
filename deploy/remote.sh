@@ -53,12 +53,16 @@ checkout() {
   log "Stand: $(git log -1 --format='%h %s')"
 }
 
-default_site_address() {
+default_public_host() {
   if [ -n "$DEPLOY_DOMAIN" ]; then
-    echo "https://$DEPLOY_DOMAIN:$HTTPS_PORT"
+    echo "$DEPLOY_DOMAIN"
   else
-    echo "https://$(hostname -I | awk '{print $1}'):$HTTPS_PORT"
+    hostname -I | awk '{print $1}'
   fi
+}
+
+site_url() {
+  echo "https://$(env_value PUBLIC_HOST):$(env_value HTTPS_PORT)"
 }
 
 # Setzt KEY=VALUE in .env, falls KEY noch fehlt (bestehende Werte bleiben unangetastet)
@@ -77,7 +81,7 @@ ensure_env() {
     touch .env
     env_default JWT_SECRET "$(openssl rand -hex 32)"
     env_default FAMILY_INVITE_CODE "$(openssl rand -hex 4)"
-    env_default SITE_ADDRESS "$(default_site_address)"
+    env_default PUBLIC_HOST "$(default_public_host)"
     env_default HTTPS_PORT "$HTTPS_PORT"
     env_default COOKIE_SECURE true
     env_default TRUST_PROXY 1
@@ -104,7 +108,7 @@ wait_healthy() {
 
   # Erstes Zertifikat kann ein paar Sekunden dauern
   local site
-  site="$(env_value SITE_ADDRESS)"
+  site="$(site_url)"
   for _ in $(seq 1 30); do
     if curl -fsS --max-time 5 "$site/health" >/dev/null 2>&1; then
       log "Läuft mit gültigem HTTPS-Zertifikat: $site"
@@ -153,7 +157,7 @@ case "$cmd" in
   status)
     cd "$APP_DIR"
     $COMPOSE ps
-    curl -fsS --max-time 5 "$(env_value SITE_ADDRESS)/health" && echo
+    curl -fsS --max-time 5 "$(site_url)/health" && echo
     ;;
   logs)
     cd "$APP_DIR"

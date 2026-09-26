@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from 'react'
-import { shortName } from '../lib/timeline.js'
+import { dogLabel, shortName } from '../lib/timeline.js'
 
 // Elternteil wählen: aus der Liste (auch rudelübergreifend) oder als Freitext.
 export default function ParentPicker({ label, sex, dogs, value, onChange, excludeId, ownFamilyId }) {
@@ -44,8 +44,9 @@ export default function ParentPicker({ label, sex, dogs, value, onChange, exclud
           <option value="">– unbekannt –</option>
           {options.map((dog) => (
             <option key={dog.id} value={dog.id}>
-              {shortName(dog.name)}
-              {dog.name !== shortName(dog.name) ? ` (${dog.name})` : ''}
+              {dogLabel(dog)}
+              {!dog.name_unbekannt && dog.name !== shortName(dog.name) ? ` (${dog.name})` : ''}
+              {!dog.name_unbekannt && dog.rasse ? ` · ${dog.rasse}` : ''}
               {ownFamilyId && dog.family_id !== ownFamilyId ? ` · ${dog.familyName}` : ''}
             </option>
           ))}
