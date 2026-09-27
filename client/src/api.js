@@ -48,6 +48,7 @@ export const api = {
   config: () => request('/config'),
   me: () => request('/me'),
   login: (password) => request('/login', json('POST', { password })),
+  demo: () => request('/demo', { method: 'POST' }),
   createFamily: (payload) => request('/families', json('POST', payload)),
   logout: () => request('/logout', { method: 'POST' }),
   renameFamily: (name) => request('/family', json('PUT', { name })),

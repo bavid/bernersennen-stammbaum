@@ -93,6 +93,14 @@ router.post('/login', authLimiter, async (req, res, next) => {
   }
 })
 
+// Öffentlicher Einstieg ohne Passwort: loggt ins schreibgeschützte Demo-Rudel ein (falls vorhanden)
+router.post('/demo', authLimiter, (req, res) => {
+  const demoFamily = db.prepare('SELECT id, name FROM families WHERE is_demo = 1 LIMIT 1').get()
+  if (!demoFamily) return res.status(404).json({ error: 'Keine Demo verfügbar' })
+  setSessionCookie(res, demoFamily.id)
+  res.json({ id: demoFamily.id, name: demoFamily.name, isDemo: true })
+})
+
 router.post('/logout', (req, res) => {
   clearSessionCookie(res)
   res.status(204).end()
@@ -112,12 +120,13 @@ router.put('/family', requireAuth, (req, res) => {
 
 // Einladungscode für eingeloggte Mitglieder – damit sie ihn an Bekannte weitergeben können
 router.get('/invite', requireAuth, (req, res) => {
-  res.json({ inviteCode: config.inviteCode || null })
+  // Demo-Rudel ist öffentlich erreichbar – der echte Einladungscode bleibt echten Mitgliedern vorbehalten
+  res.json({ inviteCode: req.isDemo ? null : config.inviteCode || null })
 })
 
 router.get('/me', requireAuth, (req, res) => {
   const family = db.prepare('SELECT id, name FROM families WHERE id = ?').get(req.familyId)
-  res.json(family)
+  res.json({ ...family, isDemo: req.isDemo })
 })
 
 module.exports = router

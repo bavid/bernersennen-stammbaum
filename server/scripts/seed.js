@@ -42,7 +42,7 @@ function assertSeedable(password) {
 
 const seed = db.transaction((password, copyImage) => {
   const familyId = db
-    .prepare('INSERT INTO families (name, password_hash) VALUES (?, ?)')
+    .prepare('INSERT INTO families (name, password_hash, is_demo) VALUES (?, ?, 1)')
     .run(FAMILY_NAME, bcrypt.hashSync(password, 10)).lastInsertRowid
 
   const insertDog = db.prepare(
@@ -119,6 +119,7 @@ try {
   seed(password, createImageCopier())
   console.log(`Demo-Rudel "${FAMILY_NAME}" angelegt: ${DOGS.length} Hunde, ${TIMELINE.length} Timeline-Einträge.`)
   console.log(`Login-Passwort: ${password}`)
+  console.log('Als öffentliche Demo markiert (is_demo): schreibgeschützt, auch über /api/demo ohne Passwort erreichbar.')
 } catch (err) {
   console.error(`Seed fehlgeschlagen: ${err.message}`)
   process.exitCode = 1

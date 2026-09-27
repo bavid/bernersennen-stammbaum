@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
+import { DemoProvider } from './lib/demo.js'
 import BernerMark from './components/BernerMark.jsx'
 import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
@@ -21,6 +22,18 @@ const NAV_ITEMS = [
   { to: '/zuchtbuch', icon: 'book', label: 'Zuchtbuch' },
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
+
+function DemoBanner({ onLeave }) {
+  return (
+    <div className="demo-banner" role="status">
+      <Icon name="alert" />
+      <span>Du siehst eine schreibgeschützte Demo – nichts wird gespeichert oder hochgeladen.</span>
+      <button type="button" className="btn btn-primary" onClick={onLeave}>
+        Eigenes Rudel anlegen
+      </button>
+    </div>
+  )
+}
 
 function AppHeader({ family, onLogout }) {
   const { pathname } = useLocation()
@@ -82,6 +95,13 @@ export default function App() {
     }
   }
 
+  // Voller Seitenwechsel: LoginPage entscheidet ihren Anlege/Anmelden-Modus einmalig beim Mount
+  // anhand der URL – ein einfacher Reload ist hier robuster als Logout- und Navigations-State zu verschränken.
+  async function handleLeaveDemo() {
+    await api.logout()
+    window.location.href = '/neue-familie'
+  }
+
   // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login
   if (pathname === '/admin' || pathname.startsWith('/admin/')) return <AdminPage />
 
@@ -98,33 +118,36 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
-      <ScrollToTop />
-      <AppHeader family={family} onLogout={handleLogout} />
-      <main className="app-main">
-        <Routes>
-          <Route
-            path="/stammbaum"
-            element={<OverviewPage family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />}
-          />
-          <Route path="/hund/:id" element={<DogDetailPage family={family} />} />
-          <Route path="/pinnwand" element={<PinboardPage />} />
-          <Route path="/zuchtbuch" element={<BreedingPage />} />
-          <Route path="/admin-schreiben" element={<ContactAdminPage />} />
-          <Route path="/collage" element={<CollagePage family={family} />} />
-          <Route path="*" element={<Navigate to="/stammbaum" replace />} />
-        </Routes>
-      </main>
-      <footer className="app-footer">
-        <div className="tricolor" aria-hidden="true" />
-        <p>Familienchronik · damit wir wissen, wie es den anderen geht</p>
-        <button type="button" className="footer-link" onClick={() => setInviteOpen(true)}>
-          Jemanden einladen
-        </button>
-      </footer>
-      <Modal open={inviteOpen} title="Jemanden einladen" onClose={() => setInviteOpen(false)}>
-        <InviteDialog family={family} />
-      </Modal>
-    </div>
+    <DemoProvider value={Boolean(family.isDemo)}>
+      <div className="app-shell">
+        <ScrollToTop />
+        {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} />}
+        <AppHeader family={family} onLogout={handleLogout} />
+        <main className="app-main">
+          <Routes>
+            <Route
+              path="/stammbaum"
+              element={<OverviewPage family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />}
+            />
+            <Route path="/hund/:id" element={<DogDetailPage family={family} />} />
+            <Route path="/pinnwand" element={<PinboardPage />} />
+            <Route path="/zuchtbuch" element={<BreedingPage />} />
+            <Route path="/admin-schreiben" element={<ContactAdminPage />} />
+            <Route path="/collage" element={<CollagePage family={family} />} />
+            <Route path="*" element={<Navigate to="/stammbaum" replace />} />
+          </Routes>
+        </main>
+        <footer className="app-footer">
+          <div className="tricolor" aria-hidden="true" />
+          <p>Familienchronik · damit wir wissen, wie es den anderen geht</p>
+          <button type="button" className="footer-link" onClick={() => setInviteOpen(true)}>
+            Jemanden einladen
+          </button>
+        </footer>
+        <Modal open={inviteOpen} title="Jemanden einladen" onClose={() => setInviteOpen(false)}>
+          <InviteDialog family={family} />
+        </Modal>
+      </div>
+    </DemoProvider>
   )
 }

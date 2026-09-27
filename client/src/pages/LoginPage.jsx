@@ -194,6 +194,8 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
 export default function LoginPage({ onLogin }) {
   const [mode, setMode] = useState(() => (window.location.pathname === '/neue-familie' ? 'create' : 'login'))
   const [inviteRequired, setInviteRequired] = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
+  const [demoError, setDemoError] = useState(null)
 
   useEffect(() => {
     api
@@ -202,9 +204,20 @@ export default function LoginPage({ onLogin }) {
       .catch(() => setInviteRequired(false))
   }, [])
 
+  async function handleDemo() {
+    setDemoError(null)
+    setDemoLoading(true)
+    try {
+      onLogin(await api.demo())
+    } catch (err) {
+      setDemoError(err.message)
+      setDemoLoading(false)
+    }
+  }
+
   return (
     <div className="login">
-      <section className="login-hero" aria-hidden="true">
+      <section className="login-hero">
         <div className="login-hero-inner">
           <BernerMark size={88} className="login-mark" />
           <p className="login-kicker">Eine Familie · viele Zuhause</p>
@@ -261,6 +274,15 @@ export default function LoginPage({ onLogin }) {
           ) : (
             <CreateFamilyForm onLogin={onLogin} inviteRequired={inviteRequired} />
           )}
+
+          <div className="login-demo">
+            <span className="login-demo-divider">oder</span>
+            {demoError && <div className="error-banner" role="alert">{demoError}</div>}
+            <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
+              {demoLoading ? 'Lädt …' : 'Erst mal unverbindlich reinschauen: Demo ansehen'}
+            </button>
+            <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit den Beispiel-Hunden aus „Rudel vom Sonnenhang".</p>
+          </div>
         </div>
       </section>
     </div>

@@ -127,6 +127,20 @@
   justify-self: start;
 }
 
+.login-demo {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.login-demo-divider {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
 @keyframes rise {
   from {
     opacity: 0;

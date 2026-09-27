@@ -127,5 +127,6 @@ addColumnIfMissing('dogs', 'rasse', 'TEXT')
 addColumnIfMissing('dogs', 'name_unbekannt', 'INTEGER NOT NULL DEFAULT 0')
 addColumnIfMissing('dogs', 'tierart', "TEXT NOT NULL DEFAULT 'hund'")
 addColumnIfMissing('families', 'quelle', 'TEXT')
+addColumnIfMissing('families', 'is_demo', 'INTEGER NOT NULL DEFAULT 0')
 
 module.exports = db
