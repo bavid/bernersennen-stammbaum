@@ -51,6 +51,8 @@ export default function ActivityFeed({ entries: allEntries, termin }) {
               <span className="feed-headline">{entry.titel}</span>
               <span className="feed-meta">
                 {entry.autor_name} · {relativeTime(entry.created_at)}
+                {entry.comment_count > 0 &&
+                  ` · ${entry.comment_count} ${entry.comment_count === 1 ? 'Kommentar' : 'Kommentare'}`}
               </span>
             </span>
           </Link>

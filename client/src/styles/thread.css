@@ -1,0 +1,122 @@
+/* Gesprächsverlauf mit Namen: Antworten auf der Pinnwand, Kommentare in der Chronik.
+   Theme-Farben; die Pinnwand überschreibt sie mit Papierfarben (pinboard.css). */
+
+.replies {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reply {
+  position: relative;
+  padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
+  border-radius: 4px 12px 12px 12px;
+  background: var(--surface-sunk);
+}
+
+.reply-meta {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.reply-meta strong {
+  color: var(--ink);
+}
+
+.reply-text {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.reply .reply-delete {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  min-height: 1.6rem;
+  padding: 0 var(--space-2);
+  gap: var(--space-1);
+  border-color: transparent;
+  opacity: 0.55;
+}
+
+.reply .reply-delete:hover,
+.reply .reply-delete.is-armed,
+.reply .reply-delete:focus-visible {
+  opacity: 1;
+}
+
+.reply-open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: start;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--rust);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+
+.reply-open:hover {
+  border-color: var(--rust);
+  background: var(--rust-wash);
+}
+
+.reply-open svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.reply-form {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.reply-form textarea,
+.reply-form input {
+  min-height: 2.4rem;
+  font-size: var(--text-sm);
+}
+
+.reply-form textarea {
+  min-height: 3.5rem;
+}
+
+.reply-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.reply-form-row input {
+  flex: 1 1 100%;
+}
+
+.reply-btn {
+  min-height: 2.4rem;
+  padding: 0 var(--space-4);
+  font-size: var(--text-xs);
+}
+
+.reply-error {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--danger);
+}
+
+/* Kommentare unter einem Chronik-Eintrag */
+.entry-comments {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--line);
+}

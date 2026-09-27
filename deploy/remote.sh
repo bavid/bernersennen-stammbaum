@@ -9,7 +9,7 @@
 #   logs           letzte 200 Log-Zeilen
 #   invite         Einladungscode für neue Rudel anzeigen
 #   backup         Snapshot von DB + Fotos nach $APP_DIR/backups/*.tgz
-#   seed <pw>      Demo-Rudel mit Testbildern anlegen (Passwort <pw>)
+#   demo           öffentliche Demo (neu) anlegen – ersetzt nur das Demo-Rudel, echte Rudel bleiben
 #   wipe --yes     ALLE Daten löschen (DB + Fotos)
 #   admin <hash>   Admin-Zugang setzen (Hash von `npm run admin:hash`), Benutzer "admin"
 #
@@ -169,10 +169,10 @@ case "$cmd" in
   backup)
     backup
     ;;
-  seed)
-    [ -n "${2:-}" ] || fail "Passwort fehlt: seed <passwort>"
+  demo)
     cd "$APP_DIR"
-    $COMPOSE exec -T chronik node scripts/seed.js --password "$2"
+    backup
+    $COMPOSE exec -T chronik node scripts/demo.js
     ;;
   admin)
     [[ "${2:-}" =~ ^scrypt:[0-9a-f]+:[0-9a-f]+$ ]] || fail "Hash fehlt oder ist ungültig: admin <scrypt:…>"

@@ -70,10 +70,7 @@ function Invoke-Action {
         { $_ -in '4', 'logs' } { Invoke-Remote 'logs' }
         { $_ -in '5', 'backup' } { Save-Backup }
         { $_ -in '6', 'invite' } { Write-Host "  Einladungscode: $(Invoke-Remote 'invite')" -ForegroundColor Green }
-        { $_ -in '7', 'seed' } {
-            $pw = Read-Host "  Passwort für das Demo-Rudel (min. 6 Zeichen)"
-            if ($pw.Length -ge 6) { Invoke-Remote 'seed' "'$($pw -replace "'", '')'" }
-        }
+        { $_ -in '7', 'demo' } { Invoke-Remote 'demo' }
         { $_ -in '8', 'wipe' } {
             Write-Host "  Löscht ALLE Rudel, Hunde, Einträge und Fotos (vorher wird ein Backup erstellt)." -ForegroundColor Red
             if ((Read-Host "  Zum Bestätigen LOESCHEN eintippen") -eq 'LOESCHEN') { Invoke-Remote 'wipe' '--yes' }
@@ -109,7 +106,7 @@ while ($true) {
     Write-Host "  [4]  Logs (letzte 200 Zeilen)"
     Write-Host "  [5]  Backup herunterladen (DB + Fotos)" -ForegroundColor Cyan
     Write-Host "  [6]  Einladungscode für neue Rudel anzeigen" -ForegroundColor Cyan
-    Write-Host "  [7]  Demo-Rudel mit Testbildern einspielen" -ForegroundColor Cyan
+    Write-Host "  [7]  Öffentliche Demo neu anlegen (echte Rudel bleiben)" -ForegroundColor Cyan
     Write-Host "  [8]  ALLE Daten löschen" -ForegroundColor Red
     Write-Host "  [9]  Erstinstallation (Docker + App)" -ForegroundColor Blue
     Write-Host "  [10] Admin-Passwort setzen (Benutzer: admin)" -ForegroundColor Blue

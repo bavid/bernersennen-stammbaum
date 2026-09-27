@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import Avatar from './Avatar.jsx'
+import CommentThread from './CommentThread.jsx'
 import { dogLabel, groupByYear } from '../lib/timeline.js'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 
@@ -44,7 +45,7 @@ function Milestone({ item, onOpenPhoto }) {
   )
 }
 
-function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto }) {
+function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment }) {
   const age = birthDate ? ageText(birthDate, item.datum) : null
   return (
     <article className="entry-card">
@@ -64,11 +65,24 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto }) {
       </header>
       {item.text && <p className="entry-text">{item.text}</p>}
       <Photos urls={item.foto_urls} onOpenPhoto={onOpenPhoto} />
+      {onAddComment && (
+        <div className="entry-comments">
+          <CommentThread
+            items={item.comments || []}
+            noun="Kommentar"
+            plural="Kommentare"
+            verb="Kommentieren"
+            placeholder="Dein Kommentar …"
+            onAdd={(payload) => onAddComment(item, payload)}
+            onDelete={(comment) => onDeleteComment(item, comment)}
+          />
+        </div>
+      )}
     </article>
   )
 }
 
-export default function Timeline({ items, birthDate, highlightKey, canEdit, onEdit, onOpenPhoto }) {
+export default function Timeline({ items, birthDate, highlightKey, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment }) {
   const groups = groupByYear(items)
   return (
     <ol className="timeline">
@@ -87,7 +101,15 @@ export default function Timeline({ items, birthDate, highlightKey, canEdit, onEd
                 </time>
                 <span className="timeline-node" aria-hidden="true" />
                 {item.type === 'entry' ? (
-                  <Entry item={item} birthDate={birthDate} canEdit={canEdit} onEdit={onEdit} onOpenPhoto={onOpenPhoto} />
+                  <Entry
+                    item={item}
+                    birthDate={birthDate}
+                    canEdit={canEdit}
+                    onEdit={onEdit}
+                    onOpenPhoto={onOpenPhoto}
+                    onAddComment={onAddComment}
+                    onDeleteComment={onDeleteComment}
+                  />
                 ) : (
                   <Milestone item={item} onOpenPhoto={onOpenPhoto} />
                 )}

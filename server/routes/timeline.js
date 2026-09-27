@@ -5,9 +5,27 @@ const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/valida
 
 const router = express.Router()
 
-function toEntry(row) {
-  return { ...row, foto_urls: JSON.parse(row.foto_urls) }
+const MAX_COMMENT_LENGTH = 1000
+
+function toEntry(row, comments = []) {
+  return { ...row, foto_urls: JSON.parse(row.foto_urls), comments }
 }
+
+// Kommentare aller gelisteten Einträge in einer Abfrage statt einer pro Eintrag
+function commentsByEntry(familyId, dogId) {
+  const rows = db
+    .prepare(
+      `SELECT c.* FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
+       WHERE c.family_id = ? AND (? IS NULL OR t.dog_id = ?)
+       ORDER BY c.created_at, c.id`
+    )
+    .all(familyId, dogId, dogId)
+  const grouped = new Map()
+  for (const row of rows) grouped.set(row.entry_id, [...(grouped.get(row.entry_id) || []), row])
+  return grouped
+}
+
+const commentsOf = (entryId) => db.prepare('SELECT * FROM entry_comments WHERE entry_id = ? ORDER BY created_at, id').all(entryId)
 
 // Validiert Titel/Datum/Autor/Text/Fotos. Liefert { error } oder { values }.
 function readEntryInput(body) {
@@ -44,14 +62,15 @@ router.get('/recent', requireAuth, (req, res) => {
   const rows = db
     .prepare(
       `SELECT t.*, d.name AS dog_name, d.name_unbekannt AS dog_name_unbekannt, d.rasse AS dog_rasse,
-              d.foto_url AS dog_foto_url
+              d.foto_url AS dog_foto_url,
+              (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id) AS comment_count
        FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id
        WHERE t.family_id = ?
        ORDER BY t.created_at DESC, t.id DESC
        LIMIT ?`
     )
     .all(req.familyId, limit)
-  res.json(rows.map(toEntry))
+  res.json(rows.map((row) => toEntry(row)))
 })
 
 // Chronologisch aufsteigend: die Timeline erzählt das Leben von der Geburt an.
@@ -64,7 +83,8 @@ router.get('/', requireAuth, (req, res) => {
         .prepare('SELECT * FROM timeline_entries WHERE family_id = ? AND dog_id = ? ORDER BY datum, id')
         .all(req.familyId, dogId)
     : db.prepare('SELECT * FROM timeline_entries WHERE family_id = ? ORDER BY datum, id').all(req.familyId)
-  res.json(rows.map(toEntry))
+  const comments = commentsByEntry(req.familyId, dogId)
+  res.json(rows.map((row) => toEntry(row, comments.get(row.id))))
 })
 
 router.post('/', requireAuth, (req, res) => {
@@ -105,13 +125,45 @@ router.put('/:id', requireAuth, (req, res) => {
   ).run({ ...values, id: existing.id })
 
   const entry = db.prepare('SELECT * FROM timeline_entries WHERE id = ?').get(existing.id)
-  res.json(toEntry(entry))
+  res.json(toEntry(entry, commentsOf(entry.id)))
+})
+
+const deleteEntry = db.transaction((entryId) => {
+  db.prepare('DELETE FROM entry_comments WHERE entry_id = ?').run(entryId)
+  db.prepare('DELETE FROM timeline_entries WHERE id = ?').run(entryId)
 })
 
 router.delete('/:id', requireAuth, (req, res) => {
   const existing = loadOwnEntry(req, res)
   if (!existing) return
-  db.prepare('DELETE FROM timeline_entries WHERE id = ?').run(existing.id)
+  deleteEntry(existing.id)
+  res.status(204).end()
+})
+
+// Andere Mitglieder kommentieren einen Eintrag – mit Namen, wie auf der Pinnwand
+router.post('/:id/comments', requireAuth, (req, res) => {
+  const entry = loadOwnEntry(req, res)
+  if (!entry) return
+
+  const body = req.body || {}
+  const autorName = cleanText(body.autorName, 60)
+  const text = cleanText(body.text, MAX_COMMENT_LENGTH)
+  if (!autorName || !text) return res.status(400).json({ error: 'Name und Kommentar sind erforderlich' })
+
+  const result = db
+    .prepare('INSERT INTO entry_comments (entry_id, family_id, autor_name, text) VALUES (?, ?, ?, ?)')
+    .run(entry.id, req.familyId, autorName, text)
+  res.status(201).json(db.prepare('SELECT * FROM entry_comments WHERE id = ?').get(result.lastInsertRowid))
+})
+
+router.delete('/:id/comments/:commentId', requireAuth, (req, res) => {
+  const comment = db
+    .prepare('SELECT * FROM entry_comments WHERE id = ? AND entry_id = ?')
+    .get(req.params.commentId, req.params.id)
+  if (!comment || comment.family_id !== req.familyId) {
+    return res.status(404).json({ error: 'Kommentar nicht gefunden' })
+  }
+  db.prepare('DELETE FROM entry_comments WHERE id = ?').run(comment.id)
   res.status(204).end()
 })
 

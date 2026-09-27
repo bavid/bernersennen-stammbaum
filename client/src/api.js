@@ -78,6 +78,8 @@ export const api = {
   deleteNote: (id) => request(`/notes/${id}`, { method: 'DELETE' }),
   createReply: (noteId, payload) => request(`/notes/${noteId}/replies`, json('POST', payload)),
   deleteReply: (noteId, replyId) => request(`/notes/${noteId}/replies/${replyId}`, { method: 'DELETE' }),
+  addComment: (entryId, payload) => request(`/timeline/${entryId}/comments`, json('POST', payload)),
+  deleteComment: (entryId, commentId) => request(`/timeline/${entryId}/comments/${commentId}`, { method: 'DELETE' }),
 
   admin: {
     me: () => request('/admin/me'),

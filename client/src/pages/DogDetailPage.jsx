@@ -243,6 +243,25 @@ export default function DogDetailPage({ family }) {
     toast('Eintrag gelöscht')
   }
 
+  // Kommentare: Fehler beim Schreiben zeigt das Formular selbst an
+  async function handleAddComment(entry, payload) {
+    const comment = await api.addComment(entry.id, payload)
+    setEntries((current) =>
+      current.map((e) => (e.id === entry.id ? { ...e, comments: [...(e.comments || []), comment] } : e))
+    )
+  }
+
+  async function handleDeleteComment(entry, comment) {
+    try {
+      await api.deleteComment(entry.id, comment.id)
+      setEntries((current) =>
+        current.map((e) => (e.id === entry.id ? { ...e, comments: e.comments.filter((c) => c.id !== comment.id) } : e))
+      )
+    } catch (err) {
+      toast(err.message)
+    }
+  }
+
   async function handleAddHousemate(otherId) {
     try {
       const housemates = await api.addHousemate(dog.id, otherId)
@@ -356,6 +375,8 @@ export default function DogDetailPage({ family }) {
             canEdit={dog.isOwn}
             onEdit={setEditingEntry}
             onOpenPhoto={setPhoto}
+            onAddComment={dog.isOwn ? handleAddComment : undefined}
+            onDeleteComment={handleDeleteComment}
           />
         ) : (
           dog.isOwn && <p className="muted chronicle-empty">Noch keine Einträge – die erste Erinnerung wartet.</p>

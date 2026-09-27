@@ -37,9 +37,10 @@ Pinnwand für Treffen und Notizen, Zuchtbuch und druckbaren Collagen.
   eines Hundes lässt sich ein Mitbewohner in einem Schritt neu anlegen (Tierart, Name, z. B. „Kaninchen").
 - **Chronik pro Hund**: Einträge mit Datum, Text und Fotos. Das Datum bestimmt die Position.
   Ein Eintrag von 2018, der heute nachgetragen wird, landet automatisch zwischen 2017 und 2019.
-  Geburt, Deckakte und Nachwuchs erscheinen als automatische Meilensteine.
+  Geburt, Deckakte und Nachwuchs erscheinen als automatische Meilensteine. Alle im Rudel können
+  Einträge kommentieren – mit ihrem Namen, wie auf der Pinnwand.
 - **Neu im Rudel**: Über dem Stammbaum stehen das nächste Treffen und die zuletzt geschriebenen
-  Einträge aller Hunde – ein Klick springt direkt zum Eintrag.
+  Einträge aller Hunde samt Anzahl der Kommentare – ein Klick springt direkt zum Eintrag.
 - **Pinnwand**: Einfache Zettel für alle, optional mit Termin (Datum, Uhrzeit). Kommende Treffen
   stehen oben, vergangene rutschen ans Ende.
 - **Zuchtbuch**: Deckakte und Würfe, Rüden aus dem eigenen Rudel oder als Freitext.
@@ -59,7 +60,7 @@ Voraussetzung: Node.js 20 oder neuer.
 
 ```bash
 npm run install:all
-npm run seed      # optional: Demo-Rudel "Rudel vom Sonnenhang", Passwort: sonnenhang
+npm run seed      # optional: Beispiel-Rudel "Rudel vom Sonnenhang", Passwort: sonnenhang
 npm run dev       # API auf :4000, Oberfläche auf http://localhost:5173
 ```
 
@@ -69,7 +70,7 @@ Unter Windows startet `start.bat` dasselbe per Doppelklick.
 | ------------------------------- | ---------------------------------------------- |
 | `npm test`                      | Server-Tests (node:test) und Client-Tests (Vitest) |
 | `npm run build`                 | Produktions-Build der Oberfläche               |
-| `npm run seed`                  | Demo-Rudel mit Testbildern anlegen             |
+| `npm run seed`                  | Beispiel-Rudel mit Testbildern anlegen         |
 | `npm run db:reset -- -- --yes`  | Lokale Datenbank und Fotos löschen             |
 | `npm --prefix server run family:delete -- "Name" --yes` | Ein Rudel samt Hunden und Fotos löschen |
 
@@ -95,7 +96,12 @@ Ohne den Server-Proxy ist die App nur per SSH-Tunnel erreichbar:
 3. Später: **[3] Deploy** holt den neuesten Stand von GitHub und baut neu.
 
 Weitere Menüpunkte: Status, Logs, Backup herunterladen, Einladungscode anzeigen,
-Demo-Rudel einspielen, alle Daten löschen (mit automatischem Backup vorher).
+öffentliche Demo neu anlegen, alle Daten löschen (mit automatischem Backup vorher).
+
+**Öffentliche Demo**: Auf der Login-Seite führt „Demo ansehen“ ohne Passwort in ein schreibgeschütztes
+Beispiel-Rudel (vier Generationen, unbekannte Vorfahren, Mitbewohner, Chronik mit Kommentaren,
+Pinnwand, Zuchtbuch). `deploy/remote.sh demo` bzw. **[7]** in `manage.ps1` legt sie neu an und
+ersetzt dabei nur die Demo – echte Rudel bleiben unberührt.
 
 Ein einzelnes Rudel löschen (auf dem Server im App-Ordner):
 `docker compose exec chronik node scripts/delete-family.js "Name des Rudels" --yes`
@@ -140,7 +146,7 @@ client/          React-Oberfläche (Vite)
 server/          Express-API + SQLite
   routes/        auth, dogs, timeline, breeding, uploads
   seed/          Demo-Daten und Testbilder
-  scripts/       seed.js, reset.js
-deploy/remote.sh Server-Befehle (setup, deploy, backup, seed, wipe …)
+  scripts/       seed.js, demo.js, reset.js
+deploy/remote.sh Server-Befehle (setup, deploy, backup, demo, wipe …)
 manage.ps1       Windows-Menü für den Server
 ```

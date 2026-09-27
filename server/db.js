@@ -86,6 +86,18 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_note_replies_note ON note_replies(note_id, created_at);
 
+  -- Kommentare anderer Mitglieder zu Chronik-Einträgen
+  CREATE TABLE IF NOT EXISTS entry_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entry_id INTEGER NOT NULL REFERENCES timeline_entries(id),
+    family_id INTEGER NOT NULL REFERENCES families(id),
+    autor_name TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_entry_comments_entry ON entry_comments(entry_id, created_at);
+
   CREATE TABLE IF NOT EXISTS admin_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     family_id INTEGER NOT NULL REFERENCES families(id),

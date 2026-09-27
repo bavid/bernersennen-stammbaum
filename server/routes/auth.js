@@ -95,7 +95,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
 
 // Öffentlicher Einstieg ohne Passwort: loggt ins schreibgeschützte Demo-Rudel ein (falls vorhanden)
 router.post('/demo', authLimiter, (req, res) => {
-  const demoFamily = db.prepare('SELECT id, name FROM families WHERE is_demo = 1 LIMIT 1').get()
+  const demoFamily = db.prepare('SELECT id, name FROM families WHERE is_demo = 1 ORDER BY id DESC LIMIT 1').get()
   if (!demoFamily) return res.status(404).json({ error: 'Keine Demo verfügbar' })
   setSessionCookie(res, demoFamily.id)
   res.json({ id: demoFamily.id, name: demoFamily.name, isDemo: true })

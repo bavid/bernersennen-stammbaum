@@ -250,6 +250,7 @@ const deleteDog = db.transaction((dog) => {
   db.prepare('UPDATE dogs SET father_dog_id = NULL, father_freitext = ? WHERE father_dog_id = ?').run(label, dog.id)
   db.prepare('UPDATE breeding_events SET vater_dog_id = NULL, vater_freitext = ? WHERE vater_dog_id = ?').run(label, dog.id)
   db.prepare('DELETE FROM breeding_events WHERE mutter_dog_id = ?').run(dog.id)
+  db.prepare('DELETE FROM entry_comments WHERE entry_id IN (SELECT id FROM timeline_entries WHERE dog_id = ?)').run(dog.id)
   db.prepare('DELETE FROM timeline_entries WHERE dog_id = ?').run(dog.id)
   db.prepare('DELETE FROM dog_links WHERE dog_a_id = ? OR dog_b_id = ?').run(dog.id, dog.id)
   db.prepare('DELETE FROM dogs WHERE id = ?').run(dog.id)
