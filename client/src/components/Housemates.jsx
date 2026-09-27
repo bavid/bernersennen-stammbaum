@@ -134,7 +134,7 @@ export default function Housemates({ dog, allDogs, canEdit, onAdd, onCreate, onR
           const kind = animalKind(mate)
           return (
             <span key={mate.id} className="chip chip-housemate">
-              <Link to={`/hund/${mate.id}`} className="chip-link">
+              <Link to={`/tier/${mate.id}`} className="chip-link">
                 <Avatar dog={mate} size={24} />
                 {dogLabel(mate)}
                 {kind && <span className="muted"> · {kind}</span>}

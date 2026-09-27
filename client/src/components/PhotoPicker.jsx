@@ -1,11 +1,13 @@
 import { useId, useState } from 'react'
 import { api } from '../api'
 import { downscaleImage } from '../lib/images.js'
+import { useIsDemo } from '../lib/demo.js'
 import Icon from './Icon.jsx'
 
 // Lädt Fotos sofort hoch (verkleinert) und verwaltet die Liste der URLs.
 export default function PhotoPicker({ value, onChange, multiple = true, label = 'Foto', onBusyChange, onError }) {
   const inputId = useId()
+  const isDemo = useIsDemo()
   const [busy, setBusy] = useState(false)
 
   function setBusyState(next) {
@@ -42,22 +44,30 @@ export default function PhotoPicker({ value, onChange, multiple = true, label = 
       {value.map((url) => (
         <div className="photo-thumb" key={url}>
           <img src={url} alt="" />
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() => onChange(value.filter((u) => u !== url))}
-            aria-label="Foto entfernen"
-          >
-            <Icon name="close" />
-          </button>
+          {!isDemo && (
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => onChange(value.filter((u) => u !== url))}
+              aria-label="Foto entfernen"
+            >
+              <Icon name="close" />
+            </button>
+          )}
         </div>
       ))}
-      {canAddMore && (
+      {canAddMore && !isDemo && (
         <label className={`photo-add ${busy ? 'is-busy' : ''}`} htmlFor={inputId}>
           <Icon name="camera" />
           <span>{busy ? 'Lädt …' : label}</span>
           <input id={inputId} type="file" accept="image/*" multiple={multiple} onChange={handleFiles} disabled={busy} />
         </label>
+      )}
+      {canAddMore && isDemo && (
+        <span className="photo-add is-disabled muted" title="Im Demo-Modus deaktiviert">
+          <Icon name="camera" />
+          <span>Demo: kein Upload</span>
+        </span>
       )}
     </div>
   )

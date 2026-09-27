@@ -158,6 +158,7 @@ function Dashboard({ onLogout }) {
                         <span className="muted">
                           angelegt {relativeTime(family.created_at)}
                           {family.last_activity ? ` · zuletzt aktiv ${relativeTime(family.last_activity)}` : ''}
+                          {family.quelle ? ` · über: ${family.quelle}` : ''}
                         </span>
                       </span>
                       <span className="admin-family-counts">

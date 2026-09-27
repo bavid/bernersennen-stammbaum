@@ -74,7 +74,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
     const dog = await api.createDog(payload)
     setFormOpen(false)
     toast(`${dog.name} ist jetzt Teil des Stammbaums`)
-    navigate(`/hund/${dog.id}`)
+    navigate(`/tier/${dog.id}`)
   }
 
   return (
@@ -118,10 +118,10 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
         <div className="empty-state">
           <BernerMark size={72} />
           <h3>Euer Stammbaum ist noch leer</h3>
-          <p>Fangt mit dem ältesten Hund an, den ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
+          <p>Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
           <button type="button" className="btn btn-primary" onClick={() => setFormOpen(true)}>
             <Icon name="plus" />
-            Ersten Hund anlegen
+            Erstes Tier anlegen
           </button>
         </div>
       )}

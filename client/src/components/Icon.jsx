@@ -115,6 +115,7 @@ const PATHS = {
       <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5" />
     </>
   ),
+  chevronDown: <path d="m6 9 6 6 6-6" />,
   collage: (
     <>
       <rect x="3" y="3" width="8" height="10" rx="1.5" />

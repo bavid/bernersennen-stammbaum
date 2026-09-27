@@ -6,11 +6,13 @@ const db = require('../db')
 const config = require('../config')
 const { requireAuth, setSessionCookie, clearSessionCookie } = require('../middleware/auth')
 const { rejectHoneypot } = require('../middleware/abuse')
+const { cleanText } = require('../lib/validate')
 
 const router = express.Router()
 
 const MIN_PASSWORD_LENGTH = 6
 const MAX_NAME_LENGTH = 80
+const MAX_QUELLE_LENGTH = 200
 const BCRYPT_ROUNDS = 10
 
 const authLimiter = rateLimit({
@@ -41,7 +43,7 @@ router.get('/config', (req, res) => {
 
 router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => {
   try {
-    const { name, password, inviteCode } = req.body || {}
+    const { name, password, inviteCode, quelle } = req.body || {}
     const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
     if (!trimmedName || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
       return res.status(400).json({
@@ -60,8 +62,8 @@ router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => 
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
     const result = db
-      .prepare('INSERT INTO families (name, password_hash) VALUES (?, ?)')
-      .run(trimmedName, passwordHash)
+      .prepare('INSERT INTO families (name, password_hash, quelle) VALUES (?, ?, ?)')
+      .run(trimmedName, passwordHash, cleanText(quelle, MAX_QUELLE_LENGTH))
 
     setSessionCookie(res, result.lastInsertRowid)
     res.status(201).json({ id: result.lastInsertRowid, name: trimmedName })
@@ -91,6 +93,14 @@ router.post('/login', authLimiter, async (req, res, next) => {
   }
 })
 
+// Öffentlicher Einstieg ohne Passwort: loggt ins schreibgeschützte Demo-Rudel ein (falls vorhanden)
+router.post('/demo', authLimiter, (req, res) => {
+  const demoFamily = db.prepare('SELECT id, name FROM families WHERE is_demo = 1 LIMIT 1').get()
+  if (!demoFamily) return res.status(404).json({ error: 'Keine Demo verfügbar' })
+  setSessionCookie(res, demoFamily.id)
+  res.json({ id: demoFamily.id, name: demoFamily.name, isDemo: true })
+})
+
 router.post('/logout', (req, res) => {
   clearSessionCookie(res)
   res.status(204).end()
@@ -110,12 +120,13 @@ router.put('/family', requireAuth, (req, res) => {
 
 // Einladungscode für eingeloggte Mitglieder – damit sie ihn an Bekannte weitergeben können
 router.get('/invite', requireAuth, (req, res) => {
-  res.json({ inviteCode: config.inviteCode || null })
+  // Demo-Rudel ist öffentlich erreichbar – der echte Einladungscode bleibt echten Mitgliedern vorbehalten
+  res.json({ inviteCode: req.isDemo ? null : config.inviteCode || null })
 })
 
 router.get('/me', requireAuth, (req, res) => {
   const family = db.prepare('SELECT id, name FROM families WHERE id = ?').get(req.familyId)
-  res.json(family)
+  res.json({ ...family, isDemo: req.isDemo })
 })
 
 module.exports = router

@@ -19,7 +19,7 @@ const HIGHLIGHT_MS = 2600
 function ParentLink({ parent, freitext }) {
   if (parent) {
     return (
-      <Link to={`/hund/${parent.id}`} className="chip">
+      <Link to={`/tier/${parent.id}`} className="chip">
         <Avatar dog={parent} size={24} />
         {dogLabel(parent)}
       </Link>
@@ -106,7 +106,7 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
               <dt>Nachwuchs</dt>
               <dd className="chip-list">
                 {dog.children.map((child) => (
-                  <Link key={child.id} to={`/hund/${child.id}`} className="chip">
+                  <Link key={child.id} to={`/tier/${child.id}`} className="chip">
                     <Avatar dog={child} size={24} />
                     {dogLabel(child)}
                   </Link>

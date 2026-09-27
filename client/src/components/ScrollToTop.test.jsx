@@ -30,7 +30,7 @@ test('page survives route changes when scrollTo returns a Promise (Chrome 150+)'
   })
   try {
     await act(async () => {
-      navigate('/hund/1')
+      navigate('/tier/1')
     })
   } catch {
     // Ein Absturz zeigt sich unten am leeren Container

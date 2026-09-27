@@ -98,7 +98,7 @@ router.delete('/messages/:id', requireAdmin, (req, res) => {
 router.get('/overview', requireAdmin, (req, res) => {
   const families = db
     .prepare(
-      `SELECT f.id, f.name, f.created_at,
+      `SELECT f.id, f.name, f.created_at, f.quelle,
          (SELECT COUNT(*) FROM dogs d WHERE d.family_id = f.id) AS dogs,
          (SELECT COUNT(*) FROM timeline_entries t WHERE t.family_id = f.id) AS entries,
          (SELECT COUNT(*) FROM notes n WHERE n.family_id = f.id) AS notes,
@@ -130,7 +130,7 @@ router.get('/overview', requireAdmin, (req, res) => {
 })
 
 router.get('/families/:id', requireAdmin, (req, res) => {
-  const family = db.prepare('SELECT id, name, created_at FROM families WHERE id = ?').get(req.params.id)
+  const family = db.prepare('SELECT id, name, created_at, quelle FROM families WHERE id = ?').get(req.params.id)
   if (!family) return res.status(404).json({ error: 'Rudel nicht gefunden' })
 
   const dogs = db

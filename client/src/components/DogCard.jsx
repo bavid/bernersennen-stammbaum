@@ -23,7 +23,7 @@ const DogCard = forwardRef(function DogCard({ dog, adoptiveLabel, highlighted, d
   return (
     <Link
       ref={ref}
-      to={`/hund/${dog.id}`}
+      to={`/tier/${dog.id}`}
       className={classes}
       onMouseEnter={() => onHover?.(dog.id)}
       onMouseLeave={() => onHover?.(null)}

@@ -21,6 +21,27 @@
   flex-direction: column;
 }
 
+.demo-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--rust-wash);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.demo-banner svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--rust);
+  flex-shrink: 0;
+}
+
 /* Header */
 
 .app-header {

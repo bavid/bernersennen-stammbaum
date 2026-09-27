@@ -12,8 +12,10 @@ const COOKIE_OPTIONS = {
   maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000
 }
 
-const familyExists = db.prepare('SELECT 1 FROM families WHERE id = ?')
+const familyById = db.prepare('SELECT is_demo FROM families WHERE id = ?')
 
+// is_demo kommt aus der DB, nicht aus dem Token: so bleibt eine Demo-Familie schreibgeschützt,
+// auch wenn jemand sich mit ihrem echten Passwort ganz normal einloggt.
 function requireAuth(req, res, next) {
   const token = req.cookies?.session
   if (!token) {
@@ -21,10 +23,15 @@ function requireAuth(req, res, next) {
   }
   try {
     const payload = jwt.verify(token, jwtSecret)
-    if (!familyExists.get(payload.familyId)) {
+    const family = familyById.get(payload.familyId)
+    if (!family) {
       return res.status(401).json({ error: 'Rudel existiert nicht mehr' })
     }
+    if (family.is_demo && req.method !== 'GET') {
+      return res.status(403).json({ error: 'Demo-Modus: nur zum Ansehen, keine Änderungen möglich.' })
+    }
     req.familyId = payload.familyId
+    req.isDemo = Boolean(family.is_demo)
     next()
   } catch {
     return res.status(401).json({ error: 'Session ungültig oder abgelaufen' })
