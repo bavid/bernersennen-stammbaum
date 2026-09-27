@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import DogCard from './DogCard.jsx'
+import Icon from './Icon.jsx'
 import PedigreeToolbar from './PedigreeToolbar.jsx'
 import usePanZoom from '../hooks/usePanZoom.js'
 import {
@@ -53,12 +54,40 @@ function innerSize(scroller) {
   }
 }
 
-function HouseMarker({ x, y }) {
+function HouseMarker({ x, y, onToggle }) {
   return (
-    <g transform={`translate(${x}, ${y})`}>
+    <g
+      transform={`translate(${x}, ${y})`}
+      className={onToggle ? 'housemate-toggle' : undefined}
+      onClick={onToggle}
+      role={onToggle ? 'button' : undefined}
+      tabIndex={onToggle ? 0 : undefined}
+      aria-label={onToggle ? 'Mitbewohner einklappen' : undefined}
+      onKeyDown={
+        onToggle &&
+        ((event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return
+          event.preventDefault()
+          onToggle()
+        })
+      }
+    >
       <circle r="10" />
       <path className="housemate-icon" d={HOUSE_PATH} />
     </g>
+  )
+}
+
+// Eingeklappter Mitbewohner: kleines Haus-Symbol direkt am Haupttier statt der vollen Karte(n)
+function HousemateBadge({ count, onClick }) {
+  return (
+    <button type="button" className="housemate-badge" onClick={onClick} title="Mitbewohner anzeigen">
+      <svg viewBox="-10 -10 20 20" width="20" height="20" aria-hidden="true">
+        <circle r="10" />
+        <path className="housemate-icon" d={HOUSE_PATH} />
+      </svg>
+      {count > 1 && <span className="housemate-badge-count">{count}</span>}
+    </button>
   )
 }
 
@@ -71,14 +100,44 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
     const rowOf = new Map(rows.flatMap((row, index) => row.map((dog) => [dog.id, index])))
     return housemateGroups(pairs, rowOf)
   }, [pairs, rows])
+  const anchors = useMemo(() => adoptiveAnchors(nodes, links), [nodes, links])
   const adoptiveLabels = useMemo(() => {
     const byId = new Map(nodes.map((n) => [n.id, n]))
     const labels = new Map()
-    for (const [id, anchorId] of adoptiveAnchors(nodes, links)) {
+    for (const [id, anchorId] of anchors) {
       labels.set(id, `${adoptiveTitle(byId.get(id))} von ${displayName(byId.get(anchorId))}`)
     }
     return labels
-  }, [nodes, links])
+  }, [nodes, anchors])
+
+  // Mitbewohner sind standardmäßig eingeklappt: nur ein Haus-Symbol am Haupttier, bis man draufklickt
+  const [expandedAnchors, setExpandedAnchors] = useState(() => new Set())
+  const hiddenByAnchor = useMemo(() => {
+    const map = new Map()
+    for (const [id, anchorId] of anchors) {
+      if (expandedAnchors.has(anchorId)) continue
+      if (!map.has(anchorId)) map.set(anchorId, [])
+      map.get(anchorId).push(id)
+    }
+    return map
+  }, [anchors, expandedAnchors])
+  const hiddenHousemateIds = useMemo(() => new Set([...hiddenByAnchor.values()].flat()), [hiddenByAnchor])
+  const expandAnchor = (anchorId) => setExpandedAnchors((prev) => new Set(prev).add(anchorId))
+  const collapseAnchor = (anchorId) =>
+    setExpandedAnchors((prev) => {
+      const next = new Set(prev)
+      next.delete(anchorId)
+      return next
+    })
+
+  // Jede Generation lässt sich einzeln einklappen, um lange Bäume schlanker zu machen
+  const [collapsedGens, setCollapsedGens] = useState(() => new Set())
+  const toggleGen = (index) =>
+    setCollapsedGens((prev) => {
+      const next = new Set(prev)
+      next.has(index) ? next.delete(index) : next.add(index)
+      return next
+    })
 
   const scrollRef = useRef(null)
   const containerRef = useRef(null)
@@ -103,6 +162,12 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
     document.fonts?.ready.then(remeasure)
     return () => observer.disconnect()
   }, [rows, remeasure])
+
+  // Ein-/ausklappen ändert, welche Karten es überhaupt gibt – sofort neu vermessen,
+  // statt auf den ResizeObserver zu warten (sonst zeigen die Linien kurz auf verschwundene Karten)
+  useLayoutEffect(() => {
+    remeasure()
+  }, [collapsedGens, expandedAnchors, remeasure])
 
   // Breite Bäume: am Handy mittig starten (Generationen stehen über den Karten), am Desktop links
   useLayoutEffect(() => {
@@ -235,10 +300,11 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
                   const boxes = members.map((id) => geometry.boxes.get(id)).filter(Boolean)
                   if (boxes.length < 2) return null
                   const { d, icon } = householdPath(boxes)
+                  const anchorId = members.find((id) => !anchors.has(id))
                   return (
                     <g key={members.join('-')} className={`housemate ${lineState(members)}`} data-members={members.length}>
                       <path d={d} />
-                      <HouseMarker {...icon} />
+                      <HouseMarker {...icon} onToggle={anchorId !== undefined ? () => collapseAnchor(anchorId) : undefined} />
                     </g>
                   )
                 })}
@@ -259,25 +325,44 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
 
             {rows.map((row, index) => {
               const born = generationDates(row)
+              const isCollapsed = collapsedGens.has(index)
               return (
                 <section className="pedigree-row" key={index} aria-label={`Generation ${index + 1}`}>
-                  <div className="pedigree-gen" aria-hidden="true">
+                  <button
+                    type="button"
+                    className="pedigree-gen"
+                    onClick={() => toggleGen(index)}
+                    aria-expanded={!isCollapsed}
+                  >
                     <span className="pedigree-gen-num">{ROMAN[index] || index + 1}</span>
                     <span className="pedigree-gen-label">Generation</span>
                     {born && <span className="pedigree-gen-date">{born}</span>}
-                  </div>
+                    <Icon name="chevronDown" className={`pedigree-gen-chevron ${isCollapsed ? 'is-collapsed' : ''}`} />
+                  </button>
                   <div className="pedigree-cards">
-                    {row.map((dog) => (
-                      <DogCard
-                        key={dog.id}
-                        ref={setCardRef(dog.id)}
-                        dog={dog}
-                        adoptiveLabel={adoptiveLabels.get(dog.id)}
-                        highlighted={related?.has(dog.id)}
-                        dimmed={related && !related.has(dog.id)}
-                        onHover={setHoveredId}
-                      />
-                    ))}
+                    {isCollapsed ? (
+                      <button type="button" className="pedigree-collapsed-hint" onClick={() => toggleGen(index)}>
+                        {row.length} {row.length === 1 ? 'Tier' : 'Tiere'} · einblenden
+                      </button>
+                    ) : (
+                      row.flatMap((dog) => {
+                        if (hiddenHousemateIds.has(dog.id)) return []
+                        const card = (
+                          <DogCard
+                            key={dog.id}
+                            ref={setCardRef(dog.id)}
+                            dog={dog}
+                            adoptiveLabel={adoptiveLabels.get(dog.id)}
+                            highlighted={related?.has(dog.id)}
+                            dimmed={related && !related.has(dog.id)}
+                            onHover={setHoveredId}
+                          />
+                        )
+                        const hidden = hiddenByAnchor.get(dog.id)
+                        if (!hidden?.length) return [card]
+                        return [card, <HousemateBadge key={`house-${dog.id}`} count={hidden.length} onClick={() => expandAnchor(dog.id)} />]
+                      })
+                    )}
                   </div>
                 </section>
               )

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
 import BernerMark from './components/BernerMark.jsx'
@@ -35,10 +35,17 @@ function DemoBanner({ onLeave }) {
   )
 }
 
+// Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
+function RedirectTierUrl() {
+  const { id } = useParams()
+  const { hash } = useLocation()
+  return <Navigate to={`/tier/${id}${hash}`} replace />
+}
+
 function AppHeader({ family, onLogout }) {
   const { pathname } = useLocation()
-  // Hundeseiten gehören zum Stammbaum
-  const isActive = (item, active) => active || (item.to === '/stammbaum' && pathname.startsWith('/hund/'))
+  // Tierseiten gehören zum Stammbaum
+  const isActive = (item, active) => active || (item.to === '/stammbaum' && pathname.startsWith('/tier/'))
   return (
     <header className="app-header">
       <div className="app-header-inner">
@@ -129,7 +136,8 @@ export default function App() {
               path="/stammbaum"
               element={<OverviewPage family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />}
             />
-            <Route path="/hund/:id" element={<DogDetailPage family={family} />} />
+            <Route path="/tier/:id" element={<DogDetailPage family={family} />} />
+            <Route path="/hund/:id" element={<RedirectTierUrl />} />
             <Route path="/pinnwand" element={<PinboardPage />} />
             <Route path="/zuchtbuch" element={<BreedingPage />} />
             <Route path="/admin-schreiben" element={<ContactAdminPage />} />

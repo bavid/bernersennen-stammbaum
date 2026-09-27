@@ -31,7 +31,7 @@ function Milestone({ item, onOpenPhoto }) {
         {item.children && (
           <div className="milestone-children">
             {item.children.map((child) => (
-              <Link key={child.id} to={`/hund/${child.id}`} className="chip">
+              <Link key={child.id} to={`/tier/${child.id}`} className="chip">
                 <Avatar dog={child} size={24} />
                 {dogLabel(child)}
               </Link>

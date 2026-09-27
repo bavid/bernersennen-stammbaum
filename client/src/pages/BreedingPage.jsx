@@ -101,10 +101,10 @@ function BreedingEvent({ event, onDelete, onOpenPhoto }) {
         {formatDateLong(event.datum)}
       </time>
       <div className="breeding-pair">
-        <Link to={`/hund/${event.mutter_dog_id}`}>{shortName(event.mutter_name)}</Link>
+        <Link to={`/tier/${event.mutter_dog_id}`}>{shortName(event.mutter_name)}</Link>
         <Icon name="heart" />
         {event.vater_dog_id ? (
-          <Link to={`/hund/${event.vater_dog_id}`}>{shortName(father)}</Link>
+          <Link to={`/tier/${event.vater_dog_id}`}>{shortName(father)}</Link>
         ) : (
           <span>{father || 'unbekannter Rüde'}</span>
         )}

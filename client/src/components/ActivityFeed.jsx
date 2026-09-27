@@ -44,7 +44,7 @@ export default function ActivityFeed({ entries: allEntries, termin }) {
           </Link>
         )}
         {entries.map((entry) => (
-          <Link key={entry.id} to={`/hund/${entry.dog_id}#entry-${entry.id}`} className="feed-item">
+          <Link key={entry.id} to={`/tier/${entry.dog_id}#entry-${entry.id}`} className="feed-item">
             <Avatar dog={toDog(entry)} size={44} />
             <span className="feed-body">
               <span className="feed-kicker">{dogLabel(toDog(entry))}</span>
