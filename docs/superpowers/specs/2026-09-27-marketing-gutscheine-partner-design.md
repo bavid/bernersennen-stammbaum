@@ -22,6 +22,10 @@ Für Präsentationen bei Partnern steht jederzeit eine **Admin-Präsentationsans
 damit Werbung für die Vermittlung. Wird ein Tier vermittelt, zieht seine Chronik mit ins neue Zuhause, und zwar
 über einen Gutschein. Jede Vermittlung bringt so ein neues Rudel (siehe Phase T).
 
+**Langfristig für alle Tiere, nicht nur für Hunde.** Die App kennt schon Hund, Katze und „anderes Tier". Alles
+Neue wird von Anfang an tierneutral gebaut, damit es später ohne Umbau für alle Tierarten funktioniert (siehe
+„Ausblick: alle Tiere").
+
 ## Ideensammlung (Ausgangspunkt, sinngemäß)
 
 - Marketing über Einmal-Gutscheine, verteilt an Tierheime, Hundeschulen usw.
@@ -41,6 +45,7 @@ damit Werbung für die Vermittlung. Wird ein Tier vermittelt, zieht seine Chroni
   Eine eigene Domain wird gekauft.
 - *(Zusatz)* Tierheime können die App nutzen, um Chroniken für ihre Hunde aufzubauen, Änderungen zu sammeln und
   Werbung zu machen.
+- *(Zusatz)* Nicht nur für Hunde, sondern irgendwann für alle Tiere.
 
 ## Ausgangslage im Code (Stand `1f7b91c`)
 
@@ -68,6 +73,7 @@ damit Werbung für die Vermittlung. Wird ein Tier vermittelt, zieht seine Chroni
 | Ergebnisanzeige | **Liste mit Entfernung.** Pro Eintrag gibt es einen Link „In Google Maps öffnen" (einfacher Maps-Link, kein API-Schlüssel, keine Kosten), alternativ einen OpenStreetMap-Link bzw. die Koordinaten. Keine eingebettete Karte, deshalb bleibt die CSP bei `'self'`. |
 | „Neuer Begleiter gesucht?" | Zeigt **nur Partner und vom Admin geprüfte Einträge.** Automatisch Gefundenes landet zuerst in der Prüfliste. |
 | Crawler | Quellen: Tierheim-Verzeichnis, Vermittlungstiere, Hundeschulen, Futter-Empfehlungen. Die 2 konkreten Beispiel-URLs fehlen noch. |
+| Tierarten | **Langfristig alle Tiere.** Neues wird tierneutral gebaut: Datenmodell, Texte, „Neuer Begleiter gesucht?" und Steckbriefe. Spezifisch für Hunde bleiben vorerst nur die Hundeschulen. |
 | Umgebungen | Lokale Testumgebung → Staging unter eigener URL → Prod. Nach Prod geht genau der Stand (SHA), der auf Staging getestet wurde. |
 
 ### Warum erst mal kein Google?
@@ -580,6 +586,49 @@ Anbieter und Website-Prüfung bekommen ein injiziertes `fetch`. Tests gehen also
 
 ---
 
+## Ausblick: alle Tiere
+
+Ziel ist, die App **irgendwann für alle Tiere** anzubieten, nicht nur für Hunde. Das ist keine eigene Phase jetzt.
+Es ist eine Leitlinie: Alles aus den Phasen 1–5 und T wird so gebaut, dass der spätere Schritt nur noch Tierarten,
+Texte und Branding betrifft, aber keinen Umbau.
+
+**Schon vorhanden:**
+- `dogs.tierart` mit `hund`, `katze` und `anderes` (die genaue Art steht als Freitext in `rasse`, zum Beispiel
+  „Kaninchen").
+- Passende Beschriftungen je Tierart (Rüde/Hündin, Kater/Katze, männlich/weiblich) in
+  `client/src/lib/timeline.js`.
+- Eltern müssen dieselbe Tierart haben (`server/routes/dogs.js`).
+
+**Leitlinien ab sofort:**
+- **Tierneutral bauen:**
+  - Texte sprechen von „Tier" bzw. nutzen die vorhandenen Helfer `speciesNoun`, `sexLabel` und `animalKind`.
+  - Steckbriefe, Übergabe, „Neuer Begleiter gesucht?" und Partnerportale funktionieren für jede Tierart.
+  - Filter nach Tierart kommen gleich mit.
+- **Tierheime (Phase T)** dürfen von Anfang an alle Tierarten pflegen, die die App kennt, weil Tierheime immer
+  auch Katzen und Kleintiere vermitteln.
+- **Hundespezifisch bleibt vorerst nur „Hundeschule gesucht?".** Die Tabelle `partners` ist aber schon so angelegt,
+  dass später weitere Trainings-Partner dazukommen können (zum Beispiel Katzen-Verhaltensberatung,
+  Reitschule/Pferdetraining). Futter-Empfehlungen bekommen ein Feld `tierart`.
+- **Umkreissuche:** `amenity=animal_shelter` deckt in OSM schon alle Tierarten ab. Für Training gibt es
+  `animal_training=<Tierart>`.
+
+**Später, beim eigentlichen Schritt „alle Tiere":**
+- **Tierarten erweitern:** Kleintiere, Vögel, Pferde, Reptilien usw. Dazu passende Geschlechtsbezeichnungen, und
+  „Würfe" allgemein als Nachwuchs.
+- **Branding:** Heute ist die App auf Berner Sennenhunde zugeschnitten:
+  - Logo `BernerMark` in 5 Komponenten
+  - Meta-Beschreibung in `client/index.html` („…eures Berner-Sennenhund-Rudels…")
+  - Login-Texte („Klickt einen Hund an")
+  - der Begriff **„Rudel"** in rund 20 Client-Dateien
+
+  Für alle Tiere braucht es einen neutralen Namen und ein neutrales Erscheinungsbild. „Rudel" könnte zum Beispiel
+  „Familie" oder „Zuhause" werden, wahlweise je nach Tierart.
+- **Domain:** Sie sollte **von Anfang an tierneutral** gewählt werden, also nicht „berner…", weil die QR-Codes auf
+  gedruckten Karten sie dauerhaft enthalten. Der Berner-Auftritt kann als eigene Unterseite oder Subdomain
+  weiterbestehen.
+
+---
+
 ## Querschnitt
 
 ### Recht
@@ -624,8 +673,9 @@ Tierheimen ist und „Neuer Begleiter gesucht?" mit echten Tieren füllt.
 ## Offene Fragen
 
 1. **Crawler-Beispiele:** Welche 2 konkreten URLs? Was sagen deren Nutzungsbedingungen bzw. robots.txt?
-2. **Domain:** Welche wird es? Sie muss vor dem Kartendruck feststehen, weil die QR-Codes sie enthalten. Ist
-   `staging.<domain>` mit Basic-Auth recht?
+2. **Domain:** Welche wird es? Sie muss vor dem Kartendruck feststehen, weil die QR-Codes sie enthalten. Weil die
+   App langfristig für alle Tiere gedacht ist, sollte sie tierneutral sein. Ist `staging.<domain>` mit Basic-Auth
+   recht?
 3. **Länder:** Nur Deutschland, oder auch Schweiz und Österreich? Deren 4-stellige PLZ überschneiden sich, dann
    braucht es ein Länderfeld.
 4. **Kontingente:** Wie viele Gutscheine pro Rudel? Wann wird aufgefüllt? Laufen Partner-Stapel ab?
@@ -648,5 +698,7 @@ Tierheimen ist und „Neuer Begleiter gesucht?" mit echten Tieren füllt.
     Tierheim eine eigene Kopie?
 14. **Tierheim – Steckbriefe:** Sollen Steckbriefe von Suchmaschinen gefunden werden dürfen (mehr Reichweite),
     oder nur per Link erreichbar sein (Vorschlag als Standard)?
-15. **Tierheim – andere Tiere:** Tierheime vermitteln auch Katzen, Kleintiere usw. Die App kann schon mehrere
-    Tierarten. Sollen die in Steckbriefen und unter „Neuer Begleiter gesucht?" auftauchen, oder nur Hunde?
+15. ~~**Tierheim – andere Tiere:**~~ **Entschieden:** langfristig alle Tiere. Tierheime pflegen von Anfang an
+    alle Tierarten, die die App kennt (siehe „Ausblick: alle Tiere").
+16. **Name und Branding für „alle Tiere":** Bleibt „Familienchronik" als Name? Wird „Rudel" zu einem neutralen
+    Begriff (z. B. „Familie", „Zuhause")? Bleibt der Berner-Auftritt als eigene Unterseite erhalten?
