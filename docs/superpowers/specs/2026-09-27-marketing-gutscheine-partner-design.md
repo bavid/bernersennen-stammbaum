@@ -50,7 +50,7 @@ Neue wird von Anfang an tierneutral gebaut, damit es später ohne Umbau für all
   Werbung zu machen.
 - *(Zusatz)* Nicht nur für Hunde, sondern irgendwann für alle Tiere.
 - *(Zusatz)* Das Standard-Farbschema ist genau richtig und soll so bleiben.
-- *(Zusatz)* Namensideen: „FamilieAufPfoten", „EineTierischNetteFamilie".
+- *(Zusatz)* Namensideen: „FamilieAufPfoten", „EineTierischNetteFamilie", „Fellnasen Familie".
 - *(Zusatz)* Der Zuschnitt auf Berner kann ein Theme sein. Das Design soll anpassbar werden (Theming).
 
 ## Ausgangslage im Code (Stand `1f7b91c`)
@@ -81,7 +81,7 @@ Neue wird von Anfang an tierneutral gebaut, damit es später ohne Umbau für all
 | Crawler | Quellen: Tierheim-Verzeichnis, Vermittlungstiere, Hundeschulen, Futter-Empfehlungen. Die 2 konkreten Beispiel-URLs fehlen noch. |
 | Tierarten | **Langfristig alle Tiere.** Neues wird tierneutral gebaut: Datenmodell, Texte, „Neuer Begleiter gesucht?" und Steckbriefe. Spezifisch für Hunde bleiben vorerst nur die Hundeschulen. |
 | Umgebungen | Lokale Testumgebung → Staging unter eigener URL → Prod. Nach Prod geht genau der Stand (SHA), der auf Staging getestet wurde. |
-| Name | **„Familie auf Pfoten"**, Slogan **„Eine tierisch nette Familie"**. Domain-Kandidat `familieaufpfoten.de`, dazu `familie-auf-pfoten.de` als Weiterleitung für Tippfehler. |
+| Name | **„Familie auf Pfoten"**, Slogan **„Eine tierisch nette Familie"**. Domain-Kandidat `familieaufpfoten.de`, dazu `familie-auf-pfoten.de` als Weiterleitung für Tippfehler. Als Alternative vorgemerkt: „Fellnasen-Familie" (`fellnasenfamilie.de`). Das Wort „Fellnasen" wird in den Texten verwendet. |
 | Farbschema | Die heutigen Farben (`client/src/styles/tokens.css`) sind der **Standard und werden nicht verändert.** Themes legen sich nur darüber. |
 | Themes | **Jedes Rudel wählt sein Theme selbst**, zum Beispiel „Standard" oder „Berner". **Partner-Portale** bekommen eigene Akzentfarbe und Logo. Es gibt keine Theme-Einstellung pro Server-Instanz. |
 
@@ -665,6 +665,31 @@ angefasst. Themes legen sich nur darüber und ändern nie den Standard.
 - **Später:** weitere Themes (zum Beispiel Katze), ein Dunkelmodus über denselben Mechanismus, ein Wortschatz je
   Tierart.
 
+### Namens-Alternative: Fellnasen-Familie
+
+- **Dafür:** Das Wort ist herzlich, jeder versteht es sofort, und in Tierheim-Kreisen ist es üblich.
+- **Dagegen:**
+  - Es ist schon vielfach vergeben: Instagram @fellnasenfamilie und @fellnasen.familie, die Facebook-Seite
+    „Fellnasen sind Familie" sowie Vereinsnamen wie „Fellnasen Stuttgart e.V." und „Ein Herz für Fellnasen in Not
+    e.V.". Wer von der App hört und danach sucht, landet leicht woanders.
+  - „Fellnase" ist ein beschreibendes Allerweltswort und deshalb als Marke kaum schützbar.
+  - Es gibt mehrere Schreibweisen: „Fellnasen Familie", „Fellnasen-Familie", „Fellnasenfamilie".
+  - Tiere ohne Fell sind ausgeschlossen. Das gilt bei „Pfoten" allerdings ähnlich.
+- **Deshalb bleibt „Familie auf Pfoten" der Name.** Bei Bedarf wird `fellnasenfamilie.de` zusätzlich gesichert und
+  auf `familieaufpfoten.de` weitergeleitet.
+
+### Tonalität: „Fellnasen" im Text
+
+Das gilt für das Standard-Theme. Das Berner-Theme behält seine heutigen Texte.
+
+- **„Fellnasen suchen ein Zuhause"**: Überschrift für die Tiere in Vermittlung bzw. die Steckbriefe unter „Neuer
+  Begleiter gesucht?" (Phase T und Phase 3).
+- **„Wie geht's den anderen Fellnasen?"**: Hero-Text auf der Login- bzw. Startseite, angelehnt an das heutige
+  „Wie geht's den anderen?".
+- Der Slogan **„Eine tierisch nette Familie"** bleibt.
+- Tiere ohne Fell (Vögel, Reptilien, Fische) werden je nach Tierart neutral angesprochen. Dafür gibt es schon die
+  Helfer `speciesNoun` und `animalKind` in `client/src/lib/timeline.js`.
+
 ### Technik
 
 - `client/src/themes/` enthält `index.js`, `standard.js` und `berner.js`. Jedes Theme beschreibt:
@@ -746,7 +771,10 @@ Phase 5 (Kartendruck) und vor dem Start in Prod unter der neuen Domain.
 1. **Crawler-Beispiele:** Welche 2 konkreten URLs? Was sagen deren Nutzungsbedingungen bzw. robots.txt?
 2. **Domain:** Kandidat ist `familieaufpfoten.de`, dazu `familie-auf-pfoten.de` als Weiterleitung. Ist sie noch
    frei? Sie muss vor dem Kartendruck gekauft sein, weil die QR-Codes sie enthalten. Ist
-   `staging.familieaufpfoten.de` mit Basic-Auth recht?
+   `staging.familieaufpfoten.de` mit Basic-Auth recht? Optional kommen `fellnasenfamilie.de` bzw.
+   `fellnasen-familie.de` als Schutz- und Weiterleitungsdomains dazu. Stand 27.09.2026 haben `familieaufpfoten.de`
+   und `fellnasenfamilie.de` keinen DNS-Eintrag. Das spricht dafür, dass sie frei sind, ist aber kein Beweis. Die
+   verbindliche Prüfung läuft über die DENIC-Domainabfrage.
 3. **Länder:** Nur Deutschland, oder auch Schweiz und Österreich? Deren 4-stellige PLZ überschneiden sich, dann
    braucht es ein Länderfeld.
 4. **Kontingente:** Wie viele Gutscheine pro Rudel? Wann wird aufgefüllt? Laufen Partner-Stapel ab?
@@ -778,6 +806,7 @@ Phase 5 (Kartendruck) und vor dem Start in Prod unter der neuen Domain.
 18. **Markenrecherche:** Vor dem Domainkauf „Familie auf Pfoten" beim DPMA bzw. EUIPO prüfen. Es gibt die bekannte
     Tierschutzmarke VIER PFOTEN und eine Facebook-Seite „Familie mit vier Pfoten". Die Namen sind verschieden, aber
     eine kurze Prüfung schadet nicht. „Eine tierisch nette Familie" ist ein Buchtitel, als Slogan ist das
-    unkritisch.
+    unkritisch. „Fellnasen" ist ein beschreibendes Wort und als Marke kaum schützbar. Das ist ein Grund mehr, es
+    nur im Text zu verwenden.
 19. **Eigene Farben:** Sollen Rudel später einzelne Farben selbst anpassen dürfen, oder nur fertige Themes wählen
     (Vorschlag, damit Kontrast und Lesbarkeit gesichert bleiben)?
