@@ -18,7 +18,7 @@ test('admin sees everything, but only with the admin login', async (t) => {
   const { server, base } = await startApp()
   t.after(() => cleanup(dataDir, server))
 
-  const a = await createFamily(base, 'Rudel A', 'passwortA')
+  const a = await createFamily(base, 'Rudel A', 'passwortA', { quelle: 'Hundeschule Musterstadt' })
   await createFamily(base, 'Rudel B', 'passwortB')
   const dog = (await call(base, '/api/dogs', { method: 'POST', cookie: a.cookie, body: { name: 'Hermes', geschlecht: 'ruede', rasse: 'Berner-Mix' } })).data
   await call(base, '/api/timeline', { method: 'POST', cookie: a.cookie, body: { dogId: dog.id, autorName: 'D', datum: '2026-06-01', titel: 'See' } })
@@ -49,6 +49,7 @@ test('admin sees everything, but only with the admin login', async (t) => {
     const rudelA = data.families.find((f) => f.name === 'Rudel A')
     assert.deepEqual([rudelA.dogs, rudelA.entries, rudelA.notes, rudelA.replies], [1, 1, 1, 1])
     assert.ok(rudelA.last_activity)
+    assert.equal(rudelA.quelle, 'Hundeschule Musterstadt')
   })
 
   await t.test('pack details include dogs, entries and notes with replies', async () => {

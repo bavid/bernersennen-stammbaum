@@ -106,6 +106,7 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
+  const [quelle, setQuelle] = useState('')
   const [website, setWebsite] = useState('')
   const [passwordError, setPasswordError] = useState(null)
   const [error, setError] = useState(null)
@@ -117,7 +118,7 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
     setPasswordError(null)
     setLoading(true)
     try {
-      onLogin(await api.createFamily({ name, password, inviteCode: inviteCode || undefined, website }))
+      onLogin(await api.createFamily({ name, password, inviteCode: inviteCode || undefined, quelle: quelle || undefined, website }))
     } catch (err) {
       // "Passwort belegt" direkt am Passwortfeld zeigen, alles andere oben
       if (err.details?.field === 'password') setPasswordError(err.message)
@@ -171,6 +172,18 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
           </span>
         </div>
       )}
+      <div className="field">
+        <label className="field-label" htmlFor="family-quelle">
+          Wie hast du von uns erfahren? <span className="muted">(optional)</span>
+        </label>
+        <input
+          id="family-quelle"
+          value={quelle}
+          onChange={(e) => setQuelle(e.target.value)}
+          placeholder="z. B. Hundeschule, Zuchtverein, Facebook, von einem Freund"
+          maxLength={200}
+        />
+      </div>
       <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading}>
         {loading ? 'Lege an …' : 'Rudel anlegen'}
       </button>

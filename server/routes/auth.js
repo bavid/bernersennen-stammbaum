@@ -6,11 +6,13 @@ const db = require('../db')
 const config = require('../config')
 const { requireAuth, setSessionCookie, clearSessionCookie } = require('../middleware/auth')
 const { rejectHoneypot } = require('../middleware/abuse')
+const { cleanText } = require('../lib/validate')
 
 const router = express.Router()
 
 const MIN_PASSWORD_LENGTH = 6
 const MAX_NAME_LENGTH = 80
+const MAX_QUELLE_LENGTH = 200
 const BCRYPT_ROUNDS = 10
 
 const authLimiter = rateLimit({
@@ -41,7 +43,7 @@ router.get('/config', (req, res) => {
 
 router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => {
   try {
-    const { name, password, inviteCode } = req.body || {}
+    const { name, password, inviteCode, quelle } = req.body || {}
     const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
     if (!trimmedName || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
       return res.status(400).json({
@@ -60,8 +62,8 @@ router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => 
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
     const result = db
-      .prepare('INSERT INTO families (name, password_hash) VALUES (?, ?)')
-      .run(trimmedName, passwordHash)
+      .prepare('INSERT INTO families (name, password_hash, quelle) VALUES (?, ?, ?)')
+      .run(trimmedName, passwordHash, cleanText(quelle, MAX_QUELLE_LENGTH))
 
     setSessionCookie(res, result.lastInsertRowid)
     res.status(201).json({ id: result.lastInsertRowid, name: trimmedName })
