@@ -27,13 +27,16 @@ Pinnwand für Treffen und Notizen, Zuchtbuch und druckbaren Collagen.
 - **Stammbaum**: Generationen werden automatisch berechnet, Eltern und Würfe mit Linien verbunden,
   jede Generation zeigt ihr Geburtsdatum bzw. ihre Geburtsjahre. Beim Überfahren eines Hundes wird
   seine Familie hervorgehoben, ein Klick öffnet seine Seite. Große Bäume lassen sich zoomen
-  (Knöpfe oder Strg + Mausrad), mit der Maus verschieben, einpassen und im Vollbild ansehen.
+  (Knöpfe oder Strg + Mausrad), mit der Maus verschieben, einpassen und im Vollbild ansehen und
+  nutzen die volle Fensterbreite. „Kompakt“ zeigt ältere Generationen nur mit Porträt und Namen
+  (per Klick auf die Generation auch einzeln) – die Linien bleiben verbunden.
 - **Rasse & unbekannte Vorfahren**: Jeder Hund hat eine Rasse (auch Mischungen wie
   „Berner × Hovawart"). Vorfahren ohne bekannten Namen lassen sich mit „Name unbekannt" anlegen
   und erscheinen trotzdem als eigene Karte im Baum.
 - **Adoptiv-Geschwister & andere Tiere**: „Lebt zusammen mit" verbindet Tiere ohne gemeinsame
-  Abstammung, etwa einen Adoptiv-Bruder oder eine Katze. Sie stehen direkt neben ihrem Mitbewohner,
-  verbunden mit einer gestrichelten Linie, und tragen z. B. „Adoptiv-Katze von Hermes". Auf der Seite
+  Abstammung, etwa einen Adoptiv-Bruder oder eine Katze. Ein Haus-Knopf am Tier klappt darunter eine
+  eigene Mitbewohner-Reihe auf – der Wurf bleibt zusammen, die Karten tragen z. B.
+  „Adoptiv-Katze von Hermes". Auf der Seite
   eines Hundes lässt sich ein Mitbewohner in einem Schritt neu anlegen (Tierart, Name, z. B. „Kaninchen").
 - **Chronik pro Hund**: Einträge mit Datum, Text und Fotos. Das Datum bestimmt die Position.
   Ein Eintrag von 2018, der heute nachgetragen wird, landet automatisch zwischen 2017 und 2019.

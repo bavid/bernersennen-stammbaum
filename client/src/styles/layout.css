@@ -249,17 +249,28 @@
   line-height: 1.55;
 }
 
+/* Kennzahlen und Knöpfe: linksbündig untereinander – egal ob neben dem Titel oder darunter umgebrochen */
 .page-hero-side {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--space-5);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
 @media (max-width: 720px) {
   .page-hero-side {
     align-items: stretch;
     width: 100%;
+  }
+
+  .hero-actions > .btn {
+    flex: 1 1 12rem;
   }
 }
 

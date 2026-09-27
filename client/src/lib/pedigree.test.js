@@ -1,5 +1,14 @@
 import { describe, expect, test } from 'vitest'
-import { adoptiveAnchors, collectNodes, computeUnions, generationDates, housemateGroups, housematePairs, layoutPedigree } from './pedigree.js'
+import {
+  adoptiveAnchors,
+  collectNodes,
+  computeUnions,
+  generationDates,
+  housemateGroups,
+  housemateLanes,
+  housematePairs,
+  layoutPedigree
+} from './pedigree.js'
 
 const dog = (id, name, extra = {}) => ({ id, name, geburtsdatum: null, mother_dog_id: null, father_dog_id: null, ...extra })
 
@@ -72,13 +81,12 @@ describe('adoptive siblings', () => {
     ])
   })
 
-  test('adoptive siblings share the generation and sit right next to their housemate', () => {
-    const rows = layoutPedigree(family, links).map((row) => row.map((d) => d.name))
-    expect(rows).toHaveLength(2)
-    expect(rows[1]).toEqual(['Ida', 'Hermes', 'Max', 'Minka'])
+  test('adoptive animals are not part of the generation rows – the litter stays untouched', () => {
+    const rows = layoutPedigree(family, links).map((row) => row.map((d) => d.name).sort())
+    expect(rows).toEqual([['Dante', 'Emma'], ['Hermes', 'Ida']])
   })
 
-  test('the litter stays together: adoptive animals sit at its outer edges, next to their housemate', () => {
+  test('each generation gets a housemate lane: groups in the order of their housemates', () => {
     const nodes = [
       dog(1, 'Emma'),
       dog(2, 'Dante'),
@@ -90,25 +98,26 @@ describe('adoptive siblings', () => {
       dog(8, 'Luna')
     ]
     const litterLinks = [
+      { dog_a_id: 5, dog_b_id: 8 },
       { dog_a_id: 3, dog_b_id: 6 },
-      { dog_a_id: 3, dog_b_id: 7 },
-      { dog_a_id: 5, dog_b_id: 8 }
+      { dog_a_id: 3, dog_b_id: 7 }
     ]
-    const rows = layoutPedigree(nodes, litterLinks).map((row) => row.map((d) => d.name))
-    expect(rows[1]).toEqual(['Mimi', 'Balu', 'Hermes', 'Ida', 'Otto', 'Luna'])
+    const anchors = adoptiveAnchors(nodes, litterLinks)
+    const rows = layoutPedigree(nodes, litterLinks)
+    expect(rows[1].map((d) => d.name)).toEqual(['Hermes', 'Ida', 'Otto'])
+    expect(housemateLanes(rows, anchors)).toEqual([
+      [],
+      [
+        { anchorId: 3, memberIds: [6, 7] },
+        { anchorId: 5, memberIds: [8] }
+      ]
+    ])
   })
 
-  test('a single housemate in the middle of a litter moves to its edge', () => {
-    const nodes = [
-      dog(1, 'Emma'),
-      dog(2, 'Dante'),
-      dog(3, 'Anna', { mother_dog_id: 1, father_dog_id: 2 }),
-      dog(4, 'Hermes', { mother_dog_id: 1, father_dog_id: 2 }),
-      dog(5, 'Zora', { mother_dog_id: 1, father_dog_id: 2 }),
-      dog(6, 'Max')
-    ]
-    const rows = layoutPedigree(nodes, [{ dog_a_id: 4, dog_b_id: 6 }]).map((row) => row.map((d) => d.name))
-    expect(rows[1]).toEqual(['Anna', 'Zora', 'Hermes', 'Max'])
+  test('without links nothing changes and pairs outside the tree are ignored', () => {
+    expect(adoptiveAnchors(family, []).size).toBe(0)
+    expect(layoutPedigree(family, []).flat()).toHaveLength(6)
+    expect(housematePairs([{ dog_a_id: 3, dog_b_id: 99 }], family)).toEqual([])
   })
 
   test('housemates in one row form a household, links across rows stay single pairs', () => {
@@ -127,11 +136,6 @@ describe('adoptive siblings', () => {
       [1, 9]
     ]
     expect(housemateGroups(pairs, rowOf)).toEqual({ households: [[1, 2, 3], [4, 5]], crossRow: [[1, 9]] })
-  })
-
-  test('without links nothing changes and pairs outside the tree are ignored', () => {
-    expect(adoptiveAnchors(family, []).size).toBe(0)
-    expect(housematePairs([{ dog_a_id: 3, dog_b_id: 99 }], family)).toEqual([])
   })
 })
 

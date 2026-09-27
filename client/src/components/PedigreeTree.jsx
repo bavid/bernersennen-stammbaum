@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import DogCard from './DogCard.jsx'
-import Icon from './Icon.jsx'
+import HousemateLane from './HousemateLane.jsx'
+import PedigreeRow from './PedigreeRow.jsx'
 import PedigreeToolbar from './PedigreeToolbar.jsx'
+import { HOUSE_PATH } from './HouseGlyph.jsx'
 import usePanZoom from '../hooks/usePanZoom.js'
 import {
   adoptiveAnchors,
@@ -9,18 +10,20 @@ import {
   computeUnions,
   generationDates,
   housemateGroups,
+  housemateLanes,
   housematePairs,
   layoutPedigree
 } from '../lib/pedigree.js'
-import { crossRowPath, householdPath, unionPaths } from '../lib/pedigreeLines.js'
+import { crossRowPath, householdPath, laneConnector, placeLaneGroups, unionPaths } from '../lib/pedigreeLines.js'
+import { readSetting, writeSetting } from '../lib/storage.js'
 import { adoptiveTitle, displayName } from '../lib/timeline.js'
 import { fitZoom, zoomIn, zoomOut } from '../lib/zoom.js'
 
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
-const HOUSE_PATH = 'M-6,1 L0,-5 L6,1 M-4,-0.5 L-4,5 L4,5 L4,-0.5'
 const PHONE_QUERY = '(max-width: 720px)' // wie der Handy-Umbruch in tree.css
+const LANE_GAP = 16
+const FLOOR_MARGIN = 14 // Abstand der Eltern-Linien unter einer Mitbewohner-Reihe
 
-// Position einer Karte im Baum, unabhängig vom Zoom (offset* ignoriert transform)
+// Position eines Elements im Baum, unabhängig vom Zoom (offset* ignoriert transform)
 function offsetBox(element, container) {
   let left = 0
   let top = 0
@@ -35,13 +38,24 @@ function offsetBox(element, container) {
   return { left, right: left + width, top, bottom: top + height, cx: left + width / 2, cy: top + height / 2 }
 }
 
-function measure(container, cardRefs) {
+function measureAll(refs, container) {
   const boxes = new Map()
-  for (const [id, element] of cardRefs.current) {
+  for (const [key, element] of refs.current) {
     const box = element && offsetBox(element, container)
-    if (box) boxes.set(id, box)
+    if (box) boxes.set(key, box)
   }
-  return { boxes, width: container.offsetWidth, height: container.offsetHeight }
+  return boxes
+}
+
+function measure(container, refs) {
+  return {
+    boxes: measureAll(refs.cards, container),
+    toggles: measureAll(refs.toggles, container),
+    tracks: measureAll(refs.tracks, container),
+    groupWidths: new Map([...refs.groups.current].filter(([, el]) => el).map(([id, el]) => [id, el.offsetWidth])),
+    width: container.offsetWidth,
+    height: container.offsetHeight
+  }
 }
 
 // Innenfläche des Rahmens ohne Innenabstand
@@ -54,105 +68,110 @@ function innerSize(scroller) {
   }
 }
 
-function HouseMarker({ x, y, onToggle }) {
+function HouseMarker({ x, y }) {
   return (
-    <g
-      transform={`translate(${x}, ${y})`}
-      className={onToggle ? 'housemate-toggle' : undefined}
-      onClick={onToggle}
-      role={onToggle ? 'button' : undefined}
-      tabIndex={onToggle ? 0 : undefined}
-      aria-label={onToggle ? 'Mitbewohner einklappen' : undefined}
-      onKeyDown={
-        onToggle &&
-        ((event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return
-          event.preventDefault()
-          onToggle()
-        })
-      }
-    >
+    <g transform={`translate(${x}, ${y})`}>
       <circle r="10" />
       <path className="housemate-icon" d={HOUSE_PATH} />
     </g>
   )
 }
 
-// Eingeklappter Mitbewohner: kleines Haus-Symbol direkt am Haupttier statt der vollen Karte(n)
-function HousemateBadge({ count, onClick }) {
-  return (
-    <button type="button" className="housemate-badge" onClick={onClick} title="Mitbewohner anzeigen">
-      <svg viewBox="-10 -10 20 20" width="20" height="20" aria-hidden="true">
-        <circle r="10" />
-        <path className="housemate-icon" d={HOUSE_PATH} />
-      </svg>
-      {count > 1 && <span className="housemate-badge-count">{count}</span>}
-    </button>
-  )
+// Ansichts-Einstellung pro Gerät (z. B. welche Mitbewohner aufgeklappt sind)
+function useStoredSet(key) {
+  const [value, setValue] = useState(() => {
+    const stored = readSetting(key, [])
+    return new Set(Array.isArray(stored) ? stored : [])
+  })
+  useEffect(() => writeSetting(key, [...value]), [key, value])
+  const update = useCallback((change) => setValue((previous) => change(new Set(previous))), [])
+  return [value, update]
+}
+
+const toggleIn = (id) => (set) => {
+  if (set.has(id)) set.delete(id)
+  else set.add(id)
+  return set
+}
+
+// Elemente je Schlüssel merken; die Ref-Callbacks bleiben pro Schlüssel stabil (kein Neu-Anhängen bei jedem Hover)
+function useRefMap() {
+  const map = useRef(new Map())
+  const callbacks = useRef(new Map())
+  const setter = useCallback((key) => {
+    if (!callbacks.current.has(key)) {
+      callbacks.current.set(key, (element) => {
+        if (element) map.current.set(key, element)
+        else map.current.delete(key)
+      })
+    }
+    return callbacks.current.get(key)
+  }, [])
+  return [map, setter]
 }
 
 export default function PedigreeTree({ dogs, allDogs, links = [] }) {
   const nodes = useMemo(() => collectNodes(dogs, allDogs), [dogs, allDogs])
-  const rows = useMemo(() => layoutPedigree(nodes, links), [nodes, links])
-  const unions = useMemo(() => computeUnions(nodes), [nodes])
-  const pairs = useMemo(() => housematePairs(links, nodes), [links, nodes])
-  const groups = useMemo(() => {
-    const rowOf = new Map(rows.flatMap((row, index) => row.map((dog) => [dog.id, index])))
-    return housemateGroups(pairs, rowOf)
-  }, [pairs, rows])
+  const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const anchors = useMemo(() => adoptiveAnchors(nodes, links), [nodes, links])
+  const rows = useMemo(() => layoutPedigree(nodes, links), [nodes, links])
+  const lanes = useMemo(() => housemateLanes(rows, anchors), [rows, anchors])
+  const unions = useMemo(() => computeUnions(nodes), [nodes])
+  const parentIds = useMemo(() => new Set(unions.flatMap((u) => u.parents)), [unions])
+  // Mitbewohner-Tiere liegen "zwischen" den Generationen (x.5). Sie haben per Definition keine Abstammung,
+  // sind also nie Eltern einer Linie – laneFloor sieht darum nur ganze Reihen.
+  const rowOf = useMemo(() => {
+    const map = new Map(rows.flatMap((row, index) => row.map((dog) => [dog.id, index])))
+    for (const [id, anchorId] of anchors) map.set(id, map.get(anchorId) + 0.5)
+    return map
+  }, [rows, anchors])
+  // Adoptiv-Tier ↔ Haupttier zeigt die Mitbewohner-Reihe; alle anderen Paare als Klammer bzw. Kurve
+  const groups = useMemo(() => {
+    const viaLane = ([a, b]) =>
+      anchors.get(a) === b || anchors.get(b) === a || (anchors.has(a) && anchors.get(a) === anchors.get(b))
+    return housemateGroups(housematePairs(links, nodes).filter((pair) => !viaLane(pair)), rowOf)
+  }, [links, nodes, anchors, rowOf])
   const adoptiveLabels = useMemo(() => {
-    const byId = new Map(nodes.map((n) => [n.id, n]))
     const labels = new Map()
     for (const [id, anchorId] of anchors) {
       labels.set(id, `${adoptiveTitle(byId.get(id))} von ${displayName(byId.get(anchorId))}`)
     }
     return labels
-  }, [nodes, anchors])
+  }, [byId, anchors])
 
-  // Mitbewohner sind standardmäßig eingeklappt: nur ein Haus-Symbol am Haupttier, bis man draufklickt
-  const [expandedAnchors, setExpandedAnchors] = useState(() => new Set())
-  const hiddenByAnchor = useMemo(() => {
-    const map = new Map()
-    for (const [id, anchorId] of anchors) {
-      if (expandedAnchors.has(anchorId)) continue
-      if (!map.has(anchorId)) map.set(anchorId, [])
-      map.get(anchorId).push(id)
-    }
-    return map
-  }, [anchors, expandedAnchors])
-  const hiddenHousemateIds = useMemo(() => new Set([...hiddenByAnchor.values()].flat()), [hiddenByAnchor])
-  const expandAnchor = (anchorId) => setExpandedAnchors((prev) => new Set(prev).add(anchorId))
-  const collapseAnchor = (anchorId) =>
-    setExpandedAnchors((prev) => {
-      const next = new Set(prev)
-      next.delete(anchorId)
-      return next
-    })
+  // Mitbewohner sind eingeklappt, bis man am Haupttier aufs Haus klickt; Generationen lassen sich kompakt zeigen
+  const [openHousemates, updateOpenHousemates] = useStoredSet('openHousemates')
+  const [compactGens, updateCompactGens] = useStoredSet('compactGens')
 
-  // Jede Generation lässt sich einzeln einklappen, um lange Bäume schlanker zu machen
-  const [collapsedGens, setCollapsedGens] = useState(() => new Set())
-  const toggleGen = (index) =>
-    setCollapsedGens((prev) => {
-      const next = new Set(prev)
-      next.has(index) ? next.delete(index) : next.add(index)
-      return next
-    })
+  const visibleLanes = useMemo(
+    () =>
+      lanes.map((laneGroups, index) =>
+        compactGens.has(index)
+          ? []
+          : laneGroups
+              .filter((group) => openHousemates.has(group.anchorId))
+              .map((group) => ({ ...group, members: group.memberIds.map((id) => byId.get(id)) }))
+      ),
+    [lanes, compactGens, openHousemates, byId]
+  )
 
   const scrollRef = useRef(null)
   const containerRef = useRef(null)
-  const cardRefs = useRef(new Map())
+  const [cardRefs, setCardRef] = useRefMap()
+  const [toggleRefs, setToggleRef] = useRefMap()
+  const [trackRefs, setTrackRef] = useRefMap()
+  const [groupRefs, setGroupRef] = useRefMap()
   const initialScrollPending = useRef(true)
   const zoomBeforeExpand = useRef(null)
   const [geometry, setGeometry] = useState(null)
-  const [availableWidth, setAvailableWidth] = useState(0)
   const [hoveredId, setHoveredId] = useState(null)
   const [expanded, setExpanded] = useState(false)
   const { zoom, zoomTo, syncLabels } = usePanZoom(scrollRef, containerRef)
 
   const remeasure = useCallback(() => {
-    if (containerRef.current) setGeometry(measure(containerRef.current, cardRefs))
-  }, [])
+    if (!containerRef.current) return
+    setGeometry(measure(containerRef.current, { cards: cardRefs, toggles: toggleRefs, tracks: trackRefs, groups: groupRefs }))
+  }, [cardRefs, toggleRefs, trackRefs, groupRefs])
 
   useLayoutEffect(() => {
     initialScrollPending.current = true
@@ -163,11 +182,39 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
     return () => observer.disconnect()
   }, [rows, remeasure])
 
-  // Ein-/ausklappen ändert, welche Karten es überhaupt gibt – sofort neu vermessen,
-  // statt auf den ResizeObserver zu warten (sonst zeigen die Linien kurz auf verschwundene Karten)
+  // Mitbewohner-Gruppen unter ihr Haupttier setzen – gemessen am Haus-Knopf, an dem die Linie beginnt
+  const placements = useMemo(() => {
+    if (!geometry) return []
+    return visibleLanes.map((laneGroups, index) => {
+      const track = geometry.tracks.get(index)
+      if (!laneGroups.length || !track) return null
+      const branchPoints = new Map(
+        laneGroups.map((group) => {
+          const box = geometry.boxes.get(group.anchorId)
+          const toggle = geometry.toggles.get(group.anchorId)
+          return [group.anchorId, box && toggle ? { ...box, cx: toggle.cx } : box]
+        })
+      )
+      const stems = rows[index]
+        .filter((dog) => parentIds.has(dog.id))
+        .map((dog) => geometry.boxes.get(dog.id)?.cx)
+        .filter((x) => x !== undefined)
+      return placeLaneGroups(laneGroups, {
+        anchors: branchPoints,
+        widths: geometry.groupWidths,
+        stems,
+        minX: track.left + LANE_GAP,
+        maxX: geometry.width,
+        gap: LANE_GAP
+      })
+    })
+  }, [geometry, visibleLanes, rows, parentIds])
+
+  // Nach dem Aufklappen, Einklappen oder Verschieben neu vermessen (die Linien hängen an den Karten)
+  const placementKey = JSON.stringify(placements.map((placement) => placement && [...placement.entries()]))
   useLayoutEffect(() => {
     remeasure()
-  }, [collapsedGens, expandedAnchors, remeasure])
+  }, [placementKey, compactGens, openHousemates, remeasure])
 
   // Breite Bäume: am Handy mittig starten (Generationen stehen über den Karten), am Desktop links
   useLayoutEffect(() => {
@@ -179,23 +226,10 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
     syncLabels()
   }, [geometry, syncLabels])
 
-  // Schmale Bäume bleiben mittig: die Ebene ist mindestens so breit wie der sichtbare Rahmen
-  useLayoutEffect(() => {
-    const scroller = scrollRef.current
-    const update = () => setAvailableWidth(innerSize(scroller).width)
-    update()
-    const observer = new ResizeObserver(update)
-    observer.observe(scroller)
-    return () => observer.disconnect()
-  }, [])
-
   const fit = useCallback(() => {
     const layer = containerRef.current
-    const previous = layer.style.minWidth
-    layer.style.minWidth = '0px' // eigentliche Breite des Baums, ohne Mindestbreite
-    const content = { width: layer.offsetWidth, height: layer.offsetHeight }
-    layer.style.minWidth = previous
     const available = innerSize(scrollRef.current)
+    const content = { width: layer.offsetWidth, height: layer.offsetHeight }
     zoomTo(fitZoom(content, expanded ? available : { width: available.width }))
   }, [expanded, zoomTo])
 
@@ -234,6 +268,11 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
     }
   }, [expanded, collapse])
 
+  // "Vorfahren kompakt": alle Generationen bis auf die jüngste auf Porträt + Name reduzieren
+  const anyCompact = compactGens.size > 0
+  const toggleAncestorsCompact = () =>
+    updateCompactGens(() => (anyCompact ? new Set() : new Set(rows.slice(0, -1).map((_, index) => index))))
+
   const related = useMemo(() => {
     if (!hoveredId) return null
     const ids = new Set([hoveredId])
@@ -243,6 +282,10 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
         union.children.forEach((id) => ids.add(id))
       }
     }
+    const anchorId = anchors.get(hoveredId) ?? hoveredId
+    for (const [id, anchor] of anchors) {
+      if (anchor === anchorId) ids.add(id).add(anchorId)
+    }
     for (const members of groups.households) {
       if (members.includes(hoveredId)) members.forEach((id) => ids.add(id))
     }
@@ -251,41 +294,60 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
       if (b === hoveredId) ids.add(a)
     }
     return ids
-  }, [hoveredId, unions, groups])
-
-  const setCardRef = (id) => (element) => {
-    if (element) cardRefs.current.set(id, element)
-    else cardRefs.current.delete(id)
-  }
+  }, [hoveredId, unions, anchors, groups])
 
   const lineState = (ids) => (related ? (ids.includes(hoveredId) ? 'is-active' : 'is-muted') : '')
-  const hasHousemates = groups.households.length > 0 || groups.crossRow.length > 0
+  const cardProps = (dog) => ({
+    adoptiveLabel: adoptiveLabels.get(dog.id),
+    highlighted: related?.has(dog.id),
+    dimmed: related && !related.has(dog.id),
+    onHover: setHoveredId
+  })
+  const housematesOfRow = (index) =>
+    new Map(
+      lanes[index].map((group) => [
+        group.anchorId,
+        {
+          count: group.memberIds.length,
+          open: openHousemates.has(group.anchorId),
+          onToggle: () => updateOpenHousemates(toggleIn(group.anchorId))
+        }
+      ])
+    )
+  const laneFloor = (rowIndex) => {
+    const bottoms = (visibleLanes[rowIndex] || [])
+      .flatMap((group) => group.memberIds)
+      .map((id) => geometry.boxes.get(id)?.bottom)
+      .filter((bottom) => bottom !== undefined)
+    return bottoms.length ? Math.max(...bottoms) + FLOOR_MARGIN : undefined
+  }
+  const hasHousemates = anchors.size > 0 || groups.households.length > 0 || groups.crossRow.length > 0
 
   return (
     <div className={`pedigree-wrap ${expanded ? 'is-expanded' : ''}`}>
       <PedigreeToolbar
         zoom={zoom}
         expanded={expanded}
+        compact={anyCompact}
+        canCompact={rows.length > 1}
         onZoomIn={() => zoomTo(zoomIn(zoom))}
         onZoomOut={() => zoomTo(zoomOut(zoom))}
         onReset={() => zoomTo(1)}
         onFit={fit}
+        onToggleCompact={toggleAncestorsCompact}
         onToggleExpand={toggleExpanded}
       />
       <div className="pedigree-scroll" ref={scrollRef}>
-        <div
-          className="pedigree-sizer"
-          style={geometry ? { width: geometry.width * zoom, height: geometry.height * zoom } : undefined}
-        >
+        <div className="pedigree-sizer" style={geometry ? { width: geometry.width * zoom, height: geometry.height * zoom } : undefined}>
           <div
-            className={`pedigree ${hasHousemates ? 'has-housemates' : ''}`}
+            className={`pedigree ${groups.households.length ? 'has-households' : ''}`}
             ref={containerRef}
-            style={{ transform: `scale(${zoom})`, minWidth: availableWidth ? availableWidth / zoom : undefined }}
+            style={{ transform: `scale(${zoom})` }}
           >
             {geometry && (
               <svg className="pedigree-lines" width={geometry.width} height={geometry.height} aria-hidden="true">
                 {unions.map((union) => {
-                  const drawn = unionPaths(union, geometry.boxes)
+                  const drawn = unionPaths(union, geometry.boxes, { floor: laneFloor(rowOf.get(union.parents[0])) })
                   if (!drawn) return null
                   return (
                     <g key={union.key} className={lineState([...union.parents, ...union.children])}>
@@ -296,15 +358,32 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
                     </g>
                   )
                 })}
+                {visibleLanes.flatMap((laneGroups, index) =>
+                  laneGroups.map((group) => {
+                    const toggle = geometry.toggles.get(group.anchorId)
+                    const spot = placements[index]?.get(group.anchorId)
+                    const members = group.memberIds.map((id) => geometry.boxes.get(id)).filter(Boolean)
+                    if (!toggle || !spot || !members.length) return null
+                    const { d } = laneConnector({ bottom: toggle.bottom }, spot.stemX, members)
+                    return (
+                      <g
+                        key={`lane-${group.anchorId}`}
+                        className={`housemate lane-link ${lineState([group.anchorId, ...group.memberIds])}`}
+                        data-members={group.memberIds.length + 1}
+                      >
+                        <path d={d} />
+                      </g>
+                    )
+                  })
+                )}
                 {groups.households.map((members) => {
                   const boxes = members.map((id) => geometry.boxes.get(id)).filter(Boolean)
                   if (boxes.length < 2) return null
                   const { d, icon } = householdPath(boxes)
-                  const anchorId = members.find((id) => !anchors.has(id))
                   return (
                     <g key={members.join('-')} className={`housemate ${lineState(members)}`} data-members={members.length}>
                       <path d={d} />
-                      <HouseMarker {...icon} onToggle={anchorId !== undefined ? () => collapseAnchor(anchorId) : undefined} />
+                      <HouseMarker {...icon} />
                     </g>
                   )
                 })}
@@ -323,49 +402,36 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
               </svg>
             )}
 
-            {rows.map((row, index) => {
-              const born = generationDates(row)
-              const isCollapsed = collapsedGens.has(index)
-              return (
-                <section className="pedigree-row" key={index} aria-label={`Generation ${index + 1}`}>
-                  <button
-                    type="button"
-                    className="pedigree-gen"
-                    onClick={() => toggleGen(index)}
-                    aria-expanded={!isCollapsed}
-                  >
-                    <span className="pedigree-gen-num">{ROMAN[index] || index + 1}</span>
-                    <span className="pedigree-gen-label">Generation</span>
-                    {born && <span className="pedigree-gen-date">{born}</span>}
-                    <Icon name="chevronDown" className={`pedigree-gen-chevron ${isCollapsed ? 'is-collapsed' : ''}`} />
-                  </button>
-                  <div className="pedigree-cards">
-                    {isCollapsed ? (
-                      <button type="button" className="pedigree-collapsed-hint" onClick={() => toggleGen(index)}>
-                        {row.length} {row.length === 1 ? 'Tier' : 'Tiere'} · einblenden
-                      </button>
-                    ) : (
-                      row.flatMap((dog) => {
-                        if (hiddenHousemateIds.has(dog.id)) return []
-                        const card = (
-                          <DogCard
-                            key={dog.id}
-                            ref={setCardRef(dog.id)}
-                            dog={dog}
-                            adoptiveLabel={adoptiveLabels.get(dog.id)}
-                            highlighted={related?.has(dog.id)}
-                            dimmed={related && !related.has(dog.id)}
-                            onHover={setHoveredId}
-                          />
-                        )
-                        const hidden = hiddenByAnchor.get(dog.id)
-                        if (!hidden?.length) return [card]
-                        return [card, <HousemateBadge key={`house-${dog.id}`} count={hidden.length} onClick={() => expandAnchor(dog.id)} />]
-                      })
-                    )}
-                  </div>
-                </section>
+            {rows.flatMap((row, index) => {
+              const rowElement = (
+                <PedigreeRow
+                  key={`row-${index}`}
+                  index={index}
+                  row={row}
+                  born={generationDates(row)}
+                  compact={compactGens.has(index)}
+                  onToggleCompact={() => updateCompactGens(toggleIn(index))}
+                  cardProps={cardProps}
+                  setCardRef={setCardRef}
+                  housemates={housematesOfRow(index)}
+                  setToggleRef={setToggleRef}
+                />
               )
+              if (!visibleLanes[index].length) return [rowElement]
+              return [
+                rowElement,
+                <HousemateLane
+                  key={`lane-${index}`}
+                  index={index}
+                  groups={visibleLanes[index]}
+                  placement={placements[index]}
+                  trackLeft={geometry?.tracks.get(index)?.left}
+                  trackRef={setTrackRef(index)}
+                  setGroupRef={setGroupRef}
+                  setCardRef={setCardRef}
+                  cardProps={cardProps}
+                />
+              ]
             })}
           </div>
         </div>
@@ -376,7 +442,7 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
             <span className="legend-line legend-family" /> Abstammung
           </span>
           <span className="legend-item">
-            <span className="legend-line legend-housemate" /> lebt zusammen (z. B. Adoptiv-Geschwister)
+            <span className="legend-line legend-housemate" /> lebt zusammen – Haus am Tier antippen zeigt die Mitbewohner
           </span>
         </p>
       )}

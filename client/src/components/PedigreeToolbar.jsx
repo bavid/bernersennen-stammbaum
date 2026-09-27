@@ -1,8 +1,19 @@
 import Icon from './Icon.jsx'
 import { MAX_ZOOM, MIN_ZOOM } from '../lib/zoom.js'
 
-// Ansicht des Stammbaums: zoomen, einpassen, Vollbild
-export default function PedigreeToolbar({ zoom, expanded, onZoomIn, onZoomOut, onReset, onFit, onToggleExpand }) {
+// Ansicht des Stammbaums: zoomen, einpassen, Vorfahren kompakt, Vollbild
+export default function PedigreeToolbar({
+  zoom,
+  expanded,
+  compact,
+  canCompact,
+  onZoomIn,
+  onZoomOut,
+  onReset,
+  onFit,
+  onToggleCompact,
+  onToggleExpand
+}) {
   return (
     <div className="pedigree-toolbar" role="toolbar" aria-label="Stammbaum-Ansicht">
       <span className="pedigree-hint">Ziehen zum Verschieben · Strg + Mausrad zum Zoomen</span>
@@ -17,10 +28,28 @@ export default function PedigreeToolbar({ zoom, expanded, onZoomIn, onZoomOut, o
           <Icon name="plus" />
         </button>
       </div>
-      <button type="button" className="tool-btn tool-btn-label" onClick={onFit} title="Ganzen Stammbaum zeigen">
+      <button type="button" className="tool-btn tool-btn-label" onClick={onFit} aria-label="Einpassen" title="Ganzen Stammbaum zeigen">
         <Icon name="fit" /> <span>Einpassen</span>
       </button>
-      <button type="button" className="tool-btn tool-btn-label" onClick={onToggleExpand} aria-pressed={expanded}>
+      {canCompact && (
+        <button
+          type="button"
+          className="tool-btn tool-btn-label"
+          onClick={onToggleCompact}
+          aria-pressed={compact}
+          aria-label="Vorfahren kompakt"
+          title={compact ? 'Alle Generationen voll zeigen' : 'Ältere Generationen nur mit Porträt und Namen zeigen'}
+        >
+          <Icon name="layers" /> <span>Kompakt</span>
+        </button>
+      )}
+      <button
+        type="button"
+        className="tool-btn tool-btn-label"
+        onClick={onToggleExpand}
+        aria-pressed={expanded}
+        aria-label={expanded ? 'Vollbild schließen' : 'Vollbild'}
+      >
         <Icon name={expanded ? 'shrink' : 'expand'} /> <span>{expanded ? 'Schließen' : 'Vollbild'}</span>
       </button>
     </div>

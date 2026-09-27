@@ -5,7 +5,10 @@ import '@fontsource-variable/fraunces/full.css'
 import '@fontsource-variable/manrope'
 import App from './App.jsx'
 import { ToastProvider } from './components/Toast.jsx'
+import { trackScrollbarWidth } from './lib/viewport.js'
 import './styles/global.css'
+
+trackScrollbarWidth()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

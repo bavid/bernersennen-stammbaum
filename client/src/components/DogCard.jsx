@@ -1,16 +1,41 @@
 import { forwardRef } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
-import { displayName, sexLabel } from '../lib/timeline.js'
+import { displayName, sexLabel, shortName } from '../lib/timeline.js'
 import { yearOf } from '../lib/dates.js'
 
 const SPECIES_BADGE = { katze: '🐈', anderes: '🐾' }
 
-const DogCard = forwardRef(function DogCard({ dog, adoptiveLabel, highlighted, dimmed, onHover }, ref) {
+// variant: 'full' (Standard), 'lane' (etwas kleiner, Mitbewohner-Reihe), 'mini' (eingeklappte Generation)
+const DogCard = forwardRef(function DogCard({ dog, adoptiveLabel, highlighted, dimmed, onHover, variant = 'full' }, ref) {
   const year = yearOf(dog.geburtsdatum)
   const badge = SPECIES_BADGE[dog.tierart]
+  const hoverProps = {
+    onMouseEnter: () => onHover?.(dog.id),
+    onMouseLeave: () => onHover?.(null),
+    onFocus: () => onHover?.(dog.id),
+    onBlur: () => onHover?.(null)
+  }
+
+  if (variant === 'mini') {
+    const name = dog.name_unbekannt ? displayName(dog) : shortName(dog.name)
+    return (
+      <Link
+        ref={ref}
+        to={`/tier/${dog.id}`}
+        className={['dog-mini', highlighted && 'is-highlighted', dimmed && 'is-dimmed'].filter(Boolean).join(' ')}
+        title={displayName(dog)}
+        {...hoverProps}
+      >
+        <Avatar dog={dog} size={40} />
+        <span className="dog-mini-name">{name}</span>
+      </Link>
+    )
+  }
+
   const classes = [
     'dog-card',
+    variant === 'lane' && 'is-lane',
     dog.external && 'is-external',
     dog.name_unbekannt && 'is-unknown',
     adoptiveLabel && 'is-adoptive',
@@ -25,10 +50,7 @@ const DogCard = forwardRef(function DogCard({ dog, adoptiveLabel, highlighted, d
       ref={ref}
       to={`/tier/${dog.id}`}
       className={classes}
-      onMouseEnter={() => onHover?.(dog.id)}
-      onMouseLeave={() => onHover?.(null)}
-      onFocus={() => onHover?.(dog.id)}
-      onBlur={() => onHover?.(null)}
+      {...hoverProps}
     >
       <span className="dog-card-avatar">
         <Avatar dog={dog} size={60} />

@@ -101,14 +101,16 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
         </div>
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}
-          <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
-            <Icon name="plus" />
-            Tier hinzufügen
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={onInvite}>
-            <Icon name="send" />
-            Jemanden einladen
-          </button>
+          <div className="hero-actions">
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
+              <Icon name="plus" />
+              Tier hinzufügen
+            </button>
+            <button type="button" className="btn btn-ghost btn-lg" onClick={onInvite}>
+              <Icon name="send" />
+              Jemanden einladen
+            </button>
+          </div>
         </div>
       </header>
 

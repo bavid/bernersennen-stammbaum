@@ -106,13 +106,13 @@ export function adoptiveAnchors(nodes, links = []) {
 }
 
 // Liefert Zeilen (je Generation) in einer Reihenfolge mit möglichst wenig Kreuzungen.
-// Adoptiv-Tiere landen in der Generation ihres Mitbewohners, direkt daneben.
-export function layoutPedigree(nodes, links = []) {
+// Adoptiv-Tiere stehen nicht in den Reihen, sondern in der Mitbewohner-Reihe darunter (housemateLanes).
+export function layoutPedigree(allNodes, links = []) {
+  const anchors = adoptiveAnchors(allNodes, links)
+  const nodes = allNodes.filter((n) => !anchors.has(n.id))
   if (!nodes.length) return []
   const nodeIds = new Set(nodes.map((n) => n.id))
   const generation = computeGenerations(nodes)
-  const anchors = adoptiveAnchors(nodes, links)
-  for (const [id, anchorId] of anchors) generation.set(id, generation.get(anchorId))
   const rowCount = Math.max(...generation.values()) + 1
   let rows = Array.from({ length: rowCount }, () => [])
   nodes.forEach((n) => rows[generation.get(n.id)].push(n))
@@ -130,40 +130,16 @@ export function layoutPedigree(nodes, links = []) {
     }
   }
 
-  rows = rows.map((row) => placeAdoptive(row, anchors, nodeIds))
   return rows.filter((row) => row.length)
 }
 
-const litterKey = (node, nodeIds) => parentIds(node, nodeIds).join('+') || `solo-${node.id}`
-
-// Adoptiv-Tiere an den Rand des Wurfs ihres Mitbewohners setzen: Der Wurf bleibt zusammen und die
-// Abstammungslinien laufen nicht quer über Adoptiv-Karten. Zwei Mitbewohner im Wurf: einer links, einer rechts.
-function placeAdoptive(row, anchors, nodeIds) {
-  const adoptive = row.filter((n) => anchors.has(n.id))
-  if (!adoptive.length) return row
-  const matesOf = (id) => adoptive.filter((n) => anchors.get(n.id) === id)
-
-  const blocks = []
-  for (const node of row.filter((n) => !anchors.has(n.id))) {
-    const key = litterKey(node, nodeIds)
-    const last = blocks[blocks.length - 1]
-    if (last?.key === key) last.nodes.push(node)
-    else blocks.push({ key, nodes: [node] })
-  }
-
-  const placed = blocks.flatMap((block, index) => {
-    const hosts = block.nodes.filter((n) => matesOf(n.id).length)
-    if (!hosts.length) return block.nodes
-    const leftFirst = hosts.length === 1 && index === 0 && blocks.length > 1
-    const onLeft = hosts.length > 1 || leftFirst ? hosts[0] : null
-    const onRight = onLeft && hosts.length === 1 ? null : hosts[hosts.length - 1]
-    const result = onLeft ? [...matesOf(onLeft.id).reverse(), onLeft] : []
-    for (const node of block.nodes.filter((n) => n !== onLeft && n !== onRight)) result.push(node, ...matesOf(node.id))
-    if (onRight) result.push(onRight, ...matesOf(onRight.id))
-    return result
-  })
-  const placedIds = new Set(placed.map((n) => n.id))
-  return [...placed, ...adoptive.filter((n) => !placedIds.has(n.id))]
+// Mitbewohner-Reihe unter jeder Generation: je Haupttier seine Adoptiv-Tiere, in der Reihenfolge der Reihe
+export function housemateLanes(rows, anchors) {
+  const byAnchor = new Map()
+  for (const [id, anchorId] of anchors) byAnchor.set(anchorId, [...(byAnchor.get(anchorId) || []), id])
+  return rows.map((row) =>
+    row.filter((dog) => byAnchor.has(dog.id)).map((dog) => ({ anchorId: dog.id, memberIds: byAnchor.get(dog.id) }))
+  )
 }
 
 // Fasst "lebt zusammen"-Paare einer Reihe zu Haushalten zusammen (eine Klammer statt vieler Bögen).
