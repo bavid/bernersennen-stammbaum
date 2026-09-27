@@ -8,7 +8,7 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import OverviewPage from './pages/OverviewPage.jsx'
 import DogDetailPage from './pages/DogDetailPage.jsx'
-import BreedingPage from './pages/BreedingPage.jsx'
+import LittersPage from './pages/LittersPage.jsx'
 import CollagePage from './pages/CollagePage.jsx'
 import PinboardPage from './pages/PinboardPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
@@ -19,7 +19,7 @@ import InviteDialog from './components/InviteDialog.jsx'
 const NAV_ITEMS = [
   { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
   { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
-  { to: '/zuchtbuch', icon: 'book', label: 'Zuchtbuch' },
+  { to: '/wuerfe', icon: 'sprout', label: 'Würfe' },
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
 
@@ -139,7 +139,8 @@ export default function App() {
             <Route path="/tier/:id" element={<DogDetailPage family={family} />} />
             <Route path="/hund/:id" element={<RedirectTierUrl />} />
             <Route path="/pinnwand" element={<PinboardPage />} />
-            <Route path="/zuchtbuch" element={<BreedingPage />} />
+            <Route path="/wuerfe" element={<LittersPage />} />
+            <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
             <Route path="/admin-schreiben" element={<ContactAdminPage />} />
             <Route path="/collage" element={<CollagePage family={family} />} />
             <Route path="*" element={<Navigate to="/stammbaum" replace />} />

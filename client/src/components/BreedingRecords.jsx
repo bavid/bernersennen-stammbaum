@@ -1,23 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
-import Icon from '../components/Icon.jsx'
-import ParentPicker from '../components/ParentPicker.jsx'
-import PhotoPicker from '../components/PhotoPicker.jsx'
-import ConfirmButton from '../components/ConfirmButton.jsx'
-import Lightbox from '../components/Lightbox.jsx'
-import { useToast } from '../components/Toast.jsx'
+import Icon from './Icon.jsx'
+import ParentPicker from './ParentPicker.jsx'
+import PhotoPicker from './PhotoPicker.jsx'
+import ConfirmButton from './ConfirmButton.jsx'
 import { formatDateLong, todayIso } from '../lib/dates.js'
 import { shortName } from '../lib/timeline.js'
 
 const EMPTY_FORM = { mutterDogId: '', vater: { dogId: '', freitext: '' }, datum: todayIso(), wurfInfo: '', fotos: [] }
 
-function BreedingForm({ ownDogs, allDogs, onCreated }) {
+function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const mothers = ownDogs.filter((d) => d.geschlecht === 'huendin')
+  const mothers = ownDogs.filter((d) => d.geschlecht === 'huendin' && (d.tierart || 'hund') === 'hund')
   const update = (patch) => setForm((current) => ({ ...current, ...patch }))
 
   async function handleSubmit(event) {
@@ -44,7 +42,7 @@ function BreedingForm({ ownDogs, allDogs, onCreated }) {
 
   return (
     <form className="form-stack card breeding-form" onSubmit={handleSubmit}>
-      <h2>Neuer Eintrag</h2>
+      <h3>Deckakt eintragen</h3>
       {error && <div className="error-banner" role="alert">{error}</div>}
       <div className="field">
         <label className="field-label" htmlFor="mutter">
@@ -67,38 +65,43 @@ function BreedingForm({ ownDogs, allDogs, onCreated }) {
       <ParentPicker label="Rüde" sex="ruede" dogs={allDogs} value={form.vater} onChange={(vater) => update({ vater })} />
       <div className="field">
         <label className="field-label" htmlFor="breeding-date">
-          Datum des Deckakts
+          Datum des Deckakts <span className="muted">(auch geplant)</span>
         </label>
         <input id="breeding-date" type="date" value={form.datum} onChange={(e) => update({ datum: e.target.value })} required />
       </div>
       <div className="field">
         <label className="field-label" htmlFor="wurf-info">
-          Wurf &amp; Notizen
+          Notizen
         </label>
         <textarea
           id="wurf-info"
           value={form.wurfInfo}
           onChange={(e) => update({ wurfInfo: e.target.value })}
-          placeholder="Anzahl Welpen, Geburtsdatum, Besonderheiten …"
+          placeholder="Anzahl Welpen, Besonderheiten, Ultraschall …"
         />
       </div>
       <div className="field">
         <span className="field-label">Fotos</span>
         <PhotoPicker value={form.fotos} onChange={(fotos) => update({ fotos })} onBusyChange={setUploading} onError={setError} />
       </div>
-      <button className="btn btn-primary btn-lg" type="submit" disabled={saving || uploading || !form.mutterDogId}>
-        {saving ? 'Speichere …' : 'Ins Zuchtbuch eintragen'}
-      </button>
+      <div className="form-actions">
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          Abbrechen
+        </button>
+        <button className="btn btn-primary" type="submit" disabled={saving || uploading || !form.mutterDogId}>
+          {saving ? 'Speichere …' : 'Eintragen'}
+        </button>
+      </div>
     </form>
   )
 }
 
-function BreedingEvent({ event, onDelete, onOpenPhoto }) {
+export function BreedingEvent({ event, onDelete, onOpenPhoto }) {
   const father = event.vater_name || event.vater_freitext
   return (
     <li className="breeding-event">
       <time className="breeding-date" dateTime={event.datum}>
-        {formatDateLong(event.datum)}
+        Deckakt · {formatDateLong(event.datum)}
       </time>
       <div className="breeding-pair">
         <Link to={`/tier/${event.mutter_dog_id}`}>{shortName(event.mutter_name)}</Link>
@@ -119,82 +122,54 @@ function BreedingEvent({ event, onDelete, onOpenPhoto }) {
           ))}
         </div>
       )}
-      <div className="breeding-actions">
-        <ConfirmButton onConfirm={() => onDelete(event)} label="Löschen" />
-      </div>
+      {onDelete && (
+        <div className="breeding-actions">
+          <ConfirmButton onConfirm={() => onDelete(event)} label="Löschen" />
+        </div>
+      )}
     </li>
   )
 }
 
-export default function BreedingPage() {
-  const [ownDogs, setOwnDogs] = useState([])
-  const [allDogs, setAllDogs] = useState([])
-  const [events, setEvents] = useState(null)
-  const [error, setError] = useState(null)
-  const [photo, setPhoto] = useState(null)
-  const toast = useToast()
-
-  useEffect(() => {
-    Promise.all([api.listDogs(), api.listAllDogs(), api.listBreedingEvents()])
-      .then(([own, all, breeding]) => {
-        setOwnDogs(own)
-        setAllDogs(all)
-        setEvents(breeding)
-      })
-      .catch((err) => setError(err.message))
-  }, [])
-
-  function handleCreated(created) {
-    setEvents((current) => [created, ...current].sort((a, b) => (a.datum < b.datum ? 1 : -1)))
-    toast('Im Zuchtbuch eingetragen')
-  }
-
-  async function handleDelete(event) {
-    try {
-      await api.deleteBreedingEvent(event.id)
-      setEvents((current) => current.filter((e) => e.id !== event.id))
-      toast('Eintrag gelöscht')
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
+// Das bisherige Zuchtbuch als Abschnitt der Würfe-Seite: für die, die züchten – alle anderen sehen es zugeklappt
+export default function BreedingRecords({ events, ownDogs, allDogs, onCreated, onDelete, onOpenPhoto }) {
+  const [writing, setWriting] = useState(false)
   return (
-    <div className="page">
-      <header className="page-hero">
-        <div>
-          <span className="eyebrow">Zuchtbuch</span>
-          <h1>Deckakte &amp; Würfe</h1>
-          <p className="page-lede">
-            Haltet fest, wann eine Hündin gedeckt wurde und was aus dem Wurf geworden ist. Die Einträge erscheinen auch in
-            der Chronik beider Elterntiere.
-          </p>
-        </div>
-      </header>
-
-      {error && <div className="error-banner" role="alert">{error}</div>}
-
-      <div className="breeding-layout">
-        <BreedingForm ownDogs={ownDogs} allDogs={allDogs} onCreated={handleCreated} />
-
-        <section aria-labelledby="breeding-list-title">
-          <h2 id="breeding-list-title" className="section-title">
-            Bisherige Einträge
-          </h2>
-          {events && events.length === 0 && (
-            <p className="empty-state">Noch keine Deckakte erfasst.</p>
-          )}
-          {events && events.length > 0 && (
-            <ol className="breeding-list">
-              {events.map((event) => (
-                <BreedingEvent key={event.id} event={event} onDelete={handleDelete} onOpenPhoto={setPhoto} />
-              ))}
-            </ol>
-          )}
-        </section>
+    <section className="breeding-records" aria-labelledby="breeding-records-title">
+      <div className="section-head">
+        <h2 id="breeding-records-title" className="section-title">
+          Zuchtbuch
+        </h2>
+        {!writing && (
+          <button type="button" className="btn btn-ghost" onClick={() => setWriting(true)}>
+            <Icon name="plus" /> Deckakt eintragen
+          </button>
+        )}
       </div>
-
-      <Lightbox src={photo} onClose={() => setPhoto(null)} />
-    </div>
+      <p className="muted">
+        Für die, die züchten: Ein Deckakt erscheint oben als erwarteter Wurf und später bei seinen Welpen.
+      </p>
+      {writing && (
+        <BreedingForm
+          ownDogs={ownDogs}
+          allDogs={allDogs}
+          onCreated={(created) => {
+            onCreated(created)
+            setWriting(false)
+          }}
+          onCancel={() => setWriting(false)}
+        />
+      )}
+      {events.length > 0 && (
+        <details className="breeding-all">
+          <summary>Alle Einträge ({events.length})</summary>
+          <ol className="breeding-list">
+            {events.map((event) => (
+              <BreedingEvent key={event.id} event={event} onDelete={onDelete} onOpenPhoto={onOpenPhoto} />
+            ))}
+          </ol>
+        </details>
+      )}
+    </section>
   )
 }

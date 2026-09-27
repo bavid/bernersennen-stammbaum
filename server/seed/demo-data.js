@@ -245,7 +245,7 @@ const TIMELINE = [
   { dog: 'cora', datum: '2018-07-02', autor: 'David', titel: 'Erstes Mal schwimmen', text: 'Vom Steg gesprungen, als hätte sie nie etwas anderes gemacht.', fotos: ['see.jpg'] },
   { dog: 'cora', datum: '2017-08-20', autor: 'Anna', titel: 'Die Geschwister ziehen aus', text: 'Cora bleibt bei uns, Dante auch – die anderen vier haben tolle Familien gefunden.' },
   { dog: 'dante', datum: '2019-05-05', autor: 'David', titel: 'HD/ED-Auswertung', text: 'Beide Ergebnisse frei. Große Erleichterung!' },
-  { dog: 'dante', datum: '2018-10-12', autor: 'Anna', titel: 'Begleithundeprüfung bestanden' },
+  { dog: 'dante', datum: '2018-10-12', autor: 'Anna', titel: 'Begleithundeprüfung bestanden', fotos: ['dante.jpg'] },
   { dog: 'luna', datum: '2016-11-20', autor: 'Familie Brunner', titel: 'Luna zieht an die Aare', text: 'Vom Bauernhof zu uns in die Stadt. Die Enten am Fluss haben keine ruhige Minute mehr.', fotos: ['see.jpg'] },
   { dog: 'luna', datum: '2020-11-03', autor: 'Familie Brunner', titel: 'Zwei Welpen: Gustav und Juna', text: 'Ein Brummbär und ein Wirbelwind. Beide bleiben bei uns.', fotos: ['welpen.jpg'] },
   { dog: 'emma', datum: '2021-01-10', autor: 'Anna', titel: 'Schneetag im Garten', fotos: ['schnee.jpg'] },
@@ -269,7 +269,7 @@ const TIMELINE = [
   { dog: 'hermes', datum: '2023-04-15', autor: 'David', titel: 'Erster Ausflug an den See', fotos: ['see.jpg'] },
   { dog: 'hermes', datum: '2023-12-24', autor: 'Anna', titel: 'Erstes Weihnachten', text: 'Hat das Geschenkpapier mehr geliebt als die Geschenke.' },
   { dog: 'hermes', datum: '2024-06-02', autor: 'David', titel: 'Max zieht ein', text: 'Aus dem Tierheim zu uns: Labrador Max. Hermes hat ihm sofort sein Lieblingsspielzeug gezeigt – und wieder weggenommen.', fotos: ['max.jpg'] },
-  { dog: 'ida', datum: '2024-05-20', autor: 'Anna', titel: 'Ida entdeckt die Tulpen', text: 'Das Beet ist jetzt ein Hundebett.' },
+  { dog: 'ida', datum: '2024-05-20', autor: 'Anna', titel: 'Ida entdeckt die Tulpen', text: 'Das Beet ist jetzt ein Hundebett.', fotos: ['ida.jpg'] },
   { dog: 'kira', datum: '2024-10-05', autor: 'Lea', titel: 'Herbst in der Elfenau', text: 'Kira im Laub – man sieht nur noch die Rute.', fotos: ['kira.jpg'] },
   { dog: 'paula', datum: '2025-06-14', autor: 'Jonas', titel: 'Paula trifft Hoppel', hoursAgo: 34, text: 'Erst misstrauisch beschnuppert, jetzt unzertrennlich.', fotos: ['hoppel.jpg'],
     comments: [{ autor: 'David', hoursAgo: 20, text: 'Hermes und Minka haben ein Jahr gebraucht – Respekt!' }] },
@@ -277,6 +277,18 @@ const TIMELINE = [
   { dog: 'max', datum: '2025-08-30', autor: 'David', titel: 'Max’ Adoptionstag', text: 'Ein Jahr bei uns. Es gab Kuchen – natürlich hundegeeignet.' },
   { dog: 'minka', datum: '2024-11-11', autor: 'Anna', titel: 'Minka erobert das Hundekörbchen', hoursAgo: 96, text: 'Hermes schläft jetzt daneben. Diskussion zwecklos.', fotos: ['minka.jpg'] }
 ]
+
+// Zusätzliche Einträge mit Fotos: so zeigt die Würfe-Seite Geschwister "im gleichen Alter"
+TIMELINE.push(
+  { dog: 'ida', datum: '2023-04-22', autor: 'Anna', titel: 'Erste Nacht im Garten', text: 'Ida hat die Sterne angebellt. Einzeln.', fotos: ['garten-ida.jpg'] },
+  { dog: 'kira', datum: '2023-04-20', autor: 'Lea', titel: 'Einzug in Bern', text: 'Die Autofahrt verschlafen, die Wohnung sofort erobert.', fotos: ['welpen.jpg'] },
+  { dog: 'hermes', datum: '2024-02-14', autor: 'Anna', titel: 'Ein Jahr alt!', text: 'Geburtstagskuchen aus Leberwurst und Haferflocken.', fotos: ['hermes.jpg'] },
+  { dog: 'kira', datum: '2024-02-18', autor: 'Lea', titel: 'Geburtstagsrunde an der Aare', fotos: ['kira.jpg'] },
+  { dog: 'finn', datum: '2021-02-14', autor: 'Familie Keller', titel: 'Finn im Tiefschnee', fotos: ['finn.jpg'] },
+  { dog: 'juna', datum: '2022-08-14', autor: 'Familie Brunner', titel: 'Am Wohlensee', text: 'Juna schwimmt, Gustav bewacht die Handtücher.', fotos: ['juna.jpg'] },
+  { dog: 'moritz', datum: '2025-06-01', autor: 'Familie Brunner', titel: 'Moritz entdeckt den Garten', fotos: ['moritz.jpg'] },
+  { dog: 'paula', datum: '2026-03-21', autor: 'Jonas', titel: 'Paulas erster Geburtstag', text: 'Hoppel war eingeladen und hat die Deko gefressen.', fotos: ['paula.jpg'] }
+)
 
 const BREEDING = [
   { mutter: 'bella', vater: 'aiko', datum: '2017-04-16', wurfInfo: '6 Welpen (3 Rüden, 3 Hündinnen), geboren am 18.06.2017.', fotos: ['welpen.jpg'] },

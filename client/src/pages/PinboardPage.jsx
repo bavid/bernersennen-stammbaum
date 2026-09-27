@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import PinboardNote from '../components/PinboardNote.jsx'
@@ -9,8 +10,9 @@ import { readSetting, writeSetting } from '../lib/storage.js'
 
 const EMPTY_NOTE = { text: '', terminDatum: '', terminZeit: '' }
 
-function NoteComposer({ onCreated }) {
-  const [note, setNote] = useState(EMPTY_NOTE)
+// draft: vorbereiteter Zettel, z. B. "Wurftreffen" von der Würfe-Seite
+function NoteComposer({ onCreated, draft }) {
+  const [note, setNote] = useState(() => ({ ...EMPTY_NOTE, ...draft }))
   const [autorName, setAutorName] = useState(() => readSetting('autorName', ''))
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -89,6 +91,7 @@ function NoteComposer({ onCreated }) {
 }
 
 export default function PinboardPage() {
+  const draft = useLocation().state?.draft
   const [notes, setNotes] = useState(null)
   const [error, setError] = useState(null)
   const toast = useToast()
@@ -144,7 +147,7 @@ export default function PinboardPage() {
       {error && <div className="error-banner" role="alert">{error}</div>}
 
       <div className="pinboard-layout">
-        <NoteComposer onCreated={handleCreated} />
+        <NoteComposer onCreated={handleCreated} draft={draft} />
         <section aria-label="Angepinnte Zettel">
           {notes && notes.length === 0 && (
             <div className="empty-state">

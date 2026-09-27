@@ -3,7 +3,7 @@
 **Wie geht’s den anderen?** Geschwister, Eltern und Großeltern eines Wurfs leben meist in
 verschiedenen Familien. Diese kleine Web-App hält sie verbunden: Klick einen Hund an und schau nach,
 was er so treibt – mit Stammbaum über Generationen, einer Chronik pro Hund, einer gemeinsamen
-Pinnwand für Treffen und Notizen, Zuchtbuch und druckbaren Collagen.
+Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
 
 ![Stammbaum über fünf Generationen mit Rassen und Wurfdatum](docs/screenshots/stammbaum.jpg)
 
@@ -46,7 +46,10 @@ Pinnwand für Treffen und Notizen, Zuchtbuch und druckbaren Collagen.
   Einträge aller Hunde samt Anzahl der Kommentare – ein Klick springt direkt zum Eintrag.
 - **Pinnwand**: Einfache Zettel für alle, optional mit Termin (Datum, Uhrzeit). Kommende Treffen
   stehen oben, vergangene rutschen ans Ende.
-- **Zuchtbuch**: Deckakte und Würfe, Rüden aus dem eigenen Rudel oder als Freitext.
+- **Würfe**: Entstehen automatisch aus dem Stammbaum – je Wurf die Eltern, alle Geschwister mit ihrem
+  neuesten Eintrag und Chronik-Fotos im gleichen Alter („Als Welpen“, „Mit einem Jahr“ …). Vor dem
+  Wurf-Geburtstag gibt es einen Hinweis samt „Treffen planen“ (fertiger Pinnwand-Zettel). Wer züchtet,
+  trägt Deckakte ein: Sie erscheinen als erwarteter Wurf mit Countdown und später beim Wurf.
 - **Collage**: A4-Collage aus Porträt, Chronik-Fotos und Eltern, Download als PNG.
 - **Schreib dem Admin**: Feedback und Problemmeldungen gehen nur an den Admin – die anderen im
   Rudel sehen sie nicht. Der Name ist freiwillig, ohne Namen kommt die Nachricht anonym an.
