@@ -18,6 +18,10 @@ Betriebskosten, der Rest geht nachvollziehbar an Tierheime.
 
 Für Präsentationen bei Partnern steht jederzeit eine **Admin-Präsentationsansicht** bereit.
 
+**Tierheime nutzen die App auch selbst:** Sie legen Chroniken für ihre Tiere an, sammeln Neuigkeiten und machen
+damit Werbung für die Vermittlung. Wird ein Tier vermittelt, zieht seine Chronik mit ins neue Zuhause, und zwar
+über einen Gutschein. Jede Vermittlung bringt so ein neues Rudel (siehe Phase T).
+
 ## Ideensammlung (Ausgangspunkt, sinngemäß)
 
 - Marketing über Einmal-Gutscheine, verteilt an Tierheime, Hundeschulen usw.
@@ -35,6 +39,8 @@ Für Präsentationen bei Partnern steht jederzeit eine **Admin-Präsentationsans
 - Alles lokal und getrennt. Die Testumgebung muss leicht durchklickbar sein, aber nur lokal. Deployt wird erst,
   wenn der Deploy-Prozess eindeutig ist, und zuerst unter einer **anderen URL**. Danach erst Prod.
   Eine eigene Domain wird gekauft.
+- *(Zusatz)* Tierheime können die App nutzen, um Chroniken für ihre Hunde aufzubauen, Änderungen zu sammeln und
+  Werbung zu machen.
 
 ## Ausgangslage im Code (Stand `1f7b91c`)
 
@@ -359,6 +365,92 @@ partners(id, slug UNIQUE, name,
 
 ---
 
+## Phase T — Tierheim-Chroniken (Zusatz)
+
+**Idee:** Tierheime nutzen die App selbst. Sie bauen für jedes Tier eine Chronik auf, sammeln Neuigkeiten und
+machen damit Werbung für die Vermittlung. Die Chronik zieht mit dem Tier ins neue Zuhause um. Für uns ist das der
+stärkste Grund, warum ein Tierheim Partner wird, und gleichzeitig der natürlichste Weg, Gutscheine zu verteilen:
+**jede Vermittlung bringt ein neues Rudel.**
+
+### Ablauf
+
+1. **Tierheim-Konto:** Der Admin legt beim Partner-Onboarding ein Rudel der Art `tierheim` an, verknüpft mit dem
+   Partner. Mitarbeitende und Ehrenamtliche bekommen je einen Benutzer (Tabelle `users` aus Phase 1). So sieht man,
+   wer welchen Eintrag geschrieben hat.
+2. **Chronik im Tierheim:** Für jedes Tier gibt es eine Chronik mit Ankunft, Tierarzt, Verhalten, Training,
+   Gassi-Berichten und Fotos. Das nutzt die bestehende Timeline (`timeline_entries`) und die Tierart (`dogs.tierart`),
+   also auch für Katzen und andere Tiere. Neu ist eine optionale Kategorie pro Eintrag, damit sich Änderungen
+   filtern lassen, zum Beispiel „alle Tierarzt-Einträge".
+3. **Werbung für das Tier:**
+   - Ein Tier in Vermittlung bekommt einen öffentlichen **Steckbrief** unter `/t/:slug`. Er zeigt ausgewählte
+     Fotos und Einträge, die als öffentlich markiert sind, und einen Kontakt-Knopf, der zum Tierheim führt. Die
+     Vermittlung selbst läuft nie über die App.
+   - Diese Steckbriefe erscheinen im Partnerportal (`/p/:slug`) und unter **„Neuer Begleiter gesucht?"**. Weil die
+     Daten direkt vom Tierheim kommen, entfällt dafür weitgehend der Crawler für Vermittlungstiere.
+   - Teilen: ein Link für Social Media und die eigene Webseite des Tierheims, dazu ein druckbarer Steckbrief als
+     Aushang. Der nutzt den bestehenden Collage-Generator (`client/src/pages/CollagePage.jsx`, `PrintSheet`).
+4. **Übergabe bei Vermittlung:**
+   - Das Tierheim klickt „Vermittelt" und bekommt einen **Übergabe-Gutschein** für genau dieses Tier.
+   - Die neuen Halter lösen ihn ein. Sie legen damit ein neues Rudel an oder hängen das Tier an ihr bestehendes
+     Rudel. Das Tier zieht samt Chronik um.
+   - Die Einträge des Tierheims behalten ihre Herkunft („Tierheim X, 12.03.2026").
+5. **Neuigkeiten nach der Vermittlung:**
+   - Die neuen Halter können freiwillig einstellen, dass **„das Tierheim mitlesen darf"**. Das lässt sich jederzeit
+     widerrufen.
+   - Das Tierheim sieht dann neue Einträge seiner vermittelten Tiere in einer Übersicht („Wie geht's unseren
+     Ehemaligen?"). Das ersetzt nebenbei manche Nachkontrolle.
+   - Mit einer zusätzlichen, eigenen Einwilligung darf das Tierheim einzelne Einträge als **Happy-End-Geschichte**
+     öffentlich zeigen, als Werbung für das Tierheim.
+
+### Datenmodell (Skizze)
+
+```
+families        += art CHECK IN ('rudel','tierheim') DEFAULT 'rudel', partner_id
+dogs            += vermittlung_status CHECK IN ('in_vermittlung','reserviert','vermittelt') NULL,
+                   public_slug UNIQUE (partieller Index), herkunft_family_id
+timeline_entries += kategorie NULL, is_public INT DEFAULT 0, herkunft_family_id
+dog_transfers(id, dog_id, from_family_id, to_family_id, voucher_id, transferred_at)
+dog_shares(dog_id, family_id, since, story_consent INT DEFAULT 0, revoked_at)   -- „Tierheim darf mitlesen"
+voucher_batches.kind += 'uebergabe'; vouchers += dog_id NULL
+```
+
+- **Umzug:** `dogs.family_id` und die `family_id` der Timeline-Einträge des Tiers wechseln zum neuen Rudel.
+  `herkunft_family_id` hält fest, wer den Eintrag geschrieben hat. Das geschieht in einer Transaktion zusammen mit
+  dem Einlösen.
+- **Andere Tiere:** Verbindungen zu anderen Tieren (`dog_links`, Eltern-Verweise) bleiben beim Tierheim und werden
+  beim Umzug gelöst. Heute ist alles strikt pro Rudel getrennt (`loadOwnDog` in `server/routes/dogs.js`).
+- **Mitlesen:** Das ist der **erste lesende Zugriff über Rudel-Grenzen hinweg**. Er wird bewusst eng gehalten:
+  - eigene Endpunkte, zum Beispiel `GET /api/shelter/ehemalige`
+  - nur lesend
+  - nur für Tiere mit aktivem `dog_shares`
+  - Die bestehenden Routen bleiben unverändert streng.
+- **Öffentliche Steckbriefe:** Sie brauchen öffentliche Fotos. Heute verlangt `/uploads` einen Login. Die App
+  liefert deshalb nur Fotos aus, die an einem öffentlichen Eintrag hängen, über eine eigene Route (zum Beispiel
+  `/public-media/:id`) und nie das ganze Verzeichnis.
+
+### Recht und Datenschutz
+
+- Für die Inhalte der Steckbriefe ist das Tierheim verantwortlich: Bildrechte und korrekte Angaben. Das regelt eine
+  kurze Nutzungsvereinbarung für Partner.
+- Mitlesen und Happy-End-Geschichten brauchen je eine eigene, widerrufbare Einwilligung der neuen Halter
+  (DSGVO Art. 6 Abs. 1 lit. a).
+- Personenbezogene Daten der Halter erscheinen nie öffentlich, nur Tiername und Einträge, die sie freigegeben haben.
+- Steckbriefe sind in der Standardeinstellung `noindex`. Das Tierheim entscheidet, ob Suchmaschinen sie finden
+  dürfen.
+
+### Demo und Präsentation
+
+- Ein Demo-Tierheim „Tierheim Sonnenhang" mit 3–4 Tieren in Vermittlung, einem vermittelten Tier samt
+  Happy-End-Geschichte und einem Übergabe-Gutschein in der Testumgebung.
+- Der Präsentationsmodus (Phase 5) kann „als Tierheim X" vorführen. Das ist das Kernstück der Partner-Präsentation.
+
+**Fertig, wenn:**
+- ein Tierheim Tiere mit Chronik pflegen und einen öffentlichen Steckbrief freischalten kann;
+- ein Übergabe-Gutschein das Tier samt Chronik in ein neues oder bestehendes Rudel umziehen lässt;
+- das Tierheim Neuigkeiten nur mit Einwilligung sieht und diese Einwilligung widerrufbar ist.
+
+---
+
 ## Phase 3 — Reiter „Entdecken"
 
 - **Navigation:** neuer Eintrag `/entdecken` in `NAV_ITEMS` (`client/src/App.jsx:19`) mit Kompass-Icon in
@@ -367,7 +459,8 @@ partners(id, slug UNIQUE, name,
 - **`DiscoverPage.jsx` hat vier Abschnitte:**
   1. **„Hundeschule gesucht? Hier klicken"**: Partner-Hundeschulen im Umkreis, sonst alle.
   2. **„Neuer Begleiter gesucht?"**: nur `tierheim` und `vermittlung`, nur Partner und vom Admin geprüfte
-     Einträge. **Nie Züchter.**
+     Einträge. **Nie Züchter.** Dazu die Steckbriefe von Tieren in Vermittlung aus Partner-Tierheimen im Umkreis
+     (Phase T).
   3. **„Futter-Empfehlungen"**: was Hundetrainer empfehlen, mit „empfohlen von …" und je nach Geschäftsmodell
      als „Anzeige" gekennzeichnet.
   4. **„Unterstützen"**:
@@ -414,6 +507,8 @@ partners(id, slug UNIQUE, name,
   Betreiber nach einem Export oder einer Erlaubnis.
 - Abgedeckte Arten: Tierheim-Verzeichnis, Vermittlungstiere (**nur verlinken**, keine Fotos oder Texte
   übernehmen), Hundeschulen, Futter-Empfehlungen.
+- Vermittlungstiere von **Partner**-Tierheimen kommen direkt aus deren Chroniken (Phase T). Der Crawler ergänzt nur
+  Tierheime, die noch keine Partner sind, und verlinkt dort bloß.
 
 ### Tabellen
 
@@ -479,7 +574,7 @@ Anbieter und Website-Prüfung bekommen ein injiziertes `fetch`. Tests gehen also
   - gefundene gegenüber übernommenen Einträgen
 - **Präsentationsmodus:**
   - Vorschau jedes Partnerportals, auch von Entwürfen
-  - „Demo als Partner X"
+  - „Demo als Partner X", auch „als Tierheim X" mit Chroniken, Steckbriefen und Übergabe (Phase T)
   - Vollbild ohne Admin-Bedienelemente, zum Vorführen bei Tierheimen und Hundeschulen
 - **Rudel-Liste:** zeigt die Herkunft (Partner bzw. Gutschein-Kette) statt des alten Freitexts `quelle`.
 
@@ -519,8 +614,10 @@ Anbieter und Website-Prüfung bekommen ein injiziertes `fetch`. Tests gehen also
 
 ### Reihenfolge
 
-Die Phasen bauen aufeinander auf: 0 → 1 → 2 → 3, danach 4 und 5 parallel. Phase 0 kommt zuerst, damit ab Phase 1
-alles lokal durchklickbar ist und nichts ungetestet nach Prod geht.
+Die Phasen bauen aufeinander auf: 0 → 1 → 2 → **T** → 3, danach 4 und 5 parallel. Phase 0 kommt zuerst, damit ab
+Phase 1 alles lokal durchklickbar ist und nichts ungetestet nach Prod geht. Phase T braucht Gutscheine und Benutzer
+(Phase 1) sowie Partner (Phase 2). Sie kommt vor „Entdecken", weil sie das stärkste Argument im Gespräch mit
+Tierheimen ist und „Neuer Begleiter gesucht?" mit echten Tieren füllt.
 
 ---
 
@@ -544,3 +641,12 @@ alles lokal durchklickbar ist und nichts ungetestet nach Prod geht.
 10. **Altbestand:** Sollen alte Rudel bis zu einem Stichtag auf einen Rudel-Schlüssel umstellen?
 11. **Karte:** Bleibt es bei der Liste mit Maps-Links, oder soll später eine eingebettete Karte (Leaflet mit
     OSM-Kacheln) dazukommen?
+12. **Tierheim – „Änderungen sammeln":** Gemeint sind (a) Einträge von Mitarbeitenden und Ehrenamtlichen, solange
+    das Tier im Tierheim ist, (b) Neuigkeiten der neuen Halter nach der Vermittlung, oder beides? Das Konzept sieht
+    beides vor.
+13. **Tierheim – Chronik beim Umzug:** Zieht die ganze Chronik mit ins neue Zuhause (Vorschlag), oder behält das
+    Tierheim eine eigene Kopie?
+14. **Tierheim – Steckbriefe:** Sollen Steckbriefe von Suchmaschinen gefunden werden dürfen (mehr Reichweite),
+    oder nur per Link erreichbar sein (Vorschlag als Standard)?
+15. **Tierheim – andere Tiere:** Tierheime vermitteln auch Katzen, Kleintiere usw. Die App kann schon mehrere
+    Tierarten. Sollen die in Steckbriefen und unter „Neuer Begleiter gesucht?" auftauchen, oder nur Hunde?
