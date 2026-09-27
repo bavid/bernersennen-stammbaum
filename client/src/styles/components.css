@@ -657,3 +657,51 @@ textarea {
   height: 1px;
   overflow: hidden;
 }
+
+/* Lange Texte (Beschreibung, Chronik): erst ein paar Zeilen, dann "Mehr lesen" */
+.is-clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--clamp-lines, 4);
+  line-clamp: var(--clamp-lines, 4);
+}
+
+.is-faded {
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+.expand-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rust);
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+.expand-toggle:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.expand-toggle svg {
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.expand-toggle svg.is-flipped {
+  transform: rotate(180deg);
+}
+
+.expand-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import Avatar from './Avatar.jsx'
 import CommentThread from './CommentThread.jsx'
+import ExpandableText from './ExpandableText.jsx'
 import { dogLabel, groupByYear } from '../lib/timeline.js'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 
@@ -63,7 +64,7 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
           </button>
         )}
       </header>
-      {item.text && <p className="entry-text">{item.text}</p>}
+      {item.text && <ExpandableText text={item.text} className="entry-text" lines={6} />}
       <Photos urls={item.foto_urls} onOpenPhoto={onOpenPhoto} />
       {onAddComment && (
         <div className="entry-comments">

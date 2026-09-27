@@ -7,6 +7,7 @@ import Modal from '../components/Modal.jsx'
 import Lightbox from '../components/Lightbox.jsx'
 import DogForm from '../components/DogForm.jsx'
 import Housemates from '../components/Housemates.jsx'
+import ExpandableText from '../components/ExpandableText.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
@@ -116,7 +117,7 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
           )}
         </dl>
 
-        {dog.beschreibung && <p className="dog-hero-description">{dog.beschreibung}</p>}
+        {dog.beschreibung && <ExpandableText text={dog.beschreibung} className="dog-hero-description" lines={4} />}
 
         {dog.isOwn && (
           <div className="dog-hero-actions">

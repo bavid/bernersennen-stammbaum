@@ -105,6 +105,8 @@
   font-size: var(--text-lg);
   line-height: 1.7;
   color: var(--ink-soft);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .dog-hero-actions {
