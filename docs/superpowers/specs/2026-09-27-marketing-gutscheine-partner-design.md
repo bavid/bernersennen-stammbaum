@@ -5,6 +5,9 @@ Status: **Entwurf zur Diskussion** — noch kein Code. Umgesetzt wird phasenweis
 
 ## Ziel
 
+**Name: „Familie auf Pfoten" – Slogan: „Eine tierisch nette Familie".** Das Standard-Farbschema bleibt wie es ist.
+Der Berner-Auftritt wird zu einem wählbaren Theme (siehe „Design: Name, Farbschema, Themes").
+
 Die Familienchronik soll über **Mundpropaganda** wachsen. Dafür gibt es **Einmal-Gutscheine**, die man auf der
 Seite einlöst. Verteilt werden sie über **Tierheime, Vermittlungsstellen und Hundeschulen**, gedruckt als Karten
 mit QR-Code. **Nie über Züchter.**
@@ -46,6 +49,9 @@ Neue wird von Anfang an tierneutral gebaut, damit es später ohne Umbau für all
 - *(Zusatz)* Tierheime können die App nutzen, um Chroniken für ihre Hunde aufzubauen, Änderungen zu sammeln und
   Werbung zu machen.
 - *(Zusatz)* Nicht nur für Hunde, sondern irgendwann für alle Tiere.
+- *(Zusatz)* Das Standard-Farbschema ist genau richtig und soll so bleiben.
+- *(Zusatz)* Namensideen: „FamilieAufPfoten", „EineTierischNetteFamilie".
+- *(Zusatz)* Der Zuschnitt auf Berner kann ein Theme sein. Das Design soll anpassbar werden (Theming).
 
 ## Ausgangslage im Code (Stand `1f7b91c`)
 
@@ -75,6 +81,9 @@ Neue wird von Anfang an tierneutral gebaut, damit es später ohne Umbau für all
 | Crawler | Quellen: Tierheim-Verzeichnis, Vermittlungstiere, Hundeschulen, Futter-Empfehlungen. Die 2 konkreten Beispiel-URLs fehlen noch. |
 | Tierarten | **Langfristig alle Tiere.** Neues wird tierneutral gebaut: Datenmodell, Texte, „Neuer Begleiter gesucht?" und Steckbriefe. Spezifisch für Hunde bleiben vorerst nur die Hundeschulen. |
 | Umgebungen | Lokale Testumgebung → Staging unter eigener URL → Prod. Nach Prod geht genau der Stand (SHA), der auf Staging getestet wurde. |
+| Name | **„Familie auf Pfoten"**, Slogan **„Eine tierisch nette Familie"**. Domain-Kandidat `familieaufpfoten.de`, dazu `familie-auf-pfoten.de` als Weiterleitung für Tippfehler. |
+| Farbschema | Die heutigen Farben (`client/src/styles/tokens.css`) sind der **Standard und werden nicht verändert.** Themes legen sich nur darüber. |
+| Themes | **Jedes Rudel wählt sein Theme selbst**, zum Beispiel „Standard" oder „Berner". **Partner-Portale** bekommen eigene Akzentfarbe und Logo. Es gibt keine Theme-Einstellung pro Server-Instanz. |
 
 ### Warum erst mal kein Google?
 
@@ -621,11 +630,70 @@ Texte und Branding betrifft, aber keinen Umbau.
   - Login-Texte („Klickt einen Hund an")
   - der Begriff **„Rudel"** in rund 20 Client-Dateien
 
-  Für alle Tiere braucht es einen neutralen Namen und ein neutrales Erscheinungsbild. „Rudel" könnte zum Beispiel
-  „Familie" oder „Zuhause" werden, wahlweise je nach Tierart.
+  **Der Name steht: „Familie auf Pfoten".** Alles Berner-Spezifische wandert in ein eigenes **Berner-Theme**,
+  siehe den nächsten Abschnitt.
 - **Domain:** Sie sollte **von Anfang an tierneutral** gewählt werden, also nicht „berner…", weil die QR-Codes auf
-  gedruckten Karten sie dauerhaft enthalten. Der Berner-Auftritt kann als eigene Unterseite oder Subdomain
-  weiterbestehen.
+  gedruckten Karten sie dauerhaft enthalten. Kandidat ist `familieaufpfoten.de`. Den Berner-Auftritt gibt es
+  weiter, als Theme.
+
+---
+
+## Design: Name, Farbschema, Themes
+
+**Name:** „Familie auf Pfoten". **Slogan:** „Eine tierisch nette Familie".
+
+**Farbschema:** Das heutige Farbschema bleibt **genau so** der Standard. `client/src/styles/tokens.css` wird nicht
+angefasst. Themes legen sich nur darüber und ändern nie den Standard.
+
+### Themes
+
+| | Standard | Berner |
+|---|---|---|
+| Farben | wie heute | wie heute |
+| Logo | neutrales Pfoten-Logo (`PawMark`, neu) | `BernerMark` (wie heute) |
+| Deko | ohne Dreifarb-Streifen | Dreifarb-Streifen (`tricolor`) |
+| Texte | tierneutral, z. B. „Klickt ein Tier an", mit Name und Slogan | die heutigen Berner-Texte, z. B. „Klickt einen Hund an" |
+| Gruppe heißt | Vorschlag: „Familie" | „Rudel" |
+| Wer bekommt es | **neue Rudel** | **alle bestehenden Rudel und die Demo „Rudel vom Sonnenhang"**, automatisch bei der Migration, damit sich für heutige Nutzer nichts ändert |
+
+- **Wahl:** Jedes Rudel wählt sein Theme in den **Rudel-Einstellungen**, mit Vorschau. Vor dem Login gilt
+  „Standard", auf einem Partner-Portal das Partner-Theme.
+- **Partner-Portale:** Die Partnerfarbe (`partners.farbe`) und das Logo überschreiben auf `/p/:slug` **nur die
+  Akzent-Tokens** `--rust`, `--rust-deep`, `--rust-wash` und `--on-rust`. Der Server prüft das Hex-Format und den
+  Kontrast nach WCAG AA (mindestens 4,5:1). Fällt die Prüfung durch, gilt der Standard. Die Grundfarben bleiben
+  immer gleich.
+- **Später:** weitere Themes (zum Beispiel Katze), ein Dunkelmodus über denselben Mechanismus, ein Wortschatz je
+  Tierart.
+
+### Technik
+
+- `client/src/themes/` enthält `index.js`, `standard.js` und `berner.js`. Jedes Theme beschreibt:
+  - `id` und Anzeigename
+  - die Logo-Komponente
+  - Texte und Wortschatz (etwa „Rudel" oder „Familie", Hero-Texte auf der Login-Seite)
+  - Deko-Schalter (Dreifarb-Streifen)
+  - optionale Token-Overrides
+- Ein `ThemeProvider` (React-Context) setzt `<html data-theme="…">`.
+- Overrides liegen in `client/src/styles/themes/*.css` unter `[data-theme="…"]`. `tokens.css` bleibt der
+  unveränderte Standard in `:root`.
+- `<ThemeMark>` ersetzt die 5 direkten `BernerMark`-Aufrufe (`App.jsx`, `LoginPage.jsx`, `OverviewPage.jsx`,
+  `AdminPage.jsx`, `components/collage/CollagePageView.jsx`).
+- Der Dreifarb-Streifen (`App.jsx`, `LoginPage.jsx`, `layout.css`, `login.css`, `collage.css`) erscheint nur, wenn
+  das Theme ihn vorsieht.
+- Server:
+  - Neue Spalte `families.theme` per `addColumnIfMissing`. Bestehende Zeilen bekommen `berner`, neue Rudel
+    `standard`.
+  - `PUT /api/family` nimmt zusätzlich `theme` an und prüft es gegen die Liste der erlaubten Themes.
+  - `GET /api/me` liefert das Theme mit.
+- `client/index.html` bekommt einen neutralen Titel und eine neutrale Meta-Beschreibung („Familie auf Pfoten – eine
+  tierisch nette Familie").
+
+### Einordnung
+
+- Die **Theme-Grundlage** (Provider, `data-theme`, Akzent-Overrides) kommt mit **Phase 2**, weil die
+  Partner-Portale sie brauchen.
+- **Berner-Theme herauslösen und umbenennen** in „Familie auf Pfoten" geschieht **vor dem Kartendruck
+  (Phase 5)** und vor dem Start unter der neuen Domain. Name und Domain stehen auf den gedruckten Karten.
 
 ---
 
@@ -668,14 +736,17 @@ Phase 1 alles lokal durchklickbar ist und nichts ungetestet nach Prod geht. Phas
 (Phase 1) sowie Partner (Phase 2). Sie kommt vor „Entdecken", weil sie das stärkste Argument im Gespräch mit
 Tierheimen ist und „Neuer Begleiter gesucht?" mit echten Tieren füllt.
 
+Die **Theme-Grundlage** kommt mit Phase 2. **Umbenennung in „Familie auf Pfoten" und Berner-Theme** kommen vor
+Phase 5 (Kartendruck) und vor dem Start in Prod unter der neuen Domain.
+
 ---
 
 ## Offene Fragen
 
 1. **Crawler-Beispiele:** Welche 2 konkreten URLs? Was sagen deren Nutzungsbedingungen bzw. robots.txt?
-2. **Domain:** Welche wird es? Sie muss vor dem Kartendruck feststehen, weil die QR-Codes sie enthalten. Weil die
-   App langfristig für alle Tiere gedacht ist, sollte sie tierneutral sein. Ist `staging.<domain>` mit Basic-Auth
-   recht?
+2. **Domain:** Kandidat ist `familieaufpfoten.de`, dazu `familie-auf-pfoten.de` als Weiterleitung. Ist sie noch
+   frei? Sie muss vor dem Kartendruck gekauft sein, weil die QR-Codes sie enthalten. Ist
+   `staging.familieaufpfoten.de` mit Basic-Auth recht?
 3. **Länder:** Nur Deutschland, oder auch Schweiz und Österreich? Deren 4-stellige PLZ überschneiden sich, dann
    braucht es ein Länderfeld.
 4. **Kontingente:** Wie viele Gutscheine pro Rudel? Wann wird aufgefüllt? Laufen Partner-Stapel ab?
@@ -700,5 +771,13 @@ Tierheimen ist und „Neuer Begleiter gesucht?" mit echten Tieren füllt.
     oder nur per Link erreichbar sein (Vorschlag als Standard)?
 15. ~~**Tierheim – andere Tiere:**~~ **Entschieden:** langfristig alle Tiere. Tierheime pflegen von Anfang an
     alle Tierarten, die die App kennt (siehe „Ausblick: alle Tiere").
-16. **Name und Branding für „alle Tiere":** Bleibt „Familienchronik" als Name? Wird „Rudel" zu einem neutralen
-    Begriff (z. B. „Familie", „Zuhause")? Bleibt der Berner-Auftritt als eigene Unterseite erhalten?
+16. ~~**Name und Branding für „alle Tiere":**~~ **Entschieden:** Der Name ist „Familie auf Pfoten", der Slogan
+    „Eine tierisch nette Familie". Das Standard-Farbschema bleibt, Berner wird ein Theme, jedes Rudel wählt selbst,
+    Partner-Portale bekommen eigene Akzentfarben (siehe „Design: Name, Farbschema, Themes").
+17. **Wortschatz im Standard-Theme:** Heißt die Gruppe dort „Familie" (Vorschlag, passt zum Namen) statt „Rudel"?
+18. **Markenrecherche:** Vor dem Domainkauf „Familie auf Pfoten" beim DPMA bzw. EUIPO prüfen. Es gibt die bekannte
+    Tierschutzmarke VIER PFOTEN und eine Facebook-Seite „Familie mit vier Pfoten". Die Namen sind verschieden, aber
+    eine kurze Prüfung schadet nicht. „Eine tierisch nette Familie" ist ein Buchtitel, als Slogan ist das
+    unkritisch.
+19. **Eigene Farben:** Sollen Rudel später einzelne Farben selbst anpassen dürfen, oder nur fertige Themes wählen
+    (Vorschlag, damit Kontrast und Lesbarkeit gesichert bleiben)?
