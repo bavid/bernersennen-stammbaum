@@ -33,6 +33,12 @@ test('scripts/demo.js legt die öffentliche Demo (Rudel + Zuhause) im neuen Stan
     .prepare('SELECT 1 FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
     .get(families[1].id, families[0].id)
   assert.ok(membership, 'Zuhause ist Mitglied des Rudels')
+
+  // replaceDemoPack() legt (Task 4) auch die Demo-Partner neu an, auch wenn scripts/demo.js selbst
+  // nichts darüber ausgibt - siehe lib/demoPack.js, seed/demo-partners.js.
+  const partnerSlugs = db.prepare('SELECT slug FROM partners WHERE is_demo = 1 ORDER BY slug').all().map((p) => p.slug)
+  assert.deepEqual(partnerSlugs, ['hundeschule-pfotenglueck', 'tierheim-sonnenhang', 'tierschutzverein-deichland'])
+
   db.close()
 
   fs.rmSync(dir, { recursive: true, force: true })

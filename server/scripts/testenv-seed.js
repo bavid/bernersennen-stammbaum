@@ -19,7 +19,9 @@ const TEST_PACK_NAME = 'Rudel vom Sonnenhang (Test)'
 const TEST_HOUSEHOLD_NAME = 'Zuhause am Deich (Test)'
 const ADMIN_BATCH_LABEL = 'Testumgebung'
 const INVITE_BATCH_LABEL = 'Einladung Rudel vom Sonnenhang (Test)'
+const PARTNER_BATCH_LABEL = 'Partner-Stapel "Tierheim Sonnenhang"'
 const ADMIN_BATCH_SIZE = 5
+const PARTNER_BATCH_SIZE = 3
 // Lokal ein festes Passwort (E2E-Skripte), auf der öffentlich erreichbaren Vorschau ein zufälliges
 const testPassword = appEnv === 'dev' ? 'sonnenhang' : crypto.randomBytes(9).toString('base64url')
 const testHouseholdPassword = appEnv === 'dev' ? 'deich' : crypto.randomBytes(9).toString('base64url')
@@ -80,6 +82,23 @@ try {
     console.log(`Admin-Stapel "${ADMIN_BATCH_LABEL}" (${ADMIN_BATCH_SIZE} Codes):\n${codes.map(formatCode).join('\n')}`)
   } else {
     console.log(`Admin-Stapel "${ADMIN_BATCH_LABEL}" besteht schon`)
+  }
+
+  // Partner-Gutscheinstapel für den Demo-Partner "Tierheim Sonnenhang" (siehe lib/demoPack.js,
+  // seed/demo-partners.js) - zum Ausprobieren, wie ein Partner-Portal einen eigenen Gutschein einlöst
+  // (families.partner_id landet dann auf "kam über Partner X", siehe lib/vouchers.js redeemVoucher).
+  // Der "besteht schon"-Check hält den Stapel über mehrere Läufe stabil wie die übrigen Stapel oben -
+  // da replaceDemoPack() den Demo-Partner bei jedem Lauf neu anlegt (neue Id, siehe dort), bleiben die
+  // Codes eines schon bestehenden Stapels ab dem zweiten Lauf ohne Partner-Zuordnung (partner_id wird
+  // von replaceDemoPack() genullt, siehe dort) - `--reset` räumt vorher alle Gutscheine weg, danach
+  // entsteht der Stapel wieder frisch mit dem aktuellen Demo-Partner.
+  if (!db.prepare('SELECT 1 FROM voucher_batches WHERE label = ?').get(PARTNER_BATCH_LABEL)) {
+    const partner = db.prepare("SELECT id FROM partners WHERE slug = 'tierheim-sonnenhang' AND is_demo = 1").get()
+    if (!partner) throw new Error('Demo-Partner "Tierheim Sonnenhang" fehlt - replaceDemoPack() lief nicht wie erwartet')
+    const { codes } = createBatch(db, { label: PARTNER_BATCH_LABEL, kind: 'partner', size: PARTNER_BATCH_SIZE, partnerId: partner.id })
+    console.log(`${PARTNER_BATCH_LABEL} (${PARTNER_BATCH_SIZE} Codes):\n${codes.map(formatCode).join('\n')}`)
+  } else {
+    console.log(`${PARTNER_BATCH_LABEL} besteht schon`)
   }
 
   // Ein Einladungs-Gutschein des Test-Rudels: löst man ihn ein, entsteht ein Zuhause, das gleich

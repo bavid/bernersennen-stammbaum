@@ -50,6 +50,23 @@ function membershipExists(dir, memberName, groupName) {
   return Boolean(row)
 }
 
+// Partner-Gutscheinstapel "Tierheim Sonnenhang" (Task 4, siehe scripts/testenv-seed.js): Anzahl der
+// Codes im Stapel UND wie viele davon tatsächlich partner_id des aktuellen Demo-Partners tragen -
+// getrennt, damit ein Test sichtbar machen kann, falls ein zweiter Lauf die Zuordnung verliert (siehe
+// Kommentar in scripts/testenv-seed.js zu replaceDemoPack()).
+function partnerBatchInfo(dir) {
+  const Database = require('better-sqlite3')
+  const db = new Database(path.join(dir, 'data.db'), { readonly: true })
+  const partner = db.prepare("SELECT id FROM partners WHERE slug = 'tierheim-sonnenhang' AND is_demo = 1").get()
+  const batch = db.prepare(`SELECT id, kind, partner_id, size FROM voucher_batches WHERE label = ?`).get('Partner-Stapel "Tierheim Sonnenhang"')
+  const voucherCount = batch ? db.prepare('SELECT COUNT(*) AS n FROM vouchers WHERE batch_id = ?').get(batch.id).n : 0
+  const linkedCount = batch
+    ? db.prepare('SELECT COUNT(*) AS n FROM vouchers WHERE batch_id = ? AND partner_id = ?').get(batch.id, partner?.id ?? -1).n
+    : 0
+  db.close()
+  return { partnerId: partner?.id ?? null, batch, voucherCount, linkedCount }
+}
+
 test('testenv-seed never runs in production', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-seedguard-'))
   const result = run({ DATA_DIR: dir, APP_ENV: 'production' })
@@ -90,6 +107,16 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
     'Test-Zuhause ist Mitglied im Test-Rudel'
   )
 
+  // Partner-Gutscheinstapel "Tierheim Sonnenhang": Codes werden wie die übrigen Test-Codes nach den
+  // Admin-Codes ausgegeben, kind='partner' und alle drei Codes tragen die Id des Demo-Partners.
+  assert.match(first.stdout, /Admin-Stapel "Testumgebung" \(5 Codes\):[\s\S]*Partner-Stapel "Tierheim Sonnenhang" \(3 Codes\):/)
+  const firstBatch = partnerBatchInfo(dir)
+  assert.ok(firstBatch.partnerId, 'Demo-Partner "Tierheim Sonnenhang" existiert')
+  assert.equal(firstBatch.batch?.kind, 'partner')
+  assert.equal(firstBatch.batch?.partner_id, firstBatch.partnerId)
+  assert.equal(firstBatch.voucherCount, 3)
+  assert.equal(firstBatch.linkedCount, 3, 'alle drei Gutscheine tragen die Id des Demo-Partners')
+
   assert.equal(run(env).status, 0)
   assert.equal(familiesIn(dir).length, 4, 'second run replaces the demo pair and keeps both test packs')
 
@@ -112,12 +139,28 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   assert.equal(run(env).status, 0)
   assert.ok(names().includes('Familie Vorher'), 'a plain run without --reset must not delete other families')
 
+  // Vor --reset: der zweite Lauf oben hat den Demo-Partner ersetzt (neue Id), der Partner-Stapel
+  // bestand aber schon (Label-Check) - seine Codes tragen darum jetzt KEINE Partner-Id mehr (siehe
+  // lib/demoPack.js replaceDemoPack(), das übrig gebliebene Verweise auf gelöschte Demo-Partner-Ids
+  // nullt). Das ist die dokumentierte Grenze dieses "besteht schon"-Verhaltens (siehe Kommentar in
+  // scripts/testenv-seed.js) - erst --reset räumt den Stapel weg und lässt ihn neu, korrekt verknüpft entstehen.
+  const beforeReset = partnerBatchInfo(dir)
+  assert.equal(beforeReset.voucherCount, 3, 'der Stapel selbst bleibt über den zweiten Lauf hinweg bestehen')
+  assert.equal(beforeReset.linkedCount, 0, 'seine Codes zeigen nach dem Partner-Wechsel auf keine Partner-Id mehr')
+
   assert.equal(run(env, ['--reset']).status, 0)
   assert.deepEqual(
     names(),
     ['Familie Sonnenhang', 'Rudel vom Sonnenhang (Test)', 'Zuhause am Deich', 'Zuhause am Deich (Test)'],
     '--reset must delete families the seed did not create'
   )
+
+  // --reset räumt vorher ALLE Gutscheine/Stapel weg (deleteOrphanedVoucherBatches) - der Partner-Stapel
+  // entsteht danach frisch, wieder korrekt mit dem (neuen) Demo-Partner verknüpft.
+  const afterReset = partnerBatchInfo(dir)
+  assert.equal(afterReset.voucherCount, 3)
+  assert.equal(afterReset.linkedCount, 3, '--reset stellt die Partner-Zuordnung wieder her')
+
   fs.rmSync(dir, { recursive: true, force: true })
 })
 

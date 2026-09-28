@@ -3,7 +3,10 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const { useTempDataDir, startApp, cleanup, call, createFamily, getCookie } = require('./helpers')
 
-const dataDir = useTempDataDir('demopack')
+// APP_ENV=staging: demo partners (is_demo = 1) are only public outside dev/staging with ?demo=1 (see
+// routes/partners.js demoAllowed) - staging lets the portal test below check the plain, un-suffixed
+// endpoint, same as a real preview deployment would see it.
+const dataDir = useTempDataDir('demopack', { APP_ENV: 'staging' })
 
 test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) => {
   const { server, base } = await startApp()
@@ -18,9 +21,14 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
   const real = await createFamily(base, 'Echtes Rudel', 'echtes-passwort')
   await call(base, '/api/dogs', { method: 'POST', cookie: real.cookie, body: { name: 'Bleibt', geschlecht: 'ruede' } })
 
+  // Ein echter (nicht-Demo) Partner, der beim Ersetzen der Demo-Partner niemals angefasst werden darf
+  const realPartnerId = db
+    .prepare("INSERT INTO partners (slug, name, typ, status, is_demo) VALUES ('echter-partner', 'Echter Partner', 'tierheim', 'aktiv', 0)")
+    .run().lastInsertRowid
+
   replaceDemoPack(db, uploadDir)
   const firstUploads = fs.readdirSync(uploadDir).length
-  const { removed, created, household } = replaceDemoPack(db, uploadDir)
+  const { removed, created, household, partnerIds } = replaceDemoPack(db, uploadDir)
 
   await t.test('replacing removes both old demo families and their photos', async () => {
     assert.equal(removed.length, 2)
@@ -43,6 +51,47 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
       1,
       'Zuhause ist Mitglied im Rudel'
     )
+  })
+
+  await t.test('exactly three demo partners with the expected slugs and badges; the real partner is untouched', () => {
+    assert.equal(partnerIds.length, 3)
+    const demoPartners = db.prepare('SELECT id, slug, typ, status, ist_partner, farbe FROM partners WHERE is_demo = 1 ORDER BY slug').all()
+    assert.deepEqual(
+      demoPartners.map((p) => p.slug),
+      ['hundeschule-pfotenglueck', 'tierheim-sonnenhang', 'tierschutzverein-deichland']
+    )
+    for (const partner of demoPartners) assert.equal(partner.status, 'aktiv')
+    assert.deepEqual(demoPartners.map((p) => p.id).sort((a, b) => a - b), partnerIds.slice().sort((a, b) => a - b))
+
+    const sonnenhang = demoPartners.find((p) => p.slug === 'tierheim-sonnenhang')
+    assert.equal(sonnenhang.typ, 'tierheim')
+    assert.equal(sonnenhang.ist_partner, 1, 'badge "partner"')
+    assert.equal(sonnenhang.farbe, '#2f6b3f')
+
+    const pfotengluck = demoPartners.find((p) => p.slug === 'hundeschule-pfotenglueck')
+    assert.equal(pfotengluck.typ, 'hundeschule')
+    assert.equal(pfotengluck.ist_partner, 1, 'badge "partner"')
+
+    const deichland = demoPartners.find((p) => p.slug === 'tierschutzverein-deichland')
+    assert.equal(deichland.typ, 'vermittlung')
+    assert.equal(deichland.ist_partner, 0, 'badge "geprueft"')
+
+    assert.ok(db.prepare('SELECT 1 FROM partners WHERE id = ? AND is_demo = 0').get(realPartnerId), 'echter Partner bleibt unangetastet')
+  })
+
+  await t.test('the demo partner portal is publicly reachable (APP_ENV=staging)', async () => {
+    const portal = await call(base, '/api/public/partners/tierheim-sonnenhang')
+    assert.equal(portal.status, 200)
+    assert.equal(portal.data.name, 'Tierheim Sonnenhang')
+    assert.equal(portal.data.badge, 'partner')
+    assert.equal(portal.data.farbe, '#2f6b3f')
+    assert.match(portal.data.portal_text, /neues Zuhause/)
+    assert.equal(portal.data.spenden_url, 'https://example.org/tierheim-sonnenhang/spenden')
+    assert.equal(portal.data.vermittlung_url, 'https://example.org/tierheim-sonnenhang/tiere')
+    assert.equal(portal.data.preview, undefined, 'aktiv, keine Vorschau')
+
+    const list = await call(base, '/api/public/partners')
+    assert.ok(list.data.some((p) => p.slug === 'tierheim-sonnenhang'), 'erscheint auch in der öffentlichen Liste')
   })
 
   await t.test('two dog_shares, at least two private entries, exactly one foreign comment', () => {
@@ -151,10 +200,20 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
   await t.test('a second replace fully replaces both demo families, no orphans left behind', async () => {
     const oldRudelId = created.familyId
     const oldHouseholdId = household.familyId
+    const oldPartnerIds = partnerIds.slice()
 
     const second = replaceDemoPack(db, uploadDir)
     assert.equal(second.removed.length, 2)
     assert.equal(second.household.dogs, 4)
+
+    assert.equal(second.partnerIds.length, 3, 'wieder genau drei Demo-Partner')
+    assert.equal(
+      db.prepare(`SELECT COUNT(*) AS n FROM partners WHERE id IN (${oldPartnerIds.map(() => '?').join(',')})`).get(...oldPartnerIds).n,
+      0,
+      'alte Demo-Partner-Ids sind weg'
+    )
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM partners WHERE is_demo = 1').get().n, 3, 'weiterhin genau drei Demo-Partner')
+    assert.ok(db.prepare('SELECT 1 FROM partners WHERE id = ? AND is_demo = 0').get(realPartnerId), 'echter Partner bleibt unangetastet')
 
     assert.equal(
       db.prepare('SELECT COUNT(*) AS n FROM families WHERE id IN (?, ?)').get(oldRudelId, oldHouseholdId).n,

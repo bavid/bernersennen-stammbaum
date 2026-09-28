@@ -4,6 +4,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const bcrypt = require('bcryptjs')
 const { deleteFamily, removeUploads } = require('./families')
+const { validatePartner } = require('./partners')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
 const {
   HOUSEHOLD_NAME,
@@ -11,6 +12,7 @@ const {
   HOUSEMATES: HOUSEHOLD_HOUSEMATES,
   TIMELINE: HOUSEHOLD_TIMELINE
 } = require('../seed/demo-household')
+const { DEMO_PARTNERS } = require('../seed/demo-partners')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -171,6 +173,22 @@ function insertHouseholdTimeline(db, familyId, ids) {
   return entryIds
 }
 
+// Legt die Demo-Partner an (is_demo = 1, siehe seed/demo-partners.js) - dieselbe validatePartner()
+// wie der Admin (POST /api/admin/partners, siehe lib/partners.js), damit Slug, Kontrastprüfung und
+// Züchter-Schutz identisch greifen. Gibt die neuen Ids zurück.
+function insertDemoPartners(db) {
+  const ids = []
+  for (const input of DEMO_PARTNERS) {
+    const clean = validatePartner(input)
+    const columns = [...Object.keys(clean), 'is_demo']
+    const id = db
+      .prepare(`INSERT INTO partners (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
+      .run(...columns.map((col) => (col === 'is_demo' ? 1 : clean[col]))).lastInsertRowid
+    ids.push(id)
+  }
+  return ids
+}
+
 // Erzeugt "Meine Chronik" eines Haushalts mit Begleitern (Einzug/Abschied/Herkunft), teils privaten
 // Chronik-Einträgen und einem Mitbewohner-Paar ohne gemeinsame Abstammung.
 // groupFamilyId: tritt der Haushalt sofort einem Rudel bei (z. B. dem Demo-Rudel oder dem Test-Rudel)?
@@ -227,11 +245,18 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, t
 // Das Passwort ist zufällig – in die Demo kommt man über "Demo ansehen".
 // name/theme: abweichender Name/Auftritt der öffentlichen Demo (z. B. themenpassend) - gilt nur fürs
 // Rudel; das Zuhause bleibt immer "Zuhause am Deich" im Standard-Auftritt.
+//
+// Die Demo-Partner (is_demo = 1, siehe seed/demo-partners.js) laufen ANDERS als Rudel/Zuhause: ihr
+// Slug ist UNIQUE, darum müssen die alten erst weg, bevor die neuen (mit denselben Slugs) entstehen -
+// alles innerhalb DERSELBEN Transaktion wie das restliche Anlegen, damit bei einem Fehler (z. B. eine
+// künftig ungültige Demo-Partner-Angabe) die ganze Transaktion zurückrollt und die alten Partner
+// unangetastet bleiben, statt für einen Moment ganz zu fehlen.
 function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
   const previous = db.prepare('SELECT id, name FROM families WHERE is_demo = 1').all()
+  const previousPartnerIds = db.prepare('SELECT id FROM partners WHERE is_demo = 1').all().map((row) => row.id)
   const copyImage = createImageCopier(uploadDir)
 
-  const { created, household } = db.transaction(() => {
+  const { created, household, partnerIds } = db.transaction(() => {
     const packOptions = { password: crypto.randomBytes(24).toString('base64url'), isDemo: true, copyImage }
     if (theme !== undefined) packOptions.theme = theme
     if (name !== undefined) packOptions.name = name
@@ -244,11 +269,33 @@ function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
       groupFamilyId: rudelResult.familyId
     })
 
-    return { created: rudelResult, household: householdResult }
+    // families.partner_id / vouchers.partner_id / voucher_batches.partner_id sind reine INTEGER-Spalten
+    // ohne REFERENCES (siehe db.js) - das Löschen unten scheitert also nie an einem Fremdschlüssel.
+    // Trotzdem werden übrig gebliebene Verweise auf die alten Demo-Partner-Ids vorher genullt, damit
+    // z. B. ein in der Testumgebung eingelöster Demo-Partner-Gutschein (siehe scripts/testenv-seed.js)
+    // danach nicht auf eine Partner-Id zeigt, die es nicht mehr gibt.
+    if (previousPartnerIds.length) {
+      const placeholders = previousPartnerIds.map(() => '?').join(', ')
+      db.prepare(`UPDATE families SET partner_id = NULL WHERE partner_id IN (${placeholders})`).run(...previousPartnerIds)
+      db.prepare(`UPDATE vouchers SET partner_id = NULL WHERE partner_id IN (${placeholders})`).run(...previousPartnerIds)
+      db.prepare(`UPDATE voucher_batches SET partner_id = NULL WHERE partner_id IN (${placeholders})`).run(...previousPartnerIds)
+      db.prepare(`DELETE FROM partners WHERE id IN (${placeholders})`).run(...previousPartnerIds)
+    }
+    const newPartnerIds = insertDemoPartners(db)
+
+    return { created: rudelResult, household: householdResult, partnerIds: newPartnerIds }
   })()
 
   for (const family of previous) removeUploads(uploadDir, deleteFamily(db, family.id))
-  return { removed: previous, created, household }
+  return { removed: previous, created, household, partnerIds }
 }
 
-module.exports = { FAMILY_NAME, HOUSEHOLD_NAME, createDemoPack, createDemoHousehold, createImageCopier, replaceDemoPack }
+module.exports = {
+  FAMILY_NAME,
+  HOUSEHOLD_NAME,
+  createDemoPack,
+  createDemoHousehold,
+  createImageCopier,
+  insertDemoPartners,
+  replaceDemoPack
+}
