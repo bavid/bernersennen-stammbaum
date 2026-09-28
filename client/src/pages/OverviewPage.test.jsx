@@ -4,16 +4,17 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { listDogs, listAllDogs, recentActivity, listNotes, listLinks, renameFamily } = vi.hoisted(() => ({
+const { listDogs, listAllDogs, recentActivity, listNotes, listLinks, renameFamily, listUsers } = vi.hoisted(() => ({
   listDogs: vi.fn(),
   listAllDogs: vi.fn(),
   recentActivity: vi.fn(),
   listNotes: vi.fn(),
   listLinks: vi.fn(),
-  renameFamily: vi.fn()
+  renameFamily: vi.fn(),
+  listUsers: vi.fn()
 }))
 
-vi.mock('../api', () => ({ api: { listDogs, listAllDogs, recentActivity, listNotes, listLinks, renameFamily } }))
+vi.mock('../api', () => ({ api: { listDogs, listAllDogs, recentActivity, listNotes, listLinks, renameFamily, listUsers } }))
 
 import OverviewPage from './OverviewPage.jsx'
 
@@ -72,6 +73,7 @@ afterEach(() => {
   listNotes.mockReset()
   listLinks.mockReset()
   renameFamily.mockReset()
+  listUsers.mockReset()
 })
 
 describe('OverviewPage – Umbenennen des eigenen Zuhauses', () => {
@@ -82,6 +84,7 @@ describe('OverviewPage – Umbenennen des eigenen Zuhauses', () => {
     listNotes.mockResolvedValue([])
     listLinks.mockResolvedValue([])
     renameFamily.mockResolvedValue({ id: 1, name: 'Zuhause an der Förde', theme: 'standard' })
+    listUsers.mockResolvedValue([])
     const onFamilyChange = vi.fn()
 
     await render(homeFamily, onFamilyChange)

@@ -6,6 +6,7 @@ import ThemeMark from '../components/ThemeMark.jsx'
 import Icon from '../components/Icon.jsx'
 import AdminFamilyDetails from '../components/AdminFamilyDetails.jsx'
 import AdminMessages from '../components/AdminMessages.jsx'
+import AdminVouchers from '../components/AdminVouchers.jsx'
 import { relativeTime } from '../lib/dates.js'
 
 const BYTES_PER_MB = 1024 * 1024
@@ -139,10 +140,7 @@ function Dashboard({ onLogout }) {
               }
             />
 
-            <div className="admin-invite card">
-              <span className="field-label">Einladungscode für neue Rudel</span>
-              <code>{overview.inviteCode || '– keiner gesetzt (jeder darf Rudel anlegen) –'}</code>
-            </div>
+            <AdminVouchers joinableFamilies={overview.families.filter((family) => family.art === 'rudel' && !family.is_demo)} />
 
             <section className="admin-families" aria-labelledby="admin-families-title">
               <h2 id="admin-families-title">Alle Rudel</h2>

@@ -275,31 +275,59 @@
   gap: var(--space-6);
 }
 
-.invite-option {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-.invite-option > div {
+.invite-vouchers,
+.invite-legacy {
   display: grid;
   gap: var(--space-3);
 }
 
-.invite-option h3 {
+.invite-vouchers h3,
+.invite-legacy h3 {
   font-size: var(--text-lg);
 }
 
-.invite-step {
+.invite-legacy {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.voucher-list {
   display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--rust-wash);
-  color: var(--rust);
-  font-family: var(--font-display);
-  font-weight: 700;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.voucher-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.voucher-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.voucher-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.voucher-row-actions .btn {
+  min-height: 2.1rem;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
 }
 
 .copy-field {

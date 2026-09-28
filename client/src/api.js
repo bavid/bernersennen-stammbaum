@@ -53,16 +53,18 @@ export const api = {
   logout: () => request('/logout', { method: 'POST' }),
   renameFamily: (name) => request('/family', json('PUT', { name })),
   updateFamily: (payload) => request('/family', json('PUT', payload)),
-  invite: () => request('/invite'),
 
   checkVoucher: (code) => request('/vouchers/check', json('POST', { code })),
   redeemVoucher: (payload) => request('/vouchers/redeem', json('POST', payload)),
   recover: (payload) => request('/recover', json('POST', payload)),
   myVouchers: () => request('/vouchers/mine'),
-  renewKey: () => request('/family/key', { method: 'POST' }),
+  // payload trägt den aktuellen Berechtigungsnachweis (currentKey/currentPassword/password je nach
+  // Sitzungsart, siehe AccessSettings) - ohne ihn lehnt der Server mit 403 ab (Schutz vor Übernahme
+  // einer fremden Sitzung).
+  renewKey: (payload) => request('/family/key', json('POST', payload)),
   listUsers: () => request('/users'),
   createUser: (payload) => request('/users', json('POST', payload)),
-  deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+  deleteUser: (id, payload) => request(`/users/${id}`, json('DELETE', payload)),
 
   view: (familyId) => request('/view', json('POST', { familyId })),
   joinFamily: (password) => request('/families/join', json('POST', { password })),
@@ -106,7 +108,11 @@ export const api = {
     messages: ({ type = '', status = '' } = {}) =>
       request(`/admin/messages?${new URLSearchParams({ type, status }).toString()}`),
     updateMessage: (id, status) => request(`/admin/messages/${id}`, json('PATCH', { status })),
-    deleteMessage: (id) => request(`/admin/messages/${id}`, { method: 'DELETE' })
+    deleteMessage: (id) => request(`/admin/messages/${id}`, { method: 'DELETE' }),
+    voucherBatches: () => request('/admin/voucher-batches'),
+    createVoucherBatch: (payload) => request('/admin/voucher-batches', json('POST', payload)),
+    voucherBatch: (id) => request(`/admin/voucher-batches/${id}`),
+    revokeVoucher: (id) => request(`/admin/vouchers/${id}/revoke`, { method: 'POST' })
   },
 
   listBreedingEvents: () => request('/breeding'),

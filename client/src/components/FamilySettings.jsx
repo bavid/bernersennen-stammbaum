@@ -1,6 +1,7 @@
 import RenameFamilyForm from './RenameFamilyForm.jsx'
 import ThemePicker from './ThemePicker.jsx'
 import LeaveFamilySection from './LeaveFamilySection.jsx'
+import AccessSettings from './AccessSettings.jsx'
 import { useIsDemo } from '../lib/demo.js'
 
 // Einstellungen-Dialog: Name und Aussehen der Familie/des Rudels in einem Modal.
@@ -13,6 +14,7 @@ import { useIsDemo } from '../lib/demo.js'
 export default function FamilySettings({ family, onRenamed, onChange, onFamilyChange, onCancel }) {
   const isDemo = useIsDemo()
   const canLeave = family.art === 'rudel' && family.home?.art === 'zuhause' && !isDemo
+  const isIdentityActive = family.id === family.home?.id
   return (
     <div className="family-settings">
       <section className="settings-section">
@@ -23,6 +25,7 @@ export default function FamilySettings({ family, onRenamed, onChange, onFamilyCh
         <h3 id="family-settings-theme-heading">Aussehen</h3>
         <ThemePicker family={family} onSaved={onChange} headingId="family-settings-theme-heading" />
       </section>
+      {isIdentityActive && !isDemo && <AccessSettings family={family} />}
       {canLeave && <LeaveFamilySection family={family} onFamilyChange={onFamilyChange} onLeft={onCancel} />}
     </div>
   )

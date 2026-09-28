@@ -2,10 +2,14 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { updateFamily, leaveFamily } = vi.hoisted(() => ({ updateFamily: vi.fn(), leaveFamily: vi.fn() }))
-vi.mock('../api', () => ({ api: { updateFamily, leaveFamily } }))
+const { updateFamily, leaveFamily, listUsers } = vi.hoisted(() => ({
+  updateFamily: vi.fn(),
+  leaveFamily: vi.fn(),
+  listUsers: vi.fn()
+}))
+vi.mock('../api', () => ({ api: { updateFamily, leaveFamily, listUsers } }))
 
 import FamilySettings from './FamilySettings.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -17,6 +21,10 @@ const family = { id: 1, name: 'Familie Test', theme: 'standard', isDemo: false }
 
 let container
 let root
+
+beforeEach(() => {
+  listUsers.mockResolvedValue([])
+})
 
 afterEach(() => {
   if (root) {
@@ -31,6 +39,7 @@ afterEach(() => {
   document.title = ''
   updateFamily.mockReset()
   leaveFamily.mockReset()
+  listUsers.mockReset()
 })
 
 async function render(onChange) {

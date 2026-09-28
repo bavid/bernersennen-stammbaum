@@ -7,7 +7,7 @@ const COPIED_MS = 2000
 // Zeigt den Schlüssel genau einmal: nach dem Einlösen eines Gutscheins und nach dem Erneuern des
 // Schlüssels (Zugang-Einstellungen). Erst der "Weiter"-Knopf lässt die aufrufende Seite fortfahren –
 // so bleibt Zeit, den Schlüssel zu sichern, bevor man in die Chronik wechselt.
-export default function KeyReveal({ value, onContinue }) {
+export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu Meiner Chronik' }) {
   const { words } = useTheme()
   const [copied, setCopied] = useState(false)
 
@@ -42,7 +42,7 @@ export default function KeyReveal({ value, onContinue }) {
         ihr sicher gehen wollt.
       </p>
       <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onContinue}>
-        Weiter zu Meiner Chronik
+        {continueLabel}
       </button>
     </div>
   )
