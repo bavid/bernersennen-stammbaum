@@ -1,5 +1,6 @@
 const crypto = require('node:crypto')
 const fs = require('node:fs')
+const path = require('node:path')
 const express = require('express')
 const multer = require('multer')
 const rateLimit = require('express-rate-limit')
@@ -7,6 +8,8 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { requireFreeDisk } = require('../middleware/abuse')
 const { uploadDir, uploadRateLimit } = require('../config')
+const { stripJpegMetadata } = require('../lib/stripJpegMetadata')
+const { stripPngMetadata } = require('../lib/stripPngMetadata')
 
 const router = express.Router()
 
@@ -50,10 +53,39 @@ const upload = multer({
 
 const insertUpload = db.prepare('INSERT INTO uploads (filename, family_id) VALUES (?, ?)')
 
+// security-review Phase T Finding 12: Handyfotos tragen oft EXIF-/GPS-Metadaten - vor dem Speichern
+// entfernen (siehe lib/stripJpegMetadata.js/lib/stripPngMetadata.js). WebP bleibt bewusst unangetastet:
+// der RIFF-Chunk-Aufbau (inkl. optionaler Padding-Bytes und verschachtelter VP8X/EXIF/XMP-Chunks) ist
+// deutlich fehleranfälliger als JPEG/PNG für einen schnellen, sicheren Walker - lieber ein WebP mit
+// Metadaten behalten als eines beschädigen. GIF trägt praktisch nie GPS-/Kamera-Metadaten (kein EXIF-
+// Container im Format) und bleibt deshalb ebenfalls unangetastet.
+const METADATA_STRIPPER_BY_MIME = {
+  'image/jpeg': stripJpegMetadata,
+  'image/png': stripPngMetadata
+}
+
+// Liest die gerade von multer gespeicherte Datei, entfernt bekannte Metadaten-Segmente und schreibt sie
+// nur zurück, wenn sich tatsächlich etwas geändert hat. Jeder Fehler (Lesen/Schreiben, unerwartete
+// Bytes) lässt die Originaldatei unangetastet - nie eine Anfrage an einem Metadaten-Problem scheitern
+// lassen, und nie Bildinhalte oder Dateipfade dabei loggen.
+function stripMetadataInPlace(file) {
+  const strip = METADATA_STRIPPER_BY_MIME[file.mimetype]
+  if (!strip) return
+  try {
+    const filePath = path.join(uploadDir, file.filename)
+    const original = fs.readFileSync(filePath)
+    const stripped = strip(original)
+    if (!stripped.equals(original)) fs.writeFileSync(filePath, stripped)
+  } catch {
+    // Original bleibt stehen - siehe Kommentar oben.
+  }
+}
+
 router.post('/', requireAuth, uploadLimiter, requireFreeDisk, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Keine Datei hochgeladen' })
   }
+  stripMetadataInPlace(req.file)
   // Merkt sich, welcher Bereich die Datei erzeugt hat - so ist sie sofort sichtbar (canSeeUpload),
   // auch bevor sie überhaupt an einem Hund oder Eintrag hängt.
   insertUpload.run(req.file.filename, req.familyId)

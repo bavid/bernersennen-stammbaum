@@ -1,6 +1,8 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const http = require('node:http')
+const fs = require('node:fs')
+const path = require('node:path')
 const { hashPassword } = require('../lib/adminAuth')
 const { useTempDataDir, startApp, cleanup, call, createFamily, getCookie } = require('./helpers')
 
@@ -298,5 +300,45 @@ test('Fotos nur für Bereiche, die sie sehen dürfen', async (t) => {
     assert.equal(res.status, 200)
     const res2 = await fetch(`${base}${dogPhotoUrl}`, { headers: { Cookie: adminCookie } })
     assert.equal(res2.status, 200)
+  })
+
+  await t.test('security-review Phase T Finding 12: EXIF-Metadaten werden beim Hochladen aus JPEGs entfernt', async () => {
+    // Synthetisches JPEG mit einem APP1-Exif-Segment - dieselbe Bauweise wie test/stripImageMetadata.test.js.
+    function jpegSegment(marker, payload) {
+      const length = Buffer.alloc(2)
+      length.writeUInt16BE(payload.length + 2, 0)
+      return Buffer.concat([Buffer.from([0xff, marker]), length, payload])
+    }
+    const exifSegment = jpegSegment(
+      0xe1,
+      Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), Buffer.from([0x4d, 0x4d, 0x00, 0x2a, 0, 0, 0, 8, 0xca, 0xfe])])
+    )
+    const jpegWithExif = Buffer.concat([
+      Buffer.from([0xff, 0xd8]), // SOI
+      exifSegment,
+      jpegSegment(0xda, Buffer.from([0x00, 0x01, 0x02])), // SOS
+      Buffer.from([0x12, 0x34, 0x56]), // "Bilddaten"
+      Buffer.from([0xff, 0xd9]) // EOI
+    ])
+    assert.ok(jpegWithExif.includes('Exif'))
+
+    const form = new FormData()
+    form.append('file', new Blob([jpegWithExif], { type: 'image/jpeg' }), 'photo.jpg')
+    const uploadRes = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Cookie: A.cookie }, body: form })
+    assert.equal(uploadRes.status, 201)
+    const { url } = await uploadRes.json()
+
+    const storedPath = path.join(config.uploadDir, url.split('/').pop())
+    const stored = fs.readFileSync(storedPath)
+    assert.equal(stored.includes('Exif'), false, 'das gespeicherte Foto trägt kein EXIF-Segment mehr')
+    // Die eigentlichen "Bilddaten" (SOI/SOS/Scan/EOI) bleiben vollständig erhalten
+    assert.equal(stored.subarray(0, 2).toString('hex'), 'ffd8')
+    assert.equal(stored.subarray(-2).toString('hex'), 'ffd9')
+    assert.ok(stored.includes(Buffer.from([0x12, 0x34, 0x56])))
+
+    // Die Datei bleibt über die normale Zugriffsprüfung weiterhin abrufbar (nichts an der Route
+    // kaputt gegangen)
+    const served = await fetch(`${base}${url}`, { headers: { Cookie: A.cookie } })
+    assert.equal(served.status, 200)
   })
 })
