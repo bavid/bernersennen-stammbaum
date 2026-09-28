@@ -34,13 +34,13 @@ foreach ($key in 'APP_ENV', 'CONTAINER_NAME', 'IMAGE_TAG') {
 }
 
 function Invoke-Remote {
-    param([string]$Action, [string]$Argument = '')
+    param([string]$Action, [string]$Argument = '', [string]$ExtraEnv = '')
     # Skript per stdin übergeben (LF-Zeilenenden, UTF-8), damit immer die lokale Version läuft
     $script = (Get-Content -Raw -Encoding UTF8 $RemoteScriptPath) -replace "`r`n", "`n"
     $previous = $OutputEncoding
     $OutputEncoding = New-Object System.Text.UTF8Encoding $false
     try {
-        $script | ssh -o StrictHostKeyChecking=accept-new $Server "$RemoteEnv bash -s -- $Action $Argument"
+        $script | ssh -o StrictHostKeyChecking=accept-new $Server "$RemoteEnv $ExtraEnv bash -s -- $Action $Argument"
     } finally {
         $OutputEncoding = $previous
     }
@@ -73,12 +73,12 @@ function Invoke-Promote {
     git -C $PSScriptRoot fetch -q origin staging
     if ($LASTEXITCODE -ne 0) { Write-Host "  git fetch fehlgeschlagen (kein Netzwerk?) - Abbruch, um keinen veralteten Stand zu übernehmen." -ForegroundColor Red; return }
     $sha = (git -C $PSScriptRoot rev-parse origin/staging).Trim()
+    if ($LASTEXITCODE -ne 0 -or $sha -notmatch '^[0-9a-f]{40}$') { Write-Host "  Konnte SHA von origin/staging nicht ermitteln." -ForegroundColor Red; return }
     Write-Host "  Übernimmt Vorschau-Stand $($sha.Substring(0, 7)) nach Prod (main)." -ForegroundColor Yellow
     if ((Read-Host "  Zum Bestätigen PROD eintippen") -ne 'PROD') { return }
     git -C $PSScriptRoot push origin "${sha}:refs/heads/main"
     if ($LASTEXITCODE -ne 0) { Write-Host "  main lässt sich nicht vorspulen (Stände auseinandergelaufen?)." -ForegroundColor Red; return }
-    $script:RemoteEnv += " REVISION='$sha'"
-    Invoke-Remote 'deploy'
+    Invoke-Remote 'deploy' -ExtraEnv "REVISION='$sha'"
 }
 
 function Invoke-Action {
