@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Avatar from '../components/Avatar.jsx'
 import BreedingRecords from '../components/BreedingRecords.jsx'
 import Icon from '../components/Icon.jsx'
@@ -34,6 +35,7 @@ function PlannedLitter({ planned }) {
 }
 
 export default function LittersPage() {
+  const { words } = useTheme()
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
   const [events, setEvents] = useState([])
@@ -139,7 +141,7 @@ export default function LittersPage() {
       {singles.length > 0 && (
         <section className="litter-singles" aria-labelledby="singles-title">
           <h2 id="singles-title" className="section-title">
-            Ohne Geschwister im Rudel
+            Ohne Geschwister {words.inGroup}
           </h2>
           <p className="muted">Von diesen Würfen steht bisher nur ein Tier im Stammbaum.</p>
           <ul className="chip-list">

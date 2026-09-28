@@ -104,7 +104,7 @@ function Setup({ dogs, draft, onCreate, busy }) {
 }
 
 export default function CollagePage({ family }) {
-  const { theme } = useTheme()
+  const { theme, words } = useTheme()
   const draftKey = `collageDraft.${family.id}`
   const [dogs, setDogs] = useState([])
   const [draft, setDraft] = useState(() => readSetting(draftKey, null))
@@ -148,7 +148,7 @@ export default function CollagePage({ family }) {
           return { dog: detail, entries }
         })
       )
-      const newPages = buildPages(dogsData, { ...options, familyName: family.name })
+      const newPages = buildPages(dogsData, { ...options, familyName: family.name, fallbackTitle: words.ourGroup })
       const library = dogsData.flatMap(({ dog, entries }) => photosOfDog(dog, entries))
       setDraft({ ...options, pages: newPages, library })
       setPageIndex(0)

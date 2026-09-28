@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Modal from '../components/Modal.jsx'
@@ -137,6 +138,7 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
 }
 
 export default function DogDetailPage({ family }) {
+  const { words } = useTheme()
   const { id } = useParams()
   const navigate = useNavigate()
   const { hash } = useLocation()
@@ -309,7 +311,7 @@ export default function DogDetailPage({ family }) {
   }
 
   const firstName = displayName(dog)
-  const about = dog.name_unbekannt ? 'diesem Hund' : firstName
+  const about = dog.name_unbekannt ? words.thisAnimalDat : firstName
 
   return (
     <div className="page">
@@ -347,7 +349,7 @@ export default function DogDetailPage({ family }) {
 
         {!dog.isOwn && (
           <p className="notice">
-            {firstName} gehört zu „{dog.familyName}“. Die Chronik ist nur für dieses Rudel sichtbar.
+            {firstName} gehört zu „{dog.familyName}“. Die Chronik ist nur für {words.thisGroup} sichtbar.
           </p>
         )}
 

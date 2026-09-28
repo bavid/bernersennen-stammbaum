@@ -34,14 +34,14 @@ function chunk(list, size) {
 
 // Seiten aus den gewählten Hunden: optional eine Übersicht aller Porträts, dann je Hund
 // so viele Seiten wie nötig. dogsData: [{ dog, entries }] in Auswahl-Reihenfolge.
-export function buildPages(dogsData, { perPage = 6, overview = false, familyName = '' } = {}) {
+export function buildPages(dogsData, { perPage = 6, overview = false, familyName = '', fallbackTitle = '' } = {}) {
   const pages = []
   if (overview) {
     const portraits = dogsData.filter(({ dog }) => dog.foto_url)
     if (portraits.length) {
       pages.push({
         id: newId('page'),
-        title: familyName || 'Unser Rudel',
+        title: familyName || fallbackTitle,
         subtitle: portraits.map(({ dog }) => displayName(dog)).join(' · '),
         footer: '',
         photos: portraits.map(({ dog }) => newPhoto(dog.foto_url, dogLabel(dog)))

@@ -64,4 +64,26 @@ describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
     const stripe = container.querySelector('.login-hero .tricolor-vertical')
     expect(stripe === null).toBe(!theme.tricolor)
   })
+
+  test('Der Anlegen-Modus nutzt den Theme-Wortschatz für Titel, Formular und Umschalter', async () => {
+    await render(themeId)
+    act(() => container.querySelector('.login-switch button[aria-pressed]:not([aria-pressed="true"])').click())
+    expect(container.querySelector('.login-card-head h1').textContent).toBe(theme.words.createGroup)
+    expect(container.querySelector('.login-switch button:last-child').textContent).toBe(theme.words.newGroup)
+    expect(container.querySelector('label[for="family-name"]').textContent).toBe(theme.words.groupName)
+    expect(container.querySelector('#family-name').placeholder).toBe(theme.words.groupNamePlaceholder)
+    expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe(theme.words.createGroup)
+  })
+
+  test('Passwort-Feld im Anmelden-Modus nutzt das Theme-Wort für das Rudel-/Familien-Passwort', async () => {
+    await render(themeId)
+    expect(container.querySelector('label[for="login-password"]').textContent).toBe(theme.words.groupPassword)
+  })
+
+  test('Der Demo-Hinweis ist für beide Themes gleich und nennt keine feste Familie mehr', async () => {
+    await render(themeId)
+    expect(container.querySelector('.login-demo .field-hint').textContent).toBe(
+      'Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.'
+    )
+  })
 })

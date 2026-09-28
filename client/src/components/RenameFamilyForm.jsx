@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
 
 const MAX_NAME_LENGTH = 80
@@ -7,6 +8,7 @@ const ARM_TIMEOUT_MS = 5000
 
 // Umbenennen mit Warnung und zweistufiger Bestätigung – der Name gilt für alle im Rudel.
 export default function RenameFamilyForm({ family, onRenamed, onCancel }) {
+  const { words } = useTheme()
   const [name, setName] = useState(family.name)
   const [armed, setArmed] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -42,7 +44,7 @@ export default function RenameFamilyForm({ family, onRenamed, onCancel }) {
       <div className="warning-banner" role="note">
         <Icon name="alert" />
         <div>
-          <strong>Das betrifft alle im Rudel.</strong>
+          <strong>Das betrifft alle {words.inGroup}.</strong>
           <p>
             Der neue Name erscheint sofort bei allen, die euer gemeinsames Passwort nutzen – auf jedem Gerät, im
             Kopfbereich und auf neuen Collagen. Das Passwort selbst bleibt gleich.
@@ -52,7 +54,7 @@ export default function RenameFamilyForm({ family, onRenamed, onCancel }) {
       {error && <div className="error-banner" role="alert">{error}</div>}
       <div className="field">
         <label className="field-label" htmlFor="family-rename">
-          Neuer Rudelname
+          {words.newGroupName}
         </label>
         <input
           id="family-rename"

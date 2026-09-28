@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import PedigreeTree from '../components/PedigreeTree.jsx'
 import DogForm from '../components/DogForm.jsx'
 import Modal from '../components/Modal.jsx'
@@ -36,6 +37,7 @@ function Stats({ dogs, allDogs, links }) {
 }
 
 export default function OverviewPage({ family, onFamilyChange, onInvite }) {
+  const { theme, words } = useTheme()
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
   const [links, setLinks] = useState([])
@@ -67,7 +69,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   function handleRenamed(renamed) {
     setRenameOpen(false)
     onFamilyChange(renamed)
-    toast(`Das Rudel heißt jetzt „${renamed.name}“`)
+    toast(`${words.TheGroup} heißt jetzt „${renamed.name}“`)
   }
 
   async function handleCreate(payload) {
@@ -88,16 +90,13 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
               type="button"
               className="icon-btn title-edit"
               onClick={() => setRenameOpen(true)}
-              aria-label="Rudelname ändern"
-              title="Rudelname ändern"
+              aria-label={words.renameGroup}
+              title={words.renameGroup}
             >
               <Icon name="edit" />
             </button>
           </div>
-          <p className="page-lede">
-            Damit wir wissen, was die anderen treiben: Klick einen Hund an und schau nach, wie es ihm geht – oder erzähl,
-            was er gerade erlebt.
-          </p>
+          <p className="page-lede">{theme.texts.overviewLede}</p>
         </div>
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}
@@ -132,7 +131,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
 
       {dogs && dogs.length > 0 && <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} />}
 
-      <Modal open={renameOpen} title="Rudelname ändern" onClose={() => setRenameOpen(false)}>
+      <Modal open={renameOpen} title={words.renameGroup} onClose={() => setRenameOpen(false)}>
         <RenameFamilyForm family={family} onRenamed={handleRenamed} onCancel={() => setRenameOpen(false)} />
       </Modal>
 

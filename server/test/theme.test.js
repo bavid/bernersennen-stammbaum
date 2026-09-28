@@ -75,6 +75,10 @@ test('Familien haben einen Auftritt (theme: standard|berner)', async (t) => {
 
     const replaced = replaceDemoPack(db, uploadDir, { theme: 'standard' })
     assert.equal(db.prepare('SELECT theme FROM families WHERE id = ?').get(replaced.created.familyId).theme, 'standard')
+
+    const named = replaceDemoPack(db, uploadDir, { theme: 'standard', name: 'Familie Sonnenhang' })
+    const namedFamily = db.prepare('SELECT name, theme FROM families WHERE id = ?').get(named.created.familyId)
+    assert.deepEqual(namedFamily, { name: 'Familie Sonnenhang', theme: 'standard' })
   })
 })
 

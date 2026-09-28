@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
 import ParentPicker from './ParentPicker.jsx'
 import PhotoPicker from './PhotoPicker.jsx'
@@ -11,6 +12,7 @@ import { shortName } from '../lib/timeline.js'
 const EMPTY_FORM = { mutterDogId: '', vater: { dogId: '', freitext: '' }, datum: todayIso(), wurfInfo: '', fotos: [] }
 
 function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
+  const { words } = useTheme()
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -54,7 +56,7 @@ function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
           onChange={(e) => update({ mutterDogId: e.target.value ? Number(e.target.value) : '' })}
           required
         >
-          <option value="">– Hündin des Rudels wählen –</option>
+          <option value="">– Hündin {words.ofGroup} wählen –</option>
           {mothers.map((dog) => (
             <option key={dog.id} value={dog.id}>
               {dog.name}

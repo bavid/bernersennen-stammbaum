@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
 
 const COPIED_MS = 2000
+
+function capitalize(text) {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
 
 function CopyField({ label, value }) {
   const [copied, setCopied] = useState(false)
@@ -36,6 +41,7 @@ function CopyField({ label, value }) {
 
 // Wie man jemanden dazuholt: ins eigene Rudel (Adresse + Passwort) oder als neues Rudel (Code)
 export default function InviteDialog({ family }) {
+  const { words } = useTheme()
   const [inviteCode, setInviteCode] = useState(undefined)
   const [error, setError] = useState(null)
   const address = window.location.origin
@@ -54,8 +60,8 @@ export default function InviteDialog({ family }) {
         <div>
           <h3>In „{family.name}“ einladen</h3>
           <p className="muted">
-            Schick der Person die Adresse und euer gemeinsames Rudel-Passwort. Dann sieht sie euren Stammbaum und kann
-            mitschreiben. Das Passwort schreibst du selbst dazu – es ist aus Sicherheitsgründen nirgends gespeichert.
+            Schick der Person die Adresse und euer gemeinsames {words.groupPassword}. Dann sieht sie euren Stammbaum und
+            kann mitschreiben. Das Passwort schreibst du selbst dazu – es ist aus Sicherheitsgründen nirgends gespeichert.
           </p>
           <CopyField label="Adresse der Chronik" value={address} />
         </div>
@@ -64,10 +70,10 @@ export default function InviteDialog({ family }) {
       <section className="invite-option">
         <span className="invite-step">2</span>
         <div>
-          <h3>Ein eigenes Rudel anlegen lassen</h3>
+          <h3>{capitalize(words.ownGroup)} anlegen lassen</h3>
           <p className="muted">
-            Wer einen ganz eigenen Stammbaum starten möchte, wählt auf der Startseite „Neues Rudel“ und braucht dafür
-            diesen Einladungscode:
+            Wer einen ganz eigenen Stammbaum starten möchte, wählt auf der Startseite „{words.newGroup}“ und braucht
+            dafür diesen Einladungscode:
           </p>
           {error && <div className="error-banner">{error}</div>}
           {inviteCode === undefined && !error && <p className="muted">Lade …</p>}

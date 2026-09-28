@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import { ageText, formatDateLong, relativeTime } from '../lib/dates.js'
 import { nextLitterBirthday } from '../lib/litters.js'
 import { displayName } from '../lib/timeline.js'
@@ -55,6 +56,7 @@ function Sibling({ dog, latest }) {
 
 // Ein Wurf: Eltern, Geschwister mit ihrem Neuesten, Fotos im gleichen Alter, Deckakt und Geburtstag
 export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOpenPhoto }) {
+  const { words } = useTheme()
   const birthday = nextLitterBirthday(litter.birthDate)
   const soon = birthday && birthday.daysUntil <= BIRTHDAY_SOON_DAYS
   const title = litter.birthDate ? `Wurf vom ${formatDateLong(litter.birthDate)}` : 'Wurf (Geburtstag unbekannt)'
@@ -66,7 +68,7 @@ export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOp
         <div>
           <h2 className="litter-title">{title}</h2>
           <p className="litter-meta">
-            {count} {count === 1 ? 'Tier' : 'Geschwister'} im Rudel
+            {count} {count === 1 ? 'Tier' : 'Geschwister'} {words.inGroup}
             {litter.birthDate && ` · heute ${ageText(litter.birthDate)} alt`}
           </p>
         </div>

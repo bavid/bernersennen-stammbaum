@@ -69,6 +69,7 @@ function PasswordField({ id, label, value, onChange, autoFocus, autoComplete, mi
 }
 
 function LoginForm({ onLogin }) {
+  const { words } = useTheme()
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -90,7 +91,7 @@ function LoginForm({ onLogin }) {
       {error && <div className="error-banner" role="alert">{error}</div>}
       <PasswordField
         id="login-password"
-        label="Rudel-Passwort"
+        label={words.groupPassword}
         value={password}
         onChange={setPassword}
         autoFocus
@@ -104,6 +105,7 @@ function LoginForm({ onLogin }) {
 }
 
 function CreateFamilyForm({ onLogin, inviteRequired }) {
+  const { words } = useTheme()
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
@@ -133,13 +135,13 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
       {error && <div className="error-banner" role="alert">{error}</div>}
       <div className="field">
         <label className="field-label" htmlFor="family-name">
-          Name des Rudels
+          {words.groupName}
         </label>
         <input
           id="family-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="z. B. Rudel vom Sonnenhang"
+          placeholder={words.groupNamePlaceholder}
           maxLength={80}
           autoFocus
           required
@@ -168,7 +170,7 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
           </label>
           <input id="invite-code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} required />
           <span className="field-hint">
-            Den Code bekommst du von der Person, die dich eingeladen hat – jedes Mitglied eines Rudels findet ihn in der
+            Den Code bekommst du von der Person, die dich eingeladen hat – jedes Mitglied {words.ofAGroup} findet ihn in der
             Chronik unter „Jemanden einladen“.
           </span>
         </div>
@@ -186,14 +188,14 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
         />
       </div>
       <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading}>
-        {loading ? 'Lege an …' : 'Rudel anlegen'}
+        {loading ? 'Lege an …' : words.createGroup}
       </button>
     </form>
   )
 }
 
 export default function LoginPage({ onLogin }) {
-  const { theme } = useTheme()
+  const { theme, words } = useTheme()
   const [mode, setMode] = useState(() => (window.location.pathname === '/neue-familie' ? 'create' : 'login'))
   const [inviteRequired, setInviteRequired] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
@@ -245,11 +247,11 @@ export default function LoginPage({ onLogin }) {
         <div className="login-card">
           <div className="login-card-head">
             <span className="eyebrow">{mode === 'login' ? 'Willkommen zurück' : 'Neuer Stammbaum'}</span>
-            <h1>{mode === 'login' ? 'Anmelden' : 'Rudel anlegen'}</h1>
+            <h1>{mode === 'login' ? 'Anmelden' : words.createGroup}</h1>
             <p className="muted">
               {mode === 'login'
                 ? 'Mit dem gemeinsamen Passwort seht ihr, was sich bei allen tut.'
-                : 'Gebt eurem Rudel einen Namen und ein gemeinsames Passwort.'}
+                : `Gebt ${words.yourGroupDat} einen Namen und ein gemeinsames Passwort.`}
             </p>
           </div>
 
@@ -258,7 +260,7 @@ export default function LoginPage({ onLogin }) {
               Anmelden
             </button>
             <button type="button" aria-pressed={mode === 'create'} onClick={() => setMode('create')}>
-              Neues Rudel
+              {words.newGroup}
             </button>
           </div>
 
@@ -274,7 +276,7 @@ export default function LoginPage({ onLogin }) {
             <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
               {demoLoading ? 'Lädt …' : 'Erst mal unverbindlich reinschauen: Demo ansehen'}
             </button>
-            <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit den Beispiel-Hunden aus „Rudel vom Sonnenhang".</p>
+            <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
           </div>
         </div>
       </section>

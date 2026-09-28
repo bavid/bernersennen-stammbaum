@@ -1,25 +1,30 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
 import { useToast } from '../components/Toast.jsx'
 
-const TYPES = {
-  feedback: {
-    label: 'Feedback',
-    icon: 'heart',
-    prompt: 'Was gefällt dir, was fehlt dir, was könnte besser sein?',
-    placeholder: 'z. B. Es wäre toll, wenn man Einträge auch als Liste für alle Hunde sehen könnte.'
-  },
-  problem: {
-    label: 'Problem melden',
-    icon: 'alert',
-    prompt: 'Was hast du gemacht, was ist passiert – und was hättest du erwartet?',
-    placeholder: 'z. B. Beim Hochladen eines Fotos von Trude kam eine Fehlermeldung.'
+function buildTypes(words) {
+  return {
+    feedback: {
+      label: 'Feedback',
+      icon: 'heart',
+      prompt: 'Was gefällt dir, was fehlt dir, was könnte besser sein?',
+      placeholder: `z. B. Es wäre toll, wenn man Einträge auch als Liste für alle ${words.animals} sehen könnte.`
+    },
+    problem: {
+      label: 'Problem melden',
+      icon: 'alert',
+      prompt: 'Was hast du gemacht, was ist passiert – und was hättest du erwartet?',
+      placeholder: 'z. B. Beim Hochladen eines Fotos von Trude kam eine Fehlermeldung.'
+    }
   }
 }
 
 function MessageForm({ fromPage, onSent }) {
+  const { words } = useTheme()
+  const TYPES = useMemo(() => buildTypes(words), [words])
   const [type, setType] = useState('feedback')
   const [text, setText] = useState('')
   // Bewusst nicht vorausgefüllt: ohne Namen kommt die Nachricht anonym an
@@ -123,13 +128,14 @@ function SentNotice({ onAgain }) {
 }
 
 function PrivacyNote() {
+  const { words } = useTheme()
   return (
     <aside className="contact-privacy" aria-labelledby="contact-privacy-title">
       <h2 id="contact-privacy-title">
         <Icon name="lock" /> Bleibt unter uns
       </h2>
       <ul>
-        <li>Nur der Admin liest deine Nachricht. Die anderen im Rudel sehen sie nicht – auch nicht hinterher.</li>
+        <li>Nur der Admin liest deine Nachricht. Die anderen {words.inGroup} sehen sie nicht – auch nicht hinterher.</li>
         <li>Dein Name ist freiwillig. Lässt du ihn leer, kommt die Nachricht anonym an.</li>
         <li>Wenn du eine Antwort möchtest, hinterlass einfach eine E-Mail oder Telefonnummer.</li>
       </ul>

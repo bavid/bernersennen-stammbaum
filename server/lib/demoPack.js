@@ -133,11 +133,13 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, t
 // Ersetzt die öffentliche Demo: legt zuerst die neue an und löscht erst danach die alte(n) – nur Rudel
 // mit is_demo = 1, samt Fotos. Scheitert das Anlegen, bleibt die alte Demo erreichbar.
 // Das Passwort ist zufällig – in die Demo kommt man über "Demo ansehen".
-function replaceDemoPack(db, uploadDir, { theme } = {}) {
+// name: abweichender Name der öffentlichen Demo (z. B. themenpassend), sonst FAMILY_NAME
+function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
   const previous = db.prepare('SELECT id, name FROM families WHERE is_demo = 1').all()
   const password = crypto.randomBytes(24).toString('base64url')
   const packOptions = { password, isDemo: true, copyImage: createImageCopier(uploadDir) }
   if (theme !== undefined) packOptions.theme = theme
+  if (name !== undefined) packOptions.name = name
   const created = createDemoPack(db, packOptions)
   for (const family of previous) removeUploads(uploadDir, deleteFamily(db, family.id))
   return { removed: previous, created }

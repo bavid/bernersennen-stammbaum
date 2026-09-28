@@ -52,7 +52,7 @@ test('testenv-seed creates the public demo and a writable test pack; --reset sta
   assert.equal(first.status, 0, first.stderr)
   assert.match(first.stdout, /Passwort: sonnenhang/)
   assert.deepEqual(familiesIn(dir), [
-    ['Rudel vom Sonnenhang', 1, 'standard'],
+    ['Familie Sonnenhang', 1, 'standard'],
     ['Rudel vom Sonnenhang (Test)', 0, 'berner']
   ])
 
@@ -67,13 +67,13 @@ test('testenv-seed creates the public demo and a writable test pack; --reset sta
   db.prepare('INSERT INTO families (name, password_hash, is_demo) VALUES (?, ?, 0)').run('Familie Vorher', 'x')
   db.close()
   const names = () => familiesIn(dir).map((row) => row[0]).sort()
-  assert.deepEqual(names(), ['Familie Vorher', 'Rudel vom Sonnenhang', 'Rudel vom Sonnenhang (Test)'])
+  assert.deepEqual(names(), ['Familie Sonnenhang', 'Familie Vorher', 'Rudel vom Sonnenhang (Test)'])
 
   assert.equal(run(env).status, 0)
   assert.ok(names().includes('Familie Vorher'), 'a plain run without --reset must not delete other families')
 
   assert.equal(run(env, ['--reset']).status, 0)
-  assert.deepEqual(names(), ['Rudel vom Sonnenhang', 'Rudel vom Sonnenhang (Test)'], '--reset must delete families the seed did not create')
+  assert.deepEqual(names(), ['Familie Sonnenhang', 'Rudel vom Sonnenhang (Test)'], '--reset must delete families the seed did not create')
   fs.rmSync(dir, { recursive: true, force: true })
 })
 

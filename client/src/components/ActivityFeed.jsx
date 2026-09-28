@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import { dogLabel } from '../lib/timeline.js'
 import { formatTermin, relativeTime } from '../lib/dates.js'
 
@@ -12,14 +13,14 @@ const MAX_TILES = 4
 
 // "Was treiben die anderen?" – nächstes Treffen und die zuletzt geschriebenen Einträge.
 export default function ActivityFeed({ entries: allEntries, termin }) {
+  const { theme, words } = useTheme()
   const entries = allEntries.slice(0, termin ? MAX_TILES - 1 : MAX_TILES)
   if (!entries.length && !termin) {
     return (
-      <section className="feed feed-empty" aria-label="Neu im Rudel">
+      <section className="feed feed-empty" aria-label={words.newsTitle}>
         <Icon name="sprout" />
         <p>
-          <strong>Noch keine Neuigkeiten.</strong> Klick einen Hund an und erzähl, was er so treibt – die anderen sehen es
-          dann hier.
+          <strong>Noch keine Neuigkeiten.</strong> {theme.texts.feedEmpty} – die anderen sehen es dann hier.
         </p>
       </section>
     )
@@ -28,7 +29,7 @@ export default function ActivityFeed({ entries: allEntries, termin }) {
   return (
     <section className="feed" aria-labelledby="feed-title">
       <h2 id="feed-title" className="feed-title">
-        Neu im Rudel
+        {words.newsTitle}
       </h2>
       <div className="feed-items">
         {termin && (

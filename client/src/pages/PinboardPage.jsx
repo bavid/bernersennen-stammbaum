@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
 import PinboardNote from '../components/PinboardNote.jsx'
 import { useToast } from '../components/Toast.jsx'
@@ -91,6 +92,7 @@ function NoteComposer({ onCreated, draft }) {
 }
 
 export default function PinboardPage() {
+  const { words } = useTheme()
   const draft = useLocation().state?.draft
   const [notes, setNotes] = useState(null)
   const [error, setError] = useState(null)
@@ -138,8 +140,8 @@ export default function PinboardPage() {
           <span className="eyebrow">Pinnwand</span>
           <h1>Pinnwand</h1>
           <p className="page-lede">
-            Treffen ausmachen, Neuigkeiten teilen, Grüße dalassen – alle im Rudel sehen es. Kommende Termine stehen immer
-            ganz oben.
+            Treffen ausmachen, Neuigkeiten teilen, Grüße dalassen – alle {words.inGroup} sehen es. Kommende Termine
+            stehen immer ganz oben.
           </p>
         </div>
       </header>

@@ -30,9 +30,11 @@ export default {
     groupNamePlaceholder: 'z. B. Rudel vom Sonnenhang',
     groupPassword: 'Rudel-Passwort',
     groupSettings: 'Rudel einstellen',
+    renameGroup: 'Rudelname ändern',
     newsTitle: 'Neu im Rudel',
     animal: 'Hund',
-    animals: 'Hunde'
+    animals: 'Hunde',
+    thisAnimalDat: 'diesem Hund'
   },
   texts: {
     loginKicker: 'Eine Familie · viele Zuhause',
