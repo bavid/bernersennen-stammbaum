@@ -9,12 +9,18 @@ const db = require('../db')
 // jpg/png/webp/gif erzeugte Namen kommen überhaupt in Frage - Pfad-Traversal scheitert schon daran.
 const FILENAME_RE = /^[0-9a-f-]{36}\.(jpg|png|webp|gif)$/i
 
-const dogPhotoStmt = db.prepare('SELECT 1 FROM dogs WHERE foto_url = @url AND public_slug IS NOT NULL')
+// vermittlung_status IN (...): dieselbe Regel wie beim öffentlichen Tier-Endpunkt selbst (routes/
+// publicAnimals.js findPublishedDog) - ein zurückgezogener/inzwischen vermittelter Steckbrief liefert
+// auch für seine Fotos 404, selbst wenn public_slug technisch noch gesetzt wäre (Verteidigungslinie:
+// PUT /api/dogs räumt public_slug beim Wechsel auf 'vermittelt' zwar schon auf, siehe routes/dogs.js).
+const PUBLISHABLE_STATUS_SQL = "vermittlung_status IN ('in_vermittlung', 'reserviert')"
+
+const dogPhotoStmt = db.prepare(`SELECT 1 FROM dogs WHERE foto_url = @url AND public_slug IS NOT NULL AND ${PUBLISHABLE_STATUS_SQL}`)
 
 const entryPhotoStmt = db.prepare(
   `SELECT 1 FROM timeline_entries t
    JOIN dogs d ON d.id = t.dog_id
-   WHERE t.foto_urls LIKE @pattern AND t.is_public = 1 AND t.privat = 0 AND d.public_slug IS NOT NULL`
+   WHERE t.foto_urls LIKE @pattern AND t.is_public = 1 AND t.privat = 0 AND d.public_slug IS NOT NULL AND d.${PUBLISHABLE_STATUS_SQL}`
 )
 
 function canServePublicMedia(filename) {

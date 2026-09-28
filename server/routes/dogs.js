@@ -2,11 +2,14 @@ const crypto = require('node:crypto')
 const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
+const { authLimiter } = require('../middleware/abuse')
 const { isIsoDate, cleanText, cleanId, isUploadUrl } = require('../lib/validate')
 const { dogLabel } = require('../lib/labels')
 const { ART, membershipsOf, canEnter, canSeeDog, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL } = require('../lib/context')
 const { canAttachUpload } = require('../lib/uploadAccess')
 const { slugify } = require('../lib/partners')
+const { createBatch, revokeOpenHandoverVouchers } = require('../lib/vouchers')
+const { formatCode } = require('../lib/codes')
 
 const router = express.Router()
 
@@ -255,6 +258,25 @@ function parentView(parentId, ownerFamilyId, viewFamilyId) {
   return parentDog.family_id === ownerFamilyId ? { id: null, name: dogLabel(parentDog) } : null
 }
 
+// Übergabe/Mitlesen (Phase T Task 3): das abgebende Tierheim des NEUESTEN Umzugs dieses Tiers, wenn es
+// (noch) tatsächlich ein Tierheim-Bereich ist - sonst null (z. B. Tier nie umgezogen, oder die
+// Tierheim-Familie besteht nicht mehr). Genutzt von GET /:id (shelterShare) und PUT /:id/shelter-share.
+const findLatestTransfer = db.prepare('SELECT from_family_id FROM dog_transfers WHERE dog_id = ? ORDER BY id DESC LIMIT 1')
+
+function findShelterForDog(dogId) {
+  const transfer = findLatestTransfer.get(dogId)
+  if (!transfer?.from_family_id) return null
+  return db.prepare("SELECT id, name FROM families WHERE id = ? AND art = 'tierheim'").get(transfer.from_family_id) || null
+}
+
+// { shelterName, enabled, storyConsent } wenn es ein Tierheim zum Mitlesen gibt, sonst null.
+function shelterShareFor(dogId) {
+  const shelter = findShelterForDog(dogId)
+  if (!shelter) return null
+  const share = db.prepare('SELECT story_consent FROM dog_shares WHERE dog_id = ? AND family_id = ?').get(dogId, shelter.id)
+  return { shelterName: shelter.name, enabled: Boolean(share), storyConsent: Boolean(share?.story_consent) }
+}
+
 router.get('/:id', requireAuth, (req, res) => {
   const dog = loadVisibleDog(req, res)
   if (!dog) return
@@ -288,7 +310,10 @@ router.get('/:id', requireAuth, (req, res) => {
     mother: parentView(dog.mother_dog_id, dog.family_id, req.familyId),
     father: parentView(dog.father_dog_id, dog.family_id, req.familyId),
     children,
-    housemates
+    housemates,
+    // Nur für den Besitzer relevant (Einwilligung "Tierheim darf mitlesen") - sonst weggelassen,
+    // nicht null, damit die Form für Nicht-Besitzer nicht suggeriert, es gäbe hier etwas zu verwalten.
+    ...(canEdit ? { shelterShare: shelterShareFor(dog.id) } : {})
   })
 })
 
@@ -358,7 +383,8 @@ router.put('/:id', requireAuth, (req, res) => {
        father_dog_id = @father_dog_id, mother_freitext = @mother_freitext,
        father_freitext = @father_freitext, foto_url = @foto_url, beschreibung = @beschreibung,
        bei_uns_seit = @bei_uns_seit, bei_uns_bis = @bei_uns_bis, abschied_grund = @abschied_grund,
-       herkunft_art = @herkunft_art, herkunft_text = @herkunft_text, vermittlung_status = @vermittlung_status
+       herkunft_art = @herkunft_art, herkunft_text = @herkunft_text, vermittlung_status = @vermittlung_status,
+       public_slug = CASE WHEN @vermittlung_status = 'vermittelt' THEN NULL ELSE public_slug END
      WHERE id = @id`
   ).run({ ...record, id: existing.id })
 
@@ -417,6 +443,36 @@ router.put('/:id/steckbrief', requireAuth, (req, res) => {
   res.json(findDog.get(dog.id))
 })
 
+// Übergabe-Gutschein (Phase T Task 3): der Tierheim-Besitzer erzeugt einen Gutschein, mit dem das Tier
+// samt Chronik ins neue Zuhause umzieht (siehe lib/transfers.js transferDog, aufgerufen beim Einlösen/
+// claim - lib/vouchers.js). authLimiter zusätzlich zum ohnehin für /api/dogs greifenden writeLimiter
+// (app.js limitWrites): wie andere sensible, Code ausgebende Aktionen (routes/auth.js /family/key).
+// "nicht Demo" ist schon durch requireAuth abgedeckt (Demo darf nur GET).
+router.post('/:id/handover', authLimiter, requireAuth, (req, res) => {
+  const dog = loadOwnDog(req, res)
+  if (!dog) return
+
+  const identity = db.prepare('SELECT art, partner_id FROM families WHERE id = ?').get(req.familyId)
+  if (!identity || identity.art !== ART.tierheim) {
+    return res.status(400).json({ error: 'Übergabe-Gutscheine gibt es nur im Tierheim-Bereich' })
+  }
+
+  revokeOpenHandoverVouchers(db, dog.id)
+  db.prepare("UPDATE dogs SET vermittlung_status = 'reserviert' WHERE id = ?").run(dog.id)
+
+  const { codes } = createBatch(db, {
+    label: `Übergabe ${dog.name}`,
+    kind: 'partner',
+    size: 1,
+    issuedByFamilyId: req.familyId,
+    partnerId: identity.partner_id,
+    dogId: dog.id
+  })
+  const code = codes[0]
+
+  res.status(201).json({ code: formatCode(code), link: `/v#${code}` })
+})
+
 // Teilen: nur aus "Meine Chronik" heraus, nur in Rudel, in denen der Haushalt Mitglied ist.
 // Ersetzt jeweils die komplette Menge (nicht additiv) – einfacher fürs Frontend als Diffing.
 const replaceShares = db.transaction((dogId, familyIds) => {
@@ -454,6 +510,34 @@ router.put('/:id/shares', requireAuth, (req, res) => {
 
   replaceShares(dog.id, uniqueIds)
   res.json({ shares: listShares.all(dog.id).map((row) => row.family_id).sort((a, b) => a - b) })
+})
+
+// Einwilligung "Tierheim darf mitlesen" (Phase T Task 3): nur für den Besitzer-Haushalt, und nur wenn
+// es laut dog_transfers überhaupt ein (noch bestehendes) abgebendes Tierheim gibt. enabled=true legt
+// den dog_shares-Eintrag an/aktualisiert ihn (mit story_consent); enabled=false löscht ihn - danach
+// sieht das Tierheim dieses Tier nicht mehr (canSeeDog/VISIBLE_DOGS_SQL).
+const setShelterShare = db.transaction((dogId, familyId, storyConsent) => {
+  db.prepare('DELETE FROM dog_shares WHERE dog_id = ? AND family_id = ?').run(dogId, familyId)
+  db.prepare('INSERT INTO dog_shares (dog_id, family_id, story_consent) VALUES (?, ?, ?)').run(dogId, familyId, storyConsent)
+})
+
+router.put('/:id/shelter-share', requireAuth, (req, res) => {
+  const dog = loadOwnDog(req, res)
+  if (!dog) return
+
+  const shelter = findShelterForDog(dog.id)
+  if (!shelter) return res.status(400).json({ error: 'Für dieses Tier gibt es kein Tierheim zum Mitlesen' })
+
+  const { enabled, storyConsent } = req.body || {}
+  if (typeof enabled !== 'boolean') return res.status(400).json({ error: '„enabled“ muss true oder false sein' })
+
+  if (enabled) {
+    setShelterShare(dog.id, shelter.id, storyConsent ? 1 : 0)
+  } else {
+    db.prepare('DELETE FROM dog_shares WHERE dog_id = ? AND family_id = ?').run(dog.id, shelter.id)
+  }
+
+  res.json(shelterShareFor(dog.id))
 })
 
 // Löscht den Hund samt Timeline. Verweise anderer Hunde/Würfe werden zu Freitext,

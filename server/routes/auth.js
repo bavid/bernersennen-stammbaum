@@ -1,17 +1,15 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const crypto = require('node:crypto')
-const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
 const { requireAuth, requireSession, setSessionCookie, clearSessionCookie, refreshSession } = require('../middleware/auth')
-const { codeLimiter } = require('../middleware/abuse')
+const { codeLimiter, authLimiter } = require('../middleware/abuse')
 const { cleanId } = require('../lib/validate')
 const { isTheme } = require('../lib/themes')
 const { ART, canEnter, buildMe } = require('../lib/context')
 const { generateCode, normalizeCode, hashCode, formatCode } = require('../lib/codes')
 const { validatePassword, validateUsername, validateEmail } = require('../lib/vouchers')
-const { ipKeyGenerator } = require('../lib/rateLimitKey')
 
 const router = express.Router()
 
@@ -26,15 +24,6 @@ const REAUTH_ERROR = 'Bitte bestätige mit deinem aktuellen Schlüssel bzw. Pass
 // Ohne unbekannten Benutzernamen läuft sonst kein bcrypt.compare, was einen Timing-Unterschied zwischen
 // "Benutzername existiert nicht" und "Benutzername existiert, Passwort falsch" offenlegt.
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), BCRYPT_ROUNDS)
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: config.loginRateLimit,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
-  message: { error: 'Zu viele Versuche. Bitte warte ein paar Minuten und probiere es dann erneut.' }
-})
 
 // Benutzer-Login (POST /login mit username/password statt secret): dieselbe 401 für falschen Namen
 // und falsches Passwort, damit sich beides von außen nicht unterscheiden lässt. bcrypt.compare läuft

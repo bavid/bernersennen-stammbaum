@@ -2,26 +2,65 @@ const express = require('express')
 const db = require('../db')
 const { codeLimiter, rejectHoneypot } = require('../middleware/abuse')
 const { requireAuth, setSessionCookie } = require('../middleware/auth')
-const { buildMe } = require('../lib/context')
+const { ART, buildMe } = require('../lib/context')
 const { normalizeCode, hashCode, formatCode, decryptCode } = require('../lib/codes')
-const { voucherStatus, redeemVoucher, ensureVoucherQuota, DEMO_VOUCHERS } = require('../lib/vouchers')
+const { voucherStatus, redeemVoucher, claimVoucher, ensureVoucherQuota, DEMO_VOUCHERS } = require('../lib/vouchers')
 
 const router = express.Router()
+
+// Phase T Task 3: Name des Tiers und des abgebenden Tierheims zu einem offenen Übergabe-Gutschein -
+// für den Hinweis "Mit diesem Gutschein zieht {animalName} aus {shelterName} zu euch" (POST /check).
+const findHandoverInfo = db.prepare(
+  `SELECT d.name AS animalName, f.name AS shelterName FROM dogs d JOIN families f ON f.id = d.family_id WHERE d.id = ?`
+)
 
 // Codes nie in Logs oder URLs: beide Endpunkte sind POST, auch das reine Nachschauen.
 router.post('/check', codeLimiter, (req, res) => {
   const normalized = normalizeCode(req.body?.code)
   if (!normalized) return res.json({ status: 'unbekannt' })
-  const voucher = db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE code_hash = ?').get(hashCode(normalized))
-  res.json({ status: voucher ? voucherStatus(voucher) : 'unbekannt' })
+  const voucher = db
+    .prepare('SELECT redeemed_at, revoked_at, expires_at, dog_id FROM vouchers WHERE code_hash = ?')
+    .get(hashCode(normalized))
+  if (!voucher) return res.json({ status: 'unbekannt' })
+
+  const status = voucherStatus(voucher)
+  const response = { status }
+  if (status === 'offen' && voucher.dog_id) {
+    const handover = findHandoverInfo.get(voucher.dog_id)
+    if (handover) response.handover = handover
+  }
+  res.json(response)
 })
 
 router.post('/redeem', codeLimiter, rejectHoneypot, (req, res, next) => {
   try {
-    const { code, name, username, password, email } = req.body || {}
-    const { familyId, code: normalized } = redeemVoucher(db, { code, name, username, password, email })
+    const { code, name, username, password, email, shelterMayRead } = req.body || {}
+    const { familyId, code: normalized } = redeemVoucher(db, { code, name, username, password, email, shelterMayRead })
     setSessionCookie(res, familyId)
     res.status(201).json({ ...buildMe(familyId, familyId, false), key: formatCode(normalized), fromOthers: true })
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
+})
+
+// Übergabe-Gutschein OHNE ein neues Zuhause anzulegen einlösen (Phase T Task 3): nur eingeloggt und
+// nur aus dem eigenen Zuhause heraus - "aktiver Bereich" muss die Identität selbst sein (nicht ein
+// beigetretenes Rudel, in dem man gerade zu Besuch ist) UND deren art muss 'zuhause' sein. Codes nie
+// in Logs: codeLimiter zusätzlich zum globalen apiLimiter, wie bei /check und /redeem.
+router.post('/claim', requireAuth, codeLimiter, (req, res, next) => {
+  try {
+    if (req.familyId !== req.homeId) {
+      return res.status(400).json({ error: 'Nur aus dem eigenen Zuhause heraus möglich' })
+    }
+    const identity = db.prepare('SELECT art FROM families WHERE id = ?').get(req.homeId)
+    if (!identity || identity.art !== ART.zuhause) {
+      return res.status(400).json({ error: 'Nur aus „Meine Chronik“ heraus möglich' })
+    }
+
+    const { code, shelterMayRead } = req.body || {}
+    const { dogId } = claimVoucher(db, { code, familyId: req.familyId, shelterMayRead })
+    res.json({ dogId })
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)

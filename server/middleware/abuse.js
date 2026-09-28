@@ -34,6 +34,15 @@ const codeLimiter = limiter(
   'Zu viele Versuche. Bitte warte ein paar Minuten und probiere es dann erneut.'
 )
 
+// Sensible, Code-ausgebende oder Zugang-ändernde Aktionen (Login, Schlüssel erneuern, Benutzer
+// anlegen/löschen, Beitreten/Gründen, Phase T: Übergabe-Gutschein erzeugen) - eigenes, knappes Limit
+// statt des allgemeinen apiLimiter allein. War früher lokal in routes/auth.js definiert; hier zentral,
+// damit auch routes/dogs.js (POST /:id/handover) denselben Limiter nutzen kann.
+const authLimiter = limiter(
+  { windowMs: FIFTEEN_MINUTES, limit: config.loginRateLimit },
+  'Zu viele Versuche. Bitte warte ein paar Minuten und probiere es dann erneut.'
+)
+
 const writeLimiter = limiter(
   { windowMs: TEN_MINUTES, limit: config.writeRateLimit, keyGenerator: (req) => `family-${req.familyId}` },
   'Sehr viele Änderungen in kurzer Zeit – bitte ein paar Minuten warten.'
@@ -64,4 +73,4 @@ function requireFreeDisk(req, res, next) {
   })
 }
 
-module.exports = { apiLimiter, photoLimiter, codeLimiter, limitWrites, rejectHoneypot, requireFreeDisk }
+module.exports = { apiLimiter, photoLimiter, codeLimiter, authLimiter, limitWrites, rejectHoneypot, requireFreeDisk }

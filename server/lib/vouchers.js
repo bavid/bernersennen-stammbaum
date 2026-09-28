@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
 const { generateCode, normalizeCode, hashCode, encryptCode } = require('./codes')
 const { voucherQuota } = require('../config')
+const { transferDog } = require('./transfers')
 
 const CODE_HINT_LENGTH = 4
 const MAX_COLLISION_RETRIES = 5 // 60 Bit Zufall - eine Kollision ist praktisch ausgeschlossen
@@ -45,6 +46,11 @@ function isoNow() {
   return new Date().toISOString().slice(0, 19).replace('T', ' ')
 }
 
+// Heutiges Datum im Format YYYY-MM-DD (wie dogs.bei_uns_seit) - für lib/transfers.js transferDog.
+function isoToday() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 // Nimmt ISO-Strings (oder ein Date) entgegen und normalisiert sie auf das sqlite-Format
 // "YYYY-MM-DD HH:MM:SS" (UTC) - sonst vergleicht expires_at > datetime('now') Text, der nicht
 // lexikographisch zu datetime('now') passt (z. B. das "T" und die Millisekunden eines ISO-Strings).
@@ -85,7 +91,12 @@ function validateEmail(email) {
 
 // Legt einen Stapel mit `size` frischen Codes an (eine Transaktion). Gibt die Klartext-Codes zurück -
 // nur für Aufrufer, die sie sofort brauchen (Tests, Seed, Admin); danach ist nur noch code_cipher da.
-function createBatch(db, { label, kind, size, issuedByFamilyId = null, joinFamilyId = null, partnerId = null, expiresAt = null }) {
+// dogId (Phase T Task 3): macht daraus einen Übergabe-Gutschein (siehe routes/dogs.js POST
+// /:id/handover) - nur für size=1 sinnvoll, aber hier nicht extra geprüft (der Aufrufer entscheidet).
+function createBatch(
+  db,
+  { label, kind, size, issuedByFamilyId = null, joinFamilyId = null, partnerId = null, expiresAt = null, dogId = null }
+) {
   const sqliteExpiresAt = toSqliteDatetime(expiresAt)
   return db.transaction(() => {
     const batchId = db
@@ -93,8 +104,8 @@ function createBatch(db, { label, kind, size, issuedByFamilyId = null, joinFamil
       .run(label, kind, partnerId, size).lastInsertRowid
 
     const insertVoucher = db.prepare(
-      `INSERT INTO vouchers (batch_id, code_hash, code_cipher, code_hint, partner_id, issued_by_family_id, join_family_id, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO vouchers (batch_id, code_hash, code_cipher, code_hint, partner_id, issued_by_family_id, join_family_id, expires_at, dog_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
 
     const codes = []
@@ -110,7 +121,8 @@ function createBatch(db, { label, kind, size, issuedByFamilyId = null, joinFamil
             partnerId,
             issuedByFamilyId,
             joinFamilyId,
-            sqliteExpiresAt
+            sqliteExpiresAt,
+            dogId
           )
           codes.push(code)
           break
@@ -122,6 +134,16 @@ function createBatch(db, { label, kind, size, issuedByFamilyId = null, joinFamil
 
     return { batchId, codes }
   })()
+}
+
+// Höchstens ein offener Übergabe-Gutschein pro Tier (routes/dogs.js POST /:id/handover): zieht alle
+// noch offenen (weder eingelöst noch schon widerrufen) Übergabe-Gutscheine dieses Tiers zurück, bevor
+// ein neuer entsteht - wie routes/admin.js POST /vouchers/:id/revoke, nur gleich für alle passenden.
+function revokeOpenHandoverVouchers(db, dogId) {
+  db.prepare(
+    `UPDATE vouchers SET revoked_at = datetime('now'), code_cipher = NULL
+     WHERE dog_id = ? AND redeemed_at IS NULL AND revoked_at IS NULL`
+  ).run(dogId)
 }
 
 // Eingaben für einen Admin-Gutschein-Stapel (POST /admin/voucher-batches): Bezeichnung Pflicht
@@ -172,8 +194,12 @@ function validateRedeemInput({ name, username, password, email }) {
 // Löst einen Gutschein ein: legt "Meine Chronik" (art='zuhause') an, der Code wird gleich ihr Schlüssel.
 // Läuft in EINER Transaktion - die UPDATE ... WHERE redeemed_at IS NULL-Guard macht doppeltes
 // Einlösen unmöglich, auch bei zwei gleichzeitigen Anfragen. Gibt { familyId, code } zurück oder wirft
-// einen Fehler mit .status (404/409/410/400).
-function redeemVoucher(db, { code, name, username, password, email }) {
+// einen Fehler mit .status (404/409/410/400). shelterMayRead (Phase T Task 3, optional): trägt der
+// Gutschein eine dog_id (Übergabe-Gutschein), zieht das Tier nach dem Anlegen des Zuhauses gleich mit
+// um (lib/transfers.js transferDog); mit shelterMayRead=true darf das abgebende Tierheim direkt
+// mitlesen (dog_shares mit story_consent=0 - die Einwilligung selbst kommt separat, siehe
+// routes/dogs.js PUT /:id/shelter-share).
+function redeemVoucher(db, { code, name, username, password, email, shelterMayRead }) {
   const normalized = normalizeCode(code)
   if (!normalized) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
 
@@ -197,7 +223,7 @@ function redeemVoucher(db, { code, name, username, password, email }) {
       throw httpError(410, 'Dieser Gutschein ist abgelaufen')
     }
 
-    const voucher = db.prepare('SELECT id, join_family_id, partner_id FROM vouchers WHERE code_hash = ?').get(codeHash)
+    const voucher = db.prepare('SELECT id, join_family_id, partner_id, dog_id FROM vouchers WHERE code_hash = ?').get(codeHash)
 
     const newFamilyId = db
       .prepare(
@@ -207,6 +233,22 @@ function redeemVoucher(db, { code, name, username, password, email }) {
       .run(trimmedName, codeHash, voucher.id, voucher.partner_id).lastInsertRowid
 
     db.prepare('UPDATE vouchers SET redeemed_by_family_id = ? WHERE id = ?').run(newFamilyId, voucher.id)
+
+    if (voucher.dog_id) {
+      const dog = db.prepare('SELECT family_id FROM dogs WHERE id = ?').get(voucher.dog_id)
+      if (dog) {
+        transferDog(db, {
+          dogId: voucher.dog_id,
+          fromFamilyId: dog.family_id,
+          toFamilyId: newFamilyId,
+          voucherId: voucher.id,
+          today: isoToday()
+        })
+        if (shelterMayRead) {
+          db.prepare('INSERT INTO dog_shares (dog_id, family_id, story_consent) VALUES (?, ?, 0)').run(voucher.dog_id, dog.family_id)
+        }
+      }
+    }
 
     if (voucher.join_family_id) {
       const joinable = db.prepare("SELECT 1 FROM families WHERE id = ? AND art = 'rudel' AND is_demo = 0").get(voucher.join_family_id)
@@ -239,6 +281,55 @@ function redeemVoucher(db, { code, name, username, password, email }) {
   return { familyId, code: normalized }
 }
 
+// Löst einen Übergabe-Gutschein OHNE ein neues Zuhause anzulegen ein: POST /vouchers/claim, nur aus
+// dem eigenen Zuhause heraus (siehe routes/vouchers.js). Atomar wie redeemVoucher (dieselbe
+// UPDATE ... WHERE redeemed_at IS NULL-Guard). dog_id wird VOR dem atomaren Einlösen gelesen (ein
+// unbedenklicher, separater Read: dog_id ändert sich nie nach dem Anlegen eines Gutscheins, siehe
+// createBatch) - ein Gutschein ohne dog_id ist kein Übergabe-Gutschein und bleibt dabei unangetastet
+// (kein verbrannter Weitergabe-/Partner-Gutschein durch einen falschen claim-Versuch).
+function claimVoucher(db, { code, familyId, shelterMayRead }) {
+  const normalized = normalizeCode(code)
+  if (!normalized) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+  const codeHash = hashCode(normalized)
+
+  const lookup = db.prepare('SELECT dog_id FROM vouchers WHERE code_hash = ?').get(codeHash)
+  if (!lookup) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+  if (!lookup.dog_id) throw httpError(400, 'Das ist kein Übergabe-Gutschein – zum Einlösen bitte abmelden.')
+
+  return db.transaction(() => {
+    const claim = db
+      .prepare(
+        `UPDATE vouchers SET redeemed_at = datetime('now'), code_cipher = NULL, redeemed_by_family_id = @familyId
+         WHERE code_hash = @codeHash AND redeemed_at IS NULL AND revoked_at IS NULL
+           AND (expires_at IS NULL OR expires_at > datetime('now'))`
+      )
+      .run({ familyId, codeHash })
+
+    if (claim.changes !== 1) {
+      const voucher = db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE code_hash = ?').get(codeHash)
+      if (voucher.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
+      if (voucher.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
+      throw httpError(410, 'Dieser Gutschein ist abgelaufen')
+    }
+
+    const voucher = db.prepare('SELECT id, dog_id FROM vouchers WHERE code_hash = ?').get(codeHash)
+    const dog = db.prepare('SELECT family_id FROM dogs WHERE id = ?').get(voucher.dog_id)
+
+    transferDog(db, {
+      dogId: voucher.dog_id,
+      fromFamilyId: dog.family_id,
+      toFamilyId: familyId,
+      voucherId: voucher.id,
+      today: isoToday()
+    })
+    if (shelterMayRead) {
+      db.prepare('INSERT INTO dog_shares (dog_id, family_id, story_consent) VALUES (?, ?, 0)').run(voucher.dog_id, dog.family_id)
+    }
+
+    return { dogId: voucher.dog_id }
+  })()
+}
+
 // Legt für einen Bereich (Rudel oder Zuhause) so viele Weitergabe-Gutscheine an, wie zum Kontingent
 // (config.voucherQuota) fehlen - GET /vouchers/mine ruft das bei jedem Aufruf auf. Offene UND schon
 // eingelöste eigene Gutscheine zählen mit, nur zurückgezogene/abgelaufene nicht - sonst würde sich das
@@ -264,8 +355,10 @@ function ensureVoucherQuota(db, area) {
 
 module.exports = {
   createBatch,
+  revokeOpenHandoverVouchers,
   voucherStatus,
   redeemVoucher,
+  claimVoucher,
   ensureVoucherQuota,
   validateBatchInput,
   DEMO_VOUCHERS,
