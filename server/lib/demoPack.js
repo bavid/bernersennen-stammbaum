@@ -5,6 +5,12 @@ const path = require('node:path')
 const bcrypt = require('bcryptjs')
 const { deleteFamily, removeUploads } = require('./families')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
+const {
+  HOUSEHOLD_NAME,
+  COMPANIONS,
+  HOUSEMATES: HOUSEHOLD_HOUSEMATES,
+  TIMELINE: HOUSEHOLD_TIMELINE
+} = require('../seed/demo-household')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -114,6 +120,89 @@ function insertBreeding(db, familyId, ids, copyImage) {
   }
 }
 
+function insertCompanions(db, familyId, copyImage) {
+  const insert = db.prepare(
+    `INSERT INTO dogs (family_id, name, rasse, tierart, geschlecht, geburtsdatum, foto_url, beschreibung,
+       bei_uns_seit, bei_uns_bis, abschied_grund, herkunft_art, herkunft_text)
+     VALUES (@familyId, @name, @rasse, @tierart, @geschlecht, @geburtsdatum, @fotoUrl, @beschreibung,
+       @beiUnsSeit, @beiUnsBis, @abschiedGrund, @herkunftArt, @herkunftText)`
+  )
+  const ids = {}
+  for (const companion of COMPANIONS) {
+    ids[companion.key] = insert.run({
+      familyId,
+      name: companion.name,
+      rasse: companion.rasse || null,
+      tierart: companion.tierart,
+      geschlecht: companion.geschlecht,
+      geburtsdatum: companion.geburtsdatum || null,
+      fotoUrl: companion.foto ? copyImage(companion.foto) : null,
+      beschreibung: companion.beschreibung || null,
+      beiUnsSeit: companion.beiUnsSeit || null,
+      beiUnsBis: companion.beiUnsBis || null,
+      abschiedGrund: companion.abschiedGrund || null,
+      herkunftArt: companion.herkunftArt || null,
+      herkunftText: companion.herkunftText || null
+    }).lastInsertRowid
+  }
+  const link = db.prepare('INSERT INTO dog_links (family_id, dog_a_id, dog_b_id) VALUES (?, ?, ?)')
+  for (const [a, b] of HOUSEHOLD_HOUSEMATES) {
+    link.run(familyId, Math.min(ids[a], ids[b]), Math.max(ids[a], ids[b]))
+  }
+  return ids
+}
+
+// Liefert zusätzlich entryIds: Id je Eintrag mit "key" - damit ein anderer Bereich (das Rudel, dem
+// der Haushalt beitritt) gezielt einen Kommentar an einen bestimmten Eintrag hängen kann.
+function insertHouseholdTimeline(db, familyId, ids) {
+  const insertEntry = db.prepare(
+    `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, privat, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(datetime('now', ?), datetime(?, '+18 hours')))`
+  )
+  const entryIds = {}
+  for (const entry of HOUSEHOLD_TIMELINE) {
+    const writtenAgo = entry.hoursAgo ? ago(entry.hoursAgo) : null
+    const entryId = insertEntry.run(
+      ids[entry.dog], familyId, entry.autor, entry.datum, entry.titel, entry.text || null,
+      entry.privat ? 1 : 0, writtenAgo, entry.datum
+    ).lastInsertRowid
+    if (entry.key) entryIds[entry.key] = entryId
+  }
+  return entryIds
+}
+
+// Erzeugt "Meine Chronik" eines Haushalts mit Begleitern (Einzug/Abschied/Herkunft), teils privaten
+// Chronik-Einträgen und einem Mitbewohner-Paar ohne gemeinsame Abstammung.
+// groupFamilyId: tritt der Haushalt sofort einem Rudel bei (z. B. dem Demo-Rudel oder dem Test-Rudel)?
+// Dann werden Nele und Mira dorthin geteilt und ein Kommentar einer fremden Familie an Neles
+// Einzugseintrag gehängt - so zeigt die Demo auch das Zusammenspiel Haushalt <-> Rudel.
+function createDemoHousehold(db, { password, isDemo, copyImage, groupFamilyId, name = HOUSEHOLD_NAME, theme = 'standard' }) {
+  return db.transaction(() => {
+    const familyId = db
+      .prepare("INSERT INTO families (name, password_hash, is_demo, theme, art) VALUES (?, ?, ?, ?, 'zuhause')")
+      .run(name, bcrypt.hashSync(password, 10), isDemo ? 1 : 0, theme).lastInsertRowid
+    const ids = insertCompanions(db, familyId, copyImage)
+    const entryIds = insertHouseholdTimeline(db, familyId, ids)
+
+    if (groupFamilyId) {
+      db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(familyId, groupFamilyId)
+      const share = db.prepare('INSERT OR IGNORE INTO dog_shares (dog_id, family_id) VALUES (?, ?)')
+      share.run(ids.nele, groupFamilyId)
+      share.run(ids.mira, groupFamilyId)
+      if (entryIds.neleEinzug) {
+        db.prepare('INSERT INTO entry_comments (entry_id, family_id, autor_name, text) VALUES (?, ?, ?, ?)').run(
+          entryIds.neleEinzug,
+          groupFamilyId,
+          'Familie Keller',
+          'Willkommen, Nele! Am Deich wird es dir bestimmt gefallen.'
+        )
+      }
+    }
+
+    return { familyId, dogs: COMPANIONS.length, entries: HOUSEHOLD_TIMELINE.length }
+  })()
+}
+
 // isDemo: öffentliche, schreibgeschützte Demo (Login über "Demo ansehen" ohne Passwort)
 // name: abweichender Rudel-Name, z. B. für ein beschreibbares Test-Rudel neben der Demo
 // theme: Auftritt der Familie – ohne Angabe der Berner-Look (bestehende Rudel, siehe db.js)
@@ -130,19 +219,36 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, t
   })()
 }
 
-// Ersetzt die öffentliche Demo: legt zuerst die neue an und löscht erst danach die alte(n) – nur Rudel
-// mit is_demo = 1, samt Fotos. Scheitert das Anlegen, bleibt die alte Demo erreichbar.
+// Ersetzt die öffentliche Demo: legt zuerst die neue an (Rudel, dann das Zuhause "Zuhause am Deich"
+// als Mitglied mit zwei geteilten Tieren, beides in EINER Transaktion) und löscht erst danach alle
+// alten Demo-Familien (is_demo = 1, egal ob Rudel oder Zuhause) samt Fotos. Scheitert das Anlegen,
+// bleibt die alte Demo unangetastet erreichbar; die alten Ids werden vorher eingesammelt, damit das
+// Löschen die gerade frisch angelegten (höheren) Ids nicht treffen kann.
 // Das Passwort ist zufällig – in die Demo kommt man über "Demo ansehen".
-// name: abweichender Name der öffentlichen Demo (z. B. themenpassend), sonst FAMILY_NAME
+// name/theme: abweichender Name/Auftritt der öffentlichen Demo (z. B. themenpassend) - gilt nur fürs
+// Rudel; das Zuhause bleibt immer "Zuhause am Deich" im Standard-Auftritt.
 function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
   const previous = db.prepare('SELECT id, name FROM families WHERE is_demo = 1').all()
-  const password = crypto.randomBytes(24).toString('base64url')
-  const packOptions = { password, isDemo: true, copyImage: createImageCopier(uploadDir) }
-  if (theme !== undefined) packOptions.theme = theme
-  if (name !== undefined) packOptions.name = name
-  const created = createDemoPack(db, packOptions)
+  const copyImage = createImageCopier(uploadDir)
+
+  const { created, household } = db.transaction(() => {
+    const packOptions = { password: crypto.randomBytes(24).toString('base64url'), isDemo: true, copyImage }
+    if (theme !== undefined) packOptions.theme = theme
+    if (name !== undefined) packOptions.name = name
+    const rudelResult = createDemoPack(db, packOptions)
+
+    const householdResult = createDemoHousehold(db, {
+      password: crypto.randomBytes(24).toString('base64url'),
+      isDemo: true,
+      copyImage,
+      groupFamilyId: rudelResult.familyId
+    })
+
+    return { created: rudelResult, household: householdResult }
+  })()
+
   for (const family of previous) removeUploads(uploadDir, deleteFamily(db, family.id))
-  return { removed: previous, created }
+  return { removed: previous, created, household }
 }
 
-module.exports = { FAMILY_NAME, createDemoPack, createImageCopier, replaceDemoPack }
+module.exports = { FAMILY_NAME, HOUSEHOLD_NAME, createDemoPack, createDemoHousehold, createImageCopier, replaceDemoPack }

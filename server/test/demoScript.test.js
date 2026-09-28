@@ -8,7 +8,7 @@ const Database = require('better-sqlite3')
 
 // scripts/demo.js legt die öffentliche Demo in einem eigenen Prozess an (wie ein echter `node scripts/demo.js`-Aufruf),
 // damit die frische db.js-Instanz genau die Umgebung dieses Prozesses sieht.
-test('scripts/demo.js legt die öffentliche Demo im neuen Standard-Auftritt an', () => {
+test('scripts/demo.js legt die öffentliche Demo (Rudel + Zuhause) im neuen Standard-Auftritt an', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-demo-script-'))
   const serverDir = path.join(__dirname, '..')
 
@@ -18,10 +18,21 @@ test('scripts/demo.js legt die öffentliche Demo im neuen Standard-Auftritt an',
   }).toString()
 
   assert.match(output, /Demo "Familie Sonnenhang" angelegt/)
+  assert.match(output, /Zuhause "Zuhause am Deich" angelegt/)
 
   const db = new Database(path.join(dir, 'data.db'))
-  const family = db.prepare('SELECT name, theme, is_demo FROM families WHERE is_demo = 1').get()
-  assert.deepEqual(family, { name: 'Familie Sonnenhang', theme: 'standard', is_demo: 1 })
+  const families = db.prepare('SELECT id, name, theme, is_demo, art FROM families WHERE is_demo = 1 ORDER BY art').all()
+  assert.deepEqual(
+    families.map(({ name, theme, is_demo: isDemo, art }) => ({ name, theme, isDemo, art })),
+    [
+      { name: 'Familie Sonnenhang', theme: 'standard', isDemo: 1, art: 'rudel' },
+      { name: 'Zuhause am Deich', theme: 'standard', isDemo: 1, art: 'zuhause' }
+    ]
+  )
+  const membership = db
+    .prepare('SELECT 1 FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
+    .get(families[1].id, families[0].id)
+  assert.ok(membership, 'Zuhause ist Mitglied des Rudels')
   db.close()
 
   fs.rmSync(dir, { recursive: true, force: true })

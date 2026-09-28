@@ -24,6 +24,21 @@ function familiesIn(dir) {
   return rows.map((row) => [row.name, row.is_demo, row.theme])
 }
 
+function membershipExists(dir, memberName, groupName) {
+  const Database = require('better-sqlite3')
+  const db = new Database(path.join(dir, 'data.db'), { readonly: true })
+  const row = db
+    .prepare(
+      `SELECT 1 FROM family_members m
+       JOIN families member ON member.id = m.member_family_id
+       JOIN families grp ON grp.id = m.group_family_id
+       WHERE member.name = ? AND grp.name = ?`
+    )
+    .get(memberName, groupName)
+  db.close()
+  return Boolean(row)
+}
+
 test('testenv-seed never runs in production', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-seedguard-'))
   const result = run({ DATA_DIR: dir, APP_ENV: 'production' })
@@ -44,44 +59,65 @@ test('testenv-seed never runs in the real prod container (NODE_ENV=production, A
   fs.rmSync(dir, { recursive: true, force: true })
 })
 
-test('testenv-seed creates the public demo and a writable test pack; --reset starts over', () => {
+test('testenv-seed creates the public demo, a writable test pack and a writable test household; --reset starts over', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-testenv-'))
   const env = { DATA_DIR: dir, APP_ENV: 'dev' }
 
   const first = run(env)
   assert.equal(first.status, 0, first.stderr)
   assert.match(first.stdout, /Passwort: sonnenhang/)
+  assert.match(first.stdout, /Passwort: deich/)
   assert.deepEqual(familiesIn(dir), [
     ['Familie Sonnenhang', 1, 'standard'],
-    ['Rudel vom Sonnenhang (Test)', 0, 'berner']
+    ['Rudel vom Sonnenhang (Test)', 0, 'berner'],
+    ['Zuhause am Deich', 1, 'standard'],
+    ['Zuhause am Deich (Test)', 0, 'standard']
   ])
+  assert.ok(membershipExists(dir, 'Zuhause am Deich', 'Familie Sonnenhang'), 'Demo-Zuhause ist Mitglied im Demo-Rudel')
+  assert.ok(
+    membershipExists(dir, 'Zuhause am Deich (Test)', 'Rudel vom Sonnenhang (Test)'),
+    'Test-Zuhause ist Mitglied im Test-Rudel'
+  )
 
   assert.equal(run(env).status, 0)
-  assert.equal(familiesIn(dir).length, 2, 'second run replaces the demo and keeps the test pack')
+  assert.equal(familiesIn(dir).length, 4, 'second run replaces the demo pair and keeps both test packs')
 
   // Simuliert ein Rudel, das die Seed-Funktion nicht kennt (z. B. echte Nutzung auf der Vorschau).
   // Ohne so ein Rudel würde --reset nichts beweisen: die Familienzahl wäre mit oder ohne --reset
-  // gleich (2), egal ob wirklich gelöscht wird.
+  // gleich, egal ob wirklich gelöscht wird.
   const Database = require('better-sqlite3')
   const db = new Database(path.join(dir, 'data.db'))
   db.prepare('INSERT INTO families (name, password_hash, is_demo) VALUES (?, ?, 0)').run('Familie Vorher', 'x')
   db.close()
   const names = () => familiesIn(dir).map((row) => row[0]).sort()
-  assert.deepEqual(names(), ['Familie Sonnenhang', 'Familie Vorher', 'Rudel vom Sonnenhang (Test)'])
+  assert.deepEqual(names(), [
+    'Familie Sonnenhang',
+    'Familie Vorher',
+    'Rudel vom Sonnenhang (Test)',
+    'Zuhause am Deich',
+    'Zuhause am Deich (Test)'
+  ])
 
   assert.equal(run(env).status, 0)
   assert.ok(names().includes('Familie Vorher'), 'a plain run without --reset must not delete other families')
 
   assert.equal(run(env, ['--reset']).status, 0)
-  assert.deepEqual(names(), ['Familie Sonnenhang', 'Rudel vom Sonnenhang (Test)'], '--reset must delete families the seed did not create')
+  assert.deepEqual(
+    names(),
+    ['Familie Sonnenhang', 'Rudel vom Sonnenhang (Test)', 'Zuhause am Deich', 'Zuhause am Deich (Test)'],
+    '--reset must delete families the seed did not create'
+  )
   fs.rmSync(dir, { recursive: true, force: true })
 })
 
-test('on the preview the test pack gets a random password', () => {
+test('on the preview both test packs get random passwords', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-preview-'))
   const result = run({ DATA_DIR: dir, APP_ENV: 'staging' })
   assert.equal(result.status, 0, result.stderr)
   assert.doesNotMatch(result.stdout, /Passwort: sonnenhang/)
-  assert.match(result.stdout, /Passwort: \S{8,}/)
+  assert.doesNotMatch(result.stdout, /Passwort: deich/)
+  const passwords = [...result.stdout.matchAll(/Passwort: (\S+)/g)].map((m) => m[1])
+  assert.equal(passwords.length, 2)
+  for (const password of passwords) assert.ok(password.length >= 8, password)
   fs.rmSync(dir, { recursive: true, force: true })
 })

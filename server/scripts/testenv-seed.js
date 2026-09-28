@@ -11,11 +11,13 @@ if (appEnv === 'production') {
 
 const db = require('../db')
 const { deleteFamily, removeUploads } = require('../lib/families')
-const { createDemoPack, createImageCopier, replaceDemoPack } = require('../lib/demoPack')
+const { createDemoPack, createDemoHousehold, createImageCopier, replaceDemoPack } = require('../lib/demoPack')
 
 const TEST_PACK_NAME = 'Rudel vom Sonnenhang (Test)'
+const TEST_HOUSEHOLD_NAME = 'Zuhause am Deich (Test)'
 // Lokal ein festes Passwort (E2E-Skripte), auf der öffentlich erreichbaren Vorschau ein zufälliges
 const testPassword = appEnv === 'dev' ? 'sonnenhang' : crypto.randomBytes(9).toString('base64url')
+const testHouseholdPassword = appEnv === 'dev' ? 'deich' : crypto.randomBytes(9).toString('base64url')
 
 function deleteAllFamilies() {
   for (const family of db.prepare('SELECT id FROM families').all()) {
@@ -27,12 +29,31 @@ try {
   if (process.argv.includes('--reset')) deleteAllFamilies()
   // Die öffentliche Demo der Vorschau zeigt den neuen Auftritt; das Test-Rudel bleibt beim Berner-Look
   replaceDemoPack(db, uploadDir, { theme: 'standard', name: 'Familie Sonnenhang' })
-  if (!db.prepare('SELECT 1 FROM families WHERE name = ?').get(TEST_PACK_NAME)) {
-    createDemoPack(db, { name: TEST_PACK_NAME, password: testPassword, isDemo: false, copyImage: createImageCopier(uploadDir) })
+
+  let testFamily = db.prepare('SELECT id FROM families WHERE name = ?').get(TEST_PACK_NAME)
+  if (!testFamily) {
+    const created = createDemoPack(db, { name: TEST_PACK_NAME, password: testPassword, isDemo: false, copyImage: createImageCopier(uploadDir) })
+    testFamily = { id: created.familyId }
     console.log(`Test-Rudel "${TEST_PACK_NAME}" – Passwort: ${testPassword}`)
   } else {
     console.log(`Test-Rudel "${TEST_PACK_NAME}" besteht schon (Passwort unverändert)`)
   }
+
+  // Beschreibbares Test-Zuhause, Mitglied im Test-Rudel: zum lokalen Testen von Teilen/privaten
+  // Einträgen mit Schreibzugriff (die öffentliche Demo ist schreibgeschützt).
+  if (!db.prepare('SELECT 1 FROM families WHERE name = ?').get(TEST_HOUSEHOLD_NAME)) {
+    createDemoHousehold(db, {
+      name: TEST_HOUSEHOLD_NAME,
+      password: testHouseholdPassword,
+      isDemo: false,
+      copyImage: createImageCopier(uploadDir),
+      groupFamilyId: testFamily.id
+    })
+    console.log(`Test-Zuhause "${TEST_HOUSEHOLD_NAME}" – Passwort: ${testHouseholdPassword}`)
+  } else {
+    console.log(`Test-Zuhause "${TEST_HOUSEHOLD_NAME}" besteht schon (Passwort unverändert)`)
+  }
+
   console.log(`Umgebung: ${appEnv} – öffentliche Demo über „Demo ansehen" auf der Login-Seite`)
 } catch (err) {
   console.error(`testenv-seed fehlgeschlagen: ${err.message}`)
