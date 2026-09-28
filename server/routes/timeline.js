@@ -2,14 +2,20 @@ const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
-const { VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
+const { ART, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
 const { canAttachUpload } = require('../lib/uploadAccess')
 
 const router = express.Router()
 
 const MAX_COMMENT_LENGTH = 1000
+// Phase T Task 2: Kategorien für die Tierheim-Chronik; kategorie bleibt auch außerhalb eines
+// Tierheims erlaubt (rein kosmetisch, keine Rechteprüfung nötig) - nur isPublic ist Tierheim-exklusiv.
+const KATEGORIEN = ['ankunft', 'tierarzt', 'verhalten', 'training', 'gassi', 'sonstiges']
 
 const hasKey = (body, key) => Object.prototype.hasOwnProperty.call(body, key)
+// leerer String/undefined/null -> null (kein Wunsch), sonst der Wert unverändert (Enum-Prüfung folgt)
+const cleanEnum = (value) => (value === null || value === undefined || value === '' ? null : value)
+const findFamilyArt = db.prepare('SELECT art FROM families WHERE id = ?')
 
 function toEntry(row, comments = []) {
   return { ...row, foto_urls: JSON.parse(row.foto_urls), comments }
@@ -33,25 +39,37 @@ function commentsByEntry(familyId, dogId) {
 
 const commentsOf = (entryId) => db.prepare('SELECT * FROM entry_comments WHERE entry_id = ? ORDER BY created_at, id').all(entryId)
 
-// Validiert Titel/Datum/Autor/Text/Fotos/Privat. Liefert { error } oder { values }.
-// existingPrivat: Wert, der gilt, wenn der Body kein privat-Feld mitschickt (PUT ändert es dann nicht;
-// POST hat naturgemäß keinen bestehenden Wert, Default false).
+// Validiert Titel/Datum/Autor/Text/Fotos/Privat/Kategorie/Öffentlich. Liefert { error } oder { values }.
+// existingPrivat/existingKategorie/existingIsPublic: der Wert, der gilt, wenn der Body das jeweilige
+// Feld nicht mitschickt (PUT ändert es dann nicht; POST hat naturgemäß keinen bestehenden Wert).
 // existingFotoUrls: die bisherigen Fotos bei PUT ([] bei POST) - bleiben erlaubt, auch wenn sie gerade
 // nicht (mehr) über canAttachUpload sichtbar wären (Altbestand, siehe lib/uploadAccess.js).
-function readEntryInput(body, req, existingPrivat = 0, existingFotoUrls = []) {
+function readEntryInput(body, req, existingPrivat = 0, existingFotoUrls = [], existingKategorie = null, existingIsPublic = 0) {
   const values = {
     autor_name: cleanText(body.autorName, 60),
     datum: body.datum,
     titel: cleanText(body.titel, 120),
     text: cleanText(body.text, 5000),
     foto_urls: cleanPhotoList(body.fotoUrls),
-    privat: hasKey(body, 'privat') ? (body.privat ? 1 : 0) : existingPrivat
+    privat: hasKey(body, 'privat') ? (body.privat ? 1 : 0) : existingPrivat,
+    kategorie: hasKey(body, 'kategorie') ? cleanEnum(body.kategorie) : existingKategorie,
+    is_public: hasKey(body, 'isPublic') ? (body.isPublic ? 1 : 0) : existingIsPublic
   }
   if (!values.autor_name || !values.titel || !values.datum) {
     return { error: 'Name, Datum und Titel sind erforderlich' }
   }
   if (!isIsoDate(values.datum)) return { error: 'Datum ist ungültig' }
   if (values.foto_urls === null) return { error: 'Fotoliste ist ungültig' }
+  if (values.kategorie !== null && !KATEGORIEN.includes(values.kategorie)) return { error: 'Unbekannte Kategorie' }
+  if (values.is_public && values.privat) {
+    return { error: 'Ein Eintrag kann nicht gleichzeitig privat und öffentlich (Steckbrief) sein' }
+  }
+  if (values.is_public) {
+    const identity = findFamilyArt.get(req.familyId)
+    if (!identity || identity.art !== ART.tierheim) {
+      return { error: '„Im Steckbrief zeigen“ gibt es nur für Tiere des Tierheims' }
+    }
+  }
   const uploadContext = { familyId: req.familyId, homeId: req.homeId }
   if (!values.foto_urls.every((url) => canAttachUpload(uploadContext, url, existingFotoUrls))) {
     return { error: 'Foto nicht gefunden' }
@@ -134,8 +152,8 @@ router.post('/', requireAuth, (req, res) => {
 
   const result = db
     .prepare(
-      `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, privat)
-       VALUES (@dog_id, @family_id, @autor_name, @datum, @titel, @text, @foto_urls, @privat)`
+      `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, privat, kategorie, is_public)
+       VALUES (@dog_id, @family_id, @autor_name, @datum, @titel, @text, @foto_urls, @privat, @kategorie, @is_public)`
     )
     .run({ ...values, dog_id: dogId, family_id: req.familyId })
 
@@ -147,12 +165,20 @@ router.put('/:id', requireAuth, (req, res) => {
   const existing = loadOwnEntry(req, res)
   if (!existing) return
 
-  const { error, values } = readEntryInput(req.body || {}, req, existing.privat, JSON.parse(existing.foto_urls))
+  const { error, values } = readEntryInput(
+    req.body || {},
+    req,
+    existing.privat,
+    JSON.parse(existing.foto_urls),
+    existing.kategorie,
+    existing.is_public
+  )
   if (error) return res.status(400).json({ error })
 
   db.prepare(
     `UPDATE timeline_entries
-     SET autor_name = @autor_name, datum = @datum, titel = @titel, text = @text, foto_urls = @foto_urls, privat = @privat
+     SET autor_name = @autor_name, datum = @datum, titel = @titel, text = @text, foto_urls = @foto_urls,
+         privat = @privat, kategorie = @kategorie, is_public = @is_public
      WHERE id = @id`
   ).run({ ...values, id: existing.id })
 

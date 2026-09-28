@@ -1,3 +1,4 @@
+const crypto = require('node:crypto')
 const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
@@ -5,6 +6,7 @@ const { isIsoDate, cleanText, cleanId, isUploadUrl } = require('../lib/validate'
 const { dogLabel } = require('../lib/labels')
 const { ART, membershipsOf, canEnter, canSeeDog, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL } = require('../lib/context')
 const { canAttachUpload } = require('../lib/uploadAccess')
+const { slugify } = require('../lib/partners')
 
 const router = express.Router()
 
@@ -16,6 +18,12 @@ const PARENTS = [
 ]
 const ABSCHIED_GRUENDE = ['verstorben', 'abgegeben', 'umgezogen', 'anderes']
 const HERKUNFT_ARTEN = ['tierheim', 'privat', 'zuechter', 'nachwuchs', 'fundtier', 'anderes']
+// Phase T Task 2: Vermittlungsstatus - nur im Tierheim-Bereich setzbar (siehe validateDogRecord).
+// "vermittelt" kommt normalerweise erst über die Übergabe (Task 3) zustande, bleibt aber auch hier
+// ein gültiger, manuell setzbarer Wert (z. B. wenn eine Vermittlung ohne App-Gutschein stattfand).
+const VERMITTLUNG_STATUS_VALUES = ['in_vermittlung', 'reserviert', 'vermittelt']
+// Ein Steckbrief lässt sich nur veröffentlichen, solange das Tier noch vermittelt werden kann.
+const PUBLISHABLE_STATUS = ['in_vermittlung', 'reserviert']
 
 const UNKNOWN_NAME = 'Unbekannt'
 const SUMMARY_COLUMNS = `dogs.id, dogs.name, dogs.name_unbekannt, dogs.rasse, dogs.tierart, dogs.geschlecht, dogs.geburtsdatum,
@@ -28,14 +36,15 @@ const pick = (body, key, fallback) => (hasKey(body, key) ? body[key] : fallback)
 const cleanEnum = (value) => (value === null || value === undefined || value === '' ? null : value)
 
 const findDog = db.prepare('SELECT * FROM dogs WHERE id = ?')
+const findFamilyArt = db.prepare('SELECT art FROM families WHERE id = ?')
 const insertDog = db.prepare(
   `INSERT INTO dogs
     (family_id, name, name_unbekannt, rasse, tierart, geschlecht, geburtsdatum, farbe_markings,
      mother_dog_id, father_dog_id, mother_freitext, father_freitext, foto_url, beschreibung,
-     bei_uns_seit, bei_uns_bis, abschied_grund, herkunft_art, herkunft_text)
+     bei_uns_seit, bei_uns_bis, abschied_grund, herkunft_art, herkunft_text, vermittlung_status)
    VALUES (@family_id, @name, @name_unbekannt, @rasse, @tierart, @geschlecht, @geburtsdatum, @farbe_markings,
      @mother_dog_id, @father_dog_id, @mother_freitext, @father_freitext, @foto_url, @beschreibung,
-     @bei_uns_seit, @bei_uns_bis, @abschied_grund, @herkunft_art, @herkunft_text)`
+     @bei_uns_seit, @bei_uns_bis, @abschied_grund, @herkunft_art, @herkunft_text, @vermittlung_status)`
 )
 const insertLink = db.prepare('INSERT OR IGNORE INTO dog_links (family_id, dog_a_id, dog_b_id) VALUES (?, ?, ?)')
 const listShares = db.prepare('SELECT family_id FROM dog_shares WHERE dog_id = ? ORDER BY family_id')
@@ -66,7 +75,10 @@ function buildDogRecord(body, existing = {}) {
     bei_uns_bis: cleanText(pick(body, 'beiUnsBis', existing.bei_uns_bis), 10),
     abschied_grund: cleanEnum(pick(body, 'abschiedGrund', existing.abschied_grund)),
     herkunft_art: cleanEnum(pick(body, 'herkunftArt', existing.herkunft_art)),
-    herkunft_text: cleanText(pick(body, 'herkunftText', existing.herkunft_text), 120)
+    herkunft_text: cleanText(pick(body, 'herkunftText', existing.herkunft_text), 120),
+    // Vermittlungsstatus (Phase T): nur im Tierheim-Bereich erlaubt, siehe validateDogRecord.
+    // public_slug bleibt hier bewusst außen vor - den setzt/löscht ausschließlich PUT /:id/steckbrief.
+    vermittlung_status: cleanEnum(pick(body, 'vermittlungStatus', existing.vermittlung_status))
   }
   // Ohne Abschiedsdatum ergibt ein Abschiedsgrund keinen Sinn
   if (!record.bei_uns_bis) record.abschied_grund = null
@@ -123,6 +135,11 @@ function validateDogRecord(record, dogId, req, existingFotoUrl = null) {
   }
   if (record.herkunft_art !== null && !HERKUNFT_ARTEN.includes(record.herkunft_art)) {
     return 'Unbekannte Herkunft'
+  }
+  if (record.vermittlung_status !== null) {
+    const identity = findFamilyArt.get(req.familyId)
+    if (!identity || identity.art !== ART.tierheim) return 'Vermittlungsstatus gibt es nur im Tierheim-Bereich'
+    if (!VERMITTLUNG_STATUS_VALUES.includes(record.vermittlung_status)) return 'Unbekannter Vermittlungsstatus'
   }
   for (const parent of PARENTS) {
     const error = validateParent(record, parent, dogId, req.familyId)
@@ -341,11 +358,63 @@ router.put('/:id', requireAuth, (req, res) => {
        father_dog_id = @father_dog_id, mother_freitext = @mother_freitext,
        father_freitext = @father_freitext, foto_url = @foto_url, beschreibung = @beschreibung,
        bei_uns_seit = @bei_uns_seit, bei_uns_bis = @bei_uns_bis, abschied_grund = @abschied_grund,
-       herkunft_art = @herkunft_art, herkunft_text = @herkunft_text
+       herkunft_art = @herkunft_art, herkunft_text = @herkunft_text, vermittlung_status = @vermittlung_status
      WHERE id = @id`
   ).run({ ...record, id: existing.id })
 
   res.json(findDog.get(existing.id))
+})
+
+// Steckbrief (Phase T Task 2): veröffentlicht/zieht ein Tier eines Tierheims öffentlich unter
+// /t/:slug zurück. Nur der Besitzer-Bereich (loadOwnDog) UND nur ein Tierheim-Bereich dürfen das -
+// ein normales Zuhause/Rudel hat keine Steckbriefe. Veröffentlichen geht nur, solange das Tier
+// tatsächlich vermittelbar ist (in_vermittlung/reserviert); Zurückziehen (published: false) geht immer.
+const SLUG_SUFFIX_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
+const SLUG_SUFFIX_LENGTH = 6
+const MAX_SLUG_ATTEMPTS = 20
+
+const slugTaken = db.prepare('SELECT 1 FROM dogs WHERE public_slug = ?')
+
+function randomSlugSuffix() {
+  let suffix = ''
+  for (let i = 0; i < SLUG_SUFFIX_LENGTH; i += 1) suffix += SLUG_SUFFIX_CHARS[crypto.randomInt(SLUG_SUFFIX_CHARS.length)]
+  return suffix
+}
+
+// <name-kebab>-<6 zufällige [a-z0-9]>, geprüft auf Eindeutigkeit (dogs.public_slug hat einen
+// Unique-Index, siehe db.js) - der Zufallsanteil macht eine Kollision praktisch ausgeschlossen,
+// die Schleife ist nur ein zusätzliches Sicherheitsnetz.
+function generatePublicSlug(name) {
+  const base = slugify(name) || 'tier'
+  for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt += 1) {
+    const slug = `${base}-${randomSlugSuffix()}`
+    if (!slugTaken.get(slug)) return slug
+  }
+  throw new Error('Konnte keinen eindeutigen Steckbrief-Link erzeugen')
+}
+
+router.put('/:id/steckbrief', requireAuth, (req, res) => {
+  const dog = loadOwnDog(req, res)
+  if (!dog) return
+
+  const identity = findFamilyArt.get(req.familyId)
+  if (!identity || identity.art !== ART.tierheim) {
+    return res.status(400).json({ error: 'Steckbriefe gibt es nur im Tierheim-Bereich' })
+  }
+
+  const { published } = req.body || {}
+  if (typeof published !== 'boolean') return res.status(400).json({ error: '„published“ muss true oder false sein' })
+
+  if (published) {
+    if (!PUBLISHABLE_STATUS.includes(dog.vermittlung_status)) {
+      return res.status(400).json({ error: 'Veröffentlichen geht nur mit Status „in Vermittlung“ oder „reserviert“' })
+    }
+    db.prepare('UPDATE dogs SET public_slug = ? WHERE id = ?').run(generatePublicSlug(dog.name), dog.id)
+  } else {
+    db.prepare('UPDATE dogs SET public_slug = NULL WHERE id = ?').run(dog.id)
+  }
+
+  res.json(findDog.get(dog.id))
 })
 
 // Teilen: nur aus "Meine Chronik" heraus, nur in Rudel, in denen der Haushalt Mitglied ist.

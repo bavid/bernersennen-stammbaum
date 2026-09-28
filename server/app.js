@@ -17,14 +17,17 @@ const adminRoutes = require('./routes/admin')
 const vouchersRoutes = require('./routes/vouchers')
 const messagesRoutes = require('./routes/messages')
 const partnersRoutes = require('./routes/partners')
+const publicAnimalsRoutes = require('./routes/publicAnimals')
 const placesRoutes = require('./routes/places')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
 const { apiLimiter, photoLimiter, limitWrites } = require('./middleware/abuse')
 const { LOGO_FILENAME_RE } = require('./lib/partners')
+const { canServePublicMedia } = require('./lib/publicMedia')
 
 const PHOTO_CACHE = 'private, max-age=2592000, immutable'
 const PARTNER_LOGO_CACHE = 'public, max-age=2592000, immutable'
+const PUBLIC_MEDIA_CACHE = 'public, max-age=3600'
 
 // Kein upgrade-insecure-requests/HSTS: die App läuft auch per http://IP:PORT ohne TLS.
 const securityHeaders = helmet({
@@ -112,6 +115,24 @@ function createApp() {
     })
   )
 
+  // Steckbrief-Fotos (Phase T Task 2): kein Login, aber nur Dateien, die zu einem veröffentlichten
+  // Steckbrief gehören (siehe lib/publicMedia.js) - alles andere 404, wie bei /uploads. noindex, weil
+  // Steckbriefe nie in Suchmaschinen auftauchen sollen (Roadmap-Entscheidung 14); "public" statt
+  // "private" im Cache-Control, anders als /uploads, weil diese Fotos absichtlich für alle gleich sind.
+  app.use(
+    '/public-media',
+    photoLimiter,
+    (req, res, next) => {
+      res.setHeader('X-Robots-Tag', 'noindex')
+      if (!canServePublicMedia(path.basename(req.path))) return res.status(404).json({ error: 'Nicht gefunden' })
+      next()
+    },
+    express.static(config.uploadDir, {
+      fallthrough: false,
+      setHeaders: (res) => res.setHeader('Cache-Control', PUBLIC_MEDIA_CACHE)
+    })
+  )
+
   app.use('/api', apiLimiter)
   app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding'], limitWrites)
   app.use('/api', authRoutes)
@@ -123,6 +144,7 @@ function createApp() {
   app.use('/api/messages', messagesRoutes)
   app.use('/api/admin', adminRoutes)
   app.use('/api/public/partners', partnersRoutes)
+  app.use('/api/public', publicAnimalsRoutes)
   app.use('/api/places', placesRoutes)
   app.use('/api/uploads', uploadsRoutes)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))
