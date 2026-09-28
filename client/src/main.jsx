@@ -5,6 +5,7 @@ import '@fontsource-variable/fraunces/full.css'
 import '@fontsource-variable/manrope'
 import App from './App.jsx'
 import { ToastProvider } from './components/Toast.jsx'
+import EnvBanner from './components/EnvBanner.jsx'
 import { trackScrollbarWidth } from './lib/viewport.js'
 import './styles/global.css'
 
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <ToastProvider>
+        <EnvBanner />
         <App />
       </ToastProvider>
     </BrowserRouter>
