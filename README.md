@@ -24,6 +24,15 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
 
 ## Funktionen
 
+- **Meine Chronik & Wegbegleiter**: Jeder Haushalt pflegt seine Tiere privat – mit Einzug, Herkunft (z. B.
+  „aus dem Tierheim“) und Abschied. Die Zeitleiste „Wegbegleiter“ zeigt, welche Tiere wann bei euch gelebt haben;
+  verstorbene erscheinen „In Erinnerung“. Einzug und Abschied stehen als Meilensteine in der Chronik.
+- **Tiere in Familien teilen**: Aus „Meine Chronik“ heraus tritt man Familien bei oder gründet eine. Einzelne Tiere
+  lassen sich dort zeigen („In Familien zeigen“); Einträge mit „Nur für uns (privat)“ bleiben im eigenen Zuhause.
+  Die Familie sieht geteilte Tiere mit „aus Zuhause …“, kann kommentieren, aber nichts ändern. Oben im Kopf wechselt
+  man zwischen „Meine Chronik“ und den Familien.
+- **Tier schnell erfassen**: „Tier hinzufügen“ fragt nur Tierart, Name, Geschlecht, „lebt mit“ und Einzug –
+  alles Weitere über „Mehr Angaben“. Im Stammbaum legt „+“ in der Mitbewohner-Reihe direkt ein Tier an, das dort mitlebt.
 - **Stammbaum**: Generationen werden automatisch berechnet, Eltern und Würfe mit Linien verbunden,
   jede Generation zeigt ihr Geburtsdatum bzw. ihre Geburtsjahre. Beim Überfahren eines Hundes wird
   seine Familie hervorgehoben, ein Klick öffnet seine Seite. Große Bäume lassen sich zoomen
@@ -159,6 +168,8 @@ Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen und die Domain im Server-Pro
 - Passwörter mit bcrypt gehasht, Session als httpOnly-Cookie (JWT, 30 Tage)
 - Rate-Limit auf Login und Rudel-Anlage
 - Uploads nur als JPG/PNG/WebP/GIF, Dateiname und Endung vergibt der Server
+- Fotos sieht nur, wer das Tier bzw. den Eintrag sehen darf (fremde Foto-Adressen liefern 404 und lassen sich
+  auch nicht an eigene Tiere hängen)
 - Security-Header (CSP, nosniff, frame-ancestors) per helmet
 
 ## Projektstruktur
