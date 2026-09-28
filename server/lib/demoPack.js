@@ -115,11 +115,12 @@ function insertBreeding(db, familyId, ids, copyImage) {
 }
 
 // isDemo: öffentliche, schreibgeschützte Demo (Login über "Demo ansehen" ohne Passwort)
-function createDemoPack(db, { password, isDemo, copyImage }) {
+// name: abweichender Rudel-Name, z. B. für ein beschreibbares Test-Rudel neben der Demo
+function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME }) {
   return db.transaction(() => {
     const familyId = db
       .prepare('INSERT INTO families (name, password_hash, is_demo) VALUES (?, ?, ?)')
-      .run(FAMILY_NAME, bcrypt.hashSync(password, 10), isDemo ? 1 : 0).lastInsertRowid
+      .run(name, bcrypt.hashSync(password, 10), isDemo ? 1 : 0).lastInsertRowid
     const ids = insertDogs(db, familyId, copyImage)
     insertTimeline(db, familyId, ids, copyImage)
     insertNotes(db, familyId)
