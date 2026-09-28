@@ -64,6 +64,18 @@ describe('PromotionCard', () => {
     expect(container.querySelector('img').getAttribute('src')).toBe('/partner-media/knabber.webp')
   })
 
+  test('das Bild steht außerhalb des Links und trägt den Titel als Alternativtext', async () => {
+    await render(empfehlung)
+    const img = container.querySelector('img')
+    expect(img.getAttribute('alt')).toBe('Haferflocken-Knabber')
+    expect(img.closest('a')).toBeNull()
+  })
+
+  test('ein Bild außerhalb von /partner-media wird nicht angezeigt', async () => {
+    await render({ ...empfehlung, bildUrl: 'https://example.org/fremd.png' })
+    expect(container.querySelector('img')).toBeNull()
+  })
+
   test('Empfehlung: Kennzeichnung "Empfehlung von …" als lesbarer Text', async () => {
     await render(empfehlung)
     expect(container.querySelector('.promotion-badge').textContent).toBe('Empfehlung von Hundeschule Wiesengrund')

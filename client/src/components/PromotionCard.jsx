@@ -1,10 +1,5 @@
 import Icon from './Icon.jsx'
-import { isAnzeige, isClickUrl, kennzeichnungLabel, promotionRel } from '../lib/discover.js'
-
-// Bilder von Empfehlungen liegen immer unter /partner-media (server/routes/discover.js promotionCard).
-function isPartnerMedia(url) {
-  return typeof url === 'string' && url.startsWith('/partner-media/')
-}
+import { isAnzeige, isClickUrl, isPartnerMedia, kennzeichnungLabel, promotionRel } from '../lib/discover.js'
 
 // Eine Empfehlung/Anzeige im Reiter "Entdecken" (Futter, Hundeschule): Kennzeichnung zuerst und als
 // Text (auch für Screenreader), dann Bild, Titel, Text und der Link über die Klickzählung (clickUrl).
@@ -16,7 +11,11 @@ export default function PromotionCard({ promotion }) {
   return (
     <article className={`promotion-card card${anzeige ? ' promotion-card-anzeige' : ''}`}>
       <p className={`promotion-badge${anzeige ? ' promotion-badge-anzeige' : ''}`}>{kennzeichnungLabel(promotion)}</p>
-      {isPartnerMedia(promotion.bildUrl) && <img src={promotion.bildUrl} alt="" className="promotion-card-image" loading="lazy" />}
+      {/* Das Bild steht außerhalb des Links ("Mehr erfahren") - es ist also nicht Teil eines Namens, der
+          den Titel schon nennt, und bekommt den Titel als Alternativtext. */}
+      {isPartnerMedia(promotion.bildUrl) && (
+        <img src={promotion.bildUrl} alt={promotion.titel} className="promotion-card-image" loading="lazy" />
+      )}
       <div className="promotion-card-body">
         <h3>{promotion.titel}</h3>
         {promotion.text && <p className="promotion-card-text">{promotion.text}</p>}

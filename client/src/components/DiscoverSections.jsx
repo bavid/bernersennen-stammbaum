@@ -69,7 +69,7 @@ function FarAway({ children }) {
 function PartnerListHint({ children }) {
   return (
     <DiscoverEmpty>
-      {children} – schau in die <Link to="/partner">Partnerliste</Link>.
+      {children} – schaut in die <Link to="/partner">Partnerliste</Link>.
     </DiscoverEmpty>
   )
 }
@@ -112,7 +112,7 @@ export function BegleiterSection({ partner, tiere, fallback }) {
     >
       <p className="discover-trust-note">
         <Icon name="check" />
-        Hier findest du nur Tierheime und Vermittlungsstellen – keine Züchter.
+        Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.
       </p>
       {fallback && <FallbackNote />}
       {isEmpty ? (
@@ -147,7 +147,7 @@ export function FutterSection({ futter }) {
       lede="Klar gekennzeichnet: was eine Empfehlung ist und was eine Anzeige."
     >
       {futter.length === 0 ? (
-        <DiscoverEmpty icon="star">Noch keine Futter-Empfehlungen – schau bald wieder vorbei.</DiscoverEmpty>
+        <DiscoverEmpty icon="star">Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.</DiscoverEmpty>
       ) : (
         <PromotionList items={futter} />
       )}

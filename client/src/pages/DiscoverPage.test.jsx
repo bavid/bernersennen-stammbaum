@@ -247,7 +247,7 @@ describe('DiscoverPage – vier Kapitel', () => {
     const el = section('Neuer Begleiter gesucht?')
     expect(el.textContent).toContain('Tierheim Birkenweg')
     expect(linkIn(el, 'Fips').getAttribute('href')).toBe('/t/fips-ab12cd')
-    expect(el.textContent).toContain('Hier findest du nur Tierheime und Vermittlungsstellen – keine Züchter.')
+    expect(el.textContent).toContain('Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.')
     expect(linkIn(el, 'Mehr in der Nähe').getAttribute('href')).toBe('/umgebung')
   })
 
@@ -339,14 +339,73 @@ describe('DiscoverPage – Leerzustände', () => {
     discover.mockResolvedValue(emptyResponse)
     await render()
     const hundeschulen = section('Hundeschule gesucht?')
-    expect(hundeschulen.textContent).toContain('Noch keine Hundeschulen in der Nähe – schau in die Partnerliste.')
+    expect(hundeschulen.textContent).toContain('Noch keine Hundeschulen in der Nähe – schaut in die Partnerliste.')
     expect(linkIn(hundeschulen, 'Partnerliste').getAttribute('href')).toBe('/partner')
 
     const begleiter = section('Neuer Begleiter gesucht?')
-    expect(begleiter.textContent).toContain('Noch keine Tierheime oder Vermittlungsstellen in der Nähe')
+    expect(begleiter.textContent).toContain('Noch keine Tierheime oder Vermittlungsstellen in der Nähe – schaut in die Partnerliste.')
     expect(linkIn(begleiter, 'Mehr in der Nähe').getAttribute('href')).toBe('/umgebung')
 
-    expect(section('Futter-Empfehlungen').textContent).toContain('Noch keine Futter-Empfehlungen')
-    expect(section('Unterstützen').textContent).toContain('Noch keine Spendenmöglichkeiten')
+    expect(section('Futter-Empfehlungen').textContent).toContain('Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.')
+    expect(section('Unterstützen').textContent).toContain('Noch keine Spendenmöglichkeiten hinterlegt – schaut in die Partnerliste.')
+  })
+})
+
+describe('DiscoverPage – Ansprache', () => {
+  test('spricht in der ihr-Form (keine du-Form in Hinweisen und Leerzuständen)', async () => {
+    discover.mockResolvedValue(emptyResponse)
+    await render()
+    expect(container.textContent).not.toMatch(/findest du|\bschau (in|bald)\b/)
+  })
+})
+
+function deferred() {
+  let resolve
+  let reject
+  const promise = new Promise((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+function responseWithSchool(name) {
+  return { ...emptyResponse, hundeschulen: [partner({ name })] }
+}
+
+describe('DiscoverPage – überlappende Suchen (Race Condition)', () => {
+  test('antwortet die ältere Suche zuletzt, bleibt das Ergebnis der zuletzt abgeschickten stehen', async () => {
+    const older = deferred()
+    const newer = deferred()
+    discover.mockResolvedValueOnce(emptyResponse).mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise)
+    await render()
+
+    await submitPlz('20095')
+    await submitPlz('20097')
+    expect(discover).toHaveBeenNthCalledWith(2, { plz: '20095', radius: 25 })
+    expect(discover).toHaveBeenNthCalledWith(3, { plz: '20097', radius: 25 })
+
+    await act(async () => newer.resolve(responseWithSchool('Hundeschule Neuland')))
+    await act(async () => older.resolve(responseWithSchool('Hundeschule Altmarkt')))
+
+    const text = section('Hundeschule gesucht?').textContent
+    expect(text).toContain('Hundeschule Neuland')
+    expect(text).not.toContain('Hundeschule Altmarkt')
+    expect(container.querySelector('[role="status"]')).toBeNull()
+  })
+
+  test('ein verspäteter Fehler der älteren Suche überschreibt das neuere Ergebnis nicht', async () => {
+    const older = deferred()
+    const newer = deferred()
+    discover.mockResolvedValueOnce(emptyResponse).mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise)
+    await render()
+
+    await submitPlz('20095')
+    await submitPlz('20097')
+    await act(async () => newer.resolve(responseWithSchool('Hundeschule Neuland')))
+    await act(async () => older.reject(Object.assign(new Error('Fehler 500'), { status: 500 })))
+
+    expect(container.querySelector('[role="alert"]')).toBeNull()
+    expect(section('Hundeschule gesucht?').textContent).toContain('Hundeschule Neuland')
   })
 })

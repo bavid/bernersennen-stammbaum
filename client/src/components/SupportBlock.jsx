@@ -1,14 +1,10 @@
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { DiscoverEmpty } from './DiscoverChapter.jsx'
-import { formatEuroCents, isClickUrl } from '../lib/discover.js'
+import { formatEuroCents, isClickUrl, isPartnerMedia } from '../lib/discover.js'
 import { isExternalUrl } from '../lib/format.js'
 
 const NEW_TAB_HINT = ' (öffnet in neuem Tab)'
-
-function isPartnerMedia(url) {
-  return typeof url === 'string' && url.startsWith('/partner-media/')
-}
 
 // Transparenzblock zum neuesten Spendenbericht - Beträge kommen in Cent vom Server.
 function DonationReport({ report }) {
@@ -50,6 +46,8 @@ function PartnerDonations({ items }) {
         {items.map((item) => (
           <li key={item.id}>
             <a className="support-donation-link" href={item.clickUrl} target="_blank" rel="noopener noreferrer">
+              {/* Logo bewusst dekorativ (alt=""): es steht im selben Link wie "An <Name> spenden" - ein
+                  Alternativtext würde den Namen nur doppelt vorlesen. */}
               {isPartnerMedia(item.logoUrl) ? (
                 <img src={item.logoUrl} alt="" className="support-donation-logo" />
               ) : (
@@ -78,7 +76,7 @@ export default function SupportBlock({ support }) {
   if (!hasGofundme && !support.text && !support.bericht && donations.length === 0) {
     return (
       <DiscoverEmpty icon="heart">
-        Noch keine Spendenmöglichkeiten hinterlegt – schau in die <Link to="/partner">Partnerliste</Link>.
+        Noch keine Spendenmöglichkeiten hinterlegt – schaut in die <Link to="/partner">Partnerliste</Link>.
       </DiscoverEmpty>
     )
   }

@@ -17,6 +17,12 @@ export function isClickUrl(url) {
   return typeof url === 'string' && CLICK_URL_RE.test(url)
 }
 
+// Bilder von Empfehlungen und Logos der Partner liegen immer unter /partner-media (server/routes/
+// discover.js promotionCard/spendenCard) - nur diese Form landet in einem src.
+export function isPartnerMedia(url) {
+  return typeof url === 'string' && url.startsWith('/partner-media/')
+}
+
 const KENNZEICHNUNGEN = ['Anzeige', 'Empfehlung', 'Partner']
 
 // Rechtlich vorsichtig: eine unbekannte Kennzeichnung (sollte der Server nie liefern, siehe CHECK in

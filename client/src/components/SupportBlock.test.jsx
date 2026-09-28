@@ -109,9 +109,20 @@ describe('SupportBlock', () => {
     expect(link.getAttribute('rel')).toBe('noopener noreferrer')
   })
 
+  test('Partner-Logo im Spendenlink ist dekorativ (Name steht schon im Linktext)', async () => {
+    await render({
+      ...fullSupport,
+      partnerSpenden: [{ ...fullSupport.partnerSpenden[0], logoUrl: '/partner-media/birkenweg.png' }]
+    })
+    const link = linkByText('Tierheim Birkenweg')
+    const logo = link.querySelector('img')
+    expect(logo.getAttribute('src')).toBe('/partner-media/birkenweg.png')
+    expect(logo.getAttribute('alt')).toBe('')
+  })
+
   test('ohne irgendetwas: freundlicher Leerzustand mit Link zur Partnerliste', async () => {
     await render({ gofundmeClickUrl: null, text: null, bericht: null, partnerSpenden: [] })
-    expect(container.textContent).toContain('Noch keine Spendenmöglichkeiten')
+    expect(container.textContent).toContain('Noch keine Spendenmöglichkeiten hinterlegt – schaut in die Partnerliste.')
     expect(linkByText('Partnerliste').getAttribute('href')).toBe('/partner')
   })
 

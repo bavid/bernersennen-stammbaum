@@ -53,13 +53,14 @@ export default function DiscoverPage() {
     writeSetting('nearbyRadius', radius)
   }, [radius])
 
+  // Absichtlich nur beim ersten Anzeigen (leere Abhängigkeitsliste): mit der gemerkten PLZ laden. Danach
+  // sucht ausschließlich das Formular - Tippen in PLZ oder Umkreis löst keine Anfrage aus. Das
+  // Aufräumen erklärt jede noch laufende Antwort für veraltet, damit sie nach dem Verlassen nichts setzt.
   useEffect(() => {
     load(plz.length === PLZ_LENGTH ? plz : '')
     return () => {
       latestRequest.current += 1
     }
-    // Nur beim ersten Laden – danach sucht ausschließlich das Formular.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function load(searchPlz) {

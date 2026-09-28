@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { formatEuroCents, isClickUrl, kennzeichnungLabel, normalizeDiscover, promotionRel, splitByDistance } from './discover.js'
+import { formatEuroCents, isClickUrl, isPartnerMedia, kennzeichnungLabel, normalizeDiscover, promotionRel, splitByDistance } from './discover.js'
 
 // Intl setzt zwischen Betrag und € ein geschütztes Leerzeichen (U+00A0) - für lesbare Vergleiche hier
 // durch ein normales ersetzt.
@@ -33,6 +33,22 @@ describe('isClickUrl', () => {
     expect(isClickUrl('/r/promotion/1?url=https://example.org')).toBe(false)
     expect(isClickUrl('/r/../api/me')).toBe(false)
     expect(isClickUrl(null)).toBe(false)
+  })
+})
+
+describe('isPartnerMedia', () => {
+  test('akzeptiert Bilder und Logos unter /partner-media/', () => {
+    expect(isPartnerMedia('/partner-media/knabber.webp')).toBe(true)
+    expect(isPartnerMedia('/partner-media/3f2a-logo.png')).toBe(true)
+  })
+
+  test('lehnt fremde Adressen, andere Pfade und Nicht-Strings ab', () => {
+    expect(isPartnerMedia('https://example.org/bild.png')).toBe(false)
+    expect(isPartnerMedia('//example.org/partner-media/bild.png')).toBe(false)
+    expect(isPartnerMedia('/uploads/bild.png')).toBe(false)
+    expect(isPartnerMedia('javascript:alert(1)')).toBe(false)
+    expect(isPartnerMedia(null)).toBe(false)
+    expect(isPartnerMedia(undefined)).toBe(false)
   })
 })
 
