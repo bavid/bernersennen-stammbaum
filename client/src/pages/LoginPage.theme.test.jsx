@@ -3,8 +3,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { config } = vi.hoisted(() => ({ config: vi.fn() }))
-vi.mock('../api', () => ({ api: { config } }))
+vi.mock('../api', () => ({ api: {} }))
 
 import LoginPage from './LoginPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -21,11 +20,9 @@ afterEach(() => {
   }
   delete document.documentElement.dataset.theme
   document.title = ''
-  config.mockReset()
 })
 
 async function render(themeId) {
-  config.mockResolvedValue({ inviteRequired: false })
   container = document.createElement('div')
   document.body.appendChild(container)
   await act(async () =>
@@ -38,6 +35,10 @@ async function render(themeId) {
   return container
 }
 
+// Die Login-Seite wird von App.jsx immer im Standard-Auftritt gerendert (siehe App.jsx). Der Hero-Bereich
+// bleibt trotzdem theme-fähig (liest theme.texts) – dieser Test deckt genau das ab, unabhängig davon,
+// welches Theme der Aufrufer übergibt. Anmelden/Einlösen/Wiederherstellung selbst nutzen feste, nicht
+// theme-abhängige Texte ("Rudel"/Familien-Wortschatz kommt hier nicht mehr vor).
 describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
   const theme = getTheme(themeId)
 
@@ -65,31 +66,11 @@ describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
     expect(stripe === null).toBe(!theme.tricolor)
   })
 
-  test('Der Anlegen-Modus nutzt den Theme-Wortschatz für Titel, Formular und Umschalter', async () => {
+  test('Anmelden-Modus, Feldbeschriftung und Absenden-Knopf sind fest (nicht vom Theme abhängig)', async () => {
     await render(themeId)
-    act(() => container.querySelector('.login-switch button[aria-pressed]:not([aria-pressed="true"])').click())
-    // Anlegen-Modus startet mit "Meine Chronik" (ohne Namensfeld) – für den Familien-/Rudel-Wortschatz
-    // erst auf "Gemeinsame Familie" wechseln.
-    act(() => container.querySelector('.login-switch[aria-label="Art"] button:last-child').click())
-    expect(container.querySelector('.login-card-head h1').textContent).toBe(theme.words.createGroup)
-    expect(container.querySelector('.login-switch button:last-child').textContent).toBe(theme.words.newGroup)
-    expect(container.querySelector('label[for="family-name"]').textContent).toBe(theme.words.groupName)
-    expect(container.querySelector('#family-name').placeholder).toBe(theme.words.groupNamePlaceholder)
-    expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe(theme.words.createGroup)
-  })
-
-  test('Der Anlegen-Modus startet bei "Meine Chronik" mit eigenem Namensfeld, unabhängig vom Theme', async () => {
-    await render(themeId)
-    act(() => container.querySelector('.login-switch button[aria-pressed]:not([aria-pressed="true"])').click())
-    expect(container.querySelector('.login-card-head h1').textContent).toBe('Meine Chronik anlegen')
-    expect(container.querySelector('label[for="family-name"]').textContent).toBe('Wie heißt euer Zuhause?')
-    expect(container.querySelector('#family-name').placeholder).toBe('z. B. Zuhause am Deich')
-    expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Meine Chronik anlegen')
-  })
-
-  test('Passwort-Feld im Anmelden-Modus nutzt das Theme-Wort für das Rudel-/Familien-Passwort', async () => {
-    await render(themeId)
-    expect(container.querySelector('label[for="login-password"]').textContent).toBe(theme.words.groupPassword)
+    expect(container.querySelector('.login-card-head h1').textContent).toBe('Anmelden')
+    expect(container.querySelector('label[for="login-secret"]').textContent).toBe('Schlüssel oder Passwort')
+    expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Chronik öffnen')
   })
 
   test('Der Demo-Hinweis ist für beide Themes gleich und nennt keine feste Familie mehr', async () => {

@@ -3,8 +3,15 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { config, createFamily } = vi.hoisted(() => ({ config: vi.fn(), createFamily: vi.fn() }))
-vi.mock('../api', () => ({ api: { config, createFamily } }))
+const { login, loginUser, checkVoucher, redeemVoucher, recover, demo } = vi.hoisted(() => ({
+  login: vi.fn(),
+  loginUser: vi.fn(),
+  checkVoucher: vi.fn(),
+  redeemVoucher: vi.fn(),
+  recover: vi.fn(),
+  demo: vi.fn()
+}))
+vi.mock('../api', () => ({ api: { login, loginUser, checkVoucher, redeemVoucher, recover, demo } }))
 
 import LoginPage from './LoginPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -12,35 +19,39 @@ import { ThemeProvider } from '../themes/ThemeProvider.jsx'
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 let container
+let root
 
 afterEach(() => {
+  if (root) {
+    act(() => root.unmount())
+    root = null
+  }
   if (container) {
-    act(() => container.remove())
+    container.remove()
     container = null
   }
   delete document.documentElement.dataset.theme
   document.title = ''
-  config.mockReset()
-  createFamily.mockReset()
+  login.mockReset()
+  loginUser.mockReset()
+  checkVoucher.mockReset()
+  redeemVoucher.mockReset()
+  recover.mockReset()
+  demo.mockReset()
 })
 
-async function render(onLogin = () => {}) {
-  config.mockResolvedValue({ inviteRequired: false })
+async function render(props) {
   container = document.createElement('div')
   document.body.appendChild(container)
+  root = createRoot(container)
   await act(async () =>
-    createRoot(container).render(
+    root.render(
       <ThemeProvider themeId="standard">
-        <LoginPage onLogin={onLogin} />
+        <LoginPage onLogin={() => {}} {...props} />
       </ThemeProvider>
     )
   )
   return container
-}
-
-// Nur der Modus-Umschalter existiert vor dem Wechsel zu "create" – danach kommt der Art-Umschalter dazu.
-function switchToCreateMode() {
-  act(() => container.querySelector('.login-switch button[aria-pressed]:not([aria-pressed="true"])').click())
 }
 
 // React verfolgt den zuletzt gerenderten Input-Wert intern; ein simples input.value = x lässt das
@@ -52,67 +63,206 @@ function setInputValue(input, value) {
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
-describe('LoginPage – Anlegen: „Meine Chronik" vs. „Gemeinsame Familie"', () => {
-  test('Anlegen startet bei „Meine Chronik": eigenes Namensfeld mit Hinweis, privater Beschreibungstext', async () => {
+function segmentButton(label) {
+  return [...container.querySelectorAll('.login-switch button')].find((btn) => btn.textContent === label)
+}
+
+function linkButton(text) {
+  return [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === text)
+}
+
+describe('LoginPage – Anmelden mit Schlüssel oder Passwort', () => {
+  test('zeigt ein Feld "Schlüssel oder Passwort" mit autocomplete current-password und dem Knopf "Chronik öffnen"', async () => {
     await render()
-    switchToCreateMode()
-    expect(container.querySelector('[aria-label="Art"] button[aria-pressed="true"]').textContent).toBe('Meine Chronik')
-    expect(container.querySelector('label[for="family-name"]').textContent).toBe('Wie heißt euer Zuhause?')
-    expect(container.querySelector('#family-name').placeholder).toBe('z. B. Zuhause am Deich')
-    expect(container.querySelector('.login-card-head h1').textContent).toBe('Meine Chronik anlegen')
-    expect(container.querySelector('.login-card-head p').textContent).toBe(
-      'Privat – für deine eigenen Tiere. Familien kannst du später beitreten.'
-    )
-    expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Meine Chronik anlegen')
+    const input = container.querySelector('#login-secret')
+    expect(container.querySelector('label[for="login-secret"]').textContent).toBe('Schlüssel oder Passwort')
+    expect(input.autocomplete).toBe('current-password')
+    expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Chronik öffnen')
   })
 
-  test('Absenden bei „Meine Chronik" sendet den eingegebenen Namen als "name" (kein fester Platzhalter-Name)', async () => {
+  test('sendet den eingegebenen Wert als "secret" und ruft onLogin mit der Antwort auf', async () => {
     const onLogin = vi.fn()
     const me = { id: 1, name: 'Zuhause am Deich', art: 'zuhause' }
-    createFamily.mockResolvedValue(me)
-    await render(onLogin)
-    switchToCreateMode()
+    login.mockResolvedValue(me)
+    await render({ onLogin })
 
-    const name = container.querySelector('#family-name')
-    const password = container.querySelector('#family-password')
-    await act(async () => {
-      setInputValue(name, 'Zuhause am Deich')
-      setInputValue(password, 'geheim123')
-    })
+    await act(async () => setInputValue(container.querySelector('#login-secret'), 'ABCD-1234-HJKM'))
     await act(async () => container.querySelector('.form-stack').requestSubmit())
 
-    expect(createFamily).toHaveBeenCalledWith(
-      expect.objectContaining({ art: 'zuhause', name: 'Zuhause am Deich', password: 'geheim123' })
-    )
+    expect(login).toHaveBeenCalledWith('ABCD-1234-HJKM')
     expect(onLogin).toHaveBeenCalledWith(me)
   })
 
-  test('Wechsel zu „Gemeinsame Familie" beschriftet das Namensfeld um und sendet art: "rudel"', async () => {
+  test('ein Fehler vom Server erscheint als Alert', async () => {
+    login.mockRejectedValue(Object.assign(new Error('Schlüssel oder Passwort falsch'), { status: 401, details: {} }))
+    await render()
+
+    await act(async () => setInputValue(container.querySelector('#login-secret'), 'falsch'))
+    await act(async () => container.querySelector('.form-stack').requestSubmit())
+
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Schlüssel oder Passwort falsch')
+  })
+})
+
+describe('LoginPage – Anmelden mit Benutzername', () => {
+  test('"Mit Benutzername anmelden" zeigt Benutzername- und Passwort-Feld mit passendem autocomplete', async () => {
+    await render()
+    act(() => linkButton('Mit Benutzername anmelden').click())
+
+    const username = container.querySelector('#login-username')
+    const password = container.querySelector('#login-user-password')
+    expect(username.autocomplete).toBe('username')
+    expect(password.autocomplete).toBe('current-password')
+    expect(container.querySelector('#login-secret')).toBeNull()
+  })
+
+  test('sendet Benutzername und Passwort per api.loginUser', async () => {
     const onLogin = vi.fn()
-    const me = { id: 2, name: 'Familie Sonnenhang', art: 'rudel' }
-    createFamily.mockResolvedValue(me)
-    await render(onLogin)
-    switchToCreateMode()
-    act(() => container.querySelector('[aria-label="Art"] button:last-child').click())
+    const me = { id: 2, name: 'Zuhause am Deich' }
+    loginUser.mockResolvedValue(me)
+    await render({ onLogin })
+    act(() => linkButton('Mit Benutzername anmelden').click())
 
-    expect(container.querySelector('[aria-label="Art"] button[aria-pressed="true"]').textContent).toBe(
-      'Gemeinsame Familie'
-    )
-    expect(container.querySelector('label[for="family-name"]').textContent).toBe('Name der Familie')
-    expect(container.querySelector('#family-name').placeholder).toBe('z. B. Familie Sonnenhang')
-    expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Familie anlegen')
-
-    const name = container.querySelector('#family-name')
-    const password = container.querySelector('#family-password')
     await act(async () => {
-      setInputValue(name, 'Familie Sonnenhang')
-      setInputValue(password, 'geheim123')
+      setInputValue(container.querySelector('#login-username'), 'nele')
+      setInputValue(container.querySelector('#login-user-password'), 'geheim1234')
     })
     await act(async () => container.querySelector('.form-stack').requestSubmit())
 
-    expect(createFamily).toHaveBeenCalledWith(
-      expect.objectContaining({ art: 'rudel', name: 'Familie Sonnenhang', password: 'geheim123' })
+    expect(loginUser).toHaveBeenCalledWith('nele', 'geheim1234')
+    expect(onLogin).toHaveBeenCalledWith(me)
+  })
+})
+
+describe('LoginPage – 409 (offener Gutschein) beim Anmelden', () => {
+  test('wechselt in den Einlöse-Modus, füllt den Code vor und zeigt den Erklärtext', async () => {
+    login.mockRejectedValue(Object.assign(new Error('Fehler 409'), { status: 409, details: { redeem: true } }))
+    await render()
+
+    await act(async () => setInputValue(container.querySelector('#login-secret'), 'abcd1234hjkm'))
+    await act(async () => container.querySelector('.form-stack').requestSubmit())
+
+    expect(segmentButton('Gutschein einlösen').getAttribute('aria-pressed')).toBe('true')
+    expect(container.querySelector('#redeem-code').value).toBe('ABCD-1234-HJKM')
+    expect(container.textContent).toContain('Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.')
+  })
+})
+
+describe('LoginPage – initialMode/initialCode (für die Route /v)', () => {
+  test('startet direkt im Einlöse-Modus mit vorausgefülltem, formatiertem Code', async () => {
+    await render({ initialMode: 'redeem', initialCode: 'abcd1234hjkm' })
+
+    expect(segmentButton('Gutschein einlösen').getAttribute('aria-pressed')).toBe('true')
+    expect(container.querySelector('#redeem-code').value).toBe('ABCD-1234-HJKM')
+  })
+})
+
+describe('LoginPage – Gutschein einlösen', () => {
+  async function goToRedeem() {
+    act(() => segmentButton('Gutschein einlösen').click())
+  }
+
+  test('sendet die Felder inkl. Honeypot "website" an api.redeemVoucher', async () => {
+    redeemVoucher.mockResolvedValue({
+      id: 5,
+      name: 'Zuhause am Deich',
+      art: 'zuhause',
+      theme: 'standard',
+      isDemo: false,
+      home: null,
+      memberships: [],
+      key: 'ABCD-1234-HJKM',
+      fromOthers: true
+    })
+    await render()
+    await goToRedeem()
+
+    await act(async () => {
+      setInputValue(container.querySelector('#redeem-code'), 'abcd1234hjkm')
+      setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
+    })
+    await act(async () => container.querySelector('.form-stack').requestSubmit())
+
+    expect(redeemVoucher).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'ABCD-1234-HJKM', name: 'Zuhause am Deich', website: '' })
     )
+  })
+
+  test('zeigt nach dem Einlösen KeyReveal; onLogin wird erst nach "Weiter zu Meiner Chronik" aufgerufen', async () => {
+    const onLogin = vi.fn()
+    const response = {
+      id: 5,
+      name: 'Zuhause am Deich',
+      art: 'zuhause',
+      theme: 'standard',
+      isDemo: false,
+      home: null,
+      memberships: [],
+      key: 'ABCD-1234-HJKM',
+      fromOthers: true
+    }
+    redeemVoucher.mockResolvedValue(response)
+    await render({ onLogin })
+    await goToRedeem()
+
+    await act(async () => {
+      setInputValue(container.querySelector('#redeem-code'), 'abcd1234hjkm')
+      setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
+    })
+    await act(async () => container.querySelector('.form-stack').requestSubmit())
+
+    expect(container.querySelector('.key-reveal-value').textContent).toBe('ABCD-1234-HJKM')
+    expect(onLogin).not.toHaveBeenCalled()
+
+    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu Meiner Chronik')
+    act(() => continueButton.click())
+
+    const { key, fromOthers, ...me } = response
+    expect(onLogin).toHaveBeenCalledWith(me)
+  })
+})
+
+describe('LoginPage – Wiederherstellung', () => {
+  test('"Schlüssel vergessen?" wechselt in die Wiederherstellung, der Modus-Umschalter verschwindet', async () => {
+    await render()
+    act(() => linkButton('Schlüssel vergessen?').click())
+
+    expect(container.querySelector('.login-switch')).toBeNull()
+    expect(container.querySelector('#recover-code')).not.toBeNull()
+    expect(container.textContent).toContain('Kein Benutzer? Dann meldet euch einfach mit dem Schlüssel an.')
+  })
+
+  test('erfolgreiche Wiederherstellung sendet code/username/newPassword; "Zum Anmelden" führt zurück', async () => {
+    recover.mockResolvedValue(null)
+    await render()
+    act(() => linkButton('Schlüssel vergessen?').click())
+
+    await act(async () => {
+      setInputValue(container.querySelector('#recover-code'), 'abcd1234hjkm')
+      setInputValue(container.querySelector('#recover-username'), 'nele')
+      setInputValue(container.querySelector('#recover-password'), 'neuesPasswort1')
+    })
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(recover).toHaveBeenCalledWith({ code: 'ABCD-1234-HJKM', username: 'nele', newPassword: 'neuesPasswort1' })
+    expect(container.textContent).toContain('Passwort geändert – jetzt anmelden.')
+
+    act(() => container.querySelector('button').click())
+    expect(container.querySelector('#login-secret')).not.toBeNull()
+  })
+})
+
+describe('LoginPage – Demo bleibt erreichbar', () => {
+  test('der Demo-Knopf ruft api.demo auf und liefert die Antwort an onLogin', async () => {
+    const onLogin = vi.fn()
+    const me = { id: 99, name: 'Demo', isDemo: true }
+    demo.mockResolvedValue(me)
+    await render({ onLogin })
+
+    const demoButton = [...container.querySelectorAll('.login-demo button')].find((btn) => btn.textContent.includes('Demo ansehen'))
+    await act(async () => demoButton.click())
+
+    expect(demo).toHaveBeenCalled()
     expect(onLogin).toHaveBeenCalledWith(me)
   })
 })

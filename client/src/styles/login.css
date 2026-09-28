@@ -133,6 +133,102 @@
   justify-self: start;
 }
 
+.login-links {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.login-link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rust);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.recover-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.recover-back svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.voucher-code-input {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.voucher-code-input::placeholder {
+  letter-spacing: 0.08em;
+}
+
+.field-hint-success {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.redeem-hint {
+  background: var(--rust-wash);
+  color: var(--rust-deep);
+  border: 1px solid color-mix(in srgb, var(--rust) 30%, transparent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  font-weight: 600;
+}
+
+.redeem-account {
+  padding-top: var(--space-2);
+}
+
+.key-reveal {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: stretch;
+  text-align: center;
+}
+
+.key-reveal-value {
+  font-family: var(--font-body);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  background: var(--paper-deep);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.key-reveal-text {
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.voucher-session {
+  grid-template-columns: 1fr;
+}
+
+.voucher-session-card {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  max-width: 26rem;
+}
+
 .login-demo {
   display: grid;
   gap: var(--space-3);

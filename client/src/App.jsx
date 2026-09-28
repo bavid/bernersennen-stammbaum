@@ -128,7 +128,15 @@ export function AppFooter({ onInvite }) {
 export default function App() {
   const [family, setFamily] = useState(undefined)
   const [inviteOpen, setInviteOpen] = useState(false)
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
+  // Code aus /v#CODE einmalig einsammeln und die Adresse sofort bereinigen – noch vor jedem
+  // Netzwerk-Aufruf (siehe die erste useEffect unten). Bleibt "im Speicher", auch wenn man sich auf
+  // /v erst noch abmelden muss (siehe unten, Karte "angemeldet als …").
+  const [voucherCode] = useState(() => {
+    if (pathname !== '/v' || !hash) return ''
+    window.history.replaceState(null, '', pathname)
+    return hash.slice(1)
+  })
 
   useEffect(() => {
     setUnauthorizedHandler(() => setFamily(null))
@@ -152,11 +160,11 @@ export default function App() {
     }
   }
 
-  // Voller Seitenwechsel: LoginPage entscheidet ihren Anlege/Anmelden-Modus einmalig beim Mount
-  // anhand der URL – ein einfacher Reload ist hier robuster als Logout- und Navigations-State zu verschränken.
+  // Voller Seitenwechsel: die Route /v zeigt die Login-Seite direkt im Einlöse-Modus – ein einfacher
+  // Reload ist hier robuster als Logout- und Navigations-State zu verschränken.
   async function handleLeaveDemo() {
     await api.logout()
-    window.location.href = '/neue-familie'
+    window.location.href = '/v'
   }
 
   // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login, immer im Standard-Auftritt
@@ -174,6 +182,31 @@ export default function App() {
         <div className="splash" aria-busy="true">
           <ThemeMark size={72} />
         </div>
+      </ThemeProvider>
+    )
+  }
+
+  // Öffentlicher Gutschein-Link (Karte, QR): /v#CODE. Mit bestehender Sitzung erst abmelden lassen –
+  // der Code bleibt dabei in voucherCode "im Speicher" und geht in die Login-Seite, sobald family null ist.
+  if (pathname === '/v') {
+    return (
+      <ThemeProvider themeId="standard">
+        {family ? (
+          <div className="login voucher-session">
+            <section className="login-panel">
+              <div className="card voucher-session-card">
+                <p>
+                  Du bist angemeldet als <strong>{family.name}</strong>.
+                </p>
+                <button type="button" className="btn btn-primary btn-block" onClick={handleLogout}>
+                  Abmelden und Gutschein einlösen
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : (
+          <LoginPage onLogin={setFamily} initialMode="redeem" initialCode={voucherCode} />
+        )}
       </ThemeProvider>
     )
   }

@@ -1,86 +1,56 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
-import Icon from '../components/Icon.jsx'
+import PasswordField from '../components/PasswordField.jsx'
+import RedeemForm from '../components/RedeemForm.jsx'
+import RecoverForm from '../components/RecoverForm.jsx'
+import KeyReveal from '../components/KeyReveal.jsx'
 
-const MIN_PASSWORD_LENGTH = 6
+const REDEEM_HINT = 'Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.'
 
-// Unsichtbar für Menschen (auch für Screenreader), Bots füllen es trotzdem aus
-// Nur bei der Rudel-Anlage und bewusst nach dem Passwortfeld: Passwort-Manager halten ein Textfeld
-// vor dem Passwort für den Benutzernamen und füllen es sonst aus. Die data-Attribute bitten
-// LastPass, 1Password, Bitwarden & Co., das Feld zu ignorieren.
-function Honeypot({ value, onChange }) {
-  return (
-    <div className="honeypot" aria-hidden="true">
-      <label htmlFor="hp-feld">Bitte leer lassen</label>
-      <input
-        id="hp-feld"
-        name="hp_feld"
-        tabIndex={-1}
-        autoComplete="off"
-        data-lpignore="true"
-        data-1p-ignore="true"
-        data-bwignore="true"
-        data-form-type="other"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-  )
+const MODE_COPY = {
+  login: { eyebrow: 'Willkommen zurück', title: 'Anmelden', lede: 'Mit eurem Schlüssel oder Passwort geht’s weiter.' },
+  redeem: {
+    eyebrow: 'Neue Chronik',
+    title: 'Gutschein einlösen',
+    lede: 'Löst euren Gutschein ein und legt eure Chronik an.'
+  },
+  recover: {
+    eyebrow: 'Schlüssel vergessen',
+    title: 'Passwort wiederherstellen',
+    lede: 'Mit eurem Schlüssel setzt ihr ein neues Passwort.'
+  }
 }
 
-function PasswordField({ id, label, value, onChange, autoFocus, autoComplete, minLength, error }) {
-  const [visible, setVisible] = useState(false)
-  return (
-    <div className={`field ${error ? 'has-error' : ''}`}>
-      <label className="field-label" htmlFor={id}>
-        {label}
-      </label>
-      <div className="password-input">
-        <input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          autoFocus={autoFocus}
-          autoComplete={autoComplete}
-          minLength={minLength}
-          aria-invalid={error ? 'true' : undefined}
-          aria-describedby={error ? `${id}-error` : undefined}
-          required
-        />
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={() => setVisible(!visible)}
-          aria-label={visible ? 'Passwort verbergen' : 'Passwort anzeigen'}
-        >
-          <Icon name={visible ? 'eyeOff' : 'eye'} />
-        </button>
-      </div>
-      {error && (
-        <p className="field-error" id={`${id}-error`} role="alert">
-          <Icon name="alert" /> {error}
-        </p>
-      )}
-    </div>
-  )
-}
-
-function LoginForm({ onLogin }) {
-  const { words } = useTheme()
+// Anmelden per Schlüssel (Standardfall) oder – aufklappbar – per Benutzername/Passwort. Ein offener
+// Gutschein im Schlüsselfeld beantwortet der Server mit 409 { redeem: true }: onRedeemRequired wechselt
+// dann in den Einlöse-Modus, statt nur einen Fehler zu zeigen.
+function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
+  const [useUsername, setUseUsername] = useState(false)
+  const [secret, setSecret] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  function toggleUsername() {
+    setUseUsername((prev) => !prev)
+    setError(null)
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setError(null)
     setLoading(true)
     try {
-      onLogin(await api.login(password))
+      const me = useUsername ? await api.loginUser(username, password) : await api.login(secret)
+      onLogin(me)
     } catch (err) {
+      if (!useUsername && err.status === 409 && err.details?.redeem) {
+        onRedeemRequired(secret)
+        return
+      }
       setError(err.message)
       setLoading(false)
     }
@@ -88,141 +58,88 @@ function LoginForm({ onLogin }) {
 
   return (
     <form className="form-stack" onSubmit={handleSubmit}>
-      {error && <div className="error-banner" role="alert">{error}</div>}
-      <PasswordField
-        id="login-password"
-        label={words.groupPassword}
-        value={password}
-        onChange={setPassword}
-        autoFocus
-        autoComplete="current-password"
-      />
-      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading || !password}>
-        {loading ? 'Öffne Chronik …' : 'Chronik öffnen'}
-      </button>
-    </form>
-  )
-}
-
-function CreateFamilyForm({ onLogin, inviteRequired, art }) {
-  const { words } = useTheme()
-  const isHome = art === 'zuhause'
-  const [name, setName] = useState('')
-  const [password, setPassword] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
-  const [quelle, setQuelle] = useState('')
-  const [website, setWebsite] = useState('')
-  const [passwordError, setPasswordError] = useState(null)
-  const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit(event) {
-    event.preventDefault()
-    setError(null)
-    setPasswordError(null)
-    setLoading(true)
-    try {
-      onLogin(
-        await api.createFamily({
-          name,
-          password,
-          art,
-          inviteCode: inviteCode || undefined,
-          quelle: quelle || undefined,
-          website
-        })
-      )
-    } catch (err) {
-      // "Passwort belegt" direkt am Passwortfeld zeigen, alles andere oben
-      if (err.details?.field === 'password') setPasswordError(err.message)
-      else setError(err.message)
-      setLoading(false)
-    }
-  }
-
-  return (
-    <form className="form-stack" onSubmit={handleSubmit}>
-      {error && <div className="error-banner" role="alert">{error}</div>}
-      <div className="field">
-        <label className="field-label" htmlFor="family-name">
-          {isHome ? 'Wie heißt euer Zuhause?' : words.groupName}
-        </label>
-        <input
-          id="family-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={isHome ? 'z. B. Zuhause am Deich' : words.groupNamePlaceholder}
-          maxLength={80}
-          autoFocus
-          required
-        />
-        {/* Im Menü und Kopfbereich heißt der eigene Bereich immer "Meine Chronik" – der echte Name
-            erscheint nur dort, wo andere Familien ihn sehen (z. B. "aus <Name>" bei geteilten Tieren). */}
-        {isHome && <span className="field-hint">So sehen es Familien, mit denen ihr Tiere teilt.</span>}
-      </div>
-      <PasswordField
-        id="family-password"
-        label="Gemeinsames Passwort"
-        value={password}
-        onChange={(value) => {
-          setPassword(value)
-          setPasswordError(null)
-        }}
-        autoComplete="new-password"
-        minLength={MIN_PASSWORD_LENGTH}
-        error={passwordError}
-      />
-      <p className="field-hint">
-        Mindestens {MIN_PASSWORD_LENGTH} Zeichen. Alle, die das Passwort kennen, können die Chronik mitpflegen.
-      </p>
-      <Honeypot value={website} onChange={setWebsite} />
-      {inviteRequired && (
-        <div className="field">
-          <label className="field-label" htmlFor="invite-code">
-            Einladungscode
-          </label>
-          <input id="invite-code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} required />
-          <span className="field-hint">
-            Den Code bekommst du von der Person, die dich eingeladen hat – jedes Mitglied {words.ofAGroup} findet ihn in der
-            Chronik unter „Jemanden einladen“.
-          </span>
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}
         </div>
       )}
-      <div className="field">
-        <label className="field-label" htmlFor="family-quelle">
-          Wie hast du von uns erfahren? <span className="muted">(optional)</span>
-        </label>
-        <input
-          id="family-quelle"
-          value={quelle}
-          onChange={(e) => setQuelle(e.target.value)}
-          placeholder="z. B. Hundeschule, Zuchtverein, Facebook, von einem Freund"
-          maxLength={200}
+      {useUsername ? (
+        <>
+          <div className="field">
+            <label className="field-label" htmlFor="login-username">
+              Benutzername
+            </label>
+            <input
+              id="login-username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              autoFocus
+              required
+            />
+          </div>
+          <PasswordField
+            id="login-user-password"
+            label="Passwort"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+          />
+        </>
+      ) : (
+        <PasswordField
+          id="login-secret"
+          label="Schlüssel oder Passwort"
+          value={secret}
+          onChange={setSecret}
+          autoFocus
+          autoComplete="current-password"
         />
-      </div>
-      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading}>
-        {loading ? 'Lege an …' : isHome ? 'Meine Chronik anlegen' : words.createGroup}
+      )}
+      <button
+        className="btn btn-primary btn-lg btn-block"
+        type="submit"
+        disabled={loading || (useUsername ? !username || !password : !secret)}
+      >
+        {loading ? 'Öffne Chronik …' : 'Chronik öffnen'}
       </button>
+      <div className="login-links">
+        <button type="button" className="login-link-btn" onClick={toggleUsername}>
+          {useUsername ? 'Mit Schlüssel anmelden' : 'Mit Benutzername anmelden'}
+        </button>
+        <button type="button" className="login-link-btn" onClick={onForgot}>
+          Schlüssel vergessen?
+        </button>
+      </div>
     </form>
   )
 }
 
-export default function LoginPage({ onLogin }) {
-  const { theme, words } = useTheme()
-  const [mode, setMode] = useState(() => (window.location.pathname === '/neue-familie' ? 'create' : 'login'))
-  // Im Anlege-Modus: privates Zuhause ("Meine Chronik", Standard) oder eine gemeinsame Familie/ein Rudel
-  const [art, setArt] = useState('zuhause')
-  const [inviteRequired, setInviteRequired] = useState(false)
+export default function LoginPage({ onLogin, initialMode = 'login', initialCode = '' }) {
+  const { theme } = useTheme()
+  const [mode, setMode] = useState(initialMode)
+  const [redeemCode, setRedeemCode] = useState(initialCode)
+  const [redeemHint, setRedeemHint] = useState(null)
+  const [redeemResult, setRedeemResult] = useState(null)
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoError, setDemoError] = useState(null)
-  const isHome = art === 'zuhause'
 
-  useEffect(() => {
-    api
-      .config()
-      .then((config) => setInviteRequired(config.inviteRequired))
-      .catch(() => setInviteRequired(false))
-  }, [])
+  function switchMode(next) {
+    setMode(next)
+    setRedeemHint(null)
+    setRedeemResult(null)
+  }
+
+  function handleRedeemRequired(secret) {
+    setRedeemCode(secret)
+    setRedeemHint(REDEEM_HINT)
+    setMode('redeem')
+  }
+
+  function handleRedeemed(response) {
+    const { key, fromOthers, ...me } = response
+    setRedeemResult({ key, me })
+  }
 
   async function handleDemo() {
     setDemoError(null)
@@ -234,6 +151,9 @@ export default function LoginPage({ onLogin }) {
       setDemoLoading(false)
     }
   }
+
+  const copy = MODE_COPY[mode]
+  const showingKeyReveal = mode === 'redeem' && redeemResult
 
   return (
     <div className="login">
@@ -262,51 +182,49 @@ export default function LoginPage({ onLogin }) {
       <section className="login-panel">
         <div className="login-card">
           <div className="login-card-head">
-            <span className="eyebrow">{mode === 'login' ? 'Willkommen zurück' : 'Neuer Stammbaum'}</span>
-            <h1>{mode === 'login' ? 'Anmelden' : isHome ? 'Meine Chronik anlegen' : words.createGroup}</h1>
-            <p className="muted">
-              {mode === 'login'
-                ? 'Mit dem gemeinsamen Passwort seht ihr, was sich bei allen tut.'
-                : isHome
-                  ? 'Privat – für deine eigenen Tiere. Familien kannst du später beitreten.'
-                  : `Gebt ${words.yourGroupDat} einen Namen und ein gemeinsames Passwort.`}
-            </p>
+            <span className="eyebrow">{copy.eyebrow}</span>
+            <h1>{copy.title}</h1>
+            <p className="muted">{copy.lede}</p>
           </div>
 
-          <div className="segmented login-switch" role="group" aria-label="Modus">
-            <button type="button" aria-pressed={mode === 'login'} onClick={() => setMode('login')}>
-              Anmelden
-            </button>
-            <button type="button" aria-pressed={mode === 'create'} onClick={() => setMode('create')}>
-              {words.newGroup}
-            </button>
-          </div>
-
-          {mode === 'create' && (
-            <div className="segmented login-switch" role="group" aria-label="Art">
-              <button type="button" aria-pressed={art === 'zuhause'} onClick={() => setArt('zuhause')}>
-                Meine Chronik
+          {mode !== 'recover' && (
+            <div className="segmented login-switch" role="group" aria-label="Modus">
+              <button type="button" aria-pressed={mode === 'login'} onClick={() => switchMode('login')}>
+                Anmelden
               </button>
-              <button type="button" aria-pressed={art === 'rudel'} onClick={() => setArt('rudel')}>
-                Gemeinsame Familie
+              <button type="button" aria-pressed={mode === 'redeem'} onClick={() => switchMode('redeem')}>
+                Gutschein einlösen
               </button>
             </div>
           )}
 
-          {mode === 'login' ? (
-            <LoginForm onLogin={onLogin} />
-          ) : (
-            <CreateFamilyForm onLogin={onLogin} inviteRequired={inviteRequired} art={art} />
+          {mode === 'login' && (
+            <LoginForm onLogin={onLogin} onRedeemRequired={handleRedeemRequired} onForgot={() => switchMode('recover')} />
           )}
 
-          <div className="login-demo">
-            <span className="login-demo-divider">oder</span>
-            {demoError && <div className="error-banner" role="alert">{demoError}</div>}
-            <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
-              {demoLoading ? 'Lädt …' : 'Erst mal unverbindlich reinschauen: Demo ansehen'}
-            </button>
-            <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
-          </div>
+          {mode === 'redeem' &&
+            (redeemResult ? (
+              <KeyReveal value={redeemResult.key} onContinue={() => onLogin(redeemResult.me)} />
+            ) : (
+              <RedeemForm initialCode={redeemCode} hint={redeemHint} onRedeemed={handleRedeemed} />
+            ))}
+
+          {mode === 'recover' && <RecoverForm onBack={() => switchMode('login')} />}
+
+          {mode !== 'recover' && !showingKeyReveal && (
+            <div className="login-demo">
+              <span className="login-demo-divider">oder</span>
+              {demoError && (
+                <div className="error-banner" role="alert">
+                  {demoError}
+                </div>
+              )}
+              <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
+                {demoLoading ? 'Lädt …' : 'Erst mal unverbindlich reinschauen: Demo ansehen'}
+              </button>
+              <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
+            </div>
+          )}
         </div>
       </section>
     </div>
