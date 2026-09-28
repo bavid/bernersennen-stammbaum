@@ -17,6 +17,10 @@ const router = express.Router()
 const TEN_MINUTES = 10 * 60 * 1000
 const RADIUS_VALUES = [5, 10, 25, 50, 100]
 const MAX_BEGLEITER_TIERE = 12
+// Umkreis-Fallback (Koordinator-Folgeauftrag): zeigt ein dünn besiedelter Umkreis weniger als 5
+// Einträge, werden die nächsten Treffer AUSSERHALB des Radius ergänzt (ausserhalb: true), damit die
+// Seite nie fast leer wirkt. Ab 5 echten Treffern im Radius bleibt es beim harten Ausschluss wie bisher.
+const MIN_IN_RADIUS = 5
 
 // Eigenes, knappes Limit pro IP zusätzlich zum globalen apiLimiter (app.js: app.use('/api', apiLimiter))
 // - wie places.js placesLimiter, gleiche Werte und derselbe IPv6-maskierende Schlüssel.
@@ -77,29 +81,107 @@ function activePromotionRows(bereich, req) {
     .all(bereich, contentDemoValue(req))
 }
 
-// Ordnet Partner-Zeilen nach Entfernung (mit center) oder nach Name (ohne) und liefert { row,
-// distanceKm? } - distanceKm fehlt ganz ohne PLZ, statt undefined mitzuschleppen (siehe partnerCard unten).
-function orderPartners(rows, center, radiusKm) {
-  if (!center) return sortByName(rows).map((row) => ({ row }))
+// Hängt an jede Zeile mit gültigem lat/lon die Entfernung zu center - ohne Koordinaten fliegt eine Zeile
+// bei einer Umkreissuche ganz raus (wie bisher: keine Koordinaten -> keine Entfernung -> kein Auftritt).
+function withDistances(rows, center) {
   return rows
     .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lon))
     .map((row) => ({ row, dist: distanceKm(center, { lat: row.lat, lon: row.lon }) }))
-    .filter(({ dist }) => dist <= radiusKm)
-    .sort((a, b) => a.dist - b.dist)
-    .map(({ row, dist }) => ({ row, distanceKm: Math.round(dist * 10) / 10 }))
+}
+
+// Teilt Zeilen-mit-Entfernung in "im Radius" (aufsteigend sortiert) und "außerhalb" (ebenfalls
+// aufsteigend, also die nächstgelegenen zuerst) - Grundlage sowohl für Partner-Listen als auch für
+// begleiter.tiere, das unabhängig von der Partner-Schwelle eine eigene Tier-Schwelle hat.
+function splitByRadius(rowsWithDistance, radiusKm) {
+  const inRadius = rowsWithDistance.filter(({ dist }) => dist <= radiusKm).sort((a, b) => a.dist - b.dist)
+  const outside = rowsWithDistance.filter(({ dist }) => dist > radiusKm).sort((a, b) => a.dist - b.dist)
+  return { inRadius, outside }
+}
+
+// Partner-Abschnitt (hundeschulen-Partner, begleiter.partner) mit Umkreis-Fallback: ohne PLZ alle nach
+// Name; mit PLZ die Treffer im Radius (distanceKm, ausserhalb: false) - und, wenn das WENIGER als
+// MIN_IN_RADIUS sind, zusätzlich ALLE übrigen Treffer außerhalb (ausserhalb: true), nach Entfernung
+// sortiert, damit die Seite nie fast leer wirkt (Koordinator-Folgeauftrag). Ab MIN_IN_RADIUS Treffern im
+// Radius bleibt es beim harten Ausschluss wie bisher (fallback bleibt false).
+function partnerSection(rows, center, radiusKm) {
+  if (!center) return { items: sortByName(rows).map((row) => ({ row })), fallback: false }
+
+  const { inRadius, outside } = splitByRadius(withDistances(rows, center), radiusKm)
+  const toCardInput = (ausserhalb) => ({ row, dist }) => ({ row, distanceKm: Math.round(dist * 10) / 10, ausserhalb })
+
+  let items = inRadius.map(toCardInput(false))
+  let fallback = false
+  if (inRadius.length < MIN_IN_RADIUS && outside.length) {
+    fallback = true
+    items = items.concat(outside.map(toCardInput(true)))
+  }
+  return { items, fallback }
+}
+
+// begleiter.tiere: eigene Schwelle auf Tier-Ebene (nicht auf Partner-Ebene) - selbst wenn schon genug
+// Partner im Radius liegen, können deren Steckbriefe zusammen trotzdem unter MIN_IN_RADIUS bleiben, dann
+// ergänzt der Fallback Tiere weiterer, weiter entfernter Tierheime/Vermittlungsstellen.
+function begleiterTiereSection(partnerRows, center, radiusKm) {
+  const cardsFor = (entries, ausserhalb) =>
+    entries.flatMap(({ row, dist }) =>
+      getShelterAnimalCards(row.id).map((animal) =>
+        dist === undefined ? animal : { ...animal, distanceKm: Math.round(dist * 10) / 10, ausserhalb }
+      )
+    )
+
+  if (!center) {
+    return { items: cardsFor(sortByName(partnerRows).map((row) => ({ row, dist: undefined })), false).slice(0, MAX_BEGLEITER_TIERE), fallback: false }
+  }
+
+  const { inRadius, outside } = splitByRadius(withDistances(partnerRows, center), radiusKm)
+  let tiere = cardsFor(inRadius, false)
+  let fallback = false
+  if (tiere.length < MIN_IN_RADIUS && outside.length) {
+    fallback = true
+    tiere = tiere.concat(cardsFor(outside, true))
+  }
+  return { items: tiere.slice(0, MAX_BEGLEITER_TIERE), fallback }
+}
+
+// Alle Partner-Koordinaten auf einmal (unabhängig von Typ/Status/Demo - reine Anzeige-Sortierhilfe für
+// Empfehlungen, siehe sortPromotionsByPartnerDistance) - eine Abfrage pro Anfrage statt einer je Zeile.
+function partnerDistanceMap(center) {
+  if (!center) return null
+  const map = new Map()
+  for (const row of db.prepare('SELECT id, lat, lon FROM partners').all()) {
+    if (Number.isFinite(row.lat) && Number.isFinite(row.lon)) map.set(row.id, distanceKm(center, { lat: row.lat, lon: row.lon }))
+  }
+  return map
+}
+
+// Empfehlungen mit gesetztem partner_id zuerst, nach der Entfernung DIESES Partners sortiert; Empfehlungen
+// ohne (auffindbaren) Partner danach, in ihrer bisherigen Reihenfolge (sort/Titel aus der SQL-Abfrage) -
+// wie vom Koordinator präzisiert. Ohne PLZ bleibt die Reihenfolge unverändert.
+function sortPromotionsByPartnerDistance(rows, distanceMap) {
+  if (!distanceMap) return rows
+  const withPartnerDistance = []
+  const rest = []
+  for (const row of rows) {
+    const dist = row.partner_id !== null ? distanceMap.get(row.partner_id) : undefined
+    if (dist !== undefined) withPartnerDistance.push({ row, dist })
+    else rest.push(row)
+  }
+  withPartnerDistance.sort((a, b) => a.dist - b.dist)
+  return [...withPartnerDistance.map(({ row }) => row), ...rest]
 }
 
 // Partner-Karte: wie lib/partners.js publicPartner, aber die Website läuft über die Klickzählung
 // (clickUrl + rohe url zur Anzeige) statt roh im Feld "website" zu stehen (Aufgabenstellung: "Every
 // external link is delivered as clickUrl ... plus the raw url for display").
-function partnerCard(row, distanceKmValue) {
+function partnerCard(row, { distanceKm: distanceKmValue, ausserhalb } = {}) {
   const { website, ...pub } = publicPartner(row)
   return {
     ...pub,
     kind: 'partner',
     url: website || null,
     clickUrl: website ? `/r/partner-website/${row.id}` : null,
-    ...(distanceKmValue !== undefined ? { distanceKm: distanceKmValue } : {})
+    ...(distanceKmValue !== undefined ? { distanceKm: distanceKmValue } : {}),
+    ...(ausserhalb !== undefined ? { ausserhalb } : {})
   }
 }
 
@@ -167,35 +249,40 @@ router.post('/', discoverLimiter, requireSession, (req, res) => {
     center = { lat: hit.lat, lon: hit.lon, ort: hit.ort }
   }
 
+  const distanceMap = partnerDistanceMap(center)
+
   // --- Hundeschule gesucht? ------------------------------------------------------------------------
-  const hundeschulPartner = orderPartners(activePartnerRows(['hundeschule'], req), center, radiusKm)
-    .map(({ row, distanceKm: d }) => partnerCard(row, d))
-  const hundeschulPromotions = activePromotionRows('hundeschule', req).map(promotionCard)
+  const hundeschulPartnerSection = partnerSection(activePartnerRows(['hundeschule'], req), center, radiusKm)
+  const hundeschulPartner = hundeschulPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
+  const hundeschulPromotions = sortPromotionsByPartnerDistance(activePromotionRows('hundeschule', req), distanceMap).map(promotionCard)
   const hundeschulen = [...hundeschulPartner, ...hundeschulPromotions]
 
   // --- Neuer Begleiter gesucht? --------------------------------------------------------------------
-  const begleiterOrdered = orderPartners(activePartnerRows(['tierheim', 'vermittlung'], req), center, radiusKm)
-  const begleiterPartner = begleiterOrdered.map(({ row, distanceKm: d }) => partnerCard(row, d))
-  const begleiterTiere = begleiterOrdered
-    .flatMap(({ row, distanceKm: d }) =>
-      getShelterAnimalCards(row.id).map((animal) => (d !== undefined ? { ...animal, distanceKm: d } : animal))
-    )
-    .slice(0, MAX_BEGLEITER_TIERE)
+  const begleiterPartnerRows = activePartnerRows(['tierheim', 'vermittlung'], req)
+  const begleiterPartnerSection = partnerSection(begleiterPartnerRows, center, radiusKm)
+  const begleiterPartner = begleiterPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
+  const begleiterTiereSectionResult = begleiterTiereSection(begleiterPartnerRows, center, radiusKm)
 
   // --- Futter-Empfehlungen --------------------------------------------------------------------------
-  const futter = activePromotionRows('futter', req).map(promotionCard)
+  const futter = sortPromotionsByPartnerDistance(activePromotionRows('futter', req), distanceMap).map(promotionCard)
 
   // --- Unterstützen -----------------------------------------------------------------------------------
   const gofundmeUrl = readSettingValue(settingsKey(req, 'gofundme_url'))
-  const partnerSpenden = begleiterOrdered
+  // Spendenlinks laufen über dieselbe Partner-Liste wie begleiter.partner (inkl. eines etwaigen
+  // Umkreis-Fallbacks) - eigene Ausserhalb-Kennzeichnung gibt es dafür nicht (nicht Teil des Auftrags).
+  const partnerSpenden = begleiterPartnerSection.items
     .map(({ row }) => row)
     .filter((row) => row.spenden_url)
     .map(spendenCard)
 
   res.json({
     ...(center ? { center } : {}),
+    fallback: {
+      hundeschulen: hundeschulPartnerSection.fallback,
+      begleiter: begleiterPartnerSection.fallback || begleiterTiereSectionResult.fallback
+    },
     hundeschulen,
-    begleiter: { partner: begleiterPartner, tiere: begleiterTiere },
+    begleiter: { partner: begleiterPartner, tiere: begleiterTiereSectionResult.items },
     futter,
     unterstuetzen: {
       gofundmeUrl,

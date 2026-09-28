@@ -194,11 +194,14 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
     const res = await discover({}, household.cookie)
     assert.equal(res.status, 200)
     assert.equal(res.data.center, undefined)
+    // Ohne PLZ gibt es keinen Umkreis, also auch keinen Fallback - beide Flaggen bleiben false.
+    assert.deepEqual(res.data.fallback, { hundeschulen: false, begleiter: false })
 
     // Hundeschulen: Partner + Empfehlungen - echte UND Demo-Partner (Bonus), aber sortiert nach Name
     const hsPartnerCards = res.data.hundeschulen.filter((e) => e.kind === 'partner')
     assert.ok(hsPartnerCards.some((p) => p.slug === hsEcht.slug))
     assert.ok(hsPartnerCards.some((p) => p.slug === hsDemo.slug), 'Demo-Partner ist in dev/staging auch für echte Sitzungen sichtbar')
+    assert.ok(hsPartnerCards.every((p) => !('ausserhalb' in p)), 'ohne PLZ trägt keine Karte ein ausserhalb-Feld')
     const names = hsPartnerCards.map((p) => p.name)
     assert.deepEqual(names, names.slice().sort((a, b) => a.localeCompare(b, 'de')))
 
@@ -248,6 +251,7 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
   await t.test('Demo-Sitzung sieht ausschließlich Demo-Daten (Partner, Tiere, Empfehlungen, Bericht, Einstellungen)', async () => {
     const res = await discover({}, demoHousehold.cookie)
     assert.equal(res.status, 200)
+    assert.deepEqual(res.data.fallback, { hundeschulen: false, begleiter: false })
 
     const hsPartnerSlugs = res.data.hundeschulen.filter((e) => e.kind === 'partner').map((p) => p.slug)
     assert.deepEqual(hsPartnerSlugs, [hsDemo.slug])
@@ -276,25 +280,98 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
     )
   })
 
-  await t.test('mit gültiger PLZ+Radius: nach Entfernung gefiltert und sortiert, distanceKm gesetzt', async () => {
-    const berlin = lookupPlz('10115')
-    insertPartner({ name: 'Hundeschule Nah', typ: 'hundeschule', lat: berlin.lat, lon: berlin.lon })
-    insertPartner({ name: 'Hundeschule Weit Weg', typ: 'hundeschule', lat: 48.137, lon: 11.575 }) // München, weit außerhalb 10 km
+  const berlin = lookupPlz('10115')
+  const MUENCHEN = { lat: 48.137, lon: 11.575 } // ~504 km von Berlin
+  const ROM = { lat: 41.9, lon: 12.5 } // deutlich weiter als München
+
+  await t.test('Umkreis-Fallback: weniger als 5 Treffer im Radius -> die nächsten außerhalb werden ergänzt (ausserhalb, fallback: true)', async () => {
+    insertPartner({ name: 'Hundeschule Radius A', typ: 'hundeschule', lat: berlin.lat, lon: berlin.lon })
+    insertPartner({ name: 'Hundeschule Radius B', typ: 'hundeschule', lat: berlin.lat, lon: berlin.lon })
+    insertPartner({ name: 'Hundeschule Radius C', typ: 'hundeschule', lat: berlin.lat, lon: berlin.lon })
+    insertPartner({ name: 'Hundeschule Fern München', typ: 'hundeschule', lat: MUENCHEN.lat, lon: MUENCHEN.lon })
+    insertPartner({ name: 'Hundeschule Fern Rom', typ: 'hundeschule', lat: ROM.lat, lon: ROM.lon })
 
     const res = await discover({ plz: '10115', radius: 10 }, household.cookie)
     assert.equal(res.status, 200)
     assert.equal(res.data.center.ort, 'Berlin')
+    assert.equal(res.data.fallback.hundeschulen, true, 'nur 3 Treffer im 10-km-Radius -> Fallback greift')
 
     const hsPartnerCards = res.data.hundeschulen.filter((e) => e.kind === 'partner')
-    assert.ok(hsPartnerCards.some((p) => p.name === 'Hundeschule Nah'))
-    assert.ok(!hsPartnerCards.some((p) => p.name === 'Hundeschule Weit Weg'))
-    const nah = hsPartnerCards.find((p) => p.name === 'Hundeschule Nah')
-    assert.equal(typeof nah.distanceKm, 'number')
-    assert.ok(nah.distanceKm < 1)
+    const inRadius = hsPartnerCards.filter((p) => p.name.startsWith('Hundeschule Radius'))
+    assert.equal(inRadius.length, 3)
+    assert.ok(inRadius.every((p) => p.ausserhalb === false))
+    assert.ok(inRadius.every((p) => p.distanceKm < 1))
 
-    for (let i = 1; i < hsPartnerCards.length; i += 1) {
-      assert.ok(hsPartnerCards[i - 1].distanceKm <= hsPartnerCards[i].distanceKm)
-    }
+    const outside = hsPartnerCards.filter((p) => p.name.startsWith('Hundeschule Fern'))
+    assert.equal(outside.length, 2, 'beide außerhalb liegenden Treffer werden ergänzt, nicht nur bis 5 aufgefüllt')
+    assert.ok(outside.every((p) => p.ausserhalb === true))
+    // München ist näher an Berlin als Rom -> auch außerhalb des Radius nach Entfernung sortiert
+    assert.deepEqual(outside.map((p) => p.name), ['Hundeschule Fern München', 'Hundeschule Fern Rom'])
+
+    // im Radius zuerst, dann die ergänzten außerhalb - nie gemischt
+    const lastInRadiusIndex = hsPartnerCards.findIndex((p) => p.name === 'Hundeschule Radius C')
+    const firstOutsideIndex = hsPartnerCards.findIndex((p) => p.name === 'Hundeschule Fern München')
+    assert.ok(lastInRadiusIndex < firstOutsideIndex)
+  })
+
+  await t.test('Umkreis: ab 5 Treffern im Radius kein Fallback mehr, außerhalb bleibt vollständig ausgeschlossen', async () => {
+    insertPartner({ name: 'Hundeschule Radius D', typ: 'hundeschule', lat: berlin.lat, lon: berlin.lon })
+    insertPartner({ name: 'Hundeschule Radius E', typ: 'hundeschule', lat: berlin.lat, lon: berlin.lon })
+
+    const res = await discover({ plz: '10115', radius: 10 }, household.cookie)
+    assert.equal(res.status, 200)
+    assert.equal(res.data.fallback.hundeschulen, false, '5 Treffer im Radius -> kein Fallback mehr nötig')
+
+    const hsPartnerCards = res.data.hundeschulen.filter((e) => e.kind === 'partner')
+    const inRadius = hsPartnerCards.filter((p) => p.name.startsWith('Hundeschule Radius'))
+    assert.equal(inRadius.length, 5)
+    assert.ok(!hsPartnerCards.some((p) => p.name.startsWith('Hundeschule Fern')), 'außerhalb bleibt komplett draußen, kein ausserhalb-Eintrag mehr')
+  })
+
+  await t.test('Begleiter-Abschnitt bekommt denselben Fallback (Partner UND Tiere), Empfehlungen mit Partner werden nach dessen Entfernung sortiert', async () => {
+    const fernTierheim = insertPartner({ name: 'Tierheim Fern Rom', typ: 'tierheim', lat: ROM.lat, lon: ROM.lon })
+    const nahPromo = insertPromotion({
+      bereich: 'futter',
+      kennzeichnung: 'Partner',
+      titel: 'Nahe Futter-Empfehlung',
+      partner_id: shelterEcht.partnerId, // liegt in Berlin, also im Radius
+      is_demo: 0
+    })
+    const fernPromo = insertPromotion({
+      bereich: 'futter',
+      kennzeichnung: 'Partner',
+      titel: 'Ferne Futter-Empfehlung',
+      partner_id: fernTierheim.id, // liegt in Rom, weit außerhalb
+      is_demo: 0
+    })
+
+    const res = await discover({ plz: '10115', radius: 10 }, household.cookie)
+    assert.equal(res.status, 200)
+    // nur shelterEcht + shelterDemo liegen im Radius (2 < 5) -> Fallback ergänzt den fernen Tierheim-Partner
+    assert.equal(res.data.fallback.begleiter, true)
+    const begleiterNamen = res.data.begleiter.partner.map((p) => p.name)
+    assert.ok(begleiterNamen.includes('Tierheim Fern Rom'))
+    const fernCard = res.data.begleiter.partner.find((p) => p.name === 'Tierheim Fern Rom')
+    assert.equal(fernCard.ausserhalb, true)
+    const shelterEchtCard = res.data.begleiter.partner.find((p) => p.slug === shelterEcht.slug)
+    assert.equal(shelterEchtCard.ausserhalb, false)
+
+    // Rex/Demo-Hund kommen aus im Radius liegenden Tierheimen -> ausserhalb: false
+    const rexTierCard = res.data.begleiter.tiere.find((d) => d.name === 'Rex')
+    assert.equal(rexTierCard.ausserhalb, false)
+
+    // Empfehlungen: die an den nahen Partner gebundene zuerst, dann die an den fernen gebundene, dann
+    // die ganz ohne Partner (futterEcht) - "partner-bound ones first by distance, then the others".
+    const futterTitel = res.data.futter.map((p) => p.titel)
+    const nahIndex = futterTitel.indexOf('Nahe Futter-Empfehlung')
+    const fernIndex = futterTitel.indexOf('Ferne Futter-Empfehlung')
+    const ohnePartnerIndex = futterTitel.indexOf(futterEcht.titel)
+    assert.ok(nahIndex >= 0 && fernIndex >= 0 && ohnePartnerIndex >= 0)
+    assert.ok(nahIndex < fernIndex, 'die an den näheren Partner gebundene Empfehlung steht vor der ferneren')
+    assert.ok(fernIndex < ohnePartnerIndex, 'partnergebundene Empfehlungen stehen vor Empfehlungen ohne Partner')
+
+    assert.equal(nahPromo.bereich, 'futter')
+    assert.equal(fernPromo.bereich, 'futter')
   })
 
   // --- Klickzählung / Weiterleitung (GET /r/:type/:id) ------------------------------------------------
