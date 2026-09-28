@@ -393,25 +393,51 @@ router.post('/partners/:id/shelter', requireAdmin, (req, res) => {
   const familyId = Number(
     db
       .prepare(
-        `INSERT INTO families (name, password_hash, art, theme, partner_id, legacy_password, access_key_hash)
-         VALUES (?, '!', 'tierheim', 'standard', ?, 0, ?)`
+        `INSERT INTO families (name, password_hash, art, theme, partner_id, legacy_password, access_key_hash, is_demo)
+         VALUES (?, '!', 'tierheim', 'standard', ?, 0, ?, ?)`
       )
-      .run(partner.name, id, hashCode(code)).lastInsertRowid
+      // security-review Phase T Finding 13: ein Tierheim-Bereich für einen Demo-Partner muss selbst
+      // is_demo=1 tragen - sonst wäre er (anders als jeder andere Demo-Bereich) außerhalb von dev/
+      // staging ohne ?demo=1 oder eine Demo-Sitzung sichtbar/nutzbar, obwohl der Partner es nicht ist.
+      .run(partner.name, id, hashCode(code), partner.is_demo ? 1 : 0).lastInsertRowid
   )
 
   res.status(201).json({ familyId, key: formatCode(code) })
 })
 
+// Schlüssel erneuern (security-review Phase T Finding 13): wie routes/auth.js POST /family/key, nur
+// vom Admin für ein Tierheim-Team ausgelöst (z. B. Schlüssel verloren/kompromittiert). auth_epoch+1
+// beendet jede laufende Sitzung dieses Bereichs, der neue Schlüssel kommt einmalig im Klartext zurück.
+router.post('/partners/:id/shelter/key', requireAdmin, (req, res) => {
+  const id = cleanId(req.params.id)
+  const partner = findPartner(id)
+  if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
+
+  const shelter = db.prepare("SELECT id FROM families WHERE partner_id = ? AND art = 'tierheim'").get(id)
+  if (!shelter) return res.status(404).json({ error: 'Für diesen Partner gibt es keinen Tierheim-Bereich' })
+
+  const code = generateCode()
+  db.prepare('UPDATE families SET access_key_hash = ?, auth_epoch = auth_epoch + 1 WHERE id = ?').run(hashCode(code), shelter.id)
+  res.json({ key: formatCode(code) })
+})
+
 // Löschen nur im Entwurf - ein schon veröffentlichter Partner wird stattdessen pausiert (PUT status).
 // Zusätzlich: referenziert irgendein Gutschein-Stapel (auch längst eingelöste Gutscheine) diesen
 // Partner, bleibt er ebenfalls erhalten - ein Löschen würde sonst die partner_id-Fremdreferenz in
-// voucher_batches/vouchers verwaisen lassen (security-review Phase 2 Finding 7).
+// voucher_batches/vouchers verwaisen lassen (security-review Phase 2 Finding 7). Ebenso bleibt ein
+// Partner erhalten, für den schon ein Tierheim-Bereich angelegt wurde (security-review Phase T
+// Finding 13) - der Bereich referenziert den Partner über families.partner_id, ein Löschen würde diese
+// Referenz verwaisen lassen (und POST /:id/shelter erlaubt das Anlegen bewusst unabhängig vom Status).
 router.delete('/partners/:id', requireAdmin, (req, res) => {
   const id = cleanId(req.params.id)
   const partner = findPartner(id)
   if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
   if (partner.status !== 'entwurf') {
     return res.status(409).json({ error: 'Nur Entwürfe lassen sich löschen – diesen Partner stattdessen pausieren' })
+  }
+  const hasShelterFamily = db.prepare("SELECT 1 FROM families WHERE partner_id = ? AND art = 'tierheim'").get(id)
+  if (hasShelterFamily) {
+    return res.status(409).json({ error: 'Für diesen Partner gibt es einen Tierheim-Bereich – er lässt sich nicht mehr löschen' })
   }
   const hasVoucherBatches = db.prepare('SELECT 1 FROM voucher_batches WHERE partner_id = ? LIMIT 1').get(id)
   if (hasVoucherBatches) {

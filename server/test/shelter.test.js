@@ -20,6 +20,7 @@ test('Tierheim-Bereich: Admin legt ihn aus der Partnerverwaltung an, Schlüssel-
 
   const post = (urlPath, body, cookie = adminCookie) => call(base, urlPath, { method: 'POST', body, cookie })
   const get = (urlPath, cookie = adminCookie) => call(base, urlPath, { cookie })
+  const del = (urlPath, cookie = adminCookie) => call(base, urlPath, { method: 'DELETE', cookie })
 
   let sonnenhangPartnerId
   let sonnenhangKey
@@ -139,5 +140,65 @@ test('Tierheim-Bereich: Admin legt ihn aus der Partnerverwaltung an, Schlüssel-
     const dogs = await call(base, '/api/dogs', { cookie: shelterCookie })
     assert.equal(dogs.status, 200)
     assert.ok(dogs.data.some((d) => d.name === 'Pepper'))
+  })
+
+  // --- security-review Phase T Finding 13 -----------------------------------------------------------
+
+  await t.test('DELETE /api/admin/partners/:id -> 409, solange für den Partner ein Tierheim-Bereich existiert', async () => {
+    // sonnenhangPartnerId hat längst einen Tierheim-Bereich (siehe "Anlegen" oben) und ist außerdem
+    // nicht mehr status='entwurf' - beide Gründe würden allein schon blockieren. Ein frischer, noch im
+    // Entwurf befindlicher Partner mit Tierheim-Bereich beweist, dass NUR die Shelter-Referenz zählt.
+    const draft = await post('/api/admin/partners', samplePartner({ name: 'Entwurf mit Shelter', slug: 'entwurf-mit-shelter', status: 'entwurf' }))
+    assert.equal(draft.status, 201)
+    const draftShelter = await post(`/api/admin/partners/${draft.data.id}/shelter`)
+    assert.equal(draftShelter.status, 201)
+
+    const blocked = await del(`/api/admin/partners/${draft.data.id}`)
+    assert.equal(blocked.status, 409)
+    assert.match(blocked.data.error, /Tierheim-Bereich/)
+
+    // Der Partner (samt Entwurf-Status) bleibt unangetastet
+    const stillThere = await get('/api/admin/partners')
+    assert.equal(stillThere.data.some((p) => p.slug === 'entwurf-mit-shelter'), true)
+  })
+
+  await t.test('POST /api/admin/partners/:id/shelter/key: erneuert den Zugangsschlüssel, altes Cookie fällt raus', async () => {
+    const shelterLoginBefore = await post('/api/login', { secret: sonnenhangKey }, null)
+    assert.equal(shelterLoginBefore.status, 200)
+    const oldCookie = getCookie(shelterLoginBefore.res)
+
+    const reissued = await post(`/api/admin/partners/${sonnenhangPartnerId}/shelter/key`)
+    assert.equal(reissued.status, 200)
+    assert.match(reissued.data.key, /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/)
+    assert.notEqual(reissued.data.key, sonnenhangKey)
+
+    // Die alte Sitzung fällt raus (auth_epoch), der alte Schlüssel funktioniert nicht mehr
+    const oldSessionAfter = await call(base, '/api/me', { cookie: oldCookie })
+    assert.equal(oldSessionAfter.status, 401)
+    const oldKeyLoginAfter = await post('/api/login', { secret: sonnenhangKey }, null)
+    assert.equal(oldKeyLoginAfter.status, 401)
+
+    // Der neue Schlüssel meldet dasselbe Tierheim an
+    const newLogin = await post('/api/login', { secret: reissued.data.key }, null)
+    assert.equal(newLogin.status, 200)
+    assert.equal(newLogin.data.id, sonnenhangFamilyId)
+
+    // Kein Zugriff ohne Admin, unbekannter Partner -> 404
+    const family = await createFamily(base, 'Familie Kein Key-Zugriff', 'kein-key-admin-1')
+    assert.equal((await post(`/api/admin/partners/${sonnenhangPartnerId}/shelter/key`, undefined, family.cookie)).status, 401)
+    assert.equal((await post('/api/admin/partners/999999/shelter/key')).status, 404)
+  })
+
+  await t.test('Tierheim-Bereich eines Demo-Partners bekommt selbst is_demo=1', async () => {
+    const demoPartner = await post('/api/admin/partners', samplePartner({ name: 'Tierheim Demo Shelter', slug: 'tierheim-demo-shelter' }))
+    assert.equal(demoPartner.status, 201)
+    const db = require('../db')
+    db.prepare('UPDATE partners SET is_demo = 1 WHERE id = ?').run(demoPartner.data.id)
+
+    const shelter = await post(`/api/admin/partners/${demoPartner.data.id}/shelter`)
+    assert.equal(shelter.status, 201)
+
+    const family = db.prepare('SELECT is_demo FROM families WHERE id = ?').get(shelter.data.familyId)
+    assert.equal(family.is_demo, 1)
   })
 })
