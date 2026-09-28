@@ -55,13 +55,16 @@ export const api = {
   updateFamily: (payload) => request('/family', json('PUT', payload)),
 
   // Öffentlich, ohne Session: Partnerliste (/partner) und Partner-Portal (/p/:slug).
+  // Mit plz: POST mit Body statt Query-String, damit die PLZ nicht im Server-/Proxy-Zugriffslog landet
+  // (der Server prüft `demo` weiterhin nur als Query-Parameter, s. server/routes/partners.js demoAllowed).
+  // Ohne plz bleibt es die bisherige GET-Liste aller aktiven Partner.
   publicPartners: ({ plz, radius, demo } = {}) => {
-    const params = new URLSearchParams()
-    if (plz) params.set('plz', plz)
-    if (radius) params.set('radius', radius)
-    if (demo) params.set('demo', demo)
-    const qs = params.toString()
-    return request(`/public/partners${qs ? `?${qs}` : ''}`)
+    if (plz) {
+      const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
+      return request(`/public/partners/near${qs}`, json('POST', { plz, radius }))
+    }
+    const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
+    return request(`/public/partners${qs}`)
   },
   publicPartner: (slug) => request(`/public/partners/${encodeURIComponent(slug)}`),
 
