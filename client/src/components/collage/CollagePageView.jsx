@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CAPTION_HEIGHT, MARGIN, PAGE, computeFrames, dragFocus } from '../../lib/collage/layout.js'
 import { hasCaptions, titleFontSize } from '../../lib/collage/render.js'
+import { useTheme } from '../../themes/ThemeProvider.jsx'
 
 const pct = (value, total) => `${(value / total) * 100}%`
 
@@ -88,6 +89,7 @@ function useFontsReady() {
 }
 
 export default function CollagePageView({ page, interactive = false, selectedPhotoId, onSelectPhoto, onPhotoChange }) {
+  const { theme } = useTheme()
   const withCaptions = hasCaptions(page)
   const frames = computeFrames(page.photos.length, { withCaptions })
   const fontsReady = useFontsReady()
@@ -95,7 +97,7 @@ export default function CollagePageView({ page, interactive = false, selectedPho
 
   return (
     <div className={`cpage ${interactive ? 'is-interactive' : ''}`}>
-      <div className="cpage-tricolor cpage-tricolor-top" />
+      {theme.tricolor ? <div className="cpage-tricolor cpage-tricolor-top" /> : <div className="cpage-rule cpage-rule-top" />}
       <div
         className="cpage-title"
         style={{
@@ -134,9 +136,13 @@ export default function CollagePageView({ page, interactive = false, selectedPho
 
       <div className="cpage-footer" style={{ left: pct(MARGIN, PAGE.width), right: pct(MARGIN, PAGE.width) }}>
         <span>{page.footer}</span>
-        <span className="cpage-brand">Familienchronik</span>
+        <span className="cpage-brand">{theme.appName}</span>
       </div>
-      <div className="cpage-tricolor cpage-tricolor-bottom" />
+      {theme.tricolor ? (
+        <div className="cpage-tricolor cpage-tricolor-bottom" />
+      ) : (
+        <div className="cpage-rule cpage-rule-bottom" />
+      )}
     </div>
   )
 }

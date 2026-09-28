@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import BernerMark from '../components/BernerMark.jsx'
+import { useTheme } from '../themes/ThemeProvider.jsx'
+import ThemeMark from '../components/ThemeMark.jsx'
 import Icon from '../components/Icon.jsx'
 
 const MIN_PASSWORD_LENGTH = 6
@@ -192,6 +193,7 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
 }
 
 export default function LoginPage({ onLogin }) {
+  const { theme } = useTheme()
   const [mode, setMode] = useState(() => (window.location.pathname === '/neue-familie' ? 'create' : 'login'))
   const [inviteRequired, setInviteRequired] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
@@ -219,33 +221,24 @@ export default function LoginPage({ onLogin }) {
     <div className="login">
       <section className="login-hero">
         <div className="login-hero-inner">
-          <BernerMark size={88} className="login-mark" />
-          <p className="login-kicker">Eine Familie · viele Zuhause</p>
+          <ThemeMark size={88} className="login-mark" />
+          <p className="login-kicker">{theme.texts.loginKicker}</p>
           <p className="login-headline">
-            Wie geht’s
+            {theme.texts.loginHeadline[0]}
             <br />
-            <em>den anderen?</em>
+            <em>{theme.texts.loginHeadline[1]}</em>
           </p>
-          <p className="login-lede">
-            Geschwister, Eltern und Großeltern leben in verschiedenen Familien. Hier bleibt ihr verbunden: Klickt einen
-            Hund an und schaut nach, was er so treibt.
-          </p>
+          <p className="login-lede">{theme.texts.loginLede}</p>
           <ul className="login-facts">
-            <li>
-              <strong>Stammbaum</strong>
-              <span>wer mit wem verwandt ist</span>
-            </li>
-            <li>
-              <strong>Chronik</strong>
-              <span>was jeder Hund erlebt</span>
-            </li>
-            <li>
-              <strong>Pinnwand</strong>
-              <span>Treffen und Notizen für alle</span>
-            </li>
+            {theme.texts.loginFacts.map(([title, sub]) => (
+              <li key={title}>
+                <strong>{title}</strong>
+                <span>{sub}</span>
+              </li>
+            ))}
           </ul>
         </div>
-        <div className="tricolor tricolor-vertical" />
+        {theme.tricolor && <div className="tricolor tricolor-vertical" />}
       </section>
 
       <section className="login-panel">

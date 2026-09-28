@@ -5,7 +5,7 @@ import PedigreeTree from '../components/PedigreeTree.jsx'
 import DogForm from '../components/DogForm.jsx'
 import Modal from '../components/Modal.jsx'
 import Icon from '../components/Icon.jsx'
-import BernerMark from '../components/BernerMark.jsx'
+import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
 import RenameFamilyForm from '../components/RenameFamilyForm.jsx'
 import { nextTermin } from '../lib/notes.js'
@@ -118,7 +118,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
 
       {dogs && dogs.length === 0 && (
         <div className="empty-state">
-          <BernerMark size={72} />
+          <ThemeMark size={72} />
           <h3>Euer Stammbaum ist noch leer</h3>
           <p>Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
           <button type="button" className="btn btn-primary" onClick={() => setFormOpen(true)}>

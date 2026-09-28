@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
-import BernerMark from './components/BernerMark.jsx'
+import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
+import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -23,13 +24,14 @@ const NAV_ITEMS = [
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
 
-function DemoBanner({ onLeave }) {
+export function DemoBanner({ onLeave }) {
+  const { words } = useTheme()
   return (
     <div className="demo-banner" role="status">
       <Icon name="alert" />
       <span>Du siehst eine schreibgeschützte Demo – nichts wird gespeichert oder hochgeladen.</span>
       <button type="button" className="btn btn-primary" onClick={onLeave}>
-        Eigenes Rudel anlegen
+        {words.createOwnGroup}
       </button>
     </div>
   )
@@ -42,17 +44,18 @@ function RedirectTierUrl() {
   return <Navigate to={`/tier/${id}${hash}`} replace />
 }
 
-function AppHeader({ family, onLogout }) {
+export function AppHeader({ family, onLogout }) {
   const { pathname } = useLocation()
+  const { theme } = useTheme()
   // Tierseiten gehören zum Stammbaum
   const isActive = (item, active) => active || (item.to === '/stammbaum' && pathname.startsWith('/tier/'))
   return (
     <header className="app-header">
       <div className="app-header-inner">
         <Link to="/stammbaum" className="brand">
-          <BernerMark size={40} />
+          <ThemeMark size={40} />
           <span className="brand-text">
-            <span className="brand-name">Familienchronik</span>
+            <span className="brand-name">{theme.appName}</span>
             <span className="brand-sub">{family.name}</span>
           </span>
         </Link>
@@ -78,6 +81,19 @@ function AppHeader({ family, onLogout }) {
         </button>
       </div>
     </header>
+  )
+}
+
+export function AppFooter({ onInvite }) {
+  const { theme } = useTheme()
+  return (
+    <footer className="app-footer">
+      {theme.tricolor && <div className="tricolor" aria-hidden="true" />}
+      <p>{theme.footer}</p>
+      <button type="button" className="footer-link" onClick={onInvite}>
+        Jemanden einladen
+      </button>
+    </footer>
   )
 }
 
@@ -109,54 +125,62 @@ export default function App() {
     window.location.href = '/neue-familie'
   }
 
-  // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) return <AdminPage />
+  // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login, immer im Standard-Auftritt
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    return (
+      <ThemeProvider themeId="standard">
+        <AdminPage />
+      </ThemeProvider>
+    )
+  }
 
   if (family === undefined) {
     return (
-      <div className="splash" aria-busy="true">
-        <BernerMark size={72} />
-      </div>
+      <ThemeProvider themeId="standard">
+        <div className="splash" aria-busy="true">
+          <ThemeMark size={72} />
+        </div>
+      </ThemeProvider>
     )
   }
 
   if (!family) {
-    return <LoginPage onLogin={setFamily} />
+    return (
+      <ThemeProvider themeId="standard">
+        <LoginPage onLogin={setFamily} />
+      </ThemeProvider>
+    )
   }
 
   return (
-    <DemoProvider value={Boolean(family.isDemo)}>
-      <div className="app-shell">
-        <ScrollToTop />
-        {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} />}
-        <AppHeader family={family} onLogout={handleLogout} />
-        <main className="app-main">
-          <Routes>
-            <Route
-              path="/stammbaum"
-              element={<OverviewPage family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />}
-            />
-            <Route path="/tier/:id" element={<DogDetailPage family={family} />} />
-            <Route path="/hund/:id" element={<RedirectTierUrl />} />
-            <Route path="/pinnwand" element={<PinboardPage />} />
-            <Route path="/wuerfe" element={<LittersPage />} />
-            <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
-            <Route path="/admin-schreiben" element={<ContactAdminPage />} />
-            <Route path="/collage" element={<CollagePage family={family} />} />
-            <Route path="*" element={<Navigate to="/stammbaum" replace />} />
-          </Routes>
-        </main>
-        <footer className="app-footer">
-          <div className="tricolor" aria-hidden="true" />
-          <p>Familienchronik · damit wir wissen, wie es den anderen geht</p>
-          <button type="button" className="footer-link" onClick={() => setInviteOpen(true)}>
-            Jemanden einladen
-          </button>
-        </footer>
-        <Modal open={inviteOpen} title="Jemanden einladen" onClose={() => setInviteOpen(false)}>
-          <InviteDialog family={family} />
-        </Modal>
-      </div>
-    </DemoProvider>
+    <ThemeProvider themeId={family.theme}>
+      <DemoProvider value={Boolean(family.isDemo)}>
+        <div className="app-shell">
+          <ScrollToTop />
+          {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} />}
+          <AppHeader family={family} onLogout={handleLogout} />
+          <main className="app-main">
+            <Routes>
+              <Route
+                path="/stammbaum"
+                element={<OverviewPage family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />}
+              />
+              <Route path="/tier/:id" element={<DogDetailPage family={family} />} />
+              <Route path="/hund/:id" element={<RedirectTierUrl />} />
+              <Route path="/pinnwand" element={<PinboardPage />} />
+              <Route path="/wuerfe" element={<LittersPage />} />
+              <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
+              <Route path="/admin-schreiben" element={<ContactAdminPage />} />
+              <Route path="/collage" element={<CollagePage family={family} />} />
+              <Route path="*" element={<Navigate to="/stammbaum" replace />} />
+            </Routes>
+          </main>
+          <AppFooter onInvite={() => setInviteOpen(true)} />
+          <Modal open={inviteOpen} title="Jemanden einladen" onClose={() => setInviteOpen(false)}>
+            <InviteDialog family={family} />
+          </Modal>
+        </div>
+      </DemoProvider>
+    </ThemeProvider>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
 import Avatar from '../components/Avatar.jsx'
 import ConfirmButton from '../components/ConfirmButton.jsx'
@@ -103,6 +104,7 @@ function Setup({ dogs, draft, onCreate, busy }) {
 }
 
 export default function CollagePage({ family }) {
+  const { theme } = useTheme()
   const draftKey = `collageDraft.${family.id}`
   const [dogs, setDogs] = useState([])
   const [draft, setDraft] = useState(() => readSetting(draftKey, null))
@@ -179,7 +181,7 @@ export default function CollagePage({ family }) {
   async function exportCurrentPage() {
     setBusy(true)
     try {
-      downloadBlob(await canvasToBlob(await renderPage(page)), `${slug(page.title)}-seite-${pageIndex + 1}.png`)
+      downloadBlob(await canvasToBlob(await renderPage(page, theme)), `${slug(page.title)}-seite-${pageIndex + 1}.png`)
       toast('Seite als PNG gespeichert')
     } catch (err) {
       setError(err.message)
@@ -192,7 +194,7 @@ export default function CollagePage({ family }) {
     setBusy(true)
     try {
       const blobs = []
-      for (const p of pages) blobs.push(await canvasToBlob(await renderPage(p)))
+      for (const p of pages) blobs.push(await canvasToBlob(await renderPage(p, theme)))
       setPrintImages(blobs.map((blob) => URL.createObjectURL(blob)))
     } catch (err) {
       setError(err.message)

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
-import BernerMark from '../components/BernerMark.jsx'
+import { useTheme } from '../themes/ThemeProvider.jsx'
+import ThemeMark from '../components/ThemeMark.jsx'
 import Icon from '../components/Icon.jsx'
 import AdminFamilyDetails from '../components/AdminFamilyDetails.jsx'
 import AdminMessages from '../components/AdminMessages.jsx'
@@ -10,6 +11,7 @@ import { relativeTime } from '../lib/dates.js'
 const BYTES_PER_MB = 1024 * 1024
 
 function AdminLogin({ onLogin }) {
+  const { theme } = useTheme()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
@@ -30,9 +32,9 @@ function AdminLogin({ onLogin }) {
   return (
     <div className="admin-login">
       <form className="card form-stack admin-login-card" onSubmit={handleSubmit}>
-        <BernerMark size={56} />
+        <ThemeMark size={56} />
         <div>
-          <span className="eyebrow">Familienchronik</span>
+          <span className="eyebrow">{theme.appName}</span>
           <h1 className="admin-title">Admin</h1>
         </div>
         {error && <div className="error-banner" role="alert">{error}</div>}
@@ -59,7 +61,7 @@ function AdminLogin({ onLogin }) {
           {loading ? 'Prüfe …' : 'Anmelden'}
         </button>
         <Link to="/" className="back-link">
-          <Icon name="arrowLeft" /> Zur Familienchronik
+          <Icon name="arrowLeft" /> Zur {theme.appName}
         </Link>
       </form>
     </div>
@@ -93,6 +95,7 @@ function StatsGrid({ stats }) {
 }
 
 function Dashboard({ onLogout }) {
+  const { theme } = useTheme()
   const [overview, setOverview] = useState(null)
   const [openId, setOpenId] = useState(null)
   const [error, setError] = useState(null)
@@ -108,7 +111,7 @@ function Dashboard({ onLogout }) {
     <div className="admin-shell">
       <header className="admin-header">
         <span className="admin-brand">
-          <BernerMark size={34} /> Familienchronik · <strong>Admin</strong>
+          <ThemeMark size={34} /> {theme.appName} · <strong>Admin</strong>
         </span>
         <span className="admin-header-actions">
           <Link to="/" className="btn btn-ghost">

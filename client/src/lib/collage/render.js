@@ -1,4 +1,5 @@
 import { CAPTION_HEIGHT, MARGIN, PAGE, computeFrames, coverPlacement } from './layout.js'
+import { getTheme } from '../../themes/index.js'
 
 // Zeichnet eine Collage-Seite auf ein Canvas – exakt die Geometrie der Vorschau.
 export const EXPORT_SCALE = 2 // 2480 × 3508 px ≈ A4 bei 300 dpi
@@ -8,6 +9,7 @@ const DISPLAY_FONT = "'Fraunces Variable', Georgia, serif"
 const BODY_FONT = "'Manrope Variable', 'Segoe UI', sans-serif"
 const TITLE_SIZE = 96
 const TRICOLOR_HEIGHT = 16
+const RULE_HEIGHT = 3
 
 const imageCache = new Map()
 
@@ -42,6 +44,12 @@ function drawTricolor(ctx, y) {
     ctx.fillStyle = color
     ctx.fillRect(i * stripe, y, stripe + 1, TRICOLOR_HEIGHT)
   })
+}
+
+// Standard-Auftritt ohne Dreifarb-Streifen: ein schlichter Strich an derselben Stelle (siehe .cpage-rule)
+function drawRule(ctx, y) {
+  ctx.fillStyle = COLORS.rust
+  ctx.fillRect(0, y, PAGE.width, RULE_HEIGHT)
 }
 
 const MIN_TITLE_SIZE = 48
@@ -94,7 +102,7 @@ function drawCaption(ctx, text, frame) {
   ctx.textBaseline = 'alphabetic'
 }
 
-function drawFooter(ctx, page) {
+function drawFooter(ctx, page, theme) {
   ctx.textAlign = 'left'
   ctx.font = `500 26px ${DISPLAY_FONT}`
   ctx.fillStyle = COLORS.ink
@@ -102,7 +110,7 @@ function drawFooter(ctx, page) {
   ctx.textAlign = 'right'
   ctx.font = `600 20px ${BODY_FONT}`
   ctx.fillStyle = COLORS.muted
-  ctx.fillText('Familienchronik', PAGE.width - MARGIN, 1668)
+  ctx.fillText(theme.appName, PAGE.width - MARGIN, 1668)
   ctx.textAlign = 'left'
 }
 
@@ -110,7 +118,7 @@ export function hasCaptions(page) {
   return page.photos.some((photo) => photo.caption.trim())
 }
 
-export async function renderPage(page, scale = EXPORT_SCALE) {
+export async function renderPage(page, theme = getTheme('standard'), scale = EXPORT_SCALE) {
   await Promise.all([document.fonts.load(`600 80px ${DISPLAY_FONT}`), document.fonts.load(`500 30px ${BODY_FONT}`)])
   const images = await Promise.all(page.photos.map((photo) => loadImage(photo.url)))
 
@@ -122,7 +130,8 @@ export async function renderPage(page, scale = EXPORT_SCALE) {
 
   ctx.fillStyle = COLORS.paper
   ctx.fillRect(0, 0, PAGE.width, PAGE.height)
-  drawTricolor(ctx, 0)
+  if (theme.tricolor) drawTricolor(ctx, 0)
+  else drawRule(ctx, 0)
   drawHeader(ctx, page)
 
   const frames = computeFrames(page.photos.length, { withCaptions: hasCaptions(page) })
@@ -131,8 +140,9 @@ export async function renderPage(page, scale = EXPORT_SCALE) {
     drawCaption(ctx, photo.caption.trim(), frames[i])
   })
 
-  drawFooter(ctx, page)
-  drawTricolor(ctx, PAGE.height - TRICOLOR_HEIGHT)
+  drawFooter(ctx, page, theme)
+  if (theme.tricolor) drawTricolor(ctx, PAGE.height - TRICOLOR_HEIGHT)
+  else drawRule(ctx, PAGE.height - RULE_HEIGHT)
   return canvas
 }
 

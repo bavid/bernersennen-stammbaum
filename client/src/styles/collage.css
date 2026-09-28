@@ -256,6 +256,23 @@
   bottom: 0;
 }
 
+/* Standard-Auftritt ohne Dreifarb-Streifen: ein schlichter Strich an derselben Stelle */
+.cpage-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0.17%;
+  background: var(--rust);
+}
+
+.cpage-rule-top {
+  top: 0;
+}
+
+.cpage-rule-bottom {
+  bottom: 0;
+}
+
 .cpage-title,
 .cpage-subtitle {
   position: absolute;

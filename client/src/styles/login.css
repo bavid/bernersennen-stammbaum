@@ -101,6 +101,12 @@
   background: linear-gradient(180deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #b5541f 66.6%);
 }
 
+/* Ohne Dreifarb-Streifen (Standard-Auftritt) trennt eine dezente Linie an derselben Stelle
+   den dunklen Hero vom hellen Anmelde-Panel, damit der Übergang nicht kantenlos wirkt. */
+[data-theme='standard'] .login-hero {
+  border-right: 1px solid rgba(246, 236, 221, 0.14);
+}
+
 .login-panel {
   display: grid;
   place-items: center;
@@ -176,6 +182,11 @@
     width: auto;
     height: 8px;
     background: linear-gradient(90deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #b5541f 66.6%);
+  }
+
+  [data-theme='standard'] .login-hero {
+    border-right: none;
+    border-bottom: 1px solid rgba(246, 236, 221, 0.14);
   }
 
   .login-panel {
