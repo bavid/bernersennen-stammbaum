@@ -52,6 +52,12 @@ Neue wird von Anfang an tierneutral gebaut, damit es später ohne Umbau für all
 - *(Zusatz)* Das Standard-Farbschema ist genau richtig und soll so bleiben.
 - *(Zusatz)* Namensideen: „FamilieAufPfoten", „EineTierischNetteFamilie", „Fellnasen Familie".
 - *(Zusatz)* Der Zuschnitt auf Berner kann ein Theme sein. Das Design soll anpassbar werden (Theming).
+- *(Zusatz 28.09.)* Die Tiere einer Familie müssen nicht blutsverwandt sein. Mehr Chronik im Sinne von „von 2010
+  bis 2025 haben mich diese Hunde begleitet", weniger „Nachwuchs, Nachwuchs". Statt „verpaart" und „Adoptiv-…"
+  zählt das Zusammenleben. Dadurch kommt der Tierheim-Gedanke stärker zur Geltung.
+- *(Zusatz 28.09.)* Wie eine „MyPetChronik": Jeder pflegt seine Chronik privat. Über die Familie bzw. das Rudel
+  entsteht eine gemeinsame Ansicht aller. Tiere und Einträge lassen sich zwischen privat und geteilt hin- und
+  herschieben (siehe Phase Z).
 
 ## Ausgangslage im Code (Stand `1f7b91c`)
 
@@ -84,6 +90,8 @@ Neue wird von Anfang an tierneutral gebaut, damit es später ohne Umbau für all
 | Name | **„Familie auf Pfoten"**, Slogan **„Eine tierisch nette Familie"**. Domain-Kandidat `familieaufpfoten.de`, dazu `familie-auf-pfoten.de` als Weiterleitung für Tippfehler. Als Alternative vorgemerkt: „Fellnasen-Familie" (`fellnasenfamilie.de`). Das Wort „Fellnasen" wird in den Texten verwendet. |
 | Farbschema | Die heutigen Farben (`client/src/styles/tokens.css`) sind der **Standard und werden nicht verändert.** Themes legen sich nur darüber. |
 | Themes | **Jedes Rudel wählt sein Theme selbst**, zum Beispiel „Standard" oder „Berner". **Partner-Portale** bekommen eigene Akzentfarbe und Logo. Es gibt keine Theme-Einstellung pro Server-Instanz. |
+| Chronik-Modell *(28.09.)* | **Privat zuerst, gemeinsam per Teilen.** Jeder Haushalt hat „Meine Chronik". Familien bzw. Rudel sind gemeinsame Ansichten, in die Haushalte einzelne Tiere und Einträge teilen. Heutige Rudel laufen unverändert weiter (Phase Z). |
+| Verwandtschaft *(28.09.)* | **Zusammenleben vor Abstammung.** Tiere einer Familie müssen nicht verwandt sein. „Lebt mit" ersetzt „Adoptiv-…". Einzug und Abschied sind Meilensteine wie die Geburt. Abstammung und Würfe bleiben als Zusatz. |
 
 ### Warum erst mal kein Google?
 
@@ -158,6 +166,111 @@ unproblematisch. Das ist ein normaler Link und keine API-Nutzung.
 - beide Instanzen parallel laufen, mit getrennten Daten;
 - der Prod-Build nachweislich keinen Dev-Code enthält (Build-Check);
 - „übernehmen" genau das getestete SHA deployt.
+
+---
+
+## Phase Z — Meine Chronik, Zuhause und Teilen (Zusatz 28.09.)
+
+**Idee:** Weg vom reinen Stammbaum („Nachwuchs, Nachwuchs, Nachwuchs"), hin zur **Lebenschronik der eigenen Tiere**:
+„Von 2010 bis 2025 haben mich diese Tiere begleitet." Eine Familie entsteht durch **Zusammenleben**, nicht durch
+Abstammung. Die Tiere müssen nicht blutsverwandt und nicht verpaart sein. Abstammung bleibt als Zusatz für alle, die
+sie kennen (Berner-Theme, Würfe), ist aber nicht mehr der Kern.
+
+Jeder pflegt **seine eigene Chronik privat** und sieht zugleich, was die anderen in der gemeinsamen Familie machen.
+Die gemeinsame Ansicht entsteht, indem mehrere private Chroniken ihre Tiere dort **zusammenführen**. Tiere und
+Einträge lassen sich jederzeit zwischen „nur für mich" und „mit der Familie geteilt" hin- und herschieben.
+
+Der Tierheim-Gedanke wird damit stärker: Ein Tier aus dem Tierheim ist ganz selbstverständlich Teil der Familie.
+Sein **Einzugstag** zählt genauso wie ein Geburtstag, und seine Herkunft bleibt sichtbar.
+
+### Begriffe (Vorschlag)
+
+| Begriff | Bedeutung |
+|---|---|
+| **Meine Chronik** | Der private Bereich eines Haushalts. Technisch ein Eintrag in `families` mit `art='zuhause'`. Nur der Haushalt sieht ihn. |
+| **Familie** (Standard-Theme) bzw. **Rudel** (Berner-Theme) | Der gemeinsame Bereich mehrerer Haushalte. Technisch `families.art='rudel'`, wie alle heutigen Rudel. |
+| **Wegbegleiter** | Alle Tiere, die bei einem Haushalt gelebt haben oder leben, mit „bei uns seit … bis …". |
+| **lebt mit** | Die Verbindung zwischen Tieren ohne gemeinsame Abstammung. Ersetzt überall „Adoptiv-…" (Karten, Formulare, Texte). Aus „Adoptiv-Katze von Hermes" wird „lebt mit Hermes". |
+| **Einzug / Abschied** | Die Tage, an denen ein Tier dazukam bzw. gegangen ist (verstorben, abgegeben, umgezogen). |
+
+### Was Nutzer sehen
+
+- **Wegbegleiter-Zeitleiste** als Startansicht von „Meine Chronik": Jahre auf der Achse, je Tier ein Balken von
+  Einzug bis Abschied. Überlappende Balken zeigen, wer mit wem zusammengelebt hat. Ein Klick öffnet die Tierseite.
+  Verstorbene Tiere bleiben mit sanfter Kennzeichnung („In Erinnerung") sichtbar.
+- **Herkunft** je Tier: „Woher kam Luna?" mit Tierheim/Tierschutz, von privat, Züchter, eigener Nachwuchs, Fundtier,
+  anderes, dazu ein Freitext, z. B. „Tierheim Sonnenhang". In Phase T wird das beim Übergabe-Gutschein automatisch
+  gesetzt.
+- **Automatische Meilensteine** in der Chronik: Einzug („Luna zieht ein") und Abschied, wie heute Geburt und Würfe.
+  Dazu ein Hinweis vor dem Jahrestag: „Morgen ist Luna 5 Jahre bei euch", so wie der Wurf-Geburtstag.
+- **Teilen je Tier:** „In Familie zeigen" mit einer Liste der Familien, in denen der Haushalt Mitglied ist.
+  Ausschalten nimmt das Tier wieder heraus. In der Chronik bleibt alles erhalten.
+- **Teilen je Eintrag:** Ein Schloss am Eintrag schaltet zwischen „nur für mich" und „mit der Familie geteilt".
+  Standard ist „geteilt", sobald das Tier geteilt ist. Private Einträge erscheinen nie in der Familienansicht.
+- **Ansicht wechseln:** Oben ein Umschalter „Meine Chronik ▾ / Familie Sonnenhang". Die Familienansicht zeigt den
+  heutigen Stammbaum, die Pinnwand, „Neu im Rudel" usw., aber mit allen Tieren, die die Haushalte dort teilen.
+- **Umziehen:** Ein Tier, das heute direkt im gemeinsamen Rudel liegt, lässt sich in „Meine Chronik" holen und
+  bleibt dabei geteilt. Umgekehrt geht es auch. So wandern bestehende Rudel ohne Stichtag nach und nach um.
+- **Familienansicht nach Haushalten:** Optional gruppiert der Stammbaum die Tiere nach Zuhause
+  („Zuhause am Deich: Hermes, Minka"). Verbindungen über „lebt mit" und Abstammung bleiben, wie sie sind.
+
+### Rechte
+
+| Wer | Darf |
+|---|---|
+| Haushalt (Besitzer des Tiers) | alles: Tier und Einträge pflegen, teilen, Teilen beenden, umziehen |
+| Familie, in die das Tier geteilt ist | lesen (nur geteilte Einträge), kommentieren, in Würfen und im Stammbaum verbinden |
+| Tiere, die direkt im Rudel liegen (heutiger Stand) | wie heute: alle im Rudel dürfen pflegen |
+| Alle anderen | nichts (404, wie heute) |
+
+### Datenmodell (Skizze)
+
+```
+families          += art CHECK IN ('rudel','zuhause','tierheim') DEFAULT 'rudel'
+family_members(member_family_id, group_family_id, since, role)   -- Haushalt ist Mitglied einer Familie
+dog_shares(dog_id, family_id, since, story_consent INT DEFAULT 0, revoked_at)   -- aus Phase T, jetzt früher
+dogs              += bei_uns_seit, bei_uns_bis, abschied_grund, herkunft_art, herkunft_text
+timeline_entries  += geteilt INT NOT NULL DEFAULT 1
+dog_transfers(id, dog_id, from_family_id, to_family_id, voucher_id NULL, transferred_at)   -- aus Phase T
+```
+
+- **Ein Tier gehört genau einem Bereich** (`dogs.family_id`). Geteilt wird per `dog_shares`, nie per Kopie.
+- **Die Familienansicht** lädt `dogs WHERE family_id = :rudel OR id IN (aktive dog_shares für :rudel)` und von
+  geteilten Tieren nur Einträge mit `geteilt=1`.
+- **Schreibende Routen** bleiben streng beim Besitzer. Nur `loadOwnDog` bzw. ein neues `loadVisibleDog` für
+  lesende Routen und Kommentare kennen Freigaben. Dafür kommen eigene Tests dazu: Fremde sehen weiterhin nur 404,
+  private Einträge tauchen in keiner Liste und keinem Zähler auf, Fotos privater Einträge sind nicht abrufbar.
+- **Eltern über Haushaltsgrenzen:** Ein Eltern-Verweis darf auf ein Tier zeigen, das in einer gemeinsamen Familie
+  sichtbar ist (Wurfgeschwister in verschiedenen Haushalten). Endet die Freigabe, zeigt die App den Namen als Text.
+- **Beitreten:** Ein Haushalt tritt einer Familie mit deren Schlüssel bzw. Passwort bei (`family_members`). Ab
+  Phase 1 geht das auch per Einladungs-Gutschein, der beim Einlösen gleich die Mitgliedschaft anlegt.
+- **Mitlesen des Tierheims** (Phase T) ist damit nur noch ein Sonderfall von `dog_shares` mit einer Familie der Art
+  `tierheim`.
+
+### Auswirkungen auf andere Phasen
+
+- **Phase D:** Wortschatz „lebt mit" statt „Adoptiv-…". Neue Texte für „Meine Chronik" und „Wegbegleiter".
+- **Phase 1:** Wer einen Gutschein einlöst, legt zuerst **„Meine Chronik"** an. Eine Familie gründen oder ihr
+  beitreten kommt danach bzw. über einen Einladungs-Gutschein (`vouchers.join_family_id`). Die Weitergabe-Gutscheine
+  eines Rudels werden damit zu Einladungen in genau diese Familie.
+- **Phase T:** Die Übergabe zieht das Tier in „Meine Chronik" der neuen Halter, mit Herkunft „Tierheim X" und
+  Einzugstag. Das Tierheim liest nur mit, wenn die Halter es freigeben (`dog_shares`).
+- **Präsentation (Phase 5):** Die Geschichte für Tierheime lautet: „Das Tier bekommt eine Chronik, die sein Leben
+  lang mitwächst."
+
+### Demo
+
+- **„Meine Chronik" der Demo** mit Wegbegleitern von 2008 bis heute: ein verstorbener Hund („In Erinnerung"), eine
+  Katze von privat, ein Tierheimhund mit Einzugstag und ein Kaninchen, zusätzlich zwei private Einträge.
+- Der Demo-Haushalt ist Mitglied der Demo-Familie „Rudel vom Sonnenhang". Zwei seiner Tiere sind dort geteilt.
+  So lassen sich beide Ansichten und der Umschalter vorführen.
+
+**Fertig, wenn:**
+- ein Haushalt seine Tiere privat mit Einzug, Abschied und Herkunft pflegen und als Zeitleiste sehen kann;
+- er Tiere und einzelne Einträge in eine Familie teilen und wieder herausnehmen kann;
+- die Familienansicht die geteilten Tiere aller Haushalte zeigt, private Einträge nie;
+- bestehende Rudel unverändert weiterlaufen und Tiere in „Meine Chronik" umziehen können;
+- nirgends mehr „Adoptiv-…" steht.
 
 ---
 
@@ -418,6 +531,10 @@ stärkste Grund, warum ein Tierheim Partner wird, und gleichzeitig der natürlic
      öffentlich zeigen, als Werbung für das Tierheim.
 
 ### Datenmodell (Skizze)
+
+> **Seit Phase Z:** `families.art`, `dog_shares` und `dog_transfers` entstehen schon dort. Phase T ergänzt nur
+> `art='tierheim'`, `partner_id`, Vermittlungsstatus, Steckbrief und Übergabe-Gutschein. Die Übergabe zieht das
+> Tier in „Meine Chronik" der neuen Halter, mit Herkunft „Tierheim X" und Einzugstag.
 
 ```
 families        += art CHECK IN ('rudel','tierheim') DEFAULT 'rudel', partner_id
@@ -764,6 +881,11 @@ Tierheimen ist und „Neuer Begleiter gesucht?" mit echten Tieren füllt.
 Die **Theme-Grundlage** kommt mit Phase 2. **Umbenennung in „Familie auf Pfoten" und Berner-Theme** kommen vor
 Phase 5 (Kartendruck) und vor dem Start in Prod unter der neuen Domain.
 
+**Aktualisiert 28.09.:** Für die Vorschau gilt **0 → D → Z → 1 → 2 → T → 3 → 5**, Phase 4 danach.
+- Design und Themes (D) kommen nach vorn, weil der neue Auftritt das Erste ist, was man in der Vorschau sieht.
+- **Phase Z** (Meine Chronik, Zuhause, Teilen) kommt vor die Gutscheine. Das Einlösen soll direkt „Meine Chronik"
+  anlegen, und Phase T baut auf `dog_shares` und `dog_transfers` auf.
+
 ---
 
 ## Offene Fragen
@@ -810,3 +932,11 @@ Phase 5 (Kartendruck) und vor dem Start in Prod unter der neuen Domain.
     nur im Text zu verwenden.
 19. **Eigene Farben:** Sollen Rudel später einzelne Farben selbst anpassen dürfen, oder nur fertige Themes wählen
     (Vorschlag, damit Kontrast und Lesbarkeit gesichert bleiben)?
+20. **Begriffe in Phase Z:** Passen „Meine Chronik", „Wegbegleiter" und „lebt mit"? Alternativen wären „Mein
+    Zuhause", „Familienmitglieder" und „gehört zur Familie".
+21. **Wer pflegt geteilte Tiere?** Vorschlag: nur der eigene Haushalt, die Familie liest und kommentiert. Heutige
+    Rudel-Tiere darf wie bisher das ganze Rudel pflegen.
+22. **Abschied:** Wie sollen verstorbene Tiere erscheinen? Vorschlag: „In Erinnerung" mit dezenter Kennzeichnung
+    und einem optionalen eigenen Abschiedstext.
+23. **Standard-Ansicht nach dem Login:** „Meine Chronik" oder die zuletzt benutzte Familie? Vorschlag: die zuletzt
+    benutzte.

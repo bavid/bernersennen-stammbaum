@@ -5,7 +5,8 @@
 
 **Grundlage:** [Design-Konzept](../specs/2026-09-27-marketing-gutscheine-partner-design.md) (Stand `187cdcd`).
 
-**Ziel:** Die Familienchronik wird zu „Familie auf Pfoten – Eine tierisch nette Familie": Gutscheine statt
+**Ziel:** Die Familienchronik wird zu „Familie auf Pfoten – Eine tierisch nette Familie": Jeder pflegt „Meine
+Chronik" mit seinen Wegbegleitern und teilt Tiere in gemeinsame Familien. Gutscheine statt
 Einladungscode, Partner-Portale für Tierheime und Hundeschulen, Tierheim-Chroniken mit Übergabe, Reiter
 „Entdecken", Themes (Standard / Berner) und eine Admin-Präsentation. Vorgeführt wird alles auf einer eigenen
 **Vorschau-Instanz auf Port 3005**; die Familien-Instanz auf Port 3010 bleibt unverändert, bis der Stand
@@ -49,16 +50,23 @@ Für die Vorschau gelten die Vorschläge des Konzepts. Alles ist so gebaut, dass
 | 14 | Steckbriefe | standardmäßig `noindex` |
 | 17 | Wortschatz Standard-Theme | „Familie" statt „Rudel" |
 | 19 | Eigene Farben | nur fertige Themes |
+| 20 | Begriffe Phase Z | „Meine Chronik", „Wegbegleiter", „lebt mit" (statt „Adoptiv-…") |
+| 21 | Wer pflegt geteilte Tiere | nur der eigene Haushalt; Familie liest und kommentiert; heutige Rudel-Tiere wie bisher alle |
+| 22 | Abschied | „In Erinnerung", dezent, optional eigener Text |
+| 23 | Ansicht nach Login | zuletzt benutzte (Meine Chronik oder Familie) |
 
 ## Phasen & Fortschritt
 
-Reihenfolge für die Vorschau: **0 → D → 1 → 2 → T → 3 → 5**, Phase 4 danach (blockiert durch Frage 1).
+Reihenfolge für die Vorschau: **0 → D → Z → 1 → 2 → T → 3 → 5**, Phase 4 danach (blockiert durch Frage 1).
 „D" (Design & Themes) kommt vor die Gutscheine, weil der neue Auftritt das Erste ist, was man in der Vorschau sieht.
+„Z" (Meine Chronik, Zuhause, Teilen) folgt direkt: Das Einlösen eines Gutscheins legt „Meine Chronik" an, und die
+Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 
 | Phase | Inhalt | Plan | Status |
 |---|---|---|---|
 | 0 | Umgebungen: Vorschau-Instanz 3005, lokale Testumgebung, `APP_ENV`-Band, Deploy per SHA | [Plan](2026-09-28-phase-0-umgebungen.md) | ⏳ in Arbeit |
 | D | Design: Name „Familie auf Pfoten", Pfoten-Logo, Themes Standard/Berner, Wortschatz, Theme-Wahl | wird vor Beginn geschrieben | ☐ offen |
+| Z | Meine Chronik & Teilen: private Chronik je Haushalt, Wegbegleiter-Zeitleiste (Einzug/Abschied/Herkunft), Tiere und Einträge in Familien teilen, „lebt mit" statt „Adoptiv-…" | wird vor Beginn geschrieben | ☐ offen |
 | 1 | Gutscheine & neuer Login: Codes, Einlösen, Rudel-Schlüssel, Benutzer, PUK, `/v#CODE`, Dev-Panel | wird vor Beginn geschrieben | ☐ offen |
 | 2 | Partner, Portale `/p/:slug`, Partnerübersicht, PLZ/Umkreis, Impressum/Datenschutz | wird vor Beginn geschrieben | ☐ offen |
 | T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein, Mitlesen | wird vor Beginn geschrieben | ☐ offen |
@@ -81,3 +89,5 @@ Legende: ☐ offen · ⏳ in Arbeit · ✅ fertig (lokal getestet) · 🚀 auf d
 | Datum | Phase | Stand | Notiz |
 |---|---|---|---|
 | 2026-09-28 | – | `187cdcd` | Konzept nach `main` übernommen, Branch `staging` angelegt, Roadmap erstellt |
+| 2026-09-28 | 0 | `b1f9e7a` | Tasks 1–6: Compose-Parameter, `APP_ENV`, Vorschau-Band, Testdaten mit Prod-Schutz, `npm run dev:test`, `remote.sh` mit REVISION, Instanz-Schutz, Backup vor Deploy |
+| 2026-09-28 | Z | – | Konzept ergänzt: private Chronik, Wegbegleiter, Teilen in Familien, Zusammenleben statt Abstammung |
