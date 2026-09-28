@@ -51,6 +51,7 @@ function DogPicker({ dogs, selectedIds, onToggle }) {
 }
 
 function Setup({ dogs, draft, onCreate, busy }) {
+  const { words } = useTheme()
   const [selectedIds, setSelectedIds] = useState(draft?.selectedIds || [])
   const [perPage, setPerPage] = useState(draft?.perPage || DEFAULT_PER_PAGE)
   const [overview, setOverview] = useState(draft?.overview ?? false)
@@ -59,7 +60,7 @@ function Setup({ dogs, draft, onCreate, busy }) {
   return (
     <div className="card form-stack collage-setup">
       <div className="collage-setup-head">
-        <h2>1. Hunde auswählen</h2>
+        <h2>1. {words.animals} auswählen</h2>
         <span className="segmented segmented-sm">
           <button type="button" onClick={() => setSelectedIds(dogs.map((d) => d.id))}>Alle</button>
           <button type="button" onClick={() => setSelectedIds([])}>Keine</button>
@@ -97,7 +98,9 @@ function Setup({ dogs, draft, onCreate, busy }) {
         onClick={() => onCreate({ selectedIds, perPage, overview })}
       >
         <Icon name="collage" />
-        {busy ? 'Sammle Fotos …' : `Collage erstellen (${selectedIds.length} ${selectedIds.length === 1 ? 'Hund' : 'Hunde'})`}
+        {busy
+          ? 'Sammle Fotos …'
+          : `Collage erstellen (${selectedIds.length} ${selectedIds.length === 1 ? words.animal : words.animals})`}
       </button>
     </div>
   )
@@ -215,8 +218,8 @@ export default function CollagePage({ family }) {
           <span className="eyebrow">Zum Ausdrucken</span>
           <h1>Collage</h1>
           <p className="page-lede">
-            Mehrere Hunde, mehrere Seiten: Ausschnitte im Bild verschieben, Fotos umsortieren oder entfernen, Titel und
-            Unterschriften anpassen – dann als PNG oder PDF speichern.
+            Mehrere {words.animals}, mehrere Seiten: Ausschnitte im Bild verschieben, Fotos umsortieren oder entfernen,
+            Titel und Unterschriften anpassen – dann als PNG oder PDF speichern.
           </p>
         </div>
       </header>
@@ -231,7 +234,7 @@ export default function CollagePage({ family }) {
         <>
           <div className="collage-toolbar">
             <button type="button" className="btn btn-ghost" onClick={() => setMode('setup')}>
-              <Icon name="arrowLeft" /> Hunde &amp; Aufteilung
+              <Icon name="arrowLeft" /> {words.animals} &amp; Aufteilung
             </button>
             <span className="form-actions-spacer" />
             <span className="collage-draft-hint">

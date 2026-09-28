@@ -1,5 +1,6 @@
 import Icon from '../Icon.jsx'
 import ConfirmButton from '../ConfirmButton.jsx'
+import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { MAX_ZOOM, MIN_ZOOM, clampZoom } from '../../lib/collage/layout.js'
 
 function PageTexts({ page, onChange }) {
@@ -82,11 +83,12 @@ function PhotoControls({ page, photo, onChange, onMove, onRemove }) {
 }
 
 function PhotoTray({ photos, onAdd }) {
+  const { words } = useTheme()
   return (
     <section className="inspector-section">
       <h3>Fotos hinzufügen</h3>
       {photos.length === 0 ? (
-        <p className="field-hint">Alle Fotos der gewählten Hunde sind schon auf dieser Seite.</p>
+        <p className="field-hint">Alle Fotos der gewählten {words.animals} sind schon auf dieser Seite.</p>
       ) : (
         <div className="tray">
           {photos.map((photo) => (
