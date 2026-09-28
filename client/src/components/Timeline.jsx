@@ -6,7 +6,9 @@ import ExpandableText from './ExpandableText.jsx'
 import { dogLabel, groupByYear } from '../lib/timeline.js'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 
-const MILESTONE_ICONS = { birth: 'star', breeding: 'heart', litter: 'sprout' }
+// Kein eigenes Einzugs-/Abschieds-Icon vorhanden – 'pin' (Stecknadel, "hier verankert") und
+// 'logout' (Tür mit Pfeil, "geht") aus Icon.jsx passen inhaltlich am besten.
+const MILESTONE_ICONS = { birth: 'star', breeding: 'heart', litter: 'sprout', arrival: 'pin', farewell: 'logout' }
 
 function Photos({ urls, onOpenPhoto }) {
   if (!urls?.length) return null

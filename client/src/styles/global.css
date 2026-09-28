@@ -8,9 +8,11 @@
 @import './timeline.css';
 @import './pages.css';
 @import './litters.css';
+@import './companions.css';
 @import './thread.css';
 @import './pinboard.css';
 @import './admin.css';
 @import './collage.css';
 @import './contact.css';
 @import './settings.css';
+@import './context-switcher.css';

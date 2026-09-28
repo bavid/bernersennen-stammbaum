@@ -1,6 +1,7 @@
 import { yearOf } from './dates.js'
+import { herkunftText } from './companions.js'
 
-const TYPE_ORDER = { birth: 0, breeding: 1, litter: 2, entry: 3 }
+const TYPE_ORDER = { birth: 0, arrival: 1, breeding: 2, litter: 3, entry: 4, farewell: 5 }
 
 const SEX_LABELS = {
   hund: { ruede: 'Rüde', huendin: 'Hündin' },
@@ -98,7 +99,15 @@ function breedingItems(dog, breedingEvents = []) {
     })
 }
 
-// Führt eigene Einträge und automatische Meilensteine (Geburt, Deckakt, Nachwuchs)
+// "Abschied von Aiko" (verstorben), "Aiko zieht aus" (abgegeben/umgezogen), sonst "Aiko geht"
+function farewellTitel(dog) {
+  const name = shortName(dog.name)
+  if (dog.abschied_grund === 'verstorben') return `Abschied von ${name}`
+  if (dog.abschied_grund === 'abgegeben' || dog.abschied_grund === 'umgezogen') return `${name} zieht aus`
+  return `${name} geht`
+}
+
+// Führt eigene Einträge und automatische Meilensteine (Geburt, Einzug, Deckakt, Nachwuchs, Abschied)
 // zu einer chronologisch sortierten Liste zusammen.
 export function buildTimeline({ dog, entries = [], breedingEvents = [], children = [], newestFirst = false }) {
   const items = [
@@ -108,6 +117,18 @@ export function buildTimeline({ dog, entries = [], breedingEvents = [], children
   ]
   if (dog.geburtsdatum) {
     items.push({ type: 'birth', key: 'birth', datum: dog.geburtsdatum, titel: `${shortName(dog.name)} kommt zur Welt` })
+  }
+  if (dog.bei_uns_seit) {
+    items.push({
+      type: 'arrival',
+      key: 'arrival',
+      datum: dog.bei_uns_seit,
+      titel: `${shortName(dog.name)} zieht ein`,
+      text: herkunftText(dog) || null
+    })
+  }
+  if (dog.bei_uns_bis) {
+    items.push({ type: 'farewell', key: 'farewell', datum: dog.bei_uns_bis, titel: farewellTitel(dog) })
   }
   items.sort(compareItems)
   return newestFirst ? items.reverse() : items

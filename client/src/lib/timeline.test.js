@@ -47,6 +47,41 @@ describe('buildTimeline', () => {
     ])
   })
 
+  test('adds an arrival milestone with the origin as text', () => {
+    const items = buildTimeline({
+      dog: { ...dog, bei_uns_seit: '2015-01-10', herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }
+    })
+    expect(items.map((i) => i.titel)).toEqual(['Aiko kommt zur Welt', 'Aiko zieht ein'])
+    expect(items[1].text).toBe('aus dem Tierheim – Tierheim Sonnenhang')
+  })
+
+  test('an arrival milestone without origin has no text', () => {
+    const items = buildTimeline({ dog: { ...dog, geburtsdatum: null, bei_uns_seit: '2015-01-10' } })
+    expect(items[0]).toMatchObject({ type: 'arrival', titel: 'Aiko zieht ein', text: null })
+  })
+
+  test('the farewell title depends on the reason', () => {
+    const base = { ...dog, geburtsdatum: null, bei_uns_bis: '2024-01-01' }
+    expect(buildTimeline({ dog: { ...base, abschied_grund: 'verstorben' } })[0].titel).toBe('Abschied von Aiko')
+    expect(buildTimeline({ dog: { ...base, abschied_grund: 'abgegeben' } })[0].titel).toBe('Aiko zieht aus')
+    expect(buildTimeline({ dog: { ...base, abschied_grund: 'umgezogen' } })[0].titel).toBe('Aiko zieht aus')
+    expect(buildTimeline({ dog: { ...base, abschied_grund: 'anderes' } })[0].titel).toBe('Aiko geht')
+    expect(buildTimeline({ dog: { ...base, abschied_grund: null } })[0].titel).toBe('Aiko geht')
+  })
+
+  test('birth, arrival and farewell sort chronologically together with entries', () => {
+    const items = buildTimeline({
+      dog: { ...dog, bei_uns_seit: '2014-08-01', bei_uns_bis: '2024-05-01', abschied_grund: 'verstorben' },
+      entries: [{ id: 1, datum: '2020-01-01', titel: 'Ausflug' }]
+    })
+    expect(items.map((i) => i.titel)).toEqual([
+      'Aiko kommt zur Welt',
+      'Aiko zieht ein',
+      'Ausflug',
+      'Abschied von Aiko'
+    ])
+  })
+
   test('groups items by year', () => {
     const groups = groupByYear([
       { datum: '2020-01-01' },

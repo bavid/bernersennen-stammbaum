@@ -164,9 +164,14 @@
 }
 
 .timeline-item-birth .timeline-node,
+.timeline-item-arrival .timeline-node,
 .timeline-item-litter .timeline-node,
 .timeline-item-breeding .timeline-node {
   background: var(--rust);
+}
+
+.timeline-item-farewell .timeline-node {
+  background: var(--muted);
 }
 
 /* Einträge */
@@ -288,6 +293,21 @@
 .milestone-litter .milestone-icon {
   background: var(--alpine-wash);
   color: var(--alpine);
+}
+
+/* Abschied: zurückhaltend statt hervorgehoben wie die übrigen Meilensteine */
+.milestone-farewell {
+  border-style: solid;
+  background: var(--surface-sunk);
+}
+
+.milestone-farewell .milestone-icon {
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.milestone-farewell .milestone-title {
+  color: var(--ink-soft);
 }
 
 .milestone-body {
