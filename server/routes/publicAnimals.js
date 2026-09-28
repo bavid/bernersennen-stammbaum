@@ -1,10 +1,10 @@
-const path = require('node:path')
 const express = require('express')
 const db = require('../db')
 const config = require('../config')
 const { optionalSession } = require('../middleware/auth')
 const { publicPartnerSql, isPubliclyVisible } = require('../lib/partners')
 const { publishableSql, listedSql } = require('../lib/vermittlung')
+const { toPublicMediaUrl } = require('../lib/mediaUrls')
 
 const router = express.Router()
 
@@ -18,10 +18,6 @@ function demoAllowed(req) {
   if (req.query.demo === '1') return true
   if (config.appEnv === 'dev' || config.appEnv === 'staging') return true
   return Boolean(req.isDemo)
-}
-
-function toPublicMediaUrl(url) {
-  return url ? `/public-media/${path.basename(url)}` : null
 }
 
 function notFound(res, message = 'Diesen Steckbrief gibt es nicht') {

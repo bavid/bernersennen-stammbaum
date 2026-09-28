@@ -370,6 +370,25 @@ function replaceDemoDiscoverContent(db, mediaDir, newImages) {
   return { promotionIds, removedImages }
 }
 
+// Phase P Task 3b: räumt die Demo-Einblicke weg (is_demo = 1) und dazu jeden Einblick eines alten
+// Demo-Partners (previousPartnerIds) - der Partner wird gleich gelöscht, sein Einblick bliebe sonst verwaist.
+// Muss innerhalb der replaceDemoPack-Transaktion laufen; gibt die Foto-Adressen zurück, die Dateien
+// entfernt replaceDemoPack erst NACH der Transaktion (wie bei den Fotos der alten Demo-Familien).
+function removeDemoEinblicke(db, previousPartnerIds) {
+  const placeholders = previousPartnerIds.map(() => '?').join(', ')
+  const where = previousPartnerIds.length ? `is_demo = 1 OR partner_id IN (${placeholders})` : 'is_demo = 1'
+  const fotoUrls = db.prepare(`SELECT foto_url FROM partner_einblicke WHERE ${where}`).all(...previousPartnerIds).map((row) => row.foto_url)
+  db.prepare(`DELETE FROM partner_einblicke WHERE ${where}`).run(...previousPartnerIds)
+  return fotoUrls
+}
+
+// Nur Fotos, die nach dem Aufräumen kein Einblick mehr nutzt (Verteidigungslinie - Einblick-Fotos werden
+// sonst nirgends geteilt).
+function unusedEinblickPhotos(db, fotoUrls) {
+  const stillUsed = db.prepare('SELECT 1 FROM partner_einblicke WHERE foto_url = ? LIMIT 1')
+  return [...new Set(fotoUrls)].filter((url) => !stillUsed.get(url))
+}
+
 // Erzeugt "Meine Chronik" eines Haushalts mit Begleitern (Einzug/Abschied/Herkunft), teils privaten
 // Chronik-Einträgen und einem Mitbewohner-Paar ohne gemeinsame Abstammung.
 // groupFamilyId: tritt der Haushalt sofort einem Rudel bei (z. B. dem Demo-Rudel oder dem Test-Rudel)?
@@ -467,6 +486,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     if (theme !== undefined) packOptions.theme = theme
     if (name !== undefined) packOptions.name = name
     const rudelResult = createDemoPack(db, packOptions)
+    const removedEinblickPhotos = removeDemoEinblicke(db, previousPartnerIds)
 
     // families.partner_id / vouchers.partner_id / voucher_batches.partner_id sind reine INTEGER-Spalten
     // ohne REFERENCES (siehe db.js) - das Löschen unten scheitert also nie an einem Fremdschlüssel.
@@ -509,7 +529,8 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       household: householdResult,
       shelter: shelterResult,
       partnerIds: newPartnerIds,
-      discover: discoverResult
+      discover: discoverResult,
+      removedEinblickPhotos
     }
   })
 
@@ -523,9 +544,10 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     for (const file of newPromotionImages) fs.rmSync(path.join(mediaDir, file), { force: true })
     throw err
   }
-  const { created, household, shelter, partnerIds, discover } = built
+  const { created, household, shelter, partnerIds, discover, removedEinblickPhotos } = built
 
   for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
+  removeUploads(uploadDir, unusedEinblickPhotos(db, removedEinblickPhotos))
 
   // Die alten Demo-Familien sind jetzt vollständig durch neue ersetzt (auch das Tierheim, is_demo=1,
   // art='tierheim', gehört dazu und steckt schon in previous) - dog_transfers-Zeilen, die noch auf eine

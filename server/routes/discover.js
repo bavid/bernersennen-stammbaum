@@ -8,6 +8,7 @@ const { lookupPlz, distanceKm } = require('../lib/geo')
 const { publicPartner, publicPartnerSql } = require('../lib/partners')
 const { promotionPartnerVisibleSql } = require('../lib/promotions')
 const { getShelterAnimalCards } = require('./publicAnimals')
+const { teaserFotoSql, teaserFoto } = require('../lib/einblicke')
 
 // Phase 3 Task 2: Reiter "Entdecken" - eine Antwort bündelt alle vier Abschnitte
 // (docs/superpowers/plans/2026-09-29-phase-3-entdecken.md). requireSession statt requireAuth: die Demo
@@ -64,13 +65,17 @@ function settingsKey(req, base) {
 }
 
 // Aktiv und nicht gesperrt (Phase P Task 1) - ein gesperrter Partner verschwindet samt seiner Tiere
-// (begleiter.tiere hängt an diesen Zeilen) und seiner Spendenkarte aus "Entdecken".
+// (begleiter.tiere hängt an diesen Zeilen) und seiner Spendenkarte aus "Entdecken". teaser_foto_url
+// (Phase P Task 3b, lib/einblicke.js teaserFotoSql) kommt in derselben Abfrage mit - keine Abfrage je Karte.
 function activePartnerRows(typs, req) {
   const demoValues = partnerDemoValues(req)
   const typPlaceholders = typs.map(() => '?').join(', ')
   const demoPlaceholders = demoValues.map(() => '?').join(', ')
   return db
-    .prepare(`SELECT * FROM partners WHERE ${publicPartnerSql()} AND typ IN (${typPlaceholders}) AND is_demo IN (${demoPlaceholders})`)
+    .prepare(
+      `SELECT *, ${teaserFotoSql()} FROM partners
+       WHERE ${publicPartnerSql()} AND typ IN (${typPlaceholders}) AND is_demo IN (${demoPlaceholders})`
+    )
     .all(...typs, ...demoValues)
 }
 
@@ -206,6 +211,7 @@ function partnerCard(row, { distanceKm: distanceKmValue, ausserhalb } = {}) {
   return {
     ...pub,
     kind: 'partner',
+    teaserFoto: teaserFoto(row),
     url: website || null,
     clickUrl: website ? `/r/partner-website/${row.id}` : null,
     ...(distanceKmValue !== undefined ? { distanceKm: distanceKmValue } : {}),

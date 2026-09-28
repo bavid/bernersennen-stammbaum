@@ -15,6 +15,7 @@ const { handlePartnerLogoUpload } = require('../lib/partnerLogo')
 const { ART, PARTNER_AREA_ARTS } = require('../lib/context')
 const { PARTNER_AREA_ARTS_SQL, areaArtForTyp, areaLabel, findPartnerArea, insertPartnerArea } = require('../lib/partnerAreas')
 const { partnerAccessBatchOptions } = require('../lib/partnerAccess')
+const { findEinblick, ownEinblick, setAusgeblendet } = require('../lib/einblicke')
 
 const router = express.Router()
 
@@ -462,6 +463,35 @@ router.delete('/partners/:id', requireAdmin, (req, res) => {
   }
   db.prepare('DELETE FROM partners WHERE id = ?').run(id)
   res.status(204).end()
+})
+
+// --- Einblicke (Phase P Task 3b) ------------------------------------------------------------------
+
+const ADMIN_EINBLICKE_LIMIT = 500
+
+// Alle Einblicke eines Partners (?partnerId=) oder die neuesten aller Partner - inkl. ausgeblendeter, mit
+// Partner-Namen. Fotos über /uploads (der Admin sieht jede Datei, middleware/admin.js requireUploadAccess).
+router.get('/einblicke', requireAdmin, (req, res) => {
+  const partnerId = cleanId(req.query.partnerId)
+  if (Number.isNaN(partnerId)) return res.status(400).json({ error: 'Ungültige Partner-Id' })
+  const rows = db
+    .prepare(
+      `SELECT e.*, p.name AS partner_name FROM partner_einblicke e LEFT JOIN partners p ON p.id = e.partner_id
+       ${partnerId ? 'WHERE e.partner_id = @partnerId' : ''}
+       ORDER BY e.datum DESC, e.id DESC LIMIT ${ADMIN_EINBLICKE_LIMIT}`
+    )
+    .all(partnerId ? { partnerId } : {})
+  res.json(rows.map((row) => ({ ...ownEinblick(row), partnerId: row.partner_id, partnerName: row.partner_name, isDemo: Boolean(row.is_demo) })))
+})
+
+// Ausblenden/Einblenden: ein ausgeblendeter Einblick verschwindet aus Portal, Teaser und /public-media,
+// der Partner sieht ihn weiter (mit ausgeblendet: true) und kann ihn nicht selbst wieder einblenden.
+router.post('/einblicke/:id/ausblenden', requireAdmin, (req, res) => {
+  const einblick = findEinblick(req.params.id)
+  if (!einblick) return res.status(404).json({ error: 'Diesen Einblick gibt es nicht' })
+  const { ausgeblendet } = req.body || {}
+  if (typeof ausgeblendet !== 'boolean') return res.status(400).json({ error: '„ausgeblendet“ muss true oder false sein' })
+  res.json(ownEinblick(setAusgeblendet(einblick.id, ausgeblendet)))
 })
 
 module.exports = router

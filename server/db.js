@@ -424,4 +424,25 @@ rebuildPartnersTable()
 addColumnIfMissing('voucher_batches', 'zweck', "TEXT NOT NULL DEFAULT 'chronik'")
 addColumnIfMissing('voucher_batches', 'partner_typ', 'TEXT')
 
+// Phase P Task 3b: Einblicke - Fotos mit Datum, die ein Partner auf seinem Portal zeigt (lib/einblicke.js,
+// routes/partnerArea/einblicke.js). foto_url ist ein /uploads/-Pfad wie dogs.foto_url; öffentlich wird das
+// Foto nur über /public-media ausgeliefert, solange der Partner sichtbar und der Einblick nicht vom Admin
+// ausgeblendet ist (lib/publicMedia.js). Bewusst ohne REFERENCES auf partners(id) - wie families.partner_id.
+// idx_einblicke_foto: für die Datei-Freigabe (/public-media, /uploads) je Dateiname.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS partner_einblicke (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partner_id INTEGER NOT NULL,
+    foto_url TEXT NOT NULL,
+    datum TEXT NOT NULL,
+    text TEXT,
+    einwilligung INTEGER NOT NULL,
+    ausgeblendet INTEGER NOT NULL DEFAULT 0,
+    is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_einblicke_partner ON partner_einblicke(partner_id, datum DESC);
+  CREATE INDEX IF NOT EXISTS idx_einblicke_foto ON partner_einblicke(foto_url);
+`)
+
 module.exports = db

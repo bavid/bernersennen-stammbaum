@@ -6,6 +6,7 @@ const { lookupPlz, distanceKm } = require('../lib/geo')
 const { publicPartner, publicPartnerSql, isPubliclyVisible } = require('../lib/partners')
 const { isAdmin } = require('../middleware/admin')
 const { optionalSession } = require('../middleware/auth')
+const { teaserFotoSql, teaserFoto, listVisibleEinblicke, publicEinblick } = require('../lib/einblicke')
 
 const router = express.Router()
 
@@ -32,6 +33,18 @@ function sortByName(rows) {
   return rows.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'))
 }
 
+// Öffentlich sichtbare Partner samt Teaser-Foto (neuester sichtbarer Einblick, lib/einblicke.js) - EINE
+// Abfrage für die ganze Liste.
+function visiblePartnerRows(req) {
+  const demoClause = demoAllowed(req) ? '' : 'AND is_demo = 0'
+  return db.prepare(`SELECT *, ${teaserFotoSql()} FROM partners WHERE ${publicPartnerSql()} ${demoClause}`).all()
+}
+
+// Partner-Karte in Liste/Umkreis: publicPartner plus teaserFoto (null ohne sichtbaren Einblick).
+function partnerListCard(row) {
+  return { ...publicPartner(row), teaserFoto: teaserFoto(row) }
+}
+
 // findShelterFamily: wie server/routes/publicAnimals.js - existiert für diesen Partner überhaupt ein
 // Tierheim-Bereich? Ohne ihn wäre "Demo als Tierheim ansehen" (Task 6) ein toter Knopf: api.demo({as:
 // 'tierheim'}) schlägt fehl, wenn der Demo-Partner (noch) keinen eigenen Tierheim-Bereich hat (final-
@@ -49,15 +62,14 @@ function nearbyPartners(req, res, { plz, radius }) {
   const center = lookupPlz(typeof plz === 'string' ? plz.trim() : '')
   if (!center) return res.status(400).json({ error: 'Diese Postleitzahl kennen wir nicht' })
 
-  const demoClause = demoAllowed(req) ? '' : 'AND is_demo = 0'
-  const rows = db.prepare(`SELECT * FROM partners WHERE ${publicPartnerSql()} ${demoClause}`).all()
+  const rows = visiblePartnerRows(req)
 
   const results = rows
     .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lon))
     .map((row) => ({ row, distance: distanceKm(center, { lat: row.lat, lon: row.lon }) }))
     .filter(({ distance }) => distance <= radiusKm)
     .sort((a, b) => a.distance - b.distance)
-    .map(({ row, distance }) => ({ ...publicPartner(row), distanceKm: Math.round(distance * 10) / 10 }))
+    .map(({ row, distance }) => ({ ...partnerListCard(row), distanceKm: Math.round(distance * 10) / 10 }))
 
   res.json(results)
 }
@@ -67,9 +79,7 @@ function nearbyPartners(req, res, { plz, radius }) {
 router.get('/', (req, res) => {
   const { plz, radius } = req.query
   if (plz === undefined || plz === null || plz === '') {
-    const demoClause = demoAllowed(req) ? '' : 'AND is_demo = 0'
-    const rows = db.prepare(`SELECT * FROM partners WHERE ${publicPartnerSql()} ${demoClause}`).all()
-    return res.json(sortByName(rows).map((row) => publicPartner(row)))
+    return res.json(sortByName(visiblePartnerRows(req)).map(partnerListCard))
   }
   nearbyPartners(req, res, { plz, radius })
 })
@@ -106,7 +116,9 @@ router.get('/:slug', (req, res) => {
     ...(preview ? { preview: true } : {}),
     // Phase T Task 6: der Client zeigt für Demo-Partner mit einem tatsächlich bestehenden Demo-Tierheim
     // zusätzlich "Demo als Tierheim ansehen" (PartnerPortalPage.jsx) - ohne extra Anfrage.
-    ...(partner.is_demo && findShelterFamily.get(partner.id) ? { shelterDemo: true } : {})
+    ...(partner.is_demo && findShelterFamily.get(partner.id) ? { shelterDemo: true } : {}),
+    // Phase P Task 3b: höchstens 60 nicht ausgeblendete Einblicke, neueste zuerst.
+    einblicke: listVisibleEinblicke(partner.id).map((row) => publicEinblick(row))
   })
 })
 

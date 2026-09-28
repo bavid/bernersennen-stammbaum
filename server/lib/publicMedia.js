@@ -76,6 +76,15 @@ const storyConsentEntryPhotoStmt = db.prepare(`
     )
 `)
 
+// Einblicke (Phase P Task 3b, lib/einblicke.js): das Foto eines Einblicks, den der Admin nicht ausgeblendet
+// hat, eines öffentlich sichtbaren Partners (aktiv, nicht gesperrt - derselbe PUBLIC_PARTNER_SQL wie oben).
+// Pausiert, Entwurf, gesperrt oder ausgeblendet -> 404. idx_einblicke_foto (db.js) trägt die Suche.
+const einblickPhotoStmt = db.prepare(`
+  SELECT 1 FROM partner_einblicke e
+  JOIN partners p ON p.id = e.partner_id
+  WHERE e.foto_url = @url AND e.ausgeblendet = 0 AND ${PUBLIC_PARTNER_SQL}
+`)
+
 function canServePublicMedia(filename) {
   if (!FILENAME_RE.test(filename)) return false
 
@@ -85,6 +94,7 @@ function canServePublicMedia(filename) {
   if (entryPhotoStmt.get(params)) return true
   if (storyConsentDogPhotoStmt.get(params)) return true
   if (storyConsentEntryPhotoStmt.get(params)) return true
+  if (einblickPhotoStmt.get(params)) return true
   return false
 }
 

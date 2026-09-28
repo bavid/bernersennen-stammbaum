@@ -1,6 +1,6 @@
 const path = require('node:path')
 const db = require('../db')
-const { VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL } = require('./context')
+const { VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL, PARTNER_AREA_ARTS } = require('./context')
 
 // uploads.js erzeugt Dateinamen ausschließlich aus crypto.randomUUID() (36 Zeichen: Hex-Ziffern und
 // Bindestriche) plus einer Endung aus EXTENSION_BY_MIME - das sind nur jpg, png, webp und gif ("jpeg"
@@ -32,18 +32,35 @@ const breedingPhotoStmt = db.prepare(
   'SELECT 1 FROM breeding_events WHERE family_id = @familyId AND foto_urls LIKE @pattern'
 )
 
-// Darf die Identität { familyId: aktiver Bereich, homeId: Login-Identität } die Upload-Datei
-// "filename" abrufen? Erst die Form prüfen, danach vier unabhängige "sichtbar, weil..."-Gründe.
-function canSeeUpload({ familyId, homeId }, filename) {
-  if (!FILENAME_RE.test(filename)) return false
+// Foto eines Einblicks (Phase P Task 3b, lib/einblicke.js) des Partners, dessen Bereich gerade aktiv ist -
+// auch ausgeblendet oder als Entwurf: der Partner sieht seine eigenen Einblicke immer.
+const einblickPhotoStmt = db.prepare(
+  `SELECT 1 FROM partner_einblicke e JOIN families f ON f.partner_id = e.partner_id
+   WHERE e.foto_url = @url AND f.id = @familyId AND f.art IN (${PARTNER_AREA_ARTS.map((art) => `'${art}'`).join(', ')})`
+)
 
-  const params = { familyId, homeId, filename, url: `/uploads/${filename}`, pattern: `%"/uploads/${filename}"%` }
+function uploadParams({ familyId, homeId }, filename) {
+  return { familyId, homeId, filename, url: `/uploads/${filename}`, pattern: `%"/uploads/${filename}"%` }
+}
 
+// Die vier Gründe, aus denen eine Datei zu den Daten des Bereichs gehört (und darum auch an einen Hund/
+// Eintrag/Wurf gehängt werden darf, siehe canAttachUpload).
+function isAttachableUpload(params) {
   if (uploadRowStmt.get(params)) return true
   if (dogPhotoStmt.get(params)) return true
   if (entryPhotoStmt.get(params)) return true
   if (breedingPhotoStmt.get(params)) return true
   return false
+}
+
+// Darf die Identität { familyId: aktiver Bereich, homeId: Login-Identität } die Upload-Datei
+// "filename" abrufen? Erst die Form prüfen, danach die unabhängigen "sichtbar, weil..."-Gründe - dazu
+// zählt auch ein Einblick-Foto des eigenen Partners (nur ansehen, nicht anhängen: ein Einblick-Foto soll
+// nicht über einen Hund/Eintrag weiterleben, nachdem der Einblick gelöscht wurde).
+function canSeeUpload({ familyId, homeId }, filename) {
+  if (!FILENAME_RE.test(filename)) return false
+  const params = uploadParams({ familyId, homeId }, filename)
+  return isAttachableUpload(params) || Boolean(einblickPhotoStmt.get(params))
 }
 
 // Für Schreibzugriffe: darf { familyId, homeId } die Foto-URL "url" an einen Hund/Eintrag/Wurf
@@ -54,7 +71,9 @@ function canSeeUpload({ familyId, homeId }, filename) {
 // (die URL taucht dann ja im eigenen, sichtbaren Datensatz auf).
 function canAttachUpload({ familyId, homeId }, url, existingUrls = []) {
   if (existingUrls.includes(url)) return true
-  return canSeeUpload({ familyId, homeId }, path.basename(url))
+  const filename = path.basename(url)
+  if (!FILENAME_RE.test(filename)) return false
+  return isAttachableUpload(uploadParams({ familyId, homeId }, filename))
 }
 
 // Nur die eigene, tatsächlich hochgeladene Datei (uploads.family_id = familyId)

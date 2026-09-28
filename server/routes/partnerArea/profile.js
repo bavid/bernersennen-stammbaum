@@ -3,6 +3,7 @@ const db = require('../../db')
 const { denyDemoWrites } = require('../../middleware/auth')
 const { profileResponse, validateProfileUpdate, completeness } = require('../../lib/partnerProfile')
 const { handlePartnerLogoUpload } = require('../../lib/partnerLogo')
+const { countVisibleEinblicke } = require('../../lib/einblicke')
 
 // Phase P Task 3a: das eigene Profil im Partner-Bereich - lesen, ändern, Logo, veröffentlichen/pausieren.
 // Läuft hinter middleware/partnerArea.js requirePartnerArea (req.partner ist gesetzt).
@@ -13,8 +14,9 @@ const LOCKED_MESSAGE = 'Gesperrt – bitte meldet euch beim Betreiber.'
 
 const findPartner = db.prepare('SELECT * FROM partners WHERE id = ?')
 
-function sendProfile(res, partnerId, status = 200) {
-  res.status(status).json(profileResponse(findPartner.get(partnerId)))
+// Die Empfehlung "mindestens ein Einblick" zählt nur sichtbare (nicht vom Admin ausgeblendete) Einblicke.
+function sendProfile(res, partnerId) {
+  res.json(profileResponse(findPartner.get(partnerId), { einblickCount: countVisibleEinblicke(partnerId) }))
 }
 
 router.get('/', (req, res) => {
