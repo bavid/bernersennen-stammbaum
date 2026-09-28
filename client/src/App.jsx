@@ -98,7 +98,16 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed }) {
   // voucherCode (App.jsx) kommt roh aus dem #Hash - wie RedeemForm/LoginForm geht auch hier nur der
   // formatierte Code (XXXX-XXXX-XXXX) an die API, nie der rohe Hash-Text.
   const formattedCode = formatVoucherCode(code)
-  const canClaim = family.art === 'zuhause' && Boolean(family.home) && family.id === family.home.id
+  // final-review Phase T Finding 10: eine Demo-Sitzung darf nichts übernehmen (schreibgeschützt wie
+  // jede andere Demo-Aktion, api.claimVoucher würde ohnehin mit 403 ablehnen) - canClaim schließt sie
+  // deshalb schon hier aus, statt erst den Fehler vom Server abzuwarten.
+  const isHouseholdIdentity = family.home?.art === 'zuhause'
+  const canClaim = !family.isDemo && family.art === 'zuhause' && Boolean(family.home) && family.id === family.home.id
+  // Ein Haushalt, der gerade ein Rudel ansieht (ContextSwitcher), kann von hier aus nicht übernehmen -
+  // canClaim ist dann false, ohne dass wir wüssten, ob der Code überhaupt einen offenen Übergabe-
+  // Gutschein trägt. "Abmelden und neu einlösen" wäre hier die falsche Empfehlung (verschenkt die
+  // Übernahme in die bestehende Chronik) - stattdessen der Hinweis, zuerst zurückzuwechseln.
+  const viewingGroupAsHousehold = isHouseholdIdentity && family.id !== family.home.id
 
   useEffect(() => {
     let cancelled = false
@@ -158,6 +167,9 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed }) {
       <p>
         Du bist angemeldet als <strong>{family.name}</strong>.
       </p>
+      {viewingGroupAsHousehold && (
+        <p className="field-hint">Wechselt oben zu „Meine Chronik“, um das Tier zu übernehmen.</p>
+      )}
       <button type="button" className="btn btn-primary btn-block" onClick={onLogout}>
         Abmelden und Gutschein einlösen
       </button>

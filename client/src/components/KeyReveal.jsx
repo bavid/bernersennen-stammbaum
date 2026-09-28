@@ -8,7 +8,10 @@ const COPIED_MS = 2000
 // Schlüssels (Zugang-Einstellungen). Erst der "Weiter"-Knopf lässt die aufrufende Seite fortfahren –
 // so bleibt Zeit, den Schlüssel zu sichern, bevor man in die Chronik wechselt. showCardHint blendet den
 // Hinweis auf die (physische) Karte aus – nach einem Schlüssel-Erneuern gibt es keine neue Karte dazu.
-export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu Meiner Chronik', showCardHint = true }) {
+// note (final-review Phase T Finding 4, AdminPartners "Tierheim-Bereich anlegen"): ein zusätzlicher,
+// aufrufer-spezifischer Hinweis unter dem Kartenhinweis - für Kontexte, in denen die Standardtexte
+// (an ein Zuhause gerichtet) nicht passen, ohne die Kernerklärung selbst zu verdoppeln oder zu ersetzen.
+export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu Meiner Chronik', showCardHint = true, note }) {
   const { words } = useTheme()
   const [copied, setCopied] = useState(false)
   const headingRef = useRef(null)
@@ -56,6 +59,7 @@ export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter z
           ihr sicher gehen wollt.
         </p>
       )}
+      {note && <p className="field-hint">{note}</p>}
       <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onContinue}>
         {continueLabel}
       </button>

@@ -2,12 +2,17 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
+import Modal from './Modal.jsx'
+import KeyReveal from './KeyReveal.jsx'
 import { isValidHexColor } from '../lib/color.js'
 import { contrastRatio, hasEnoughContrast, ON_RUST, MIN_CONTRAST } from '../lib/contrast.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 
 const STATUS_LABELS = { entwurf: 'Entwurf', aktiv: 'Aktiv', pausiert: 'Pausiert' }
 const DEFAULT_FARBE = '#2f6b3f'
+// Tierheim-Bereich (final-review Phase T Finding 4): nur Partner dieser beiden Typen können einen
+// eigenen App-Bereich bekommen (server/routes/admin.js POST /:id/shelter prüft dieselbe Liste).
+const SHELTER_TYPES = ['tierheim', 'vermittlung']
 
 // Formularwerte (camelCase) aus einer Server-Zeile (snake_case) bzw. leer beim Neuanlegen.
 function initialState(partner) {
@@ -323,9 +328,53 @@ function PartnerForm({ partner, onSaved, onCancel }) {
   )
 }
 
+// Tierheim-Bereich einer Zeile (final-review Phase T Finding 4): ohne shelter_family_id ein einfacher
+// "anlegen"-Knopf (server legt Familie + Schlüssel in einem Zug an, kein Bestätigen nötig - anders als
+// das Erneuern unten, das eine bestehende Sitzung ungültig macht). Mit shelter_family_id ein zweistufiger
+// Bestätigen-Ablauf wie ConfirmButton, aber mit eigenem Erklärtext statt nur einer Label-Änderung.
+function ShelterAccessControls({ partner, busy, confirmingRenew, error, onCreate, onStartRenew, onCancelRenew, onConfirmRenew }) {
+  if (!SHELTER_TYPES.includes(partner.typ)) return null
+
+  return (
+    <span className="admin-partner-shelter">
+      {partner.shelter_family_id ? (
+        <>
+          <span className="pill">Tierheim-Bereich: angelegt</span>
+          {confirmingRenew ? (
+            <span className="admin-partner-shelter-confirm">
+              <span className="field-hint" role="alert">
+                Alle Geräte des Tierheims müssen sich neu anmelden.
+              </span>
+              <button type="button" className="btn btn-ghost" onClick={onCancelRenew}>
+                Abbrechen
+              </button>
+              <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => onConfirmRenew(partner)}>
+                {busy ? 'Erneuere …' : 'Wirklich neu ausgeben?'}
+              </button>
+            </span>
+          ) : (
+            <button type="button" className="btn btn-ghost" onClick={() => onStartRenew(partner)}>
+              Schlüssel neu ausgeben
+            </button>
+          )}
+        </>
+      ) : (
+        <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => onCreate(partner)}>
+          {busy ? 'Lege an …' : 'Tierheim-Bereich anlegen'}
+        </button>
+      )}
+      {error && (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      )}
+    </span>
+  )
+}
+
 // Ein Partner in der Liste: Status-Chip, Typ, Aktionen (Bearbeiten/Portal ansehen/Pausieren
-// bzw. Aktivieren/Löschen nur im Entwurf).
-function PartnerRow({ partner, onEdit, onToggleStatus, onDelete }) {
+// bzw. Aktivieren/Löschen nur im Entwurf), plus Tierheim-Bereich-Verwaltung für tierheim/vermittlung.
+function PartnerRow({ partner, onEdit, onToggleStatus, onDelete, shelter }) {
   return (
     <li className="admin-partner-row">
       <span className="admin-partner-row-main">
@@ -347,6 +396,16 @@ function PartnerRow({ partner, onEdit, onToggleStatus, onDelete }) {
           <ConfirmButton className="admin-partner-delete" onConfirm={() => onDelete(partner)} label="Löschen" confirmLabel="Wirklich löschen?" />
         )}
       </span>
+      <ShelterAccessControls
+        partner={partner}
+        busy={shelter.busyId === partner.id}
+        confirmingRenew={shelter.renewConfirmId === partner.id}
+        error={shelter.errorId === partner.id ? shelter.error : null}
+        onCreate={shelter.onCreate}
+        onStartRenew={shelter.onStartRenew}
+        onCancelRenew={shelter.onCancelRenew}
+        onConfirmRenew={shelter.onConfirmRenew}
+      />
     </li>
   )
 }
@@ -358,6 +417,15 @@ export default function AdminPartners({ onChange }) {
   const [partners, setPartners] = useState(undefined)
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(null) // null: keine Liste ausgeblendet; 'new' oder eine Partner-Zeile
+
+  // Tierheim-Bereich (Finding 4): busyId/renewConfirmId/errorId sind jeweils eine Partner-id oder null -
+  // pro Zeile wird nur "ihr" Zustand angezeigt (siehe ShelterAccessControls). revealedKey ist der frisch
+  // erzeugte/erneuerte Schlüssel, einmalig über KeyReveal gezeigt, bis der Admin ihn gesichert hat.
+  const [shelterBusyId, setShelterBusyId] = useState(null)
+  const [renewConfirmId, setRenewConfirmId] = useState(null)
+  const [shelterErrorId, setShelterErrorId] = useState(null)
+  const [shelterError, setShelterError] = useState(null)
+  const [revealedKey, setRevealedKey] = useState(null)
 
   function load() {
     api.admin
@@ -400,6 +468,57 @@ export default function AdminPartners({ onChange }) {
     load()
   }
 
+  async function handleCreateShelter(partner) {
+    setShelterErrorId(null)
+    setShelterBusyId(partner.id)
+    try {
+      const { key } = await api.admin.createShelter(partner.id)
+      setRevealedKey(key)
+      load()
+    } catch (err) {
+      setShelterErrorId(partner.id)
+      setShelterError(err.message)
+    } finally {
+      setShelterBusyId(null)
+    }
+  }
+
+  function handleStartRenewShelterKey(partner) {
+    setShelterErrorId(null)
+    setRenewConfirmId(partner.id)
+  }
+
+  function handleCancelRenewShelterKey() {
+    setRenewConfirmId(null)
+  }
+
+  async function handleConfirmRenewShelterKey(partner) {
+    setShelterErrorId(null)
+    setShelterBusyId(partner.id)
+    try {
+      const { key } = await api.admin.renewShelterKey(partner.id)
+      setRevealedKey(key)
+      setRenewConfirmId(null)
+      load()
+    } catch (err) {
+      setShelterErrorId(partner.id)
+      setShelterError(err.message)
+    } finally {
+      setShelterBusyId(null)
+    }
+  }
+
+  const shelterRowProps = {
+    busyId: shelterBusyId,
+    renewConfirmId,
+    errorId: shelterErrorId,
+    error: shelterError,
+    onCreate: handleCreateShelter,
+    onStartRenew: handleStartRenewShelterKey,
+    onCancelRenew: handleCancelRenewShelterKey,
+    onConfirmRenew: handleConfirmRenewShelterKey
+  }
+
   return (
     <section className="admin-partners card" aria-labelledby="admin-partners-title">
       <div className="admin-partners-head">
@@ -426,10 +545,29 @@ export default function AdminPartners({ onChange }) {
       {!editing && partners && partners.length > 0 && (
         <ul className="admin-partner-list">
           {partners.map((partner) => (
-            <PartnerRow key={partner.id} partner={partner} onEdit={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDelete} />
+            <PartnerRow
+              key={partner.id}
+              partner={partner}
+              onEdit={setEditing}
+              onToggleStatus={handleToggleStatus}
+              onDelete={handleDelete}
+              shelter={shelterRowProps}
+            />
           ))}
         </ul>
       )}
+
+      <Modal open={Boolean(revealedKey)} title="Tierheim-Zugang" onClose={() => setRevealedKey(null)}>
+        {revealedKey && (
+          <KeyReveal
+            value={revealedKey}
+            showCardHint={false}
+            note="Diesen Schlüssel dem Tierheim geben – damit meldet es sich an. Weitere Zugänge legt das Tierheim selbst unter „Einstellungen → Zugang“ an."
+            continueLabel="Fertig"
+            onContinue={() => setRevealedKey(null)}
+          />
+        )}
+      </Modal>
     </section>
   )
 }

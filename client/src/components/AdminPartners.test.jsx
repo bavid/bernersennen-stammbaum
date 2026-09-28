@@ -3,18 +3,33 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo } = vi.hoisted(() => ({
+const { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo, createShelter, renewShelterKey } = vi.hoisted(() => ({
   partners: vi.fn(),
   createPartner: vi.fn(),
   updatePartner: vi.fn(),
   deletePartner: vi.fn(),
-  uploadPartnerLogo: vi.fn()
+  uploadPartnerLogo: vi.fn(),
+  createShelter: vi.fn(),
+  renewShelterKey: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { admin: { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo } } }))
+vi.mock('../api', () => ({
+  api: { admin: { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo, createShelter, renewShelterKey } }
+}))
 
 import AdminPartners from './AdminPartners.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+// jsdom implementiert <dialog> nicht vollständig (kein showModal/close) – der KeyReveal-Dialog für den
+// Tierheim-Zugang läuft im Modal.
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function showModal() {
+    this.open = true
+  }
+  HTMLDialogElement.prototype.close = function close() {
+    this.open = false
+  }
+}
 
 let container
 let root
@@ -75,6 +90,8 @@ afterEach(() => {
   updatePartner.mockReset()
   deletePartner.mockReset()
   uploadPartnerLogo.mockReset()
+  createShelter.mockReset()
+  renewShelterKey.mockReset()
 })
 
 async function render() {
@@ -310,5 +327,80 @@ describe('AdminPartners – Formular', () => {
     expect(container.querySelector('.admin-partner-form')).toBeNull()
     expect(createPartner).not.toHaveBeenCalled()
     expect(updatePartner).not.toHaveBeenCalled()
+  })
+})
+
+// final-review Phase T Finding 4: Tierheim-Bereich anlegen/Schlüssel erneuern aus der Partnerverwaltung.
+describe('AdminPartners – Tierheim-Bereich', () => {
+  test('ohne shelter_family_id zeigt "Tierheim-Bereich anlegen"; kein Angebot für einen Typ ohne Tierheim-Fähigkeit', async () => {
+    partners.mockResolvedValue([{ ...draftPartner, shelter_family_id: null }, activePartner])
+    await render()
+
+    const rows = [...container.querySelectorAll('.admin-partner-row')]
+    expect([...rows[0].querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Tierheim-Bereich anlegen')).toBe(true)
+    // activePartner ist vom Typ "hundeschule" - kein Tierheim-Bereich-Angebot.
+    expect(rows[1].textContent).not.toContain('Tierheim-Bereich')
+  })
+
+  test('mit shelter_family_id zeigt "Tierheim-Bereich: angelegt" und "Schlüssel neu ausgeben"', async () => {
+    partners.mockResolvedValue([{ ...draftPartner, typ: 'tierheim', shelter_family_id: 42 }])
+    await render()
+
+    expect(container.textContent).toContain('Tierheim-Bereich: angelegt')
+    expect(buttonByText('Schlüssel neu ausgeben')).not.toBeUndefined()
+  })
+
+  test('"Tierheim-Bereich anlegen" ruft api.admin.createShelter ohne Rückfrage auf und zeigt den Schlüssel via KeyReveal', async () => {
+    partners.mockResolvedValue([{ ...draftPartner, shelter_family_id: null }])
+    createShelter.mockResolvedValue({ familyId: 42, key: 'ABCD-1234-EFGH' })
+    await render()
+
+    await act(async () => buttonByText('Tierheim-Bereich anlegen').click())
+
+    expect(createShelter).toHaveBeenCalledWith(1)
+    expect(container.querySelector('.key-reveal-value').textContent).toBe('ABCD-1234-EFGH')
+    // showCardHint={false} - der übliche Kartenhinweis fehlt, dafür der admin-spezifische Text.
+    expect(container.textContent).not.toContain('Wer euch die Karte gegeben hat')
+    expect(container.textContent).toContain('Diesen Schlüssel dem Tierheim geben')
+  })
+
+  test('"Schlüssel neu ausgeben" verlangt erst eine Bestätigung mit Erklärtext, dann erst ruft es die API', async () => {
+    partners.mockResolvedValue([{ ...draftPartner, typ: 'tierheim', shelter_family_id: 42 }])
+    renewShelterKey.mockResolvedValue({ key: 'WXYZ-5678-IJKL' })
+    await render()
+
+    await act(async () => buttonByText('Schlüssel neu ausgeben').click())
+    expect(renewShelterKey).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Alle Geräte des Tierheims müssen sich neu anmelden.')
+
+    const confirm = buttonByText('Wirklich neu ausgeben?')
+    expect(confirm).not.toBeUndefined()
+    await act(async () => confirm.click())
+
+    expect(renewShelterKey).toHaveBeenCalledWith(1)
+    expect(container.querySelector('.key-reveal-value').textContent).toBe('WXYZ-5678-IJKL')
+  })
+
+  test('"Abbrechen" bei der Erneuern-Bestätigung ruft die API nicht auf', async () => {
+    partners.mockResolvedValue([{ ...draftPartner, typ: 'tierheim', shelter_family_id: 42 }])
+    await render()
+
+    await act(async () => buttonByText('Schlüssel neu ausgeben').click())
+    await act(async () => buttonByText('Abbrechen').click())
+
+    expect(renewShelterKey).not.toHaveBeenCalled()
+    expect(buttonByText('Schlüssel neu ausgeben')).not.toBeUndefined()
+  })
+
+  test('ein Fehler beim Anlegen erscheint inline, ohne die restliche Liste zu verstecken', async () => {
+    partners.mockResolvedValue([{ ...draftPartner, shelter_family_id: null }])
+    createShelter.mockRejectedValue(new Error('Für diesen Partner gibt es schon einen Tierheim-Bereich'))
+    await render()
+
+    await act(async () => buttonByText('Tierheim-Bereich anlegen').click())
+
+    expect(container.querySelector('.admin-partner-row .field-error').textContent).toBe(
+      'Für diesen Partner gibt es schon einen Tierheim-Bereich'
+    )
   })
 })

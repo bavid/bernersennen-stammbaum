@@ -164,6 +164,11 @@ export const api = {
     createPartner: (payload) => request('/admin/partners', json('POST', payload)),
     updatePartner: (id, payload) => request(`/admin/partners/${id}`, json('PUT', payload)),
     deletePartner: (id) => request(`/admin/partners/${id}`, { method: 'DELETE' }),
+    // Tierheim-Bereich für einen Partner (final-review Phase T Finding 4) - der Server (routes/admin.js)
+    // kennt beide Endpunkte schon, hier fehlte nur die Client-Anbindung. Beide liefern den neuen
+    // Zugangsschlüssel einmalig im Klartext zurück ({ key }, createShelter zusätzlich { familyId }).
+    createShelter: (partnerId) => request(`/admin/partners/${partnerId}/shelter`, { method: 'POST' }),
+    renewShelterKey: (partnerId) => request(`/admin/partners/${partnerId}/shelter/key`, { method: 'POST' }),
     uploadPartnerLogo: (id, file) => {
       const formData = new FormData()
       formData.append('file', file)

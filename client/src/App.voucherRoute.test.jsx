@@ -259,7 +259,7 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     expect(claimVoucher).toHaveBeenCalledWith({ code: 'ABCD-1234-HJKM', shelterMayRead: true })
   })
 
-  test('aus einem beigetretenen Rudel heraus (nicht das eigene Zuhause selbst) bleibt es bei "Abmelden und Gutschein einlösen"', async () => {
+  test('aus einem beigetretenen Rudel heraus (nicht das eigene Zuhause selbst) bleibt es bei "Abmelden und Gutschein einlösen", plus ein Hinweis zurückzuwechseln (final-review Phase T Finding 10)', async () => {
     const visitingGroup = {
       id: 9,
       name: 'Familie Sonnenhang',
@@ -274,6 +274,7 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
 
     expect(checkVoucher).not.toHaveBeenCalled()
     expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(true)
+    expect(container.textContent).toContain('Wechselt oben zu „Meine Chronik“, um das Tier zu übernehmen.')
   })
 
   test('ein gewöhnlicher (Nicht-Übergabe) Gutschein-Code lässt es bei "Abmelden und Gutschein einlösen"', async () => {
@@ -282,6 +283,22 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     await render('/v#abcd1234hjkm')
 
     expect(checkVoucher).toHaveBeenCalledWith('ABCD-1234-HJKM')
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(true)
+  })
+
+  test('eine echte Zuhause-Sitzung ohne Rudel-Umweg bekommt den Rudel-Hinweis nicht', async () => {
+    me.mockResolvedValue(qualifyingHome)
+    checkVoucher.mockResolvedValue({ status: 'offen' })
+    await render('/v#abcd1234hjkm')
+
+    expect(container.textContent).not.toContain('Wechselt oben zu „Meine Chronik“')
+  })
+
+  test('eine Demo-Sitzung des eigenen Zuhauses kann nichts übernehmen (final-review Phase T Finding 10)', async () => {
+    me.mockResolvedValue({ ...qualifyingHome, isDemo: true })
+    await render('/v#abcd1234hjkm')
+
+    expect(checkVoucher).not.toHaveBeenCalled()
     expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(true)
   })
 })

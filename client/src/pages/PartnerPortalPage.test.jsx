@@ -399,7 +399,7 @@ describe('PartnerPortalPage – "Demo als Tierheim ansehen" (Task 6)', () => {
   })
 
   test('zeigt den Knopf für einen demo-fähigen Partner; ein Klick ruft api.demo({ as: "tierheim" }) und onRedeemed auf', async () => {
-    publicPartner.mockResolvedValue({ ...partner, demo: true })
+    publicPartner.mockResolvedValue({ ...partner, shelterDemo: true })
     const me = { id: 9, name: 'Tierheim Sonnenhang', theme: 'standard', art: 'tierheim', isDemo: true, home: null, memberships: [] }
     demo.mockResolvedValue(me)
     const onRedeemed = vi.fn()
@@ -414,7 +414,7 @@ describe('PartnerPortalPage – "Demo als Tierheim ansehen" (Task 6)', () => {
   })
 
   test('ein Fehler von api.demo() erscheint als Alert', async () => {
-    publicPartner.mockResolvedValue({ ...partner, demo: true })
+    publicPartner.mockResolvedValue({ ...partner, shelterDemo: true })
     demo.mockRejectedValue(new Error('Demo gerade nicht verfügbar'))
     await render()
 
@@ -425,7 +425,7 @@ describe('PartnerPortalPage – "Demo als Tierheim ansehen" (Task 6)', () => {
   })
 
   test('kein Knopf im angemeldeten Zustand', async () => {
-    publicPartner.mockResolvedValue({ ...partner, demo: true })
+    publicPartner.mockResolvedValue({ ...partner, shelterDemo: true })
     const loggedInHome = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: null, memberships: [] }
     await render({ family: loggedInHome })
 

@@ -141,7 +141,9 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
   }
 
   // "Demo als Tierheim ansehen" (Task 6): derselbe Ablauf wie handleDemo, nur mit { as: 'tierheim' } -
-  // nur sichtbar, wenn der Server diesen Partner als demo-fähig meldet (partner.demo, siehe unten).
+  // nur sichtbar, wenn der Server diesen Partner als demo-fähig meldet (partner.shelterDemo, siehe unten
+  // - final-review Phase T Finding 5: das gilt nur, wenn tatsächlich ein Demo-Tierheim existiert, sonst
+  // liefe der Knopf ins Leere).
   async function handleShelterDemo() {
     setShelterDemoError(null)
     setShelterDemoLoading(true)
@@ -229,7 +231,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
               <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
                 {demoLoading ? 'Lädt …' : 'Demo ansehen'}
               </button>
-              {partner.demo && (
+              {partner.shelterDemo && (
                 <>
                   {shelterDemoError && (
                     <div className="error-banner" role="alert">

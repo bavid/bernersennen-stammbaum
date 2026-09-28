@@ -83,6 +83,16 @@ describe('KeyReveal', () => {
     expect(container.textContent).toContain('Wer euch die Karte gegeben hat, kennt diesen Code.')
   })
 
+  test('zeigt einen zusätzlichen "note"-Hinweis, wenn er übergeben wird (z. B. AdminPartners Tierheim-Zugang)', async () => {
+    await render({ note: 'Diesen Schlüssel dem Tierheim geben.' })
+    expect(container.textContent).toContain('Diesen Schlüssel dem Tierheim geben.')
+  })
+
+  test('ohne "note" erscheint kein zusätzlicher Hinweis', async () => {
+    await render()
+    expect(container.textContent).not.toContain('Diesen Schlüssel dem Tierheim geben.')
+  })
+
   test('setzt beim Erscheinen den Fokus auf die Überschrift "Euer Schlüssel", die in einer role="status"-Region steckt', async () => {
     await render()
     const heading = [...container.querySelectorAll('p')].find((p) => p.textContent === 'Euer Schlüssel')
