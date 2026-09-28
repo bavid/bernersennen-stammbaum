@@ -25,6 +25,10 @@ async function main() {
   const env = {
     ...process.env,
     DATA_DIR: dataDir,
+    // config.js gibt DB_PATH/UPLOAD_DIR Vorrang vor DATA_DIR (||-Fallback) - eine Shell, in der
+    // DB_PATH zufällig gesetzt ist, würde sonst npm run testenv:reset auf die falsche DB loslassen.
+    DB_PATH: '',
+    UPLOAD_DIR: '',
     APP_ENV: 'dev',
     DEV_TOOLS: '1',
     CODE_PEPPER: 'dev',
