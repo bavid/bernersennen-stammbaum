@@ -339,3 +339,119 @@
   border-left: 2px solid var(--line-strong);
   list-style: none;
 }
+
+/* Partner (Task 7) */
+
+.admin-partners {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.admin-partners-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.admin-partners-head h2 {
+  font-size: var(--text-xl);
+}
+
+.admin-partner-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-partner-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.admin-partner-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.admin-partner-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.admin-partner-status-aktiv {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+
+.admin-partner-status-pausiert {
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.admin-partner-status-entwurf {
+  background: var(--alpine-wash);
+  color: var(--alpine);
+}
+
+.admin-partner-form h3 {
+  font-size: var(--text-lg);
+}
+
+.admin-partner-checkbox-field {
+  align-self: end;
+}
+
+.admin-partner-color {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.admin-partner-color input[type='color'] {
+  width: 2.9rem;
+  min-height: 2.9rem;
+  padding: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.admin-partner-color input[type='text'] {
+  max-width: 10rem;
+}
+
+.admin-partner-contrast.is-ok {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.admin-partner-contrast.is-warning {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.admin-partner-logo-preview {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: contain;
+  background: var(--paper-deep);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+}
+
+.admin-partner-logo-btn {
+  justify-self: start;
+  cursor: pointer;
+}

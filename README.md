@@ -74,10 +74,20 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
 - **Aussehen**: „Familie auf Pfoten“ (Pfoten-Logo, tierneutrale Texte: „Familie“, „Tier“) oder „Berner“
   (Wappen, Dreifarb-Streifen, „Rudel“, „Hund“). Jede Familie wählt selbst unter „Familie einstellen“ – mit
   Live-Vorschau. Bestehende Rudel behalten den Berner-Auftritt, neue starten mit „Familie auf Pfoten“.
+- **Partner & Portale**: Tierheime, Vermittlungsstellen und Hundeschulen bekommen eine eigene Portalseite
+  (`/p/kurzname`) mit Logo, Akzentfarbe und einem direkt einlösbaren Gutschein; die öffentliche Partnerliste
+  (`/partner`) lässt sich nach PLZ und Umkreis filtern. Der Admin pflegt Partner, Status (Entwurf/Aktiv/
+  Pausiert) und Logo, und kann Gutschein-Stapel gezielt „für Partner“ anlegen. Züchter gibt es hier nie.
+- **In der Nähe**: Angemeldete finden Tierheime und Hundeschulen in ihrer Umgebung – per Postleitzahl oder,
+  nur mit ausdrücklicher Zustimmung, per gerundetem Standort (~1 km, nie gespeichert). Die Suche läuft über
+  den eigenen Server bei OpenStreetMap, nie direkt aus dem Browser.
 - **Handy-tauglich**: kompakte Stammbaum-Karten, Navigation unten, Fotos werden vor dem Upload verkleinert.
 
 Stack: Node.js/Express + SQLite (better-sqlite3), React + Vite, Caddy für HTTPS, keine externen
 Dienste. Schriften werden selbst gehostet (keine Google-Fonts-Aufrufe).
+
+**Quellen**: Postleitzahlen von [GeoNames](https://www.geonames.org/) (CC BY 4.0); Umkreissuche über
+© [OpenStreetMap](https://www.openstreetmap.org/copyright)-Mitwirkende (ODbL).
 
 ## Lokal starten
 
@@ -166,6 +176,10 @@ docker compose up -d --build
 | `COOKIE_SECURE`      | `true` – Cookies nur über HTTPS                                        |
 | `TRUST_PROXY`        | `1` – App steht hinter Caddy, Rate-Limit sieht echte IPs               |
 | `APP_ENV`            | `production` (Standard), `staging` (Vorschau) oder `dev` – steuert Hinweis-Band und Beispieldaten |
+| `IMPRESSUM_NAME`, `IMPRESSUM_ADRESSE`, `IMPRESSUM_EMAIL`, `IMPRESSUM_TELEFON` | Betreiberangaben für `/impressum`. `IMPRESSUM_ADRESSE` ist mehrzeilig, Zeilen mit literalem `\n` trennen. Ohne diese Angaben zeigt `/impressum` einen ehrlichen Hinweis statt erfundener Daten |
+| `PLACES_PROVIDERS`   | Anbieter für „In der Nähe“ neben den Partnern: `overpass` (echte OSM-Anfragen, Standard in Produktion) oder `fixture` (feste Testdaten ohne Internetzugriff, Standard sonst) |
+| `PLACES_DAILY_LIMIT` | Höchstens so viele echte Overpass-Anfragen pro Tag (Standard 500)      |
+| `PUBLIC_URL`         | Öffentliche Adresse (`https://…`) im User-Agent gegenüber Overpass/OSM; ohne Angabe wird der angefragte Hostname verwendet |
 
 Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen und die Domain im Server-Proxy eintragen.
 

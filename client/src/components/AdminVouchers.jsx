@@ -90,10 +90,13 @@ function BatchDetail({ batchId, onRevoked }) {
   )
 }
 
-// Admin-Gutschein-Stapel: anlegen (mit optionalem Beitritts-Rudel), Liste mit Zählern, Details mit
-// Zurückziehen. joinableFamilies kommt aus der Familienliste der Übersicht, vorgefiltert auf echte,
-// nicht-demo Rudel (nur die sind ein gültiges Ziel, siehe routes/admin.js).
-export default function AdminVouchers({ joinableFamilies = [] }) {
+// Admin-Gutschein-Stapel: anlegen (mit optionalem Beitritts-Rudel oder Partner), Liste mit Zählern,
+// Details mit Zurückziehen. joinableFamilies kommt aus der Familienliste der Übersicht, vorgefiltert
+// auf echte, nicht-demo Rudel (nur die sind ein gültiges Ziel, siehe routes/admin.js). partners kommt
+// aus AdminPartners (Task 7), vorgefiltert auf Entwurf/Aktiv (die einzigen gültigen Ziele) - ein Stapel
+// "für Partner" macht kind='partner', der Partner erscheint dann bei jedem Gutschein und, wer ihn
+// einlöst, in families.partner_id (siehe lib/vouchers.js createBatch, routes/vouchers.js redeemVoucher).
+export default function AdminVouchers({ joinableFamilies = [], partners = [] }) {
   const [batches, setBatches] = useState(undefined)
   const [error, setError] = useState(null)
   const [openId, setOpenId] = useState(null)
@@ -101,6 +104,7 @@ export default function AdminVouchers({ joinableFamilies = [] }) {
   const [label, setLabel] = useState('')
   const [size, setSize] = useState(DEFAULT_SIZE)
   const [joinFamilyId, setJoinFamilyId] = useState('')
+  const [partnerId, setPartnerId] = useState('')
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState(null)
   const [createdCodes, setCreatedCodes] = useState(null)
@@ -121,11 +125,13 @@ export default function AdminVouchers({ joinableFamilies = [] }) {
     try {
       const payload = { label, size: Number(size) }
       if (joinFamilyId) payload.joinFamilyId = Number(joinFamilyId)
+      if (partnerId) payload.partnerId = Number(partnerId)
       const result = await api.admin.createVoucherBatch(payload)
       setCreatedCodes(result.codes)
       setLabel('')
       setSize(DEFAULT_SIZE)
       setJoinFamilyId('')
+      setPartnerId('')
       loadBatches()
     } catch (err) {
       setCreateError(err.message)
@@ -178,6 +184,19 @@ export default function AdminVouchers({ joinableFamilies = [] }) {
               {joinableFamilies.map((family) => (
                 <option key={family.id} value={family.id}>
                   {family.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field span-2">
+            <label className="field-label" htmlFor="admin-voucher-partner">
+              Für Partner (optional)
+            </label>
+            <select id="admin-voucher-partner" value={partnerId} onChange={(e) => setPartnerId(e.target.value)}>
+              <option value="">Kein Partner</option>
+              {partners.map((partner) => (
+                <option key={partner.id} value={partner.id}>
+                  {partner.name}
                 </option>
               ))}
             </select>

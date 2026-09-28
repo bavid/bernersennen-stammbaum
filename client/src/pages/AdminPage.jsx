@@ -7,7 +7,13 @@ import Icon from '../components/Icon.jsx'
 import AdminFamilyDetails from '../components/AdminFamilyDetails.jsx'
 import AdminMessages from '../components/AdminMessages.jsx'
 import AdminVouchers from '../components/AdminVouchers.jsx'
+import AdminPartners from '../components/AdminPartners.jsx'
 import { relativeTime } from '../lib/dates.js'
+
+// Gültiges Ziel für einen Partner-Gutscheinstapel (siehe routes/admin.js POST /voucher-batches)
+function partnerVoucherEligible(partner) {
+  return partner.status === 'entwurf' || partner.status === 'aktiv'
+}
 
 const BYTES_PER_MB = 1024 * 1024
 
@@ -98,6 +104,7 @@ function StatsGrid({ stats }) {
 function Dashboard({ onLogout }) {
   const { theme } = useTheme()
   const [overview, setOverview] = useState(null)
+  const [partners, setPartners] = useState([])
   const [openId, setOpenId] = useState(null)
   const [error, setError] = useState(null)
 
@@ -106,6 +113,15 @@ function Dashboard({ onLogout }) {
       .overview()
       .then(setOverview)
       .catch((err) => setError(err.message))
+  }, [])
+
+  // Eigener, kleiner Ladevorgang für die Partner-Auswahl in AdminVouchers ("Für Partner") - AdminPartners
+  // lädt seine eigene (vollständigere) Liste unabhängig selbst, wie AdminMessages/AdminVouchers auch.
+  useEffect(() => {
+    api.admin
+      .partners()
+      .then(setPartners)
+      .catch(() => setPartners([]))
   }, [])
 
   return (
@@ -140,7 +156,12 @@ function Dashboard({ onLogout }) {
               }
             />
 
-            <AdminVouchers joinableFamilies={overview.families.filter((family) => family.art === 'rudel' && !family.is_demo)} />
+            <AdminPartners onChange={setPartners} />
+
+            <AdminVouchers
+              joinableFamilies={overview.families.filter((family) => family.art === 'rudel' && !family.is_demo)}
+              partners={partners.filter(partnerVoucherEligible)}
+            />
 
             <section className="admin-families" aria-labelledby="admin-families-title">
               <h2 id="admin-families-title">Alle Rudel</h2>

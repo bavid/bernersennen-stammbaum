@@ -112,7 +112,7 @@ function requireHomeIdentity(req, res) {
 }
 
 router.get('/config', (req, res) => {
-  res.json({ appEnv: config.appEnv })
+  res.json({ appEnv: config.appEnv, legal: config.legal })
 })
 
 // Kein Honeypot beim Login: Passwort-Manager füllen das versteckte Feld mit dem gespeicherten

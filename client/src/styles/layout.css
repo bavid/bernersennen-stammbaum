@@ -213,6 +213,11 @@
   letter-spacing: 0.04em;
 }
 
+.app-footer-legal {
+  display: inline-flex;
+  gap: var(--space-4);
+}
+
 .tricolor {
   width: 5.5rem;
   height: 6px;

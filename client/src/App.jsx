@@ -21,6 +21,7 @@ import ContactAdminPage from './pages/ContactAdminPage.jsx'
 import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
 import PartnersPage from './pages/PartnersPage.jsx'
 import NearbyPage from './pages/NearbyPage.jsx'
+import LegalPage from './pages/LegalPage.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 
@@ -131,6 +132,14 @@ export function AppFooter({ onInvite }) {
       <Link to="/umgebung" className="footer-link">
         Tierheime & Hundeschulen in der Nähe →
       </Link>
+      <span className="app-footer-legal">
+        <Link to="/impressum" className="footer-link">
+          Impressum
+        </Link>
+        <Link to="/datenschutz" className="footer-link">
+          Datenschutz
+        </Link>
+      </span>
     </footer>
   )
 }
@@ -252,6 +261,16 @@ export default function App() {
     return (
       <ThemeProvider themeId="standard">
         <PartnersPage />
+      </ThemeProvider>
+    )
+  }
+
+  // Impressum/Datenschutz (Task 7): öffentlich, unabhängig vom Login-Status - wie /partner ein eigener
+  // früher Zweig statt einer Route im angemeldeten Bereich, damit sie auch ohne Sitzung erreichbar sind.
+  if (pathname === '/impressum' || pathname === '/datenschutz') {
+    return (
+      <ThemeProvider themeId="standard">
+        <LegalPage variant={pathname === '/impressum' ? 'impressum' : 'datenschutz'} />
       </ThemeProvider>
     )
   }

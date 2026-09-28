@@ -65,6 +65,20 @@ function readPlacesProviders(env) {
   return [env === 'production' ? 'overpass' : 'fixture']
 }
 
+// Impressum/Datenschutz (Task 7): IMPRESSUM_NAME/-ADRESSE/-EMAIL/-TELEFON aus der Umgebung, fehlende
+// Angaben bleiben leere Strings (nie erfundene Betreiberdaten). In der .env kann kein echter
+// Zeilenumbruch stehen - IMPRESSUM_ADRESSE nutzt darum das literale Zeichenpaar \n, das hier zu einem
+// echten Zeilenumbruch wird. env-Parameter (statt process.env direkt) macht die Funktion ohne
+// Umgebungs-Zauberei testbar.
+function readLegal(env = process.env) {
+  return {
+    name: (env.IMPRESSUM_NAME || '').trim(),
+    address: (env.IMPRESSUM_ADRESSE || '').trim().replace(/\\n/g, '\n'),
+    email: (env.IMPRESSUM_EMAIL || '').trim(),
+    phone: (env.IMPRESSUM_TELEFON || '').trim()
+  }
+}
+
 const dataDir = process.env.DATA_DIR || __dirname
 
 const appEnv = readAppEnv(process.env.APP_ENV)
@@ -77,6 +91,7 @@ module.exports = {
   isProduction,
   appEnv,
   readAppEnv,
+  readLegal,
   cookiePrefix,
   sessionCookie: `${cookiePrefix}session`,
   adminCookie: `${cookiePrefix}admin_session`,
@@ -108,5 +123,7 @@ module.exports = {
   // optionale eigene Adresse für den Bot-User-Agent (siehe lib/http.js)
   placesProviders: readPlacesProviders(appEnv),
   placesDailyLimit: Number(process.env.PLACES_DAILY_LIMIT) || 500,
-  publicUrl: process.env.PUBLIC_URL || null
+  publicUrl: process.env.PUBLIC_URL || null,
+  // Impressum/Datenschutz (Task 7, siehe routes/auth.js GET /config und lib/geo.js-Nachbarn)
+  legal: readLegal()
 }

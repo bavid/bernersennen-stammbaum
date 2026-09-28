@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
 
-// Fuß der öffentlichen Seiten (Portal, Partnerliste, später „In der Nähe"): Quellenangabe für die
-// PLZ-Daten (GeoNames) und Links auf Impressum/Datenschutz. Die Rechtsseiten kommen erst in Task 7 –
-// bis dahin führen die Links ins Leere (404/Login), was für diese Phase in Ordnung ist.
+// Fuß der öffentlichen Seiten (Portal, Partnerliste): Quellenangabe für die PLZ-Daten (GeoNames) und
+// Links auf Impressum/Datenschutz (LegalPage, siehe App.jsx /impressum und /datenschutz).
 export default function PublicFooter() {
   return (
     <footer className="public-footer">

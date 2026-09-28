@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
@@ -227,6 +228,11 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
           )}
         </div>
       </section>
+
+      <footer className="login-footer">
+        <Link to="/impressum">Impressum</Link>
+        <Link to="/datenschutz">Datenschutz</Link>
+      </footer>
     </div>
   )
 }

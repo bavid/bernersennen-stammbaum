@@ -6,7 +6,8 @@ export function isValidHexColor(value) {
   return typeof value === 'string' && HEX_RE.test(value)
 }
 
-function hexToRgb(hex) {
+// Exportiert (auch von lib/contrast.js genutzt – dieselbe Umrechnung, nicht zweimal schreiben).
+export function hexToRgb(hex) {
   const n = parseInt(hex.slice(1), 16)
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
 }

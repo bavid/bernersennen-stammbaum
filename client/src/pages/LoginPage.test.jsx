@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const { login, loginUser, checkVoucher, redeemVoucher, recover, demo } = vi.hoisted(() => ({
@@ -46,9 +47,11 @@ async function render(props) {
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <ThemeProvider themeId="standard">
-        <LoginPage onLogin={() => {}} {...props} />
-      </ThemeProvider>
+      <MemoryRouter>
+        <ThemeProvider themeId="standard">
+          <LoginPage onLogin={() => {}} {...props} />
+        </ThemeProvider>
+      </MemoryRouter>
     )
   )
   return container

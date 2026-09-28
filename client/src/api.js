@@ -126,7 +126,18 @@ export const api = {
     voucherBatches: () => request('/admin/voucher-batches'),
     createVoucherBatch: (payload) => request('/admin/voucher-batches', json('POST', payload)),
     voucherBatch: (id) => request(`/admin/voucher-batches/${id}`),
-    revokeVoucher: (id) => request(`/admin/vouchers/${id}/revoke`, { method: 'POST' })
+    revokeVoucher: (id) => request(`/admin/vouchers/${id}/revoke`, { method: 'POST' }),
+
+    // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
+    partners: () => request('/admin/partners'),
+    createPartner: (payload) => request('/admin/partners', json('POST', payload)),
+    updatePartner: (id, payload) => request(`/admin/partners/${id}`, json('PUT', payload)),
+    deletePartner: (id) => request(`/admin/partners/${id}`, { method: 'DELETE' }),
+    uploadPartnerLogo: (id, file) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      return request(`/admin/partners/${id}/logo`, { method: 'POST', body: formData })
+    }
   },
 
   listBreedingEvents: () => request('/breeding'),

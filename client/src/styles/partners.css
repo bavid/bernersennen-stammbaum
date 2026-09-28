@@ -15,6 +15,32 @@
   max-width: 64rem;
 }
 
+/* Impressum/Datenschutz (Task 7) - eigenständige Texte, gleicher öffentlicher Rahmen wie oben */
+
+.legal-hero {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.legal-block {
+  display: grid;
+  gap: var(--space-4);
+  line-height: 1.6;
+}
+
+.legal-block h2 {
+  font-size: var(--text-lg);
+}
+
+.legal-block p {
+  color: var(--text);
+}
+
+.legal-block a {
+  color: var(--rust);
+}
+
 .preview-banner {
   justify-self: center;
   padding: var(--space-2) var(--space-5);

@@ -243,6 +243,25 @@
   color: var(--muted);
 }
 
+/* Fuß der Login-Seite: Impressum/Datenschutz (Task 7) - eigene Zeile unter den zwei Spalten */
+.login-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-4);
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+
+.login-footer a {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 @keyframes rise {
   from {
     opacity: 0;

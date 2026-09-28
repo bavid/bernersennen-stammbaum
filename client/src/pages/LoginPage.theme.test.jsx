@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 vi.mock('../api', () => ({ api: {} }))
@@ -27,9 +28,11 @@ async function render(themeId) {
   document.body.appendChild(container)
   await act(async () =>
     createRoot(container).render(
-      <ThemeProvider themeId={themeId}>
-        <LoginPage onLogin={() => {}} />
-      </ThemeProvider>
+      <MemoryRouter>
+        <ThemeProvider themeId={themeId}>
+          <LoginPage onLogin={() => {}} />
+        </ThemeProvider>
+      </MemoryRouter>
     )
   )
   return container

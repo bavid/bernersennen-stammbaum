@@ -103,6 +103,39 @@ describe('AdminVouchers – Stapel anlegen', () => {
     const options = [...container.querySelectorAll('#admin-voucher-join option')].map((o) => o.textContent)
     expect(options).toEqual(['Keine – eigenständiges Zuhause', 'Familie Sonnenhang', 'Zuhause am Deich'])
   })
+
+  test('die Auswahl "für Partner" listet die übergebenen Partner und sendet partnerId nur bei Auswahl', async () => {
+    voucherBatches.mockResolvedValue([])
+    createVoucherBatch.mockResolvedValue({ batch: { id: 1, label: 'Partnerkarten', size: 3, created_at: '2026-01-05 10:00:00' }, codes: ['A', 'B', 'C'] })
+    const partners = [
+      { id: 5, name: 'Tierheim Sonnenhang' },
+      { id: 6, name: 'Hundeschule Pfotenglück' }
+    ]
+    await render({ partners })
+
+    const options = [...container.querySelectorAll('#admin-voucher-partner option')].map((o) => o.textContent)
+    expect(options).toEqual(['Kein Partner', 'Tierheim Sonnenhang', 'Hundeschule Pfotenglück'])
+
+    await act(async () => {
+      setInputValue(container.querySelector('#admin-voucher-label'), 'Partnerkarten')
+      setInputValue(container.querySelector('#admin-voucher-size'), '3')
+    })
+    await act(async () => container.querySelector('form').requestSubmit())
+    expect(createVoucherBatch).toHaveBeenCalledWith({ label: 'Partnerkarten', size: 3 })
+
+    createVoucherBatch.mockClear()
+    await act(async () => {
+      setInputValue(container.querySelector('#admin-voucher-label'), 'Partnerkarten 2')
+      setInputValue(container.querySelector('#admin-voucher-size'), '3')
+      const select = container.querySelector('#admin-voucher-partner')
+      const nativeSelectSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set
+      nativeSelectSetter.call(select, '6')
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(createVoucherBatch).toHaveBeenCalledWith({ label: 'Partnerkarten 2', size: 3, partnerId: 6 })
+  })
 })
 
 describe('AdminVouchers – Liste und Details', () => {
