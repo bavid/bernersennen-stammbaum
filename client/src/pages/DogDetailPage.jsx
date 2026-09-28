@@ -437,10 +437,23 @@ export default function DogDetailPage({ family, onFamilyChange }) {
           <SteckbriefPanel dog={dog} onDogChange={handleSteckbriefChange} />
 
           <div className="steckbrief-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setHandoverOpen(true)}>
+            {/* Phase P: ein pausiertes Tier ist gerade nicht vermittelbar - der Server lehnt eine Übergabe
+                ab (routes/dogs.js POST /:id/handover), der Knopf deshalb gleich gesperrt, mit Hinweis. */}
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={dog.vermittlung_status === 'pausiert'}
+              aria-describedby={dog.vermittlung_status === 'pausiert' ? 'handover-paused-hint' : undefined}
+              onClick={() => setHandoverOpen(true)}
+            >
               <Icon name="logout" />
               Vermittelt – Übergabe vorbereiten
             </button>
+            {dog.vermittlung_status === 'pausiert' && (
+              <p className="field-hint" id="handover-paused-hint">
+                Erst auf ‚Reserviert‘ setzen.
+              </p>
+            )}
             {dog.vermittlung_status === 'reserviert' && (
               <button type="button" className="btn btn-ghost" disabled={withdrawing || isDemo} onClick={handleWithdrawHandover}>
                 <Icon name="close" />

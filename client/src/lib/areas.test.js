@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { HOME_LABEL, isEditable, isPartnerArea, startRoute } from './areas.js'
+import { HOME_LABEL, inviteLabel, isEditable, isPartnerArea, startRoute } from './areas.js'
 
 describe('startRoute', () => {
   test('a household area starts at Wegbegleiter', () => {
@@ -33,6 +33,19 @@ describe('isPartnerArea', () => {
     expect(isPartnerArea({ art: 'zuhause' })).toBe(false)
     expect(isPartnerArea({ art: 'rudel' })).toBe(false)
     expect(isPartnerArea(null)).toBe(false)
+  })
+})
+
+describe('inviteLabel', () => {
+  test('partner and shelter areas pass on customer vouchers', () => {
+    expect(inviteLabel({ art: 'partner' })).toBe('Kunden-Gutschein weitergeben')
+    expect(inviteLabel({ art: 'tierheim' })).toBe('Kunden-Gutschein weitergeben')
+  })
+
+  test('households and packs invite someone', () => {
+    expect(inviteLabel({ art: 'zuhause' })).toBe('Jemanden einladen')
+    expect(inviteLabel({ art: 'rudel' })).toBe('Jemanden einladen')
+    expect(inviteLabel(undefined)).toBe('Jemanden einladen')
   })
 })
 

@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs')
 const { generateCode, normalizeCode, hashCode, encryptCode } = require('./codes')
 const { voucherQuota } = require('../config')
 const { transferDog } = require('./transfers')
+const { PARTNER_AREA_ARTS } = require('./context')
 
 const CODE_HINT_LENGTH = 4
 const MAX_COLLISION_RETRIES = 5 // 60 Bit Zufall - eine Kollision ist praktisch ausgeschlossen
@@ -435,10 +436,22 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
   })()
 }
 
-// Legt für einen Bereich (Rudel oder Zuhause) so viele Weitergabe-Gutscheine an, wie zum Kontingent
-// (config.voucherQuota) fehlen - GET /vouchers/mine ruft das bei jedem Aufruf auf. Offene UND schon
-// eingelöste eigene Gutscheine zählen mit, nur zurückgezogene/abgelaufene nicht - sonst würde sich das
-// Kontingent bei jedem Aufruf immer weiter auffüllen, obwohl längst genug im Umlauf sind.
+// Partner, dem die Weitergabe-Gutscheine eines Bereichs zugerechnet werden (Phase P): nur ein Partner-
+// oder Tierheim-Bereich (PARTNER_AREA_ARTS) gehört zu einem Partner - ein Zuhause trägt families.partner_id
+// bloß als Herkunft ("kam über Partner X") und gibt sie NICHT an seine eigenen Gutscheine weiter.
+function issuingPartnerId(db, area) {
+  if (!PARTNER_AREA_ARTS.includes(area.art)) return null
+  const row = db.prepare('SELECT partner_id FROM families WHERE id = ?').get(area.id)
+  return row?.partner_id ?? null
+}
+
+// Legt für einen Bereich (Rudel, Zuhause, Tierheim oder Partner) so viele Weitergabe-Gutscheine an, wie
+// zum Kontingent (config.voucherQuota) fehlen - GET /vouchers/mine ruft das bei jedem Aufruf auf. Offene
+// UND schon eingelöste eigene Gutscheine zählen mit, nur zurückgezogene/abgelaufene nicht - sonst würde
+// sich das Kontingent bei jedem Aufruf immer weiter auffüllen, obwohl längst genug im Umlauf sind.
+// Partner geben so Kunden-Gutscheine an ihre Kundschaft weiter: die Gutscheine eines Partner-/Tierheim-
+// Bereichs tragen dessen partner_id, das eingelöste Zuhause damit (wie bei Admin-Partner-Stapeln, siehe
+// redeemVoucher) families.partner_id als Herkunft.
 function ensureVoucherQuota(db, area) {
   // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
   // Einladungen und dürfen weder mitgezählt noch als solche aufgefüllt werden. Partner-Zugänge (Phase P
@@ -457,7 +470,8 @@ function ensureVoucherQuota(db, area) {
     kind: 'rudel',
     size: missing,
     issuedByFamilyId: area.id,
-    joinFamilyId: area.art === 'rudel' ? area.id : null
+    joinFamilyId: area.art === 'rudel' ? area.id : null,
+    partnerId: issuingPartnerId(db, area)
   })
 }
 

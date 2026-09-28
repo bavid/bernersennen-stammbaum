@@ -184,6 +184,18 @@ describe('RedeemForm – Absenden', () => {
     )
   })
 
+  test('der Aufklapp-Knopf für Benutzername/Passwort verweist per aria-controls auf seinen Bereich', async () => {
+    await render()
+    const toggle = container.querySelector('.expand-toggle')
+    expect(toggle.getAttribute('aria-controls')).toBe('redeem-account-panel')
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+
+    act(() => toggle.click())
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(container.querySelector('#redeem-account-panel').contains(container.querySelector('#redeem-username'))).toBe(true)
+  })
+
   test('ruft onRedeemed mit der vollen Server-Antwort auf', async () => {
     const onRedeemed = vi.fn()
     const response = { id: 1, name: 'Zuhause am Deich', art: 'zuhause', key: 'ABCD-1234-HJKM', fromOthers: true }

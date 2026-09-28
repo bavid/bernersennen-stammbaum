@@ -19,6 +19,8 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 const rudel = { id: 3, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel', isDemo: false }
 const zuhause = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false }
+const partnerArea = { id: 30, name: 'Hundeschule Wiesengrund', theme: 'standard', art: 'partner', isDemo: false }
+const shelterArea = { id: 5, name: 'Tierheim Sonnenhang', theme: 'standard', art: 'tierheim', isDemo: false }
 
 const openVoucher = {
   id: 1,
@@ -181,5 +183,23 @@ describe('InviteDialog – eigene Gutscheine', () => {
     myVouchers.mockRejectedValue(new Error('Server nicht erreichbar'))
     await render(rudel)
     expect(container.querySelector('[role="alert"]').textContent).toBe('Server nicht erreichbar')
+  })
+})
+
+describe('InviteDialog – Partner und Tierheime geben Kunden-Gutscheine weiter (Phase P)', () => {
+  const PARTNER_TEXT = 'Gebt diesen Gutschein an eure Kundschaft weiter – damit legen sie ihre eigene Chronik bei Familie auf Pfoten an.'
+
+  test.each([
+    ['Partner-Bereich', partnerArea],
+    ['Tierheim-Bereich', shelterArea]
+  ])('%s: Erklärtext für die Kundschaft, ohne Mitgliedschaft oder Rudel-Passwort', async (_label, family) => {
+    myVouchers.mockResolvedValue([{ ...openVoucher, joins: false }])
+    await render(family)
+
+    expect(container.textContent).toContain(PARTNER_TEXT)
+    expect(container.textContent).not.toContain('Mitglied')
+    expect(container.textContent).not.toContain('beitreten')
+    expect(container.textContent).not.toContain('Adresse und Passwort weitergeben')
+    expect(container.querySelector('.voucher-code').textContent).toBe('ABCD-1234-HJKM')
   })
 })

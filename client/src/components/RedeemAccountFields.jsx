@@ -3,6 +3,7 @@ import PasswordField from './PasswordField.jsx'
 
 const ACCOUNT_PASSWORD_MIN = 8
 const EMAIL_MAX_LENGTH = 120
+const PANEL_ID = 'redeem-account-panel'
 
 export const EMPTY_ACCOUNT = { open: false, username: '', password: '', email: '' }
 
@@ -23,12 +24,18 @@ export default function RedeemAccountFields({ value, onChange }) {
 
   return (
     <>
-      <button type="button" className="expand-toggle" aria-expanded={value.open} onClick={() => update({ open: !value.open })}>
+      <button
+        type="button"
+        className="expand-toggle"
+        aria-expanded={value.open}
+        aria-controls={PANEL_ID}
+        onClick={() => update({ open: !value.open })}
+      >
         Benutzername und eigenes Passwort (optional)
         <Icon name="chevronDown" className={value.open ? 'is-flipped' : ''} />
       </button>
       {value.open && (
-        <div className="redeem-account form-stack">
+        <div id={PANEL_ID} className="redeem-account form-stack">
           <div className="field">
             <label className="field-label" htmlFor="redeem-username">
               Benutzername

@@ -91,6 +91,15 @@ describe('Navigation für Tierheime (family.art === "tierheim")', () => {
     expect(container.textContent).toContain('Hier pflegt ihr bald euer Profil.')
   })
 
+  test('der Fuß bietet "Kunden-Gutschein weitergeben" (Phase P)', async () => {
+    me.mockResolvedValue(shelterFamily)
+    listDogs.mockResolvedValue([])
+    recentActivity.mockResolvedValue([])
+    await render('/tiere')
+
+    expect(container.querySelector('.app-footer button.footer-link').textContent).toBe('Kunden-Gutschein weitergeben')
+  })
+
   test('ohne "Zugang" in der Leiste verlinkt das Profil eines Tierheims auf /zugang', async () => {
     me.mockResolvedValue(shelterFamily)
     await render('/profil')

@@ -252,3 +252,89 @@ describe('RedeemForm – Partner-Zugang: Prüfung im Browser', () => {
     expect($('#partner-plz').getAttribute('aria-invalid')).toBeNull()
   })
 })
+
+function deferred() {
+  let resolve
+  let reject
+  const promise = new Promise((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+// Ohne vorgegebene Antwort: die Tests steuern checkVoucher selbst (verzögerte Antworten).
+async function mountPending(props = {}) {
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  root = createRoot(container)
+  await act(async () => root.render(<RedeemForm initialCode="abcd1234hjkm" onRedeemed={() => {}} {...props} />))
+}
+
+function blurCode() {
+  $('#redeem-code').dispatchEvent(new Event('focusout', { bubbles: true }))
+}
+
+describe('RedeemForm – Prüfung: Reihenfolge, doppelte Anfragen, Abbau', () => {
+  test('eine verspätete Antwort für einen alten Code wird verworfen (Antworten in falscher Reihenfolge)', async () => {
+    const oldCheck = deferred()
+    const newCheck = deferred()
+    checkVoucher.mockReturnValueOnce(oldCheck.promise).mockReturnValueOnce(newCheck.promise)
+    await mountPending()
+    expect(checkVoucher).toHaveBeenNthCalledWith(1, 'ABCD-1234-HJKM')
+
+    await act(async () => setInputValue($('#redeem-code'), 'wxyz9876mnpq'))
+    await act(async () => blurCode())
+    expect(checkVoucher).toHaveBeenNthCalledWith(2, 'WXYZ-9876-MNPQ')
+
+    await act(async () => newCheck.resolve(UNBOUND))
+    expect($('#partner-name')).not.toBeNull()
+    expect(container.textContent).not.toContain('Prüfe …')
+
+    await act(async () => oldCheck.resolve({ status: 'eingelöst' }))
+    expect(container.textContent).not.toContain('schon eingelöst')
+    expect($('#partner-name')).not.toBeNull()
+    expect(submitButton().disabled).toBe(false)
+  })
+
+  test('ein verspäteter Fehler für einen alten Code löscht das neue Ergebnis nicht', async () => {
+    const oldCheck = deferred()
+    checkVoucher.mockReturnValueOnce(oldCheck.promise).mockResolvedValueOnce(UNBOUND)
+    await mountPending()
+
+    await act(async () => setInputValue($('#redeem-code'), 'wxyz9876mnpq'))
+    await act(async () => blurCode())
+    await act(async () => oldCheck.reject(new Error('Netzwerkfehler')))
+
+    expect($('#partner-name')).not.toBeNull()
+  })
+
+  test('Verlassen des Code-Felds während der laufenden Prüfung fragt nicht doppelt', async () => {
+    const pending = deferred()
+    checkVoucher.mockReturnValue(pending.promise)
+    await mountPending()
+
+    await act(async () => blurCode())
+    expect(checkVoucher).toHaveBeenCalledTimes(1)
+    expect(container.textContent).toContain('Prüfe …')
+
+    await act(async () => pending.resolve(UNBOUND))
+    await act(async () => blurCode())
+    expect(checkVoucher).toHaveBeenCalledTimes(1)
+  })
+
+  test('eine Antwort nach dem Schließen des Formulars läuft ins Leere, ohne Fehler', async () => {
+    const pending = deferred()
+    checkVoucher.mockReturnValue(pending.promise)
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await mountPending()
+
+    act(() => root.unmount())
+    root = null
+    await act(async () => pending.resolve(UNBOUND))
+
+    expect(consoleError).not.toHaveBeenCalled()
+    consoleError.mockRestore()
+  })
+})
+

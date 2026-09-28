@@ -28,7 +28,7 @@ function withoutKeys(object, keys) {
 // Partner-Profil ein (PartnerSetupFields). onRedeemed bekommt die volle Server-Antwort (inkl.
 // key/fromOthers) – die aufrufende Seite entscheidet, was damit passiert (erst den Schlüssel zeigen,
 // siehe KeyReveal).
-export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }) {
+export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, onPartnerModeChange }) {
   const [code, setCode] = useState(() => formatVoucherCode(initialCode))
   const [name, setName] = useState('')
   const [partnerValues, setPartnerValues] = useState(EMPTY_PARTNER_VALUES)
@@ -40,34 +40,56 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
   // shelterMayRead geht als optionales Feld an api.redeemVoucher), bei einem Partner-Zugang zweck.
   const [checkResult, setCheckResult] = useState(null)
   const [shelterMayRead, setShelterMayRead] = useState(false)
-  const [checking, setChecking] = useState(false)
+  // Code, dessen Prüfung gerade läuft (null: keine) - "Prüfe …" und die Sperre gegen eine doppelte
+  // Anfrage gelten nur für den aktuellen Code; ein geänderter Code darf sofort neu geprüft werden.
+  const [checkingCode, setCheckingCode] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   // Der Code, für den eine Prüfung gilt: eine späte Antwort zu einem inzwischen geänderten Code wird verworfen.
   const latestCode = useRef(code)
+  // Wie VoucherSessionCard (App.jsx, cancelled): nach dem Aushängen (z. B. Wechsel zu "Anmelden" oder
+  // KeyReveal) setzt eine noch ausstehende Antwort keinen Zustand mehr.
+  const isMounted = useRef(false)
   const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
 
   const status = checkResult?.status || null
   const handover = checkResult?.handover || null
   const partnerAccess = partnerAccessFrom(checkResult)
+  const isPartnerMode = Boolean(partnerAccess)
+  const checking = checkingCode === code
 
   async function checkCode(value) {
-    setChecking(true)
+    setCheckingCode(value)
+    let result = null
     try {
-      const result = await api.checkVoucher(value)
-      if (latestCode.current === value) setCheckResult(result || null)
+      result = (await api.checkVoucher(value)) || null
     } catch {
-      if (latestCode.current === value) setCheckResult(null)
-    } finally {
-      setChecking(false)
+      result = null
     }
+    if (!isMounted.current) return
+    setCheckingCode((current) => (current === value ? null : current))
+    if (latestCode.current === value) setCheckResult(result)
   }
 
-  // Ein vorausgefüllter Code (/v#CODE) wird gleich geprüft - sonst sähe ein Partner bis zum ersten
-  // Verlassen des Code-Felds das Kunden-Formular statt "Partner-Profil einrichten".
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  // Nur beim Öffnen (deshalb leere Abhängigkeiten): ein vorausgefüllter Code (/v#CODE) wird gleich
+  // geprüft - sonst sähe ein Partner bis zum ersten Verlassen des Code-Felds das Kunden-Formular statt
+  // "Partner-Profil einrichten". Jede spätere Prüfung stößt handleCodeBlur an; latestCode ist ein Ref,
+  // checkCode liest nur Refs und Setter - ein erneutes Ausführen bei jeder Eingabe wäre falsch.
   useEffect(() => {
     if (isCompleteVoucherCode(latestCode.current)) checkCode(latestCode.current)
   }, [])
+
+  // LoginPage passt die Kopfzeile an ("Partner-Profil einrichten" statt "Neue Chronik").
+  useEffect(() => {
+    onPartnerModeChange?.(isPartnerMode)
+  }, [isPartnerMode, onPartnerModeChange])
 
   function handleCodeChange(value) {
     const formatted = formatVoucherCode(value)
@@ -79,7 +101,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
   }
 
   function handleCodeBlur() {
-    if (!isCompleteVoucherCode(code) || checkResult) return
+    if (!isCompleteVoucherCode(code) || checkResult || checking) return
     checkCode(code)
   }
 
@@ -109,6 +131,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
       const me = await api.redeemVoucher({ code, ...fieldsPayload(), ...accountPayload(account), website })
       onRedeemed(me)
     } catch (err) {
+      if (!isMounted.current) return
       setError(err.message)
       setLoading(false)
       focusFirstError()

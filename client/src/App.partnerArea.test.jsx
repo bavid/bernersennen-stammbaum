@@ -4,8 +4,9 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher } = vi.hoisted(() => ({
+const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers } = vi.hoisted(() => ({
   me: vi.fn(),
+  myVouchers: vi.fn(),
   logout: vi.fn(),
   listUsers: vi.fn(),
   listDogs: vi.fn(),
@@ -14,13 +15,23 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   redeemVoucher: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher },
+  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers },
   setUnauthorizedHandler: () => {}
 }))
 
 import App from './App.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+// jsdom implementiert <dialog> nicht vollständig (kein showModal/close) – der Weitergabe-Dialog läuft im Modal.
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function showModal() {
+    this.open = true
+  }
+  HTMLDialogElement.prototype.close = function close() {
+    this.open = false
+  }
+}
 
 let container
 let root
@@ -63,7 +74,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
   document.title = ''
   window.history.replaceState(null, '', '/')
-  for (const mock of [me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher]) mock.mockReset()
+  for (const mock of [me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers]) mock.mockReset()
   window.localStorage.clear()
   vi.restoreAllMocks()
 })
@@ -163,6 +174,13 @@ describe('Profil und Zugang gibt es nur für Partner-Bereiche', () => {
     memberships: []
   }
 
+  test('ein Zuhause lädt weiterhin mit "Jemanden einladen" ein', async () => {
+    listDogs.mockResolvedValue([])
+    await render('/wegbegleiter', home)
+
+    expect(container.querySelector('.app-footer .footer-link').textContent).toBe('Jemanden einladen')
+  })
+
   test.each(['/profil', '/zugang'])('ein Zuhause wird von %s auf seine Start-Route umgeleitet', async (path) => {
     listDogs.mockResolvedValue([])
     await render(path, home)
@@ -177,6 +195,7 @@ describe('Partner-Zugang auf /v einlösen', () => {
     redeemVoucher.mockResolvedValue({ ...partnerArea, key: 'ABCD-1234-HJKM', fromOthers: true })
     await render('/v#abcd1234hjkm', null)
 
+    expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Partner-Profil einrichten')
     await act(async () => {
       setInputValue(container.querySelector('#partner-name'), 'Hundeschule Wiesengrund')
       setSelectValue(container.querySelector('#partner-typ'), 'hundeschule')
@@ -191,5 +210,37 @@ describe('Partner-Zugang auf /v einlösen', () => {
 
     expect(container.querySelector('h1').textContent).toBe('Hundeschule Wiesengrund')
     expect(navLinks().map((a) => a.textContent)).toEqual(['Profil', 'Zugang'])
+  })
+})
+
+describe('Partner-Bereich – Kunden-Gutscheine weitergeben', () => {
+  test('der Fuß bietet "Kunden-Gutschein weitergeben" statt "Jemanden einladen"', async () => {
+    await render('/profil')
+
+    const footerButton = container.querySelector('.app-footer button.footer-link')
+    expect(footerButton.textContent).toBe('Kunden-Gutschein weitergeben')
+    expect(container.textContent).not.toContain('Jemanden einladen')
+  })
+
+  test('der Dialog heißt ebenso und erklärt die Weitergabe an die Kundschaft', async () => {
+    myVouchers.mockResolvedValue([])
+    await render('/profil')
+
+    await act(async () => container.querySelector('.app-footer button.footer-link').click())
+
+    const dialog = container.querySelector('dialog.modal')
+    expect(dialog.open).toBe(true)
+    expect(dialog.querySelector('#modal-title').textContent).toBe('Kunden-Gutschein weitergeben')
+    expect(dialog.textContent).toContain('Gebt diesen Gutschein an eure Kundschaft weiter')
+    expect(dialog.textContent).not.toContain('Mitglied')
+  })
+})
+
+describe('Redeem-Seite – Kopfzeile', () => {
+  test('ein Kunden-Gutschein behält "Neue Chronik"', async () => {
+    checkVoucher.mockResolvedValue({ status: 'offen' })
+    await render('/v#abcd1234hjkm', null)
+
+    expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Neue Chronik')
   })
 })

@@ -6,6 +6,7 @@ import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
 import { formatDateShort } from '../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
+import { isPartnerArea } from '../lib/areas.js'
 
 function statusText(voucher) {
   if (voucher.status === 'eingelöst' && voucher.redeemed_at) {
@@ -117,10 +118,23 @@ function VoucherRow({ voucher }) {
   )
 }
 
-// Jemanden einladen: die eigenen Weitergabe-Gutscheine des aktiven Bereichs (myVouchers() füllt das
-// Kontingent bei jedem Aufruf selbst auf). Der alte Weg über Adresse+Passwort bleibt als zweiter
-// Abschnitt, aber nur für klassische Rudel mit gemeinsamem Passwort - ein Zuhause hat kein Passwort
-// zum Weitergeben.
+const PARTNER_EXPLANATION =
+  'Gebt diesen Gutschein an eure Kundschaft weiter – damit legen sie ihre eigene Chronik bei Familie auf Pfoten an.'
+
+// Rudel: Mitgliedschaft inklusive; Partner/Tierheime (Phase P): Kunden-Gutscheine für die Kundschaft, nie
+// ein Beitritt (der Server rechnet sie dem Partner zu, siehe server/lib/vouchers.js ensureVoucherQuota).
+function explanationFor(family) {
+  if (isPartnerArea(family)) return PARTNER_EXPLANATION
+  if (family.art === 'rudel') {
+    return `Wer den Gutschein einlöst, bekommt eine eigene Chronik und ist gleich Mitglied in „${family.name}“.`
+  }
+  return 'Wer den Gutschein einlöst, bekommt eine eigene Chronik.'
+}
+
+// Jemanden einladen bzw. (Partner/Tierheim) Kunden-Gutscheine weitergeben: die eigenen Weitergabe-
+// Gutscheine des aktiven Bereichs (myVouchers() füllt das Kontingent bei jedem Aufruf selbst auf). Der
+// alte Weg über Adresse+Passwort bleibt als zweiter Abschnitt, aber nur für klassische Rudel mit
+// gemeinsamem Passwort - ein Zuhause hat kein Passwort zum Weitergeben.
 export default function InviteDialog({ family }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
@@ -134,10 +148,7 @@ export default function InviteDialog({ family }) {
       .catch((err) => setError(err.message))
   }, [])
 
-  const explanation =
-    family.art === 'rudel'
-      ? `Wer den Gutschein einlöst, bekommt eine eigene Chronik und ist gleich Mitglied in „${family.name}“.`
-      : 'Wer den Gutschein einlöst, bekommt eine eigene Chronik.'
+  const explanation = explanationFor(family)
 
   return (
     <div className="invite">

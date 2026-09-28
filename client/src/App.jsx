@@ -3,8 +3,8 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
 import { readSetting, writeSetting } from './lib/storage.js'
-import { startRoute } from './lib/areas.js'
-import { navItemsFor } from './lib/navItems.js'
+import { inviteLabel, startRoute } from './lib/areas.js'
+import { MAX_NAV_ITEMS, navItemsFor } from './lib/navItems.js'
 import { formatVoucherCode } from './lib/voucherCode.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
@@ -29,9 +29,8 @@ const PARTNER_SLUG_RE = /^\/p\/([^/]+)\/?$/
 const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
 
 // Hauptnavigation je Bereichsart (lib/navItems.js navItemsFor), Routen des Bereichs in AreaRoutes.jsx.
-// Ab fünf Einträgen wird die Leiste kompakter (layout.css .app-nav-dense), damit sie am Handy bei 375 px
-// und am schmalen Desktop ohne Überlappung passt.
-const DENSE_NAV_MIN_ITEMS = 5
+// Bei der Höchstzahl von Einträgen (MAX_NAV_ITEMS) wird die Leiste kompakter (layout.css .app-nav-dense),
+// damit sie am Handy bei 375 px und am schmalen Desktop ohne Überlappung passt.
 
 export function DemoBanner({ onLeave }) {
   const { words } = useTheme()
@@ -169,7 +168,7 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
             )}
           </span>
         </div>
-        <nav className={`app-nav${navItems.length >= DENSE_NAV_MIN_ITEMS ? ' app-nav-dense' : ''}`} aria-label="Hauptnavigation">
+        <nav className={`app-nav${navItems.length >= MAX_NAV_ITEMS ? ' app-nav-dense' : ''}`} aria-label="Hauptnavigation">
           {navItems.map((item) => (
             <NavLink key={item.to} to={item.to} className={({ isActive: active }) => (isActive(item, active) ? 'active' : '')}>
               <Icon name={item.icon} />
@@ -194,14 +193,15 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
   )
 }
 
-export function AppFooter({ onInvite }) {
+// family ist optional (z. B. im Theme-Test) - ohne gilt die Beschriftung für Haushalte/Rudel.
+export function AppFooter({ family, onInvite }) {
   const { theme } = useTheme()
   return (
     <footer className="app-footer">
       {theme.tricolor && <div className="tricolor" aria-hidden="true" />}
       <p>{theme.footer}</p>
       <button type="button" className="footer-link" onClick={onInvite}>
-        Jemanden einladen
+        {inviteLabel(family)}
       </button>
       <Link to="/umgebung" className="footer-link">
         Tierheime & Hundeschulen in der Nähe →
@@ -383,8 +383,8 @@ export default function App() {
           <main className="app-main" key={family.id}>
             <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />
           </main>
-          <AppFooter onInvite={() => setInviteOpen(true)} />
-          <Modal open={inviteOpen} title="Jemanden einladen" onClose={() => setInviteOpen(false)}>
+          <AppFooter family={family} onInvite={() => setInviteOpen(true)} />
+          <Modal open={inviteOpen} title={inviteLabel(family)} onClose={() => setInviteOpen(false)}>
             <InviteDialog family={family} />
           </Modal>
         </div>

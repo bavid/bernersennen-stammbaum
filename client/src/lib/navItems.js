@@ -1,6 +1,7 @@
 // Hauptnavigation je Bereichsart (family.art) - AppHeader rendert sie, am Handy als untere Leiste.
 
-// Mehr als fünf Einträge passen am Handy (375 px) nicht mehr in die untere Leiste.
+// Mehr als fünf Einträge passen am Handy (375 px) nicht mehr in die untere Leiste - bei genau so vielen
+// schaltet App.jsx die Leiste auf die kompakte Variante (layout.css .app-nav-dense).
 export const MAX_NAV_ITEMS = 5
 
 // Reiter "Entdecken" (Phase 3) für Haushalte und Rudel, jeweils vor der Collage.

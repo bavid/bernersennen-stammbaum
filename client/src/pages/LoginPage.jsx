@@ -30,6 +30,12 @@ const MODE_COPY = {
     title: 'Gutschein einlösen',
     lede: 'Löst euren Gutschein ein und legt eure Chronik an.'
   },
+  // Einlöse-Modus mit einem Partner-Zugang (RedeemForm meldet es über onPartnerModeChange, Phase P).
+  partnerRedeem: {
+    eyebrow: 'Partner-Profil einrichten',
+    title: 'Gutschein einlösen',
+    lede: 'Löst euren Partner-Zugang ein und richtet euer Partner-Profil ein.'
+  },
   recover: {
     eyebrow: 'Passwort vergessen',
     title: 'Passwort wiederherstellen',
@@ -135,6 +141,7 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
   const [redeemCode, setRedeemCode] = useState(initialCode)
   const [redeemHint, setRedeemHint] = useState(null)
   const [redeemResult, setRedeemResult] = useState(null)
+  const [partnerRedeem, setPartnerRedeem] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoError, setDemoError] = useState(null)
 
@@ -142,6 +149,7 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
     setMode(next)
     setRedeemHint(null)
     setRedeemResult(null)
+    setPartnerRedeem(false)
   }
 
   function handleRedeemRequired(secret) {
@@ -166,7 +174,7 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
     }
   }
 
-  const copy = MODE_COPY[mode]
+  const copy = MODE_COPY[mode === 'redeem' && partnerRedeem ? 'partnerRedeem' : mode]
   const showingKeyReveal = mode === 'redeem' && redeemResult
 
   return (
@@ -220,7 +228,12 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
             (redeemResult ? (
               <KeyReveal value={redeemResult.key} onContinue={() => onLogin(redeemResult.me)} {...keyRevealProps(redeemResult.me)} />
             ) : (
-              <RedeemForm initialCode={redeemCode} hint={redeemHint} onRedeemed={handleRedeemed} />
+              <RedeemForm
+                initialCode={redeemCode}
+                hint={redeemHint}
+                onRedeemed={handleRedeemed}
+                onPartnerModeChange={setPartnerRedeem}
+              />
             ))}
 
           {mode === 'recover' && <RecoverForm onBack={() => switchMode('login')} />}

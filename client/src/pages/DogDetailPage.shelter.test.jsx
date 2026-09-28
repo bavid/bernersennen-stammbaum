@@ -259,3 +259,31 @@ describe('DogDetailPage – Tierheim: Übergabe', () => {
     expect(withdrawHandover).not.toHaveBeenCalled()
   })
 })
+
+describe('DogDetailPage – Tierheim: Übergabe bei Status "pausiert" (Phase P)', () => {
+  function handoverButton() {
+    return [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes('Übergabe vorbereiten'))
+  }
+
+  test('ein pausiertes Tier kann nicht übergeben werden - der Knopf ist gesperrt, mit Hinweis', async () => {
+    getDog.mockResolvedValue(shelterDog({ vermittlung_status: 'pausiert' }))
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render()
+
+    expect(handoverButton().disabled).toBe(true)
+    expect(container.textContent).toContain('Erst auf ‚Reserviert‘ setzen.')
+  })
+
+  test('bei "in Vermittlung" bleibt der Knopf frei und ohne Hinweis', async () => {
+    getDog.mockResolvedValue(shelterDog({ vermittlung_status: 'in_vermittlung' }))
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render()
+
+    expect(handoverButton().disabled).toBe(false)
+    expect(container.textContent).not.toContain('Erst auf ‚Reserviert‘ setzen.')
+  })
+})
