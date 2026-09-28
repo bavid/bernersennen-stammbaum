@@ -233,16 +233,28 @@ router.post('/families/group', authLimiter, requireAuth, async (req, res, next) 
   }
 })
 
+// Mitgliedschaft und die eigenen Freigaben in dieses Rudel gemeinsam entfernen: ein Absturz
+// dazwischen darf keine verwaisten dog_shares hinterlassen, die auf eine tote Mitgliedschaft zeigen.
+const leaveGroup = db.transaction((homeId, groupId) => {
+  const result = db
+    .prepare('DELETE FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
+    .run(homeId, groupId)
+  if (result.changes > 0) {
+    db.prepare('DELETE FROM dog_shares WHERE family_id = ? AND dog_id IN (SELECT id FROM dogs WHERE family_id = ?)').run(
+      groupId,
+      homeId
+    )
+  }
+  return result.changes
+})
+
 // Mitgliedschaft in einem Rudel beenden. War es gerade der aktive Bereich, geht es zurück nach Hause.
-// Task 2: hier zusätzlich die dog_shares des Haushalts in dieses Rudel löschen.
 router.delete('/memberships/:groupId', requireAuth, (req, res) => {
   const groupId = cleanId(req.params.groupId)
   if (!groupId) return res.status(404).json({ error: 'Diese Mitgliedschaft gibt es nicht' })
 
-  const result = db
-    .prepare('DELETE FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
-    .run(req.homeId, groupId)
-  if (result.changes === 0) {
+  const changes = leaveGroup(req.homeId, groupId)
+  if (changes === 0) {
     return res.status(404).json({ error: 'Diese Mitgliedschaft gibt es nicht' })
   }
 

@@ -39,4 +39,19 @@ function buildMe(homeId, activeId, isDemo) {
   return { ...active, isDemo: Boolean(isDemo), home, memberships: membershipsOf(homeId) }
 }
 
-module.exports = { ART, membershipsOf, isMember, canEnter, buildMe }
+// Tiere, die im Bereich @familyId sichtbar sind: eigene und dorthin geteilte
+const VISIBLE_DOGS_SQL = `(SELECT id FROM dogs WHERE family_id = @familyId
+  UNION SELECT dog_id FROM dog_shares WHERE family_id = @familyId)`
+
+// Chronik-Einträge, die im Bereich @familyId sichtbar sind: eigene (alle) und geteilte (nur nicht-private).
+// Erwartet einen Alias "t" auf timeline_entries im umgebenden Query.
+const VISIBLE_ENTRY_SQL = `(t.family_id = @familyId OR (t.dog_id IN (SELECT dog_id FROM dog_shares WHERE family_id = @familyId) AND t.privat = 0))`
+
+// Darf familyId dog sehen (lesend)? Eigenes Tier oder an familyId geteilt.
+function canSeeDog(familyId, dog) {
+  if (!dog) return false
+  if (dog.family_id === familyId) return true
+  return Boolean(db.prepare('SELECT 1 FROM dog_shares WHERE dog_id = ? AND family_id = ?').get(dog.id, familyId))
+}
+
+module.exports = { ART, membershipsOf, isMember, canEnter, buildMe, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL, canSeeDog }

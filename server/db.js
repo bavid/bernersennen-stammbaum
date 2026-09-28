@@ -165,4 +165,22 @@ db.transaction(() => {
   }
 })()
 
+// Task 2 (Phase Z): ein Zuhause kann eigene Tiere in Rudel teilen, denen es beigetreten ist.
+// dog_shares hält, welches Tier in welchem Rudel lesend sichtbar ist (Schreiben bleibt beim Eigentümer).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS dog_shares (
+    dog_id INTEGER NOT NULL REFERENCES dogs(id),
+    family_id INTEGER NOT NULL REFERENCES families(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (dog_id, family_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_dog_shares_family ON dog_shares(family_id, dog_id);
+`)
+addColumnIfMissing('dogs', 'bei_uns_seit', 'TEXT')
+addColumnIfMissing('dogs', 'bei_uns_bis', 'TEXT')
+addColumnIfMissing('dogs', 'abschied_grund', 'TEXT')
+addColumnIfMissing('dogs', 'herkunft_art', 'TEXT')
+addColumnIfMissing('dogs', 'herkunft_text', 'TEXT')
+addColumnIfMissing('timeline_entries', 'privat', 'INTEGER NOT NULL DEFAULT 0')
+
 module.exports = db

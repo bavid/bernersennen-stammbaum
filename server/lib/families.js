@@ -18,6 +18,12 @@ function deleteFamily(db, familyId) {
   const photos = photoUrlsOf(db, familyId)
 
   db.transaction(() => {
+    // Geteilte Tiere zuerst aufräumen: sowohl Freigaben AUS diesem Bereich (F teilte an andere)
+    // als auch Freigaben IN diesen Bereich (andere teilten an F, falls F ein Rudel war)
+    db.prepare('DELETE FROM dog_shares WHERE family_id = ? OR dog_id IN (SELECT id FROM dogs WHERE family_id = ?)').run(
+      familyId,
+      familyId
+    )
     const dogs = db.prepare('SELECT id, name, name_unbekannt, rasse FROM dogs WHERE family_id = ?').all(familyId)
     for (const dog of dogs) {
       const label = dogLabel(dog)
