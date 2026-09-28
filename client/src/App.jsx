@@ -199,7 +199,7 @@ export default function App() {
                 path="/stammbaum"
                 element={<OverviewPage family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />}
               />
-              <Route path="/tier/:id" element={<DogDetailPage family={family} />} />
+              <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={setFamily} />} />
               <Route path="/hund/:id" element={<RedirectTierUrl />} />
               <Route path="/wegbegleiter" element={<CompanionsPage family={family} />} />
               <Route path="/pinnwand" element={<PinboardPage />} />
