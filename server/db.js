@@ -143,6 +143,19 @@ addColumnIfMissing('dogs', 'tierart', "TEXT NOT NULL DEFAULT 'hund'")
 addColumnIfMissing('families', 'quelle', 'TEXT')
 addColumnIfMissing('families', 'is_demo', 'INTEGER NOT NULL DEFAULT 0')
 
+// "Meine Chronik" (art='zuhause') ist der private Bereich eines Haushalts; bestehende und neue
+// gemeinsame Familien bleiben 'rudel'. family_members verknüpft ein Zuhause mit Rudeln, denen es beitritt.
+addColumnIfMissing('families', 'art', "TEXT NOT NULL DEFAULT 'rudel'")
+db.exec(`
+  CREATE TABLE IF NOT EXISTS family_members (
+    member_family_id INTEGER NOT NULL REFERENCES families(id),
+    group_family_id INTEGER NOT NULL REFERENCES families(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (member_family_id, group_family_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_family_members_group ON family_members(group_family_id);
+`)
+
 // Bestehende Rudel behalten ihren Berner-Auftritt, neue Familien starten mit „Familie auf Pfoten".
 // Spalte anlegen und Bestandsdaten umstellen als eine Transaktion, damit ein Absturz dazwischen
 // nicht neue Zeilen fälschlich auf 'standard' stehen lässt, während alte noch die Spalte vermissen.

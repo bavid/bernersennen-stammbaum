@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
 const db = require('../db')
 const { jwtSecret, cookieSecure, sessionCookie } = require('../config')
+const { canEnter } = require('../lib/context')
 
 const SESSION_DAYS = 30
 
@@ -14,9 +15,9 @@ const COOKIE_OPTIONS = {
 
 const familyById = db.prepare('SELECT is_demo FROM families WHERE id = ?')
 
-// is_demo kommt aus der DB, nicht aus dem Token: so bleibt eine Demo-Familie schreibgeschützt,
-// auch wenn jemand sich mit ihrem echten Passwort ganz normal einloggt.
-function requireAuth(req, res, next) {
+// Prüft die Session, ohne Schreibzugriffe im Demo-Modus zu sperren (das übernimmt requireAuth).
+// req.homeId ist die Identität (Zuhause oder klassisches Rudel-Login), req.familyId der aktive Bereich.
+function requireSession(req, res, next) {
   const token = req.cookies?.[sessionCookie]
   if (!token) {
     return res.status(401).json({ error: 'Nicht eingeloggt' })
@@ -27,10 +28,13 @@ function requireAuth(req, res, next) {
     if (!family) {
       return res.status(401).json({ error: 'Rudel existiert nicht mehr' })
     }
-    if (family.is_demo && req.method !== 'GET') {
-      return res.status(403).json({ error: 'Demo-Modus: nur zum Ansehen, keine Änderungen möglich.' })
+    let active = payload.activeFamilyId ?? payload.familyId
+    if (active !== payload.familyId && !canEnter(payload.familyId, active)) {
+      // Mitgliedschaft beendet oder Familie gelöscht: zurück in den eigenen Bereich
+      active = payload.familyId
     }
-    req.familyId = payload.familyId
+    req.homeId = payload.familyId
+    req.familyId = active
     req.isDemo = Boolean(family.is_demo)
     next()
   } catch {
@@ -38,12 +42,24 @@ function requireAuth(req, res, next) {
   }
 }
 
-function signSession(familyId) {
-  return jwt.sign({ familyId }, jwtSecret, { expiresIn: `${SESSION_DAYS}d` })
+// is_demo kommt aus der DB, nicht aus dem Token: so bleibt eine Demo-Familie schreibgeschützt,
+// auch wenn jemand sich mit ihrem echten Passwort ganz normal einloggt.
+function requireAuth(req, res, next) {
+  requireSession(req, res, (err) => {
+    if (err) return next(err)
+    if (req.isDemo && req.method !== 'GET') {
+      return res.status(403).json({ error: 'Demo-Modus: nur zum Ansehen, keine Änderungen möglich.' })
+    }
+    next()
+  })
 }
 
-function setSessionCookie(res, familyId) {
-  res.cookie(sessionCookie, signSession(familyId), COOKIE_OPTIONS)
+function signSession(familyId, activeFamilyId = familyId) {
+  return jwt.sign({ familyId, activeFamilyId }, jwtSecret, { expiresIn: `${SESSION_DAYS}d` })
+}
+
+function setSessionCookie(res, familyId, activeFamilyId = familyId) {
+  res.cookie(sessionCookie, signSession(familyId, activeFamilyId), COOKIE_OPTIONS)
 }
 
 function clearSessionCookie(res) {
@@ -51,4 +67,4 @@ function clearSessionCookie(res) {
   res.clearCookie(sessionCookie, options)
 }
 
-module.exports = { requireAuth, signSession, setSessionCookie, clearSessionCookie }
+module.exports = { requireAuth, requireSession, signSession, setSessionCookie, clearSessionCookie }

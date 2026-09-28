@@ -4,10 +4,11 @@ const bcrypt = require('bcryptjs')
 const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
-const { requireAuth, setSessionCookie, clearSessionCookie } = require('../middleware/auth')
+const { requireAuth, requireSession, setSessionCookie, clearSessionCookie } = require('../middleware/auth')
 const { rejectHoneypot } = require('../middleware/abuse')
-const { cleanText } = require('../lib/validate')
+const { cleanText, cleanId } = require('../lib/validate')
 const { isTheme } = require('../lib/themes')
+const { ART, canEnter, buildMe } = require('../lib/context')
 
 const router = express.Router()
 
@@ -30,12 +31,29 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(hashA, hashB)
 }
 
-async function findFamilyByPassword(password) {
-  const families = db.prepare('SELECT id, name, theme, password_hash FROM families').all()
+// onlyJoinable: für /families/join – nur echte Rudel, keine Demo (kein Zuhause anderer, keine Demo-Familie)
+async function findFamilyByPassword(password, { onlyJoinable = false } = {}) {
+  const base = 'SELECT id, name, theme, is_demo, password_hash FROM families'
+  const query = onlyJoinable ? `${base} WHERE art = 'rudel' AND is_demo = 0` : base
+  const families = db.prepare(query).all()
   for (const family of families) {
     if (await bcrypt.compare(password, family.password_hash)) return family
   }
   return null
+}
+
+function homeIdentity(homeId) {
+  return db.prepare('SELECT art FROM families WHERE id = ?').get(homeId)
+}
+
+// join/group dürfen nur aus dem eigenen privaten Bereich heraus aufgerufen werden, nicht aus einem Rudel
+function requireHomeIdentity(req, res) {
+  const identity = homeIdentity(req.homeId)
+  if (!identity || identity.art !== ART.zuhause) {
+    res.status(400).json({ error: 'Nur aus „Meine Chronik“ heraus möglich' })
+    return false
+  }
+  return true
 }
 
 router.get('/config', (req, res) => {
@@ -44,12 +62,17 @@ router.get('/config', (req, res) => {
 
 router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => {
   try {
-    const { name, password, inviteCode, quelle } = req.body || {}
+    const { name, password, inviteCode, quelle, art: artInput } = req.body || {}
     const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
     if (!trimmedName || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
       return res.status(400).json({
         error: `Rudelname und ein Passwort mit mindestens ${MIN_PASSWORD_LENGTH} Zeichen sind erforderlich`
       })
+    }
+    // Alte Clients senden keine art mit – die bekommen weiterhin ein gewöhnliches Rudel
+    const art = artInput === undefined ? ART.rudel : artInput
+    if (art !== ART.zuhause && art !== ART.rudel) {
+      return res.status(400).json({ error: 'Unbekannte Art' })
     }
     if (config.inviteCode && !safeEqual(inviteCode, config.inviteCode)) {
       return res.status(403).json({ error: 'Der Einladungscode stimmt nicht' })
@@ -63,11 +86,11 @@ router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => 
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
     const result = db
-      .prepare('INSERT INTO families (name, password_hash, quelle) VALUES (?, ?, ?)')
-      .run(trimmedName, passwordHash, cleanText(quelle, MAX_QUELLE_LENGTH))
+      .prepare('INSERT INTO families (name, password_hash, quelle, art) VALUES (?, ?, ?, ?)')
+      .run(trimmedName, passwordHash, cleanText(quelle, MAX_QUELLE_LENGTH), art)
 
     setSessionCookie(res, result.lastInsertRowid)
-    res.status(201).json({ id: result.lastInsertRowid, name: trimmedName, theme: 'standard' })
+    res.status(201).json(buildMe(result.lastInsertRowid, result.lastInsertRowid, false))
   } catch (err) {
     next(err)
   }
@@ -88,18 +111,21 @@ router.post('/login', authLimiter, async (req, res, next) => {
     }
 
     setSessionCookie(res, match.id)
-    res.json({ id: match.id, name: match.name, theme: match.theme })
+    res.json(buildMe(match.id, match.id, Boolean(match.is_demo)))
   } catch (err) {
     next(err)
   }
 })
 
-// Öffentlicher Einstieg ohne Passwort: loggt ins schreibgeschützte Demo-Rudel ein (falls vorhanden)
+// Öffentlicher Einstieg ohne Passwort: loggt ins schreibgeschützte Demo-Rudel ein (falls vorhanden).
+// Bevorzugt einen Demo-Haushalt ("Meine Chronik"); heute gibt es nur ein Demo-Rudel, Verhalten bleibt gleich.
 router.post('/demo', authLimiter, (req, res) => {
-  const demoFamily = db.prepare('SELECT id, name, theme FROM families WHERE is_demo = 1 ORDER BY id DESC LIMIT 1').get()
+  const demoFamily = db
+    .prepare("SELECT id, name, theme FROM families WHERE is_demo = 1 ORDER BY (art = 'zuhause') DESC, id DESC LIMIT 1")
+    .get()
   if (!demoFamily) return res.status(404).json({ error: 'Keine Demo verfügbar' })
   setSessionCookie(res, demoFamily.id)
-  res.json({ id: demoFamily.id, name: demoFamily.name, theme: demoFamily.theme, isDemo: true })
+  res.json(buildMe(demoFamily.id, demoFamily.id, true))
 })
 
 router.post('/logout', (req, res) => {
@@ -138,8 +164,87 @@ router.get('/invite', requireAuth, (req, res) => {
 })
 
 router.get('/me', requireAuth, (req, res) => {
-  const family = db.prepare('SELECT id, name, theme FROM families WHERE id = ?').get(req.familyId)
-  res.json({ ...family, isDemo: req.isDemo })
+  res.json(buildMe(req.homeId, req.familyId, req.isDemo))
+})
+
+// Bereich wechseln: eigenes Zuhause oder ein Rudel, dem der Haushalt beigetreten ist.
+// requireSession statt requireAuth: auch die Demo darf in ihren eigenen Bereich "wechseln".
+router.post('/view', requireSession, (req, res) => {
+  const id = cleanId(req.body?.familyId)
+  if (!id || !canEnter(req.homeId, id)) {
+    return res.status(404).json({ error: 'Diesen Bereich gibt es nicht' })
+  }
+  setSessionCookie(res, req.homeId, id)
+  res.json(buildMe(req.homeId, id, req.isDemo))
+})
+
+// Einem bestehenden Rudel mit dessen Passwort beitreten – nur aus "Meine Chronik" heraus
+router.post('/families/join', authLimiter, requireAuth, async (req, res, next) => {
+  try {
+    if (!requireHomeIdentity(req, res)) return
+
+    const { password } = req.body || {}
+    const match = typeof password === 'string' && password ? await findFamilyByPassword(password, { onlyJoinable: true }) : null
+    if (!match) {
+      return res.status(401).json({ error: 'Dieses Passwort kennen wir nicht' })
+    }
+
+    db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(req.homeId, match.id)
+    res.json(buildMe(req.homeId, req.familyId, false))
+  } catch (err) {
+    next(err)
+  }
+})
+
+// Ein neues Rudel gründen und ihm gleich beitreten – nur aus "Meine Chronik" heraus
+router.post('/families/group', authLimiter, requireAuth, async (req, res, next) => {
+  try {
+    if (!requireHomeIdentity(req, res)) return
+
+    const { name, password } = req.body || {}
+    const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
+    if (!trimmedName || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        error: `Rudelname und ein Passwort mit mindestens ${MIN_PASSWORD_LENGTH} Zeichen sind erforderlich`
+      })
+    }
+    if (await findFamilyByPassword(password)) {
+      return res.status(409).json({
+        error: 'Passwort belegt – dieses Passwort nutzt schon ein anderes Rudel. Bitte wähle ein anderes.',
+        field: 'password'
+      })
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
+    const result = db
+      .prepare("INSERT INTO families (name, password_hash, art, theme) VALUES (?, ?, 'rudel', 'standard')")
+      .run(trimmedName, passwordHash)
+    db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(req.homeId, result.lastInsertRowid)
+
+    res.status(201).json(buildMe(req.homeId, req.familyId, false))
+  } catch (err) {
+    next(err)
+  }
+})
+
+// Mitgliedschaft in einem Rudel beenden. War es gerade der aktive Bereich, geht es zurück nach Hause.
+// Task 2: hier zusätzlich die dog_shares des Haushalts in dieses Rudel löschen.
+router.delete('/memberships/:groupId', requireAuth, (req, res) => {
+  const groupId = cleanId(req.params.groupId)
+  if (!groupId) return res.status(404).json({ error: 'Diese Mitgliedschaft gibt es nicht' })
+
+  const result = db
+    .prepare('DELETE FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
+    .run(req.homeId, groupId)
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'Diese Mitgliedschaft gibt es nicht' })
+  }
+
+  if (req.familyId === groupId) {
+    setSessionCookie(res, req.homeId)
+    return res.json(buildMe(req.homeId, req.homeId, req.isDemo))
+  }
+  res.json(buildMe(req.homeId, req.familyId, req.isDemo))
 })
 
 module.exports = router
