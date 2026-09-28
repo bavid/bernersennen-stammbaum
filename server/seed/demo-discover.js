@@ -44,7 +44,7 @@ const DEMO_SETTINGS = {
   gofundme_url: 'https://example.org/familie-auf-pfoten-spenden',
   unterstuetzen_text:
     'Jeder Beitrag hält Familie auf Pfoten am Laufen. Was nach den Kosten für Server und Betrieb übrig bleibt, ' +
-    'geben wir an Tierheime weiter – wie viel genau, steht unten im Bericht. Danke, dass du dabei bist!'
+    'geben wir an Tierheime weiter – wie viel genau, steht unten im Bericht. Danke, dass ihr dabei seid!'
 }
 
 // Beträge in Cent wie in donation_reports (Eingang 1.250 €, Kosten 180 €, weitergeleitet 1.000 €).
