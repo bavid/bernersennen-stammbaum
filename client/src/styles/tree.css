@@ -388,7 +388,7 @@
   }
 }
 
-/* "Lebt zusammen mit" – Adoptiv-Geschwister, andere Tiere */
+/* "Lebt zusammen mit" – Mitbewohner ohne gemeinsame Abstammung, andere Tiere */
 
 .pedigree-lines g.housemate path {
   stroke: var(--tan);
@@ -465,12 +465,12 @@
   line-height: 1;
 }
 
-.dog-card.is-adoptive {
+.dog-card.is-housemate {
   border-style: dashed;
   border-color: var(--tan);
 }
 
-.dog-card-adoptive {
+.dog-card-housemate {
   color: #9a6a2f;
 }
 
@@ -481,7 +481,7 @@
     font-size: 0.7rem;
   }
 
-  .dog-card-adoptive {
+  .dog-card-housemate {
     display: block !important;
     font-size: 0.6rem;
     line-height: 1.25;

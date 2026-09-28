@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { adoptiveTitle, animalKind, buildTimeline, displayName, dogLabel, genitive, groupByYear, sexLabel, shortName, speciesNoun } from './timeline.js'
+import { animalKind, buildTimeline, displayName, dogLabel, genitive, groupByYear, livesWithLabel, sexLabel, shortName, speciesNoun } from './timeline.js'
 import { ageText, formatDateLong, formatDateShort } from './dates.js'
 
 const dog = { id: 1, name: 'Aiko vom Sonnenhang', geburtsdatum: '2014-05-12' }
@@ -81,13 +81,16 @@ describe('dates', () => {
     expect(dogLabel({ name: 'Trude vom Hof', name_unbekannt: 0 })).toBe('Trude')
   })
 
-  test('sex and adoptive labels depend on the species', () => {
+  test('sex labels depend on the species', () => {
     expect(sexLabel('ruede')).toBe('Rüde')
     expect(sexLabel('huendin', 'katze')).toBe('Katze')
     expect(sexLabel('ruede', 'anderes')).toBe('männlich')
-    expect(adoptiveTitle({ geschlecht: 'ruede', tierart: 'hund' })).toBe('Adoptiv-Bruder')
-    expect(adoptiveTitle({ geschlecht: 'huendin', tierart: 'katze' })).toBe('Adoptiv-Katze')
-    expect(adoptiveTitle({ geschlecht: 'huendin', tierart: 'anderes' })).toBe('Adoptiv-Geschwister')
+  })
+
+  test('livesWithLabel names the animals someone lives with', () => {
+    expect(livesWithLabel([{ name: 'Hermes' }])).toBe('lebt mit Hermes')
+    expect(livesWithLabel([{ name: 'Hermes' }, { name: 'Minka' }])).toBe('lebt mit Hermes & Minka')
+    expect(livesWithLabel([{ name: 'Unbekannt', name_unbekannt: 1, rasse: 'Kater' }])).toBe('lebt mit Unbekannt')
   })
 
   test('speciesNoun names the animal for buttons like "Katze anlegen"', () => {

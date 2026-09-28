@@ -114,7 +114,7 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_admin_messages_status ON admin_messages(status, created_at);
 
-  -- "Lebt zusammen mit": Adoptiv-Geschwister und andere Tiere im selben Zuhause (ohne Abstammung).
+  -- "Lebt zusammen mit": Mitbewohner ohne gemeinsame Abstammung und andere Tiere im selben Zuhause.
   -- Ungerichtet, gespeichert mit dog_a_id < dog_b_id.
   CREATE TABLE IF NOT EXISTS dog_links (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

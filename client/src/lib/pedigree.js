@@ -88,8 +88,8 @@ export function housematePairs(links = [], nodes) {
 const linkedTo = (id, pairs) => pairs.flatMap(([a, b]) => (a === id ? [b] : b === id ? [a] : []))
 
 // Tiere ohne Abstammung im Baum (keine Eltern, keine Kinder), die mit jemandem zusammenleben –
-// z. B. Adoptiv-Geschwister. Liefert Map: id -> id des Tieres, bei dem sie wohnen.
-export function adoptiveAnchors(nodes, links = []) {
+// z. B. ein Mitbewohner ohne gemeinsame Abstammung. Liefert Map: id -> id des Tieres, bei dem sie wohnen.
+export function housemateAnchors(nodes, links = []) {
   const ids = new Set(nodes.map((n) => n.id))
   const pairs = housematePairs(links, nodes)
   const hasPedigree = (node) =>
@@ -106,9 +106,9 @@ export function adoptiveAnchors(nodes, links = []) {
 }
 
 // Liefert Zeilen (je Generation) in einer Reihenfolge mit möglichst wenig Kreuzungen.
-// Adoptiv-Tiere stehen nicht in den Reihen, sondern in der Mitbewohner-Reihe darunter (housemateLanes).
+// Tiere ohne Abstammung stehen nicht in den Reihen, sondern in der Mitbewohner-Reihe darunter (housemateLanes).
 export function layoutPedigree(allNodes, links = []) {
-  const anchors = adoptiveAnchors(allNodes, links)
+  const anchors = housemateAnchors(allNodes, links)
   const nodes = allNodes.filter((n) => !anchors.has(n.id))
   if (!nodes.length) return []
   const nodeIds = new Set(nodes.map((n) => n.id))
@@ -133,7 +133,7 @@ export function layoutPedigree(allNodes, links = []) {
   return rows.filter((row) => row.length)
 }
 
-// Mitbewohner-Reihe unter jeder Generation: je Haupttier seine Adoptiv-Tiere, in der Reihenfolge der Reihe
+// Mitbewohner-Reihe unter jeder Generation: je Haupttier seine Mitbewohner ohne Abstammung, in der Reihenfolge der Reihe
 export function housemateLanes(rows, anchors) {
   const byAnchor = new Map()
   for (const [id, anchorId] of anchors) byAnchor.set(anchorId, [...(byAnchor.get(anchorId) || []), id])

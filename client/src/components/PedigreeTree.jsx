@@ -5,10 +5,10 @@ import PedigreeToolbar from './PedigreeToolbar.jsx'
 import { HOUSE_PATH } from './HouseGlyph.jsx'
 import usePanZoom from '../hooks/usePanZoom.js'
 import {
-  adoptiveAnchors,
   collectNodes,
   computeUnions,
   generationDates,
+  housemateAnchors,
   housemateGroups,
   housemateLanes,
   housematePairs,
@@ -16,7 +16,7 @@ import {
 } from '../lib/pedigree.js'
 import { crossRowPath, householdPath, laneConnector, placeLaneGroups, unionPaths } from '../lib/pedigreeLines.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
-import { adoptiveTitle, displayName } from '../lib/timeline.js'
+import { livesWithLabel } from '../lib/timeline.js'
 import { fitZoom, zoomIn, zoomOut } from '../lib/zoom.js'
 
 const PHONE_QUERY = '(max-width: 720px)' // wie der Handy-Umbruch in tree.css
@@ -113,7 +113,7 @@ function useRefMap() {
 export default function PedigreeTree({ dogs, allDogs, links = [] }) {
   const nodes = useMemo(() => collectNodes(dogs, allDogs), [dogs, allDogs])
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
-  const anchors = useMemo(() => adoptiveAnchors(nodes, links), [nodes, links])
+  const anchors = useMemo(() => housemateAnchors(nodes, links), [nodes, links])
   const rows = useMemo(() => layoutPedigree(nodes, links), [nodes, links])
   const lanes = useMemo(() => housemateLanes(rows, anchors), [rows, anchors])
   const unions = useMemo(() => computeUnions(nodes), [nodes])
@@ -125,16 +125,16 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
     for (const [id, anchorId] of anchors) map.set(id, map.get(anchorId) + 0.5)
     return map
   }, [rows, anchors])
-  // Adoptiv-Tier ↔ Haupttier zeigt die Mitbewohner-Reihe; alle anderen Paare als Klammer bzw. Kurve
+  // Mitbewohner ohne Abstammung ↔ Haupttier zeigt die Mitbewohner-Reihe; alle anderen Paare als Klammer bzw. Kurve
   const groups = useMemo(() => {
     const viaLane = ([a, b]) =>
       anchors.get(a) === b || anchors.get(b) === a || (anchors.has(a) && anchors.get(a) === anchors.get(b))
     return housemateGroups(housematePairs(links, nodes).filter((pair) => !viaLane(pair)), rowOf)
   }, [links, nodes, anchors, rowOf])
-  const adoptiveLabels = useMemo(() => {
+  const housemateLabels = useMemo(() => {
     const labels = new Map()
     for (const [id, anchorId] of anchors) {
-      labels.set(id, `${adoptiveTitle(byId.get(id))} von ${displayName(byId.get(anchorId))}`)
+      labels.set(id, livesWithLabel([byId.get(anchorId)]))
     }
     return labels
   }, [byId, anchors])
@@ -298,7 +298,7 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
 
   const lineState = (ids) => (related ? (ids.includes(hoveredId) ? 'is-active' : 'is-muted') : '')
   const cardProps = (dog) => ({
-    adoptiveLabel: adoptiveLabels.get(dog.id),
+    livesWithLabel: housemateLabels.get(dog.id),
     highlighted: related?.has(dog.id),
     dimmed: related && !related.has(dog.id),
     onHover: setHoveredId

@@ -34,15 +34,6 @@ export function animalKind(dog) {
   return speciesLabel(tierart)
 }
 
-// "Adoptiv-Bruder", "Adoptiv-Schwester", "Adoptiv-Kater", "Adoptiv-Katze", "Adoptiv-Geschwister"
-export function adoptiveTitle(dog) {
-  const titles = {
-    hund: { ruede: 'Adoptiv-Bruder', huendin: 'Adoptiv-Schwester' },
-    katze: { ruede: 'Adoptiv-Kater', huendin: 'Adoptiv-Katze' }
-  }
-  return titles[dog.tierart || 'hund']?.[dog.geschlecht] || 'Adoptiv-Geschwister'
-}
-
 export function shortName(name = '') {
   return name.split(/\s+(vom|von|aus|zum|zur)\s+/i)[0]
 }
@@ -50,6 +41,11 @@ export function shortName(name = '') {
 // Name für Karten und Überschriften; Hunde mit unbekanntem Namen heißen "Unbekannt"
 export function displayName(dog) {
   return dog.name_unbekannt ? 'Unbekannt' : shortName(dog.name)
+}
+
+// "lebt mit Hermes", "lebt mit Hermes & Minka" – für Tiere ohne eigene Abstammung, die mit jemandem zusammenleben
+export function livesWithLabel(dogs) {
+  return `lebt mit ${dogs.map(displayName).join(' & ')}`
 }
 
 // Wie displayName, aber bei unbekanntem Namen mit Rasse – für Listen, Links und Auswahlfelder

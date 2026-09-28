@@ -171,7 +171,7 @@ router.get('/:id', requireAuth, (req, res) => {
   })
 })
 
-// Adoptiv-Geschwister / Mitbewohner verbinden – beide müssen zum eigenen Rudel gehören
+// Mitbewohner verbinden – beide müssen zum eigenen Rudel gehören
 router.post('/:id/housemates', requireAuth, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return

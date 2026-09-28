@@ -118,7 +118,7 @@ function QuickAdd({ candidates, onAdd, onCreate, onClose }) {
   )
 }
 
-// "Lebt zusammen mit": Adoptiv-Geschwister und andere Tiere im selben Zuhause
+// "Lebt zusammen mit": Mitbewohner ohne gemeinsame Abstammung und andere Tiere im selben Zuhause
 export default function Housemates({ dog, allDogs, canEdit, onAdd, onCreate, onRemove }) {
   const [adding, setAdding] = useState(false)
   const linkedIds = new Set(dog.housemates.map((h) => h.id))

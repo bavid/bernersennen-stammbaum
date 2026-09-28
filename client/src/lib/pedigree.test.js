@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import {
-  adoptiveAnchors,
   collectNodes,
   computeUnions,
   generationDates,
+  housemateAnchors,
   housemateGroups,
   housemateLanes,
   housematePairs,
@@ -60,7 +60,7 @@ describe('layoutPedigree', () => {
   })
 })
 
-describe('adoptive siblings', () => {
+describe('housemates without pedigree', () => {
   const family = [
     dog(1, 'Emma'),
     dog(2, 'Dante'),
@@ -75,13 +75,13 @@ describe('adoptive siblings', () => {
   ]
 
   test('an animal without pedigree is anchored at its housemate', () => {
-    expect([...adoptiveAnchors(family, links)]).toEqual([
+    expect([...housemateAnchors(family, links)]).toEqual([
       [5, 3],
       [6, 3]
     ])
   })
 
-  test('adoptive animals are not part of the generation rows – the litter stays untouched', () => {
+  test('animals without pedigree are not part of the generation rows – the litter stays untouched', () => {
     const rows = layoutPedigree(family, links).map((row) => row.map((d) => d.name).sort())
     expect(rows).toEqual([['Dante', 'Emma'], ['Hermes', 'Ida']])
   })
@@ -102,7 +102,7 @@ describe('adoptive siblings', () => {
       { dog_a_id: 3, dog_b_id: 6 },
       { dog_a_id: 3, dog_b_id: 7 }
     ]
-    const anchors = adoptiveAnchors(nodes, litterLinks)
+    const anchors = housemateAnchors(nodes, litterLinks)
     const rows = layoutPedigree(nodes, litterLinks)
     expect(rows[1].map((d) => d.name)).toEqual(['Hermes', 'Ida', 'Otto'])
     expect(housemateLanes(rows, anchors)).toEqual([
@@ -115,7 +115,7 @@ describe('adoptive siblings', () => {
   })
 
   test('without links nothing changes and pairs outside the tree are ignored', () => {
-    expect(adoptiveAnchors(family, []).size).toBe(0)
+    expect(housemateAnchors(family, []).size).toBe(0)
     expect(layoutPedigree(family, []).flat()).toHaveLength(6)
     expect(housematePairs([{ dog_a_id: 3, dog_b_id: 99 }], family)).toEqual([])
   })

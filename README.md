@@ -33,10 +33,10 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
 - **Rasse & unbekannte Vorfahren**: Jeder Hund hat eine Rasse (auch Mischungen wie
   „Berner × Hovawart"). Vorfahren ohne bekannten Namen lassen sich mit „Name unbekannt" anlegen
   und erscheinen trotzdem als eigene Karte im Baum.
-- **Adoptiv-Geschwister & andere Tiere**: „Lebt zusammen mit" verbindet Tiere ohne gemeinsame
-  Abstammung, etwa einen Adoptiv-Bruder oder eine Katze. Ein Haus-Knopf am Tier klappt darunter eine
+- **Mitbewohner & andere Tiere**: „Lebt zusammen mit" verbindet Tiere ohne gemeinsame
+  Abstammung, etwa ein Tier aus dem Tierheim oder eine Katze. Ein Haus-Knopf am Tier klappt darunter eine
   eigene Mitbewohner-Reihe auf – der Wurf bleibt zusammen, die Karten tragen z. B.
-  „Adoptiv-Katze von Hermes". Auf der Seite
+  „lebt mit Hermes". Auf der Seite
   eines Hundes lässt sich ein Mitbewohner in einem Schritt neu anlegen (Tierart, Name, z. B. „Kaninchen").
 - **Chronik pro Hund**: Einträge mit Datum, Text und Fotos. Das Datum bestimmt die Position.
   Ein Eintrag von 2018, der heute nachgetragen wird, landet automatisch zwischen 2017 und 2019.

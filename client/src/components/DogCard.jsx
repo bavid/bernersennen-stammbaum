@@ -7,7 +7,7 @@ import { yearOf } from '../lib/dates.js'
 const SPECIES_BADGE = { katze: '🐈', anderes: '🐾' }
 
 // variant: 'full' (Standard), 'lane' (etwas kleiner, Mitbewohner-Reihe), 'mini' (eingeklappte Generation)
-const DogCard = forwardRef(function DogCard({ dog, adoptiveLabel, highlighted, dimmed, onHover, variant = 'full' }, ref) {
+const DogCard = forwardRef(function DogCard({ dog, livesWithLabel, highlighted, dimmed, onHover, variant = 'full' }, ref) {
   const year = yearOf(dog.geburtsdatum)
   const badge = SPECIES_BADGE[dog.tierart]
   const hoverProps = {
@@ -38,7 +38,7 @@ const DogCard = forwardRef(function DogCard({ dog, adoptiveLabel, highlighted, d
     variant === 'lane' && 'is-lane',
     dog.external && 'is-external',
     dog.name_unbekannt && 'is-unknown',
-    adoptiveLabel && 'is-adoptive',
+    livesWithLabel && 'is-housemate',
     highlighted && 'is-highlighted',
     dimmed && 'is-dimmed'
   ]
@@ -73,8 +73,8 @@ const DogCard = forwardRef(function DogCard({ dog, adoptiveLabel, highlighted, d
           {year && <span>{year}</span>}
         </span>
         {dog.external && <span className="dog-card-tag">{dog.familyName}</span>}
-        {!dog.external && adoptiveLabel && <span className="dog-card-tag dog-card-adoptive">{adoptiveLabel}</span>}
-        {!dog.external && !adoptiveLabel && dog.timeline_count > 0 && (
+        {!dog.external && livesWithLabel && <span className="dog-card-tag dog-card-housemate">{livesWithLabel}</span>}
+        {!dog.external && !livesWithLabel && dog.timeline_count > 0 && (
           <span className="dog-card-tag">
             {dog.timeline_count} {dog.timeline_count === 1 ? 'Eintrag' : 'Einträge'}
           </span>

@@ -4,7 +4,7 @@ const { useTempDataDir, startApp, cleanup, call, createFamily } = require('./hel
 
 const dataDir = useTempDataDir('housemates')
 
-test('adoptive siblings and other animals living together', async (t) => {
+test('housemates without shared pedigree and other animals living together', async (t) => {
   const { server, base } = await startApp()
   t.after(() => cleanup(dataDir, server))
 

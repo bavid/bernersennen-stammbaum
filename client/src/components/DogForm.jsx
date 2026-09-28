@@ -224,7 +224,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       {!dog && (
         <div className="field span-2">
           <label className="field-label" htmlFor="dog-housemate">
-            Lebt zusammen mit <span className="muted">(optional, z. B. Adoptiv-Geschwister)</span>
+            Lebt zusammen mit <span className="muted">(optional, für Tiere ohne gemeinsame Abstammung)</span>
           </label>
           <select id="dog-housemate" value={form.housemateId} onChange={(e) => update({ housemateId: e.target.value ? Number(e.target.value) : '' })}>
             <option value="">– niemandem –</option>

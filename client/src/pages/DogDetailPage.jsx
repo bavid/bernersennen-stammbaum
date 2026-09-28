@@ -11,7 +11,7 @@ import ExpandableText from '../components/ExpandableText.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
-import { adoptiveTitle, buildTimeline, displayName, dogLabel, genitive, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
+import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
@@ -29,15 +29,15 @@ function ParentLink({ parent, freitext }) {
   return <span className={freitext ? '' : 'muted'}>{freitext || 'unbekannt'}</span>
 }
 
-// "Adoptiv-Bruder von Hermes" – für Tiere ohne eigene Abstammung, die mit jemandem zusammenleben
-function adoptiveLine(dog) {
+// "lebt mit Hermes" – für Tiere ohne eigene Abstammung, die mit jemandem zusammenleben
+function housemateLine(dog) {
   const hasPedigree = dog.mother_dog_id || dog.father_dog_id || dog.mother_freitext || dog.father_freitext || dog.children.length
   if (hasPedigree || !dog.housemates.length) return null
-  return `${adoptiveTitle(dog)} von ${dog.housemates.map(displayName).join(' & ')}`
+  return livesWithLabel(dog.housemates)
 }
 
 function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
-  const adoptive = adoptiveLine(dog)
+  const livesWith = housemateLine(dog)
   const age = dog.geburtsdatum ? ageText(dog.geburtsdatum) : null
   return (
     <header className="dog-hero">
@@ -58,9 +58,9 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
         </span>
         <h1 className={dog.name_unbekannt ? 'is-unknown' : undefined}>{displayName(dog)}</h1>
         {!dog.name_unbekannt && dog.name !== shortName(dog.name) && <p className="dog-hero-fullname">{dog.name}</p>}
-        {adoptive && (
-          <p className="dog-hero-adoptive">
-            <Icon name="heart" /> {adoptive}
+        {livesWith && (
+          <p className="dog-hero-housemate">
+            <Icon name="heart" /> {livesWith}
           </p>
         )}
 

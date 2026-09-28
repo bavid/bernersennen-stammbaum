@@ -140,7 +140,7 @@
   border-radius: 50%;
 }
 
-.dog-hero-adoptive {
+.dog-hero-housemate {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -152,7 +152,7 @@
   color: #9a6a2f;
 }
 
-.dog-hero-adoptive svg {
+.dog-hero-housemate svg {
   width: 1rem;
   height: 1rem;
 }
