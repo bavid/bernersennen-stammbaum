@@ -62,8 +62,15 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
 - **Collage**: A4-Collage aus Porträt, Chronik-Fotos und Eltern, Download als PNG.
 - **Schreib dem Admin**: Feedback und Problemmeldungen gehen nur an den Admin – die anderen im
   Rudel sehen sie nicht. Der Name ist freiwillig, ohne Namen kommt die Nachricht anonym an.
-- **Rudel mit Passwort**: Jedes Rudel hat ein gemeinsames Passwort und sieht nur seine eigenen
-  Hunde, Einträge und Fotos.
+- **Gutscheine statt offener Anmeldung**: Neu dabei ist man nur mit einem Einmal-Gutschein (Code
+  `XXXX-XXXX-XXXX`, als Link `/v#CODE` – der Code steht nie in Server-Logs). Beim Einlösen entsteht „Meine
+  Chronik“; der Code wird zum **Schlüssel**: Login auf jedem Gerät und Wiederherstellung (PUK) in einem.
+  Benutzername, eigenes Passwort und E-Mail sind optional. Jeder Bereich hat 3 Gutscheine zum Weitergeben
+  („Jemanden einladen“) – ein Gutschein aus einer Familie macht beim Einlösen gleich zum Mitglied. Der Admin
+  erzeugt Gutschein-Stapel. Unter „… einstellen → Zugang“ lässt sich der Schlüssel erneuern (andere Geräte
+  müssen sich dann neu anmelden) und Benutzer verwalten – jeweils nur mit Bestätigung.
+- **Bestehende Rudel mit Passwort** melden sich weiter mit ihrem gemeinsamen Passwort an und sehen nur ihre
+  eigenen Tiere, Einträge und Fotos.
 - **Aussehen**: „Familie auf Pfoten“ (Pfoten-Logo, tierneutrale Texte: „Familie“, „Tier“) oder „Berner“
   (Wappen, Dreifarb-Streifen, „Rudel“, „Hund“). Jede Familie wählt selbst unter „Familie einstellen“ – mit
   Live-Vorschau. Bestehende Rudel behalten den Berner-Auftritt, neue starten mit „Familie auf Pfoten“.
@@ -86,8 +93,9 @@ Unter Windows startet `start.bat` dasselbe per Doppelklick.
 
 **Testumgebung mit eigenen Daten:** `npm run dev:test` (Windows: `start-test.bat`) startet Server und Client mit
 Daten unter `server/.testenv/`, einem Test-Admin (`admin` / `test-admin`) und dem Band „Testsystem“.
-`npm run testenv:reset` löscht die Testdaten und legt die Beispieldaten neu an. Die echte lokale Datenbank bleibt
-unberührt.
+`npm run testenv:reset` löscht die Testdaten und legt die Beispieldaten neu an – dabei werden ein paar
+Test-Gutscheine erzeugt und in der Konsole ausgegeben (Einlösen unter http://localhost:5173/v#CODE). Die echte
+lokale Datenbank bleibt unberührt.
 
 | Befehl                          | Zweck                                          |
 | ------------------------------- | ---------------------------------------------- |
@@ -166,8 +174,12 @@ Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen und die Domain im Server-Pro
 - HTTPS mit Let's-Encrypt-Zertifikat (Caddy), Cookies nur über HTTPS
 - Strikte Trennung der Rudel: fremde Hunde sind per geänderter URL nicht abrufbar (404),
   Fotos nur mit Login
-- Passwörter mit bcrypt gehasht, Session als httpOnly-Cookie (JWT, 30 Tage)
-- Rate-Limit auf Login und Rudel-Anlage
+- Passwörter mit bcrypt gehasht, Session als httpOnly-Cookie (JWT, 30 Tage); Schlüssel erneuern beendet
+  alle anderen Sitzungen
+- Gutschein-Codes: 60 Bit Zufall, gespeichert nur als HMAC (mit `CODE_PEPPER`), noch offene zusätzlich
+  AES-GCM-verschlüsselt; Einlösen atomar (nie doppelt)
+- Rate-Limits auf Login, Gutscheine und Wiederherstellung (IPv6 je /56); gleich lange Antworten bei falschem
+  Benutzernamen oder Passwort
 - Uploads nur als JPG/PNG/WebP/GIF, Dateiname und Endung vergibt der Server
 - Fotos sieht nur, wer das Tier bzw. den Eintrag sehen darf (fremde Foto-Adressen liefern 404 und lassen sich
   auch nicht an eigene Tiere hängen)
