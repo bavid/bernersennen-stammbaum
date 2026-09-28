@@ -3,6 +3,18 @@ const path = require('node:path')
 const isProduction = process.env.NODE_ENV === 'production'
 const DEV_JWT_SECRET = 'dev-only-secret-never-use-in-production'
 
+const APP_ENVS = ['production', 'staging', 'dev']
+
+// Umgebung für Hinweis-Band und Schutzschalter: production | staging (Vorschau) | dev (lokal).
+// Ohne gültige Angabe entscheidet NODE_ENV. `value` bekommt hier bewusst keinen Default auf
+// process.env.APP_ENV: explizites `undefined` (z. B. in Tests) soll den Fallback greifen lassen,
+// statt einen zur Laufzeit bereits gesetzten APP_ENV wiederzuverwenden.
+function readAppEnv(value, production = isProduction) {
+  const env = (value || '').trim()
+  if (APP_ENVS.includes(env)) return env
+  return production ? 'production' : 'dev'
+}
+
 function readJwtSecret() {
   const secret = process.env.JWT_SECRET
   if (secret) return secret
@@ -29,6 +41,8 @@ const dataDir = process.env.DATA_DIR || __dirname
 
 module.exports = {
   isProduction,
+  appEnv: readAppEnv(process.env.APP_ENV),
+  readAppEnv,
   port: Number(process.env.PORT) || 4000,
   jwtSecret: readJwtSecret(),
   dbPath: process.env.DB_PATH || path.join(dataDir, 'data.db'),

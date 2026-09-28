@@ -38,7 +38,7 @@ async function findFamilyByPassword(password) {
 }
 
 router.get('/config', (req, res) => {
-  res.json({ inviteRequired: Boolean(config.inviteCode) })
+  res.json({ inviteRequired: Boolean(config.inviteCode), appEnv: config.appEnv })
 })
 
 router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => {
