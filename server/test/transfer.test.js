@@ -577,4 +577,20 @@ test('Übergabe-Gutschein: Tier zieht mit Chronik ins neue Zuhause', async (t) =
     const detail = await get(`/api/dogs/${finni.id}`, newHomeCookie)
     assert.equal(detail.data.herkunft_text, 'Partnername Konstant')
   })
+
+  await t.test('16. shelterShare (Tierheim darf mitlesen) nutzt ebenfalls den admin-gepflegten Partnernamen (final-review Phase T)', async () => {
+    const partnerName = await createShelter('Anderer Konstanter Name')
+    db.prepare('UPDATE families SET name = ? WHERE id = ?').run('Frei geänderter Team-Name Zwei', partnerName.familyId)
+
+    const rex = await addDog(partnerName, 'Rex', 'ruede')
+    const handover = await post(`/api/dogs/${rex.id}/handover`, {}, partnerName.cookie)
+    assert.equal(handover.status, 201)
+
+    const redeemed = await post('/api/vouchers/redeem', { code: handover.data.code, name: 'Zuhause für Rex' })
+    assert.equal(redeemed.status, 201)
+    const newHomeCookie = getCookie(redeemed.res)
+
+    const detail = await get(`/api/dogs/${rex.id}`, newHomeCookie)
+    assert.deepEqual(detail.data.shelterShare, { shelterName: 'Anderer Konstanter Name', enabled: false, storyConsent: false })
+  })
 })

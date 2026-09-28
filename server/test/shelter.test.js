@@ -142,6 +142,31 @@ test('Tierheim-Bereich: Admin legt ihn aus der Partnerverwaltung an, Schlüssel-
     assert.ok(dogs.data.some((d) => d.name === 'Pepper'))
   })
 
+  // --- final-review Phase T: GET /api/dogs liefert latest_entry_titel/latest_entry_datum -----------
+
+  await t.test('GET /api/dogs liefert latest_entry_titel/latest_entry_datum je Tier (neuester GESCHRIEBENER, nicht neuester datierter Eintrag)', async () => {
+    const shelterLogin = await post('/api/login', { secret: sonnenhangKey }, null)
+    const shelterCookie = getCookie(shelterLogin.res)
+
+    const created = await post('/api/dogs', { name: 'Benno', geschlecht: 'ruede', tierart: 'hund' }, shelterCookie)
+    assert.equal(created.status, 201)
+
+    const db = require('../db')
+    // Absichtlich rückdatiert eingefügt: der zuletzt GESCHRIEBENE Eintrag (höhere id) muss gewinnen,
+    // nicht der mit dem späteren Datum - wie zuvor bei api.recentActivity (created_at, nicht datum).
+    db.prepare(
+      `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, foto_urls) VALUES (?, ?, 'Team', '2020-06-01', 'Erster Eintrag', '[]')`
+    ).run(created.data.id, sonnenhangFamilyId)
+    db.prepare(
+      `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, privat, foto_urls) VALUES (?, ?, 'Team', '2020-01-01', 'Zuletzt geschrieben, aber alt datiert', 1, '[]')`
+    ).run(created.data.id, sonnenhangFamilyId)
+
+    const dogs = await call(base, '/api/dogs', { cookie: shelterCookie })
+    const benno = dogs.data.find((d) => d.id === created.data.id)
+    assert.equal(benno.latest_entry_titel, 'Zuletzt geschrieben, aber alt datiert')
+    assert.equal(benno.latest_entry_datum, '2020-01-01')
+  })
+
   // --- security-review Phase T Finding 13 -----------------------------------------------------------
 
   await t.test('DELETE /api/admin/partners/:id -> 409, solange für den Partner ein Tierheim-Bereich existiert', async () => {

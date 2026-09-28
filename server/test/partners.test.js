@@ -438,4 +438,31 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
     const portal = await get('/api/public/partners/demo-tierheim')
     assert.equal(portal.status, 200)
   })
+
+  // final-review Phase T: shelterDemo darf nicht schon an is_demo allein hängen - erst ein
+  // tatsächlich bestehender Tierheim-Bereich (POST /:id/shelter) darf den Knopf "Demo als Tierheim
+  // ansehen" freischalten (sonst liefe er ins Leere, siehe PartnerPortalPage.jsx).
+  await t.test('shelterDemo: nur true, wenn der Demo-Partner tatsächlich einen Tierheim-Bereich hat', async () => {
+    const demoShelterPartner = await post('/api/admin/partners', samplePartner({ name: 'Demo ohne Bereich', slug: 'demo-ohne-bereich' }))
+    assert.equal(demoShelterPartner.status, 201)
+    const db = require('../db')
+    db.prepare('UPDATE partners SET is_demo = 1 WHERE id = ?').run(demoShelterPartner.data.id)
+
+    const beforeShelter = await get('/api/public/partners/demo-ohne-bereich')
+    assert.equal(beforeShelter.status, 200)
+    assert.equal(beforeShelter.data.shelterDemo, undefined)
+
+    const shelter = await post(`/api/admin/partners/${demoShelterPartner.data.id}/shelter`)
+    assert.equal(shelter.status, 201)
+
+    const afterShelter = await get('/api/public/partners/demo-ohne-bereich')
+    assert.equal(afterShelter.data.shelterDemo, true)
+
+    // Ein Nicht-Demo-Partner mit Tierheim-Bereich bekommt shelterDemo trotzdem nicht gesetzt.
+    const realPartner = await post('/api/admin/partners', samplePartner({ name: 'Echtes Tierheim', slug: 'echtes-tierheim' }))
+    const realShelter = await post(`/api/admin/partners/${realPartner.data.id}/shelter`)
+    assert.equal(realShelter.status, 201)
+    const realPortal = await get('/api/public/partners/echtes-tierheim')
+    assert.equal(realPortal.data.shelterDemo, undefined)
+  })
 })

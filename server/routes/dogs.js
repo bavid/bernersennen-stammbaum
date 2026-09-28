@@ -204,11 +204,20 @@ function visibleParentId(parentId, viewFamilyId) {
 
 // can_edit: 1/0 (SQL-Ausdruck, wie andere Flags à la name_unbekannt). shared_from: Name des
 // Eigentümer-Rudels, nur gesetzt wenn das Tier nicht dem eigenen Bereich gehört.
+// latest_entry_titel/latest_entry_datum (final-review Phase T, ShelterAnimalsPage): der neueste im
+// Bereich sichtbare Eintrag je Tier - dieselbe VISIBLE_ENTRY_SQL-Regel wie überall (eigene Einträge
+// vollständig, geteilte nur nicht-private), für ein eigenes Tierheim-Tier also ALLE seine Einträge.
+// Nach created_at (zuletzt GESCHRIEBEN) statt datum sortiert, wie zuvor api.recentActivity - ein
+// rückdatierter Eintrag soll die Kartenvorschau nicht in die Vergangenheit springen lassen.
 router.get('/', requireAuth, (req, res) => {
   const dogs = db
     .prepare(
       `SELECT dogs.*,
          (SELECT COUNT(*) FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${VISIBLE_ENTRY_SQL}) AS timeline_count,
+         (SELECT t.titel FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${VISIBLE_ENTRY_SQL}
+            ORDER BY t.created_at DESC, t.id DESC LIMIT 1) AS latest_entry_titel,
+         (SELECT t.datum FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${VISIBLE_ENTRY_SQL}
+            ORDER BY t.created_at DESC, t.id DESC LIMIT 1) AS latest_entry_datum,
          (dogs.family_id = @familyId) AS can_edit,
          CASE WHEN dogs.family_id != @familyId THEN (SELECT name FROM families f WHERE f.id = dogs.family_id) END AS shared_from
        FROM dogs
@@ -285,10 +294,20 @@ function parentView(parentId, ownerFamilyId, viewFamilyId) {
 // Tierheim-Familie besteht nicht mehr). Genutzt von GET /:id (shelterShare) und PUT /:id/shelter-share.
 const findLatestTransfer = db.prepare('SELECT from_family_id FROM dog_transfers WHERE dog_id = ? ORDER BY id DESC LIMIT 1')
 
+// name: der admin-gepflegte Partnername (partners.name), nicht der (vom Tierheim-Team selbst frei
+// änderbare) Familienname - Fallback auf families.name nur, wenn kein Partner verknüpft ist (final-
+// review Phase T: dieselbe Regel wie routes/vouchers.js findHandoverInfo/lib/transfers.js herkunft_text,
+// bisher hier noch fehlend).
+const findShelterFamilyById = db.prepare(
+  `SELECT f.id, COALESCE(p.name, f.name) AS name
+   FROM families f LEFT JOIN partners p ON p.id = f.partner_id
+   WHERE f.id = ? AND f.art = 'tierheim'`
+)
+
 function findShelterForDog(dogId) {
   const transfer = findLatestTransfer.get(dogId)
   if (!transfer?.from_family_id) return null
-  return db.prepare("SELECT id, name FROM families WHERE id = ? AND art = 'tierheim'").get(transfer.from_family_id) || null
+  return findShelterFamilyById.get(transfer.from_family_id) || null
 }
 
 // { shelterName, enabled, storyConsent } wenn es ein Tierheim zum Mitlesen gibt, sonst null.

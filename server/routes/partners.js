@@ -32,6 +32,12 @@ function sortByName(rows) {
   return rows.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'))
 }
 
+// findShelterFamily: wie server/routes/publicAnimals.js - existiert für diesen Partner überhaupt ein
+// Tierheim-Bereich? Ohne ihn wäre "Demo als Tierheim ansehen" (Task 6) ein toter Knopf: api.demo({as:
+// 'tierheim'}) schlägt fehl, wenn der Demo-Partner (noch) keinen eigenen Tierheim-Bereich hat (final-
+// review: der Knopf hing bisher allein an partner.is_demo, nicht an dessen tatsächlicher Existenz).
+const findShelterFamily = db.prepare("SELECT id FROM families WHERE partner_id = ? AND art = 'tierheim'")
+
 // Aktive Partner im Umkreis von plz/radius, nach Entfernung sortiert - oder eine Fehlerantwort direkt
 // über res. Gemeinsame Logik für GET ?plz= (Rückwärtskompatibilität) und POST /near (Finding 9: die PLZ
 // soll nicht mehr zwingend in der URL landen, siehe Kommentar dort).
@@ -95,9 +101,9 @@ router.get('/:slug', (req, res) => {
     vermittlung_url: partner.vermittlung_url,
     farbe: partner.farbe,
     ...(preview ? { preview: true } : {}),
-    // Phase T Task 6: der Client zeigt für Demo-Partner zusätzlich "Demo als Tierheim ansehen"
-    // (PartnerPortalPage.jsx) - ohne extra Anfrage, ob es zu diesem Partner ein Demo-Tierheim gibt.
-    ...(partner.is_demo ? { demo: true } : {})
+    // Phase T Task 6: der Client zeigt für Demo-Partner mit einem tatsächlich bestehenden Demo-Tierheim
+    // zusätzlich "Demo als Tierheim ansehen" (PartnerPortalPage.jsx) - ohne extra Anfrage.
+    ...(partner.is_demo && findShelterFamily.get(partner.id) ? { shelterDemo: true } : {})
   })
 })
 
