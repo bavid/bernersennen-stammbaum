@@ -4,14 +4,20 @@
 #
 # Befehle:
 #   setup          Docker installieren, Repo holen, .env mit Secrets erzeugen, starten
-#   deploy         neuesten Stand holen, Image neu bauen, neu starten
+#   deploy         neuesten Stand holen (oder REVISION=<sha>), vorher Backup, Image neu bauen, neu starten
 #   status         Container-Status und Health-Check
 #   logs           letzte 200 Log-Zeilen
 #   invite         Einladungscode für neue Rudel anzeigen
 #   backup         Snapshot von DB + Fotos nach $APP_DIR/backups/*.tgz
 #   demo           öffentliche Demo (neu) anlegen – ersetzt nur das Demo-Rudel, echte Rudel bleiben
+#   showcase       NUR Vorschau/Staging: alle Daten löschen und Beispieldaten neu anlegen (vorher Backup)
 #   wipe --yes     ALLE Daten löschen (DB + Fotos)
 #   admin <hash>   Admin-Zugang setzen (Hash von `npm run admin:hash`), Benutzer "admin"
+#
+# Variablen für eine zweite Instanz (Vorschau), z. B.:
+#   APP_DIR=/opt/bernersennen-stammbaum-staging BRANCH=staging HTTPS_PORT=3005 \
+#   CONTAINER_NAME=fap-preview IMAGE_TAG=staging APP_ENV=staging bash -s -- setup
+# REVISION=<sha> deployt genau diesen Stand (z. B. das auf der Vorschau getestete SHA nach Prod).
 #
 # Die App lauscht nur auf 127.0.0.1:$HTTPS_PORT. HTTPS nach außen (Let's Encrypt, Port 80 für die
 # Zertifikatsprüfung) macht der gemeinsame Caddy des Servers in /opt/proxy (Repo "server").
@@ -22,6 +28,10 @@ REPO_URL="${REPO_URL:-https://github.com/bavid/bernersennen-stammbaum.git}"
 BRANCH="${BRANCH:-main}"
 HTTPS_PORT="${HTTPS_PORT:-3010}"
 DEPLOY_DOMAIN="${DEPLOY_DOMAIN:-}"
+REVISION="${REVISION:-}"
+APP_ENV="${APP_ENV:-production}"
+CONTAINER_NAME="${CONTAINER_NAME:-bernersennen-stammbaum}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
 CONTAINER_UID=1000
 COMPOSE="docker compose"
 
@@ -49,8 +59,13 @@ checkout() {
     git remote add origin "$REPO_URL"
   fi
   git fetch -q origin "$BRANCH"
-  git checkout -q -B "$BRANCH" "origin/$BRANCH"
-  git reset -q --hard "origin/$BRANCH"
+  local target="origin/$BRANCH"
+  if [ -n "$REVISION" ]; then
+    git cat-file -e "$REVISION^{commit}" 2>/dev/null || git fetch -q origin "$REVISION" || fail "Stand $REVISION nicht gefunden"
+    target="$REVISION"
+  fi
+  git checkout -q -B "$BRANCH" "$target"
+  git reset -q --hard "$target"
   log "Stand: $(git log -1 --format='%h %s')"
 }
 
@@ -86,6 +101,9 @@ ensure_env() {
     env_default HTTPS_PORT "$HTTPS_PORT"
     env_default COOKIE_SECURE true
     env_default TRUST_PROXY 1
+    env_default APP_ENV "$APP_ENV"
+    env_default CONTAINER_NAME "$CONTAINER_NAME"
+    env_default IMAGE_TAG "$IMAGE_TAG"
   )
   chmod 600 .env
   mkdir -p data backups
@@ -135,9 +153,18 @@ backup() {
   # Konsistenter Snapshot über die SQLite-Backup-API, auch während die App läuft
   $COMPOSE exec -T chronik node -e \
     "require('better-sqlite3')('/data/data.db').backup('/data/snapshot.db').then(() => process.exit(0))"
-  tar czf "$file" -C data snapshot.db uploads
+  # .env gehört dazu: ohne die Secrets (JWT_SECRET, später CODE_PEPPER) sind Sessions und Codes wertlos
+  (umask 077 && tar czf "$file" -C data snapshot.db uploads -C "$APP_DIR" .env)
   rm -f data/snapshot.db
   log "Backup: $APP_DIR/$file ($(du -h "$file" | cut -f1))"
+}
+
+# Vor Deploys sichern – Migrationen lassen sich nicht zurückdrehen. Beim allerersten Start gibt es noch nichts.
+backup_if_running() {
+  cd "$APP_DIR"
+  if [ -f .env ] && $COMPOSE ps --status running -q chronik 2>/dev/null | grep -q .; then
+    backup
+  fi
 }
 
 cmd="${1:-status}"
@@ -150,6 +177,7 @@ case "$cmd" in
     log "Einladungscode für neue Rudel: $(env_value FAMILY_INVITE_CODE)"
     ;;
   deploy)
+    backup_if_running
     checkout
     ensure_env
     start
@@ -173,6 +201,12 @@ case "$cmd" in
     cd "$APP_DIR"
     backup
     $COMPOSE exec -T chronik node scripts/demo.js
+    ;;
+  showcase)
+    cd "$APP_DIR"
+    [ "$(env_value APP_ENV)" != "production" ] || fail "showcase setzt alle Daten zurück – nur für Vorschau/Staging (APP_ENV=staging)"
+    backup
+    $COMPOSE exec -T chronik node scripts/testenv-seed.js --reset
     ;;
   admin)
     [[ "${2:-}" =~ ^scrypt:[0-9a-f]+:[0-9a-f]+$ ]] || fail "Hash fehlt oder ist ungültig: admin <scrypt:…>"
