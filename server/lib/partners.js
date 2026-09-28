@@ -34,6 +34,26 @@ function httpError(status, message) {
   return err
 }
 
+// --- Sanitisierung roher Text-Eingaben (security-review Phase 2 Finding 8) ------------------------
+// Steuerzeichen (C0/C1) und Bidi-Override-/Isolate-Zeichen (U+202A-202E, U+2066-2069) raus, BEVOR
+// getrimmt/geprüft wird - beides taugt sonst zum Verschleiern (ein Bidi-Override kann z. B. den
+// angezeigten Namen verdrehen). \n bleibt nur im Portal-Text erlaubt (echte Zeilenumbrüche dort),
+// überall sonst zählt auch \n als zu entfernendes Steuerzeichen.
+const BIDI_CONTROL_RE = /[‪-‮⁦-⁩]/g
+const CONTROL_CHARS_RE = /[\u0000-\u001F\u007F-\u009F]/g
+const CONTROL_CHARS_KEEP_NEWLINE_RE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F]/g
+
+function stripUnsafeChars(value, { allowNewline = false } = {}) {
+  if (typeof value !== 'string') return value
+  const withoutControls = value.replace(allowNewline ? CONTROL_CHARS_KEEP_NEWLINE_RE : CONTROL_CHARS_RE, '')
+  return withoutControls.replace(BIDI_CONTROL_RE, '')
+}
+
+// Säubert + trimmt eine rohe String-Eingabe; alles andere (undefined/null/Zahl/...) wird zu ''.
+function cleanTextInput(value, { allowNewline = false } = {}) {
+  return typeof value === 'string' ? stripUnsafeChars(value, { allowNewline }).trim() : ''
+}
+
 // --- Slug: Umlaute transliterieren, alles andere zu Bindestrichen, gekürzt auf SLUG_MAX_LENGTH ---
 function transliterate(value) {
   return value.replace(/[äöüÄÖÜß]/g, (ch) => UMLAUT_MAP[ch])
@@ -86,7 +106,7 @@ function contrastRatio(hexA, hexB) {
 // --- einzelne Feld-Validierungen: undefined/null/'' -> null (kein Wunsch), sonst geprüft ---
 function cleanOptionalText(value, maxLength, label) {
   if (value === undefined || value === null || value === '') return null
-  const trimmed = typeof value === 'string' ? value.trim() : ''
+  const trimmed = cleanTextInput(value)
   if (!trimmed) return null
   if (trimmed.length > maxLength) throw httpError(400, `${label} darf höchstens ${maxLength} Zeichen haben`)
   return trimmed
@@ -115,41 +135,84 @@ function resolvePlz(value) {
   return { plz: trimmed, lat: hit.lat, lon: hit.lon, ort: hit.ort }
 }
 
-function validateUrl(value, label) {
-  if (value === undefined || value === null || value === '') return null
-  const trimmed = typeof value === 'string' ? value.trim() : ''
-  if (!trimmed || trimmed.length > MAX_URL_LENGTH) throw httpError(400, `${label}: ungültige Adresse`)
+// Nimmt eine bloße "www."-Adresse als https:// entgegen (ohne Protokoll ist new URL() sonst nicht
+// parsbar) - alles andere bleibt unverändert, die Protokoll-Prüfung passiert erst in parseHttpUrl.
+function normalizeUrlInput(value) {
+  const cleaned = cleanTextInput(value)
+  if (!cleaned) return ''
+  return /^www\./i.test(cleaned) ? `https://${cleaned}` : cleaned
+}
+
+// Liefert `new URL(value).href` (normalisierte Form, z. B. mit abschließendem "/" bei einer bloßen
+// Domain) statt der rohen Eingabe zu speichern - oder null, wenn der Wert kein gültiges http(s)-URL ist.
+function parseHttpUrl(value, maxLength) {
+  if (!value || value.length > maxLength) return null
   let parsed
   try {
-    parsed = new URL(trimmed)
+    parsed = new URL(value)
   } catch {
-    throw httpError(400, `${label}: ungültige Adresse`)
+    return null
   }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw httpError(400, `${label}: nur http:// oder https:// erlaubt`)
-  }
-  return trimmed
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+  return parsed.href
+}
+
+function validateUrl(value, label) {
+  const normalized = normalizeUrlInput(value)
+  if (!normalized) return null
+  const href = parseHttpUrl(normalized, MAX_URL_LENGTH)
+  if (!href) throw httpError(400, `${label}: ungültige Adresse`)
+  return href
+}
+
+// Wie validateUrl, aber liefert bei ungültigem Wert null statt zu werfen - für unsichere externe Daten
+// (z. B. OSM-Tags, siehe lib/places/providers/overpass.js), die einen Treffer nicht komplett verwerfen
+// sollen, nur weil ein einzelnes Kontaktfeld unbrauchbar ist.
+function sanitizeExternalUrl(value, maxLength = MAX_URL_LENGTH) {
+  const normalized = normalizeUrlInput(value)
+  return normalized ? parseHttpUrl(normalized, maxLength) : null
+}
+
+// E-Mail: "einfaches Format" - kein "?"/"&" (sonst ließe sich z. B. eine Query-artige Nutzlast
+// einschleusen, die manche Mail-Clients/Log-Zeilen falsch interpretieren).
+function parseEmail(value, maxLength) {
+  if (!value || value.length > maxLength || value.includes('?') || value.includes('&') || !EMAIL_RE.test(value)) return null
+  return value
 }
 
 function validateEmail(value) {
   if (value === undefined || value === null || value === '') return null
-  const trimmed = typeof value === 'string' ? value.trim() : ''
-  if (!trimmed || trimmed.length > MAX_EMAIL_LENGTH || !EMAIL_RE.test(trimmed)) {
-    throw httpError(400, 'Die E-Mail-Adresse ist ungültig')
-  }
-  return trimmed
+  const trimmed = cleanTextInput(value)
+  const result = parseEmail(trimmed, MAX_EMAIL_LENGTH)
+  if (!result) throw httpError(400, 'Die E-Mail-Adresse ist ungültig')
+  return result
+}
+
+function sanitizeExternalEmail(value, maxLength = MAX_EMAIL_LENGTH) {
+  const trimmed = cleanTextInput(value)
+  return trimmed ? parseEmail(trimmed, maxLength) : null
+}
+
+function parsePhone(value) {
+  return value && PHONE_RE.test(value) ? value : null
 }
 
 function validatePhone(value) {
   if (value === undefined || value === null || value === '') return null
-  const trimmed = typeof value === 'string' ? value.trim() : ''
-  if (!trimmed || !PHONE_RE.test(trimmed)) throw httpError(400, 'Die Telefonnummer ist ungültig')
-  return trimmed
+  const trimmed = cleanTextInput(value)
+  const result = parsePhone(trimmed)
+  if (!result) throw httpError(400, 'Die Telefonnummer ist ungültig')
+  return result
+}
+
+function sanitizeExternalPhone(value) {
+  const trimmed = cleanTextInput(value)
+  return trimmed ? parsePhone(trimmed) : null
 }
 
 function validatePortalText(value) {
   if (value === undefined || value === null || value === '') return null
-  const trimmed = typeof value === 'string' ? value.trim() : ''
+  const trimmed = cleanTextInput(value, { allowNewline: true })
   if (!trimmed) return null
   if (trimmed.length > MAX_PORTAL_TEXT_LENGTH) throw httpError(400, `Der Portal-Text darf höchstens ${MAX_PORTAL_TEXT_LENGTH} Zeichen haben`)
   if (/[<>]/.test(trimmed)) throw httpError(400, 'Der Portal-Text darf nur reinen Text enthalten (kein HTML)')
@@ -261,6 +324,10 @@ module.exports = {
   slugify,
   contrastRatio,
   detectImageExt,
+  stripUnsafeChars,
+  sanitizeExternalUrl,
+  sanitizeExternalEmail,
+  sanitizeExternalPhone,
   TYP_VALUES,
   STATUS_VALUES,
   MAX_LOGO_BYTES,

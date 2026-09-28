@@ -365,12 +365,19 @@ router.post('/partners/:id/logo', requireAdmin, (req, res, next) => {
 })
 
 // Löschen nur im Entwurf - ein schon veröffentlichter Partner wird stattdessen pausiert (PUT status).
+// Zusätzlich: referenziert irgendein Gutschein-Stapel (auch längst eingelöste Gutscheine) diesen
+// Partner, bleibt er ebenfalls erhalten - ein Löschen würde sonst die partner_id-Fremdreferenz in
+// voucher_batches/vouchers verwaisen lassen (security-review Phase 2 Finding 7).
 router.delete('/partners/:id', requireAdmin, (req, res) => {
   const id = cleanId(req.params.id)
   const partner = findPartner(id)
   if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
   if (partner.status !== 'entwurf') {
     return res.status(409).json({ error: 'Nur Entwürfe lassen sich löschen – diesen Partner stattdessen pausieren' })
+  }
+  const hasVoucherBatches = db.prepare('SELECT 1 FROM voucher_batches WHERE partner_id = ? LIMIT 1').get(id)
+  if (hasVoucherBatches) {
+    return res.status(409).json({ error: 'Für diesen Partner gibt es schon Gutschein-Stapel – er lässt sich nicht mehr löschen' })
   }
   if (partner.logo_file) {
     fs.rmSync(path.join(config.partnerMediaDir, partner.logo_file), { force: true })

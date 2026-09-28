@@ -75,6 +75,8 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
     assert.equal((await post('/api/admin/partners', samplePartner({ website: 'javascript:alert(1)' }))).status, 400)
     assert.equal((await post('/api/admin/partners', samplePartner({ website: 'ftp://example.org' }))).status, 400)
     assert.equal((await post('/api/admin/partners', samplePartner({ kontaktEmail: 'keine-email' }))).status, 400)
+    assert.equal((await post('/api/admin/partners', samplePartner({ kontaktEmail: 'mit?frage@example.org' }))).status, 400)
+    assert.equal((await post('/api/admin/partners', samplePartner({ kontaktEmail: 'mit&und@example.org' }))).status, 400)
     assert.equal((await post('/api/admin/partners', samplePartner({ kontaktTelefon: 'ruf mich an' }))).status, 400)
 
     const ok = await post(
@@ -82,8 +84,41 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
       samplePartner({ name: 'Mit Kontakt', website: 'https://example.org', kontaktEmail: 'kontakt@example.org', kontaktTelefon: '+49 30 1234567' })
     )
     assert.equal(ok.status, 201)
-    assert.equal(ok.data.website, 'https://example.org')
+    // new URL(value).href ist die gespeicherte, normalisierte Form (Finding 8) - ein bloßer Domain-Name
+    // bekommt dabei einen abschließenden Schrägstrich.
+    assert.equal(ok.data.website, 'https://example.org/')
     assert.equal(ok.data.kontakt_email, 'kontakt@example.org')
+  })
+
+  await t.test('Anlegen: Website normalisiert (new URL().href), bare "www." wird zu https://www., Pfade bleiben erhalten', async () => {
+    const bareWww = await post('/api/admin/partners', samplePartner({ name: 'Bare WWW', slug: 'bare-www', website: 'www.example.org' }))
+    assert.equal(bareWww.status, 201)
+    assert.equal(bareWww.data.website, 'https://www.example.org/')
+
+    const withPath = await post(
+      '/api/admin/partners',
+      samplePartner({ name: 'Mit Pfad', slug: 'mit-pfad', website: 'https://example.org/spenden?ref=chronik' })
+    )
+    assert.equal(withPath.status, 201)
+    assert.equal(withPath.data.website, 'https://example.org/spenden?ref=chronik')
+  })
+
+  await t.test('Anlegen: Steuerzeichen und Bidi-Override-Zeichen werden aus Textfeldern entfernt', async () => {
+    // U+202E (RLO) + U+0007 (BEL, Steuerzeichen) im Namen - beides muss vor dem Speichern verschwinden.
+    const withControls = await post(
+      '/api/admin/partners',
+      samplePartner({ name: 'Tierheim‮ Test\u0007', slug: 'tierheim-bidi-test' })
+    )
+    assert.equal(withControls.status, 201)
+    assert.equal(withControls.data.name, 'Tierheim Test')
+
+    // portal_text darf \n behalten (Zeilenumbrüche in der Portal-Beschreibung), aber keine Bidi-Zeichen.
+    const withNewline = await post(
+      '/api/admin/partners',
+      samplePartner({ name: 'Mit Zeilenumbruch', slug: 'mit-zeilenumbruch', portalText: 'Zeile eins‪mit Override\nZeile zwei' })
+    )
+    assert.equal(withNewline.status, 201)
+    assert.equal(withNewline.data.portal_text, 'Zeile einsmit Override\nZeile zwei')
   })
 
   await t.test('Anlegen: portal_text nur reiner Text (kein HTML), höchstens 2000 Zeichen', async () => {
@@ -247,6 +282,35 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
     assert.equal(nearHamburg.data.length, 1)
     assert.equal(nearHamburg.data[0].slug, 'hundeschule-nord')
     assert.equal(nearHamburg.data[0].distanceKm, 0)
+  })
+
+  await t.test('POST /api/public/partners/near: gleiche Antwort wie GET ?plz - PLZ landet nicht in der URL', async () => {
+    const viaPost = await post('/api/public/partners/near', { plz: '10115', radius: 10 }, null)
+    const viaGet = await get('/api/public/partners?plz=10115&radius=10')
+    assert.equal(viaPost.status, 200)
+    assert.deepEqual(viaPost.data, viaGet.data)
+
+    const badRadius = await post('/api/public/partners/near', { plz: '10115', radius: 7 }, null)
+    assert.equal(badRadius.status, 400)
+
+    const badPlz = await post('/api/public/partners/near', { plz: '00000', radius: 10 }, null)
+    assert.equal(badPlz.status, 400)
+
+    const wide = await post('/api/public/partners/near', { plz: '10115', radius: 50 }, null)
+    assert.deepEqual(wide.data, (await get('/api/public/partners?plz=10115&radius=50')).data)
+  })
+
+  await t.test('Löschen: auch ein Entwurf mit Gutschein-Stapel-Referenz -> 409 (nicht nur bei status != entwurf)', async () => {
+    const draftWithVouchers = await post(
+      '/api/admin/partners',
+      samplePartner({ name: 'Entwurf mit Gutscheinen', slug: 'entwurf-mit-gutscheinen', status: 'entwurf' })
+    )
+    await post('/api/admin/voucher-batches', { label: 'Referenziert Entwurf', size: 1, partnerId: draftWithVouchers.data.id })
+
+    const blocked = await del(`/api/admin/partners/${draftWithVouchers.data.id}`)
+    assert.equal(blocked.status, 409)
+    // der Partner (samt Entwurf-Status) bleibt unangetastet, nur pausieren/löschen der Gutscheine würde helfen
+    assert.equal((await get('/api/admin/partners', adminCookie)).data.some((p) => p.slug === 'entwurf-mit-gutscheinen'), true)
   })
 
   await t.test('Löschen: nur im Entwurf möglich, sonst 409', async () => {
