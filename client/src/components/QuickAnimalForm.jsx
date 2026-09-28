@@ -32,7 +32,9 @@ function buildValues({ tierart, name, nameUnbekannt, rasse, geschlecht, beiUnsSe
 // "lebt mit" unveränderlich; sonst lässt sich ein vorhandenes eigenes Tier aus allDogs wählen.
 // "Mehr Angaben …" reicht die bisherigen Werte an onMore weiter (z. B. um DogForm damit vorzufüllen) –
 // ohne onMore-Prop bleibt der Knopf weg (z. B. auf der Tierseite, die kein volles Formular anbietet).
-export default function QuickAnimalForm({ allDogs, livesWith = null, onCreated, onCancel, onMore }) {
+// shelter: aus ShelterAnimalsPage ("Tier aufnehmen") aufgerufen – das neue Tier startet mit dem
+// Vermittlungsstatus "in Vermittlung" (nur im Tierheim-Bereich erlaubt, siehe server/routes/dogs.js).
+export default function QuickAnimalForm({ allDogs, livesWith = null, shelter = false, onCreated, onCancel, onMore }) {
   const { theme } = useTheme()
   const [tierart, setTierart] = useState(() => initialTierart(theme.id))
   const [tierartError, setTierartError] = useState(false)
@@ -77,7 +79,8 @@ export default function QuickAnimalForm({ allDogs, livesWith = null, onCreated, 
         tierart,
         geschlecht,
         beiUnsSeit: beiUnsSeit || null,
-        housemateId: (livesWith ? livesWith.id : housemateId) || null
+        housemateId: (livesWith ? livesWith.id : housemateId) || null,
+        ...(shelter ? { vermittlungStatus: 'in_vermittlung' } : {})
       })
       onCreated(dog)
     } catch (err) {

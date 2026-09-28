@@ -10,6 +10,10 @@ describe('startRoute', () => {
     expect(startRoute({ art: 'rudel' })).toBe('/stammbaum')
   })
 
+  test('a shelter area starts at Tiere', () => {
+    expect(startRoute({ art: 'tierheim' })).toBe('/tiere')
+  })
+
   test('without a family (e.g. classic pack login without art) falls back to Stammbaum', () => {
     expect(startRoute(undefined)).toBe('/stammbaum')
   })

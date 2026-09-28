@@ -178,7 +178,16 @@ const PATHS = {
       <circle cx="12" cy="10" r="3" />
     </>
   ),
-  external: <path d="M7 17 17 7M9 7h8v8" />
+  external: <path d="M7 17 17 7M9 7h8v8" />,
+  paw: (
+    <>
+      <circle cx="6.5" cy="8" r="2" />
+      <circle cx="11.5" cy="5" r="2" />
+      <circle cx="16.5" cy="7" r="2" />
+      <circle cx="19" cy="11.5" r="2" />
+      <path d="M12 21c-3 0-6-1.8-6-4.5 0-2 2-3.5 6-3.5s6 1.5 6 3.5c0 2.7-3 4.5-6 4.5Z" />
+    </>
+  )
 }
 
 export default function Icon({ name, title, ...props }) {

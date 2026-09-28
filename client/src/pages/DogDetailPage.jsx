@@ -9,6 +9,8 @@ import Lightbox from '../components/Lightbox.jsx'
 import DogForm from '../components/DogForm.jsx'
 import Housemates from '../components/Housemates.jsx'
 import SharePanel from '../components/SharePanel.jsx'
+import SteckbriefPanel from '../components/SteckbriefPanel.jsx'
+import HandoverDialog from '../components/HandoverDialog.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
@@ -17,8 +19,14 @@ import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabe
 import { companionLine } from '../lib/companions.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
+import { VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel } from '../lib/shelter.js'
 
 const HIGHLIGHT_MS = 2600
+
+const VERMITTLUNG_STATUS_OPTIONS = [
+  { value: '', label: '– kein Status –' },
+  ...VERMITTLUNG_STATUS_VALUES.map((value) => ({ value, label: vermittlungStatusLabel(value) }))
+]
 
 // parent.id fehlt (null), wenn der Elternteil hier nicht sichtbar ist (fremder, nicht geteilter
 // Bereich) – der Server liefert dann trotzdem den Namen zur Anzeige, aber ohne Ziel-Id. Ein Link auf
@@ -174,6 +182,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   const [editingEntry, setEditingEntry] = useState(null)
   const [editingDog, setEditingDog] = useState(false)
   const [photo, setPhoto] = useState(null)
+  const [handoverOpen, setHandoverOpen] = useState(false)
   const [highlightKey, setHighlightKey] = useState(null)
   const [newestFirst, setNewestFirst] = useState(() => readSetting('newestFirst', false))
 
@@ -325,6 +334,30 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     toast('Stammdaten gespeichert')
   }
 
+  // Vermittlungsstatus ändern (Tierheim). api.updateDog liefert die rohe Hund-Zeile ohne die
+  // angereicherten Felder (familyName, isOwn, shares, mother, father, …) - deshalb wird sie in den
+  // bestehenden dog-State gemischt statt ihn zu ersetzen (wie schon bei handleAddHousemate oben).
+  async function handleStatusChange(value) {
+    try {
+      const updated = await api.updateDog(dog.id, { vermittlungStatus: value || null })
+      setDog((current) => ({ ...current, ...updated }))
+      toast('Status aktualisiert')
+    } catch (err) {
+      toast(err.message)
+    }
+  }
+
+  // SteckbriefPanel liefert ebenfalls nur die rohe Hund-Zeile (public_slug geändert) - gleiches Mischen.
+  function handleSteckbriefChange(updated) {
+    setDog((current) => ({ ...current, ...updated }))
+  }
+
+  // Der Übergabe-Gutschein setzt serverseitig vermittlung_status auf "reserviert" - hier nur die
+  // Anzeige nachziehen, der Dialog selbst zeigt Code und Link.
+  function handleHandoverCreated() {
+    setDog((current) => ({ ...current, vermittlung_status: 'reserviert' }))
+  }
+
   async function handleDeleteDog() {
     await api.deleteDog(dog.id)
     toast(`${dog.name} wurde entfernt`)
@@ -377,6 +410,35 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         <SharePanel key={dog.id} dog={dog} family={family} onFamilyChange={onFamilyChange} />
       )}
 
+      {dog.canEdit && family.art === 'tierheim' && (
+        <section className="shelter-panel" aria-labelledby="shelter-panel-title">
+          <h2 id="shelter-panel-title">Vermittlung</h2>
+          <div className="field">
+            <label className="field-label" htmlFor="vermittlung-status">
+              Status
+            </label>
+            <select
+              id="vermittlung-status"
+              value={dog.vermittlung_status || ''}
+              onChange={(e) => handleStatusChange(e.target.value)}
+            >
+              {VERMITTLUNG_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <SteckbriefPanel dog={dog} onDogChange={handleSteckbriefChange} />
+
+          <button type="button" className="btn btn-ghost" onClick={() => setHandoverOpen(true)}>
+            <Icon name="logout" />
+            Vermittelt – Übergabe vorbereiten
+          </button>
+        </section>
+      )}
+
       <section className="chronicle" aria-labelledby="chronicle-title">
         <div className="chronicle-head">
           <div>
@@ -409,6 +471,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
                 <h3 className="composer-title">Neue Erinnerung zu {about}</h3>
                 <TimelineEntryForm
                   isHousehold={family.art === 'zuhause'}
+                  isShelter={family.art === 'tierheim'}
                   onSubmit={handleCreateEntry}
                   onCancel={() => setComposerOpen(false)}
                 />
@@ -445,6 +508,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
           <TimelineEntryForm
             entry={editingEntry}
             isHousehold={family.art === 'zuhause'}
+            isShelter={family.art === 'tierheim'}
             onSubmit={handleUpdateEntry}
             onDelete={handleDeleteEntry}
             onCancel={() => setEditingEntry(null)}
@@ -461,6 +525,10 @@ export default function DogDetailPage({ family, onFamilyChange }) {
           onDelete={handleDeleteDog}
           onCancel={() => setEditingDog(false)}
         />
+      </Modal>
+
+      <Modal open={handoverOpen} title={`Übergabe vorbereiten – ${firstName}`} onClose={() => setHandoverOpen(false)}>
+        {handoverOpen && <HandoverDialog dog={dog} onCreated={handleHandoverCreated} />}
       </Modal>
 
       <Lightbox src={photo} onClose={() => setPhoto(null)} />

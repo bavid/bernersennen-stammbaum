@@ -137,6 +137,26 @@ describe('QuickAnimalForm', () => {
     expect(createDog).toHaveBeenCalledWith(expect.objectContaining({ tierart: 'anderes', rasse: 'Kaninchen' }))
   })
 
+  test('shelter=true legt das Tier mit vermittlungStatus "in_vermittlung" an', async () => {
+    createDog.mockResolvedValue({ id: 3, name: 'Pepper' })
+    await render({ shelter: true }, 'berner')
+
+    setInputValue(container.querySelector('#quick-animal-name'), 'Pepper')
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(createDog).toHaveBeenCalledWith(expect.objectContaining({ vermittlungStatus: 'in_vermittlung' }))
+  })
+
+  test('ohne shelter-Prop wird kein vermittlungStatus mitgeschickt', async () => {
+    createDog.mockResolvedValue({ id: 4, name: 'Momo' })
+    await render({}, 'berner')
+
+    setInputValue(container.querySelector('#quick-animal-name'), 'Momo')
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(createDog).toHaveBeenCalledWith(expect.not.objectContaining({ vermittlungStatus: expect.anything() }))
+  })
+
   test('"Name unbekannt" legt ohne Namen an', async () => {
     createDog.mockResolvedValue({ id: 2, name: 'Unbekannt' })
     await render({}, 'berner')

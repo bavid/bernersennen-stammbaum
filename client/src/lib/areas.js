@@ -1,8 +1,9 @@
 // Bereiche eines Haushalts: das eigene "Zuhause" (art: 'zuhause') und die Familien/Rudel, denen es beitritt.
 
-// Startseite je aktivem Bereich: Zuhause -> Wegbegleiter, Familie/Rudel -> Stammbaum.
+// Startseite je aktivem Bereich: Zuhause -> Wegbegleiter, Tierheim -> Tiere, Familie/Rudel -> Stammbaum.
 // Gilt auch für klassische Rudel-Logins (kein home.art === 'zuhause'), die landen wie bisher am Stammbaum.
 export function startRoute(family) {
+  if (family?.art === 'tierheim') return '/tiere'
   return family?.art === 'zuhause' ? '/wegbegleiter' : '/stammbaum'
 }
 

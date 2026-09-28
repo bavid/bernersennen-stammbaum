@@ -13,6 +13,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import OverviewPage from './pages/OverviewPage.jsx'
 import DogDetailPage from './pages/DogDetailPage.jsx'
 import CompanionsPage from './pages/CompanionsPage.jsx'
+import ShelterAnimalsPage from './pages/ShelterAnimalsPage.jsx'
 import LittersPage from './pages/LittersPage.jsx'
 import CollagePage from './pages/CollagePage.jsx'
 import PinboardPage from './pages/PinboardPage.jsx'
@@ -44,7 +45,16 @@ const NAV_ITEMS_GROUP = [
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
 
+// Tierheime (Phase T): kein Stammbaum/Würfe, sondern "Unsere Tiere" als Startseite - Pinnwand und
+// Collage bleiben unverändert nutzbar.
+const NAV_ITEMS_SHELTER = [
+  { to: '/tiere', icon: 'paw', label: 'Tiere' },
+  { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
+  { to: '/collage', icon: 'collage', label: 'Collage' }
+]
+
 function navItemsFor(family) {
+  if (family.art === 'tierheim') return NAV_ITEMS_SHELTER
   return family.art === 'zuhause' ? NAV_ITEMS_HOME : NAV_ITEMS_GROUP
 }
 
@@ -71,8 +81,9 @@ function RedirectTierUrl() {
 export function AppHeader({ family, onLogout, onFamilyChange }) {
   const { pathname } = useLocation()
   const { theme } = useTheme()
-  // Tierseiten gehören zum Stammbaum
-  const isActive = (item, active) => active || (item.to === '/stammbaum' && pathname.startsWith('/tier/'))
+  // Tierseiten gehören zum Stammbaum bzw. (im Tierheim) zu "Tiere"
+  const isActive = (item, active) =>
+    active || ((item.to === '/stammbaum' || item.to === '/tiere') && pathname.startsWith('/tier/'))
   // Nur Haushalte bekommen den Bereichswechsler; klassische Rudel-Logins (kein family.home) zeigen nur den Namen.
   const isHouseholdIdentity = family.home?.art === 'zuhause'
   return (
@@ -305,6 +316,10 @@ export default function App() {
               <Route
                 path="/wegbegleiter"
                 element={family.art === 'zuhause' ? <CompanionsPage family={family} /> : <Navigate to={startRoute(family)} replace />}
+              />
+              <Route
+                path="/tiere"
+                element={family.art === 'tierheim' ? <ShelterAnimalsPage family={family} /> : <Navigate to={startRoute(family)} replace />}
               />
               <Route path="/pinnwand" element={<PinboardPage />} />
               <Route path="/wuerfe" element={<LittersPage />} />

@@ -3,17 +3,22 @@ import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import { todayIso } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
+import { KATEGORIE_VALUES, kategorieLabel } from '../lib/shelter.js'
 
 // Neuer oder bearbeiteter Timeline-Eintrag. Das Datum bestimmt die Position in der Chronik.
 // isHousehold: der aktive Bereich ist ein Haushalt ("Meine Chronik") – nur dort kann ein Eintrag als
 // privat markiert werden (sonst gibt es niemanden, vor dem er verborgen bleiben könnte).
-export default function TimelineEntryForm({ entry, isHousehold, onSubmit, onDelete, onCancel }) {
+// isShelter: der aktive Bereich ist ein Tierheim – statt "privat" gibt es hier eine Kategorie und die
+// Checkbox "Im Steckbrief zeigen (öffentlich)" (isPublic), s. Phase T Task 4.
+export default function TimelineEntryForm({ entry, isHousehold, isShelter, onSubmit, onDelete, onCancel }) {
   const [autorName, setAutorName] = useState(() => entry?.autor_name || readSetting('autorName', ''))
   const [datum, setDatum] = useState(() => entry?.datum || todayIso())
   const [titel, setTitel] = useState(entry?.titel || '')
   const [text, setText] = useState(entry?.text || '')
   const [fotos, setFotos] = useState(entry?.foto_urls || [])
   const [privat, setPrivat] = useState(Boolean(entry?.privat))
+  const [kategorie, setKategorie] = useState(entry?.kategorie || '')
+  const [isPublic, setIsPublic] = useState(Boolean(entry?.is_public))
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -24,7 +29,7 @@ export default function TimelineEntryForm({ entry, isHousehold, onSubmit, onDele
     setSaving(true)
     try {
       writeSetting('autorName', autorName.trim())
-      await onSubmit({ autorName, datum, titel, text, fotoUrls: fotos, privat })
+      await onSubmit({ autorName, datum, titel, text, fotoUrls: fotos, privat, kategorie: kategorie || null, isPublic })
     } catch (err) {
       setError(err.message)
       setSaving(false)
@@ -100,6 +105,30 @@ export default function TimelineEntryForm({ entry, isHousehold, onSubmit, onDele
             Nur für uns (privat)
           </label>
           <span className="field-hint">Private Einträge sehen nur die Menschen in eurem Zuhause.</span>
+        </div>
+      )}
+      {isShelter && (
+        <div className="field">
+          <label className="field-label" htmlFor="entry-kategorie">
+            Kategorie
+          </label>
+          <select id="entry-kategorie" value={kategorie} onChange={(e) => setKategorie(e.target.value)}>
+            <option value="">– keine –</option>
+            {KATEGORIE_VALUES.map((value) => (
+              <option key={value} value={value}>
+                {kategorieLabel(value)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {isShelter && (
+        <div className="field span-2">
+          <label className="check">
+            <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+            Im Steckbrief zeigen (öffentlich)
+          </label>
+          <span className="field-hint">Erscheint auf dem öffentlichen Steckbrief, sobald er veröffentlicht ist.</span>
         </div>
       )}
       <div className="form-actions span-2">

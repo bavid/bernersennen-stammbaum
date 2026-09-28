@@ -5,6 +5,7 @@ import CommentThread from './CommentThread.jsx'
 import ExpandableText from './ExpandableText.jsx'
 import { dogLabel, groupByYear } from '../lib/timeline.js'
 import { ageText, formatDayMonth } from '../lib/dates.js'
+import { kategorieLabel } from '../lib/shelter.js'
 
 // Kein eigenes Einzugs-/Abschieds-Icon vorhanden – 'pin' (Stecknadel, "hier verankert") und
 // 'logout' (Tür mit Pfeil, "geht") aus Icon.jsx passen inhaltlich am besten.
@@ -50,12 +51,20 @@ function Milestone({ item, onOpenPhoto }) {
 
 function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment, canDeleteComment }) {
   const age = birthDate ? ageText(birthDate, item.datum) : null
+  const kategorie = kategorieLabel(item.kategorie)
   return (
     <article className="entry-card">
       <header className="entry-head">
         <div>
           <h3 className="entry-title">
             {item.titel}
+            {kategorie ? <span className="kategorie-badge">{kategorie}</span> : null}
+            {item.is_public ? (
+              <span className="public-badge" title="Im Steckbrief sichtbar" aria-label="Im Steckbrief sichtbar">
+                <Icon name="globe" />
+                öffentlich
+              </span>
+            ) : null}
             {item.privat ? (
               <span className="privat-badge" title="Privater Eintrag" aria-label="Privater Eintrag">
                 <Icon name="lock" />
@@ -67,6 +76,9 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
             von {item.autor_name}
             {age ? ` · ${age} alt` : ''}
           </p>
+          {/* herkunft_name kommt nur bei umgezogenen Einträgen mit (server-seitiger JOIN auf
+              herkunft_family_id, siehe Phase T Task 4/Server-Ergänzung) - sonst bleibt die Zeile weg. */}
+          {item.herkunft_name && <p className="entry-herkunft muted">aus {item.herkunft_name}</p>}
         </div>
         {canEdit && (
           <button type="button" className="icon-btn" onClick={() => onEdit(item)} aria-label={`„${item.titel}“ bearbeiten`}>

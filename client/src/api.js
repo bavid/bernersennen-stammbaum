@@ -99,6 +99,10 @@ export const api = {
   removeHousemate: (dogId, otherDogId) => request(`/dogs/${dogId}/housemates/${otherDogId}`, { method: 'DELETE' }),
   setDogShares: (id, familyIds) => request(`/dogs/${id}/shares`, json('PUT', { familyIds })),
 
+  // Phase T – Tierheim: Steckbrief veröffentlichen/zurückziehen und Übergabe-Gutschein erzeugen.
+  setSteckbrief: (id, published) => request(`/dogs/${id}/steckbrief`, json('PUT', { published })),
+  createHandover: (id) => request(`/dogs/${id}/handover`, { method: 'POST' }),
+
   listTimeline: (dogId) => request(`/timeline${dogId ? `?dogId=${encodeURIComponent(dogId)}` : ''}`),
   createTimelineEntry: (payload) => request('/timeline', json('POST', payload)),
   updateTimelineEntry: (id, payload) => request(`/timeline/${id}`, json('PUT', payload)),

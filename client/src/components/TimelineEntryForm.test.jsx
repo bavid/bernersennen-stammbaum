@@ -30,15 +30,27 @@ afterEach(() => {
 })
 
 const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+const nativeSelectValueSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set
 
 function setInputValue(input, value) {
   nativeInputValueSetter.call(input, value)
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
+function setSelectValue(select, value) {
+  nativeSelectValueSetter.call(select, value)
+  select.dispatchEvent(new Event('change', { bubbles: true }))
+}
+
 function fillRequiredFields() {
   setInputValue(container.querySelector('#entry-title'), 'Erster Tag am See')
   setInputValue(container.querySelector('#entry-author'), 'Dana')
+}
+
+// Checkbox anhand des sichtbaren Labeltexts finden - eindeutig, auch wenn mehrere ".check"
+// Checkboxen im Formular stehen (privat, isHousehold, vs. öffentlich, isShelter).
+function checkboxWithLabel(text) {
+  return [...container.querySelectorAll('.check')].find((label) => label.textContent === text)?.querySelector('input')
 }
 
 function privatCheckbox() {
@@ -93,5 +105,55 @@ describe('TimelineEntryForm – privat', () => {
     await act(async () => container.querySelector('form').requestSubmit())
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ privat: false }))
+  })
+})
+
+describe('TimelineEntryForm – Tierheim (Kategorie, öffentlich)', () => {
+  test('ohne isShelter gibt es weder Kategorie-Auswahl noch "öffentlich"-Checkbox', async () => {
+    await render()
+    expect(container.querySelector('#entry-kategorie')).toBeNull()
+    expect(container.textContent).not.toContain('Im Steckbrief zeigen')
+  })
+
+  test('mit isShelter erscheinen Kategorie-Auswahl und die "öffentlich"-Checkbox statt "privat"', async () => {
+    await render({ isShelter: true })
+    expect(container.querySelector('#entry-kategorie')).not.toBeNull()
+    expect(container.textContent).toContain('Im Steckbrief zeigen (öffentlich)')
+    expect(checkboxWithLabel('Nur für uns (privat)')).toBeUndefined()
+  })
+
+  test('sendet die gewählte Kategorie und isPublic: true', async () => {
+    const onSubmit = vi.fn().mockResolvedValue()
+    await render({ isShelter: true, onSubmit })
+    fillRequiredFields()
+
+    setSelectValue(container.querySelector('#entry-kategorie'), 'ankunft')
+    act(() => checkboxWithLabel('Im Steckbrief zeigen (öffentlich)').click())
+
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ kategorie: 'ankunft', isPublic: true }))
+  })
+
+  test('ohne Auswahl wird kategorie: null und isPublic: false gesendet', async () => {
+    const onSubmit = vi.fn().mockResolvedValue()
+    await render({ isShelter: true, onSubmit })
+    fillRequiredFields()
+
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ kategorie: null, isPublic: false }))
+  })
+
+  test('beim Bearbeiten zeigt es Kategorie und öffentlich-Status des Eintrags', async () => {
+    await render({
+      isShelter: true,
+      entry: { id: 1, titel: 'Ankunft', autor_name: 'Team', datum: '2024-01-01', kategorie: 'ankunft', is_public: 1 }
+    })
+    expect(container.querySelector('#entry-kategorie').value).toBe('ankunft')
+    const checkbox = [...container.querySelectorAll('.check input[type="checkbox"]')].find(
+      (input) => input.closest('.check').textContent === 'Im Steckbrief zeigen (öffentlich)'
+    )
+    expect(checkbox.checked).toBe(true)
   })
 })

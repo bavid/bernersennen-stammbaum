@@ -60,3 +60,39 @@ describe('Timeline – private Einträge', () => {
     expect(container.querySelector('.privat-badge')).toBeNull()
   })
 })
+
+describe('Timeline – Tierheim (Kategorie, öffentlich, Herkunft)', () => {
+  test('ein Eintrag mit Kategorie zeigt einen Kategorie-Chip mit deutschem Label', async () => {
+    await render([entry({ kategorie: 'tierarzt' })])
+    const badge = container.querySelector('.kategorie-badge')
+    expect(badge).not.toBeNull()
+    expect(badge.textContent).toBe('Tierarzt')
+  })
+
+  test('ohne Kategorie erscheint kein Kategorie-Chip', async () => {
+    await render([entry({ kategorie: null })])
+    expect(container.querySelector('.kategorie-badge')).toBeNull()
+  })
+
+  test('is_public zeigt ein "öffentlich"-Kennzeichen', async () => {
+    await render([entry({ is_public: 1 })])
+    const badge = container.querySelector('.public-badge')
+    expect(badge).not.toBeNull()
+    expect(badge.textContent).toContain('öffentlich')
+  })
+
+  test('ohne is_public bleibt das Kennzeichen weg', async () => {
+    await render([entry({ is_public: 0 })])
+    expect(container.querySelector('.public-badge')).toBeNull()
+  })
+
+  test('herkunft_name zeigt "aus {herkunft_name}" (umgezogener Eintrag)', async () => {
+    await render([entry({ herkunft_name: 'Tierheim Sonnenhang' })])
+    expect(container.querySelector('.entry-herkunft').textContent).toBe('aus Tierheim Sonnenhang')
+  })
+
+  test('ohne herkunft_name bleibt die Zeile weg', async () => {
+    await render([entry()])
+    expect(container.querySelector('.entry-herkunft')).toBeNull()
+  })
+})
