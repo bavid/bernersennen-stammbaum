@@ -6,6 +6,7 @@ const db = require('../db')
 const config = require('../config')
 const { verifyPassword, safeEqual } = require('../lib/adminAuth')
 const { requireAdmin, setAdminCookie, clearAdminCookie } = require('../middleware/admin')
+const { ipKeyGenerator } = require('../lib/rateLimitKey')
 
 const router = express.Router()
 
@@ -17,6 +18,7 @@ const adminLoginLimiter = rateLimit({
   limit: ADMIN_LOGIN_LIMIT,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
   message: { error: 'Zu viele Versuche. Bitte warte ein paar Minuten.' }
 })
 
@@ -124,7 +126,6 @@ router.get('/overview', requireAdmin, (req, res) => {
       openMessages: db.prepare("SELECT COUNT(*) AS c FROM admin_messages WHERE status = 'offen'").get().c,
       uploads: uploadStats()
     },
-    inviteCode: config.inviteCode || null,
     families
   })
 })

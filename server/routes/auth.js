@@ -1,35 +1,41 @@
-const crypto = require('node:crypto')
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
-const { requireAuth, requireSession, setSessionCookie, clearSessionCookie } = require('../middleware/auth')
-const { rejectHoneypot } = require('../middleware/abuse')
-const { cleanText, cleanId } = require('../lib/validate')
+const { requireAuth, requireSession, setSessionCookie, clearSessionCookie, refreshSession } = require('../middleware/auth')
+const { codeLimiter } = require('../middleware/abuse')
+const { cleanId } = require('../lib/validate')
 const { isTheme } = require('../lib/themes')
 const { ART, canEnter, buildMe } = require('../lib/context')
-const { normalizeCode, hashCode } = require('../lib/codes')
+const { generateCode, normalizeCode, hashCode, formatCode } = require('../lib/codes')
+const { validatePassword, validateUsername, validateEmail } = require('../lib/vouchers')
+const { ipKeyGenerator } = require('../lib/rateLimitKey')
 
 const router = express.Router()
 
 const MIN_PASSWORD_LENGTH = 6
 const MAX_NAME_LENGTH = 80
-const MAX_QUELLE_LENGTH = 200
 const BCRYPT_ROUNDS = 10
+const USER_LOGIN_ERROR = 'Benutzername oder Passwort falsch'
+const RECOVER_MISMATCH = 'Schlüssel oder Benutzername stimmen nicht'
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: config.loginRateLimit,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
   message: { error: 'Zu viele Versuche. Bitte warte ein paar Minuten und probiere es dann erneut.' }
 })
 
-function safeEqual(a, b) {
-  const hashA = crypto.createHash('sha256').update(String(a ?? '')).digest()
-  const hashB = crypto.createHash('sha256').update(String(b ?? '')).digest()
-  return crypto.timingSafeEqual(hashA, hashB)
+// Benutzer-Login (POST /login mit username/password statt secret): dieselbe 401 für falschen Namen
+// und falsches Passwort, damit sich beides von außen nicht unterscheiden lässt.
+async function findUserByCredentials(username, password) {
+  if (typeof username !== 'string' || !username || typeof password !== 'string' || !password) return null
+  const user = db.prepare('SELECT id, family_id, password_hash FROM users WHERE username = ?').get(username)
+  if (!user) return null
+  return (await bcrypt.compare(password, user.password_hash)) ? user : null
 }
 
 // onlyJoinable: für /families/join – nur echte Rudel, keine Demo (kein Zuhause anderer, keine Demo-Familie)
@@ -62,54 +68,29 @@ function requireHomeIdentity(req, res) {
 }
 
 router.get('/config', (req, res) => {
-  res.json({ inviteRequired: Boolean(config.inviteCode), appEnv: config.appEnv })
-})
-
-router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => {
-  try {
-    const { name, password, inviteCode, quelle, art: artInput } = req.body || {}
-    const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
-    if (!trimmedName || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
-      return res.status(400).json({
-        error: `Rudelname und ein Passwort mit mindestens ${MIN_PASSWORD_LENGTH} Zeichen sind erforderlich`
-      })
-    }
-    // Alte Clients senden keine art mit – die bekommen weiterhin ein gewöhnliches Rudel
-    const art = artInput === undefined ? ART.rudel : artInput
-    if (art !== ART.zuhause && art !== ART.rudel) {
-      return res.status(400).json({ error: 'Unbekannte Art' })
-    }
-    if (config.inviteCode && !safeEqual(inviteCode, config.inviteCode)) {
-      return res.status(403).json({ error: 'Der Einladungscode stimmt nicht' })
-    }
-    if (await findFamilyByPassword(password)) {
-      return res.status(409).json({
-        error: 'Passwort belegt – dieses Passwort nutzt schon ein anderes Rudel. Bitte wähle ein anderes.',
-        field: 'password'
-      })
-    }
-
-    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
-    const result = db
-      .prepare('INSERT INTO families (name, password_hash, quelle, art) VALUES (?, ?, ?, ?)')
-      .run(trimmedName, passwordHash, cleanText(quelle, MAX_QUELLE_LENGTH), art)
-
-    setSessionCookie(res, result.lastInsertRowid)
-    res.status(201).json(buildMe(result.lastInsertRowid, result.lastInsertRowid, false))
-  } catch (err) {
-    next(err)
-  }
+  res.json({ appEnv: config.appEnv })
 })
 
 // Kein Honeypot beim Login: Passwort-Manager füllen das versteckte Feld mit dem gespeicherten
 // Benutzernamen und sperren sonst echte Menschen aus. Schutz hier: authLimiter.
-// { secret } ist das neue Feld (Schlüssel ODER altes Passwort); { password } bleibt als Alias für
-// alte Clients. Sieht secret wie ein Gutschein-Code aus, wird zuerst dort nachgeschaut - erst wenn
-// weder ein Schlüssel noch ein offener Gutschein passt, läuft die alte Passwort-Schleife (ein altes
-// Passwort könnte zufällig codeförmig sein).
+// { username, password } ist der Benutzer-Login (Phase 1, unabhängig vom Bereichs-Schlüssel).
+// { secret } ist das Feld für den Bereich selbst (Schlüssel ODER altes Passwort); { password } bleibt
+// als Alias für alte Clients. Sieht secret wie ein Gutschein-Code aus, wird zuerst dort nachgeschaut -
+// erst wenn weder ein Schlüssel noch ein offener Gutschein passt, läuft die alte Passwort-Schleife
+// (ein altes Passwort könnte zufällig codeförmig sein).
 router.post('/login', authLimiter, async (req, res, next) => {
   try {
-    const { secret, password } = req.body || {}
+    const { username, password, secret } = req.body || {}
+
+    if (typeof username === 'string' && username) {
+      const user = await findUserByCredentials(username, password)
+      if (!user) return res.status(401).json({ error: USER_LOGIN_ERROR })
+      db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?").run(user.id)
+      const family = db.prepare('SELECT is_demo FROM families WHERE id = ?').get(user.family_id)
+      setSessionCookie(res, user.family_id, user.family_id, { userId: user.id })
+      return res.json(buildMe(user.family_id, user.family_id, Boolean(family?.is_demo)))
+    }
+
     const rawSecret = typeof secret === 'string' && secret ? secret : password
     if (typeof rawSecret !== 'string' || !rawSecret) {
       return res.status(400).json({ error: 'Schlüssel oder Passwort ist erforderlich' })
@@ -186,12 +167,6 @@ router.put('/family', requireAuth, (req, res) => {
   res.json(db.prepare('SELECT id, name, theme FROM families WHERE id = ?').get(req.familyId))
 })
 
-// Einladungscode für eingeloggte Mitglieder – damit sie ihn an Bekannte weitergeben können
-router.get('/invite', requireAuth, (req, res) => {
-  // Demo-Rudel ist öffentlich erreichbar – der echte Einladungscode bleibt echten Mitgliedern vorbehalten
-  res.json({ inviteCode: req.isDemo ? null : config.inviteCode || null })
-})
-
 router.get('/me', requireAuth, (req, res) => {
   res.json(buildMe(req.homeId, req.familyId, req.isDemo))
 })
@@ -205,7 +180,7 @@ router.post('/view', requireSession, (req, res) => {
   if (!id || !canEnter(req.homeId, id)) {
     return res.status(404).json({ error: 'Diesen Bereich gibt es nicht' })
   }
-  setSessionCookie(res, req.homeId, id)
+  refreshSession(req, res, id)
   res.json(buildMe(req.homeId, id, req.isDemo))
 })
 
@@ -288,10 +263,98 @@ router.delete('/memberships/:groupId', requireAuth, (req, res) => {
   }
 
   if (req.familyId === groupId) {
-    setSessionCookie(res, req.homeId)
+    refreshSession(req, res, req.homeId)
     return res.json(buildMe(req.homeId, req.homeId, req.isDemo))
   }
   res.json(buildMe(req.homeId, req.familyId, req.isDemo))
+})
+
+// Nur im eigenen Bereich (Identität == aktiver Bereich) - sonst könnte man z. B. während man in einem
+// beigetretenen Rudel unterwegs ist, versehentlich dessen Schlüssel/Benutzer meinen.
+function requireOwnIdentity(req, res) {
+  if (req.familyId !== req.homeId) {
+    res.status(400).json({ error: 'Nur im eigenen Bereich möglich' })
+    return false
+  }
+  return true
+}
+
+// Neuen Schlüssel erzeugen: auth_epoch steigt, jede andere Sitzung dieser Identität fällt raus
+// (siehe requireSession). Die eigene, gerade genutzte Sitzung bekommt sofort ein neues Cookie
+// (refreshSession), sonst wäre man mit der nächsten Anfrage selbst ausgesperrt.
+router.post('/family/key', requireAuth, (req, res) => {
+  if (!requireOwnIdentity(req, res)) return
+
+  const code = generateCode()
+  db.prepare('UPDATE families SET access_key_hash = ?, auth_epoch = auth_epoch + 1 WHERE id = ?').run(hashCode(code), req.homeId)
+  refreshSession(req, res, req.homeId)
+  res.json({ key: formatCode(code) })
+})
+
+// Eigene Benutzer-Logins der Identität (req.homeId) - gelten bereichsübergreifend, unabhängig vom
+// gerade aktiven Bereich (Zuhause oder ein beigetretenes Rudel).
+router.get('/users', requireAuth, (req, res) => {
+  res.json(
+    db.prepare('SELECT id, username, email, last_login_at FROM users WHERE family_id = ? ORDER BY created_at, id').all(req.homeId)
+  )
+})
+
+router.post('/users', requireAuth, async (req, res, next) => {
+  try {
+    const { username, password, email } = req.body || {}
+    validateUsername(username)
+    validatePassword(password)
+    const cleanEmail = validateEmail(email)
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
+
+    try {
+      const result = db
+        .prepare('INSERT INTO users (family_id, username, password_hash, email) VALUES (?, ?, ?, ?)')
+        .run(req.homeId, username, passwordHash, cleanEmail)
+      res.status(201).json(db.prepare('SELECT id, username, email, last_login_at FROM users WHERE id = ?').get(result.lastInsertRowid))
+    } catch (err) {
+      if (String(err.message).includes('UNIQUE')) return res.status(409).json({ error: 'Benutzername ist vergeben' })
+      throw err
+    }
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
+})
+
+router.delete('/users/:id', requireAuth, (req, res) => {
+  const id = cleanId(req.params.id)
+  if (!id) return res.status(404).json({ error: 'Diesen Benutzer gibt es nicht' })
+
+  const result = db.prepare('DELETE FROM users WHERE id = ? AND family_id = ?').run(id, req.homeId)
+  if (!result.changes) return res.status(404).json({ error: 'Diesen Benutzer gibt es nicht' })
+  res.status(204).end()
+})
+
+// Wiederherstellung: der Schlüssel dient als PUK für den eigenen Benutzer-Login. Jede Unstimmigkeit
+// (Code, Benutzername oder beides falsch) ergibt dieselbe Meldung, damit sich von außen nicht
+// unterscheiden lässt, welcher Teil falsch war. session_epoch + 1 beendet alle bisherigen Sitzungen
+// dieses Benutzers (siehe requireSession).
+router.post('/recover', codeLimiter, async (req, res, next) => {
+  try {
+    const { code, username, newPassword } = req.body || {}
+    validatePassword(newPassword)
+
+    const normalized = normalizeCode(code)
+    const user =
+      typeof username === 'string' && username ? db.prepare('SELECT id, family_id FROM users WHERE username = ?').get(username) : null
+    const family = normalized && user ? db.prepare('SELECT access_key_hash FROM families WHERE id = ?').get(user.family_id) : null
+    if (!normalized || !user || !family || family.access_key_hash !== hashCode(normalized)) {
+      return res.status(400).json({ error: RECOVER_MISMATCH })
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS)
+    db.prepare('UPDATE users SET password_hash = ?, session_epoch = session_epoch + 1 WHERE id = ?').run(passwordHash, user.id)
+    res.status(204).end()
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
 })
 
 module.exports = router

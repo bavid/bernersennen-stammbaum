@@ -8,6 +8,7 @@ const BCRYPT_ROUNDS = 10
 const MAX_NAME_LENGTH = 80 // wie bei anderen Familiennamen
 const USERNAME_RE = /^[A-Za-z0-9._-]{3,40}$/
 const MIN_USER_PASSWORD_LENGTH = 8
+const MAX_PASSWORD_BYTES = 72 // bcrypt kappt alles danach kommentarlos - lieber vorher ablehnen
 const MAX_EMAIL_LENGTH = 120
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -22,9 +23,48 @@ function isoNow() {
   return new Date().toISOString().slice(0, 19).replace('T', ' ')
 }
 
+// Nimmt ISO-Strings (oder ein Date) entgegen und normalisiert sie auf das sqlite-Format
+// "YYYY-MM-DD HH:MM:SS" (UTC) - sonst vergleicht expires_at > datetime('now') Text, der nicht
+// lexikographisch zu datetime('now') passt (z. B. das "T" und die Millisekunden eines ISO-Strings).
+function toSqliteDatetime(value) {
+  if (value === null || value === undefined) return null
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) throw httpError(400, 'Ungültiges Datum')
+  return date.toISOString().slice(0, 19).replace('T', ' ')
+}
+
+// Gemeinsame Validierung für jedes neue oder geänderte Benutzer-Passwort (Einlösen, POST /users,
+// /recover): mindestens MIN_USER_PASSWORD_LENGTH Zeichen, höchstens MAX_PASSWORD_BYTES Byte (UTF-8) -
+// bcrypt selbst kappt bei 72 Byte kommentarlos, ein längeres Passwort wäre also teilweise wirkungslos.
+function validatePassword(password) {
+  if (typeof password !== 'string' || password.length < MIN_USER_PASSWORD_LENGTH) {
+    throw httpError(400, `Das Passwort muss mindestens ${MIN_USER_PASSWORD_LENGTH} Zeichen haben`)
+  }
+  if (Buffer.byteLength(password, 'utf8') > MAX_PASSWORD_BYTES) {
+    throw httpError(400, 'Das Passwort ist zu lang')
+  }
+}
+
+function validateUsername(username) {
+  if (typeof username !== 'string' || !USERNAME_RE.test(username)) {
+    throw httpError(400, 'Benutzername: 3-40 Zeichen (Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich)')
+  }
+}
+
+// undefined/null/'' -> kein Wunsch nach einer E-Mail, gibt null zurück; sonst geprüft und getrimmt.
+function validateEmail(email) {
+  if (email === undefined || email === null || email === '') return null
+  const trimmed = typeof email === 'string' ? email.trim() : ''
+  if (!trimmed || trimmed.length > MAX_EMAIL_LENGTH || !EMAIL_RE.test(trimmed)) {
+    throw httpError(400, 'Die E-Mail-Adresse ist ungültig')
+  }
+  return trimmed
+}
+
 // Legt einen Stapel mit `size` frischen Codes an (eine Transaktion). Gibt die Klartext-Codes zurück -
 // nur für Aufrufer, die sie sofort brauchen (Tests, Seed, Admin); danach ist nur noch code_cipher da.
 function createBatch(db, { label, kind, size, issuedByFamilyId = null, joinFamilyId = null, partnerId = null, expiresAt = null }) {
+  const sqliteExpiresAt = toSqliteDatetime(expiresAt)
   return db.transaction(() => {
     const batchId = db
       .prepare('INSERT INTO voucher_batches (label, kind, partner_id, size) VALUES (?, ?, ?, ?)')
@@ -48,7 +88,7 @@ function createBatch(db, { label, kind, size, issuedByFamilyId = null, joinFamil
             partnerId,
             issuedByFamilyId,
             joinFamilyId,
-            expiresAt
+            sqliteExpiresAt
           )
           codes.push(code)
           break
@@ -84,22 +124,11 @@ function validateRedeemInput({ name, username, password, email }) {
     throw httpError(400, 'Benutzername und Passwort gehören zusammen - beide angeben oder beide weglassen')
   }
   if (hasUsername) {
-    if (!USERNAME_RE.test(username)) {
-      throw httpError(400, 'Benutzername: 3-40 Zeichen (Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich)')
-    }
-    if (password.length < MIN_USER_PASSWORD_LENGTH) {
-      throw httpError(400, `Das Passwort muss mindestens ${MIN_USER_PASSWORD_LENGTH} Zeichen haben`)
-    }
+    validateUsername(username)
+    validatePassword(password)
   }
 
-  let cleanEmail = null
-  if (hasUsername && email !== undefined && email !== null && email !== '') {
-    const trimmedEmail = typeof email === 'string' ? email.trim() : ''
-    if (!trimmedEmail || trimmedEmail.length > MAX_EMAIL_LENGTH || !EMAIL_RE.test(trimmedEmail)) {
-      throw httpError(400, 'Die E-Mail-Adresse ist ungültig')
-    }
-    cleanEmail = trimmedEmail
-  }
+  const cleanEmail = hasUsername ? validateEmail(email) : null
 
   return { trimmedName, hasUsername, cleanEmail }
 }
@@ -174,4 +203,14 @@ function redeemVoucher(db, { code, name, username, password, email }) {
   return { familyId, code: normalized }
 }
 
-module.exports = { createBatch, voucherStatus, redeemVoucher }
+module.exports = {
+  createBatch,
+  voucherStatus,
+  redeemVoucher,
+  validatePassword,
+  validateUsername,
+  validateEmail,
+  USERNAME_RE,
+  MIN_USER_PASSWORD_LENGTH,
+  MAX_PASSWORD_BYTES
+}

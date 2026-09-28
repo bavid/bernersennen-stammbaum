@@ -53,6 +53,7 @@ function requireSession(req, res, next) {
     const activeIsDemo = active === payload.familyId ? family.is_demo : familyById.get(active)?.is_demo
     req.homeId = payload.familyId
     req.familyId = active
+    req.userId = payload.uid ?? null
     req.isDemo = Boolean(family.is_demo) || Boolean(activeIsDemo)
     next()
   } catch {
@@ -94,4 +95,12 @@ function clearSessionCookie(res) {
   res.clearCookie(sessionCookie, options)
 }
 
-module.exports = { requireAuth, requireSession, signSession, setSessionCookie, clearSessionCookie }
+// Signiert die Sitzung einer bereits authentifizierten Anfrage neu (Bereichswechsel, Schlüssel
+// erneuern, Mitgliedschaft verlassen, ...) und behält dabei req.userId bei. Ohne das würde jede
+// Neu-Signierung einen Benutzer-Login unbemerkt auf die reine Familien-Identität zurückfallen lassen -
+// req.userId kommt aus requireSession (payload.uid) und ist bei jeder Route hinter requireAuth gesetzt.
+function refreshSession(req, res, activeId) {
+  setSessionCookie(res, req.homeId, activeId, { userId: req.userId })
+}
+
+module.exports = { requireAuth, requireSession, signSession, setSessionCookie, clearSessionCookie, refreshSession }

@@ -18,17 +18,9 @@ test('spam and flood protection', async (t) => {
 
   const a = await createFamily(base, 'Rudel A', 'passwortA')
 
-  await t.test('a taken password is reported on the password field', async () => {
-    const res = await createFamily(base, 'Rudel Doppelt', 'passwortA')
-    assert.equal(res.status, 409)
-    assert.equal(res.data.field, 'password')
-    assert.match(res.data.error, /Passwort belegt/)
-  })
-
-  await t.test('bots filling the hidden honeypot field cannot register a pack', async () => {
-    const signup = await createFamily(base, 'Bot-Rudel', 'botpasswort', { website: 'http://spam.example' })
-    assert.equal(signup.status, 400)
-  })
+  // Registrierung (POST /api/families) und ihr Honeypot gibt es seit Phase 1 nicht mehr - Duplikat-
+  // Passwort bleibt bei /api/families/group testbar (context.test.js), der Honeypot beim Einlösen
+  // eines Gutscheins (vouchers.test.js).
 
   await t.test('login ignores the honeypot – password managers autofill it with the saved username', async () => {
     const login = await call(base, '/api/login', { method: 'POST', body: { password: 'passwortA', website: 'Rudel A' } })

@@ -9,6 +9,7 @@ process.env.JWT_SECRET = 'test-secret'
 
 const express = require('express')
 const cookieParser = require('cookie-parser')
+const bcrypt = require('bcryptjs')
 const authRoutes = require('../routes/auth')
 const dogsRoutes = require('../routes/dogs')
 const db = require('../db')
@@ -34,11 +35,14 @@ function getCookie(res) {
   return (res.headers.get('set-cookie') || '').split(';')[0]
 }
 
+// Seit Phase 1 gibt es keine Registrierung (POST /api/families) mehr - die Familie entsteht hier
+// direkt in der DB (wie test/helpers.js' createFamily), danach normal per /api/login angemeldet.
 async function createFamily(base, name, password) {
-  const res = await fetch(`${base}/api/families`, {
+  db.prepare('INSERT INTO families (name, password_hash, legacy_password) VALUES (?, ?, 1)').run(name, bcrypt.hashSync(password, 10))
+  const res = await fetch(`${base}/api/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, password })
+    body: JSON.stringify({ password })
   })
   return getCookie(res)
 }

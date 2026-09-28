@@ -61,6 +61,24 @@ function deleteFamily(db, familyId) {
     db.prepare('DELETE FROM dogs WHERE family_id = ?').run(familyId)
     // Mitgliedschaften in beide Richtungen: als beigetretener Haushalt und als Rudel mit Mitgliedern
     db.prepare('DELETE FROM family_members WHERE member_family_id = ? OR group_family_id = ?').run(familyId, familyId)
+
+    // Phase 1: eigene Benutzer-Logins weg (users.family_id ist NOT NULL, kein SET NULL möglich).
+    // Noch offene, selbst ausgegebene Gutscheine verschwinden mit der Familie (niemand kann sie mehr
+    // einlösen) - für die Statistik interessante Zeilen (schon eingelöste, oder wo diese Familie nur
+    // Ziel eines Beitritts/einer Einlösung war) bleiben, verlieren aber die tote Referenz (NULLIF).
+    // Ohne das würde DELETE FROM families weiter unten mit SQLITE_CONSTRAINT_FOREIGNKEY scheitern,
+    // sobald die Familie Benutzer hat, selbst Gutscheine ausgegeben hat oder z. B. als Demo-Familie
+    // das join_family_id eines Admin-Gutscheins ist (etwa bei jedem replaceDemoPack-Lauf).
+    db.prepare('DELETE FROM users WHERE family_id = ?').run(familyId)
+    db.prepare('DELETE FROM vouchers WHERE issued_by_family_id = ? AND redeemed_at IS NULL').run(familyId)
+    db.prepare(
+      `UPDATE vouchers SET
+         issued_by_family_id = NULLIF(issued_by_family_id, @familyId),
+         join_family_id = NULLIF(join_family_id, @familyId),
+         redeemed_by_family_id = NULLIF(redeemed_by_family_id, @familyId)
+       WHERE @familyId IN (issued_by_family_id, join_family_id, redeemed_by_family_id)`
+    ).run({ familyId })
+
     db.prepare('DELETE FROM families WHERE id = ?').run(familyId)
   })()
 

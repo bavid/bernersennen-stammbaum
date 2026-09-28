@@ -13,7 +13,7 @@ test('Meine Chronik als eigener Bereich, Familien beitreten und wechseln', async
   const config = require('../config')
   const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
 
-  await t.test('1. Registrierung mit art=zuhause, ungültige/fehlende art', async () => {
+  await t.test('1. createFamily(art=zuhause) legt ein Zuhause an, ohne art ein gewöhnliches Rudel', async () => {
     const created = await createFamily(base, 'Zuhause Nele', 'zuhause-pw-1', { art: 'zuhause' })
     assert.equal(created.status, 201)
     assert.equal(created.data.art, 'zuhause')
@@ -24,9 +24,6 @@ test('Meine Chronik als eigener Bereich, Familien beitreten und wechseln', async
     assert.equal(me.data.art, 'zuhause')
     assert.equal(me.data.home.id, created.data.id)
     assert.deepEqual(me.data.memberships, [])
-
-    const badArt = await post('/api/families', { name: 'X', password: 'irgendwas1', art: 'unsinn' })
-    assert.equal(badArt.status, 400)
 
     const noArt = await createFamily(base, 'Familie Sonnenhang', 'rudel-pw-noart')
     assert.equal(noArt.data.art, 'rudel')

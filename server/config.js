@@ -80,7 +80,6 @@ module.exports = {
   uploadDir: process.env.UPLOAD_DIR || path.join(dataDir, 'uploads'),
   clientDist: process.env.CLIENT_DIST || path.join(__dirname, '..', 'client', 'dist'),
   cookieSecure: process.env.COOKIE_SECURE === 'true',
-  inviteCode: process.env.FAMILY_INVITE_CODE || '',
   trustProxy: readTrustProxy(),
   corsOrigin: readCorsOrigin(),
   loginRateLimit: Number(process.env.LOGIN_RATE_LIMIT) || 20,

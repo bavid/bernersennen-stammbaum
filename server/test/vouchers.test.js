@@ -250,4 +250,35 @@ test('Gutscheine einlösen, Login per Schlüssel, Sitzungs-Epoche', async (t) =>
     assert.equal(after.status, 401)
     assert.match(after.data.error, /Sitzung abgelaufen/)
   })
+
+  await t.test('15. createBatch normalisiert expiresAt (ISO-String) auf das sqlite-Format', () => {
+    const { batchId } = createBatch(db, { label: 'ISO', kind: 'admin', size: 1, expiresAt: '2026-01-02T03:04:05.000Z' })
+    const row = db.prepare('SELECT expires_at FROM vouchers WHERE batch_id = ?').get(batchId)
+    assert.equal(row.expires_at, '2026-01-02 03:04:05')
+  })
+
+  await t.test('16. Passwort beim Einlösen: höchstens 72 Byte (bcrypt kappt sonst kommentarlos)', async () => {
+    const res = await redeem({ code: oneCode(), name: 'Zuhause Lang', username: 'nele-lang', password: 'a'.repeat(73) })
+    assert.equal(res.status, 400)
+    assert.match(res.data.error, /zu lang/)
+  })
+
+  await t.test('17. 409 wegen vergebenem Benutzernamen lässt den Gutschein offen - danach mit anderem Namen einlösbar', async () => {
+    await redeem({ code: oneCode(), name: 'Zuhause Erst', username: 'doppelt-name', password: 'geheim123' })
+
+    const code = oneCode()
+    const codeHash = hashCode(normalizeCode(code))
+    const before = db.prepare('SELECT redeemed_at, code_cipher FROM vouchers WHERE code_hash = ?').get(codeHash)
+    assert.ok(before.code_cipher, 'Geheimtext ist vor dem Versuch noch da')
+
+    const clash = await redeem({ code, name: 'Zuhause Zweit', username: 'doppelt-name', password: 'geheim123' })
+    assert.equal(clash.status, 409)
+
+    const after = db.prepare('SELECT redeemed_at, code_cipher FROM vouchers WHERE code_hash = ?').get(codeHash)
+    assert.equal(after.redeemed_at, null, 'der Gutschein bleibt offen')
+    assert.equal(after.code_cipher, before.code_cipher, 'der Geheimtext bleibt erhalten')
+
+    const retry = await redeem({ code, name: 'Zuhause Zweit', username: 'anderer-name', password: 'geheim123' })
+    assert.equal(retry.status, 201)
+  })
 })

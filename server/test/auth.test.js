@@ -9,6 +9,7 @@ process.env.JWT_SECRET = 'test-secret'
 
 const express = require('express')
 const cookieParser = require('cookie-parser')
+const bcrypt = require('bcryptjs')
 const authRoutes = require('../routes/auth')
 const { requireAuth } = require('../middleware/auth')
 const db = require('../db')
@@ -36,18 +37,24 @@ function getCookie(res) {
   return setCookie.split(';')[0]
 }
 
-test('family creation, login and session protection', async (t) => {
+test('login and session protection', async (t) => {
   const app = buildApp()
   const server = app.listen(0)
   const base = `http://localhost:${server.address().port}`
 
-  await t.test('creates a family and sets a session cookie', async () => {
-    const res = await fetch(`${base}/api/families`, {
+  // Seit Phase 1 gibt es keine Registrierung (POST /api/families) mehr - eine Alt-Familie entsteht
+  // direkt in der DB (wie test/helpers.js' createFamily), danach normal per /api/login angemeldet.
+  await t.test('a family logs in and gets a namespaced session cookie', async () => {
+    db.prepare('INSERT INTO families (name, password_hash, legacy_password) VALUES (?, ?, 1)').run(
+      'Familie Hermes',
+      bcrypt.hashSync('geheim123', 10)
+    )
+    const res = await fetch(`${base}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Familie Hermes', password: 'geheim123' })
+      body: JSON.stringify({ password: 'geheim123' })
     })
-    assert.equal(res.status, 201)
+    assert.equal(res.status, 200)
     // Cookie-Name ist an das Testumfeld gekoppelt (dev_session, staging_session, ...) - siehe config.sessionCookie
     assert.ok(getCookie(res).startsWith(`${config.sessionCookie}=`), `expected ${config.sessionCookie}=..., got ${getCookie(res)}`)
   })

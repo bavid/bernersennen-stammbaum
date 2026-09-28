@@ -4,7 +4,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { useTempDataDir, startApp, cleanup, call, createFamily, getCookie } = require('./helpers')
 
-const dataDir = useTempDataDir('security', { FAMILY_INVITE_CODE: 'berner-2026', UPLOAD_RATE_LIMIT: '3' })
+const dataDir = useTempDataDir('security', { UPLOAD_RATE_LIMIT: '3' })
 const clientDist = path.join(dataDir, 'dist')
 fs.mkdirSync(clientDist)
 fs.writeFileSync(path.join(clientDist, 'index.html'), '<!doctype html><title>Chronik</title>')
@@ -24,35 +24,11 @@ test('security and deployment behaviour', async (t) => {
   const { server, base } = await startApp()
   t.after(() => cleanup(dataDir, server))
 
-  let cookie
-
-  await t.test('family creation requires the invite code when configured', async () => {
-    const config = await call(base, '/api/config')
-    assert.equal(config.data.inviteRequired, true)
-
-    const without = await createFamily(base, 'Rudel X', 'geheim123')
-    assert.equal(without.status, 403)
-
-    const withCode = await createFamily(base, 'Rudel X', 'geheim123', { inviteCode: 'berner-2026' })
-    assert.equal(withCode.status, 201)
-    cookie = withCode.cookie
-  })
-
-  await t.test('members can look up the invite code to pass it on, strangers cannot', async () => {
-    const member = await call(base, '/api/invite', { cookie })
-    assert.equal(member.status, 200)
-    assert.equal(member.data.inviteCode, 'berner-2026')
-    const stranger = await call(base, '/api/invite')
-    assert.equal(stranger.status, 401)
-  })
-
-  await t.test('rejects short and duplicate passwords', async () => {
-    const short = await createFamily(base, 'Rudel Y', '123', { inviteCode: 'berner-2026' })
-    assert.equal(short.status, 400)
-
-    const duplicate = await createFamily(base, 'Rudel Y', 'geheim123', { inviteCode: 'berner-2026' })
-    assert.equal(duplicate.status, 409)
-  })
+  // Registrierung (POST /api/families) samt Einladungscode gibt es seit Phase 1 nicht mehr - siehe
+  // access.test.js ("POST /api/families gibt es nicht mehr") und vouchers.test.js für die Validierung
+  // beim Einlösen eines Gutscheins. Für die folgenden Tests reicht eine gewöhnliche Alt-Familie.
+  const family = await createFamily(base, 'Familie Security', 'geheim123')
+  const cookie = family.cookie
 
   await t.test('session cookie is httpOnly', async () => {
     const res = await call(base, '/api/login', { method: 'POST', body: { password: 'geheim123' } })

@@ -2,7 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
-const { useTempDataDir, startApp, cleanup, call, createFamily } = require('./helpers')
+const { useTempDataDir, startApp, cleanup, call, createFamily, createHousehold } = require('./helpers')
 
 const dataDir = useTempDataDir('families')
 
@@ -108,5 +108,76 @@ test('deleting a family keeps other families intact', async (t) => {
     assert.equal(fs.existsSync(yPath), true, 'fremde, von Y hochgeladene Datei bleibt erhalten')
     assert.equal(db.prepare('SELECT COUNT(*) AS c FROM uploads WHERE family_id = ?').get(x.data.id).c, 0)
     assert.equal(db.prepare('SELECT COUNT(*) AS c FROM uploads WHERE family_id = ?').get(y.data.id).c, 1)
+  })
+
+  // Sicherheits-Nachbesserung (I1): deleteFamily verletzte vorher die Fremdschlüsselprüfung, sobald die
+  // Familie Benutzer hatte oder von Gutscheinen referenziert wurde (issued_by/join/redeemed_by) - siehe
+  // lib/families.js. Die folgenden vier Fälle decken genau das ab.
+
+  await t.test('deleteFamily: ein per Gutschein eingelöstes Zuhause lässt sich löschen, der Gutschein bleibt (ohne Verweis)', async () => {
+    const household = await createHousehold(base, 'Zuhause Nordwind')
+    const voucherBefore = db.prepare('SELECT id FROM vouchers WHERE redeemed_by_family_id = ?').get(household.data.id)
+    assert.ok(voucherBefore, 'der Gutschein zeigt vor dem Löschen auf das Zuhause')
+
+    deleteFamily(db, household.data.id)
+
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(household.data.id).c, 0)
+    const voucherAfter = db.prepare('SELECT redeemed_by_family_id FROM vouchers WHERE id = ?').get(voucherBefore.id)
+    assert.equal(voucherAfter.redeemed_by_family_id, null, 'die Referenz ist weg, die Zeile bleibt (Statistik)')
+  })
+
+  await t.test('deleteFamily: ein Zuhause mit eigenem Benutzer lässt sich löschen', async () => {
+    const household = await createHousehold(base, 'Zuhause Talwind', { username: 'nutzer-del1', password: 'geheim1234' })
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM users WHERE family_id = ?').get(household.data.id).c, 1)
+
+    deleteFamily(db, household.data.id)
+
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(household.data.id).c, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM users WHERE family_id = ?').get(household.data.id).c, 0)
+  })
+
+  await t.test('deleteFamily: ein Rudel, das selbst Gutscheine ausgegeben hat (offen + eingelöst) und Beitrittsziel ist', async () => {
+    const { createBatch } = require('../lib/vouchers')
+    const rudel = await createFamily(base, 'Familie Weitergabe', 'weitergabe-pw1')
+
+    const open = createBatch(db, {
+      label: 'Offen',
+      kind: 'rudel',
+      size: 1,
+      issuedByFamilyId: rudel.data.id,
+      joinFamilyId: rudel.data.id
+    })
+    const redeemed = createBatch(db, { label: 'Eingelöst', kind: 'rudel', size: 1, issuedByFamilyId: rudel.data.id })
+    const redeemRes = await call(base, '/api/vouchers/redeem', {
+      method: 'POST',
+      body: { code: redeemed.codes[0], name: 'Zuhause Weitergabe' }
+    })
+    assert.equal(redeemRes.status, 201)
+
+    deleteFamily(db, rudel.data.id)
+
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(rudel.data.id).c, 0)
+    assert.equal(
+      db.prepare('SELECT COUNT(*) AS c FROM vouchers WHERE batch_id = ?').get(open.batchId).c,
+      0,
+      'der offene, selbst ausgegebene Gutschein wird gelöscht'
+    )
+    const redeemedRow = db.prepare('SELECT issued_by_family_id FROM vouchers WHERE batch_id = ?').get(redeemed.batchId)
+    assert.equal(redeemedRow.issued_by_family_id, null, 'der eingelöste Gutschein bleibt, aber ohne Verweis auf das gelöschte Rudel')
+  })
+
+  await t.test('deleteFamily: eine Demo-Familie, die das join_family_id eines Admin-Gutscheins ist (replaceDemoPack-Fall)', async () => {
+    const { createBatch } = require('../lib/vouchers')
+    const demo = await createFamily(base, 'Familie Demo Gutschein', 'demo-pw-voucher1')
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(demo.data.id)
+    const adminBatch = createBatch(db, { label: 'Admin-Ziel-Demo', kind: 'admin', size: 1, joinFamilyId: demo.data.id })
+
+    // Ohne die I1-Nachbesserung würfe das hier SQLITE_CONSTRAINT_FOREIGNKEY - genau der Fall, der bei
+    // jedem replaceDemoPack()-Lauf auftritt, sobald ein Admin-Gutschein die alte Demo als Beitrittsziel hat.
+    deleteFamily(db, demo.data.id)
+
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(demo.data.id).c, 0)
+    const voucherAfter = db.prepare('SELECT join_family_id FROM vouchers WHERE batch_id = ?').get(adminBatch.batchId)
+    assert.equal(voucherAfter.join_family_id, null)
   })
 })
