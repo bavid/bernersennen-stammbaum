@@ -78,7 +78,10 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
   await t.test('the demo household shows every companion feature: 4 animals, private entries, housemates', async () => {
     const dogs = (await call(base, '/api/dogs', { cookie: demoCookie })).data
     assert.equal(dogs.length, 4)
-    assert.ok(dogs.every((d) => d.foto_url), 'every companion has a picture')
+    // Mira hat absichtlich kein Foto (Client zeigt Initialen) - sonst doppelt sich Minkas Bild,
+    // sobald Mira ins Rudel geteilt wird. Die anderen drei haben eigene, nicht doppelt genutzte Fotos.
+    assert.equal(dogs.filter((d) => d.foto_url).length, 3, 'drei von vier Begleitern haben ein Foto')
+    assert.equal(dogs.find((d) => d.name === 'Mira').foto_url, null, 'Mira ohne Foto -> Initialen-Avatar')
     assert.ok(dogs.some((d) => d.tierart === 'katze') && dogs.some((d) => d.tierart === 'anderes'), 'cat and other animal')
     assert.ok(dogs.some((d) => d.bei_uns_bis && d.abschied_grund === 'verstorben'), 'a farewell entry')
     assert.ok(
@@ -108,10 +111,17 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
 
     const nele = dogs.find((d) => d.name === 'Nele')
     const mira = dogs.find((d) => d.name === 'Mira')
+    const finn = dogs.find((d) => d.name === 'Finn vom Sonnenhang')
+    const minka = dogs.find((d) => d.name === 'Minka')
     assert.ok(nele && mira, 'the shared companions are visible in the pack')
     assert.equal(nele.shared_from, 'Zuhause am Deich')
     assert.equal(mira.shared_from, 'Zuhause am Deich')
     assert.equal(nele.can_edit, 0)
+    // Geteilte Tiere dürfen im Rudel nicht wie Duplikate vorhandener Tiere aussehen (gleiches Foto)
+    assert.ok(finn && nele.foto_url, 'Finn und Neles Foto sind gesetzt')
+    assert.notEqual(nele.foto_url, finn.foto_url, 'Nele teilt sich Finns Foto nicht')
+    assert.ok(minka?.foto_url, 'Minka hat ein Foto')
+    assert.equal(mira.foto_url, null, 'Mira hat bewusst kein Foto (kein Duplikat von Minka)')
 
     const entries = (await call(base, '/api/timeline', { cookie: rudelCookie })).data
     assert.ok(entries.some((e) => e.comments.length > 0), 'comments')

@@ -32,7 +32,9 @@ const COMPANIONS = [
     beiUnsSeit: '2012-08-01',
     herkunftArt: 'privat',
     herkunftText: 'Bauernhof-Wurf',
-    foto: 'minka.jpg',
+    // Kein Foto: Minka (Rudel) ist im Bildersatz die einzige Katze - Mira wird nach Rudel geteilt,
+    // ein zweites Tier mit demselben Bild sähe dort wie ein Duplikat aus. Der Client zeigt statt
+    // eines Fotos die Initialen.
     beschreibung: 'Vom Bauernhof der Cousine, mit acht Wochen zu uns geholt. Schläft am liebsten auf dem Fensterbrett.'
   },
   {
@@ -45,7 +47,11 @@ const COMPANIONS = [
     beiUnsSeit: '2021-06-12',
     herkunftArt: 'tierheim',
     herkunftText: 'Tierheim Sonnenhang',
-    foto: 'finn.jpg',
+    // Bewusst NICHT finn.jpg: Nele wird nach Rudel geteilt, wo Finn selbst mit genau diesem Bild
+    // auftritt - dasselbe Foto für zwei Tiere sähe dort wie ein Duplikat aus. wanderung.jpg ist im
+    // Rudel nur als Eintragsfoto bei Aiko/Gustav zu sehen (nie als deren Profilbild) und zeigt keine
+    // Nähe zu Finn.
+    foto: 'wanderung.jpg',
     beschreibung: 'Aus dem Tierheim Sonnenhang zu uns gezogen. Anfangs schüchtern, heute die Chefin am Deich.'
   },
   {
