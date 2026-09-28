@@ -98,7 +98,15 @@ function LogoUpload({ partnerId, logoUrl, onUploaded }) {
       <label className="btn btn-ghost admin-partner-logo-btn">
         <Icon name="camera" />
         {busy ? 'Lädt …' : 'Logo hochladen'}
-        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleChange} disabled={busy} hidden />
+        {/* Visuell versteckt statt hidden (wie PhotoPicker.jsx .photo-add input): mit hidden verschwindet
+            das Feld aus der Tab-Reihenfolge und ist per Tastatur nicht erreichbar. */}
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          onChange={handleChange}
+          disabled={busy}
+          className="admin-partner-logo-input"
+        />
       </label>
       <p className="field-hint">PNG, JPG oder WebP, höchstens 512 KB.</p>
     </div>
@@ -367,7 +375,10 @@ export default function AdminPartners({ onChange }) {
     setError(null)
     const status = partner.status === 'aktiv' ? 'pausiert' : 'aktiv'
     try {
-      await api.admin.updatePartner(partner.id, { status })
+      // PUT /api/admin/partners/:id validiert den vollen Datensatz (lib/partners.js validatePartner,
+      // z. B. ist der Name Pflicht) - ein Payload mit nur { status } scheitert deshalb mit 400. Also den
+      // kompletten, aus der Server-Zeile abgeleiteten Formular-Stand senden, nur status überschrieben.
+      await api.admin.updatePartner(partner.id, { ...toPayload(initialState(partner)), status })
       load()
     } catch (err) {
       setError(err.message)

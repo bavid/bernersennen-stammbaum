@@ -120,7 +120,7 @@ describe('AdminPartners – Liste', () => {
     expect([...rows[1].querySelectorAll('button')].some((btn) => btn.textContent.includes('Löschen'))).toBe(false)
   })
 
-  test('Pausieren/Aktivieren wechselt den Status und lädt die Liste neu', async () => {
+  test('Pausieren/Aktivieren sendet den vollständigen Datensatz (nicht nur status) und lädt die Liste neu', async () => {
     partners.mockResolvedValue([activePartner])
     updatePartner.mockResolvedValue({ ...activePartner, status: 'pausiert' })
     await render()
@@ -131,7 +131,38 @@ describe('AdminPartners – Liste', () => {
     partners.mockResolvedValue([{ ...activePartner, status: 'pausiert' }])
     await act(async () => toggle.click())
 
-    expect(updatePartner).toHaveBeenCalledWith(2, { status: 'pausiert' })
+    // PUT /api/admin/partners/:id validiert den vollen Datensatz (Name ist Pflicht) - ein Payload mit
+    // nur { status } scheitert dort mit 400 (siehe server/test/partners.test.js). Alle Pflichtfelder aus
+    // toPayload/initialState müssen deshalb mitgeschickt werden, status überschrieben.
+    expect(updatePartner).toHaveBeenCalledWith(
+      2,
+      expect.objectContaining({
+        name: activePartner.name,
+        typ: activePartner.typ,
+        plz: activePartner.plz,
+        istPartner: true,
+        status: 'pausiert'
+      })
+    )
+    const sentPayload = updatePartner.mock.calls[0][1]
+    expect(Object.keys(sentPayload).sort()).toEqual(
+      [
+        'name',
+        'slug',
+        'typ',
+        'status',
+        'istPartner',
+        'plz',
+        'website',
+        'spendenUrl',
+        'vermittlungUrl',
+        'kontaktEmail',
+        'kontaktTelefon',
+        'portalTitel',
+        'portalText',
+        'farbe'
+      ].sort()
+    )
     expect(partners).toHaveBeenCalledTimes(2)
   })
 
@@ -248,6 +279,18 @@ describe('AdminPartners – Formular', () => {
     })
 
     expect(uploadPartnerLogo).toHaveBeenCalledWith(2, file)
+  })
+
+  test('das Logo-Upload-Feld ist per Tastatur erreichbar (nicht hidden, nur visuell versteckt)', async () => {
+    partners.mockResolvedValue([activePartner])
+    await render()
+
+    await act(async () => buttonByText('Bearbeiten').click())
+
+    const fileInput = container.querySelector('.admin-partner-form input[type="file"]')
+    expect(fileInput.hidden).toBe(false)
+    expect(fileInput.hasAttribute('hidden')).toBe(false)
+    expect(fileInput.tabIndex).not.toBe(-1)
   })
 
   test('beim Neuanlegen (noch keine id) gibt es kein Logo-Upload-Feld', async () => {

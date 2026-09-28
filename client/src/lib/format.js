@@ -18,3 +18,12 @@ export function googleMapsUrl({ lat, lon }) {
 export function osmUrl({ lat, lon }) {
   return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}`
 }
+
+// Quellenangaben unter "In der Nähe" (Finding 9): der Server liefert den OSM-Copyright-Text als reinen
+// String (server/lib/places/index.js) - hier zusätzlich zur eigenen Lizenzseite verlinkt.
+export const OSM_COPYRIGHT_URL = 'https://www.openstreetmap.org/copyright'
+export const GEONAMES_ATTRIBUTION = 'Postleitzahlen: GeoNames (CC BY 4.0)'
+
+export function isOsmAttribution(text) {
+  return typeof text === 'string' && text.includes('OpenStreetMap')
+}

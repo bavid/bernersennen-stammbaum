@@ -109,6 +109,13 @@ describe('NearbyPage – Kopf', () => {
     expect(container.querySelector('.eyebrow')?.textContent).toBe('In der Nähe')
     expect(container.querySelector('h1')?.textContent).toBe('Tierheime & Hundeschulen')
   })
+
+  // "euch"/"eurem" in Kopftext und Hinweisen (ihr-Form) - der leere Zustand sagte bislang "Gib" (du-Form)
+  test('Leerzustand spricht konsistent in der ihr-Form ("Gebt", nicht "Gib")', async () => {
+    await render()
+    expect(container.textContent).toContain('Gebt eine Postleitzahl ein oder nutzt euren Standort, um loszulegen.')
+    expect(container.textContent).not.toMatch(/\bGib eine Postleitzahl\b/)
+  })
 })
 
 describe('NearbyPage – Suche mit PLZ', () => {
@@ -197,13 +204,17 @@ describe('NearbyPage – limited-Hinweis und Quellenangabe', () => {
     expect(container.textContent).toContain('Gerade sind nur gespeicherte Ergebnisse verfügbar – später mehr.')
   })
 
-  test('nennt die OSM-Quellenangabe unter der Liste', async () => {
+  test('nennt die OSM-Quellenangabe unter der Liste, verlinkt zur OSM-Copyright-Seite, und nennt GeoNames', async () => {
     searchPlaces.mockResolvedValue(baseResponse)
     await render()
     await act(async () => setInputValue(container.querySelector('#location-plz'), '10115'))
     await act(async () => container.querySelector('.location-picker').requestSubmit())
 
     expect(container.textContent).toContain('© OpenStreetMap-Mitwirkende (ODbL)')
+    const link = [...container.querySelectorAll('a')].find((a) => a.textContent === '© OpenStreetMap-Mitwirkende (ODbL)')
+    expect(link.getAttribute('href')).toBe('https://www.openstreetmap.org/copyright')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(container.textContent).toContain('Postleitzahlen: GeoNames (CC BY 4.0)')
   })
 })
 

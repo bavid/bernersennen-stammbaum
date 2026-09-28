@@ -114,7 +114,7 @@ export default function NearbyPage() {
         <div className="empty-state card">
           <Icon name="mapPin" />
           <h3>Noch keine Suche</h3>
-          <p className="muted">Gib eine Postleitzahl ein oder nutzt euren Standort, um loszulegen.</p>
+          <p className="muted">Gebt eine Postleitzahl ein oder nutzt euren Standort, um loszulegen.</p>
         </div>
       )}
     </div>

@@ -179,4 +179,13 @@ describe('PlaceList – limited-Hinweis und Quellenangabe', () => {
     await render({ results: [sonnenhang], attribution: ['© OpenStreetMap-Mitwirkende (ODbL)'] })
     expect(container.textContent).toContain('© OpenStreetMap-Mitwirkende (ODbL)')
   })
+
+  test('verlinkt die OSM-Quellenangabe zur OSM-Copyright-Seite und nennt zusätzlich GeoNames', async () => {
+    await render({ results: [sonnenhang], attribution: ['© OpenStreetMap-Mitwirkende (ODbL)'] })
+    const link = [...container.querySelectorAll('a')].find((a) => a.textContent === '© OpenStreetMap-Mitwirkende (ODbL)')
+    expect(link.getAttribute('href')).toBe('https://www.openstreetmap.org/copyright')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(container.textContent).toContain('Postleitzahlen: GeoNames (CC BY 4.0)')
+  })
 })

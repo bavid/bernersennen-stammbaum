@@ -126,6 +126,20 @@ describe('PartnersPage – Liste mit PLZ', () => {
 
     expect(container.querySelector('[role="alert"]').textContent).toBe('Diese Postleitzahl kennen wir nicht')
   })
+
+  test('eine unvollständige PLZ (1-4 Ziffern) zeigt einen Hinweis statt stillschweigend alle Partner zu listen', async () => {
+    publicPartners.mockResolvedValue([sonnenhang, pfotenglueck])
+    await render()
+    await act(async () => Promise.resolve())
+    publicPartners.mockClear()
+
+    await act(async () => setInputValue(container.querySelector('#location-plz'), '101'))
+    await act(async () => container.querySelector('.location-picker').requestSubmit())
+
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Bitte eine 5-stellige Postleitzahl eingeben.')
+    // keine erneute (stillschweigende) Suche über alle Partner ausgelöst
+    expect(publicPartners).not.toHaveBeenCalled()
+  })
 })
 
 describe('PartnersPage – kein Standort-Knopf für Gäste', () => {

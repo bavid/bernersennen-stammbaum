@@ -62,7 +62,10 @@ export default function LocationPicker({
   }
 
   return (
-    <form className="location-picker" onSubmit={onSubmit}>
+    // noValidate: die eigene JS-Prüfung (PartnersPage/NearbyPage) übernimmt die Meldung bei
+    // unvollständiger PLZ - ohne noValidate blockiert das pattern="[0-9]{5}" unten die Übermittlung
+    // schon nativ (stiller Blick, kein eigener Text) und unser onSubmit läuft nie (Finding 10).
+    <form className="location-picker" onSubmit={onSubmit} noValidate>
       <div className="location-picker-fields">
         <div className="field">
           <label className="field-label" htmlFor="location-plz">

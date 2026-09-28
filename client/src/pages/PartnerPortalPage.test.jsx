@@ -4,11 +4,12 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { publicPartner, redeemVoucher } = vi.hoisted(() => ({
+const { publicPartner, redeemVoucher, demo } = vi.hoisted(() => ({
   publicPartner: vi.fn(),
-  redeemVoucher: vi.fn()
+  redeemVoucher: vi.fn(),
+  demo: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { publicPartner, redeemVoucher } }))
+vi.mock('../api', () => ({ api: { publicPartner, redeemVoucher, demo } }))
 
 import PartnerPortalPage from './PartnerPortalPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -38,6 +39,7 @@ afterEach(() => {
   document.title = ''
   publicPartner.mockReset()
   redeemVoucher.mockReset()
+  demo.mockReset()
 })
 
 async function render(props) {
@@ -226,6 +228,42 @@ describe('PartnerPortalPage – angemeldete Besucher', () => {
     const logoutButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')
     act(() => logoutButton.click())
     expect(onLogout).toHaveBeenCalled()
+  })
+})
+
+describe('PartnerPortalPage – Demo ansehen', () => {
+  test('zeigt "Demo ansehen" im abgemeldeten Zustand; ein Klick ruft api.demo() und danach onRedeemed auf', async () => {
+    publicPartner.mockResolvedValue(partner)
+    const me = { id: 9, name: 'Demo-Zuhause', theme: 'standard', art: 'zuhause', isDemo: true, home: null, memberships: [] }
+    demo.mockResolvedValue(me)
+    const onRedeemed = vi.fn()
+    await render({ onRedeemed })
+
+    const demoButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo ansehen')
+    expect(demoButton).not.toBeUndefined()
+    await act(async () => demoButton.click())
+
+    expect(demo).toHaveBeenCalled()
+    expect(onRedeemed).toHaveBeenCalledWith(me)
+  })
+
+  test('ein Fehler von api.demo() erscheint als Alert', async () => {
+    publicPartner.mockResolvedValue(partner)
+    demo.mockRejectedValue(new Error('Demo gerade nicht verfügbar'))
+    await render()
+
+    const demoButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo ansehen')
+    await act(async () => demoButton.click())
+
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Demo gerade nicht verfügbar')
+  })
+
+  test('kein "Demo ansehen" im angemeldeten Zustand', async () => {
+    publicPartner.mockResolvedValue(partner)
+    const loggedInHome = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: null, memberships: [] }
+    await render({ family: loggedInHome })
+
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Demo ansehen')).toBe(false)
   })
 })
 

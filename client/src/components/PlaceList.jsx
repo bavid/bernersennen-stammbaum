@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { TYPE_LABELS, BADGE_LABELS } from '../lib/partnerTypes.js'
-import { formatDistanceKm, isExternalUrl, googleMapsUrl, osmUrl } from '../lib/format.js'
+import { formatDistanceKm, isExternalUrl, googleMapsUrl, osmUrl, isOsmAttribution, OSM_COPYRIGHT_URL, GEONAMES_ATTRIBUTION } from '../lib/format.js'
 
 const FILTERS = [
   { key: 'alle', label: 'Alle' },
@@ -129,7 +129,24 @@ export default function PlaceList({ results, radius, ort, limited, attribution }
         </ul>
       )}
 
-      {attribution?.length > 0 && <p className="place-list-attribution">{attribution.join(' · ')}</p>}
+      {attribution?.length > 0 && (
+        <p className="place-list-attribution">
+          {attribution.map((entry, index) => (
+            <span key={entry}>
+              {index > 0 && ' · '}
+              {isOsmAttribution(entry) ? (
+                <a href={OSM_COPYRIGHT_URL} target="_blank" rel="noopener noreferrer">
+                  {entry}
+                </a>
+              ) : (
+                entry
+              )}
+            </span>
+          ))}
+          {' · '}
+          {GEONAMES_ATTRIBUTION}
+        </p>
+      )}
     </div>
   )
 }

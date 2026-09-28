@@ -452,6 +452,21 @@
 }
 
 .admin-partner-logo-btn {
+  position: relative;
   justify-self: start;
   cursor: pointer;
+}
+
+/* Wie PhotoPicker.jsx .photo-add input: visuell verborgen statt hidden, damit das Feld per Tab
+   erreichbar und für Screenreader ansprechbar bleibt. */
+.admin-partner-logo-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.admin-partner-logo-btn:focus-within {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }

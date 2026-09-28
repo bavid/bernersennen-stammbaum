@@ -149,6 +149,28 @@ describe('AdminVouchers – Liste und Details', () => {
     expect(head.textContent).toContain('2 eingelöst')
   })
 
+  test('zeigt bei einem Partner-Stapel die Pill "für {partner_name}"', async () => {
+    voucherBatches.mockResolvedValue([
+      {
+        id: 1,
+        label: 'Partnerkarten',
+        kind: 'partner',
+        partner_name: 'Tierheim Sonnenhang',
+        size: 3,
+        open: 3,
+        redeemed: 0,
+        revoked: 0,
+        created_at: '2026-01-05 10:00:00'
+      },
+      { id: 2, label: 'Testkarten', kind: 'admin', partner_name: null, size: 5, open: 3, redeemed: 2, revoked: 0, created_at: '2026-01-05 10:00:00' }
+    ])
+    await render()
+
+    const heads = [...container.querySelectorAll('.admin-voucher-batch-head')]
+    expect(heads[0].textContent).toContain('für Tierheim Sonnenhang')
+    expect(heads[1].textContent).not.toContain('für ')
+  })
+
   test('ein Klick zeigt die Codes mit Status; "Zurückziehen" zieht einen offenen Gutschein zurück', async () => {
     voucherBatches.mockResolvedValue([{ id: 1, label: 'Testkarten', kind: 'admin', size: 2, open: 2, redeemed: 0, revoked: 0, created_at: '2026-01-05 10:00:00' }])
     voucherBatch.mockResolvedValue({

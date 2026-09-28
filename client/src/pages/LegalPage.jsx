@@ -58,22 +58,36 @@ function Datenschutz({ legal }) {
       <h2>Gespeicherte Inhalte</h2>
       <p>
         Gespeichert werden die Inhalte, die ihr selbst anlegt: Tiere, Chronik-Einträge, Fotos, Kommentare und
-        Pinnwand-Zettel. Benutzername und E-Mail-Adresse sind optional und nur für den eigenen Login gedacht.
-        Gutschein-Codes und Zugangsschlüssel werden nicht im Klartext, sondern nur als Hash gespeichert.
+        Pinnwand-Zettel. Benutzername und E-Mail-Adresse sind optional und nur für den eigenen Login gedacht;
+        bei optionalen Benutzer-Logins merken wir uns außerdem den Zeitpunkt der letzten Anmeldung. Ist ein
+        Zuhause über einen Partner-Gutschein entstanden, speichern wir, über welchen Partner das war.
+      </p>
+      <p>
+        Zugangsschlüssel werden nicht im Klartext, sondern nur als Hash gespeichert – wir können sie nicht
+        wiederherstellen oder erneut anzeigen. Gutschein-Codes werden ebenfalls als Hash gespeichert und
+        zusätzlich verschlüsselt (AES-GCM) abgelegt, solange sie noch offen sind: so lässt sich ein Code im
+        Admin-Bereich erneut anzeigen. Sobald ein Gutschein eingelöst oder zurückgezogen wird, löschen wir die
+        verschlüsselte Fassung – ab dann bleibt nur noch der Hash.
       </p>
 
       <h2>Standort und Umkreissuche</h2>
       <p>
-        Für „Tierheime & Hundeschulen in der Nähe“ und die Partnerliste lässt sich wahlweise eine Postleitzahl
-        eingeben oder – nur mit ausdrücklicher Zustimmung im Browser – der eigene Standort verwenden. Der
-        Standort wird dabei auf etwa 1 km gerundet, ausschließlich für diese eine Suche verwendet und nie
-        gespeichert oder protokolliert.
+        Die Partnerliste (/partner) verwendet nur die eingegebene Postleitzahl und ausschließlich unsere eigene
+        Partner-Datenbank – dafür wird kein Standort übermittelt und keine externe Suche angestoßen.
+      </p>
+      <p>
+        Für „Tierheime & Hundeschulen in der Nähe“ (/umgebung, nur angemeldet nutzbar) lässt sich wahlweise eine
+        Postleitzahl eingeben oder – nur mit ausdrücklicher Zustimmung im Browser – der eigene, gerundete
+        Standort verwenden. Der Standort wird dabei auf etwa 1 km gerundet, ausschließlich für diese eine Suche
+        verwendet und nie gespeichert oder protokolliert. Postleitzahl und Umkreis der letzten Suche merkt sich
+        euer Browser (localStorage) auf diesem Gerät, damit ihr sie nicht jedes Mal neu eingeben müsst.
       </p>
       <p>
         Die Suche läuft über unseren eigenen Server bei OpenStreetMap (Overpass-API): OpenStreetMap sieht dabei
         nur die Adresse unseres Servers und die gerundeten Koordinaten, niemals die IP-Adresse oder den genauen
-        Standort der Nutzerin oder des Nutzers. Postleitzahl-Daten (GeoNames, CC BY 4.0) liegen lokal auf dem
-        Server und erfordern keine externe Abfrage.
+        Standort der Nutzerin oder des Nutzers. Der Server speichert Treffer aus dieser Suche für etwa 7 Tage in
+        einem Zwischenspeicher, je grob gerundeter ca. 5-km-Fläche – ohne Bezug zu einer bestimmten Person.
+        Postleitzahl-Daten (GeoNames, CC BY 4.0) liegen lokal auf dem Server und erfordern keine externe Abfrage.
       </p>
 
       <h2>Keine Tracker, keine fremden Dienste</h2>

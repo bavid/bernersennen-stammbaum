@@ -8,6 +8,7 @@ import Icon from '../components/Icon.jsx'
 
 const DEFAULT_RADIUS = 25
 const PLZ_LENGTH = 5
+const INCOMPLETE_PLZ_ERROR = 'Bitte eine 5-stellige Postleitzahl eingeben.'
 
 // /partner – öffentliche Partnerliste. Ohne PLZ zeigt sie alle aktiven Partner, mit einer gültigen
 // 5-stelligen PLZ die im Umkreis, nach Entfernung sortiert (der Server übernimmt Sortierung/Filter).
@@ -43,6 +44,13 @@ export default function PartnersPage() {
 
   function handleSubmit(event) {
     event.preventDefault()
+    // Eine angefangene, aber unvollständige PLZ (1-4 Ziffern) soll nicht stillschweigend als "keine PLZ"
+    // gelten und alle Partner zeigen - ein Hinweis statt einer überraschenden Volltreffer-Liste (Finding 10).
+    if (plz.length > 0 && plz.length < PLZ_LENGTH) {
+      setError(INCOMPLETE_PLZ_ERROR)
+      setPartners([])
+      return
+    }
     search(plz, radius)
   }
 

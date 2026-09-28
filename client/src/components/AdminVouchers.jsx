@@ -231,6 +231,7 @@ export default function AdminVouchers({ joinableFamilies = [], partners = [] }) 
                     <span className="muted"> · angelegt {relativeTime(batch.created_at)}</span>
                   </span>
                   <span className="admin-voucher-batch-counts">
+                    {batch.partner_name && <span className="pill pill-rust">für {batch.partner_name}</span>}
                     <span className="pill">{batch.open} offen</span>
                     <span className="pill">{batch.redeemed} eingelöst</span>
                     {batch.revoked > 0 && <span className="pill">{batch.revoked} zurückgezogen</span>}

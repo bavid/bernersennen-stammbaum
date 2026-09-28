@@ -58,6 +58,8 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
   const navigate = useNavigate()
   const [partner, setPartner] = useState(undefined) // undefined: lädt, null: nicht gefunden
   const [redeemResult, setRedeemResult] = useState(null)
+  const [demoLoading, setDemoLoading] = useState(false)
+  const [demoError, setDemoError] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -79,6 +81,19 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
   function handleRedeemed(response) {
     const { key, fromOthers, ...me } = response
     setRedeemResult({ key, me })
+  }
+
+  // Wie der Demo-Knopf der Login-Seite (LoginPage.jsx handleDemo): api.demo() -> onRedeemed (=
+  // handleVoucherLogin in App.jsx: setFamily + navigate(startRoute(me))) - keine eigene Navigation hier.
+  async function handleDemo() {
+    setDemoError(null)
+    setDemoLoading(true)
+    try {
+      onRedeemed(await api.demo())
+    } catch (err) {
+      setDemoError(err.message)
+      setDemoLoading(false)
+    }
   }
 
   if (partner === undefined) {
@@ -145,7 +160,20 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
         ) : redeemResult ? (
           <KeyReveal value={redeemResult.key} onContinue={() => onRedeemed(redeemResult.me)} />
         ) : (
-          <RedeemForm onRedeemed={handleRedeemed} />
+          <>
+            <RedeemForm onRedeemed={handleRedeemed} />
+            <div className="login-demo">
+              <span className="login-demo-divider">oder</span>
+              {demoError && (
+                <div className="error-banner" role="alert">
+                  {demoError}
+                </div>
+              )}
+              <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
+                {demoLoading ? 'Lädt …' : 'Demo ansehen'}
+              </button>
+            </div>
+          </>
         )}
       </section>
 

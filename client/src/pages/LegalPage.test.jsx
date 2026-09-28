@@ -77,6 +77,55 @@ describe('LegalPage – /datenschutz', () => {
     expect(container.textContent).toMatch(/nie.*gespeichert|nicht gespeichert/)
   })
 
+  test('beschreibt Schlüssel als Hash und offene Gutschein-Codes zusätzlich AES-GCM-verschlüsselt bis Einlösung/Widerruf', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(container.textContent).toMatch(/Hash/)
+    expect(container.textContent).toMatch(/AES-GCM/)
+    expect(container.textContent).toMatch(/eingelöst.*zurückgezogen|eingelöst oder zurückgezogen/)
+  })
+
+  test('nennt, dass /partner nur die PLZ und die eigene Datenbank nutzt (kein Standort, keine externe Suche)', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(container.textContent).toMatch(/\/partner/)
+    expect(container.textContent).toMatch(/eigene Partner-Datenbank|eigene.*Datenbank/)
+  })
+
+  test('nennt den serverseitigen Cache der Umkreissuche (~7 Tage, ~5 km, ohne Personenbezug)', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(container.textContent).toMatch(/7 Tage/)
+    expect(container.textContent).toMatch(/5-km|5 km/)
+    expect(container.textContent).toMatch(/ohne Bezug zu einer bestimmten Person/)
+  })
+
+  test('nennt, dass PLZ und Radius der letzten Umkreissuche im Browser (localStorage) auf diesem Gerät gemerkt werden', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(container.textContent).toMatch(/localStorage/)
+    expect(container.textContent).toMatch(/diesem Gerät/)
+  })
+
+  test('nennt die Speicherung des Partner-Bezugs (Gutschein-Beitritt) und der letzten Login-Zeit optionaler Benutzer', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(container.textContent).toMatch(/über welchen Partner/)
+    expect(container.textContent).toMatch(/letzte[nr]? Anmeldung/)
+  })
+
+  test('macht keine Aussage über den Hosting-Standort', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(container.textContent).not.toMatch(/Hosting|gehostet in|Rechenzentrum|Server steht in/)
+  })
+
   test('Kontakt ohne Impressums-E-Mail verweist auf das Impressum statt eine E-Mail zu erfinden', async () => {
     config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
     await render('datenschutz')
