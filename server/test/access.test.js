@@ -12,7 +12,7 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
   const db = require('../db')
 
   const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
-  const del = (urlPath, cookie) => call(base, urlPath, { method: 'DELETE', cookie })
+  const del = (urlPath, body, cookie) => call(base, urlPath, { method: 'DELETE', body, cookie })
 
   await t.test('POST /api/families gibt es nicht mehr', async () => {
     const res = await post('/api/families', { name: 'X', password: 'irgendwas1' })
@@ -50,7 +50,11 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
   await t.test('Benutzer anlegen, auflisten, löschen; Benutzername (unabhängig von Groß/Kleinschreibung) schon vergeben', async () => {
     const household = await createHousehold(base, 'Zuhause Benutzer')
 
-    const created = await post('/api/users', { username: 'mira-neu', password: 'geheim1234', email: 'mira@example.com' }, household.cookie)
+    const created = await post(
+      '/api/users',
+      { username: 'mira-neu', password: 'geheim1234', email: 'mira@example.com', currentKey: household.key },
+      household.cookie
+    )
     assert.equal(created.status, 201)
     assert.equal(created.data.username, 'mira-neu')
     assert.equal(created.data.email, 'mira@example.com')
@@ -60,22 +64,30 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
     assert.equal(list.data.length, 1)
     assert.equal(list.data[0].id, created.data.id)
 
-    const taken = await post('/api/users', { username: 'MIRA-NEU', password: 'anderespw1' }, household.cookie)
+    const taken = await post(
+      '/api/users',
+      { username: 'MIRA-NEU', password: 'anderespw1', currentKey: household.key },
+      household.cookie
+    )
     assert.equal(taken.status, 409)
 
-    const removed = await del(`/api/users/${created.data.id}`, household.cookie)
+    const removed = await del(`/api/users/${created.data.id}`, { currentKey: household.key }, household.cookie)
     assert.equal(removed.status, 204)
 
     const listAfter = await call(base, '/api/users', { cookie: household.cookie })
     assert.deepEqual(listAfter.data, [])
 
-    const removeAgain = await del(`/api/users/${created.data.id}`, household.cookie)
+    const removeAgain = await del(`/api/users/${created.data.id}`, { currentKey: household.key }, household.cookie)
     assert.equal(removeAgain.status, 404)
   })
 
   await t.test('Passwort beim Anlegen eines Benutzers: höchstens 72 Byte', async () => {
     const household = await createHousehold(base, 'Zuhause Passwortlaenge')
-    const res = await post('/api/users', { username: 'lang-user', password: 'a'.repeat(73) }, household.cookie)
+    const res = await post(
+      '/api/users',
+      { username: 'lang-user', password: 'a'.repeat(73), currentKey: household.key },
+      household.cookie
+    )
     assert.equal(res.status, 400)
     assert.match(res.data.error, /zu lang/)
   })
@@ -135,7 +147,7 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
     assert.equal(secondDeviceLogin.status, 200)
     const secondDeviceCookie = getCookie(secondDeviceLogin.res)
 
-    const renewed = await post('/api/family/key', undefined, household.cookie)
+    const renewed = await post('/api/family/key', { currentKey: household.key }, household.cookie)
     assert.equal(renewed.status, 200)
     assert.ok(renewed.data.key)
     assert.notEqual(renewed.data.key, household.key)
@@ -209,10 +221,119 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
     const userCookie = getCookie(userLogin.res)
     const userId = db.prepare('SELECT id FROM users WHERE username = ?').get('mira-loeschen').id
 
-    const removed = await del(`/api/users/${userId}`, household.cookie)
+    const removed = await del(`/api/users/${userId}`, { currentKey: household.key }, household.cookie)
     assert.equal(removed.status, 204)
 
     const meAfter = await call(base, '/api/me', { cookie: userCookie })
     assert.equal(meAfter.status, 401)
+  })
+
+  // Sicherheits-Nachbesserung: /family/key, POST /users und DELETE /users/:id verlangten vorher nur
+  // eine gültige Sitzung - eine Sitzung allein (z. B. ein Benutzer-Login, der den Bereichs-Schlüssel gar
+  // nicht kennt) durfte damit einen neuen Schlüssel erzeugen und jede andere Sitzung der Identität
+  // aussperren ("Übernahme"). Jetzt ist ein aktueller Nachweis Pflicht: Schlüssel-Sitzung -> currentKey,
+  // Benutzer-Sitzung -> das eigene Passwort (der Schlüssel selbst zählt für sie NICHT).
+  await t.test('Schlüssel erneuern: ohne/mit falschem Nachweis -> 403, Schlüssel-Sitzung nur mit currentKey, Benutzer-Sitzung nur mit eigenem Passwort', async () => {
+    const household = await createHousehold(base, 'Zuhause Nachweis-Schluessel')
+
+    const noProof = await post('/api/family/key', undefined, household.cookie)
+    assert.equal(noProof.status, 403)
+    assert.equal(noProof.data.error, 'Bitte bestätige mit deinem aktuellen Schlüssel bzw. Passwort.')
+
+    const wrongKey = await post('/api/family/key', { currentKey: 'ZZZZ-ZZZZ-ZZZZ' }, household.cookie)
+    assert.equal(wrongKey.status, 403)
+
+    const withKey = await post('/api/family/key', { currentKey: household.key }, household.cookie)
+    assert.equal(withKey.status, 200)
+    assert.ok(withKey.data.key)
+    assert.notEqual(withKey.data.key, household.key)
+
+    // Übernahme-Szenario aus dem Review: eine Benutzer-Sitzung kennt den Schlüssel nicht zwangsläufig -
+    // und selbst wenn sie ihn kennt, zählt er für sie nicht als Nachweis, nur ihr eigenes Passwort.
+    const userHousehold = await createHousehold(base, 'Zuhause Nachweis-Benutzer', {
+      username: 'nachweis-user',
+      password: 'nachweis-pw-1'
+    })
+    const userLogin = await post('/api/login', { username: 'nachweis-user', password: 'nachweis-pw-1' })
+    assert.equal(userLogin.status, 200)
+    const userCookie = getCookie(userLogin.res)
+
+    const takeoverNoProof = await post('/api/family/key', undefined, userCookie)
+    assert.equal(takeoverNoProof.status, 403)
+    assert.equal(takeoverNoProof.data.error, 'Bitte bestätige mit deinem aktuellen Schlüssel bzw. Passwort.')
+
+    const takeoverWithKey = await post('/api/family/key', { currentKey: userHousehold.key }, userCookie)
+    assert.equal(takeoverWithKey.status, 403, 'der Schlüssel selbst genügt einer Benutzer-Sitzung nicht')
+
+    const wrongPassword = await post('/api/family/key', { password: 'falsches-pw' }, userCookie)
+    assert.equal(wrongPassword.status, 403)
+
+    const withPassword = await post('/api/family/key', { password: 'nachweis-pw-1' }, userCookie)
+    assert.equal(withPassword.status, 200)
+    assert.ok(withPassword.data.key)
+  })
+
+  await t.test('POST/DELETE /users: verlangen ebenfalls einen aktuellen Nachweis (Schlüssel- und Benutzer-Sitzung)', async () => {
+    const household = await createHousehold(base, 'Zuhause Nachweis-Benutzeranlegen')
+
+    const noProof = await post('/api/users', { username: 'ohne-nachweis', password: 'geheim1234' }, household.cookie)
+    assert.equal(noProof.status, 403)
+    assert.equal(noProof.data.error, 'Bitte bestätige mit deinem aktuellen Schlüssel bzw. Passwort.')
+
+    const created = await post(
+      '/api/users',
+      { username: 'mit-nachweis', password: 'geheim1234', currentKey: household.key },
+      household.cookie
+    )
+    assert.equal(created.status, 201)
+
+    const deleteNoProof = await del(`/api/users/${created.data.id}`, undefined, household.cookie)
+    assert.equal(deleteNoProof.status, 403)
+
+    const deleteWrongProof = await del(`/api/users/${created.data.id}`, { currentKey: 'ZZZZ-ZZZZ-ZZZZ' }, household.cookie)
+    assert.equal(deleteWrongProof.status, 403)
+
+    const deleteWithProof = await del(`/api/users/${created.data.id}`, { currentKey: household.key }, household.cookie)
+    assert.equal(deleteWithProof.status, 204)
+
+    // Benutzer-Sitzung: ihr eigenes Passwort ist der Nachweis, nicht der Bereichs-Schlüssel
+    const userHousehold = await createHousehold(base, 'Zuhause Nachweis-Benutzeranlegen Zwei', {
+      username: 'nachweis-anlegen',
+      password: 'nachweis-anlegen-1'
+    })
+    const userLogin = await post('/api/login', { username: 'nachweis-anlegen', password: 'nachweis-anlegen-1' })
+    assert.equal(userLogin.status, 200)
+    const userCookie = getCookie(userLogin.res)
+
+    const createdByUser = await post('/api/users', { username: 'zweiter-user', password: 'geheim1234' }, userCookie)
+    assert.equal(createdByUser.status, 403, 'ohne das eigene Passwort kein neuer Benutzer')
+
+    // Das neue Passwort des ANZULEGENDEN Benutzers und der NACHWEIS für die eigene Sitzung sind zwei
+    // verschiedene Felder mit demselben Namen "password" - deckungsgleich mit dem Review: die Route
+    // liest den Nachweis aus dem Body, bevor sie username/password des neuen Benutzers validiert.
+    const createdByUserOk = await post(
+      '/api/users',
+      { username: 'zweiter-user', password: 'nachweis-anlegen-1' },
+      userCookie
+    )
+    assert.equal(createdByUserOk.status, 201)
+    assert.equal(createdByUserOk.data.username, 'zweiter-user')
+  })
+
+  await t.test('auth-Feld in buildMe beschreibt die aktuelle Sitzung (kind + username)', async () => {
+    const legacyRudel = await createFamily(base, 'Familie Auth-Feld Legacy', 'auth-feld-legacy-pw1')
+    assert.equal(legacyRudel.data.auth.kind, 'legacy')
+
+    const household = await createHousehold(base, 'Zuhause Auth-Feld', { username: 'auth-feld-user', password: 'auth-feld-pw-1' })
+    assert.equal(household.data.auth.kind, 'key')
+
+    const userLogin = await post('/api/login', { username: 'auth-feld-user', password: 'auth-feld-pw-1' })
+    assert.equal(userLogin.status, 200)
+    assert.equal(userLogin.data.auth.kind, 'user')
+    assert.equal(userLogin.data.auth.username, 'auth-feld-user')
+
+    const me = await call(base, '/api/me', { cookie: getCookie(userLogin.res) })
+    assert.equal(me.data.auth.kind, 'user')
+    assert.equal(me.data.auth.username, 'auth-feld-user')
   })
 })

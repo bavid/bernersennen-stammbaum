@@ -164,6 +164,19 @@ test('deleting a family keeps other families intact', async (t) => {
     )
     const redeemedRow = db.prepare('SELECT issued_by_family_id FROM vouchers WHERE batch_id = ?').get(redeemed.batchId)
     assert.equal(redeemedRow.issued_by_family_id, null, 'der eingelöste Gutschein bleibt, aber ohne Verweis auf das gelöschte Rudel')
+
+    // M3: der jetzt leere Stapel (nur der gelöschte offene Gutschein war drin) verschwindet mit; der
+    // Stapel mit dem weiterhin existierenden eingelösten Gutschein bleibt bestehen.
+    assert.equal(
+      db.prepare('SELECT COUNT(*) AS c FROM voucher_batches WHERE id = ?').get(open.batchId).c,
+      0,
+      'ein leer zurückbleibender Stapel wird mitgelöscht'
+    )
+    assert.equal(
+      db.prepare('SELECT COUNT(*) AS c FROM voucher_batches WHERE id = ?').get(redeemed.batchId).c,
+      1,
+      'ein Stapel mit noch vorhandenen Gutscheinen bleibt bestehen'
+    )
   })
 
   await t.test('deleteFamily: eine Demo-Familie, die das join_family_id eines Admin-Gutscheins ist (replaceDemoPack-Fall)', async () => {

@@ -31,12 +31,28 @@ function canEnter(homeId, familyId) {
   return Boolean(identity.is_demo) === Boolean(area.is_demo)
 }
 
-// Antwort für /me, /login, /demo, /view: aktiver Bereich oben, Identität und Mitgliedschaften dazu
-function buildMe(homeId, activeId, isDemo) {
+// Welchen Nachweis verlangen /family/key, POST /users und DELETE /users/:id für DIESE Sitzung? Der
+// Client braucht das, um das richtige Feld abzufragen (siehe requireCurrentCredential in routes/auth.js,
+// das dieselbe Regel beim tatsächlichen Prüfen anwendet). Benutzer-Sitzung (userId gesetzt) -> das
+// eigene Passwort zählt, nicht der Schlüssel der Identität. Sonst richtet es sich nach der Identität
+// selbst: hat sie schon einen Schlüssel (access_key_hash), gilt der; nur eine Alt-Familie ohne
+// Schlüssel verlangt noch ihr altes Bereichs-Passwort.
+function currentAuthInfo(homeId, userId) {
+  if (userId) {
+    const user = db.prepare('SELECT username FROM users WHERE id = ?').get(userId)
+    if (user) return { kind: 'user', username: user.username }
+  }
+  const family = db.prepare('SELECT access_key_hash FROM families WHERE id = ?').get(homeId)
+  return { kind: family?.access_key_hash ? 'key' : 'legacy' }
+}
+
+// Antwort für /me, /login, /demo, /view: aktiver Bereich oben, Identität und Mitgliedschaften dazu.
+// userId (falls gesetzt) beschreibt eine Benutzer-Sitzung und fließt nur in "auth" ein.
+function buildMe(homeId, activeId, isDemo, userId = null) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
   const active = family(activeId)
   const home = family(homeId)
-  return { ...active, isDemo: Boolean(isDemo), home, memberships: membershipsOf(homeId) }
+  return { ...active, isDemo: Boolean(isDemo), home, memberships: membershipsOf(homeId), auth: currentAuthInfo(homeId, userId) }
 }
 
 // Tiere, die im Bereich @familyId sichtbar sind: eigene und dorthin geteilte

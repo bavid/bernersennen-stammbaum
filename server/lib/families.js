@@ -70,6 +70,16 @@ function deleteFamily(db, familyId) {
     // sobald die Familie Benutzer hat, selbst Gutscheine ausgegeben hat oder z. B. als Demo-Familie
     // das join_family_id eines Admin-Gutscheins ist (etwa bei jedem replaceDemoPack-Lauf).
     db.prepare('DELETE FROM users WHERE family_id = ?').run(familyId)
+
+    // M3: welche Stapel (voucher_batches) bestehen nur aus offenen, selbst ausgegebenen Gutscheinen
+    // dieser Familie? Ids VOR dem Löschen sammeln - danach lässt sich pro Stapel prüfen, ob er leer
+    // zurückbleibt (sonst bliebe so ein Stapel für immer als leerer Rest in voucher_batches liegen,
+    // siehe scripts/testenv-seed.js).
+    const affectedBatchIds = db
+      .prepare('SELECT DISTINCT batch_id FROM vouchers WHERE issued_by_family_id = ? AND redeemed_at IS NULL')
+      .all(familyId)
+      .map((row) => row.batch_id)
+
     db.prepare('DELETE FROM vouchers WHERE issued_by_family_id = ? AND redeemed_at IS NULL').run(familyId)
     db.prepare(
       `UPDATE vouchers SET
@@ -80,6 +90,11 @@ function deleteFamily(db, familyId) {
     ).run({ familyId })
 
     db.prepare('DELETE FROM families WHERE id = ?').run(familyId)
+
+    if (affectedBatchIds.length) {
+      const deleteIfEmpty = db.prepare('DELETE FROM voucher_batches WHERE id = ? AND NOT EXISTS (SELECT 1 FROM vouchers WHERE batch_id = ?)')
+      for (const batchId of affectedBatchIds) deleteIfEmpty.run(batchId, batchId)
+    }
   })()
 
   // stillUsed zählt beides: Fotos, die noch an einem Hund/Eintrag/Wurf einer verbliebenen Familie

@@ -1,5 +1,6 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
+const crypto = require('node:crypto')
 const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
@@ -19,6 +20,12 @@ const MAX_NAME_LENGTH = 80
 const BCRYPT_ROUNDS = 10
 const USER_LOGIN_ERROR = 'Benutzername oder Passwort falsch'
 const RECOVER_MISMATCH = 'Schlüssel oder Benutzername stimmen nicht'
+const REAUTH_ERROR = 'Bitte bestätige mit deinem aktuellen Schlüssel bzw. Passwort.'
+
+// M1: fester Vergleichs-Hash, einmal beim Modul-Laden erzeugt (gleiche Kosten wie echte Passwort-Hashes).
+// Ohne unbekannten Benutzernamen läuft sonst kein bcrypt.compare, was einen Timing-Unterschied zwischen
+// "Benutzername existiert nicht" und "Benutzername existiert, Passwort falsch" offenlegt.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), BCRYPT_ROUNDS)
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -30,12 +37,46 @@ const authLimiter = rateLimit({
 })
 
 // Benutzer-Login (POST /login mit username/password statt secret): dieselbe 401 für falschen Namen
-// und falsches Passwort, damit sich beides von außen nicht unterscheiden lässt.
+// und falsches Passwort, damit sich beides von außen nicht unterscheiden lässt. bcrypt.compare läuft
+// IMMER (mit DUMMY_PASSWORD_HASH, falls kein Benutzer existiert) - sonst wäre ein unbekannter
+// Benutzername an der fehlenden bcrypt-Wartezeit erkennbar (M1: Timing-Orakel).
 async function findUserByCredentials(username, password) {
   if (typeof username !== 'string' || !username || typeof password !== 'string' || !password) return null
   const user = db.prepare('SELECT id, family_id, password_hash FROM users WHERE username = ?').get(username)
-  if (!user) return null
-  return (await bcrypt.compare(password, user.password_hash)) ? user : null
+  const valid = await bcrypt.compare(password, user?.password_hash ?? DUMMY_PASSWORD_HASH)
+  return valid && user ? user : null
+}
+
+// Nachweis mit einem AKTUELLEN Berechtigungsnachweis für sensible Aktionen (Schlüssel erneuern,
+// Benutzer anlegen/löschen): eine bloße Sitzung darf dafür nicht genügen (Session-Übernahme z. B. über
+// ein unbeaufsichtigtes Gerät oder XSS). Benutzer-Sitzung (req.userId gesetzt) -> das eigene Passwort;
+// sonst (Schlüssel- oder Alt-Passwort-Sitzung) -> der aktuelle Schlüssel der Identität, bzw. bei einer
+// Alt-Familie ohne Schlüssel (access_key_hash NULL, legacy_password = 1) ihr aktuelles Bereichs-Passwort.
+async function verifyCurrentCredential(req) {
+  const body = req.body || {}
+
+  if (req.userId) {
+    if (typeof body.password !== 'string' || !body.password) return false
+    const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.userId)
+    if (!user) return false
+    return bcrypt.compare(body.password, user.password_hash)
+  }
+
+  const family = db.prepare('SELECT access_key_hash, legacy_password, password_hash FROM families WHERE id = ?').get(req.homeId)
+  if (!family) return false
+
+  if (family.access_key_hash) {
+    const normalized = typeof body.currentKey === 'string' ? normalizeCode(body.currentKey) : null
+    if (!normalized) return false
+    return hashCode(normalized) === family.access_key_hash
+  }
+
+  if (family.legacy_password) {
+    if (typeof body.currentPassword !== 'string' || !body.currentPassword) return false
+    return bcrypt.compare(body.currentPassword, family.password_hash)
+  }
+
+  return false
 }
 
 // onlyJoinable: für /families/join – nur echte Rudel, keine Demo (kein Zuhause anderer, keine Demo-Familie)
@@ -88,7 +129,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
       db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?").run(user.id)
       const family = db.prepare('SELECT is_demo FROM families WHERE id = ?').get(user.family_id)
       setSessionCookie(res, user.family_id, user.family_id, { userId: user.id })
-      return res.json(buildMe(user.family_id, user.family_id, Boolean(family?.is_demo)))
+      return res.json(buildMe(user.family_id, user.family_id, Boolean(family?.is_demo), user.id))
     }
 
     const rawSecret = typeof secret === 'string' && secret ? secret : password
@@ -168,7 +209,7 @@ router.put('/family', requireAuth, (req, res) => {
 })
 
 router.get('/me', requireAuth, (req, res) => {
-  res.json(buildMe(req.homeId, req.familyId, req.isDemo))
+  res.json(buildMe(req.homeId, req.familyId, req.isDemo, req.userId))
 })
 
 // Bereich wechseln: eigenes Zuhause oder ein Rudel, dem der Haushalt beigetreten ist.
@@ -181,7 +222,7 @@ router.post('/view', requireSession, (req, res) => {
     return res.status(404).json({ error: 'Diesen Bereich gibt es nicht' })
   }
   refreshSession(req, res, id)
-  res.json(buildMe(req.homeId, id, req.isDemo))
+  res.json(buildMe(req.homeId, id, req.isDemo, req.userId))
 })
 
 // Einem bestehenden Rudel mit dessen Passwort beitreten – nur aus "Meine Chronik" heraus
@@ -196,7 +237,7 @@ router.post('/families/join', authLimiter, requireAuth, async (req, res, next) =
     }
 
     db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(req.homeId, match.id)
-    res.json(buildMe(req.homeId, req.familyId, false))
+    res.json(buildMe(req.homeId, req.familyId, false, req.userId))
   } catch (err) {
     next(err)
   }
@@ -231,7 +272,7 @@ router.post('/families/group', authLimiter, requireAuth, async (req, res, next) 
       db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(req.homeId, result.lastInsertRowid)
     })()
 
-    res.status(201).json(buildMe(req.homeId, req.familyId, false))
+    res.status(201).json(buildMe(req.homeId, req.familyId, false, req.userId))
   } catch (err) {
     next(err)
   }
@@ -264,9 +305,9 @@ router.delete('/memberships/:groupId', requireAuth, (req, res) => {
 
   if (req.familyId === groupId) {
     refreshSession(req, res, req.homeId)
-    return res.json(buildMe(req.homeId, req.homeId, req.isDemo))
+    return res.json(buildMe(req.homeId, req.homeId, req.isDemo, req.userId))
   }
-  res.json(buildMe(req.homeId, req.familyId, req.isDemo))
+  res.json(buildMe(req.homeId, req.familyId, req.isDemo, req.userId))
 })
 
 // Nur im eigenen Bereich (Identität == aktiver Bereich) - sonst könnte man z. B. während man in einem
@@ -281,14 +322,24 @@ function requireOwnIdentity(req, res) {
 
 // Neuen Schlüssel erzeugen: auth_epoch steigt, jede andere Sitzung dieser Identität fällt raus
 // (siehe requireSession). Die eigene, gerade genutzte Sitzung bekommt sofort ein neues Cookie
-// (refreshSession), sonst wäre man mit der nächsten Anfrage selbst ausgesperrt.
-router.post('/family/key', requireAuth, (req, res) => {
-  if (!requireOwnIdentity(req, res)) return
+// (refreshSession), sonst wäre man mit der nächsten Anfrage selbst ausgesperrt. Wichtig: ein aktueller
+// Berechtigungsnachweis ist Pflicht (verifyCurrentCredential) - sonst könnte eine übernommene Sitzung
+// (z. B. ein Benutzer-Login ohne Kenntnis des Schlüssels) die ganze Identität an sich reißen, indem sie
+// einfach einen neuen Schlüssel erzeugt und damit jede andere Sitzung aussperrt.
+router.post('/family/key', authLimiter, requireAuth, async (req, res, next) => {
+  try {
+    if (!requireOwnIdentity(req, res)) return
+    if (!(await verifyCurrentCredential(req))) {
+      return res.status(403).json({ error: REAUTH_ERROR })
+    }
 
-  const code = generateCode()
-  db.prepare('UPDATE families SET access_key_hash = ?, auth_epoch = auth_epoch + 1 WHERE id = ?').run(hashCode(code), req.homeId)
-  refreshSession(req, res, req.homeId)
-  res.json({ key: formatCode(code) })
+    const code = generateCode()
+    db.prepare('UPDATE families SET access_key_hash = ?, auth_epoch = auth_epoch + 1 WHERE id = ?').run(hashCode(code), req.homeId)
+    refreshSession(req, res, req.homeId)
+    res.json({ key: formatCode(code) })
+  } catch (err) {
+    next(err)
+  }
 })
 
 // Eigene Benutzer-Logins der Identität (req.homeId) - gelten bereichsübergreifend, unabhängig vom
@@ -299,8 +350,15 @@ router.get('/users', requireAuth, (req, res) => {
   )
 })
 
-router.post('/users', requireAuth, async (req, res, next) => {
+// Ein neuer Benutzer-Login ist ein zusätzlicher, bereichsübergreifend gültiger Zugang zur Identität -
+// genau wie beim Schlüssel erneuern (siehe oben) braucht das einen aktuellen Berechtigungsnachweis,
+// sonst könnte eine übernommene Sitzung sich unbemerkt einen dauerhaften eigenen Zugang anlegen.
+router.post('/users', authLimiter, requireAuth, async (req, res, next) => {
   try {
+    if (!(await verifyCurrentCredential(req))) {
+      return res.status(403).json({ error: REAUTH_ERROR })
+    }
+
     const { username, password, email } = req.body || {}
     validateUsername(username)
     validatePassword(password)
@@ -322,13 +380,22 @@ router.post('/users', requireAuth, async (req, res, next) => {
   }
 })
 
-router.delete('/users/:id', requireAuth, (req, res) => {
-  const id = cleanId(req.params.id)
-  if (!id) return res.status(404).json({ error: 'Diesen Benutzer gibt es nicht' })
+// Wie beim Anlegen: einen Benutzer-Login zu entfernen braucht einen aktuellen Berechtigungsnachweis.
+router.delete('/users/:id', authLimiter, requireAuth, async (req, res, next) => {
+  try {
+    const id = cleanId(req.params.id)
+    if (!id) return res.status(404).json({ error: 'Diesen Benutzer gibt es nicht' })
 
-  const result = db.prepare('DELETE FROM users WHERE id = ? AND family_id = ?').run(id, req.homeId)
-  if (!result.changes) return res.status(404).json({ error: 'Diesen Benutzer gibt es nicht' })
-  res.status(204).end()
+    if (!(await verifyCurrentCredential(req))) {
+      return res.status(403).json({ error: REAUTH_ERROR })
+    }
+
+    const result = db.prepare('DELETE FROM users WHERE id = ? AND family_id = ?').run(id, req.homeId)
+    if (!result.changes) return res.status(404).json({ error: 'Diesen Benutzer gibt es nicht' })
+    res.status(204).end()
+  } catch (err) {
+    next(err)
+  }
 })
 
 // Wiederherstellung: der Schlüssel dient als PUK für den eigenen Benutzer-Login. Jede Unstimmigkeit
