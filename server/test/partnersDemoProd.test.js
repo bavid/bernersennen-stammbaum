@@ -1,6 +1,6 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { useTempDataDir, startApp, cleanup, call } = require('./helpers')
+const { useTempDataDir, startApp, cleanup, call, createFamily } = require('./helpers')
 
 // appEnv wird beim ersten require('../config') fest eingelesen (siehe config.js) - für "läuft wirklich
 // wie in Produktion" braucht es deshalb eine eigene Testdatei mit APP_ENV=production von Anfang an
@@ -48,5 +48,32 @@ test('Partner: Demo-Partner erscheinen in Produktion nicht in der echten Liste, 
 
     const nearWithDemo = await call(base, '/api/public/partners?plz=10115&radius=10&demo=1')
     assert.ok(nearWithDemo.data.some((p) => p.slug === 'demo-tierheim-prod'))
+  })
+
+  // Finding 2 (Abschluss-Review Phase 2): "Zum Portal" für einen Demo-Partner (z. B. aus /umgebung
+  // heraus) 404te in Produktion für eine angemeldete Demo-Familie, weil demoAllowed() dort nur ?demo=1
+  // oder appEnv dev/staging kannte. Eine gültige Demo-Familien-Sitzung muss ohne ?demo=1 durchkommen -
+  // eine anonyme Anfrage dagegen weiterhin 404 bekommen (kein 401, siehe middleware/auth.js optionalSession).
+  await t.test('mit gültiger Demo-Familien-Sitzung (ohne ?demo=1): Portal und Liste bleiben erreichbar', async () => {
+    const demoFamily = await createFamily(base, 'Demo-Familie Portal-Zugriff', 'demo-familie-portal-zugriff-1')
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(demoFamily.data.id)
+
+    const list = await call(base, '/api/public/partners', { cookie: demoFamily.cookie })
+    assert.ok(list.data.some((p) => p.slug === 'demo-tierheim-prod'))
+
+    const portal = await call(base, '/api/public/partners/demo-tierheim-prod', { cookie: demoFamily.cookie })
+    assert.equal(portal.status, 200)
+
+    const near = await call(base, '/api/public/partners?plz=10115&radius=10', { cookie: demoFamily.cookie })
+    assert.ok(near.data.some((p) => p.slug === 'demo-tierheim-prod'))
+
+    // eine normale (nicht-Demo) Familiensitzung bekommt weiterhin kein Demo-Partner-Portal
+    const realFamily = await createFamily(base, 'Echte Familie Portal-Zugriff', 'echte-familie-portal-zugriff-1')
+    const realPortal = await call(base, '/api/public/partners/demo-tierheim-prod', { cookie: realFamily.cookie })
+    assert.equal(realPortal.status, 404)
+
+    // anonym bleibt es bei 404, nie 401 - optionalSession darf anonyme Anfragen nicht ablehnen
+    const anonPortal = await call(base, '/api/public/partners/demo-tierheim-prod')
+    assert.equal(anonPortal.status, 404)
   })
 })

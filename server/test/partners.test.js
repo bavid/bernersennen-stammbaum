@@ -179,6 +179,56 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
     assert.equal(missing.status, 404)
   })
 
+  // Finding 1 (Abschluss-Review Phase 2): AdminPartners.jsx "Pausieren"/"Aktivieren" schickte bisher nur
+  // { status } an PUT /api/admin/partners/:id - validatePartner (siehe lib/partners.js) verlangt aber den
+  // vollen Datensatz (u. a. ist der Name Pflicht), das scheiterte also immer mit 400. Der Fix schickt
+  // { ...toPayload(initialState(partner)), status } - hier serverseitig gegengeprüft: derselbe volle,
+  // camelCase-Datensatz mit nur geändertem status muss durchgehen, das alte { status }-allein weiterhin nicht.
+  await t.test('Ändern: voller Datensatz mit nur geändertem status (wie AdminPartners "Pausieren"/"Aktivieren" sendet jetzt) -> 200', async () => {
+    const created = await post(
+      '/api/admin/partners',
+      samplePartner({
+        name: 'Pausier-Test',
+        slug: 'pausier-test',
+        status: 'aktiv',
+        website: 'https://example.org',
+        kontaktEmail: 'kontakt@example.org',
+        kontaktTelefon: '+49 30 1234567',
+        portalText: 'Willkommen bei uns!',
+        farbe: '#2f6b3f'
+      })
+    )
+    assert.equal(created.status, 201)
+
+    // Entspricht AdminPartners.jsx toPayload(initialState(partner)): camelCase, alle Formularfelder, aus
+    // der Server-Zeile (snake_case) zurückgebildet - nur status ist geändert.
+    const fullPayloadOnlyStatusChanged = {
+      name: created.data.name,
+      slug: created.data.slug,
+      typ: created.data.typ,
+      status: 'pausiert',
+      istPartner: Boolean(created.data.ist_partner),
+      plz: created.data.plz,
+      website: created.data.website,
+      spendenUrl: created.data.spenden_url,
+      vermittlungUrl: created.data.vermittlung_url,
+      kontaktEmail: created.data.kontakt_email,
+      kontaktTelefon: created.data.kontakt_telefon,
+      portalTitel: created.data.portal_titel,
+      portalText: created.data.portal_text,
+      farbe: created.data.farbe
+    }
+    const updated = await put(`/api/admin/partners/${created.data.id}`, fullPayloadOnlyStatusChanged)
+    assert.equal(updated.status, 200)
+    assert.equal(updated.data.status, 'pausiert')
+    assert.equal(updated.data.name, 'Pausier-Test')
+    assert.equal(updated.data.website, 'https://example.org/')
+
+    // Das alte, kaputte Verhalten (nur { status }) scheitert weiterhin an der Namenspflicht.
+    const statusOnly = await put(`/api/admin/partners/${created.data.id}`, { status: 'aktiv' })
+    assert.equal(statusOnly.status, 400)
+  })
+
   await t.test('Liste (Admin) zeigt alle Status', async () => {
     const list = await get('/api/admin/partners', adminCookie)
     assert.equal(list.status, 200)

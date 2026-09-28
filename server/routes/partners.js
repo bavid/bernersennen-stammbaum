@@ -5,19 +5,27 @@ const config = require('../config')
 const { lookupPlz, distanceKm } = require('../lib/geo')
 const { publicPartner } = require('../lib/partners')
 const { isAdmin } = require('../middleware/admin')
+const { optionalSession } = require('../middleware/auth')
 
 const router = express.Router()
 
 // Muss existieren, bevor app.js express.static() für /partner-media mountet (siehe dort).
 fs.mkdirSync(config.partnerMediaDir, { recursive: true })
 
+// Setzt req.isDemo, ohne anonyme Anfragen abzulehnen (siehe middleware/auth.js) - demoAllowed() unten
+// braucht das, damit eine angemeldete Demo-Familie Demo-Partner auch in Produktion ohne ?demo=1 sieht.
+router.use(optionalSession)
+
 const RADIUS_VALUES = [5, 10, 25, 50, 100]
 
-// Demo-Partner (is_demo=1) sind ausserhalb dev/staging nur mit ausdruecklichem ?demo=1 sichtbar - in
-// Produktion tauchen sie in der echten Liste nicht auf.
+// Demo-Partner (is_demo=1) sind ausserhalb dev/staging nur mit ausdruecklichem ?demo=1 sichtbar, oder
+// wenn die anfragende Sitzung selbst eine gültige Demo-Familie ist (Finding 2: "Zum Portal" aus
+// /umgebung heraus soll für eine angemeldete Demo-Familie nicht 404en, auch nicht in Produktion) - in
+// Produktion tauchen sie sonst in der echten Liste nicht auf.
 function demoAllowed(req) {
   if (req.query.demo === '1') return true
-  return config.appEnv === 'dev' || config.appEnv === 'staging'
+  if (config.appEnv === 'dev' || config.appEnv === 'staging') return true
+  return Boolean(req.isDemo)
 }
 
 function sortByName(rows) {

@@ -61,6 +61,40 @@ function requireSession(req, res, next) {
   }
 }
 
+// Wie requireSession, aber ohne bei fehlendem/ungültigem Cookie mit 401 zu scheitern - für Stellen, die
+// anonyme Anfragen weiterhin erlauben müssen, aber wissen wollen, ob eine gültige Sitzung zu einer
+// Demo-Familie gehört (z. B. server/routes/partners.js demoAllowed, Finding 2: "Zum Portal" aus
+// /umgebung heraus soll für eine angemeldete Demo-Familie nicht 404en, auch nicht in Produktion).
+function sessionIsDemo(req) {
+  const token = req.cookies?.[sessionCookie]
+  if (!token) return false
+  try {
+    const payload = jwt.verify(token, jwtSecret)
+    const family = familyById.get(payload.familyId)
+    if (!family) return false
+    if ((payload.e ?? 0) !== family.auth_epoch) return false
+    if (payload.uid) {
+      const user = userById.get(payload.uid)
+      if (!user || (payload.ue ?? 0) !== user.session_epoch) return false
+    }
+    let active = payload.activeFamilyId ?? payload.familyId
+    if (active !== payload.familyId && !canEnter(payload.familyId, active)) {
+      active = payload.familyId
+    }
+    const activeIsDemo = active === payload.familyId ? family.is_demo : familyById.get(active)?.is_demo
+    return Boolean(family.is_demo) || Boolean(activeIsDemo)
+  } catch {
+    return false
+  }
+}
+
+// Middleware-Fassung von sessionIsDemo: setzt req.isDemo, antwortet aber nie selbst (next() immer) -
+// anonyme oder ungültige Anfragen laufen mit req.isDemo=false einfach weiter.
+function optionalSession(req, res, next) {
+  req.isDemo = sessionIsDemo(req)
+  next()
+}
+
 // is_demo kommt aus der DB, nicht aus dem Token: so bleibt eine Demo-Familie schreibgeschützt,
 // auch wenn jemand sich mit ihrem echten Passwort ganz normal einloggt.
 function requireAuth(req, res, next) {
@@ -103,4 +137,12 @@ function refreshSession(req, res, activeId) {
   setSessionCookie(res, req.homeId, activeId, { userId: req.userId })
 }
 
-module.exports = { requireAuth, requireSession, signSession, setSessionCookie, clearSessionCookie, refreshSession }
+module.exports = {
+  requireAuth,
+  requireSession,
+  optionalSession,
+  signSession,
+  setSessionCookie,
+  clearSessionCookie,
+  refreshSession
+}
