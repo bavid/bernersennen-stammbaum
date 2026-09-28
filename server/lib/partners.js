@@ -12,8 +12,23 @@ const MAX_URL_LENGTH = 300
 const MAX_EMAIL_LENGTH = 120
 const MAX_PORTAL_TEXT_LENGTH = 2000
 
-const TYP_VALUES = ['tierheim', 'vermittlung', 'hundeschule', 'futter', 'sonstige']
+// Muss zum CHECK in db.js (PARTNERS_COLUMNS_SQL) passen. hundesalon/betreuung: Phase P Task 1.
+const TYP_VALUES = ['tierheim', 'vermittlung', 'hundeschule', 'hundesalon', 'betreuung', 'futter', 'sonstige']
 const STATUS_VALUES = ['entwurf', 'aktiv', 'pausiert']
+// Typen, deren Bereich ein Tierheim-Bereich (art='tierheim') wird - alle anderen bekommen art='partner'.
+const SHELTER_TYP_VALUES = ['tierheim', 'vermittlung']
+
+// Öffentlich sichtbar ist ein Partner nur, wenn er aktiv UND nicht vom Admin gesperrt ist (Phase P Task 1).
+// Eine Sperre setzt status zwar zusätzlich auf 'pausiert' (validatePartner), jede öffentliche Abfrage
+// prüft gesperrt trotzdem selbst - als Verteidigungslinie gegen Rohdaten mit gesperrt=1 und status aktiv.
+function publicPartnerSql(alias) {
+  const prefix = alias ? `${alias}.` : ''
+  return `${prefix}status = 'aktiv' AND ${prefix}gesperrt = 0`
+}
+
+function isPubliclyVisible(row) {
+  return Boolean(row) && row.status === 'aktiv' && !row.gesperrt
+}
 
 const SLUG_RE = /^[a-z0-9-]{3,60}$/
 const SLUG_MAX_LENGTH = 60
@@ -230,16 +245,38 @@ function validateFarbe(value) {
   return hex
 }
 
+// Echte Booleans für die Schalter gesperrt/kontaktformularAktiv (wie cleanBooleanFlag in lib/vouchers.js:
+// der String "false" wäre sonst truthy). Fehlt der Wert, bleibt der bisherige (beim Bearbeiten) bzw. der
+// Default (beim Anlegen) - so löst ein Update des bisherigen Admin-Clients, der die neuen Felder noch
+// nicht kennt, keine Sperre auf und schaltet nichts ab.
+function validateFlag(value, existingValue, defaultValue, label) {
+  if (value === undefined || value === null) return existingValue ?? defaultValue
+  if (typeof value !== 'boolean') throw httpError(400, `„${label}“ muss true oder false sein`)
+  return value ? 1 : 0
+}
+
+// Wie validateUrl, aber ein fehlendes Feld (undefined) behält den bisherigen Wert - aus demselben Grund
+// wie bei validateFlag. null oder '' löschen den Link ausdrücklich.
+function validateKontaktFormularUrl(value, existingValue) {
+  if (value === undefined) return existingValue ?? null
+  return validateUrl(value, 'Kontaktformular-Link')
+}
+
 // Validiert und normalisiert die Eingabe für POST/PUT /api/admin/partners. existingSlug/existingStatus:
 // beim Bearbeiten die bisherigen Werte, damit ein Update ohne slug-/status-Feld weder die URL noch die
-// Sichtbarkeit ungewollt verändert.
-function validatePartner(input = {}, { existingSlug, existingStatus } = {}) {
+// Sichtbarkeit ungewollt verändert. existing (optional): der ganze bisherige Datensatz - liefert
+// dieselben Voreinstellungen für gesperrt, kontakt_formular_url und kontaktformular_aktiv.
+// gesperrt = 1 (Admin-Sperre, Phase P Task 1) zwingt status auf 'pausiert': solange gesperrt, lässt sich
+// ein Partner nicht wieder aktivieren - erst entsperren (gesperrt: false), dann aktivieren.
+function validatePartner(input = {}, { existingSlug, existingStatus, existing } = {}) {
   const name = cleanOptionalText(input.name, MAX_NAME_LENGTH, 'Der Name')
   if (!name) throw httpError(400, 'Der Name ist Pflicht')
 
-  const slug = resolveSlug(input.slug, name, existingSlug)
+  const slug = resolveSlug(input.slug, name, existingSlug ?? existing?.slug)
   const typ = validateTyp(input.typ)
-  const status = validateStatus(input.status, existingStatus)
+  const gesperrt = validateFlag(input.gesperrt, existing?.gesperrt, 0, 'gesperrt')
+  const requestedStatus = validateStatus(input.status, existingStatus ?? existing?.status)
+  const status = gesperrt ? 'pausiert' : requestedStatus
   const istPartner = input.istPartner === undefined || input.istPartner === null ? true : Boolean(input.istPartner)
 
   const { plz, lat, lon, ort } = resolvePlz(input.plz)
@@ -249,6 +286,8 @@ function validatePartner(input = {}, { existingSlug, existingStatus } = {}) {
   const vermittlungUrl = validateUrl(input.vermittlungUrl, 'Vermittlungs-Link')
   const kontaktEmail = validateEmail(input.kontaktEmail)
   const kontaktTelefon = validatePhone(input.kontaktTelefon)
+  const kontaktFormularUrl = validateKontaktFormularUrl(input.kontaktFormularUrl, existing?.kontakt_formular_url)
+  const kontaktformularAktiv = validateFlag(input.kontaktformularAktiv, existing?.kontaktformular_aktiv, 1, 'kontaktformularAktiv')
   const portalTitel = cleanOptionalText(input.portalTitel, MAX_TITEL_LENGTH, 'Der Portal-Titel')
   const portalText = validatePortalText(input.portalText)
   const farbe = validateFarbe(input.farbe)
@@ -270,9 +309,12 @@ function validatePartner(input = {}, { existingSlug, existingStatus } = {}) {
     vermittlung_url: vermittlungUrl,
     kontakt_email: kontaktEmail,
     kontakt_telefon: kontaktTelefon,
+    kontakt_formular_url: kontaktFormularUrl,
+    kontaktformular_aktiv: kontaktformularAktiv,
     portal_titel: portalTitel,
     portal_text: portalText,
-    farbe
+    farbe,
+    gesperrt
   }
 }
 
@@ -321,6 +363,8 @@ function detectImageExt(buffer) {
 module.exports = {
   validatePartner,
   publicPartner,
+  publicPartnerSql,
+  isPubliclyVisible,
   slugify,
   contrastRatio,
   detectImageExt,
@@ -330,6 +374,7 @@ module.exports = {
   sanitizeExternalPhone,
   TYP_VALUES,
   STATUS_VALUES,
+  SHELTER_TYP_VALUES,
   MAX_LOGO_BYTES,
   LOGO_MIME_TYPES,
   LOGO_FILENAME_RE,

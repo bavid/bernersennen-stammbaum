@@ -6,6 +6,7 @@
 const config = require('../../config')
 const { distanceKm } = require('../geo')
 const { looksLikeBreeder } = require('../breederGuard')
+const { publicPartnerSql } = require('../partners')
 const { cacheKey, cellCenter, readCache, writeCache, consumeOverpassBudget, consumeIdentityBudget } = require('./cache')
 const { searchFixture } = require('./providers/fixture')
 const { searchOverpass } = require('./providers/overpass')
@@ -27,12 +28,13 @@ function normalizeName(name) {
     .replace(/\s+/g, ' ')
 }
 
-// Aktive Partner im Umkreis - Demo-Partner nur für die Demo bzw. in dev/staging (dieselbe Regel wie
-// routes/partners.js demoAllowed, hier ohne Request/Query, weil das über isDemo hereinkommt).
+// Aktive (und nicht gesperrte, lib/partners.js publicPartnerSql) Partner im Umkreis - Demo-Partner nur
+// für die Demo bzw. in dev/staging (dieselbe Regel wie routes/partners.js demoAllowed, hier ohne
+// Request/Query, weil das über isDemo hereinkommt).
 function findActivePartnersNear(db, { lat, lon, radiusKm, isDemo }) {
   const includeDemo = isDemo || config.appEnv === 'dev' || config.appEnv === 'staging'
   const demoClause = includeDemo ? '' : 'AND is_demo = 0'
-  const rows = db.prepare(`SELECT * FROM partners WHERE status = 'aktiv' ${demoClause}`).all()
+  const rows = db.prepare(`SELECT * FROM partners WHERE ${publicPartnerSql()} ${demoClause}`).all()
 
   return rows
     .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lon))

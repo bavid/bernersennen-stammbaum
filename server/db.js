@@ -248,12 +248,15 @@ db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_families_access_key ON families(a
 
 // Phase 2 Task 2: Partner (Tierheime, Vermittlungsstellen, Hundeschulen, Futter, ...) mit eigener
 // Portalseite (/p/:slug). Nie 'zuechter' - siehe lib/breederGuard.js, das alle Partner-Texte prüft.
-db.exec(`
-  CREATE TABLE IF NOT EXISTS partners (
+// Phase P Task 1: dazu Hundesalons und Betreuung (Hundesitter, Tagesstätte, Pension) sowie gesperrt
+// (Admin-Sperre, öffentlich wie "nicht aktiv"), kontakt_formular_url und kontaktformular_aktiv. Die
+// Typ-Liste muss zu lib/partners.js TYP_VALUES passen. PARTNERS_COLUMNS_SQL ist die EINE Definition für
+// neue Datenbanken UND den einmaligen Umbau alter Datenbanken (rebuildPartnersTable unten).
+const PARTNERS_COLUMNS_SQL = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     slug TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
-    typ TEXT NOT NULL CHECK (typ IN ('tierheim','vermittlung','hundeschule','futter','sonstige')),
+    typ TEXT NOT NULL CHECK (typ IN ('tierheim','vermittlung','hundeschule','hundesalon','betreuung','futter','sonstige')),
     ist_partner INTEGER NOT NULL DEFAULT 1,
     status TEXT NOT NULL DEFAULT 'entwurf' CHECK (status IN ('entwurf','aktiv','pausiert')),
     plz TEXT, ort TEXT, lat REAL, lon REAL,
@@ -262,9 +265,16 @@ db.exec(`
     logo_file TEXT, portal_titel TEXT, portal_text TEXT, farbe TEXT,
     quelle TEXT NOT NULL DEFAULT 'manuell' CHECK (quelle IN ('manuell','osm','sitecheck')),
     osm_ref TEXT, is_demo INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE INDEX IF NOT EXISTS idx_partners_status ON partners(status);
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    gesperrt INTEGER NOT NULL DEFAULT 0,
+    kontakt_formular_url TEXT,
+    kontaktformular_aktiv INTEGER NOT NULL DEFAULT 1
+`
+const PARTNERS_INDEXES_SQL = 'CREATE INDEX IF NOT EXISTS idx_partners_status ON partners(status);'
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS partners (${PARTNERS_COLUMNS_SQL});
+  ${PARTNERS_INDEXES_SQL}
 `)
 
 // Welcher Partner den Gutschein vergeben hat, mit dem dieses Zuhause entstand ("kam über Partner X") -
@@ -352,5 +362,64 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 `)
+
+// Phase P Task 1 (docs/superpowers/plans/2026-09-29-phase-p-partnerbereich.md): Partner-Bereiche für
+// alle Partner-Typen. Neue partners-Spalten zuerst per ALTER (für den Umbau darunter sind dann alle
+// Spalten schon da), danach der einmalige Umbau für die neuen Typen im CHECK.
+addColumnIfMissing('partners', 'gesperrt', 'INTEGER NOT NULL DEFAULT 0')
+addColumnIfMissing('partners', 'kontakt_formular_url', 'TEXT')
+addColumnIfMissing('partners', 'kontaktformular_aktiv', 'INTEGER NOT NULL DEFAULT 1')
+
+// Den CHECK auf partners.typ kann SQLite per ALTER nicht ändern - einmalig neu aufbauen, solange das
+// gespeicherte Schema 'hundesalon' noch nicht kennt (das Muster "12 Schritte" aus
+// https://www.sqlite.org/lang_altertable.html#otheralter). Kein anderer Tisch hat heute REFERENCES
+// partners(...) (families/voucher_batches/vouchers/promotions.partner_id sind bewusst ohne Fremdschlüssel,
+// siehe oben) - sollte das später dazukommen, bleibt die Referenz trotzdem gültig: sie zeigt per Name auf
+// "partners", und genau so heißt die neue Tabelle nach dem Umbenennen wieder (test/partnerSchema.test.js).
+function rebuildPartnersTable() {
+  const current = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'partners'").get()
+  if (!current || current.sql.includes("'hundesalon'")) return
+
+  const oldColumns = db.prepare('PRAGMA table_info(partners)').all().map((column) => column.name)
+  // AUTOINCREMENT: der Umbau würde den Zähler sonst auf die höchste NOCH VORHANDENE Id zurücksetzen - die
+  // Id eines schon gelöschten Partners dürfte dann neu vergeben werden.
+  const oldSequence = db.prepare("SELECT seq FROM sqlite_sequence WHERE name = 'partners'").get()?.seq ?? 0
+
+  // Muss außerhalb jeder Transaktion umgestellt werden (innerhalb wirkt das Pragma nicht).
+  db.pragma('foreign_keys = OFF')
+  try {
+    db.transaction(() => {
+      db.exec(`CREATE TABLE partners_neu (${PARTNERS_COLUMNS_SQL})`)
+      const newColumns = new Set(db.prepare('PRAGMA table_info(partners_neu)').all().map((column) => column.name))
+      const lost = oldColumns.filter((column) => !newColumns.has(column))
+      // Lieber gar nicht umbauen (Rollback) als stillschweigend eine Spalte samt Daten verlieren.
+      if (lost.length) throw new Error(`Umbau von partners abgebrochen - unbekannte Spalten: ${lost.join(', ')}`)
+
+      const columnList = oldColumns.join(', ')
+      db.exec(`INSERT INTO partners_neu (${columnList}) SELECT ${columnList} FROM partners`)
+      db.exec('DROP TABLE partners')
+      db.exec('ALTER TABLE partners_neu RENAME TO partners')
+      db.exec(PARTNERS_INDEXES_SQL)
+
+      const sequence = db.prepare("SELECT seq FROM sqlite_sequence WHERE name = 'partners'").get()
+      if (!sequence) {
+        if (oldSequence > 0) db.prepare("INSERT INTO sqlite_sequence (name, seq) VALUES ('partners', ?)").run(oldSequence)
+      } else if (sequence.seq < oldSequence) {
+        db.prepare("UPDATE sqlite_sequence SET seq = ? WHERE name = 'partners'").run(oldSequence)
+      }
+
+      const violations = db.pragma('foreign_key_check')
+      if (violations.length) throw new Error(`Umbau von partners abgebrochen - Fremdschlüssel verletzt: ${JSON.stringify(violations)}`)
+    })()
+  } finally {
+    db.pragma('foreign_keys = ON')
+  }
+}
+rebuildPartnersTable()
+
+// Gutschein-Stapel für Partner-Zugänge (Task 2): zweck 'chronik' (bisher: legt ein Zuhause an) oder
+// 'partnerzugang'; partner_typ optional als Vorgabe für den neuen Partner - beides wird im Code geprüft.
+addColumnIfMissing('voucher_batches', 'zweck', "TEXT NOT NULL DEFAULT 'chronik'")
+addColumnIfMissing('voucher_batches', 'partner_typ', 'TEXT')
 
 module.exports = db

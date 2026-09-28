@@ -12,7 +12,8 @@ const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
 const { createBatch, voucherStatus, validateBatchInput } = require('../lib/vouchers')
 const { formatCode, decryptCode, generateCode, hashCode } = require('../lib/codes')
-const { validatePartner, detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('../lib/partners')
+const { validatePartner, detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES, SHELTER_TYP_VALUES } = require('../lib/partners')
+const { ART, PARTNER_AREA_ARTS } = require('../lib/context')
 
 const router = express.Router()
 
@@ -292,13 +293,33 @@ function uniqueConstraintViolation(err) {
   return typeof err.message === 'string' && err.message.includes('UNIQUE')
 }
 
-// shelter_family_id: die Tierheim-Familie (falls vorhanden), die der Admin über POST /:id/shelter aus
-// diesem Partner angelegt hat - der Client zeigt damit z. B. einen "Schlüssel erneuern"-statt-"Anlegen"-Knopf.
+// Phase P Task 1: der Bereich eines Partners - art 'tierheim' (Typ tierheim/vermittlung) oder 'partner'
+// (alle anderen Typen). Höchstens einer pro Partner. Nur diese beiden Arten zählen: ein Zuhause trägt
+// families.partner_id bloß als Herkunft ("kam über Partner X", lib/vouchers.js redeemVoucher).
+const AREA_ARTS_SQL = PARTNER_AREA_ARTS.map((art) => `'${art}'`).join(', ')
+const findPartnerArea = db.prepare(`SELECT id, art FROM families WHERE partner_id = ? AND art IN (${AREA_ARTS_SQL}) ORDER BY id LIMIT 1`)
+
+function areaArtForTyp(typ) {
+  return SHELTER_TYP_VALUES.includes(typ) ? ART.tierheim : ART.partner
+}
+
+function areaLabel(art) {
+  return art === ART.tierheim ? 'Tierheim-Bereich' : 'Partner-Bereich'
+}
+
+// shelter_family_id: die Tierheim-Familie (falls vorhanden) - bleibt für den bisherigen Admin-Client.
+// area_family_id/area_art (Phase P Task 1): der Bereich des Partners, egal welcher Art - der Client zeigt
+// damit z. B. einen "Schlüssel erneuern"-statt-"Anlegen"-Knopf. gesperrt kommt über p.* mit.
 router.get('/partners', requireAdmin, (req, res) => {
+  const areaSubquery = (column) =>
+    `(SELECT f.${column} FROM families f WHERE f.partner_id = p.id AND f.art IN (${AREA_ARTS_SQL}) ORDER BY f.id LIMIT 1)`
   res.json(
     db
       .prepare(
-        `SELECT p.*, (SELECT f.id FROM families f WHERE f.partner_id = p.id AND f.art = 'tierheim') AS shelter_family_id
+        `SELECT p.*,
+           (SELECT f.id FROM families f WHERE f.partner_id = p.id AND f.art = 'tierheim') AS shelter_family_id,
+           ${areaSubquery('id')} AS area_family_id,
+           ${areaSubquery('art')} AS area_art
          FROM partners p ORDER BY p.name COLLATE NOCASE`
       )
       .all()
@@ -326,7 +347,14 @@ router.put('/partners/:id', requireAdmin, (req, res, next) => {
     const existing = findPartner(id)
     if (!existing) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
 
-    const clean = validatePartner(req.body || {}, { existingSlug: existing.slug, existingStatus: existing.status })
+    const clean = validatePartner(req.body || {}, { existing })
+    // Ein bestehender Bereich hat seine Art beim Anlegen vom Typ bekommen (areaArtForTyp) - ein Typwechsel
+    // über die Grenze Tierheim/Vermittlung <-> übrige Partner würde nicht mehr dazu passen (z. B. Tiere
+    // in einem Bereich, der laut Typ keine haben darf). Innerhalb der jeweiligen Gruppe geht der Wechsel.
+    const area = findPartnerArea.get(id)
+    if (area && areaArtForTyp(clean.typ) !== area.art) {
+      return res.status(409).json({ error: `Für diesen Partner gibt es einen ${areaLabel(area.art)} – dazu passt der Typ „${clean.typ}“ nicht` })
+    }
     const columns = Object.keys(clean)
     db.prepare(`UPDATE partners SET ${columns.map((col) => `${col} = ?`).join(', ')} WHERE id = ?`).run(
       ...columns.map((col) => clean[col]),
@@ -373,61 +401,76 @@ router.post('/partners/:id/logo', requireAdmin, (req, res, next) => {
   })
 })
 
-// Phase T Task 1: legt für einen Tierheim-/Vermittlungs-Partner einen eigenen Bereich an (art='tierheim'),
-// über den das Team selbst die App nutzt (Chronik je Tier, Steckbrief, Übergabe) - siehe
-// docs/superpowers/plans/2026-09-29-phase-t-tierheim.md. Der Zugangsschlüssel funktioniert wie ein
-// Gutschein-Code (siehe lib/vouchers.js redeemVoucher/lib/codes.js): einmalig im Klartext zurückgegeben,
-// danach nur noch der Hash in families.access_key_hash. Höchstens ein Tierheim-Bereich pro Partner.
-router.post('/partners/:id/shelter', requireAdmin, (req, res) => {
+// Legt für einen Partner seinen eigenen Bereich an, über den das Team selbst die App nutzt - Phase T
+// Task 1 für Tierheime (art='tierheim': Chronik je Tier, Steckbrief, Übergabe), seit Phase P Task 1 für
+// jeden Partner-Typ (art='partner' für alle, die keine Tierheime/Vermittlungen sind). Der
+// Zugangsschlüssel funktioniert wie ein Gutschein-Code (siehe lib/vouchers.js redeemVoucher/
+// lib/codes.js): einmalig im Klartext zurückgegeben, danach nur noch der Hash in
+// families.access_key_hash. Höchstens ein Bereich pro Partner, egal welcher Art.
+// onlyShelter: der alte Pfad /shelter bleibt Tierheimen/Vermittlungen vorbehalten (400 für andere Typen).
+function createPartnerArea(req, res, { onlyShelter }) {
   const id = cleanId(req.params.id)
   const partner = findPartner(id)
   if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
-  if (!['tierheim', 'vermittlung'].includes(partner.typ)) {
+  if (onlyShelter && !SHELTER_TYP_VALUES.includes(partner.typ)) {
     return res.status(400).json({ error: 'Nur für Partner vom Typ Tierheim oder Vermittlung' })
   }
 
-  const existing = db.prepare("SELECT 1 FROM families WHERE partner_id = ? AND art = 'tierheim'").get(id)
-  if (existing) return res.status(409).json({ error: 'Für diesen Partner gibt es schon einen Tierheim-Bereich' })
+  const existing = findPartnerArea.get(id)
+  if (existing) return res.status(409).json({ error: `Für diesen Partner gibt es schon einen ${areaLabel(existing.art)}` })
 
+  const art = areaArtForTyp(partner.typ)
   const code = generateCode()
   const familyId = Number(
     db
       .prepare(
         `INSERT INTO families (name, password_hash, art, theme, partner_id, legacy_password, access_key_hash, is_demo)
-         VALUES (?, '!', 'tierheim', 'standard', ?, 0, ?, ?)`
+         VALUES (?, '!', ?, 'standard', ?, 0, ?, ?)`
       )
-      // security-review Phase T Finding 13: ein Tierheim-Bereich für einen Demo-Partner muss selbst
-      // is_demo=1 tragen - sonst wäre er (anders als jeder andere Demo-Bereich) außerhalb von dev/
-      // staging ohne ?demo=1 oder eine Demo-Sitzung sichtbar/nutzbar, obwohl der Partner es nicht ist.
-      .run(partner.name, id, hashCode(code), partner.is_demo ? 1 : 0).lastInsertRowid
+      // security-review Phase T Finding 13: ein Bereich für einen Demo-Partner muss selbst is_demo=1
+      // tragen - sonst wäre er (anders als jeder andere Demo-Bereich) außerhalb von dev/staging ohne
+      // ?demo=1 oder eine Demo-Sitzung sichtbar/nutzbar, obwohl der Partner es nicht ist.
+      .run(partner.name, art, id, hashCode(code), partner.is_demo ? 1 : 0).lastInsertRowid
   )
 
-  res.status(201).json({ familyId, key: formatCode(code) })
-})
+  res.status(201).json({ familyId, key: formatCode(code), art })
+}
+
+router.post('/partners/:id/area', requireAdmin, (req, res) => createPartnerArea(req, res, { onlyShelter: false }))
+router.post('/partners/:id/shelter', requireAdmin, (req, res) => createPartnerArea(req, res, { onlyShelter: true }))
 
 // Schlüssel erneuern (security-review Phase T Finding 13): wie routes/auth.js POST /family/key, nur
-// vom Admin für ein Tierheim-Team ausgelöst (z. B. Schlüssel verloren/kompromittiert). auth_epoch+1
+// vom Admin für ein Partner-Team ausgelöst (z. B. Schlüssel verloren/kompromittiert). auth_epoch+1
 // beendet jede laufende Sitzung dieses Bereichs, der neue Schlüssel kommt einmalig im Klartext zurück.
-router.post('/partners/:id/shelter/key', requireAdmin, (req, res) => {
+// arts: welche Bereichsarten der Pfad erneuern darf - /area/key beide, der alte Pfad /shelter/key nur
+// Tierheim-Bereiche (wie bisher).
+function reissueAreaKey(req, res, { arts }) {
   const id = cleanId(req.params.id)
   const partner = findPartner(id)
   if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
 
-  const shelter = db.prepare("SELECT id FROM families WHERE partner_id = ? AND art = 'tierheim'").get(id)
-  if (!shelter) return res.status(404).json({ error: 'Für diesen Partner gibt es keinen Tierheim-Bereich' })
+  const area = findPartnerArea.get(id)
+  if (!area || !arts.includes(area.art)) {
+    const label = arts.length === 1 ? areaLabel(arts[0]) : 'Bereich'
+    return res.status(404).json({ error: `Für diesen Partner gibt es keinen ${label}` })
+  }
 
   const code = generateCode()
-  db.prepare('UPDATE families SET access_key_hash = ?, auth_epoch = auth_epoch + 1 WHERE id = ?').run(hashCode(code), shelter.id)
+  db.prepare('UPDATE families SET access_key_hash = ?, auth_epoch = auth_epoch + 1 WHERE id = ?').run(hashCode(code), area.id)
   res.json({ key: formatCode(code) })
-})
+}
+
+router.post('/partners/:id/area/key', requireAdmin, (req, res) => reissueAreaKey(req, res, { arts: PARTNER_AREA_ARTS }))
+router.post('/partners/:id/shelter/key', requireAdmin, (req, res) => reissueAreaKey(req, res, { arts: [ART.tierheim] }))
 
 // Löschen nur im Entwurf - ein schon veröffentlichter Partner wird stattdessen pausiert (PUT status).
 // Zusätzlich: referenziert irgendein Gutschein-Stapel (auch längst eingelöste Gutscheine) diesen
 // Partner, bleibt er ebenfalls erhalten - ein Löschen würde sonst die partner_id-Fremdreferenz in
 // voucher_batches/vouchers verwaisen lassen (security-review Phase 2 Finding 7). Ebenso bleibt ein
-// Partner erhalten, für den schon ein Tierheim-Bereich angelegt wurde (security-review Phase T
-// Finding 13) - der Bereich referenziert den Partner über families.partner_id, ein Löschen würde diese
-// Referenz verwaisen lassen (und POST /:id/shelter erlaubt das Anlegen bewusst unabhängig vom Status).
+// Partner erhalten, für den schon ein Bereich angelegt wurde (Tierheim- oder Partner-Bereich,
+// security-review Phase T Finding 13) - der Bereich referenziert den Partner über families.partner_id,
+// ein Löschen würde diese Referenz verwaisen lassen (und POST /:id/area erlaubt das Anlegen bewusst
+// unabhängig vom Status).
 router.delete('/partners/:id', requireAdmin, (req, res) => {
   const id = cleanId(req.params.id)
   const partner = findPartner(id)
@@ -435,9 +478,9 @@ router.delete('/partners/:id', requireAdmin, (req, res) => {
   if (partner.status !== 'entwurf') {
     return res.status(409).json({ error: 'Nur Entwürfe lassen sich löschen – diesen Partner stattdessen pausieren' })
   }
-  const hasShelterFamily = db.prepare("SELECT 1 FROM families WHERE partner_id = ? AND art = 'tierheim'").get(id)
-  if (hasShelterFamily) {
-    return res.status(409).json({ error: 'Für diesen Partner gibt es einen Tierheim-Bereich – er lässt sich nicht mehr löschen' })
+  const area = findPartnerArea.get(id)
+  if (area) {
+    return res.status(409).json({ error: `Für diesen Partner gibt es einen ${areaLabel(area.art)} – er lässt sich nicht mehr löschen` })
   }
   const hasVoucherBatches = db.prepare('SELECT 1 FROM voucher_batches WHERE partner_id = ? LIMIT 1').get(id)
   if (hasVoucherBatches) {

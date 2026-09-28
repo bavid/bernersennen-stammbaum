@@ -1,4 +1,6 @@
 const db = require('../db')
+const { publicPartnerSql } = require('./partners')
+const { publishableSql } = require('./vermittlung')
 
 // Phase T Task 2: welche Datei darf ohne Login über /public-media/<datei> abgerufen werden? Anders als
 // lib/uploadAccess.js (canSeeUpload, das nach dem aktiven Bereich fragt) gibt es hier keinen Bereich -
@@ -10,13 +12,16 @@ const db = require('../db')
 const FILENAME_RE = /^[0-9a-f-]{36}\.(jpg|png|webp|gif)$/i
 
 // vermittlung_status IN (...): dieselbe Regel wie beim öffentlichen Tier-Endpunkt selbst (routes/
-// publicAnimals.js findPublishedDog) - ein zurückgezogener/inzwischen vermittelter Steckbrief liefert
-// auch für seine Fotos 404, selbst wenn public_slug technisch noch gesetzt wäre (Verteidigungslinie:
-// PUT /api/dogs räumt public_slug beim Wechsel auf 'vermittelt' zwar schon auf, siehe routes/dogs.js).
-const PUBLISHABLE_STATUS_SQL = "d.vermittlung_status IN ('in_vermittlung', 'reserviert')"
+// publicAnimals.js findPublishedDog, lib/vermittlung.js PUBLISHABLE_STATUS inkl. "pausiert") - ein
+// zurückgezogener/inzwischen vermittelter Steckbrief liefert auch für seine Fotos 404, selbst wenn
+// public_slug technisch noch gesetzt wäre (Verteidigungslinie: PUT /api/dogs räumt public_slug beim
+// Wechsel auf 'vermittelt' zwar schon auf, siehe routes/dogs.js).
+const PUBLISHABLE_STATUS_SQL = publishableSql('d')
 
-// security-review Phase T Finding 5: ein pausierter/Entwurf-Partner (status != 'aktiv') darf auch keine
-// Fotos mehr ausliefern - derselbe Grundsatz wie in routes/publicAnimals.js findShelterPartner.
+// security-review Phase T Finding 5: ein pausierter/Entwurf-Partner (status != 'aktiv') - und seit Phase P
+// Task 1 ein gesperrter - darf auch keine Fotos mehr ausliefern - derselbe Grundsatz wie in
+// routes/publicAnimals.js findShelterPartner (lib/partners.js publicPartnerSql).
+const PUBLIC_PARTNER_SQL = publicPartnerSql('p')
 // Finding 11: FROM dogs d (nutzt den Teil-Index idx_dogs_public_slug, siehe db.js) statt FROM
 // timeline_entries - der Eintrag-Join hängt sich über idx_timeline_dog(dog_id, datum) an ein bereits
 // stark eingeschränktes d, statt erst alle timeline_entries zu scannen (siehe test/publicMediaQueryPlan.test.js).
@@ -24,7 +29,7 @@ const dogPhotoStmt = db.prepare(`
   SELECT 1 FROM dogs d
   JOIN families f ON f.id = d.family_id
   JOIN partners p ON p.id = f.partner_id
-  WHERE d.foto_url = @url AND d.public_slug IS NOT NULL AND ${PUBLISHABLE_STATUS_SQL} AND p.status = 'aktiv'
+  WHERE d.foto_url = @url AND d.public_slug IS NOT NULL AND ${PUBLISHABLE_STATUS_SQL} AND ${PUBLIC_PARTNER_SQL}
 `)
 
 const entryPhotoStmt = db.prepare(`
@@ -32,7 +37,7 @@ const entryPhotoStmt = db.prepare(`
   JOIN families f ON f.id = d.family_id
   JOIN partners p ON p.id = f.partner_id
   JOIN timeline_entries t ON t.dog_id = d.id
-  WHERE d.public_slug IS NOT NULL AND ${PUBLISHABLE_STATUS_SQL} AND p.status = 'aktiv'
+  WHERE d.public_slug IS NOT NULL AND ${PUBLISHABLE_STATUS_SQL} AND ${PUBLIC_PARTNER_SQL}
     AND t.is_public = 1 AND t.privat = 0 AND t.foto_urls LIKE @pattern
 `)
 
@@ -45,7 +50,7 @@ const storyConsentDogPhotoStmt = db.prepare(`
   SELECT 1 FROM dogs d
   JOIN dog_shares ds ON ds.dog_id = d.id AND ds.story_consent = 1
   JOIN families f ON f.id = ds.family_id AND f.art = 'tierheim' AND d.family_id != f.id
-  JOIN partners p ON p.id = f.partner_id AND p.status = 'aktiv'
+  JOIN partners p ON p.id = f.partner_id AND ${PUBLIC_PARTNER_SQL}
   WHERE d.foto_url = @url
 `)
 
@@ -58,7 +63,7 @@ const storyConsentEntryPhotoStmt = db.prepare(`
   SELECT 1 FROM dog_shares ds
   JOIN dogs d ON d.id = ds.dog_id
   JOIN families f ON f.id = ds.family_id AND f.art = 'tierheim' AND d.family_id != f.id
-  JOIN partners p ON p.id = f.partner_id AND p.status = 'aktiv'
+  JOIN partners p ON p.id = f.partner_id AND ${PUBLIC_PARTNER_SQL}
   JOIN timeline_entries t ON t.dog_id = ds.dog_id AND t.privat = 0
   WHERE ds.story_consent = 1
     AND t.foto_urls LIKE @firstPhotoPattern

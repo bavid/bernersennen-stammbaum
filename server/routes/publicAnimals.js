@@ -3,6 +3,8 @@ const express = require('express')
 const db = require('../db')
 const config = require('../config')
 const { optionalSession } = require('../middleware/auth')
+const { publicPartnerSql, isPubliclyVisible } = require('../lib/partners')
+const { publishableSql, listedSql } = require('../lib/vermittlung')
 
 const router = express.Router()
 
@@ -26,20 +28,19 @@ function notFound(res, message = 'Diesen Steckbrief gibt es nicht') {
   return res.status(404).json({ error: message })
 }
 
-// Nur Tiere mit gesetztem public_slug UND einem Status, der eine Vermittlung noch zulässt - ein
-// zurückgezogener oder inzwischen vermittelter Steckbrief liefert 404, auch wenn der Slug technisch
-// noch in der DB steht (siehe routes/dogs.js PUT /:id/steckbrief für das Setzen/Löschen selbst).
-const findPublishedDog = db.prepare(
-  `SELECT * FROM dogs WHERE public_slug = @slug AND vermittlung_status IN ('in_vermittlung', 'reserviert')`
-)
+// Nur Tiere mit gesetztem public_slug UND einem veröffentlichbaren Status (lib/vermittlung.js
+// PUBLISHABLE_STATUS, inkl. "pausiert") - ein zurückgezogener oder inzwischen vermittelter Steckbrief
+// liefert 404, auch wenn der Slug technisch noch in der DB steht (siehe routes/dogs.js PUT
+// /:id/steckbrief für das Setzen/Löschen selbst).
+const findPublishedDog = db.prepare(`SELECT * FROM dogs WHERE public_slug = @slug AND ${publishableSql()}`)
 
-// security-review Phase T Finding 5: ein pausierter oder noch als Entwurf geführter Partner (status !=
-// 'aktiv') darf nichts öffentlich zeigen - auch wenn ein Tier seiner Tierheim-Familie technisch noch
-// public_slug + vermittelbaren Status trägt (siehe auch lib/publicMedia.js für die zugehörigen Fotos).
+// security-review Phase T Finding 5: ein pausierter, gesperrter (Phase P Task 1) oder noch als Entwurf
+// geführter Partner darf nichts öffentlich zeigen - auch wenn ein Tier seiner Tierheim-Familie technisch
+// noch public_slug + veröffentlichbaren Status trägt (siehe auch lib/publicMedia.js für die Fotos).
 const findShelterPartner = db.prepare(
   `SELECT p.name, p.slug, p.website, p.kontakt_email, p.kontakt_telefon, p.vermittlung_url, p.logo_file, p.is_demo
    FROM families f JOIN partners p ON p.id = f.partner_id
-   WHERE f.id = @familyId AND f.art = 'tierheim' AND p.status = 'aktiv'`
+   WHERE f.id = @familyId AND f.art = 'tierheim' AND ${publicPartnerSql('p')}`
 )
 
 // Nur öffentliche (is_public = 1), nie private Einträge - privat = 0 ist hier eine zweite,
@@ -79,6 +80,9 @@ router.get('/animals/:slug', (req, res) => {
     geburtsdatum: dog.geburtsdatum,
     beschreibung: dog.beschreibung,
     fotoUrl: toPublicMediaUrl(dog.foto_url),
+    // Phase P Task 1: damit der Steckbrief z. B. "pausiert – gerade nicht vermittelbar" anzeigen kann
+    // (wie vermittlung_status auf den Portal-Karten, siehe getShelterAnimalCards).
+    vermittlung_status: dog.vermittlung_status,
     entries,
     shelter: {
       name: shelter.name,
@@ -92,13 +96,21 @@ router.get('/animals/:slug', (req, res) => {
   })
 })
 
-// GET /api/public/partners/:slug/animals - Karten-Daten für das Portal: die veröffentlichten,
-// noch vermittelbaren Tiere eines Tierheim-Partners.
+// GET /api/public/partners/:slug/animals - Karten-Daten für das Portal: die veröffentlichten Tiere
+// eines Tierheim-Partners.
 const findShelterFamily = db.prepare("SELECT id FROM families WHERE partner_id = ? AND art = 'tierheim'")
-const findPublishedAnimals = db.prepare(
-  `SELECT public_slug, name, tierart, geschlecht, rasse, geburtsdatum, foto_url, vermittlung_status
-   FROM dogs
-   WHERE family_id = ? AND public_slug IS NOT NULL AND vermittlung_status IN ('in_vermittlung', 'reserviert')
+const PUBLISHED_ANIMAL_COLUMNS = 'public_slug, name, tierart, geschlecht, rasse, geburtsdatum, foto_url, vermittlung_status'
+// Zwei Listen (lib/vermittlung.js): "Entdecken" zeigt nur LISTED_STATUS (ohne pausiert), das eigene
+// Portal des Tierheims alle veröffentlichbaren Tiere (PUBLISHABLE_STATUS) - pausierte mit ihrem Status,
+// damit der Client sie kennzeichnen kann.
+const findListedAnimals = db.prepare(
+  `SELECT ${PUBLISHED_ANIMAL_COLUMNS} FROM dogs
+   WHERE family_id = ? AND public_slug IS NOT NULL AND ${listedSql()}
+   ORDER BY name`
+)
+const findPublishableAnimals = db.prepare(
+  `SELECT ${PUBLISHED_ANIMAL_COLUMNS} FROM dogs
+   WHERE family_id = ? AND public_slug IS NOT NULL AND ${publishableSql()}
    ORDER BY name`
 )
 
@@ -106,10 +118,12 @@ const findPublishedAnimals = db.prepare(
 // families.id) - eigene Funktion, damit routes/discover.js (Phase 3 Task 2, "begleiter.tiere") dieselbe
 // Abfrage und dieselbe Kartenform wiederverwenden kann, ohne GET /partners/:slug/animals selbst
 // aufzurufen (Sichtbarkeits-/Status-Prüfungen des Partners bleiben dabei Sache des jeweiligen Aufrufers).
-function getShelterAnimalCards(partnerId) {
+// includePaused: true nur fürs eigene Portal (siehe oben) - Standard sind die gelisteten Tiere.
+function getShelterAnimalCards(partnerId, { includePaused = false } = {}) {
   const shelterFamily = findShelterFamily.get(partnerId)
   if (!shelterFamily) return []
-  return findPublishedAnimals.all(shelterFamily.id).map((dog) => ({
+  const statement = includePaused ? findPublishableAnimals : findListedAnimals
+  return statement.all(shelterFamily.id).map((dog) => ({
     slug: dog.public_slug,
     name: dog.name,
     tierart: dog.tierart,
@@ -124,12 +138,12 @@ function getShelterAnimalCards(partnerId) {
 router.get('/partners/:slug/animals', (req, res) => {
   const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
   if (!partner) return notFound(res, 'Diesen Partner gibt es nicht')
-  // security-review Phase T Finding 5: pausiert/Entwurf ist für die Öffentlichkeit gleichbedeutend mit
-  // "gibt es nicht" - wie is_demo hier schon behandelt wurde.
-  if (partner.status !== 'aktiv') return notFound(res, 'Diesen Partner gibt es nicht')
+  // security-review Phase T Finding 5: pausiert/Entwurf (und seit Phase P Task 1 gesperrt) ist für die
+  // Öffentlichkeit gleichbedeutend mit "gibt es nicht" - wie is_demo hier schon behandelt wurde.
+  if (!isPubliclyVisible(partner)) return notFound(res, 'Diesen Partner gibt es nicht')
   if (partner.is_demo && !demoAllowed(req)) return notFound(res, 'Diesen Partner gibt es nicht')
 
-  res.json(getShelterAnimalCards(partner.id))
+  res.json(getShelterAnimalCards(partner.id, { includePaused: true }))
 })
 
 // GET /api/public/partners/:slug/happy-ends - Task 6 ("einfache Sektion", volle Auswahl einzelner
@@ -171,7 +185,7 @@ function happyEndExcerpt(text) {
 router.get('/partners/:slug/happy-ends', (req, res) => {
   const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
   if (!partner) return notFound(res, 'Diesen Partner gibt es nicht')
-  if (partner.status !== 'aktiv') return notFound(res, 'Diesen Partner gibt es nicht')
+  if (!isPubliclyVisible(partner)) return notFound(res, 'Diesen Partner gibt es nicht')
   if (partner.is_demo && !demoAllowed(req)) return notFound(res, 'Diesen Partner gibt es nicht')
 
   const shelterFamily = findShelterFamily.get(partner.id)

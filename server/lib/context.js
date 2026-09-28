@@ -1,6 +1,12 @@
 const db = require('../db')
 
-const ART = { zuhause: 'zuhause', rudel: 'rudel', tierheim: 'tierheim' }
+// partner (Phase P Task 1): Bereich eines Partners, der kein Tierheim ist (Hundeschule, Hundesalon,
+// Betreuung, ...) - angelegt vom Admin über routes/admin.js POST /partners/:id/area. Keine Tiere.
+const ART = { zuhause: 'zuhause', rudel: 'rudel', tierheim: 'tierheim', partner: 'partner' }
+
+// Bereichsarten, die zu einem Partner gehören (families.partner_id zeigt dann auf "seinen" Partner). Ein
+// Zuhause trägt partner_id nur als Herkunft ("kam über Partner X") und zählt deshalb NICHT dazu.
+const PARTNER_AREA_ARTS = [ART.tierheim, ART.partner]
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist
 function membershipsOf(homeId) {
@@ -48,19 +54,22 @@ function currentAuthInfo(homeId, userId) {
 
 // Antwort für /me, /login, /demo, /view: aktiver Bereich oben, Identität und Mitgliedschaften dazu.
 // userId (falls gesetzt) beschreibt eine Benutzer-Sitzung und fließt nur in "auth" ein.
-// Ist der aktive Bereich ein Tierheim (art='tierheim'), kommt zusätzlich "partner" dazu (der Partner,
-// aus dem der Admin diesen Bereich angelegt hat, siehe routes/admin.js POST /partners/:id/shelter) -
-// der Client zeigt damit z. B. den Partnernamen/-slug, ohne extra nachzufragen.
+// Ist der aktive Bereich ein Partner-Bereich (art 'tierheim' oder 'partner'), kommt zusätzlich "partner"
+// dazu (der Partner, aus dem der Admin diesen Bereich angelegt hat, siehe routes/admin.js POST
+// /partners/:id/area) - der Client zeigt damit z. B. Name/Slug/Typ und eine Sperre, ohne extra nachzufragen.
 function buildMe(homeId, activeId, isDemo, userId = null) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
   const active = family(activeId)
   const home = family(homeId)
   const me = { ...active, isDemo: Boolean(isDemo), home, memberships: membershipsOf(homeId), auth: currentAuthInfo(homeId, userId) }
-  if (active?.art === ART.tierheim) {
+  if (PARTNER_AREA_ARTS.includes(active?.art)) {
     const partner = db
-      .prepare('SELECT p.id, p.slug, p.name FROM families f JOIN partners p ON p.id = f.partner_id WHERE f.id = ?')
+      .prepare(
+        `SELECT p.id, p.slug, p.name, p.typ, p.status, p.gesperrt
+         FROM families f JOIN partners p ON p.id = f.partner_id WHERE f.id = ?`
+      )
       .get(activeId)
-    if (partner) me.partner = partner
+    if (partner) me.partner = { ...partner, gesperrt: Boolean(partner.gesperrt) }
   }
   return me
 }
@@ -88,6 +97,7 @@ const VISIBLE_COMMENT_SQL = `(t.family_id = @familyId OR c.family_id = @familyId
 
 module.exports = {
   ART,
+  PARTNER_AREA_ARTS,
   membershipsOf,
   isMember,
   canEnter,

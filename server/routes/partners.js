@@ -3,7 +3,7 @@ const express = require('express')
 const db = require('../db')
 const config = require('../config')
 const { lookupPlz, distanceKm } = require('../lib/geo')
-const { publicPartner } = require('../lib/partners')
+const { publicPartner, publicPartnerSql, isPubliclyVisible } = require('../lib/partners')
 const { isAdmin } = require('../middleware/admin')
 const { optionalSession } = require('../middleware/auth')
 
@@ -50,7 +50,7 @@ function nearbyPartners(req, res, { plz, radius }) {
   if (!center) return res.status(400).json({ error: 'Diese Postleitzahl kennen wir nicht' })
 
   const demoClause = demoAllowed(req) ? '' : 'AND is_demo = 0'
-  const rows = db.prepare(`SELECT * FROM partners WHERE status = 'aktiv' ${demoClause}`).all()
+  const rows = db.prepare(`SELECT * FROM partners WHERE ${publicPartnerSql()} ${demoClause}`).all()
 
   const results = rows
     .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lon))
@@ -68,7 +68,7 @@ router.get('/', (req, res) => {
   const { plz, radius } = req.query
   if (plz === undefined || plz === null || plz === '') {
     const demoClause = demoAllowed(req) ? '' : 'AND is_demo = 0'
-    const rows = db.prepare(`SELECT * FROM partners WHERE status = 'aktiv' ${demoClause}`).all()
+    const rows = db.prepare(`SELECT * FROM partners WHERE ${publicPartnerSql()} ${demoClause}`).all()
     return res.json(sortByName(rows).map((row) => publicPartner(row)))
   }
   nearbyPartners(req, res, { plz, radius })
@@ -82,15 +82,16 @@ router.post('/near', (req, res) => {
   nearbyPartners(req, res, { plz, radius })
 })
 
-// GET /api/public/partners/:slug - Portal-Daten. Nur status='aktiv', sonst 404 - ausser mit gültigem
-// Admin-Cookie, dann als Vorschau (preview: true) auch für Entwürfe/pausierte Partner.
+// GET /api/public/partners/:slug - Portal-Daten. Nur aktiv und nicht gesperrt (lib/partners.js
+// isPubliclyVisible), sonst 404 - ausser mit gültigem Admin-Cookie, dann als Vorschau (preview: true)
+// auch für Entwürfe, pausierte und gesperrte Partner.
 router.get('/:slug', (req, res) => {
   const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
   const notFound = () => res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
   if (!partner) return notFound()
   if (partner.is_demo && !demoAllowed(req)) return notFound()
 
-  const preview = partner.status !== 'aktiv'
+  const preview = !isPubliclyVisible(partner)
   if (preview && !isAdmin(req)) return notFound()
 
   res.json({
@@ -99,6 +100,8 @@ router.get('/:slug', (req, res) => {
     portal_text: partner.portal_text,
     spenden_url: partner.spenden_url,
     vermittlung_url: partner.vermittlung_url,
+    // Phase P Task 1: Link zum eigenen Kontaktformular des Partners (nur http(s), siehe validatePartner).
+    kontakt_formular_url: partner.kontakt_formular_url,
     farbe: partner.farbe,
     ...(preview ? { preview: true } : {}),
     // Phase T Task 6: der Client zeigt für Demo-Partner mit einem tatsächlich bestehenden Demo-Tierheim

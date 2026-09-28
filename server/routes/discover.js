@@ -5,7 +5,7 @@ const config = require('../config')
 const { requireSession } = require('../middleware/auth')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { lookupPlz, distanceKm } = require('../lib/geo')
-const { publicPartner } = require('../lib/partners')
+const { publicPartner, publicPartnerSql } = require('../lib/partners')
 const { getShelterAnimalCards } = require('./publicAnimals')
 
 // Phase 3 Task 2: Reiter "Entdecken" - eine Antwort bündelt alle vier Abschnitte
@@ -62,12 +62,14 @@ function settingsKey(req, base) {
   return req.isDemo ? `demo_${base}` : base
 }
 
+// Aktiv und nicht gesperrt (Phase P Task 1) - ein gesperrter Partner verschwindet samt seiner Tiere
+// (begleiter.tiere hängt an diesen Zeilen) und seiner Spendenkarte aus "Entdecken".
 function activePartnerRows(typs, req) {
   const demoValues = partnerDemoValues(req)
   const typPlaceholders = typs.map(() => '?').join(', ')
   const demoPlaceholders = demoValues.map(() => '?').join(', ')
   return db
-    .prepare(`SELECT * FROM partners WHERE status = 'aktiv' AND typ IN (${typPlaceholders}) AND is_demo IN (${demoPlaceholders})`)
+    .prepare(`SELECT * FROM partners WHERE ${publicPartnerSql()} AND typ IN (${typPlaceholders}) AND is_demo IN (${demoPlaceholders})`)
     .all(...typs, ...demoValues)
 }
 

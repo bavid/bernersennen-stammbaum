@@ -10,6 +10,7 @@ const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess'
 const { slugify } = require('../lib/partners')
 const { createBatch, revokeOpenHandoverVouchers } = require('../lib/vouchers')
 const { formatCode } = require('../lib/codes')
+const { VERMITTLUNG_STATUS, PUBLISHABLE_STATUS, statusInSql } = require('../lib/vermittlung')
 
 const router = express.Router()
 
@@ -24,9 +25,8 @@ const HERKUNFT_ARTEN = ['tierheim', 'privat', 'zuechter', 'nachwuchs', 'fundtier
 // Phase T Task 2: Vermittlungsstatus - nur im Tierheim-Bereich setzbar (siehe validateDogRecord).
 // "vermittelt" kommt normalerweise erst über die Übergabe (Task 3) zustande, bleibt aber auch hier
 // ein gültiger, manuell setzbarer Wert (z. B. wenn eine Vermittlung ohne App-Gutschein stattfand).
-const VERMITTLUNG_STATUS_VALUES = ['in_vermittlung', 'reserviert', 'vermittelt']
-// Ein Steckbrief lässt sich nur veröffentlichen, solange das Tier noch vermittelt werden kann.
-const PUBLISHABLE_STATUS = ['in_vermittlung', 'reserviert']
+// Die Status-Listen (VERMITTLUNG_STATUS, PUBLISHABLE_STATUS: ein Steckbrief lässt sich veröffentlichen
+// bzw. bleibt veröffentlicht) kommen seit Phase P Task 1 aus lib/vermittlung.js - inkl. "pausiert".
 
 const UNKNOWN_NAME = 'Unbekannt'
 const SUMMARY_COLUMNS = `dogs.id, dogs.name, dogs.name_unbekannt, dogs.rasse, dogs.tierart, dogs.geschlecht, dogs.geburtsdatum,
@@ -163,7 +163,7 @@ function validateDogRecord(record, dogId, req, existingFotoUrl = null, previousV
     const identity = findFamilyArt.get(req.familyId)
     if (!identity || identity.art !== ART.tierheim) return 'Vermittlungsstatus gibt es nur im Tierheim-Bereich'
   }
-  if (record.vermittlung_status !== null && !VERMITTLUNG_STATUS_VALUES.includes(record.vermittlung_status)) {
+  if (record.vermittlung_status !== null && !VERMITTLUNG_STATUS.includes(record.vermittlung_status)) {
     return 'Unbekannter Vermittlungsstatus'
   }
   for (const parent of PARENTS) {
@@ -398,6 +398,12 @@ function validateHousemate(housemateId, familyId) {
 }
 
 router.post('/', requireAuth, (req, res) => {
+  // Phase P Task 1: ein Partner-Bereich (Hundeschule, Hundesalon, Betreuung, ...) führt keine Tiere -
+  // Tiere mit Chronik gibt es nur im Zuhause, im Rudel und im Tierheim.
+  if (findFamilyArt.get(req.familyId)?.art === ART.partner) {
+    return res.status(400).json({ error: 'Partner-Bereiche haben keine Tiere' })
+  }
+
   const body = req.body || {}
   const record = buildDogRecord(body)
   const housemateId = cleanId(body.housemateId)
@@ -408,12 +414,12 @@ router.post('/', requireAuth, (req, res) => {
   res.status(201).json(findDog.get(id))
 })
 
-// public_slug bleibt nur erhalten, solange der neue Status noch vermittelbar ist (in_vermittlung/
-// reserviert) - jeder andere Wert (inkl. NULL, nicht nur 'vermittelt') räumt ihn auf
+// public_slug bleibt nur erhalten, solange der neue Status veröffentlichbar ist (in_vermittlung/
+// reserviert/pausiert) - jeder andere Wert (inkl. NULL, nicht nur 'vermittelt') räumt ihn auf
 // (security-review Phase T Finding 10: vorher blieb ein Steckbrief-Link z. B. beim Zurücksetzen auf
-// NULL fälschlich stehen). PUBLISHABLE_STATUS ist eine feste, im Code definierte Konstante - direkt
-// als Literal in der IN-Liste, kein Nutzereingabe-Pfad (wie PUBLISHABLE_STATUS_SQL in lib/publicMedia.js).
-const PUBLIC_SLUG_KEEP_SQL = `CASE WHEN @vermittlung_status IN (${PUBLISHABLE_STATUS.map((s) => `'${s}'`).join(', ')}) THEN public_slug ELSE NULL END`
+// NULL fälschlich stehen). PUBLISHABLE_STATUS ist eine feste, im Code definierte Konstante - statusInSql
+// setzt sie als Literal in die IN-Liste, kein Nutzereingabe-Pfad (wie lib/publicMedia.js).
+const PUBLIC_SLUG_KEEP_SQL = `CASE WHEN ${statusInSql(PUBLISHABLE_STATUS, '@vermittlung_status')} THEN public_slug ELSE NULL END`
 
 const updateDogStmt = db.prepare(
   `UPDATE dogs SET
@@ -453,8 +459,9 @@ router.put('/:id', requireAuth, (req, res) => {
 
 // Steckbrief (Phase T Task 2): veröffentlicht/zieht ein Tier eines Tierheims öffentlich unter
 // /t/:slug zurück. Nur der Besitzer-Bereich (loadOwnDog) UND nur ein Tierheim-Bereich dürfen das -
-// ein normales Zuhause/Rudel hat keine Steckbriefe. Veröffentlichen geht nur, solange das Tier
-// tatsächlich vermittelbar ist (in_vermittlung/reserviert); Zurückziehen (published: false) geht immer.
+// ein normales Zuhause/Rudel hat keine Steckbriefe. Veröffentlichen geht nur mit einem
+// veröffentlichbaren Status (PUBLISHABLE_STATUS: in_vermittlung/reserviert/pausiert - ein pausiertes Tier
+// bleibt mit Hinweis sichtbar); Zurückziehen (published: false) geht immer.
 const SLUG_SUFFIX_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
 const SLUG_SUFFIX_LENGTH = 6
 const MAX_SLUG_ATTEMPTS = 20
@@ -493,7 +500,7 @@ router.put('/:id/steckbrief', requireAuth, (req, res) => {
 
   if (published) {
     if (!PUBLISHABLE_STATUS.includes(dog.vermittlung_status)) {
-      return res.status(400).json({ error: 'Veröffentlichen geht nur mit Status „in Vermittlung“ oder „reserviert“' })
+      return res.status(400).json({ error: 'Veröffentlichen geht nur mit Status „in Vermittlung“, „reserviert“ oder „pausiert“' })
     }
     db.prepare('UPDATE dogs SET public_slug = ? WHERE id = ?').run(generatePublicSlug(dog.name), dog.id)
   } else {
@@ -539,6 +546,11 @@ router.post('/:id/handover', authLimiter, requireAuth, (req, res) => {
   const identity = db.prepare('SELECT art, partner_id FROM families WHERE id = ?').get(req.familyId)
   if (!identity || identity.art !== ART.tierheim) {
     return res.status(400).json({ error: 'Übergabe-Gutscheine gibt es nur im Tierheim-Bereich' })
+  }
+  // Phase P Task 1: ein pausiertes Tier ist gerade nicht vermittelbar - eine Übergabe würde es sonst
+  // stillschweigend auf "reserviert" setzen. Erst den Status zurück auf "in Vermittlung" stellen.
+  if (dog.vermittlung_status === 'pausiert') {
+    return res.status(400).json({ error: 'Das Tier ist pausiert – für eine Übergabe bitte erst wieder auf „in Vermittlung“ stellen' })
   }
 
   const { codes } = createHandover(dog, identity)

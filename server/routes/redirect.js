@@ -1,5 +1,6 @@
 const express = require('express')
 const db = require('../db')
+const { isPubliclyVisible } = require('../lib/partners')
 
 // Phase 3 Task 2: anonyme Klickzählung für externe Links im Reiter "Entdecken"
 // (docs/superpowers/plans/2026-09-29-phase-3-entdecken.md). Die Ziel-URL kommt AUSSCHLIESSLICH aus der
@@ -12,7 +13,7 @@ const BOT_RE = /bot|crawl|spider|preview|slurp|facebookexternalhit/i
 const GOFUNDME_SETTINGS_KEYS = { 0: 'gofundme_url', 1: 'demo_gofundme_url' }
 
 const findPromotion = db.prepare('SELECT url, aktiv FROM promotions WHERE id = ?')
-const findPartner = db.prepare('SELECT website, spenden_url, status FROM partners WHERE id = ?')
+const findPartner = db.prepare('SELECT website, spenden_url, status, gesperrt FROM partners WHERE id = ?')
 const findSetting = db.prepare('SELECT value FROM settings WHERE key = ?')
 
 function promotionUrl(id) {
@@ -21,15 +22,16 @@ function promotionUrl(id) {
   return row.url
 }
 
+// Nur aktive, nicht gesperrte Partner (Phase P Task 1) - wie jede andere öffentliche Partner-Abfrage.
 function partnerWebsiteUrl(id) {
   const row = findPartner.get(id)
-  if (!row || row.status !== 'aktiv' || !row.website) return null
+  if (!isPubliclyVisible(row) || !row.website) return null
   return row.website
 }
 
 function partnerSpendeUrl(id) {
   const row = findPartner.get(id)
-  if (!row || row.status !== 'aktiv' || !row.spenden_url) return null
+  if (!isPubliclyVisible(row) || !row.spenden_url) return null
   return row.spenden_url
 }
 
