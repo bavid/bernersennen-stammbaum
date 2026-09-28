@@ -97,6 +97,20 @@ function Datenschutz({ legal }) {
         nachgeladen.
       </p>
 
+      <h2>Entdecken und Empfehlungen</h2>
+      <p>
+        „Entdecken“ zeigt Hundeschulen, Tierheime, Futter-Empfehlungen und Spendenmöglichkeiten aus unserer eigenen
+        Datenbank – gefiltert höchstens nach der eingegebenen Postleitzahl. Jede Empfehlung ist gekennzeichnet:
+        „Anzeige“ (bezahlt oder mit Gegenleistung), „Empfehlung von …“ oder „Partner“.
+      </p>
+      <p>
+        Links zu Partnern, Empfehlungen und Spendenseiten führen kurz über unseren eigenen Server (/r/…). Dabei
+        zählen wir nur, wie oft ein Ziel angeklickt wurde – je Ziel und Tag eine Zahl, ohne Bezug zu einer Person.
+        Es werden keine Cookies gesetzt und keine IP-Adressen oder Geräte-Kennungen gespeichert; Aufrufe von
+        Suchmaschinen- und anderen Bots zählen nicht mit. Die aufgerufene Seite erfährt nicht, von welcher Seite
+        bei uns ihr kommt.
+      </p>
+
       <h2>Tierheime</h2>
       <p>
         Ein Tierheim kann einen eigenen Steckbrief für ein vermittelbares Tier veröffentlichen (/t/…) – sichtbar sind

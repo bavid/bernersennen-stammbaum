@@ -173,4 +173,18 @@ describe('LegalPage – /datenschutz', () => {
     expect(container.textContent).toMatch(/Widerruf wirkt sofort/)
     expect(container.textContent).toMatch(/Browser.*zwischengespeichert/)
   })
+
+  // Phase 3: "Entdecken" zählt Klicks auf Empfehlungen/Partner-Links über /r/… - die Seite muss ehrlich
+  // sagen, was dabei gespeichert wird (nur Ziel, Tag, Anzahl) und was nicht (keine Cookies, keine IP).
+  test('Absatz "Entdecken": Kennzeichnung und anonyme Klickzählung ohne Cookies und IP-Adressen', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect([...container.querySelectorAll('h2')].some((h) => h.textContent === 'Entdecken und Empfehlungen')).toBe(true)
+    expect(container.textContent).toMatch(/„Anzeige“/)
+    expect(container.textContent).toMatch(/je Ziel und Tag/)
+    expect(container.textContent).toMatch(/keine Cookies/)
+    expect(container.textContent).toMatch(/keine IP-Adressen/)
+    expect(container.textContent).toMatch(/Suchmaschinen- und anderen Bots/)
+  })
 })

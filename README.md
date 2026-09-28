@@ -85,6 +85,13 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   ganzen Chronik in „Meine Chronik” um, die Herkunft bleibt sichtbar. Mit freiwilliger, jederzeit
   widerrufbarer Einwilligung darf das Tierheim weiter mitlesen; stimmt die neue Familie zusätzlich zu,
   erscheint die Geschichte als **Happy End** auf dem Portal.
+- **Entdecken**: Ein eigener Reiter mit vier Kapiteln – „Hundeschule gesucht?“, „Neuer Begleiter gesucht?“
+  (nur Tierheime und Vermittlungsstellen, nie Züchter), „Futter-Empfehlungen“ und „Unterstützen“ (GoFundMe
+  plus Transparenzzahlen: Eingang, gedeckte Kosten, an Tierheime weitergegeben). Optional per PLZ und Umkreis;
+  gibt es im Umkreis weniger als 5 Treffer, erscheinen die nächsten weiteren unter „Weiter weg“. Jede
+  Empfehlung ist gekennzeichnet („Anzeige“, „Empfehlung von …“, „Partner“). Links laufen über `/r/…` und
+  werden **anonym gezählt** – je Ziel und Tag, ohne Cookies, ohne IP, ohne Bots. Der Admin pflegt
+  Empfehlungen (mit Klickzahlen), GoFundMe-Link und Spendenberichte.
 - **In der Nähe**: Angemeldete finden Tierheime und Hundeschulen in ihrer Umgebung – per Postleitzahl oder,
   nur mit ausdrücklicher Zustimmung, per gerundetem Standort (~1 km, nie gespeichert). Die Suche läuft über
   den eigenen Server bei OpenStreetMap, nie direkt aus dem Browser.
