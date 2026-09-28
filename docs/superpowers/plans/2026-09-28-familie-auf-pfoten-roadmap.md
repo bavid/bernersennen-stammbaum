@@ -40,7 +40,7 @@ Für die Vorschau gelten die Vorschläge des Konzepts. Alles ist so gebaut, dass
 | 4 | Kontingente | 3 Gutscheine pro Rudel (`RUDEL_VOUCHER_QUOTA`), Partner-Stapel ohne Ablauf |
 | 5 | Ausgeber kennt den Code | Hinweis „Schlüssel erneuern" nach dem Einlösen |
 | 6 | Wiederherstellung | nur per Code (PUK), keine E-Mail |
-| 7 | Anzeigen-Pflege | nur Admin |
+| 7 | Anzeigen-Pflege | **geändert 29.09.:** Partner pflegen Beiträge selbst (Kennzeichnung „Anzeige“), Admin gibt frei |
 | 8 | Kennzeichnung | pro Eintrag wählbar: „Partner", „Empfehlung", „Anzeige" |
 | 9 | GoFundMe | Link + vom Admin gepflegte Transparenzzahlen |
 | 10 | Altbestand | alte Passwörter bleiben gültig, kein Stichtag |
@@ -57,7 +57,7 @@ Für die Vorschau gelten die Vorschläge des Konzepts. Alles ist so gebaut, dass
 
 ## Phasen & Fortschritt
 
-Reihenfolge für die Vorschau: **0 → D → Z → 1 → 2 → T → 3 → 5**, Phase 4 danach (blockiert durch Frage 1).
+Reihenfolge für die Vorschau: **0 → D → Z → 1 → 2 → T → 3 → P → 5**, Phase 4 danach (blockiert durch Frage 1).
 „D" (Design & Themes) kommt vor die Gutscheine, weil der neue Auftritt das Erste ist, was man in der Vorschau sieht.
 „Z" (Meine Chronik, Zuhause, Teilen) folgt direkt: Das Einlösen eines Gutscheins legt „Meine Chronik" an, und die
 Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
@@ -71,6 +71,7 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 | 2 | Partner, Portale `/p/:slug`, Partnerübersicht, PLZ/Umkreis (GeoNames + OSM), „In der Nähe“, Impressum/Datenschutz | [Plan](2026-09-28-phase-2-partner.md) | 🚀 auf der Vorschau |
 | T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein (Tier zieht mit Chronik um), Mitlesen, Happy-Ends | [Plan](2026-09-29-phase-t-tierheim.md) | ✅ fertig (lokal getestet) |
 | 3 | Reiter „Entdecken": Hundeschulen, „Neuer Begleiter gesucht?", Futter-Empfehlungen, Unterstützen, Klickzählung | wird vor Beginn geschrieben | ☐ offen |
+| P | Partner-Bereich & Kontakt: Partner pflegen Portal und Beiträge („Anzeige“, Freigabe durch Admin), Umkreis mit Auffüllen (< 5 → nächste weitere), „Schreib uns“ mit Postfach, E-Mail/Kontaktformular-Link | [Plan](2026-09-29-phase-p-partnerbereich.md) | ☐ offen |
 | 5 | Admin: Gutschein-Stapel + Druckkarten mit QR, Partner/Anzeigen/Spenden pflegen, Statistik, Präsentationsmodus | wird vor Beginn geschrieben | ☐ offen |
 | 4 | Import, Crawler, Website-Prüfung, Prüfliste | zurückgestellt | ⏸ blockiert (Frage 1) |
 

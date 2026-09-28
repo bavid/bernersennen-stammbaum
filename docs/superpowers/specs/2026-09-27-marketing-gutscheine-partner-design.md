@@ -628,6 +628,57 @@ voucher_batches.kind += 'uebergabe'; vouchers += dog_id NULL
 
 ---
 
+## Phase P — Partner-Bereich und Kontakt (Zusatz 29.09.)
+
+**Idee:** Partner pflegen ihren Auftritt selbst. Sie stellen Beiträge ein, die im Reiter „Entdecken“ und auf ihrem
+Portal als **„Anzeige“** erscheinen, und zwar im Umkreis der Nutzer. Außerdem sind sie direkt erreichbar: über eine
+hinterlegte E-Mail-Adresse, einen Link zu ihrem eigenen Kontaktformular oder unser eingebautes Formular
+**„Schreib uns“**.
+
+- **Partner-Bereich:**
+  - Jeder Partner kann einen eigenen Bereich bekommen, so wie ein Tierheim. Der Admin legt ihn an.
+  - Anmelden geht per Schlüssel, weitere Zugänge vergibt der Partner selbst über „Zugang“.
+  - Tierheime nutzen ihren Tierheim-Bereich dafür mit.
+- **Selbst pflegen:**
+  - **Frei für den Partner:**
+    - Portal-Titel und -Text;
+    - Farbe (mit Kontrastprüfung) und Logo;
+    - Website, Spenden- und Vermittlungs-Link;
+    - Kontakt: E-Mail, Telefon, Kontaktformular-URL;
+    - PLZ.
+  - **Bleibt beim Admin:** Name, Slug, Typ, Status und Partner-Kennzeichnung.
+  - Der Züchter-Schutz gilt für alle Texte.
+- **Beiträge („Werbung“):**
+  - Partner legen Beiträge an, zum Beispiel Kurse, Aktionen, Tage der offenen Tür oder Futter-Angebote.
+  - Die **Kennzeichnung ist immer „Anzeige“**.
+  - Der Bereich richtet sich nach dem Partner-Typ.
+  - Neue Beiträge sind zunächst **„eingereicht“**. Der Admin gibt sie frei oder lehnt sie mit Begründung ab. Erst
+    freigegebene Beiträge werden angezeigt.
+  - Der Partner sieht Status und Klickzahlen.
+- **Anzeige im Umkreis:**
+  - Die PLZ ist optional, ebenso der Standort.
+  - Gibt es im Umkreis **weniger als 5 Treffer**, werden die nächsten weiteren nach Entfernung angehängt
+    („weiter weg“). Ohne PLZ erscheinen alle.
+  - Das gilt für „Entdecken“ und für die Partnerliste.
+- **Kontakt:**
+  - Auf dem Portal und auf Steckbriefen gibt es „Schreib uns“.
+  - **Formular:** Name (optional), E-Mail oder Telefon für die Antwort (eins von beiden ist Pflicht) und die
+    Nachricht. Vom Steckbrief aus kommt der Bezug automatisch mit („Anfrage zu Pepper“).
+  - **Postfach statt E-Mail:** Die Nachrichten landen im Postfach des Partner-Bereichs. Wir versenden bewusst
+    **keine E-Mails**, denn dafür bräuchte es einen externen Mail-Dienst.
+  - **Weitere Wege:** Zusätzlich gibt es einen `mailto:`-Link, falls der Partner eine E-Mail hinterlegt hat, und
+    einen Link zu seinem eigenen Kontaktformular, falls vorhanden. Eingebettet wird nichts, die CSP bleibt `'self'`.
+- **Missbrauchsschutz:** Rate-Limit pro IP, Honeypot, Längengrenzen. Nachrichten werden nach 180 Tagen automatisch
+  gelöscht, der Partner kann sie auch selbst löschen. Die Datenschutzseite erklärt das.
+- **Demo:**
+  - Die „Hundeschule Pfotenglück“ bekommt einen Demo-Partner-Bereich mit zwei Beiträgen (einer freigegeben, einer
+    eingereicht) und zwei Beispiel-Nachrichten.
+  - „Demo als Partner ansehen“ auf dem Portal.
+
+**Entscheidung 7 (Anzeigen-Pflege) geändert:** Partner pflegen ihre Beiträge selbst, der Admin gibt frei.
+
+---
+
 ## Phase 4 — Import, Crawler und Website-Prüfung
 
 ### Quellen (`server/crawler/sources/*.js`)
@@ -904,7 +955,7 @@ Phase 5 (Kartendruck) und vor dem Start in Prod unter der neuen Domain.
    „Schlüssel erneuern" nach dem Einlösen, oder braucht die Karte eine getrennte PUK, etwa zum Freirubbeln?
 6. **Wiederherstellung per E-Mail** braucht einen Mail-Dienst (SMTP), also einen externen Dienst. Erst mal nur
    die PUK?
-7. **Anzeigen-Pflege:** Dürfen Partner ihre Anzeigen selbst bearbeiten, oder nur der Admin?
+7. ~~**Anzeigen-Pflege:**~~ **Entschieden (29.09.):** Partner pflegen ihre Beiträge selbst im Partner-Bereich, der Admin gibt sie frei (siehe Phase P).
 8. **Preismodell für Anzeigen:** Kostenlos für Partner, gegen Spende, oder bezahlt? Davon hängt ab, ob etwas als
    „Anzeige" oder „Empfehlung" gekennzeichnet wird.
 9. **GoFundMe:** Ist die Weitergabe an Tierheime steuerlich und nach den AGB geprüft? Wie oft werden die
