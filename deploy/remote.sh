@@ -17,11 +17,18 @@
 # Variablen für eine zweite Instanz (Vorschau), z. B.:
 #   APP_DIR=/opt/bernersennen-stammbaum-staging BRANCH=staging HTTPS_PORT=3005 \
 #   CONTAINER_NAME=fap-preview IMAGE_TAG=staging APP_ENV=staging bash -s -- setup
-# REVISION=<sha> deployt genau diesen Stand (z. B. das auf der Vorschau getestete SHA nach Prod).
+# REVISION=<volles SHA> deployt genau diesen Stand (z. B. das auf der Vorschau getestete SHA nach Prod).
 #
 # Die App lauscht nur auf 127.0.0.1:$HTTPS_PORT. HTTPS nach außen (Let's Encrypt, Port 80 für die
 # Zertifikatsprüfung) macht der gemeinsame Caddy des Servers in /opt/proxy (Repo "server").
 set -euo pipefail
+
+# Für check_instance: was hat der Aufrufer tatsächlich übergeben? Vor den Defaults unten festhalten,
+# sonst ist nicht mehr unterscheidbar "explizit gesetzt" von "Default getroffen".
+ARG_APP_ENV="${APP_ENV:-}"
+ARG_CONTAINER_NAME="${CONTAINER_NAME:-}"
+ARG_IMAGE_TAG="${IMAGE_TAG:-}"
+ARG_HTTPS_PORT="${HTTPS_PORT:-}"
 
 APP_DIR="${APP_DIR:-/opt/bernersennen-stammbaum}"
 REPO_URL="${REPO_URL:-https://github.com/bavid/bernersennen-stammbaum.git}"
@@ -34,6 +41,7 @@ CONTAINER_NAME="${CONTAINER_NAME:-bernersennen-stammbaum}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 CONTAINER_UID=1000
 COMPOSE="docker compose"
+readonly BACKUP_KEEP=10
 
 log() { printf '==> %s\n' "$*"; }
 warn() { printf 'WARNUNG: %s\n' "$*" >&2; }
@@ -64,9 +72,15 @@ checkout() {
     git cat-file -e "$REVISION^{commit}" 2>/dev/null || git fetch -q origin "$REVISION" || fail "Stand $REVISION nicht gefunden"
     target="$REVISION"
   fi
+  # Ohne explizites REVISION nie stillschweigend zurückspringen (z. B. History-Rewrite auf GitHub)
+  if [ -z "$REVISION" ]; then
+    if git rev-parse -q --verify HEAD >/dev/null && ! git merge-base --is-ancestor HEAD "$target"; then
+      fail "Der laufende Stand $(git rev-parse --short HEAD) ist nicht in $target enthalten – zurück auf einen älteren Stand? Mit REVISION=<volles SHA> gezielt deployen oder erst $BRANCH auf GitHub vorspulen."
+    fi
+  fi
   git checkout -q -B "$BRANCH" "$target"
   git reset -q --hard "$target"
-  log "Stand: $(git log -1 --format='%h %s')"
+  log "Stand: $(git log -1 --format='%H %s')"
 }
 
 default_public_host() {
@@ -90,6 +104,23 @@ env_value() {
   grep "^$1=" "$APP_DIR/.env" | cut -d= -f2-
 }
 
+# Schützt vor Instanz-Verwechslung: wenn $APP_DIR schon eine .env hat, muss jeder explizit
+# übergebene Wert (APP_ENV/CONTAINER_NAME/IMAGE_TAG/HTTPS_PORT) zu dem passen, was dort schon steht.
+check_instance() {
+  [ -f "$APP_DIR/.env" ] || return 0
+  local key var arg existing
+  for key in APP_ENV CONTAINER_NAME IMAGE_TAG HTTPS_PORT; do
+    var="ARG_$key"
+    arg="${!var}"
+    [ -n "$arg" ] || continue
+    existing="$(env_value "$key")"
+    [ -n "$existing" ] || continue
+    if [ "$arg" != "$existing" ]; then
+      fail "$APP_DIR ist die Instanz mit $key=$existing, übergeben wurde $key=$arg – falsches APP_DIR?"
+    fi
+  done
+}
+
 ensure_env() {
   cd "$APP_DIR"
   (
@@ -104,6 +135,7 @@ ensure_env() {
     env_default APP_ENV "$APP_ENV"
     env_default CONTAINER_NAME "$CONTAINER_NAME"
     env_default IMAGE_TAG "$IMAGE_TAG"
+    env_default COMPOSE_PROJECT_NAME "$(basename "$APP_DIR")"
   )
   chmod 600 .env
   mkdir -p data backups
@@ -157,19 +189,25 @@ backup() {
   (umask 077 && tar czf "$file" -C data snapshot.db uploads -C "$APP_DIR" .env)
   rm -f data/snapshot.db
   log "Backup: $APP_DIR/$file ($(du -h "$file" | cut -f1))"
+  # Nur die letzten $BACKUP_KEEP Archive dieser Instanz behalten
+  ls -1t backups/chronik-*.tgz 2>/dev/null | tail -n +"$((BACKUP_KEEP + 1))" | xargs -r rm --
 }
 
 # Vor Deploys sichern – Migrationen lassen sich nicht zurückdrehen. Beim allerersten Start gibt es noch nichts.
 backup_if_running() {
+  [ -d "$APP_DIR" ] || return 0
   cd "$APP_DIR"
   if [ -f .env ] && $COMPOSE ps --status running -q chronik 2>/dev/null | grep -q .; then
     backup
+  else
+    log "Kein Backup: App läuft (noch) nicht"
   fi
 }
 
 cmd="${1:-status}"
 case "$cmd" in
   setup)
+    check_instance
     install_docker
     checkout
     ensure_env
@@ -177,6 +215,7 @@ case "$cmd" in
     log "Einladungscode für neue Rudel: $(env_value FAMILY_INVITE_CODE)"
     ;;
   deploy)
+    check_instance
     backup_if_running
     checkout
     ensure_env
@@ -203,6 +242,7 @@ case "$cmd" in
     $COMPOSE exec -T chronik node scripts/demo.js
     ;;
   showcase)
+    check_instance
     cd "$APP_DIR"
     case "$(env_value APP_ENV)" in
       staging|dev) ;;
