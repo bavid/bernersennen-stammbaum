@@ -229,6 +229,13 @@ function promotionCard(row) {
   }
 }
 
+// Karten eines Empfehlungs-Bereichs (futter, hundeschule, begleiter, unterstuetzen - lib/promotions.js
+// BEREICH_VALUES): dieselbe Abfrage (aktiv, Zeitfenster, Demo-Trennung, sichtbarer Partner), dieselbe
+// Sortierung nach Partner-Entfernung und dieselbe Kartenform für jeden Abschnitt.
+function promotionCards(bereich, req, distanceMap) {
+  return sortPromotionsByPartnerDistance(activePromotionRows(bereich, req), distanceMap).map(promotionCard)
+}
+
 function spendenCard(row) {
   return {
     id: row.id,
@@ -282,7 +289,7 @@ router.post('/', discoverLimiter, requireSession, (req, res) => {
   // --- Hundeschule gesucht? ------------------------------------------------------------------------
   const hundeschulPartnerSection = partnerSection(activePartnerRows(['hundeschule'], req), center, radiusKm)
   const hundeschulPartner = hundeschulPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
-  const hundeschulPromotions = sortPromotionsByPartnerDistance(activePromotionRows('hundeschule', req), distanceMap).map(promotionCard)
+  const hundeschulPromotions = promotionCards('hundeschule', req, distanceMap)
   const hundeschulen = [...hundeschulPartner, ...hundeschulPromotions]
 
   // --- Neuer Begleiter gesucht? --------------------------------------------------------------------
@@ -290,9 +297,10 @@ router.post('/', discoverLimiter, requireSession, (req, res) => {
   const begleiterPartnerSection = partnerSection(begleiterPartnerRows, center, radiusKm)
   const begleiterPartner = begleiterPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
   const begleiterTiereSectionResult = begleiterTiereSection(begleiterPartnerRows, center, radiusKm)
+  const begleiterPromotions = promotionCards('begleiter', req, distanceMap)
 
   // --- Futter-Empfehlungen --------------------------------------------------------------------------
-  const futter = sortPromotionsByPartnerDistance(activePromotionRows('futter', req), distanceMap).map(promotionCard)
+  const futter = promotionCards('futter', req, distanceMap)
 
   // --- Unterstützen -----------------------------------------------------------------------------------
   const gofundmeUrl = readSettingValue(settingsKey(req, 'gofundme_url'))
@@ -302,6 +310,7 @@ router.post('/', discoverLimiter, requireSession, (req, res) => {
     .map(({ row }) => row)
     .filter((row) => row.spenden_url)
     .map(spendenCard)
+  const unterstuetzenPromotions = promotionCards('unterstuetzen', req, distanceMap)
 
   res.json({
     ...(center ? { center } : {}),
@@ -310,14 +319,15 @@ router.post('/', discoverLimiter, requireSession, (req, res) => {
       begleiter: begleiterPartnerSection.fallback || begleiterTiereSectionResult.fallback
     },
     hundeschulen,
-    begleiter: { partner: begleiterPartner, tiere: begleiterTiereSectionResult.items },
+    begleiter: { partner: begleiterPartner, tiere: begleiterTiereSectionResult.items, promotions: begleiterPromotions },
     futter,
     unterstuetzen: {
       gofundmeUrl,
       gofundmeClickUrl: gofundmeUrl ? `/r/gofundme/${req.isDemo ? 1 : 0}` : null,
       text: readSettingValue(settingsKey(req, 'unterstuetzen_text')),
       bericht: newestDonationReport(req),
-      partnerSpenden
+      partnerSpenden,
+      promotions: unterstuetzenPromotions
     }
   })
 })

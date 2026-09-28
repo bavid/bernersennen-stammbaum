@@ -6,6 +6,8 @@
 // derselben validatePromotion() wie der Admin (Kennzeichnung, "Empfehlung von"-Pflicht, Link, Züchter-
 // Schutz). Statt einer partnerId steht hier der Slug des Demo-Partners (seed/demo-partners.js), weil
 // dessen Id bei jedem Demo-Wechsel neu vergeben wird. bild: optionales Seed-Bild aus seed/images.
+// Jeder Bereich (futter, hundeschule, begleiter, unterstuetzen) kommt mindestens einmal vor, damit die Demo
+// alle Stellen zeigt, an denen "Entdecken" Empfehlungen anzeigt.
 // Rechtliches: Futtertexte sachlich, ohne Gesundheitsversprechen.
 const DEMO_PROMOTIONS = [
   {
@@ -35,6 +37,28 @@ const DEMO_PROMOTIONS = [
     url: 'https://example.org/pfotenglueck-welpenkurs',
     tierart: 'hund',
     bild: 'welpen.jpg'
+  },
+  {
+    bereich: 'begleiter',
+    kennzeichnung: 'Partner',
+    partnerSlug: 'tierheim-sonnenhang',
+    titel: 'Patenschaft für Senioren-Hunde',
+    text:
+      'Mit einer Patenschaft übernehmt ihr einen Teil der laufenden Kosten für einen älteren Hund im Tierheim ' +
+      'Sonnenhang: Futter, Tierarztbesuche und Pflege. Der Hund bleibt im Tierheim, ihr bekommt regelmäßig ' +
+      'Neuigkeiten und könnt ihn besuchen.',
+    url: 'https://example.org/patenschaft',
+    tierart: 'hund'
+  },
+  {
+    bereich: 'unterstuetzen',
+    kennzeichnung: 'Empfehlung',
+    empfohlenVon: 'Familie auf Pfoten',
+    titel: 'Futterspende fürs Tierheim',
+    text:
+      'Über eine Wunschliste könnt ihr Trocken- und Nassfutter bestellen, das direkt an das Tierheim geliefert ' +
+      'wird. Die Liste zeigt, welche Sorten dort gerade gebraucht werden.',
+    url: 'https://example.org/futterspende'
   }
 ]
 

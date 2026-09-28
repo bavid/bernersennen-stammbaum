@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import PartnerCard from './PartnerCard.jsx'
 import AnimalAdoptionCard from './AnimalAdoptionCard.jsx'
-import PromotionCard from './PromotionCard.jsx'
+import PromotionCard, { PromotionList } from './PromotionCard.jsx'
 import SupportBlock from './SupportBlock.jsx'
 import DiscoverChapter, { DiscoverEmpty, DiscoverSubheading, FallbackNote } from './DiscoverChapter.jsx'
 import { splitByDistance } from '../lib/discover.js'
@@ -37,19 +37,6 @@ function AnimalList({ items }) {
       {items.map((animal) => (
         <li key={animal.slug}>
           <AnimalAdoptionCard animal={animal} />
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function PromotionList({ items }) {
-  if (items.length === 0) return null
-  return (
-    <ul className="promotion-list">
-      {items.map((promotion) => (
-        <li key={promotion.id}>
-          <PromotionCard promotion={promotion} />
         </li>
       ))}
     </ul>
@@ -97,10 +84,12 @@ export function HundeschulenSection({ partner, promotions, fallback }) {
   )
 }
 
-export function BegleiterSection({ partner, tiere, fallback }) {
+// Empfehlungen (bereich "begleiter", z. B. Patenschaften) stehen nach Tierheimen und Tieren im Umkreis,
+// aber VOR "Weiter weg" - sonst läsen sie sich (auch per Überschriften-Navigation) als weit entfernt.
+export function BegleiterSection({ partner, tiere, promotions, fallback }) {
   const shelters = splitByDistance(partner)
   const animals = splitByDistance(tiere)
-  const isEmpty = partner.length === 0 && tiere.length === 0
+  const isEmpty = partner.length === 0 && tiere.length === 0 && promotions.length === 0
   const hasFar = shelters.far.length > 0 || animals.far.length > 0
 
   return (
@@ -121,6 +110,7 @@ export function BegleiterSection({ partner, tiere, fallback }) {
         <>
           <PartnerList items={shelters.near} />
           <AnimalList items={animals.near} />
+          <PromotionList items={promotions} />
           {hasFar && (
             <FarAway>
               <PartnerList items={shelters.far} />

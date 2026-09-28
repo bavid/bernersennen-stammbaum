@@ -121,7 +121,12 @@ export default function DiscoverPage() {
       {data && (
         <div className="discover-chapters" aria-busy={loading || undefined}>
           <HundeschulenSection partner={data.hundeschulPartner} promotions={data.hundeschulPromotions} fallback={data.fallback.hundeschulen} />
-          <BegleiterSection partner={data.begleiterPartner} tiere={data.begleiterTiere} fallback={data.fallback.begleiter} />
+          <BegleiterSection
+            partner={data.begleiterPartner}
+            tiere={data.begleiterTiere}
+            promotions={data.begleiterPromotions}
+            fallback={data.fallback.begleiter}
+          />
           <FutterSection futter={data.futter} />
           <SupportSection support={data.unterstuetzen} />
         </div>

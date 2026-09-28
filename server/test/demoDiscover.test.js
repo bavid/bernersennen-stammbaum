@@ -13,7 +13,13 @@ const dataDir = useTempDataDir('demo-discover')
 const REAL_GOFUNDME_URL = 'https://example.org/echte-spendenseite'
 const REAL_TEXT = 'Echter Unterstützen-Text.'
 const DEMO_GOFUNDME_URL = 'https://example.org/familie-auf-pfoten-spenden'
-const DEMO_TITLES = ['Futterhof Deichland – Probierpaket', 'Knusperkorn Sensitive', 'Welpenkurs im Frühjahr']
+const DEMO_TITLES = [
+  'Futterhof Deichland – Probierpaket',
+  'Futterspende fürs Tierheim',
+  'Knusperkorn Sensitive',
+  'Patenschaft für Senioren-Hunde',
+  'Welpenkurs im Frühjahr'
+]
 // Futtertexte ohne Gesundheitsversprechen (Plan, Regeln: "Rechtliches") - grobe Stamm-Liste für die Demo.
 const HEALTH_PROMISE_RE = /heil|verhinder|gesund|krank|immun|verdauung|allergi|vorbeug|beugt|stärkt|schützt|linder/i
 
@@ -67,7 +73,7 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
   const demoLogin = await call(base, '/api/demo', { method: 'POST' })
   const demoCookie = getCookie(demoLogin.res)
 
-  await t.test('nach dem Anlegen: drei Demo-Empfehlungen mit Kennzeichnung, Link und Partner-Verknüpfung', () => {
+  await t.test('nach dem Anlegen: fünf Demo-Empfehlungen (jeder Bereich) mit Kennzeichnung, Link und Partner-Verknüpfung', () => {
     const rows = demoPromotions()
     assert.deepEqual(rows.map((r) => r.titel), DEMO_TITLES)
     assert.deepEqual(first.promotionIds.slice().sort((a, b) => a - b), rows.map((r) => r.id).sort((a, b) => a - b))
@@ -95,6 +101,24 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
     assert.equal(welpenkurs.url, 'https://example.org/pfotenglueck-welpenkurs')
     assert.ok(welpenkurs.bild_file, 'Welpenkurs zeigt auch das Bild-Feature')
     assert.ok(fs.existsSync(path.join(partnerMediaDir, welpenkurs.bild_file)), 'Bilddatei liegt im partner-media-Ordner')
+
+    const sonnenhang = db.prepare("SELECT id FROM partners WHERE slug = 'tierheim-sonnenhang' AND is_demo = 1").get()
+    assert.ok(sonnenhang, 'Demo-Tierheim Sonnenhang existiert')
+    const patenschaft = byTitle['Patenschaft für Senioren-Hunde']
+    assert.equal(patenschaft.bereich, 'begleiter')
+    assert.equal(patenschaft.kennzeichnung, 'Partner')
+    assert.equal(patenschaft.partner_id, sonnenhang.id, 'mit dem Demo-Tierheim Sonnenhang verknüpft')
+    assert.equal(patenschaft.url, 'https://example.org/patenschaft')
+    assert.ok(patenschaft.text && patenschaft.text.length > 20, 'sachlicher Text vorhanden')
+
+    const futterspende = byTitle['Futterspende fürs Tierheim']
+    assert.equal(futterspende.bereich, 'unterstuetzen')
+    assert.equal(futterspende.kennzeichnung, 'Empfehlung')
+    assert.equal(futterspende.empfohlen_von, 'Familie auf Pfoten')
+    assert.equal(futterspende.url, 'https://example.org/futterspende')
+    assert.ok(futterspende.text && futterspende.text.length > 20, 'sachlicher Text vorhanden')
+
+    assert.deepEqual([...new Set(rows.map((r) => r.bereich))].sort(), ['begleiter', 'futter', 'hundeschule', 'unterstuetzen'], 'die Demo zeigt jeden Bereich')
 
     for (const row of rows) {
       assert.equal(row.aktiv, 1)
@@ -141,6 +165,21 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
       'der verknüpfte Demo-Partner steht im selben Abschnitt'
     )
 
+    assert.deepEqual(res.data.begleiter.promotions.map((p) => p.titel), ['Patenschaft für Senioren-Hunde'])
+    const patenschaft = res.data.begleiter.promotions[0]
+    assert.equal(patenschaft.kennzeichnung, 'Partner')
+    assert.equal(patenschaft.clickUrl, `/r/promotion/${patenschaft.id}`)
+    assert.ok(
+      res.data.begleiter.partner.some((e) => e.slug === 'tierheim-sonnenhang'),
+      'das verknüpfte Demo-Tierheim steht im selben Abschnitt'
+    )
+
+    assert.deepEqual(res.data.unterstuetzen.promotions.map((p) => p.titel), ['Futterspende fürs Tierheim'])
+    const futterspende = res.data.unterstuetzen.promotions[0]
+    assert.equal(futterspende.kennzeichnung, 'Empfehlung')
+    assert.equal(futterspende.empfohlenVon, 'Familie auf Pfoten')
+    assert.equal(futterspende.clickUrl, `/r/promotion/${futterspende.id}`)
+
     assert.equal(res.data.unterstuetzen.gofundmeUrl, DEMO_GOFUNDME_URL)
     assert.equal(res.data.unterstuetzen.gofundmeClickUrl, '/r/gofundme/1')
     assert.equal(res.data.unterstuetzen.text, demoSettings().demo_unterstuetzen_text)
@@ -162,7 +201,12 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
     const res = await discover(household.cookie)
     assert.equal(res.status, 200)
 
-    const promotionTitles = [...res.data.futter, ...res.data.hundeschulen.filter((e) => e.kind === 'promotion')].map((p) => p.titel)
+    const promotionTitles = [
+      ...res.data.futter,
+      ...res.data.hundeschulen.filter((e) => e.kind === 'promotion'),
+      ...res.data.begleiter.promotions,
+      ...res.data.unterstuetzen.promotions
+    ].map((p) => p.titel)
     assert.deepEqual(promotionTitles, ['Echte Anzeige'])
     for (const title of DEMO_TITLES) assert.ok(!promotionTitles.includes(title), `${title} bleibt der Demo vorbehalten`)
 
@@ -186,7 +230,7 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
     const second = replaceDemoPack(db, uploadDir)
 
     const rows = demoPromotions()
-    assert.deepEqual(rows.map((r) => r.titel), DEMO_TITLES, 'wieder genau drei Demo-Empfehlungen, keine Duplikate')
+    assert.deepEqual(rows.map((r) => r.titel), DEMO_TITLES, 'wieder genau fünf Demo-Empfehlungen, keine Duplikate')
     assert.deepEqual(second.promotionIds.slice().sort((a, b) => a - b), rows.map((r) => r.id).sort((a, b) => a - b))
     assert.equal(
       db.prepare(`SELECT COUNT(*) AS n FROM promotions WHERE id IN (${oldPromotionIds.map(() => '?').join(', ')})`).get(...oldPromotionIds).n,
@@ -198,6 +242,8 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
 
     const newPfotenglueck = db.prepare("SELECT id FROM partners WHERE slug = 'hundeschule-pfotenglueck' AND is_demo = 1").get()
     assert.equal(rows.find((r) => r.titel === 'Welpenkurs im Frühjahr').partner_id, newPfotenglueck.id, 'zeigt auf den NEUEN Demo-Partner')
+    const newSonnenhang = db.prepare("SELECT id FROM partners WHERE slug = 'tierheim-sonnenhang' AND is_demo = 1").get()
+    assert.equal(rows.find((r) => r.titel === 'Patenschaft für Senioren-Hunde').partner_id, newSonnenhang.id, 'zeigt auf das NEUE Demo-Tierheim')
 
     const orphanPromotionClicks = db
       .prepare("SELECT COUNT(*) AS n FROM link_clicks WHERE target_type = 'promotion' AND target_id NOT IN (SELECT id FROM promotions)")
@@ -256,7 +302,7 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
 
   await t.test('Rollback: scheitert eine Demo-Empfehlung (unbekannter Partner-Slug), bleibt die bisherige Demo samt echten Daten vollständig erhalten', () => {
     const before = snapshotAll()
-    assert.equal(before.demoPromotions.length, 3, 'Ausgangslage: eine vollständige Demo')
+    assert.equal(before.demoPromotions.length, 5, 'Ausgangslage: eine vollständige Demo')
 
     seed.DEMO_PROMOTIONS.push({
       bereich: 'hundeschule',

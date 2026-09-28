@@ -66,7 +66,8 @@ function normalizeSupport(unterstuetzen) {
     gofundmeClickUrl: support.gofundmeClickUrl || null,
     text: support.text || null,
     bericht: support.bericht && typeof support.bericht === 'object' ? support.bericht : null,
-    partnerSpenden: asArray(support.partnerSpenden)
+    partnerSpenden: asArray(support.partnerSpenden),
+    promotions: asArray(support.promotions)
   }
 }
 
@@ -81,6 +82,7 @@ export function normalizeDiscover(data) {
     hundeschulPromotions: hundeschulen.filter((item) => item.kind === 'promotion'),
     begleiterPartner: asArray(begleiter.partner),
     begleiterTiere: asArray(begleiter.tiere),
+    begleiterPromotions: asArray(begleiter.promotions),
     futter: asArray(source.futter),
     unterstuetzen: normalizeSupport(source.unterstuetzen),
     fallback: {

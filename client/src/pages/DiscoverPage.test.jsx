@@ -101,12 +101,24 @@ const tier = {
   vermittlung_status: 'in_vermittlung'
 }
 
+// Empfehlungen der Bereiche "begleiter" und "unterstuetzen" - je eine Anzeige (rel="sponsored") und eine
+// Partner-/Empfehlungs-Karte ohne sponsored.
+const begleiterPromotions = [
+  promotion({ id: 30, bereich: 'begleiter', kennzeichnung: 'Partner', empfohlenVon: null, titel: 'Patenschaft für Senioren-Hunde', clickUrl: '/r/promotion/30' }),
+  promotion({ id: 31, bereich: 'begleiter', kennzeichnung: 'Anzeige', empfohlenVon: null, titel: 'Leinenwerk Starterset', clickUrl: '/r/promotion/31' })
+]
+const unterstuetzenPromotions = [
+  promotion({ id: 40, bereich: 'unterstuetzen', kennzeichnung: 'Empfehlung', empfohlenVon: 'Familie auf Pfoten', titel: 'Futterspende fürs Tierheim', clickUrl: '/r/promotion/40' }),
+  promotion({ id: 41, bereich: 'unterstuetzen', kennzeichnung: 'Anzeige', empfohlenVon: null, titel: 'Spendenlauf Mühlental', clickUrl: '/r/promotion/41' })
+]
+
 const fullResponse = {
   fallback: { hundeschulen: false, begleiter: false },
   hundeschulen: [partner(), promotion({ id: 21, bereich: 'hundeschule', kennzeichnung: 'Partner', empfohlenVon: null, titel: 'Welpenkurs im Herbst', clickUrl: '/r/promotion/21' })],
   begleiter: {
     partner: [partner({ id: 3, slug: 'tierheim-birkenweg', name: 'Tierheim Birkenweg', typ: 'tierheim', clickUrl: '/r/partner-website/3' })],
-    tiere: [tier]
+    tiere: [tier],
+    promotions: begleiterPromotions
   },
   futter: [
     promotion(),
@@ -124,16 +136,17 @@ const fullResponse = {
       empfaenger: 'Tierheim Birkenweg',
       nachweisUrl: null
     },
-    partnerSpenden: [{ id: 3, slug: 'tierheim-birkenweg', name: 'Tierheim Birkenweg', logoUrl: null, url: 'https://example.org/s', clickUrl: '/r/partner-spende/3' }]
+    partnerSpenden: [{ id: 3, slug: 'tierheim-birkenweg', name: 'Tierheim Birkenweg', logoUrl: null, url: 'https://example.org/s', clickUrl: '/r/partner-spende/3' }],
+    promotions: unterstuetzenPromotions
   }
 }
 
 const emptyResponse = {
   fallback: { hundeschulen: false, begleiter: false },
   hundeschulen: [],
-  begleiter: { partner: [], tiere: [] },
+  begleiter: { partner: [], tiere: [], promotions: [] },
   futter: [],
-  unterstuetzen: { gofundmeUrl: null, gofundmeClickUrl: null, text: null, bericht: null, partnerSpenden: [] }
+  unterstuetzen: { gofundmeUrl: null, gofundmeClickUrl: null, text: null, bericht: null, partnerSpenden: [], promotions: [] }
 }
 
 function section(titleText) {
@@ -144,6 +157,15 @@ function section(titleText) {
 
 function linkIn(el, text) {
   return [...el.querySelectorAll('a')].find((a) => a.textContent.includes(text))
+}
+
+function cardIn(el, title) {
+  return [...el.querySelectorAll('.promotion-card')].find((card) => card.querySelector('h3')?.textContent === title)
+}
+
+// true, wenn a im Dokument vor b steht
+function isBefore(a, b) {
+  return Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
 }
 
 async function submitPlz(value, radius) {
@@ -283,6 +305,70 @@ describe('DiscoverPage – vier Kapitel', () => {
   })
 })
 
+describe('DiscoverPage – Empfehlungen bei Begleiter und Unterstützen', () => {
+  test('Begleiter: Empfehlungen als PromotionCard nach Tierheim und Tieren, vor "Mehr in der Nähe"', async () => {
+    discover.mockResolvedValue(fullResponse)
+    await render()
+    const el = section('Neuer Begleiter gesucht?')
+    const cards = [...el.querySelectorAll('.promotion-card h3')].map((h) => h.textContent)
+    expect(cards).toEqual(['Patenschaft für Senioren-Hunde', 'Leinenwerk Starterset'])
+
+    const patenschaft = cardIn(el, 'Patenschaft für Senioren-Hunde')
+    expect(isBefore(linkIn(el, 'Fips'), patenschaft)).toBe(true)
+    expect(isBefore(el.querySelector('.partner-card'), patenschaft)).toBe(true)
+    expect(isBefore(cardIn(el, 'Leinenwerk Starterset'), linkIn(el, 'Mehr in der Nähe'))).toBe(true)
+  })
+
+  test('Begleiter: Kennzeichnung wie bei Futter - Anzeige mit sponsored, Partner ohne', async () => {
+    discover.mockResolvedValue(fullResponse)
+    await render()
+    const el = section('Neuer Begleiter gesucht?')
+    const anzeige = cardIn(el, 'Leinenwerk Starterset')
+    expect(anzeige.querySelector('.promotion-badge').textContent).toBe('Anzeige')
+    expect(linkIn(anzeige, 'Mehr erfahren').getAttribute('rel')).toBe('sponsored noopener noreferrer')
+    expect(linkIn(anzeige, 'Mehr erfahren').getAttribute('href')).toBe('/r/promotion/31')
+
+    const partnerCard = cardIn(el, 'Patenschaft für Senioren-Hunde')
+    expect(partnerCard.querySelector('.promotion-badge').textContent).toBe('Partner')
+    expect(linkIn(partnerCard, 'Mehr erfahren').getAttribute('rel')).not.toContain('sponsored')
+  })
+
+  test('Unterstützen: Empfehlungen unter dem GoFundMe-Aufruf; Anzeige mit sponsored, Empfehlung nennt die empfehlende Stelle', async () => {
+    discover.mockResolvedValue(fullResponse)
+    await render()
+    const el = section('Unterstützen')
+    const cards = [...el.querySelectorAll('.promotion-card h3')].map((h) => h.textContent)
+    expect(cards).toEqual(['Futterspende fürs Tierheim', 'Spendenlauf Mühlental'])
+    expect(isBefore(linkIn(el, 'GoFundMe'), cardIn(el, 'Futterspende fürs Tierheim'))).toBe(true)
+
+    const anzeige = cardIn(el, 'Spendenlauf Mühlental')
+    expect(anzeige.querySelector('.promotion-badge').textContent).toBe('Anzeige')
+    expect(linkIn(anzeige, 'Mehr erfahren').getAttribute('rel')).toBe('sponsored noopener noreferrer')
+
+    const empfehlung = cardIn(el, 'Futterspende fürs Tierheim')
+    expect(empfehlung.querySelector('.promotion-badge').textContent).toBe('Empfehlung von Familie auf Pfoten')
+    expect(linkIn(empfehlung, 'Mehr erfahren').getAttribute('rel')).not.toContain('sponsored')
+    expect(linkIn(empfehlung, 'Mehr erfahren').getAttribute('href')).toBe('/r/promotion/40')
+  })
+
+  test('Begleiter mit Umkreis-Fallback: Empfehlungen stehen nicht unter "Weiter weg"', async () => {
+    discover.mockResolvedValue({
+      ...fullResponse,
+      fallback: { hundeschulen: false, begleiter: true },
+      begleiter: {
+        partner: [partner({ id: 3, slug: 'tierheim-birkenweg', name: 'Tierheim Birkenweg', typ: 'tierheim', distanceKm: 62, ausserhalb: true })],
+        tiere: [{ ...tier, distanceKm: 62, ausserhalb: true }],
+        promotions: begleiterPromotions
+      }
+    })
+    await render()
+    const el = section('Neuer Begleiter gesucht?')
+    const far = el.querySelector('.discover-far')
+    expect(far.querySelector('.promotion-card')).toBeNull()
+    expect(isBefore(cardIn(el, 'Leinenwerk Starterset'), far)).toBe(true)
+  })
+})
+
 describe('DiscoverPage – Umkreis-Fallback', () => {
   const fallbackResponse = {
     ...fullResponse,
@@ -348,6 +434,25 @@ describe('DiscoverPage – Leerzustände', () => {
 
     expect(section('Futter-Empfehlungen').textContent).toContain('Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.')
     expect(section('Unterstützen').textContent).toContain('Noch keine Spendenmöglichkeiten hinterlegt – schaut in die Partnerliste.')
+    expect(container.querySelector('.promotion-card')).toBeNull()
+  })
+
+  test('Begleiter nur mit Empfehlungen: kein Leerzustand, die Empfehlungen und "Mehr in der Nähe" bleiben', async () => {
+    discover.mockResolvedValue({ ...emptyResponse, begleiter: { partner: [], tiere: [], promotions: begleiterPromotions } })
+    await render()
+    const el = section('Neuer Begleiter gesucht?')
+    expect(el.textContent).not.toContain('Noch keine Tierheime oder Vermittlungsstellen')
+    expect(cardIn(el, 'Patenschaft für Senioren-Hunde')).toBeDefined()
+    expect(linkIn(el, 'Mehr in der Nähe').getAttribute('href')).toBe('/umgebung')
+  })
+
+  test('Unterstützen nur mit Empfehlungen: kein Leerzustand, die Empfehlungen werden gezeigt', async () => {
+    discover.mockResolvedValue({ ...emptyResponse, unterstuetzen: { ...emptyResponse.unterstuetzen, promotions: unterstuetzenPromotions } })
+    await render()
+    const el = section('Unterstützen')
+    expect(el.textContent).not.toContain('Noch keine Spendenmöglichkeiten')
+    expect(cardIn(el, 'Futterspende fürs Tierheim')).toBeDefined()
+    expect(el.querySelector('.support-cta')).toBeNull()
   })
 })
 

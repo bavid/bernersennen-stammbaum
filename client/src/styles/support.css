@@ -7,6 +7,12 @@
   align-items: start;
 }
 
+/* Empfehlungen (bereich "unterstuetzen") direkt unter dem Aufruf, über die volle Breite - so bleiben
+   Bericht und Spendenlinks darunter weiter nebeneinander. */
+.support-block > .promotion-list {
+  grid-column: 1 / -1;
+}
+
 /* Aufruf als dunkle Bühne wie Login/Portal-Kopf - der eine Ort der Seite, der um etwas bittet */
 .support-cta {
   grid-column: 1 / -1;

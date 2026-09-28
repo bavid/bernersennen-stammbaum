@@ -278,6 +278,9 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
       res.data.unterstuetzen.partnerSpenden.map((p) => p.id),
       []
     )
+    // Ohne Empfehlungen dieser Bereiche kommen trotzdem leere Listen (nie fehlende Felder).
+    assert.deepEqual(res.data.begleiter.promotions, [])
+    assert.deepEqual(res.data.unterstuetzen.promotions, [])
   })
 
   const berlin = lookupPlz('10115')
@@ -427,6 +430,98 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
     assert.equal(fernieCard.ausserhalb, true)
     assert.equal(typeof fernieCard.distanceKm, 'number')
     assert.ok(fernieCard.distanceKm > 10)
+  })
+
+  await t.test('Empfehlungen der Bereiche "begleiter" und "unterstuetzen" landen in ihrem Abschnitt - wie Futter: aktiv, im Zeitfenster, Demo-getrennt, nur mit sichtbarem Partner', async () => {
+    // Partner nur als Sortier- und Sichtbarkeitshilfe - Typ "sonstige", damit sie weder in begleiter.partner
+    // noch in die Umkreis-Zählungen der Tests oben geraten.
+    const nahPartner = insertPartner({ name: 'Sonstiges Nah', typ: 'sonstige', lat: berlin.lat, lon: berlin.lon })
+    const fernPartner = insertPartner({ name: 'Sonstiges Fern', typ: 'sonstige', lat: ROM.lat, lon: ROM.lon })
+    const pausierterPartner = insertPartner({ name: 'Sonstiges Pausiert', typ: 'sonstige', status: 'pausiert' })
+    const gesperrterPartner = insertPartner({ name: 'Sonstiges Gesperrt', typ: 'sonstige' })
+    db.prepare('UPDATE partners SET gesperrt = 1 WHERE id = ?').run(gesperrterPartner.id)
+
+    const begleiterOhnePartner = insertPromotion({
+      bereich: 'begleiter',
+      kennzeichnung: 'Anzeige',
+      titel: 'A Begleiter ohne Partner',
+      url: 'https://example.org/begleiter-anzeige',
+      is_demo: 0
+    })
+    const begleiterFern = insertPromotion({ bereich: 'begleiter', kennzeichnung: 'Partner', titel: 'B Begleiter fern', partner_id: fernPartner.id, is_demo: 0 })
+    const begleiterNah = insertPromotion({ bereich: 'begleiter', kennzeichnung: 'Partner', titel: 'C Begleiter nah', partner_id: nahPartner.id, is_demo: 0 })
+    const begleiterPausiert = insertPromotion({ bereich: 'begleiter', kennzeichnung: 'Partner', titel: 'Begleiter pausierter Partner', url: 'https://example.org/pausiert', partner_id: pausierterPartner.id })
+    const begleiterInaktiv = insertPromotion({ bereich: 'begleiter', titel: 'Begleiter inaktiv', aktiv: 0 })
+    const begleiterAbgelaufen = insertPromotion({ bereich: 'begleiter', titel: 'Begleiter abgelaufen', ende: '2020-01-01' })
+    const begleiterDemo = insertPromotion({ bereich: 'begleiter', kennzeichnung: 'Partner', titel: 'Begleiter Demo', is_demo: 1 })
+
+    const unterstuetzenEcht = insertPromotion({
+      bereich: 'unterstuetzen',
+      kennzeichnung: 'Empfehlung',
+      empfohlen_von: 'Familie auf Pfoten',
+      titel: 'Futterspende echt',
+      url: 'https://example.org/futterspende-echt',
+      is_demo: 0
+    })
+    const unterstuetzenGesperrt = insertPromotion({ bereich: 'unterstuetzen', kennzeichnung: 'Partner', titel: 'Unterstützen gesperrter Partner', url: 'https://example.org/gesperrt', partner_id: gesperrterPartner.id })
+    const unterstuetzenDemo = insertPromotion({ bereich: 'unterstuetzen', kennzeichnung: 'Anzeige', titel: 'Unterstützen Demo', url: 'https://example.org/unterstuetzen-demo', is_demo: 1 })
+
+    // --- echte Sitzung ohne PLZ: Reihenfolge nach sort/Titel, nichts Inaktives/Abgelaufenes/Verstecktes/Demo
+    const real = await discover({}, household.cookie)
+    assert.equal(real.status, 200)
+    assert.deepEqual(
+      real.data.begleiter.promotions.map((p) => p.id),
+      [begleiterOhnePartner.id, begleiterFern.id, begleiterNah.id],
+      'nur aktive, laufende, echte Begleiter-Empfehlungen mit sichtbarem (oder ohne) Partner'
+    )
+    assert.deepEqual(real.data.unterstuetzen.promotions.map((p) => p.id), [unterstuetzenEcht.id])
+
+    // Kartenform wie bei Futter/Hundeschule: Kennzeichnung, "Empfehlung von" und Link über die Klickzählung
+    assert.deepEqual(real.data.begleiter.promotions[0], {
+      id: begleiterOhnePartner.id,
+      kind: 'promotion',
+      bereich: 'begleiter',
+      kennzeichnung: 'Anzeige',
+      empfohlenVon: null,
+      titel: 'A Begleiter ohne Partner',
+      text: null,
+      bildUrl: null,
+      tierart: null,
+      url: 'https://example.org/begleiter-anzeige',
+      clickUrl: `/r/promotion/${begleiterOhnePartner.id}`
+    })
+    const spende = real.data.unterstuetzen.promotions[0]
+    assert.equal(spende.kind, 'promotion')
+    assert.equal(spende.bereich, 'unterstuetzen')
+    assert.equal(spende.kennzeichnung, 'Empfehlung')
+    assert.equal(spende.empfohlenVon, 'Familie auf Pfoten')
+    assert.equal(spende.clickUrl, `/r/promotion/${unterstuetzenEcht.id}`)
+
+    // Keine der neuen Empfehlungen rutscht in Futter oder Hundeschule
+    const newIds = [begleiterOhnePartner, begleiterFern, begleiterNah, begleiterPausiert, begleiterInaktiv, begleiterAbgelaufen, begleiterDemo]
+      .concat([unterstuetzenEcht, unterstuetzenGesperrt, unterstuetzenDemo])
+      .map((p) => p.id)
+    const elsewhere = [...real.data.futter, ...real.data.hundeschulen.filter((e) => e.kind === 'promotion')].map((p) => p.id)
+    assert.ok(newIds.every((id) => !elsewhere.includes(id)), 'begleiter/unterstuetzen erscheinen nur in ihrem eigenen Abschnitt')
+
+    // Klick-Weiterleitung: sichtbare leiten weiter, die des versteckten Partners nicht
+    const clickOk = await fetch(`${base}/r/promotion/${unterstuetzenEcht.id}`, { redirect: 'manual' })
+    assert.equal(clickOk.status, 302)
+    assert.equal(clickOk.headers.get('location'), 'https://example.org/futterspende-echt')
+    assert.equal((await fetch(`${base}/r/promotion/${begleiterPausiert.id}`, { redirect: 'manual' })).status, 404)
+    assert.equal((await fetch(`${base}/r/promotion/${unterstuetzenGesperrt.id}`, { redirect: 'manual' })).status, 404)
+
+    // --- Demo-Sitzung: ausschließlich die Demo-Empfehlungen, kein dev/staging-Bonus
+    const demo = await discover({}, demoHousehold.cookie)
+    assert.equal(demo.status, 200)
+    assert.deepEqual(demo.data.begleiter.promotions.map((p) => p.id), [begleiterDemo.id])
+    assert.deepEqual(demo.data.unterstuetzen.promotions.map((p) => p.id), [unterstuetzenDemo.id])
+
+    // --- mit PLZ: partnergebundene nach Entfernung ihres Partners zuerst, dann die ohne Partner
+    const near = await discover({ plz: '10115', radius: 10 }, household.cookie)
+    assert.equal(near.status, 200)
+    assert.deepEqual(near.data.begleiter.promotions.map((p) => p.id), [begleiterNah.id, begleiterFern.id, begleiterOhnePartner.id])
+    assert.deepEqual(near.data.unterstuetzen.promotions.map((p) => p.id), [unterstuetzenEcht.id])
   })
 
   // --- Klickzählung / Weiterleitung (GET /r/:type/:id) ------------------------------------------------

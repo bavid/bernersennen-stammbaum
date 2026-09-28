@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { DiscoverEmpty } from './DiscoverChapter.jsx'
+import { PromotionList } from './PromotionCard.jsx'
 import { formatEuroCents, isClickUrl, isPartnerMedia } from '../lib/discover.js'
 import { isExternalUrl } from '../lib/format.js'
 
@@ -66,14 +67,15 @@ function PartnerDonations({ items }) {
   )
 }
 
-// Kapitel "Unterstützen": GoFundMe-Knopf, Text, Transparenzblock und Spendenlinks der Partner-Tierheime.
-// Alle externen Links laufen über die Klickzählung (clickUrl /r/...), nur der Nachweis ist ein direkter
-// Link auf das hinterlegte Dokument.
+// Kapitel "Unterstützen": GoFundMe-Knopf, Text, Empfehlungen (bereich "unterstuetzen", direkt unter dem
+// Aufruf), Transparenzblock und Spendenlinks der Partner-Tierheime. Alle externen Links laufen über die
+// Klickzählung (clickUrl /r/...), nur der Nachweis ist ein direkter Link auf das hinterlegte Dokument.
+// Leer ist das Kapitel nur, wenn ALLES davon fehlt.
 export default function SupportBlock({ support }) {
   const hasGofundme = isClickUrl(support.gofundmeClickUrl)
   const donations = support.partnerSpenden.filter((item) => isClickUrl(item.clickUrl))
 
-  if (!hasGofundme && !support.text && !support.bericht && donations.length === 0) {
+  if (!hasGofundme && !support.text && !support.bericht && donations.length === 0 && support.promotions.length === 0) {
     return (
       <DiscoverEmpty icon="heart">
         Noch keine Spendenmöglichkeiten hinterlegt – schaut in die <Link to="/partner">Partnerliste</Link>.
@@ -94,6 +96,7 @@ export default function SupportBlock({ support }) {
           )}
         </div>
       )}
+      <PromotionList items={support.promotions} />
       {support.bericht && <DonationReport report={support.bericht} />}
       {donations.length > 0 && <PartnerDonations items={donations} />}
     </div>

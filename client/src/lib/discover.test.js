@@ -101,8 +101,9 @@ describe('normalizeDiscover', () => {
     expect(result.hundeschulPromotions).toEqual([])
     expect(result.begleiterPartner).toEqual([])
     expect(result.begleiterTiere).toEqual([])
+    expect(result.begleiterPromotions).toEqual([])
     expect(result.futter).toEqual([])
-    expect(result.unterstuetzen).toEqual({ gofundmeClickUrl: null, text: null, bericht: null, partnerSpenden: [] })
+    expect(result.unterstuetzen).toEqual({ gofundmeClickUrl: null, text: null, bericht: null, partnerSpenden: [], promotions: [] })
     expect(result.fallback).toEqual({ hundeschulen: false, begleiter: false })
   })
 
@@ -113,17 +114,25 @@ describe('normalizeDiscover', () => {
         { id: 1, kind: 'partner', name: 'Hundeschule Wiesengrund' },
         { id: 2, kind: 'promotion', titel: 'Welpenkurs' }
       ],
-      begleiter: { partner: [{ id: 3 }], tiere: [{ slug: 'fips-ab12' }] },
+      begleiter: { partner: [{ id: 3 }], tiere: [{ slug: 'fips-ab12' }], promotions: [{ id: 5, kind: 'promotion', bereich: 'begleiter' }] },
       futter: [{ id: 4 }],
-      unterstuetzen: { gofundmeClickUrl: '/r/gofundme/0', text: 'Danke!', bericht: null, partnerSpenden: [{ id: 3 }] }
+      unterstuetzen: {
+        gofundmeClickUrl: '/r/gofundme/0',
+        text: 'Danke!',
+        bericht: null,
+        partnerSpenden: [{ id: 3 }],
+        promotions: [{ id: 6, kind: 'promotion', bereich: 'unterstuetzen' }]
+      }
     })
     expect(result.hundeschulPartner.map((item) => item.id)).toEqual([1])
     expect(result.hundeschulPromotions.map((item) => item.id)).toEqual([2])
     expect(result.begleiterPartner).toHaveLength(1)
     expect(result.begleiterTiere).toHaveLength(1)
+    expect(result.begleiterPromotions.map((item) => item.id)).toEqual([5])
     expect(result.futter).toHaveLength(1)
     expect(result.unterstuetzen.gofundmeClickUrl).toBe('/r/gofundme/0')
     expect(result.unterstuetzen.partnerSpenden).toHaveLength(1)
+    expect(result.unterstuetzen.promotions.map((item) => item.id)).toEqual([6])
     expect(result.fallback).toEqual({ hundeschulen: true, begleiter: false })
   })
 
@@ -134,11 +143,23 @@ describe('normalizeDiscover', () => {
   })
 
   test('falsche Typen (z. B. Objekt statt Liste) werden zu leeren Listen', () => {
-    const result = normalizeDiscover({ hundeschulen: {}, begleiter: 'x', futter: null, unterstuetzen: { partnerSpenden: 'x' } })
+    const result = normalizeDiscover({ hundeschulen: {}, begleiter: 'x', futter: null, unterstuetzen: { partnerSpenden: 'x', promotions: {} } })
     expect(result.hundeschulPartner).toEqual([])
     expect(result.begleiterPartner).toEqual([])
     expect(result.begleiterTiere).toEqual([])
+    expect(result.begleiterPromotions).toEqual([])
     expect(result.futter).toEqual([])
     expect(result.unterstuetzen.partnerSpenden).toEqual([])
+    expect(result.unterstuetzen.promotions).toEqual([])
+  })
+
+  test('fehlende Empfehlungs-Listen bei Begleiter und Unterstützen werden zu leeren Listen, null-Einträge fallen heraus', () => {
+    const missing = normalizeDiscover({ begleiter: { partner: [], tiere: [] }, unterstuetzen: { partnerSpenden: [] } })
+    expect(missing.begleiterPromotions).toEqual([])
+    expect(missing.unterstuetzen.promotions).toEqual([])
+
+    const withNull = normalizeDiscover({ begleiter: { promotions: [null, { id: 7 }] }, unterstuetzen: { promotions: ['x', { id: 8 }] } })
+    expect(withNull.begleiterPromotions.map((item) => item.id)).toEqual([7])
+    expect(withNull.unterstuetzen.promotions.map((item) => item.id)).toEqual([8])
   })
 })
