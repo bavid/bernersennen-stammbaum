@@ -1,0 +1,283 @@
+/* Öffentliche Seiten ohne App-Rahmen: Partner-Portal (/p/:slug) und Partnerliste (/partner).
+   .partner-portal setzt --rust/--rust-deep/--rust-wash/--on-rust inline (siehe PartnerPortalPage) –
+   alles darunter, das diese Token nutzt (Knöpfe, Pills, Fokusringe), übernimmt die Partnerfarbe
+   automatisch, weil Custom Properties vererbt werden. Ohne gültige Farbe bleiben die Theme-Töne. */
+
+.public-page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(var(--space-6), 5vw, var(--space-12)) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
+  display: grid;
+  gap: clamp(var(--space-8), 4vw, var(--space-10));
+}
+
+.partners-page {
+  max-width: 64rem;
+}
+
+.preview-banner {
+  justify-self: center;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--rust);
+  color: var(--on-rust);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Portal-Kopf: dunkle Hero-Fläche wie der Login, hier als eigenständige Karte statt Split-Screen */
+.partner-portal-hero {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  padding: clamp(var(--space-8), 6vw, var(--space-12));
+  border-radius: var(--radius-lg);
+  background-color: var(--hero-bg);
+  background-image: radial-gradient(ellipse 70% 60% at 90% 0%, color-mix(in srgb, var(--rust) 55%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, color-mix(in srgb, var(--tan) 20%, transparent), transparent 65%);
+  color: var(--hero-text);
+  box-shadow: var(--shadow-raised);
+}
+
+.partner-portal-marks {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.partner-portal-mark {
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.4));
+}
+
+.partner-logo {
+  max-height: 3.5rem;
+  max-width: 9rem;
+  width: auto;
+  border-radius: var(--radius-sm);
+  background: var(--snow);
+  padding: var(--space-1) var(--space-2);
+}
+
+.partner-portal-hero .eyebrow {
+  color: var(--tan);
+}
+
+.partner-portal-hero h1 {
+  color: var(--hero-text);
+  font-size: clamp(2.2rem, 1.6rem + 2.4vw, 3.4rem);
+}
+
+.partner-portal-text {
+  color: var(--hero-muted);
+  max-width: 38rem;
+  line-height: 1.6;
+  font-size: var(--text-lg);
+}
+
+.partner-portal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.partner-portal-hero .btn-ghost {
+  border-color: rgba(246, 236, 221, 0.35);
+  color: var(--hero-text);
+  background: rgba(246, 236, 221, 0.06);
+}
+
+.partner-portal-hero .btn-ghost:hover:not(:disabled) {
+  border-color: var(--tan);
+  color: var(--tan);
+  background: rgba(246, 236, 221, 0.12);
+}
+
+.partner-portal-action {
+  max-width: 26rem;
+  justify-self: center;
+  width: 100%;
+}
+
+.partner-portal-contact h2 {
+  margin-bottom: var(--space-4);
+}
+
+.partner-portal-contact ul {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.partner-portal-contact li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text);
+}
+
+.partner-portal-contact li svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--rust);
+  flex-shrink: 0;
+}
+
+.partner-portal-missing {
+  min-height: 70vh;
+  align-content: center;
+}
+
+.partner-portal-missing .empty-state {
+  gap: var(--space-4);
+}
+
+/* Partnerliste */
+
+.partners-hero {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.location-picker {
+  display: grid;
+  gap: var(--space-4);
+  padding: clamp(var(--space-5), 3vw, var(--space-6));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.location-picker-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.location-picker-fields .field {
+  min-width: 9rem;
+  flex: 1 1 9rem;
+}
+
+.location-picker-fields .btn {
+  flex-shrink: 0;
+}
+
+.location-picker-locate {
+  justify-self: start;
+}
+
+.partner-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.partner-card {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+
+.partner-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.partner-card-logo {
+  width: 3.5rem;
+  height: 3.5rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--paper-deep);
+  object-fit: contain;
+  padding: var(--space-1);
+}
+
+.partner-card-logo-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.partner-card-logo-fallback svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.partner-card-title h3 {
+  font-size: var(--text-lg);
+}
+
+.partner-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.partner-card-distance {
+  font-weight: 700;
+  color: var(--rust);
+}
+
+.partner-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.partner-card-links .btn {
+  padding: 0 var(--space-4);
+  min-height: 2.3rem;
+  font-size: var(--text-xs);
+}
+
+/* Fuß der öffentlichen Seiten */
+
+.public-footer {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.public-footer-links {
+  display: flex;
+  gap: var(--space-4);
+}
+
+@media (max-width: 720px) {
+  .location-picker-fields {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .location-picker-fields .btn {
+    width: 100%;
+  }
+
+  .partner-portal-action {
+    max-width: none;
+  }
+}

@@ -18,8 +18,14 @@ import CollagePage from './pages/CollagePage.jsx'
 import PinboardPage from './pages/PinboardPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import ContactAdminPage from './pages/ContactAdminPage.jsx'
+import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
+import PartnersPage from './pages/PartnersPage.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
+
+// /p/<slug> – öffentliches Partner-Portal, unabhängig von Groß-/Kleinschreibung des Pfads egal (der
+// Slug selbst bleibt roh, die Route validiert nur die Form).
+const PARTNER_SLUG_RE = /^\/p\/([^/]+)\/?$/
 
 // Haushalte ("Meine Chronik") sehen den Wegbegleiter statt der Würfe – Rudel weiterhin wie bisher.
 const NAV_ITEMS_HOME = [
@@ -221,6 +227,27 @@ export default function App() {
         ) : (
           <LoginPage onLogin={handleVoucherLogin} initialMode="redeem" initialCode={voucherCode} />
         )}
+      </ThemeProvider>
+    )
+  }
+
+  // Partner-Portal und Partnerliste: öffentlich, funktionieren angemeldet wie abgemeldet (siehe dort) –
+  // deshalb wie /v ein eigener früher Zweig, statt sie unter die Routen des angemeldeten Bereichs zu
+  // hängen. onRedeemed teilt sich mit /v denselben Übergang: Familie setzen und zur Start-Route wechseln.
+  const partnerSlug = pathname.match(PARTNER_SLUG_RE)?.[1]
+
+  if (partnerSlug) {
+    return (
+      <ThemeProvider themeId="standard">
+        <PartnerPortalPage slug={partnerSlug} family={family} onRedeemed={handleVoucherLogin} onLogout={handleLogout} />
+      </ThemeProvider>
+    )
+  }
+
+  if (pathname === '/partner') {
+    return (
+      <ThemeProvider themeId="standard">
+        <PartnersPage />
       </ThemeProvider>
     )
   }

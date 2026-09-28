@@ -54,6 +54,17 @@ export const api = {
   renameFamily: (name) => request('/family', json('PUT', { name })),
   updateFamily: (payload) => request('/family', json('PUT', payload)),
 
+  // Öffentlich, ohne Session: Partnerliste (/partner) und Partner-Portal (/p/:slug).
+  publicPartners: ({ plz, radius, demo } = {}) => {
+    const params = new URLSearchParams()
+    if (plz) params.set('plz', plz)
+    if (radius) params.set('radius', radius)
+    if (demo) params.set('demo', demo)
+    const qs = params.toString()
+    return request(`/public/partners${qs ? `?${qs}` : ''}`)
+  },
+  publicPartner: (slug) => request(`/public/partners/${encodeURIComponent(slug)}`),
+
   checkVoucher: (code) => request('/vouchers/check', json('POST', { code })),
   redeemVoucher: (payload) => request('/vouchers/redeem', json('POST', payload)),
   recover: (payload) => request('/recover', json('POST', payload)),
