@@ -197,14 +197,14 @@ function redeemVoucher(db, { code, name, username, password, email }) {
       throw httpError(410, 'Dieser Gutschein ist abgelaufen')
     }
 
-    const voucher = db.prepare('SELECT id, join_family_id FROM vouchers WHERE code_hash = ?').get(codeHash)
+    const voucher = db.prepare('SELECT id, join_family_id, partner_id FROM vouchers WHERE code_hash = ?').get(codeHash)
 
     const newFamilyId = db
       .prepare(
-        `INSERT INTO families (name, password_hash, art, theme, legacy_password, access_key_hash, voucher_id)
-         VALUES (?, '!', 'zuhause', 'standard', 0, ?, ?)`
+        `INSERT INTO families (name, password_hash, art, theme, legacy_password, access_key_hash, voucher_id, partner_id)
+         VALUES (?, '!', 'zuhause', 'standard', 0, ?, ?, ?)`
       )
-      .run(trimmedName, codeHash, voucher.id).lastInsertRowid
+      .run(trimmedName, codeHash, voucher.id, voucher.partner_id).lastInsertRowid
 
     db.prepare('UPDATE vouchers SET redeemed_by_family_id = ? WHERE id = ?').run(newFamilyId, voucher.id)
 

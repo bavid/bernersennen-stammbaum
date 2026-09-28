@@ -1,6 +1,8 @@
+const crypto = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
 const express = require('express')
+const multer = require('multer')
 const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
@@ -10,6 +12,7 @@ const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
 const { createBatch, voucherStatus, validateBatchInput } = require('../lib/vouchers')
 const { formatCode, decryptCode } = require('../lib/codes')
+const { validatePartner, detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('../lib/partners')
 
 const router = express.Router()
 
@@ -172,10 +175,12 @@ router.get('/families/:id', requireAdmin, (req, res) => {
 
 // Gutschein-Stapel für den Admin: Bezeichnung Pflicht (<=80 Zeichen), Anzahl 1-200. Optional
 // joinFamilyId - wer den Gutschein einlöst, tritt diesem Rudel gleich bei; nur ein bestehendes,
-// echtes Rudel (kein Zuhause, keine Demo) ist ein gültiges Ziel.
+// echtes Rudel (kein Zuhause, keine Demo) ist ein gültiges Ziel. Optional partnerId (Task 2) - ein
+// aktiver oder Entwurfs-Partner macht den Stapel zu kind='partner', partner_id landet auf Stapel UND
+// jedem Gutschein (siehe lib/vouchers.js createBatch), redeemVoucher überträgt es dann auf families.
 router.post('/voucher-batches', requireAdmin, (req, res, next) => {
   try {
-    const { size, joinFamilyId } = req.body || {}
+    const { size, joinFamilyId, partnerId } = req.body || {}
     const trimmedLabel = validateBatchInput({ label: req.body?.label, size })
 
     let cleanJoinFamilyId = null
@@ -186,7 +191,22 @@ router.post('/voucher-batches', requireAdmin, (req, res, next) => {
       cleanJoinFamilyId = id
     }
 
-    const { batchId, codes } = createBatch(db, { label: trimmedLabel, kind: 'admin', size, joinFamilyId: cleanJoinFamilyId })
+    let cleanPartnerId = null
+    if (partnerId !== undefined && partnerId !== null && partnerId !== '') {
+      const id = cleanId(partnerId)
+      const partner = id && db.prepare("SELECT 1 FROM partners WHERE id = ? AND status IN ('entwurf', 'aktiv')").get(id)
+      if (!partner) return res.status(400).json({ error: 'Diesen Partner gibt es nicht' })
+      cleanPartnerId = id
+    }
+
+    const kind = cleanPartnerId ? 'partner' : 'admin'
+    const { batchId, codes } = createBatch(db, {
+      label: trimmedLabel,
+      kind,
+      size,
+      joinFamilyId: cleanJoinFamilyId,
+      partnerId: cleanPartnerId
+    })
     const batch = db.prepare('SELECT id, label, size, created_at FROM voucher_batches WHERE id = ?').get(batchId)
     res.status(201).json({ batch, codes: codes.map(formatCode) })
   } catch (err) {
@@ -196,15 +216,17 @@ router.post('/voucher-batches', requireAdmin, (req, res, next) => {
 })
 
 // Zähler je Stapel - "abgelaufen" zählt bewusst in keiner der drei Spalten mit (die Liste dient nur
-// dem Überblick, nicht der Kontingent-Logik).
+// dem Überblick, nicht der Kontingent-Logik). partner_name: nur bei kind='partner' gesetzt.
 router.get('/voucher-batches', requireAdmin, (req, res) => {
   const batches = db
     .prepare(
-      `SELECT b.id, b.label, b.kind, b.size, b.created_at,
+      `SELECT b.id, b.label, b.kind, b.size, b.created_at, p.name AS partner_name,
          SUM(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NULL AND (v.expires_at IS NULL OR v.expires_at > datetime('now')) THEN 1 ELSE 0 END) AS open,
          SUM(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NOT NULL THEN 1 ELSE 0 END) AS redeemed,
          SUM(CASE WHEN v.revoked_at IS NOT NULL THEN 1 ELSE 0 END) AS revoked
-       FROM voucher_batches b LEFT JOIN vouchers v ON v.batch_id = b.id
+       FROM voucher_batches b
+       LEFT JOIN vouchers v ON v.batch_id = b.id
+       LEFT JOIN partners p ON p.id = b.partner_id
        GROUP BY b.id ORDER BY b.created_at DESC, b.id DESC`
     )
     .all()
@@ -253,6 +275,108 @@ router.post('/vouchers/:id/revoke', requireAdmin, (req, res) => {
   }
   const updated = db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE id = ?').get(id)
   res.json({ status: voucherStatus(updated) })
+})
+
+// --- Partner (Task 2) ---------------------------------------------------------------------------
+
+const partnerLogoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_LOGO_BYTES, files: 1, fields: 0, parts: 2 }
+})
+
+function findPartner(id) {
+  return id ? db.prepare('SELECT * FROM partners WHERE id = ?').get(id) : null
+}
+
+function uniqueConstraintViolation(err) {
+  return typeof err.message === 'string' && err.message.includes('UNIQUE')
+}
+
+router.get('/partners', requireAdmin, (req, res) => {
+  res.json(db.prepare('SELECT * FROM partners ORDER BY name COLLATE NOCASE').all())
+})
+
+router.post('/partners', requireAdmin, (req, res, next) => {
+  try {
+    const clean = validatePartner(req.body || {})
+    const columns = Object.keys(clean)
+    const id = db
+      .prepare(`INSERT INTO partners (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
+      .run(...columns.map((col) => clean[col])).lastInsertRowid
+    res.status(201).json(findPartner(id))
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    if (uniqueConstraintViolation(err)) return res.status(409).json({ error: 'Diesen Kurznamen gibt es schon' })
+    next(err)
+  }
+})
+
+router.put('/partners/:id', requireAdmin, (req, res, next) => {
+  try {
+    const id = cleanId(req.params.id)
+    const existing = findPartner(id)
+    if (!existing) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
+
+    const clean = validatePartner(req.body || {}, { existingSlug: existing.slug, existingStatus: existing.status })
+    const columns = Object.keys(clean)
+    db.prepare(`UPDATE partners SET ${columns.map((col) => `${col} = ?`).join(', ')} WHERE id = ?`).run(
+      ...columns.map((col) => clean[col]),
+      id
+    )
+    res.json(findPartner(id))
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    if (uniqueConstraintViolation(err)) return res.status(409).json({ error: 'Diesen Kurznamen gibt es schon' })
+    next(err)
+  }
+})
+
+// Logo: server-vergebener Dateiname (nie der Client-Dateiname), Bild-Art per Magic-Bytes bestätigt
+// (nicht nur per Content-Type-Header) - siehe lib/partners.js detectImageExt. SVG scheitert schon am
+// fehlenden Signatur-Treffer (XSS-Risiko bei eingebettetem Skript in SVG).
+router.post('/partners/:id/logo', requireAdmin, (req, res, next) => {
+  const id = cleanId(req.params.id)
+  const partner = findPartner(id)
+  if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
+
+  partnerLogoUpload.single('file')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      const message = err.code === 'LIMIT_FILE_SIZE' ? `Das Logo ist zu groß (max. ${MAX_LOGO_BYTES / 1024} KB)` : 'Upload fehlgeschlagen'
+      return res.status(400).json({ error: message })
+    }
+    if (err) return next(err)
+    if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen' })
+
+    const ext = detectImageExt(req.file.buffer)
+    if (!ext || !LOGO_MIME_TYPES.includes(req.file.mimetype)) {
+      return res.status(400).json({ error: 'Nur PNG, JPG oder WebP sind als Logo erlaubt' })
+    }
+
+    fs.mkdirSync(config.partnerMediaDir, { recursive: true })
+    const filename = `${crypto.randomUUID()}.${ext}`
+    fs.writeFileSync(path.join(config.partnerMediaDir, filename), req.file.buffer)
+
+    if (partner.logo_file) {
+      fs.rmSync(path.join(config.partnerMediaDir, partner.logo_file), { force: true })
+    }
+    db.prepare('UPDATE partners SET logo_file = ? WHERE id = ?').run(filename, id)
+    res.status(201).json({ logoUrl: `/partner-media/${filename}` })
+  })
+})
+
+// Löschen nur im Entwurf - ein schon veröffentlichter Partner wird stattdessen pausiert (PUT status).
+router.delete('/partners/:id', requireAdmin, (req, res) => {
+  const id = cleanId(req.params.id)
+  const partner = findPartner(id)
+  if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
+  if (partner.status !== 'entwurf') {
+    return res.status(409).json({ error: 'Nur Entwürfe lassen sich löschen – diesen Partner stattdessen pausieren' })
+  }
+  if (partner.logo_file) {
+    fs.rmSync(path.join(config.partnerMediaDir, partner.logo_file), { force: true })
+  }
+  db.prepare('DELETE FROM partners WHERE id = ?').run(id)
+  res.status(204).end()
 })
 
 module.exports = router

@@ -16,11 +16,14 @@ const notesRoutes = require('./routes/notes')
 const adminRoutes = require('./routes/admin')
 const vouchersRoutes = require('./routes/vouchers')
 const messagesRoutes = require('./routes/messages')
+const partnersRoutes = require('./routes/partners')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
 const { apiLimiter, photoLimiter, limitWrites } = require('./middleware/abuse')
+const { LOGO_FILENAME_RE } = require('./lib/partners')
 
 const PHOTO_CACHE = 'private, max-age=2592000, immutable'
+const PARTNER_LOGO_CACHE = 'public, max-age=2592000, immutable'
 
 // Kein upgrade-insecure-requests/HSTS: die App läuft auch per http://IP:PORT ohne TLS.
 const securityHeaders = helmet({
@@ -94,6 +97,20 @@ function createApp() {
     })
   )
 
+  // Partner-Logos: öffentlich (anders als /uploads), kein Login nötig - siehe routes/admin.js für den
+  // Upload und lib/partners.js für Dateinamen-Regel (LOGO_FILENAME_RE) und Magic-Byte-Prüfung.
+  app.use(
+    '/partner-media',
+    (req, res, next) => {
+      if (!LOGO_FILENAME_RE.test(path.basename(req.path))) return res.status(404).json({ error: 'Nicht gefunden' })
+      next()
+    },
+    express.static(config.partnerMediaDir, {
+      fallthrough: false,
+      setHeaders: (res) => res.setHeader('Cache-Control', PARTNER_LOGO_CACHE)
+    })
+  )
+
   app.use('/api', apiLimiter)
   app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding'], limitWrites)
   app.use('/api', authRoutes)
@@ -104,6 +121,7 @@ function createApp() {
   app.use('/api/notes', notesRoutes)
   app.use('/api/messages', messagesRoutes)
   app.use('/api/admin', adminRoutes)
+  app.use('/api/public/partners', partnersRoutes)
   app.use('/api/uploads', uploadsRoutes)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))
 

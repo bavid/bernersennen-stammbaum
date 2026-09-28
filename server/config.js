@@ -78,6 +78,8 @@ module.exports = {
   voucherQuota: Number(process.env.RUDEL_VOUCHER_QUOTA) || 3,
   dbPath: process.env.DB_PATH || path.join(dataDir, 'data.db'),
   uploadDir: process.env.UPLOAD_DIR || path.join(dataDir, 'uploads'),
+  // Partner-Logos (öffentlich, anders als /uploads) - siehe routes/partners.js und lib/partners.js
+  partnerMediaDir: process.env.PARTNER_MEDIA_DIR || path.join(dataDir, 'partner-media'),
   clientDist: process.env.CLIENT_DIST || path.join(__dirname, '..', 'client', 'dist'),
   cookieSecure: process.env.COOKIE_SECURE === 'true',
   trustProxy: readTrustProxy(),

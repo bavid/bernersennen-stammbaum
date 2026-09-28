@@ -246,4 +246,29 @@ addColumnIfMissing('families', 'auth_epoch', 'INTEGER NOT NULL DEFAULT 0')
 addColumnIfMissing('families', 'voucher_id', 'INTEGER')
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_families_access_key ON families(access_key_hash) WHERE access_key_hash IS NOT NULL')
 
+// Phase 2 Task 2: Partner (Tierheime, Vermittlungsstellen, Hundeschulen, Futter, ...) mit eigener
+// Portalseite (/p/:slug). Nie 'zuechter' - siehe lib/breederGuard.js, das alle Partner-Texte prüft.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS partners (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    typ TEXT NOT NULL CHECK (typ IN ('tierheim','vermittlung','hundeschule','futter','sonstige')),
+    ist_partner INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'entwurf' CHECK (status IN ('entwurf','aktiv','pausiert')),
+    plz TEXT, ort TEXT, lat REAL, lon REAL,
+    website TEXT, spenden_url TEXT, vermittlung_url TEXT,
+    kontakt_email TEXT, kontakt_telefon TEXT,
+    logo_file TEXT, portal_titel TEXT, portal_text TEXT, farbe TEXT,
+    quelle TEXT NOT NULL DEFAULT 'manuell' CHECK (quelle IN ('manuell','osm','sitecheck')),
+    osm_ref TEXT, is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_partners_status ON partners(status);
+`)
+
+// Welcher Partner den Gutschein vergeben hat, mit dem dieses Zuhause entstand ("kam über Partner X") -
+// gesetzt beim Einlösen aus vouchers.partner_id (siehe lib/vouchers.js redeemVoucher).
+addColumnIfMissing('families', 'partner_id', 'INTEGER')
+
 module.exports = db

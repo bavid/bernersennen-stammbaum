@@ -55,4 +55,4 @@ function clearAdminCookie(res) {
   res.clearCookie(ADMIN_COOKIE, options)
 }
 
-module.exports = { requireAdmin, requireUploadAccess, setAdminCookie, clearAdminCookie }
+module.exports = { requireAdmin, requireUploadAccess, setAdminCookie, clearAdminCookie, isAdmin }
