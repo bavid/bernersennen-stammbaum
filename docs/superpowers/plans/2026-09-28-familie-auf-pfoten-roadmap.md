@@ -64,8 +64,8 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 
 | Phase | Inhalt | Plan | Status |
 |---|---|---|---|
-| 0 | Umgebungen: Vorschau-Instanz 3005, lokale Testumgebung, `APP_ENV`-Band, Deploy per SHA | [Plan](2026-09-28-phase-0-umgebungen.md) | ⏳ in Arbeit |
-| D | Design: Name „Familie auf Pfoten", Pfoten-Logo, Themes Standard/Berner, Wortschatz, Theme-Wahl | wird vor Beginn geschrieben | ☐ offen |
+| 0 | Umgebungen: Vorschau-Instanz 3005, lokale Testumgebung, `APP_ENV`-Band, Deploy per SHA | [Plan](2026-09-28-phase-0-umgebungen.md) | 🚀 Vorschau läuft (intern), öffentlich nach Proxy-Eintrag |
+| D | Design: Name „Familie auf Pfoten", Pfoten-Logo, Themes Standard/Berner, Wortschatz, Theme-Wahl, „lebt mit" | [Plan](2026-09-28-phase-d-design-themes.md) | ⏳ in Arbeit |
 | Z | Meine Chronik & Teilen: private Chronik je Haushalt, Wegbegleiter-Zeitleiste (Einzug/Abschied/Herkunft), Tiere und Einträge in Familien teilen, „lebt mit" statt „Adoptiv-…" | wird vor Beginn geschrieben | ☐ offen |
 | 1 | Gutscheine & neuer Login: Codes, Einlösen, Rudel-Schlüssel, Benutzer, PUK, `/v#CODE`, Dev-Panel | wird vor Beginn geschrieben | ☐ offen |
 | 2 | Partner, Portale `/p/:slug`, Partnerübersicht, PLZ/Umkreis, Impressum/Datenschutz | wird vor Beginn geschrieben | ☐ offen |
@@ -90,4 +90,5 @@ Legende: ☐ offen · ⏳ in Arbeit · ✅ fertig (lokal getestet) · 🚀 auf d
 |---|---|---|---|
 | 2026-09-28 | – | `187cdcd` | Konzept nach `main` übernommen, Branch `staging` angelegt, Roadmap erstellt |
 | 2026-09-28 | 0 | `b1f9e7a` | Tasks 1–6: Compose-Parameter, `APP_ENV`, Vorschau-Band, Testdaten mit Prod-Schutz, `npm run dev:test`, `remote.sh` mit REVISION, Instanz-Schutz, Backup vor Deploy |
+| 2026-09-28 | 0 | `08df576` | Tasks 7–8: `manage.ps1 -Target staging`, Vorschau zurücksetzen [11], Vorschau → Prod übernehmen [12], README. Vorschau-Instanz `fap-preview` auf dem Server eingerichtet und mit Beispieldaten gefüllt, Prod unberührt |
 | 2026-09-28 | Z | – | Konzept ergänzt: private Chronik, Wegbegleiter, Teilen in Familien, Zusammenleben statt Abstammung |
