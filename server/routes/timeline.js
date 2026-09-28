@@ -2,23 +2,26 @@ const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
-const { VISIBLE_ENTRY_SQL } = require('../lib/context')
+const { VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
 
 const router = express.Router()
 
 const MAX_COMMENT_LENGTH = 1000
+
+const hasKey = (body, key) => Object.prototype.hasOwnProperty.call(body, key)
 
 function toEntry(row, comments = []) {
   return { ...row, foto_urls: JSON.parse(row.foto_urls), comments }
 }
 
 // Kommentare aller im Bereich sichtbaren Einträge in einer Abfrage statt einer pro Eintrag.
-// Zeigt ALLE Kommentare dieser Einträge (auch von anderen Familien), nicht nur die eigenen.
+// Zeigt nur Kommentare, die im jeweiligen Bereich sichtbar sind (VISIBLE_COMMENT_SQL):
+// der Eintrag-Eigentümer sieht alle, andere Bereiche nur ihre eigenen plus die des Eigentümers.
 function commentsByEntry(familyId, dogId) {
   const rows = db
     .prepare(
       `SELECT c.* FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
-       WHERE ${VISIBLE_ENTRY_SQL} AND (@dogId IS NULL OR t.dog_id = @dogId)
+       WHERE ${VISIBLE_ENTRY_SQL} AND (@dogId IS NULL OR t.dog_id = @dogId) AND ${VISIBLE_COMMENT_SQL}
        ORDER BY c.created_at, c.id`
     )
     .all({ familyId, dogId })
@@ -30,14 +33,16 @@ function commentsByEntry(familyId, dogId) {
 const commentsOf = (entryId) => db.prepare('SELECT * FROM entry_comments WHERE entry_id = ? ORDER BY created_at, id').all(entryId)
 
 // Validiert Titel/Datum/Autor/Text/Fotos/Privat. Liefert { error } oder { values }.
-function readEntryInput(body) {
+// existingPrivat: Wert, der gilt, wenn der Body kein privat-Feld mitschickt (PUT ändert es dann nicht;
+// POST hat naturgemäß keinen bestehenden Wert, Default false).
+function readEntryInput(body, existingPrivat = 0) {
   const values = {
     autor_name: cleanText(body.autorName, 60),
     datum: body.datum,
     titel: cleanText(body.titel, 120),
     text: cleanText(body.text, 5000),
     foto_urls: cleanPhotoList(body.fotoUrls),
-    privat: body.privat ? 1 : 0
+    privat: hasKey(body, 'privat') ? (body.privat ? 1 : 0) : existingPrivat
   }
   if (!values.autor_name || !values.titel || !values.datum) {
     return { error: 'Name, Datum und Titel sind erforderlich' }
@@ -80,7 +85,7 @@ router.get('/recent', requireAuth, (req, res) => {
     .prepare(
       `SELECT t.*, d.name AS dog_name, d.name_unbekannt AS dog_name_unbekannt, d.rasse AS dog_rasse,
               d.foto_url AS dog_foto_url,
-              (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id) AS comment_count
+              (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id AND ${VISIBLE_COMMENT_SQL}) AS comment_count
        FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id
        WHERE ${VISIBLE_ENTRY_SQL}
        ORDER BY t.created_at DESC, t.id DESC
@@ -135,7 +140,7 @@ router.put('/:id', requireAuth, (req, res) => {
   const existing = loadOwnEntry(req, res)
   if (!existing) return
 
-  const { error, values } = readEntryInput(req.body || {})
+  const { error, values } = readEntryInput(req.body || {}, existing.privat)
   if (error) return res.status(400).json({ error })
 
   db.prepare(

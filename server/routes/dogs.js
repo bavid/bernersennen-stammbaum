@@ -3,7 +3,7 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, isUploadUrl } = require('../lib/validate')
 const { dogLabel } = require('../lib/labels')
-const { ART, isMember, canSeeDog, VISIBLE_DOGS_SQL } = require('../lib/context')
+const { ART, membershipsOf, canEnter, canSeeDog, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL } = require('../lib/context')
 
 const router = express.Router()
 
@@ -143,13 +143,21 @@ function loadVisibleDog(req, res) {
   return dog
 }
 
+// Rohe Eltern-Id nur, wenn dieser Elternteil im Bereich viewFamilyId ebenfalls sichtbar ist –
+// sonst verrät die Id (auch ohne eigenen Datensatz abrufbar zu sein) die Existenz eines fremden
+// Tieres. Nur relevant für Nicht-Bearbeiten-Ansichten; Eigentümer sehen ihre echten Ids immer.
+function visibleParentId(parentId, viewFamilyId) {
+  if (!parentId) return null
+  return canSeeDog(viewFamilyId, findDog.get(parentId)) ? parentId : null
+}
+
 // can_edit: 1/0 (SQL-Ausdruck, wie andere Flags à la name_unbekannt). shared_from: Name des
 // Eigentümer-Rudels, nur gesetzt wenn das Tier nicht dem eigenen Bereich gehört.
 router.get('/', requireAuth, (req, res) => {
   const dogs = db
     .prepare(
       `SELECT dogs.*,
-         (SELECT COUNT(*) FROM timeline_entries t WHERE t.dog_id = dogs.id) AS timeline_count,
+         (SELECT COUNT(*) FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${VISIBLE_ENTRY_SQL}) AS timeline_count,
          (dogs.family_id = @familyId) AS can_edit,
          CASE WHEN dogs.family_id != @familyId THEN (SELECT name FROM families f WHERE f.id = dogs.family_id) END AS shared_from
        FROM dogs
@@ -157,6 +165,15 @@ router.get('/', requireAuth, (req, res) => {
        ORDER BY geburtsdatum IS NULL, geburtsdatum, name`
     )
     .all({ familyId: req.familyId })
+    .map((dog) =>
+      dog.can_edit
+        ? dog
+        : {
+            ...dog,
+            mother_dog_id: visibleParentId(dog.mother_dog_id, req.familyId),
+            father_dog_id: visibleParentId(dog.father_dog_id, req.familyId)
+          }
+    )
   res.json(dogs)
 })
 
@@ -200,13 +217,16 @@ const summaryById = db.prepare(
   `SELECT ${SUMMARY_COLUMNS} FROM dogs JOIN families ON families.id = dogs.family_id WHERE dogs.id = ?`
 )
 
-// Elternteil: volle Zusammenfassung wenn im aktuellen Bereich sichtbar, sonst nur der Name (nicht verlinkbar)
-function parentView(parentId, viewFamilyId) {
+// Elternteil-Ansicht: volle Zusammenfassung wenn im aktuellen Bereich sichtbar; sonst nur der Name
+// als Fallback, aber NUR wenn der Elternteil zur selben Eigentümerfamilie wie das Tier gehört
+// (der Normalfall: nur nicht separat geteilt). Gehört er zu einer ganz anderen, unverwandten
+// Familie (Altdaten von vor der API-Validierung), wird nichts preisgegeben, auch nicht der Name.
+function parentView(parentId, ownerFamilyId, viewFamilyId) {
   if (!parentId) return null
   const parentDog = findDog.get(parentId)
   if (!parentDog) return null
   if (canSeeDog(viewFamilyId, parentDog)) return summaryById.get(parentId)
-  return { id: null, name: dogLabel(parentDog) }
+  return parentDog.family_id === ownerFamilyId ? { id: null, name: dogLabel(parentDog) } : null
 }
 
 router.get('/:id', requireAuth, (req, res) => {
@@ -230,13 +250,17 @@ router.get('/:id', requireAuth, (req, res) => {
 
   res.json({
     ...dog,
+    // Rohe Ids in Nicht-Bearbeiten-Ansichten redigieren, wenn der Elternteil hier nicht sichtbar ist;
+    // Eigentümer sehen ihre echten mother_dog_id/father_dog_id immer (auch bei Altdaten-Sonderfällen).
+    mother_dog_id: canEdit ? dog.mother_dog_id : visibleParentId(dog.mother_dog_id, req.familyId),
+    father_dog_id: canEdit ? dog.father_dog_id : visibleParentId(dog.father_dog_id, req.familyId),
     familyName: family.name,
     ownerFamilyId: dog.family_id,
     isOwn: canEdit,
     canEdit,
     shares: canEdit ? listShares.all(dog.id).map((row) => row.family_id) : [],
-    mother: parentView(dog.mother_dog_id, req.familyId),
-    father: parentView(dog.father_dog_id, req.familyId),
+    mother: parentView(dog.mother_dog_id, dog.family_id, req.familyId),
+    father: parentView(dog.father_dog_id, dog.family_id, req.familyId),
     children,
     housemates
   })
@@ -323,6 +347,8 @@ const replaceShares = db.transaction((dogId, familyIds) => {
   for (const familyId of familyIds) insert.run(dogId, familyId)
 })
 
+const MAX_SHARE_TARGETS = 50
+
 router.put('/:id/shares', requireAuth, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
@@ -333,11 +359,18 @@ router.put('/:id/shares', requireAuth, (req, res) => {
   }
 
   const familyIds = (req.body || {}).familyIds
-  const validList = Array.isArray(familyIds) && familyIds.every((id) => Number.isInteger(id) && id > 0)
+  const validList =
+    Array.isArray(familyIds) &&
+    familyIds.length <= MAX_SHARE_TARGETS &&
+    familyIds.every((id) => Number.isInteger(id) && id > 0)
   if (!validList) return res.status(400).json({ error: 'Ungültige Liste von Familien' })
 
+  // Eine einzige membershipsOf-Abfrage statt einer isMember-Abfrage pro Id, zusätzlich Demo-Parität
+  // wie canEnter (kein Wechsel zwischen Demo und Nicht-Demo, selbst bei technischer Mitgliedschaft)
   const uniqueIds = [...new Set(familyIds)]
-  if (!uniqueIds.every((id) => isMember(req.familyId, id))) {
+  const memberships = new Set(membershipsOf(req.familyId).map((m) => m.id))
+  const allowed = uniqueIds.every((id) => memberships.has(id) && canEnter(req.familyId, id))
+  if (!allowed) {
     return res.status(400).json({ error: 'Nur Familien, in denen ihr Mitglied seid' })
   }
 

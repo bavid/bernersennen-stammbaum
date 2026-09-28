@@ -54,4 +54,20 @@ function canSeeDog(familyId, dog) {
   return Boolean(db.prepare('SELECT 1 FROM dog_shares WHERE dog_id = ? AND family_id = ?').get(dog.id, familyId))
 }
 
-module.exports = { ART, membershipsOf, isMember, canEnter, buildMe, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL, canSeeDog }
+// Kommentare, die im Bereich @familyId sichtbar sind: der Eintrag-Eigentümer sieht ALLE
+// Kommentare; jeder andere Bereich (z. B. ein Rudel, in das geteilt wurde) sieht nur eigene
+// Kommentare plus die des Eigentümers – Kommentare fremder, ebenfalls beteiligter Bereiche
+// bleiben untereinander unsichtbar. Erwartet Aliase "c" (entry_comments) und "t" (timeline_entries).
+const VISIBLE_COMMENT_SQL = `(t.family_id = @familyId OR c.family_id = @familyId OR c.family_id = t.family_id)`
+
+module.exports = {
+  ART,
+  membershipsOf,
+  isMember,
+  canEnter,
+  buildMe,
+  VISIBLE_DOGS_SQL,
+  VISIBLE_ENTRY_SQL,
+  VISIBLE_COMMENT_SQL,
+  canSeeDog
+}
