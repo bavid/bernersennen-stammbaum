@@ -1,8 +1,6 @@
-const crypto = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
 const express = require('express')
-const multer = require('multer')
 const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
@@ -12,7 +10,8 @@ const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
 const { createBatch, voucherStatus, validateBatchInput, validateZweck, ZWECK } = require('../lib/vouchers')
 const { formatCode, decryptCode, generateCode, hashCode } = require('../lib/codes')
-const { validatePartner, detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES, SHELTER_TYP_VALUES } = require('../lib/partners')
+const { validatePartner, SHELTER_TYP_VALUES } = require('../lib/partners')
+const { handlePartnerLogoUpload } = require('../lib/partnerLogo')
 const { ART, PARTNER_AREA_ARTS } = require('../lib/context')
 const { PARTNER_AREA_ARTS_SQL, areaArtForTyp, areaLabel, findPartnerArea, insertPartnerArea } = require('../lib/partnerAreas')
 const { partnerAccessBatchOptions } = require('../lib/partnerAccess')
@@ -303,11 +302,6 @@ router.post('/vouchers/:id/revoke', requireAdmin, (req, res) => {
 
 // --- Partner (Task 2) ---------------------------------------------------------------------------
 
-const partnerLogoUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_LOGO_BYTES, files: 1, fields: 0, parts: 2 }
-})
-
 function findPartner(id) {
   return id ? db.prepare('SELECT * FROM partners WHERE id = ?').get(id) : null
 }
@@ -381,37 +375,13 @@ router.put('/partners/:id', requireAdmin, (req, res, next) => {
   }
 })
 
-// Logo: server-vergebener Dateiname (nie der Client-Dateiname), Bild-Art per Magic-Bytes bestätigt
-// (nicht nur per Content-Type-Header) - siehe lib/partners.js detectImageExt. SVG scheitert schon am
-// fehlenden Signatur-Treffer (XSS-Risiko bei eingebettetem Skript in SVG).
+// Logo: dieselbe Funktion wie beim Partner selbst (lib/partnerLogo.js - Magic-Bytes, Größe,
+// Metadaten-Entfernung, server-vergebener Dateiname).
 router.post('/partners/:id/logo', requireAdmin, (req, res, next) => {
   const id = cleanId(req.params.id)
   const partner = findPartner(id)
   if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
-
-  partnerLogoUpload.single('file')(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      const message = err.code === 'LIMIT_FILE_SIZE' ? `Das Logo ist zu groß (max. ${MAX_LOGO_BYTES / 1024} KB)` : 'Upload fehlgeschlagen'
-      return res.status(400).json({ error: message })
-    }
-    if (err) return next(err)
-    if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen' })
-
-    const ext = detectImageExt(req.file.buffer)
-    if (!ext || !LOGO_MIME_TYPES.includes(req.file.mimetype)) {
-      return res.status(400).json({ error: 'Nur PNG, JPG oder WebP sind als Logo erlaubt' })
-    }
-
-    fs.mkdirSync(config.partnerMediaDir, { recursive: true })
-    const filename = `${crypto.randomUUID()}.${ext}`
-    fs.writeFileSync(path.join(config.partnerMediaDir, filename), req.file.buffer)
-
-    if (partner.logo_file) {
-      fs.rmSync(path.join(config.partnerMediaDir, partner.logo_file), { force: true })
-    }
-    db.prepare('UPDATE partners SET logo_file = ? WHERE id = ?').run(filename, id)
-    res.status(201).json({ logoUrl: `/partner-media/${filename}` })
-  })
+  handlePartnerLogoUpload(req, res, next, partner.id)
 })
 
 // Legt für einen Partner seinen eigenen Bereich an, über den das Team selbst die App nutzt - Phase T

@@ -95,15 +95,22 @@ function optionalSession(req, res, next) {
   next()
 }
 
+const DEMO_READ_ONLY = 'Demo-Modus: nur zum Ansehen, keine Änderungen möglich.'
+
+// Schreibsperre für Demo-Sitzungen - läuft NACH requireSession (braucht req.isDemo). Eigene Middleware,
+// damit Router, die lesende POSTs kennen (z. B. routes/partnerArea.js POST /preview/discover), die Sperre
+// gezielt nur an ihre Schreib-Routen hängen können, statt requireAuth pauschal vorzuschalten.
+function denyDemoWrites(req, res, next) {
+  if (req.isDemo && req.method !== 'GET') return res.status(403).json({ error: DEMO_READ_ONLY })
+  next()
+}
+
 // is_demo kommt aus der DB, nicht aus dem Token: so bleibt eine Demo-Familie schreibgeschützt,
 // auch wenn jemand sich mit ihrem echten Passwort ganz normal einloggt.
 function requireAuth(req, res, next) {
   requireSession(req, res, (err) => {
     if (err) return next(err)
-    if (req.isDemo && req.method !== 'GET') {
-      return res.status(403).json({ error: 'Demo-Modus: nur zum Ansehen, keine Änderungen möglich.' })
-    }
-    next()
+    denyDemoWrites(req, res, next)
   })
 }
 
@@ -140,6 +147,7 @@ function refreshSession(req, res, activeId) {
 module.exports = {
   requireAuth,
   requireSession,
+  denyDemoWrites,
   optionalSession,
   signSession,
   setSessionCookie,
