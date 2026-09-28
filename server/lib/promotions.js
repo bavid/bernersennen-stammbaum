@@ -4,7 +4,7 @@
 // routes/adminMarketing.js. Nie Züchter: assertNoBreeder prüft Titel, Text und "Empfehlung von" wie
 // lib/partners.js es für Partner-Texte tut (docs/superpowers/plans/2026-09-29-phase-3-entdecken.md).
 
-const { stripUnsafeChars, sanitizeExternalUrl } = require('./partners')
+const { stripUnsafeChars, sanitizeExternalUrl, publicPartnerSql } = require('./partners')
 const { assertNoBreeder } = require('./breederGuard')
 const { isIsoDate, cleanId } = require('./validate')
 
@@ -16,6 +16,21 @@ const MAX_URL_LENGTH = 300
 const BEREICH_VALUES = ['futter', 'hundeschule', 'begleiter', 'unterstuetzen']
 const KENNZEICHNUNG_VALUES = ['Anzeige', 'Empfehlung', 'Partner']
 const TIERART_VALUES = ['hund', 'katze', 'anderes']
+
+// Öffentlich zeigen (Entdecken, Klick-Weiterleitung) nur Empfehlungen ohne Partner oder mit einem
+// öffentlich sichtbaren Partner (aktiv und nicht gesperrt, lib/partners.js publicPartnerSql) - ein
+// gesperrter, pausierter oder Entwurfs-Partner nimmt seine Empfehlungen mit (Review zu Phase P Task 1).
+// Ein gelöschter Partner (partner_id ohne Zeile, promotions.partner_id hat bewusst keine REFERENCES)
+// zählt ebenfalls als nicht sichtbar. Erwartet einen LEFT JOIN partners <partnerAlias> ON
+// <partnerAlias>.id = <promotionAlias>.partner_id im umgebenden Query.
+const SQL_ALIAS_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
+
+function promotionPartnerVisibleSql(promotionAlias, partnerAlias) {
+  if (!SQL_ALIAS_RE.test(promotionAlias) || !SQL_ALIAS_RE.test(partnerAlias)) {
+    throw new Error('Ungültiger Tabellen-Alias für die Empfehlungs-Abfrage')
+  }
+  return `(${promotionAlias}.partner_id IS NULL OR (${publicPartnerSql(partnerAlias)}))`
+}
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -175,6 +190,7 @@ function validateDonationReport(input = {}) {
 
 module.exports = {
   validatePromotion,
+  promotionPartnerVisibleSql,
   validateDonationReport,
   cleanCents,
   cleanTextInput,

@@ -32,14 +32,17 @@ const dogPhotoStmt = db.prepare(`
   WHERE d.foto_url = @url AND d.public_slug IS NOT NULL AND ${PUBLISHABLE_STATUS_SQL} AND ${PUBLIC_PARTNER_SQL}
 `)
 
-const entryPhotoStmt = db.prepare(`
+// Als eigene Konstante exportiert, damit test/publicMediaQueryPlan.test.js den Plan GENAU dieser Abfrage
+// prüft (statt einer nachgebauten Kopie, die beim nächsten Umbau still auseinanderlaufen könnte).
+const ENTRY_PHOTO_SQL = `
   SELECT 1 FROM dogs d
   JOIN families f ON f.id = d.family_id
   JOIN partners p ON p.id = f.partner_id
   JOIN timeline_entries t ON t.dog_id = d.id
   WHERE d.public_slug IS NOT NULL AND ${PUBLISHABLE_STATUS_SQL} AND ${PUBLIC_PARTNER_SQL}
     AND t.is_public = 1 AND t.privat = 0 AND t.foto_urls LIKE @pattern
-`)
+`
+const entryPhotoStmt = db.prepare(ENTRY_PHOTO_SQL)
 
 // Happy Ends (Phase T Task 6, routes/publicAnimals.js GET /partners/:slug/happy-ends): ein Tier, das
 // dieses Tierheim einmal vermittelt hat, ist längst nicht mehr veröffentlicht (public_slug/
@@ -85,4 +88,4 @@ function canServePublicMedia(filename) {
   return false
 }
 
-module.exports = { canServePublicMedia, FILENAME_RE }
+module.exports = { canServePublicMedia, FILENAME_RE, ENTRY_PHOTO_SQL }

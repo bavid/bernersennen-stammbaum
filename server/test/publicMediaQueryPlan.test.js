@@ -15,6 +15,7 @@ const { useTempDataDir, cleanup } = require('./helpers')
 // EXPLAIN QUERY PLAN auf Index-Nutzung statt eines vollen Scans über timeline_entries.
 const dataDir = useTempDataDir('public-media-query-plan')
 const db = require('../db')
+const { ENTRY_PHOTO_SQL } = require('../lib/publicMedia')
 
 test.after(() => cleanup(dataDir))
 
@@ -49,18 +50,11 @@ function seed() {
 test('lib/publicMedia.js entryPhotoStmt: EXPLAIN QUERY PLAN nutzt Indizes statt eines vollen Scans über timeline_entries', () => {
   seed()
 
-  // Dieselbe Query-Form wie lib/publicMedia.js entryPhotoStmt (siehe dort für die volle Begründung).
-  const plan = db
-    .prepare(
-      `EXPLAIN QUERY PLAN
-       SELECT 1 FROM dogs d
-       JOIN families f ON f.id = d.family_id
-       JOIN partners p ON p.id = f.partner_id
-       JOIN timeline_entries t ON t.dog_id = d.id
-       WHERE d.public_slug IS NOT NULL AND d.vermittlung_status IN ('in_vermittlung', 'reserviert') AND p.status = 'aktiv'
-         AND t.is_public = 1 AND t.privat = 0 AND t.foto_urls LIKE @pattern`
-    )
-    .all({ pattern: '%"/uploads/test.jpg"%' })
+  // GENAU die Abfrage aus lib/publicMedia.js entryPhotoStmt (siehe dort für die volle Begründung) - aus
+  // denselben Bausteinen gebaut (publishableSql/publicPartnerSql), keine nachgebaute Kopie.
+  assert.match(ENTRY_PHOTO_SQL, /gesperrt = 0/, 'die geprüfte Abfrage enthält die Sperr-Prüfung (Phase P Task 1)')
+  assert.match(ENTRY_PHOTO_SQL, /'pausiert'/, 'die geprüfte Abfrage enthält den Status pausiert (Phase P Task 1)')
+  const plan = db.prepare(`EXPLAIN QUERY PLAN ${ENTRY_PHOTO_SQL}`).all({ pattern: '%"/uploads/test.jpg"%' })
 
   const planText = plan.map((row) => row.detail).join('\n')
 

@@ -49,6 +49,23 @@ test('Gesperrte Partner verschwinden aus allen öffentlichen Wegen, Status wird 
   const animalSlug = (await put(`/api/dogs/${dog.id}/steckbrief`, { published: true }, shelterCookie)).data.public_slug
   assert.ok(animalSlug)
 
+  // Empfehlungen (promotions): eine hängt am Partner, eine an gar keinem - nur die erste verschwindet mit
+  // ihrem Partner (Review zu Phase P Task 1).
+  function insertPromotion(titel, partnerId) {
+    return db
+      .prepare(
+        `INSERT INTO promotions (partner_id, bereich, kennzeichnung, titel, url, aktiv, is_demo)
+         VALUES (?, 'hundeschule', 'Empfehlung', ?, 'https://example.org/empfehlung', 1, 0)`
+      )
+      .run(partnerId, titel).lastInsertRowid
+  }
+  const schoolPromotionId = insertPromotion('Welpenkurs im Park', school.id)
+  const freePromotionId = insertPromotion('Ratgeber Leinenführigkeit', null)
+
+  async function promotionRedirectStatus(id) {
+    return (await fetch(`${base}/r/promotion/${id}`, { redirect: 'manual' })).status
+  }
+
   async function nearSlugs() {
     return (await post('/api/public/partners/near', { plz: '10115', radius: 10 }, null)).data.map((p) => p.slug)
   }
@@ -75,6 +92,11 @@ test('Gesperrte Partner verschwinden aus allen öffentlichen Wegen, Status wird 
     assert.equal(found.hundeschulen.some((c) => c.slug === 'hundeschule-riegel'), expected.school, 'Entdecken hundeschulen')
     assert.equal(found.begleiter.partner.some((c) => c.slug === 'tierheim-riegel'), expected.shelter, 'Entdecken begleiter.partner')
     assert.equal(found.begleiter.tiere.some((c) => c.slug === animalSlug), expected.shelter, 'Entdecken begleiter.tiere')
+    const promotionIds = found.hundeschulen.filter((c) => c.kind === 'promotion').map((c) => c.id)
+    assert.equal(promotionIds.includes(schoolPromotionId), expected.school, 'Empfehlung des Partners in Entdecken')
+    assert.ok(promotionIds.includes(freePromotionId), 'Empfehlung ohne Partner bleibt in Entdecken')
+    assert.equal(await promotionRedirectStatus(schoolPromotionId), expected.school ? 302 : 404, 'Klick-Weiterleitung Empfehlung')
+    assert.equal(await promotionRedirectStatus(freePromotionId), 302, 'Klick-Weiterleitung Empfehlung ohne Partner')
 
     const shelterStatus = expected.shelter ? 200 : 404
     assert.equal((await get(`/api/public/animals/${animalSlug}`)).status, shelterStatus, 'Steckbrief')

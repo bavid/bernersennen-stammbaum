@@ -6,6 +6,7 @@ const { requireSession } = require('../middleware/auth')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { lookupPlz, distanceKm } = require('../lib/geo')
 const { publicPartner, publicPartnerSql } = require('../lib/partners')
+const { promotionPartnerVisibleSql } = require('../lib/promotions')
 const { getShelterAnimalCards } = require('./publicAnimals')
 
 // Phase 3 Task 2: Reiter "Entdecken" - eine Antwort bündelt alle vier Abschnitte
@@ -74,14 +75,17 @@ function activePartnerRows(typs, req) {
 }
 
 // Aktive Empfehlungen/Anzeigen eines Bereichs im Zeitfenster (NULL = offen), nach sort/Titel sortiert.
+// Hängt eine Empfehlung an einem Partner, muss der öffentlich sichtbar sein (promotionPartnerVisibleSql).
 function activePromotionRows(bereich, req) {
   return db
     .prepare(
-      `SELECT * FROM promotions
-       WHERE bereich = ? AND aktiv = 1 AND is_demo = ?
-         AND (start IS NULL OR start <= date('now'))
-         AND (ende IS NULL OR ende >= date('now'))
-       ORDER BY sort, titel`
+      `SELECT m.* FROM promotions m
+       LEFT JOIN partners p ON p.id = m.partner_id
+       WHERE m.bereich = ? AND m.aktiv = 1 AND m.is_demo = ?
+         AND (m.start IS NULL OR m.start <= date('now'))
+         AND (m.ende IS NULL OR m.ende >= date('now'))
+         AND ${promotionPartnerVisibleSql('m', 'p')}
+       ORDER BY m.sort, m.titel`
     )
     .all(bereich, contentDemoValue(req))
 }
