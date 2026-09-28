@@ -1,6 +1,7 @@
 import { forwardRef } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
+import Icon from './Icon.jsx'
 import { displayName, sexLabel, shortName } from '../lib/timeline.js'
 import { yearOf } from '../lib/dates.js'
 
@@ -27,7 +28,15 @@ const DogCard = forwardRef(function DogCard({ dog, livesWithLabel, highlighted, 
         title={displayName(dog)}
         {...hoverProps}
       >
-        <Avatar dog={dog} size={40} />
+        <span className="dog-mini-avatar">
+          <Avatar dog={dog} size={40} />
+          {/* Zu wenig Platz für einen Text-Tag – hier reicht das Haus-Symbol mit Titel/aria-label */}
+          {dog.shared_from && (
+            <span className="dog-mini-badge" title={`aus ${dog.shared_from}`} aria-label={`aus ${dog.shared_from}`}>
+              <Icon name="home" />
+            </span>
+          )}
+        </span>
         <span className="dog-mini-name">{name}</span>
       </Link>
     )
@@ -72,12 +81,18 @@ const DogCard = forwardRef(function DogCard({ dog, livesWithLabel, highlighted, 
           <span className="sex-label">{sexLabel(dog.geschlecht, dog.tierart)}</span>
           {year && <span>{year}</span>}
         </span>
-        {dog.external && <span className="dog-card-tag">{dog.familyName}</span>}
-        {!dog.external && livesWithLabel && <span className="dog-card-tag dog-card-housemate">{livesWithLabel}</span>}
-        {!dog.external && !livesWithLabel && dog.timeline_count > 0 && (
-          <span className="dog-card-tag">
-            {dog.timeline_count} {dog.timeline_count === 1 ? 'Eintrag' : 'Einträge'}
-          </span>
+        {dog.shared_from ? (
+          <span className="dog-card-tag dog-card-shared">aus {dog.shared_from}</span>
+        ) : dog.external ? (
+          <span className="dog-card-tag">{dog.familyName}</span>
+        ) : livesWithLabel ? (
+          <span className="dog-card-tag dog-card-housemate">{livesWithLabel}</span>
+        ) : (
+          dog.timeline_count > 0 && (
+            <span className="dog-card-tag">
+              {dog.timeline_count} {dog.timeline_count === 1 ? 'Eintrag' : 'Einträge'}
+            </span>
+          )
         )}
       </span>
     </Link>

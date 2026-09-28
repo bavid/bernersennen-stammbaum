@@ -54,7 +54,15 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
     <article className="entry-card">
       <header className="entry-head">
         <div>
-          <h3 className="entry-title">{item.titel}</h3>
+          <h3 className="entry-title">
+            {item.titel}
+            {item.privat ? (
+              <span className="privat-badge" title="Privater Eintrag" aria-label="Privater Eintrag">
+                <Icon name="lock" />
+                privat
+              </span>
+            ) : null}
+          </h3>
           <p className="entry-meta">
             von {item.autor_name}
             {age ? ` · ${age} alt` : ''}

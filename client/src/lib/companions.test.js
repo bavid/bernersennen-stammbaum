@@ -1,5 +1,14 @@
 import { describe, expect, test } from 'vitest'
-import { HERKUNFT_LABELS, companionRows, herkunftText, nextAnniversary, position, yearSpan, yearsTogether } from './companions.js'
+import {
+  HERKUNFT_LABELS,
+  companionLine,
+  companionRows,
+  herkunftText,
+  nextAnniversary,
+  position,
+  yearSpan,
+  yearsTogether
+} from './companions.js'
 
 const dog = (id, name, extra = {}) => ({
   id,
@@ -154,5 +163,52 @@ describe('herkunftText', () => {
 
   test('HERKUNFT_LABELS covers every herkunft_art', () => {
     expect(Object.keys(HERKUNFT_LABELS)).toEqual(['tierheim', 'privat', 'zuechter', 'nachwuchs', 'fundtier', 'anderes'])
+  })
+})
+
+describe('companionLine', () => {
+  test('ongoing: move-in date and herkunft combine with a middot', () => {
+    expect(
+      companionLine(dog(1, 'Nele', { bei_uns_seit: '2021-06-12', herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }))
+    ).toEqual({ text: 'Bei euch seit 12. Juni 2021 · aus dem Tierheim – Tierheim Sonnenhang', memorial: false })
+  })
+
+  test('ongoing: only the move-in date, no herkunft', () => {
+    expect(companionLine(dog(1, 'Nele', { bei_uns_seit: '2021-06-12' }))).toEqual({
+      text: 'Bei euch seit 12. Juni 2021',
+      memorial: false
+    })
+  })
+
+  test('ongoing: only herkunft, no move-in date', () => {
+    expect(companionLine(dog(1, 'Nele', { herkunft_art: 'zuechter' }))).toEqual({ text: 'vom Züchter', memorial: false })
+  })
+
+  test('ongoing: nothing known -> null', () => {
+    expect(companionLine(dog(1, 'Nele'))).toBeNull()
+  })
+
+  test('departed, verstorben: "In Erinnerung" with the year span', () => {
+    expect(companionLine(dog(1, 'Aiko', { bei_uns_seit: '2010-01-01', bei_uns_bis: '2022-06-01', abschied_grund: 'verstorben' }))).toEqual(
+      { text: 'In Erinnerung · 2010–2022', memorial: true }
+    )
+  })
+
+  test('departed, verstorben: falls back to the birth year without a move-in date', () => {
+    expect(companionLine(dog(1, 'Aiko', { geburtsdatum: '2010-01-01', bei_uns_bis: '2022-06-01', abschied_grund: 'verstorben' }))).toEqual(
+      { text: 'In Erinnerung · 2010–2022', memorial: true }
+    )
+  })
+
+  test('departed, other reason: year span plus the reason label', () => {
+    expect(companionLine(dog(1, 'Bello', { bei_uns_seit: '2018-01-01', bei_uns_bis: '2020-01-01', abschied_grund: 'abgegeben' }))).toEqual(
+      { text: 'Bei euch 2018–2020 · abgegeben', memorial: false }
+    )
+    expect(companionLine(dog(1, 'Bello', { bei_uns_seit: '2018-01-01', bei_uns_bis: '2020-01-01', abschied_grund: 'umgezogen' }))).toEqual(
+      { text: 'Bei euch 2018–2020 · umgezogen', memorial: false }
+    )
+    expect(companionLine(dog(1, 'Bello', { bei_uns_seit: '2018-01-01', bei_uns_bis: '2020-01-01', abschied_grund: 'anderes' }))).toEqual(
+      { text: 'Bei euch 2018–2020 · aus anderem Grund', memorial: false }
+    )
   })
 })

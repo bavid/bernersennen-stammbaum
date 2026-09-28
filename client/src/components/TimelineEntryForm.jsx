@@ -5,12 +5,15 @@ import { todayIso } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
 // Neuer oder bearbeiteter Timeline-Eintrag. Das Datum bestimmt die Position in der Chronik.
-export default function TimelineEntryForm({ entry, onSubmit, onDelete, onCancel }) {
+// isHousehold: der aktive Bereich ist ein Haushalt ("Meine Chronik") – nur dort kann ein Eintrag als
+// privat markiert werden (sonst gibt es niemanden, vor dem er verborgen bleiben könnte).
+export default function TimelineEntryForm({ entry, isHousehold, onSubmit, onDelete, onCancel }) {
   const [autorName, setAutorName] = useState(() => entry?.autor_name || readSetting('autorName', ''))
   const [datum, setDatum] = useState(() => entry?.datum || todayIso())
   const [titel, setTitel] = useState(entry?.titel || '')
   const [text, setText] = useState(entry?.text || '')
   const [fotos, setFotos] = useState(entry?.foto_urls || [])
+  const [privat, setPrivat] = useState(Boolean(entry?.privat))
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -21,7 +24,7 @@ export default function TimelineEntryForm({ entry, onSubmit, onDelete, onCancel 
     setSaving(true)
     try {
       writeSetting('autorName', autorName.trim())
-      await onSubmit({ autorName, datum, titel, text, fotoUrls: fotos })
+      await onSubmit({ autorName, datum, titel, text, fotoUrls: fotos, privat })
     } catch (err) {
       setError(err.message)
       setSaving(false)
@@ -90,6 +93,15 @@ export default function TimelineEntryForm({ entry, onSubmit, onDelete, onCancel 
         <span className="field-label">Fotos</span>
         <PhotoPicker value={fotos} onChange={setFotos} label="Fotos" onBusyChange={setUploading} onError={setError} />
       </div>
+      {isHousehold && (
+        <div className="field span-2">
+          <label className="check">
+            <input type="checkbox" checked={privat} onChange={(e) => setPrivat(e.target.checked)} />
+            Nur für uns (privat)
+          </label>
+          <span className="field-hint">Private Einträge sehen nur die Menschen in eurem Zuhause.</span>
+        </div>
+      )}
       <div className="form-actions span-2">
         {onDelete && <ConfirmButton onConfirm={handleDelete} label="Eintrag löschen" disabled={saving} />}
         <span className="form-actions-spacer" />

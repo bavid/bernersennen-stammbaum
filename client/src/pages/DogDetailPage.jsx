@@ -8,11 +8,13 @@ import Modal from '../components/Modal.jsx'
 import Lightbox from '../components/Lightbox.jsx'
 import DogForm from '../components/DogForm.jsx'
 import Housemates from '../components/Housemates.jsx'
+import SharePanel from '../components/SharePanel.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
+import { companionLine } from '../lib/companions.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
@@ -40,6 +42,7 @@ function housemateLine(dog) {
 function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
   const livesWith = housemateLine(dog)
   const age = dog.geburtsdatum ? ageText(dog.geburtsdatum) : null
+  const companion = companionLine(dog)
   return (
     <header className="dog-hero">
       <div className="dog-hero-photo">
@@ -59,6 +62,11 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
         </span>
         <h1 className={dog.name_unbekannt ? 'is-unknown' : undefined}>{displayName(dog)}</h1>
         {!dog.name_unbekannt && dog.name !== shortName(dog.name) && <p className="dog-hero-fullname">{dog.name}</p>}
+        {companion && (
+          <p className={`dog-hero-companion ${companion.memorial ? 'is-memorial' : ''}`}>
+            {companion.memorial && <Icon name="heart" />} {companion.text}
+          </p>
+        )}
         {livesWith && (
           <p className="dog-hero-housemate">
             <Icon name="heart" /> {livesWith}
@@ -137,7 +145,7 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
   )
 }
 
-export default function DogDetailPage({ family }) {
+export default function DogDetailPage({ family, onFamilyChange }) {
   const { words } = useTheme()
   const { id } = useParams()
   const navigate = useNavigate()
@@ -305,6 +313,19 @@ export default function DogDetailPage({ family }) {
     navigate('/stammbaum')
   }
 
+  // Ein hierher geteiltes Tier des eigenen Haushalts bearbeiten: zurück zu "Meine Chronik" wechseln,
+  // dort neu laden (canEdit wechselt serverseitig mit dem aktiven Bereich) und zur selben Tierseite.
+  async function handleSwitchToHome() {
+    try {
+      const me = await api.view(family.home.id)
+      onFamilyChange?.(me)
+      await load()
+      navigate(`/tier/${dog.id}`)
+    } catch (err) {
+      toast(err.message)
+    }
+  }
+
   function toggleOrder() {
     setNewestFirst(!newestFirst)
     writeSetting('newestFirst', !newestFirst)
@@ -333,6 +354,10 @@ export default function DogDetailPage({ family }) {
         onOpenPhoto={setPhoto}
       />
 
+      {dog.canEdit && family.art === 'zuhause' && (
+        <SharePanel key={dog.id} dog={dog} family={family} onFamilyChange={onFamilyChange} />
+      )}
+
       <section className="chronicle" aria-labelledby="chronicle-title">
         <div className="chronicle-head">
           <div>
@@ -347,10 +372,15 @@ export default function DogDetailPage({ family }) {
           )}
         </div>
 
-        {!dog.isOwn && (
-          <p className="notice">
-            {firstName} gehört zu „{dog.familyName}“. Die Chronik ist nur für {words.thisGroup} sichtbar.
-          </p>
+        {!dog.canEdit && (
+          <div className="notice notice-with-action">
+            <p>Lebt im Zuhause „{dog.familyName}“ und wird hier geteilt.</p>
+            {dog.ownerFamilyId === family.home?.id && (
+              <button type="button" className="btn btn-ghost" onClick={handleSwitchToHome}>
+                In Meiner Chronik bearbeiten
+              </button>
+            )}
+          </div>
         )}
 
         {dog.isOwn && (
@@ -358,7 +388,11 @@ export default function DogDetailPage({ family }) {
             {composerOpen ? (
               <>
                 <h3 className="composer-title">Neue Erinnerung zu {about}</h3>
-                <TimelineEntryForm onSubmit={handleCreateEntry} onCancel={() => setComposerOpen(false)} />
+                <TimelineEntryForm
+                  isHousehold={family.art === 'zuhause'}
+                  onSubmit={handleCreateEntry}
+                  onCancel={() => setComposerOpen(false)}
+                />
               </>
             ) : (
               <button type="button" className="composer-trigger" onClick={() => setComposerOpen(true)}>
@@ -390,6 +424,7 @@ export default function DogDetailPage({ family }) {
         {editingEntry && (
           <TimelineEntryForm
             entry={editingEntry}
+            isHousehold={family.art === 'zuhause'}
             onSubmit={handleUpdateEntry}
             onDelete={handleDeleteEntry}
             onCancel={() => setEditingEntry(null)}

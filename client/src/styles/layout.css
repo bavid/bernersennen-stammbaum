@@ -345,6 +345,18 @@
   font-weight: 600;
 }
 
+.notice-with-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.notice-with-action p {
+  margin: 0;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;

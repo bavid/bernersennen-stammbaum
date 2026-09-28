@@ -2,7 +2,31 @@ import { useState } from 'react'
 import ParentPicker from './ParentPicker.jsx'
 import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
+import Icon from './Icon.jsx'
 import { dogLabel, sexLabel, speciesLabel, speciesNoun } from '../lib/timeline.js'
+
+const HERKUNFT_OPTIONS = [
+  { value: '', label: '–' },
+  { value: 'tierheim', label: 'Tierheim/Tierschutz' },
+  { value: 'privat', label: 'von privat' },
+  { value: 'zuechter', label: 'vom Züchter' },
+  { value: 'nachwuchs', label: 'eigener Nachwuchs' },
+  { value: 'fundtier', label: 'Fundtier' },
+  { value: 'anderes', label: 'anderes' }
+]
+
+const ABSCHIED_OPTIONS = [
+  { value: '', label: '– bitte wählen –' },
+  { value: 'verstorben', label: 'verstorben' },
+  { value: 'abgegeben', label: 'abgegeben' },
+  { value: 'umgezogen', label: 'umgezogen' },
+  { value: 'anderes', label: 'anderes' }
+]
+
+// Ist irgendetwas aus "Bei uns" bereits gesetzt? Dann startet der Abschnitt aufgeklappt statt eingeklappt.
+function hasCompanionInfo(dog) {
+  return Boolean(dog?.bei_uns_seit || dog?.bei_uns_bis || dog?.herkunft_art || dog?.herkunft_text)
+}
 
 export const SPECIES = ['hund', 'katze', 'anderes']
 
@@ -37,7 +61,13 @@ function initialState(dog) {
     beschreibung: dog?.beschreibung || '',
     fotos: dog?.foto_url ? [dog.foto_url] : [],
     mother: { dogId: dog?.mother_dog_id || '', freitext: dog?.mother_freitext || '' },
-    father: { dogId: dog?.father_dog_id || '', freitext: dog?.father_freitext || '' }
+    father: { dogId: dog?.father_dog_id || '', freitext: dog?.father_freitext || '' },
+    beiUnsSeit: dog?.bei_uns_seit || '',
+    herkunftArt: dog?.herkunft_art || '',
+    herkunftText: dog?.herkunft_text || '',
+    nichtMehrBeiUns: Boolean(dog?.bei_uns_bis),
+    beiUnsBis: dog?.bei_uns_bis || '',
+    abschiedGrund: dog?.abschied_grund || ''
   }
 }
 
@@ -56,7 +86,13 @@ function toPayload(form) {
     motherDogId: form.mother.dogId || null,
     motherFreitext: form.mother.freitext || null,
     fatherDogId: form.father.dogId || null,
-    fatherFreitext: form.father.freitext || null
+    fatherFreitext: form.father.freitext || null,
+    beiUnsSeit: form.beiUnsSeit || null,
+    herkunftArt: form.herkunftArt || null,
+    herkunftText: form.herkunftText || null,
+    // Unchecking "nicht mehr bei uns" räumt Abschiedsdatum und -grund wieder ab
+    beiUnsBis: form.nichtMehrBeiUns ? form.beiUnsBis || null : null,
+    abschiedGrund: form.nichtMehrBeiUns ? form.abschiedGrund || null : null
   }
 }
 
@@ -66,6 +102,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [companionOpen, setCompanionOpen] = useState(() => hasCompanionInfo(dog))
 
   const update = (patch) => setForm((current) => ({ ...current, ...patch }))
   const fields = SPECIES_FIELDS[form.tierart] || SPECIES_FIELDS.hund
@@ -259,6 +296,109 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
         ownFamilyId={ownFamilyId}
       />
 
+      <fieldset className="field span-2 companion-fieldset">
+        <legend className="field-label">Bei uns</legend>
+        {companionOpen ? (
+          <div className="companion-fields">
+            <div className="field">
+              <label className="field-label" htmlFor="dog-bei-uns-seit">
+                Einzug
+              </label>
+              <input
+                id="dog-bei-uns-seit"
+                type="date"
+                value={form.beiUnsSeit}
+                onChange={(e) => update({ beiUnsSeit: e.target.value })}
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label" htmlFor="dog-herkunft-art">
+                Herkunft
+              </label>
+              <select
+                id="dog-herkunft-art"
+                value={form.herkunftArt}
+                onChange={(e) => update({ herkunftArt: e.target.value })}
+              >
+                {HERKUNFT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field span-2">
+              <label className="field-label" htmlFor="dog-herkunft-text">
+                Woher genau <span className="muted">(optional)</span>
+              </label>
+              <input
+                id="dog-herkunft-text"
+                value={form.herkunftText}
+                onChange={(e) => update({ herkunftText: e.target.value })}
+                placeholder="z. B. Tierheim Sonnenhang"
+                maxLength={120}
+              />
+            </div>
+
+            <div className="field span-2">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={form.nichtMehrBeiUns}
+                  onChange={(e) => {
+                    const nichtMehrBeiUns = e.target.checked
+                    update({
+                      nichtMehrBeiUns,
+                      ...(!nichtMehrBeiUns && { beiUnsBis: '', abschiedGrund: '' })
+                    })
+                  }}
+                />
+                Nicht mehr bei uns
+              </label>
+            </div>
+
+            {form.nichtMehrBeiUns && (
+              <>
+                <div className="field">
+                  <label className="field-label" htmlFor="dog-bei-uns-bis">
+                    Abschied
+                  </label>
+                  <input
+                    id="dog-bei-uns-bis"
+                    type="date"
+                    value={form.beiUnsBis}
+                    onChange={(e) => update({ beiUnsBis: e.target.value })}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="dog-abschied-grund">
+                    Grund
+                  </label>
+                  <select
+                    id="dog-abschied-grund"
+                    value={form.abschiedGrund}
+                    onChange={(e) => update({ abschiedGrund: e.target.value })}
+                  >
+                    {ABSCHIED_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <button type="button" className="disclosure-btn" onClick={() => setCompanionOpen(true)} aria-expanded="false">
+            <Icon name="chevronDown" />
+            Einzug, Herkunft, Abschied
+          </button>
+        )}
+      </fieldset>
+
       <div className="field span-2">
         <label className="field-label" htmlFor="dog-description">
           Beschreibung
@@ -279,7 +419,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
           Abbrechen
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
-          {saving ? 'Speichere …' : dog ? 'Änderungen speichern' : `${noun} anlegen`}
+          {saving ? 'Speichere …' : dog ? 'Änderungen speichern' : 'Tier anlegen'}
         </button>
       </div>
     </form>

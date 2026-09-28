@@ -1,6 +1,6 @@
 // Wegbegleiter: Zeitspanne je Tier – vom Einzug (sonst Geburt) bis Abschied (sonst heute) –
 // dazu die Achse für die Zeitleiste, Herkunftstexte und der nächste Einzugs-Jahrestag.
-import { todayIso } from './dates.js'
+import { formatDateLong, todayIso, yearOf } from './dates.js'
 
 const DAY_MS = 86400000
 
@@ -85,4 +85,37 @@ export function herkunftText(dog) {
   if (art === 'anderes') return text || ''
   const label = HERKUNFT_LABELS[art] || ''
   return text ? `${label} – ${text}` : label
+}
+
+const ABSCHIED_GRUND_LABELS = {
+  abgegeben: 'abgegeben',
+  umgezogen: 'umgezogen',
+  anderes: 'aus anderem Grund'
+}
+
+// Zeile unter Name/Rasse im Hero der Tierseite: fasst Einzug/Herkunft (noch bei uns) oder Abschied
+// (gegangen) in einem Satz zusammen. null, wenn dazu nichts bekannt ist. memorial löst die
+// zurückhaltende "In Erinnerung"-Variante aus (wie schon in CompanionTimeline für "verstorben").
+export function companionLine(dog) {
+  if (dog.bei_uns_bis) {
+    const from = yearOf(dog.bei_uns_seit || dog.geburtsdatum)
+    const to = yearOf(dog.bei_uns_bis)
+    const span = from && to ? `${from}–${to}` : to ? `${to}` : ''
+
+    if (dog.abschied_grund === 'verstorben') {
+      return { text: span ? `In Erinnerung · ${span}` : 'In Erinnerung', memorial: true }
+    }
+
+    const grund = ABSCHIED_GRUND_LABELS[dog.abschied_grund] || ''
+    const parts = [span ? `Bei euch ${span}` : 'Bei euch']
+    if (grund) parts.push(grund)
+    return { text: parts.join(' · '), memorial: false }
+  }
+
+  const parts = []
+  if (dog.bei_uns_seit) parts.push(`Bei euch seit ${formatDateLong(dog.bei_uns_seit)}`)
+  const herkunft = herkunftText(dog)
+  if (herkunft) parts.push(herkunft)
+  if (!parts.length) return null
+  return { text: parts.join(' · '), memorial: false }
 }
