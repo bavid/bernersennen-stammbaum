@@ -7,6 +7,7 @@ const config = require('../config')
 const { requireAuth, setSessionCookie, clearSessionCookie } = require('../middleware/auth')
 const { rejectHoneypot } = require('../middleware/abuse')
 const { cleanText } = require('../lib/validate')
+const { isTheme } = require('../lib/themes')
 
 const router = express.Router()
 
@@ -30,7 +31,7 @@ function safeEqual(a, b) {
 }
 
 async function findFamilyByPassword(password) {
-  const families = db.prepare('SELECT id, name, password_hash FROM families').all()
+  const families = db.prepare('SELECT id, name, theme, password_hash FROM families').all()
   for (const family of families) {
     if (await bcrypt.compare(password, family.password_hash)) return family
   }
@@ -66,7 +67,7 @@ router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => 
       .run(trimmedName, passwordHash, cleanText(quelle, MAX_QUELLE_LENGTH))
 
     setSessionCookie(res, result.lastInsertRowid)
-    res.status(201).json({ id: result.lastInsertRowid, name: trimmedName })
+    res.status(201).json({ id: result.lastInsertRowid, name: trimmedName, theme: 'standard' })
   } catch (err) {
     next(err)
   }
@@ -87,7 +88,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
     }
 
     setSessionCookie(res, match.id)
-    res.json({ id: match.id, name: match.name })
+    res.json({ id: match.id, name: match.name, theme: match.theme })
   } catch (err) {
     next(err)
   }
@@ -95,10 +96,10 @@ router.post('/login', authLimiter, async (req, res, next) => {
 
 // Öffentlicher Einstieg ohne Passwort: loggt ins schreibgeschützte Demo-Rudel ein (falls vorhanden)
 router.post('/demo', authLimiter, (req, res) => {
-  const demoFamily = db.prepare('SELECT id, name FROM families WHERE is_demo = 1 ORDER BY id DESC LIMIT 1').get()
+  const demoFamily = db.prepare('SELECT id, name, theme FROM families WHERE is_demo = 1 ORDER BY id DESC LIMIT 1').get()
   if (!demoFamily) return res.status(404).json({ error: 'Keine Demo verfügbar' })
   setSessionCookie(res, demoFamily.id)
-  res.json({ id: demoFamily.id, name: demoFamily.name, isDemo: true })
+  res.json({ id: demoFamily.id, name: demoFamily.name, theme: demoFamily.theme, isDemo: true })
 })
 
 router.post('/logout', (req, res) => {
@@ -106,16 +107,28 @@ router.post('/logout', (req, res) => {
   res.status(204).end()
 })
 
-// Rudel umbenennen – betrifft alle, die das gemeinsame Passwort nutzen (Warnung im Frontend)
+// Name und/oder Aussehen der Familie ändern – betrifft alle, die das gemeinsame Passwort nutzen
 router.put('/family', requireAuth, (req, res) => {
-  const { name } = req.body || {}
-  const trimmedName = typeof name === 'string' ? name.trim() : ''
-  if (!trimmedName) return res.status(400).json({ error: 'Der Rudelname darf nicht leer sein' })
-  if (trimmedName.length > MAX_NAME_LENGTH) {
-    return res.status(400).json({ error: `Der Rudelname darf höchstens ${MAX_NAME_LENGTH} Zeichen haben` })
+  const { name, theme } = req.body || {}
+  if (name === undefined && theme === undefined) {
+    return res.status(400).json({ error: 'Nichts zu ändern' })
   }
-  db.prepare('UPDATE families SET name = ? WHERE id = ?').run(trimmedName, req.familyId)
-  res.json({ id: req.familyId, name: trimmedName })
+  const updates = {}
+  if (name !== undefined) {
+    const trimmedName = typeof name === 'string' ? name.trim() : ''
+    if (!trimmedName) return res.status(400).json({ error: 'Der Name darf nicht leer sein' })
+    if (trimmedName.length > MAX_NAME_LENGTH) {
+      return res.status(400).json({ error: `Der Name darf höchstens ${MAX_NAME_LENGTH} Zeichen haben` })
+    }
+    updates.name = trimmedName
+  }
+  if (theme !== undefined) {
+    if (!isTheme(theme)) return res.status(400).json({ error: 'Dieses Aussehen gibt es nicht' })
+    updates.theme = theme
+  }
+  if (updates.name) db.prepare('UPDATE families SET name = ? WHERE id = ?').run(updates.name, req.familyId)
+  if (updates.theme) db.prepare('UPDATE families SET theme = ? WHERE id = ?').run(updates.theme, req.familyId)
+  res.json(db.prepare('SELECT id, name, theme FROM families WHERE id = ?').get(req.familyId))
 })
 
 // Einladungscode für eingeloggte Mitglieder – damit sie ihn an Bekannte weitergeben können
@@ -125,7 +138,7 @@ router.get('/invite', requireAuth, (req, res) => {
 })
 
 router.get('/me', requireAuth, (req, res) => {
-  const family = db.prepare('SELECT id, name FROM families WHERE id = ?').get(req.familyId)
+  const family = db.prepare('SELECT id, name, theme FROM families WHERE id = ?').get(req.familyId)
   res.json({ ...family, isDemo: req.isDemo })
 })
 

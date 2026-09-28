@@ -132,7 +132,9 @@ db.exec(`
 // Spalten, die nach dem ersten Release dazukamen – bestehende Datenbanken werden ergänzt.
 function addColumnIfMissing(table, column, definition) {
   const exists = db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column)
-  if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+  if (exists) return false
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+  return true
 }
 
 addColumnIfMissing('dogs', 'rasse', 'TEXT')
@@ -140,5 +142,10 @@ addColumnIfMissing('dogs', 'name_unbekannt', 'INTEGER NOT NULL DEFAULT 0')
 addColumnIfMissing('dogs', 'tierart', "TEXT NOT NULL DEFAULT 'hund'")
 addColumnIfMissing('families', 'quelle', 'TEXT')
 addColumnIfMissing('families', 'is_demo', 'INTEGER NOT NULL DEFAULT 0')
+
+// Bestehende Rudel behalten ihren Berner-Auftritt, neue Familien starten mit „Familie auf Pfoten"
+if (addColumnIfMissing('families', 'theme', "TEXT NOT NULL DEFAULT 'standard'")) {
+  db.exec("UPDATE families SET theme = 'berner'")
+}
 
 module.exports = db

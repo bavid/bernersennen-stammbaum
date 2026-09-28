@@ -17,9 +17,9 @@ function run(env, args = []) {
 function familiesIn(dir) {
   const Database = require('better-sqlite3')
   const db = new Database(path.join(dir, 'data.db'), { readonly: true })
-  const rows = db.prepare('SELECT name, is_demo FROM families ORDER BY name').all()
+  const rows = db.prepare('SELECT name, is_demo, theme FROM families ORDER BY name').all()
   db.close()
-  return rows.map((row) => [row.name, row.is_demo])
+  return rows.map((row) => [row.name, row.is_demo, row.theme])
 }
 
 test('testenv-seed never runs in production', () => {
@@ -39,8 +39,8 @@ test('testenv-seed creates the public demo and a writable test pack; --reset sta
   assert.equal(first.status, 0, first.stderr)
   assert.match(first.stdout, /Passwort: sonnenhang/)
   assert.deepEqual(familiesIn(dir), [
-    ['Rudel vom Sonnenhang', 1],
-    ['Rudel vom Sonnenhang (Test)', 0]
+    ['Rudel vom Sonnenhang', 1, 'standard'],
+    ['Rudel vom Sonnenhang (Test)', 0, 'berner']
   ])
 
   assert.equal(run(env).status, 0)

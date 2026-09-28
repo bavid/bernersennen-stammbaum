@@ -25,7 +25,8 @@ function deleteAllFamilies() {
 
 try {
   if (process.argv.includes('--reset')) deleteAllFamilies()
-  replaceDemoPack(db, uploadDir)
+  // Die öffentliche Demo der Vorschau zeigt den neuen Auftritt; das Test-Rudel bleibt beim Berner-Look
+  replaceDemoPack(db, uploadDir, { theme: 'standard' })
   if (!db.prepare('SELECT 1 FROM families WHERE name = ?').get(TEST_PACK_NAME)) {
     createDemoPack(db, { name: TEST_PACK_NAME, password: testPassword, isDemo: false, copyImage: createImageCopier(uploadDir) })
     console.log(`Test-Rudel "${TEST_PACK_NAME}" – Passwort: ${testPassword}`)

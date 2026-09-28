@@ -116,11 +116,12 @@ function insertBreeding(db, familyId, ids, copyImage) {
 
 // isDemo: öffentliche, schreibgeschützte Demo (Login über "Demo ansehen" ohne Passwort)
 // name: abweichender Rudel-Name, z. B. für ein beschreibbares Test-Rudel neben der Demo
-function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME }) {
+// theme: Auftritt der Familie – ohne Angabe der Berner-Look (bestehende Rudel, siehe db.js)
+function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, theme = 'berner' }) {
   return db.transaction(() => {
     const familyId = db
-      .prepare('INSERT INTO families (name, password_hash, is_demo) VALUES (?, ?, ?)')
-      .run(name, bcrypt.hashSync(password, 10), isDemo ? 1 : 0).lastInsertRowid
+      .prepare('INSERT INTO families (name, password_hash, is_demo, theme) VALUES (?, ?, ?, ?)')
+      .run(name, bcrypt.hashSync(password, 10), isDemo ? 1 : 0, theme).lastInsertRowid
     const ids = insertDogs(db, familyId, copyImage)
     insertTimeline(db, familyId, ids, copyImage)
     insertNotes(db, familyId)
@@ -132,10 +133,12 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME })
 // Ersetzt die öffentliche Demo: legt zuerst die neue an und löscht erst danach die alte(n) – nur Rudel
 // mit is_demo = 1, samt Fotos. Scheitert das Anlegen, bleibt die alte Demo erreichbar.
 // Das Passwort ist zufällig – in die Demo kommt man über "Demo ansehen".
-function replaceDemoPack(db, uploadDir) {
+function replaceDemoPack(db, uploadDir, { theme } = {}) {
   const previous = db.prepare('SELECT id, name FROM families WHERE is_demo = 1').all()
   const password = crypto.randomBytes(24).toString('base64url')
-  const created = createDemoPack(db, { password, isDemo: true, copyImage: createImageCopier(uploadDir) })
+  const packOptions = { password, isDemo: true, copyImage: createImageCopier(uploadDir) }
+  if (theme !== undefined) packOptions.theme = theme
+  const created = createDemoPack(db, packOptions)
   for (const family of previous) removeUploads(uploadDir, deleteFamily(db, family.id))
   return { removed: previous, created }
 }
