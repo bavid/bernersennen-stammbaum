@@ -15,7 +15,7 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
 
   const db = require('../db')
   const config = require('../config')
-  const { lookupPlz } = require('../lib/geo')
+  const { lookupPlz, distanceKm } = require('../lib/geo')
 
   const adminLogin = await call(base, '/api/admin/login', { method: 'POST', body: { username: 'admin', password: ADMIN_TEST_PASSWORD } })
   const adminCookie = getCookie(adminLogin.res)
@@ -372,6 +372,61 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
 
     assert.equal(nahPromo.bereich, 'futter')
     assert.equal(fernPromo.bereich, 'futter')
+  })
+
+  await t.test('Umkreis-Fallback: außerhalb liegende Treffer werden auf MAX_FALLBACK (20) gedeckelt', async () => {
+    // begleiter (tierheim/vermittlung) hat aktuell nur 2 Partner im Radius (shelterEcht, shelterDemo) -
+    // bleibt < 5, der Fallback greift also unabhängig davon, wie viele Kandidaten außerhalb liegen.
+    const farCandidates = []
+    for (let i = 0; i < 25; i += 1) {
+      const lat = berlin.lat - (i + 1) * 0.5 // je Schritt ~55 km weiter südlich, klar außerhalb 10 km
+      farCandidates.push({ name: `Tierheim Kappung ${i}`, lat, lon: berlin.lon })
+      insertPartner({ name: `Tierheim Kappung ${i}`, typ: 'tierheim', lat, lon: berlin.lon })
+    }
+    // Zusammen mit "Tierheim Fern Rom" aus dem vorherigen Test sind das 26 Kandidaten außerhalb - mehr
+    // als MAX_FALLBACK (20).
+    const allOutsideCandidates = [...farCandidates, { name: 'Tierheim Fern Rom', lat: ROM.lat, lon: ROM.lon }]
+    const nearestExpectedNames = allOutsideCandidates
+      .map((p) => ({ name: p.name, dist: distanceKm(berlin, { lat: p.lat, lon: p.lon }) }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 20)
+      .map((p) => p.name)
+      .sort()
+
+    const res = await discover({ plz: '10115', radius: 10 }, household.cookie)
+    assert.equal(res.status, 200)
+    assert.equal(res.data.fallback.begleiter, true)
+
+    const ausserhalbCards = res.data.begleiter.partner.filter((p) => p.ausserhalb === true)
+    assert.equal(ausserhalbCards.length, 20, 'nie mehr als MAX_FALLBACK Treffer außerhalb werden angehängt, obwohl 26 in Frage kämen')
+    assert.deepEqual(ausserhalbCards.map((p) => p.name).sort(), nearestExpectedNames)
+  })
+
+  await t.test('Begleiter-Tiere: 5+ Partner im Radius, aber zusammen weniger als 5 veröffentlichte Tiere -> Fallback ergänzt Tiere weiter entfernter Tierheime', async () => {
+    // Drei weitere Partner im Radius OHNE Tierheim-Bereich/Tiere - zusammen mit shelterEcht/shelterDemo
+    // liegen jetzt mindestens 5 Partner im Radius, aber weiterhin nur Rex + Demo-Hund als Tiere (< 5).
+    insertPartner({ name: 'Tierheim Radius Leer 1', typ: 'tierheim', lat: berlin.lat, lon: berlin.lon })
+    insertPartner({ name: 'Vermittlung Radius Leer 2', typ: 'vermittlung', lat: berlin.lat, lon: berlin.lon })
+    insertPartner({ name: 'Tierheim Radius Leer 3', typ: 'tierheim', lat: berlin.lat, lon: berlin.lon })
+
+    const shelterFern = await createShelter('Tierheim Weit Weg Mit Tier', 'discover-tierheim-weit-weg-mit-tier')
+    await publishDog(shelterFern, 'Fernie')
+    // Erst nach dem Veröffentlichen weit wegsetzen (die Admin-Anlage braucht eine auflösbare PLZ) - wie
+    // beim is_demo-Umbau der Demo-Tierheime oben.
+    db.prepare('UPDATE partners SET lat = ?, lon = ? WHERE id = ?').run(ROM.lat, ROM.lon, shelterFern.partnerId)
+
+    const res = await discover({ plz: '10115', radius: 10 }, household.cookie)
+    assert.equal(res.status, 200)
+    assert.equal(res.data.fallback.begleiter, true)
+
+    const inRadiusPartner = res.data.begleiter.partner.filter((p) => p.ausserhalb === false)
+    assert.ok(inRadiusPartner.length >= 5, 'mindestens 5 Partner liegen im Radius')
+
+    const fernieCard = res.data.begleiter.tiere.find((d) => d.name === 'Fernie')
+    assert.ok(fernieCard, 'das Tier des weit entfernten Tierheims wird trotzdem ergänzt')
+    assert.equal(fernieCard.ausserhalb, true)
+    assert.equal(typeof fernieCard.distanceKm, 'number')
+    assert.ok(fernieCard.distanceKm > 10)
   })
 
   // --- Klickzählung / Weiterleitung (GET /r/:type/:id) ------------------------------------------------

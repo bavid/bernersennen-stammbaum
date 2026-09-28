@@ -21,6 +21,9 @@ const MAX_BEGLEITER_TIERE = 12
 // Einträge, werden die nächsten Treffer AUSSERHALB des Radius ergänzt (ausserhalb: true), damit die
 // Seite nie fast leer wirkt. Ab 5 echten Treffern im Radius bleibt es beim harten Ausschluss wie bisher.
 const MIN_IN_RADIUS = 5
+// review finding (Important): ein dünn besiedelter Umkreis mit sehr vielen Partnern insgesamt sollte
+// nicht ALLE davon außerhalb anhängen (unbegrenzte Antwortgröße) - nur die nächsten 20.
+const MAX_FALLBACK = 20
 
 // Eigenes, knappes Limit pro IP zusätzlich zum globalen apiLimiter (app.js: app.use('/api', apiLimiter))
 // - wie places.js placesLimiter, gleiche Werte und derselbe IPv6-maskierende Schlüssel.
@@ -100,9 +103,9 @@ function splitByRadius(rowsWithDistance, radiusKm) {
 
 // Partner-Abschnitt (hundeschulen-Partner, begleiter.partner) mit Umkreis-Fallback: ohne PLZ alle nach
 // Name; mit PLZ die Treffer im Radius (distanceKm, ausserhalb: false) - und, wenn das WENIGER als
-// MIN_IN_RADIUS sind, zusätzlich ALLE übrigen Treffer außerhalb (ausserhalb: true), nach Entfernung
-// sortiert, damit die Seite nie fast leer wirkt (Koordinator-Folgeauftrag). Ab MIN_IN_RADIUS Treffern im
-// Radius bleibt es beim harten Ausschluss wie bisher (fallback bleibt false).
+// MIN_IN_RADIUS sind, zusätzlich die nächsten bis zu MAX_FALLBACK Treffer außerhalb (ausserhalb: true),
+// nach Entfernung sortiert, damit die Seite nie fast leer wirkt (Koordinator-Folgeauftrag). Ab
+// MIN_IN_RADIUS Treffern im Radius bleibt es beim harten Ausschluss wie bisher (fallback bleibt false).
 function partnerSection(rows, center, radiusKm) {
   if (!center) return { items: sortByName(rows).map((row) => ({ row })), fallback: false }
 
@@ -113,7 +116,9 @@ function partnerSection(rows, center, radiusKm) {
   let fallback = false
   if (inRadius.length < MIN_IN_RADIUS && outside.length) {
     fallback = true
-    items = items.concat(outside.map(toCardInput(true)))
+    // outside ist bereits aufsteigend nach Entfernung sortiert (splitByRadius) - slice(0, MAX_FALLBACK)
+    // sind also automatisch die MAX_FALLBACK nächstgelegenen, nicht irgendwelche.
+    items = items.concat(outside.slice(0, MAX_FALLBACK).map(toCardInput(true)))
   }
   return { items, fallback }
 }
@@ -121,26 +126,43 @@ function partnerSection(rows, center, radiusKm) {
 // begleiter.tiere: eigene Schwelle auf Tier-Ebene (nicht auf Partner-Ebene) - selbst wenn schon genug
 // Partner im Radius liegen, können deren Steckbriefe zusammen trotzdem unter MIN_IN_RADIUS bleiben, dann
 // ergänzt der Fallback Tiere weiterer, weiter entfernter Tierheime/Vermittlungsstellen.
+//
+// review finding (Important, N+1): getShelterAnimalCards() ist eine eigene DB-Abfrage je Partner - ein
+// einfaches flatMap über ALLE Zeilen würde sie auch dann für jeden einzelnen Partner ausführen, wenn
+// MAX_BEGLEITER_TIERE längst erreicht ist. collectTiere() bricht die Schleife (Partner UND das
+// Aufsammeln selbst) ab, sobald genug Tiere gesammelt sind - ruft getShelterAnimalCards also nie öfter
+// auf als nötig, um bis zu MAX_BEGLEITER_TIERE Karten zu füllen.
 function begleiterTiereSection(partnerRows, center, radiusKm) {
-  const cardsFor = (entries, ausserhalb) =>
-    entries.flatMap(({ row, dist }) =>
-      getShelterAnimalCards(row.id).map((animal) =>
-        dist === undefined ? animal : { ...animal, distanceKm: Math.round(dist * 10) / 10, ausserhalb }
-      )
-    )
+  function collectTiere(entries, ausserhalb, tiere) {
+    for (const { row, dist } of entries) {
+      if (tiere.length >= MAX_BEGLEITER_TIERE) break
+      for (const animal of getShelterAnimalCards(row.id)) {
+        if (tiere.length >= MAX_BEGLEITER_TIERE) break
+        tiere.push(dist === undefined ? animal : { ...animal, distanceKm: Math.round(dist * 10) / 10, ausserhalb })
+      }
+    }
+  }
 
   if (!center) {
-    return { items: cardsFor(sortByName(partnerRows).map((row) => ({ row, dist: undefined })), false).slice(0, MAX_BEGLEITER_TIERE), fallback: false }
+    const tiere = []
+    collectTiere(
+      sortByName(partnerRows).map((row) => ({ row, dist: undefined })),
+      false,
+      tiere
+    )
+    return { items: tiere, fallback: false }
   }
 
   const { inRadius, outside } = splitByRadius(withDistances(partnerRows, center), radiusKm)
-  let tiere = cardsFor(inRadius, false)
+  const tiere = []
+  collectTiere(inRadius, false, tiere)
+
   let fallback = false
   if (tiere.length < MIN_IN_RADIUS && outside.length) {
     fallback = true
-    tiere = tiere.concat(cardsFor(outside, true))
+    collectTiere(outside, true, tiere)
   }
-  return { items: tiere.slice(0, MAX_BEGLEITER_TIERE), fallback }
+  return { items: tiere, fallback }
 }
 
 // Alle Partner-Koordinaten auf einmal (unabhängig von Typ/Status/Demo - reine Anzeige-Sortierhilfe für
