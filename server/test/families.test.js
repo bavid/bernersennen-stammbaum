@@ -42,4 +42,30 @@ test('deleting a family keeps other families intact', async (t) => {
     const login = await call(base, '/api/login', { method: 'POST', body: { password: 'passwortB' } })
     assert.equal(login.status, 200)
   })
+
+  await t.test('deleting a rudel someone joined removes the membership, the member stays', async () => {
+    const home = await createFamily(base, 'Zuhause Nele', 'zuhause-pw-del1', { art: 'zuhause' })
+    const rudel = await createFamily(base, 'Familie Talblick', 'rudel-pw-del1')
+    await post(home.cookie, '/api/families/join', { password: 'rudel-pw-del1' })
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM family_members WHERE group_family_id = ?').get(rudel.data.id).c, 1)
+
+    deleteFamily(db, rudel.data.id)
+
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(rudel.data.id).c, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM family_members WHERE group_family_id = ?').get(rudel.data.id).c, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(home.data.id).c, 1)
+  })
+
+  await t.test('deleting a zuhause that joined a rudel removes the membership, the rudel stays', async () => {
+    const home = await createFamily(base, 'Zuhause Mira', 'zuhause-pw-del2', { art: 'zuhause' })
+    const rudel = await createFamily(base, 'Familie Nordlicht', 'rudel-pw-del2')
+    await post(home.cookie, '/api/families/join', { password: 'rudel-pw-del2' })
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM family_members WHERE member_family_id = ?').get(home.data.id).c, 1)
+
+    deleteFamily(db, home.data.id)
+
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(home.data.id).c, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM family_members WHERE member_family_id = ?').get(home.data.id).c, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(rudel.data.id).c, 1)
+  })
 })

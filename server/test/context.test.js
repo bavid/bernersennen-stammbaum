@@ -142,6 +142,85 @@ test('Meine Chronik als eigener Bereich, Familien beitreten und wechseln', async
     assert.equal(login.data.theme, 'standard')
   })
 
+  await t.test('9. join mit dem Passwort eines anderen Zuhauses -> 401', async () => {
+    const homeA = await createFamily(base, 'Zuhause Nele Zwei', 'zuhause-pw-9a', { art: 'zuhause' })
+    const homeB = await createFamily(base, 'Zuhause Mira Zwei', 'zuhause-pw-9b', { art: 'zuhause' })
+
+    const join = await post('/api/families/join', { password: 'zuhause-pw-9b' }, homeA.cookie)
+    assert.equal(join.status, 401)
+  })
+
+  await t.test('10. klassischer Rudel-Login: /view in ein fremdes Zuhause -> 404', async () => {
+    const rudel = await createFamily(base, 'Familie Ostwind', 'rudel-pw-10')
+    const login = await post('/api/login', { password: 'rudel-pw-10' })
+    const cookie = getCookie(login.res)
+    const otherHome = await createFamily(base, 'Zuhause Balu Zwei', 'zuhause-pw-10', { art: 'zuhause' })
+
+    const view = await post('/api/view', { familyId: otherHome.data.id }, cookie)
+    assert.equal(view.status, 404)
+  })
+
+  await t.test('11. /view lehnt ungültige IDs strikt ab (kein Type-Coercion, auch nicht auf den eigenen Bereich)', async () => {
+    const home = await createFamily(base, 'Zuhause Emma Zwei', 'zuhause-pw-11', { art: 'zuhause' })
+    const ownId = home.data.id
+    // Alles hier würde über Number(...)-Koerzierung auf die eigene (an sich erlaubte) ID zeigen –
+    // strikte Prüfung muss trotzdem ablehnen, plus ein paar unabhängig ungültige Werte
+    const bad = [true, [ownId], `${ownId}.0`, String(ownId), 'abc', 0, -1]
+    for (const value of bad) {
+      const res = await post('/api/view', { familyId: value }, home.cookie)
+      assert.equal(res.status, 404, `familyId=${JSON.stringify(value)} sollte 404 geben, war ${res.status}`)
+    }
+
+    // Die echte, numerische ID funktioniert weiterhin
+    const ok = await post('/api/view', { familyId: ownId }, home.cookie)
+    assert.equal(ok.status, 200)
+  })
+
+  await t.test('12. DELETE /memberships für eine Nicht-Mitgliedschaft -> 404', async () => {
+    const home = await createFamily(base, 'Zuhause Luna Zwei', 'zuhause-pw-12', { art: 'zuhause' })
+    const foreignRudel = await createFamily(base, 'Familie Fremdling Zwei', 'rudel-pw-12')
+
+    const del = await call(base, `/api/memberships/${foreignRudel.data.id}`, { method: 'DELETE', cookie: home.cookie })
+    assert.equal(del.status, 404)
+  })
+
+  await t.test('13. eine nicht-aktive Mitgliedschaft löschen lässt den Cookie unangetastet', async () => {
+    const home = await createFamily(base, 'Zuhause Hermes Zwei', 'zuhause-pw-13', { art: 'zuhause' })
+    const rudelA = await createFamily(base, 'Familie Talblick Zwei', 'rudel-pw-13a')
+    const rudelB = await createFamily(base, 'Familie Nordlicht Zwei', 'rudel-pw-13b')
+    await post('/api/families/join', { password: 'rudel-pw-13a' }, home.cookie)
+    await post('/api/families/join', { password: 'rudel-pw-13b' }, home.cookie)
+    // Aktiver Bereich bleibt das Zuhause selbst (kein /view aufgerufen) – rudelB ist gar nicht aktiv
+    void rudelB
+
+    const del = await call(base, `/api/memberships/${rudelA.data.id}`, { method: 'DELETE', cookie: home.cookie })
+    assert.equal(del.status, 200)
+    assert.equal(del.headers.get('set-cookie'), null)
+  })
+
+  await t.test('14. group mit bereits vergebenem Passwort -> 409', async () => {
+    const home = await createFamily(base, 'Zuhause Nele Drei', 'zuhause-pw-14', { art: 'zuhause' })
+    await createFamily(base, 'Familie Irgendwer', 'passwort-belegt-14')
+
+    const group = await post('/api/families/group', { name: 'Neue Gruppe', password: 'passwort-belegt-14' }, home.cookie)
+    assert.equal(group.status, 409)
+  })
+
+  await t.test('15. canEnter verweigert den Wechsel zwischen Demo und Nicht-Demo, selbst bei Mitgliedschaft', async () => {
+    const home = await createFamily(base, 'Zuhause Balu Drei', 'zuhause-pw-15', { art: 'zuhause' })
+    const rudel = await createFamily(base, 'Familie Sonnenhang Drei', 'rudel-pw-15')
+    // /join würde eine Demo-Gruppe nie zulassen – hier die Mitgliedschaft direkt anlegen und danach
+    // die Gruppe zur Demo erklären, um die Verteidigungslinie in canEnter zu prüfen
+    db.prepare('INSERT INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(home.data.id, rudel.data.id)
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(rudel.data.id)
+
+    const view = await post('/api/view', { familyId: rudel.data.id }, home.cookie)
+    assert.equal(view.status, 404)
+
+    const { canEnter } = require('../lib/context')
+    assert.equal(canEnter(home.data.id, rudel.data.id), false)
+  })
+
   await t.test('alte Tokens ohne activeFamilyId funktionieren weiterhin', async () => {
     const family = await createFamily(base, 'Familie Alt-Token', 'alt-token-pw-1')
     const oldStyleToken = jwt.sign({ familyId: family.data.id }, config.jwtSecret, { expiresIn: '30d' })

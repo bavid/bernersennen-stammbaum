@@ -34,6 +34,8 @@ function deleteFamily(db, familyId) {
     db.prepare('DELETE FROM breeding_events WHERE family_id = ?').run(familyId)
     db.prepare('UPDATE dogs SET mother_dog_id = NULL, father_dog_id = NULL WHERE family_id = ?').run(familyId)
     db.prepare('DELETE FROM dogs WHERE family_id = ?').run(familyId)
+    // Mitgliedschaften in beide Richtungen: als beigetretener Haushalt und als Rudel mit Mitgliedern
+    db.prepare('DELETE FROM family_members WHERE member_family_id = ? OR group_family_id = ?').run(familyId, familyId)
     db.prepare('DELETE FROM families WHERE id = ?').run(familyId)
   })()
 

@@ -33,9 +33,12 @@ function requireSession(req, res, next) {
       // Mitgliedschaft beendet oder Familie gelöscht: zurück in den eigenen Bereich
       active = payload.familyId
     }
+    // Identität ODER aktiver Bereich demo -> als Demo behandeln (Verteidigungslinie neben canEnter,
+    // das ein Auseinanderlaufen von Identität und Bereich im Normalbetrieb schon verhindert)
+    const activeIsDemo = active === payload.familyId ? family.is_demo : familyById.get(active)?.is_demo
     req.homeId = payload.familyId
     req.familyId = active
-    req.isDemo = Boolean(family.is_demo)
+    req.isDemo = Boolean(family.is_demo) || Boolean(activeIsDemo)
     next()
   } catch {
     return res.status(401).json({ error: 'Session ungültig oder abgelaufen' })

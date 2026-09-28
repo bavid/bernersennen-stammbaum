@@ -170,7 +170,9 @@ router.get('/me', requireAuth, (req, res) => {
 // Bereich wechseln: eigenes Zuhause oder ein Rudel, dem der Haushalt beigetreten ist.
 // requireSession statt requireAuth: auch die Demo darf in ihren eigenen Bereich "wechseln".
 router.post('/view', requireSession, (req, res) => {
-  const id = cleanId(req.body?.familyId)
+  // Strikt: nur ein echter JS-Integer > 0, kein Number(...)-Koerzierung (z. B. "3.0", [3], true, "abc")
+  const rawId = req.body?.familyId
+  const id = Number.isInteger(rawId) && rawId > 0 ? rawId : null
   if (!id || !canEnter(req.homeId, id)) {
     return res.status(404).json({ error: 'Diesen Bereich gibt es nicht' })
   }
@@ -216,10 +218,14 @@ router.post('/families/group', authLimiter, requireAuth, async (req, res, next) 
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
-    const result = db
-      .prepare("INSERT INTO families (name, password_hash, art, theme) VALUES (?, ?, 'rudel', 'standard')")
-      .run(trimmedName, passwordHash)
-    db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(req.homeId, result.lastInsertRowid)
+    // Rudel anlegen und Mitgliedschaft eintragen atomar: ein Absturz dazwischen darf kein Rudel
+    // ohne Mitglied (oder ein Mitglied ohne Rudel) hinterlassen.
+    db.transaction(() => {
+      const result = db
+        .prepare("INSERT INTO families (name, password_hash, art, theme) VALUES (?, ?, 'rudel', 'standard')")
+        .run(trimmedName, passwordHash)
+      db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(req.homeId, result.lastInsertRowid)
+    })()
 
     res.status(201).json(buildMe(req.homeId, req.familyId, false))
   } catch (err) {

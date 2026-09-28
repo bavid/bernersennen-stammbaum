@@ -18,9 +18,17 @@ function isMember(homeId, groupId) {
   )
 }
 
-// Darf die Identität homeId den Bereich familyId ansehen? (eigener Bereich oder Mitgliedschaft)
+// Darf die Identität homeId den Bereich familyId ansehen? (eigener Bereich oder Mitgliedschaft).
+// Demo und Nicht-Demo dürfen nie gemischt werden, selbst wenn irgendwo eine Mitgliedschaftszeile
+// existiert (z. B. weil eine Familie nachträglich als Demo markiert wurde) – Verteidigungslinie,
+// da /join bzw. /group das im Normalbetrieb schon verhindern.
 function canEnter(homeId, familyId) {
-  return homeId === familyId || isMember(homeId, familyId)
+  if (homeId === familyId) return true
+  if (!isMember(homeId, familyId)) return false
+  const identity = db.prepare('SELECT is_demo FROM families WHERE id = ?').get(homeId)
+  const area = db.prepare('SELECT is_demo FROM families WHERE id = ?').get(familyId)
+  if (!identity || !area) return false
+  return Boolean(identity.is_demo) === Boolean(area.is_demo)
 }
 
 // Antwort für /me, /login, /demo, /view: aktiver Bereich oben, Identität und Mitgliedschaften dazu
