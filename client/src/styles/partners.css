@@ -217,6 +217,53 @@
   color: var(--ink-soft);
 }
 
+/* Vermittlungsstatus unter dem Namen (Phase P), bei "pausiert" mit Hinweis daneben. */
+.steckbrief-vermittlung {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.steckbrief-paused-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+/* Partner-Profil (/profil, PartnerProfilePage, Phase P): Status des Partners als Chip unter dem Namen -
+   dieselben Töne wie die Status-Spalte im Admin (admin.css .admin-partner-status-*). */
+.partner-status-chip {
+  justify-self: start;
+  font-weight: 800;
+  border-color: transparent;
+}
+
+.partner-status-aktiv {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+
+.partner-status-entwurf {
+  background: var(--alpine-wash);
+  color: var(--alpine);
+}
+
+.partner-status-pausiert {
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.partner-status-gesperrt {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.partner-profile-page > .btn {
+  justify-self: start;
+}
+
 /* Partnerliste */
 
 .partners-hero {

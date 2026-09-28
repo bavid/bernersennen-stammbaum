@@ -9,18 +9,17 @@ import ThemeMark from '../components/ThemeMark.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { displayName, speciesLabel } from '../lib/timeline.js'
 import { formatDayMonth } from '../lib/dates.js'
-import { vermittlungStatusLabel } from '../lib/shelter.js'
+import { VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel, vermittlungStatusShortLabel } from '../lib/vermittlung.js'
 
 // "Alle" und "Ohne Status" (final-review Phase T Finding 1) dazu, sonst verschwanden Tiere ohne
 // vermittlung_status (z. B. frisch aufgenommen, Status noch nicht gesetzt) aus jeder Ansicht - sie
-// passten weder in eine der drei Status-Kacheln noch in "Ehemalige" (kein shared_from). Ehemalige sind
+// passten weder in eine der Status-Kacheln noch in "Ehemalige" (kein shared_from). Ehemalige sind
 // Tiere, die nicht mehr dem Tierheim gehören, aber (mit Einwilligung des neuen Zuhauses) hierher
-// geteilt sind, siehe dog.shared_from (GET /api/dogs). Default bleibt "In Vermittlung" (siehe unten).
+// geteilt sind, siehe dog.shared_from (GET /api/dogs). Je Status ein Chip (lib/vermittlung.js, seit
+// Phase P inkl. "Pausiert"), Default bleibt in_vermittlung ("Verfügbar", siehe unten).
 const FILTERS = [
   { key: 'alle', label: 'Alle' },
-  { key: 'in_vermittlung', label: 'In Vermittlung' },
-  { key: 'reserviert', label: 'Reserviert' },
-  { key: 'vermittelt', label: 'Vermittelt' },
+  ...VERMITTLUNG_STATUS_VALUES.map((status) => ({ key: status, label: vermittlungStatusShortLabel(status) })),
   { key: 'ohne_status', label: 'Ohne Status' },
   { key: 'ehemalige', label: 'Ehemalige (mitgelesen)' }
 ]
@@ -69,8 +68,8 @@ function ShelterAnimalCard({ dog }) {
   )
 }
 
-// "Unsere Tiere" - die Tiere des Tierheims in Vermittlung/reserviert/vermittelt, plus die Ehemaligen,
-// die es (mit Einwilligung) weiter mitlesen darf.
+// "Unsere Tiere" - die Tiere des Tierheims (verfügbar/reserviert/pausiert/vermittelt), plus die
+// Ehemaligen, die es (mit Einwilligung) weiter mitlesen darf.
 export default function ShelterAnimalsPage({ family }) {
   const [dogs, setDogs] = useState(null)
   const [error, setError] = useState(null)
@@ -114,7 +113,7 @@ export default function ShelterAnimalsPage({ family }) {
           <span className="eyebrow">{family.name}</span>
           <h1>Unsere Tiere</h1>
           <p className="page-lede">
-            Alle Tiere in Vermittlung, reserviert und vermittelt – dazu Ehemalige, die ihr weiter mitlesen dürft.
+            Alle eure Tiere – verfügbar, reserviert, pausiert oder vermittelt – dazu Ehemalige, die ihr weiter mitlesen dürft.
           </p>
         </div>
         <div className="page-hero-side">

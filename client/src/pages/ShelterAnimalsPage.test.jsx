@@ -74,15 +74,15 @@ function chip(label) {
 }
 
 describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
-  test('zeigt sechs Filter-Chips: Alle, In Vermittlung, Reserviert, Vermittelt, Ohne Status, Ehemalige (mitgelesen)', async () => {
+  test('zeigt sieben Filter-Chips: Alle, Verfügbar, Reserviert, Pausiert, Vermittelt, Ohne Status, Ehemalige (mitgelesen)', async () => {
     listDogs.mockResolvedValue([])
     await render()
 
     const labels = [...container.querySelectorAll('.filter-chip')].map((btn) => btn.textContent.split(' ·')[0])
-    expect(labels).toEqual(['Alle', 'In Vermittlung', 'Reserviert', 'Vermittelt', 'Ohne Status', 'Ehemalige (mitgelesen)'])
+    expect(labels).toEqual(['Alle', 'Verfügbar', 'Reserviert', 'Pausiert', 'Vermittelt', 'Ohne Status', 'Ehemalige (mitgelesen)'])
   })
 
-  test('Standardfilter "In Vermittlung" zeigt nur Tiere mit diesem Status', async () => {
+  test('Standardfilter "Verfügbar" zeigt nur Tiere mit Status in_vermittlung', async () => {
     listDogs.mockResolvedValue([
       dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
       dog({ id: 2, name: 'Oskar', vermittlung_status: 'reserviert' })
@@ -189,5 +189,34 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
     await act(async () => container.querySelector('.quick-animal-form').requestSubmit())
 
     expect(createDog).toHaveBeenCalledWith(expect.objectContaining({ vermittlungStatus: 'in_vermittlung' }))
+  })
+})
+
+describe('ShelterAnimalsPage – Status "pausiert" (Phase P)', () => {
+  test('der Chip "Pausiert" zeigt nur pausierte Tiere', async () => {
+    listDogs.mockResolvedValue([
+      dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
+      dog({ id: 2, name: 'Oskar', vermittlung_status: 'pausiert' })
+    ])
+    await render()
+
+    expect(chip('Pausiert').textContent).toContain('· 1')
+    act(() => chip('Pausiert').click())
+
+    expect(container.textContent).toContain('Oskar')
+    expect(container.textContent).not.toContain('Pepper')
+  })
+
+  test('die Karten zeigen "Verfügbar" und "Pausiert (on hold)" als Status', async () => {
+    listDogs.mockResolvedValue([
+      dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
+      dog({ id: 2, name: 'Oskar', vermittlung_status: 'pausiert' })
+    ])
+    await render()
+
+    act(() => chip('Alle').click())
+
+    const statusChips = [...container.querySelectorAll('.status-chip')].map((el) => el.textContent)
+    expect(statusChips).toEqual(['Verfügbar', 'Pausiert (on hold)'])
   })
 })

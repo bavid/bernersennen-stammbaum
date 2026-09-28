@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { HOME_LABEL, isEditable, startRoute } from './areas.js'
+import { HOME_LABEL, isEditable, isPartnerArea, startRoute } from './areas.js'
 
 describe('startRoute', () => {
   test('a household area starts at Wegbegleiter', () => {
@@ -14,8 +14,25 @@ describe('startRoute', () => {
     expect(startRoute({ art: 'tierheim' })).toBe('/tiere')
   })
 
+  test('a partner area (dog school, groomer, ...) starts at Profil', () => {
+    expect(startRoute({ art: 'partner' })).toBe('/profil')
+  })
+
   test('without a family (e.g. classic pack login without art) falls back to Stammbaum', () => {
     expect(startRoute(undefined)).toBe('/stammbaum')
+  })
+})
+
+describe('isPartnerArea', () => {
+  test('is true for partner and shelter areas', () => {
+    expect(isPartnerArea({ art: 'partner' })).toBe(true)
+    expect(isPartnerArea({ art: 'tierheim' })).toBe(true)
+  })
+
+  test('is false for households, packs and no family', () => {
+    expect(isPartnerArea({ art: 'zuhause' })).toBe(false)
+    expect(isPartnerArea({ art: 'rudel' })).toBe(false)
+    expect(isPartnerArea(null)).toBe(false)
   })
 })
 

@@ -194,6 +194,50 @@
   padding-top: var(--space-2);
 }
 
+/* Partner-Profil einrichten (PartnerSetupFields, Phase P): eigener Rahmen im Einlöse-Formular, damit
+   auf einen Blick klar ist, dass hier kein "Meine Chronik" entsteht - Tan-Linie wie beim Übergabe-
+   Hinweis, aber ruhiger (Fläche statt Rost-Wash). */
+.partner-setup {
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border: 1.5px solid color-mix(in srgb, var(--tan) 55%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.partner-setup-intro {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.partner-setup-intro h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--ink);
+}
+
+.partner-setup-intro p,
+.partner-setup-welcome,
+.partner-setup-typ-fixed {
+  margin: 0;
+}
+
+.partner-setup-welcome {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--rust-deep);
+}
+
+.partner-setup-typ-fixed {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.partner-setup-hint {
+  text-align: center;
+}
+
 .key-reveal {
   display: grid;
   gap: var(--space-3);

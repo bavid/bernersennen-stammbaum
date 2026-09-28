@@ -61,6 +61,13 @@ describe('SteckbriefPanel – nicht veröffentlicht', () => {
     const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Steckbrief veröffentlichen')
     expect(button.disabled).toBe(true)
     expect(container.textContent).toContain('Veröffentlichen geht nur mit Status')
+    expect(container.textContent).toContain('„Verfügbar“, „Reserviert“ oder „Pausiert (on hold)“')
+  })
+
+  test('ein pausiertes Tier lässt sich veröffentlichen (Phase P)', async () => {
+    await render({ dog: dog({ vermittlung_status: 'pausiert' }) })
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Steckbrief veröffentlichen')
+    expect(button.disabled).toBe(false)
   })
 
   test('Klick auf "Steckbrief veröffentlichen" ruft api.setSteckbrief(id, true) und meldet den Hund', async () => {

@@ -9,6 +9,7 @@ import Icon from '../components/Icon.jsx'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 import { groupByYear, speciesSexLabel } from '../lib/timeline.js'
 import { kategorieLabel } from '../lib/shelter.js'
+import { PAUSED_HINT, vermittlungStatusLabel } from '../lib/vermittlung.js'
 import { isExternalUrl, isValidPhone, telHref } from '../lib/format.js'
 
 const SHARE_COPIED_MS = 2000
@@ -86,6 +87,20 @@ function PublicChronicle({ entries }) {
         ))}
       </ol>
     </section>
+  )
+}
+
+// Vermittlungsstatus unter dem Namen (Phase P): "Verfügbar"/"Reserviert"/"Pausiert (on hold)" - ein
+// pausiertes Tier bleibt öffentlich, bekommt aber den Hinweis, dass es gerade nicht vermittelbar ist.
+// Ohne Status (ältere Antwort) erscheint nichts.
+function VermittlungStatus({ status }) {
+  const label = vermittlungStatusLabel(status)
+  if (!label) return null
+  return (
+    <div className="steckbrief-vermittlung">
+      <span className={`chip status-chip status-chip-${status}`}>{label}</span>
+      {status === 'pausiert' && <p className="steckbrief-paused-hint">{PAUSED_HINT}</p>}
+    </div>
   )
 }
 
@@ -218,6 +233,7 @@ export default function SteckbriefPage({ slug }) {
         <div className="dog-hero-body">
           <span className="eyebrow">{speciesSexLabel(animal.tierart, animal.geschlecht)}</span>
           <h1>{animal.name}</h1>
+          <VermittlungStatus status={animal.vermittlung_status} />
           <dl className="facts">
             <div>
               <dt>Rasse</dt>

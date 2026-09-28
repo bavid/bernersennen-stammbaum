@@ -7,8 +7,21 @@ import PasswordField from '../components/PasswordField.jsx'
 import RedeemForm from '../components/RedeemForm.jsx'
 import RecoverForm from '../components/RecoverForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
+import { isPartnerArea } from '../lib/areas.js'
 
 const REDEEM_HINT = 'Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.'
+
+// Nach einem Partner-Zugang (Phase P) öffnet der Schlüssel den Partner-Bereich, nicht "Meine Chronik" -
+// und erneuert wird er dort unter "Zugang", nicht in den Familien-Einstellungen am Stammbaum.
+const PARTNER_KEY_REVEAL = {
+  continueLabel: 'Weiter zum Partner-Bereich',
+  showCardHint: false,
+  note: 'Wer euch den Zugang gegeben hat, kennt diesen Code. Erneuert den Schlüssel später unter „Zugang“, wenn ihr sicher gehen wollt.'
+}
+
+function keyRevealProps(me) {
+  return isPartnerArea(me) ? PARTNER_KEY_REVEAL : {}
+}
 
 const MODE_COPY = {
   login: { eyebrow: 'Willkommen zurück', title: 'Anmelden', lede: 'Mit eurem Schlüssel oder Passwort geht’s weiter.' },
@@ -205,7 +218,7 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
 
           {mode === 'redeem' &&
             (redeemResult ? (
-              <KeyReveal value={redeemResult.key} onContinue={() => onLogin(redeemResult.me)} />
+              <KeyReveal value={redeemResult.key} onContinue={() => onLogin(redeemResult.me)} {...keyRevealProps(redeemResult.me)} />
             ) : (
               <RedeemForm initialCode={redeemCode} hint={redeemHint} onRedeemed={handleRedeemed} />
             ))}

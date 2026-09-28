@@ -57,7 +57,7 @@ describe('AnimalAdoptionCard', () => {
     await render()
     expect(container.querySelector('.shelter-card-name').textContent).toBe('Pepper')
     expect(container.querySelector('.shelter-card-species').textContent).toBe('Hund · Hündin · Mischling')
-    expect(container.querySelector('.status-chip').textContent).toBe('In Vermittlung')
+    expect(container.querySelector('.status-chip').textContent).toBe('Verfügbar')
   })
 
   test('zeigt das Foto über die vom Server gelieferte /public-media-URL', async () => {
@@ -79,5 +79,14 @@ describe('AnimalAdoptionCard', () => {
   test('ohne distanceKm keine Entfernungsangabe', async () => {
     await render()
     expect(container.querySelector('.animal-card-distance')).toBeNull()
+  })
+})
+
+describe('AnimalAdoptionCard – pausiert (Phase P)', () => {
+  test('ein pausiertes Tier trägt den Chip "Pausiert (on hold)"', async () => {
+    await render({ vermittlung_status: 'pausiert' })
+    const statusChip = container.querySelector('.status-chip')
+    expect(statusChip.textContent).toBe('Pausiert (on hold)')
+    expect(statusChip.classList.contains('status-chip-pausiert')).toBe(true)
   })
 })

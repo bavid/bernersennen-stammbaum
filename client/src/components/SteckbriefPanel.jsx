@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
 import { useIsDemo } from '../lib/demo.js'
-import { STECKBRIEF_PUBLISHABLE_STATUS } from '../lib/shelter.js'
+import { STECKBRIEF_PUBLISHABLE_STATUS, vermittlungStatusLabel } from '../lib/vermittlung.js'
 
 const COPIED_MS = 2000
+
+// „Verfügbar“, „Reserviert“ oder „Pausiert (on hold)“ - aus den gemeinsamen Beschriftungen.
+const PUBLISHABLE_STATUS_TEXT = (() => {
+  const quoted = STECKBRIEF_PUBLISHABLE_STATUS.map((status) => `„${vermittlungStatusLabel(status)}“`)
+  return `${quoted.slice(0, -1).join(', ')} oder ${quoted[quoted.length - 1]}`
+})()
 
 // Steckbrief-Verwaltung auf der Tierseite im Tierheim: veröffentlichen erzeugt einen öffentlichen
 // Link /t/:slug (server: PUT /api/dogs/:id/steckbrief { published }), zurückziehen löscht ihn wieder.
@@ -85,7 +91,7 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
             Steckbrief veröffentlichen
           </button>
           {!canPublish && (
-            <p className="field-hint">Veröffentlichen geht nur mit Status „In Vermittlung“ oder „Reserviert“.</p>
+            <p className="field-hint">Veröffentlichen geht nur mit Status {PUBLISHABLE_STATUS_TEXT}.</p>
           )}
         </>
       )}

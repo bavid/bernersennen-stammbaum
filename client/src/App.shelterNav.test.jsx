@@ -68,14 +68,35 @@ async function render(initialEntry) {
 }
 
 describe('Navigation für Tierheime (family.art === "tierheim")', () => {
-  test('die Hauptnavigation zeigt Tiere, Pinnwand, Collage - kein Stammbaum/Wegbegleiter/Würfe', async () => {
+  test('die Hauptnavigation zeigt Tiere, Pinnwand, Collage, Profil - kein Stammbaum/Wegbegleiter/Würfe', async () => {
     me.mockResolvedValue(shelterFamily)
     listDogs.mockResolvedValue([])
     recentActivity.mockResolvedValue([])
     await render('/tiere')
 
     const labels = [...container.querySelectorAll('.app-nav a')].map((a) => a.textContent)
-    expect(labels).toEqual(['Tiere', 'Pinnwand', 'Collage'])
+    expect(labels).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil'])
+    expect(labels.length).toBeLessThanOrEqual(5)
+  })
+
+  test('"Profil" (Phase P) zeigt den Platzhalter mit Name und Status des Tierheim-Partners', async () => {
+    me.mockResolvedValue({ ...shelterFamily, partner: { ...shelterFamily.partner, status: 'aktiv', gesperrt: false } })
+    await render('/profil')
+
+    const link = [...container.querySelectorAll('.app-nav a')].find((a) => a.textContent === 'Profil')
+    expect(link.getAttribute('href')).toBe('/profil')
+    expect(link.classList.contains('active')).toBe(true)
+    expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
+    expect(container.querySelector('.partner-status-chip').textContent).toBe('Aktiv')
+    expect(container.textContent).toContain('Hier pflegt ihr bald euer Profil.')
+  })
+
+  test('ohne "Zugang" in der Leiste verlinkt das Profil eines Tierheims auf /zugang', async () => {
+    me.mockResolvedValue(shelterFamily)
+    await render('/profil')
+
+    const link = [...container.querySelectorAll('main a')].find((a) => a.textContent.includes('Zugang'))
+    expect(link.getAttribute('href')).toBe('/zugang')
   })
 
   test('"Tiere" verlinkt auf /tiere', async () => {

@@ -250,3 +250,29 @@ describe('SteckbriefPage – nicht gefunden', () => {
     expect(link.getAttribute('href')).toBe('/partner')
   })
 })
+
+describe('SteckbriefPage – Vermittlungsstatus (Phase P)', () => {
+  test('zeigt den Status als Chip, "Verfügbar" für in_vermittlung', async () => {
+    publicAnimal.mockResolvedValue({ ...animal, vermittlung_status: 'in_vermittlung' })
+    await render()
+
+    expect(container.querySelector('.status-chip').textContent).toBe('Verfügbar')
+    expect(container.textContent).not.toContain('Gerade nicht vermittelbar')
+  })
+
+  test('ein pausiertes Tier zeigt "Pausiert (on hold)" und den Hinweis, bald wieder vorbeizuschauen', async () => {
+    publicAnimal.mockResolvedValue({ ...animal, vermittlung_status: 'pausiert' })
+    await render()
+
+    expect(container.querySelector('.status-chip').textContent).toBe('Pausiert (on hold)')
+    expect(container.textContent).toContain('Gerade nicht vermittelbar – schaut bald wieder vorbei.')
+  })
+
+  test('ohne Status (ältere Antwort) weder Chip noch Hinweis', async () => {
+    publicAnimal.mockResolvedValue(animal)
+    await render()
+
+    expect(container.querySelector('.status-chip')).toBeNull()
+    expect(container.textContent).not.toContain('Gerade nicht vermittelbar')
+  })
+})

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
 import { speciesSexLabel } from '../lib/timeline.js'
 import { ageText } from '../lib/dates.js'
-import { vermittlungStatusLabel } from '../lib/shelter.js'
+import { vermittlungStatusLabel } from '../lib/vermittlung.js'
 import { formatDistanceKm } from '../lib/format.js'
 
 // Karte für ein Tier in Vermittlung auf dem Portal seines Tierheims (/p/:slug, Sektion "Fellnasen/Tiere

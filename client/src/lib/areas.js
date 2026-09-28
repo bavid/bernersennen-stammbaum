@@ -1,10 +1,24 @@
 // Bereiche eines Haushalts: das eigene "Zuhause" (art: 'zuhause') und die Familien/Rudel, denen es beitritt.
 
-// Startseite je aktivem Bereich: Zuhause -> Wegbegleiter, Tierheim -> Tiere, Familie/Rudel -> Stammbaum.
-// Gilt auch für klassische Rudel-Logins (kein home.art === 'zuhause'), die landen wie bisher am Stammbaum.
+// Startseite je aktivem Bereich: Zuhause -> Wegbegleiter, Tierheim -> Tiere, Partner-Bereich (Phase P)
+// -> Profil, Familie/Rudel -> Stammbaum. Gilt auch für klassische Rudel-Logins (kein home.art ===
+// 'zuhause'), die landen wie bisher am Stammbaum.
+const START_ROUTES = {
+  zuhause: '/wegbegleiter',
+  tierheim: '/tiere',
+  partner: '/profil'
+}
+
 export function startRoute(family) {
-  if (family?.art === 'tierheim') return '/tiere'
-  return family?.art === 'zuhause' ? '/wegbegleiter' : '/stammbaum'
+  return START_ROUTES[family?.art] || '/stammbaum'
+}
+
+// Bereiche, die zu einem Partner gehören (server/lib/context.js PARTNER_AREA_ARTS): Tierheime bzw.
+// Vermittlungen ('tierheim') und alle anderen Partner ('partner'). me.partner ist dann gesetzt.
+const PARTNER_AREA_ARTS = ['tierheim', 'partner']
+
+export function isPartnerArea(family) {
+  return PARTNER_AREA_ARTS.includes(family?.art)
 }
 
 // Fester Anzeigename für den privaten Bereich eines Haushalts im Bereichswechsler, unabhängig vom

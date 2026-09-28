@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useIsDemo } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
-import { VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel, STECKBRIEF_PUBLISHABLE_STATUS } from '../lib/shelter.js'
+import { NO_STATUS_LABEL, STECKBRIEF_PUBLISHABLE_STATUS, VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel } from '../lib/vermittlung.js'
 
 // "– kein Status –" ist legitim (final-review Phase T Finding 1) - ein frisch aufgenommenes Tier hat
 // oft noch keinen Vermittlungsstatus, und die Option lässt ihn auch wieder entfernen.
 const STATUS_OPTIONS = [
-  { value: '', label: '– kein Status –' },
+  { value: '', label: NO_STATUS_LABEL },
   ...VERMITTLUNG_STATUS_VALUES.map((value) => ({ value, label: vermittlungStatusLabel(value) }))
 ]
 
@@ -15,8 +15,9 @@ const STATUS_OPTIONS = [
 // Nebenwirkungen haben, die auf den ersten Blick nicht sichtbar sind - einen offenen Übergabe-Gutschein
 // entwerten (beim Verlassen von "reserviert", siehe routes/dogs.js updateDog/revokeOpenHandoverVouchers)
 // und einen veröffentlichten Steckbrief zurückziehen (wenn der neue Status nicht mehr vermittelbar ist,
-// siehe PUBLIC_SLUG_KEEP_SQL). Bisher speicherte schon jede Pfeiltasten-Navigation im <select> sofort -
-// jetzt erst ein bewusstes "Speichern", und bei einer der beiden Nebenwirkungen erst nach Bestätigung.
+// siehe PUBLIC_SLUG_KEEP_SQL - "pausiert" zählt seit Phase P als vermittelbar, der Steckbrief bleibt).
+// Bisher speicherte schon jede Pfeiltasten-Navigation im <select> sofort - jetzt erst ein bewusstes
+// "Speichern", und bei einer der beiden Nebenwirkungen erst nach Bestätigung.
 export default function VermittlungStatusPanel({ dog, onChange }) {
   const isDemo = useIsDemo()
   const toast = useToast()

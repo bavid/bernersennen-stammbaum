@@ -1,19 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { adoptionSectionTitle, kategorieLabel, vermittlungStatusLabel } from './shelter.js'
-
-describe('vermittlungStatusLabel', () => {
-  test('returns the German label for a known status', () => {
-    expect(vermittlungStatusLabel('in_vermittlung')).toBe('In Vermittlung')
-    expect(vermittlungStatusLabel('reserviert')).toBe('Reserviert')
-    expect(vermittlungStatusLabel('vermittelt')).toBe('Vermittelt')
-  })
-
-  test('returns null for no/unknown status', () => {
-    expect(vermittlungStatusLabel(null)).toBeNull()
-    expect(vermittlungStatusLabel(undefined)).toBeNull()
-    expect(vermittlungStatusLabel('anderes')).toBeNull()
-  })
-})
+import { adoptionSectionTitle, kategorieLabel } from './shelter.js'
 
 describe('kategorieLabel', () => {
   test('returns the German label for a known category', () => {

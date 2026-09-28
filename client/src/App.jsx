@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
 import { readSetting, writeSetting } from './lib/storage.js'
 import { startRoute } from './lib/areas.js'
+import { navItemsFor } from './lib/navItems.js'
 import { formatVoucherCode } from './lib/voucherCode.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
@@ -11,21 +12,12 @@ import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import ContextSwitcher from './components/ContextSwitcher.jsx'
 import LoginPage from './pages/LoginPage.jsx'
-import OverviewPage from './pages/OverviewPage.jsx'
-import DogDetailPage from './pages/DogDetailPage.jsx'
-import CompanionsPage from './pages/CompanionsPage.jsx'
-import ShelterAnimalsPage from './pages/ShelterAnimalsPage.jsx'
-import LittersPage from './pages/LittersPage.jsx'
-import CollagePage from './pages/CollagePage.jsx'
-import PinboardPage from './pages/PinboardPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
-import ContactAdminPage from './pages/ContactAdminPage.jsx'
 import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
 import PartnersPage from './pages/PartnersPage.jsx'
 import SteckbriefPage from './pages/SteckbriefPage.jsx'
-import NearbyPage from './pages/NearbyPage.jsx'
-import DiscoverPage from './pages/DiscoverPage.jsx'
 import LegalPage from './pages/LegalPage.jsx'
+import AreaRoutes from './AreaRoutes.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 
@@ -36,39 +28,7 @@ const PARTNER_SLUG_RE = /^\/p\/([^/]+)\/?$/
 // /t/<slug> – öffentlicher Steckbrief eines Tiers (Phase T Task 5), derselbe Aufbau wie PARTNER_SLUG_RE.
 const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
 
-// Reiter "Entdecken" (Phase 3) für Haushalte und Rudel, jeweils vor der Collage.
-const NAV_ITEM_DISCOVER = { to: '/entdecken', icon: 'compass', label: 'Entdecken' }
-
-// Haushalte ("Meine Chronik") sehen den Wegbegleiter statt der Würfe – Rudel weiterhin wie bisher.
-const NAV_ITEMS_HOME = [
-  { to: '/wegbegleiter', icon: 'route', label: 'Wegbegleiter' },
-  { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
-  { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
-  NAV_ITEM_DISCOVER,
-  { to: '/collage', icon: 'collage', label: 'Collage' }
-]
-
-const NAV_ITEMS_GROUP = [
-  { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
-  { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
-  { to: '/wuerfe', icon: 'sprout', label: 'Würfe' },
-  NAV_ITEM_DISCOVER,
-  { to: '/collage', icon: 'collage', label: 'Collage' }
-]
-
-// Tierheime (Phase T): kein Stammbaum/Würfe, sondern "Unsere Tiere" als Startseite - Pinnwand und
-// Collage bleiben unverändert nutzbar. Kein "Entdecken" (Phase 3: Tierheim-Navigation unverändert).
-const NAV_ITEMS_SHELTER = [
-  { to: '/tiere', icon: 'paw', label: 'Tiere' },
-  { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
-  { to: '/collage', icon: 'collage', label: 'Collage' }
-]
-
-function navItemsFor(family) {
-  if (family.art === 'tierheim') return NAV_ITEMS_SHELTER
-  return family.art === 'zuhause' ? NAV_ITEMS_HOME : NAV_ITEMS_GROUP
-}
-
+// Hauptnavigation je Bereichsart (lib/navItems.js navItemsFor), Routen des Bereichs in AreaRoutes.jsx.
 // Ab fünf Einträgen wird die Leiste kompakter (layout.css .app-nav-dense), damit sie am Handy bei 375 px
 // und am schmalen Desktop ohne Überlappung passt.
 const DENSE_NAV_MIN_ITEMS = 5
@@ -84,13 +44,6 @@ export function DemoBanner({ onLeave }) {
       </button>
     </div>
   )
-}
-
-// Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
-function RedirectTierUrl() {
-  const { id } = useParams()
-  const { hash } = useLocation()
-  return <Navigate to={`/tier/${id}${hash}`} replace />
 }
 
 // Karte auf /v#CODE mit laufender Sitzung (Phase T Task 5): normalerweise nur "Abmelden und Gutschein
@@ -428,33 +381,7 @@ export default function App() {
               aktuellen Pfad entsprechen kann, z. B. Stammbaum -> Stammbaum) die alte Seiteninstanz
               samt Daten des vorherigen Bereichs stehen. Der key erzwingt ein sauberes Neu-Mounten. */}
           <main className="app-main" key={family.id}>
-            <Routes>
-              <Route
-                path="/stammbaum"
-                element={<OverviewPage family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />}
-              />
-              <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={setFamily} />} />
-              <Route path="/hund/:id" element={<RedirectTierUrl />} />
-              <Route
-                path="/wegbegleiter"
-                element={family.art === 'zuhause' ? <CompanionsPage family={family} /> : <Navigate to={startRoute(family)} replace />}
-              />
-              <Route
-                path="/tiere"
-                element={family.art === 'tierheim' ? <ShelterAnimalsPage family={family} /> : <Navigate to={startRoute(family)} replace />}
-              />
-              <Route path="/pinnwand" element={<PinboardPage />} />
-              <Route path="/wuerfe" element={<LittersPage />} />
-              <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
-              <Route path="/admin-schreiben" element={<ContactAdminPage />} />
-              <Route path="/collage" element={<CollagePage family={family} />} />
-              <Route path="/umgebung" element={<NearbyPage />} />
-              <Route
-                path="/entdecken"
-                element={family.art === 'tierheim' ? <Navigate to={startRoute(family)} replace /> : <DiscoverPage />}
-              />
-              <Route path="*" element={<Navigate to={startRoute(family)} replace />} />
-            </Routes>
+            <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />
           </main>
           <AppFooter onInvite={() => setInviteOpen(true)} />
           <Modal open={inviteOpen} title="Jemanden einladen" onClose={() => setInviteOpen(false)}>

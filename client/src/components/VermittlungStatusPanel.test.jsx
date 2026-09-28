@@ -153,3 +153,50 @@ describe('VermittlungStatusPanel', () => {
     expect(select().value).toBe('vermittelt')
   })
 })
+
+describe('VermittlungStatusPanel – Status "pausiert" (Phase P)', () => {
+  test('bietet alle Status mit den gemeinsamen Beschriftungen an, inklusive "Pausiert (on hold)"', async () => {
+    await render()
+    const options = [...select().querySelectorAll('option')].map((o) => [o.value, o.textContent])
+    expect(options).toEqual([
+      ['', '– kein Status –'],
+      ['in_vermittlung', 'Verfügbar'],
+      ['reserviert', 'Reserviert'],
+      ['pausiert', 'Pausiert (on hold)'],
+      ['vermittelt', 'Vermittelt']
+    ])
+  })
+
+  test('pausieren bei veröffentlichtem Steckbrief speichert ohne Rückzugs-Warnung (der Steckbrief bleibt)', async () => {
+    updateDog.mockResolvedValue({ id: 20, vermittlung_status: 'pausiert', public_slug: 'pepper-ab12cd' })
+    await render({ dog: dog({ vermittlung_status: 'in_vermittlung', public_slug: 'pepper-ab12cd' }) })
+
+    act(() => setSelectValue('pausiert'))
+    expect(saveButton().textContent).toBe('Speichern')
+    await act(async () => saveButton().click())
+
+    expect(container.textContent).not.toContain('Der Steckbrief wird zurückgezogen.')
+    expect(updateDog).toHaveBeenCalledWith(20, { vermittlungStatus: 'pausiert' })
+  })
+
+  test('von "reserviert" auf "pausiert" bleibt die Bestätigung für den Übergabe-Code, ohne Steckbrief-Warnung', async () => {
+    await render({ dog: dog({ vermittlung_status: 'reserviert', public_slug: 'pepper-ab12cd' }) })
+
+    act(() => setSelectValue('pausiert'))
+    await act(async () => saveButton().click())
+
+    expect(updateDog).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Der offene Übergabe-Code wird ungültig.')
+    expect(container.textContent).not.toContain('Der Steckbrief wird zurückgezogen.')
+  })
+
+  test('von "pausiert" auf "vermittelt" zieht einen veröffentlichten Steckbrief zurück und fragt deshalb nach', async () => {
+    await render({ dog: dog({ vermittlung_status: 'pausiert', public_slug: 'pepper-ab12cd' }) })
+
+    act(() => setSelectValue('vermittelt'))
+    await act(async () => saveButton().click())
+
+    expect(updateDog).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Der Steckbrief wird zurückgezogen.')
+  })
+})

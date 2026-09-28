@@ -108,12 +108,12 @@ describe('Reiter "Entdecken" in der Hauptnavigation', () => {
     expect(navLabels()).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
   })
 
-  test('Tierheim: unverändert Tiere, Pinnwand, Collage', async () => {
+  test('Tierheim: Tiere, Pinnwand, Collage und (Phase P) Profil - kein Entdecken', async () => {
     await render(shelter, '/tiere')
-    expect(navLabels()).toEqual(['Tiere', 'Pinnwand', 'Collage'])
+    expect(navLabels()).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil'])
   })
 
-  test('mit fünf Einträgen bekommt die Leiste die kompakte Variante, mit drei nicht', async () => {
+  test('mit fünf Einträgen bekommt die Leiste die kompakte Variante, mit vier nicht', async () => {
     await render(home, '/entdecken')
     expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(true)
 
