@@ -230,4 +230,18 @@
   .companion-chip {
     display: none;
   }
+
+  /* Rechts neben dem Balken ist auf dem Handy kein Platz: „heute“ zeigt die Linie,
+     die Erinnerungs-Beschriftung wandert über den Balken (dort sitzt sonst der Herkunfts-Chip) */
+  .companion-bar-label-today {
+    display: none;
+  }
+
+  .companion-bar-label-memory {
+    top: auto;
+    bottom: 100%;
+    left: 0;
+    margin: 0 0 3px;
+    transform: none;
+  }
 }
