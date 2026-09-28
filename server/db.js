@@ -319,4 +319,38 @@ addColumnIfMissing('vouchers', 'dog_id', 'INTEGER')
 // die Gültigkeitsprüfung in redeem/claim) - ohne Index ein Full-Table-Scan über vouchers.
 db.exec('CREATE INDEX IF NOT EXISTS idx_vouchers_dog ON vouchers(dog_id)')
 
+// Phase 3 Task 1: Reiter "Entdecken" - Empfehlungen/Anzeigen, anonyme Klickzählung, Spendenberichte und
+// Admin-Einstellungen (docs/superpowers/plans/2026-09-29-phase-3-entdecken.md). Der Admin pflegt
+// promotions/donation_reports/settings über routes/adminMarketing.js (lib/promotions.js validatePromotion).
+// link_clicks zählt Klicks auf externe Links pro Tag OHNE Cookie/IP (siehe Task 2, routes/redirect.js).
+// promotions.partner_id trägt bewusst KEINE REFERENCES - wie dog_transfers/timeline_entries.herkunft_family_id
+// (siehe Kommentar oben) soll eine Empfehlung nicht an einem später gelöschten Partner hängen bleiben.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS promotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partner_id INTEGER,
+    bereich TEXT NOT NULL CHECK (bereich IN ('futter','hundeschule','begleiter','unterstuetzen')),
+    kennzeichnung TEXT NOT NULL CHECK (kennzeichnung IN ('Anzeige','Empfehlung','Partner')),
+    empfohlen_von TEXT, titel TEXT NOT NULL, text TEXT, url TEXT,
+    bild_file TEXT, tierart TEXT, aktiv INTEGER NOT NULL DEFAULT 1,
+    start TEXT, ende TEXT, sort INTEGER NOT NULL DEFAULT 0, is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_promotions_bereich ON promotions(bereich, aktiv);
+
+  CREATE TABLE IF NOT EXISTS link_clicks (
+    target_type TEXT NOT NULL, target_id INTEGER NOT NULL, tag TEXT NOT NULL, anzahl INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (target_type, target_id, tag)
+  );
+
+  CREATE TABLE IF NOT EXISTS donation_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, zeitraum TEXT NOT NULL,
+    eingang_cents INTEGER NOT NULL, kosten_cents INTEGER NOT NULL, weitergeleitet_cents INTEGER NOT NULL,
+    empfaenger TEXT, nachweis_url TEXT, is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+`)
+
 module.exports = db
