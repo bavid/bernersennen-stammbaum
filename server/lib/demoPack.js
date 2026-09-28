@@ -3,8 +3,10 @@ const crypto = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
 const bcrypt = require('bcryptjs')
+const { partnerMediaDir: defaultMediaDir } = require('../config')
 const { deleteFamily, removeUploads } = require('./families')
 const { validatePartner, slugify } = require('./partners')
+const { validatePromotion, validateUrl, cleanOptionalText, MAX_TEXT_LENGTH } = require('./promotions')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
 const {
   HOUSEHOLD_NAME,
@@ -14,6 +16,7 @@ const {
 } = require('../seed/demo-household')
 const { DEMO_PARTNERS } = require('../seed/demo-partners')
 const { SHELTER_NAME, DOGS: SHELTER_DOGS, TIMELINE: SHELTER_TIMELINE } = require('../seed/demo-shelter')
+const { DEMO_PROMOTIONS, DEMO_SETTINGS, DEMO_DONATION_REPORT } = require('../seed/demo-discover')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -273,6 +276,100 @@ function createDemoShelter(db, { copyImage, partnerId }) {
   return { familyId, dogIds: ids, dogs: SHELTER_DOGS.length, entries: SHELTER_TIMELINE.length }
 }
 
+// --- Phase 3 Task 3: Demo-Inhalte für "Entdecken" (seed/demo-discover.js) ---------------------------
+
+const DEMO_SETTINGS_PREFIX = 'demo_'
+
+// Genau die Einstellungen, die routes/adminMarketing.js (SETTINGS_KEYS) kennt - geprüft mit denselben
+// lib/promotions.js-Helfern wie dort (Link normalisiert, Text getrimmt und längenbegrenzt).
+const DEMO_SETTING_VALIDATORS = {
+  gofundme_url: (value) => validateUrl(value, 'Der Demo-GoFundMe-Link'),
+  unterstuetzen_text: (value) => cleanOptionalText(value, MAX_TEXT_LENGTH, 'Der Demo-Unterstützen-Text')
+}
+
+// Räumt die bisherigen Demo-Inhalte für "Entdecken" weg: Demo-Empfehlungen samt ihrer Klickzahlen
+// (link_clicks hängt nur über target_type/target_id an der Empfehlung, ohne Fremdschlüssel), alle
+// demo_*-Einstellungen und die Demo-Spendenberichte. Echte Zeilen (is_demo = 0 bzw. Schlüssel ohne
+// "demo_") bleiben unberührt. Gibt die Bilddateien der gelöschten Empfehlungen zurück - die entfernt
+// replaceDemoPack erst NACH der Transaktion (wie die Fotos der alten Demo-Familien), damit ein
+// Rollback keine noch gebrauchten Bilder verliert.
+function removeDemoDiscoverContent(db) {
+  const previous = db.prepare('SELECT id, bild_file FROM promotions WHERE is_demo = 1').all()
+  if (previous.length) {
+    const ids = previous.map((row) => row.id)
+    const placeholders = ids.map(() => '?').join(', ')
+    db.prepare(`DELETE FROM link_clicks WHERE target_type = 'promotion' AND target_id IN (${placeholders})`).run(...ids)
+    db.prepare(`DELETE FROM promotions WHERE id IN (${placeholders})`).run(...ids)
+  }
+  db.prepare('DELETE FROM settings WHERE substr(key, 1, ?) = ?').run(DEMO_SETTINGS_PREFIX.length, DEMO_SETTINGS_PREFIX)
+  db.prepare('DELETE FROM donation_reports WHERE is_demo = 1').run()
+  return previous.map((row) => row.bild_file).filter(Boolean)
+}
+
+// Seed-Bild mit zufälligem Namen in den öffentlichen partner-media-Ordner - dort liegen auch die vom
+// Admin hochgeladenen Empfehlungsbilder (routes/adminMarketing.js POST /promotions/:id/image).
+function copyPromotionImage(mediaDir, fileName) {
+  fs.mkdirSync(mediaDir, { recursive: true })
+  const target = `${crypto.randomUUID()}${path.extname(fileName)}`
+  fs.copyFileSync(path.join(IMAGE_DIR, fileName), path.join(mediaDir, target))
+  return target
+}
+
+// Dieselbe validatePromotion() wie POST /api/admin/promotions - erst ALLE Einträge prüfen, dann Bilder
+// kopieren und einfügen, damit eine ungültige Seed-Angabe keine Bilddatei hinterlässt. partnerSlug
+// zeigt auf einen Demo-Partner, der in derselben Transaktion gerade neu entstanden ist (neue Id).
+function insertDemoPromotions(db, mediaDir) {
+  const findPartner = db.prepare('SELECT id FROM partners WHERE slug = ? AND is_demo = 1')
+  const prepared = DEMO_PROMOTIONS.map(({ partnerSlug, bild, ...input }) => {
+    const partner = partnerSlug ? findPartner.get(partnerSlug) : null
+    if (partnerSlug && !partner) throw new Error(`Demo-Partner "${partnerSlug}" fehlt für die Demo-Empfehlung "${input.titel}"`)
+    return { clean: validatePromotion({ ...input, partnerId: partner ? partner.id : null }, { db }), bild }
+  })
+  return prepared.map(({ clean, bild }) => {
+    const row = { ...clean, bild_file: bild ? copyPromotionImage(mediaDir, bild) : null, is_demo: 1 }
+    const columns = Object.keys(row)
+    return db
+      .prepare(`INSERT INTO promotions (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
+      .run(...columns.map((col) => row[col])).lastInsertRowid
+  })
+}
+
+// Schreibt die Demo-Einstellungen IMMER mit "demo_"-Präfix - ein Demo-Wechsel kann so keinen echten
+// Schlüssel überschreiben, egal was in seed/demo-discover.js steht.
+function insertDemoSettings(db) {
+  const insert = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)')
+  for (const [key, value] of Object.entries(DEMO_SETTINGS)) {
+    const validate = DEMO_SETTING_VALIDATORS[key]
+    if (!validate) throw new Error(`Unbekannte Demo-Einstellung: ${key}`)
+    insert.run(`${DEMO_SETTINGS_PREFIX}${key}`, validate(value) || '')
+  }
+}
+
+function insertDemoDonationReport(db) {
+  const report = DEMO_DONATION_REPORT
+  db.prepare(
+    `INSERT INTO donation_reports (zeitraum, eingang_cents, kosten_cents, weitergeleitet_cents, empfaenger, nachweis_url, is_demo)
+     VALUES (?, ?, ?, ?, ?, ?, 1)`
+  ).run(
+    report.zeitraum,
+    report.eingangCents,
+    report.kostenCents,
+    report.weitergeleitetCents,
+    report.empfaenger,
+    validateUrl(report.nachweisUrl, 'Der Nachweis-Link')
+  )
+}
+
+// Ersetzt alle Demo-Inhalte für "Entdecken" (muss innerhalb einer Transaktion laufen, NACH
+// insertDemoPartners - "Welpenkurs im Frühjahr" braucht die neue Id des Demo-Partners Pfotenglück).
+function replaceDemoDiscoverContent(db, mediaDir) {
+  const removedImages = removeDemoDiscoverContent(db)
+  const promotionIds = insertDemoPromotions(db, mediaDir)
+  insertDemoSettings(db)
+  insertDemoDonationReport(db)
+  return { promotionIds, removedImages }
+}
+
 // Erzeugt "Meine Chronik" eines Haushalts mit Begleitern (Einzug/Abschied/Herkunft), teils privaten
 // Chronik-Einträgen und einem Mitbewohner-Paar ohne gemeinsame Abstammung.
 // groupFamilyId: tritt der Haushalt sofort einem Rudel bei (z. B. dem Demo-Rudel oder dem Test-Rudel)?
@@ -352,14 +449,19 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, t
 // unangetastet bleiben, statt für einen Moment ganz zu fehlen.
 // Phase T Task 6: die drei Demo-Partner entstehen in fester Reihenfolge (siehe seed/demo-partners.js),
 // aber ein Nachschlagen über den Slug bleibt robust, falls sich die Reihenfolge dort je ändert.
+//
+// Phase 3 Task 3: auch die Demo-Inhalte für "Entdecken" (Demo-Empfehlungen samt Klickzahlen und Bildern,
+// demo_*-Einstellungen, Demo-Spendenberichte - siehe seed/demo-discover.js) werden in DERSELBEN
+// Transaktion weggeräumt und neu angelegt; echte Empfehlungen/Einstellungen/Berichte bleiben unberührt.
+// mediaDir: Ablage der Empfehlungsbilder (Standard: config.partnerMediaDir, wie beim Admin-Upload).
 const SHELTER_PARTNER_SLUG = 'tierheim-sonnenhang'
 
-function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
+function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDir } = {}) {
   const previous = db.prepare('SELECT id, name FROM families WHERE is_demo = 1').all()
   const previousPartnerIds = db.prepare('SELECT id FROM partners WHERE is_demo = 1').all().map((row) => row.id)
   const copyImage = createImageCopier(uploadDir)
 
-  const { created, household, shelter, partnerIds } = db.transaction(() => {
+  const { created, household, shelter, partnerIds, discover } = db.transaction(() => {
     const packOptions = { password: crypto.randomBytes(24).toString('base64url'), isDemo: true, copyImage }
     if (theme !== undefined) packOptions.theme = theme
     if (name !== undefined) packOptions.name = name
@@ -375,6 +477,12 @@ function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
       db.prepare(`UPDATE families SET partner_id = NULL WHERE partner_id IN (${placeholders})`).run(...previousPartnerIds)
       db.prepare(`UPDATE vouchers SET partner_id = NULL WHERE partner_id IN (${placeholders})`).run(...previousPartnerIds)
       db.prepare(`UPDATE voucher_batches SET partner_id = NULL WHERE partner_id IN (${placeholders})`).run(...previousPartnerIds)
+      // Phase 3 Task 3: dasselbe für Empfehlungen (promotions.partner_id, ebenfalls ohne REFERENCES) und
+      // für Klickzahlen auf Website/Spendenlink der alten Demo-Partner (link_clicks, nur über die Id).
+      db.prepare(`UPDATE promotions SET partner_id = NULL WHERE partner_id IN (${placeholders})`).run(...previousPartnerIds)
+      db.prepare(
+        `DELETE FROM link_clicks WHERE target_type IN ('partner-website', 'partner-spende') AND target_id IN (${placeholders})`
+      ).run(...previousPartnerIds)
       db.prepare(`DELETE FROM partners WHERE id IN (${placeholders})`).run(...previousPartnerIds)
     }
     const newPartnerIds = insertDemoPartners(db)
@@ -393,8 +501,20 @@ function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
       shelterFamilyId: shelterResult.familyId
     })
 
-    return { created: rudelResult, household: householdResult, shelter: shelterResult, partnerIds: newPartnerIds }
+    // Zuletzt: kopiert als einziger Schritt Dateien in den partner-media-Ordner - scheitert vorher
+    // etwas, entsteht dort also nichts Verwaistes.
+    const discoverResult = replaceDemoDiscoverContent(db, mediaDir)
+
+    return {
+      created: rudelResult,
+      household: householdResult,
+      shelter: shelterResult,
+      partnerIds: newPartnerIds,
+      discover: discoverResult
+    }
   })()
+
+  for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
 
   // Die alten Demo-Familien sind jetzt vollständig durch neue ersetzt (auch das Tierheim, is_demo=1,
   // art='tierheim', gehört dazu und steckt schon in previous) - dog_transfers-Zeilen, die noch auf eine
@@ -409,7 +529,7 @@ function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
   }
 
   for (const family of previous) removeUploads(uploadDir, deleteFamily(db, family.id))
-  return { removed: previous, created, household, shelter, partnerIds }
+  return { removed: previous, created, household, shelter, partnerIds, promotionIds: discover.promotionIds }
 }
 
 module.exports = {
