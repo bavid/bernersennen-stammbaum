@@ -9,6 +9,7 @@ const { rejectHoneypot } = require('../middleware/abuse')
 const { cleanText, cleanId } = require('../lib/validate')
 const { isTheme } = require('../lib/themes')
 const { ART, canEnter, buildMe } = require('../lib/context')
+const { normalizeCode, hashCode } = require('../lib/codes')
 
 const router = express.Router()
 
@@ -32,10 +33,14 @@ function safeEqual(a, b) {
 }
 
 // onlyJoinable: für /families/join – nur echte Rudel, keine Demo (kein Zuhause anderer, keine Demo-Familie)
+// legacy_password = 1 immer Pflicht: Gutschein-Zuhause haben password_hash = '!' (Schlüssel statt
+// Passwort) - die Schleife läuft nie über sie, damit '!' nie versehentlich zu irgendetwas "passt".
 async function findFamilyByPassword(password, { onlyJoinable = false } = {}) {
-  const base = 'SELECT id, name, theme, is_demo, password_hash FROM families'
-  const query = onlyJoinable ? `${base} WHERE art = 'rudel' AND is_demo = 0` : base
-  const families = db.prepare(query).all()
+  const conditions = ['legacy_password = 1']
+  if (onlyJoinable) conditions.push("art = 'rudel'", 'is_demo = 0')
+  const families = db
+    .prepare(`SELECT id, name, theme, is_demo, password_hash FROM families WHERE ${conditions.join(' AND ')}`)
+    .all()
   for (const family of families) {
     if (await bcrypt.compare(password, family.password_hash)) return family
   }
@@ -98,14 +103,38 @@ router.post('/families', authLimiter, rejectHoneypot, async (req, res, next) => 
 
 // Kein Honeypot beim Login: Passwort-Manager füllen das versteckte Feld mit dem gespeicherten
 // Benutzernamen und sperren sonst echte Menschen aus. Schutz hier: authLimiter.
+// { secret } ist das neue Feld (Schlüssel ODER altes Passwort); { password } bleibt als Alias für
+// alte Clients. Sieht secret wie ein Gutschein-Code aus, wird zuerst dort nachgeschaut - erst wenn
+// weder ein Schlüssel noch ein offener Gutschein passt, läuft die alte Passwort-Schleife (ein altes
+// Passwort könnte zufällig codeförmig sein).
 router.post('/login', authLimiter, async (req, res, next) => {
   try {
-    const { password } = req.body || {}
-    if (typeof password !== 'string' || !password) {
-      return res.status(400).json({ error: 'Passwort ist erforderlich' })
+    const { secret, password } = req.body || {}
+    const rawSecret = typeof secret === 'string' && secret ? secret : password
+    if (typeof rawSecret !== 'string' || !rawSecret) {
+      return res.status(400).json({ error: 'Schlüssel oder Passwort ist erforderlich' })
     }
 
-    const match = await findFamilyByPassword(password)
+    const normalized = normalizeCode(rawSecret)
+    if (normalized) {
+      const codeHash = hashCode(normalized)
+      const family = db.prepare('SELECT id, name, theme, is_demo FROM families WHERE access_key_hash = ?').get(codeHash)
+      if (family) {
+        setSessionCookie(res, family.id)
+        return res.json(buildMe(family.id, family.id, Boolean(family.is_demo)))
+      }
+      const voucher = db
+        .prepare(
+          `SELECT 1 FROM vouchers WHERE code_hash = ? AND redeemed_at IS NULL AND revoked_at IS NULL
+             AND (expires_at IS NULL OR expires_at > datetime('now'))`
+        )
+        .get(codeHash)
+      if (voucher) {
+        return res.status(409).json({ redeem: true })
+      }
+    }
+
+    const match = await findFamilyByPassword(rawSecret)
     if (!match) {
       return res.status(401).json({ error: 'Dieses Passwort kennen wir nicht' })
     }

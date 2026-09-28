@@ -84,6 +84,8 @@ module.exports = {
   trustProxy: readTrustProxy(),
   corsOrigin: readCorsOrigin(),
   loginRateLimit: Number(process.env.LOGIN_RATE_LIMIT) || 20,
+  // Gutschein prüfen/einlösen: eigenes Limit, weil beides öffentlich ohne Login erreichbar ist
+  codeRateLimit: Number(process.env.CODE_RATE_LIMIT) || 20,
   uploadRateLimit: Number(process.env.UPLOAD_RATE_LIMIT) || 200,
   // Anfragen pro IP je 5 Minuten (API bzw. Fotos) und Schreibzugriffe pro Rudel je 10 Minuten
   apiRateLimit: Number(process.env.API_RATE_LIMIT) || 900,

@@ -13,7 +13,10 @@ const COOKIE_OPTIONS = {
   maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000
 }
 
-const familyById = db.prepare('SELECT is_demo FROM families WHERE id = ?')
+const familyById = db.prepare('SELECT is_demo, auth_epoch FROM families WHERE id = ?')
+const userById = db.prepare('SELECT session_epoch FROM users WHERE id = ?')
+
+const SESSION_EXPIRED = 'Sitzung abgelaufen – bitte neu anmelden'
 
 // Prüft die Session, ohne Schreibzugriffe im Demo-Modus zu sperren (das übernimmt requireAuth).
 // req.homeId ist die Identität (Zuhause oder klassisches Rudel-Login), req.familyId der aktive Bereich.
@@ -27,6 +30,18 @@ function requireSession(req, res, next) {
     const family = familyById.get(payload.familyId)
     if (!family) {
       return res.status(401).json({ error: 'Rudel existiert nicht mehr' })
+    }
+    // Sitzungs-Epoche der Identität: alte Tokens ohne "e" gelten, solange auth_epoch noch 0 ist
+    // (nie erneuert). Wird der Schlüssel erneuert, steigt auth_epoch und jedes ältere Token fällt raus.
+    if ((payload.e ?? 0) !== family.auth_epoch) {
+      return res.status(401).json({ error: SESSION_EXPIRED })
+    }
+    // Benutzer-Login (uid/ue): genauso, aber je Benutzer statt je Familie (z. B. nach Wiederherstellung).
+    if (payload.uid) {
+      const user = userById.get(payload.uid)
+      if (!user || (payload.ue ?? 0) !== user.session_epoch) {
+        return res.status(401).json({ error: SESSION_EXPIRED })
+      }
     }
     let active = payload.activeFamilyId ?? payload.familyId
     if (active !== payload.familyId && !canEnter(payload.familyId, active)) {
@@ -57,12 +72,21 @@ function requireAuth(req, res, next) {
   })
 }
 
-function signSession(familyId, activeFamilyId = familyId) {
-  return jwt.sign({ familyId, activeFamilyId }, jwtSecret, { expiresIn: `${SESSION_DAYS}d` })
+// Liest die Epochen selbst, statt sie den Aufrufern zu überlassen: familyId ist die Identität (ihr
+// auth_epoch landet in "e"), userId optional (dessen session_epoch dann in "ue" landet).
+function signSession(familyId, activeFamilyId = familyId, { userId } = {}) {
+  const family = familyById.get(familyId)
+  const payload = { familyId, activeFamilyId, e: family?.auth_epoch ?? 0 }
+  if (userId) {
+    const user = userById.get(userId)
+    payload.uid = userId
+    payload.ue = user?.session_epoch ?? 0
+  }
+  return jwt.sign(payload, jwtSecret, { expiresIn: `${SESSION_DAYS}d` })
 }
 
-function setSessionCookie(res, familyId, activeFamilyId = familyId) {
-  res.cookie(sessionCookie, signSession(familyId, activeFamilyId), COOKIE_OPTIONS)
+function setSessionCookie(res, familyId, activeFamilyId = familyId, opts = {}) {
+  res.cookie(sessionCookie, signSession(familyId, activeFamilyId, opts), COOKIE_OPTIONS)
 }
 
 function clearSessionCookie(res) {

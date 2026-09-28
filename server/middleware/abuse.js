@@ -8,6 +8,7 @@ const { requireAuth } = require('./auth')
 
 const FIVE_MINUTES = 5 * 60 * 1000
 const TEN_MINUTES = 10 * 60 * 1000
+const FIFTEEN_MINUTES = 15 * 60 * 1000
 const DEFAULT_MIN_FREE_DISK_MB = 1024
 const BYTES_PER_MB = 1024 * 1024
 
@@ -22,6 +23,13 @@ const apiLimiter = limiter(
 
 // Fotos pro IP (großzügiger, eine Seite lädt viele Bilder)
 const photoLimiter = limiter({ windowMs: FIVE_MINUTES, limit: config.photoRateLimit }, 'Zu viele Anfragen.')
+
+// Gutschein prüfen/einlösen (per IP): öffentlich ohne Login erreichbar, Codes nie in Logs -> eigenes,
+// knappes Limit statt des allgemeinen apiLimiter allein
+const codeLimiter = limiter(
+  { windowMs: FIFTEEN_MINUTES, limit: config.codeRateLimit },
+  'Zu viele Versuche. Bitte warte ein paar Minuten und probiere es dann erneut.'
+)
 
 const writeLimiter = limiter(
   { windowMs: TEN_MINUTES, limit: config.writeRateLimit, keyGenerator: (req) => `family-${req.familyId}` },
@@ -53,4 +61,4 @@ function requireFreeDisk(req, res, next) {
   })
 }
 
-module.exports = { apiLimiter, photoLimiter, limitWrites, rejectHoneypot, requireFreeDisk }
+module.exports = { apiLimiter, photoLimiter, codeLimiter, limitWrites, rejectHoneypot, requireFreeDisk }
