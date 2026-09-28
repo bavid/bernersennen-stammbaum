@@ -248,6 +248,54 @@ test('Partner-Bereich: Profil pflegen, veröffentlichen, pausieren, Logo', async
     assert.ok(!(await get('/api/public/partners')).data.some((p) => p.slug === partner.slug))
   })
 
+  await t.test('öffentliches Profil: PUT darf Pflichtangaben nicht entfernen, pausiert geht alles', async () => {
+    const { partner, cookie } = await createPartnerArea({ plz: '10115', portalText: LONG_PORTAL_TEXT, website: 'https://example.org/aktiv' })
+    assert.equal((await post('/api/partner-area/profile/publish', { aktiv: true }, cookie)).status, 200)
+    const before = partnerRow(partner.id)
+
+    const noPlz = await put('/api/partner-area/profile', { plz: '', website: 'https://example.org/neu' }, cookie)
+    assert.equal(noPlz.status, 400)
+    assert.deepEqual(noPlz.data.fehlt, ['Postleitzahl'])
+    assert.equal(noPlz.data.error, 'Solange euer Profil öffentlich ist, braucht es: Postleitzahl – oder pausiert es zuerst.')
+    assert.deepEqual(partnerRow(partner.id), before, 'nichts geändert, auch nicht die mitgeschickte Website')
+
+    const shortText = await put('/api/partner-area/profile', { portalText: 'Zu kurz.' }, cookie)
+    assert.equal(shortText.status, 400)
+    assert.deepEqual(shortText.data.fehlt, ['Portal-Text (mind. 40 Zeichen)'])
+    const noText = await put('/api/partner-area/profile', { portalText: null, plz: null }, cookie)
+    assert.equal(noText.status, 400)
+    assert.deepEqual(noText.data.fehlt, ['Postleitzahl', 'Portal-Text (mind. 40 Zeichen)'])
+    assert.deepEqual(partnerRow(partner.id), before)
+
+    // Änderungen, die vollständig bleiben, gehen weiter
+    const ok = await put('/api/partner-area/profile', { portalTitel: 'Neuer Titel', plz: '20095' }, cookie)
+    assert.equal(ok.status, 200)
+    assert.equal(ok.data.status, 'aktiv')
+
+    // Pausiert: frei bearbeitbar, auch Pflichtangaben leeren
+    assert.equal((await post('/api/partner-area/profile/publish', { aktiv: false }, cookie)).status, 200)
+    const cleared = await put('/api/partner-area/profile', { plz: '', portalText: null }, cookie)
+    assert.equal(cleared.status, 200)
+    assert.equal(cleared.data.plz, null)
+    assert.equal(cleared.data.portalText, null)
+    assert.equal(cleared.data.status, 'pausiert')
+    assert.equal(partnerRow(partner.id).ort, null)
+  })
+
+  await t.test('öffentliches Profil, das schon unvollständig ist: andere Felder bleiben änderbar', async () => {
+    // Der Betreiber kann einen Partner ohne Portal-Text aktiv schalten - der Partner soll dann trotzdem
+    // z. B. seine Telefonnummer pflegen können, ohne erst den Text schreiben zu müssen.
+    const { partner, cookie } = await createPartnerArea({ plz: '10115', status: 'aktiv' })
+    const res = await put('/api/partner-area/profile', { kontaktTelefon: '030 654321' }, cookie)
+    assert.equal(res.status, 200)
+    assert.equal(partnerRow(partner.id).kontakt_telefon, '030 654321')
+    // Was schon da ist, darf aber nicht verschwinden
+    const noPlz = await put('/api/partner-area/profile', { plz: null }, cookie)
+    assert.equal(noPlz.status, 400)
+    assert.deepEqual(noPlz.data.fehlt, ['Postleitzahl', 'Portal-Text (mind. 40 Zeichen)'])
+    assert.equal(partnerRow(partner.id).plz, '10115')
+  })
+
   await t.test('Veröffentlichen/Pausieren bei gesperrtem Partner -> 403', async () => {
     const { partner, cookie } = await createPartnerArea({ plz: '10115', portalText: LONG_PORTAL_TEXT })
     const locked = await put(

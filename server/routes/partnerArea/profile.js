@@ -24,7 +24,8 @@ router.get('/', (req, res) => {
 })
 
 // Nur die mitgeschickten, erlaubten Felder ändern sich (lib/partnerProfile.js validateProfileUpdate) -
-// Slug, Typ, Status und Sperre nie.
+// Slug, Typ, Status und Sperre nie. Ein aktives Profil darf dabei keine Pflichtangabe verlieren (400 mit
+// fehlt, siehe assertStaysComplete).
 router.put('/', denyDemoWrites, (req, res, next) => {
   try {
     const changes = validateProfileUpdate(req.body, req.partner)
@@ -37,7 +38,7 @@ router.put('/', denyDemoWrites, (req, res, next) => {
     }
     sendProfile(res, req.partner.id)
   } catch (err) {
-    if (err.status) return res.status(err.status).json({ error: err.message })
+    if (err.status) return res.status(err.status).json({ error: err.message, ...(err.fehlt ? { fehlt: err.fehlt } : {}) })
     next(err)
   }
 })

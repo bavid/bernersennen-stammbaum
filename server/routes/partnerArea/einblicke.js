@@ -34,8 +34,16 @@ const router = express.Router()
 
 const NOT_FOUND = 'Diesen Einblick gibt es nicht'
 
+// security-review Phase P Task 3: Einblicke sind immer öffentlich und zeigen Tiere der Kundschaft - nur
+// JPG und PNG, denn nur für diese beiden entfernt lib/photoUpload.js die Metadaten (EXIF/GPS). WebP/GIF
+// scheitern schon am Content-Type (fileFilter) und, falls als JPG/PNG ausgegeben, an den Magic Bytes.
+// Der allgemeine Foto-Upload (routes/uploads.js) bleibt davon unberührt.
+const EINBLICK_MIME_TYPES = ['image/jpeg', 'image/png']
+const EINBLICK_EXTS = ['jpg', 'png']
+const TYPE_MESSAGE = 'Bitte als JPG oder PNG hochladen.'
+
 // Felder: datum, text (<= 300 Zeichen, in UTF-8 bis gut 1 KB), einwilligung - plus das Foto.
-const einblickUpload = createPhotoUpload({ fields: 3, fieldSize: 4096, parts: 4 })
+const einblickUpload = createPhotoUpload({ fields: 3, fieldSize: 4096, parts: 4 }, { mimeTypes: EINBLICK_MIME_TYPES, typeError: TYPE_MESSAGE })
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -74,7 +82,7 @@ router.post('/', denyDemoWrites, uploadLimiter, requireFreeDisk, rejectWhenFull,
     try {
       if (!req.file) throw httpError(400, 'Bitte wählt ein Foto aus.')
       const { datum, text } = validateNewEinblick(req.body)
-      if (!hasMatchingSignature(req.file)) throw httpError(400, 'Nur Fotos (JPG, PNG, WebP, GIF) sind erlaubt')
+      if (!hasMatchingSignature(req.file, EINBLICK_EXTS)) throw httpError(400, TYPE_MESSAGE)
       stripMetadataInPlace(req.file)
       const einblick = insertEinblick({ partner: req.partner, fotoUrl: `/uploads/${req.file.filename}`, datum, text })
       res.status(201).json(ownEinblick(einblick))

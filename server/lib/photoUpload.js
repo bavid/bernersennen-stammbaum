@@ -35,9 +35,13 @@ const uploadLimiter = rateLimit({
   message: { error: 'Zu viele Fotos in kurzer Zeit. Bitte später weitermachen.' }
 })
 
+const ALL_PHOTO_MIME_TYPES = Object.keys(EXTENSION_BY_MIME)
+const DEFAULT_TYPE_ERROR = 'Nur Fotos (JPG, PNG, WebP, GIF) sind erlaubt'
+
 // multer-Instanz für EIN Foto; limits ergänzt/überschreibt die Grenzen für Textfelder (fields, fieldSize,
-// parts) je nach Formular.
-function createPhotoUpload(limits = {}) {
+// parts) je nach Formular. mimeTypes/typeError: engere Auswahl für eine einzelne Route (z. B. Einblicke nur
+// JPG/PNG) - Standard ist die ganze Whitelist.
+function createPhotoUpload(limits = {}, { mimeTypes = ALL_PHOTO_MIME_TYPES, typeError = DEFAULT_TYPE_ERROR } = {}) {
   fs.mkdirSync(uploadDir, { recursive: true })
   return multer({
     storage: multer.diskStorage({
@@ -46,8 +50,8 @@ function createPhotoUpload(limits = {}) {
     }),
     limits: { fileSize: MAX_FILE_BYTES, files: 1, ...limits },
     fileFilter: (req, file, cb) => {
-      if (!EXTENSION_BY_MIME[file.mimetype]) {
-        const error = new Error('Nur Fotos (JPG, PNG, WebP, GIF) sind erlaubt')
+      if (!EXTENSION_BY_MIME[file.mimetype] || !mimeTypes.includes(file.mimetype)) {
+        const error = new Error(typeError)
         error.status = 400
         return cb(error)
       }
@@ -93,12 +97,13 @@ function detectPhotoExt(buffer) {
   return buffer.length >= 6 && GIF_SIGNATURES.includes(buffer.toString('ascii', 0, 6)) ? 'gif' : null
 }
 
-// Für ÖFFENTLICHE Fotos (Einblicke): passt der Inhalt (Magic Bytes) zur behaupteten Bild-Art? Der
-// Content-Type kommt vom Client und beweist nichts - eine beliebige Datei soll nicht als "Foto" öffentlich
-// ausgeliefert werden.
-function hasMatchingSignature(file) {
+// Für ÖFFENTLICHE Fotos (Einblicke): passt der Inhalt (Magic Bytes) zur behaupteten Bild-Art, und ist
+// es eine der erlaubten Arten (allowedExts, Endungen wie in EXTENSION_BY_MIME)? Der Content-Type kommt vom
+// Client und beweist nichts - eine beliebige Datei soll nicht als "Foto" öffentlich ausgeliefert werden.
+function hasMatchingSignature(file, allowedExts = Object.values(EXTENSION_BY_MIME)) {
   try {
-    return detectPhotoExt(fs.readFileSync(filePathOf(file))) === EXTENSION_BY_MIME[file.mimetype]
+    const ext = detectPhotoExt(fs.readFileSync(filePathOf(file)))
+    return allowedExts.includes(ext) && ext === EXTENSION_BY_MIME[file.mimetype]
   } catch {
     return false
   }

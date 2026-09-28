@@ -35,6 +35,11 @@ function pngChunk(type, data) {
   return Buffer.concat([length, Buffer.from(type, 'ascii'), data, Buffer.alloc(4)])
 }
 
+// WebP (RIFF....WEBP) und GIF - gültige Signaturen, aber für Einblicke nicht erlaubt (keine Metadaten-Entfernung).
+const WEBP_BYTES = Buffer.concat([Buffer.from('RIFF', 'ascii'), Buffer.from([20, 0, 0, 0]), Buffer.from('WEBPVP8 ', 'ascii'), Buffer.alloc(12)])
+const GIF_BYTES = Buffer.concat([Buffer.from('GIF89a', 'ascii'), Buffer.from([1, 0, 1, 0, 0, 0, 0, 0x3b])])
+const TYPE_MESSAGE = 'Bitte als JPG oder PNG hochladen.'
+
 const PNG_WITH_TEXT = Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
   pngChunk('IHDR', Buffer.alloc(13)),
@@ -181,15 +186,44 @@ test('Einblicke: Partner zeigen Fotos mit Datum auf ihrem Portal', async (t) => 
     assert.equal((await postEinblick(cookie, { text: 'Welpen abzugeben' })).status, 400)
     assert.equal((await postEinblick(cookie, { text: '<b>fett</b>' })).status, 400)
     assert.equal((await postEinblick(cookie, { foto: null })).status, 400)
-    // Bild-Art passt nicht zum Inhalt / kein Bild / nicht erlaubte Art
-    assert.equal((await postEinblick(cookie, { foto: Buffer.from('kein Bild'), mime: 'image/png', filename: 'a.png' })).status, 400)
-    assert.equal((await postEinblick(cookie, { foto: JPEG_WITH_EXIF, mime: 'image/png', filename: 'a.png' })).status, 400)
-    assert.equal((await postEinblick(cookie, { foto: Buffer.from('<svg/>'), mime: 'image/svg+xml', filename: 'a.svg' })).status, 400)
+    // Bild-Art passt nicht zum Inhalt / kein Bild / nicht erlaubte Art - entschieden nach den Magic Bytes
+    for (const [foto, mime, filename] of [
+      [Buffer.from('kein Bild'), 'image/png', 'a.png'],
+      [JPEG_WITH_EXIF, 'image/png', 'a.png'],
+      [Buffer.from('<svg/>'), 'image/svg+xml', 'a.svg']
+    ]) {
+      const res = await postEinblick(cookie, { foto, mime, filename })
+      assert.equal(res.status, 400, filename)
+      assert.equal(res.data.error, TYPE_MESSAGE)
+    }
     assert.deepEqual(uploadFiles(), before)
     assert.deepEqual((await get('/api/partner-area/einblicke', cookie)).data, [])
 
     // 300 Zeichen gehen genau noch
     assert.equal((await postEinblick(cookie, { text: 'y'.repeat(300) })).status, 201)
+  })
+
+  await t.test('nur JPG und PNG: WebP und GIF -> 400 ohne Datei, auch mit falsch behauptetem Typ', async () => {
+    const { cookie } = await createPartnerArea()
+    const before = uploadFiles()
+    for (const [foto, mime, filename] of [
+      [WEBP_BYTES, 'image/webp', 'a.webp'],
+      [WEBP_BYTES, 'image/jpeg', 'a.jpg'],
+      [GIF_BYTES, 'image/gif', 'a.gif'],
+      [GIF_BYTES, 'image/png', 'a.png']
+    ]) {
+      const res = await postEinblick(cookie, { foto, mime, filename })
+      assert.equal(res.status, 400, `${filename} als ${mime}`)
+      assert.equal(res.data.error, TYPE_MESSAGE)
+    }
+    assert.deepEqual(uploadFiles(), before)
+    assert.deepEqual((await get('/api/partner-area/einblicke', cookie)).data, [])
+
+    // Der allgemeine Foto-Upload (Tiere, Chronik) nimmt WebP/GIF weiterhin an
+    const form = new FormData()
+    form.append('file', new Blob([GIF_BYTES], { type: 'image/gif' }), 'tier.gif')
+    const general = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Cookie: cookie }, body: form })
+    assert.equal(general.status, 201)
   })
 
   await t.test('höchstens 60 Einblicke: der 61. -> 409, keine Datei', async () => {

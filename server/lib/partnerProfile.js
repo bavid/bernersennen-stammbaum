@@ -100,7 +100,25 @@ function validateProfileUpdate(body, existing) {
   const input = { name: existing.name, ...body, typ: existing.typ }
   const clean = validatePartner(input, { existing })
   const columns = keys.flatMap((key) => PROFILE_COLUMNS[key])
-  return Object.fromEntries(columns.map((column) => [column, clean[column]]))
+  const changes = Object.fromEntries(columns.map((column) => [column, clean[column]]))
+  assertStaysComplete(existing, changes)
+  return changes
+}
+
+// security-review Phase P Task 3: ein öffentliches (aktives) Profil darf durch eine Änderung keine
+// Pflichtangabe verlieren - sonst stünde z. B. ein Partner ohne PLZ oder mit leerem Portal öffentlich da.
+// Kein automatisches Pausieren: die Änderung wird abgelehnt, der Partner pausiert selbst, wenn er will.
+// Nur NEU fehlende Angaben zählen: ein vom Betreiber unvollständig aktiv geschalteter Partner kann seine
+// übrigen Felder weiter pflegen, ohne erst alles ergänzen zu müssen. fehlt nennt alle fehlenden Angaben.
+// Entwürfe und pausierte Profile bleiben frei bearbeitbar.
+function assertStaysComplete(existing, changes) {
+  if (existing.status !== 'aktiv') return
+  const before = completeness(existing).fehlt
+  const { fehlt } = completeness({ ...existing, ...changes })
+  if (!fehlt.some((label) => !before.includes(label))) return
+  const err = httpError(400, `Solange euer Profil öffentlich ist, braucht es: ${fehlt.join(', ')} – oder pausiert es zuerst.`)
+  err.fehlt = fehlt
+  throw err
 }
 
 module.exports = { completeness, profileResponse, validateProfileUpdate, MIN_PORTAL_TEXT_LENGTH, PROFILE_COLUMNS }
