@@ -72,6 +72,11 @@ npm run dev       # API auf :4000, Oberfläche auf http://localhost:5173
 
 Unter Windows startet `start.bat` dasselbe per Doppelklick.
 
+**Testumgebung mit eigenen Daten:** `npm run dev:test` (Windows: `start-test.bat`) startet Server und Client mit
+Daten unter `server/.testenv/`, einem Test-Admin (`admin` / `test-admin`) und dem Band „Testsystem“.
+`npm run testenv:reset` löscht die Testdaten und legt die Beispieldaten neu an. Die echte lokale Datenbank bleibt
+unberührt.
+
 | Befehl                          | Zweck                                          |
 | ------------------------------- | ---------------------------------------------- |
 | `npm test`                      | Server-Tests (node:test) und Client-Tests (Vitest) |
@@ -104,9 +109,17 @@ Ohne den Server-Proxy ist die App nur per SSH-Tunnel erreichbar:
 Weitere Menüpunkte: Status, Logs, Backup herunterladen, Einladungscode anzeigen,
 öffentliche Demo neu anlegen, alle Daten löschen (mit automatischem Backup vorher).
 
+**Vorschau (zweite Instanz):** Auf demselben Server läuft eine Vorschau mit Branch `staging` auf Port 3005 – nur
+Beispieldaten, oben das Band „Vorschau“. `.deploy.staging.env.example` nach `.deploy.staging.env` kopieren, dann
+`.\manage.ps1 -Target staging` (Erstinstallation mit **[9]**, Beispieldaten neu mit **[11]**). Freigegebene Stände
+bringt `.\manage.ps1` → **[12]** nach Prod: `main` wird auf genau das getestete SHA vorgespult und dieses SHA
+deployt. Jeder Deploy sichert vorher Datenbank, Fotos und `.env` (die letzten 10 Sicherungen bleiben liegen).
+`remote.sh` bricht ab, wenn die übergebenen Werte (Port, Container, `APP_ENV`) nicht zur Instanz in `APP_DIR`
+passen oder ein Deploy auf einen älteren Stand zurückspringen würde.
+
 **Öffentliche Demo**: Auf der Login-Seite führt „Demo ansehen“ ohne Passwort in ein schreibgeschütztes
 Beispiel-Rudel (vier Generationen, unbekannte Vorfahren, Mitbewohner, Chronik mit Kommentaren,
-Pinnwand, Zuchtbuch). `deploy/remote.sh demo` bzw. **[7]** in `manage.ps1` legt sie neu an und
+Pinnwand, Würfe). `deploy/remote.sh demo` bzw. **[7]** in `manage.ps1` legt sie neu an und
 ersetzt dabei nur die Demo – echte Rudel bleiben unberührt.
 
 Ein einzelnes Rudel löschen (auf dem Server im App-Ordner):
@@ -131,6 +144,7 @@ docker compose up -d --build
 | `FAMILY_INVITE_CODE` | Code zum Anlegen neuer Rudel (leer = jeder darf anlegen)               |
 | `COOKIE_SECURE`      | `true` – Cookies nur über HTTPS                                        |
 | `TRUST_PROXY`        | `1` – App steht hinter Caddy, Rate-Limit sieht echte IPs               |
+| `APP_ENV`            | `production` (Standard), `staging` (Vorschau) oder `dev` – steuert Hinweis-Band und Beispieldaten |
 
 Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen und die Domain im Server-Proxy eintragen.
 
@@ -153,6 +167,6 @@ server/          Express-API + SQLite
   routes/        auth, dogs, timeline, breeding, uploads
   seed/          Demo-Daten und Testbilder
   scripts/       seed.js, demo.js, reset.js
-deploy/remote.sh Server-Befehle (setup, deploy, backup, demo, wipe …)
+deploy/remote.sh Server-Befehle (setup, deploy, backup, demo, showcase, wipe …)
 manage.ps1       Windows-Menü für den Server
 ```
