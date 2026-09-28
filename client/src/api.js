@@ -55,6 +55,11 @@ export const api = {
   updateFamily: (payload) => request('/family', json('PUT', payload)),
   invite: () => request('/invite'),
 
+  view: (familyId) => request('/view', json('POST', { familyId })),
+  joinFamily: (password) => request('/families/join', json('POST', { password })),
+  createGroup: (payload) => request('/families/group', json('POST', payload)),
+  leaveFamily: (id) => request(`/memberships/${id}`, { method: 'DELETE' }),
+
   listDogs: () => request('/dogs'),
   listAllDogs: () => request('/dogs/all'),
   getDog: (id) => request(`/dogs/${id}`),
@@ -64,6 +69,7 @@ export const api = {
   listLinks: () => request('/dogs/links'),
   addHousemate: (dogId, otherDogId) => request(`/dogs/${dogId}/housemates`, json('POST', { otherDogId })),
   removeHousemate: (dogId, otherDogId) => request(`/dogs/${dogId}/housemates/${otherDogId}`, { method: 'DELETE' }),
+  setDogShares: (id, familyIds) => request(`/dogs/${id}/shares`, json('PUT', { familyIds })),
 
   listTimeline: (dogId) => request(`/timeline${dogId ? `?dogId=${encodeURIComponent(dogId)}` : ''}`),
   createTimelineEntry: (payload) => request('/timeline', json('POST', payload)),

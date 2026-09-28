@@ -129,6 +129,13 @@ const PATHS = {
       <rect x="13" y="11" width="8" height="10" rx="1.5" />
       <rect x="3" y="15" width="8" height="6" rx="1.5" />
     </>
+  ),
+  route: (
+    <>
+      <circle cx="6" cy="19" r="3" />
+      <circle cx="18" cy="5" r="3" />
+      <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+    </>
   )
 }
 

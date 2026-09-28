@@ -3,10 +3,12 @@ import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from '
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
 import { readSetting, writeSetting } from './lib/storage.js'
+import { startRoute } from './lib/areas.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
+import ContextSwitcher from './components/ContextSwitcher.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import OverviewPage from './pages/OverviewPage.jsx'
 import DogDetailPage from './pages/DogDetailPage.jsx'
@@ -18,12 +20,39 @@ import ContactAdminPage from './pages/ContactAdminPage.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 
-const NAV_ITEMS = [
+// Haushalte ("Meine Chronik") sehen den Wegbegleiter statt der Würfe – Rudel weiterhin wie bisher.
+const NAV_ITEMS_HOME = [
+  { to: '/wegbegleiter', icon: 'route', label: 'Wegbegleiter' },
+  { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
+  { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
+  { to: '/collage', icon: 'collage', label: 'Collage' }
+]
+
+const NAV_ITEMS_GROUP = [
   { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
   { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
   { to: '/wuerfe', icon: 'sprout', label: 'Würfe' },
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
+
+function navItemsFor(family) {
+  return family.art === 'zuhause' ? NAV_ITEMS_HOME : NAV_ITEMS_GROUP
+}
+
+// Platzhalter für den Wegbegleiter (Task 6 ersetzt ihn durch die echte Seite) – sorgt dafür, dass die
+// Navigation für Haushalte schon jetzt funktioniert.
+export function CompanionsPlaceholder() {
+  return (
+    <div className="page">
+      <div className="page-hero">
+        <div>
+          <h1>Wegbegleiter</h1>
+          <p className="page-lede">Kommt gleich.</p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function DemoBanner({ onLeave }) {
   const { words } = useTheme()
@@ -45,23 +74,35 @@ function RedirectTierUrl() {
   return <Navigate to={`/tier/${id}${hash}`} replace />
 }
 
-export function AppHeader({ family, onLogout }) {
+export function AppHeader({ family, onLogout, onFamilyChange }) {
   const { pathname } = useLocation()
   const { theme } = useTheme()
   // Tierseiten gehören zum Stammbaum
   const isActive = (item, active) => active || (item.to === '/stammbaum' && pathname.startsWith('/tier/'))
+  // Nur Haushalte bekommen den Bereichswechsler; klassische Rudel-Logins (kein family.home) zeigen nur den Namen.
+  const isHouseholdIdentity = family.home?.art === 'zuhause'
   return (
     <header className="app-header">
       <div className="app-header-inner">
-        <Link to="/stammbaum" className="brand">
-          <ThemeMark size={40} />
+        <div className="brand">
+          {/* Eigenes, aus der Tab-Reihenfolge ausgeblendetes Icon-Link: der Name daneben ist das
+              eigentliche, für Tastatur und Screenreader erreichbare Ziel zum Stammbaum/Wegbegleiter. */}
+          <Link to={startRoute(family)} className="brand-mark" tabIndex={-1} aria-hidden="true">
+            <ThemeMark size={40} />
+          </Link>
           <span className="brand-text">
-            <span className="brand-name">{theme.appName}</span>
-            <span className="brand-sub">{family.name}</span>
+            <Link to={startRoute(family)} className="brand-name">
+              {theme.appName}
+            </Link>
+            {isHouseholdIdentity ? (
+              <ContextSwitcher family={family} onChange={onFamilyChange} />
+            ) : (
+              <span className="brand-sub">{family.name}</span>
+            )}
           </span>
-        </Link>
+        </div>
         <nav className="app-nav" aria-label="Hauptnavigation">
-          {NAV_ITEMS.map((item) => (
+          {navItemsFor(family).map((item) => (
             <NavLink key={item.to} to={item.to} className={({ isActive: active }) => (isActive(item, active) ? 'active' : '')}>
               <Icon name={item.icon} />
               <span>{item.label}</span>
@@ -165,7 +206,7 @@ export default function App() {
         <div className="app-shell">
           <ScrollToTop />
           {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} />}
-          <AppHeader family={family} onLogout={handleLogout} />
+          <AppHeader family={family} onLogout={handleLogout} onFamilyChange={setFamily} />
           <main className="app-main">
             <Routes>
               <Route
@@ -174,12 +215,13 @@ export default function App() {
               />
               <Route path="/tier/:id" element={<DogDetailPage family={family} />} />
               <Route path="/hund/:id" element={<RedirectTierUrl />} />
+              <Route path="/wegbegleiter" element={<CompanionsPlaceholder />} />
               <Route path="/pinnwand" element={<PinboardPage />} />
               <Route path="/wuerfe" element={<LittersPage />} />
               <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
               <Route path="/admin-schreiben" element={<ContactAdminPage />} />
               <Route path="/collage" element={<CollagePage family={family} />} />
-              <Route path="*" element={<Navigate to="/stammbaum" replace />} />
+              <Route path="*" element={<Navigate to={startRoute(family)} replace />} />
             </Routes>
           </main>
           <AppFooter onInvite={() => setInviteOpen(true)} />

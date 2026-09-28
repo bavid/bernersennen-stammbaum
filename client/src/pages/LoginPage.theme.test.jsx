@@ -68,11 +68,22 @@ describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
   test('Der Anlegen-Modus nutzt den Theme-Wortschatz für Titel, Formular und Umschalter', async () => {
     await render(themeId)
     act(() => container.querySelector('.login-switch button[aria-pressed]:not([aria-pressed="true"])').click())
+    // Anlegen-Modus startet mit "Meine Chronik" (ohne Namensfeld) – für den Familien-/Rudel-Wortschatz
+    // erst auf "Gemeinsame Familie" wechseln.
+    act(() => container.querySelector('.login-switch[aria-label="Art"] button:last-child').click())
     expect(container.querySelector('.login-card-head h1').textContent).toBe(theme.words.createGroup)
     expect(container.querySelector('.login-switch button:last-child').textContent).toBe(theme.words.newGroup)
     expect(container.querySelector('label[for="family-name"]').textContent).toBe(theme.words.groupName)
     expect(container.querySelector('#family-name').placeholder).toBe(theme.words.groupNamePlaceholder)
     expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe(theme.words.createGroup)
+  })
+
+  test('Der Anlegen-Modus startet bei "Meine Chronik" ohne Namensfeld, unabhängig vom Theme', async () => {
+    await render(themeId)
+    act(() => container.querySelector('.login-switch button[aria-pressed]:not([aria-pressed="true"])').click())
+    expect(container.querySelector('.login-card-head h1').textContent).toBe('Meine Chronik anlegen')
+    expect(container.querySelector('label[for="family-name"]')).toBeNull()
+    expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Meine Chronik anlegen')
   })
 
   test('Passwort-Feld im Anmelden-Modus nutzt das Theme-Wort für das Rudel-/Familien-Passwort', async () => {

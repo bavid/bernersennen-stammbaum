@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
+import { HOME_LABEL } from '../lib/areas.js'
 import ThemeMark from '../components/ThemeMark.jsx'
 import Icon from '../components/Icon.jsx'
 
@@ -104,8 +105,9 @@ function LoginForm({ onLogin }) {
   )
 }
 
-function CreateFamilyForm({ onLogin, inviteRequired }) {
+function CreateFamilyForm({ onLogin, inviteRequired, art }) {
   const { words } = useTheme()
+  const isHome = art === 'zuhause'
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
@@ -121,7 +123,16 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
     setPasswordError(null)
     setLoading(true)
     try {
-      onLogin(await api.createFamily({ name, password, inviteCode: inviteCode || undefined, quelle: quelle || undefined, website }))
+      onLogin(
+        await api.createFamily({
+          name: isHome ? HOME_LABEL : name,
+          password,
+          art,
+          inviteCode: inviteCode || undefined,
+          quelle: quelle || undefined,
+          website
+        })
+      )
     } catch (err) {
       // "Passwort belegt" direkt am Passwortfeld zeigen, alles andere oben
       if (err.details?.field === 'password') setPasswordError(err.message)
@@ -133,20 +144,22 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
   return (
     <form className="form-stack" onSubmit={handleSubmit}>
       {error && <div className="error-banner" role="alert">{error}</div>}
-      <div className="field">
-        <label className="field-label" htmlFor="family-name">
-          {words.groupName}
-        </label>
-        <input
-          id="family-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={words.groupNamePlaceholder}
-          maxLength={80}
-          autoFocus
-          required
-        />
-      </div>
+      {!isHome && (
+        <div className="field">
+          <label className="field-label" htmlFor="family-name">
+            {words.groupName}
+          </label>
+          <input
+            id="family-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={words.groupNamePlaceholder}
+            maxLength={80}
+            autoFocus
+            required
+          />
+        </div>
+      )}
       <PasswordField
         id="family-password"
         label="Gemeinsames Passwort"
@@ -155,6 +168,7 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
           setPassword(value)
           setPasswordError(null)
         }}
+        autoFocus={isHome}
         autoComplete="new-password"
         minLength={MIN_PASSWORD_LENGTH}
         error={passwordError}
@@ -188,7 +202,7 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
         />
       </div>
       <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading}>
-        {loading ? 'Lege an …' : words.createGroup}
+        {loading ? 'Lege an …' : isHome ? 'Meine Chronik anlegen' : words.createGroup}
       </button>
     </form>
   )
@@ -197,9 +211,12 @@ function CreateFamilyForm({ onLogin, inviteRequired }) {
 export default function LoginPage({ onLogin }) {
   const { theme, words } = useTheme()
   const [mode, setMode] = useState(() => (window.location.pathname === '/neue-familie' ? 'create' : 'login'))
+  // Im Anlege-Modus: privates Zuhause ("Meine Chronik", Standard) oder eine gemeinsame Familie/ein Rudel
+  const [art, setArt] = useState('zuhause')
   const [inviteRequired, setInviteRequired] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoError, setDemoError] = useState(null)
+  const isHome = art === 'zuhause'
 
   useEffect(() => {
     api
@@ -247,11 +264,13 @@ export default function LoginPage({ onLogin }) {
         <div className="login-card">
           <div className="login-card-head">
             <span className="eyebrow">{mode === 'login' ? 'Willkommen zurück' : 'Neuer Stammbaum'}</span>
-            <h1>{mode === 'login' ? 'Anmelden' : words.createGroup}</h1>
+            <h1>{mode === 'login' ? 'Anmelden' : isHome ? 'Meine Chronik anlegen' : words.createGroup}</h1>
             <p className="muted">
               {mode === 'login'
                 ? 'Mit dem gemeinsamen Passwort seht ihr, was sich bei allen tut.'
-                : `Gebt ${words.yourGroupDat} einen Namen und ein gemeinsames Passwort.`}
+                : isHome
+                  ? 'Privat – für deine eigenen Tiere. Familien kannst du später beitreten.'
+                  : `Gebt ${words.yourGroupDat} einen Namen und ein gemeinsames Passwort.`}
             </p>
           </div>
 
@@ -264,10 +283,21 @@ export default function LoginPage({ onLogin }) {
             </button>
           </div>
 
+          {mode === 'create' && (
+            <div className="segmented login-switch" role="group" aria-label="Art">
+              <button type="button" aria-pressed={art === 'zuhause'} onClick={() => setArt('zuhause')}>
+                Meine Chronik
+              </button>
+              <button type="button" aria-pressed={art === 'rudel'} onClick={() => setArt('rudel')}>
+                Gemeinsame Familie
+              </button>
+            </div>
+          )}
+
           {mode === 'login' ? (
             <LoginForm onLogin={onLogin} />
           ) : (
-            <CreateFamilyForm onLogin={onLogin} inviteRequired={inviteRequired} />
+            <CreateFamilyForm onLogin={onLogin} inviteRequired={inviteRequired} art={art} />
           )}
 
           <div className="login-demo">

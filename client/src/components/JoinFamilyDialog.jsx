@@ -1,0 +1,158 @@
+import { useState } from 'react'
+import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
+import { useIsDemo } from '../lib/demo.js'
+import { useToast } from './Toast.jsx'
+
+const MIN_PASSWORD_LENGTH = 6
+const MAX_NAME_LENGTH = 80
+const DEMO_HINT_ID = 'join-family-demo-hint'
+
+// Aus "Meine Chronik" heraus: einer bestehenden Familie/einem Rudel mit dessen Passwort beitreten,
+// oder eine neue gründen. Der aktive Bereich bleibt dabei "Meine Chronik" (der Server wechselt nicht
+// automatisch), onChange bekommt trotzdem das volle "me"-Objekt (jetzt mit der neuen Mitgliedschaft).
+export default function JoinFamilyDialog({ onChange, onClose }) {
+  const { words } = useTheme()
+  const isDemo = useIsDemo()
+  const toast = useToast()
+  const [tab, setTab] = useState('join')
+  const [joinPassword, setJoinPassword] = useState('')
+  const [groupName, setGroupName] = useState('')
+  const [groupPassword, setGroupPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  function selectTab(next) {
+    setTab(next)
+    setError(null)
+  }
+
+  async function handleJoin(event) {
+    event.preventDefault()
+    setError(null)
+    setLoading(true)
+    try {
+      const me = await api.joinFamily(joinPassword)
+      onChange(me)
+      toast('Beigetreten.')
+      onClose()
+    } catch (err) {
+      setError(err.message)
+      setLoading(false)
+    }
+  }
+
+  async function handleCreate(event) {
+    event.preventDefault()
+    setError(null)
+    setLoading(true)
+    try {
+      const me = await api.createGroup({ name: groupName, password: groupPassword })
+      onChange(me)
+      toast(`„${groupName}“ gegründet.`)
+      onClose()
+    } catch (err) {
+      setError(err.message)
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="join-family">
+      <div className="segmented join-family-switch" role="group" aria-label="Modus">
+        <button type="button" aria-pressed={tab === 'join'} onClick={() => selectTab('join')}>
+          Beitreten
+        </button>
+        <button type="button" aria-pressed={tab === 'create'} onClick={() => selectTab('create')}>
+          Neu gründen
+        </button>
+      </div>
+
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}
+        </div>
+      )}
+
+      {tab === 'join' ? (
+        <form className="form-stack" onSubmit={handleJoin}>
+          <div className="field">
+            <label className="field-label" htmlFor="join-family-password">
+              {words.groupPassword}
+            </label>
+            <input
+              id="join-family-password"
+              type="password"
+              value={joinPassword}
+              onChange={(e) => setJoinPassword(e.target.value)}
+              autoComplete="off"
+              disabled={isDemo}
+              aria-describedby={isDemo ? DEMO_HINT_ID : undefined}
+              required
+            />
+          </div>
+          {isDemo && (
+            <p id={DEMO_HINT_ID} className="field-hint">
+              In der Demo nicht möglich.
+            </p>
+          )}
+          <div className="form-actions">
+            <span className="form-actions-spacer" />
+            <button type="submit" className="btn btn-primary" disabled={isDemo || loading || !joinPassword}>
+              {loading ? 'Beitrete …' : 'Beitreten'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <form className="form-stack" onSubmit={handleCreate}>
+          <div className="field">
+            <label className="field-label" htmlFor="join-family-name">
+              {words.groupName}
+            </label>
+            <input
+              id="join-family-name"
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+              placeholder={words.groupNamePlaceholder}
+              maxLength={MAX_NAME_LENGTH}
+              disabled={isDemo}
+              required
+            />
+          </div>
+          <div className="field">
+            <label className="field-label" htmlFor="join-family-create-password">
+              Gemeinsames Passwort
+            </label>
+            <input
+              id="join-family-create-password"
+              type="password"
+              value={groupPassword}
+              onChange={(e) => setGroupPassword(e.target.value)}
+              autoComplete="new-password"
+              minLength={MIN_PASSWORD_LENGTH}
+              disabled={isDemo}
+              aria-describedby={isDemo ? DEMO_HINT_ID : undefined}
+              required
+            />
+          </div>
+          <p className="field-hint">Teilt das Passwort mit allen, die dazugehören sollen.</p>
+          {isDemo && (
+            <p id={DEMO_HINT_ID} className="field-hint">
+              In der Demo nicht möglich.
+            </p>
+          )}
+          <div className="form-actions">
+            <span className="form-actions-spacer" />
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isDemo || loading || !groupName.trim() || !groupPassword}
+            >
+              {loading ? 'Lege an …' : words.createGroup}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
+}
