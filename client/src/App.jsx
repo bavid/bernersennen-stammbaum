@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
+import { readSetting, writeSetting } from './lib/storage.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
@@ -110,6 +111,12 @@ export default function App() {
       .catch(() => setFamily(null))
   }, [])
 
+  // Merkt sich das Aussehen der zuletzt angemeldeten Familie, damit der Splash-Screen beim nächsten
+  // Laden (bevor /api/me geantwortet hat) nicht kurz den falschen Auftritt zeigt.
+  useEffect(() => {
+    if (family?.theme) writeSetting('lastThemeId', family.theme)
+  }, [family])
+
   async function handleLogout() {
     try {
       await api.logout()
@@ -136,7 +143,7 @@ export default function App() {
 
   if (family === undefined) {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider themeId={readSetting('lastThemeId', 'standard')}>
         <div className="splash" aria-busy="true">
           <ThemeMark size={72} />
         </div>

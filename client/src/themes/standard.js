@@ -30,7 +30,6 @@ export default {
     groupNamePlaceholder: 'z. B. Familie Sonnenhang',
     groupPassword: 'Familien-Passwort',
     groupSettings: 'Familie einstellen',
-    renameGroup: 'Namen der Familie ändern',
     newsTitle: 'Neu in der Familie',
     animal: 'Tier',
     animals: 'Tiere',

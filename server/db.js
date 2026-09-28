@@ -143,9 +143,13 @@ addColumnIfMissing('dogs', 'tierart', "TEXT NOT NULL DEFAULT 'hund'")
 addColumnIfMissing('families', 'quelle', 'TEXT')
 addColumnIfMissing('families', 'is_demo', 'INTEGER NOT NULL DEFAULT 0')
 
-// Bestehende Rudel behalten ihren Berner-Auftritt, neue Familien starten mit „Familie auf Pfoten"
-if (addColumnIfMissing('families', 'theme', "TEXT NOT NULL DEFAULT 'standard'")) {
-  db.exec("UPDATE families SET theme = 'berner'")
-}
+// Bestehende Rudel behalten ihren Berner-Auftritt, neue Familien starten mit „Familie auf Pfoten".
+// Spalte anlegen und Bestandsdaten umstellen als eine Transaktion, damit ein Absturz dazwischen
+// nicht neue Zeilen fälschlich auf 'standard' stehen lässt, während alte noch die Spalte vermissen.
+db.transaction(() => {
+  if (addColumnIfMissing('families', 'theme', "TEXT NOT NULL DEFAULT 'standard'")) {
+    db.exec("UPDATE families SET theme = 'berner'")
+  }
+})()
 
 module.exports = db

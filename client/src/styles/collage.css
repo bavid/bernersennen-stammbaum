@@ -256,13 +256,15 @@
   bottom: 0;
 }
 
-/* Standard-Auftritt ohne Dreifarb-Streifen: ein schlichter Strich an derselben Stelle */
+/* Standard-Auftritt ohne Dreifarb-Streifen: ein schlichter Strich an derselben Stelle.
+   Fest verdrahtet wie die übrigen .cpage-Papierfarben: der Canvas-Export in lib/collage/render.js
+   zeichnet immer COLORS.rust ('#a4431d'), unabhängig vom Farbschema – Vorschau und Export müssen übereinstimmen. */
 .cpage-rule {
   position: absolute;
   left: 0;
   right: 0;
   height: 0.17%;
-  background: var(--rust);
+  background: #a4431d;
 }
 
 .cpage-rule-top {

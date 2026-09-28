@@ -52,6 +52,15 @@ test('zeigt beide Abschnitte mit Überschriften "Name" und "Aussehen"', async ()
   expect(headings).toEqual(['Name', 'Aussehen'])
 })
 
+test('das Aussehen-Fieldset verweist per aria-labelledby auf die Überschrift statt eine zweite "Aussehen"-legend zu zeigen', async () => {
+  await render(() => {})
+  const heading = [...container.querySelectorAll('.settings-section h3')].find((h) => h.textContent === 'Aussehen')
+  const fieldset = container.querySelector('.theme-picker')
+  expect(heading.id).toBeTruthy()
+  expect(fieldset.getAttribute('aria-labelledby')).toBe(heading.id)
+  expect(fieldset.querySelector('legend')).toBeNull()
+})
+
 test('gibt die vom ThemePicker gespeicherte Antwort unverändert an onChange weiter', async () => {
   updateFamily.mockResolvedValue({ id: 1, name: 'Familie Test', theme: 'berner' })
   const onChange = vi.fn()

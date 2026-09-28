@@ -4,9 +4,14 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo } from '../lib/demo.js'
 import { THEME_IDS, getTheme } from '../themes/index.js'
 
+const DEMO_HINT_ID = 'theme-picker-demo-hint'
+
 // Aussehen wählen: Auswahl zeigt sofort eine Live-Vorschau (setPreviewId), gespeichert wird erst mit "Übernehmen".
 // Ohne Speichern (Abbrechen, Modal schließen, Demo) endet die Vorschau beim Unmount wieder beim gespeicherten Aussehen.
-export default function ThemePicker({ family, onSaved }) {
+// headingId: id einer außerhalb gerenderten "Aussehen"-Überschrift (z. B. FamilySettings), die dann per
+// aria-labelledby als Name des Fieldsets dient statt einer zweiten, nur visuell versteckten <legend>.
+// Ohne headingId (z. B. im eigenständigen Einsatz/Test) bekommt das Fieldset seine eigene versteckte legend.
+export default function ThemePicker({ family, onSaved, headingId }) {
   const { setPreviewId } = useTheme()
   const isDemo = useIsDemo()
   const [selected, setSelected] = useState(family.theme)
@@ -36,8 +41,8 @@ export default function ThemePicker({ family, onSaved }) {
   const unchanged = selected === family.theme
 
   return (
-    <fieldset className="theme-picker">
-      <legend>Aussehen</legend>
+    <fieldset className="theme-picker" aria-labelledby={headingId}>
+      {!headingId && <legend>Aussehen</legend>}
       {error && (
         <div className="error-banner" role="alert">
           {error}
@@ -71,7 +76,9 @@ export default function ThemePicker({ family, onSaved }) {
         })}
       </div>
       {isDemo && (
-        <p className="field-hint">In der Demo nur als Vorschau – gespeichert wird nichts.</p>
+        <p id={DEMO_HINT_ID} className="field-hint">
+          In der Demo nur als Vorschau – gespeichert wird nichts.
+        </p>
       )}
       <div className="form-actions">
         <span className="form-actions-spacer" />
@@ -80,6 +87,7 @@ export default function ThemePicker({ family, onSaved }) {
           className="btn btn-primary theme-picker-save"
           onClick={handleSave}
           disabled={saving || unchanged || isDemo}
+          aria-describedby={isDemo ? DEMO_HINT_ID : undefined}
         >
           {saving ? 'Speichere …' : 'Übernehmen'}
         </button>

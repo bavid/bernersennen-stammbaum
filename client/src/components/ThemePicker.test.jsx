@@ -17,10 +17,12 @@ const family = { id: 1, name: 'Familie Test', theme: 'standard' }
 let container
 let root
 
-function Wrapper({ show = true, isDemo = false, onSaved = () => {} }) {
+function Wrapper({ show = true, isDemo = false, onSaved = () => {}, headingId } = {}) {
   return (
     <ThemeProvider themeId="standard">
-      <DemoProvider value={isDemo}>{show && <ThemePicker family={family} onSaved={onSaved} />}</DemoProvider>
+      <DemoProvider value={isDemo}>
+        {show && <ThemePicker family={family} onSaved={onSaved} headingId={headingId} />}
+      </DemoProvider>
     </ThemeProvider>
   )
 }
@@ -60,6 +62,32 @@ function saveButton() {
 }
 
 describe('ThemePicker', () => {
+  test('ohne headingId hat das Fieldset eine eigene versteckte legend "Aussehen"', async () => {
+    await render()
+    const fieldset = container.querySelector('.theme-picker')
+    expect(fieldset.hasAttribute('aria-labelledby')).toBe(false)
+    expect(fieldset.querySelector('legend').textContent).toBe('Aussehen')
+  })
+
+  test('mit headingId verweist das Fieldset per aria-labelledby auf die äußere Überschrift statt eine zweite legend zu zeigen', async () => {
+    await render({ headingId: 'outer-heading' })
+    const fieldset = container.querySelector('.theme-picker')
+    expect(fieldset.getAttribute('aria-labelledby')).toBe('outer-heading')
+    expect(fieldset.querySelector('legend')).toBeNull()
+  })
+
+  test('der Demo-Hinweis ist per aria-describedby mit dem Übernehmen-Button verknüpft', async () => {
+    await render({ isDemo: true })
+    const hint = container.querySelector('.field-hint')
+    expect(hint.id).toBeTruthy()
+    expect(saveButton().getAttribute('aria-describedby')).toBe(hint.id)
+  })
+
+  test('ohne Demo-Hinweis hat der Übernehmen-Button kein aria-describedby', async () => {
+    await render()
+    expect(saveButton().hasAttribute('aria-describedby')).toBe(false)
+  })
+
   test('zeigt beide Aussehen mit Label aus theme.label, Standard ist ausgewählt', async () => {
     await render()
     const options = [...container.querySelectorAll('.theme-option')]

@@ -12,8 +12,8 @@ export default function FamilySettings({ family, onRenamed, onChange, onCancel }
         <RenameFamilyForm family={family} onRenamed={onRenamed} onCancel={onCancel} />
       </section>
       <section className="settings-section">
-        <h3>Aussehen</h3>
-        <ThemePicker family={family} onSaved={onChange} />
+        <h3 id="family-settings-theme-heading">Aussehen</h3>
+        <ThemePicker family={family} onSaved={onChange} headingId="family-settings-theme-heading" />
       </section>
     </div>
   )
