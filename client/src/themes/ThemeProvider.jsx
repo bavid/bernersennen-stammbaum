@@ -8,9 +8,16 @@ const noop = () => {}
 // setPreviewId zeigt ein anderes Theme vorübergehend (Auswahl in den Einstellungen), ohne zu speichern.
 export function ThemeProvider({ themeId, children }) {
   const [previewId, setPreviewId] = useState(null)
-  const theme = getTheme(previewId || themeId)
+  const [lastThemeId, setLastThemeId] = useState(themeId)
 
-  useEffect(() => setPreviewId(null), [themeId])
+  // Ein neuer gespeicherter Wert verwirft eine laufende Vorschau sofort, noch während des Renderns –
+  // kein separater Effect-Durchlauf, der kurz das alte Vorschau-Theme zeigen würde.
+  if (themeId !== lastThemeId) {
+    setLastThemeId(themeId)
+    if (previewId !== null) setPreviewId(null)
+  }
+
+  const theme = getTheme(previewId || themeId)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme.id

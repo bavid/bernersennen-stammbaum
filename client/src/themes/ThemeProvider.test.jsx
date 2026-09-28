@@ -52,7 +52,7 @@ function PreviewSwitcher({ toId }) {
 }
 
 test('setPreviewId shows a different theme without saving it, and changing themeId clears the preview', async () => {
-  await render(
+  const root = await render(
     <ThemeProvider themeId="berner">
       <PreviewSwitcher toId="standard" />
     </ThemeProvider>
@@ -63,7 +63,8 @@ test('setPreviewId shows a different theme without saving it, and changing theme
   await act(async () => button.dispatchEvent(new MouseEvent('click', { bubbles: true })))
   expect(document.documentElement.dataset.theme).toBe('standard')
 
-  const root = createRoot(container)
+  // Reuse the same root so the preview state actually lives on across these renders
+  // (a fresh createRoot() on the same container would silently discard it).
   await act(async () =>
     root.render(
       <ThemeProvider themeId="standard">
