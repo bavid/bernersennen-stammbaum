@@ -1,8 +1,10 @@
 services:
   chronik:
     build: .
-    image: bernersennen-stammbaum:latest
-    container_name: bernersennen-stammbaum
+    # Zwei Instanzen auf einem Server (Familien-Instanz und Vorschau) brauchen eigene Namen,
+    # sonst überschreibt die eine das Image bzw. den Container der anderen. Standard = Familien-Instanz.
+    image: bernersennen-stammbaum:${IMAGE_TAG:-latest}
+    container_name: ${CONTAINER_NAME:-bernersennen-stammbaum}
     restart: unless-stopped
     # Nur auf localhost erreichbar. HTTPS nach außen macht der gemeinsame Caddy des Servers
     # (Repo "server", /opt/proxy): er lauscht auf der öffentlichen IP unter demselben Port

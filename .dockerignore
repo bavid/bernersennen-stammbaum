@@ -9,5 +9,6 @@ client/dist
 server/data
 server/data.db*
 server/uploads
+server/.testenv
 server/test
 *.log
