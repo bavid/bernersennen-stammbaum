@@ -55,6 +55,9 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   Rudel sehen sie nicht. Der Name ist freiwillig, ohne Namen kommt die Nachricht anonym an.
 - **Rudel mit Passwort**: Jedes Rudel hat ein gemeinsames Passwort und sieht nur seine eigenen
   Hunde, Einträge und Fotos. Zum Anlegen eines neuen Rudels braucht man optional einen Einladungscode.
+- **Aussehen**: „Familie auf Pfoten“ (Pfoten-Logo, tierneutrale Texte: „Familie“, „Tier“) oder „Berner“
+  (Wappen, Dreifarb-Streifen, „Rudel“, „Hund“). Jede Familie wählt selbst unter „Familie einstellen“ – mit
+  Live-Vorschau. Bestehende Rudel behalten den Berner-Auftritt, neue starten mit „Familie auf Pfoten“.
 - **Handy-tauglich**: kompakte Stammbaum-Karten, Navigation unten, Fotos werden vor dem Upload verkleinert.
 
 Stack: Node.js/Express + SQLite (better-sqlite3), React + Vite, Caddy für HTTPS, keine externen
