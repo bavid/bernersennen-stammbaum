@@ -55,6 +55,7 @@
 | `client/src/lib/timeline.js` | Meilensteine Einzug/Abschied |
 | `client/src/components/DogForm.jsx`, `pages/DogDetailPage.jsx`, `components/TimelineEntryForm.jsx`, `components/Timeline.jsx`, `components/DogCard.jsx`, `components/SharePanel.jsx` (neu) | Felder, Teilen, privat |
 | `client/src/App.jsx`, `pages/LoginPage.jsx` | Navigation je Bereich, Registrierung mit Wahl |
+| `client/src/components/QuickAnimalForm.jsx` (neu), `HousemateLane.jsx`, `Housemates.jsx` | Tier schnell erfassen, „+ Mitbewohner" im Stammbaum |
 
 ---
 
@@ -480,7 +481,50 @@ Tests für beide Meilensteine und die Herkunftstexte (Tabelle `HERKUNFT_LABELS`:
 
 ---
 
-### Task 8: Doku, Prüfung, Vorschau (Koordinator)
+### Task 8: Tier schnell erfassen – generisch statt „Hund anlegen" (Client)
+
+Befund aus der Demo:
+- „Tier hinzufügen" öffnet das volle Hundeformular (Tierart vorbelegt mit Hund, Knopf „Hund anlegen", Eltern, Rasse …).
+- Im Stammbaum gibt es keine Schnellerfassung für Mitbewohner. Die gibt es bisher nur auf der Tierseite (`Housemates.jsx`).
+
+**Files:**
+- Create: `client/src/components/QuickAnimalForm.jsx` (+ Test)
+- Modify:
+  - `client/src/pages/OverviewPage.jsx` und `client/src/pages/CompanionsPage.jsx` (Knopf „Tier hinzufügen")
+  - `client/src/components/HousemateLane.jsx` und `client/src/components/PedigreeTree.jsx` („+ Mitbewohner")
+  - `client/src/components/Housemates.jsx` (nutzt dieselbe Schnellerfassung)
+  - `client/src/components/DogForm.jsx` (Knopf-Text)
+  - Theme-Dateien (neue Wörter in **beiden**)
+
+- **`QuickAnimalForm`** ist der erste Schritt bei „Tier hinzufügen":
+  - **Felder:**
+    - Tierart (Hund/Katze/anderes; bei „anderes" ein Freitext „z. B. Kaninchen" in `rasse`);
+    - Name (oder „Name unbekannt");
+    - Geschlecht (Beschriftung je Tierart, bestehende Helfer);
+    - optional „lebt mit" (Auswahl eines vorhandenen Tiers);
+    - optional „Bei uns seit".
+  - **Knöpfe:** „Tier anlegen" und „Mehr Angaben …". Letzterer öffnet das volle `DogForm` mit den schon eingegebenen Werten (Rasse, Geburt, Eltern, Beschreibung, Foto).
+  - **Vorbelegung der Tierart:** im Berner-Theme Hund, im Standard-Theme keine Vorbelegung (Pflichtauswahl).
+  - **Beim Speichern:** Tier anlegen (`api.createDog`), mit „lebt mit" direkt den Mitbewohner-Link setzen (bestehender Endpunkt aus `Housemates.jsx`), danach Toast „{Name} ist jetzt dabei" und zur Tierseite.
+- **`DogForm`:** Der Knopf heißt beim Anlegen „Tier anlegen", unabhängig von der Tierart. Der Formulartitel bleibt „Neues Tier anlegen".
+- **Stammbaum:**
+  - In jeder aufgeklappten Mitbewohner-Reihe (`HousemateLane`) am Ende der Gruppe ein dezenter Knopf „+ Mitbewohner", der `QuickAnimalForm` mit „lebt mit {Haupttier}" vorbelegt öffnet.
+  - Auch Tiere ohne Mitbewohner bekommen im Menü bzw. am Haus-Knopf die Aktion „Mitbewohner hinzufügen".
+  - In der Demo sind die Knöpfe deaktiviert, wie die übrigen Schreibknöpfe (`useDemo`).
+- **`Housemates.jsx`** (Tierseite): ersetzt seine eigene Schnellerfassung durch `QuickAnimalForm` mit Vorbelegung, damit es nur eine Maske gibt.
+- **Tests:**
+  - Standard-Theme ohne vorbelegte Tierart: Senden ohne Auswahl → Hinweis.
+  - Berner: Hund vorbelegt.
+  - „lebt mit" ruft nach dem Anlegen den Link-Endpunkt auf.
+  - „Mehr Angaben" übergibt die Werte an `DogForm`.
+  - „+ Mitbewohner" in der Lane öffnet die Maske mit dem richtigen Haupttier.
+
+- [ ] Tests → scheitern → implementieren → Tests und Build grün, Sichtprüfung im Stammbaum (Demo: Knöpfe deaktiviert; Test-Rudel: anlegen klappt)
+- [ ] Commit: `feat: Tier schnell erfassen – generisch, mit Mitbewohner direkt aus dem Stammbaum`
+
+---
+
+### Task 9: Doku, Prüfung, Vorschau (Koordinator)
 
 - [ ] README → Funktionen: „Meine Chronik & Wegbegleiter", „Tiere in Familien teilen", „Fotos nur für Berechtigte" (Sicherheit).
 - [ ] Roadmap: Phase Z auf ✅/🚀, Fortschritts-Log.
