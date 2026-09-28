@@ -204,7 +204,10 @@ case "$cmd" in
     ;;
   showcase)
     cd "$APP_DIR"
-    [ "$(env_value APP_ENV)" != "production" ] || fail "showcase setzt alle Daten zurück – nur für Vorschau/Staging (APP_ENV=staging)"
+    case "$(env_value APP_ENV)" in
+      staging|dev) ;;
+      *) fail "showcase setzt alle Daten zurück – nur für Vorschau/Staging (APP_ENV=staging in .env)" ;;
+    esac
     backup
     $COMPOSE exec -T chronik node scripts/testenv-seed.js --reset
     ;;
