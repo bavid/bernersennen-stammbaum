@@ -136,8 +136,47 @@ function validatePromotion(input = {}, { db } = {}) {
   }
 }
 
+// --- Spendenberichte (donation_reports) -----------------------------------------------------------
+// Gemeinsame Prüfung für POST/PUT /api/admin/donation-reports (routes/adminMarketing.js) und den
+// Demo-Bericht (lib/demoPack.js) - eine ungültige Seed-Angabe scheitert so genauso laut wie eine
+// ungültige Admin-Eingabe. Beträge in Cent (ganze Zahlen).
+
+const MAX_ZEITRAUM_LENGTH = 40
+const MAX_EMPFAENGER_LENGTH = 120
+const MAX_CENTS = 1e9
+
+function cleanCents(value, label) {
+  if (!Number.isInteger(value) || value < 0 || value > MAX_CENTS) {
+    throw httpError(400, `${label} muss eine ganze Zahl zwischen 0 und ${MAX_CENTS} sein (Cent)`)
+  }
+  return value
+}
+
+function validateDonationReport(input = {}) {
+  const zeitraum = cleanTextInput(input.zeitraum)
+  if (!zeitraum) throw httpError(400, 'Der Zeitraum ist Pflicht')
+  if (zeitraum.length > MAX_ZEITRAUM_LENGTH) throw httpError(400, `Der Zeitraum darf höchstens ${MAX_ZEITRAUM_LENGTH} Zeichen haben`)
+
+  const eingangCents = cleanCents(input.eingangCents, 'Der Eingang')
+  const kostenCents = cleanCents(input.kostenCents, 'Die Kosten')
+  const weitergeleitetCents = cleanCents(input.weitergeleitetCents, 'Der weitergeleitete Betrag')
+  const empfaenger = cleanOptionalText(input.empfaenger, MAX_EMPFAENGER_LENGTH, 'Der Empfänger')
+  const nachweisUrl = validateUrl(input.nachweisUrl, 'Der Nachweis-Link')
+
+  return {
+    zeitraum,
+    eingang_cents: eingangCents,
+    kosten_cents: kostenCents,
+    weitergeleitet_cents: weitergeleitetCents,
+    empfaenger,
+    nachweis_url: nachweisUrl
+  }
+}
+
 module.exports = {
   validatePromotion,
+  validateDonationReport,
+  cleanCents,
   cleanTextInput,
   cleanRequiredText,
   cleanOptionalText,
@@ -149,5 +188,8 @@ module.exports = {
   MAX_TITEL_LENGTH,
   MAX_TEXT_LENGTH,
   MAX_EMPFOHLEN_VON_LENGTH,
-  MAX_URL_LENGTH
+  MAX_URL_LENGTH,
+  MAX_ZEITRAUM_LENGTH,
+  MAX_EMPFAENGER_LENGTH,
+  MAX_CENTS
 }

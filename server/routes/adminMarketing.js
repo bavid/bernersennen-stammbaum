@@ -10,7 +10,7 @@ const { cleanId } = require('../lib/validate')
 const { detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('../lib/partners')
 const { stripJpegMetadata } = require('../lib/stripJpegMetadata')
 const { stripPngMetadata } = require('../lib/stripPngMetadata')
-const { validatePromotion, cleanTextInput, cleanOptionalText, validateUrl } = require('../lib/promotions')
+const { validatePromotion, validateDonationReport, cleanOptionalText, validateUrl } = require('../lib/promotions')
 
 // Phase 3 Task 1: Admin-Pflege für den Reiter "Entdecken" - Empfehlungen/Anzeigen (promotions),
 // GoFundMe-Link/Text (settings) und Transparenzberichte (donation_reports). Eingehängt unter /api/admin
@@ -191,38 +191,7 @@ router.put('/settings', requireAdmin, (req, res, next) => {
 })
 
 // --- Spendenberichte (donation_reports) -----------------------------------------------------------
-
-const MAX_ZEITRAUM_LENGTH = 40
-const MAX_EMPFAENGER_LENGTH = 120
-const MAX_CENTS = 1e9
-
-function cleanCents(value, label) {
-  if (!Number.isInteger(value) || value < 0 || value > MAX_CENTS) {
-    throw httpError(400, `${label} muss eine ganze Zahl zwischen 0 und ${MAX_CENTS} sein (Cent)`)
-  }
-  return value
-}
-
-function validateDonationReport(input = {}) {
-  const zeitraum = cleanTextInput(input.zeitraum)
-  if (!zeitraum) throw httpError(400, 'Der Zeitraum ist Pflicht')
-  if (zeitraum.length > MAX_ZEITRAUM_LENGTH) throw httpError(400, `Der Zeitraum darf höchstens ${MAX_ZEITRAUM_LENGTH} Zeichen haben`)
-
-  const eingangCents = cleanCents(input.eingangCents, 'Der Eingang')
-  const kostenCents = cleanCents(input.kostenCents, 'Die Kosten')
-  const weitergeleitetCents = cleanCents(input.weitergeleitetCents, 'Der weitergeleitete Betrag')
-  const empfaenger = cleanOptionalText(input.empfaenger, MAX_EMPFAENGER_LENGTH, 'Der Empfänger')
-  const nachweisUrl = validateUrl(input.nachweisUrl, 'Der Nachweis-Link')
-
-  return {
-    zeitraum,
-    eingang_cents: eingangCents,
-    kosten_cents: kostenCents,
-    weitergeleitet_cents: weitergeleitetCents,
-    empfaenger,
-    nachweis_url: nachweisUrl
-  }
-}
+// Validierung: validateDonationReport aus lib/promotions.js (auch vom Demo-Bericht in lib/demoPack.js genutzt).
 
 function findDonationReport(id) {
   return id ? db.prepare('SELECT * FROM donation_reports WHERE id = ?').get(id) : null

@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs')
 const { partnerMediaDir: defaultMediaDir } = require('../config')
 const { deleteFamily, removeUploads } = require('./families')
 const { validatePartner, slugify } = require('./partners')
-const { validatePromotion, validateUrl, cleanOptionalText, MAX_TEXT_LENGTH } = require('./promotions')
+const { validatePromotion, validateDonationReport, validateUrl, cleanOptionalText, MAX_TEXT_LENGTH } = require('./promotions')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
 const {
   HOUSEHOLD_NAME,
@@ -21,11 +21,12 @@ const { DEMO_PROMOTIONS, DEMO_SETTINGS, DEMO_DONATION_REPORT } = require('../see
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
 
-// Kopiert Seed-Bilder mit zufälligem Namen in den Upload-Ordner (jedes Bild nur einmal)
+// Kopiert Seed-Bilder mit zufälligem Namen in den Upload-Ordner (jedes Bild nur einmal).
+// copiedUrls(): alle bisher kopierten /uploads/-Pfade - replaceDemoPack räumt sie nach einem Rollback weg.
 function createImageCopier(uploadDir) {
   fs.mkdirSync(uploadDir, { recursive: true })
   const copied = new Map()
-  return (fileName) => {
+  const copyImage = (fileName) => {
     if (!copied.has(fileName)) {
       const target = `${crypto.randomUUID()}${path.extname(fileName)}`
       fs.copyFileSync(path.join(IMAGE_DIR, fileName), path.join(uploadDir, target))
@@ -33,6 +34,8 @@ function createImageCopier(uploadDir) {
     }
     return copied.get(fileName)
   }
+  copyImage.copiedUrls = () => [...copied.values()]
+  return copyImage
 }
 
 const ago = (hours) => `-${hours} hours`
@@ -307,18 +310,20 @@ function removeDemoDiscoverContent(db) {
 }
 
 // Seed-Bild mit zufälligem Namen in den öffentlichen partner-media-Ordner - dort liegen auch die vom
-// Admin hochgeladenen Empfehlungsbilder (routes/adminMarketing.js POST /promotions/:id/image).
-function copyPromotionImage(mediaDir, fileName) {
+// Admin hochgeladenen Empfehlungsbilder (routes/adminMarketing.js POST /promotions/:id/image). Jeder
+// neue Dateiname landet in newImages, damit replaceDemoPack ihn nach einem Rollback wieder entfernt.
+function copyPromotionImage(mediaDir, fileName, newImages) {
   fs.mkdirSync(mediaDir, { recursive: true })
   const target = `${crypto.randomUUID()}${path.extname(fileName)}`
   fs.copyFileSync(path.join(IMAGE_DIR, fileName), path.join(mediaDir, target))
+  newImages.push(target)
   return target
 }
 
 // Dieselbe validatePromotion() wie POST /api/admin/promotions - erst ALLE Einträge prüfen, dann Bilder
-// kopieren und einfügen, damit eine ungültige Seed-Angabe keine Bilddatei hinterlässt. partnerSlug
-// zeigt auf einen Demo-Partner, der in derselben Transaktion gerade neu entstanden ist (neue Id).
-function insertDemoPromotions(db, mediaDir) {
+// kopieren und einfügen. partnerSlug zeigt auf einen Demo-Partner, der in derselben Transaktion gerade
+// neu entstanden ist (neue Id).
+function insertDemoPromotions(db, mediaDir, newImages) {
   const findPartner = db.prepare('SELECT id FROM partners WHERE slug = ? AND is_demo = 1')
   const prepared = DEMO_PROMOTIONS.map(({ partnerSlug, bild, ...input }) => {
     const partner = partnerSlug ? findPartner.get(partnerSlug) : null
@@ -326,7 +331,7 @@ function insertDemoPromotions(db, mediaDir) {
     return { clean: validatePromotion({ ...input, partnerId: partner ? partner.id : null }, { db }), bild }
   })
   return prepared.map(({ clean, bild }) => {
-    const row = { ...clean, bild_file: bild ? copyPromotionImage(mediaDir, bild) : null, is_demo: 1 }
+    const row = { ...clean, bild_file: bild ? copyPromotionImage(mediaDir, bild, newImages) : null, is_demo: 1 }
     const columns = Object.keys(row)
     return db
       .prepare(`INSERT INTO promotions (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
@@ -345,26 +350,21 @@ function insertDemoSettings(db) {
   }
 }
 
+// Dieselbe validateDonationReport() wie POST /api/admin/donation-reports - ein ungültiger Seed-Wert
+// (z. B. negative Cent) wirft und rollt die ganze Demo-Transaktion zurück.
 function insertDemoDonationReport(db) {
-  const report = DEMO_DONATION_REPORT
-  db.prepare(
-    `INSERT INTO donation_reports (zeitraum, eingang_cents, kosten_cents, weitergeleitet_cents, empfaenger, nachweis_url, is_demo)
-     VALUES (?, ?, ?, ?, ?, ?, 1)`
-  ).run(
-    report.zeitraum,
-    report.eingangCents,
-    report.kostenCents,
-    report.weitergeleitetCents,
-    report.empfaenger,
-    validateUrl(report.nachweisUrl, 'Der Nachweis-Link')
+  const row = { ...validateDonationReport(DEMO_DONATION_REPORT), is_demo: 1 }
+  const columns = Object.keys(row)
+  db.prepare(`INSERT INTO donation_reports (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`).run(
+    ...columns.map((col) => row[col])
   )
 }
 
 // Ersetzt alle Demo-Inhalte für "Entdecken" (muss innerhalb einer Transaktion laufen, NACH
 // insertDemoPartners - "Welpenkurs im Frühjahr" braucht die neue Id des Demo-Partners Pfotenglück).
-function replaceDemoDiscoverContent(db, mediaDir) {
+function replaceDemoDiscoverContent(db, mediaDir, newImages) {
   const removedImages = removeDemoDiscoverContent(db)
-  const promotionIds = insertDemoPromotions(db, mediaDir)
+  const promotionIds = insertDemoPromotions(db, mediaDir, newImages)
   insertDemoSettings(db)
   insertDemoDonationReport(db)
   return { promotionIds, removedImages }
@@ -460,8 +460,9 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
   const previous = db.prepare('SELECT id, name FROM families WHERE is_demo = 1').all()
   const previousPartnerIds = db.prepare('SELECT id FROM partners WHERE is_demo = 1').all().map((row) => row.id)
   const copyImage = createImageCopier(uploadDir)
+  const newPromotionImages = []
 
-  const { created, household, shelter, partnerIds, discover } = db.transaction(() => {
+  const buildNewDemo = db.transaction(() => {
     const packOptions = { password: crypto.randomBytes(24).toString('base64url'), isDemo: true, copyImage }
     if (theme !== undefined) packOptions.theme = theme
     if (name !== undefined) packOptions.name = name
@@ -501,9 +502,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       shelterFamilyId: shelterResult.familyId
     })
 
-    // Zuletzt: kopiert als einziger Schritt Dateien in den partner-media-Ordner - scheitert vorher
-    // etwas, entsteht dort also nichts Verwaistes.
-    const discoverResult = replaceDemoDiscoverContent(db, mediaDir)
+    const discoverResult = replaceDemoDiscoverContent(db, mediaDir, newPromotionImages)
 
     return {
       created: rudelResult,
@@ -512,7 +511,19 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       partnerIds: newPartnerIds,
       discover: discoverResult
     }
-  })()
+  })
+
+  // Scheitert der Aufbau, rollt die Transaktion die Datenbank vollständig zurück (die alte Demo bleibt
+  // erreichbar) - die bis dahin schon kopierten Fotos/Empfehlungsbilder wären dann aber verwaist.
+  let built
+  try {
+    built = buildNewDemo()
+  } catch (err) {
+    removeUploads(uploadDir, copyImage.copiedUrls())
+    for (const file of newPromotionImages) fs.rmSync(path.join(mediaDir, file), { force: true })
+    throw err
+  }
+  const { created, household, shelter, partnerIds, discover } = built
 
   for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
 

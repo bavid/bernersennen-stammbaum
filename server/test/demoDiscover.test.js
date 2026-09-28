@@ -239,4 +239,50 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
     assert.equal(row.titel, 'Echt, aber mit Demo-Partner')
     assert.equal(row.partner_id, null, 'der Verweis auf den gelöschten Demo-Partner wird genullt')
   })
+
+  // Gesamter Demo- und Echt-Zustand, den ein gescheitertes replaceDemoPack unverändert lassen muss.
+  const snapshotAll = () => ({
+    demoFamilies: db.prepare('SELECT id, name, art FROM families WHERE is_demo = 1 ORDER BY id').all(),
+    demoPartners: db.prepare('SELECT * FROM partners WHERE is_demo = 1 ORDER BY id').all(),
+    demoPromotions: db.prepare('SELECT * FROM promotions WHERE is_demo = 1 ORDER BY id').all(),
+    demoSettings: demoSettings(),
+    demoReports: db.prepare('SELECT * FROM donation_reports WHERE is_demo = 1 ORDER BY id').all(),
+    realPromotions: db.prepare('SELECT * FROM promotions WHERE is_demo = 0 ORDER BY id').all(),
+    real: snapshotReal(),
+    mediaFiles: fs.readdirSync(partnerMediaDir).sort(),
+    uploadFiles: fs.readdirSync(uploadDir).sort()
+  })
+  const seed = require('../seed/demo-discover')
+
+  await t.test('Rollback: scheitert eine Demo-Empfehlung (unbekannter Partner-Slug), bleibt die bisherige Demo samt echten Daten vollständig erhalten', () => {
+    const before = snapshotAll()
+    assert.equal(before.demoPromotions.length, 3, 'Ausgangslage: eine vollständige Demo')
+
+    seed.DEMO_PROMOTIONS.push({
+      bereich: 'hundeschule',
+      kennzeichnung: 'Partner',
+      partnerSlug: 'gibt-es-nicht',
+      titel: 'Kaputte Demo-Empfehlung'
+    })
+    try {
+      assert.throws(() => replaceDemoPack(db, uploadDir), /Demo-Partner "gibt-es-nicht" fehlt/)
+    } finally {
+      seed.DEMO_PROMOTIONS.pop()
+    }
+
+    assert.deepEqual(snapshotAll(), before, 'Demo-Familien, -Partner, -Empfehlungen, -Einstellungen, -Bericht, Bilder und echte Daten unverändert')
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM promotions WHERE titel = 'Kaputte Demo-Empfehlung'").get().n, 0)
+  })
+
+  await t.test('ungültiger Demo-Spendenbericht scheitert laut (dieselbe Prüfung wie im Admin) und ändert nichts', () => {
+    const before = snapshotAll()
+    const original = seed.DEMO_DONATION_REPORT.eingangCents
+    seed.DEMO_DONATION_REPORT.eingangCents = -1
+    try {
+      assert.throws(() => replaceDemoPack(db, uploadDir), /Der Eingang muss eine ganze Zahl/)
+    } finally {
+      seed.DEMO_DONATION_REPORT.eingangCents = original
+    }
+    assert.deepEqual(snapshotAll(), before, 'nichts wurde halb ersetzt')
+  })
 })
