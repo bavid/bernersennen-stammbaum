@@ -628,54 +628,202 @@ voucher_batches.kind += 'uebergabe'; vouchers += dog_id NULL
 
 ---
 
-## Phase P — Partner-Bereich und Kontakt (Zusatz 29.09.)
+## Zwei Produkte auf einer Plattform (Zusatz 29.09.)
 
-**Idee:** Partner pflegen ihren Auftritt selbst. Sie stellen Beiträge ein, die im Reiter „Entdecken“ und auf ihrem
-Portal als **„Anzeige“** erscheinen, und zwar im Umkreis der Nutzer. Außerdem sind sie direkt erreichbar: über eine
-hinterlegte E-Mail-Adresse, einen Link zu ihrem eigenen Kontaktformular oder unser eingebautes Formular
-**„Schreib uns“**.
+„Familie auf Pfoten“ besteht aus zwei Produkten, die sich gegenseitig tragen:
 
-- **Partner-Bereich:**
-  - Jeder Partner kann einen eigenen Bereich bekommen, so wie ein Tierheim. Der Admin legt ihn an.
-  - Anmelden geht per Schlüssel, weitere Zugänge vergibt der Partner selbst über „Zugang“.
-  - Tierheime nutzen ihren Tierheim-Bereich dafür mit.
-- **Selbst pflegen:**
-  - **Frei für den Partner:**
-    - Portal-Titel und -Text;
-    - Farbe (mit Kontrastprüfung) und Logo;
-    - Website, Spenden- und Vermittlungs-Link;
-    - Kontakt: E-Mail, Telefon, Kontaktformular-URL;
-    - PLZ.
-  - **Bleibt beim Admin:** Name, Slug, Typ, Status und Partner-Kennzeichnung.
-  - Der Züchter-Schutz gilt für alle Texte.
+| | **Chronik** (für Tierhalter) | **Partner-Profil** (für Hundeschulen, Tierheime, Hundesalons, Betreuung …) |
+|---|---|---|
+| Zweck | private Chronik der eigenen Tiere, Familien/Rudel teilen | öffentliches Bewerbungs- und Werbeprofil, Einblicke, Anzeigen, Kontakt |
+| Einstieg | **Kunden-Gutschein** → „Meine Chronik“ | **Partner-Zugang** (Gutschein vom Admin, von Hand verteilt) → Partner-Bereich |
+| Sichtbarkeit | privat bzw. nur für die eigene Familie | öffentlich (Portal, Entdecken, Partnerliste) |
+| Karten | Kunden-Karten, auch über Partner-Stapel verteilt | Partner-Karten „Euer kostenloses Partnerprofil“ |
+
+- **Getrennte Bereiche:** Partner-Bereiche sind vom privaten Teil getrennt. Wer als Partner auch privat eine Chronik
+  führen will, braucht dafür einen **Kunden-Gutschein**. Aus einem Partner-Bereich heraus kann man keiner Familie
+  beitreten und keine gründen.
+- **Werbung für die Chronik:** Partner verteilen weiter Kunden-Gutscheine (Partner-Stapel) an ihre Kundschaft. So
+  wirbt jedes Partner-Profil auch für die Chronik.
+
+---
+
+## Phase P — Partner-Zugang, Partner-Bereich und Kontakt (Zusatz 29.09., erweitert)
+
+**Idee:**
+- **Selbst pflegen:** Partner pflegen ihren öffentlichen Auftritt selbst und sehen jederzeit, wie er für Kunden
+  aussieht.
+- **Beiträge:** Sie zeigen Einblicke in ihre Arbeit (Fotos mit Datum) und stellen Beiträge ein, die im Umkreis der
+  Nutzer als **„Anzeige“** erscheinen.
+- **Kontakt:** Sie sind direkt erreichbar über eine hinterlegte E-Mail, einen Link zu ihrem eigenen Kontaktformular
+  oder unser Formular **„Schreib uns“**.
+
+Die Phase wird in zwei Schritten ausgeliefert: **P1** (Zugang, Profil, Kundensicht, Einblicke) und **P2**
+(Anzeigen mit Freigabe, Kontakt, Postfach).
+
+### P1 — Partner-Zugang und Profil
+
+- **Partner-Zugang (Gutschein):**
+  - Der Admin erzeugt Stapel mit dem Zweck **„Partner-Zugang“**. Optional gibt er einen Typ vor oder bindet den
+    Zugang an einen schon angelegten Partner. Der Betreiber verteilt die Karten von Hand.
+  - Einlösen über `/v#CODE` wie bei Kunden-Gutscheinen. Der Server erkennt den Zweck und startet die
+    **Einrichtung**: Name, Typ und PLZ.
+  - Daraus entstehen ein Partner-Datensatz (Status „Entwurf“) und ein Partner-Bereich. Tierheime und
+    Vermittlungsstellen bekommen einen Tierheim-Bereich mit Tieren. Der Code wird zum Schlüssel, genau wie beim
+    Kunden-Gutschein.
+  - Der Admin kann Partner-Bereiche auch weiterhin direkt anlegen, etwa mit „Bereich anlegen“ in der Partnerliste.
+  - **Typen:** Tierheim, Vermittlung, Hundeschule, **Hundesalon**, **Betreuung** (Hundesitter, Tagesstätte,
+    Pension), Futter, Sonstiges. Züchter gibt es nie, der Züchter-Schutz gilt für alle Texte.
+- **Umschalter „Bearbeiten | Kundensicht“:** Er ist in jedem Partner-Bereich immer sichtbar.
+  - **Bearbeiten:**
+    - öffentliche Profilangaben: Name, Titel, Text, Farbe, Logo, Website, Spenden- und Vermittlungs-Link,
+      Kontakt, PLZ;
+    - Einblicke;
+    - bei Tierheimen die Tiere mit Status, also „Verfügbar“ (in Vermittlung), „Reserviert“, **„Pausiert“**
+      (on hold, vorübergehend nicht vermittelbar) und „Vermittelt“.
+  - **Kundensicht (Live-Vorschau):**
+    - die **Beispiel-Oberfläche eines Kunden** (Demo-Haushalt) mit dem Reiter „Entdecken“, in dem die eigene
+      Karte und die eigenen Beiträge erscheinen;
+    - dazu das eigene Portal und die Steckbriefe, genau so, wie andere sie sehen.
+    - Das geht auch, solange das Profil noch **nicht veröffentlicht** ist. Ein Band zeigt dann „Vorschau – so
+      sehen Kunden euer Profil“.
+- **Veröffentlichen:**
+  - Der Partner schaltet sein Profil selbst auf „aktiv“ oder pausiert es. Ein Zugang wird persönlich übergeben,
+    deshalb braucht es dafür **keine Admin-Freigabe**.
+  - Der Admin kann ein Profil jederzeit **sperren**. Solange es gesperrt ist, kann der Partner es nicht
+    reaktivieren.
+  - Der Slug bleibt nach der ersten Veröffentlichung fest, weil Links und QR-Codes ihn enthalten. Den Typ ändert
+    nach der Einrichtung nur der Admin.
+- **Einblicke** („was wir mit unseren Fellnasen machen“):
+  - **Inhalt:** Foto, Datum und kurzer Text, zum Beispiel ein frisch gestylter Pudel, die Welpengruppe oder ein
+    Ausflug.
+  - **Wo sie erscheinen:** auf dem Portal als Galerie, neueste zuerst. Das neueste Foto ist das Vorschaubild auf der
+    Karte in „Entdecken“ und in der Partnerliste.
+  - **Keine Freigabe durch den Admin**, er kann einzelne Einblicke aber ausblenden.
+  - **Einwilligung:** Pflicht-Häkchen „Die Halterinnen und Halter der gezeigten Tiere sind einverstanden.“ Dazu der
+    Hinweis, keine Personen und keine Nachnamen oder Adressen zu zeigen.
+  - **Fotos:** Metadaten werden entfernt (EXIF bzw. PNG), die Bilder liegen unter `/public-media`.
+  - **Grenze:** höchstens 60 Einblicke. Beim Überschreiten fragt die App, ob die ältesten gelöscht werden sollen.
+- **Zugänge im Partner-Bereich:** weitere Logins für Mitarbeitende, wie „Zugang“ in der Chronik. Den Schlüssel
+  erneuern mit Bestätigung.
+- **Hinweis im Partner-Bereich:** „Privat eine eigene Chronik führen? Dafür gibt es Kunden-Gutscheine.“
+- **Demo:**
+  - Die „Hundeschule Pfotenglück“ bekommt einen Demo-Partner-Bereich mit Einblicken.
+  - Dazu kommt der Demo-„Hundesalon Wuschelglück“ mit Einblicken.
+  - „Demo als Partner ansehen“ zeigt Bearbeiten und Kundensicht im Nur-Lesen-Modus.
+
+### P2 — Anzeigen, Kontakt und Postfach
+
 - **Beiträge („Werbung“):**
-  - Partner legen Beiträge an, zum Beispiel Kurse, Aktionen, Tage der offenen Tür oder Futter-Angebote.
+  - Partner legen Beiträge an, zum Beispiel Kurse, Aktionen, Tage der offenen Tür oder Angebote.
   - Die **Kennzeichnung ist immer „Anzeige“**.
   - Der Bereich richtet sich nach dem Partner-Typ.
-  - Neue Beiträge sind zunächst **„eingereicht“**. Der Admin gibt sie frei oder lehnt sie mit Begründung ab. Erst
-    freigegebene Beiträge werden angezeigt.
+  - Neue und geänderte Beiträge sind **„eingereicht“**. Der Admin gibt sie frei oder lehnt sie mit Begründung ab.
   - Der Partner sieht Status und Klickzahlen.
+  - Freigegebene Beiträge erscheinen in „Entdecken“ und auf dem Portal.
 - **Anzeige im Umkreis:**
-  - Die PLZ ist optional, ebenso der Standort.
+  - PLZ und Standort sind optional.
   - Gibt es im Umkreis **weniger als 5 Treffer**, werden die nächsten weiteren nach Entfernung angehängt
     („weiter weg“). Ohne PLZ erscheinen alle.
   - Das gilt für „Entdecken“ und für die Partnerliste.
+  - Hundesalons und Betreuung bekommen in „Entdecken“ ein eigenes Kapitel **„Salon & Betreuung“**.
 - **Kontakt:**
   - Auf dem Portal und auf Steckbriefen gibt es „Schreib uns“.
-  - **Formular:** Name (optional), E-Mail oder Telefon für die Antwort (eins von beiden ist Pflicht) und die
-    Nachricht. Vom Steckbrief aus kommt der Bezug automatisch mit („Anfrage zu Pepper“).
-  - **Postfach statt E-Mail:** Die Nachrichten landen im Postfach des Partner-Bereichs. Wir versenden bewusst
-    **keine E-Mails**, denn dafür bräuchte es einen externen Mail-Dienst.
-  - **Weitere Wege:** Zusätzlich gibt es einen `mailto:`-Link, falls der Partner eine E-Mail hinterlegt hat, und
-    einen Link zu seinem eigenen Kontaktformular, falls vorhanden. Eingebettet wird nichts, die CSP bleibt `'self'`.
-- **Missbrauchsschutz:** Rate-Limit pro IP, Honeypot, Längengrenzen. Nachrichten werden nach 180 Tagen automatisch
-  gelöscht, der Partner kann sie auch selbst löschen. Die Datenschutzseite erklärt das.
+  - **Formular:** Name (optional), E-Mail oder Telefon (eins von beiden ist Pflicht) und die Nachricht. Vom
+    Steckbrief aus kommt der Bezug automatisch mit („Anfrage zu Pepper“).
+  - **Postfach statt E-Mail:** Die Nachrichten landen im Postfach des Partner-Bereichs. Wir versenden **keine
+    E-Mails**.
+  - **Weitere Wege:** ein `mailto:`-Link und ein Link zum eigenen Kontaktformular des Partners. Eingebettet wird
+    nichts, die CSP bleibt `'self'`.
+- **Missbrauchsschutz:** Rate-Limit pro IP, Honeypot, Längengrenzen. Nachrichten werden nach 180 Tagen gelöscht.
+  Die Datenschutzseite erklärt das.
 - **Demo:**
-  - Die „Hundeschule Pfotenglück“ bekommt einen Demo-Partner-Bereich mit zwei Beiträgen (einer freigegeben, einer
-    eingereicht) und zwei Beispiel-Nachrichten.
-  - „Demo als Partner ansehen“ auf dem Portal.
+  - Pfotenglück bekommt zwei Beiträge (einer freigegeben, einer eingereicht) und zwei Beispiel-Nachrichten.
+  - Das Demo-Tierheim bekommt eine Anfrage zu einem Steckbrief.
 
 **Entscheidung 7 (Anzeigen-Pflege) geändert:** Partner pflegen ihre Beiträge selbst, der Admin gibt frei.
+
+---
+
+## Phase R — Familien-Verwaltung und Rollen (Zusatz 29.09.)
+
+**Idee:** Eine Familie (im Berner-Theme „Rudel“) hat eine Leitung, die alles verwalten darf. Darunter gibt es
+abgestufte Rollen. Neue Mitglieder kommen weiter über Einladungs-Gutscheine dazu. Die Rolle steht schon im
+Gutschein.
+
+### Drei Ebenen, klar getrennt
+
+| Ebene | Wer sieht es | Beispiel |
+|---|---|---|
+| **Privat** | nur der eigene Haushalt | „Meine Chronik“, private Einträge, nicht geteilte Tiere |
+| **Familie** | Mitglieder der Familie, je nach Rolle | geteilte Tiere, Pinnwand, Stammbaum, Würfe |
+| **Öffentlich** | alle | nur Partner-Portale, Steckbriefe, Happy-Ends (mit Einwilligung) |
+
+Eine Familie ist nie öffentlich. Die Mitglieder-Seite zeigt diese Übersicht, damit klar ist, wer was sieht.
+
+### Rollen
+
+| Recht | Leitung („Rudelführer“) | Stellvertretung | Mitglied | Gast |
+|---|---|---|---|---|
+| Familie ansehen, kommentieren | ✓ | ✓ | ✓ | ✓ |
+| eigene Tiere und Einträge teilen | ✓ | ✓ | ✓ | – |
+| Würfe und Stammbaum-Verknüpfungen pflegen | ✓ | ✓ | ✓ | – |
+| Einladen (Gutscheine erzeugen, Kontingent) | ✓ | ✓ | – | – |
+| Beiträge anderer in der Familie ausblenden | ✓ | ✓ | – | – |
+| Mitglieder entfernen, Rollen ändern | ✓ | – | – | – |
+| Name, Theme, Familien-Schlüssel | ✓ | – | – | – |
+| Familie auflösen, Leitung übergeben | ✓ | – | – | – |
+
+- **Rollen je Theme:**
+  - Berner-Theme: „Rudelführer“, „Stellvertretung“, „Mitglied“, „Gast“.
+  - Standard-Theme: „Familienleitung“, „Stellvertretung“, „Mitglied“, „Gast“.
+- **Leitung:**
+  - Es gibt immer mindestens eine Leitung. Die letzte Leitung kann nur gehen, wenn sie die Leitung übergibt oder
+    die Familie auflöst.
+  - Mehrere Leitungen sind erlaubt.
+- **Einladungen:**
+  - Ein Einladungs-Gutschein trägt die Rolle. Standard ist „Mitglied“.
+  - Die Stellvertretung darf höchstens „Mitglied“ oder „Gast“ einladen.
+  - Offene Einladungen sieht man auf der Mitglieder-Seite und kann sie dort widerrufen.
+- **Entfernen:**
+  - Entfernt die Leitung ein Mitglied, verschwinden dessen geteilte Tiere aus der Familie. In seiner eigenen
+    Chronik bleiben sie erhalten.
+  - Kommentare bleiben stehen, als Name erscheint dann „ehemaliges Mitglied“.
+- **Bestandsfamilien:**
+  - Der gemeinsame Familien-Schlüssel (alte Rudel-Logins) hat Leitungsrechte, wie bisher.
+  - Das älteste Mitglied jeder Familie wird bei der Umstellung zur Leitung.
+- **Demo:** In der Demo-Familie sind alle vier Rollen besetzt. Die Mitglieder-Seite ist in der Demo nur lesbar.
+
+---
+
+## Phase G — Eigene Domain und Go-Live (Zusatz 29.09.)
+
+**Idee:** Wenn Vorschau und Phasen stehen, zieht alles unter eine eigene Domain. Erst danach werden Karten
+gedruckt, weil die QR-Codes die Domain enthalten.
+
+- **Vorbereitung (Betreiber):**
+  - Markenrecherche (Frage 18).
+  - Domain prüfen und kaufen, zum Beispiel `familieaufpfoten.de` und `familie-auf-pfoten.de` als Weiterleitung.
+  - DNS-Einträge (A, AAAA) auf den Server setzen.
+- **Proxy:**
+  - Caddy-Block je Domain mit automatischem Let's-Encrypt-Zertifikat, dafür müssen Port 80 und 443 frei sein.
+  - Die Vorschau zieht nach `vorschau.<domain>`, optional mit Basic-Auth.
+  - **Proxy und Firewall ändert nur der Betreiber** oder es geschieht mit seiner ausdrücklichen Freigabe.
+- **App:**
+  - `PUBLIC_URL` bzw. `DEPLOY_DOMAIN` setzen (QR-Ziele, Links, Portal-URLs).
+  - HSTS und strenge Cookies prüfen.
+  - Alte Adresse `IP:3010` leitet auf die Domain weiter.
+  - `robots.txt` (Steckbriefe `noindex`, Portale indexierbar).
+- **Recht:**
+  - echte Impressum-Angaben (`IMPRESSUM_*`) und eine Kontakt-E-Mail unter der Domain;
+  - die Datenschutzseite prüft der Betreiber.
+- **Go-Live:**
+  - Backup von Prod.
+  - `CODE_PEPPER` und Admin-Passwort auf Prod setzen.
+  - Den auf der Vorschau getesteten Stand nach Prod übernehmen (`manage.ps1` → [12]), nur mit Freigabe.
+  - Rauchtest.
+- **Danach:**
+  - Karten drucken (Phase 5): Kunden-Karten, Partner-Karten, Partner-Stapel.
+  - Vorschau als Präsentations-Instanz behalten.
 
 ---
 
@@ -760,6 +908,12 @@ Anbieter und Website-Prüfung bekommen ein injiziertes `fetch`. Tests gehen also
   - „Demo als Partner X", auch „als Tierheim X" mit Chroniken, Steckbriefen und Übergabe (Phase T)
   - Vollbild ohne Admin-Bedienelemente, zum Vorführen bei Tierheimen und Hundeschulen
 - **Rudel-Liste:** zeigt die Herkunft (Partner bzw. Gutschein-Kette) statt des alten Freitexts `quelle`.
+- **Karten (Zusatz 29.09.):**
+  - drei Kartenmotive: Kunden-Karte („Deine Chronik“), Partner-Karte („Euer kostenloses Partnerprofil“) und
+    Partner-Stapel-Karte (mit Partner-Logo);
+  - Partner sehen ihren Kunden-Gutschein-Stapel im Partner-Bereich (offen/eingelöst) und können ihn nachdrucken;
+  - Infoseite `/partner-werden` für Partner-Karten und Gespräche.
+- **Druck erst nach Phase G:** Die Druckseite ist vorher fertig, aber gedruckt wird erst mit der Domain.
 
 ---
 
@@ -932,6 +1086,10 @@ Tierheimen ist und „Neuer Begleiter gesucht?" mit echten Tieren füllt.
 Die **Theme-Grundlage** kommt mit Phase 2. **Umbenennung in „Familie auf Pfoten" und Berner-Theme** kommen vor
 Phase 5 (Kartendruck) und vor dem Start in Prod unter der neuen Domain.
 
+**Aktualisiert 29.09.:** Für die Vorschau gilt **0 → D → Z → 1 → 2 → T → 3 → P1 → P2 → R → 5 → G**, Phase 4
+danach. P1 und P2 bilden das Partner-Produkt, R die Familien-Verwaltung. G (Domain und Go-Live) steht am Ende,
+danach werden Karten gedruckt.
+
 **Aktualisiert 28.09.:** Für die Vorschau gilt **0 → D → Z → 1 → 2 → T → 3 → 5**, Phase 4 danach.
 - Design und Themes (D) kommen nach vorn, weil der neue Auftritt das Erste ist, was man in der Vorschau sieht.
 - **Phase Z** (Meine Chronik, Zuhause, Teilen) kommt vor die Gutscheine. Das Einlösen soll direkt „Meine Chronik"
@@ -991,3 +1149,9 @@ Phase 5 (Kartendruck) und vor dem Start in Prod unter der neuen Domain.
     und einem optionalen eigenen Abschiedstext.
 23. **Standard-Ansicht nach dem Login:** „Meine Chronik" oder die zuletzt benutzte Familie? Vorschlag: die zuletzt
     benutzte.
+24. **Partner veröffentlichen selbst:** Vorschlag: Ja, ohne Freigabe durch den Admin, weil Partner-Zugänge
+    persönlich verteilt werden. Der Admin kann jederzeit sperren. Oder soll der Admin jedes neue Profil freigeben?
+25. **Rollen-Namen:** Passen „Rudelführer“ bzw. „Familienleitung“, „Stellvertretung“, „Mitglied“ und „Gast“?
+26. **„Pausiert“ bei Tierheim-Tieren:** Vorschlag: Der Steckbrief bleibt mit dem Hinweis „gerade nicht
+    vermittelbar“ sichtbar. Oder soll er ausgeblendet werden?
+27. **Preis für Partner-Profile:** kostenlos (Vorschlag für den Start), später gegen Spende oder Beitrag?

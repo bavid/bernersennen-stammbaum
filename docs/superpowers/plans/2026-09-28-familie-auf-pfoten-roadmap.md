@@ -54,10 +54,16 @@ Für die Vorschau gelten die Vorschläge des Konzepts. Alles ist so gebaut, dass
 | 21 | Wer pflegt geteilte Tiere | nur der eigene Haushalt; Familie liest und kommentiert; heutige Rudel-Tiere wie bisher alle |
 | 22 | Abschied | „In Erinnerung", dezent, optional eigener Text |
 | 23 | Ansicht nach Login | zuletzt benutzte (Meine Chronik oder Familie) |
+| 24 | Partner veröffentlichen selbst | ja, ohne Admin-Freigabe (Zugang wird persönlich verteilt), Admin kann sperren |
+| 25 | Rollen-Namen | Rudelführer/Familienleitung, Stellvertretung, Mitglied, Gast |
+| 26 | Tierheim-Status „Pausiert“ | Steckbrief bleibt sichtbar mit Hinweis, nicht in „Entdecken“ |
+| 27 | Preis Partner-Profile | kostenlos zum Start |
 
 ## Phasen & Fortschritt
 
-Reihenfolge für die Vorschau: **0 → D → Z → 1 → 2 → T → 3 → P → 5**, Phase 4 danach (blockiert durch Frage 1).
+Reihenfolge für die Vorschau: **0 → D → Z → 1 → 2 → T → 3 → P1 → P2 → R → 5 → G**, Phase 4 danach (blockiert durch
+Frage 1). Zwei Produkte auf einer Plattform: **Chronik** (Kunden-Gutschein) und **Partner-Profil** (Partner-Zugang,
+P1/P2). R bringt Rollen in Familien. G (Domain & Go-Live) steht am Ende – erst danach werden Karten gedruckt.
 „D" (Design & Themes) kommt vor die Gutscheine, weil der neue Auftritt das Erste ist, was man in der Vorschau sieht.
 „Z" (Meine Chronik, Zuhause, Teilen) folgt direkt: Das Einlösen eines Gutscheins legt „Meine Chronik" an, und die
 Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
@@ -69,10 +75,13 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 | Z | Meine Chronik & Teilen: private Chronik je Haushalt, Wegbegleiter-Zeitleiste (Einzug/Abschied/Herkunft), Tiere und Einträge in Familien teilen, „lebt mit" statt „Adoptiv-…", Schnellerfassung | [Plan](2026-09-28-phase-z-meine-chronik.md) | 🚀 auf der Vorschau |
 | 1 | Gutscheine & neuer Login: Codes, Einlösen → Meine Chronik, Schlüssel (Login + PUK), Benutzer, Einladung in Familien, Admin-Stapel, `/v#CODE` | [Plan](2026-09-28-phase-1-gutscheine.md) | 🚀 auf der Vorschau |
 | 2 | Partner, Portale `/p/:slug`, Partnerübersicht, PLZ/Umkreis (GeoNames + OSM), „In der Nähe“, Impressum/Datenschutz | [Plan](2026-09-28-phase-2-partner.md) | 🚀 auf der Vorschau |
-| T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein (Tier zieht mit Chronik um), Mitlesen, Happy-Ends | [Plan](2026-09-29-phase-t-tierheim.md) | ✅ fertig (lokal getestet) |
-| 3 | Reiter „Entdecken": Hundeschulen, „Neuer Begleiter gesucht?", Futter-Empfehlungen, Unterstützen, Klickzählung | wird vor Beginn geschrieben | ☐ offen |
-| P | Partner-Bereich & Kontakt: Partner pflegen Portal und Beiträge („Anzeige“, Freigabe durch Admin), Umkreis mit Auffüllen (< 5 → nächste weitere), „Schreib uns“ mit Postfach, E-Mail/Kontaktformular-Link | [Plan](2026-09-29-phase-p-partnerbereich.md) | ☐ offen |
-| 5 | Admin: Gutschein-Stapel + Druckkarten mit QR, Partner/Anzeigen/Spenden pflegen, Statistik, Präsentationsmodus | wird vor Beginn geschrieben | ☐ offen |
+| T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein (Tier zieht mit Chronik um), Mitlesen, Happy-Ends | [Plan](2026-09-29-phase-t-tierheim.md) | 🚀 auf der Vorschau |
+| 3 | Reiter „Entdecken": Hundeschulen, „Neuer Begleiter gesucht?", Futter-Empfehlungen, Unterstützen, Klickzählung, Umkreis mit Auffüllen | [Plan](2026-09-29-phase-3-entdecken.md) | ⏳ Server fertig (auf der Vorschau), Client offen |
+| P1 | Partner-Zugang & Profil: Partner-Gutschein → Einrichtung, Profil selbst pflegen, „Bearbeiten \| Kundensicht“ (Live-Vorschau in Beispiel-Kundenoberfläche), Veröffentlichen/Sperre, Einblicke (Fotos + Datum), Hundesalon/Betreuung, Status „Pausiert“ | [Plan](2026-09-29-phase-p-partnerbereich.md) | ☐ offen |
+| P2 | Anzeigen & Kontakt: Beiträge als „Anzeige“ mit Admin-Freigabe, „Schreib uns“ mit Postfach, E-Mail/Kontaktformular-Link, „Salon & Betreuung“, Partnerliste füllt dünnen Umkreis auf | [Plan](2026-09-29-phase-p-partnerbereich.md) | ☐ offen |
+| R | Familien-Verwaltung: Rollen (Rudelführer/Leitung, Stellvertretung, Mitglied, Gast), Mitglieder-Seite, Einladungen mit Rolle, Leitung übergeben, auflösen, „Wer sieht was?“ | [Plan](2026-09-29-phase-r-familienverwaltung.md) | ☐ offen |
+| 5 | Admin: Druckkarten mit QR (Kunden-, Partner-, Partner-Stapel-Karten), Partner sehen ihren Kunden-Stapel, `/partner-werden`, Statistik, Präsentationsmodus | wird vor Beginn geschrieben | ☐ offen |
+| G | Eigene Domain & Go-Live: Domain/DNS/Caddy (Betreiber), `PUBLIC_URL`, HSTS, robots.txt, Prod-Übernahme mit Freigabe, danach Karten drucken | [Plan](2026-09-29-phase-g-domain-golive.md) | ☐ offen (braucht Domain) |
 | 4 | Import, Crawler, Website-Prüfung, Prüfliste | zurückgestellt | ⏸ blockiert (Frage 1) |
 
 Legende: ☐ offen · ⏳ in Arbeit · ✅ fertig (lokal getestet) · 🚀 auf der Vorschau (3005) · ⏸ blockiert
@@ -99,3 +108,6 @@ Legende: ☐ offen · ⏳ in Arbeit · ✅ fertig (lokal getestet) · 🚀 auf d
 | 2026-09-29 | 2 | `56ed1ec` | Partner mit Portal `/p/:slug` (Logo, Akzentfarbe, Gutschein einlösen, Demo), Partnerliste `/partner` (PLZ/Umkreis, GeoNames), „In der Nähe“ `/umgebung` (OSM über den Server, gecacht, SSRF-geschützt, ohne Züchter), Admin-Pflege, Partner-Gutscheine, Impressum/Datenschutz; Demo-Partner |
 | 2026-09-28 | Z | – | Konzept ergänzt: private Chronik, Wegbegleiter, Teilen in Familien, Zusammenleben statt Abstammung |
 | 2026-09-29 | T | `c7315cd` | Tasks 1–6: Tierheim-Bereich (art='tierheim'), Vermittlungsstatus/Kategorien/Steckbrief `/t/:slug`, Übergabe-Gutschein (Tier zieht mit Chronik um), Mitlesen-Einwilligung, Demo-Tierheim „Tierheim Sonnenhang" (4 Tiere, 3 Steckbriefe, `/api/demo {as:'tierheim'}`), Happy-Ends auf dem Partner-Portal |
+| 2026-09-29 | T | `a0048ad` | Abschluss-Review behoben (Status-Filter, Bestätigung bei Statuswechsel, Einwilligungstexte, Admin-UI für Tierheim-Zugänge, Demo-Sperren) – auf der Vorschau |
+| 2026-09-29 | 3 | `829d188` | Tasks 1–2: Admin-Pflege Empfehlungen/Spenden, `POST /api/discover`, anonyme Klickzählung `/r/…`, Umkreis mit Auffüllen (< 5 → nächste 20) – Server auf der Vorschau |
+| 2026-09-29 | P/R/G | – | Konzept erweitert: zwei Produkte (Chronik / Partner-Profil), Partner-Zugang per Gutschein, Kundensicht, Einblicke, Rollen in Familien, Domain & Go-Live; Pläne P (P1/P2), R, G geschrieben |
