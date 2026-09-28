@@ -286,4 +286,34 @@ db.exec(`
   );
 `)
 
+// Phase T Task 1: Tierheim als eigener Bereich (art='tierheim', siehe lib/context.js ART.tierheim) -
+// Datenmodell für Vermittlung (Steckbrief, Status) und Übergabe (Gutschein mit vouchers.dog_id,
+// dog_transfers). Bewusst KEINE REFERENCES auf dog_transfers.dog_id/from_family_id/to_family_id/
+// voucher_id und auf timeline_entries.herkunft_family_id: das sind reine Herkunfts-/Protokoll-Verweise,
+// die nach einem Löschen (Familie, Tier, Gutschein) bewusst stehen bleiben dürfen, statt die Löschung
+// per Fremdschlüsselprüfung zu blockieren (siehe lib/families.js deleteFamily, das diese Tabellen/
+// Spalten deshalb unangetastet lässt).
+addColumnIfMissing('dogs', 'vermittlung_status', 'TEXT')
+addColumnIfMissing('dogs', 'public_slug', 'TEXT')
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_dogs_public_slug ON dogs(public_slug) WHERE public_slug IS NOT NULL')
+
+addColumnIfMissing('timeline_entries', 'kategorie', 'TEXT')
+addColumnIfMissing('timeline_entries', 'is_public', 'INTEGER NOT NULL DEFAULT 0')
+addColumnIfMissing('timeline_entries', 'herkunft_family_id', 'INTEGER')
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS dog_transfers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dog_id INTEGER NOT NULL,
+    from_family_id INTEGER,
+    to_family_id INTEGER,
+    voucher_id INTEGER,
+    transferred_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_dog_transfers_dog ON dog_transfers(dog_id);
+`)
+
+addColumnIfMissing('dog_shares', 'story_consent', 'INTEGER NOT NULL DEFAULT 0')
+addColumnIfMissing('vouchers', 'dog_id', 'INTEGER')
+
 module.exports = db

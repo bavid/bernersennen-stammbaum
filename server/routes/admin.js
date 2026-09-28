@@ -11,7 +11,7 @@ const { requireAdmin, setAdminCookie, clearAdminCookie } = require('../middlewar
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
 const { createBatch, voucherStatus, validateBatchInput } = require('../lib/vouchers')
-const { formatCode, decryptCode } = require('../lib/codes')
+const { formatCode, decryptCode, generateCode, hashCode } = require('../lib/codes')
 const { validatePartner, detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('../lib/partners')
 
 const router = express.Router()
@@ -292,8 +292,17 @@ function uniqueConstraintViolation(err) {
   return typeof err.message === 'string' && err.message.includes('UNIQUE')
 }
 
+// shelter_family_id: die Tierheim-Familie (falls vorhanden), die der Admin über POST /:id/shelter aus
+// diesem Partner angelegt hat - der Client zeigt damit z. B. einen "Schlüssel erneuern"-statt-"Anlegen"-Knopf.
 router.get('/partners', requireAdmin, (req, res) => {
-  res.json(db.prepare('SELECT * FROM partners ORDER BY name COLLATE NOCASE').all())
+  res.json(
+    db
+      .prepare(
+        `SELECT p.*, (SELECT f.id FROM families f WHERE f.partner_id = p.id AND f.art = 'tierheim') AS shelter_family_id
+         FROM partners p ORDER BY p.name COLLATE NOCASE`
+      )
+      .all()
+  )
 })
 
 router.post('/partners', requireAdmin, (req, res, next) => {
@@ -362,6 +371,35 @@ router.post('/partners/:id/logo', requireAdmin, (req, res, next) => {
     db.prepare('UPDATE partners SET logo_file = ? WHERE id = ?').run(filename, id)
     res.status(201).json({ logoUrl: `/partner-media/${filename}` })
   })
+})
+
+// Phase T Task 1: legt für einen Tierheim-/Vermittlungs-Partner einen eigenen Bereich an (art='tierheim'),
+// über den das Team selbst die App nutzt (Chronik je Tier, Steckbrief, Übergabe) - siehe
+// docs/superpowers/plans/2026-09-29-phase-t-tierheim.md. Der Zugangsschlüssel funktioniert wie ein
+// Gutschein-Code (siehe lib/vouchers.js redeemVoucher/lib/codes.js): einmalig im Klartext zurückgegeben,
+// danach nur noch der Hash in families.access_key_hash. Höchstens ein Tierheim-Bereich pro Partner.
+router.post('/partners/:id/shelter', requireAdmin, (req, res) => {
+  const id = cleanId(req.params.id)
+  const partner = findPartner(id)
+  if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
+  if (!['tierheim', 'vermittlung'].includes(partner.typ)) {
+    return res.status(400).json({ error: 'Nur für Partner vom Typ Tierheim oder Vermittlung' })
+  }
+
+  const existing = db.prepare("SELECT 1 FROM families WHERE partner_id = ? AND art = 'tierheim'").get(id)
+  if (existing) return res.status(409).json({ error: 'Für diesen Partner gibt es schon einen Tierheim-Bereich' })
+
+  const code = generateCode()
+  const familyId = Number(
+    db
+      .prepare(
+        `INSERT INTO families (name, password_hash, art, theme, partner_id, legacy_password, access_key_hash)
+         VALUES (?, '!', 'tierheim', 'standard', ?, 0, ?)`
+      )
+      .run(partner.name, id, hashCode(code)).lastInsertRowid
+  )
+
+  res.status(201).json({ familyId, key: formatCode(code) })
 })
 
 // Löschen nur im Entwurf - ein schon veröffentlichter Partner wird stattdessen pausiert (PUT status).

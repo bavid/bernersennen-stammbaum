@@ -1,6 +1,6 @@
 const db = require('../db')
 
-const ART = { zuhause: 'zuhause', rudel: 'rudel' }
+const ART = { zuhause: 'zuhause', rudel: 'rudel', tierheim: 'tierheim' }
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist
 function membershipsOf(homeId) {
@@ -48,11 +48,21 @@ function currentAuthInfo(homeId, userId) {
 
 // Antwort für /me, /login, /demo, /view: aktiver Bereich oben, Identität und Mitgliedschaften dazu.
 // userId (falls gesetzt) beschreibt eine Benutzer-Sitzung und fließt nur in "auth" ein.
+// Ist der aktive Bereich ein Tierheim (art='tierheim'), kommt zusätzlich "partner" dazu (der Partner,
+// aus dem der Admin diesen Bereich angelegt hat, siehe routes/admin.js POST /partners/:id/shelter) -
+// der Client zeigt damit z. B. den Partnernamen/-slug, ohne extra nachzufragen.
 function buildMe(homeId, activeId, isDemo, userId = null) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
   const active = family(activeId)
   const home = family(homeId)
-  return { ...active, isDemo: Boolean(isDemo), home, memberships: membershipsOf(homeId), auth: currentAuthInfo(homeId, userId) }
+  const me = { ...active, isDemo: Boolean(isDemo), home, memberships: membershipsOf(homeId), auth: currentAuthInfo(homeId, userId) }
+  if (active?.art === ART.tierheim) {
+    const partner = db
+      .prepare('SELECT p.id, p.slug, p.name FROM families f JOIN partners p ON p.id = f.partner_id WHERE f.id = ?')
+      .get(activeId)
+    if (partner) me.partner = partner
+  }
+  return me
 }
 
 // Tiere, die im Bereich @familyId sichtbar sind: eigene und dorthin geteilte
