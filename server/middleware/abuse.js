@@ -2,6 +2,7 @@ const fs = require('node:fs')
 const rateLimit = require('express-rate-limit')
 const config = require('../config')
 const { requireAuth } = require('./auth')
+const { ipKeyGenerator } = require('../lib/rateLimitKey')
 
 // Schutz gegen Spam, Brute-Force und versehentliches Fluten (keine Abwehr für
 // volumetrische DDoS-Angriffe – die filtert der Hoster auf Netzwerkebene).
@@ -12,8 +13,10 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000
 const DEFAULT_MIN_FREE_DISK_MB = 1024
 const BYTES_PER_MB = 1024 * 1024
 
+// Alle Limiter hier sind pro IP (anders als z. B. writeLimiter unten) - ipKeyGenerator maskiert IPv6
+// auf ein /56-Präfix, sonst liefe das Limit für IPv6 praktisch leer (siehe lib/rateLimitKey.js).
 const limiter = (options, message) =>
-  rateLimit({ standardHeaders: 'draft-7', legacyHeaders: false, message: { error: message }, ...options })
+  rateLimit({ standardHeaders: 'draft-7', legacyHeaders: false, message: { error: message }, keyGenerator: ipKeyGenerator, ...options })
 
 // Alle API-Anfragen pro IP
 const apiLimiter = limiter(

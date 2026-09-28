@@ -96,6 +96,25 @@ test('Produktion mit zu kurzem CODE_PEPPER wirft beim Start', () => {
   expectChildThrow("require('./config')", env, /CODE_PEPPER/)
 })
 
+test('decryptCode lehnt Geheimtext ab, der nicht aus genau drei Base64-Teilen besteht', () => {
+  assert.throws(() => decryptCode('nur-ein-teil'))
+  assert.throws(() => decryptCode('a.b'))
+  assert.throws(() => decryptCode('a.b.c.d'))
+  assert.throws(() => decryptCode(''))
+  assert.throws(() => decryptCode(null))
+})
+
+test('decryptCode lehnt falsche IV- oder Tag-Längen ab', () => {
+  const cipher = encryptCode('ABCDEFGH1234')
+  const [iv, tag, data] = cipher.split('.')
+
+  const shortIv = Buffer.from(iv, 'base64').subarray(0, 8).toString('base64')
+  assert.throws(() => decryptCode([shortIv, tag, data].join('.')))
+
+  const shortTag = Buffer.from(tag, 'base64').subarray(0, 8).toString('base64')
+  assert.throws(() => decryptCode([iv, shortTag, data].join('.')))
+})
+
 test('Produktion mit gültigem CODE_PEPPER startet ohne zu werfen', () => {
   const env = { ...process.env, NODE_ENV: 'production', JWT_SECRET: 'x'.repeat(40), CODE_PEPPER: 'y'.repeat(32) }
   assert.doesNotThrow(() => runChild("require('./config')", env))
