@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const express = require('express')
 const multer = require('multer')
 const rateLimit = require('express-rate-limit')
+const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { requireFreeDisk } = require('../middleware/abuse')
 const { uploadDir, uploadRateLimit } = require('../config')
@@ -47,10 +48,15 @@ const upload = multer({
   }
 })
 
+const insertUpload = db.prepare('INSERT INTO uploads (filename, family_id) VALUES (?, ?)')
+
 router.post('/', requireAuth, uploadLimiter, requireFreeDisk, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Keine Datei hochgeladen' })
   }
+  // Merkt sich, welcher Bereich die Datei erzeugt hat - so ist sie sofort sichtbar (canSeeUpload),
+  // auch bevor sie überhaupt an einem Hund oder Eintrag hängt.
+  insertUpload.run(req.file.filename, req.familyId)
   res.status(201).json({ url: `/uploads/${req.file.filename}` })
 })
 

@@ -183,4 +183,16 @@ addColumnIfMissing('dogs', 'herkunft_art', 'TEXT')
 addColumnIfMissing('dogs', 'herkunft_text', 'TEXT')
 addColumnIfMissing('timeline_entries', 'privat', 'INTEGER NOT NULL DEFAULT 0')
 
+// Task 3 (Phase Z): welcher Bereich eine Upload-Datei erzeugt hat - damit ein frisches, noch keinem
+// Hund/Eintrag zugeordnetes Foto schon vor dem Speichern nur dort sichtbar ist (canSeeUpload in
+// lib/uploadAccess.js). filename ist der PRIMARY KEY: ein Dateiname gehört für immer genau einer Familie.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS uploads (
+    filename TEXT PRIMARY KEY,
+    family_id INTEGER NOT NULL REFERENCES families(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_uploads_family ON uploads(family_id);
+`)
+
 module.exports = db

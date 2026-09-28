@@ -1,6 +1,8 @@
+const path = require('node:path')
 const jwt = require('jsonwebtoken')
 const { jwtSecret, cookieSecure, adminCookie: ADMIN_COOKIE } = require('../config')
-const { requireAuth } = require('./auth')
+const { requireSession } = require('./auth')
+const { canSeeUpload } = require('../lib/uploadAccess')
 
 const ADMIN_SESSION_HOURS = 12
 
@@ -27,10 +29,20 @@ function requireAdmin(req, res, next) {
   next()
 }
 
-// Fotos: Rudel-Mitglieder oder Admin
-function requireFamilyOrAdmin(req, res, next) {
+// Fotos: Admin sieht alles; sonst nur wer laut canSeeUpload Zugriff auf genau diese Datei hat.
+// requireSession statt requireAuth: die Demo darf lesen (express.static bedient ohnehin nur GET/HEAD,
+// requireAuths Schreibsperre für's Demo-Modus wäre hier also wirkungslos) und antwortet bei fehlender/
+// ungültiger Session selbst mit 401 (heutiges Verhalten bleibt so).
+// 404 statt 403 bei fehlendem Zugriff: eine fremde Foto-URL soll nicht einmal verraten, dass es sie gibt.
+function requireUploadAccess(req, res, next) {
   if (isAdmin(req)) return next()
-  return requireAuth(req, res, next)
+  requireSession(req, res, () => {
+    const filename = path.basename(req.path)
+    if (!canSeeUpload({ familyId: req.familyId, homeId: req.homeId }, filename)) {
+      return res.status(404).json({ error: 'Nicht gefunden' })
+    }
+    next()
+  })
 }
 
 function setAdminCookie(res) {
@@ -43,4 +55,4 @@ function clearAdminCookie(res) {
   res.clearCookie(ADMIN_COOKIE, options)
 }
 
-module.exports = { requireAdmin, requireFamilyOrAdmin, setAdminCookie, clearAdminCookie }
+module.exports = { requireAdmin, requireUploadAccess, setAdminCookie, clearAdminCookie }

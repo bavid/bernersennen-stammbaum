@@ -16,7 +16,7 @@ const notesRoutes = require('./routes/notes')
 const adminRoutes = require('./routes/admin')
 const messagesRoutes = require('./routes/messages')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
-const { requireFamilyOrAdmin } = require('./middleware/admin')
+const { requireUploadAccess } = require('./middleware/admin')
 const { apiLimiter, photoLimiter, limitWrites } = require('./middleware/abuse')
 
 const PHOTO_CACHE = 'private, max-age=2592000, immutable'
@@ -81,11 +81,12 @@ function createApp() {
     res.json({ status: 'ok' })
   })
 
-  // Fotos nur mit Login (Rudel oder Admin); "private", damit keine geteilten Caches sie speichern
+  // Fotos nur für Bereiche, die sie laut canSeeUpload auch sehen dürfen (oder Admin); "private",
+  // damit keine geteilten Caches sie speichern
   app.use(
     '/uploads',
     photoLimiter,
-    requireFamilyOrAdmin,
+    requireUploadAccess,
     express.static(config.uploadDir, {
       fallthrough: false,
       setHeaders: (res) => res.setHeader('Cache-Control', PHOTO_CACHE)

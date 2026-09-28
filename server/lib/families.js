@@ -12,12 +12,24 @@ function photoUrlsOf(db, familyId) {
   ]
 }
 
+// Hochgeladene, aber nie an einem Hund/Eintrag/Wurf verwendete Fotos einer Familie (z. B. ein
+// abgebrochener Upload) - die stehen nur in der uploads-Tabelle, photoUrlsOf sieht sie nicht.
+function unusedUploadUrlsOf(db, familyId) {
+  return db
+    .prepare('SELECT filename FROM uploads WHERE family_id = ?')
+    .all(familyId)
+    .map((row) => `/uploads/${row.filename}`)
+}
+
 // Löscht ein Rudel komplett. Verweise aus anderen Rudeln auf seine Hunde werden zu Freitext,
 // damit deren Stammbaum lesbar bleibt. Liefert die Foto-URLs, die danach niemand mehr nutzt.
 function deleteFamily(db, familyId) {
-  const photos = photoUrlsOf(db, familyId)
+  const photos = [...new Set([...photoUrlsOf(db, familyId), ...unusedUploadUrlsOf(db, familyId)])]
 
   db.transaction(() => {
+    // Upload-Zuordnungen der Familie zuerst weg - sonst verletzt das Löschen der families-Zeile
+    // unten die Fremdschlüsselprüfung (uploads.family_id REFERENCES families(id)).
+    db.prepare('DELETE FROM uploads WHERE family_id = ?').run(familyId)
     // Geteilte Tiere zuerst aufräumen: sowohl Freigaben AUS diesem Bereich (F teilte an andere)
     // als auch Freigaben IN diesen Bereich (andere teilten an F, falls F ein Rudel war)
     db.prepare('DELETE FROM dog_shares WHERE family_id = ? OR dog_id IN (SELECT id FROM dogs WHERE family_id = ?)').run(
