@@ -21,16 +21,28 @@ const DEFAULT_MAX_BYTES = 1_000_000
 
 const IPV4_MAPPED_RE = /^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i
 
-// Private/reservierte Bereiche, die nie erreicht werden dürfen (siehe Task-Vorgabe).
+// Private/reservierte Bereiche, die nie erreicht werden dürfen (siehe Task-Vorgabe). Statt einer reinen
+// Blockliste wäre "nur global unicast erlauben" die robustere Regel - hier bewusst als explizite Liste
+// gehalten, damit jeder Bereich einzeln benannt und getestet ist (security-review Phase 2 Finding 5).
 const forbiddenRanges = new BlockList()
 forbiddenRanges.addSubnet('10.0.0.0', 8, 'ipv4')
 forbiddenRanges.addSubnet('172.16.0.0', 12, 'ipv4')
 forbiddenRanges.addSubnet('192.168.0.0', 16, 'ipv4')
 forbiddenRanges.addSubnet('127.0.0.0', 8, 'ipv4')
 forbiddenRanges.addSubnet('169.254.0.0', 16, 'ipv4')
+forbiddenRanges.addSubnet('0.0.0.0', 8, 'ipv4') // "diese Adresse" (RFC 791/1122)
+forbiddenRanges.addSubnet('100.64.0.0', 10, 'ipv4') // Carrier-Grade NAT (RFC 6598)
+forbiddenRanges.addSubnet('192.0.0.0', 24, 'ipv4') // IETF-Protokollzuweisungen (RFC 6890)
+forbiddenRanges.addSubnet('198.18.0.0', 15, 'ipv4') // Netzwerk-Benchmarking (RFC 2544)
+forbiddenRanges.addSubnet('224.0.0.0', 4, 'ipv4') // Multicast
+forbiddenRanges.addSubnet('240.0.0.0', 4, 'ipv4') // reserviert (inkl. 255.255.255.255 Broadcast)
 forbiddenRanges.addAddress('::1', 'ipv6')
 forbiddenRanges.addSubnet('fc00::', 7, 'ipv6') // ULA
 forbiddenRanges.addSubnet('fe80::', 10, 'ipv6') // link-local
+forbiddenRanges.addSubnet('::', 96, 'ipv6') // unspezifiziert (::) + veraltetes IPv4-kompatibles ::/96
+forbiddenRanges.addSubnet('ff00::', 8, 'ipv6') // Multicast
+forbiddenRanges.addSubnet('64:ff9b::', 96, 'ipv6') // NAT64 wohlbekanntes Präfix (RFC 6052)
+forbiddenRanges.addSubnet('2002::', 16, 'ipv6') // 6to4 (RFC 3056) - kann IPv4-Adressen einbetten
 
 // IPv4-mapped IPv6 (z. B. "::ffff:127.0.0.1") wie die eingebettete IPv4-Adresse behandeln - sonst
 // würde sie an obigen ipv6-Bereichen vorbeirutschen, obwohl sie effektiv dieselbe Adresse ist.
@@ -63,6 +75,21 @@ function httpLibError(status, message) {
   const err = new Error(message)
   err.status = status
   return err
+}
+
+// Lässt `promise` gegen eine feste Deadline laufen, statt gegen eine eigene, frische Zeitspanne - so
+// zählt die DNS-Auflösung gegen dasselbe Gesamt-Zeitlimit wie die eigentliche Anfrage (siehe
+// safeFetchJson: ohne das könnte eine hängende Namensauflösung `timeoutMs` beliebig überschreiten,
+// weil bisher nur die Anfrage selbst ein Zeitlimit hatte). Ein "Verlieren" gegen die Deadline lässt die
+// ursprüngliche Promise im Hintergrund weiterlaufen (kein AbortSignal für dns.promises.lookup nötig) -
+// ihr Ergebnis wird dann einfach nicht mehr verwendet.
+function withDeadline(promise, deadlineAt) {
+  const remaining = deadlineAt - Date.now()
+  if (remaining <= 0) return Promise.reject(httpLibError(504, 'Zeitüberschreitung bei der Anfrage'))
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(httpLibError(504, 'Zeitüberschreitung bei der Anfrage')), remaining))
+  ])
 }
 
 function userAgent(hostname) {
@@ -158,6 +185,11 @@ async function safeFetchJson(url, options = {}) {
     throw httpLibError(500, 'safeFetchJson benötigt eine Host-Allowlist')
   }
 
+  // Gesamt-Zeitschranke über DNS-Auflösung UND Anfrage hinweg (siehe withDeadline) - ohne sie könnte
+  // eine hängende Namensauflösung timeoutMs beliebig überschreiten, weil bislang nur die eigentliche
+  // Anfrage ein eigenes Zeitlimit hatte.
+  const deadlineAt = Date.now() + timeoutMs
+
   let parsed
   try {
     parsed = new URL(url)
@@ -176,10 +208,20 @@ async function safeFetchJson(url, options = {}) {
     throw httpLibError(400, 'Dieser Host ist nicht erlaubt')
   }
 
+  // Port fest auf 443 gepinnt - außerhalb des Test-Flags soll niemand über die URL einen anderen
+  // (z. B. internen) Port ansprechen können. `allowLocalHttp` ist ausschließlich für einen lokalen
+  // Testserver auf einem beliebigen Port gedacht (siehe isAllowedAddress).
+  const requestedPort = Number(parsed.port) || (isHttps ? 443 : 80)
+  if (!allowLocalHttp && requestedPort !== 443) {
+    throw httpLibError(400, 'Nur Port 443 ist erlaubt')
+  }
+  const port = requestedPort
+
   let addresses
   try {
-    addresses = await dns.promises.lookup(hostname, { all: true, verbatim: true })
-  } catch {
+    addresses = await withDeadline(dns.promises.lookup(hostname, { all: true, verbatim: true }), deadlineAt)
+  } catch (err) {
+    if (err instanceof Error && err.status === 504) throw err
     throw httpLibError(502, 'Host konnte nicht aufgelöst werden')
   }
   if (!addresses.length) throw httpLibError(502, 'Host konnte nicht aufgelöst werden')
@@ -190,7 +232,6 @@ async function safeFetchJson(url, options = {}) {
   // Direkt gegen die geprüfte(n) Adresse(n) verbinden statt später noch einmal per Hostnamen
   // aufzulösen - siehe Kommentar am Dateikopf (DNS-Rebinding).
   const targetIp = addresses[0].address
-  const port = Number(parsed.port) || (isHttps ? 443 : 80)
   const path = `${parsed.pathname}${parsed.search}`
 
   // Host-Header wie ein normaler Client: Hostname allein bei Standard-Port, sonst mit Port - unabhängig
@@ -202,6 +243,9 @@ async function safeFetchJson(url, options = {}) {
     requestHeaders['Content-Type'] = 'application/json'
   }
 
+  const remainingMs = deadlineAt - Date.now()
+  if (remainingMs <= 0) throw httpLibError(504, 'Zeitüberschreitung bei der Anfrage')
+
   return performRequest({
     targetIp,
     hostname,
@@ -211,7 +255,7 @@ async function safeFetchJson(url, options = {}) {
     method,
     headers: requestHeaders,
     body,
-    timeoutMs,
+    timeoutMs: remainingMs,
     maxBytes
   })
 }

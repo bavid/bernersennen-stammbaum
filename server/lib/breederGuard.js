@@ -1,34 +1,51 @@
 'use strict'
 
 // Erkennt Zucht- und Züchter-Texte, damit sie draußen bleiben - Partner sind nie Züchter
-// (docs/superpowers/plans/2026-09-28-phase-2-partner.md, Task 1).
+// (docs/superpowers/plans/2026-09-28-phase-2-partner.md, Task 1; security-review Phase 2 Finding 1).
 
-// "Zucht" tritt in deutschen Komposita als Vorsilbe ("Zuchtstätte", "Zuchthündin") UND als
-// Nachsilbe ("Hundezucht", "Katzenzucht") auf. Eine reine \bzucht\b-Klammer würde beide Komposita-
-// Formen verfehlen, deshalb genügt hier eine Wortanfang- ODER eine Wortende-Grenze.
-const ZUCHT_RE = /\bzucht|zucht\b/i
+// JS `\b` kennt nur ASCII-Wortzeichen - bei Umlauten (z. B. "Züchter") wäre eine reine \b-Klammer
+// unzuverlässig. Deshalb: erst auf NFC normalisieren (setzt ein zerlegtes ü = u + Kombinationstrema
+// U+0308 zu einem einzigen ü zusammen) und kleinschreiben, danach mit reinen Teilstring-/Stamm-Mustern
+// statt \b arbeiten (Komposita wie "Hundezüchter" und Pluralformen wie "Züchterinnen" matchen so von
+// selbst mit).
 
-// "Aufzucht"/"Handaufzucht"/"Flaschenaufzucht" sind im Tierschutz übliche Begriffe für die Betreuung
-// elternloser Welpen/Kätzchen - keine Zucht. Die Wortende-Grenze von ZUCHT_RE (nötig für "Hundezucht")
-// würde sie sonst fälschlich treffen, weil sie selbst auf "...zucht" enden. Vor dem eigentlichen Test
-// werden nur GENAU diese drei Wörter aus dem Text entfernt - ein "Zucht" oder "Hundezucht" im selben
-// Text bleibt also weiterhin erkennbar (siehe Test "schützt nicht vor echten Zucht-Begriffen").
-const AUFZUCHT_ALLOWLIST_RE = /\b(hand|flaschen)?aufzucht\b/gi
+// Erlaubt: Betreuung elternloser Welpen/Kätzchen ("Aufzucht") ist keine Zucht, "Zwingerhusten" ist eine
+// Krankheit (kein Zwinger-Angebot), "nicht im Zwinger" verneint das Zwinger-Halten ausdrücklich. Diese
+// Begriffe/Wendungen werden VOR der Stamm-Prüfung aus dem Text entfernt - ein zusätzliches "Zucht" oder
+// "Zwinger" an anderer Stelle im selben Text bleibt trotzdem erkennbar (siehe Test "Allow-Liste schützt
+// nicht vor echten Zucht-Begriffen").
+const ALLOWLIST_WORDS = ['aufzucht', 'handaufzucht', 'flaschenaufzucht', 'welpenaufzucht', 'kittenaufzucht', 'zwingerhusten']
+const ALLOWLIST_PHRASES = ['nicht im zwinger']
 
-// Begriffe, die als ganzes Wort auftreten müssen (Groß-/Kleinschreibung egal).
-const WORD_TERMS = ['Züchter', 'Züchterin', 'Zwinger', 'Deckrüde', 'Deckkater', 'Welpenverkauf', 'Kennel', 'Cattery', 'breeder', 'breeding']
-const WORD_RE = new RegExp(`\\b(${WORD_TERMS.join('|')})\\b`, 'i')
+// Stämme statt ganzer Wörter, damit Komposita ("Hundezucht") UND Pluralformen/Deklinationen
+// ("Züchterinnen", "Deckrüden") gleichermaßen treffen. "(?<!auf)zucht" lässt "aufzucht" durch (zusätzlich
+// zur Allow-Liste oben) - eine negative Lookbehind-Bedingung reicht hier, weil "Aufzucht" selbst nie ein
+// eigenständiges "Zucht"-Vorkommen enthält. "\bkennels?\b" und "\bbreed(er|ers|ing)\b" sind reine
+// ASCII-Wörter, dort ist die Wortgrenze unproblematisch.
+const STEM_RE = /(?<!auf)zucht|züchte|zwinger|deckr(ü|ue)de|deckkater|deckhengst|welpenverkauf|vermehrer|\bkennels?\b|catter(y|ies)|\bbreed(er|ers|ing)\b/iu
 
-// Mehrwort-Wendung - der Leerraum dazwischen darf variieren (mehrere Leerzeichen, Zeilenumbruch, ...).
-const PHRASE_RE = /\bwelpen\s+abzugeben\b/i
+// Mehrwort-Wendungen - der Leerraum dazwischen darf variieren (mehrere Leerzeichen, Zeilenumbruch, ...).
+const PHRASE_RE = /welpen\s+(abzugeben|zu\s+verkaufen|zu\s+vergeben|verfügbar)|puppies\s+for\s+sale|kittens\s+for\s+sale|stud\s+(dog|service)/iu
 
-// Bewusst NICHT in der Liste (siehe Task-Vorgabe): "Tierschutz", "Welpenschule", "Welpenkurs",
+// Bewusst NICHT in den Mustern (siehe Task-Vorgabe): "Tierschutz", "Welpenschule", "Welpenkurs",
 // "Hundeschule", "Tierheim" - das sind legitime Partner-Kategorien, keine Zucht-Angebote.
+
+function stripAllowlisted(normalized) {
+  let result = normalized
+  for (const phrase of ALLOWLIST_PHRASES) {
+    result = result.split(phrase).join(' ')
+  }
+  for (const word of ALLOWLIST_WORDS) {
+    result = result.replace(new RegExp(`\\b${word}\\b`, 'giu'), ' ')
+  }
+  return result
+}
 
 function looksLikeBreeder(text) {
   if (typeof text !== 'string' || !text) return false
-  const withoutAufzucht = text.replace(AUFZUCHT_ALLOWLIST_RE, ' ')
-  return ZUCHT_RE.test(withoutAufzucht) || WORD_RE.test(text) || PHRASE_RE.test(text)
+  const normalized = text.normalize('NFC').toLowerCase()
+  const stripped = stripAllowlisted(normalized)
+  return STEM_RE.test(stripped) || PHRASE_RE.test(stripped)
 }
 
 function breederGuardError() {

@@ -1,6 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const http = require('node:http')
+const dns = require('node:dns')
 const { once } = require('node:events')
 const { safeFetchJson, isForbiddenIp, isLoopbackIp } = require('../lib/http')
 
@@ -36,6 +37,29 @@ test('isForbiddenIp/isLoopbackIp: private, loopback und link-local Bereiche werd
   assert.equal(isLoopbackIp('::1'), true)
   assert.equal(isLoopbackIp('::ffff:127.0.0.1'), true)
   assert.equal(isLoopbackIp('10.0.0.1'), false)
+})
+
+test('isForbiddenIp: zusätzliche reservierte/Sonder-Bereiche (SSRF-Härtung)', () => {
+  // IPv4: "diese Adresse" (0/8), CGNAT (100.64/10), IETF-Protokolle (192.0.0/24), Benchmarking
+  // (198.18/15), Multicast (224/4), reserviert (240/4), gerichtete Broadcast
+  assert.equal(isForbiddenIp('0.0.0.0'), true)
+  assert.equal(isForbiddenIp('0.5.5.5'), true)
+  assert.equal(isForbiddenIp('100.64.0.1'), true)
+  assert.equal(isForbiddenIp('100.127.255.255'), true)
+  assert.equal(isForbiddenIp('100.63.255.255'), false) // knapp außerhalb von 100.64.0.0/10
+  assert.equal(isForbiddenIp('192.0.0.5'), true)
+  assert.equal(isForbiddenIp('198.18.0.1'), true)
+  assert.equal(isForbiddenIp('198.19.255.255'), true)
+  assert.equal(isForbiddenIp('224.0.0.1'), true)
+  assert.equal(isForbiddenIp('240.0.0.1'), true)
+  assert.equal(isForbiddenIp('255.255.255.255'), true)
+
+  // IPv6: unspezifiziert, veraltetes IPv4-kompatibles ::/96, Multicast, NAT64, 6to4
+  assert.equal(isForbiddenIp('::'), true)
+  assert.equal(isForbiddenIp('::0.0.0.1'), true)
+  assert.equal(isForbiddenIp('ff02::1'), true)
+  assert.equal(isForbiddenIp('64:ff9b::203.0.113.1'), true)
+  assert.equal(isForbiddenIp('2002::1'), true)
 })
 
 test('safeFetchJson: privater Host (localhost/127.0.0.1) ohne Test-Flag scheitert', async () => {
@@ -106,4 +130,82 @@ test('safeFetchJson: Zeitüberschreitung bei einem hängenden Server', async (t)
     safeFetchJson(`http://127.0.0.1:${port}/x`, { allowHosts: ['127.0.0.1'], allowLocalHttp: true, timeoutMs: 200 }),
     /zeitüberschreitung/i
   )
+})
+
+// --- DNS-Auflösung: mehrere Adressen, jede verbotene Adresse blockt die ganze Anfrage -------------
+
+test('safeFetchJson: eine private Adresse unter mehreren aufgelösten Adressen blockt die ganze Anfrage', async (t) => {
+  t.mock.method(dns.promises, 'lookup', async () => [
+    { address: '203.0.113.5', family: 4 },
+    { address: '10.0.0.1', family: 4 }
+  ])
+
+  await assert.rejects(
+    safeFetchJson('https://example.org/x', { allowHosts: ['example.org'] }),
+    /nicht erlaubt/i
+  )
+})
+
+test('safeFetchJson: 0.0.0.0 als aufgelöste Adresse wird abgelehnt', async (t) => {
+  t.mock.method(dns.promises, 'lookup', async () => [{ address: '0.0.0.0', family: 4 }])
+
+  await assert.rejects(safeFetchJson('https://example.org/x', { allowHosts: ['example.org'] }), /nicht erlaubt/i)
+})
+
+test('safeFetchJson: :: als aufgelöste Adresse wird abgelehnt', async (t) => {
+  t.mock.method(dns.promises, 'lookup', async () => [{ address: '::', family: 6 }])
+
+  await assert.rejects(safeFetchJson('https://example.org/x', { allowHosts: ['example.org'] }), /nicht erlaubt/i)
+})
+
+test('safeFetchJson: 100.64.0.1 (CGNAT) als aufgelöste Adresse wird abgelehnt', async (t) => {
+  t.mock.method(dns.promises, 'lookup', async () => [{ address: '100.64.0.1', family: 4 }])
+
+  await assert.rejects(safeFetchJson('https://example.org/x', { allowHosts: ['example.org'] }), /nicht erlaubt/i)
+})
+
+// --- DNS-Pinning: es wird gegen die geprüfte Adresse verbunden, Host-Header/SNI bleiben der echte
+// Hostname (siehe Dateikopf, DNS-Rebinding) ---------------------------------------------------------
+
+test('safeFetchJson: verbindet zur geprüften (gemockten) Adresse, Host-Header trägt den echten Hostnamen samt Port', async (t) => {
+  const { server, port } = await startLocalServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ok: true, host: req.headers.host }))
+  })
+  t.after(() => server.close())
+
+  t.mock.method(dns.promises, 'lookup', async () => [{ address: '127.0.0.1', family: 4 }])
+
+  const data = await safeFetchJson(`http://pinned.test:${port}/x`, { allowHosts: ['pinned.test'], allowLocalHttp: true })
+  assert.equal(data.ok, true)
+  assert.equal(data.host, `pinned.test:${port}`)
+})
+
+// --- Port-Pinning: außerhalb des Test-Flags ist ausschließlich Port 443 erlaubt --------------------
+
+test('safeFetchJson: https mit abweichendem Port ohne allowLocalHttp wird abgelehnt', async (t) => {
+  t.mock.method(dns.promises, 'lookup', async () => [{ address: '203.0.113.5', family: 4 }])
+
+  await assert.rejects(safeFetchJson('https://example.org:8443/x', { allowHosts: ['example.org'] }), /port/i)
+})
+
+// --- Gemeinsame Gesamt-Zeitschranke: DNS-Auflösung + Anfrage zusammen dürfen timeoutMs nicht
+// überschreiten ---------------------------------------------------------------------------------
+
+test('safeFetchJson: eine hängende DNS-Auflösung löst dieselbe Zeitüberschreitung aus wie eine hängende Anfrage', async () => {
+  const dnsMock = { promise: new Promise(() => {}) } // löst absichtlich nie auf
+  const t0 = Date.now()
+  await assert.rejects(
+    (async () => {
+      const original = dns.promises.lookup
+      dns.promises.lookup = () => dnsMock.promise
+      try {
+        await safeFetchJson('https://example.org/x', { allowHosts: ['example.org'], timeoutMs: 200 })
+      } finally {
+        dns.promises.lookup = original
+      }
+    })(),
+    /zeitüberschreitung/i
+  )
+  assert.ok(Date.now() - t0 < 2000, 'die Gesamt-Zeitschranke greift, statt auf die DNS-Auflösung zu warten')
 })
