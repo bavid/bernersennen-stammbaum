@@ -69,7 +69,7 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 | Z | Meine Chronik & Teilen: private Chronik je Haushalt, Wegbegleiter-Zeitleiste (Einzug/Abschied/Herkunft), Tiere und Einträge in Familien teilen, „lebt mit" statt „Adoptiv-…", Schnellerfassung | [Plan](2026-09-28-phase-z-meine-chronik.md) | 🚀 auf der Vorschau |
 | 1 | Gutscheine & neuer Login: Codes, Einlösen → Meine Chronik, Schlüssel (Login + PUK), Benutzer, Einladung in Familien, Admin-Stapel, `/v#CODE` | [Plan](2026-09-28-phase-1-gutscheine.md) | 🚀 auf der Vorschau |
 | 2 | Partner, Portale `/p/:slug`, Partnerübersicht, PLZ/Umkreis (GeoNames + OSM), „In der Nähe“, Impressum/Datenschutz | [Plan](2026-09-28-phase-2-partner.md) | 🚀 auf der Vorschau |
-| T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein (Tier zieht mit Chronik um), Mitlesen, Happy-Ends | [Plan](2026-09-29-phase-t-tierheim.md) | ☐ als Nächstes |
+| T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein (Tier zieht mit Chronik um), Mitlesen, Happy-Ends | [Plan](2026-09-29-phase-t-tierheim.md) | ✅ fertig (lokal getestet) |
 | 3 | Reiter „Entdecken": Hundeschulen, „Neuer Begleiter gesucht?", Futter-Empfehlungen, Unterstützen, Klickzählung | wird vor Beginn geschrieben | ☐ offen |
 | 5 | Admin: Gutschein-Stapel + Druckkarten mit QR, Partner/Anzeigen/Spenden pflegen, Statistik, Präsentationsmodus | wird vor Beginn geschrieben | ☐ offen |
 | 4 | Import, Crawler, Website-Prüfung, Prüfliste | zurückgestellt | ⏸ blockiert (Frage 1) |
@@ -97,3 +97,4 @@ Legende: ☐ offen · ⏳ in Arbeit · ✅ fertig (lokal getestet) · 🚀 auf d
 | 2026-09-28 | 1 | `a72ae84` | Gutscheine statt Einladungscode: Einlösen → Meine Chronik, Schlüssel = Login + PUK, Benutzer optional, Weitergabe-Gutscheine (Familien-Einladung = Mitgliedschaft), Admin-Stapel, `/v#CODE`, Schlüssel erneuern/Benutzer nur mit Bestätigung, `CODE_PEPPER` im Deploy |
 | 2026-09-29 | 2 | `56ed1ec` | Partner mit Portal `/p/:slug` (Logo, Akzentfarbe, Gutschein einlösen, Demo), Partnerliste `/partner` (PLZ/Umkreis, GeoNames), „In der Nähe“ `/umgebung` (OSM über den Server, gecacht, SSRF-geschützt, ohne Züchter), Admin-Pflege, Partner-Gutscheine, Impressum/Datenschutz; Demo-Partner |
 | 2026-09-28 | Z | – | Konzept ergänzt: private Chronik, Wegbegleiter, Teilen in Familien, Zusammenleben statt Abstammung |
+| 2026-09-29 | T | `c7315cd` | Tasks 1–6: Tierheim-Bereich (art='tierheim'), Vermittlungsstatus/Kategorien/Steckbrief `/t/:slug`, Übergabe-Gutschein (Tier zieht mit Chronik um), Mitlesen-Einwilligung, Demo-Tierheim „Tierheim Sonnenhang" (4 Tiere, 3 Steckbriefe, `/api/demo {as:'tierheim'}`), Happy-Ends auf dem Partner-Portal |

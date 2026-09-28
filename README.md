@@ -77,7 +77,14 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
 - **Partner & Portale**: Tierheime, Vermittlungsstellen und Hundeschulen bekommen eine eigene Portalseite
   (`/p/kurzname`) mit Logo, Akzentfarbe und einem direkt einlösbaren Gutschein; die öffentliche Partnerliste
   (`/partner`) lässt sich nach PLZ und Umkreis filtern. Der Admin pflegt Partner, Status (Entwurf/Aktiv/
-  Pausiert) und Logo, und kann Gutschein-Stapel gezielt „für Partner“ anlegen. Züchter gibt es hier nie.
+  Pausiert) und Logo, und kann Gutschein-Stapel gezielt „für Partner” anlegen. Züchter gibt es hier nie.
+- **Tierheime**: Ein eigener Bereich für Tierheime und Vermittlungsstellen (vom Admin aus der
+  Partnerverwaltung angelegt). Sie pflegen eine Chronik je Tier (Ankunft, Tierarzt, Verhalten, Gassi …),
+  zeigen Tiere in Vermittlung mit öffentlichem Steckbrief (`/t/kurzname`) und erzeugen bei einer
+  Vermittlung einen **Übergabe-Gutschein** – die neuen Halter lösen ihn ein, und das Tier zieht mit seiner
+  ganzen Chronik in „Meine Chronik” um, die Herkunft bleibt sichtbar. Mit freiwilliger, jederzeit
+  widerrufbarer Einwilligung darf das Tierheim weiter mitlesen; stimmt die neue Familie zusätzlich zu,
+  erscheint die Geschichte als **Happy End** auf dem Portal.
 - **In der Nähe**: Angemeldete finden Tierheime und Hundeschulen in ihrer Umgebung – per Postleitzahl oder,
   nur mit ausdrücklicher Zustimmung, per gerundetem Standort (~1 km, nie gespeichert). Die Suche läuft über
   den eigenen Server bei OpenStreetMap, nie direkt aus dem Browser.
