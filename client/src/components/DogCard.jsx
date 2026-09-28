@@ -30,10 +30,13 @@ const DogCard = forwardRef(function DogCard({ dog, livesWithLabel, highlighted, 
       >
         <span className="dog-mini-avatar">
           <Avatar dog={dog} size={40} />
-          {/* Zu wenig Platz für einen Text-Tag – hier reicht das Haus-Symbol mit Titel/aria-label */}
+          {/* Zu wenig Platz für einen Text-Tag – hier reicht das Haus-Symbol mit Titel; der Text für
+              Screenreader steckt als visuell verstecktes Kind im Symbol (ein aria-label an einem
+              nicht-interaktiven <span> wird nicht von jedem Screenreader vorgelesen). */}
           {dog.shared_from && (
-            <span className="dog-mini-badge" title={`aus ${dog.shared_from}`} aria-label={`aus ${dog.shared_from}`}>
+            <span className="dog-mini-badge" title={`aus ${dog.shared_from}`}>
               <Icon name="home" />
+              <span className="visually-hidden">aus {dog.shared_from}</span>
             </span>
           )}
         </span>

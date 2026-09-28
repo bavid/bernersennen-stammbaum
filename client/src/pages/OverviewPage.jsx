@@ -70,9 +70,14 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
     loadDogs().catch((err) => setError(err.message))
   }, [])
 
+  // Ist der aktive Bereich gerade das eigene Zuhause (family.id === family.home.id), zeigt der
+  // Bereichswechsler den Haushaltsnamen als Zusatz zu "Meine Chronik" – der muss beim Umbenennen
+  // mitziehen, sonst zeigt er nach dem Speichern noch den alten Namen.
   function handleRenamed(renamed) {
     setSettingsOpen(false)
-    onFamilyChange({ ...family, ...renamed })
+    const merged = { ...family, ...renamed }
+    if (family.home?.id === family.id) merged.home = { ...family.home, name: renamed.name }
+    onFamilyChange(merged)
     toast(`${words.TheGroup} heißt jetzt „${renamed.name}“`)
   }
 
@@ -161,6 +166,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
           family={family}
           onRenamed={handleRenamed}
           onChange={handleThemeSaved}
+          onFamilyChange={onFamilyChange}
           onCancel={() => setSettingsOpen(false)}
         />
       </Modal>

@@ -10,7 +10,10 @@
   align-items: center;
   gap: 2px;
   max-width: 100%;
-  padding: 0;
+  /* Mindestens 24px hohes Tippziel (auch am Handy) statt nur der Textzeile – über Innenabstand,
+     damit die Optik (Position, Schriftgröße) sonst unverändert bleibt. */
+  min-height: 24px;
+  padding: 2px 0;
   border: 0;
   background: none;
   font-size: var(--text-xs);

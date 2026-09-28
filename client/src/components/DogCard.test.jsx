@@ -59,11 +59,12 @@ describe('DogCard – geteiltes Tier aus einem Zuhause', () => {
     expect(container.querySelector('.dog-card-tag').textContent).toBe('3 Einträge')
   })
 
-  test('mini-Variante zeigt statt Text ein Haus-Symbol mit aria-label', async () => {
+  test('mini-Variante zeigt statt Text ein Haus-Symbol mit visuell verstecktem Text', async () => {
     await render({ dog: dog({ shared_from: 'Zuhause am Deich' }), variant: 'mini' })
     const badge = container.querySelector('.dog-mini-badge')
     expect(badge).not.toBeNull()
-    expect(badge.getAttribute('aria-label')).toBe('aus Zuhause am Deich')
+    expect(badge.getAttribute('aria-label')).toBeNull()
+    expect(badge.querySelector('.visually-hidden').textContent).toBe('aus Zuhause am Deich')
     expect(container.querySelector('.dog-card-shared')).toBeNull()
   })
 })

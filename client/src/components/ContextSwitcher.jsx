@@ -45,9 +45,25 @@ export default function ContextSwitcher({ family, onChange }) {
       closeMenu()
       return
     }
+    // Tab soll den Fokus wie gewohnt weiterreichen (zum nächsten bzw. vorherigen fokussierbaren
+    // Element) – das Menü schließt dabei nur, statt offen und ohne sichtbaren Fokus stehen zu bleiben.
+    if (event.key === 'Tab') {
+      setOpen(false)
+      return
+    }
+    const items = [...rootRef.current.querySelectorAll('[role="menuitem"]')]
+    if (event.key === 'Home') {
+      event.preventDefault()
+      items[0]?.focus()
+      return
+    }
+    if (event.key === 'End') {
+      event.preventDefault()
+      items[items.length - 1]?.focus()
+      return
+    }
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
     event.preventDefault()
-    const items = [...rootRef.current.querySelectorAll('[role="menuitem"]')]
     const index = items.indexOf(document.activeElement)
     const step = event.key === 'ArrowDown' ? 1 : -1
     items[(index + step + items.length) % items.length]?.focus()
@@ -56,9 +72,13 @@ export default function ContextSwitcher({ family, onChange }) {
   async function switchTo(id, name) {
     if (id === family.id) {
       setOpen(false)
+      triggerRef.current?.focus()
       return
     }
+    // Das Menü verschwindet aus dem DOM – ohne expliziten Fokus fiele er sonst auf <body> zurück
+    // (schlecht für Tastatur/Screenreader). Der Knopf ist nach dem Wechsel weiter derselbe Node.
     setOpen(false)
+    triggerRef.current?.focus()
     try {
       const me = await api.view(id)
       onChange(me)

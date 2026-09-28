@@ -12,6 +12,7 @@ vi.mock('../api', () => ({ api: { setDogShares, joinFamily, createGroup } }))
 
 import SharePanel from './SharePanel.jsx'
 import { DemoProvider } from '../lib/demo.js'
+import { ThemeProvider } from '../themes/ThemeProvider.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -150,5 +151,54 @@ describe('SharePanel', () => {
     await act(async () => container.querySelector('.join-family form').requestSubmit())
 
     expect(onFamilyChange).toHaveBeenCalledWith(me)
+  })
+
+  test('während das Speichern läuft, sind die Checkboxen gesperrt (verhindert überholende Antworten)', async () => {
+    let resolveSave
+    setDogShares.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSave = resolve
+      })
+    )
+    await render()
+
+    act(() => checkboxFor('Rudel Nachbarn').click())
+    expect(checkboxFor('Rudel Nachbarn').disabled).toBe(true)
+    expect(checkboxFor('Familie Klein').disabled).toBe(true)
+
+    await act(async () => resolveSave({ shares: [3, 5] }))
+    expect(checkboxFor('Rudel Nachbarn').disabled).toBe(false)
+  })
+})
+
+describe('SharePanel – Texte über den Theme-Wortschatz', () => {
+  async function renderThemed(themeId, props) {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <ThemeProvider themeId={themeId}>
+          <Wrapper {...props} />
+        </ThemeProvider>
+      )
+    )
+    return container
+  }
+
+  test('Berner-Theme: Überschrift, Leerzustand und Knopf sprechen von "Rudel(n)" statt "Familie(n)"', async () => {
+    await renderThemed('berner', { family: { ...family, memberships: [] } })
+    expect(container.querySelector('#share-panel-title').textContent).toBe('In Rudeln zeigen')
+    expect(container.querySelector('.share-panel-empty').textContent).toContain('Noch kein Rudel verbunden.')
+    const button = [...container.querySelectorAll('.share-panel-empty button')].find(
+      (btn) => btn.textContent === 'Rudel beitreten oder gründen'
+    )
+    expect(button).not.toBeUndefined()
+  })
+
+  test('Standard-Theme: Überschrift, Leerzustand und Knopf sprechen von "Familie(n)"', async () => {
+    await renderThemed('standard', { family: { ...family, memberships: [] } })
+    expect(container.querySelector('#share-panel-title').textContent).toBe('In Familien zeigen')
+    expect(container.querySelector('.share-panel-empty').textContent).toContain('Noch keine Familie verbunden.')
   })
 })

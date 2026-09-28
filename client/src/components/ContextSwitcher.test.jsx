@@ -162,6 +162,33 @@ describe('ContextSwitcher', () => {
     expect(document.activeElement).toBe(items()[0])
   })
 
+  test('Home/End springen zum ersten/letzten Menüpunkt', async () => {
+    await render()
+    act(() => trigger().click())
+    act(() => items()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true })))
+    expect(document.activeElement).toBe(items()[items().length - 1])
+    act(() => items()[items().length - 1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true })))
+    expect(document.activeElement).toBe(items()[0])
+  })
+
+  test('Tab schließt das Menü, statt es offen zu lassen (Fokus wandert normal weiter)', async () => {
+    await render()
+    act(() => trigger().click())
+    expect(container.querySelector('[role="menu"]')).not.toBeNull()
+    act(() => items()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })))
+    expect(container.querySelector('[role="menu"]')).toBeNull()
+  })
+
+  test('nach dem Wechsel per Klick liegt der Fokus wieder auf dem Knopf statt auf body zu fallen', async () => {
+    const onChange = vi.fn()
+    const me = { ...family, id: 5, name: 'Rudel Nachbarn' }
+    view.mockResolvedValue(me)
+    await render({ onChange })
+    act(() => trigger().click())
+    await act(async () => items()[2].click())
+    expect(document.activeElement).toBe(trigger())
+  })
+
   test('„Familie beitreten oder gründen …" öffnet den Dialog im Modal', async () => {
     await render()
     act(() => trigger().click())

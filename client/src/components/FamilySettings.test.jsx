@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { afterEach, expect, test, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { updateFamily } = vi.hoisted(() => ({ updateFamily: vi.fn() }))
-vi.mock('../api', () => ({ api: { updateFamily } }))
+const { updateFamily, leaveFamily } = vi.hoisted(() => ({ updateFamily: vi.fn(), leaveFamily: vi.fn() }))
+vi.mock('../api', () => ({ api: { updateFamily, leaveFamily } }))
 
 import FamilySettings from './FamilySettings.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -29,6 +30,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
   document.title = ''
   updateFamily.mockReset()
+  leaveFamily.mockReset()
 })
 
 async function render(onChange) {
@@ -70,4 +72,75 @@ test('gibt die vom ThemePicker gespeicherte Antwort unverändert an onChange wei
   await act(async () => container.querySelector('.theme-picker-save').click())
 
   expect(onChange).toHaveBeenCalledWith({ id: 1, name: 'Familie Test', theme: 'berner' })
+})
+
+describe('FamilySettings – "Familie verlassen"', () => {
+  const groupActive = {
+    id: 3,
+    name: 'Familie Sonnenhang',
+    theme: 'standard',
+    art: 'rudel',
+    isDemo: false,
+    home: { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' },
+    memberships: [{ id: 3, name: 'Familie Sonnenhang' }]
+  }
+
+  async function renderWith(family, { isDemo = false } = {}, props = {}) {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <MemoryRouter>
+          <ThemeProvider themeId="standard">
+            <DemoProvider value={isDemo}>
+              <FamilySettings family={family} onRenamed={() => {}} onChange={() => {}} onCancel={() => {}} {...props} />
+            </DemoProvider>
+          </ThemeProvider>
+        </MemoryRouter>
+      )
+    )
+  }
+
+  function heading() {
+    return [...container.querySelectorAll('.settings-section h3')].find((h) => h.textContent === 'Familie verlassen')
+  }
+
+  test('erscheint, wenn die Identität ein Zuhause ist und gerade eine Familie aktiv ist', async () => {
+    await renderWith(groupActive)
+    expect(heading()).not.toBeUndefined()
+  })
+
+  test('erscheint nicht, wenn das eigene Zuhause selbst der aktive Bereich ist', async () => {
+    await renderWith({ ...groupActive, id: 1, art: 'zuhause' })
+    expect(heading()).toBeUndefined()
+  })
+
+  test('erscheint nicht in der Demo', async () => {
+    await renderWith(groupActive, { isDemo: true })
+    expect(heading()).toBeUndefined()
+  })
+
+  test('erscheint nicht bei einem klassischen Rudel-Login (Identität selbst ist ein Rudel, kein Zuhause)', async () => {
+    await renderWith({ ...groupActive, home: { id: 3, name: 'Familie Sonnenhang', art: 'rudel' } })
+    expect(heading()).toBeUndefined()
+  })
+
+  test('zweistufiges Verlassen ruft api.leaveFamily, dann onFamilyChange mit dem zurückgegebenen "me" und schließt', async () => {
+    const me = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: groupActive.home, memberships: [] }
+    leaveFamily.mockResolvedValue(me)
+    const onFamilyChange = vi.fn()
+    const onCancel = vi.fn()
+    await renderWith(groupActive, {}, { onFamilyChange, onCancel })
+
+    const button = () => [...container.querySelectorAll('.leave-family-section button')][0]
+    act(() => button().click())
+    expect(button().textContent).toContain('Ja,')
+
+    await act(async () => button().click())
+
+    expect(leaveFamily).toHaveBeenCalledWith(3)
+    expect(onFamilyChange).toHaveBeenCalledWith(me)
+    expect(onCancel).toHaveBeenCalled()
+  })
 })
