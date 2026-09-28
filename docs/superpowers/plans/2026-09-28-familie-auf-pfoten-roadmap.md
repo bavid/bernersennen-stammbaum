@@ -67,7 +67,7 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 | 0 | Umgebungen: Vorschau-Instanz 3005, lokale Testumgebung, `APP_ENV`-Band, Deploy per SHA | [Plan](2026-09-28-phase-0-umgebungen.md) | 🚀 Vorschau läuft (intern), öffentlich nach Proxy-Eintrag |
 | D | Design: Name „Familie auf Pfoten", Pfoten-Logo, Themes Standard/Berner, Wortschatz, Theme-Wahl, „lebt mit" | [Plan](2026-09-28-phase-d-design-themes.md) | 🚀 auf der Vorschau |
 | Z | Meine Chronik & Teilen: private Chronik je Haushalt, Wegbegleiter-Zeitleiste (Einzug/Abschied/Herkunft), Tiere und Einträge in Familien teilen, „lebt mit" statt „Adoptiv-…", Schnellerfassung | [Plan](2026-09-28-phase-z-meine-chronik.md) | 🚀 auf der Vorschau |
-| 1 | Gutscheine & neuer Login: Codes, Einlösen, Rudel-Schlüssel, Benutzer, PUK, `/v#CODE`, Dev-Panel | wird vor Beginn geschrieben | ☐ offen |
+| 1 | Gutscheine & neuer Login: Codes, Einlösen → Meine Chronik, Schlüssel (Login + PUK), Benutzer, Einladung in Familien, Admin-Stapel, `/v#CODE` | [Plan](2026-09-28-phase-1-gutscheine.md) | ⏳ in Arbeit |
 | 2 | Partner, Portale `/p/:slug`, Partnerübersicht, PLZ/Umkreis, Impressum/Datenschutz | wird vor Beginn geschrieben | ☐ offen |
 | T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein, Mitlesen | wird vor Beginn geschrieben | ☐ offen |
 | 3 | Reiter „Entdecken": Hundeschulen, „Neuer Begleiter gesucht?", Futter-Empfehlungen, Unterstützen, Klickzählung | wird vor Beginn geschrieben | ☐ offen |
