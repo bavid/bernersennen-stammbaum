@@ -550,7 +550,7 @@ router.post('/:id/handover', authLimiter, requireAuth, (req, res) => {
   // Phase P Task 1: ein pausiertes Tier ist gerade nicht vermittelbar - eine Übergabe würde es sonst
   // stillschweigend auf "reserviert" setzen. Erst den Status zurück auf "in Vermittlung" stellen.
   if (dog.vermittlung_status === 'pausiert') {
-    return res.status(400).json({ error: 'Das Tier ist pausiert – für eine Übergabe bitte erst wieder auf „in Vermittlung“ stellen' })
+    return res.status(400).json({ error: 'Das Tier ist pausiert – für eine Übergabe bitte erst auf „Verfügbar“ oder „Reserviert“ setzen' })
   }
 
   const { codes } = createHandover(dog, identity)

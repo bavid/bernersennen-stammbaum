@@ -273,7 +273,7 @@ describe('DogDetailPage – Tierheim: Übergabe bei Status "pausiert" (Phase P)'
     await render()
 
     expect(handoverButton().disabled).toBe(true)
-    expect(container.textContent).toContain('Erst auf ‚Reserviert‘ setzen.')
+    expect(container.textContent).toContain('Erst auf ‚Verfügbar‘ oder ‚Reserviert‘ setzen.')
   })
 
   test('bei "in Vermittlung" bleibt der Knopf frei und ohne Hinweis', async () => {
@@ -284,6 +284,6 @@ describe('DogDetailPage – Tierheim: Übergabe bei Status "pausiert" (Phase P)'
     await render()
 
     expect(handoverButton().disabled).toBe(false)
-    expect(container.textContent).not.toContain('Erst auf ‚Reserviert‘ setzen.')
+    expect(container.textContent).not.toContain('Erst auf ‚Verfügbar‘ oder ‚Reserviert‘ setzen.')
   })
 })

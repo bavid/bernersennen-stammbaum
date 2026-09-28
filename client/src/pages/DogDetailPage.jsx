@@ -451,7 +451,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
             </button>
             {dog.vermittlung_status === 'pausiert' && (
               <p className="field-hint" id="handover-paused-hint">
-                Erst auf ‚Reserviert‘ setzen.
+                Erst auf ‚Verfügbar‘ oder ‚Reserviert‘ setzen.
               </p>
             )}
             {dog.vermittlung_status === 'reserviert' && (
