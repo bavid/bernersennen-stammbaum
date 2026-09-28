@@ -88,6 +88,68 @@ describe('RedeemForm – Code-Feld', () => {
   })
 })
 
+describe('RedeemForm – Übergabe-Gutschein (Phase T Task 5)', () => {
+  function checkAndBlur() {
+    setInputValue(codeInput(), 'abcd1234hjkm')
+    codeInput().dispatchEvent(new Event('focusout', { bubbles: true }))
+  }
+
+  test('zeigt bei einem Übergabe-Gutschein den Umzugs-Hinweis und die Einwilligungs-Checkbox', async () => {
+    checkVoucher.mockResolvedValue({ status: 'offen', handover: { animalName: 'Pepper', shelterName: 'Tierheim Sonnenhang' } })
+    await render()
+    await act(async () => checkAndBlur())
+
+    expect(container.textContent).toContain(
+      'Mit diesem Gutschein zieht Pepper aus Tierheim Sonnenhang zu euch – mit der ganzen Chronik.'
+    )
+    const label = [...container.querySelectorAll('label')].find((l) => l.textContent.includes('darf weiter mitlesen'))
+    expect(label).not.toBeUndefined()
+    expect(label.textContent).toContain('Tierheim Sonnenhang darf weiter mitlesen (freiwillig, jederzeit widerrufbar)')
+    expect(label.querySelector('input[type="checkbox"]').checked).toBe(false)
+  })
+
+  test('ohne Übergabe-Gutschein erscheint weder Hinweis noch Checkbox', async () => {
+    checkVoucher.mockResolvedValue({ status: 'offen' })
+    await render()
+    await act(async () => checkAndBlur())
+
+    expect(container.textContent).not.toContain('zieht')
+    expect([...container.querySelectorAll('label')].some((l) => l.textContent.includes('darf weiter mitlesen'))).toBe(false)
+  })
+
+  test('sendet shelterMayRead:true, wenn die Einwilligung angehakt wurde', async () => {
+    checkVoucher.mockResolvedValue({ status: 'offen', handover: { animalName: 'Pepper', shelterName: 'Tierheim Sonnenhang' } })
+    redeemVoucher.mockResolvedValue({ id: 1, name: 'Zuhause am Deich', art: 'zuhause', key: 'ABCD-1234-HJKM', fromOthers: true })
+    await render()
+    await act(async () => {
+      setInputValue(codeInput(), 'abcd1234hjkm')
+      setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
+      codeInput().dispatchEvent(new Event('focusout', { bubbles: true }))
+    })
+    const checkbox = [...container.querySelectorAll('label')]
+      .find((l) => l.textContent.includes('darf weiter mitlesen'))
+      .querySelector('input[type="checkbox"]')
+    await act(async () => checkbox.click())
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(redeemVoucher).toHaveBeenCalledWith(expect.objectContaining({ shelterMayRead: true }))
+  })
+
+  test('ohne Übergabe-Gutschein bleibt shelterMayRead unbestimmt (kein falsches "false" für gewöhnliche Gutscheine)', async () => {
+    redeemVoucher.mockResolvedValue({ id: 1, name: 'Zuhause am Deich', art: 'zuhause', key: 'ABCD-1234-HJKM', fromOthers: true })
+    await render()
+    await act(async () => fillBase())
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(redeemVoucher).toHaveBeenCalledWith(expect.objectContaining({ shelterMayRead: undefined }))
+  })
+
+  function fillBase() {
+    setInputValue(codeInput(), 'abcd1234hjkm')
+    setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
+  }
+})
+
 describe('RedeemForm – Absenden', () => {
   function fillBase() {
     setInputValue(codeInput(), 'abcd1234hjkm')

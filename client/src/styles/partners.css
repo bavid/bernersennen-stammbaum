@@ -171,6 +171,52 @@
   gap: var(--space-4);
 }
 
+/* Vermittlungs-Sektion auf dem Portal (Task 5): teilt sich die Kartenoptik mit ShelterAnimalsPage
+   (.shelter-grid/.shelter-card, shelter.css) - hier nur die Überschrift und der Grid-Abstand dazu. */
+
+.partner-portal-animals {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.partner-portal-animals h2 {
+  font-size: var(--text-lg);
+}
+
+/* Öffentlicher Steckbrief /t/:slug (SteckbriefPage, Task 5): Hero/Facts/Beschreibung teilen sich die
+   Optik mit der Tierseite (.dog-hero/.facts/.dog-hero-description, dog.css) - hier nur der Tierheim-
+   Kasten am Ende und die freundliche 404-Seite. */
+
+.steckbrief-missing {
+  min-height: 70vh;
+  align-content: center;
+}
+
+.steckbrief-missing .empty-state {
+  gap: var(--space-4);
+}
+
+.steckbrief-shelter {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.steckbrief-shelter-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.steckbrief-shelter-head .partner-logo {
+  max-height: 3rem;
+}
+
+.steckbrief-shelter-note {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
 /* Partnerliste */
 
 .partners-hero {

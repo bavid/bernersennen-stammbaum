@@ -129,6 +129,19 @@
   max-width: 20rem;
 }
 
+/* Einwilligung "Tierheim darf mitlesen" (DogDetailPage, eigenes Zuhause) - dieselbe Kastenoptik wie
+   .shelter-panel oben, nur ohne dessen Tierheim-eigene Elemente. */
+
+.shelter-share-panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
 .steckbrief-panel {
   display: grid;
   gap: var(--space-3);
@@ -207,6 +220,25 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-2);
+}
+
+/* Übergabe-Hinweis beim Einlösen (RedeemForm, App.jsx VoucherSessionCard): derselbe "besonderer
+   Moment"-Rahmen wie der Limit-Hinweis unter "In der Nähe" (.place-list-limited-hint), hier für den
+   Umzugs-Hinweis "zieht … mit der ganzen Chronik" samt Mitlesen-Einwilligung wiederverwendet. */
+
+.handover-notice {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1.5px dashed var(--tan);
+  border-radius: var(--radius-md);
+  background: var(--rust-wash);
+}
+
+.handover-notice p {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 @media (max-width: 600px) {

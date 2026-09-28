@@ -31,3 +31,10 @@ const KATEGORIE_LABELS = {
 export function kategorieLabel(kategorie) {
   return KATEGORIE_LABELS[kategorie] || null
 }
+
+// Überschrift der Vermittlungs-Sektion auf dem Partner-Portal (Task 5): "Fellnasen" nur, wenn WIRKLICH
+// nur Hunde/Katzen darunter sind - bei jeder Mischung oder anderen Tieren bleibt es neutral "Tiere".
+export function adoptionSectionTitle(animals) {
+  const allFurry = animals.length > 0 && animals.every((animal) => animal.tierart === 'hund' || animal.tierart === 'katze')
+  return allFurry ? 'Fellnasen suchen ein Zuhause' : 'Tiere suchen ein Zuhause'
+}

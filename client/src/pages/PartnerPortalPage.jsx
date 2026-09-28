@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import ThemeMark from '../components/ThemeMark.jsx'
 import RedeemForm from '../components/RedeemForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
+import AnimalAdoptionCard from '../components/AnimalAdoptionCard.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
 import { startRoute } from '../lib/areas.js'
 import { isValidHexColor, darkenHex, hexToRgba } from '../lib/color.js'
 import { isExternalUrl } from '../lib/format.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
+import { adoptionSectionTitle } from '../lib/shelter.js'
 
 const ON_RUST = '#fffaf2'
 const ACCENT_WASH_ALPHA = 0.1
@@ -56,7 +58,9 @@ function NotFound() {
 // Portal, nur die Aktion ist ersetzt (siehe unten) – man muss sich nicht abmelden, um es anzuschauen.
 export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [partner, setPartner] = useState(undefined) // undefined: lädt, null: nicht gefunden
+  const [animals, setAnimals] = useState([])
   const [redeemResult, setRedeemResult] = useState(null)
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoError, setDemoError] = useState(null)
@@ -77,6 +81,25 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
       cancelled = true
     }
   }, [slug])
+
+  // Tiere in Vermittlung für die Sektion "Fellnasen/Tiere suchen ein Zuhause" (Task 5) - unabhängig vom
+  // Partner-Fetch oben: schlägt es fehl (z. B. kein Tierheim), bleibt es bei einer leeren Liste, ohne
+  // die restliche Portalseite zu blockieren. ?demo=1 geht mit, wenn das Portal selbst so geladen wurde
+  // (siehe api.publicPartners für dieselbe Konvention) - der Server liest demo nur aus der Query.
+  useEffect(() => {
+    let cancelled = false
+    setAnimals([])
+    const demo = new URLSearchParams(location.search).get('demo') === '1' ? '1' : undefined
+    api
+      .publicPartnerAnimals(slug, { demo })
+      .then((data) => {
+        if (!cancelled) setAnimals(data)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [slug, location.search])
 
   function handleRedeemed(response) {
     const { key, fromOthers, ...me } = response
@@ -176,6 +199,17 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
           </>
         )}
       </section>
+
+      {animals.length > 0 && (
+        <section className="partner-portal-animals">
+          <h2>{adoptionSectionTitle(animals)}</h2>
+          <div className="shelter-grid">
+            {animals.map((animal) => (
+              <AnimalAdoptionCard key={animal.slug} animal={animal} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {(isExternalUrl(partner.website) || partner.kontakt_email || partner.kontakt_telefon) && (
         <section className="card partner-portal-contact">

@@ -29,6 +29,11 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
   const [email, setEmail] = useState('')
   const [website, setWebsite] = useState('')
   const [status, setStatus] = useState(null)
+  // handover: { animalName, shelterName } bei einem offenen Übergabe-Gutschein (api.checkVoucher liefert
+  // es mit, siehe server routes/vouchers.js POST /check) - zeigt den Umzugs-Hinweis und die Einwilligung
+  // "Tierheim darf weiter mitlesen" (shelterMayRead, geht als optionales Feld an api.redeemVoucher).
+  const [handover, setHandover] = useState(null)
+  const [shelterMayRead, setShelterMayRead] = useState(false)
   const [checking, setChecking] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -36,6 +41,8 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
   function handleCodeChange(value) {
     setCode(formatVoucherCode(value))
     setStatus(null)
+    setHandover(null)
+    setShelterMayRead(false)
   }
 
   async function handleCodeBlur() {
@@ -44,8 +51,10 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
     try {
       const result = await api.checkVoucher(code)
       setStatus(result.status)
+      setHandover(result.handover || null)
     } catch {
       setStatus(null)
+      setHandover(null)
     } finally {
       setChecking(false)
     }
@@ -62,6 +71,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
         username: showAccount ? username || undefined : undefined,
         password: showAccount ? password || undefined : undefined,
         email: showAccount ? email || undefined : undefined,
+        shelterMayRead: handover ? shelterMayRead : undefined,
         website
       })
       onRedeemed(me)
@@ -108,6 +118,17 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
           </p>
         )}
       </div>
+      {handover && (
+        <div className="handover-notice" role="status">
+          <p>
+            Mit diesem Gutschein zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
+          </p>
+          <label className="check">
+            <input type="checkbox" checked={shelterMayRead} onChange={(e) => setShelterMayRead(e.target.checked)} />
+            {handover.shelterName} darf weiter mitlesen (freiwillig, jederzeit widerrufbar)
+          </label>
+        </div>
+      )}
       <div className="field">
         <label className="field-label" htmlFor="redeem-name">
           Wie heißt euer Zuhause?

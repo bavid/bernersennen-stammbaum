@@ -4,6 +4,7 @@ import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
 import { readSetting, writeSetting } from './lib/storage.js'
 import { startRoute } from './lib/areas.js'
+import { formatVoucherCode } from './lib/voucherCode.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
@@ -21,6 +22,7 @@ import AdminPage from './pages/AdminPage.jsx'
 import ContactAdminPage from './pages/ContactAdminPage.jsx'
 import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
 import PartnersPage from './pages/PartnersPage.jsx'
+import SteckbriefPage from './pages/SteckbriefPage.jsx'
 import NearbyPage from './pages/NearbyPage.jsx'
 import LegalPage from './pages/LegalPage.jsx'
 import Modal from './components/Modal.jsx'
@@ -29,6 +31,9 @@ import InviteDialog from './components/InviteDialog.jsx'
 // /p/<slug> – öffentliches Partner-Portal, unabhängig von Groß-/Kleinschreibung des Pfads egal (der
 // Slug selbst bleibt roh, die Route validiert nur die Form).
 const PARTNER_SLUG_RE = /^\/p\/([^/]+)\/?$/
+
+// /t/<slug> – öffentlicher Steckbrief eines Tiers (Phase T Task 5), derselbe Aufbau wie PARTNER_SLUG_RE.
+const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
 
 // Haushalte ("Meine Chronik") sehen den Wegbegleiter statt der Würfe – Rudel weiterhin wie bisher.
 const NAV_ITEMS_HOME = [
@@ -76,6 +81,88 @@ function RedirectTierUrl() {
   const { id } = useParams()
   const { hash } = useLocation()
   return <Navigate to={`/tier/${id}${hash}`} replace />
+}
+
+// Karte auf /v#CODE mit laufender Sitzung (Phase T Task 5): normalerweise nur "Abmelden und Gutschein
+// einlösen" - trägt der Code aber einen offenen Übergabe-Gutschein UND die Sitzung ist das eigene
+// Zuhause selbst (nicht ein beigetretenes Rudel, nicht ein klassischer Rudel-Login), bietet sie
+// stattdessen "In Meine Chronik übernehmen" (api.claimVoucher, ohne Ab-/Anmelden). code kommt aus dem
+// #Hash der Adresse (App.jsx voucherCode) - ohne Code (z. B. direkter Aufruf von /v) bleibt es bei der
+// einfachen Karte, ganz ohne Prüf-Anfrage.
+function VoucherSessionCard({ family, code, onLogout, onClaimed }) {
+  const [handover, setHandover] = useState(null)
+  const [shelterMayRead, setShelterMayRead] = useState(false)
+  const [claiming, setClaiming] = useState(false)
+  const [error, setError] = useState(null)
+
+  // voucherCode (App.jsx) kommt roh aus dem #Hash - wie RedeemForm/LoginForm geht auch hier nur der
+  // formatierte Code (XXXX-XXXX-XXXX) an die API, nie der rohe Hash-Text.
+  const formattedCode = formatVoucherCode(code)
+  const canClaim = family.art === 'zuhause' && Boolean(family.home) && family.id === family.home.id
+
+  useEffect(() => {
+    let cancelled = false
+    if (!formattedCode || !canClaim) {
+      setHandover(null)
+      return undefined
+    }
+    api
+      .checkVoucher(formattedCode)
+      .then((result) => {
+        if (!cancelled) setHandover(result.handover || null)
+      })
+      .catch(() => {
+        if (!cancelled) setHandover(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [formattedCode, canClaim])
+
+  async function handleClaim() {
+    setError(null)
+    setClaiming(true)
+    try {
+      const { dogId } = await api.claimVoucher({ code: formattedCode, shelterMayRead })
+      onClaimed(dogId)
+    } catch (err) {
+      setError(err.message)
+      setClaiming(false)
+    }
+  }
+
+  if (handover) {
+    return (
+      <div className="card voucher-session-card">
+        {error && (
+          <div className="error-banner" role="alert">
+            {error}
+          </div>
+        )}
+        <p>
+          Mit diesem Gutschein zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
+        </p>
+        <label className="check">
+          <input type="checkbox" checked={shelterMayRead} onChange={(e) => setShelterMayRead(e.target.checked)} />
+          {handover.shelterName} darf weiter mitlesen (freiwillig, jederzeit widerrufbar)
+        </label>
+        <button type="button" className="btn btn-primary btn-block" disabled={claiming} onClick={handleClaim}>
+          {claiming ? 'Übernehme …' : 'In Meine Chronik übernehmen'}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card voucher-session-card">
+      <p>
+        Du bist angemeldet als <strong>{family.name}</strong>.
+      </p>
+      <button type="button" className="btn btn-primary btn-block" onClick={onLogout}>
+        Abmelden und Gutschein einlösen
+      </button>
+    </div>
+  )
 }
 
 export function AppHeader({ family, onLogout, onFamilyChange }) {
@@ -211,6 +298,13 @@ export default function App() {
     window.location.href = '/v'
   }
 
+  // Übergabe-Gutschein per api.claimVoucher übernommen (VoucherSessionCard) - anders als beim Einlösen
+  // mit neuem Zuhause bleibt die Sitzung dieselbe, nur der Code wird nicht mehr gebraucht.
+  function handleClaimed(dogId) {
+    setVoucherCode('')
+    navigate(`/tier/${dogId}`)
+  }
+
   // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login, immer im Standard-Auftritt
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     return (
@@ -238,14 +332,7 @@ export default function App() {
         {family ? (
           <div className="login voucher-session">
             <section className="login-panel">
-              <div className="card voucher-session-card">
-                <p>
-                  Du bist angemeldet als <strong>{family.name}</strong>.
-                </p>
-                <button type="button" className="btn btn-primary btn-block" onClick={handleLogout}>
-                  Abmelden und Gutschein einlösen
-                </button>
-              </div>
+              <VoucherSessionCard family={family} code={voucherCode} onLogout={handleLogout} onClaimed={handleClaimed} />
             </section>
           </div>
         ) : (
@@ -264,6 +351,18 @@ export default function App() {
     return (
       <ThemeProvider themeId="standard">
         <PartnerPortalPage slug={partnerSlug} family={family} onRedeemed={handleVoucherLogin} onLogout={handleLogout} />
+      </ThemeProvider>
+    )
+  }
+
+  // Öffentlicher Steckbrief /t/:slug (Phase T Task 5): wie partnerSlug oben ein eigener früher Zweig,
+  // unabhängig vom Login-Status - reine Lesevorschau, keine Personalisierung nötig.
+  const animalSlug = pathname.match(ANIMAL_SLUG_RE)?.[1]
+
+  if (animalSlug) {
+    return (
+      <ThemeProvider themeId="standard">
+        <SteckbriefPage slug={animalSlug} />
       </ThemeProvider>
     )
   }

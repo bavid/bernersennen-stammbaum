@@ -171,7 +171,21 @@ describe('DogDetailPage – Tierheim: Steckbrief', () => {
 })
 
 describe('DogDetailPage – Tierheim: Übergabe', () => {
-  test('"Vermittelt – Übergabe vorbereiten" öffnet den Dialog und zeigt den erzeugten Code', async () => {
+  test('"Vermittelt – Übergabe vorbereiten" öffnet zuerst nur die Erklärung, ohne sofort einen Gutschein anzulegen', async () => {
+    getDog.mockResolvedValue(shelterDog())
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render()
+
+    const trigger = [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes('Übergabe vorbereiten'))
+    await act(async () => trigger.click())
+
+    expect(createHandover).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Es wird ein Übergabe-Gutschein erzeugt')
+  })
+
+  test('erst der Knopf "Übergabe-Gutschein erzeugen" im Dialog ruft api.createHandover auf und zeigt den Code', async () => {
     getDog.mockResolvedValue(shelterDog())
     listTimeline.mockResolvedValue([])
     listBreedingEvents.mockResolvedValue([])
@@ -181,6 +195,8 @@ describe('DogDetailPage – Tierheim: Übergabe', () => {
 
     const trigger = [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes('Übergabe vorbereiten'))
     await act(async () => trigger.click())
+    const confirm = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Übergabe-Gutschein erzeugen')
+    await act(async () => confirm.click())
 
     expect(createHandover).toHaveBeenCalledWith(20)
     expect(container.querySelector('.handover-code').textContent).toBe('ABCD-1234-EFGH')

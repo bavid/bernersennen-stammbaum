@@ -27,3 +27,16 @@ export const GEONAMES_ATTRIBUTION = 'Postleitzahlen: GeoNames (CC BY 4.0)'
 export function isOsmAttribution(text) {
   return typeof text === 'string' && text.includes('OpenStreetMap')
 }
+
+// Telefonnummern für einen tel:-Link (SteckbriefPage Tierheim-Kasten, Phase T Task 5): serverseitig
+// schon geprüft (server/lib/partners.js PHONE_RE), hier zur Sicherheit dieselbe Form noch einmal
+// geprüft, bevor daraus ein Link entsteht - nie ein roher, unbestätigter Wert in ein href.
+const PHONE_RE = /^[0-9+()/\- ]{5,30}$/
+
+export function isValidPhone(value) {
+  return typeof value === 'string' && PHONE_RE.test(value)
+}
+
+export function telHref(value) {
+  return `tel:${value.replace(/[^0-9+]/g, '')}`
+}

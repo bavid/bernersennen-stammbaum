@@ -67,12 +67,23 @@ export const api = {
     return request(`/public/partners${qs}`)
   },
   publicPartner: (slug) => request(`/public/partners/${encodeURIComponent(slug)}`),
+  // Karten-Daten für die Vermittlungs-Sektion auf dem Portal (Phase T Task 5). demo wie publicPartners:
+  // Query-Parameter '1', nur wenn das Portal selbst mit ?demo=1 geladen wurde (siehe PartnerPortalPage).
+  publicPartnerAnimals: (slug, { demo } = {}) => {
+    const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
+    return request(`/public/partners/${encodeURIComponent(slug)}/animals${qs}`)
+  },
+  // Öffentlicher Steckbrief eines Tiers (/t/:slug) - kein Login, immer noindex (siehe SteckbriefPage).
+  publicAnimal: (slug) => request(`/public/animals/${encodeURIComponent(slug)}`),
 
   // "In der Nähe" (/umgebung, angemeldet): location ist { plz } oder { lat, lon }, nie beides.
   searchPlaces: (location, radius) => request('/places/search', json('POST', { ...location, radius })),
 
   checkVoucher: (code) => request('/vouchers/check', json('POST', { code })),
   redeemVoucher: (payload) => request('/vouchers/redeem', json('POST', payload)),
+  // Übergabe-Gutschein ohne neues Zuhause einlösen (Phase T Task 5): nur eingeloggt, aus dem eigenen
+  // Zuhause heraus (siehe App.jsx VoucherSessionCard) - liefert { dogId }.
+  claimVoucher: (payload) => request('/vouchers/claim', json('POST', payload)),
   recover: (payload) => request('/recover', json('POST', payload)),
   myVouchers: () => request('/vouchers/mine'),
   // payload trägt den aktuellen Berechtigungsnachweis (currentKey/currentPassword/password je nach
@@ -102,6 +113,8 @@ export const api = {
   // Phase T – Tierheim: Steckbrief veröffentlichen/zurückziehen und Übergabe-Gutschein erzeugen.
   setSteckbrief: (id, published) => request(`/dogs/${id}/steckbrief`, json('PUT', { published })),
   createHandover: (id) => request(`/dogs/${id}/handover`, { method: 'POST' }),
+  // Einwilligung "Tierheim darf mitlesen" (Phase T Task 5, Besitzer-Zuhause) - siehe ShelterSharePanel.
+  setShelterShare: (id, payload) => request(`/dogs/${id}/shelter-share`, json('PUT', payload)),
 
   listTimeline: (dogId) => request(`/timeline${dogId ? `?dogId=${encodeURIComponent(dogId)}` : ''}`),
   createTimelineEntry: (payload) => request('/timeline', json('POST', payload)),

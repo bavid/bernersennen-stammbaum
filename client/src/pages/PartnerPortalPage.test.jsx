@@ -2,14 +2,15 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { publicPartner, redeemVoucher, demo } = vi.hoisted(() => ({
+const { publicPartner, publicPartnerAnimals, redeemVoucher, demo } = vi.hoisted(() => ({
   publicPartner: vi.fn(),
+  publicPartnerAnimals: vi.fn(),
   redeemVoucher: vi.fn(),
   demo: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { publicPartner, redeemVoucher, demo } }))
+vi.mock('../api', () => ({ api: { publicPartner, publicPartnerAnimals, redeemVoucher, demo } }))
 
 import PartnerPortalPage from './PartnerPortalPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -26,6 +27,12 @@ function setInputValue(input, value) {
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
+beforeEach(() => {
+  // Sinnvoller Standard, damit Tests, die die Vermittlungs-Sektion nicht betreffen, api.publicPartnerAnimals
+  // nicht extra mocken müssen - Tests, die eine Liste brauchen, überschreiben das gezielt.
+  publicPartnerAnimals.mockResolvedValue([])
+})
+
 afterEach(() => {
   if (root) {
     act(() => root.unmount())
@@ -38,6 +45,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
   document.title = ''
   publicPartner.mockReset()
+  publicPartnerAnimals.mockReset()
   redeemVoucher.mockReset()
   demo.mockReset()
 })
@@ -46,17 +54,12 @@ async function render(props) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
+  const slug = props?.slug || 'tierheim-sonnenhang'
   await act(async () =>
     root.render(
-      <MemoryRouter initialEntries={[`/p/${props?.slug || 'tierheim-sonnenhang'}`]}>
+      <MemoryRouter initialEntries={[props?.path || `/p/${slug}`]}>
         <ThemeProvider themeId="standard">
-          <PartnerPortalPage
-            slug="tierheim-sonnenhang"
-            family={null}
-            onRedeemed={() => {}}
-            onLogout={() => {}}
-            {...props}
-          />
+          <PartnerPortalPage slug={slug} family={null} onRedeemed={() => {}} onLogout={() => {}} {...props} />
         </ThemeProvider>
       </MemoryRouter>
     )
@@ -292,5 +295,55 @@ describe('PartnerPortalPage – Links und Kontakt', () => {
     await render()
     const mail = [...container.querySelectorAll('a')].find((a) => a.getAttribute('href') === 'mailto:info@sonnenhang.example.org')
     expect(mail).not.toBeUndefined()
+  })
+})
+
+describe('PartnerPortalPage – Vermittlungs-Sektion "Fellnasen/Tiere suchen ein Zuhause" (Task 5)', () => {
+  const dog = {
+    slug: 'pepper-ab12cd',
+    name: 'Pepper',
+    tierart: 'hund',
+    geschlecht: 'huendin',
+    rasse: 'Mischling',
+    geburtsdatum: null,
+    fotoUrl: null,
+    vermittlung_status: 'in_vermittlung'
+  }
+
+  test('ohne Tiere in Vermittlung erscheint die Sektion gar nicht', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render()
+    expect(container.querySelector('.partner-portal-animals')).toBeNull()
+  })
+
+  test('zeigt "Fellnasen suchen ein Zuhause" und eine Karte je Tier, wenn nur Hunde/Katzen vermittelt werden', async () => {
+    publicPartner.mockResolvedValue(partner)
+    publicPartnerAnimals.mockResolvedValue([dog])
+    await render()
+
+    expect(container.querySelector('.partner-portal-animals h2').textContent).toBe('Fellnasen suchen ein Zuhause')
+    const link = container.querySelector('.partner-portal-animals a')
+    expect(link.getAttribute('href')).toBe('/t/pepper-ab12cd')
+    expect(container.textContent).toContain('Pepper')
+  })
+
+  test('zeigt "Tiere suchen ein Zuhause", sobald eine andere Tierart dabei ist', async () => {
+    publicPartner.mockResolvedValue(partner)
+    publicPartnerAnimals.mockResolvedValue([dog, { ...dog, slug: 'momo-ef34gh', name: 'Momo', tierart: 'anderes' }])
+    await render()
+
+    expect(container.querySelector('.partner-portal-animals h2').textContent).toBe('Tiere suchen ein Zuhause')
+  })
+
+  test('ruft api.publicPartnerAnimals ohne demo auf, wenn das Portal normal geladen wurde', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render()
+    expect(publicPartnerAnimals).toHaveBeenCalledWith('tierheim-sonnenhang', { demo: undefined })
+  })
+
+  test('ruft api.publicPartnerAnimals mit demo=1 auf, wenn das Portal selbst mit ?demo=1 geladen wurde', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render({ path: '/p/tierheim-sonnenhang?demo=1' })
+    expect(publicPartnerAnimals).toHaveBeenCalledWith('tierheim-sonnenhang', { demo: '1' })
   })
 })

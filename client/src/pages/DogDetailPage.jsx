@@ -9,6 +9,7 @@ import Lightbox from '../components/Lightbox.jsx'
 import DogForm from '../components/DogForm.jsx'
 import Housemates from '../components/Housemates.jsx'
 import SharePanel from '../components/SharePanel.jsx'
+import ShelterSharePanel from '../components/ShelterSharePanel.jsx'
 import SteckbriefPanel from '../components/SteckbriefPanel.jsx'
 import HandoverDialog from '../components/HandoverDialog.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
@@ -352,6 +353,12 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     setDog((current) => ({ ...current, ...updated }))
   }
 
+  // ShelterSharePanel liefert nur die neue shelterShare-Antwort (nicht den ganzen Hund) - hier gezielt
+  // unter dog.shelterShare einsortiert, wie handleSteckbriefChange oben für public_slug.
+  function handleShelterShareChange(shelterShare) {
+    setDog((current) => ({ ...current, shelterShare }))
+  }
+
   // Der Übergabe-Gutschein setzt serverseitig vermittlung_status auf "reserviert" - hier nur die
   // Anzeige nachziehen, der Dialog selbst zeigt Code und Link.
   function handleHandoverCreated() {
@@ -408,6 +415,10 @@ export default function DogDetailPage({ family, onFamilyChange }) {
 
       {dog.canEdit && family.art === 'zuhause' && (
         <SharePanel key={dog.id} dog={dog} family={family} onFamilyChange={onFamilyChange} />
+      )}
+
+      {dog.canEdit && family.art === 'zuhause' && dog.shelterShare && (
+        <ShelterSharePanel key={dog.id} dog={dog} onChange={handleShelterShareChange} />
       )}
 
       {dog.canEdit && family.art === 'tierheim' && (

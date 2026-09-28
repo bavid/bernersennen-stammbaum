@@ -1,37 +1,40 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
 import { displayName } from '../lib/timeline.js'
 
 const COPIED_MS = 2000
 
-// Übergabe-Gutschein für ein Tier des Tierheims: wird beim Öffnen sofort erzeugt (wie KeyReveal einen
-// Schlüssel sofort zeigt, ohne eigenen "Erzeugen"-Knopf) und zeigt Code und Link groß zum Kopieren/
-// Teilen. dog: das Tier, für das der Gutschein gilt. onCreated: informiert die Tierseite, dass der
-// Status jetzt "reserviert" ist (Server: POST /api/dogs/:id/handover setzt vermittlung_status).
+// Übergabe-Gutschein für ein Tier des Tierheims: erst ein Hinweistext erklärt die Folgen (ein früherer
+// Übergabe-Code wird ungültig, das Tier gilt als "reserviert"), erst ein bewusster Klick auf "Übergabe-
+// Gutschein erzeugen" ruft den Server - das bloße Öffnen des Dialogs darf nichts anlegen. dog: das Tier,
+// für das der Gutschein gilt. onCreated: informiert die Tierseite, dass der Status jetzt "reserviert"
+// ist (Server: POST /api/dogs/:id/handover setzt vermittlung_status).
 export default function HandoverDialog({ dog, onCreated }) {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const [creating, setCreating] = useState(false)
   const [copied, setCopied] = useState(null)
-  const started = useRef(false)
-
-  useEffect(() => {
-    if (started.current) return
-    started.current = true
-    api
-      .createHandover(dog.id)
-      .then((data) => {
-        setResult(data)
-        onCreated?.()
-      })
-      .catch((err) => setError(err.message))
-  }, [dog.id, onCreated])
 
   useEffect(() => {
     if (!copied) return undefined
     const timer = setTimeout(() => setCopied(null), COPIED_MS)
     return () => clearTimeout(timer)
   }, [copied])
+
+  async function handleCreate() {
+    setError(null)
+    setCreating(true)
+    try {
+      const data = await api.createHandover(dog.id)
+      setResult(data)
+      onCreated?.()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCreating(false)
+    }
+  }
 
   async function copy(text, which) {
     try {
@@ -42,18 +45,28 @@ export default function HandoverDialog({ dog, onCreated }) {
     }
   }
 
-  if (error) {
+  const name = displayName(dog)
+
+  if (!result) {
     return (
-      <div className="error-banner" role="alert">
-        {error}
+      <div className="handover-dialog handover-dialog-confirm">
+        {error && (
+          <div className="error-banner" role="alert">
+            {error}
+          </div>
+        )}
+        <p>
+          Es wird ein Übergabe-Gutschein erzeugt, {name} wird als reserviert markiert; ein früherer Übergabe-Code wird
+          ungültig.
+        </p>
+        <button type="button" className="btn btn-primary btn-block" disabled={creating} onClick={handleCreate}>
+          {creating ? 'Erzeuge …' : 'Übergabe-Gutschein erzeugen'}
+        </button>
       </div>
     )
   }
 
-  if (!result) return <div className="handover-dialog is-loading" aria-busy="true" />
-
   const fullLink = `${window.location.origin}${result.link}`
-  const name = displayName(dog)
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
   return (

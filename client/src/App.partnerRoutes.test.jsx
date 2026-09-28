@@ -2,18 +2,19 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners } = vi.hoisted(() => ({
+const { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners, publicPartnerAnimals } = vi.hoisted(() => ({
   me: vi.fn(),
   logout: vi.fn(),
   redeemVoucher: vi.fn(),
   listDogs: vi.fn(),
   publicPartner: vi.fn(),
-  publicPartners: vi.fn()
+  publicPartners: vi.fn(),
+  publicPartnerAnimals: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners },
+  api: { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners, publicPartnerAnimals },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -62,6 +63,10 @@ function setInputValue(input, value) {
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
+beforeEach(() => {
+  publicPartnerAnimals.mockResolvedValue([])
+})
+
 afterEach(() => {
   if (root) {
     act(() => root.unmount())
@@ -80,6 +85,7 @@ afterEach(() => {
   listDogs.mockReset()
   publicPartner.mockReset()
   publicPartners.mockReset()
+  publicPartnerAnimals.mockReset()
   vi.restoreAllMocks()
 })
 

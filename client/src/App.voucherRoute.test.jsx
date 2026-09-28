@@ -4,15 +4,25 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, login, redeemVoucher, listDogs } = vi.hoisted(() => ({
-  me: vi.fn(),
-  logout: vi.fn(),
-  login: vi.fn(),
-  redeemVoucher: vi.fn(),
-  listDogs: vi.fn()
-}))
+const { me, logout, login, redeemVoucher, listDogs, checkVoucher, claimVoucher, getDog, listTimeline, listBreedingEvents, listAllDogs } =
+  vi.hoisted(() => ({
+    me: vi.fn(),
+    logout: vi.fn(),
+    login: vi.fn(),
+    redeemVoucher: vi.fn(),
+    listDogs: vi.fn(),
+    checkVoucher: vi.fn(),
+    claimVoucher: vi.fn(),
+    // Nur für den Claim-Test unten gebraucht: nach api.claimVoucher navigiert App.jsx zu /tier/:id, das
+    // holt seine eigenen Daten - ohne diese Mocks würde DogDetailPage dort auf ein undefiniertes
+    // api.getDog treffen und nur eine Fehlerseite zeigen, statt sauber wegzunavigieren.
+    getDog: vi.fn(),
+    listTimeline: vi.fn(),
+    listBreedingEvents: vi.fn(),
+    listAllDogs: vi.fn()
+  }))
 vi.mock('./api', () => ({
-  api: { me, logout, login, redeemVoucher, listDogs },
+  api: { me, logout, login, redeemVoucher, listDogs, checkVoucher, claimVoucher, getDog, listTimeline, listBreedingEvents, listAllDogs },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -57,6 +67,12 @@ afterEach(() => {
   login.mockReset()
   redeemVoucher.mockReset()
   listDogs.mockReset()
+  checkVoucher.mockReset()
+  claimVoucher.mockReset()
+  getDog.mockReset()
+  listTimeline.mockReset()
+  listBreedingEvents.mockReset()
+  listAllDogs.mockReset()
   vi.restoreAllMocks()
 })
 
@@ -179,5 +195,93 @@ describe('Route /v – nach dem Anmelden landet man in der Chronik, nicht auf de
     expect(login).toHaveBeenCalledWith('ABCD-1234-HJKM')
     expect(container.textContent).not.toContain('Abmelden und Gutschein einlösen')
     expect(container.querySelector('h1')?.textContent).toBe('Wegbegleiter')
+  })
+})
+
+describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung übernehmen (Phase T Task 5)', () => {
+  const qualifyingHome = {
+    id: 1,
+    name: 'Zuhause am Deich',
+    theme: 'standard',
+    art: 'zuhause',
+    isDemo: false,
+    home: { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' },
+    memberships: []
+  }
+
+  test('zeigt den Umzugs-Hinweis und "In Meine Chronik übernehmen" statt "Abmelden und Gutschein einlösen"', async () => {
+    me.mockResolvedValue(qualifyingHome)
+    checkVoucher.mockResolvedValue({ status: 'offen', handover: { animalName: 'Pepper', shelterName: 'Tierheim Sonnenhang' } })
+    await render('/v#abcd1234hjkm')
+
+    expect(checkVoucher).toHaveBeenCalledWith('ABCD-1234-HJKM')
+    expect(container.textContent).toContain('Mit diesem Gutschein zieht Pepper aus Tierheim Sonnenhang zu euch – mit der ganzen Chronik.')
+    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In Meine Chronik übernehmen')
+    expect(claimButton).not.toBeUndefined()
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(false)
+  })
+
+  test('Klick auf "In Meine Chronik übernehmen" ruft api.claimVoucher auf und verlässt die Gutschein-Karte', async () => {
+    me.mockResolvedValue(qualifyingHome)
+    checkVoucher.mockResolvedValue({ status: 'offen', handover: { animalName: 'Pepper', shelterName: 'Tierheim Sonnenhang' } })
+    claimVoucher.mockResolvedValue({ dogId: 42 })
+    getDog.mockResolvedValue({ id: 42, name: 'Pepper', shares: [], mother: null, father: null, children: [], housemates: [] })
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render('/v#abcd1234hjkm')
+
+    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In Meine Chronik übernehmen')
+    await act(async () => claimButton.click())
+
+    expect(claimVoucher).toHaveBeenCalledWith({ code: 'ABCD-1234-HJKM', shelterMayRead: false })
+    expect(container.textContent).not.toContain('In Meine Chronik übernehmen')
+    expect(container.textContent).not.toContain('angemeldet als')
+  })
+
+  test('mit angehakter Einwilligung sendet der Klick shelterMayRead:true', async () => {
+    me.mockResolvedValue(qualifyingHome)
+    checkVoucher.mockResolvedValue({ status: 'offen', handover: { animalName: 'Pepper', shelterName: 'Tierheim Sonnenhang' } })
+    claimVoucher.mockResolvedValue({ dogId: 42 })
+    getDog.mockResolvedValue({ id: 42, name: 'Pepper', shares: [], mother: null, father: null, children: [], housemates: [] })
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render('/v#abcd1234hjkm')
+
+    const checkbox = [...container.querySelectorAll('label')]
+      .find((l) => l.textContent.includes('darf weiter mitlesen'))
+      .querySelector('input[type="checkbox"]')
+    await act(async () => checkbox.click())
+    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In Meine Chronik übernehmen')
+    await act(async () => claimButton.click())
+
+    expect(claimVoucher).toHaveBeenCalledWith({ code: 'ABCD-1234-HJKM', shelterMayRead: true })
+  })
+
+  test('aus einem beigetretenen Rudel heraus (nicht das eigene Zuhause selbst) bleibt es bei "Abmelden und Gutschein einlösen"', async () => {
+    const visitingGroup = {
+      id: 9,
+      name: 'Familie Sonnenhang',
+      theme: 'standard',
+      art: 'rudel',
+      isDemo: false,
+      home: { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' },
+      memberships: []
+    }
+    me.mockResolvedValue(visitingGroup)
+    await render('/v#abcd1234hjkm')
+
+    expect(checkVoucher).not.toHaveBeenCalled()
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(true)
+  })
+
+  test('ein gewöhnlicher (Nicht-Übergabe) Gutschein-Code lässt es bei "Abmelden und Gutschein einlösen"', async () => {
+    me.mockResolvedValue(qualifyingHome)
+    checkVoucher.mockResolvedValue({ status: 'offen' })
+    await render('/v#abcd1234hjkm')
+
+    expect(checkVoucher).toHaveBeenCalledWith('ABCD-1234-HJKM')
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(true)
   })
 })
