@@ -18,6 +18,14 @@ const MAX_BATCH_LABEL_LENGTH = 80
 const MIN_BATCH_SIZE = 1
 const MAX_BATCH_SIZE = 200
 
+// Wofür ein Gutschein-Stapel da ist (voucher_batches.zweck, Phase P Task 2): 'chronik' legt beim
+// Einlösen "Meine Chronik" an (bisheriges Verhalten), 'partnerzugang' lässt einen Partner sein Profil
+// und seinen Bereich selbst einrichten (siehe lib/partnerAccess.js).
+const ZWECK = { chronik: 'chronik', partnerzugang: 'partnerzugang' }
+const ZWECK_VALUES = Object.values(ZWECK)
+const PARTNER_ACCESS_NO_CHRONIK_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang – er legt keine Chronik an'
+const PARTNER_ACCESS_CLAIM_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang – bitte über „Gutschein einlösen“ einrichten.'
+
 // Feste Schein-Liste für GET /vouchers/mine in der Demo: sieht aus wie echte Gutscheine, lässt sich
 // aber nicht einlösen. Jeder Klartext-Code enthält ein "U" - das kommt im Crockford-Alphabet nicht vor
 // (siehe lib/codes.js), normalizeCode lehnt die Codes also zuverlässig ab (siehe test/vouchersMine.test.js).
@@ -115,19 +123,43 @@ function validateEmail(email) {
   return trimmed
 }
 
+// Ein Partner-Zugang ist nie zugleich Einladung (join_family_id), Übergabe (dog_id) oder Weitergabe-
+// Gutschein eines Bereichs (issued_by_family_id) - so zählt er auch nie zum Kontingent in
+// ensureVoucherQuota. Programmierfehler statt Nutzereingabe: routes/admin.js prüft das vorher mit 400.
+function assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId }) {
+  if (!ZWECK_VALUES.includes(zweck)) throw new Error(`Unbekannter Gutschein-Zweck: ${zweck}`)
+  if (zweck === ZWECK.partnerzugang && (issuedByFamilyId || joinFamilyId || dogId)) {
+    throw new Error('Ein Partner-Zugang trägt weder Rudel, Übergabe noch ausgebenden Bereich')
+  }
+}
+
 // Legt einen Stapel mit `size` frischen Codes an (eine Transaktion). Gibt die Klartext-Codes zurück -
 // nur für Aufrufer, die sie sofort brauchen (Tests, Seed, Admin); danach ist nur noch code_cipher da.
 // dogId (Phase T Task 3): macht daraus einen Übergabe-Gutschein (siehe routes/dogs.js POST
 // /:id/handover) - nur für size=1 sinnvoll, aber hier nicht extra geprüft (der Aufrufer entscheidet).
+// zweck/partnerTyp (Phase P Task 2): siehe ZWECK; partnerTyp ist die optionale Typ-Vorgabe eines
+// Partner-Zugangs, partnerId bindet einen Partner-Zugang an einen bestehenden Partner.
 function createBatch(
   db,
-  { label, kind, size, issuedByFamilyId = null, joinFamilyId = null, partnerId = null, expiresAt = null, dogId = null }
+  {
+    label,
+    kind,
+    size,
+    issuedByFamilyId = null,
+    joinFamilyId = null,
+    partnerId = null,
+    expiresAt = null,
+    dogId = null,
+    zweck = ZWECK.chronik,
+    partnerTyp = null
+  }
 ) {
+  assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId })
   const sqliteExpiresAt = toSqliteDatetime(expiresAt)
   return db.transaction(() => {
     const batchId = db
-      .prepare('INSERT INTO voucher_batches (label, kind, partner_id, size) VALUES (?, ?, ?, ?)')
-      .run(label, kind, partnerId, size).lastInsertRowid
+      .prepare('INSERT INTO voucher_batches (label, kind, partner_id, size, zweck, partner_typ) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(label, kind, partnerId, size, zweck, partnerTyp).lastInsertRowid
 
     const insertVoucher = db.prepare(
       `INSERT INTO vouchers (batch_id, code_hash, code_cipher, code_hint, partner_id, issued_by_family_id, join_family_id, expires_at, dog_id)
@@ -186,6 +218,13 @@ function validateBatchInput({ label, size }) {
   return trimmedLabel
 }
 
+// Fehlt zweck, bleibt es beim bisherigen Chronik-Stapel.
+function validateZweck(value) {
+  if (value === undefined || value === null || value === '') return ZWECK.chronik
+  if (!ZWECK_VALUES.includes(value)) throw httpError(400, `Zweck muss einer von ${ZWECK_VALUES.join(', ')} sein`)
+  return value
+}
+
 function voucherStatus(row) {
   if (row.revoked_at) return 'widerrufen'
   if (row.redeemed_at) return 'eingelöst'
@@ -193,15 +232,9 @@ function voucherStatus(row) {
   return 'offen'
 }
 
-// household name required <=80; username/password: both or none; username 3-40 [A-Za-z0-9._-];
-// password >=8; email optional <=120, simple format. Throws on any violation.
-function validateRedeemInput({ name, username, password, email }) {
-  const trimmedName = typeof name === 'string' ? name.trim() : ''
-  if (!trimmedName) throw httpError(400, 'Wie heißt euer Zuhause?')
-  if (trimmedName.length > MAX_NAME_LENGTH) {
-    throw httpError(400, `Der Name darf höchstens ${MAX_NAME_LENGTH} Zeichen haben`)
-  }
-
+// Optionaler eigener Benutzer-Login beim Einlösen (Chronik wie Partner-Zugang): username/password
+// beide oder keins; username 3-40 [A-Za-z0-9._-]; password >=8; email optional <=120, einfaches Format.
+function validateLoginInput({ username, password, email }) {
   const hasUsername = typeof username === 'string' && username !== ''
   const hasPassword = typeof password === 'string' && password !== ''
   if (hasUsername !== hasPassword) {
@@ -211,10 +244,72 @@ function validateRedeemInput({ name, username, password, email }) {
     validateUsername(username)
     validatePassword(password)
   }
+  return { hasUsername, cleanEmail: hasUsername ? validateEmail(email) : null }
+}
 
-  const cleanEmail = hasUsername ? validateEmail(email) : null
+// household name required <=80, dazu validateLoginInput. Throws on any violation.
+function validateRedeemInput({ name, username, password, email }) {
+  const trimmedName = typeof name === 'string' ? name.trim() : ''
+  if (!trimmedName) throw httpError(400, 'Wie heißt euer Zuhause?')
+  if (trimmedName.length > MAX_NAME_LENGTH) {
+    throw httpError(400, `Der Name darf höchstens ${MAX_NAME_LENGTH} Zeichen haben`)
+  }
+  return { trimmedName, ...validateLoginInput({ username, password, email }) }
+}
 
-  return { trimmedName, hasUsername, cleanEmail }
+// Gutschein samt Zweck/Typ-Vorgabe seines Stapels - für /check, /redeem und /claim.
+function findVoucherByHash(db, codeHash) {
+  return db
+    .prepare(
+      `SELECT v.id, v.join_family_id, v.partner_id, v.dog_id, v.issued_by_family_id, v.redeemed_at, v.revoked_at,
+         v.expires_at, b.zweck, b.partner_typ
+       FROM vouchers v JOIN voucher_batches b ON b.id = v.batch_id WHERE v.code_hash = ?`
+    )
+    .get(codeHash)
+}
+
+// 404/410 für unbekannte, zurückgezogene, schon eingelöste oder abgelaufene Gutscheine.
+function assertVoucherOpen(voucher) {
+  if (!voucher) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+  if (voucher.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
+  if (voucher.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
+  if (voucher.expires_at && voucher.expires_at <= isoNow()) throw httpError(410, 'Dieser Gutschein ist abgelaufen')
+}
+
+// Verbraucht den Gutschein atomar (UPDATE ... WHERE redeemed_at IS NULL) - nur innerhalb der
+// Einlöse-Transaktion aufrufen, nachdem die Eingaben geprüft sind. Scheitert danach noch etwas (z. B. ein
+// vergebener Benutzername), rollt die Transaktion das Verbrauchen mit zurück.
+function claimOpenVoucher(db, codeHash) {
+  const claim = db
+    .prepare(
+      `UPDATE vouchers SET redeemed_at = datetime('now'), code_cipher = NULL
+       WHERE code_hash = ? AND redeemed_at IS NULL AND revoked_at IS NULL
+         AND (expires_at IS NULL OR expires_at > datetime('now'))`
+    )
+    .run(codeHash)
+  // Nur als Verteidigungslinie gegen eine gleichzeitige zweite Anfrage zwischen der Prüfung und
+  // dieser UPDATE - der Normalfall (kein Wettlauf) hat claim.changes immer schon 1.
+  if (claim.changes !== 1) throw httpError(410, 'Dieser Gutschein wurde inzwischen verändert')
+}
+
+function markRedeemedBy(db, voucherId, familyId) {
+  db.prepare('UPDATE vouchers SET redeemed_by_family_id = ? WHERE id = ?').run(familyId, voucherId)
+}
+
+// Legt den optionalen Benutzer-Login für einen frisch eingelösten Bereich an (409 bei vergebenem Namen).
+function insertAreaUser(db, familyId, { username, password, cleanEmail }) {
+  const passwordHash = bcrypt.hashSync(password, BCRYPT_ROUNDS)
+  try {
+    db.prepare('INSERT INTO users (family_id, username, password_hash, email) VALUES (?, ?, ?, ?)').run(
+      familyId,
+      username,
+      passwordHash,
+      cleanEmail
+    )
+  } catch (err) {
+    if (String(err.message).includes('UNIQUE')) throw httpError(409, 'Benutzername ist vergeben')
+    throw err
+  }
 }
 
 // Löst einen Gutschein ein: legt "Meine Chronik" (art='zuhause') an, der Code wird gleich ihr Schlüssel.
@@ -237,30 +332,14 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
     // security-review Phase T Finding 3: erst prüfen (Gutschein selbst UND - bei einem Übergabe-
     // Gutschein - die Übergabe dahinter), dann verbrauchen. So bleibt ein Gutschein unangetastet
     // (redeemed_at weiterhin NULL), wenn die Übergabe inzwischen nicht mehr passt.
-    const voucherRow = db
-      .prepare(
-        `SELECT id, join_family_id, partner_id, dog_id, issued_by_family_id, redeemed_at, revoked_at, expires_at
-         FROM vouchers WHERE code_hash = ?`
-      )
-      .get(codeHash)
-    if (!voucherRow) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
-    if (voucherRow.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
-    if (voucherRow.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
-    if (voucherRow.expires_at && voucherRow.expires_at <= isoNow()) throw httpError(410, 'Dieser Gutschein ist abgelaufen')
-    assertHandoverStillRedeemable(db, voucherRow)
+    const voucher = findVoucherByHash(db, codeHash)
+    assertVoucherOpen(voucher)
+    // Phase P Task 2: ein Partner-Zugang läuft über lib/partnerAccess.js (routes/vouchers.js verzweigt
+    // dorthin) - hier entsteht daraus nie ein Zuhause.
+    if (voucher.zweck !== ZWECK.chronik) throw httpError(400, PARTNER_ACCESS_NO_CHRONIK_MESSAGE)
+    assertHandoverStillRedeemable(db, voucher)
 
-    const claim = db
-      .prepare(
-        `UPDATE vouchers SET redeemed_at = datetime('now'), code_cipher = NULL
-         WHERE code_hash = ? AND redeemed_at IS NULL AND revoked_at IS NULL
-           AND (expires_at IS NULL OR expires_at > datetime('now'))`
-      )
-      .run(codeHash)
-    // Nur als Verteidigungslinie gegen eine gleichzeitige zweite Anfrage zwischen der Prüfung oben und
-    // dieser UPDATE - der Normalfall (kein Wettlauf) hat claim.changes immer schon 1.
-    if (claim.changes !== 1) throw httpError(410, 'Dieser Gutschein wurde inzwischen verändert')
-
-    const voucher = voucherRow
+    claimOpenVoucher(db, codeHash)
 
     const newFamilyId = db
       .prepare(
@@ -269,7 +348,7 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
       )
       .run(trimmedName, codeHash, voucher.id, voucher.partner_id).lastInsertRowid
 
-    db.prepare('UPDATE vouchers SET redeemed_by_family_id = ? WHERE id = ?').run(newFamilyId, voucher.id)
+    markRedeemedBy(db, voucher.id, newFamilyId)
 
     if (voucher.dog_id) {
       // assertHandoverStillRedeemable hat die Existenz des Tiers bereits bestätigt.
@@ -296,20 +375,7 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
       }
     }
 
-    if (hasUsername) {
-      const passwordHash = bcrypt.hashSync(password, BCRYPT_ROUNDS)
-      try {
-        db.prepare('INSERT INTO users (family_id, username, password_hash, email) VALUES (?, ?, ?, ?)').run(
-          newFamilyId,
-          username,
-          passwordHash,
-          cleanEmail
-        )
-      } catch (err) {
-        if (String(err.message).includes('UNIQUE')) throw httpError(409, 'Benutzername ist vergeben')
-        throw err
-      }
-    }
+    if (hasUsername) insertAreaUser(db, newFamilyId, { username, password, cleanEmail })
 
     return newFamilyId
   })()
@@ -333,10 +399,10 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
     // security-review Phase T Finding 3: dieselbe Prüfen-vor-Verbrauchen-Reihenfolge wie redeemVoucher,
     // und derselbe Fix für den 500er: assertHandoverStillRedeemable bestätigt vorher, dass das Tier noch
     // existiert - db.prepare(...).get(voucher.dog_id) unten kann also nicht mehr undefined liefern.
-    const voucherRow = db
-      .prepare('SELECT id, dog_id, issued_by_family_id, redeemed_at, revoked_at, expires_at FROM vouchers WHERE code_hash = ?')
-      .get(codeHash)
+    const voucherRow = findVoucherByHash(db, codeHash)
     if (!voucherRow) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+    // Phase P Task 2: ein Partner-Zugang wird nie "nebenbei" aus einem Zuhause heraus verbraucht.
+    if (voucherRow.zweck === ZWECK.partnerzugang) throw httpError(400, PARTNER_ACCESS_CLAIM_MESSAGE)
     if (!voucherRow.dog_id) throw httpError(400, 'Das ist kein Übergabe-Gutschein – zum Einlösen bitte abmelden.')
     if (voucherRow.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
     if (voucherRow.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
@@ -376,7 +442,8 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
 // Kontingent bei jedem Aufruf immer weiter auffüllen, obwohl längst genug im Umlauf sind.
 function ensureVoucherQuota(db, area) {
   // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
-  // Einladungen und dürfen weder mitgezählt noch als solche aufgefüllt werden.
+  // Einladungen und dürfen weder mitgezählt noch als solche aufgefüllt werden. Partner-Zugänge (Phase P
+  // Task 2) tragen nie issued_by_family_id (assertBatchPurpose) und zählen damit ebenfalls nie mit.
   const { c: counted } = db
     .prepare(
       `SELECT COUNT(*) AS c FROM vouchers
@@ -403,6 +470,14 @@ module.exports = {
   claimVoucher,
   ensureVoucherQuota,
   validateBatchInput,
+  validateZweck,
+  validateLoginInput,
+  findVoucherByHash,
+  assertVoucherOpen,
+  claimOpenVoucher,
+  markRedeemedBy,
+  insertAreaUser,
+  ZWECK,
   cleanBooleanFlag,
   HANDOVER_GONE_MESSAGE,
   DEMO_VOUCHERS,

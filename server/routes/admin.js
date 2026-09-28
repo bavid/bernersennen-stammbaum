@@ -10,10 +10,12 @@ const { verifyPassword, safeEqual } = require('../lib/adminAuth')
 const { requireAdmin, setAdminCookie, clearAdminCookie } = require('../middleware/admin')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
-const { createBatch, voucherStatus, validateBatchInput } = require('../lib/vouchers')
+const { createBatch, voucherStatus, validateBatchInput, validateZweck, ZWECK } = require('../lib/vouchers')
 const { formatCode, decryptCode, generateCode, hashCode } = require('../lib/codes')
 const { validatePartner, detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES, SHELTER_TYP_VALUES } = require('../lib/partners')
 const { ART, PARTNER_AREA_ARTS } = require('../lib/context')
+const { PARTNER_AREA_ARTS_SQL, areaArtForTyp, areaLabel, findPartnerArea, insertPartnerArea } = require('../lib/partnerAreas')
+const { partnerAccessBatchOptions } = require('../lib/partnerAccess')
 
 const router = express.Router()
 
@@ -174,41 +176,59 @@ router.get('/families/:id', requireAdmin, (req, res) => {
   res.json({ family, dogs, entries, notes: notes.map((note) => ({ ...note, replies: byNote.get(note.id) })) })
 })
 
-// Gutschein-Stapel für den Admin: Bezeichnung Pflicht (<=80 Zeichen), Anzahl 1-200. Optional
-// joinFamilyId - wer den Gutschein einlöst, tritt diesem Rudel gleich bei; nur ein bestehendes,
-// echtes Rudel (kein Zuhause, keine Demo) ist ein gültiges Ziel. Optional partnerId (Task 2) - ein
-// aktiver oder Entwurfs-Partner macht den Stapel zu kind='partner', partner_id landet auf Stapel UND
-// jedem Gutschein (siehe lib/vouchers.js createBatch), redeemVoucher überträgt es dann auf families.
+function httpError(status, message) {
+  const err = new Error(message)
+  err.status = status
+  return err
+}
+
+function isGiven(value) {
+  return value !== undefined && value !== null && value !== ''
+}
+
+// createBatch-Optionen für einen Chronik-Stapel (bisheriges Verhalten). Optional joinFamilyId - wer den
+// Gutschein einlöst, tritt diesem Rudel gleich bei; nur ein bestehendes, echtes Rudel (kein Zuhause,
+// keine Demo) ist ein gültiges Ziel. Optional partnerId (Task 2) - ein aktiver oder Entwurfs-Partner
+// macht den Stapel zu kind='partner', partner_id landet auf Stapel UND jedem Gutschein (siehe
+// lib/vouchers.js createBatch), redeemVoucher überträgt es dann auf families. Eine Typ-Vorgabe gibt es
+// nur für Partner-Zugänge.
+function chronikBatchOptions({ joinFamilyId, partnerId, partnerTyp }) {
+  if (isGiven(partnerTyp)) throw httpError(400, 'Eine Typ-Vorgabe gibt es nur für Partner-Zugänge')
+
+  let cleanJoinFamilyId = null
+  if (isGiven(joinFamilyId)) {
+    const id = cleanId(joinFamilyId)
+    const joinable = id && db.prepare("SELECT 1 FROM families WHERE id = ? AND art = 'rudel' AND is_demo = 0").get(id)
+    if (!joinable) throw httpError(400, 'Dieses Rudel gibt es nicht')
+    cleanJoinFamilyId = id
+  }
+
+  let cleanPartnerId = null
+  if (isGiven(partnerId)) {
+    const id = cleanId(partnerId)
+    const partner = id && db.prepare("SELECT 1 FROM partners WHERE id = ? AND status IN ('entwurf', 'aktiv')").get(id)
+    if (!partner) throw httpError(400, 'Diesen Partner gibt es nicht')
+    cleanPartnerId = id
+  }
+
+  return { kind: cleanPartnerId ? 'partner' : 'admin', zweck: ZWECK.chronik, joinFamilyId: cleanJoinFamilyId, partnerId: cleanPartnerId }
+}
+
+// Gutschein-Stapel für den Admin: Bezeichnung Pflicht (<=80 Zeichen), Anzahl 1-200. zweck (Phase P
+// Task 2): 'chronik' (Standard, siehe chronikBatchOptions) oder 'partnerzugang' (lib/partnerAccess.js
+// partnerAccessBatchOptions: optionale Typ-Vorgabe partnerTyp, optional an einen bestehenden Partner
+// gebunden per partnerId).
 router.post('/voucher-batches', requireAdmin, (req, res, next) => {
   try {
-    const { size, joinFamilyId, partnerId } = req.body || {}
-    const trimmedLabel = validateBatchInput({ label: req.body?.label, size })
+    const body = req.body || {}
+    const trimmedLabel = validateBatchInput({ label: body.label, size: body.size })
+    const zweck = validateZweck(body.zweck)
+    const options = zweck === ZWECK.partnerzugang ? partnerAccessBatchOptions(db, body) : chronikBatchOptions(body)
 
-    let cleanJoinFamilyId = null
-    if (joinFamilyId !== undefined && joinFamilyId !== null && joinFamilyId !== '') {
-      const id = cleanId(joinFamilyId)
-      const joinable = id && db.prepare("SELECT 1 FROM families WHERE id = ? AND art = 'rudel' AND is_demo = 0").get(id)
-      if (!joinable) return res.status(400).json({ error: 'Dieses Rudel gibt es nicht' })
-      cleanJoinFamilyId = id
-    }
-
-    let cleanPartnerId = null
-    if (partnerId !== undefined && partnerId !== null && partnerId !== '') {
-      const id = cleanId(partnerId)
-      const partner = id && db.prepare("SELECT 1 FROM partners WHERE id = ? AND status IN ('entwurf', 'aktiv')").get(id)
-      if (!partner) return res.status(400).json({ error: 'Diesen Partner gibt es nicht' })
-      cleanPartnerId = id
-    }
-
-    const kind = cleanPartnerId ? 'partner' : 'admin'
-    const { batchId, codes } = createBatch(db, {
-      label: trimmedLabel,
-      kind,
-      size,
-      joinFamilyId: cleanJoinFamilyId,
-      partnerId: cleanPartnerId
-    })
-    const batch = db.prepare('SELECT id, label, size, created_at FROM voucher_batches WHERE id = ?').get(batchId)
+    const { batchId, codes } = createBatch(db, { label: trimmedLabel, size: body.size, ...options })
+    const batch = db
+      .prepare('SELECT id, label, size, zweck, partner_typ AS partnerTyp, created_at FROM voucher_batches WHERE id = ?')
+      .get(batchId)
     res.status(201).json({ batch, codes: codes.map(formatCode) })
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
@@ -217,11 +237,12 @@ router.post('/voucher-batches', requireAdmin, (req, res, next) => {
 })
 
 // Zähler je Stapel - "abgelaufen" zählt bewusst in keiner der drei Spalten mit (die Liste dient nur
-// dem Überblick, nicht der Kontingent-Logik). partner_name: nur bei kind='partner' gesetzt.
+// dem Überblick, nicht der Kontingent-Logik). partner_name: bei kind='partner' und bei einem
+// gebundenen Partner-Zugang gesetzt. zweck/partnerTyp: siehe POST /voucher-batches.
 router.get('/voucher-batches', requireAdmin, (req, res) => {
   const batches = db
     .prepare(
-      `SELECT b.id, b.label, b.kind, b.size, b.created_at, p.name AS partner_name,
+      `SELECT b.id, b.label, b.kind, b.zweck, b.partner_typ AS partnerTyp, b.size, b.created_at, p.name AS partner_name,
          SUM(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NULL AND (v.expires_at IS NULL OR v.expires_at > datetime('now')) THEN 1 ELSE 0 END) AS open,
          SUM(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NOT NULL THEN 1 ELSE 0 END) AS redeemed,
          SUM(CASE WHEN v.revoked_at IS NOT NULL THEN 1 ELSE 0 END) AS revoked
@@ -236,7 +257,9 @@ router.get('/voucher-batches', requireAdmin, (req, res) => {
 
 router.get('/voucher-batches/:id', requireAdmin, (req, res) => {
   const id = cleanId(req.params.id)
-  const batch = id ? db.prepare('SELECT id, label, kind, size, created_at FROM voucher_batches WHERE id = ?').get(id) : null
+  const batch = id
+    ? db.prepare('SELECT id, label, kind, zweck, partner_typ AS partnerTyp, size, created_at FROM voucher_batches WHERE id = ?').get(id)
+    : null
   if (!batch) return res.status(404).json({ error: 'Diesen Stapel gibt es nicht' })
 
   const rows = db
@@ -294,25 +317,15 @@ function uniqueConstraintViolation(err) {
 }
 
 // Phase P Task 1: der Bereich eines Partners - art 'tierheim' (Typ tierheim/vermittlung) oder 'partner'
-// (alle anderen Typen). Höchstens einer pro Partner. Nur diese beiden Arten zählen: ein Zuhause trägt
-// families.partner_id bloß als Herkunft ("kam über Partner X", lib/vouchers.js redeemVoucher).
-const AREA_ARTS_SQL = PARTNER_AREA_ARTS.map((art) => `'${art}'`).join(', ')
-const findPartnerArea = db.prepare(`SELECT id, art FROM families WHERE partner_id = ? AND art IN (${AREA_ARTS_SQL}) ORDER BY id LIMIT 1`)
-
-function areaArtForTyp(typ) {
-  return SHELTER_TYP_VALUES.includes(typ) ? ART.tierheim : ART.partner
-}
-
-function areaLabel(art) {
-  return art === ART.tierheim ? 'Tierheim-Bereich' : 'Partner-Bereich'
-}
+// (alle anderen Typen), höchstens einer pro Partner. Die Helfer dazu (areaArtForTyp, findPartnerArea,
+// insertPartnerArea, ...) liegen in lib/partnerAreas.js - der Partner-Zugang per Gutschein nutzt sie auch.
 
 // shelter_family_id: die Tierheim-Familie (falls vorhanden) - bleibt für den bisherigen Admin-Client.
 // area_family_id/area_art (Phase P Task 1): der Bereich des Partners, egal welcher Art - der Client zeigt
 // damit z. B. einen "Schlüssel erneuern"-statt-"Anlegen"-Knopf. gesperrt kommt über p.* mit.
 router.get('/partners', requireAdmin, (req, res) => {
   const areaSubquery = (column) =>
-    `(SELECT f.${column} FROM families f WHERE f.partner_id = p.id AND f.art IN (${AREA_ARTS_SQL}) ORDER BY f.id LIMIT 1)`
+    `(SELECT f.${column} FROM families f WHERE f.partner_id = p.id AND f.art IN (${PARTNER_AREA_ARTS_SQL}) ORDER BY f.id LIMIT 1)`
   res.json(
     db
       .prepare(
@@ -351,7 +364,7 @@ router.put('/partners/:id', requireAdmin, (req, res, next) => {
     // Ein bestehender Bereich hat seine Art beim Anlegen vom Typ bekommen (areaArtForTyp) - ein Typwechsel
     // über die Grenze Tierheim/Vermittlung <-> übrige Partner würde nicht mehr dazu passen (z. B. Tiere
     // in einem Bereich, der laut Typ keine haben darf). Innerhalb der jeweiligen Gruppe geht der Wechsel.
-    const area = findPartnerArea.get(id)
+    const area = findPartnerArea(db, id)
     if (area && areaArtForTyp(clean.typ) !== area.art) {
       return res.status(409).json({ error: `Für diesen Partner gibt es einen ${areaLabel(area.art)} – dazu passt der Typ „${clean.typ}“ nicht` })
     }
@@ -416,23 +429,11 @@ function createPartnerArea(req, res, { onlyShelter }) {
     return res.status(400).json({ error: 'Nur für Partner vom Typ Tierheim oder Vermittlung' })
   }
 
-  const existing = findPartnerArea.get(id)
+  const existing = findPartnerArea(db, id)
   if (existing) return res.status(409).json({ error: `Für diesen Partner gibt es schon einen ${areaLabel(existing.art)}` })
 
-  const art = areaArtForTyp(partner.typ)
   const code = generateCode()
-  const familyId = Number(
-    db
-      .prepare(
-        `INSERT INTO families (name, password_hash, art, theme, partner_id, legacy_password, access_key_hash, is_demo)
-         VALUES (?, '!', ?, 'standard', ?, 0, ?, ?)`
-      )
-      // security-review Phase T Finding 13: ein Bereich für einen Demo-Partner muss selbst is_demo=1
-      // tragen - sonst wäre er (anders als jeder andere Demo-Bereich) außerhalb von dev/staging ohne
-      // ?demo=1 oder eine Demo-Sitzung sichtbar/nutzbar, obwohl der Partner es nicht ist.
-      .run(partner.name, art, id, hashCode(code), partner.is_demo ? 1 : 0).lastInsertRowid
-  )
-
+  const { familyId, art } = insertPartnerArea(db, { partner, accessKeyHash: hashCode(code) })
   res.status(201).json({ familyId, key: formatCode(code), art })
 }
 
@@ -449,7 +450,7 @@ function reissueAreaKey(req, res, { arts }) {
   const partner = findPartner(id)
   if (!partner) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
 
-  const area = findPartnerArea.get(id)
+  const area = findPartnerArea(db, id)
   if (!area || !arts.includes(area.art)) {
     const label = arts.length === 1 ? areaLabel(arts[0]) : 'Bereich'
     return res.status(404).json({ error: `Für diesen Partner gibt es keinen ${label}` })
@@ -478,7 +479,7 @@ router.delete('/partners/:id', requireAdmin, (req, res) => {
   if (partner.status !== 'entwurf') {
     return res.status(409).json({ error: 'Nur Entwürfe lassen sich löschen – diesen Partner stattdessen pausieren' })
   }
-  const area = findPartnerArea.get(id)
+  const area = findPartnerArea(db, id)
   if (area) {
     return res.status(409).json({ error: `Für diesen Partner gibt es einen ${areaLabel(area.art)} – er lässt sich nicht mehr löschen` })
   }

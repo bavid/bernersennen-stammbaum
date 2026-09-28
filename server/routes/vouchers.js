@@ -4,7 +4,8 @@ const { codeLimiter, rejectHoneypot } = require('../middleware/abuse')
 const { requireAuth, setSessionCookie } = require('../middleware/auth')
 const { ART, buildMe } = require('../lib/context')
 const { normalizeCode, hashCode, formatCode, decryptCode } = require('../lib/codes')
-const { voucherStatus, redeemVoucher, claimVoucher, ensureVoucherQuota, DEMO_VOUCHERS } = require('../lib/vouchers')
+const { voucherStatus, redeemVoucher, claimVoucher, ensureVoucherQuota, findVoucherByHash, ZWECK, DEMO_VOUCHERS } = require('../lib/vouchers')
+const { isPartnerAccessCode, partnerAccessCheckInfo, redeemPartnerAccess } = require('../lib/partnerAccess')
 
 const router = express.Router()
 
@@ -19,28 +20,34 @@ const findHandoverInfo = db.prepare(
    WHERE d.id = ?`
 )
 
-// Codes nie in Logs oder URLs: beide Endpunkte sind POST, auch das reine Nachschauen.
+// Codes nie in Logs oder URLs: beide Endpunkte sind POST, auch das reine Nachschauen. Ein offener
+// Partner-Zugang (Phase P Task 2) meldet zusätzlich zweck und - falls bekannt - partnerTyp/partnerName
+// (lib/partnerAccess.js); ein Kunden-Gutschein bleibt bei { status } (plus handover bei einer Übergabe).
 router.post('/check', codeLimiter, (req, res) => {
   const normalized = normalizeCode(req.body?.code)
   if (!normalized) return res.json({ status: 'unbekannt' })
-  const voucher = db
-    .prepare('SELECT redeemed_at, revoked_at, expires_at, dog_id FROM vouchers WHERE code_hash = ?')
-    .get(hashCode(normalized))
+  const voucher = findVoucherByHash(db, hashCode(normalized))
   if (!voucher) return res.json({ status: 'unbekannt' })
 
   const status = voucherStatus(voucher)
-  const response = { status }
-  if (status === 'offen' && voucher.dog_id) {
-    const handover = findHandoverInfo.get(voucher.dog_id)
-    if (handover) response.handover = handover
-  }
-  res.json(response)
+  if (status !== 'offen') return res.json({ status })
+  if (voucher.zweck === ZWECK.partnerzugang) return res.json({ status, ...partnerAccessCheckInfo(db, voucher) })
+  const handover = voucher.dog_id ? findHandoverInfo.get(voucher.dog_id) : null
+  res.json(handover ? { status, handover } : { status })
 })
+
+// Ein Partner-Zugang legt einen Partner samt Bereich an (lib/partnerAccess.js), jeder andere Gutschein
+// "Meine Chronik" (lib/vouchers.js). Der Zweck eines Gutscheins ändert sich nach dem Anlegen nie - die
+// Weiche darf ihn also vor der eigentlichen Einlöse-Transaktion lesen.
+function redeemAnyVoucher(body) {
+  const { code, name, typ, plz, username, password, email, shelterMayRead } = body
+  if (isPartnerAccessCode(db, code)) return redeemPartnerAccess(db, { code, name, typ, plz, username, password, email })
+  return redeemVoucher(db, { code, name, username, password, email, shelterMayRead })
+}
 
 router.post('/redeem', codeLimiter, rejectHoneypot, (req, res, next) => {
   try {
-    const { code, name, username, password, email, shelterMayRead } = req.body || {}
-    const { familyId, code: normalized } = redeemVoucher(db, { code, name, username, password, email, shelterMayRead })
+    const { familyId, code: normalized } = redeemAnyVoucher(req.body || {})
     setSessionCookie(res, familyId)
     res.status(201).json({ ...buildMe(familyId, familyId, false), key: formatCode(normalized), fromOthers: true })
   } catch (err) {
