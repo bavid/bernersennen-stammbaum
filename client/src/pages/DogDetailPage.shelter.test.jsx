@@ -22,6 +22,7 @@ vi.mock('../api', () => ({
 }))
 
 import DogDetailPage from './DogDetailPage.jsx'
+import { DemoProvider } from '../lib/demo.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -80,17 +81,19 @@ const shelterDog = (overrides = {}) => ({
   ...overrides
 })
 
-async function render() {
+async function render({ isDemo = false } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter initialEntries={['/tier/20']}>
-        <Routes>
-          <Route path="/tier/:id" element={<DogDetailPage family={shelterFamily} onFamilyChange={() => {}} />} />
-        </Routes>
-      </MemoryRouter>
+      <DemoProvider value={isDemo}>
+        <MemoryRouter initialEntries={['/tier/20']}>
+          <Routes>
+            <Route path="/tier/:id" element={<DogDetailPage family={shelterFamily} onFamilyChange={() => {}} />} />
+          </Routes>
+        </MemoryRouter>
+      </DemoProvider>
     )
   )
   return container
@@ -128,22 +131,28 @@ describe('DogDetailPage – Tierheim: Status', () => {
     expect(select.value).toBe('in_vermittlung')
   })
 
-  test('Ändern der Auswahl ruft api.updateDog mit vermittlungStatus auf', async () => {
+  test('Ändern der Auswahl speichert NICHT sofort (kein onChange-Save) - erst "Speichern" ruft api.updateDog auf', async () => {
     getDog.mockResolvedValue(shelterDog())
     listTimeline.mockResolvedValue([])
     listBreedingEvents.mockResolvedValue([])
     listAllDogs.mockResolvedValue([])
-    updateDog.mockResolvedValue({ ...shelterDog(), vermittlung_status: 'reserviert' })
+    updateDog.mockResolvedValue({ ...shelterDog(), vermittlung_status: 'vermittelt' })
     await render()
 
     const select = container.querySelector('#vermittlung-status')
     const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set
     await act(async () => {
-      nativeSetter.call(select, 'reserviert')
+      nativeSetter.call(select, 'vermittelt')
       select.dispatchEvent(new Event('change', { bubbles: true }))
     })
 
-    expect(updateDog).toHaveBeenCalledWith(20, { vermittlungStatus: 'reserviert' })
+    expect(updateDog).not.toHaveBeenCalled()
+
+    const saveButton = [...container.querySelectorAll('.vermittlung-status-panel button')].find((btn) => btn.textContent === 'Speichern')
+    expect(saveButton).not.toBeUndefined()
+    await act(async () => saveButton.click())
+
+    expect(updateDog).toHaveBeenCalledWith(20, { vermittlungStatus: 'vermittelt' })
   })
 
   test('für ein nur geteiltes ("Ehemaliges") Tier erscheint keine Status-Auswahl', async () => {
@@ -233,5 +242,20 @@ describe('DogDetailPage – Tierheim: Übergabe', () => {
     expect(select.value).toBe('in_vermittlung')
     // Der Knopf verschwindet, sobald der Status nicht mehr "reserviert" ist (dog-State neu gemischt).
     expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.includes('Übergabe zurückziehen'))).toBe(false)
+  })
+
+  test('in der Demo ist "Übergabe zurückziehen" gesperrt, mit Hinweis (final-review Phase T Finding 8)', async () => {
+    getDog.mockResolvedValue(shelterDog({ vermittlung_status: 'reserviert' }))
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render({ isDemo: true })
+
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes('Übergabe zurückziehen'))
+    expect(button.disabled).toBe(true)
+    expect(container.textContent).toContain('In der Demo nicht möglich.')
+
+    await act(async () => button.click())
+    expect(withdrawHandover).not.toHaveBeenCalled()
   })
 })

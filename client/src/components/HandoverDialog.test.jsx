@@ -7,6 +7,7 @@ const { createHandover } = vi.hoisted(() => ({ createHandover: vi.fn() }))
 vi.mock('../api', () => ({ api: { createHandover } }))
 
 import HandoverDialog from './HandoverDialog.jsx'
+import { DemoProvider } from '../lib/demo.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -15,11 +16,17 @@ let root
 
 const dog = { id: 7, name: 'Pepper' }
 
-async function render(props = {}) {
+async function render({ isDemo = false, ...props } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
-  await act(async () => root.render(<HandoverDialog dog={dog} {...props} />))
+  await act(async () =>
+    root.render(
+      <DemoProvider value={isDemo}>
+        <HandoverDialog dog={dog} {...props} />
+      </DemoProvider>
+    )
+  )
   return container
 }
 
@@ -107,5 +114,17 @@ describe('HandoverDialog – "Übergabe-Gutschein erzeugen"', () => {
 
     expect(container.querySelector('.error-banner').textContent).toBe('Es gibt bereits einen offenen Übergabe-Gutschein')
     expect(confirmButton()).not.toBeUndefined()
+  })
+})
+
+describe('HandoverDialog – Demo (final-review Phase T Finding 8)', () => {
+  test('"Übergabe-Gutschein erzeugen" ist in der Demo gesperrt, mit Hinweis', async () => {
+    await render({ isDemo: true })
+
+    expect(confirmButton().disabled).toBe(true)
+    expect(container.textContent).toContain('In der Demo nicht möglich.')
+
+    await act(async () => confirmButton().click())
+    expect(createHandover).not.toHaveBeenCalled()
   })
 })

@@ -139,4 +139,38 @@ describe('LegalPage – /datenschutz', () => {
     const link = [...container.querySelectorAll('a')].find((a) => a.getAttribute('href') === 'mailto:kontakt@example.org')
     expect(link).not.toBeUndefined()
   })
+
+  // final-review Phase T Finding 3: eigener Absatz "Tierheime" - öffentliche Steckbriefe, Übergabe/
+  // Umzug der Chronik, freiwilliges Mitlesen und Happy Ends brauchen eine eigene, ehrliche Erklärung.
+  test('Absatz "Tierheime": öffentliche Steckbriefe (/t/…, nur als öffentlich markierte Einträge, noindex)', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect([...container.querySelectorAll('h2')].some((h) => h.textContent === 'Tierheime')).toBe(true)
+    expect(container.textContent).toMatch(/\/t\/…/)
+    expect(container.textContent).toMatch(/noindex/)
+  })
+
+  test('Absatz "Tierheime": Übergabe/Umzug der Chronik, Herkunft bleibt sichtbar, freiwilliges und widerrufbares Mitlesen', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(container.textContent).toMatch(/Übergabe-Gutschein/)
+    expect(container.textContent).toMatch(/Herkunft sichtbar/)
+    expect(container.textContent).toMatch(/freiwillig/)
+    expect(container.textContent).toMatch(/jederzeit widerrufen/)
+    expect(container.textContent).toMatch(/nicht-privaten Einträge/)
+  })
+
+  test('Absatz "Tierheime": Happy Ends nur mit separater Einwilligung, keine Namen, sofortiger Widerruf (Browser-Cache als Ausnahme)', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(container.textContent).toMatch(/Happy End/)
+    expect(container.textContent).toMatch(/Porträtfoto/)
+    expect(container.textContent).toMatch(/neueste[nr]? nicht-private[nr]? Eintrag/)
+    expect(container.textContent).toMatch(/nie Namen/)
+    expect(container.textContent).toMatch(/Widerruf wirkt sofort/)
+    expect(container.textContent).toMatch(/Browser.*zwischengespeichert/)
+  })
 })

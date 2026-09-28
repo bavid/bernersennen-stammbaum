@@ -97,6 +97,25 @@ function Datenschutz({ legal }) {
         nachgeladen.
       </p>
 
+      <h2>Tierheime</h2>
+      <p>
+        Ein Tierheim kann einen eigenen Steckbrief für ein vermittelbares Tier veröffentlichen (/t/…) – sichtbar sind
+        dort nur die Einträge, die das Tierheim ausdrücklich als öffentlich markiert. Diese Seiten sind für
+        Suchmaschinen ausgeschlossen (noindex).
+      </p>
+      <p>
+        Zieht ein Tier über einen Übergabe-Gutschein in ein neues Zuhause um, wandert seine ganze bisherige Chronik
+        mit um; das abgebende Tierheim bleibt als Herkunft sichtbar. Das neue Zuhause kann dem abgebenden Tierheim
+        freiwillig erlauben, weiterhin mitzulesen – diese Einwilligung lässt sich jederzeit widerrufen und umfasst
+        immer nur die nicht-privaten Einträge.
+      </p>
+      <p>
+        Öffentliche Happy Ends (Porträtfoto und der neueste nicht-private Eintrag auf der Portalseite eines
+        Tierheims) zeigen wir nur mit einer eigenen, separaten Einwilligung des neuen Zuhauses – nie Namen oder
+        andere Angaben zu den Menschen dahinter. Ein Widerruf wirkt sofort; nur ein vom Browser bereits
+        zwischengespeichertes Foto kann noch kurz sichtbar bleiben.
+      </p>
+
       <h2>Rechte und Kontakt</h2>
       <p>
         Für Auskunft über gespeicherte Daten oder deren Löschung wendet euch bitte an{' '}

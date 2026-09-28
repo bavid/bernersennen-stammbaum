@@ -7,6 +7,7 @@ const { setSteckbrief } = vi.hoisted(() => ({ setSteckbrief: vi.fn() }))
 vi.mock('../api', () => ({ api: { setSteckbrief } }))
 
 import SteckbriefPanel from './SteckbriefPanel.jsx'
+import { DemoProvider } from '../lib/demo.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -21,11 +22,17 @@ const dog = (overrides = {}) => ({
   ...overrides
 })
 
-async function render(props = {}) {
+async function render({ isDemo = false, ...props } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
-  await act(async () => root.render(<SteckbriefPanel dog={dog()} onDogChange={() => {}} {...props} />))
+  await act(async () =>
+    root.render(
+      <DemoProvider value={isDemo}>
+        <SteckbriefPanel dog={dog()} onDogChange={() => {}} {...props} />
+      </DemoProvider>
+    )
+  )
   return container
 }
 
@@ -101,5 +108,20 @@ describe('SteckbriefPanel – veröffentlicht', () => {
 
     expect(setSteckbrief).toHaveBeenCalledWith(7, false)
     expect(onDogChange).toHaveBeenCalledWith({ id: 7, public_slug: null })
+  })
+})
+
+describe('SteckbriefPanel – Demo (final-review Phase T Finding 8)', () => {
+  test('"Steckbrief veröffentlichen" ist in der Demo gesperrt, mit Hinweis', async () => {
+    await render({ isDemo: true, dog: dog({ vermittlung_status: 'in_vermittlung' }) })
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Steckbrief veröffentlichen')
+    expect(button.disabled).toBe(true)
+    expect(container.textContent).toContain('In der Demo nicht möglich.')
+  })
+
+  test('"Zurückziehen" ist in der Demo gesperrt', async () => {
+    await render({ isDemo: true, dog: dog({ public_slug: 'pepper-ab12cd' }) })
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Zurückziehen')
+    expect(button.disabled).toBe(true)
   })
 })

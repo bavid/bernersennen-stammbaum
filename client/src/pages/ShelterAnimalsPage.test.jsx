@@ -4,12 +4,11 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { listDogs, recentActivity, createDog } = vi.hoisted(() => ({
+const { listDogs, createDog } = vi.hoisted(() => ({
   listDogs: vi.fn(),
-  recentActivity: vi.fn(),
   createDog: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { listDogs, recentActivity, createDog } }))
+vi.mock('../api', () => ({ api: { listDogs, createDog } }))
 
 import ShelterAnimalsPage from './ShelterAnimalsPage.jsx'
 
@@ -67,7 +66,6 @@ afterEach(() => {
     container = null
   }
   listDogs.mockReset()
-  recentActivity.mockReset()
   createDog.mockReset()
 })
 
@@ -76,13 +74,12 @@ function chip(label) {
 }
 
 describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
-  test('zeigt vier Filter-Chips: In Vermittlung, Reserviert, Vermittelt, Ehemalige (mitgelesen)', async () => {
+  test('zeigt sechs Filter-Chips: Alle, In Vermittlung, Reserviert, Vermittelt, Ohne Status, Ehemalige (mitgelesen)', async () => {
     listDogs.mockResolvedValue([])
-    recentActivity.mockResolvedValue([])
     await render()
 
     const labels = [...container.querySelectorAll('.filter-chip')].map((btn) => btn.textContent.split(' ·')[0])
-    expect(labels).toEqual(['In Vermittlung', 'Reserviert', 'Vermittelt', 'Ehemalige (mitgelesen)'])
+    expect(labels).toEqual(['Alle', 'In Vermittlung', 'Reserviert', 'Vermittelt', 'Ohne Status', 'Ehemalige (mitgelesen)'])
   })
 
   test('Standardfilter "In Vermittlung" zeigt nur Tiere mit diesem Status', async () => {
@@ -90,7 +87,6 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
       dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
       dog({ id: 2, name: 'Oskar', vermittlung_status: 'reserviert' })
     ])
-    recentActivity.mockResolvedValue([])
     await render()
 
     expect(container.textContent).toContain('Pepper')
@@ -102,7 +98,6 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
       dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
       dog({ id: 2, name: 'Oskar', vermittlung_status: 'reserviert' })
     ])
-    recentActivity.mockResolvedValue([])
     await render()
 
     act(() => chip('Reserviert').click())
@@ -111,12 +106,43 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
     expect(container.textContent).not.toContain('Pepper')
   })
 
+  test('"Alle" zeigt jedes Tier, unabhängig vom Status', async () => {
+    listDogs.mockResolvedValue([
+      dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
+      dog({ id: 2, name: 'Oskar', vermittlung_status: 'reserviert' }),
+      dog({ id: 3, name: 'Nele', vermittlung_status: null, shared_from: 'Zuhause am Deich' }),
+      dog({ id: 4, name: 'Findus', vermittlung_status: null, shared_from: null })
+    ])
+    await render()
+
+    act(() => chip('Alle').click())
+
+    expect(container.textContent).toContain('Pepper')
+    expect(container.textContent).toContain('Oskar')
+    expect(container.textContent).toContain('Nele')
+    expect(container.textContent).toContain('Findus')
+  })
+
+  test('"Ohne Status" zeigt eigene Tiere ohne vermittlung_status, keine Ehemaligen', async () => {
+    listDogs.mockResolvedValue([
+      dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
+      dog({ id: 4, name: 'Findus', vermittlung_status: null, shared_from: null }),
+      dog({ id: 3, name: 'Nele', vermittlung_status: null, shared_from: 'Zuhause am Deich' })
+    ])
+    await render()
+
+    act(() => chip('Ohne Status').click())
+
+    expect(container.textContent).toContain('Findus')
+    expect(container.textContent).not.toContain('Pepper')
+    expect(container.textContent).not.toContain('Nele')
+  })
+
   test('"Ehemalige (mitgelesen)" zeigt Tiere mit shared_from, nicht die eigenen', async () => {
     listDogs.mockResolvedValue([
       dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
       dog({ id: 3, name: 'Nele', vermittlung_status: null, shared_from: 'Zuhause am Deich' })
     ])
-    recentActivity.mockResolvedValue([])
     await render()
 
     act(() => chip('Ehemalige').click())
@@ -128,15 +154,20 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
 
   test('eine Karte zeigt den Steckbrief-Status', async () => {
     listDogs.mockResolvedValue([dog({ public_slug: 'pepper-ab12cd' })])
-    recentActivity.mockResolvedValue([])
     await render()
 
     expect(container.textContent).toContain('Steckbrief öffentlich')
   })
 
+  test('eine Karte zeigt den neuesten Eintrag direkt aus dog.latest_entry_titel/latest_entry_datum (kein separater recentActivity-Aufruf)', async () => {
+    listDogs.mockResolvedValue([dog({ latest_entry_titel: 'Erster Spaziergang', latest_entry_datum: '2026-03-04' })])
+    await render()
+
+    expect(container.textContent).toContain('Erster Spaziergang')
+  })
+
   test('"Tier aufnehmen" öffnet die Schnellerfassung; ein angelegtes Tier bekommt vermittlungStatus in_vermittlung', async () => {
     listDogs.mockResolvedValue([])
-    recentActivity.mockResolvedValue([])
     createDog.mockResolvedValue({ id: 9, name: 'Momo' })
     await render()
 

@@ -11,23 +11,19 @@ import Housemates from '../components/Housemates.jsx'
 import SharePanel from '../components/SharePanel.jsx'
 import ShelterSharePanel from '../components/ShelterSharePanel.jsx'
 import SteckbriefPanel from '../components/SteckbriefPanel.jsx'
+import VermittlungStatusPanel from '../components/VermittlungStatusPanel.jsx'
 import HandoverDialog from '../components/HandoverDialog.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
+import { useIsDemo } from '../lib/demo.js'
 import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { companionLine } from '../lib/companions.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
-import { VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel } from '../lib/shelter.js'
 
 const HIGHLIGHT_MS = 2600
-
-const VERMITTLUNG_STATUS_OPTIONS = [
-  { value: '', label: '– kein Status –' },
-  ...VERMITTLUNG_STATUS_VALUES.map((value) => ({ value, label: vermittlungStatusLabel(value) }))
-]
 
 // parent.id fehlt (null), wenn der Elternteil hier nicht sichtbar ist (fremder, nicht geteilter
 // Bereich) – der Server liefert dann trotzdem den Namen zur Anzeige, aber ohne Ziel-Id. Ein Link auf
@@ -173,6 +169,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   const navigate = useNavigate()
   const { hash } = useLocation()
   const toast = useToast()
+  const isDemo = useIsDemo()
 
   const [dog, setDog] = useState(null)
   const [entries, setEntries] = useState([])
@@ -336,17 +333,11 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     toast('Stammdaten gespeichert')
   }
 
-  // Vermittlungsstatus ändern (Tierheim). api.updateDog liefert die rohe Hund-Zeile ohne die
-  // angereicherten Felder (familyName, isOwn, shares, mother, father, …) - deshalb wird sie in den
-  // bestehenden dog-State gemischt statt ihn zu ersetzen (wie schon bei handleAddHousemate oben).
-  async function handleStatusChange(value) {
-    try {
-      const updated = await api.updateDog(dog.id, { vermittlungStatus: value || null })
-      setDog((current) => ({ ...current, ...updated }))
-      toast('Status aktualisiert')
-    } catch (err) {
-      toast(err.message)
-    }
+  // Vermittlungsstatus ändern (Tierheim): VermittlungStatusPanel ruft die API selbst auf (Speichern-
+  // Knopf, ggf. mit Bestätigung) und liefert nur die rohe Hund-Zeile zurück - wie handleAddHousemate
+  // oben wird sie in den bestehenden (angereicherten) dog-State gemischt statt ihn zu ersetzen.
+  function handleVermittlungStatusChange(updated) {
+    setDog((current) => ({ ...current, ...updated }))
   }
 
   // SteckbriefPanel liefert ebenfalls nur die rohe Hund-Zeile (public_slug geändert) - gleiches Mischen.
@@ -368,7 +359,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
 
   // Übergabe zurückziehen (Task 6): DELETE /api/dogs/:id/handover zieht offene Übergabe-Gutscheine
   // zurück und setzt den Status wieder auf "in Vermittlung" - Antwort ist die rohe Hund-Zeile, wie bei
-  // handleStatusChange oben also in den bestehenden dog-State gemischt statt ihn zu ersetzen.
+  // handleVermittlungStatusChange oben also in den bestehenden dog-State gemischt statt ihn zu ersetzen.
   async function handleWithdrawHandover() {
     setWithdrawing(true)
     try {
@@ -441,22 +432,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
       {dog.canEdit && family.art === 'tierheim' && (
         <section className="shelter-panel" aria-labelledby="shelter-panel-title">
           <h2 id="shelter-panel-title">Vermittlung</h2>
-          <div className="field">
-            <label className="field-label" htmlFor="vermittlung-status">
-              Status
-            </label>
-            <select
-              id="vermittlung-status"
-              value={dog.vermittlung_status || ''}
-              onChange={(e) => handleStatusChange(e.target.value)}
-            >
-              {VERMITTLUNG_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <VermittlungStatusPanel key={dog.id} dog={dog} onChange={handleVermittlungStatusChange} />
 
           <SteckbriefPanel dog={dog} onDogChange={handleSteckbriefChange} />
 
@@ -466,11 +442,12 @@ export default function DogDetailPage({ family, onFamilyChange }) {
               Vermittelt – Übergabe vorbereiten
             </button>
             {dog.vermittlung_status === 'reserviert' && (
-              <button type="button" className="btn btn-ghost" disabled={withdrawing} onClick={handleWithdrawHandover}>
+              <button type="button" className="btn btn-ghost" disabled={withdrawing || isDemo} onClick={handleWithdrawHandover}>
                 <Icon name="close" />
                 {withdrawing ? 'Ziehe zurück …' : 'Übergabe zurückziehen'}
               </button>
             )}
+            {isDemo && dog.vermittlung_status === 'reserviert' && <p className="field-hint">In der Demo nicht möglich.</p>}
           </div>
         </section>
       )}

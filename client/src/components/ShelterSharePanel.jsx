@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../api'
 import { useIsDemo } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
+import { displayName } from '../lib/timeline.js'
 
 // Einwilligung "Tierheim darf mitlesen" (Phase T Task 5) - auf der Tierseite im eigenen Zuhause, nur
 // wenn dog.shelterShare überhaupt etwas zum Verwalten kennt (dog_transfers kennt ein abgebendes
@@ -15,6 +16,7 @@ export default function ShelterSharePanel({ dog, onChange }) {
   const [share, setShare] = useState(dog.shelterShare)
   const [saving, setSaving] = useState(false)
   const disabled = isDemo || saving
+  const name = displayName(dog)
 
   async function update(next) {
     const previous = share
@@ -48,6 +50,11 @@ export default function ShelterSharePanel({ dog, onChange }) {
         <input type="checkbox" checked={share.enabled} disabled={disabled} onChange={(e) => toggleEnabled(e.target.checked)} />
         {share.shelterName} darf mitlesen
       </label>
+      {/* Informed consent (final-review Phase T Finding 3): die Checkbox-Beschriftung allein sagt nicht,
+          WAS "mitlesen" konkret bedeutet - der Hinweis macht es für die Einwilligung ausdrücklich. */}
+      <p className="field-hint">
+        {share.shelterName} sieht {name} und alle nicht-privaten Einträge (nur lesen und kommentieren)
+      </p>
       <label className="check">
         <input
           type="checkbox"
@@ -55,7 +62,8 @@ export default function ShelterSharePanel({ dog, onChange }) {
           disabled={disabled || !share.enabled}
           onChange={(e) => toggleStoryConsent(e.target.checked)}
         />
-        {share.shelterName} darf Einträge als Happy-End-Geschichte zeigen
+        {share.shelterName} darf {name} mit Foto und dem neuesten nicht-privaten Eintrag öffentlich auf seiner
+        Portalseite zeigen (Happy End)
       </label>
       {isDemo && <p className="field-hint">In der Demo nicht möglich.</p>}
     </section>

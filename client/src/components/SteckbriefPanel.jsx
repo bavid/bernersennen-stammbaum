@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
+import { useIsDemo } from '../lib/demo.js'
 import { STECKBRIEF_PUBLISHABLE_STATUS } from '../lib/shelter.js'
 
 const COPIED_MS = 2000
@@ -10,6 +11,7 @@ const COPIED_MS = 2000
 // onDogChange bekommt die rohe, aktualisierte Hund-Zeile vom Server - DogDetailPage mischt sie in den
 // bestehenden (angereicherten) dog-State (siehe handleSteckbriefChange dort).
 export default function SteckbriefPanel({ dog, onDogChange }) {
+  const isDemo = useIsDemo()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -69,7 +71,7 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
               <Icon name="external" />
               Öffnen
             </a>
-            <button type="button" className="btn btn-ghost" disabled={saving} onClick={() => setPublished(false)}>
+            <button type="button" className="btn btn-ghost" disabled={saving || isDemo} onClick={() => setPublished(false)}>
               Zurückziehen
             </button>
           </div>
@@ -79,7 +81,7 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
           <p className="steckbrief-status">
             <Icon name="lock" /> Privat – noch nicht veröffentlicht
           </p>
-          <button type="button" className="btn btn-primary" disabled={saving || !canPublish} onClick={() => setPublished(true)}>
+          <button type="button" className="btn btn-primary" disabled={saving || !canPublish || isDemo} onClick={() => setPublished(true)}>
             Steckbrief veröffentlichen
           </button>
           {!canPublish && (
@@ -87,6 +89,7 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
           )}
         </>
       )}
+      {isDemo && <p className="field-hint">In der Demo nicht möglich.</p>}
     </section>
   )
 }

@@ -11,31 +11,30 @@ import { displayName, speciesLabel } from '../lib/timeline.js'
 import { formatDayMonth } from '../lib/dates.js'
 import { vermittlungStatusLabel } from '../lib/shelter.js'
 
-// Nur diese vier Ansichten - Ehemalige sind Tiere, die nicht mehr dem Tierheim gehören, aber
-// (mit Einwilligung des neuen Zuhauses) hierher geteilt sind, siehe dog.shared_from (GET /api/dogs).
+// "Alle" und "Ohne Status" (final-review Phase T Finding 1) dazu, sonst verschwanden Tiere ohne
+// vermittlung_status (z. B. frisch aufgenommen, Status noch nicht gesetzt) aus jeder Ansicht - sie
+// passten weder in eine der drei Status-Kacheln noch in "Ehemalige" (kein shared_from). Ehemalige sind
+// Tiere, die nicht mehr dem Tierheim gehören, aber (mit Einwilligung des neuen Zuhauses) hierher
+// geteilt sind, siehe dog.shared_from (GET /api/dogs). Default bleibt "In Vermittlung" (siehe unten).
 const FILTERS = [
+  { key: 'alle', label: 'Alle' },
   { key: 'in_vermittlung', label: 'In Vermittlung' },
   { key: 'reserviert', label: 'Reserviert' },
   { key: 'vermittelt', label: 'Vermittelt' },
+  { key: 'ohne_status', label: 'Ohne Status' },
   { key: 'ehemalige', label: 'Ehemalige (mitgelesen)' }
 ]
 
+const DEFAULT_FILTER = 'in_vermittlung'
+
 function matchesFilter(dog, filter) {
+  if (filter === 'alle') return true
   if (filter === 'ehemalige') return Boolean(dog.shared_from)
+  if (filter === 'ohne_status') return !dog.shared_from && !dog.vermittlung_status
   return !dog.shared_from && dog.vermittlung_status === filter
 }
 
-// Neuester sichtbarer Eintrag je Tier, aus den zuletzt geschriebenen Einträgen des Bereichs
-// (api.recentActivity) - reicht für die Kartenvorschau, ohne pro Tier eine eigene Abfrage zu brauchen.
-function latestEntriesByDog(recent) {
-  const map = new Map()
-  for (const entry of recent) {
-    if (!map.has(entry.dog_id)) map.set(entry.dog_id, entry)
-  }
-  return map
-}
-
-function ShelterAnimalCard({ dog, latestEntry }) {
+function ShelterAnimalCard({ dog }) {
   const statusLabel = vermittlungStatusLabel(dog.vermittlung_status)
   return (
     <Link to={`/tier/${dog.id}`} className="shelter-card">
@@ -60,9 +59,9 @@ function ShelterAnimalCard({ dog, latestEntry }) {
             </span>
           )}
         </span>
-        {latestEntry && (
+        {dog.latest_entry_titel && (
           <span className="shelter-card-latest">
-            {formatDayMonth(latestEntry.datum)} · {latestEntry.titel}
+            {formatDayMonth(dog.latest_entry_datum)} · {dog.latest_entry_titel}
           </span>
         )}
       </span>
@@ -74,24 +73,23 @@ function ShelterAnimalCard({ dog, latestEntry }) {
 // die es (mit Einwilligung) weiter mitlesen darf.
 export default function ShelterAnimalsPage({ family }) {
   const [dogs, setDogs] = useState(null)
-  const [recent, setRecent] = useState([])
   const [error, setError] = useState(null)
-  const [filter, setFilter] = useState(FILTERS[0].key)
+  const [filter, setFilter] = useState(DEFAULT_FILTER)
   const [formOpen, setFormOpen] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
 
+  // Der neueste sichtbare Eintrag je Tier kommt seit final-review Phase T Finding 9 direkt mit GET
+  // /api/dogs (latest_entry_titel/latest_entry_datum) - keine zweite Anfrage gegen recentActivity mehr
+  // nötig, und keine Lücke mehr für Tiere, deren letzter Eintrag außerhalb der letzten 20 des Bereichs lag.
   async function load() {
-    const [dogsData, recentData] = await Promise.all([api.listDogs(), api.recentActivity(20)])
-    setDogs(dogsData)
-    setRecent(recentData)
+    setDogs(await api.listDogs())
   }
 
   useEffect(() => {
     load().catch((err) => setError(err.message))
   }, [])
 
-  const latestByDog = useMemo(() => latestEntriesByDog(recent), [recent])
   const filtered = useMemo(() => (dogs || []).filter((dog) => matchesFilter(dog, filter)), [dogs, filter])
   const counts = useMemo(() => {
     const result = {}
@@ -161,7 +159,7 @@ export default function ShelterAnimalsPage({ family }) {
       {filtered.length > 0 && (
         <div className="shelter-grid">
           {filtered.map((dog) => (
-            <ShelterAnimalCard key={dog.id} dog={dog} latestEntry={latestByDog.get(dog.id)} />
+            <ShelterAnimalCard key={dog.id} dog={dog} />
           ))}
         </div>
       )}

@@ -16,6 +16,8 @@ let root
 
 const dog = (overrides = {}) => ({
   id: 10,
+  name: 'Nele',
+  name_unbekannt: false,
   shelterShare: { shelterName: 'Tierheim Sonnenhang', enabled: true, storyConsent: false, ...overrides }
 })
 
@@ -55,7 +57,14 @@ describe('ShelterSharePanel', () => {
   test('zeigt den Namen des Tierheims in beiden Checkbox-Beschriftungen', async () => {
     await render()
     expect(container.textContent).toContain('Tierheim Sonnenhang darf mitlesen')
-    expect(container.textContent).toContain('Tierheim Sonnenhang darf Einträge als Happy-End-Geschichte zeigen')
+    expect(container.textContent).toContain(
+      'Tierheim Sonnenhang darf Nele mit Foto und dem neuesten nicht-privaten Eintrag öffentlich auf seiner Portalseite zeigen (Happy End)'
+    )
+  })
+
+  test('erklärt "darf mitlesen" mit einem Hinweis, was das Tierheim dadurch sieht (informed consent)', async () => {
+    await render()
+    expect(container.textContent).toContain('Tierheim Sonnenhang sieht Nele und alle nicht-privaten Einträge (nur lesen und kommentieren)')
   })
 
   test('spiegelt den aktuellen Stand (enabled/storyConsent) in den Checkboxen', async () => {
