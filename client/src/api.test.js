@@ -131,3 +131,68 @@ describe('api.discover – Reiter "Entdecken" (Phase 3)', () => {
     expect(JSON.parse(options.body)).toEqual({})
   })
 })
+
+describe('api.admin – Entdecken pflegen (Phase 3 Task 5)', () => {
+  test('Empfehlungen: Liste, Anlegen, Ändern, Löschen an /admin/promotions', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.admin.promotions()
+    await api.admin.createPromotion({ titel: 'Welpenkurs' })
+    await api.admin.updatePromotion(7, { titel: 'Welpenkurs' })
+    await api.admin.deletePromotion(7)
+
+    const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+    expect(calls).toEqual([
+      ['/api/admin/promotions', 'GET'],
+      ['/api/admin/promotions', 'POST'],
+      ['/api/admin/promotions/7', 'PUT'],
+      ['/api/admin/promotions/7', 'DELETE']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ titel: 'Welpenkurs' })
+  })
+
+  test('Bild: POST multipart (FormData, Feld "file") ohne JSON-Content-Type', async () => {
+    const fetchMock = stubFetch({ bildUrl: '/partner-media/x.png' })
+    const file = new File(['x'], 'bild.png', { type: 'image/png' })
+
+    await api.admin.uploadPromotionImage(7, file)
+
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/admin/promotions/7/image')
+    expect(options.method).toBe('POST')
+    expect(options.body).toBeInstanceOf(FormData)
+    expect(options.body.get('file')).toBeInstanceOf(File)
+    expect(options.headers).toBeUndefined()
+  })
+
+  test('Einstellungen: GET und PUT an /admin/settings', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.admin.settings()
+    await api.admin.updateSettings({ gofundme_url: 'https://example.org/spenden' })
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/admin/settings')
+    const [url, options] = fetchMock.mock.calls[1]
+    expect(url).toBe('/api/admin/settings')
+    expect(options.method).toBe('PUT')
+    expect(JSON.parse(options.body)).toEqual({ gofundme_url: 'https://example.org/spenden' })
+  })
+
+  test('Spendenberichte: Liste, Anlegen, Ändern, Löschen an /admin/donation-reports', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.admin.donationReports()
+    await api.admin.createDonationReport({ zeitraum: '2026 Q3', eingangCents: 125050 })
+    await api.admin.updateDonationReport(3, { zeitraum: '2026 Q3' })
+    await api.admin.deleteDonationReport(3)
+
+    const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+    expect(calls).toEqual([
+      ['/api/admin/donation-reports', 'GET'],
+      ['/api/admin/donation-reports', 'POST'],
+      ['/api/admin/donation-reports/3', 'PUT'],
+      ['/api/admin/donation-reports/3', 'DELETE']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ zeitraum: '2026 Q3', eingangCents: 125050 })
+  })
+})

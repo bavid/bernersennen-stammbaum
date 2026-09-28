@@ -151,6 +151,40 @@ test('Empfehlungen/Anzeigen, Einstellungen, Spendenberichte: Admin-Pflege für "
     assert.match(row.bildUrl, /^\/partner-media\/[0-9a-f-]{36}\.jpg$/)
   })
 
+  // Phase 3 Task 5: Klickzahlen in der Admin-Liste - clicks7 = die letzten 7 Tage inklusive heute
+  // (tag >= date('now', '-6 days'), UTC wie routes/redirect.js), clicksTotal = alle Tage. Nur
+  // target_type 'promotion' zählt; eine Empfehlung ohne Klicks bekommt 0/0.
+  await t.test('Liste: clicks7 (letzte 7 Tage inkl. heute) und clicksTotal je Empfehlung aus link_clicks', async () => {
+    const db = require('../db')
+    const clicked = await post('/api/admin/promotions', samplePromotion({ titel: 'Mit Klicks' }))
+    const quiet = await post('/api/admin/promotions', samplePromotion({ titel: 'Ohne Klicks' }))
+    assert.equal(clicked.status, 201)
+    assert.equal(quiet.status, 201)
+
+    const insertClicks = db.prepare(
+      "INSERT INTO link_clicks (target_type, target_id, tag, anzahl) VALUES (?, ?, date('now', ?), ?)"
+    )
+    insertClicks.run('promotion', clicked.data.id, '+0 days', 4)
+    insertClicks.run('promotion', clicked.data.id, '-3 days', 2)
+    insertClicks.run('promotion', clicked.data.id, '-6 days', 1)
+    insertClicks.run('promotion', clicked.data.id, '-7 days', 8)
+    insertClicks.run('promotion', clicked.data.id, '-10 days', 5)
+    // Andere Zieltypen mit derselben Id zählen nicht mit.
+    insertClicks.run('partner-website', clicked.data.id, '+0 days', 100)
+    insertClicks.run('partner-spende', quiet.data.id, '+0 days', 100)
+
+    const list = await get('/api/admin/promotions')
+    assert.equal(list.status, 200)
+    const clickedRow = list.data.find((p) => p.id === clicked.data.id)
+    const quietRow = list.data.find((p) => p.id === quiet.data.id)
+
+    assert.equal(clickedRow.clicks7, 4 + 2 + 1)
+    assert.equal(clickedRow.clicksTotal, 4 + 2 + 1 + 8 + 5)
+    assert.equal(quietRow.clicks7, 0)
+    assert.equal(quietRow.clicksTotal, 0)
+    assert.ok(list.data.every((p) => Number.isInteger(p.clicks7) && Number.isInteger(p.clicksTotal)))
+  })
+
   await t.test('Einstellungen: nur erlaubte Schlüssel, GoFundMe-URL geprüft, Text begrenzt, Demo-Schlüssel eigenständig', async () => {
     const initial = await get('/api/admin/settings')
     assert.equal(initial.status, 200)

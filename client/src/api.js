@@ -176,7 +176,26 @@ export const api = {
       const formData = new FormData()
       formData.append('file', file)
       return request(`/admin/partners/${id}/logo`, { method: 'POST', body: formData })
-    }
+    },
+
+    // Reiter "Entdecken" pflegen (Phase 3 Task 5, server/routes/adminMarketing.js): Empfehlungen/Anzeigen
+    // (Zeilen snake_case, dazu bildUrl, clicks7, clicksTotal), Einstellungen (gofundme_url/
+    // unterstuetzen_text) und Spendenberichte (Beträge in Cent).
+    promotions: () => request('/admin/promotions'),
+    createPromotion: (payload) => request('/admin/promotions', json('POST', payload)),
+    updatePromotion: (id, payload) => request(`/admin/promotions/${id}`, json('PUT', payload)),
+    deletePromotion: (id) => request(`/admin/promotions/${id}`, { method: 'DELETE' }),
+    uploadPromotionImage: (id, file) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      return request(`/admin/promotions/${id}/image`, { method: 'POST', body: formData })
+    },
+    settings: () => request('/admin/settings'),
+    updateSettings: (payload) => request('/admin/settings', json('PUT', payload)),
+    donationReports: () => request('/admin/donation-reports'),
+    createDonationReport: (payload) => request('/admin/donation-reports', json('POST', payload)),
+    updateDonationReport: (id, payload) => request(`/admin/donation-reports/${id}`, json('PUT', payload)),
+    deleteDonationReport: (id) => request(`/admin/donation-reports/${id}`, { method: 'DELETE' })
   },
 
   listBreedingEvents: () => request('/breeding'),

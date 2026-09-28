@@ -42,9 +42,25 @@ function promotionRow(row) {
   return { ...row, bildUrl: row.bild_file ? `/partner-media/${row.bild_file}` : null }
 }
 
+// Phase 3 Task 5: Klickzahlen je Empfehlung in EINER aggregierten Abfrage (kein N+1) - clicks7 zählt die
+// letzten 7 Tage inklusive heute (tag >= date('now', '-6 days'); tag schreibt routes/redirect.js als
+// date('now'), also UTC), clicksTotal alle Tage. Nur target_type 'promotion'; ohne Klicks 0/0.
+const listPromotionsWithClicks = db.prepare(
+  `SELECT p.*, COALESCE(c.clicks7, 0) AS clicks7, COALESCE(c.clicksTotal, 0) AS clicksTotal
+   FROM promotions p
+   LEFT JOIN (
+     SELECT target_id,
+            SUM(CASE WHEN tag >= date('now', '-6 days') THEN anzahl ELSE 0 END) AS clicks7,
+            SUM(anzahl) AS clicksTotal
+     FROM link_clicks
+     WHERE target_type = 'promotion'
+     GROUP BY target_id
+   ) c ON c.target_id = p.id
+   ORDER BY p.created_at DESC, p.id DESC`
+)
+
 router.get('/promotions', requireAdmin, (req, res) => {
-  const rows = db.prepare('SELECT * FROM promotions ORDER BY created_at DESC, id DESC').all()
-  res.json(rows.map(promotionRow))
+  res.json(listPromotionsWithClicks.all().map(promotionRow))
 })
 
 router.post('/promotions', requireAdmin, (req, res, next) => {

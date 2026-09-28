@@ -8,6 +8,8 @@ import AdminFamilyDetails from '../components/AdminFamilyDetails.jsx'
 import AdminMessages from '../components/AdminMessages.jsx'
 import AdminVouchers from '../components/AdminVouchers.jsx'
 import AdminPartners from '../components/AdminPartners.jsx'
+import AdminPromotions from '../components/AdminPromotions.jsx'
+import AdminSupport from '../components/AdminSupport.jsx'
 import { relativeTime } from '../lib/dates.js'
 
 // Gültiges Ziel für einen Partner-Gutscheinstapel (siehe routes/admin.js POST /voucher-batches)
@@ -115,8 +117,9 @@ function Dashboard({ onLogout }) {
       .catch((err) => setError(err.message))
   }, [])
 
-  // Eigener, kleiner Ladevorgang für die Partner-Auswahl in AdminVouchers ("Für Partner") - AdminPartners
-  // lädt seine eigene (vollständigere) Liste unabhängig selbst, wie AdminMessages/AdminVouchers auch.
+  // Eigener, kleiner Ladevorgang für die Partner-Auswahl in AdminVouchers ("Für Partner") und
+  // AdminPromotions ("Partner (optional)") - AdminPartners lädt seine eigene (vollständigere) Liste
+  // unabhängig selbst, wie AdminMessages/AdminVouchers auch.
   useEffect(() => {
     api.admin
       .partners()
@@ -162,6 +165,11 @@ function Dashboard({ onLogout }) {
               joinableFamilies={overview.families.filter((family) => family.art === 'rudel' && !family.is_demo)}
               partners={partners.filter(partnerVoucherEligible)}
             />
+
+            {/* Reiter "Entdecken" (Phase 3 Task 5): dieselbe Partnerliste füllt die Partner-Auswahl. */}
+            <AdminPromotions partners={partners} />
+
+            <AdminSupport />
 
             <section className="admin-families" aria-labelledby="admin-families-title">
               <h2 id="admin-families-title">Alle Rudel</h2>

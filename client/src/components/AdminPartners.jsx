@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import Modal from './Modal.jsx'
 import KeyReveal from './KeyReveal.jsx'
+import AdminImageUpload from './AdminImageUpload.jsx'
 import { isValidHexColor } from '../lib/color.js'
 import { contrastRatio, hasEnoughContrast, ON_RUST, MIN_CONTRAST } from '../lib/contrast.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
@@ -69,52 +70,17 @@ function ContrastHint({ farbe }) {
   )
 }
 
-// Logo nur für einen bereits gespeicherten Partner (Server braucht die id) - direkter Upload wie
-// PhotoPicker, aber genau eine Datei und ein eigener Endpunkt (lib/partners.js prüft PNG/JPG/WebP).
+// Logo nur für einen bereits gespeicherten Partner (Server braucht die id) - lib/partners.js prüft
+// PNG/JPG/WebP; Upload-Knopf und Tastaturbedienung teilt es mit dem Bild einer Empfehlung.
 function LogoUpload({ partnerId, logoUrl, onUploaded }) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
-
-  async function handleChange(event) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-    setBusy(true)
-    setError(null)
-    try {
-      const { logoUrl: nextUrl } = await api.admin.uploadPartnerLogo(partnerId, file)
-      onUploaded(nextUrl)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
-    <div className="field">
-      <span className="field-label">Logo</span>
-      {logoUrl && <img src={logoUrl} alt="" className="admin-partner-logo-preview" />}
-      {error && (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
-      )}
-      <label className="btn btn-ghost admin-partner-logo-btn">
-        <Icon name="camera" />
-        {busy ? 'Lädt …' : 'Logo hochladen'}
-        {/* Visuell versteckt statt hidden (wie PhotoPicker.jsx .photo-add input): mit hidden verschwindet
-            das Feld aus der Tab-Reihenfolge und ist per Tastatur nicht erreichbar. */}
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          onChange={handleChange}
-          disabled={busy}
-          className="admin-partner-logo-input"
-        />
-      </label>
-      <p className="field-hint">PNG, JPG oder WebP, höchstens 512 KB.</p>
-    </div>
+    <AdminImageUpload
+      label="Logo"
+      buttonLabel="Logo hochladen"
+      imageUrl={logoUrl}
+      upload={async (file) => (await api.admin.uploadPartnerLogo(partnerId, file)).logoUrl}
+      onUploaded={onUploaded}
+    />
   )
 }
 
