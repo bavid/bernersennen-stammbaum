@@ -75,7 +75,7 @@ checkout() {
   # Ohne explizites REVISION nie stillschweigend zurückspringen (z. B. History-Rewrite auf GitHub)
   if [ -z "$REVISION" ]; then
     if git rev-parse -q --verify HEAD >/dev/null && ! git merge-base --is-ancestor HEAD "$target"; then
-      fail "Der laufende Stand $(git rev-parse --short HEAD) ist nicht in $target enthalten – zurück auf einen älteren Stand? Mit REVISION=<volles SHA> gezielt deployen oder erst $BRANCH auf GitHub vorspulen."
+      fail "Der laufende Stand $(git rev-parse --short HEAD) ist nicht in $target enthalten – zurück auf einen älteren Stand oder falscher BRANCH? Mit REVISION=<volles SHA> gezielt deployen oder erst $BRANCH auf GitHub vorspulen."
     fi
   fi
   git checkout -q -B "$BRANCH" "$target"
@@ -108,12 +108,22 @@ env_value() {
 # übergebene Wert (APP_ENV/CONTAINER_NAME/IMAGE_TAG/HTTPS_PORT) zu dem passen, was dort schon steht.
 check_instance() {
   [ -f "$APP_DIR/.env" ] || return 0
-  local key var arg existing
+  local key var arg existing def
   for key in APP_ENV CONTAINER_NAME IMAGE_TAG HTTPS_PORT; do
     var="ARG_$key"
     arg="${!var}"
     [ -n "$arg" ] || continue
-    existing="$(env_value "$key")"
+    # Fehlt der Schlüssel noch in .env (z. B. Instanz vor diesem Feature angelegt), gilt der
+    # historische Standardwert – env_value schlägt sonst unter set -e/pipefail fehl (grep ohne Treffer)
+    def=""
+    case "$key" in
+      APP_ENV) def=production ;;
+      CONTAINER_NAME) def=bernersennen-stammbaum ;;
+      IMAGE_TAG) def=latest ;;
+      HTTPS_PORT) def=3010 ;;
+    esac
+    existing="$(env_value "$key" || true)"
+    existing="${existing:-$def}"
     [ -n "$existing" ] || continue
     if [ "$arg" != "$existing" ]; then
       fail "$APP_DIR ist die Instanz mit $key=$existing, übergeben wurde $key=$arg – falsches APP_DIR?"
