@@ -22,7 +22,15 @@ const DEFAULT_OUTPUT = path.join(__dirname, '..', 'geo', 'plz-de.json')
 
 // Namen, die nach Firma statt nach Ort aussehen (Großkunden-PLZ) - werden bei der Ortswahl
 // ignoriert, solange für die PLZ noch mindestens ein anderer Name übrig bleibt.
-const COMPANY_RE = /\b(GmbH|AG|KG|mbH|e\.V\.|SE|Co\.|Verwaltung|Vertrieb|Bank|Versicherung)\b/
+// Erste Gruppe: ganze Wörter (Groß-/Kleinschreibung wie im Original, also case-sensitiv, mit
+// Wortgrenze davor UND danach). Zweite Gruppe: bewusst OHNE Wortgrenze danach, weil diese vier
+// Wortstämme auch am Anfang zusammengesetzter Firmennamen auftreten ("Verwaltungsgesellschaft",
+// "Vertriebszentrum", "Versicherungsdienste", "Gesellschafterversammlung") - der Kompositum-Rest ist
+// im Deutschen klein geschrieben, taucht in dieser Regex also gar nicht separat auf. Großschreibung am
+// Wortanfang hält reale Ortsnamen fern, die diese Silben klein oder mitten im Wort tragen (geprüft in
+// buildPlz.test.js und per Diff aller PLZ vor/nach dieser Änderung - nur Firmen-PLZ ändern sich).
+const COMPANY_RE = /\b(GmbH|AG|KG|mbH|e\.V\.|SE|Co\.|Bank|Holding)\b|Verwaltung|Vertrieb|Versicherung|Gesellschaft/
+
 
 function round3(value) {
   return Math.round(value * 1000) / 1000

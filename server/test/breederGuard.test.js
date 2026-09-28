@@ -49,6 +49,30 @@ test('looksLikeBreeder: legitime Partner-Kategorien lösen keinen Treffer aus', 
   }
 })
 
+// "Aufzucht"/"Handaufzucht"/"Flaschenaufzucht" sind im Tierschutz übliche Begriffe für die Betreuung
+// elternloser Welpen/Kätzchen - keine Zucht. Die reine Wortende-Grenze von ZUCHT_RE würde sie sonst
+// fälschlich als Zucht-Text erkennen (siehe lib/breederGuard.js).
+test('looksLikeBreeder: Aufzucht, Handaufzucht und Flaschenaufzucht sind keine Zucht', () => {
+  const negatives = [
+    'Aufzucht',
+    'aufzucht',
+    'AUFZUCHT',
+    'Handaufzucht',
+    'Flaschenaufzucht',
+    'Wir kümmern uns um die Aufzucht elternloser Kätzchen',
+    'Diese Welpen sind in Handaufzucht groß geworden',
+    'Flaschenaufzucht rund um die Uhr'
+  ]
+  for (const text of negatives) {
+    assert.equal(looksLikeBreeder(text), false, `sollte NICHT als Zucht-Text erkannt werden: "${text}"`)
+  }
+})
+
+test('looksLikeBreeder: "Aufzucht" schützt nicht vor echten Zucht-Begriffen im selben Text', () => {
+  assert.equal(looksLikeBreeder('Aufzucht und Zucht seit 1990'), true)
+  assert.equal(looksLikeBreeder('Handaufzucht, aber auch Hundezucht'), true)
+})
+
 test('looksLikeBreeder: nicht-string Eingaben gelten als unbedenklich', () => {
   assert.equal(looksLikeBreeder(null), false)
   assert.equal(looksLikeBreeder(undefined), false)

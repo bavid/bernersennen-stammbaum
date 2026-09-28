@@ -8,6 +8,13 @@
 // Formen verfehlen, deshalb genügt hier eine Wortanfang- ODER eine Wortende-Grenze.
 const ZUCHT_RE = /\bzucht|zucht\b/i
 
+// "Aufzucht"/"Handaufzucht"/"Flaschenaufzucht" sind im Tierschutz übliche Begriffe für die Betreuung
+// elternloser Welpen/Kätzchen - keine Zucht. Die Wortende-Grenze von ZUCHT_RE (nötig für "Hundezucht")
+// würde sie sonst fälschlich treffen, weil sie selbst auf "...zucht" enden. Vor dem eigentlichen Test
+// werden nur GENAU diese drei Wörter aus dem Text entfernt - ein "Zucht" oder "Hundezucht" im selben
+// Text bleibt also weiterhin erkennbar (siehe Test "schützt nicht vor echten Zucht-Begriffen").
+const AUFZUCHT_ALLOWLIST_RE = /\b(hand|flaschen)?aufzucht\b/gi
+
 // Begriffe, die als ganzes Wort auftreten müssen (Groß-/Kleinschreibung egal).
 const WORD_TERMS = ['Züchter', 'Züchterin', 'Zwinger', 'Deckrüde', 'Deckkater', 'Welpenverkauf', 'Kennel', 'Cattery', 'breeder', 'breeding']
 const WORD_RE = new RegExp(`\\b(${WORD_TERMS.join('|')})\\b`, 'i')
@@ -20,7 +27,8 @@ const PHRASE_RE = /\bwelpen\s+abzugeben\b/i
 
 function looksLikeBreeder(text) {
   if (typeof text !== 'string' || !text) return false
-  return ZUCHT_RE.test(text) || WORD_RE.test(text) || PHRASE_RE.test(text)
+  const withoutAufzucht = text.replace(AUFZUCHT_ALLOWLIST_RE, ' ')
+  return ZUCHT_RE.test(withoutAufzucht) || WORD_RE.test(text) || PHRASE_RE.test(text)
 }
 
 function breederGuardError() {

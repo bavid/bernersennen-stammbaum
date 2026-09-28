@@ -4,6 +4,7 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
+const { pickOrt } = require('../scripts/build-plz')
 
 // Drei Zeilen im GeoNames-Format, eine davon mit Firmenname - prüft Gruppierung, Mittelwert-Bildung
 // und Ortswahl (Firmenname wird ignoriert, solange ein anderer Name existiert).
@@ -43,6 +44,39 @@ test('build-plz.js: gruppiert nach PLZ, mittelt Koordinaten und ignoriert Firmen
   assert.equal(ort, 'Musterstadt')
 
   assert.deepEqual(table['54321'], [50, 8, 'Anderswald'])
+})
+
+// Die alte Regex fing nur ganze Wörter wie "Verwaltung" oder "Versicherung" - Wortstämme in
+// zusammengesetzten Firmennamen ("Verwaltungsgesellschaft", "Vertriebszentrum") rutschten durch, weil
+// nach dem Stamm noch Buchstaben folgen (keine Wortgrenze). Damit gewann sogar ein häufigerer
+// Firmenname gegen den selteneren echten Ortsnamen. Jeder Firmenname hier taucht bewusst ÖFTER auf als
+// der echte Ort UND enthält KEIN eigenständiges "GmbH"/"AG"/... Wort - nur so testet der Fall wirklich
+// den neuen Wortstamm-Treffer und nicht die schon vorher erkannten ganzen Wörter.
+test('pickOrt: erkennt auch Firmen-Wortstämme (Verwaltungsgesellschaft, Vertriebs-, Versicherungs-, Gesellschaft)', () => {
+  const cases = [
+    ['Musterstadt', 'Musterstadt Verwaltungsgesellschaft'],
+    ['Musterstadt', 'Musterstadt Vertriebszentrum'],
+    ['Musterstadt', 'Musterstadt Versicherungsdienste'],
+    ['Musterstadt', 'Musterstadt Gesellschafterversammlung']
+  ]
+  for (const [real, company] of cases) {
+    // Firmenname 2x, echter Ort 1x - ohne Stamm-Erkennung würde die (häufigere) Firma gewinnen.
+    assert.equal(pickOrt([real, company, company]), real, `sollte "${real}" statt "${company}" wählen`)
+  }
+})
+
+// "Holding" ist (wie GmbH/AG/KG/...) ein ganzes Wort mit Wortgrenze - anders als die vier Stämme oben.
+test('pickOrt: "Holding" als eigenes Wort gilt weiter als Firmenname', () => {
+  assert.equal(pickOrt(['Musterstadt', 'Musterstadt Holding', 'Musterstadt Holding']), 'Musterstadt')
+})
+
+// Echte deutsche Ortsnamen dürfen durch die erweiterten (nicht wortgrenzen-verankerten) Stämme nicht
+// fälschlich als Firma gelten - sonst bliebe für die PLZ am Ende gar kein Ortsname übrig.
+test('pickOrt: reale Ortsnamen bleiben trotz der erweiterten Firmen-Erkennung unangetastet', () => {
+  const townNames = ['Gesell', 'Vertrieb-Wüstung', 'Versicherungsstädt', 'Holdingen', 'Verwaltungsheim']
+  for (const name of townNames) {
+    assert.equal(pickOrt([name]), name, `einziger Name "${name}" muss trotzdem gewählt werden`)
+  }
 })
 
 test('build-plz.js: ohne Pfad zur Quelldatei bricht das Skript mit Fehlermeldung ab', () => {
