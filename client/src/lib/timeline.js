@@ -20,6 +20,15 @@ export function speciesLabel(tierart = 'hund') {
   return SPECIES_LABELS[tierart] || SPECIES_LABELS.hund
 }
 
+// Kombinierte Art+Geschlecht-Zeile ohne Dopplung: bei Katzen ist der Geschlechtsbegriff für Weibchen
+// identisch mit dem Artnamen ("Katze"/"Katze") – dann reicht ein Wort. Rüde/Hündin bzw. Kater bleiben
+// eigenständige Begriffe und werden weiter mit Mittelpunkt kombiniert ("Hund · Hündin", "Katze · Kater").
+export function speciesSexLabel(tierart = 'hund', geschlecht) {
+  const species = speciesLabel(tierart)
+  const sex = sexLabel(geschlecht, tierart)
+  return species === sex ? species : `${species} · ${sex}`
+}
+
 const SPECIES_NOUNS = { hund: 'Hund', katze: 'Katze', anderes: 'Tier' }
 
 // Für Beschriftungen wie "Katze anlegen" oder "Tier löschen"

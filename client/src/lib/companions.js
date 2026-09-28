@@ -95,8 +95,13 @@ const ABSCHIED_GRUND_LABELS = {
 
 // Zeile unter Name/Rasse im Hero der Tierseite: fasst Einzug/Herkunft (noch bei uns) oder Abschied
 // (gegangen) in einem Satz zusammen. null, wenn dazu nichts bekannt ist. memorial löst die
-// zurückhaltende "In Erinnerung"-Variante aus (wie schon in CompanionTimeline für "verstorben").
-export function companionLine(dog) {
+// zurückhaltende "In Erinnerung"-Variante aus (wie schon in CompanionTimeline für "verstorben") –
+// sie bleibt unverändert, auch für geteilte Tiere (kein "Im X in Erinnerung").
+// ownerName: gesetzt für ein geteiltes Tier im fremden Bereich (!dog.canEdit) – ersetzt "Bei euch"
+// durch "Im {ownerName}" (der Name des besitzenden Zuhauses/Rudels), sonst gilt weiter "Bei euch".
+export function companionLine(dog, { ownerName } = {}) {
+  const beiUns = ownerName ? `Im ${ownerName}` : 'Bei euch'
+
   if (dog.bei_uns_bis) {
     const from = yearOf(dog.bei_uns_seit || dog.geburtsdatum)
     const to = yearOf(dog.bei_uns_bis)
@@ -107,13 +112,13 @@ export function companionLine(dog) {
     }
 
     const grund = ABSCHIED_GRUND_LABELS[dog.abschied_grund] || ''
-    const parts = [span ? `Bei euch ${span}` : 'Bei euch']
+    const parts = [span ? `${beiUns} ${span}` : beiUns]
     if (grund) parts.push(grund)
     return { text: parts.join(' · '), memorial: false }
   }
 
   const parts = []
-  if (dog.bei_uns_seit) parts.push(`Bei euch seit ${formatDateLong(dog.bei_uns_seit)}`)
+  if (dog.bei_uns_seit) parts.push(`${beiUns} seit ${formatDateLong(dog.bei_uns_seit)}`)
   const herkunft = herkunftText(dog)
   if (herkunft) parts.push(herkunft)
   if (!parts.length) return null

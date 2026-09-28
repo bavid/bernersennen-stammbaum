@@ -4,6 +4,7 @@ import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
 import QuickAnimalForm from './QuickAnimalForm.jsx'
 import { animalKind, dogLabel } from '../lib/timeline.js'
+import { isEditable } from '../lib/areas.js'
 
 // "Lebt zusammen mit": Mitbewohner ohne gemeinsame Abstammung und andere Tiere im selben Zuhause.
 // Neu anlegen läuft über QuickAnimalForm (dieselbe Maske wie im Stammbaum und auf "Tier hinzufügen") –
@@ -12,7 +13,9 @@ import { animalKind, dogLabel } from '../lib/timeline.js'
 export default function Housemates({ dog, allDogs, canEdit, onAdd, onCreated, onRemove }) {
   const [adding, setAdding] = useState(false)
   const linkedIds = new Set(dog.housemates.map((h) => h.id))
-  const candidates = allDogs.filter((other) => other.id !== dog.id && !linkedIds.has(other.id))
+  // "lebt zusammen mit" darf nur zwischen eigenen Tieren gesetzt werden (der Server prüft das ebenso) –
+  // ein hierher geteiltes Tier eines anderen Zuhauses taucht sonst fälschlich als Ziel auf.
+  const candidates = allDogs.filter((other) => other.id !== dog.id && !linkedIds.has(other.id) && isEditable(other))
 
   if (!dog.housemates.length && !canEdit) return null
 

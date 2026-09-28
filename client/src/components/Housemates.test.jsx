@@ -110,4 +110,17 @@ describe('Housemates', () => {
     expect(onAdd).toHaveBeenCalledWith(7)
     expect(createDog).not.toHaveBeenCalled()
   })
+
+  test('ein hierher geteiltes (nicht bearbeitbares) Tier erscheint nicht in "… oder schon in der Chronik"', async () => {
+    await render({
+      allDogs: [
+        { id: 7, name: 'Minka', can_edit: 1 },
+        { id: 8, name: 'Mira (geteilt)', can_edit: 0 }
+      ]
+    })
+
+    act(() => addChip().click())
+    const options = [...container.querySelectorAll('#housemate-existing option')].map((o) => o.textContent)
+    expect(options).toEqual(['– Tier auswählen –', 'Minka'])
+  })
 })

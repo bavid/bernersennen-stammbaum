@@ -4,6 +4,7 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { SPECIES, SPECIES_FIELDS } from './DogForm.jsx'
 import Icon from './Icon.jsx'
 import { dogLabel, livesWithLabel, sexLabel, speciesLabel } from '../lib/timeline.js'
+import { isEditable } from '../lib/areas.js'
 
 const ANDERES_KIND_LABEL = 'Welches Tier?'
 const ANDERES_KIND_PLACEHOLDER = 'z. B. Kaninchen'
@@ -12,11 +13,6 @@ const ANDERES_KIND_PLACEHOLDER = 'z. B. Kaninchen'
 // Standard-Auftritt ist nichts vorbelegt, da hier jede Tierart gleich wahrscheinlich ist.
 function initialTierart(themeId) {
   return themeId === 'berner' ? 'hund' : ''
-}
-
-// can_edit fehlt in manchen Listen (z. B. der eigenen Chronik) – dann sind es ohnehin nur eigene Tiere.
-function isEditable(dog) {
-  return dog.can_edit === undefined || Boolean(dog.can_edit)
 }
 
 function buildValues({ tierart, name, nameUnbekannt, rasse, geschlecht, beiUnsSeit, housemateId, livesWith }) {

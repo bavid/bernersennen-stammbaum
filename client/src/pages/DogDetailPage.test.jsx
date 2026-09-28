@@ -1,0 +1,204 @@
+// @vitest-environment jsdom
+import { act } from 'react'
+import { createRoot } from 'react-dom/client'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+
+const { getDog, listTimeline, listBreedingEvents, listAllDogs, addComment, deleteComment } = vi.hoisted(() => ({
+  getDog: vi.fn(),
+  listTimeline: vi.fn(),
+  listBreedingEvents: vi.fn(),
+  listAllDogs: vi.fn(),
+  addComment: vi.fn(),
+  deleteComment: vi.fn()
+}))
+
+vi.mock('../api', () => ({
+  api: { getDog, listTimeline, listBreedingEvents, listAllDogs, addComment, deleteComment }
+}))
+
+import DogDetailPage, { ParentLink } from './DogDetailPage.jsx'
+
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+let container
+let root
+
+const activeFamily = {
+  id: 2,
+  name: 'Familie Sonnenhang',
+  theme: 'standard',
+  art: 'rudel',
+  isDemo: false,
+  home: { id: 2, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel' },
+  memberships: []
+}
+
+// Nele: ein von "Zuhause am Deich" (Bereich 1) in Familie Sonnenhang (aktiver Bereich, id 2) geteiltes Tier.
+const sharedDog = () => ({
+  id: 10,
+  name: 'Nele',
+  name_unbekannt: false,
+  tierart: 'hund',
+  geschlecht: 'huendin',
+  geburtsdatum: '2019-03-10',
+  rasse: 'Mischling',
+  farbe_markings: null,
+  beschreibung: null,
+  foto_url: null,
+  familyName: 'Zuhause am Deich',
+  ownerFamilyId: 1,
+  isOwn: false,
+  canEdit: false,
+  shares: [],
+  mother: null,
+  mother_freitext: null,
+  father: { id: null, name: 'Balu' },
+  father_freitext: null,
+  children: [],
+  housemates: [],
+  bei_uns_seit: '2021-06-12',
+  bei_uns_bis: null,
+  abschied_grund: null,
+  herkunft_art: 'tierheim',
+  herkunft_text: 'Tierheim Sonnenhang'
+})
+
+const entryWithComments = () => ({
+  id: 5,
+  dog_id: 10,
+  autor_name: 'Zuhause am Deich',
+  datum: '2021-06-13',
+  titel: 'Nele zieht ein',
+  text: 'Die ersten Tage',
+  foto_urls: [],
+  privat: 0,
+  comments: [
+    { id: 100, family_id: 2, autor_name: 'Nachbar', text: 'Süß!', created_at: '2024-01-01T00:00:00.000Z' },
+    { id: 101, family_id: 1, autor_name: 'Zuhause am Deich', text: 'Danke', created_at: '2024-01-02T00:00:00.000Z' }
+  ]
+})
+
+async function render(family = activeFamily) {
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  root = createRoot(container)
+  await act(async () =>
+    root.render(
+      <MemoryRouter initialEntries={['/tier/10']}>
+        <Routes>
+          <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={() => {}} />} />
+        </Routes>
+      </MemoryRouter>
+    )
+  )
+  return container
+}
+
+afterEach(() => {
+  if (root) {
+    act(() => root.unmount())
+    root = null
+  }
+  if (container) {
+    container.remove()
+    container = null
+  }
+  getDog.mockReset()
+  listTimeline.mockReset()
+  listBreedingEvents.mockReset()
+  listAllDogs.mockReset()
+  addComment.mockReset()
+  deleteComment.mockReset()
+})
+
+describe('ParentLink', () => {
+  function renderParentLink(props) {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    act(() => root.render(<MemoryRouter><ParentLink {...props} /></MemoryRouter>))
+    return container
+  }
+
+  test('ein sichtbarer Elternteil (mit id) ist ein Link zur Tierseite', () => {
+    renderParentLink({ parent: { id: 7, name: 'Aiko vom Sonnenhang' } })
+    const link = container.querySelector('a')
+    expect(link).not.toBeNull()
+    expect(link.getAttribute('href')).toBe('/tier/7')
+    expect(link.textContent).toContain('Aiko')
+  })
+
+  test('ein nicht sichtbarer Elternteil ({id:null,name}) ist ein einfacher Chip, kein Link auf /tier/null', () => {
+    renderParentLink({ parent: { id: null, name: 'Balu' } })
+    expect(container.querySelector('a')).toBeNull()
+    const chip = container.querySelector('.chip')
+    expect(chip).not.toBeNull()
+    expect(chip.tagName).toBe('SPAN')
+    expect(chip.textContent).toContain('Balu')
+  })
+
+  test('ganz ohne Elternteil zeigt Freitext oder "unbekannt"', () => {
+    renderParentLink({ parent: null, freitext: null })
+    expect(container.querySelector('.chip')).toBeNull()
+    expect(container.textContent).toContain('unbekannt')
+  })
+})
+
+describe('DogDetailPage – geteiltes Tier: Kommentare bleiben sichtbar', () => {
+  test('Kommentare und das Kommentieren-Formular erscheinen, obwohl das Tier nicht dem aktiven Bereich gehört', async () => {
+    getDog.mockResolvedValue(sharedDog())
+    listTimeline.mockResolvedValue([entryWithComments()])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+
+    await render()
+
+    expect(container.querySelector('.reply-text')).not.toBeNull()
+    const replies = [...container.querySelectorAll('.reply-text')].map((el) => el.textContent)
+    expect(replies).toEqual(['Süß!', 'Danke'])
+    expect(container.querySelector('.reply-open')).not.toBeNull()
+  })
+
+  test('der Löschen-Knopf erscheint nur für Kommentare des aktiven Bereichs oder auf einem eigenen Eintrag', async () => {
+    getDog.mockResolvedValue(sharedDog())
+    listTimeline.mockResolvedValue([entryWithComments()])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+
+    await render()
+
+    const replies = [...container.querySelectorAll('.reply')]
+    const own = replies.find((li) => li.querySelector('.reply-text').textContent === 'Süß!') // family_id 2 === aktiver Bereich
+    const foreign = replies.find((li) => li.querySelector('.reply-text').textContent === 'Danke') // family_id 1, dog.canEdit false
+
+    expect(own.querySelector('.reply-delete')).not.toBeNull()
+    expect(foreign.querySelector('.reply-delete')).toBeNull()
+  })
+
+  test('gehört das Tier dem aktiven Bereich, sind beide Löschen-Knöpfe da (Moderation)', async () => {
+    const ownDog = { ...sharedDog(), isOwn: true, canEdit: true, ownerFamilyId: 2 }
+    getDog.mockResolvedValue(ownDog)
+    listTimeline.mockResolvedValue([entryWithComments()])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+
+    await render()
+
+    expect(container.querySelectorAll('.reply-delete').length).toBe(2)
+  })
+})
+
+describe('DogDetailPage – Hero-Zeile für geteilte Tiere', () => {
+  test('zeigt "Im {familyName} seit …" statt "Bei euch seit …"', async () => {
+    getDog.mockResolvedValue(sharedDog())
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+
+    await render()
+
+    const companion = container.querySelector('.dog-hero-companion')
+    expect(companion.textContent.trim()).toBe('Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim – Tierheim Sonnenhang')
+  })
+})

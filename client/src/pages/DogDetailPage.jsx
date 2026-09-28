@@ -20,13 +20,24 @@ import { readSetting, writeSetting } from '../lib/storage.js'
 
 const HIGHLIGHT_MS = 2600
 
-function ParentLink({ parent, freitext }) {
-  if (parent) {
+// parent.id fehlt (null), wenn der Elternteil hier nicht sichtbar ist (fremder, nicht geteilter
+// Bereich) – der Server liefert dann trotzdem den Namen zur Anzeige, aber ohne Ziel-Id. Ein Link auf
+// `/tier/null` wäre kaputt, darum bleibt es in dem Fall bei einem einfachen Chip ohne Link.
+export function ParentLink({ parent, freitext }) {
+  if (parent?.id) {
     return (
       <Link to={`/tier/${parent.id}`} className="chip">
         <Avatar dog={parent} size={24} />
         {dogLabel(parent)}
       </Link>
+    )
+  }
+  if (parent) {
+    return (
+      <span className="chip">
+        <Avatar dog={parent} size={24} />
+        {dogLabel(parent)}
+      </span>
     )
   }
   return <span className={freitext ? '' : 'muted'}>{freitext || 'unbekannt'}</span>
@@ -42,7 +53,9 @@ function housemateLine(dog) {
 function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
   const livesWith = housemateLine(dog)
   const age = dog.geburtsdatum ? ageText(dog.geburtsdatum) : null
-  const companion = companionLine(dog)
+  // Für geteilte Tiere im fremden Bereich (!dog.canEdit) ersetzt der Name des besitzenden Bereichs
+  // "Bei euch" durch "Im {familyName}" – der Abschieds-/Erinnerungstext bleibt unverändert.
+  const companion = companionLine(dog, !dog.canEdit ? { ownerName: dog.familyName } : undefined)
   return (
     <header className="dog-hero">
       <div className="dog-hero-photo">
@@ -273,6 +286,12 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     }
   }
 
+  // Löschen-Knopf nur für Kommentare, die der Server auch löschen ließe: eigene (aktiver Bereich) oder
+  // auf einem Eintrag, den der aktive Bereich besitzt (dog.canEdit) – Moderation wie beim Server.
+  function canDeleteComment(_entry, comment) {
+    return comment.family_id === family.id || dog.canEdit
+  }
+
   async function handleAddHousemate(otherId) {
     try {
       const housemates = await api.addHousemate(dog.id, otherId)
@@ -312,13 +331,14 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     navigate('/stammbaum')
   }
 
-  // Ein hierher geteiltes Tier des eigenen Haushalts bearbeiten: zurück zu "Meine Chronik" wechseln,
-  // dort neu laden (canEdit wechselt serverseitig mit dem aktiven Bereich) und zur selben Tierseite.
+  // Ein hierher geteiltes Tier des eigenen Haushalts bearbeiten: zurück zu "Meine Chronik" wechseln
+  // und zur selben Tierseite navigieren. Kein manuelles load() nötig – App.jsx hängt den Seiteninhalt
+  // an family.id auf (key), der Bereichswechsel remountet diese Seite also von selbst und lädt neu
+  // (canEdit wechselt serverseitig mit dem aktiven Bereich).
   async function handleSwitchToHome() {
     try {
       const me = await api.view(family.home.id)
       onFamilyChange?.(me)
-      await load()
       navigate(`/tier/${dog.id}`)
     } catch (err) {
       toast(err.message)
@@ -411,8 +431,9 @@ export default function DogDetailPage({ family, onFamilyChange }) {
             canEdit={dog.isOwn}
             onEdit={setEditingEntry}
             onOpenPhoto={setPhoto}
-            onAddComment={dog.isOwn ? handleAddComment : undefined}
+            onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
+            canDeleteComment={canDeleteComment}
           />
         ) : (
           dog.isOwn && <p className="muted chronicle-empty">Noch keine Einträge – die erste Erinnerung wartet.</p>

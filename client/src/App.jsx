@@ -193,7 +193,11 @@ export default function App() {
           <ScrollToTop />
           {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} />}
           <AppHeader family={family} onLogout={handleLogout} onFamilyChange={setFamily} />
-          <main className="app-main">
+          {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
+              bliebe beim Wechsel des Bereichs (ContextSwitcher navigiert zur Start-Route, die dem
+              aktuellen Pfad entsprechen kann, z. B. Stammbaum -> Stammbaum) die alte Seiteninstanz
+              samt Daten des vorherigen Bereichs stehen. Der key erzwingt ein sauberes Neu-Mounten. */}
+          <main className="app-main" key={family.id}>
             <Routes>
               <Route
                 path="/stammbaum"
@@ -201,7 +205,10 @@ export default function App() {
               />
               <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={setFamily} />} />
               <Route path="/hund/:id" element={<RedirectTierUrl />} />
-              <Route path="/wegbegleiter" element={<CompanionsPage family={family} />} />
+              <Route
+                path="/wegbegleiter"
+                element={family.art === 'zuhause' ? <CompanionsPage family={family} /> : <Navigate to={startRoute(family)} replace />}
+              />
               <Route path="/pinnwand" element={<PinboardPage />} />
               <Route path="/wuerfe" element={<LittersPage />} />
               <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />

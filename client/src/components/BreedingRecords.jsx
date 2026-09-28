@@ -8,6 +8,7 @@ import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import { formatDateLong, todayIso } from '../lib/dates.js'
 import { shortName } from '../lib/timeline.js'
+import { isEditable } from '../lib/areas.js'
 
 const EMPTY_FORM = { mutterDogId: '', vater: { dogId: '', freitext: '' }, datum: todayIso(), wurfInfo: '', fotos: [] }
 
@@ -17,7 +18,9 @@ function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const mothers = ownDogs.filter((d) => d.geschlecht === 'huendin' && (d.tierart || 'hund') === 'hund')
+  // ownDogs (aus listDogs) enthält seit dem Teilen auch hierher geteilte, nicht bearbeitbare Tiere –
+  // ein Deckakt lässt sich aber nur mit eigenen Hündinnen eintragen (der Server würde alles andere ablehnen).
+  const mothers = ownDogs.filter((d) => d.geschlecht === 'huendin' && (d.tierart || 'hund') === 'hund' && isEditable(d))
   const update = (patch) => setForm((current) => ({ ...current, ...patch }))
 
   async function handleSubmit(event) {

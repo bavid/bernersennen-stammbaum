@@ -81,3 +81,32 @@ describe('HousemateLane – "+ Mitbewohner"', () => {
     expect(container.querySelector('.lane-add-btn')).toBeNull()
   })
 })
+
+describe('HousemateLane – geteiltes Haupttier', () => {
+  test('kein Knopf, wenn das Haupttier der Gruppe nicht bearbeitbar ist (can_edit: false)', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    const sharedAnchor = { ...anchor, can_edit: false }
+    await act(async () =>
+      root.render(
+        <MemoryRouter>
+          <DemoProvider value={false}>
+            <HousemateLane
+              index={0}
+              groups={[{ anchorId: 1, memberIds: [2], members: [member], anchor: sharedAnchor }]}
+              placement={placement}
+              trackLeft={0}
+              trackRef={() => {}}
+              setGroupRef={noopRefFactory}
+              setCardRef={noopRefFactory}
+              cardProps={() => ({})}
+              onAddMitbewohner={vi.fn()}
+            />
+          </DemoProvider>
+        </MemoryRouter>
+      )
+    )
+    expect(container.querySelector('.lane-add-btn')).toBeNull()
+  })
+})

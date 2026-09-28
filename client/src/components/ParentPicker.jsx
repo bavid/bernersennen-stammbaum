@@ -1,7 +1,10 @@
 import { useId, useMemo, useState } from 'react'
 import { dogLabel, shortName } from '../lib/timeline.js'
+import { isEditable } from '../lib/areas.js'
 
-// Elternteil wählen: aus der Liste (auch rudelübergreifend) oder als Freitext.
+// Elternteil wählen: aus der Liste eigener (bearbeitbarer) Tiere oder als Freitext. Nur eigene Tiere,
+// weil der Server einen Elternteil ablehnt, der nicht dem eigenen Bereich gehört (auch ein hierher
+// geteiltes Tier eines anderen Zuhauses zählt nicht als eigenes).
 export default function ParentPicker({ label, sex, tierart = 'hund', dogs, value, onChange, excludeId, ownFamilyId }) {
   const id = useId()
   const [mode, setMode] = useState(value.freitext ? 'freitext' : 'liste')
@@ -9,7 +12,9 @@ export default function ParentPicker({ label, sex, tierart = 'hund', dogs, value
   const options = useMemo(
     () =>
       dogs
-        .filter((dog) => dog.geschlecht === sex && (dog.tierart || 'hund') === tierart && dog.id !== excludeId)
+        .filter(
+          (dog) => dog.geschlecht === sex && (dog.tierart || 'hund') === tierart && dog.id !== excludeId && isEditable(dog)
+        )
         .sort((a, b) => a.name.localeCompare(b.name, 'de')),
     [dogs, sex, tierart, excludeId]
   )

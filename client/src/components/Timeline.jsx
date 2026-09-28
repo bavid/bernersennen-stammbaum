@@ -48,7 +48,7 @@ function Milestone({ item, onOpenPhoto }) {
   )
 }
 
-function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment }) {
+function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment, canDeleteComment }) {
   const age = birthDate ? ageText(birthDate, item.datum) : null
   return (
     <article className="entry-card">
@@ -86,6 +86,7 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
             placeholder="Dein Kommentar …"
             onAdd={(payload) => onAddComment(item, payload)}
             onDelete={(comment) => onDeleteComment(item, comment)}
+            canDelete={canDeleteComment ? (comment) => canDeleteComment(item, comment) : undefined}
           />
         </div>
       )}
@@ -93,7 +94,17 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
   )
 }
 
-export default function Timeline({ items, birthDate, highlightKey, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment }) {
+export default function Timeline({
+  items,
+  birthDate,
+  highlightKey,
+  canEdit,
+  onEdit,
+  onOpenPhoto,
+  onAddComment,
+  onDeleteComment,
+  canDeleteComment
+}) {
   const groups = groupByYear(items)
   return (
     <ol className="timeline">
@@ -120,6 +131,7 @@ export default function Timeline({ items, birthDate, highlightKey, canEdit, onEd
                     onOpenPhoto={onOpenPhoto}
                     onAddComment={onAddComment}
                     onDeleteComment={onDeleteComment}
+                    canDeleteComment={canDeleteComment}
                   />
                 ) : (
                   <Milestone item={item} onOpenPhoto={onOpenPhoto} />

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
-import { displayName, sexLabel, speciesLabel } from '../lib/timeline.js'
+import { displayName, speciesSexLabel } from '../lib/timeline.js'
 import { herkunftText, position } from '../lib/companions.js'
 import { formatDateLong } from '../lib/dates.js'
 
@@ -62,9 +62,7 @@ function CompanionRow({ row, span }) {
           <Avatar dog={row.dog} size={36} />
           <span className="companion-identity-text">
             <span className="companion-name">{displayName(row.dog)}</span>
-            <span className="companion-species muted">
-              {speciesLabel(row.dog.tierart)} · {sexLabel(row.dog.geschlecht, row.dog.tierart)}
-            </span>
+            <span className="companion-species muted">{speciesSexLabel(row.dog.tierart, row.dog.geschlecht)}</span>
           </span>
         </span>
         <span className="companion-track">

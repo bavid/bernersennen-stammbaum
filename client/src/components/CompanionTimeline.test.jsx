@@ -100,3 +100,29 @@ test('an origin chip only appears when herkunft_art is set', async () => {
   const neleRow = [...container.querySelectorAll('.companion-row')].find((li) => li.textContent.includes('Nele'))
   expect(neleRow.querySelector('.companion-chip').textContent).toBe('Tierheim')
 })
+
+test('a female cat shows the species only once instead of "Katze · Katze"', async () => {
+  const catDogs = [dog(9, 'Mira', { tierart: 'katze', geschlecht: 'huendin', bei_uns_seit: '2012-08-01' })]
+  const catRows = companionRows(catDogs, today)
+  const catSpan = yearSpan(catRows, today)
+  await render(catRows, catSpan, today)
+  const row = container.querySelector('.companion-row')
+  expect(row.querySelector('.companion-species').textContent).toBe('Katze')
+})
+
+test('a male cat still shows "Katze · Kater"', async () => {
+  const catDogs = [dog(9, 'Balu', { tierart: 'katze', geschlecht: 'ruede', bei_uns_seit: '2012-08-01' })]
+  const catRows = companionRows(catDogs, today)
+  const catSpan = yearSpan(catRows, today)
+  await render(catRows, catSpan, today)
+  const row = container.querySelector('.companion-row')
+  expect(row.querySelector('.companion-species').textContent).toBe('Katze · Kater')
+})
+
+test('a dog keeps showing "Hund · Hündin"', async () => {
+  const dogRows = companionRows([dog(1, 'Nele', { tierart: 'hund', geschlecht: 'huendin', bei_uns_seit: '2021-06-12' })], today)
+  const dogSpan = yearSpan(dogRows, today)
+  await render(dogRows, dogSpan, today)
+  const row = container.querySelector('.companion-row')
+  expect(row.querySelector('.companion-species').textContent).toBe('Hund · Hündin')
+})

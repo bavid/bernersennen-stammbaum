@@ -75,7 +75,18 @@ function CommentForm({ placeholder, onSubmit, onCancel }) {
 
 // Gesprächsverlauf mit Namen – für Pinnwand-Zettel (Antworten) und Chronik-Einträge (Kommentare).
 // onAdd bekommt { autorName, text } und muss den gespeicherten Beitrag liefern oder werfen.
-export default function CommentThread({ items, noun = 'Antwort', plural = 'Antworten', verb = 'Antworten', placeholder, onAdd, onDelete }) {
+// canDelete(item): ob der Löschen-Knopf für diesen Beitrag erscheint (Standard: immer, wie bisher) –
+// Chronik-Kommentare auf geteilten Tieren blenden ihn für Beiträge anderer Bereiche aus.
+export default function CommentThread({
+  items,
+  noun = 'Antwort',
+  plural = 'Antworten',
+  verb = 'Antworten',
+  placeholder,
+  onAdd,
+  onDelete,
+  canDelete = () => true
+}) {
   const [writing, setWriting] = useState(false)
   const count = items.length
 
@@ -90,13 +101,15 @@ export default function CommentThread({ items, noun = 'Antwort', plural = 'Antwo
                   <strong>{item.autor_name}</strong> · {relativeTime(item.created_at)}
                 </p>
                 <p className="reply-text">{item.text}</p>
-                <ConfirmButton
-                  onConfirm={() => onDelete(item)}
-                  label=""
-                  confirmLabel="Löschen?"
-                  ariaLabel={`${noun} von ${item.autor_name} löschen`}
-                  className="reply-delete"
-                />
+                {canDelete(item) && (
+                  <ConfirmButton
+                    onConfirm={() => onDelete(item)}
+                    label=""
+                    confirmLabel="Löschen?"
+                    ariaLabel={`${noun} von ${item.autor_name} löschen`}
+                    className="reply-delete"
+                  />
+                )}
               </li>
             ))}
           </ol>

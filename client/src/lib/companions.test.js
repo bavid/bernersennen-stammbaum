@@ -211,4 +211,28 @@ describe('companionLine', () => {
       { text: 'Bei euch 2018–2020 · aus anderem Grund', memorial: false }
     )
   })
+
+  test('shared animal, ongoing: "Bei euch" becomes "Im {ownerName}"', () => {
+    expect(
+      companionLine(dog(1, 'Nele', { bei_uns_seit: '2021-06-12', herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }), {
+        ownerName: 'Zuhause am Deich'
+      })
+    ).toEqual({ text: 'Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim – Tierheim Sonnenhang', memorial: false })
+  })
+
+  test('shared animal, departed for another reason: "Bei euch" becomes "Im {ownerName}" too', () => {
+    expect(
+      companionLine(dog(1, 'Bello', { bei_uns_seit: '2018-01-01', bei_uns_bis: '2020-01-01', abschied_grund: 'umgezogen' }), {
+        ownerName: 'Zuhause am Deich'
+      })
+    ).toEqual({ text: 'Im Zuhause am Deich 2018–2020 · umgezogen', memorial: false })
+  })
+
+  test('shared animal, deceased: the memorial wording stays as-is, no owner name', () => {
+    expect(
+      companionLine(dog(1, 'Aiko', { bei_uns_seit: '2010-01-01', bei_uns_bis: '2022-06-01', abschied_grund: 'verstorben' }), {
+        ownerName: 'Zuhause am Deich'
+      })
+    ).toEqual({ text: 'In Erinnerung · 2010–2022', memorial: true })
+  })
 })

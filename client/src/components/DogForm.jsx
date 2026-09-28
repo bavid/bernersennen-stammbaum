@@ -4,6 +4,7 @@ import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import { dogLabel, sexLabel, speciesLabel, speciesNoun } from '../lib/timeline.js'
+import { isEditable } from '../lib/areas.js'
 
 const HERKUNFT_OPTIONS = [
   { value: '', label: '–' },
@@ -268,7 +269,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSu
           </label>
           <select id="dog-housemate" value={form.housemateId} onChange={(e) => update({ housemateId: e.target.value ? Number(e.target.value) : '' })}>
             <option value="">– niemandem –</option>
-            {allDogs.map((other) => (
+            {allDogs.filter(isEditable).map((other) => (
               <option key={other.id} value={other.id}>
                 {dogLabel(other)}
               </option>

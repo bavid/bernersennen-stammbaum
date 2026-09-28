@@ -3,6 +3,7 @@ import HouseGlyph from './HouseGlyph.jsx'
 import Icon from './Icon.jsx'
 import { useIsDemo } from '../lib/demo.js'
 import { displayName } from '../lib/timeline.js'
+import { isEditable } from '../lib/areas.js'
 
 // Aufgeklappte Mitbewohner-Reihe zwischen zwei Generationen ("Generation 4½"): jede Gruppe hängt unter
 // ihrem Haupttier. Die Abstände setzt placeLaneGroups; bis sie gemessen sind, bleibt die Reihe unsichtbar.
@@ -28,7 +29,7 @@ export default function HousemateLane({ index, groups, placement, trackLeft, tra
               {group.members.map((dog) => (
                 <DogCard key={dog.id} ref={setCardRef(dog.id)} dog={dog} variant="lane" {...cardProps(dog)} />
               ))}
-              {!isDemo && onAddMitbewohner && group.anchor && (
+              {!isDemo && onAddMitbewohner && group.anchor && isEditable(group.anchor) && (
                 <button
                   type="button"
                   className="lane-add-btn"

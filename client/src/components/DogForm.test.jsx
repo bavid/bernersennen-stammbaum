@@ -130,6 +130,34 @@ describe('DogForm – „Bei uns“', () => {
   })
 })
 
+describe('DogForm – geteilte Tiere sind kein Schreibziel', () => {
+  test('das "Lebt zusammen mit"-Auswahlfeld zeigt nur bearbeitbare (eigene) Tiere', async () => {
+    await render({
+      allDogs: [
+        { id: 1, name: 'Nele', can_edit: 1 },
+        { id: 2, name: 'Mira (geteilt)', can_edit: 0 }
+      ]
+    })
+    const options = [...container.querySelectorAll('#dog-housemate option')].map((o) => o.textContent)
+    expect(options).toEqual(['– niemandem –', 'Nele'])
+  })
+
+  test('Mutter/Vater bieten nur eigene Tiere zur Auswahl, keine hierher geteilten', async () => {
+    await render({
+      allDogs: [
+        { id: 1, name: 'Emma', geschlecht: 'huendin', tierart: 'hund', can_edit: 1 },
+        { id: 2, name: 'Luna (geteilt)', geschlecht: 'huendin', tierart: 'hund', can_edit: 0 }
+      ]
+    })
+    const options = [...container.querySelectorAll('select')]
+      .find((select) => [...select.options].some((o) => o.textContent.includes('Emma')))
+      .querySelectorAll('option')
+    const labels = [...options].map((o) => o.textContent)
+    expect(labels.some((l) => l.includes('Emma'))).toBe(true)
+    expect(labels.some((l) => l.includes('Luna'))).toBe(false)
+  })
+})
+
 describe('DogForm – initialValues (Neuanlegen aus QuickAnimalForm "Mehr Angaben …")', () => {
   test('übernimmt Name, Tierart, Geschlecht, Einzug und "lebt mit" beim Neuanlegen', async () => {
     await render({
