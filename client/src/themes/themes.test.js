@@ -26,4 +26,8 @@ describe('themes', () => {
     expect(words.inGroup).toBe('im Rudel')
     expect(getTheme('standard').words.newsTitle).toBe('Neu in der Familie')
   })
+
+  test('each theme defines a Mark component', () => {
+    for (const id of THEME_IDS) expect(typeof getTheme(id).Mark).toBe('function')
+  })
 })

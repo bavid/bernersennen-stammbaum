@@ -6,6 +6,7 @@ export default function BernerMark({ size = 40, title, className }) {
       width={size}
       height={size}
       viewBox="0 0 64 64"
+      data-mark="berner"
       role={title ? 'img' : undefined}
       aria-hidden={title ? undefined : 'true'}
     >

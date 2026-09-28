@@ -1,6 +1,9 @@
+import BernerMark from '../components/BernerMark.jsx'
+
 // Berner-Auftritt: Wappen, Dreifarb-Streifen und die Texte, die bestehende Rudel kennen
 export default {
   id: 'berner',
+  Mark: BernerMark,
   label: 'Berner',
   description: 'Berner-Wappen und Dreifarb-Streifen',
   appName: 'Familienchronik',

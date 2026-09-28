@@ -1,6 +1,9 @@
+import PawMark from '../components/PawMark.jsx'
+
 // „Familie auf Pfoten" – tierneutraler Standard-Auftritt
 export default {
   id: 'standard',
+  Mark: PawMark,
   label: 'Familie auf Pfoten',
   description: 'Pfoten-Logo, für alle Tierarten',
   appName: 'Familie auf Pfoten',
