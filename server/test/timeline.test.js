@@ -79,4 +79,29 @@ test('timeline keeps entries in chronological order', async (t) => {
     const { data } = await call(base, `/api/timeline?dogId=${dogId}`, { cookie })
     assert.equal(data.length, entries.length - 1)
   })
+
+  // security-review Phase T Finding 14: herkunft_name statt der rohen herkunft_family_id - für ein Tier
+  // ohne Tierheim-Herkunft ist es null, und das interne Verweisfeld selbst taucht in der Antwort gar
+  // nicht mehr auf (siehe transfer.test.js Test 4/15 für den positiven Fall mit echter Herkunft).
+  await t.test('herkunft_name is null and herkunft_family_id is absent without a shelter origin', async () => {
+    const created = await addEntry('2023-05-01', 'Ohne Herkunft')
+    assert.equal(created.status, 201)
+    assert.equal(created.data.herkunft_name, null)
+    assert.equal('herkunft_family_id' in created.data, false)
+
+    const updated = await call(base, `/api/timeline/${created.data.id}`, {
+      method: 'PUT',
+      cookie,
+      body: { autorName: 'David', datum: '2023-05-02', titel: 'Ohne Herkunft (bearbeitet)' }
+    })
+    assert.equal(updated.status, 200)
+    assert.equal(updated.data.herkunft_name, null)
+    assert.equal('herkunft_family_id' in updated.data, false)
+
+    const list = await call(base, `/api/timeline?dogId=${dogId}`, { cookie })
+    assert.ok(list.data.every((entry) => entry.herkunft_name === null && !('herkunft_family_id' in entry)))
+
+    const recent = await call(base, '/api/timeline/recent', { cookie })
+    assert.ok(recent.data.every((entry) => entry.herkunft_name === null && !('herkunft_family_id' in entry)))
+  })
 })

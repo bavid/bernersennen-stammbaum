@@ -41,6 +41,32 @@ function httpError(status, message) {
   return err
 }
 
+// security-review Phase T Finding 7: shelterMayRead (redeem/claim) und storyConsent (routes/dogs.js
+// PUT /:id/shelter-share) müssen echte Booleans sein - sonst würde z. B. der String "false" (truthy!)
+// stillschweigend eine Mitlese-Freigabe erteilen. Fehlt der Wert ganz, gilt "nicht gewünscht" (false).
+function cleanBooleanFlag(value, label) {
+  if (value === undefined || value === null) return false
+  if (typeof value !== 'boolean') throw httpError(400, `„${label}“ muss true oder false sein`)
+  return value
+}
+
+const HANDOVER_GONE_MESSAGE = 'Dieser Übergabe-Gutschein gilt nicht mehr'
+
+// security-review Phase T Finding 3: ein Übergabe-Gutschein (vouchers.dog_id gesetzt) darf sich nur
+// einlösen lassen, solange die Übergabe, für die er ausgestellt wurde, noch genauso ansteht: das Tier
+// existiert noch, gehört noch demselben Tierheim, das ihn ausgestellt hat (issued_by_family_id), dieses
+// Tierheim ist noch ein echter (nicht-Demo) Tierheim-Bereich, und das Tier steht noch auf "reserviert"
+// (nicht z. B. per DELETE /:id/handover storniert oder anderweitig verändert). Sonst 410, OHNE den
+// Gutschein zu verbrauchen - der Aufruf passiert bewusst VOR der verbrauchenden UPDATE weiter unten.
+function assertHandoverStillRedeemable(db, voucher) {
+  if (!voucher.dog_id) return
+  const dog = db.prepare('SELECT family_id, vermittlung_status FROM dogs WHERE id = ?').get(voucher.dog_id)
+  if (!dog || dog.family_id !== voucher.issued_by_family_id) throw httpError(410, HANDOVER_GONE_MESSAGE)
+  const owner = db.prepare('SELECT art, is_demo FROM families WHERE id = ?').get(dog.family_id)
+  if (!owner || owner.art !== 'tierheim' || owner.is_demo) throw httpError(410, HANDOVER_GONE_MESSAGE)
+  if (dog.vermittlung_status !== 'reserviert') throw httpError(410, HANDOVER_GONE_MESSAGE)
+}
+
 // Aktueller Zeitpunkt im selben Format wie sqlite datetime('now') - lexikographisch vergleichbar
 function isoNow() {
   return new Date().toISOString().slice(0, 19).replace('T', ' ')
@@ -204,9 +230,25 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
   if (!normalized) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
 
   const { trimmedName, hasUsername, cleanEmail } = validateRedeemInput({ name, username, password, email })
+  const cleanShelterMayRead = cleanBooleanFlag(shelterMayRead, 'shelterMayRead')
   const codeHash = hashCode(normalized)
 
   const familyId = db.transaction(() => {
+    // security-review Phase T Finding 3: erst prüfen (Gutschein selbst UND - bei einem Übergabe-
+    // Gutschein - die Übergabe dahinter), dann verbrauchen. So bleibt ein Gutschein unangetastet
+    // (redeemed_at weiterhin NULL), wenn die Übergabe inzwischen nicht mehr passt.
+    const voucherRow = db
+      .prepare(
+        `SELECT id, join_family_id, partner_id, dog_id, issued_by_family_id, redeemed_at, revoked_at, expires_at
+         FROM vouchers WHERE code_hash = ?`
+      )
+      .get(codeHash)
+    if (!voucherRow) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+    if (voucherRow.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
+    if (voucherRow.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
+    if (voucherRow.expires_at && voucherRow.expires_at <= isoNow()) throw httpError(410, 'Dieser Gutschein ist abgelaufen')
+    assertHandoverStillRedeemable(db, voucherRow)
+
     const claim = db
       .prepare(
         `UPDATE vouchers SET redeemed_at = datetime('now'), code_cipher = NULL
@@ -214,16 +256,11 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
            AND (expires_at IS NULL OR expires_at > datetime('now'))`
       )
       .run(codeHash)
+    // Nur als Verteidigungslinie gegen eine gleichzeitige zweite Anfrage zwischen der Prüfung oben und
+    // dieser UPDATE - der Normalfall (kein Wettlauf) hat claim.changes immer schon 1.
+    if (claim.changes !== 1) throw httpError(410, 'Dieser Gutschein wurde inzwischen verändert')
 
-    if (claim.changes !== 1) {
-      const voucher = db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE code_hash = ?').get(codeHash)
-      if (!voucher) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
-      if (voucher.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
-      if (voucher.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
-      throw httpError(410, 'Dieser Gutschein ist abgelaufen')
-    }
-
-    const voucher = db.prepare('SELECT id, join_family_id, partner_id, dog_id FROM vouchers WHERE code_hash = ?').get(codeHash)
+    const voucher = voucherRow
 
     const newFamilyId = db
       .prepare(
@@ -235,18 +272,17 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
     db.prepare('UPDATE vouchers SET redeemed_by_family_id = ? WHERE id = ?').run(newFamilyId, voucher.id)
 
     if (voucher.dog_id) {
+      // assertHandoverStillRedeemable hat die Existenz des Tiers bereits bestätigt.
       const dog = db.prepare('SELECT family_id FROM dogs WHERE id = ?').get(voucher.dog_id)
-      if (dog) {
-        transferDog(db, {
-          dogId: voucher.dog_id,
-          fromFamilyId: dog.family_id,
-          toFamilyId: newFamilyId,
-          voucherId: voucher.id,
-          today: isoToday()
-        })
-        if (shelterMayRead) {
-          db.prepare('INSERT INTO dog_shares (dog_id, family_id, story_consent) VALUES (?, ?, 0)').run(voucher.dog_id, dog.family_id)
-        }
+      transferDog(db, {
+        dogId: voucher.dog_id,
+        fromFamilyId: dog.family_id,
+        toFamilyId: newFamilyId,
+        voucherId: voucher.id,
+        today: isoToday()
+      })
+      if (cleanShelterMayRead) {
+        db.prepare('INSERT INTO dog_shares (dog_id, family_id, story_consent) VALUES (?, ?, 0)').run(voucher.dog_id, dog.family_id)
       }
     }
 
@@ -290,13 +326,23 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
 function claimVoucher(db, { code, familyId, shelterMayRead }) {
   const normalized = normalizeCode(code)
   if (!normalized) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+  const cleanShelterMayRead = cleanBooleanFlag(shelterMayRead, 'shelterMayRead')
   const codeHash = hashCode(normalized)
 
-  const lookup = db.prepare('SELECT dog_id FROM vouchers WHERE code_hash = ?').get(codeHash)
-  if (!lookup) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
-  if (!lookup.dog_id) throw httpError(400, 'Das ist kein Übergabe-Gutschein – zum Einlösen bitte abmelden.')
-
   return db.transaction(() => {
+    // security-review Phase T Finding 3: dieselbe Prüfen-vor-Verbrauchen-Reihenfolge wie redeemVoucher,
+    // und derselbe Fix für den 500er: assertHandoverStillRedeemable bestätigt vorher, dass das Tier noch
+    // existiert - db.prepare(...).get(voucher.dog_id) unten kann also nicht mehr undefined liefern.
+    const voucherRow = db
+      .prepare('SELECT id, dog_id, issued_by_family_id, redeemed_at, revoked_at, expires_at FROM vouchers WHERE code_hash = ?')
+      .get(codeHash)
+    if (!voucherRow) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+    if (!voucherRow.dog_id) throw httpError(400, 'Das ist kein Übergabe-Gutschein – zum Einlösen bitte abmelden.')
+    if (voucherRow.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
+    if (voucherRow.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
+    if (voucherRow.expires_at && voucherRow.expires_at <= isoNow()) throw httpError(410, 'Dieser Gutschein ist abgelaufen')
+    assertHandoverStillRedeemable(db, voucherRow)
+
     const claim = db
       .prepare(
         `UPDATE vouchers SET redeemed_at = datetime('now'), code_cipher = NULL, redeemed_by_family_id = @familyId
@@ -304,15 +350,9 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
            AND (expires_at IS NULL OR expires_at > datetime('now'))`
       )
       .run({ familyId, codeHash })
+    if (claim.changes !== 1) throw httpError(410, 'Dieser Gutschein wurde inzwischen verändert')
 
-    if (claim.changes !== 1) {
-      const voucher = db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE code_hash = ?').get(codeHash)
-      if (voucher.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
-      if (voucher.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
-      throw httpError(410, 'Dieser Gutschein ist abgelaufen')
-    }
-
-    const voucher = db.prepare('SELECT id, dog_id FROM vouchers WHERE code_hash = ?').get(codeHash)
+    const voucher = voucherRow
     const dog = db.prepare('SELECT family_id FROM dogs WHERE id = ?').get(voucher.dog_id)
 
     transferDog(db, {
@@ -322,7 +362,7 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
       voucherId: voucher.id,
       today: isoToday()
     })
-    if (shelterMayRead) {
+    if (cleanShelterMayRead) {
       db.prepare('INSERT INTO dog_shares (dog_id, family_id, story_consent) VALUES (?, ?, 0)').run(voucher.dog_id, dog.family_id)
     }
 
@@ -335,10 +375,12 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
 // eingelöste eigene Gutscheine zählen mit, nur zurückgezogene/abgelaufene nicht - sonst würde sich das
 // Kontingent bei jedem Aufruf immer weiter auffüllen, obwohl längst genug im Umlauf sind.
 function ensureVoucherQuota(db, area) {
+  // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
+  // Einladungen und dürfen weder mitgezählt noch als solche aufgefüllt werden.
   const { c: counted } = db
     .prepare(
       `SELECT COUNT(*) AS c FROM vouchers
-       WHERE issued_by_family_id = ? AND revoked_at IS NULL
+       WHERE issued_by_family_id = ? AND revoked_at IS NULL AND dog_id IS NULL
          AND (redeemed_at IS NOT NULL OR expires_at IS NULL OR expires_at > datetime('now'))`
     )
     .get(area.id)
@@ -361,6 +403,8 @@ module.exports = {
   claimVoucher,
   ensureVoucherQuota,
   validateBatchInput,
+  cleanBooleanFlag,
+  HANDOVER_GONE_MESSAGE,
   DEMO_VOUCHERS,
   validatePassword,
   validateUsername,

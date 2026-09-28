@@ -33,10 +33,13 @@ const findPublishedDog = db.prepare(
   `SELECT * FROM dogs WHERE public_slug = @slug AND vermittlung_status IN ('in_vermittlung', 'reserviert')`
 )
 
+// security-review Phase T Finding 5: ein pausierter oder noch als Entwurf geführter Partner (status !=
+// 'aktiv') darf nichts öffentlich zeigen - auch wenn ein Tier seiner Tierheim-Familie technisch noch
+// public_slug + vermittelbaren Status trägt (siehe auch lib/publicMedia.js für die zugehörigen Fotos).
 const findShelterPartner = db.prepare(
   `SELECT p.name, p.slug, p.website, p.kontakt_email, p.kontakt_telefon, p.vermittlung_url, p.logo_file, p.is_demo
    FROM families f JOIN partners p ON p.id = f.partner_id
-   WHERE f.id = @familyId AND f.art = 'tierheim'`
+   WHERE f.id = @familyId AND f.art = 'tierheim' AND p.status = 'aktiv'`
 )
 
 // Nur öffentliche (is_public = 1), nie private Einträge - privat = 0 ist hier eine zweite,
@@ -102,6 +105,9 @@ const findPublishedAnimals = db.prepare(
 router.get('/partners/:slug/animals', (req, res) => {
   const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
   if (!partner) return notFound(res, 'Diesen Partner gibt es nicht')
+  // security-review Phase T Finding 5: pausiert/Entwurf ist für die Öffentlichkeit gleichbedeutend mit
+  // "gibt es nicht" - wie is_demo hier schon behandelt wurde.
+  if (partner.status !== 'aktiv') return notFound(res, 'Diesen Partner gibt es nicht')
   if (partner.is_demo && !demoAllowed(req)) return notFound(res, 'Diesen Partner gibt es nicht')
 
   const shelterFamily = findShelterFamily.get(partner.id)

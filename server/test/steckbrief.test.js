@@ -119,6 +119,23 @@ test('Tiere in Vermittlung: Status, Kategorien, öffentlicher Steckbrief', async
     pepperSlug = republished.data.public_slug
   })
 
+  await t.test('Folgeänderung (security-review Finding 10): public_slug räumt sich auch beim Zurücksetzen auf NULL auf', async () => {
+    assert.ok(pepperSlug, 'Pepper ist zu diesem Zeitpunkt veröffentlicht')
+    const cleared = await put(`/api/dogs/${pepperId}`, { vermittlungStatus: '' }, sonnenhang.cookie)
+    assert.equal(cleared.status, 200)
+    assert.equal(cleared.data.vermittlung_status, null)
+    assert.equal(cleared.data.public_slug, null)
+
+    const gone = await call(base, `/api/public/animals/${pepperSlug}`)
+    assert.equal(gone.status, 404)
+
+    // Wieder veröffentlichen, damit die nachfolgenden Tests unverändert weiterlaufen
+    await put(`/api/dogs/${pepperId}`, { vermittlungStatus: 'in_vermittlung' }, sonnenhang.cookie)
+    const republished = await put(`/api/dogs/${pepperId}/steckbrief`, { published: true }, sonnenhang.cookie)
+    assert.equal(republished.status, 200)
+    pepperSlug = republished.data.public_slug
+  })
+
   await t.test('Kategorie und „im Steckbrief zeigen“ (isPublic) in Chronik-Einträgen', async () => {
     const badKategorie = await post(
       '/api/timeline',
@@ -191,21 +208,28 @@ test('Tiere in Vermittlung: Status, Kategorien, öffentlicher Steckbrief', async
     )
     assert.equal(publicEntry.status, 201)
 
-    const privatePhoto = await uploadPng(base, sonnenhang.cookie)
-    const privateEntry = await post(
+    // security-review Phase T Finding 9: ein Tierheim-Bereich darf gar keine privaten Einträge mehr
+    // ANLEGEN (dazu gibt es im gemeinsam genutzten Team-Login niemanden, vor dem etwas zu verbergen
+    // wäre) - die API lehnt den Versuch mit 400 ab.
+    const privateAttempt = await post(
       '/api/timeline',
-      {
-        dogId: pepperId,
-        autorName: 'Team',
-        datum: '2026-01-07',
-        titel: 'Verhaltensnotiz (intern)',
-        kategorie: 'verhalten',
-        privat: true,
-        fotoUrls: [privatePhoto]
-      },
+      { dogId: pepperId, autorName: 'Team', datum: '2026-01-07', titel: 'Verhaltensnotiz (intern)', privat: true },
       sonnenhang.cookie
     )
-    assert.equal(privateEntry.status, 201)
+    assert.equal(privateAttempt.status, 400)
+    assert.match(privateAttempt.data.error, /keine privaten Einträge/)
+
+    // Bestehende private Einträge aus der Zeit vor diesem Review (direkt in der DB, wie Altbestand)
+    // bleiben unangetastet und ihre Fotos weiterhin nie öffentlich - "keep transfer behaviour for
+    // existing rows" gilt nur für den Umzug selbst (lib/transfers.js), nicht für neue Schreibzugriffe.
+    const privatePhoto = await uploadPng(base, sonnenhang.cookie)
+    const privateEntryId = db
+      .prepare(
+        `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, kategorie, privat, foto_urls)
+         VALUES (?, ?, 'Team', '2026-01-07', 'Verhaltensnotiz (intern)', 'verhalten', 1, ?)`
+      )
+      .run(pepperId, sonnenhang.familyId, JSON.stringify([privatePhoto])).lastInsertRowid
+    assert.ok(privateEntryId)
 
     const internalPhoto = await uploadPng(base, sonnenhang.cookie)
     const internalEntry = await post(
@@ -331,5 +355,42 @@ test('Tiere in Vermittlung: Status, Kategorien, öffentlicher Steckbrief', async
     const realHome = await createFamily(base, 'Echtes Zuhause Steckbrief', 'echtes-zuhause-steckbrief-1')
     const withRealSession = await call(base, `/api/public/animals/${demoSlug}`, { cookie: realHome.cookie })
     assert.equal(withRealSession.status, 404)
+  })
+
+  await t.test('Partner pausiert/Entwurf: /animals/:slug, /partners/:slug/animals und /public-media liefern 404', async () => {
+    // security-review Phase T Finding 5: ein pausierter oder auf Entwurf zurückgesetzter Partner darf
+    // öffentlich nichts mehr zeigen, auch wenn ein Tier technisch noch public_slug + vermittelbaren
+    // Status trägt (dieselbe "gibt es nicht"-Regel wie schon für is_demo).
+    const pause = await put(
+      `/api/admin/partners/${sonnenhang.partnerId}`,
+      { name: 'Tierheim Sonnenhang', typ: 'tierheim', slug: sonnenhang.partnerSlug, status: 'pausiert' },
+      adminCookie
+    )
+    assert.equal(pause.status, 200)
+    assert.equal(pause.data.status, 'pausiert')
+
+    const animalGone = await call(base, `/api/public/animals/${pepperSlug}`)
+    assert.equal(animalGone.status, 404)
+
+    const listGone = await call(base, `/api/public/partners/${sonnenhang.partnerSlug}/animals`)
+    assert.equal(listGone.status, 404)
+
+    const mediaGone = await fetch(`${base}/public-media/${dogPhotoFilename}`)
+    assert.equal(mediaGone.status, 404)
+
+    // Reaktivieren macht alles wieder sichtbar
+    const reactivate = await put(
+      `/api/admin/partners/${sonnenhang.partnerId}`,
+      { name: 'Tierheim Sonnenhang', typ: 'tierheim', slug: sonnenhang.partnerSlug, status: 'aktiv' },
+      adminCookie
+    )
+    assert.equal(reactivate.status, 200)
+
+    const animalBack = await call(base, `/api/public/animals/${pepperSlug}`)
+    assert.equal(animalBack.status, 200)
+    const listBack = await call(base, `/api/public/partners/${sonnenhang.partnerSlug}/animals`)
+    assert.equal(listBack.status, 200)
+    const mediaBack = await fetch(`${base}/public-media/${dogPhotoFilename}`)
+    assert.equal(mediaBack.status, 200)
   })
 })

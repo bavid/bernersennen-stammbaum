@@ -57,4 +57,22 @@ function canAttachUpload({ familyId, homeId }, url, existingUrls = []) {
   return canSeeUpload({ familyId, homeId }, path.basename(url))
 }
 
-module.exports = { canSeeUpload, canAttachUpload, FILENAME_RE }
+// Nur die eigene, tatsächlich hochgeladene Datei (uploads.family_id = familyId)
+const ownUploadStmt = db.prepare('SELECT 1 FROM uploads WHERE filename = @filename AND family_id = @familyId')
+
+// Für ÖFFENTLICHE Inhalte (Steckbrief-Foto eines vermittelbaren Tierheim-Tiers, Foto in einem
+// öffentlichen Chronik-Eintrag): strenger als canAttachUpload. canAttachUpload lässt jedes im Bereich
+// SICHTBARE Foto zu - das schließt auch Fotos eines per Mitlese-Freigabe (dog_shares, siehe
+// routes/dogs.js PUT /:id/shelter-share) sichtbaren, längst vermittelten Tieres ein. Ohne diese
+// Einschränkung könnte ein Tierheim mit Mitlese-Freigabe ein privates Foto des neuen Zuhauses in
+// einen eigenen öffentlichen Steckbrief/Eintrag übernehmen (security-review Phase T Finding 6).
+// Erlaubt bleibt nur: die Datei stammt selbst aus diesem Bereich, oder sie stand schon vorher auf
+// genau diesem Datensatz (existingUrls, wie bei canAttachUpload).
+function canAttachPublicUpload({ familyId }, url, existingUrls = []) {
+  if (existingUrls.includes(url)) return true
+  const filename = path.basename(url)
+  if (!FILENAME_RE.test(filename)) return false
+  return Boolean(ownUploadStmt.get({ filename, familyId }))
+}
+
+module.exports = { canSeeUpload, canAttachUpload, canAttachPublicUpload, FILENAME_RE }

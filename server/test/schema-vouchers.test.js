@@ -71,6 +71,15 @@ test('code_hash in vouchers ist eindeutig', () => {
   assert.throws(() => insertVoucher.run(batchId, 'hash-emma'), /UNIQUE/)
 })
 
+test('vouchers hat einen Index auf dog_id (security-review Phase T Finding 3)', () => {
+  const indexes = db.prepare('PRAGMA index_list(vouchers)').all().map((i) => i.name)
+  const hasDogIdIndex = indexes.some((name) => {
+    const cols = db.prepare(`PRAGMA index_info(${name})`).all()
+    return cols.length === 1 && cols[0].name === 'dog_id'
+  })
+  assert.ok(hasDogIdIndex, 'erwarte einen Index, der (auch) dog_id abdeckt')
+})
+
 test('access_key_hash ist eindeutig, aber mehrere NULL sind erlaubt', () => {
   const insert = db.prepare('INSERT INTO families (name, password_hash, access_key_hash) VALUES (?, ?, ?)')
   insert.run('Zuhause am Deich', '!', null)

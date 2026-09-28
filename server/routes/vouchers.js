@@ -10,8 +10,13 @@ const router = express.Router()
 
 // Phase T Task 3: Name des Tiers und des abgebenden Tierheims zu einem offenen Übergabe-Gutschein -
 // für den Hinweis "Mit diesem Gutschein zieht {animalName} aus {shelterName} zu euch" (POST /check).
+// shelterName: der admin-gepflegte Partnername (partners.name), nicht der (vom Tierheim selbst frei
+// änderbare) Familienname - Fallback auf families.name nur, wenn kein Partner verknüpft ist
+// (security-review Phase T Finding 8, wie herkunft_text in lib/transfers.js).
 const findHandoverInfo = db.prepare(
-  `SELECT d.name AS animalName, f.name AS shelterName FROM dogs d JOIN families f ON f.id = d.family_id WHERE d.id = ?`
+  `SELECT d.name AS animalName, COALESCE(p.name, f.name) AS shelterName
+   FROM dogs d JOIN families f ON f.id = d.family_id LEFT JOIN partners p ON p.id = f.partner_id
+   WHERE d.id = ?`
 )
 
 // Codes nie in Logs oder URLs: beide Endpunkte sind POST, auch das reine Nachschauen.
@@ -76,10 +81,13 @@ router.get('/mine', requireAuth, (req, res) => {
   const area = db.prepare('SELECT id, name, art FROM families WHERE id = ?').get(req.familyId)
   ensureVoucherQuota(db, area)
 
+  // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
+  // Einladungen - sie gehören nicht in diese Liste (sonst könnte man einen Übergabe-Code hier als
+  // normalen Einladungs-Code verwenden/weitergeben).
   const rows = db
     .prepare(
       `SELECT id, code_cipher, code_hint, redeemed_at, revoked_at, expires_at, join_family_id, created_at
-       FROM vouchers WHERE issued_by_family_id = ? ORDER BY created_at DESC, id DESC`
+       FROM vouchers WHERE issued_by_family_id = ? AND dog_id IS NULL ORDER BY created_at DESC, id DESC`
     )
     .all(area.id)
 

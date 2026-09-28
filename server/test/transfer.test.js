@@ -19,6 +19,7 @@ test('Übergabe-Gutschein: Tier zieht mit Chronik ins neue Zuhause', async (t) =
   const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
   const put = (urlPath, body, cookie) => call(base, urlPath, { method: 'PUT', body, cookie })
   const get = (urlPath, cookie) => call(base, urlPath, { cookie })
+  const del = (urlPath, cookie) => call(base, urlPath, { method: 'DELETE', cookie })
 
   let shelterCounter = 0
   async function createShelter(name) {
@@ -133,12 +134,16 @@ test('Übergabe-Gutschein: Tier zieht mit Chronik ins neue Zuhause', async (t) =
       sonnenhang.cookie
     )
     assert.equal(publicEntry.status, 201)
-    const privateEntry = await post(
-      '/api/timeline',
-      { dogId: susi.id, autorName: 'Team', datum: '2026-01-06', titel: 'Verhaltensnotiz', privat: true },
-      sonnenhang.cookie
-    )
-    assert.equal(privateEntry.status, 201)
+    // Ein Tierheim darf über die API keine privaten Einträge mehr anlegen (security-review Phase T
+    // Finding 9) - ein privater Alt-Eintrag (Freigabe/Pflegeprotokoll von vor diesem Review) wird hier
+    // direkt in der DB simuliert, um "die ganze Chronik zieht mit" trotzdem für so einen Fall zu prüfen.
+    const privateEntryId = db
+      .prepare(
+        `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, privat, foto_urls)
+         VALUES (?, ?, 'Team', '2026-01-06', 'Verhaltensnotiz', 1, '[]')`
+      )
+      .run(susi.id, sonnenhang.familyId).lastInsertRowid
+    assert.ok(privateEntryId)
 
     const handover = await post(`/api/dogs/${susi.id}/handover`, {}, sonnenhang.cookie)
     assert.equal(handover.status, 201)
@@ -168,7 +173,10 @@ test('Übergabe-Gutschein: Tier zieht mit Chronik ins neue Zuhause', async (t) =
     for (const entry of timeline.data) {
       assert.equal(entry.family_id, newHomeId)
       assert.equal(entry.is_public, 0)
-      assert.equal(entry.herkunft_family_id, sonnenhang.familyId)
+      // security-review Phase T Finding 14: herkunft_name (der Partner-/Familienname der Herkunft)
+      // statt der rohen herkunft_family_id, die in der Antwort nicht mehr auftaucht.
+      assert.equal(entry.herkunft_name, sonnenhang.familyName)
+      assert.equal('herkunft_family_id' in entry, false)
     }
 
     // dog_links wurden entfernt
@@ -241,13 +249,17 @@ test('Übergabe-Gutschein: Tier zieht mit Chronik ins neue Zuhause', async (t) =
       { dogId: sunny.id, autorName: 'Team', datum: '2026-01-10', titel: 'Öffentliche Notiz', isPublic: true, kategorie: 'sonstiges' },
       sonnenhang.cookie
     )
-    const privateEntry = await post(
-      '/api/timeline',
-      { dogId: sunny.id, autorName: 'Team', datum: '2026-01-11', titel: 'Private Notiz', privat: true },
-      sonnenhang.cookie
-    )
     assert.equal(publicEntry.status, 201)
-    assert.equal(privateEntry.status, 201)
+    // Ein privater Alt-Eintrag (security-review Phase T Finding 9: die API selbst lehnt "privat" im
+    // Tierheim-Bereich jetzt ab) direkt in der DB, um zu prüfen, dass das Tierheim ihn auch danach -
+    // trotz Mitlese-Freigabe - weiterhin nicht sieht.
+    const privateEntryId = db
+      .prepare(
+        `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, privat, foto_urls)
+         VALUES (?, ?, 'Team', '2026-01-11', 'Private Notiz', 1, '[]')`
+      )
+      .run(sunny.id, sonnenhang.familyId).lastInsertRowid
+    assert.ok(privateEntryId)
 
     const handover = await post(`/api/dogs/${sunny.id}/handover`, {}, sonnenhang.cookie)
     const redeemed = await post('/api/vouchers/redeem', {
@@ -396,5 +408,173 @@ test('Übergabe-Gutschein: Tier zieht mit Chronik ins neue Zuhause', async (t) =
 
     const afterStatusChange = await fetch(`${base}/public-media/${filename}`)
     assert.equal(afterStatusChange.status, 404)
+  })
+
+  await t.test('10. PUT /api/dogs: verlässt der Status "reserviert" auf diesem Weg, wird der offene Gutschein zurückgezogen', async () => {
+    const rocky = await addDog(sonnenhang, 'Rocky', 'ruede')
+    const handover = await post(`/api/dogs/${rocky.id}/handover`, {}, sonnenhang.cookie)
+    assert.equal(handover.status, 201)
+
+    const changed = await put(`/api/dogs/${rocky.id}`, { vermittlungStatus: 'vermittelt' }, sonnenhang.cookie)
+    assert.equal(changed.status, 200)
+
+    const { hashCode, normalizeCode } = require('../lib/codes')
+    const voucherRow = db.prepare('SELECT revoked_at FROM vouchers WHERE code_hash = ?').get(hashCode(normalizeCode(handover.data.code)))
+    assert.ok(voucherRow.revoked_at, 'der Gutschein wurde beim Statuswechsel weg von "reserviert" zurückgezogen')
+
+    const redeemAfter = await post('/api/vouchers/redeem', { code: handover.data.code, name: 'Zu spät für Rocky' })
+    assert.equal(redeemAfter.status, 410)
+    assert.match(redeemAfter.data.error, /zurückgezogen/)
+
+    // Bleibt der Status dagegen "reserviert" (z. B. nur der Name ändert sich), bleibt der Gutschein offen
+    const oskar2 = await addDog(sonnenhang, 'Oskar Zwei', 'ruede')
+    const handoverOskar2 = await post(`/api/dogs/${oskar2.id}/handover`, {}, sonnenhang.cookie)
+    await put(`/api/dogs/${oskar2.id}`, { beschreibung: 'Sehr lieb' }, sonnenhang.cookie)
+    const stillOpen = db
+      .prepare('SELECT revoked_at FROM vouchers WHERE code_hash = ?')
+      .get(hashCode(normalizeCode(handoverOskar2.data.code)))
+    assert.equal(stillOpen.revoked_at, null)
+  })
+
+  await t.test('11. DELETE /:id/handover: storniert die Reservierung, nur der Tierheim-Besitzer', async () => {
+    const nova = await addDog(sonnenhang, 'Nova', 'huendin')
+    const handover = await post(`/api/dogs/${nova.id}/handover`, {}, sonnenhang.cookie)
+    assert.equal(handover.status, 201)
+    assert.equal(db.prepare('SELECT vermittlung_status FROM dogs WHERE id = ?').get(nova.id).vermittlung_status, 'reserviert')
+
+    const notShelter = await createFamily(base, 'Zuhause DELETE Handover', 'zuhause-del-handover-1', { art: 'zuhause' })
+    const forbidden = await del(`/api/dogs/${nova.id}/handover`, notShelter.cookie)
+    assert.equal(forbidden.status, 404) // loadOwnDog: fremdes Tier gilt als nicht gefunden
+
+    const cancelled = await del(`/api/dogs/${nova.id}/handover`, sonnenhang.cookie)
+    assert.equal(cancelled.status, 200)
+    assert.equal(cancelled.data.vermittlung_status, 'in_vermittlung')
+
+    const { hashCode, normalizeCode } = require('../lib/codes')
+    const voucherRow = db.prepare('SELECT revoked_at FROM vouchers WHERE code_hash = ?').get(hashCode(normalizeCode(handover.data.code)))
+    assert.ok(voucherRow.revoked_at)
+
+    const redeemAfterCancel = await post('/api/vouchers/redeem', { code: handover.data.code, name: 'Zu spät für Nova' })
+    assert.equal(redeemAfterCancel.status, 410)
+    assert.match(redeemAfterCancel.data.error, /zurückgezogen/)
+
+    // War das Tier gar nicht mehr "reserviert" (z. B. inzwischen "vermittelt"), lässt DELETE /handover
+    // den Status unangetastet - nur noch offene Gutscheine werden trotzdem zurückgezogen.
+    const already = await addDog(sonnenhang, 'Schon Vermittelt', 'ruede')
+    await post(`/api/dogs/${already.id}/handover`, {}, sonnenhang.cookie)
+    await put(`/api/dogs/${already.id}`, { vermittlungStatus: 'vermittelt' }, sonnenhang.cookie)
+    const cancelAgain = await del(`/api/dogs/${already.id}/handover`, sonnenhang.cookie)
+    assert.equal(cancelAgain.status, 200)
+    assert.equal(cancelAgain.data.vermittlung_status, 'vermittelt')
+
+    // Ein normales Zuhause (kein Tierheim) darf DELETE /handover gar nicht aufrufen
+    const wrongArea = await createFamily(base, 'Zuhause wrong area DELETE', 'zuhause-wrong-area-del-1', { art: 'zuhause' })
+    const ownDog = await post('/api/dogs', { name: 'Kein Tierheim', geschlecht: 'ruede' }, wrongArea.cookie)
+    const wrongAreaDelete = await del(`/api/dogs/${ownDog.data.id}/handover`, wrongArea.cookie)
+    assert.equal(wrongAreaDelete.status, 400)
+  })
+
+  await t.test('12. Übergabe-Gutscheine laufen nach 30 Tagen ab', async () => {
+    const mika = await addDog(sonnenhang, 'Mika', 'huendin')
+    const before = Date.now()
+    const handover = await post(`/api/dogs/${mika.id}/handover`, {}, sonnenhang.cookie)
+    assert.equal(handover.status, 201)
+
+    const { hashCode, normalizeCode } = require('../lib/codes')
+    const voucherRow = db.prepare('SELECT expires_at FROM vouchers WHERE code_hash = ?').get(hashCode(normalizeCode(handover.data.code)))
+    assert.ok(voucherRow.expires_at)
+    const expiresAtMs = new Date(`${voucherRow.expires_at.replace(' ', 'T')}Z`).getTime()
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+    const ONE_MINUTE_MS = 60 * 1000
+    assert.ok(Math.abs(expiresAtMs - (before + THIRTY_DAYS_MS)) < ONE_MINUTE_MS, 'läuft ~30 Tage nach dem Anlegen ab')
+
+    // abgelaufen -> 410, wie jeder andere abgelaufene Gutschein
+    db.prepare('UPDATE vouchers SET expires_at = ? WHERE code_hash = ?').run('2000-01-01 00:00:00', hashCode(normalizeCode(handover.data.code)))
+    const expiredRedeem = await post('/api/vouchers/redeem', { code: handover.data.code, name: 'Zu spät für Mika' })
+    assert.equal(expiredRedeem.status, 410)
+    assert.match(expiredRedeem.data.error, /abgelaufen/)
+  })
+
+  await t.test('13. redeem/claim prüfen die Übergabe VOR dem Verbrauchen: gelöschtes Tier -> 410 statt 500', async () => {
+    const existingHome = await createFamily(base, 'Zuhause für Claim Gone', 'zuhause-claim-gone-1', { art: 'zuhause' })
+    const { hashCode, normalizeCode } = require('../lib/codes')
+
+    // DELETE /api/dogs/:id zieht offene Übergabe-Gutscheine selbst schon zurück (siehe deleteDog in
+    // routes/dogs.js), das Tier verschwindet hier deshalb bewusst NICHT über die App, sondern direkt in
+    // der DB - genau der Fall, für den assertHandoverStillRedeemable in lib/vouchers.js gedacht ist
+    // (ein noch offener Gutschein, dessen Tier aus irgendeinem anderen Grund nicht mehr existiert).
+    const ghost = await addDog(sonnenhang, 'Ghost', 'ruede')
+    const handoverGhost = await post(`/api/dogs/${ghost.id}/handover`, {}, sonnenhang.cookie)
+    assert.equal(handoverGhost.status, 201)
+    db.prepare('DELETE FROM dogs WHERE id = ?').run(ghost.id)
+
+    const redeemGone = await post('/api/vouchers/redeem', { code: handoverGhost.data.code, name: 'Zu spät (Ghost)' })
+    assert.equal(redeemGone.status, 410)
+    assert.match(redeemGone.data.error, /gilt nicht mehr/)
+
+    const ghost2 = await addDog(sonnenhang, 'Ghost Zwei', 'huendin')
+    const handoverGhost2 = await post(`/api/dogs/${ghost2.id}/handover`, {}, sonnenhang.cookie)
+    assert.equal(handoverGhost2.status, 201)
+    db.prepare('DELETE FROM dogs WHERE id = ?').run(ghost2.id)
+
+    const claimGone = await post('/api/vouchers/claim', { code: handoverGhost2.data.code }, existingHome.cookie)
+    assert.equal(claimGone.status, 410)
+    assert.match(claimGone.data.error, /gilt nicht mehr/)
+
+    // Der Gutschein bleibt dabei unverbraucht in der DB (redeemed_at weiterhin NULL) - die Prüfung
+    // passiert VOR dem Verbrauchen, nicht als nachträgliches Zurückrollen einer erfolgreichen Buchung.
+    const untouched = db.prepare('SELECT redeemed_at FROM vouchers WHERE code_hash = ?').get(hashCode(normalizeCode(handoverGhost.data.code)))
+    assert.equal(untouched.redeemed_at, null)
+
+    // Zur Abrundung: DELETE /api/dogs/:id über die App zieht den Gutschein selbst schon zurück
+    // (deleteDog) - redeem meldet in diesem Fall "zurückgezogen" statt "gilt nicht mehr", weil das
+    // schon vorher (proaktiv) passiert ist, nicht erst bei der Gültigkeitsprüfung von redeem/claim.
+    const ghost3 = await addDog(sonnenhang, 'Ghost Drei', 'ruede')
+    const handoverGhost3 = await post(`/api/dogs/${ghost3.id}/handover`, {}, sonnenhang.cookie)
+    assert.equal(handoverGhost3.status, 201)
+    const deletedViaApi = await del(`/api/dogs/${ghost3.id}`, sonnenhang.cookie)
+    assert.equal(deletedViaApi.status, 204)
+    const redeemAfterApiDelete = await post('/api/vouchers/redeem', { code: handoverGhost3.data.code, name: 'Zu spät (Ghost Drei)' })
+    assert.equal(redeemAfterApiDelete.status, 410)
+    assert.match(redeemAfterApiDelete.data.error, /zurückgezogen/)
+  })
+
+  await t.test('14. redeem/claim lehnen einen Gutschein ab, dessen Tier zwischenzeitlich nicht mehr "reserviert" ist', async () => {
+    const drifted = await addDog(sonnenhang, 'Drifted', 'ruede')
+    const handover = await post(`/api/dogs/${drifted.id}/handover`, {}, sonnenhang.cookie)
+    assert.equal(handover.status, 201)
+
+    // Status direkt in der DB verändert (nicht über PUT /api/dogs, das den Gutschein selbst schon
+    // zurückziehen würde, siehe Test 10) - simuliert einen Weg, der die Gutschein-Gültigkeit umgeht.
+    db.prepare("UPDATE dogs SET vermittlung_status = 'vermittelt' WHERE id = ?").run(drifted.id)
+
+    const redeemDrifted = await post('/api/vouchers/redeem', { code: handover.data.code, name: 'Zu spät für Drifted' })
+    assert.equal(redeemDrifted.status, 410)
+    assert.match(redeemDrifted.data.error, /gilt nicht mehr/)
+
+    const { hashCode, normalizeCode } = require('../lib/codes')
+    const untouched = db.prepare('SELECT redeemed_at FROM vouchers WHERE code_hash = ?').get(hashCode(normalizeCode(handover.data.code)))
+    assert.equal(untouched.redeemed_at, null)
+  })
+
+  await t.test('15. herkunft_text/shelterName nutzen den admin-gepflegten Partnernamen, nicht den (vom Team frei änderbaren) Familiennamen', async () => {
+    const partnerName = await createShelter('Partnername Konstant')
+    // Das Team ändert nur den eigenen, sichtbaren Familiennamen (z. B. über PUT /api/family) - der
+    // Partnername bleibt admin-verwaltet und unverändert.
+    db.prepare('UPDATE families SET name = ? WHERE id = ?').run('Frei geänderter Team-Name', partnerName.familyId)
+
+    const finni = await addDog(partnerName, 'Finni', 'ruede')
+    const handover = await post(`/api/dogs/${finni.id}/handover`, {}, partnerName.cookie)
+    assert.equal(handover.status, 201)
+
+    const checked = await post('/api/vouchers/check', { code: handover.data.code })
+    assert.equal(checked.data.handover.shelterName, 'Partnername Konstant')
+
+    const redeemed = await post('/api/vouchers/redeem', { code: handover.data.code, name: 'Zuhause für Finni' })
+    assert.equal(redeemed.status, 201)
+    const newHomeCookie = getCookie(redeemed.res)
+
+    const detail = await get(`/api/dogs/${finni.id}`, newHomeCookie)
+    assert.equal(detail.data.herkunft_text, 'Partnername Konstant')
   })
 })

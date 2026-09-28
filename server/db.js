@@ -315,5 +315,8 @@ db.exec(`
 
 addColumnIfMissing('dog_shares', 'story_consent', 'INTEGER NOT NULL DEFAULT 0')
 addColumnIfMissing('vouchers', 'dog_id', 'INTEGER')
+// security-review Phase T: Übergabe-Gutscheine werden je Tier nachgeschlagen (revokeOpenHandoverVouchers,
+// die Gültigkeitsprüfung in redeem/claim) - ohne Index ein Full-Table-Scan über vouchers.
+db.exec('CREATE INDEX IF NOT EXISTS idx_vouchers_dog ON vouchers(dog_id)')
 
 module.exports = db

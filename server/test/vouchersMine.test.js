@@ -75,6 +75,41 @@ test('GET /api/vouchers/mine: Kontingent auffüllen, Rudel-Gutscheine treten bei
     )
   })
 
+  await t.test('Übergabe-Gutscheine (dog_id gesetzt) zählen weder mit noch erscheinen sie in /mine', async () => {
+    // security-review Phase T Finding 4: ein Übergabe-Gutschein (siehe routes/dogs.js POST
+    // /:id/handover, lib/vouchers.js createBatch mit dogId) ist keine Weitergabe-Einladung - er darf
+    // weder das Kontingent aus ensureVoucherQuota auffüllen noch in dieser Liste auftauchen.
+    const household = await createHousehold(base, 'Zuhause Übergabe-Ausschluss')
+    const dog = await post('/api/dogs', { name: 'Filou', geschlecht: 'ruede' }, household.cookie)
+    assert.equal(dog.status, 201)
+
+    const before = await mine(household.cookie)
+    assert.equal(before.data.length, config.voucherQuota)
+
+    const { createBatch } = require('../lib/vouchers')
+    const { batchId } = createBatch(db, {
+      label: 'Übergabe Filou',
+      kind: 'partner',
+      size: 1,
+      issuedByFamilyId: household.data.id,
+      dogId: dog.data.id
+    })
+    const handoverVoucherId = db.prepare('SELECT id FROM vouchers WHERE batch_id = ?').get(batchId).id
+
+    const after = await mine(household.cookie)
+    assert.equal(after.data.length, config.voucherQuota, 'der Übergabe-Gutschein füllt das Kontingent nicht zusätzlich auf')
+    assert.equal(
+      after.data.some((voucher) => voucher.id === handoverVoucherId),
+      false,
+      'der Übergabe-Gutschein taucht nicht in der Liste auf'
+    )
+
+    // In der DB stehen weiterhin genau voucherQuota Weitergabe-Gutscheine PLUS der eine
+    // Übergabe-Gutschein - ensureVoucherQuota hat also nicht "nachgelegt", weil dieser nie mitzählte.
+    const totalIssued = db.prepare('SELECT COUNT(*) AS c FROM vouchers WHERE issued_by_family_id = ?').get(household.data.id).c
+    assert.equal(totalIssued, config.voucherQuota + 1)
+  })
+
   await t.test('Demo: feste Schein-Liste, keine echten Gutscheine in der DB', async () => {
     const rudel = await createFamily(base, 'Familie Demo Mine', 'demo-mine-pw-1')
     db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(rudel.data.id)

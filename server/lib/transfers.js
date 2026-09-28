@@ -15,8 +15,13 @@ function transferDog(db, { dogId, fromFamilyId, toFamilyId, voucherId, today }) 
     const dog = db.prepare('SELECT * FROM dogs WHERE id = ?').get(dogId)
     if (!dog) throw new Error(`Tier ${dogId} nicht gefunden`)
 
-    const shelter = db.prepare('SELECT name FROM families WHERE id = ?').get(fromFamilyId)
-    const shelterName = shelter ? shelter.name : null
+    // herkunft_text: der admin-gepflegte Partnername (partners.name über families.partner_id), nicht
+    // der vom Tierheim selbst frei änderbare Familienname - Fallback auf families.name, wenn (noch)
+    // kein Partner verknüpft ist (security-review Phase T Finding 8).
+    const shelter = db
+      .prepare('SELECT f.name AS familyName, p.name AS partnerName FROM families f LEFT JOIN partners p ON p.id = f.partner_id WHERE f.id = ?')
+      .get(fromFamilyId)
+    const shelterName = shelter ? shelter.partnerName || shelter.familyName : null
 
     // Eigene Eltern-Verweise des Tiers zu Freitext: im neuen Zuhause sind die Eltern (Tierheim oder
     // eine andere Familie) ohne Freigabe nicht sichtbar - wie beim Löschen (dogLabel als Freitext).

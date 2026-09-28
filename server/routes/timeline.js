@@ -3,7 +3,7 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { ART, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
-const { canAttachUpload } = require('../lib/uploadAccess')
+const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
 
 const router = express.Router()
 
@@ -17,8 +17,13 @@ const hasKey = (body, key) => Object.prototype.hasOwnProperty.call(body, key)
 const cleanEnum = (value) => (value === null || value === undefined || value === '' ? null : value)
 const findFamilyArt = db.prepare('SELECT art FROM families WHERE id = ?')
 
+// herkunft_family_id ist ein reiner internes Verweisfeld (siehe lib/transfers.js) - Finding 14 des
+// security-reviews: nicht direkt nach außen geben, sondern nur über herkunft_name (siehe die JOINs in
+// GET /recent, GET / und findEntryById unten), das schon auf den öffentlich zumutbaren Partner-/
+// Familiennamen abgebildet ist.
 function toEntry(row, comments = []) {
-  return { ...row, foto_urls: JSON.parse(row.foto_urls), comments }
+  const { herkunft_family_id, ...rest } = row
+  return { ...rest, foto_urls: JSON.parse(row.foto_urls), comments }
 }
 
 // Kommentare aller im Bereich sichtbaren Einträge in einer Abfrage statt einer pro Eintrag.
@@ -38,6 +43,22 @@ function commentsByEntry(familyId, dogId) {
 }
 
 const commentsOf = (entryId) => db.prepare('SELECT * FROM entry_comments WHERE entry_id = ? ORDER BY created_at, id').all(entryId)
+
+// herkunft_name (security-review Phase T Finding 14): der öffentlich zumutbare Name der Herkunfts-
+// Familie eines migrierten Eintrags (siehe lib/transfers.js herkunft_family_id) - der admin-gepflegte
+// Partnername, wenn die Herkunftsfamilie ein (noch bestehender) Tierheim-Bereich mit Partner ist, sonst
+// deren eigener Name, sonst null. hf.art='tierheim' UND der COALESCE-Fallback auf hf.name (nicht ein
+// hartes Erfordernis eines Partners) halten das robust gegen Alt-/Testdaten ohne partner_id.
+const HERKUNFT_NAME_JOIN_SQL = `
+  LEFT JOIN families hf ON hf.id = t.herkunft_family_id AND hf.art = 'tierheim'
+  LEFT JOIN partners hp ON hp.id = hf.partner_id`
+const HERKUNFT_NAME_SELECT_SQL = 'COALESCE(hp.name, hf.name) AS herkunft_name'
+
+// Einzelner Eintrag inkl. herkunft_name, für die Antworten von POST/PUT - keine zusätzliche
+// Sichtbarkeitsprüfung nötig, die Aufrufer haben Eigentümerschaft schon vorher festgestellt.
+const findEntryById = db.prepare(
+  `SELECT t.*, ${HERKUNFT_NAME_SELECT_SQL} FROM timeline_entries t ${HERKUNFT_NAME_JOIN_SQL} WHERE t.id = ?`
+)
 
 // Validiert Titel/Datum/Autor/Text/Fotos/Privat/Kategorie/Öffentlich. Liefert { error } oder { values }.
 // existingPrivat/existingKategorie/existingIsPublic: der Wert, der gilt, wenn der Body das jeweilige
@@ -64,14 +85,28 @@ function readEntryInput(body, req, existingPrivat = 0, existingFotoUrls = [], ex
   if (values.is_public && values.privat) {
     return { error: 'Ein Eintrag kann nicht gleichzeitig privat und öffentlich (Steckbrief) sein' }
   }
-  if (values.is_public) {
-    const identity = findFamilyArt.get(req.familyId)
-    if (!identity || identity.art !== ART.tierheim) {
-      return { error: '„Im Steckbrief zeigen“ gibt es nur für Tiere des Tierheims' }
-    }
+  const identity = findFamilyArt.get(req.familyId)
+  const isShelterArea = identity?.art === ART.tierheim
+  if (values.is_public && !isShelterArea) {
+    return { error: '„Im Steckbrief zeigen“ gibt es nur für Tiere des Tierheims' }
+  }
+  // security-review Phase T Finding 9: ein Tierheim-Bereich wird gemeinsam vom ganzen Team genutzt -
+  // "privat" hat dort niemanden, vor dem es etwas verbergen könnte, und ein bei der Übergabe (lib/
+  // transfers.js transferDog fasst "privat" nicht an) unverändert mitziehender privater Eintrag würde
+  // dem neuen Zuhause ungefiltert zufallen, ohne dass das je beabsichtigt war. Nur neue Schreibzugriffe
+  // werden geprüft - schon bestehende Altdaten bleiben unangetastet.
+  if (values.privat && isShelterArea) {
+    return { error: 'Im Tierheim gibt es keine privaten Einträge' }
   }
   const uploadContext = { familyId: req.familyId, homeId: req.homeId }
-  if (!values.foto_urls.every((url) => canAttachUpload(uploadContext, url, existingFotoUrls))) {
+  // security-review Phase T Finding 6: ein öffentlicher (isPublic) Eintrag darf nur Fotos verwenden, die
+  // der Bereich SELBST hochgeladen hat (oder die schon vorher auf dem Eintrag standen) - sonst könnte
+  // ein Tierheim mit Mitlese-Freigabe (dog_shares) ein privates Adoptanten-Foto über einen eigenen
+  // öffentlichen Eintrag veröffentlichen.
+  const attachAllowed = values.is_public
+    ? (url) => canAttachPublicUpload({ familyId: req.familyId }, url, existingFotoUrls)
+    : (url) => canAttachUpload(uploadContext, url, existingFotoUrls)
+  if (!values.foto_urls.every(attachAllowed)) {
     return { error: 'Foto nicht gefunden' }
   }
   return { values: { ...values, foto_urls: JSON.stringify(values.foto_urls) } }
@@ -110,8 +145,10 @@ router.get('/recent', requireAuth, (req, res) => {
     .prepare(
       `SELECT t.*, d.name AS dog_name, d.name_unbekannt AS dog_name_unbekannt, d.rasse AS dog_rasse,
               d.foto_url AS dog_foto_url,
-              (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id AND ${VISIBLE_COMMENT_SQL}) AS comment_count
+              (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id AND ${VISIBLE_COMMENT_SQL}) AS comment_count,
+              ${HERKUNFT_NAME_SELECT_SQL}
        FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id
+       ${HERKUNFT_NAME_JOIN_SQL}
        WHERE ${VISIBLE_ENTRY_SQL}
        ORDER BY t.created_at DESC, t.id DESC
        LIMIT @limit`
@@ -128,7 +165,8 @@ router.get('/', requireAuth, (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT t.* FROM timeline_entries t
+      `SELECT t.*, ${HERKUNFT_NAME_SELECT_SQL} FROM timeline_entries t
+       ${HERKUNFT_NAME_JOIN_SQL}
        WHERE ${VISIBLE_ENTRY_SQL} AND (@dogId IS NULL OR t.dog_id = @dogId)
        ORDER BY t.datum, t.id`
     )
@@ -157,7 +195,7 @@ router.post('/', requireAuth, (req, res) => {
     )
     .run({ ...values, dog_id: dogId, family_id: req.familyId })
 
-  const entry = db.prepare('SELECT * FROM timeline_entries WHERE id = ?').get(result.lastInsertRowid)
+  const entry = findEntryById.get(result.lastInsertRowid)
   res.status(201).json(toEntry(entry))
 })
 
@@ -182,7 +220,7 @@ router.put('/:id', requireAuth, (req, res) => {
      WHERE id = @id`
   ).run({ ...values, id: existing.id })
 
-  const entry = db.prepare('SELECT * FROM timeline_entries WHERE id = ?').get(existing.id)
+  const entry = findEntryById.get(existing.id)
   res.json(toEntry(entry, commentsOf(entry.id)))
 })
 

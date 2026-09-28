@@ -6,7 +6,7 @@ const { authLimiter } = require('../middleware/abuse')
 const { isIsoDate, cleanText, cleanId, isUploadUrl } = require('../lib/validate')
 const { dogLabel } = require('../lib/labels')
 const { ART, membershipsOf, canEnter, canSeeDog, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL } = require('../lib/context')
-const { canAttachUpload } = require('../lib/uploadAccess')
+const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
 const { slugify } = require('../lib/partners')
 const { createBatch, revokeOpenHandoverVouchers } = require('../lib/vouchers')
 const { formatCode } = require('../lib/codes')
@@ -50,7 +50,13 @@ const insertDog = db.prepare(
      @bei_uns_seit, @bei_uns_bis, @abschied_grund, @herkunft_art, @herkunft_text, @vermittlung_status)`
 )
 const insertLink = db.prepare('INSERT OR IGNORE INTO dog_links (family_id, dog_a_id, dog_b_id) VALUES (?, ?, ?)')
-const listShares = db.prepare('SELECT family_id FROM dog_shares WHERE dog_id = ? ORDER BY family_id')
+// Nur Rudel-Freigaben (Teilen aus "Meine Chronik", siehe PUT /:id/shares) - die Tierheim-Freigabe
+// (dog_shares mit einer Tierheim-Familie, "Tierheim darf mitlesen", siehe PUT /:id/shelter-share) ist
+// eine eigene Einwilligung und gehört nicht in diese Liste (security-review Phase T Finding 2).
+const listShares = db.prepare(
+  `SELECT ds.family_id FROM dog_shares ds JOIN families f ON f.id = ds.family_id
+   WHERE ds.dog_id = ? AND f.art = 'rudel' ORDER BY ds.family_id`
+)
 const findDescendant = db.prepare(`
   WITH RECURSIVE descendants(id) AS (
     SELECT id FROM dogs WHERE mother_dog_id = :root OR father_dog_id = :root
@@ -116,17 +122,27 @@ function validateParent(record, parent, dogId, familyId) {
 
 // existingFotoUrl: der bisherige Wert bei PUT (null bei POST) - bleibt erlaubt, auch wenn er gerade
 // nicht (mehr) über canAttachUpload sichtbar wäre (Altbestand, siehe lib/uploadAccess.js)
-function validateDogRecord(record, dogId, req, existingFotoUrl = null) {
+// previousVermittlungStatus: der bisherige Wert bei PUT (null bei POST) - siehe die Vermittlungsstatus-
+// Prüfung unten (security-review Phase T Finding 1).
+function validateDogRecord(record, dogId, req, existingFotoUrl = null, previousVermittlungStatus = null) {
   if (!record.name) return 'Name ist erforderlich (oder „Name unbekannt“ wählen)'
   if (!SEXES.includes(record.geschlecht)) return 'Geschlecht muss ruede oder huendin sein'
   if (!SPECIES.includes(record.tierart)) return 'Tierart muss hund, katze oder anderes sein'
   if (record.geburtsdatum && !isIsoDate(record.geburtsdatum)) return 'Geburtsdatum ist ungültig'
   if (record.foto_url && !isUploadUrl(record.foto_url)) return 'Foto-URL ist ungültig'
-  if (
-    record.foto_url &&
-    !canAttachUpload({ familyId: req.familyId, homeId: req.homeId }, record.foto_url, existingFotoUrl ? [existingFotoUrl] : [])
-  ) {
-    return 'Foto nicht gefunden'
+  if (record.foto_url) {
+    const existingUrls = existingFotoUrl ? [existingFotoUrl] : []
+    // security-review Phase T Finding 6: ein Tierheim mit Mitlese-Freigabe (dog_shares) auf ein längst
+    // vermitteltes Tier SIEHT dessen (vom neuen Zuhause hochgeladene) Fotos - canAttachUpload würde das
+    // als "im Bereich sichtbar" durchlassen. Für ein eigenes, noch vermittelbares Tier (Steckbrief-
+    // fähig) reicht das nicht: hier zählt nur ein selbst hochgeladenes Foto oder der bisherige Wert,
+    // sonst könnte ein privates Adoptanten-Foto in einen öffentlichen Steckbrief wandern.
+    const identity = findFamilyArt.get(req.familyId)
+    const isPublicShelterAnimal = identity?.art === ART.tierheim && PUBLISHABLE_STATUS.includes(record.vermittlung_status)
+    const attachAllowed = isPublicShelterAnimal
+      ? canAttachPublicUpload({ familyId: req.familyId }, record.foto_url, existingUrls)
+      : canAttachUpload({ familyId: req.familyId, homeId: req.homeId }, record.foto_url, existingUrls)
+    if (!attachAllowed) return 'Foto nicht gefunden'
   }
   if (record.bei_uns_seit && !isIsoDate(record.bei_uns_seit)) return 'Datum „bei uns seit“ ist ungültig'
   if (record.bei_uns_bis && !isIsoDate(record.bei_uns_bis)) return 'Datum „bei uns bis“ ist ungültig'
@@ -139,10 +155,16 @@ function validateDogRecord(record, dogId, req, existingFotoUrl = null) {
   if (record.herkunft_art !== null && !HERKUNFT_ARTEN.includes(record.herkunft_art)) {
     return 'Unbekannte Herkunft'
   }
-  if (record.vermittlung_status !== null) {
+  // security-review Phase T Finding 1: die Shelter-only-Regel gilt nur, wenn sich der Wert wirklich
+  // ÄNDERT. Nach einer Übergabe (lib/transfers.js transferDog) trägt das Tier weiterhin
+  // vermittlung_status='vermittelt', obwohl der neue Besitzer (ein Zuhause) kein Tierheim ist - der
+  // bloße Erhalt dieses Werts (Name ändern, Foto ändern, ...) darf nicht an dieser Regel scheitern.
+  if (record.vermittlung_status !== previousVermittlungStatus) {
     const identity = findFamilyArt.get(req.familyId)
     if (!identity || identity.art !== ART.tierheim) return 'Vermittlungsstatus gibt es nur im Tierheim-Bereich'
-    if (!VERMITTLUNG_STATUS_VALUES.includes(record.vermittlung_status)) return 'Unbekannter Vermittlungsstatus'
+  }
+  if (record.vermittlung_status !== null && !VERMITTLUNG_STATUS_VALUES.includes(record.vermittlung_status)) {
+    return 'Unbekannter Vermittlungsstatus'
   }
   for (const parent of PARENTS) {
     const error = validateParent(record, parent, dogId, req.familyId)
@@ -367,26 +389,45 @@ router.post('/', requireAuth, (req, res) => {
   res.status(201).json(findDog.get(id))
 })
 
+// public_slug bleibt nur erhalten, solange der neue Status noch vermittelbar ist (in_vermittlung/
+// reserviert) - jeder andere Wert (inkl. NULL, nicht nur 'vermittelt') räumt ihn auf
+// (security-review Phase T Finding 10: vorher blieb ein Steckbrief-Link z. B. beim Zurücksetzen auf
+// NULL fälschlich stehen). PUBLISHABLE_STATUS ist eine feste, im Code definierte Konstante - direkt
+// als Literal in der IN-Liste, kein Nutzereingabe-Pfad (wie PUBLISHABLE_STATUS_SQL in lib/publicMedia.js).
+const PUBLIC_SLUG_KEEP_SQL = `CASE WHEN @vermittlung_status IN (${PUBLISHABLE_STATUS.map((s) => `'${s}'`).join(', ')}) THEN public_slug ELSE NULL END`
+
+const updateDogStmt = db.prepare(
+  `UPDATE dogs SET
+     name = @name, name_unbekannt = @name_unbekannt, rasse = @rasse, tierart = @tierart,
+     geschlecht = @geschlecht, geburtsdatum = @geburtsdatum,
+     farbe_markings = @farbe_markings, mother_dog_id = @mother_dog_id,
+     father_dog_id = @father_dog_id, mother_freitext = @mother_freitext,
+     father_freitext = @father_freitext, foto_url = @foto_url, beschreibung = @beschreibung,
+     bei_uns_seit = @bei_uns_seit, bei_uns_bis = @bei_uns_bis, abschied_grund = @abschied_grund,
+     herkunft_art = @herkunft_art, herkunft_text = @herkunft_text, vermittlung_status = @vermittlung_status,
+     public_slug = ${PUBLIC_SLUG_KEEP_SQL}
+   WHERE id = @id`
+)
+
+// Verlässt der Status "reserviert" auf diesem Weg (nicht über DELETE /:id/handover), muss ein noch
+// offener Übergabe-Gutschein mit zurückgezogen werden - sonst ließe er sich später einlösen, obwohl die
+// Reservierung längst nicht mehr gilt (security-review Phase T Finding 3).
+const updateDog = db.transaction((existing, record) => {
+  updateDogStmt.run({ ...record, id: existing.id })
+  if (existing.vermittlung_status === 'reserviert' && record.vermittlung_status !== 'reserviert') {
+    revokeOpenHandoverVouchers(db, existing.id)
+  }
+})
+
 router.put('/:id', requireAuth, (req, res) => {
   const existing = loadOwnDog(req, res)
   if (!existing) return
 
   const record = buildDogRecord(req.body || {}, existing)
-  const error = validateDogRecord(record, existing.id, req, existing.foto_url)
+  const error = validateDogRecord(record, existing.id, req, existing.foto_url, existing.vermittlung_status)
   if (error) return res.status(400).json({ error })
 
-  db.prepare(
-    `UPDATE dogs SET
-       name = @name, name_unbekannt = @name_unbekannt, rasse = @rasse, tierart = @tierart,
-       geschlecht = @geschlecht, geburtsdatum = @geburtsdatum,
-       farbe_markings = @farbe_markings, mother_dog_id = @mother_dog_id,
-       father_dog_id = @father_dog_id, mother_freitext = @mother_freitext,
-       father_freitext = @father_freitext, foto_url = @foto_url, beschreibung = @beschreibung,
-       bei_uns_seit = @bei_uns_seit, bei_uns_bis = @bei_uns_bis, abschied_grund = @abschied_grund,
-       herkunft_art = @herkunft_art, herkunft_text = @herkunft_text, vermittlung_status = @vermittlung_status,
-       public_slug = CASE WHEN @vermittlung_status = 'vermittelt' THEN NULL ELSE public_slug END
-     WHERE id = @id`
-  ).run({ ...record, id: existing.id })
+  updateDog(existing, record)
 
   res.json(findDog.get(existing.id))
 })
@@ -448,6 +489,30 @@ router.put('/:id/steckbrief', requireAuth, (req, res) => {
 // claim - lib/vouchers.js). authLimiter zusätzlich zum ohnehin für /api/dogs greifenden writeLimiter
 // (app.js limitWrites): wie andere sensible, Code ausgebende Aktionen (routes/auth.js /family/key).
 // "nicht Demo" ist schon durch requireAuth abgedeckt (Demo darf nur GET).
+// HANDOVER_VOUCHER_DAYS: befristet, damit eine vergessene/verlorene Reservierung nicht ewig offen
+// bleibt (security-review Phase T Finding 3) - abgelaufene Gutscheine lehnt redeem/claim ohnehin ab.
+const HANDOVER_VOUCHER_DAYS = 30
+const HANDOVER_VOUCHER_MS = HANDOVER_VOUCHER_DAYS * 24 * 60 * 60 * 1000
+
+const setReservedStmt = db.prepare("UPDATE dogs SET vermittlung_status = 'reserviert' WHERE id = ?")
+
+// Zurückziehen + Statuswechsel + neuer Gutschein-Stapel als EINE Transaktion (security-review Phase T
+// Finding 3) - ein Absturz mittendrin darf das Tier nie im Zustand "reserviert ohne gültigen Gutschein"
+// oder "zwei offene Gutscheine" zurücklassen.
+const createHandover = db.transaction((dog, identity) => {
+  revokeOpenHandoverVouchers(db, dog.id)
+  setReservedStmt.run(dog.id)
+  return createBatch(db, {
+    label: `Übergabe ${dog.name}`,
+    kind: 'partner',
+    size: 1,
+    issuedByFamilyId: dog.family_id,
+    partnerId: identity.partner_id,
+    dogId: dog.id,
+    expiresAt: new Date(Date.now() + HANDOVER_VOUCHER_MS)
+  })
+})
+
 router.post('/:id/handover', authLimiter, requireAuth, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
@@ -457,26 +522,43 @@ router.post('/:id/handover', authLimiter, requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Übergabe-Gutscheine gibt es nur im Tierheim-Bereich' })
   }
 
-  revokeOpenHandoverVouchers(db, dog.id)
-  db.prepare("UPDATE dogs SET vermittlung_status = 'reserviert' WHERE id = ?").run(dog.id)
-
-  const { codes } = createBatch(db, {
-    label: `Übergabe ${dog.name}`,
-    kind: 'partner',
-    size: 1,
-    issuedByFamilyId: req.familyId,
-    partnerId: identity.partner_id,
-    dogId: dog.id
-  })
+  const { codes } = createHandover(dog, identity)
   const code = codes[0]
 
   res.status(201).json({ code: formatCode(code), link: `/v#${code}` })
 })
 
+// Übergabe stornieren (Phase T, security-review Finding 3): zieht offene Übergabe-Gutscheine dieses
+// Tiers zurück und setzt den Status zurück auf "in_vermittlung", falls er noch "reserviert" war (ein
+// inzwischen z. B. auf "vermittelt" gesetztes Tier bleibt unangetastet). Nur der Tierheim-Besitzer.
+const cancelHandover = db.transaction((dog) => {
+  revokeOpenHandoverVouchers(db, dog.id)
+  if (dog.vermittlung_status === 'reserviert') {
+    db.prepare("UPDATE dogs SET vermittlung_status = 'in_vermittlung' WHERE id = ?").run(dog.id)
+  }
+})
+
+router.delete('/:id/handover', requireAuth, (req, res) => {
+  const dog = loadOwnDog(req, res)
+  if (!dog) return
+
+  const identity = db.prepare('SELECT art FROM families WHERE id = ?').get(req.familyId)
+  if (!identity || identity.art !== ART.tierheim) {
+    return res.status(400).json({ error: 'Übergabe-Gutscheine gibt es nur im Tierheim-Bereich' })
+  }
+
+  cancelHandover(dog)
+  res.json(findDog.get(dog.id))
+})
+
 // Teilen: nur aus "Meine Chronik" heraus, nur in Rudel, in denen der Haushalt Mitglied ist.
-// Ersetzt jeweils die komplette Menge (nicht additiv) – einfacher fürs Frontend als Diffing.
+// Ersetzt jeweils die komplette Menge (nicht additiv) – einfacher fürs Frontend als Diffing. Löscht
+// dabei NUR Rudel-Freigaben - eine eventuelle Tierheim-Freigabe (dog_shares mit story_consent, siehe
+// PUT /:id/shelter-share) blieb bisher fälschlich mit gelöscht (security-review Phase T Finding 2).
 const replaceShares = db.transaction((dogId, familyIds) => {
-  db.prepare('DELETE FROM dog_shares WHERE dog_id = ?').run(dogId)
+  db.prepare(
+    `DELETE FROM dog_shares WHERE dog_id = ? AND family_id IN (SELECT id FROM families WHERE art = 'rudel')`
+  ).run(dogId)
   const insert = db.prepare('INSERT INTO dog_shares (dog_id, family_id) VALUES (?, ?)')
   for (const familyId of familyIds) insert.run(dogId, familyId)
 })
@@ -530,6 +612,11 @@ router.put('/:id/shelter-share', requireAuth, (req, res) => {
 
   const { enabled, storyConsent } = req.body || {}
   if (typeof enabled !== 'boolean') return res.status(400).json({ error: '„enabled“ muss true oder false sein' })
+  // security-review Phase T Finding 7: storyConsent muss, wenn mitgeschickt, ein echter Boolean sein -
+  // sonst würde z. B. der String "false" (truthy!) stillschweigend als Einwilligung durchgehen.
+  if (storyConsent !== undefined && storyConsent !== null && typeof storyConsent !== 'boolean') {
+    return res.status(400).json({ error: '„storyConsent“ muss true oder false sein' })
+  }
 
   if (enabled) {
     setShelterShare(dog.id, shelter.id, storyConsent ? 1 : 0)
@@ -543,6 +630,11 @@ router.put('/:id/shelter-share', requireAuth, (req, res) => {
 // Löscht den Hund samt Timeline. Verweise anderer Hunde/Würfe werden zu Freitext,
 // damit die Abstammung (auch in anderen Rudeln) lesbar bleibt.
 const deleteDog = db.transaction((dog) => {
+  // Ein noch offener Übergabe-Gutschein für dieses Tier darf danach nicht mehr einlösbar sein
+  // (security-review Phase T Finding 3) - assertHandoverStillRedeemable in lib/vouchers.js würde das
+  // zwar ohnehin ablehnen (das Tier existiert nicht mehr), aber revoked_at macht es auch für /check
+  // und die Gutschein-Übersicht sofort sichtbar "erledigt".
+  revokeOpenHandoverVouchers(db, dog.id)
   const label = dogLabel(dog)
   db.prepare('UPDATE dogs SET mother_dog_id = NULL, mother_freitext = ? WHERE mother_dog_id = ?').run(label, dog.id)
   db.prepare('UPDATE dogs SET father_dog_id = NULL, father_freitext = ? WHERE father_dog_id = ?').run(label, dog.id)
