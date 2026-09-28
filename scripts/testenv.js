@@ -37,7 +37,7 @@ async function main() {
 
   if (!fs.existsSync(path.join(dataDir, 'data.db'))) seed(env)
   console.log('Testumgebung: http://localhost:5173 · Admin: http://localhost:5173/admin (admin / test-admin)')
-  const child = spawn('npm', ['run', 'dev'], { cwd: root, env, stdio: 'inherit', shell: true })
+  const child = spawn('npm run dev', { cwd: root, env, stdio: 'inherit', shell: true })
   child.on('exit', (code) => process.exit(code ?? 0))
 }
 
