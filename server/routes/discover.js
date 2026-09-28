@@ -46,29 +46,29 @@ function sortByName(rows) {
 // echte NUR echte - außer in appEnv dev/staging, wo eine echte Test-Sitzung zusätzlich die Demo-Partner
 // sieht (wie partners.js demoAllowed). Anders als bei Empfehlungen/Spendenberichten/Einstellungen gibt es
 // hier also einen dev/staging-Bonus (siehe Aufgabenstellung Task 2).
-function partnerDemoValues(req) {
-  if (req.isDemo) return [1]
+function partnerDemoValues(isDemo) {
+  if (isDemo) return [1]
   if (config.appEnv === 'dev' || config.appEnv === 'staging') return [0, 1]
   return [0]
 }
 
 // Empfehlungen/Anzeigen und Spendenberichte bleiben STRIKT nach is_demo getrennt, ohne dev/staging-Bonus
 // (Aufgabenstellung: "promotions/reports/settings stay separated by is_demo").
-function contentDemoValue(req) {
-  return req.isDemo ? 1 : 0
+function contentDemoValue(isDemo) {
+  return isDemo ? 1 : 0
 }
 
 // settings-Schlüssel: Demo-Sitzungen lesen die demo_*-Schlüssel, echte die echten (siehe
 // routes/adminMarketing.js SETTINGS_KEYS, das genau diese Paare pflegt).
-function settingsKey(req, base) {
-  return req.isDemo ? `demo_${base}` : base
+function settingsKey(isDemo, base) {
+  return isDemo ? `demo_${base}` : base
 }
 
 // Aktiv und nicht gesperrt (Phase P Task 1) - ein gesperrter Partner verschwindet samt seiner Tiere
 // (begleiter.tiere hängt an diesen Zeilen) und seiner Spendenkarte aus "Entdecken". teaser_foto_url
 // (Phase P Task 3b, lib/einblicke.js teaserFotoSql) kommt in derselben Abfrage mit - keine Abfrage je Karte.
-function activePartnerRows(typs, req) {
-  const demoValues = partnerDemoValues(req)
+function activePartnerRows(typs, isDemo) {
+  const demoValues = partnerDemoValues(isDemo)
   const typPlaceholders = typs.map(() => '?').join(', ')
   const demoPlaceholders = demoValues.map(() => '?').join(', ')
   return db
@@ -81,7 +81,7 @@ function activePartnerRows(typs, req) {
 
 // Aktive Empfehlungen/Anzeigen eines Bereichs im Zeitfenster (NULL = offen), nach sort/Titel sortiert.
 // Hängt eine Empfehlung an einem Partner, muss der öffentlich sichtbar sein (promotionPartnerVisibleSql).
-function activePromotionRows(bereich, req) {
+function activePromotionRows(bereich, isDemo) {
   return db
     .prepare(
       `SELECT m.* FROM promotions m
@@ -92,7 +92,7 @@ function activePromotionRows(bereich, req) {
          AND ${promotionPartnerVisibleSql('m', 'p')}
        ORDER BY m.sort, m.titel`
     )
-    .all(bereich, contentDemoValue(req))
+    .all(bereich, contentDemoValue(isDemo))
 }
 
 // Hängt an jede Zeile mit gültigem lat/lon die Entfernung zu center - ohne Koordinaten fliegt eine Zeile
@@ -238,8 +238,8 @@ function promotionCard(row) {
 // Karten eines Empfehlungs-Bereichs (futter, hundeschule, begleiter, unterstuetzen - lib/promotions.js
 // BEREICH_VALUES): dieselbe Abfrage (aktiv, Zeitfenster, Demo-Trennung, sichtbarer Partner), dieselbe
 // Sortierung nach Partner-Entfernung und dieselbe Kartenform für jeden Abschnitt.
-function promotionCards(bereich, req, distanceMap) {
-  return sortPromotionsByPartnerDistance(activePromotionRows(bereich, req), distanceMap).map(promotionCard)
+function promotionCards(bereich, isDemo, distanceMap) {
+  return sortPromotionsByPartnerDistance(activePromotionRows(bereich, isDemo), distanceMap).map(promotionCard)
 }
 
 function spendenCard(row) {
@@ -253,10 +253,10 @@ function spendenCard(row) {
   }
 }
 
-function newestDonationReport(req) {
+function newestDonationReport(isDemo) {
   const row = db
     .prepare('SELECT * FROM donation_reports WHERE is_demo = ? ORDER BY created_at DESC, id DESC LIMIT 1')
-    .get(contentDemoValue(req))
+    .get(contentDemoValue(isDemo))
   if (!row) return null
   return {
     zeitraum: row.zeitraum,
@@ -273,52 +273,56 @@ function readSettingValue(key) {
   return row?.value ? row.value : null
 }
 
-// POST /api/discover { plz?, radius? } - die PLZ steht bewusst im Body statt in der URL (wie POST
-// /api/public/partners/near, siehe dort für die Begründung: Server-/Proxy-Zugriffslogs).
-router.post('/', discoverLimiter, requireSession, (req, res) => {
-  const { plz, radius } = req.body || {}
+function httpError(status, message) {
+  const err = new Error(message)
+  err.status = status
+  return err
+}
 
-  let center = null
-  let radiusKm = null
-  if (plz !== undefined && plz !== null && plz !== '') {
-    radiusKm = Number(radius)
-    if (!RADIUS_VALUES.includes(radiusKm)) {
-      return res.status(400).json({ error: 'Der Umkreis muss 5, 10, 25, 50 oder 100 km sein' })
-    }
-    const hit = lookupPlz(typeof plz === 'string' ? plz.trim() : '')
-    if (!hit) return res.status(400).json({ error: 'Diese Postleitzahl kennen wir nicht' })
-    center = { lat: hit.lat, lon: hit.lon, ort: hit.ort }
-  }
+// { plz?, radius? } aus dem Body -> { center, radiusKm } (beides null ohne PLZ) - oder 400. Exportiert für
+// die Kundensicht der Partner (routes/partnerArea/preview.js POST /preview/discover).
+function resolveDiscoverCenter({ plz, radius } = {}) {
+  if (plz === undefined || plz === null || plz === '') return { center: null, radiusKm: null }
+  const radiusKm = Number(radius)
+  if (!RADIUS_VALUES.includes(radiusKm)) throw httpError(400, 'Der Umkreis muss 5, 10, 25, 50 oder 100 km sein')
+  const hit = lookupPlz(typeof plz === 'string' ? plz.trim() : '')
+  if (!hit) throw httpError(400, 'Diese Postleitzahl kennen wir nicht')
+  return { center: { lat: hit.lat, lon: hit.lon, ort: hit.ort }, radiusKm }
+}
 
+// Die ganze "Entdecken"-Antwort - ohne req/res, damit die Kundensicht der Partner (routes/partnerArea/
+// preview.js) genau die Antwort einer Demo-Sitzung als Grundlage nehmen kann. isDemo: Demo- oder echte
+// Sicht (Partner, Empfehlungen, Berichte, Einstellungen); center/radiusKm aus resolveDiscoverCenter.
+function buildDiscover({ isDemo, center, radiusKm }) {
   const distanceMap = partnerDistanceMap(center)
 
   // --- Hundeschule gesucht? ------------------------------------------------------------------------
-  const hundeschulPartnerSection = partnerSection(activePartnerRows(['hundeschule'], req), center, radiusKm)
+  const hundeschulPartnerSection = partnerSection(activePartnerRows(['hundeschule'], isDemo), center, radiusKm)
   const hundeschulPartner = hundeschulPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
-  const hundeschulPromotions = promotionCards('hundeschule', req, distanceMap)
+  const hundeschulPromotions = promotionCards('hundeschule', isDemo, distanceMap)
   const hundeschulen = [...hundeschulPartner, ...hundeschulPromotions]
 
   // --- Neuer Begleiter gesucht? --------------------------------------------------------------------
-  const begleiterPartnerRows = activePartnerRows(['tierheim', 'vermittlung'], req)
+  const begleiterPartnerRows = activePartnerRows(['tierheim', 'vermittlung'], isDemo)
   const begleiterPartnerSection = partnerSection(begleiterPartnerRows, center, radiusKm)
   const begleiterPartner = begleiterPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
   const begleiterTiereSectionResult = begleiterTiereSection(begleiterPartnerRows, center, radiusKm)
-  const begleiterPromotions = promotionCards('begleiter', req, distanceMap)
+  const begleiterPromotions = promotionCards('begleiter', isDemo, distanceMap)
 
   // --- Futter-Empfehlungen --------------------------------------------------------------------------
-  const futter = promotionCards('futter', req, distanceMap)
+  const futter = promotionCards('futter', isDemo, distanceMap)
 
   // --- Unterstützen -----------------------------------------------------------------------------------
-  const gofundmeUrl = readSettingValue(settingsKey(req, 'gofundme_url'))
+  const gofundmeUrl = readSettingValue(settingsKey(isDemo, 'gofundme_url'))
   // Spendenlinks laufen über dieselbe Partner-Liste wie begleiter.partner (inkl. eines etwaigen
   // Umkreis-Fallbacks) - eigene Ausserhalb-Kennzeichnung gibt es dafür nicht (nicht Teil des Auftrags).
   const partnerSpenden = begleiterPartnerSection.items
     .map(({ row }) => row)
     .filter((row) => row.spenden_url)
     .map(spendenCard)
-  const unterstuetzenPromotions = promotionCards('unterstuetzen', req, distanceMap)
+  const unterstuetzenPromotions = promotionCards('unterstuetzen', isDemo, distanceMap)
 
-  res.json({
+  return {
     ...(center ? { center } : {}),
     fallback: {
       hundeschulen: hundeschulPartnerSection.fallback,
@@ -329,13 +333,31 @@ router.post('/', discoverLimiter, requireSession, (req, res) => {
     futter,
     unterstuetzen: {
       gofundmeUrl,
-      gofundmeClickUrl: gofundmeUrl ? `/r/gofundme/${req.isDemo ? 1 : 0}` : null,
-      text: readSettingValue(settingsKey(req, 'unterstuetzen_text')),
-      bericht: newestDonationReport(req),
+      gofundmeClickUrl: gofundmeUrl ? `/r/gofundme/${isDemo ? 1 : 0}` : null,
+      text: readSettingValue(settingsKey(isDemo, 'unterstuetzen_text')),
+      bericht: newestDonationReport(isDemo),
       partnerSpenden,
       promotions: unterstuetzenPromotions
     }
-  })
+  }
+}
+
+// POST /api/discover { plz?, radius? } - die PLZ steht bewusst im Body statt in der URL (wie POST
+// /api/public/partners/near, siehe dort für die Begründung: Server-/Proxy-Zugriffslogs).
+router.post('/', discoverLimiter, requireSession, (req, res, next) => {
+  try {
+    const { center, radiusKm } = resolveDiscoverCenter(req.body || {})
+    res.json(buildDiscover({ isDemo: Boolean(req.isDemo), center, radiusKm }))
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
 })
 
 module.exports = router
+module.exports.buildDiscover = buildDiscover
+module.exports.resolveDiscoverCenter = resolveDiscoverCenter
+module.exports.partnerCard = partnerCard
+module.exports.spendenCard = spendenCard
+module.exports.discoverLimiter = discoverLimiter
+module.exports.MAX_BEGLEITER_TIERE = MAX_BEGLEITER_TIERE

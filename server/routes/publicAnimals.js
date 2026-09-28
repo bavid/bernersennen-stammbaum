@@ -47,35 +47,36 @@ const findPublicEntries = db.prepare(
    ORDER BY datum, id`
 )
 
-// GET /api/public/animals/:slug - der öffentliche Steckbrief eines Tiers. Kein Login, apiLimiter greift
-// schon global (app.js: app.use('/api', apiLimiter)). noindex: Steckbriefe sollen nie in
-// Suchmaschinen landen (Roadmap-Entscheidung 14).
-router.get('/animals/:slug', (req, res) => {
-  res.setHeader('X-Robots-Tag', 'noindex')
+// Foto-Adresse für eine Antwort: öffentlich über /public-media, in der Kundensicht des Tierheims selbst
+// (preview) über /uploads - ein unveröffentlichtes Tier oder ein Entwurfs-Partner gibt über /public-media
+// nichts frei, der eigene Bereich sieht seine Fotos aber über /uploads (lib/uploadAccess.js).
+function mediaUrl(url, preview) {
+  if (!url) return null
+  return preview ? url : toPublicMediaUrl(url)
+}
 
-  const dog = findPublishedDog.get({ slug: req.params.slug })
-  if (!dog) return notFound(res)
-
-  const shelter = findShelterPartner.get({ familyId: dog.family_id })
-  if (!shelter) return notFound(res)
-  if (shelter.is_demo && !demoAllowed(req)) return notFound(res)
-
+// Die Steckbrief-Antwort eines Tiers - eigene Funktion, damit die Kundensicht des Tierheims
+// (routes/partnerArea/preview.js GET /preview/animals/:dogId) genau dieselbe Form liefert, auch für ein
+// noch unveröffentlichtes Tier. shelter: die partners-Zeile (name, slug, website, kontakt_email,
+// kontakt_telefon, vermittlung_url, logo_file). Ob das Tier gezeigt werden darf, prüft der Aufrufer.
+// Einträge: in beiden Fällen nur öffentliche - die Kundensicht zeigt, was Kundinnen und Kunden sehen.
+function buildSteckbrief(dog, shelter, { preview = false } = {}) {
   const entries = findPublicEntries.all({ dogId: dog.id }).map((entry) => ({
     titel: entry.titel,
     datum: entry.datum,
     text: entry.text,
     kategorie: entry.kategorie,
-    fotoUrls: JSON.parse(entry.foto_urls).map(toPublicMediaUrl)
+    fotoUrls: JSON.parse(entry.foto_urls).map((url) => mediaUrl(url, preview))
   }))
 
-  res.json({
+  return {
     name: dog.name,
     tierart: dog.tierart,
     geschlecht: dog.geschlecht,
     rasse: dog.rasse,
     geburtsdatum: dog.geburtsdatum,
     beschreibung: dog.beschreibung,
-    fotoUrl: toPublicMediaUrl(dog.foto_url),
+    fotoUrl: mediaUrl(dog.foto_url, preview),
     // Phase P Task 1: damit der Steckbrief z. B. "pausiert – gerade nicht vermittelbar" anzeigen kann
     // (wie vermittlung_status auf den Portal-Karten, siehe getShelterAnimalCards).
     vermittlung_status: dog.vermittlung_status,
@@ -89,7 +90,23 @@ router.get('/animals/:slug', (req, res) => {
       vermittlung_url: shelter.vermittlung_url,
       logoUrl: shelter.logo_file ? `/partner-media/${shelter.logo_file}` : null
     }
-  })
+  }
+}
+
+// GET /api/public/animals/:slug - der öffentliche Steckbrief eines Tiers. Kein Login, apiLimiter greift
+// schon global (app.js: app.use('/api', apiLimiter)). noindex: Steckbriefe sollen nie in
+// Suchmaschinen landen (Roadmap-Entscheidung 14).
+router.get('/animals/:slug', (req, res) => {
+  res.setHeader('X-Robots-Tag', 'noindex')
+
+  const dog = findPublishedDog.get({ slug: req.params.slug })
+  if (!dog) return notFound(res)
+
+  const shelter = findShelterPartner.get({ familyId: dog.family_id })
+  if (!shelter) return notFound(res)
+  if (shelter.is_demo && !demoAllowed(req)) return notFound(res)
+
+  res.json(buildSteckbrief(dog, shelter))
 })
 
 // GET /api/public/partners/:slug/animals - Karten-Daten für das Portal: die veröffentlichten Tiere
@@ -115,7 +132,8 @@ const findPublishableAnimals = db.prepare(
 // Abfrage und dieselbe Kartenform wiederverwenden kann, ohne GET /partners/:slug/animals selbst
 // aufzurufen (Sichtbarkeits-/Status-Prüfungen des Partners bleiben dabei Sache des jeweiligen Aufrufers).
 // includePaused: true nur fürs eigene Portal (siehe oben) - Standard sind die gelisteten Tiere.
-function getShelterAnimalCards(partnerId, { includePaused = false } = {}) {
+// preview: Fotos über /uploads für die Kundensicht des Tierheims selbst (siehe mediaUrl).
+function getShelterAnimalCards(partnerId, { includePaused = false, preview = false } = {}) {
   const shelterFamily = findShelterFamily.get(partnerId)
   if (!shelterFamily) return []
   const statement = includePaused ? findPublishableAnimals : findListedAnimals
@@ -126,7 +144,7 @@ function getShelterAnimalCards(partnerId, { includePaused = false } = {}) {
     geschlecht: dog.geschlecht,
     rasse: dog.rasse,
     geburtsdatum: dog.geburtsdatum,
-    fotoUrl: toPublicMediaUrl(dog.foto_url),
+    fotoUrl: mediaUrl(dog.foto_url, preview),
     vermittlung_status: dog.vermittlung_status
   }))
 }
@@ -213,3 +231,4 @@ router.get('/partners/:slug/happy-ends', (req, res) => {
 module.exports = router
 module.exports.getShelterAnimalCards = getShelterAnimalCards
 module.exports.toPublicMediaUrl = toPublicMediaUrl
+module.exports.buildSteckbrief = buildSteckbrief

@@ -189,6 +189,15 @@ function teaserFotoSql(alias) {
     ORDER BY e.datum DESC, e.id DESC LIMIT 1) AS teaser_foto_url`
 }
 
+const newestVisibleFotoStmt = db.prepare(
+  'SELECT foto_url FROM partner_einblicke WHERE partner_id = ? AND ausgeblendet = 0 ORDER BY datum DESC, id DESC LIMIT 1'
+)
+
+// /uploads-Adresse des neuesten sichtbaren Einblicks eines einzelnen Partners (Kundensicht, eigene Karte).
+function newestVisibleFotoUrl(partnerId) {
+  return newestVisibleFotoStmt.get(partnerId)?.foto_url ?? null
+}
+
 // Öffentliche Adresse des Teasers einer Zeile aus einer Abfrage mit teaserFotoSql, sonst null.
 function teaserFoto(row) {
   return row.teaser_foto_url ? toPublicMediaUrl(row.teaser_foto_url) : null
@@ -216,5 +225,6 @@ module.exports = {
   deleteEinblick,
   setAusgeblendet,
   teaserFotoSql,
-  teaserFoto
+  teaserFoto,
+  newestVisibleFotoUrl
 }

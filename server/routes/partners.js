@@ -6,7 +6,8 @@ const { lookupPlz, distanceKm } = require('../lib/geo')
 const { publicPartner, publicPartnerSql, isPubliclyVisible } = require('../lib/partners')
 const { isAdmin } = require('../middleware/admin')
 const { optionalSession } = require('../middleware/auth')
-const { teaserFotoSql, teaserFoto, listVisibleEinblicke, publicEinblick } = require('../lib/einblicke')
+const { teaserFotoSql, teaserFoto } = require('../lib/einblicke')
+const { buildPortal } = require('../lib/partnerPortal')
 
 const router = express.Router()
 
@@ -44,12 +45,6 @@ function visiblePartnerRows(req) {
 function partnerListCard(row) {
   return { ...publicPartner(row), teaserFoto: teaserFoto(row) }
 }
-
-// findShelterFamily: wie server/routes/publicAnimals.js - existiert für diesen Partner überhaupt ein
-// Tierheim-Bereich? Ohne ihn wäre "Demo als Tierheim ansehen" (Task 6) ein toter Knopf: api.demo({as:
-// 'tierheim'}) schlägt fehl, wenn der Demo-Partner (noch) keinen eigenen Tierheim-Bereich hat (final-
-// review: der Knopf hing bisher allein an partner.is_demo, nicht an dessen tatsächlicher Existenz).
-const findShelterFamily = db.prepare("SELECT id FROM families WHERE partner_id = ? AND art = 'tierheim'")
 
 // Aktive Partner im Umkreis von plz/radius, nach Entfernung sortiert - oder eine Fehlerantwort direkt
 // über res. Gemeinsame Logik für GET ?plz= (Rückwärtskompatibilität) und POST /near (Finding 9: die PLZ
@@ -94,7 +89,8 @@ router.post('/near', (req, res) => {
 
 // GET /api/public/partners/:slug - Portal-Daten. Nur aktiv und nicht gesperrt (lib/partners.js
 // isPubliclyVisible), sonst 404 - ausser mit gültigem Admin-Cookie, dann als Vorschau (preview: true)
-// auch für Entwürfe, pausierte und gesperrte Partner.
+// auch für Entwürfe, pausierte und gesperrte Partner. Die Antwort selbst baut lib/partnerPortal.js
+// buildPortal - dieselbe Form wie die Kundensicht des Partners (routes/partnerArea/preview.js).
 router.get('/:slug', (req, res) => {
   const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
   const notFound = () => res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
@@ -104,22 +100,7 @@ router.get('/:slug', (req, res) => {
   const preview = !isPubliclyVisible(partner)
   if (preview && !isAdmin(req)) return notFound()
 
-  res.json({
-    ...publicPartner(partner),
-    portal_titel: partner.portal_titel,
-    portal_text: partner.portal_text,
-    spenden_url: partner.spenden_url,
-    vermittlung_url: partner.vermittlung_url,
-    // Phase P Task 1: Link zum eigenen Kontaktformular des Partners (nur http(s), siehe validatePartner).
-    kontakt_formular_url: partner.kontakt_formular_url,
-    farbe: partner.farbe,
-    ...(preview ? { preview: true } : {}),
-    // Phase T Task 6: der Client zeigt für Demo-Partner mit einem tatsächlich bestehenden Demo-Tierheim
-    // zusätzlich "Demo als Tierheim ansehen" (PartnerPortalPage.jsx) - ohne extra Anfrage.
-    ...(partner.is_demo && findShelterFamily.get(partner.id) ? { shelterDemo: true } : {}),
-    // Phase P Task 3b: höchstens 60 nicht ausgeblendete Einblicke, neueste zuerst.
-    einblicke: listVisibleEinblicke(partner.id).map((row) => publicEinblick(row))
-  })
+  res.json({ ...buildPortal(partner), ...(preview ? { preview: true } : {}) })
 })
 
 module.exports = router
