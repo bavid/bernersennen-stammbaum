@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const db = require('../db')
-const { jwtSecret, cookieSecure } = require('../config')
+const { jwtSecret, cookieSecure, sessionCookie } = require('../config')
 
 const SESSION_DAYS = 30
 
@@ -17,7 +17,7 @@ const familyById = db.prepare('SELECT is_demo FROM families WHERE id = ?')
 // is_demo kommt aus der DB, nicht aus dem Token: so bleibt eine Demo-Familie schreibgeschützt,
 // auch wenn jemand sich mit ihrem echten Passwort ganz normal einloggt.
 function requireAuth(req, res, next) {
-  const token = req.cookies?.session
+  const token = req.cookies?.[sessionCookie]
   if (!token) {
     return res.status(401).json({ error: 'Nicht eingeloggt' })
   }
@@ -43,12 +43,12 @@ function signSession(familyId) {
 }
 
 function setSessionCookie(res, familyId) {
-  res.cookie('session', signSession(familyId), COOKIE_OPTIONS)
+  res.cookie(sessionCookie, signSession(familyId), COOKIE_OPTIONS)
 }
 
 function clearSessionCookie(res) {
   const { maxAge, ...options } = COOKIE_OPTIONS
-  res.clearCookie('session', options)
+  res.clearCookie(sessionCookie, options)
 }
 
 module.exports = { requireAuth, signSession, setSessionCookie, clearSessionCookie }

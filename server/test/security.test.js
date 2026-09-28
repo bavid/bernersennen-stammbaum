@@ -9,6 +9,9 @@ const clientDist = path.join(dataDir, 'dist')
 fs.mkdirSync(clientDist)
 fs.writeFileSync(path.join(clientDist, 'index.html'), '<!doctype html><title>Chronik</title>')
 process.env.CLIENT_DIST = clientDist
+// Erst alle env-Overrides setzen, dann config requiren - sonst cacht Node das Modul mit den
+// falschen (Default-)Werten, bevor die Testumgebung steht.
+const config = require('../config')
 
 async function uploadFile(base, cookie, { type, name, bytes }) {
   const form = new FormData()
@@ -55,7 +58,8 @@ test('security and deployment behaviour', async (t) => {
     const res = await call(base, '/api/login', { method: 'POST', body: { password: 'geheim123' } })
     assert.equal(res.status, 200)
     assert.match(res.headers.get('set-cookie'), /HttpOnly/i)
-    assert.ok(getCookie(res.res).startsWith('session='))
+    // Cookie-Name ist an das Testumfeld gekoppelt (dev_session, staging_session, ...) - siehe config.sessionCookie
+    assert.ok(getCookie(res.res).startsWith(`${config.sessionCookie}=`), `expected ${config.sessionCookie}=..., got ${getCookie(res.res)}`)
   })
 
   await t.test('upload rejects non-image types', async () => {

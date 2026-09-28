@@ -39,10 +39,19 @@ function readTrustProxy() {
 
 const dataDir = process.env.DATA_DIR || __dirname
 
+const appEnv = readAppEnv(process.env.APP_ENV)
+// Prod und Vorschau laufen auf derselben IP (nur der Port unterscheidet sich) – Browser scopen Cookies
+// aber nicht nach Port. Ohne Präfix würde ein Login auf der Vorschau die Prod-Sitzung überschreiben.
+// Prod behält bewusst die unpräfixierten Namen, damit ein Rollout niemanden ausloggt.
+const cookiePrefix = appEnv === 'production' ? '' : `${appEnv}_`
+
 module.exports = {
   isProduction,
-  appEnv: readAppEnv(process.env.APP_ENV),
+  appEnv,
   readAppEnv,
+  cookiePrefix,
+  sessionCookie: `${cookiePrefix}session`,
+  adminCookie: `${cookiePrefix}admin_session`,
   port: Number(process.env.PORT) || 4000,
   jwtSecret: readJwtSecret(),
   dbPath: process.env.DB_PATH || path.join(dataDir, 'data.db'),

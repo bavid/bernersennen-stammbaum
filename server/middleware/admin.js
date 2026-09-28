@@ -1,8 +1,7 @@
 const jwt = require('jsonwebtoken')
-const { jwtSecret, cookieSecure } = require('../config')
+const { jwtSecret, cookieSecure, adminCookie: ADMIN_COOKIE } = require('../config')
 const { requireAuth } = require('./auth')
 
-const ADMIN_COOKIE = 'admin_session'
 const ADMIN_SESSION_HOURS = 12
 
 const ADMIN_COOKIE_OPTIONS = {

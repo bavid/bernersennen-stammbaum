@@ -12,6 +12,7 @@ const cookieParser = require('cookie-parser')
 const authRoutes = require('../routes/auth')
 const { requireAuth } = require('../middleware/auth')
 const db = require('../db')
+const config = require('../config')
 
 test.after(() => {
   db.close()
@@ -47,7 +48,8 @@ test('family creation, login and session protection', async (t) => {
       body: JSON.stringify({ name: 'Familie Hermes', password: 'geheim123' })
     })
     assert.equal(res.status, 201)
-    assert.ok(getCookie(res).startsWith('session='))
+    // Cookie-Name ist an das Testumfeld gekoppelt (dev_session, staging_session, ...) - siehe config.sessionCookie
+    assert.ok(getCookie(res).startsWith(`${config.sessionCookie}=`), `expected ${config.sessionCookie}=..., got ${getCookie(res)}`)
   })
 
   await t.test('logs in with the correct password', async () => {

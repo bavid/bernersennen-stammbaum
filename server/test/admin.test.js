@@ -16,6 +16,9 @@ async function uploadPng(base, cookie) {
 test('admin sees everything, but only with the admin login', async (t) => {
   process.env.ADMIN_PASSWORD_HASH = await hashPassword(ADMIN_TEST_PASSWORD)
   const { server, base } = await startApp()
+  // Erst nach ADMIN_PASSWORD_HASH und startApp() requiren - sonst cacht Node das Modul mit den
+  // falschen (Default-)Werten, bevor die Testumgebung steht.
+  const config = require('../config')
   t.after(() => cleanup(dataDir, server))
 
   const a = await createFamily(base, 'Rudel A', 'passwortA', { quelle: 'Hundeschule Musterstadt' })
@@ -38,7 +41,8 @@ test('admin sees everything, but only with the admin login', async (t) => {
     const res = await login('admin', ADMIN_TEST_PASSWORD)
     assert.equal(res.status, 200)
     adminCookie = getCookie(res.res)
-    assert.match(adminCookie, /^admin_session=/)
+    // Cookie-Name ist an das Testumfeld gekoppelt (dev_admin_session, staging_admin_session, ...) - siehe config.adminCookie
+    assert.ok(adminCookie.startsWith(`${config.adminCookie}=`), `expected ${config.adminCookie}=..., got ${adminCookie}`)
     assert.match(res.headers.get('set-cookie'), /HttpOnly/i)
   })
 
