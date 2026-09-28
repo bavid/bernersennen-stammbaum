@@ -22,6 +22,7 @@ const {
 } = require('./vouchers')
 
 const MAX_SLUG_SUFFIX = 99
+const BLOCKED_PARTNER_MESSAGE = 'Dieser Partner-Zugang kann gerade nicht eingelöst werden – bitte meldet euch beim Betreiber.'
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -90,10 +91,13 @@ function assertPartnerAccessVoucher(voucher) {
   }
 }
 
-// Gebundener Zugang: der Partner muss noch da sein und darf inzwischen keinen Bereich bekommen haben.
+// Gebundener Zugang, in der Einlöse-Transaktion erneut geprüft (security-review Phase P Task 2): der
+// Partner muss noch da sein, darf weder gesperrt noch (inzwischen) ein Demo-Partner sein und keinen
+// Bereich bekommen haben. Der Status selbst (entwurf, aktiv, pausiert) spielt keine Rolle.
 function boundPartnerForRedeem(db, partnerId) {
   const partner = db.prepare('SELECT * FROM partners WHERE id = ?').get(partnerId)
   if (!partner) throw httpError(410, 'Dieser Partner-Zugang gilt nicht mehr')
+  if (partner.is_demo || partner.gesperrt) throw httpError(409, BLOCKED_PARTNER_MESSAGE)
   const area = findPartnerArea(db, partner.id)
   if (area) throw httpError(409, `Für diesen Partner gibt es schon einen ${areaLabel(area.art)}`)
   return partner

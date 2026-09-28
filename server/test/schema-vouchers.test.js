@@ -36,6 +36,17 @@ test('voucher_batches hat die erwarteten Spalten', () => {
   }
 })
 
+test('voucher_batches: zweck (Standard chronik) und partner_typ für Partner-Zugänge (Phase P Task 2)', () => {
+  const cols = columns('voucher_batches')
+  assert.ok(cols.includes('zweck'), 'voucher_batches.zweck fehlt')
+  assert.ok(cols.includes('partner_typ'), 'voucher_batches.partner_typ fehlt')
+
+  const batchId = db.prepare("INSERT INTO voucher_batches (label, kind, size) VALUES ('Ohne Zweck', 'admin', 1)").run().lastInsertRowid
+  const row = db.prepare('SELECT zweck, partner_typ FROM voucher_batches WHERE id = ?').get(batchId)
+  assert.equal(row.zweck, 'chronik')
+  assert.equal(row.partner_typ, null)
+})
+
 test('vouchers hat die erwarteten Spalten', () => {
   const cols = columns('vouchers')
   for (const name of [

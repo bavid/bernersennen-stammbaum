@@ -399,14 +399,13 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
     // security-review Phase T Finding 3: dieselbe Prüfen-vor-Verbrauchen-Reihenfolge wie redeemVoucher,
     // und derselbe Fix für den 500er: assertHandoverStillRedeemable bestätigt vorher, dass das Tier noch
     // existiert - db.prepare(...).get(voucher.dog_id) unten kann also nicht mehr undefined liefern.
+    // Erst "geschlossen?" (zurückgezogen, eingelöst, abgelaufen - wie assertVoucherOpen), dann die Art:
+    // ein geschlossener Code verrät so nicht, ob er ein Partner-Zugang war (security-review Phase P Task 2).
     const voucherRow = findVoucherByHash(db, codeHash)
-    if (!voucherRow) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+    assertVoucherOpen(voucherRow)
     // Phase P Task 2: ein Partner-Zugang wird nie "nebenbei" aus einem Zuhause heraus verbraucht.
     if (voucherRow.zweck === ZWECK.partnerzugang) throw httpError(400, PARTNER_ACCESS_CLAIM_MESSAGE)
     if (!voucherRow.dog_id) throw httpError(400, 'Das ist kein Übergabe-Gutschein – zum Einlösen bitte abmelden.')
-    if (voucherRow.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
-    if (voucherRow.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
-    if (voucherRow.expires_at && voucherRow.expires_at <= isoNow()) throw httpError(410, 'Dieser Gutschein ist abgelaufen')
     assertHandoverStillRedeemable(db, voucherRow)
 
     const claim = db

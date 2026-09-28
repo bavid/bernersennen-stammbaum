@@ -10,6 +10,7 @@ const ADMIN_TEST_PASSWORD = 'admin-test-partnerzugang-1'
 const dataDir = useTempDataDir('partner-access', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 const KEY_RE = /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/
 const CLAIM_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang – bitte über „Gutschein einlösen“ einrichten.'
+const BLOCKED_PARTNER_MESSAGE = 'Dieser Partner-Zugang kann gerade nicht eingelöst werden – bitte meldet euch beim Betreiber.'
 
 test('Partner-Zugang per Gutschein: Admin-Stapel, Prüfen, Einlösen, Abgrenzung', async (t) => {
   process.env.ADMIN_PASSWORD_HASH = await hashPassword(ADMIN_TEST_PASSWORD)
@@ -264,6 +265,44 @@ test('Partner-Zugang per Gutschein: Admin-Stapel, Prüfen, Einlösen, Abgrenzung
     assert.equal((await check(code)).data.status, 'offen')
   })
 
+  await t.test('redeem gebunden: gesperrter oder Demo-Partner -> 409, Gutschein bleibt offen', async () => {
+    const partner = await createPartner({ name: 'Hundeschule Sperrprobe' })
+    const code = await accessCode({ partnerId: partner.id })
+
+    for (const flags of [{ gesperrt: 1, is_demo: 0 }, { gesperrt: 0, is_demo: 1 }]) {
+      db.prepare('UPDATE partners SET gesperrt = ?, is_demo = ? WHERE id = ?').run(flags.gesperrt, flags.is_demo, partner.id)
+      const before = snapshot()
+      const res = await redeem({ code })
+      assert.equal(res.status, 409, JSON.stringify(flags))
+      assert.equal(res.data.error, BLOCKED_PARTNER_MESSAGE)
+      assertNothingCreated(code, before)
+    }
+
+    // pausiert (ohne Sperre) ist erlaubt - wie entwurf und aktiv
+    db.prepare("UPDATE partners SET gesperrt = 0, is_demo = 0, status = 'pausiert' WHERE id = ?").run(partner.id)
+    const res = await redeem({ code })
+    assert.equal(res.status, 201, JSON.stringify(res.data))
+    assert.equal(res.data.partner.id, partner.id)
+    assert.equal(res.data.partner.status, 'pausiert')
+  })
+
+  await t.test('redeem: gleichzeitiges Einlösen eines Partner-Zugangs -> genau ein Partner und ein Bereich', async () => {
+    const code = await accessCode()
+    const before = snapshot()
+    const [a, b] = await Promise.all([
+      redeem({ code, name: 'Hundeschule Gleichzeitig A', typ: 'hundeschule', plz: '10115' }),
+      redeem({ code, name: 'Hundeschule Gleichzeitig B', typ: 'hundeschule', plz: '10115' })
+    ])
+    assert.deepEqual([a.status, b.status].sort(), [201, 410])
+    assert.equal(countRows('partners'), before.partners + 1)
+    assert.equal(countRows('families'), before.families + 1)
+
+    const winner = a.status === 201 ? a : b
+    const areas = db.prepare('SELECT id FROM families WHERE voucher_id = ?').all(voucherRow(code).id)
+    assert.deepEqual(areas.map((row) => row.id), [winner.data.id])
+    assert.equal(voucherRow(code).redeemed_by_family_id, winner.data.id)
+  })
+
   await t.test('redeem: Züchter-Namen -> 400, nichts angelegt, Gutschein bleibt offen', async () => {
     const code = await accessCode()
     const before = snapshot()
@@ -332,6 +371,31 @@ test('Partner-Zugang per Gutschein: Admin-Stapel, Prüfen, Einlösen, Abgrenzung
     assert.equal(res.status, 400)
     assert.equal(res.data.error, CLAIM_MESSAGE)
     assert.equal(voucherRow(code).redeemed_at, null)
+  })
+
+  await t.test('claim: ein geschlossener Partner-Zugang verhält sich wie jeder andere geschlossene Code', async () => {
+    const household = await createHousehold(base, 'Zuhause Claim-Geschlossen')
+    const claim = (code) => post('/api/vouchers/claim', { code }, household.cookie)
+    const chronikCode = async () => (await adminPost('/api/admin/voucher-batches', { label: 'Kunde Claim', size: 1 })).data.codes[0]
+    const close = {
+      zurückgezogen: (code) => db.prepare("UPDATE vouchers SET revoked_at = datetime('now') WHERE code_hash = ?").run(hashCode(normalizeCode(code))),
+      eingelöst: (code) => db.prepare("UPDATE vouchers SET redeemed_at = datetime('now') WHERE code_hash = ?").run(hashCode(normalizeCode(code))),
+      abgelaufen: (code) => db.prepare("UPDATE vouchers SET expires_at = '2000-01-01 00:00:00' WHERE code_hash = ?").run(hashCode(normalizeCode(code)))
+    }
+
+    for (const [label, closeCode] of Object.entries(close)) {
+      const partnerCode = await accessCode()
+      const customerCode = await chronikCode()
+      closeCode(partnerCode)
+      closeCode(customerCode)
+
+      const partnerRes = await claim(partnerCode)
+      const customerRes = await claim(customerCode)
+      assert.equal(partnerRes.status, 410, label)
+      assert.deepEqual(partnerRes.data, customerRes.data, label)
+      assert.equal(customerRes.status, 410, label)
+      assert.ok(!partnerRes.data.error.includes('Partner-Zugang'), label)
+    }
   })
 
   await t.test('lib: redeemVoucher legt mit einem Partner-Zugang keine Chronik an', () => {

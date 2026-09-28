@@ -419,6 +419,8 @@ rebuildPartnersTable()
 
 // Gutschein-Stapel für Partner-Zugänge (Task 2): zweck 'chronik' (bisher: legt ein Zuhause an) oder
 // 'partnerzugang'; partner_typ optional als Vorgabe für den neuen Partner - beides wird im Code geprüft.
+// Bewusst kein CHECK auf zweck (bestehende Datenbanken haben die Spalte schon ohne): die Absicherung
+// sind lib/vouchers.js validateZweck (Admin-Eingabe) und assertBatchPurpose (createBatch).
 addColumnIfMissing('voucher_batches', 'zweck', "TEXT NOT NULL DEFAULT 'chronik'")
 addColumnIfMissing('voucher_batches', 'partner_typ', 'TEXT')
 
