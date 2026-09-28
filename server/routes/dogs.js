@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, isUploadUrl } = require('../lib/validate')
 const { dogLabel } = require('../lib/labels')
 const { ART, membershipsOf, canEnter, canSeeDog, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL } = require('../lib/context')
+const { canAttachUpload } = require('../lib/uploadAccess')
 
 const router = express.Router()
 
@@ -98,12 +99,20 @@ function validateParent(record, parent, dogId, familyId) {
   return null
 }
 
-function validateDogRecord(record, dogId, familyId) {
+// existingFotoUrl: der bisherige Wert bei PUT (null bei POST) - bleibt erlaubt, auch wenn er gerade
+// nicht (mehr) über canAttachUpload sichtbar wäre (Altbestand, siehe lib/uploadAccess.js)
+function validateDogRecord(record, dogId, req, existingFotoUrl = null) {
   if (!record.name) return 'Name ist erforderlich (oder „Name unbekannt“ wählen)'
   if (!SEXES.includes(record.geschlecht)) return 'Geschlecht muss ruede oder huendin sein'
   if (!SPECIES.includes(record.tierart)) return 'Tierart muss hund, katze oder anderes sein'
   if (record.geburtsdatum && !isIsoDate(record.geburtsdatum)) return 'Geburtsdatum ist ungültig'
   if (record.foto_url && !isUploadUrl(record.foto_url)) return 'Foto-URL ist ungültig'
+  if (
+    record.foto_url &&
+    !canAttachUpload({ familyId: req.familyId, homeId: req.homeId }, record.foto_url, existingFotoUrl ? [existingFotoUrl] : [])
+  ) {
+    return 'Foto nicht gefunden'
+  }
   if (record.bei_uns_seit && !isIsoDate(record.bei_uns_seit)) return 'Datum „bei uns seit“ ist ungültig'
   if (record.bei_uns_bis && !isIsoDate(record.bei_uns_bis)) return 'Datum „bei uns bis“ ist ungültig'
   if (record.bei_uns_seit && record.bei_uns_bis && record.bei_uns_bis < record.bei_uns_seit) {
@@ -116,7 +125,7 @@ function validateDogRecord(record, dogId, familyId) {
     return 'Unbekannte Herkunft'
   }
   for (const parent of PARENTS) {
-    const error = validateParent(record, parent, dogId, familyId)
+    const error = validateParent(record, parent, dogId, req.familyId)
     if (error) return error
   }
   return null
@@ -309,7 +318,7 @@ router.post('/', requireAuth, (req, res) => {
   const body = req.body || {}
   const record = buildDogRecord(body)
   const housemateId = cleanId(body.housemateId)
-  const error = validateDogRecord(record, null, req.familyId) || validateHousemate(housemateId, req.familyId)
+  const error = validateDogRecord(record, null, req) || validateHousemate(housemateId, req.familyId)
   if (error) return res.status(400).json({ error })
 
   const id = createDog(record, req.familyId, housemateId)
@@ -321,7 +330,7 @@ router.put('/:id', requireAuth, (req, res) => {
   if (!existing) return
 
   const record = buildDogRecord(req.body || {}, existing)
-  const error = validateDogRecord(record, existing.id, req.familyId)
+  const error = validateDogRecord(record, existing.id, req, existing.foto_url)
   if (error) return res.status(400).json({ error })
 
   db.prepare(

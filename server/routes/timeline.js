@@ -3,6 +3,7 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
+const { canAttachUpload } = require('../lib/uploadAccess')
 
 const router = express.Router()
 
@@ -35,7 +36,9 @@ const commentsOf = (entryId) => db.prepare('SELECT * FROM entry_comments WHERE e
 // Validiert Titel/Datum/Autor/Text/Fotos/Privat. Liefert { error } oder { values }.
 // existingPrivat: Wert, der gilt, wenn der Body kein privat-Feld mitschickt (PUT ändert es dann nicht;
 // POST hat naturgemäß keinen bestehenden Wert, Default false).
-function readEntryInput(body, existingPrivat = 0) {
+// existingFotoUrls: die bisherigen Fotos bei PUT ([] bei POST) - bleiben erlaubt, auch wenn sie gerade
+// nicht (mehr) über canAttachUpload sichtbar wären (Altbestand, siehe lib/uploadAccess.js).
+function readEntryInput(body, req, existingPrivat = 0, existingFotoUrls = []) {
   const values = {
     autor_name: cleanText(body.autorName, 60),
     datum: body.datum,
@@ -49,6 +52,10 @@ function readEntryInput(body, existingPrivat = 0) {
   }
   if (!isIsoDate(values.datum)) return { error: 'Datum ist ungültig' }
   if (values.foto_urls === null) return { error: 'Fotoliste ist ungültig' }
+  const uploadContext = { familyId: req.familyId, homeId: req.homeId }
+  if (!values.foto_urls.every((url) => canAttachUpload(uploadContext, url, existingFotoUrls))) {
+    return { error: 'Foto nicht gefunden' }
+  }
   return { values: { ...values, foto_urls: JSON.stringify(values.foto_urls) } }
 }
 
@@ -117,7 +124,7 @@ router.post('/', requireAuth, (req, res) => {
   const dogId = cleanId(body.dogId)
   if (!dogId) return res.status(400).json({ error: 'dogId ist erforderlich' })
 
-  const { error, values } = readEntryInput(body)
+  const { error, values } = readEntryInput(body, req)
   if (error) return res.status(400).json({ error })
 
   const dog = db.prepare('SELECT id, family_id FROM dogs WHERE id = ?').get(dogId)
@@ -140,7 +147,7 @@ router.put('/:id', requireAuth, (req, res) => {
   const existing = loadOwnEntry(req, res)
   if (!existing) return
 
-  const { error, values } = readEntryInput(req.body || {}, existing.privat)
+  const { error, values } = readEntryInput(req.body || {}, req, existing.privat, JSON.parse(existing.foto_urls))
   if (error) return res.status(400).json({ error })
 
   db.prepare(

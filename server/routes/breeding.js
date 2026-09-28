@@ -2,6 +2,7 @@ const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
+const { canAttachUpload } = require('../lib/uploadAccess')
 
 const router = express.Router()
 
@@ -16,7 +17,10 @@ function toEvent(row) {
   return { ...row, foto_urls: JSON.parse(row.foto_urls) }
 }
 
-function validateEvent(body, familyId) {
+// Kein PUT/Edit für Wurf-Einträge - fotoUrls kommen also immer frisch vom Client, nie ein
+// bestehender Datensatz, den man unverändert lassen müsste (anders als bei dogs.js/timeline.js).
+function validateEvent(body, req) {
+  const familyId = req.familyId
   const mutterId = cleanId(body.mutterDogId)
   const vaterId = cleanId(body.vaterDogId)
   const vaterFreitext = cleanText(body.vaterFreitext, 120)
@@ -29,6 +33,10 @@ function validateEvent(body, familyId) {
     return { status: 400, error: 'vaterDogId und vaterFreitext dürfen nicht gleichzeitig gesetzt sein' }
   }
   if (fotoUrls === null) return { status: 400, error: 'Fotoliste ist ungültig' }
+  const uploadContext = { familyId, homeId: req.homeId }
+  if (!fotoUrls.every((url) => canAttachUpload(uploadContext, url))) {
+    return { status: 400, error: 'Foto nicht gefunden' }
+  }
 
   const mutter = db.prepare('SELECT family_id, geschlecht, tierart FROM dogs WHERE id = ?').get(mutterId)
   if (!mutter || mutter.family_id !== familyId || mutter.geschlecht !== 'huendin') {
@@ -60,7 +68,7 @@ router.get('/', requireAuth, (req, res) => {
 })
 
 router.post('/', requireAuth, (req, res) => {
-  const { status, error, values } = validateEvent(req.body || {}, req.familyId)
+  const { status, error, values } = validateEvent(req.body || {}, req)
   if (error) return res.status(status).json({ error })
 
   const result = db

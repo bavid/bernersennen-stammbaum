@@ -1,5 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
 const { useTempDataDir, startApp, cleanup, call, createFamily } = require('./helpers')
 
 const dataDir = useTempDataDir('families')
@@ -8,17 +10,25 @@ test('deleting a family keeps other families intact', async (t) => {
   const { server, base } = await startApp()
   t.after(() => cleanup(dataDir, server))
   const db = require('../db')
-  const { deleteFamily } = require('../lib/families')
+  const { deleteFamily, removeUploads } = require('../lib/families')
+  const { uploadDir } = require('../config')
 
   const a = await createFamily(base, 'Rudel A', 'passwortA')
   const b = await createFamily(base, 'Rudel B', 'passwortB')
   const post = (cookie, urlPath, body) => call(base, urlPath, { method: 'POST', cookie, body })
 
-  const mother = (await post(a.cookie, '/api/dogs', { name: 'Bella', geschlecht: 'huendin', fotoUrl: '/uploads/a1.jpg' })).data
-  await post(a.cookie, '/api/timeline', { dogId: mother.id, autorName: 'A', datum: '2020-01-01', titel: 'X', fotoUrls: ['/uploads/a2.jpg'] })
+  // Die Foto-URLs sind frei erfunden (keine echten Uploads) und dienen nur der Foto-Aufräum-Logik
+  // von deleteFamily/photoUrlsOf - seit Task 3 prüft die API selbst, ob eine fotoUrl gerade sichtbar
+  // ist (canAttachUpload), darum werden sie hier direkt in der DB gesetzt statt über die API gesendet.
+  const mother = (await post(a.cookie, '/api/dogs', { name: 'Bella', geschlecht: 'huendin' })).data
+  db.prepare('UPDATE dogs SET foto_url = ? WHERE id = ?').run('/uploads/a1.jpg', mother.id)
+  const motherEntry = (
+    await post(a.cookie, '/api/timeline', { dogId: mother.id, autorName: 'A', datum: '2020-01-01', titel: 'X' })
+  ).data
+  db.prepare('UPDATE timeline_entries SET foto_urls = ? WHERE id = ?').run(JSON.stringify(['/uploads/a2.jpg']), motherEntry.id)
   // Rudelübergreifende Verknüpfungen sind über die API nicht mehr möglich – hier Altdaten simulieren
-  const child = (await post(b.cookie, '/api/dogs', { name: 'Cora', geschlecht: 'huendin', fotoUrl: '/uploads/b1.jpg' })).data
-  db.prepare('UPDATE dogs SET mother_dog_id = ? WHERE id = ?').run(mother.id, child.id)
+  const child = (await post(b.cookie, '/api/dogs', { name: 'Cora', geschlecht: 'huendin' })).data
+  db.prepare('UPDATE dogs SET foto_url = ?, mother_dog_id = ? WHERE id = ?').run('/uploads/b1.jpg', mother.id, child.id)
 
   const orphaned = deleteFamily(db, a.data.id)
 
@@ -67,5 +77,36 @@ test('deleting a family keeps other families intact', async (t) => {
     assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(home.data.id).c, 0)
     assert.equal(db.prepare('SELECT COUNT(*) AS c FROM family_members WHERE member_family_id = ?').get(home.data.id).c, 0)
     assert.equal(db.prepare('SELECT COUNT(*) AS c FROM families WHERE id = ?').get(rudel.data.id).c, 1)
+  })
+
+  await t.test('deleteFamily: eigene unbenutzte Uploads verschwinden von der Platte, fremde bleiben', async () => {
+    const uploadPng = async (cookie) => {
+      const form = new FormData()
+      form.append('file', new Blob(['PNG'], { type: 'image/png' }), 'x.png')
+      const res = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Cookie: cookie }, body: form })
+      return (await res.json()).url
+    }
+
+    const x = await createFamily(base, 'Rudel X', 'passwortX1')
+    const y = await createFamily(base, 'Rudel Y', 'passwortY1')
+
+    // Beide Uploads bleiben unbenutzt (nie an einem Hund/Eintrag/Wurf) - stehen also nur in "uploads"
+    const xUnusedUrl = await uploadPng(x.cookie)
+    const yUnusedUrl = await uploadPng(y.cookie)
+    const xPath = path.join(uploadDir, path.basename(xUnusedUrl))
+    const yPath = path.join(uploadDir, path.basename(yUnusedUrl))
+    assert.equal(fs.existsSync(xPath), true)
+    assert.equal(fs.existsSync(yPath), true)
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM uploads WHERE family_id = ?').get(x.data.id).c, 1)
+
+    // FK-sicher: uploads-Zeilen der gelöschten Familie stehen der families-Löschung nicht im Weg
+    const orphaned = deleteFamily(db, x.data.id)
+    removeUploads(uploadDir, orphaned)
+
+    assert.equal(orphaned.includes(xUnusedUrl), true, 'die eigene unbenutzte Datei gilt als verwaist')
+    assert.equal(fs.existsSync(xPath), false, 'eigene unbenutzte Datei wird von der Platte entfernt')
+    assert.equal(fs.existsSync(yPath), true, 'fremde, von Y hochgeladene Datei bleibt erhalten')
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM uploads WHERE family_id = ?').get(x.data.id).c, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM uploads WHERE family_id = ?').get(y.data.id).c, 1)
   })
 })

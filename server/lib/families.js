@@ -12,9 +12,11 @@ function photoUrlsOf(db, familyId) {
   ]
 }
 
-// Hochgeladene, aber nie an einem Hund/Eintrag/Wurf verwendete Fotos einer Familie (z. B. ein
-// abgebrochener Upload) - die stehen nur in der uploads-Tabelle, photoUrlsOf sieht sie nicht.
-function unusedUploadUrlsOf(db, familyId) {
+// Alle Upload-URLs einer Familie laut der uploads-Tabelle - nicht nur unbenutzte (z. B. ein
+// abgebrochener Upload, der nie an einem Hund/Eintrag/Wurf hängt und photoUrlsOf daher nicht sieht),
+// sondern auch bereits verwendete. Ob eine davon am Ende wirklich verwaist ist, entscheidet erst der
+// stillUsed-Filter unten gegen alle verbleibenden Familien.
+function uploadUrlsOf(db, familyId) {
   return db
     .prepare('SELECT filename FROM uploads WHERE family_id = ?')
     .all(familyId)
@@ -24,7 +26,7 @@ function unusedUploadUrlsOf(db, familyId) {
 // Löscht ein Rudel komplett. Verweise aus anderen Rudeln auf seine Hunde werden zu Freitext,
 // damit deren Stammbaum lesbar bleibt. Liefert die Foto-URLs, die danach niemand mehr nutzt.
 function deleteFamily(db, familyId) {
-  const photos = [...new Set([...photoUrlsOf(db, familyId), ...unusedUploadUrlsOf(db, familyId)])]
+  const photos = [...new Set([...photoUrlsOf(db, familyId), ...uploadUrlsOf(db, familyId)])]
 
   db.transaction(() => {
     // Upload-Zuordnungen der Familie zuerst weg - sonst verletzt das Löschen der families-Zeile
@@ -62,9 +64,13 @@ function deleteFamily(db, familyId) {
     db.prepare('DELETE FROM families WHERE id = ?').run(familyId)
   })()
 
-  const stillUsed = new Set(
-    db.prepare('SELECT id FROM families').all().flatMap((family) => photoUrlsOf(db, family.id))
-  )
+  // stillUsed zählt beides: Fotos, die noch an einem Hund/Eintrag/Wurf einer verbliebenen Familie
+  // hängen, UND Dateien, die eine verbliebene Familie hochgeladen hat (auch wenn noch unbenutzt) -
+  // so löscht deleteFamily nie eine Datei, die eine andere Familie hochgeladen hat.
+  const stillUsed = new Set([
+    ...db.prepare('SELECT id FROM families').all().flatMap((family) => photoUrlsOf(db, family.id)),
+    ...db.prepare("SELECT '/uploads/' || filename AS url FROM uploads").all().map((row) => row.url)
+  ])
   return [...new Set(photos)].filter((url) => !stillUsed.has(url))
 }
 
