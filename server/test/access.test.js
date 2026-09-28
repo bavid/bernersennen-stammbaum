@@ -232,8 +232,8 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
   // eine gültige Sitzung - eine Sitzung allein (z. B. ein Benutzer-Login, der den Bereichs-Schlüssel gar
   // nicht kennt) durfte damit einen neuen Schlüssel erzeugen und jede andere Sitzung der Identität
   // aussperren ("Übernahme"). Jetzt ist ein aktueller Nachweis Pflicht: Schlüssel-Sitzung -> currentKey,
-  // Benutzer-Sitzung -> das eigene Passwort (der Schlüssel selbst zählt für sie NICHT).
-  await t.test('Schlüssel erneuern: ohne/mit falschem Nachweis -> 403, Schlüssel-Sitzung nur mit currentKey, Benutzer-Sitzung nur mit eigenem Passwort', async () => {
+  // Benutzer-Sitzung -> currentPassword mit dem eigenen Passwort (der Schlüssel selbst zählt für sie NICHT).
+  await t.test('Schlüssel erneuern: ohne/mit falschem Nachweis -> 403, Schlüssel-Sitzung nur mit currentKey, Benutzer-Sitzung nur mit currentPassword', async () => {
     const household = await createHousehold(base, 'Zuhause Nachweis-Schluessel')
 
     const noProof = await post('/api/family/key', undefined, household.cookie)
@@ -265,10 +265,10 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
     const takeoverWithKey = await post('/api/family/key', { currentKey: userHousehold.key }, userCookie)
     assert.equal(takeoverWithKey.status, 403, 'der Schlüssel selbst genügt einer Benutzer-Sitzung nicht')
 
-    const wrongPassword = await post('/api/family/key', { password: 'falsches-pw' }, userCookie)
+    const wrongPassword = await post('/api/family/key', { currentPassword: 'falsches-pw' }, userCookie)
     assert.equal(wrongPassword.status, 403)
 
-    const withPassword = await post('/api/family/key', { password: 'nachweis-pw-1' }, userCookie)
+    const withPassword = await post('/api/family/key', { currentPassword: 'nachweis-pw-1' }, userCookie)
     assert.equal(withPassword.status, 200)
     assert.ok(withPassword.data.key)
   })
@@ -305,19 +305,30 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
     assert.equal(userLogin.status, 200)
     const userCookie = getCookie(userLogin.res)
 
-    const createdByUser = await post('/api/users', { username: 'zweiter-user', password: 'geheim1234' }, userCookie)
-    assert.equal(createdByUser.status, 403, 'ohne das eigene Passwort kein neuer Benutzer')
+    const createdByUser = await post('/api/users', { username: 'zweiter-user', password: 'ein-ganz-anderes-pw' }, userCookie)
+    assert.equal(createdByUser.status, 403, 'ohne currentPassword kein neuer Benutzer')
 
-    // Das neue Passwort des ANZULEGENDEN Benutzers und der NACHWEIS für die eigene Sitzung sind zwei
-    // verschiedene Felder mit demselben Namen "password" - deckungsgleich mit dem Review: die Route
-    // liest den Nachweis aus dem Body, bevor sie username/password des neuen Benutzers validiert.
+    const createdByUserWrongProof = await post(
+      '/api/users',
+      { username: 'zweiter-user', password: 'ein-ganz-anderes-pw', currentPassword: 'falsches-pw' },
+      userCookie
+    )
+    assert.equal(createdByUserWrongProof.status, 403)
+
+    // currentPassword (Nachweis für die eigene Sitzung) und password (das neue Passwort des
+    // ANZULEGENDEN Benutzers) sind getrennte Felder - der neue Benutzer bekommt bewusst ein ANDERES
+    // Passwort als das der anlegenden Sitzung, um genau diese Trennung zu belegen.
     const createdByUserOk = await post(
       '/api/users',
-      { username: 'zweiter-user', password: 'nachweis-anlegen-1' },
+      { username: 'zweiter-user', password: 'ein-ganz-anderes-pw', currentPassword: 'nachweis-anlegen-1' },
       userCookie
     )
     assert.equal(createdByUserOk.status, 201)
     assert.equal(createdByUserOk.data.username, 'zweiter-user')
+
+    // Das neue Login funktioniert mit SEINEM eigenen (anderen) Passwort, nicht mit dem der anlegenden Sitzung
+    const newUserLogin = await post('/api/login', { username: 'zweiter-user', password: 'ein-ganz-anderes-pw' })
+    assert.equal(newUserLogin.status, 200)
   })
 
   await t.test('auth-Feld in buildMe beschreibt die aktuelle Sitzung (kind + username)', async () => {

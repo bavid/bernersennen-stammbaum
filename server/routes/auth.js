@@ -49,17 +49,20 @@ async function findUserByCredentials(username, password) {
 
 // Nachweis mit einem AKTUELLEN Berechtigungsnachweis für sensible Aktionen (Schlüssel erneuern,
 // Benutzer anlegen/löschen): eine bloße Sitzung darf dafür nicht genügen (Session-Übernahme z. B. über
-// ein unbeaufsichtigtes Gerät oder XSS). Benutzer-Sitzung (req.userId gesetzt) -> das eigene Passwort;
-// sonst (Schlüssel- oder Alt-Passwort-Sitzung) -> der aktuelle Schlüssel der Identität, bzw. bei einer
-// Alt-Familie ohne Schlüssel (access_key_hash NULL, legacy_password = 1) ihr aktuelles Bereichs-Passwort.
+// ein unbeaufsichtigtes Gerät oder XSS). Zwei Felder, der Server entscheidet anhand der Sitzungsart,
+// gegen welchen Hash geprüft wird: { currentKey } für eine Schlüssel-Sitzung (Identität hat schon einen
+// access_key_hash); { currentPassword } sowohl für eine Benutzer-Sitzung (req.userId gesetzt - geprüft
+// gegen DEREN EIGENEN password_hash) als auch für eine Alt-Familie ohne Schlüssel (access_key_hash NULL,
+// legacy_password = 1 - geprüft gegen families.password_hash). So bleibt { password } in POST /users
+// ausschließlich das Passwort des NEU angelegten Benutzers, ohne Kollision mit dem Nachweis-Feld.
 async function verifyCurrentCredential(req) {
   const body = req.body || {}
 
   if (req.userId) {
-    if (typeof body.password !== 'string' || !body.password) return false
+    if (typeof body.currentPassword !== 'string' || !body.currentPassword) return false
     const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.userId)
     if (!user) return false
-    return bcrypt.compare(body.password, user.password_hash)
+    return bcrypt.compare(body.currentPassword, user.password_hash)
   }
 
   const family = db.prepare('SELECT access_key_hash, legacy_password, password_hash FROM families WHERE id = ?').get(req.homeId)
