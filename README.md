@@ -63,7 +63,7 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
 - **Schreib dem Admin**: Feedback und Problemmeldungen gehen nur an den Admin – die anderen im
   Rudel sehen sie nicht. Der Name ist freiwillig, ohne Namen kommt die Nachricht anonym an.
 - **Rudel mit Passwort**: Jedes Rudel hat ein gemeinsames Passwort und sieht nur seine eigenen
-  Hunde, Einträge und Fotos. Zum Anlegen eines neuen Rudels braucht man optional einen Einladungscode.
+  Hunde, Einträge und Fotos.
 - **Aussehen**: „Familie auf Pfoten“ (Pfoten-Logo, tierneutrale Texte: „Familie“, „Tier“) oder „Berner“
   (Wappen, Dreifarb-Streifen, „Rudel“, „Hund“). Jede Familie wählt selbst unter „Familie einstellen“ – mit
   Live-Vorschau. Bestehende Rudel behalten den Berner-Auftritt, neue starten mit „Familie auf Pfoten“.
@@ -115,10 +115,10 @@ Ohne den Server-Proxy ist die App nur per SSH-Tunnel erreichbar:
 1. `.deploy.env.example` nach `.deploy.env` kopieren und Server-IP eintragen.
 2. `.\manage.ps1` starten, **[9] Erstinstallation** wählen. Das Skript installiert Docker,
    klont dieses Repo nach `/opt/bernersennen-stammbaum`, erzeugt eine `.env` mit zufälligem
-   `JWT_SECRET` und Einladungscode und startet alles.
+   `JWT_SECRET` und `CODE_PEPPER` und startet alles.
 3. Später: **[3] Deploy** holt den neuesten Stand von GitHub und baut neu.
 
-Weitere Menüpunkte: Status, Logs, Backup herunterladen, Einladungscode anzeigen,
+Weitere Menüpunkte: Status, Logs, Backup herunterladen, Admin-Seite öffnen,
 öffentliche Demo neu anlegen, alle Daten löschen (mit automatischem Backup vorher).
 
 **Vorschau (zweite Instanz):** Auf demselben Server läuft eine Vorschau mit Branch `staging` auf Port 3005 – nur
@@ -151,9 +151,10 @@ docker compose up -d --build
 | Variable             | Bedeutung                                                              |
 | -------------------- | ---------------------------------------------------------------------- |
 | `JWT_SECRET`         | **Pflicht.** Zufälliges Secret für Session-Cookies                     |
+| `CODE_PEPPER`        | **Pflicht.** Zufälliges Secret für Gutschein-Codes (Nachschlage-Hash und Verschlüsselung). Darf sich nach dem ersten Setzen **nie mehr ändern**, sonst werden alle bestehenden Codes wertlos – gehört wie `JWT_SECRET` zur `.env`-Datensicherung |
+| `RUDEL_VOUCHER_QUOTA` | Anzahl Gutscheine, die jeder Bereich (Rudel oder Zuhause) zum Weitergeben vorrätig hat (Standard 3) |
 | `PUBLIC_HOST`        | Server-IP oder Domain (für den HTTPS-Check nach dem Deploy)            |
 | `HTTPS_PORT`         | Port der Seite (Standard 3010): App auf `127.0.0.1`, HTTPS außen per Server-Proxy |
-| `FAMILY_INVITE_CODE` | Code zum Anlegen neuer Rudel (leer = jeder darf anlegen)               |
 | `COOKIE_SECURE`      | `true` – Cookies nur über HTTPS                                        |
 | `TRUST_PROXY`        | `1` – App steht hinter Caddy, Rate-Limit sieht echte IPs               |
 | `APP_ENV`            | `production` (Standard), `staging` (Vorschau) oder `dev` – steuert Hinweis-Band und Beispieldaten |

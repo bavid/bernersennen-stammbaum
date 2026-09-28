@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs')
 const { generateCode, normalizeCode, hashCode, encryptCode } = require('./codes')
+const { voucherQuota } = require('../config')
 
 const CODE_HINT_LENGTH = 4
 const MAX_COLLISION_RETRIES = 5 // 60 Bit Zufall - eine Kollision ist praktisch ausgeschlossen
@@ -11,6 +12,27 @@ const MIN_USER_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_BYTES = 72 // bcrypt kappt alles danach kommentarlos - lieber vorher ablehnen
 const MAX_EMAIL_LENGTH = 120
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const MAX_BATCH_LABEL_LENGTH = 80
+const MIN_BATCH_SIZE = 1
+const MAX_BATCH_SIZE = 200
+
+// Feste Schein-Liste für GET /vouchers/mine in der Demo: sieht aus wie echte Gutscheine, lässt sich
+// aber nicht einlösen. Jeder Klartext-Code enthält ein "U" - das kommt im Crockford-Alphabet nicht vor
+// (siehe lib/codes.js), normalizeCode lehnt die Codes also zuverlässig ab (siehe test/vouchersMine.test.js).
+const DEMO_VOUCHERS = [
+  { id: 'demo-1', code: 'DEMU-0000-000A', hint: '000A', status: 'offen', joins: true, redeemed_at: null, created_at: '2026-01-03 10:00:00' },
+  {
+    id: 'demo-2',
+    code: null,
+    hint: '000B',
+    status: 'eingelöst',
+    joins: true,
+    redeemed_at: '2026-01-02 09:00:00',
+    created_at: '2026-01-02 08:00:00'
+  },
+  { id: 'demo-3', code: null, hint: '000C', status: 'widerrufen', joins: false, redeemed_at: null, created_at: '2026-01-01 08:00:00' }
+]
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -100,6 +122,20 @@ function createBatch(db, { label, kind, size, issuedByFamilyId = null, joinFamil
 
     return { batchId, codes }
   })()
+}
+
+// Eingaben für einen Admin-Gutschein-Stapel (POST /admin/voucher-batches): Bezeichnung Pflicht
+// (<=80 Zeichen), Anzahl ein echter Integer zwischen MIN_BATCH_SIZE und MAX_BATCH_SIZE (kein
+// Number(...)-Koerzieren einer Zahl-als-Text, siehe die strikte Prüfung in routes/auth.js /view).
+function validateBatchInput({ label, size }) {
+  const trimmedLabel = typeof label === 'string' ? label.trim() : ''
+  if (!trimmedLabel || trimmedLabel.length > MAX_BATCH_LABEL_LENGTH) {
+    throw httpError(400, `Die Bezeichnung ist Pflicht (höchstens ${MAX_BATCH_LABEL_LENGTH} Zeichen)`)
+  }
+  if (!Number.isInteger(size) || size < MIN_BATCH_SIZE || size > MAX_BATCH_SIZE) {
+    throw httpError(400, `Die Anzahl muss zwischen ${MIN_BATCH_SIZE} und ${MAX_BATCH_SIZE} liegen`)
+  }
+  return trimmedLabel
 }
 
 function voucherStatus(row) {
@@ -203,14 +239,43 @@ function redeemVoucher(db, { code, name, username, password, email }) {
   return { familyId, code: normalized }
 }
 
+// Legt für einen Bereich (Rudel oder Zuhause) so viele Weitergabe-Gutscheine an, wie zum Kontingent
+// (config.voucherQuota) fehlen - GET /vouchers/mine ruft das bei jedem Aufruf auf. Offene UND schon
+// eingelöste eigene Gutscheine zählen mit, nur zurückgezogene/abgelaufene nicht - sonst würde sich das
+// Kontingent bei jedem Aufruf immer weiter auffüllen, obwohl längst genug im Umlauf sind.
+function ensureVoucherQuota(db, area) {
+  const { c: counted } = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM vouchers
+       WHERE issued_by_family_id = ? AND revoked_at IS NULL
+         AND (redeemed_at IS NOT NULL OR expires_at IS NULL OR expires_at > datetime('now'))`
+    )
+    .get(area.id)
+  const missing = voucherQuota - counted
+  if (missing <= 0) return
+  createBatch(db, {
+    label: `Weitergabe ${area.name}`,
+    kind: 'rudel',
+    size: missing,
+    issuedByFamilyId: area.id,
+    joinFamilyId: area.art === 'rudel' ? area.id : null
+  })
+}
+
 module.exports = {
   createBatch,
   voucherStatus,
   redeemVoucher,
+  ensureVoucherQuota,
+  validateBatchInput,
+  DEMO_VOUCHERS,
   validatePassword,
   validateUsername,
   validateEmail,
   USERNAME_RE,
   MIN_USER_PASSWORD_LENGTH,
-  MAX_PASSWORD_BYTES
+  MAX_PASSWORD_BYTES,
+  MAX_BATCH_LABEL_LENGTH,
+  MIN_BATCH_SIZE,
+  MAX_BATCH_SIZE
 }

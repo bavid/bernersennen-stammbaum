@@ -7,7 +7,6 @@
 #   deploy         neuesten Stand holen (oder REVISION=<sha>), vorher Backup, Image neu bauen, neu starten
 #   status         Container-Status und Health-Check
 #   logs           letzte 200 Log-Zeilen
-#   invite         Einladungscode für neue Rudel anzeigen
 #   backup         Snapshot von DB + Fotos nach $APP_DIR/backups/*.tgz
 #   demo           öffentliche Demo (neu) anlegen – ersetzt nur das Demo-Rudel, echte Rudel bleiben
 #   showcase       NUR Vorschau/Staging: alle Daten löschen und Beispieldaten neu anlegen (vorher Backup)
@@ -137,7 +136,9 @@ ensure_env() {
     umask 077
     touch .env
     env_default JWT_SECRET "$(openssl rand -hex 32)"
-    env_default FAMILY_INVITE_CODE "$(openssl rand -hex 4)"
+    # Nie erneut setzen, sobald einmal vergeben - siehe .env.example: bestehende Gutschein-Codes
+    # werden sonst wertlos. env_default überschreibt einen schon vorhandenen Wert ohnehin nie.
+    env_default CODE_PEPPER "$(openssl rand -hex 32)"
     env_default PUBLIC_HOST "$(default_public_host)"
     env_default HTTPS_PORT "$HTTPS_PORT"
     env_default COOKIE_SECURE true
@@ -195,7 +196,7 @@ backup() {
   # Konsistenter Snapshot über die SQLite-Backup-API, auch während die App läuft
   $COMPOSE exec -T chronik node -e \
     "require('better-sqlite3')('/data/data.db').backup('/data/snapshot.db').then(() => process.exit(0))"
-  # .env gehört dazu: ohne die Secrets (JWT_SECRET, später CODE_PEPPER) sind Sessions und Codes wertlos
+  # .env gehört dazu: ohne die Secrets (JWT_SECRET, CODE_PEPPER) sind Sessions und Gutschein-Codes wertlos
   (umask 077 && tar czf "$file" -C data snapshot.db uploads -C "$APP_DIR" .env)
   rm -f data/snapshot.db
   log "Backup: $APP_DIR/$file ($(du -h "$file" | cut -f1))"
@@ -224,7 +225,6 @@ case "$cmd" in
     checkout
     ensure_env
     start
-    log "Einladungscode für neue Rudel: $(env_value FAMILY_INVITE_CODE)"
     ;;
   deploy)
     backup_if_running
@@ -240,9 +240,6 @@ case "$cmd" in
   logs)
     cd "$APP_DIR"
     $COMPOSE logs --tail 200
-    ;;
-  invite)
-    env_value FAMILY_INVITE_CODE
     ;;
   backup)
     backup

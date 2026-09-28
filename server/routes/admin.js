@@ -7,6 +7,9 @@ const config = require('../config')
 const { verifyPassword, safeEqual } = require('../lib/adminAuth')
 const { requireAdmin, setAdminCookie, clearAdminCookie } = require('../middleware/admin')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
+const { cleanId } = require('../lib/validate')
+const { createBatch, voucherStatus, validateBatchInput } = require('../lib/vouchers')
+const { formatCode, decryptCode } = require('../lib/codes')
 
 const router = express.Router()
 
@@ -165,6 +168,91 @@ router.get('/families/:id', requireAdmin, (req, res) => {
   for (const reply of replies) byNote.get(reply.note_id)?.push(reply)
 
   res.json({ family, dogs, entries, notes: notes.map((note) => ({ ...note, replies: byNote.get(note.id) })) })
+})
+
+// Gutschein-Stapel für den Admin: Bezeichnung Pflicht (<=80 Zeichen), Anzahl 1-200. Optional
+// joinFamilyId - wer den Gutschein einlöst, tritt diesem Rudel gleich bei; nur ein bestehendes,
+// echtes Rudel (kein Zuhause, keine Demo) ist ein gültiges Ziel.
+router.post('/voucher-batches', requireAdmin, (req, res, next) => {
+  try {
+    const { size, joinFamilyId } = req.body || {}
+    const trimmedLabel = validateBatchInput({ label: req.body?.label, size })
+
+    let cleanJoinFamilyId = null
+    if (joinFamilyId !== undefined && joinFamilyId !== null && joinFamilyId !== '') {
+      const id = cleanId(joinFamilyId)
+      const joinable = id && db.prepare("SELECT 1 FROM families WHERE id = ? AND art = 'rudel' AND is_demo = 0").get(id)
+      if (!joinable) return res.status(400).json({ error: 'Dieses Rudel gibt es nicht' })
+      cleanJoinFamilyId = id
+    }
+
+    const { batchId, codes } = createBatch(db, { label: trimmedLabel, kind: 'admin', size, joinFamilyId: cleanJoinFamilyId })
+    const batch = db.prepare('SELECT id, label, size, created_at FROM voucher_batches WHERE id = ?').get(batchId)
+    res.status(201).json({ batch, codes: codes.map(formatCode) })
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
+})
+
+// Zähler je Stapel - "abgelaufen" zählt bewusst in keiner der drei Spalten mit (die Liste dient nur
+// dem Überblick, nicht der Kontingent-Logik).
+router.get('/voucher-batches', requireAdmin, (req, res) => {
+  const batches = db
+    .prepare(
+      `SELECT b.id, b.label, b.kind, b.size, b.created_at,
+         SUM(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NULL AND (v.expires_at IS NULL OR v.expires_at > datetime('now')) THEN 1 ELSE 0 END) AS open,
+         SUM(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NOT NULL THEN 1 ELSE 0 END) AS redeemed,
+         SUM(CASE WHEN v.revoked_at IS NOT NULL THEN 1 ELSE 0 END) AS revoked
+       FROM voucher_batches b LEFT JOIN vouchers v ON v.batch_id = b.id
+       GROUP BY b.id ORDER BY b.created_at DESC, b.id DESC`
+    )
+    .all()
+  res.json(batches)
+})
+
+router.get('/voucher-batches/:id', requireAdmin, (req, res) => {
+  const id = cleanId(req.params.id)
+  const batch = id ? db.prepare('SELECT id, label, kind, size, created_at FROM voucher_batches WHERE id = ?').get(id) : null
+  if (!batch) return res.status(404).json({ error: 'Diesen Stapel gibt es nicht' })
+
+  const rows = db
+    .prepare(
+      `SELECT v.id, v.code_cipher, v.code_hint, v.redeemed_at, v.revoked_at, v.expires_at, f.name AS redeemed_by_name
+       FROM vouchers v LEFT JOIN families f ON f.id = v.redeemed_by_family_id
+       WHERE v.batch_id = ? ORDER BY v.id`
+    )
+    .all(id)
+
+  const vouchers = rows.map((row) => {
+    const status = voucherStatus(row)
+    return {
+      id: row.id,
+      code: status === 'offen' ? formatCode(decryptCode(row.code_cipher)) : null,
+      hint: row.code_hint,
+      status,
+      redeemed_at: row.redeemed_at,
+      redeemed_by_name: row.redeemed_by_name
+    }
+  })
+
+  res.json({ batch, vouchers })
+})
+
+// Zieht einen einzelnen Gutschein zurück (nicht den ganzen Stapel) - schon eingelöste bleiben
+// unangetastet (409), sonst wird revoked_at gesetzt und der Klartext gelöscht. Erneutes Zurückziehen
+// eines schon widerrufenen Gutscheins bleibt folgenlos (idempotent), statt einen Fehler zu werfen.
+router.post('/vouchers/:id/revoke', requireAdmin, (req, res) => {
+  const id = cleanId(req.params.id)
+  const voucher = id ? db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE id = ?').get(id) : null
+  if (!voucher) return res.status(404).json({ error: 'Diesen Gutschein gibt es nicht' })
+  if (voucher.redeemed_at) return res.status(409).json({ error: 'Dieser Gutschein wurde schon eingelöst' })
+
+  if (!voucher.revoked_at) {
+    db.prepare("UPDATE vouchers SET revoked_at = datetime('now'), code_cipher = NULL WHERE id = ?").run(id)
+  }
+  const updated = db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE id = ?').get(id)
+  res.json({ status: voucherStatus(updated) })
 })
 
 module.exports = router

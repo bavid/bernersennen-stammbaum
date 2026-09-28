@@ -12,9 +12,14 @@ if (appEnv === 'production') {
 const db = require('../db')
 const { deleteFamily, removeUploads } = require('../lib/families')
 const { createDemoPack, createDemoHousehold, createImageCopier, replaceDemoPack } = require('../lib/demoPack')
+const { createBatch } = require('../lib/vouchers')
+const { formatCode } = require('../lib/codes')
 
 const TEST_PACK_NAME = 'Rudel vom Sonnenhang (Test)'
 const TEST_HOUSEHOLD_NAME = 'Zuhause am Deich (Test)'
+const ADMIN_BATCH_LABEL = 'Testumgebung'
+const INVITE_BATCH_LABEL = 'Einladung Rudel vom Sonnenhang (Test)'
+const ADMIN_BATCH_SIZE = 5
 // Lokal ein festes Passwort (E2E-Skripte), auf der öffentlich erreichbaren Vorschau ein zufälliges
 const testPassword = appEnv === 'dev' ? 'sonnenhang' : crypto.randomBytes(9).toString('base64url')
 const testHouseholdPassword = appEnv === 'dev' ? 'deich' : crypto.randomBytes(9).toString('base64url')
@@ -25,8 +30,22 @@ function deleteAllFamilies() {
   }
 }
 
+// Nach --reset sind alle Familien weg - jeder übrig gebliebene Gutschein-Stapel ist dann verwaist:
+// Admin-Stapel referenzieren nie eine Familie (issued_by_family_id ist NULL) und bleiben von
+// deleteAllFamilies() völlig unberührt; ein Stapel wie der Einladungs-Gutschein des Test-Rudels
+// verliert nur seine vouchers-Zeile (deleteFamily löscht die, aber nicht den Stapel selbst) und würde
+// sonst als leerer Rest liegen bleiben - der "besteht schon"-Check weiter unten fände ihn dann
+// fälschlich und würde keinen neuen Gutschein mehr anlegen. Darum werden beide Tabellen komplett
+// geleert, bevor unten alles frisch entsteht.
+function deleteOrphanedVoucherBatches() {
+  db.exec('DELETE FROM vouchers; DELETE FROM voucher_batches')
+}
+
 try {
-  if (process.argv.includes('--reset')) deleteAllFamilies()
+  if (process.argv.includes('--reset')) {
+    deleteAllFamilies()
+    deleteOrphanedVoucherBatches()
+  }
   // Die öffentliche Demo der Vorschau zeigt den neuen Auftritt; das Test-Rudel bleibt beim Berner-Look
   replaceDemoPack(db, uploadDir, { theme: 'standard', name: 'Familie Sonnenhang' })
 
@@ -52,6 +71,30 @@ try {
     console.log(`Test-Zuhause "${TEST_HOUSEHOLD_NAME}" – Passwort: ${testHouseholdPassword}`)
   } else {
     console.log(`Test-Zuhause "${TEST_HOUSEHOLD_NAME}" besteht schon (Passwort unverändert)`)
+  }
+
+  // Admin-Stapel zum Ausprobieren von "Gutscheine weitergeben" bzw. der Admin-Übersicht - Klartext
+  // NUR hier in der Konsole (Codes landen sonst nie in Logs, siehe lib/codes.js).
+  if (!db.prepare('SELECT 1 FROM voucher_batches WHERE label = ?').get(ADMIN_BATCH_LABEL)) {
+    const { codes } = createBatch(db, { label: ADMIN_BATCH_LABEL, kind: 'admin', size: ADMIN_BATCH_SIZE })
+    console.log(`Admin-Stapel "${ADMIN_BATCH_LABEL}" (${ADMIN_BATCH_SIZE} Codes):\n${codes.map(formatCode).join('\n')}`)
+  } else {
+    console.log(`Admin-Stapel "${ADMIN_BATCH_LABEL}" besteht schon`)
+  }
+
+  // Ein Einladungs-Gutschein des Test-Rudels: löst man ihn ein, entsteht ein Zuhause, das gleich
+  // Mitglied im Test-Rudel ist - zum Ausprobieren von "Gutschein einlösen -> Mitglied" per Hand.
+  if (!db.prepare('SELECT 1 FROM voucher_batches WHERE label = ?').get(INVITE_BATCH_LABEL)) {
+    const { codes } = createBatch(db, {
+      label: INVITE_BATCH_LABEL,
+      kind: 'rudel',
+      size: 1,
+      issuedByFamilyId: testFamily.id,
+      joinFamilyId: testFamily.id
+    })
+    console.log(`Einladungs-Gutschein für "${TEST_PACK_NAME}": ${formatCode(codes[0])}`)
+  } else {
+    console.log(`Einladungs-Gutschein für "${TEST_PACK_NAME}" besteht schon`)
   }
 
   console.log(`Umgebung: ${appEnv} – öffentliche Demo über „Demo ansehen" auf der Login-Seite`)

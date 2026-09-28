@@ -1,6 +1,6 @@
 ﻿# manage.ps1 - Familienchronik auf dem Server verwalten
 # Nutzung: .\manage.ps1            (Menü)
-#          .\manage.ps1 deploy     (direkt ein Befehl: setup|deploy|status|logs|invite|backup|showcase|promote)
+#          .\manage.ps1 deploy     (direkt ein Befehl: setup|deploy|status|logs|admin-page|backup|showcase|promote)
 #          .\manage.ps1 -Target staging   (Vorschau-Instanz)
 #
 # Liest .deploy.env (siehe .deploy.env.example), mit -Target staging .deploy.staging.env (siehe .deploy.staging.env.example).
@@ -125,7 +125,7 @@ function Invoke-Action {
         { $_ -in '3', 'deploy' } { if (Assert-GitPushed) { Invoke-Remote 'deploy' } }
         { $_ -in '4', 'logs' } { Invoke-Remote 'logs' }
         { $_ -in '5', 'backup' } { Save-Backup }
-        { $_ -in '6', 'invite' } { Write-Host "  Einladungscode: $(Invoke-Remote 'invite')" -ForegroundColor Green }
+        { $_ -in '6', 'admin-page' } { Start-Process "https://${SiteHost}:$HttpsPort/admin" }
         { $_ -in '7', 'demo' } { Invoke-Remote 'demo' }
         { $_ -in '8', 'wipe' } {
             Write-Host "  Löscht ALLE Rudel, Hunde, Einträge und Fotos (vorher wird ein Backup erstellt)." -ForegroundColor Red
@@ -171,7 +171,7 @@ while ($true) {
     Write-Host "  [3]  Deploy (neuester Stand von GitHub)" -ForegroundColor Magenta
     Write-Host "  [4]  Logs (letzte 200 Zeilen)"
     Write-Host "  [5]  Backup herunterladen (DB + Fotos)" -ForegroundColor Cyan
-    Write-Host "  [6]  Einladungscode für neue Rudel anzeigen" -ForegroundColor Cyan
+    Write-Host "  [6]  Admin-Seite öffnen" -ForegroundColor Cyan
     Write-Host "  [7]  Öffentliche Demo neu anlegen (echte Rudel bleiben)" -ForegroundColor Cyan
     Write-Host "  [8]  ALLE Daten löschen" -ForegroundColor Red
     Write-Host "  [9]  Erstinstallation (Docker + App)" -ForegroundColor Blue
