@@ -94,7 +94,10 @@ router.get('/:slug', (req, res) => {
     spenden_url: partner.spenden_url,
     vermittlung_url: partner.vermittlung_url,
     farbe: partner.farbe,
-    ...(preview ? { preview: true } : {})
+    ...(preview ? { preview: true } : {}),
+    // Phase T Task 6: der Client zeigt für Demo-Partner zusätzlich "Demo als Tierheim ansehen"
+    // (PartnerPortalPage.jsx) - ohne extra Anfrage, ob es zu diesem Partner ein Demo-Tierheim gibt.
+    ...(partner.is_demo ? { demo: true } : {})
   })
 })
 

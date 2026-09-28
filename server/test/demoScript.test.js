@@ -19,19 +19,24 @@ test('scripts/demo.js legt die öffentliche Demo (Rudel + Zuhause) im neuen Stan
 
   assert.match(output, /Demo "Familie Sonnenhang" angelegt/)
   assert.match(output, /Zuhause "Zuhause am Deich" angelegt/)
+  assert.match(output, /Tierheim "Tierheim Sonnenhang" angelegt/)
 
   const db = new Database(path.join(dir, 'data.db'))
+  // Phase T Task 6: seit dem Demo-Tierheim sind es drei Demo-Familien (ORDER BY art: rudel, tierheim, zuhause).
   const families = db.prepare('SELECT id, name, theme, is_demo, art FROM families WHERE is_demo = 1 ORDER BY art').all()
   assert.deepEqual(
     families.map(({ name, theme, is_demo: isDemo, art }) => ({ name, theme, isDemo, art })),
     [
       { name: 'Familie Sonnenhang', theme: 'standard', isDemo: 1, art: 'rudel' },
+      { name: 'Tierheim Sonnenhang', theme: 'standard', isDemo: 1, art: 'tierheim' },
       { name: 'Zuhause am Deich', theme: 'standard', isDemo: 1, art: 'zuhause' }
     ]
   )
+  const rudel = families.find((f) => f.art === 'rudel')
+  const household = families.find((f) => f.art === 'zuhause')
   const membership = db
     .prepare('SELECT 1 FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
-    .get(families[1].id, families[0].id)
+    .get(household.id, rudel.id)
   assert.ok(membership, 'Zuhause ist Mitglied des Rudels')
 
   // replaceDemoPack() legt (Task 4) auch die Demo-Partner neu an, auch wenn scripts/demo.js selbst

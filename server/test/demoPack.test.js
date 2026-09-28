@@ -28,22 +28,24 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
 
   replaceDemoPack(db, uploadDir)
   const firstUploads = fs.readdirSync(uploadDir).length
-  const { removed, created, household, partnerIds } = replaceDemoPack(db, uploadDir)
+  const { removed, created, household, shelter, partnerIds } = replaceDemoPack(db, uploadDir)
 
-  await t.test('replacing removes both old demo families and their photos', async () => {
-    assert.equal(removed.length, 2)
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 2)
+  await t.test('replacing removes all three old demo families and their photos', async () => {
+    // Phase T Task 6: seit dem Demo-Tierheim sind es drei Demo-Familien (Rudel, Zuhause, Tierheim), nicht mehr zwei.
+    assert.equal(removed.length, 3)
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 3)
     assert.equal(fs.readdirSync(uploadDir).length, firstUploads, 'no orphaned demo photos pile up')
     const realDogs = await call(base, '/api/dogs', { cookie: real.cookie })
     assert.deepEqual(realDogs.data.map((d) => d.name), ['Bleibt'])
   })
 
-  await t.test('exactly two demo families, linked by membership', () => {
+  await t.test('exactly three demo families (Rudel, Zuhause, Tierheim), linked by membership', () => {
     const demoFamilies = db.prepare('SELECT id, art FROM families WHERE is_demo = 1').all()
-    assert.equal(demoFamilies.length, 2)
-    assert.deepEqual(demoFamilies.map((f) => f.art).sort(), ['rudel', 'zuhause'])
+    assert.equal(demoFamilies.length, 3)
+    assert.deepEqual(demoFamilies.map((f) => f.art).sort(), ['rudel', 'tierheim', 'zuhause'])
     assert.equal(demoFamilies.some((f) => f.id === created.familyId), true)
     assert.equal(demoFamilies.some((f) => f.id === household.familyId), true)
+    assert.equal(demoFamilies.some((f) => f.id === shelter.familyId), true)
     assert.equal(
       db
         .prepare('SELECT COUNT(*) AS n FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
@@ -197,14 +199,16 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     assert.equal(res.status, 403)
   })
 
-  await t.test('a second replace fully replaces both demo families, no orphans left behind', async () => {
+  await t.test('a second replace fully replaces all three demo families, no orphans left behind', async () => {
     const oldRudelId = created.familyId
     const oldHouseholdId = household.familyId
+    const oldShelterId = shelter.familyId
     const oldPartnerIds = partnerIds.slice()
 
     const second = replaceDemoPack(db, uploadDir)
-    assert.equal(second.removed.length, 2)
+    assert.equal(second.removed.length, 3)
     assert.equal(second.household.dogs, 4)
+    assert.equal(second.shelter.dogs, 4, 'wieder genau vier Tiere im Demo-Tierheim')
 
     assert.equal(second.partnerIds.length, 3, 'wieder genau drei Demo-Partner')
     assert.equal(
@@ -216,11 +220,11 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     assert.ok(db.prepare('SELECT 1 FROM partners WHERE id = ? AND is_demo = 0').get(realPartnerId), 'echter Partner bleibt unangetastet')
 
     assert.equal(
-      db.prepare('SELECT COUNT(*) AS n FROM families WHERE id IN (?, ?)').get(oldRudelId, oldHouseholdId).n,
+      db.prepare('SELECT COUNT(*) AS n FROM families WHERE id IN (?, ?, ?)').get(oldRudelId, oldHouseholdId, oldShelterId).n,
       0,
-      'alte Demo-Ids sind weg'
+      'alte Demo-Ids (auch das alte Tierheim) sind weg'
     )
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 2)
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 3)
 
     const orphanMembers = db
       .prepare(
@@ -248,6 +252,21 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
 
     const orphanUploads = db.prepare('SELECT COUNT(*) AS n FROM uploads WHERE family_id NOT IN (SELECT id FROM families)').get().n
     assert.equal(orphanUploads, 0, 'no orphaned uploads')
+
+    // Phase T Task 6: dog_transfers (Neles "Umzug" aus dem alten Demo-Tierheim) und vouchers.dog_id
+    // dürfen nach dem Ersetzen nicht auf inzwischen gelöschte Familien/Tiere zeigen.
+    const orphanTransfers = db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM dog_transfers
+         WHERE from_family_id NOT IN (SELECT id FROM families) OR to_family_id NOT IN (SELECT id FROM families)`
+      )
+      .get().n
+    assert.equal(orphanTransfers, 0, 'no orphaned dog_transfers')
+
+    const orphanVouchers = db
+      .prepare(`SELECT COUNT(*) AS n FROM vouchers WHERE dog_id IS NOT NULL AND dog_id NOT IN (SELECT id FROM dogs)`)
+      .get().n
+    assert.equal(orphanVouchers, 0, 'no orphaned vouchers')
 
     const realDogs = await call(base, '/api/dogs', { cookie: real.cookie })
     assert.deepEqual(realDogs.data.map((d) => d.name), ['Bleibt'], 'echtes Rudel bleibt unangetastet')

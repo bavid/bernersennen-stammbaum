@@ -4,7 +4,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const bcrypt = require('bcryptjs')
 const { deleteFamily, removeUploads } = require('./families')
-const { validatePartner } = require('./partners')
+const { validatePartner, slugify } = require('./partners')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
 const {
   HOUSEHOLD_NAME,
@@ -13,6 +13,7 @@ const {
   TIMELINE: HOUSEHOLD_TIMELINE
 } = require('../seed/demo-household')
 const { DEMO_PARTNERS } = require('../seed/demo-partners')
+const { SHELTER_NAME, DOGS: SHELTER_DOGS, TIMELINE: SHELTER_TIMELINE } = require('../seed/demo-shelter')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -156,17 +157,21 @@ function insertCompanions(db, familyId, copyImage) {
 
 // Liefert zusätzlich entryIds: Id je Eintrag mit "key" - damit ein anderer Bereich (das Rudel, dem
 // der Haushalt beitritt) gezielt einen Kommentar an einen bestimmten Eintrag hängen kann.
-function insertHouseholdTimeline(db, familyId, ids) {
+// shelterFamilyId (Phase T Task 6, optional): gesetzt für Einträge mit herkunftShelter (siehe
+// seed/demo-household.js, Neles frühe Tierheim-Einträge) - genau die Spalte, die auch lib/transfers.js
+// transferDog beim echten Umzug setzt, damit die Timeline "aus Tierheim Sonnenhang" zeigt.
+function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId } = {}) {
   const insertEntry = db.prepare(
-    `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, privat, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(datetime('now', ?), datetime(?, '+18 hours')))`
+    `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, privat, kategorie, herkunft_family_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(datetime('now', ?), datetime(?, '+18 hours')))`
   )
   const entryIds = {}
   for (const entry of HOUSEHOLD_TIMELINE) {
     const writtenAgo = entry.hoursAgo ? ago(entry.hoursAgo) : null
+    const herkunftFamilyId = entry.herkunftShelter && shelterFamilyId ? shelterFamilyId : null
     const entryId = insertEntry.run(
       ids[entry.dog], familyId, entry.autor, entry.datum, entry.titel, entry.text || null,
-      entry.privat ? 1 : 0, writtenAgo, entry.datum
+      entry.privat ? 1 : 0, entry.kategorie || null, herkunftFamilyId, writtenAgo, entry.datum
     ).lastInsertRowid
     if (entry.key) entryIds[entry.key] = entryId
   }
@@ -189,18 +194,103 @@ function insertDemoPartners(db) {
   return ids
 }
 
+// Phase T Task 6: Slug-Erzeugung für veröffentlichte Steckbriefe des Demo-Tierheims - spiegelt
+// routes/dogs.js generatePublicSlug (eigene, kleine Kopie hier: der Seed läuft unabhängig von den
+// Express-Routen, ohne deren interne Helfer zu importieren).
+const SHELTER_SLUG_SUFFIX_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
+const SHELTER_SLUG_SUFFIX_LENGTH = 6
+const SHELTER_MAX_SLUG_ATTEMPTS = 20
+
+function randomShelterSlugSuffix() {
+  let suffix = ''
+  for (let i = 0; i < SHELTER_SLUG_SUFFIX_LENGTH; i += 1) {
+    suffix += SHELTER_SLUG_SUFFIX_CHARS[crypto.randomInt(SHELTER_SLUG_SUFFIX_CHARS.length)]
+  }
+  return suffix
+}
+
+function generateShelterPublicSlug(db, name) {
+  const base = slugify(name) || 'tier'
+  const taken = db.prepare('SELECT 1 FROM dogs WHERE public_slug = ?')
+  for (let attempt = 0; attempt < SHELTER_MAX_SLUG_ATTEMPTS; attempt += 1) {
+    const slug = `${base}-${randomShelterSlugSuffix()}`
+    if (!taken.get(slug)) return slug
+  }
+  throw new Error('Konnte keinen eindeutigen Steckbrief-Link erzeugen')
+}
+
+function insertShelterDogs(db, familyId, copyImage) {
+  const insert = db.prepare(
+    `INSERT INTO dogs (family_id, name, rasse, tierart, geschlecht, geburtsdatum, foto_url, beschreibung, vermittlung_status, public_slug)
+     VALUES (@familyId, @name, @rasse, @tierart, @geschlecht, @geburtsdatum, @fotoUrl, @beschreibung, @vermittlungStatus, @publicSlug)`
+  )
+  const ids = {}
+  for (const dog of SHELTER_DOGS) {
+    ids[dog.key] = insert.run({
+      familyId,
+      name: dog.name,
+      rasse: dog.rasse || null,
+      tierart: dog.tierart,
+      geschlecht: dog.geschlecht,
+      geburtsdatum: dog.geburtsdatum || null,
+      fotoUrl: dog.foto ? copyImage(dog.foto) : null,
+      beschreibung: dog.beschreibung || null,
+      vermittlungStatus: dog.vermittlungStatus,
+      publicSlug: dog.published ? generateShelterPublicSlug(db, dog.name) : null
+    }).lastInsertRowid
+  }
+  return ids
+}
+
+function insertShelterTimeline(db, familyId, ids, copyImage) {
+  const insertEntry = db.prepare(
+    `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, kategorie, is_public, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(datetime('now', ?), datetime(?, '+18 hours')))`
+  )
+  for (const entry of SHELTER_TIMELINE) {
+    const fotos = (entry.fotos || []).map(copyImage)
+    const writtenAgo = entry.hoursAgo ? ago(entry.hoursAgo) : null
+    insertEntry.run(
+      ids[entry.dog], familyId, entry.autor, entry.datum, entry.titel, entry.text || null, JSON.stringify(fotos),
+      entry.kategorie || null, entry.isPublic ? 1 : 0, writtenAgo, entry.datum
+    )
+  }
+}
+
+// Legt das Demo-Tierheim an (art='tierheim', is_demo=1, partner_id = der übergebene Demo-Partner) mit
+// seinen vier Tieren und ihrer Chronik (seed/demo-shelter.js). password_hash='!'/legacy_password=0 wie
+// ein echter Tierheim-Bereich (siehe routes/admin.js POST /partners/:id/shelter) - kein access_key_hash,
+// der Zugang läuft für die Demo ausschließlich über POST /api/demo { as: 'tierheim' } (routes/auth.js).
+function createDemoShelter(db, { copyImage, partnerId }) {
+  const familyId = db
+    .prepare(
+      `INSERT INTO families (name, password_hash, art, theme, partner_id, legacy_password, is_demo)
+       VALUES (?, '!', 'tierheim', 'standard', ?, 0, 1)`
+    )
+    .run(SHELTER_NAME, partnerId).lastInsertRowid
+  const ids = insertShelterDogs(db, familyId, copyImage)
+  insertShelterTimeline(db, familyId, ids, copyImage)
+  return { familyId, dogIds: ids, dogs: SHELTER_DOGS.length, entries: SHELTER_TIMELINE.length }
+}
+
 // Erzeugt "Meine Chronik" eines Haushalts mit Begleitern (Einzug/Abschied/Herkunft), teils privaten
 // Chronik-Einträgen und einem Mitbewohner-Paar ohne gemeinsame Abstammung.
 // groupFamilyId: tritt der Haushalt sofort einem Rudel bei (z. B. dem Demo-Rudel oder dem Test-Rudel)?
 // Dann werden Nele und Mira dorthin geteilt und ein Kommentar einer fremden Familie an Neles
 // Einzugseintrag gehängt - so zeigt die Demo auch das Zusammenspiel Haushalt <-> Rudel.
-function createDemoHousehold(db, { password, isDemo, copyImage, groupFamilyId, name = HOUSEHOLD_NAME, theme = 'standard' }) {
+// shelterFamilyId (Phase T Task 6, optional): das Demo-Tierheim, aus dem Nele laut seed/demo-household.js
+// (herkunftArt='tierheim') kam. Verknüpft ihre frühen Einträge (insertHouseholdTimeline oben), legt
+// einen dog_transfers-Eintrag an (wie lib/transfers.js transferDog es bei einer echten Übergabe täte)
+// und teilt Nele mit story_consent=1 zurück ans Tierheim - so sieht es sie unter "Ehemalige" (siehe
+// routes/dogs.js findLatestTransfer/shelterShareFor). Keine voucher_id: dieser "Umzug" ist reine
+// Seed-Historie, kein echt eingelöster Gutschein.
+function createDemoHousehold(db, { password, isDemo, copyImage, groupFamilyId, shelterFamilyId, name = HOUSEHOLD_NAME, theme = 'standard' }) {
   return db.transaction(() => {
     const familyId = db
       .prepare("INSERT INTO families (name, password_hash, is_demo, theme, art) VALUES (?, ?, ?, ?, 'zuhause')")
       .run(name, bcrypt.hashSync(password, 10), isDemo ? 1 : 0, theme).lastInsertRowid
     const ids = insertCompanions(db, familyId, copyImage)
-    const entryIds = insertHouseholdTimeline(db, familyId, ids)
+    const entryIds = insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId })
 
     if (groupFamilyId) {
       db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(familyId, groupFamilyId)
@@ -217,7 +307,16 @@ function createDemoHousehold(db, { password, isDemo, copyImage, groupFamilyId, n
       }
     }
 
-    return { familyId, dogs: COMPANIONS.length, entries: HOUSEHOLD_TIMELINE.length }
+    if (shelterFamilyId) {
+      db.prepare('INSERT INTO dog_transfers (dog_id, from_family_id, to_family_id, voucher_id) VALUES (?, ?, ?, NULL)').run(
+        ids.nele,
+        shelterFamilyId,
+        familyId
+      )
+      db.prepare('INSERT INTO dog_shares (dog_id, family_id, story_consent) VALUES (?, ?, 1)').run(ids.nele, shelterFamilyId)
+    }
+
+    return { familyId, dogs: COMPANIONS.length, entries: HOUSEHOLD_TIMELINE.length, dogIds: ids }
   })()
 }
 
@@ -251,23 +350,20 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, t
 // alles innerhalb DERSELBEN Transaktion wie das restliche Anlegen, damit bei einem Fehler (z. B. eine
 // künftig ungültige Demo-Partner-Angabe) die ganze Transaktion zurückrollt und die alten Partner
 // unangetastet bleiben, statt für einen Moment ganz zu fehlen.
+// Phase T Task 6: die drei Demo-Partner entstehen in fester Reihenfolge (siehe seed/demo-partners.js),
+// aber ein Nachschlagen über den Slug bleibt robust, falls sich die Reihenfolge dort je ändert.
+const SHELTER_PARTNER_SLUG = 'tierheim-sonnenhang'
+
 function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
   const previous = db.prepare('SELECT id, name FROM families WHERE is_demo = 1').all()
   const previousPartnerIds = db.prepare('SELECT id FROM partners WHERE is_demo = 1').all().map((row) => row.id)
   const copyImage = createImageCopier(uploadDir)
 
-  const { created, household, partnerIds } = db.transaction(() => {
+  const { created, household, shelter, partnerIds } = db.transaction(() => {
     const packOptions = { password: crypto.randomBytes(24).toString('base64url'), isDemo: true, copyImage }
     if (theme !== undefined) packOptions.theme = theme
     if (name !== undefined) packOptions.name = name
     const rudelResult = createDemoPack(db, packOptions)
-
-    const householdResult = createDemoHousehold(db, {
-      password: crypto.randomBytes(24).toString('base64url'),
-      isDemo: true,
-      copyImage,
-      groupFamilyId: rudelResult.familyId
-    })
 
     // families.partner_id / vouchers.partner_id / voucher_batches.partner_id sind reine INTEGER-Spalten
     // ohne REFERENCES (siehe db.js) - das Löschen unten scheitert also nie an einem Fremdschlüssel.
@@ -283,18 +379,46 @@ function replaceDemoPack(db, uploadDir, { theme, name } = {}) {
     }
     const newPartnerIds = insertDemoPartners(db)
 
-    return { created: rudelResult, household: householdResult, partnerIds: newPartnerIds }
+    // Das Demo-Tierheim braucht die neue Partner-Id (nicht die alte, gerade gelöschte) - darum erst
+    // NACH insertDemoPartners, und das Zuhause ("Zuhause am Deich") erst NACH dem Tierheim, damit Neles
+    // Verknüpfung (dog_transfers, dog_shares mit story_consent) das Tierheim schon kennt.
+    const shelterPartner = db.prepare('SELECT id FROM partners WHERE slug = ?').get(SHELTER_PARTNER_SLUG)
+    const shelterResult = createDemoShelter(db, { copyImage, partnerId: shelterPartner.id })
+
+    const householdResult = createDemoHousehold(db, {
+      password: crypto.randomBytes(24).toString('base64url'),
+      isDemo: true,
+      copyImage,
+      groupFamilyId: rudelResult.familyId,
+      shelterFamilyId: shelterResult.familyId
+    })
+
+    return { created: rudelResult, household: householdResult, shelter: shelterResult, partnerIds: newPartnerIds }
   })()
 
+  // Die alten Demo-Familien sind jetzt vollständig durch neue ersetzt (auch das Tierheim, is_demo=1,
+  // art='tierheim', gehört dazu und steckt schon in previous) - dog_transfers-Zeilen, die noch auf eine
+  // der alten Ids zeigen, sind reine Seed-Historie ohne jeden Wert mehr (anders als bei einem ECHTEN
+  // gelöschten Tierheim, siehe db.js-Kommentar zu dog_transfers: dort bleiben sie bewusst als Protokoll
+  // stehen). deleteFamily selbst fasst dog_transfers nicht an, darum hier vorab aufräumen, damit ein
+  // erneutes replaceDemoPack keine wachsende Zahl verwaister Zeilen hinterlässt.
+  if (previous.length) {
+    const placeholders = previous.map(() => '?').join(', ')
+    const ids = previous.map((family) => family.id)
+    db.prepare(`DELETE FROM dog_transfers WHERE from_family_id IN (${placeholders}) OR to_family_id IN (${placeholders})`).run(...ids, ...ids)
+  }
+
   for (const family of previous) removeUploads(uploadDir, deleteFamily(db, family.id))
-  return { removed: previous, created, household, partnerIds }
+  return { removed: previous, created, household, shelter, partnerIds }
 }
 
 module.exports = {
   FAMILY_NAME,
   HOUSEHOLD_NAME,
+  SHELTER_NAME,
   createDemoPack,
   createDemoHousehold,
+  createDemoShelter,
   createImageCopier,
   insertDemoPartners,
   replaceDemoPack

@@ -95,9 +95,11 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   assert.equal(first.status, 0, first.stderr)
   assert.match(first.stdout, /Passwort: sonnenhang/)
   assert.match(first.stdout, /Passwort: deich/)
+  // Phase T Task 6: replaceDemoPack() legt inzwischen auch das Demo-Tierheim an (is_demo=1, 'standard').
   assert.deepEqual(familiesIn(dir), [
     ['Familie Sonnenhang', 1, 'standard'],
     ['Rudel vom Sonnenhang (Test)', 0, 'berner'],
+    ['Tierheim Sonnenhang', 1, 'standard'],
     ['Zuhause am Deich', 1, 'standard'],
     ['Zuhause am Deich (Test)', 0, 'standard']
   ])
@@ -118,7 +120,7 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   assert.equal(firstBatch.linkedCount, 3, 'alle drei Gutscheine tragen die Id des Demo-Partners')
 
   assert.equal(run(env).status, 0)
-  assert.equal(familiesIn(dir).length, 4, 'second run replaces the demo pair and keeps both test packs')
+  assert.equal(familiesIn(dir).length, 5, 'second run replaces the demo trio (Rudel/Zuhause/Tierheim) and keeps both test packs')
 
   // Simuliert ein Rudel, das die Seed-Funktion nicht kennt (z. B. echte Nutzung auf der Vorschau).
   // Ohne so ein Rudel würde --reset nichts beweisen: die Familienzahl wäre mit oder ohne --reset
@@ -132,6 +134,7 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
     'Familie Sonnenhang',
     'Familie Vorher',
     'Rudel vom Sonnenhang (Test)',
+    'Tierheim Sonnenhang',
     'Zuhause am Deich',
     'Zuhause am Deich (Test)'
   ])
@@ -151,7 +154,7 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   assert.equal(run(env, ['--reset']).status, 0)
   assert.deepEqual(
     names(),
-    ['Familie Sonnenhang', 'Rudel vom Sonnenhang (Test)', 'Zuhause am Deich', 'Zuhause am Deich (Test)'],
+    ['Familie Sonnenhang', 'Rudel vom Sonnenhang (Test)', 'Tierheim Sonnenhang', 'Zuhause am Deich', 'Zuhause am Deich (Test)'],
     '--reset must delete families the seed did not create'
   )
 

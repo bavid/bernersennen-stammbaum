@@ -1,8 +1,10 @@
 // Demo-Zuhause "Zuhause am Deich": ein privater Chronik-Bereich (art='zuhause') für Vorführungen und
 // Tests. Zeigt Einzug/Abschied/Herkunft, private Chronik-Einträge und "lebt zusammen mit" außerhalb
 // einer Abstammungslinie. Bilder liegen in ../seed/images (wiederverwendet, keine eigenen Bilder).
-// Mitgliedschaft im Demo-Rudel, geteilte Tiere und der fremde Kommentar werden von lib/demoPack.js
-// hergestellt (die kennt die Rudel-Id) - hier stehen nur die Rohdaten des Haushalts selbst.
+// Mitgliedschaft im Demo-Rudel, geteilte Tiere, der fremde Kommentar sowie (Phase T Task 6) die
+// Verknüpfung von Neles frühen Tierheim-Einträgen mit dem Demo-Tierheim (dog_transfers, dog_shares mit
+// story_consent) werden von lib/demoPack.js hergestellt (die kennt die jeweiligen Ids) - hier stehen
+// nur die Rohdaten des Haushalts selbst.
 // Jede neue Funktion der Chronik gehört auch hierher, damit die Demo alles zeigt.
 
 const HOUSEHOLD_NAME = 'Zuhause am Deich'
@@ -106,6 +108,29 @@ const TIMELINE = [
     titel: 'Neuer Lieblingsplatz',
     text: 'Mira hat das Fensterbrett im Wohnzimmer für sich entdeckt - Sonnenplatz reserviert.',
     hoursAgo: 40
+  },
+  // Zwei frühe Einträge aus Neles Zeit im Tierheim Sonnenhang (Phase T Task 6): lib/demoPack.js
+  // verknüpft sie beim Anlegen mit herkunft_family_id = dem Demo-Tierheim (dieselbe Spalte, die auch
+  // lib/transfers.js transferDog beim echten Umzug setzt) - die Timeline zeigt dann "aus Tierheim
+  // Sonnenhang". Beide vor beiUnsSeit (2021-06-12) datiert, wie bei einem echten Umzug: die Chronik
+  // zieht mit dem Tier um, diese beiden Einträge existierten schon, bevor Nele zu uns kam.
+  {
+    dog: 'nele',
+    datum: '2021-05-02',
+    autor: 'Team Sonnenhang',
+    titel: 'Ankunft im Tierheim',
+    text: 'Nele kam als Fundtier zu uns – verängstigt, aber neugierig auf jeden, der stehen blieb.',
+    kategorie: 'ankunft',
+    herkunftShelter: true
+  },
+  {
+    dog: 'nele',
+    datum: '2021-05-20',
+    autor: 'Team Sonnenhang',
+    titel: 'Erster Spaziergang',
+    text: 'Der erste Spaziergang außerhalb des Zwingers – anfangs an der Leine sehr unsicher, am Ende schon mit Schwanzwedeln.',
+    kategorie: 'gassi',
+    herkunftShelter: true
   },
   {
     dog: 'nele',

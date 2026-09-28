@@ -160,12 +160,23 @@ router.post('/login', authLimiter, async (req, res, next) => {
   }
 })
 
-// Öffentlicher Einstieg ohne Passwort: loggt ins schreibgeschützte Demo-Rudel ein (falls vorhanden).
-// Bevorzugt einen Demo-Haushalt ("Meine Chronik"); heute gibt es nur ein Demo-Rudel, Verhalten bleibt gleich.
+// Öffentlicher Einstieg ohne Passwort: loggt standardmäßig ins schreibgeschützte Demo-Zuhause ein
+// (bevorzugt "Meine Chronik"; ohne Demo-Haushalt das Demo-Rudel). Mit { as: 'tierheim' } (Phase T
+// Task 6) loggt es stattdessen ins Demo-Tierheim ein - z. B. über den Knopf "Demo als Tierheim
+// ansehen" auf dem Portal eines Demo-Partners (PartnerPortalPage.jsx). Jeder andere Wert von "as" ist
+// ein Client-Fehler (400), kein stillschweigendes Ignorieren.
+const DEMO_AS_VALUES = ['tierheim']
+
 router.post('/demo', authLimiter, (req, res) => {
-  const demoFamily = db
-    .prepare("SELECT id, name, theme FROM families WHERE is_demo = 1 ORDER BY (art = 'zuhause') DESC, id DESC LIMIT 1")
-    .get()
+  const { as } = req.body || {}
+  if (as !== undefined && !DEMO_AS_VALUES.includes(as)) {
+    return res.status(400).json({ error: 'Ungültiger Wert für „as“' })
+  }
+
+  const demoFamily =
+    as === 'tierheim'
+      ? db.prepare("SELECT id, name, theme FROM families WHERE is_demo = 1 AND art = 'tierheim' ORDER BY id DESC LIMIT 1").get()
+      : db.prepare("SELECT id, name, theme FROM families WHERE is_demo = 1 ORDER BY (art = 'zuhause') DESC, id DESC LIMIT 1").get()
   if (!demoFamily) return res.status(404).json({ error: 'Keine Demo verfügbar' })
   setSessionCookie(res, demoFamily.id)
   res.json(buildMe(demoFamily.id, demoFamily.id, true))

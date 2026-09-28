@@ -126,4 +126,72 @@ router.get('/partners/:slug/animals', (req, res) => {
   res.json(animals)
 })
 
+// GET /api/public/partners/:slug/happy-ends - Task 6 ("einfache Sektion", volle Auswahl einzelner
+// Einträge bewusst NICHT in dieser Phase, siehe Plan): bis zu sechs Tiere, die dieses Tierheim einmal
+// vermittelt hat und deren neue Familie freiwillig zugestimmt hat, eine Geschichte auf dem Portal zu
+// zeigen (dog_shares.story_consent = 1, siehe routes/dogs.js PUT /:id/shelter-share). NIE Namen, Ids
+// oder sonstige Angaben zur neuen Familie - nur das Tier selbst und sein neuester nicht-privater
+// Eintrag, gekürzt. d.family_id != @shelterFamilyId ist eine zusätzliche, verteidigende Prüfung (in
+// der Praxis kann eine story_consent-Freigabe laut PUT /:id/shelter-share ohnehin nur für ein Tier
+// entstehen, das laut dog_transfers schon aus genau diesem Tierheim weggezogen ist).
+const MAX_HAPPY_ENDS = 6
+const HAPPY_END_EXCERPT_LENGTH = 280
+
+const findStoryConsentDogs = db.prepare(
+  `SELECT d.id, d.name, d.tierart, d.foto_url FROM dog_shares ds
+   JOIN dogs d ON d.id = ds.dog_id
+   WHERE ds.family_id = @shelterFamilyId AND ds.story_consent = 1 AND d.family_id != @shelterFamilyId
+   ORDER BY ds.created_at DESC, d.id DESC`
+)
+
+// Derselbe "neueste nicht-private Eintrag" wie lib/publicMedia.js storyConsentEntryPhotoStmt - beide
+// müssen exakt dieselbe Zeile wählen, sonst zeigt die Antwort hier ein anderes Foto, als /public-media
+// tatsächlich freigibt. Bei einer Änderung an der Sortierung hier also dort mitziehen.
+const findNewestNonPrivateEntry = db.prepare(
+  `SELECT titel, datum, text, foto_urls FROM timeline_entries
+   WHERE dog_id = @dogId AND privat = 0
+   ORDER BY datum DESC, id DESC LIMIT 1`
+)
+
+// Kürzt auf höchstens 280 Zeichen, an einer Wortgrenze, mit „…“ - nie mitten im Wort abgeschnitten.
+function happyEndExcerpt(text) {
+  if (!text) return null
+  if (text.length <= HAPPY_END_EXCERPT_LENGTH) return text
+  const cut = text.slice(0, HAPPY_END_EXCERPT_LENGTH)
+  const boundary = cut.lastIndexOf(' ')
+  return `${cut.slice(0, boundary > 0 ? boundary : HAPPY_END_EXCERPT_LENGTH)}…`
+}
+
+router.get('/partners/:slug/happy-ends', (req, res) => {
+  const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
+  if (!partner) return notFound(res, 'Diesen Partner gibt es nicht')
+  if (partner.status !== 'aktiv') return notFound(res, 'Diesen Partner gibt es nicht')
+  if (partner.is_demo && !demoAllowed(req)) return notFound(res, 'Diesen Partner gibt es nicht')
+
+  const shelterFamily = findShelterFamily.get(partner.id)
+  if (!shelterFamily) return res.json([])
+
+  const happyEnds = []
+  for (const dog of findStoryConsentDogs.all({ shelterFamilyId: shelterFamily.id })) {
+    if (happyEnds.length >= MAX_HAPPY_ENDS) break
+    const entry = findNewestNonPrivateEntry.get({ dogId: dog.id })
+    if (!entry) continue // kein zeigbarer Eintrag (mehr) -> kein Happy End für dieses Tier
+
+    const fotoUrls = JSON.parse(entry.foto_urls)
+    happyEnds.push({
+      name: dog.name,
+      tierart: dog.tierart,
+      fotoUrl: toPublicMediaUrl(dog.foto_url),
+      entry: {
+        titel: entry.titel,
+        datum: entry.datum,
+        text: happyEndExcerpt(entry.text),
+        fotoUrl: fotoUrls.length ? toPublicMediaUrl(fotoUrls[0]) : null
+      }
+    })
+  }
+
+  res.json(happyEnds)
+})
+
 module.exports = router

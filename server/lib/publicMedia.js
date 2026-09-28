@@ -36,12 +36,47 @@ const entryPhotoStmt = db.prepare(`
     AND t.is_public = 1 AND t.privat = 0 AND t.foto_urls LIKE @pattern
 `)
 
+// Happy Ends (Phase T Task 6, routes/publicAnimals.js GET /partners/:slug/happy-ends): ein Tier, das
+// dieses Tierheim einmal vermittelt hat, ist längst nicht mehr veröffentlicht (public_slug/
+// vermittlung_status greifen hier also NICHT) - stattdessen zählt allein die freiwillige, jederzeit
+// widerrufbare Einwilligung der neuen Familie (dog_shares.story_consent = 1, siehe routes/dogs.js PUT
+// /:id/shelter-share). d.family_id != f.id ist dieselbe verteidigende Prüfung wie dort.
+const storyConsentDogPhotoStmt = db.prepare(`
+  SELECT 1 FROM dogs d
+  JOIN dog_shares ds ON ds.dog_id = d.id AND ds.story_consent = 1
+  JOIN families f ON f.id = ds.family_id AND f.art = 'tierheim' AND d.family_id != f.id
+  JOIN partners p ON p.id = f.partner_id AND p.status = 'aktiv'
+  WHERE d.foto_url = @url
+`)
+
+// Nur das ERSTE Foto des NEUESTEN nicht-privaten Eintrags (genau das Foto, das die Happy-End-Antwort
+// als entry.fotoUrl zeigt - alle anderen Fotos dieses oder anderer Einträge bleiben 404). @firstPhotoPattern
+// verlangt die Position am Anfang des JSON-Arrays (LIKE '["/uploads/…"%'), nicht irgendwo darin - anders
+// als @pattern oben bei entryPhotoStmt, das absichtlich jede Position zulässt. Die Sortierung (ORDER BY
+// datum DESC, id DESC) muss mit findNewestNonPrivateEntry in routes/publicAnimals.js übereinstimmen.
+const storyConsentEntryPhotoStmt = db.prepare(`
+  SELECT 1 FROM dog_shares ds
+  JOIN dogs d ON d.id = ds.dog_id
+  JOIN families f ON f.id = ds.family_id AND f.art = 'tierheim' AND d.family_id != f.id
+  JOIN partners p ON p.id = f.partner_id AND p.status = 'aktiv'
+  JOIN timeline_entries t ON t.dog_id = ds.dog_id AND t.privat = 0
+  WHERE ds.story_consent = 1
+    AND t.foto_urls LIKE @firstPhotoPattern
+    AND t.id = (
+      SELECT t2.id FROM timeline_entries t2 WHERE t2.dog_id = ds.dog_id AND t2.privat = 0
+      ORDER BY t2.datum DESC, t2.id DESC LIMIT 1
+    )
+`)
+
 function canServePublicMedia(filename) {
   if (!FILENAME_RE.test(filename)) return false
 
-  const params = { url: `/uploads/${filename}`, pattern: `%"/uploads/${filename}"%` }
+  const url = `/uploads/${filename}`
+  const params = { url, pattern: `%"${url}"%`, firstPhotoPattern: `["${url}"%` }
   if (dogPhotoStmt.get(params)) return true
   if (entryPhotoStmt.get(params)) return true
+  if (storyConsentDogPhotoStmt.get(params)) return true
+  if (storyConsentEntryPhotoStmt.get(params)) return true
   return false
 }
 
