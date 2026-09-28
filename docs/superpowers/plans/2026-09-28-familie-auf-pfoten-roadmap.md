@@ -69,7 +69,7 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 | Z | Meine Chronik & Teilen: private Chronik je Haushalt, Wegbegleiter-Zeitleiste (Einzug/Abschied/Herkunft), Tiere und Einträge in Familien teilen, „lebt mit" statt „Adoptiv-…", Schnellerfassung | [Plan](2026-09-28-phase-z-meine-chronik.md) | 🚀 auf der Vorschau |
 | 1 | Gutscheine & neuer Login: Codes, Einlösen → Meine Chronik, Schlüssel (Login + PUK), Benutzer, Einladung in Familien, Admin-Stapel, `/v#CODE` | [Plan](2026-09-28-phase-1-gutscheine.md) | 🚀 auf der Vorschau |
 | 2 | Partner, Portale `/p/:slug`, Partnerübersicht, PLZ/Umkreis (GeoNames + OSM), „In der Nähe“, Impressum/Datenschutz | [Plan](2026-09-28-phase-2-partner.md) | ⏳ in Arbeit |
-| T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein, Mitlesen | wird vor Beginn geschrieben | ☐ offen |
+| T | Tierheim-Chroniken: Vermittlungsstatus, Steckbrief `/t/:slug`, Übergabe-Gutschein (Tier zieht mit Chronik um), Mitlesen, Happy-Ends | [Plan](2026-09-29-phase-t-tierheim.md) | ☐ als Nächstes |
 | 3 | Reiter „Entdecken": Hundeschulen, „Neuer Begleiter gesucht?", Futter-Empfehlungen, Unterstützen, Klickzählung | wird vor Beginn geschrieben | ☐ offen |
 | 5 | Admin: Gutschein-Stapel + Druckkarten mit QR, Partner/Anzeigen/Spenden pflegen, Statistik, Präsentationsmodus | wird vor Beginn geschrieben | ☐ offen |
 | 4 | Import, Crawler, Website-Prüfung, Prüfliste | zurückgestellt | ⏸ blockiert (Frage 1) |
