@@ -20,6 +20,8 @@ const messagesRoutes = require('./routes/messages')
 const partnersRoutes = require('./routes/partners')
 const publicAnimalsRoutes = require('./routes/publicAnimals')
 const placesRoutes = require('./routes/places')
+const discoverRoutes = require('./routes/discover')
+const redirectRoutes = require('./routes/redirect')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
 const { apiLimiter, photoLimiter, limitWrites } = require('./middleware/abuse')
@@ -28,7 +30,10 @@ const { canServePublicMedia } = require('./lib/publicMedia')
 
 const PHOTO_CACHE = 'private, max-age=2592000, immutable'
 const PARTNER_LOGO_CACHE = 'public, max-age=2592000, immutable'
-const PUBLIC_MEDIA_CACHE = 'public, max-age=3600'
+// Phase T Review Follow-up: neu revalidieren statt eine Stunde zu cachen, damit ein widerrufenes
+// Einverständnis (story_consent, Steckbrief-Löschung) sofort greift statt bis zu 60 Minuten im Cache
+// eines Browsers/Proxys zu überleben (dafür lohnt sich der ETag/If-None-Match-Roundtrip von express.static).
+const PUBLIC_MEDIA_CACHE = 'public, no-cache'
 
 // Kein upgrade-insecure-requests/HSTS: die App läuft auch per http://IP:PORT ohne TLS.
 const securityHeaders = helmet({
@@ -148,8 +153,15 @@ function createApp() {
   app.use('/api/public/partners', partnersRoutes)
   app.use('/api/public', publicAnimalsRoutes)
   app.use('/api/places', placesRoutes)
+  app.use('/api/discover', discoverRoutes)
   app.use('/api/uploads', uploadsRoutes)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))
+
+  // /r/:type/:id (Klickzählung, routes/redirect.js): unter apiLimiter wie der Rest der API, aber AUSSERHALB
+  // von /api - der Link kann ohne Login/Session in einem neuen Tab geöffnet werden. Muss vor serveClient()
+  // stehen, sonst würde die Client-Auslieferung unten (Catch-all für alles außer api/uploads/health) jede
+  // /r/...-Anfrage stattdessen mit index.html beantworten.
+  app.use('/r', apiLimiter, redirectRoutes)
 
   serveClient(app)
   app.use(errorHandler)

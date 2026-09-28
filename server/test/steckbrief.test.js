@@ -261,7 +261,7 @@ test('Tiere in Vermittlung: Status, Kategorien, öffentlicher Steckbrief', async
 
     const dogPhotoRes = await fetch(`${base}/public-media/${dogPhotoFilename}`)
     assert.equal(dogPhotoRes.status, 200)
-    assert.equal(dogPhotoRes.headers.get('cache-control'), 'public, max-age=3600')
+    assert.equal(dogPhotoRes.headers.get('cache-control'), 'public, no-cache')
 
     const publicPhotoRes = await fetch(`${base}/public-media/${filenameOf(publicPhoto)}`)
     assert.equal(publicPhotoRes.status, 200)

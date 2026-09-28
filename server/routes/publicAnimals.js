@@ -102,18 +102,14 @@ const findPublishedAnimals = db.prepare(
    ORDER BY name`
 )
 
-router.get('/partners/:slug/animals', (req, res) => {
-  const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
-  if (!partner) return notFound(res, 'Diesen Partner gibt es nicht')
-  // security-review Phase T Finding 5: pausiert/Entwurf ist für die Öffentlichkeit gleichbedeutend mit
-  // "gibt es nicht" - wie is_demo hier schon behandelt wurde.
-  if (partner.status !== 'aktiv') return notFound(res, 'Diesen Partner gibt es nicht')
-  if (partner.is_demo && !demoAllowed(req)) return notFound(res, 'Diesen Partner gibt es nicht')
-
-  const shelterFamily = findShelterFamily.get(partner.id)
-  if (!shelterFamily) return res.json([])
-
-  const animals = findPublishedAnimals.all(shelterFamily.id).map((dog) => ({
+// Karten-Daten der veröffentlichten Tiere eines Partners (nach dessen partners.id, nicht dessen
+// families.id) - eigene Funktion, damit routes/discover.js (Phase 3 Task 2, "begleiter.tiere") dieselbe
+// Abfrage und dieselbe Kartenform wiederverwenden kann, ohne GET /partners/:slug/animals selbst
+// aufzurufen (Sichtbarkeits-/Status-Prüfungen des Partners bleiben dabei Sache des jeweiligen Aufrufers).
+function getShelterAnimalCards(partnerId) {
+  const shelterFamily = findShelterFamily.get(partnerId)
+  if (!shelterFamily) return []
+  return findPublishedAnimals.all(shelterFamily.id).map((dog) => ({
     slug: dog.public_slug,
     name: dog.name,
     tierart: dog.tierart,
@@ -123,7 +119,17 @@ router.get('/partners/:slug/animals', (req, res) => {
     fotoUrl: toPublicMediaUrl(dog.foto_url),
     vermittlung_status: dog.vermittlung_status
   }))
-  res.json(animals)
+}
+
+router.get('/partners/:slug/animals', (req, res) => {
+  const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
+  if (!partner) return notFound(res, 'Diesen Partner gibt es nicht')
+  // security-review Phase T Finding 5: pausiert/Entwurf ist für die Öffentlichkeit gleichbedeutend mit
+  // "gibt es nicht" - wie is_demo hier schon behandelt wurde.
+  if (partner.status !== 'aktiv') return notFound(res, 'Diesen Partner gibt es nicht')
+  if (partner.is_demo && !demoAllowed(req)) return notFound(res, 'Diesen Partner gibt es nicht')
+
+  res.json(getShelterAnimalCards(partner.id))
 })
 
 // GET /api/public/partners/:slug/happy-ends - Task 6 ("einfache Sektion", volle Auswahl einzelner
@@ -195,3 +201,5 @@ router.get('/partners/:slug/happy-ends', (req, res) => {
 })
 
 module.exports = router
+module.exports.getShelterAnimalCards = getShelterAnimalCards
+module.exports.toPublicMediaUrl = toPublicMediaUrl
