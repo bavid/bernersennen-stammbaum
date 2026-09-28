@@ -85,15 +85,30 @@ describe('ContextSwitcher', () => {
     expect(trigger().getAttribute('aria-expanded')).toBe('false')
   })
 
-  test('Menü listet „Meine Chronik" und die Mitgliedschaften, markiert den aktiven Bereich', async () => {
+  test('Menü listet „Meine Chronik" (mit echtem Haushaltsnamen als Zusatz) und die Mitgliedschaften, markiert den aktiven Bereich', async () => {
     await render()
     act(() => trigger().click())
     expect(trigger().getAttribute('aria-expanded')).toBe('true')
     const labels = items().map((item) => item.textContent)
-    expect(labels).toEqual(['Meine Chronik', 'Familie Klein', 'Rudel Nachbarn', 'Familie beitreten oder gründen …'])
+    expect(labels).toEqual([
+      'Meine Chronik · Zuhause am Deich',
+      'Familie Klein',
+      'Rudel Nachbarn',
+      'Familie beitreten oder gründen …'
+    ])
     expect(items()[1].getAttribute('aria-current')).toBe('true')
     expect(items()[0].getAttribute('aria-current')).toBeNull()
     expect(items()[2].getAttribute('aria-current')).toBeNull()
+  })
+
+  test('Ist der Haushalt selbst der aktive Bereich, zeigen Knopf und Menüpunkt "Meine Chronik" statt des gespeicherten Namens', async () => {
+    const homeActive = { ...family, id: 1, name: 'Zuhause am Deich' }
+    await render({ family: homeActive })
+    expect(trigger().textContent).toContain('Meine Chronik')
+    expect(trigger().textContent).not.toContain('Zuhause am Deich')
+    act(() => trigger().click())
+    expect(items()[0].textContent).toBe('Meine Chronik · Zuhause am Deich')
+    expect(items()[0].getAttribute('aria-current')).toBe('true')
   })
 
   test('Auswahl einer anderen Familie wechselt per api.view und ruft onChange', async () => {

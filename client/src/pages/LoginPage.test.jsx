@@ -53,11 +53,12 @@ function setInputValue(input, value) {
 }
 
 describe('LoginPage – Anlegen: „Meine Chronik" vs. „Gemeinsame Familie"', () => {
-  test('Anlegen startet bei „Meine Chronik": kein Namensfeld, privater Hinweistext', async () => {
+  test('Anlegen startet bei „Meine Chronik": eigenes Namensfeld mit Hinweis, privater Beschreibungstext', async () => {
     await render()
     switchToCreateMode()
     expect(container.querySelector('[aria-label="Art"] button[aria-pressed="true"]').textContent).toBe('Meine Chronik')
-    expect(container.querySelector('label[for="family-name"]')).toBeNull()
+    expect(container.querySelector('label[for="family-name"]').textContent).toBe('Wie heißt euer Zuhause?')
+    expect(container.querySelector('#family-name').placeholder).toBe('z. B. Zuhause am Deich')
     expect(container.querySelector('.login-card-head h1').textContent).toBe('Meine Chronik anlegen')
     expect(container.querySelector('.login-card-head p').textContent).toBe(
       'Privat – für deine eigenen Tiere. Familien kannst du später beitreten.'
@@ -65,24 +66,28 @@ describe('LoginPage – Anlegen: „Meine Chronik" vs. „Gemeinsame Familie"', 
     expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Meine Chronik anlegen')
   })
 
-  test('Absenden bei „Meine Chronik" sendet art: "zuhause" mit festem Namen, ohne dass der Name eingegeben wird', async () => {
+  test('Absenden bei „Meine Chronik" sendet den eingegebenen Namen als "name" (kein fester Platzhalter-Name)', async () => {
     const onLogin = vi.fn()
-    const me = { id: 1, name: 'Meine Chronik', art: 'zuhause' }
+    const me = { id: 1, name: 'Zuhause am Deich', art: 'zuhause' }
     createFamily.mockResolvedValue(me)
     await render(onLogin)
     switchToCreateMode()
 
+    const name = container.querySelector('#family-name')
     const password = container.querySelector('#family-password')
-    await act(async () => setInputValue(password, 'geheim123'))
+    await act(async () => {
+      setInputValue(name, 'Zuhause am Deich')
+      setInputValue(password, 'geheim123')
+    })
     await act(async () => container.querySelector('.form-stack').requestSubmit())
 
     expect(createFamily).toHaveBeenCalledWith(
-      expect.objectContaining({ art: 'zuhause', name: 'Meine Chronik', password: 'geheim123' })
+      expect.objectContaining({ art: 'zuhause', name: 'Zuhause am Deich', password: 'geheim123' })
     )
     expect(onLogin).toHaveBeenCalledWith(me)
   })
 
-  test('Wechsel zu „Gemeinsame Familie" zeigt das Namensfeld und sendet art: "rudel"', async () => {
+  test('Wechsel zu „Gemeinsame Familie" beschriftet das Namensfeld um und sendet art: "rudel"', async () => {
     const onLogin = vi.fn()
     const me = { id: 2, name: 'Familie Sonnenhang', art: 'rudel' }
     createFamily.mockResolvedValue(me)
@@ -93,7 +98,8 @@ describe('LoginPage – Anlegen: „Meine Chronik" vs. „Gemeinsame Familie"', 
     expect(container.querySelector('[aria-label="Art"] button[aria-pressed="true"]').textContent).toBe(
       'Gemeinsame Familie'
     )
-    expect(container.querySelector('label[for="family-name"]')).not.toBeNull()
+    expect(container.querySelector('label[for="family-name"]').textContent).toBe('Name der Familie')
+    expect(container.querySelector('#family-name').placeholder).toBe('z. B. Familie Sonnenhang')
     expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Familie anlegen')
 
     const name = container.querySelector('#family-name')

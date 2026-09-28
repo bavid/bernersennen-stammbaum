@@ -89,6 +89,11 @@
   white-space: nowrap;
 }
 
+.context-switcher-item-sub {
+  font-weight: 600;
+  color: var(--muted);
+}
+
 .context-switcher-item svg {
   flex-shrink: 0;
   width: 1rem;

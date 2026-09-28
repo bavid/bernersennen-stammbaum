@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { HOME_LABEL } from '../lib/areas.js'
 import ThemeMark from '../components/ThemeMark.jsx'
 import Icon from '../components/Icon.jsx'
 
@@ -125,7 +124,7 @@ function CreateFamilyForm({ onLogin, inviteRequired, art }) {
     try {
       onLogin(
         await api.createFamily({
-          name: isHome ? HOME_LABEL : name,
+          name,
           password,
           art,
           inviteCode: inviteCode || undefined,
@@ -144,22 +143,23 @@ function CreateFamilyForm({ onLogin, inviteRequired, art }) {
   return (
     <form className="form-stack" onSubmit={handleSubmit}>
       {error && <div className="error-banner" role="alert">{error}</div>}
-      {!isHome && (
-        <div className="field">
-          <label className="field-label" htmlFor="family-name">
-            {words.groupName}
-          </label>
-          <input
-            id="family-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={words.groupNamePlaceholder}
-            maxLength={80}
-            autoFocus
-            required
-          />
-        </div>
-      )}
+      <div className="field">
+        <label className="field-label" htmlFor="family-name">
+          {isHome ? 'Wie heißt euer Zuhause?' : words.groupName}
+        </label>
+        <input
+          id="family-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={isHome ? 'z. B. Zuhause am Deich' : words.groupNamePlaceholder}
+          maxLength={80}
+          autoFocus
+          required
+        />
+        {/* Im Menü und Kopfbereich heißt der eigene Bereich immer "Meine Chronik" – der echte Name
+            erscheint nur dort, wo andere Familien ihn sehen (z. B. "aus <Name>" bei geteilten Tieren). */}
+        {isHome && <span className="field-hint">So sehen es Familien, mit denen ihr Tiere teilt.</span>}
+      </div>
       <PasswordField
         id="family-password"
         label="Gemeinsames Passwort"
@@ -168,7 +168,6 @@ function CreateFamilyForm({ onLogin, inviteRequired, art }) {
           setPassword(value)
           setPasswordError(null)
         }}
-        autoFocus={isHome}
         autoComplete="new-password"
         minLength={MIN_PASSWORD_LENGTH}
         error={passwordError}

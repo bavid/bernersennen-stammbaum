@@ -81,7 +81,9 @@ export default function ContextSwitcher({ family, onChange }) {
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        <span className="context-switcher-name">{family.name}</span>
+        {/* Der eigene Bereich heißt hier immer "Meine Chronik" – der gespeicherte Name des Haushalts
+            ist nur relevant, wo andere Familien ihn sehen (z. B. "aus <Name>" bei geteilten Tieren). */}
+        <span className="context-switcher-name">{isHomeActive ? HOME_LABEL : family.name}</span>
         <Icon name="chevronDown" />
       </button>
       {open && (
@@ -94,7 +96,12 @@ export default function ContextSwitcher({ family, onChange }) {
             aria-current={isHomeActive ? 'true' : undefined}
             onClick={() => switchTo(family.home.id, HOME_LABEL)}
           >
-            <span>{HOME_LABEL}</span>
+            <span>
+              {HOME_LABEL}
+              {family.home.name && family.home.name !== HOME_LABEL && (
+                <span className="context-switcher-item-sub"> · {family.home.name}</span>
+              )}
+            </span>
             {isHomeActive && <Icon name="check" />}
           </button>
           {family.memberships.length > 0 && <div className="context-switcher-sep" role="separator" />}

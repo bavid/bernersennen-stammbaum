@@ -78,11 +78,12 @@ describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
     expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe(theme.words.createGroup)
   })
 
-  test('Der Anlegen-Modus startet bei "Meine Chronik" ohne Namensfeld, unabhängig vom Theme', async () => {
+  test('Der Anlegen-Modus startet bei "Meine Chronik" mit eigenem Namensfeld, unabhängig vom Theme', async () => {
     await render(themeId)
     act(() => container.querySelector('.login-switch button[aria-pressed]:not([aria-pressed="true"])').click())
     expect(container.querySelector('.login-card-head h1').textContent).toBe('Meine Chronik anlegen')
-    expect(container.querySelector('label[for="family-name"]')).toBeNull()
+    expect(container.querySelector('label[for="family-name"]').textContent).toBe('Wie heißt euer Zuhause?')
+    expect(container.querySelector('#family-name').placeholder).toBe('z. B. Zuhause am Deich')
     expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Meine Chronik anlegen')
   })
 

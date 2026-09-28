@@ -12,6 +12,7 @@ import ContextSwitcher from './components/ContextSwitcher.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import OverviewPage from './pages/OverviewPage.jsx'
 import DogDetailPage from './pages/DogDetailPage.jsx'
+import CompanionsPage from './pages/CompanionsPage.jsx'
 import LittersPage from './pages/LittersPage.jsx'
 import CollagePage from './pages/CollagePage.jsx'
 import PinboardPage from './pages/PinboardPage.jsx'
@@ -37,21 +38,6 @@ const NAV_ITEMS_GROUP = [
 
 function navItemsFor(family) {
   return family.art === 'zuhause' ? NAV_ITEMS_HOME : NAV_ITEMS_GROUP
-}
-
-// Platzhalter für den Wegbegleiter (Task 6 ersetzt ihn durch die echte Seite) – sorgt dafür, dass die
-// Navigation für Haushalte schon jetzt funktioniert.
-export function CompanionsPlaceholder() {
-  return (
-    <div className="page">
-      <div className="page-hero">
-        <div>
-          <h1>Wegbegleiter</h1>
-          <p className="page-lede">Kommt gleich.</p>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 export function DemoBanner({ onLeave }) {
@@ -215,7 +201,7 @@ export default function App() {
               />
               <Route path="/tier/:id" element={<DogDetailPage family={family} />} />
               <Route path="/hund/:id" element={<RedirectTierUrl />} />
-              <Route path="/wegbegleiter" element={<CompanionsPlaceholder />} />
+              <Route path="/wegbegleiter" element={<CompanionsPage family={family} />} />
               <Route path="/pinnwand" element={<PinboardPage />} />
               <Route path="/wuerfe" element={<LittersPage />} />
               <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
