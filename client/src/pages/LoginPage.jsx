@@ -17,7 +17,7 @@ const MODE_COPY = {
     lede: 'Löst euren Gutschein ein und legt eure Chronik an.'
   },
   recover: {
-    eyebrow: 'Schlüssel vergessen',
+    eyebrow: 'Passwort vergessen',
     title: 'Passwort wiederherstellen',
     lede: 'Mit eurem Schlüssel setzt ihr ein neues Passwort.'
   }
@@ -108,7 +108,7 @@ function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
           {useUsername ? 'Mit Schlüssel anmelden' : 'Mit Benutzername anmelden'}
         </button>
         <button type="button" className="login-link-btn" onClick={onForgot}>
-          Schlüssel vergessen?
+          Passwort vergessen?
         </button>
       </div>
     </form>

@@ -5,19 +5,13 @@ import { useIsDemo } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
 import { formatDateShort } from '../lib/dates.js'
-
-const STATUS_LABEL = {
-  offen: 'Offen',
-  eingelöst: 'Eingelöst',
-  abgelaufen: 'Abgelaufen',
-  widerrufen: 'Zurückgezogen'
-}
+import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
 
 function statusText(voucher) {
   if (voucher.status === 'eingelöst' && voucher.redeemed_at) {
     return `Eingelöst am ${formatDateShort(voucher.redeemed_at)}`
   }
-  return STATUS_LABEL[voucher.status] || voucher.status
+  return VOUCHER_STATUS_LABEL[voucher.status] || voucher.status
 }
 
 function voucherLink(code) {
@@ -48,9 +42,12 @@ function CopyField({ label, value }) {
   )
 }
 
+const LINK_COPY_FAILED_MESSAGE = 'Kopieren nicht möglich – Link bitte markieren'
+
 function VoucherRow({ voucher }) {
   const toast = useToast()
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  const [linkCopyFailed, setLinkCopyFailed] = useState(false)
 
   async function copy(text) {
     try {
@@ -58,6 +55,20 @@ function VoucherRow({ voucher }) {
       toast('Kopiert')
     } catch {
       // Ohne Zwischenablage-Recht bleibt nur das Abtippen - nichts weiter zu tun.
+    }
+  }
+
+  // Der Link ist der Weg, den man am ehesten weitergibt (SMS, Chat) - misslingt das Kopieren hier
+  // (fehlendes Zwischenablage-Recht, unsicherer Kontext), bekommt man ihn zusätzlich als Fallback-Feld
+  // zum Markieren angezeigt, statt ihn nur stillschweigend nicht zu kopieren.
+  async function copyLink() {
+    const link = voucherLink(voucher.code)
+    try {
+      await navigator.clipboard.writeText(link)
+      toast('Kopiert')
+    } catch {
+      setLinkCopyFailed(true)
+      toast(LINK_COPY_FAILED_MESSAGE)
     }
   }
 
@@ -81,7 +92,7 @@ function VoucherRow({ voucher }) {
             <Icon name="copy" />
             Code kopieren
           </button>
-          <button type="button" className="btn btn-ghost" onClick={() => copy(voucherLink(voucher.code))}>
+          <button type="button" className="btn btn-ghost" onClick={copyLink}>
             <Icon name="copy" />
             Link kopieren
           </button>
@@ -92,6 +103,15 @@ function VoucherRow({ voucher }) {
             </button>
           )}
         </div>
+      )}
+      {voucher.code && linkCopyFailed && (
+        <input
+          readOnly
+          className="voucher-link-fallback"
+          aria-label="Gutschein-Link zum Markieren und Kopieren"
+          value={voucherLink(voucher.code)}
+          onFocus={(e) => e.target.select()}
+        />
       )}
     </li>
   )

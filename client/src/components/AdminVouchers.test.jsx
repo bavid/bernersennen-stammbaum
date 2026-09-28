@@ -146,6 +146,25 @@ describe('AdminVouchers – Liste und Details', () => {
     expect(container.querySelectorAll('.admin-voucher-detail button')).toHaveLength(1)
   })
 
+  test('zeigt sprechende Status-Labels statt des rohen Server-Werts (z. B. "Zurückgezogen" statt "widerrufen")', async () => {
+    voucherBatches.mockResolvedValue([{ id: 1, label: 'Testkarten', kind: 'admin', size: 2, open: 1, redeemed: 0, revoked: 1, created_at: '2026-01-05 10:00:00' }])
+    voucherBatch.mockResolvedValue({
+      batch: { id: 1, label: 'Testkarten', kind: 'admin', size: 2, created_at: '2026-01-05 10:00:00' },
+      vouchers: [
+        { id: 10, code: null, hint: 'HJKM', status: 'widerrufen', redeemed_at: null, redeemed_by_name: null },
+        { id: 11, code: 'EFGH-5678-NPQR', hint: 'NPQR', status: 'offen', redeemed_at: null, redeemed_by_name: null }
+      ]
+    })
+    await render()
+
+    await act(async () => container.querySelector('.admin-voucher-batch-head').click())
+    const items = [...container.querySelectorAll('.admin-voucher-detail li')]
+
+    expect(items[0].textContent).toContain('Zurückgezogen')
+    expect(items[0].textContent).not.toContain('widerrufen')
+    expect(items[1].textContent).toContain('Offen')
+  })
+
   test('ein Fehler beim Laden der Liste erscheint als Alert', async () => {
     voucherBatches.mockRejectedValue(new Error('Fehler 401'))
     await render()

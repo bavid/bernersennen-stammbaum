@@ -3,6 +3,7 @@ import { api } from '../api'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
 import { relativeTime } from '../lib/dates.js'
+import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
 
 const MIN_SIZE = 1
 const MAX_SIZE = 200
@@ -74,7 +75,9 @@ function BatchDetail({ batchId, onRevoked }) {
       {detail.vouchers.map((voucher) => (
         <li key={voucher.id}>
           <span className="voucher-code">{voucher.code || `…${voucher.hint}`}</span>
-          <span className={`pill ${voucher.status === 'offen' ? '' : 'pill-rust'}`}>{voucher.status}</span>
+          <span className={`pill ${voucher.status === 'offen' ? '' : 'pill-rust'}`}>
+            {VOUCHER_STATUS_LABEL[voucher.status] || voucher.status}
+          </span>
           {voucher.redeemed_by_name && <span className="muted">{voucher.redeemed_by_name}</span>}
           {voucher.status === 'offen' && (
             <button type="button" className="btn btn-ghost" onClick={() => handleRevoke(voucher.id)}>

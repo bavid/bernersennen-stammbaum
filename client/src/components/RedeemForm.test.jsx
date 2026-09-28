@@ -144,8 +144,9 @@ describe('RedeemForm – Absenden', () => {
     expect(onRedeemed).not.toHaveBeenCalled()
   })
 
-  test('zeigt einen übergebenen Hinweistext (z. B. nach 409 beim Anmelden)', async () => {
+  test('zeigt einen übergebenen Hinweistext (z. B. nach 409 beim Anmelden) und kündigt ihn per role="status" an', async () => {
     await render({ hint: 'Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.' })
     expect(container.textContent).toContain('Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.')
+    expect(container.querySelector('[role="status"]').textContent).toBe('Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.')
   })
 })

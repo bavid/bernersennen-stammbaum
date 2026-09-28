@@ -15,3 +15,13 @@ export function formatVoucherCode(value) {
 export function isCompleteVoucherCode(formatted) {
   return formatted.replace(/-/g, '').length === CODE_CHAR_COUNT
 }
+
+// Gemeinsame Kurz-Labels für den Gutschein-Status (voucher.status), geteilt zwischen InviteDialog
+// (eigene Gutscheine) und AdminVouchers (Admin-Stapel) – so zeigen beide "Zurückgezogen" statt des
+// rohen Server-Werts "widerrufen".
+export const VOUCHER_STATUS_LABEL = {
+  offen: 'Offen',
+  eingelöst: 'Eingelöst',
+  abgelaufen: 'Abgelaufen',
+  widerrufen: 'Zurückgezogen'
+}

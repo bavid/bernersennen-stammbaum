@@ -1,15 +1,16 @@
 // @vitest-environment jsdom
-import { act } from 'react'
+import { act, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { renewKey, listUsers, createUser, deleteUser } = vi.hoisted(() => ({
+const { renewKey, listUsers, createUser, deleteUser, me } = vi.hoisted(() => ({
   renewKey: vi.fn(),
   listUsers: vi.fn(),
   createUser: vi.fn(),
-  deleteUser: vi.fn()
+  deleteUser: vi.fn(),
+  me: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { renewKey, listUsers, createUser, deleteUser } }))
+vi.mock('../api', () => ({ api: { renewKey, listUsers, createUser, deleteUser, me } }))
 
 import AccessSettings from './AccessSettings.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -43,9 +44,10 @@ afterEach(() => {
   listUsers.mockReset()
   createUser.mockReset()
   deleteUser.mockReset()
+  me.mockReset()
 })
 
-async function render(family = keyFamily) {
+async function render(family = keyFamily, { onFamilyChange } = {}) {
   listUsers.mockResolvedValue([])
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -53,7 +55,30 @@ async function render(family = keyFamily) {
   await act(async () =>
     root.render(
       <ThemeProvider themeId="standard">
-        <AccessSettings family={family} />
+        <AccessSettings family={family} onFamilyChange={onFamilyChange} />
+      </ThemeProvider>
+    )
+  )
+  return container
+}
+
+// Simuliert, wie OverviewPage AccessSettings tatsächlich einbindet: family lebt beim Aufrufer, ein
+// erneuerter Schlüssel muss also über onFamilyChange zurück in einen state fließen, den AccessSettings
+// beim nächsten Render wieder als family-Prop bekommt (nicht bloß lokal in AccessSettings selbst).
+function Wrapper({ initialFamily }) {
+  const [family, setFamily] = useState(initialFamily)
+  return <AccessSettings family={family} onFamilyChange={setFamily} />
+}
+
+async function renderWrapper(initialFamily) {
+  listUsers.mockResolvedValue([])
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  root = createRoot(container)
+  await act(async () =>
+    root.render(
+      <ThemeProvider themeId="standard">
+        <Wrapper initialFamily={initialFamily} />
       </ThemeProvider>
     )
   )
@@ -157,6 +182,64 @@ describe('AccessSettings – Schlüssel erneuern', () => {
 
     expect(container.querySelector('[role="alert"]').textContent).toBe('Bitte bestätige mit deinem aktuellen Schlüssel bzw. Passwort.')
     expect(renewButton().textContent).not.toContain('Ja,')
+  })
+
+  test('zeigt bei einer Alt-Familie (legacy) eine eigene Warnung statt "Alle anderen Geräte …"', async () => {
+    renewKey.mockResolvedValue({ key: 'WXYZ-9876-MNPQ' })
+    await render(legacyFamily)
+    await act(async () => setInputValue(confirmInput(), 'altes-passwort'))
+
+    act(() => renewButton().click())
+
+    const warning = container.querySelector('.warning-banner')
+    expect(warning.textContent).toContain(
+      'Danach meldet ihr euch zusätzlich mit dem Schlüssel an – euer bisheriges Passwort funktioniert weiterhin.'
+    )
+    expect(warning.textContent).not.toContain('Alle anderen Geräte müssen sich danach neu anmelden.')
+  })
+
+  test('legacy: nach dem Erneuern zieht family.auth.kind über onFamilyChange nach, der nächste Benutzer wird mit currentKey angelegt', async () => {
+    renewKey.mockResolvedValue({ key: 'WXYZ-9876-MNPQ' })
+    me.mockResolvedValue({ auth: { kind: 'key' } })
+    createUser.mockResolvedValue({ id: 2, username: 'hermes', email: null, last_login_at: null })
+    await renderWrapper(legacyFamily)
+
+    await act(async () => setInputValue(confirmInput(), 'altes-passwort'))
+    act(() => renewButton().click())
+    await act(async () => renewButton().click())
+
+    expect(me).toHaveBeenCalled()
+    // family.auth.kind ist jetzt "key" – Label und Eingabeformat wechseln entsprechend.
+    expect(container.querySelector('label[for="access-confirm"]').textContent).toBe('Zur Bestätigung: euer aktueller Schlüssel')
+    expect(confirmInput().type).toBe('text')
+
+    await act(async () => setInputValue(confirmInput(), 'wxyz9876mnpq'))
+    act(() => container.querySelector('.access-users > button').click())
+    await act(async () => {
+      setInputValue(container.querySelector('#access-new-username'), 'hermes')
+      setInputValue(container.querySelector('#access-new-password'), 'geheim1234')
+    })
+    await act(async () => container.querySelector('.access-users form').requestSubmit())
+
+    expect(createUser).toHaveBeenCalledWith({
+      username: 'hermes',
+      password: 'geheim1234',
+      email: undefined,
+      currentKey: 'WXYZ-9876-MNPQ'
+    })
+  })
+
+  test('legacy: schlägt api.me nach dem Erneuern fehl, wird auth.kind lokal auf "key" gesetzt (Fallback)', async () => {
+    renewKey.mockResolvedValue({ key: 'WXYZ-9876-MNPQ' })
+    me.mockRejectedValue(new Error('Netzwerkfehler'))
+    await renderWrapper(legacyFamily)
+
+    await act(async () => setInputValue(confirmInput(), 'altes-passwort'))
+    act(() => renewButton().click())
+    await act(async () => renewButton().click())
+
+    expect(container.querySelector('label[for="access-confirm"]').textContent).toBe('Zur Bestätigung: euer aktueller Schlüssel')
+    expect(confirmInput().type).toBe('text')
   })
 })
 

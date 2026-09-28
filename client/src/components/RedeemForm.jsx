@@ -76,7 +76,11 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed }
 
   return (
     <form className="form-stack" onSubmit={handleSubmit}>
-      {hint && <p className="field-hint redeem-hint">{hint}</p>}
+      {hint && (
+        <p className="field-hint redeem-hint" role="status">
+          {hint}
+        </p>
+      )}
       {error && (
         <div className="error-banner" role="alert">
           {error}

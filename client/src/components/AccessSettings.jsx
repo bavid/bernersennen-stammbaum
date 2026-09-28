@@ -18,10 +18,31 @@ const EMAIL_MAX_LENGTH = 120
 // { currentPassword } gilt für "user" (gegen das EIGENE Passwort des Benutzers) UND "legacy" (gegen das
 // Bereichs-Passwort der Alt-Familie); { password } bleibt dadurch in POST /users ausschließlich das
 // Passwort des neu angelegten Benutzers, ohne Kollision mit dem Nachweis-Feld.
+const RENEW_WARNING_DEFAULT = 'Alle anderen Geräte müssen sich danach neu anmelden.'
+const RENEW_WARNING_LEGACY = 'Danach meldet ihr euch zusätzlich mit dem Schlüssel an – euer bisheriges Passwort funktioniert weiterhin.'
+
 const AUTH_COPY = {
-  user: { label: 'Zur Bestätigung: dein Passwort', field: 'currentPassword', mono: false, autoComplete: 'current-password' },
-  legacy: { label: 'Zur Bestätigung: euer bisheriges Passwort', field: 'currentPassword', mono: false, autoComplete: 'current-password' },
-  key: { label: 'Zur Bestätigung: euer aktueller Schlüssel', field: 'currentKey', mono: true, autoComplete: 'off' }
+  user: {
+    label: 'Zur Bestätigung: dein Passwort',
+    field: 'currentPassword',
+    mono: false,
+    autoComplete: 'current-password',
+    renewWarning: RENEW_WARNING_DEFAULT
+  },
+  legacy: {
+    label: 'Zur Bestätigung: euer bisheriges Passwort',
+    field: 'currentPassword',
+    mono: false,
+    autoComplete: 'current-password',
+    renewWarning: RENEW_WARNING_LEGACY
+  },
+  key: {
+    label: 'Zur Bestätigung: euer aktueller Schlüssel',
+    field: 'currentKey',
+    mono: true,
+    autoComplete: 'off',
+    renewWarning: RENEW_WARNING_DEFAULT
+  }
 }
 
 function authCopyFor(family) {
@@ -33,11 +54,12 @@ function authCopyFor(family) {
 // LeaveFamilySection), zusätzlich der gemeinsame Berechtigungsnachweis von oben - der Server lehnt ohne
 // ihn mit 403 ab (Schutz gegen Übernahme: eine bloße Sitzung darf keinen neuen Schlüssel erzeugen und
 // damit jedes andere Gerät aussperren).
-function RenewKeySection({ confirmPayload, hasConfirm, onRenewed }) {
+function RenewKeySection({ family, confirmPayload, hasConfirm, onRenewed, onFamilyChange }) {
   const [armed, setArmed] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [newKey, setNewKey] = useState(null)
+  const copy = authCopyFor(family)
 
   useEffect(() => {
     if (!armed) return undefined
@@ -56,6 +78,15 @@ function RenewKeySection({ confirmPayload, hasConfirm, onRenewed }) {
       const { key } = await api.renewKey(confirmPayload)
       setNewKey(key)
       onRenewed?.()
+      // Der Server erwartet ab jetzt currentKey statt currentPassword (siehe AUTH_COPY/currentAuthInfo)
+      // – family.auth.kind muss also mitziehen, sonst schlägt die nächste Bestätigung (Benutzer
+      // anlegen/entfernen, erneut erneuern) mit dem alten Nachweis fehl.
+      try {
+        const me = await api.me()
+        onFamilyChange?.({ ...family, ...me })
+      } catch {
+        onFamilyChange?.({ ...family, auth: { kind: 'key' } })
+      }
     } catch (err) {
       setError(err.message)
       setSaving(false)
@@ -64,7 +95,7 @@ function RenewKeySection({ confirmPayload, hasConfirm, onRenewed }) {
   }
 
   if (newKey) {
-    return <KeyReveal value={newKey} continueLabel="Fertig" onContinue={() => setNewKey(null)} />
+    return <KeyReveal value={newKey} continueLabel="Fertig" onContinue={() => setNewKey(null)} showCardHint={false} />
   }
 
   return (
@@ -79,7 +110,7 @@ function RenewKeySection({ confirmPayload, hasConfirm, onRenewed }) {
         <div className="warning-banner" role="note">
           <Icon name="alert" />
           <div>
-            <strong>Alle anderen Geräte müssen sich danach neu anmelden.</strong>
+            <strong>{copy.renewWarning}</strong>
             <p>Nur dieses Gerät bleibt angemeldet. Überall sonst braucht ihr danach den neuen Schlüssel.</p>
           </div>
         </div>
@@ -250,7 +281,7 @@ function UsersSection({ confirmField, confirmValue, hasConfirm }) {
 // (nicht während man in einem beigetretenen Rudel unterwegs ist) und nie in der Demo. Eine gemeinsame
 // Bestätigung (aktuelles Passwort/Schlüssel, je nach family.auth.kind) gilt für alle drei sensiblen
 // Aktionen hier - der Server verlangt sie bei jeder einzeln (siehe api.js).
-export default function AccessSettings({ family }) {
+export default function AccessSettings({ family, onFamilyChange }) {
   const copy = authCopyFor(family)
   const [confirmValue, setConfirmValue] = useState('')
 
@@ -278,7 +309,13 @@ export default function AccessSettings({ family }) {
           autoComplete={copy.autoComplete}
         />
       </div>
-      <RenewKeySection confirmPayload={confirmPayload} hasConfirm={hasConfirm} onRenewed={() => setConfirmValue('')} />
+      <RenewKeySection
+        family={family}
+        confirmPayload={confirmPayload}
+        hasConfirm={hasConfirm}
+        onRenewed={() => setConfirmValue('')}
+        onFamilyChange={onFamilyChange}
+      />
       <UsersSection confirmField={copy.field} confirmValue={confirmValue} hasConfirm={hasConfirm} />
     </section>
   )

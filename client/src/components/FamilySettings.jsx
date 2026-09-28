@@ -25,7 +25,7 @@ export default function FamilySettings({ family, onRenamed, onChange, onFamilyCh
         <h3 id="family-settings-theme-heading">Aussehen</h3>
         <ThemePicker family={family} onSaved={onChange} headingId="family-settings-theme-heading" />
       </section>
-      {isIdentityActive && !isDemo && <AccessSettings family={family} />}
+      {isIdentityActive && !isDemo && <AccessSettings family={family} onFamilyChange={onFamilyChange} />}
       {canLeave && <LeaveFamilySection family={family} onFamilyChange={onFamilyChange} onLeft={onCancel} />}
     </div>
   )

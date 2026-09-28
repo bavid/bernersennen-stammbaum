@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
 import { readSetting, writeSetting } from './lib/storage.js'
@@ -129,12 +129,17 @@ export default function App() {
   const [family, setFamily] = useState(undefined)
   const [inviteOpen, setInviteOpen] = useState(false)
   const { pathname, hash } = useLocation()
+  const navigate = useNavigate()
   // Code aus /v#CODE einmalig einsammeln und die Adresse sofort bereinigen – noch vor jedem
   // Netzwerk-Aufruf (siehe die erste useEffect unten). Bleibt "im Speicher", auch wenn man sich auf
-  // /v erst noch abmelden muss (siehe unten, Karte "angemeldet als …").
-  const [voucherCode] = useState(() => {
+  // /v erst noch abmelden muss (siehe unten, Karte "angemeldet als …"), und wird beim Anmelden über
+  // handleVoucherLogin geleert – niemand sonst liest hash danach noch.
+  const [voucherCode, setVoucherCode] = useState(() => {
     if (pathname !== '/v' || !hash) return ''
-    window.history.replaceState(null, '', pathname)
+    // history.state bleibt erhalten (nicht null) – sonst verliert React Routers eigene History
+    // ihren Zustand (usr/key/idx); pathname+search kommen bewusst von window.location, nicht vom
+    // useLocation()-Wert oben, der Realität der Adressleiste entsprechend.
+    window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
     return hash.slice(1)
   })
 
@@ -158,6 +163,15 @@ export default function App() {
     } finally {
       setFamily(null)
     }
+  }
+
+  // Anmeldung auf /v (eingelöst, per Schlüssel/Passwort oder Demo): family setzen reicht allein nicht,
+  // der Pfad bleibt sonst /v und zeigt dauerhaft die Karte "Du bist angemeldet als …" (siehe family-Zweig
+  // unten). Der Gutscheincode wird hier gleich mit geleert, er wird nach dem Anmelden nicht mehr gebraucht.
+  function handleVoucherLogin(me) {
+    setFamily(me)
+    setVoucherCode('')
+    navigate(startRoute(me), { replace: true })
   }
 
   // Voller Seitenwechsel: die Route /v zeigt die Login-Seite direkt im Einlöse-Modus – ein einfacher
@@ -205,7 +219,7 @@ export default function App() {
             </section>
           </div>
         ) : (
-          <LoginPage onLogin={setFamily} initialMode="redeem" initialCode={voucherCode} />
+          <LoginPage onLogin={handleVoucherLogin} initialMode="redeem" initialCode={voucherCode} />
         )}
       </ThemeProvider>
     )

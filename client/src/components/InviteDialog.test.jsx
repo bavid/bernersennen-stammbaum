@@ -6,6 +6,11 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 const { myVouchers } = vi.hoisted(() => ({ myVouchers: vi.fn() }))
 vi.mock('../api', () => ({ api: { myVouchers } }))
 
+// Kein <ToastProvider> in diesem Test-Setup (siehe render() unten) – useToast() mocken, um die
+// Fehlermeldung beim gescheiterten "Link kopieren" ohne echte Toast-UI zu prüfen.
+const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
+vi.mock('./Toast.jsx', () => ({ useToast: () => toast }))
+
 import InviteDialog from './InviteDialog.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
 import { DemoProvider } from '../lib/demo.js'
@@ -49,6 +54,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
   document.title = ''
   myVouchers.mockReset()
+  toast.mockReset()
   vi.restoreAllMocks()
 })
 
@@ -92,6 +98,32 @@ describe('InviteDialog – eigene Gutscheine', () => {
     await act(async () => copyLinkButton.click())
 
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/v#ABCD1234HJKM`)
+  })
+
+  test('"Link kopieren": schlägt die Zwischenablage fehl, erscheint der Link als Fallback-Feld plus Fehler-Toast', async () => {
+    myVouchers.mockResolvedValue([openVoucher])
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'))
+    Object.assign(navigator, { clipboard: { writeText } })
+    await render(rudel)
+
+    expect(container.querySelector('.voucher-link-fallback')).toBeNull()
+
+    const copyLinkButton = [...container.querySelectorAll('.voucher-row button')].find((btn) =>
+      btn.textContent.includes('Link kopieren')
+    )
+    await act(async () => copyLinkButton.click())
+
+    const fallbackInput = container.querySelector('.voucher-link-fallback')
+    expect(fallbackInput).not.toBeNull()
+    expect(fallbackInput.value).toBe(`${window.location.origin}/v#ABCD1234HJKM`)
+    expect(fallbackInput.readOnly).toBe(true)
+    expect(toast).toHaveBeenCalledWith('Kopieren nicht möglich – Link bitte markieren')
+
+    // React hängt onFocus intern an "focusin" (bubbelt) statt "focus" (bubbelt nicht) - darum focus()
+    // aufrufen statt selbst ein Event zu basteln, sonst kommt der Handler nie an.
+    const selectSpy = vi.spyOn(fallbackInput, 'select')
+    act(() => fallbackInput.focus())
+    expect(selectSpy).toHaveBeenCalled()
   })
 
   test('kopiert auch nur den Code', async () => {

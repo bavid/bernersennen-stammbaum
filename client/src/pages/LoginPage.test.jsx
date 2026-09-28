@@ -223,9 +223,9 @@ describe('LoginPage – Gutschein einlösen', () => {
 })
 
 describe('LoginPage – Wiederherstellung', () => {
-  test('"Schlüssel vergessen?" wechselt in die Wiederherstellung, der Modus-Umschalter verschwindet', async () => {
+  test('"Passwort vergessen?" wechselt in die Wiederherstellung, der Modus-Umschalter verschwindet', async () => {
     await render()
-    act(() => linkButton('Schlüssel vergessen?').click())
+    act(() => linkButton('Passwort vergessen?').click())
 
     expect(container.querySelector('.login-switch')).toBeNull()
     expect(container.querySelector('#recover-code')).not.toBeNull()
@@ -235,7 +235,7 @@ describe('LoginPage – Wiederherstellung', () => {
   test('erfolgreiche Wiederherstellung sendet code/username/newPassword; "Zum Anmelden" führt zurück', async () => {
     recover.mockResolvedValue(null)
     await render()
-    act(() => linkButton('Schlüssel vergessen?').click())
+    act(() => linkButton('Passwort vergessen?').click())
 
     await act(async () => {
       setInputValue(container.querySelector('#recover-code'), 'abcd1234hjkm')

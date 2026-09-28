@@ -72,4 +72,22 @@ describe('KeyReveal', () => {
 
     expect(onContinue).toHaveBeenCalled()
   })
+
+  test('verbirgt den Kartenhinweis, wenn showCardHint=false gesetzt ist (z. B. nach dem Schlüssel-Erneuern)', async () => {
+    await render({ showCardHint: false })
+    expect(container.textContent).not.toContain('Wer euch die Karte gegeben hat, kennt diesen Code.')
+  })
+
+  test('zeigt den Kartenhinweis standardmäßig (showCardHint=true)', async () => {
+    await render()
+    expect(container.textContent).toContain('Wer euch die Karte gegeben hat, kennt diesen Code.')
+  })
+
+  test('setzt beim Erscheinen den Fokus auf die Überschrift "Euer Schlüssel", die in einer role="status"-Region steckt', async () => {
+    await render()
+    const heading = [...container.querySelectorAll('p')].find((p) => p.textContent === 'Euer Schlüssel')
+    expect(heading.getAttribute('tabindex')).toBe('-1')
+    expect(heading.closest('[role="status"]')).not.toBeNull()
+    expect(document.activeElement).toBe(heading)
+  })
 })
