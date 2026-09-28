@@ -6,6 +6,7 @@ server/data.db*
 server/data/
 server/uploads/*
 !server/uploads/.gitkeep
+server/partner-media/
 server/test/*.tmp.db*
 server/.testenv/
 data/

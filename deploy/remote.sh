@@ -196,8 +196,13 @@ backup() {
   # Konsistenter Snapshot über die SQLite-Backup-API, auch während die App läuft
   $COMPOSE exec -T chronik node -e \
     "require('better-sqlite3')('/data/data.db').backup('/data/snapshot.db').then(() => process.exit(0))"
-  # .env gehört dazu: ohne die Secrets (JWT_SECRET, CODE_PEPPER) sind Sessions und Gutschein-Codes wertlos
-  (umask 077 && tar czf "$file" -C data snapshot.db uploads -C "$APP_DIR" .env)
+  # .env gehört dazu: ohne die Secrets (JWT_SECRET, CODE_PEPPER) sind Sessions und Gutschein-Codes wertlos.
+  # partner-media (Partner-Logos, Phase 2) gibt es erst seit es Partner gibt - auf älteren/partnerlosen
+  # Instanzen fehlt das Verzeichnis, tar würde dort sonst mit "No such file or directory" abbrechen.
+  local tar_args=(-C data snapshot.db uploads)
+  [ -d data/partner-media ] && tar_args+=(partner-media)
+  tar_args+=(-C "$APP_DIR" .env)
+  (umask 077 && tar czf "$file" "${tar_args[@]}")
   rm -f data/snapshot.db
   log "Backup: $APP_DIR/$file ($(du -h "$file" | cut -f1))"
   # Nur die letzten $BACKUP_KEEP Archive dieser Instanz behalten
@@ -276,7 +281,7 @@ case "$cmd" in
     cd "$APP_DIR"
     backup
     $COMPOSE stop chronik
-    rm -rf data/data.db data/data.db-wal data/data.db-shm data/uploads
+    rm -rf data/data.db data/data.db-wal data/data.db-shm data/uploads data/partner-media
     $COMPOSE start chronik
     wait_healthy
     log "Alle Daten gelöscht (Backup liegt in backups/)"

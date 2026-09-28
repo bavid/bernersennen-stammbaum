@@ -25,10 +25,12 @@ async function main() {
   const env = {
     ...process.env,
     DATA_DIR: dataDir,
-    // config.js gibt DB_PATH/UPLOAD_DIR Vorrang vor DATA_DIR (||-Fallback) - eine Shell, in der
-    // DB_PATH zufällig gesetzt ist, würde sonst npm run testenv:reset auf die falsche DB loslassen.
+    // config.js gibt DB_PATH/UPLOAD_DIR/PARTNER_MEDIA_DIR Vorrang vor DATA_DIR (||-Fallback) - eine
+    // Shell, in der einer davon zufällig gesetzt ist, würde sonst npm run testenv:reset auf die falsche
+    // DB bzw. die falschen Verzeichnisse loslassen.
     DB_PATH: '',
     UPLOAD_DIR: '',
+    PARTNER_MEDIA_DIR: '',
     // Der Vite-Proxy erwartet die API fest auf 4000 – ein geerbtes PORT (z. B. vom Vorschau-Tool) ignorieren
     PORT: '4000',
     APP_ENV: 'dev',

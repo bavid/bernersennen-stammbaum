@@ -9,6 +9,7 @@ client/dist
 server/data
 server/data.db*
 server/uploads
+server/partner-media
 server/.testenv
 server/test
 *.log
