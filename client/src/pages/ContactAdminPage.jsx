@@ -17,7 +17,7 @@ function buildTypes(words) {
       label: 'Problem melden',
       icon: 'alert',
       prompt: 'Was hast du gemacht, was ist passiert – und was hättest du erwartet?',
-      placeholder: 'z. B. Beim Hochladen eines Fotos von Trude kam eine Fehlermeldung.'
+      placeholder: 'z. B. Beim Hochladen eines Fotos von Tilda kam eine Fehlermeldung.'
     }
   }
 }

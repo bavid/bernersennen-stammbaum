@@ -13,10 +13,10 @@ test('a pack can rename itself', async (t) => {
   const rename = (cookie, name) => call(base, '/api/family', { method: 'PUT', cookie, body: { name } })
 
   await t.test('renames only the own pack, trimmed', async () => {
-    const res = await rename(a.cookie, '  BernerSennen Familie Mosler  ')
+    const res = await rename(a.cookie, '  BernerSennen Familie Sonnenhang  ')
     assert.equal(res.status, 200)
-    assert.equal(res.data.name, 'BernerSennen Familie Mosler')
-    assert.equal((await call(base, '/api/me', { cookie: a.cookie })).data.name, 'BernerSennen Familie Mosler')
+    assert.equal(res.data.name, 'BernerSennen Familie Sonnenhang')
+    assert.equal((await call(base, '/api/me', { cookie: a.cookie })).data.name, 'BernerSennen Familie Sonnenhang')
     assert.equal((await call(base, '/api/me', { cookie: b.cookie })).data.name, 'Rudel B')
   })
 
@@ -31,6 +31,6 @@ test('a pack can rename itself', async (t) => {
 
   await t.test('the password keeps working after renaming', async () => {
     const login = await call(base, '/api/login', { method: 'POST', body: { password: 'passwortA' } })
-    assert.equal(login.data.name, 'BernerSennen Familie Mosler')
+    assert.equal(login.data.name, 'BernerSennen Familie Sonnenhang')
   })
 })

@@ -23,7 +23,7 @@ function PageTexts({ page, onChange }) {
       <h3>Seite</h3>
       {field('title', 'Titel', 'z. B. Hermes')}
       {field('subtitle', 'Untertitel', 'z. B. Berner-Mix · geboren am 14. Mai 2026')}
-      {field('footer', 'Fußzeile', 'z. B. Mutter: Trude · Vater: Bruno')}
+      {field('footer', 'Fußzeile', 'z. B. Mutter: Tilda · Vater: Bodo')}
     </section>
   )
 }

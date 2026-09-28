@@ -82,12 +82,12 @@ describe('buildPages', () => {
     const pages = buildPages(
       [
         { dog: dog(1, 'Hermes'), entries: [entry('Ausflug', '2026-06-01', urls)] },
-        { dog: dog(2, 'Milo'), entries: [] }
+        { dog: dog(2, 'Mika'), entries: [] }
       ],
-      { perPage: 4, overview: true, familyName: 'Familie Mosler' }
+      { perPage: 4, overview: true, familyName: 'Familie Sonnenhang' }
     )
-    expect(pages.map((p) => p.title)).toEqual(['Familie Mosler', 'Hermes · 1/2', 'Hermes · 2/2', 'Milo'])
-    expect(pages[0].photos.map((p) => p.caption)).toEqual(['Hermes', 'Milo'])
+    expect(pages.map((p) => p.title)).toEqual(['Familie Sonnenhang', 'Hermes · 1/2', 'Hermes · 2/2', 'Mika'])
+    expect(pages[0].photos.map((p) => p.caption)).toEqual(['Hermes', 'Mika'])
     expect(pages[1].photos).toHaveLength(4)
     expect(pages[2].photos).toHaveLength(4)
   })

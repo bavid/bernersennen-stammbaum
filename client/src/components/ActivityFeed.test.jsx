@@ -54,7 +54,7 @@ describe.each(['standard', 'berner'])('ActivityFeed im Theme %s', (themeId) => {
         {
           id: 1,
           dog_id: 5,
-          dog_name: 'Trude',
+          dog_name: 'Tilda',
           titel: 'Am See',
           autor_name: 'Mo',
           created_at: new Date().toISOString(),

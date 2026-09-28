@@ -84,9 +84,9 @@ test('pinboard notes and recent activity', async (t) => {
 
   await t.test('recent activity shows newest entries across all dogs with dog info', async () => {
     const hermes = (await post('/api/dogs', { name: 'Hermes', geschlecht: 'ruede', rasse: 'Berner-Mix' })).data
-    const trude = (await post('/api/dogs', { name: 'Trude', geschlecht: 'huendin' })).data
+    const tilda = (await post('/api/dogs', { name: 'Tilda', geschlecht: 'huendin' })).data
     await post('/api/timeline', { dogId: hermes.id, autorName: 'David', datum: '2026-06-01', titel: 'Erster Ausflug' })
-    await post('/api/timeline', { dogId: trude.id, autorName: 'Anna', datum: '2020-01-01', titel: 'Alte Erinnerung nachgetragen' })
+    await post('/api/timeline', { dogId: tilda.id, autorName: 'Anna', datum: '2020-01-01', titel: 'Alte Erinnerung nachgetragen' })
 
     const { data } = await call(base, '/api/timeline/recent?limit=5', { cookie })
     assert.deepEqual(data.map((e) => e.titel), ['Alte Erinnerung nachgetragen', 'Erster Ausflug'])

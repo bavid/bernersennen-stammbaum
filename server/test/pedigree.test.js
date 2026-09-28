@@ -78,7 +78,7 @@ test('pedigree rules and dog lifecycle', async (t) => {
     assert.equal(unknown.data.name_unbekannt, 1)
     assert.equal(unknown.data.rasse, 'Hovawart')
 
-    const pup = await createDog({ name: 'Ronja', geschlecht: 'huendin', rasse: 'Berner × Hovawart', fatherDogId: unknown.data.id })
+    const pup = await createDog({ name: 'Rieke', geschlecht: 'huendin', rasse: 'Berner × Hovawart', fatherDogId: unknown.data.id })
     const { data: detail } = await call(base, `/api/dogs/${pup.data.id}`, { cookie })
     assert.equal(detail.father.rasse, 'Hovawart')
     assert.equal(detail.father.name_unbekannt, 1)
@@ -97,7 +97,7 @@ test('pedigree rules and dog lifecycle', async (t) => {
 
   await t.test('deleting an unknown-named parent keeps the breed on the child', async () => {
     const unknown = await createDog({ nameUnbekannt: true, geschlecht: 'huendin', rasse: 'Appenzeller' })
-    const kid = await createDog({ name: 'Shila', geschlecht: 'huendin', motherDogId: unknown.data.id })
+    const kid = await createDog({ name: 'Selma', geschlecht: 'huendin', motherDogId: unknown.data.id })
     await call(base, `/api/dogs/${unknown.data.id}`, { method: 'DELETE', cookie })
     const { data } = await call(base, `/api/dogs/${kid.data.id}`, { cookie })
     assert.equal(data.mother_freitext, 'Unbekannt (Appenzeller)')

@@ -78,7 +78,7 @@ describe('dates', () => {
     const unknown = { name: 'Unbekannt', name_unbekannt: 1, rasse: 'Hovawart' }
     expect(displayName(unknown)).toBe('Unbekannt')
     expect(dogLabel(unknown)).toBe('Unbekannt (Hovawart)')
-    expect(dogLabel({ name: 'Trude vom Hof', name_unbekannt: 0 })).toBe('Trude')
+    expect(dogLabel({ name: 'Tilda vom Hof', name_unbekannt: 0 })).toBe('Tilda')
   })
 
   test('sex labels depend on the species', () => {
