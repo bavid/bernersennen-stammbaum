@@ -4,6 +4,7 @@ import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import PedigreeTree from '../components/PedigreeTree.jsx'
 import DogForm from '../components/DogForm.jsx'
+import QuickAnimalForm from '../components/QuickAnimalForm.jsx'
 import Modal from '../components/Modal.jsx'
 import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
@@ -12,6 +13,7 @@ import FamilySettings from '../components/FamilySettings.jsx'
 import { nextTermin } from '../lib/notes.js'
 import { useToast } from '../components/Toast.jsx'
 import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
+import { displayName } from '../lib/timeline.js'
 
 function Stats({ dogs, allDogs, links }) {
   const generations = useMemo(() => layoutPedigree(collectNodes(dogs, allDogs), links).length, [dogs, allDogs, links])
@@ -43,7 +45,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const [links, setLinks] = useState([])
   const [activity, setActivity] = useState(null)
   const [error, setError] = useState(null)
-  const [formOpen, setFormOpen] = useState(false)
+  // null: Modal zu. { livesWith, moreValues: null }: QuickAnimalForm (livesWith fest vorgegeben, sonst leer).
+  // moreValues gesetzt: "Mehr Angaben …" gewechselt, zeigt stattdessen DogForm damit vorbefüllt.
+  const [animalForm, setAnimalForm] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
@@ -78,11 +82,24 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
     toast('Neues Aussehen gespeichert')
   }
 
+  function openAnimalForm(livesWith = null) {
+    setAnimalForm({ livesWith, moreValues: null })
+  }
+
+  function closeAnimalForm() {
+    setAnimalForm(null)
+  }
+
+  function announceCreated(dog) {
+    closeAnimalForm()
+    toast(`${displayName(dog)} ist jetzt dabei`)
+    navigate(`/tier/${dog.id}`)
+  }
+
+  // "Mehr Angaben …" aus QuickAnimalForm: volles DogForm übernimmt selbst das Anlegen
   async function handleCreate(payload) {
     const dog = await api.createDog(payload)
-    setFormOpen(false)
-    toast(`${dog.name} ist jetzt Teil des Stammbaums`)
-    navigate(`/tier/${dog.id}`)
+    announceCreated(dog)
   }
 
   return (
@@ -107,7 +124,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}
           <div className="hero-actions">
-            <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => openAnimalForm()}>
               <Icon name="plus" />
               Tier hinzufügen
             </button>
@@ -126,7 +143,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
           <ThemeMark size={72} />
           <h3>Euer Stammbaum ist noch leer</h3>
           <p>Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
-          <button type="button" className="btn btn-primary" onClick={() => setFormOpen(true)}>
+          <button type="button" className="btn btn-primary" onClick={() => openAnimalForm()}>
             <Icon name="plus" />
             Erstes Tier anlegen
           </button>
@@ -135,7 +152,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
 
       {dogs && dogs.length > 0 && activity && <ActivityFeed entries={activity.entries} termin={activity.termin} />}
 
-      {dogs && dogs.length > 0 && <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} />}
+      {dogs && dogs.length > 0 && (
+        <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={openAnimalForm} />
+      )}
 
       <Modal open={settingsOpen} title={words.groupSettings} onClose={() => setSettingsOpen(false)}>
         <FamilySettings
@@ -146,8 +165,25 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
         />
       </Modal>
 
-      <Modal open={formOpen} title="Neues Tier anlegen" onClose={() => setFormOpen(false)}>
-        <DogForm allDogs={allDogs} ownFamilyId={family.id} onSubmit={handleCreate} onCancel={() => setFormOpen(false)} />
+      <Modal open={Boolean(animalForm)} title="Neues Tier anlegen" onClose={closeAnimalForm}>
+        {animalForm &&
+          (animalForm.moreValues ? (
+            <DogForm
+              allDogs={allDogs}
+              ownFamilyId={family.id}
+              initialValues={animalForm.moreValues}
+              onSubmit={handleCreate}
+              onCancel={closeAnimalForm}
+            />
+          ) : (
+            <QuickAnimalForm
+              allDogs={allDogs}
+              livesWith={animalForm.livesWith}
+              onCreated={announceCreated}
+              onCancel={closeAnimalForm}
+              onMore={(moreValues) => setAnimalForm((current) => ({ ...current, moreValues }))}
+            />
+          ))}
       </Modal>
     </div>
   )

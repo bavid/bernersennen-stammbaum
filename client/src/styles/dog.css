@@ -354,6 +354,19 @@
   gap: var(--space-2);
 }
 
+/* Fest vorgegebenes "lebt mit" in QuickAnimalForm (z. B. aus dem Stammbaum oder der Tierseite) –
+   sieht wie ein deaktiviertes Eingabefeld aus, ist aber reiner Text ohne Auswahl. */
+.quick-animal-fixed-housemate {
+  display: flex;
+  align-items: center;
+  min-height: 2.9rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  color: var(--muted);
+}
+
 .quick-add-existing {
   display: flex;
   flex-wrap: wrap;

@@ -110,7 +110,7 @@ function useRefMap() {
   return [map, setter]
 }
 
-export default function PedigreeTree({ dogs, allDogs, links = [] }) {
+export default function PedigreeTree({ dogs, allDogs, links = [], onAddMitbewohner }) {
   const nodes = useMemo(() => collectNodes(dogs, allDogs), [dogs, allDogs])
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const anchors = useMemo(() => housemateAnchors(nodes, links), [nodes, links])
@@ -150,7 +150,11 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
           ? []
           : laneGroups
               .filter((group) => openHousemates.has(group.anchorId))
-              .map((group) => ({ ...group, members: group.memberIds.map((id) => byId.get(id)) }))
+              .map((group) => ({
+                ...group,
+                members: group.memberIds.map((id) => byId.get(id)),
+                anchor: byId.get(group.anchorId)
+              }))
       ),
     [lanes, compactGens, openHousemates, byId]
   )
@@ -430,6 +434,7 @@ export default function PedigreeTree({ dogs, allDogs, links = [] }) {
                   setGroupRef={setGroupRef}
                   setCardRef={setCardRef}
                   cardProps={cardProps}
+                  onAddMitbewohner={onAddMitbewohner}
                 />
               ]
             })}

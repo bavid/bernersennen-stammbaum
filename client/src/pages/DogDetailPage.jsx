@@ -108,7 +108,7 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
             allDogs={allDogs}
             canEdit={dog.isOwn}
             onAdd={onAddHousemate}
-            onCreate={onCreateHousemate}
+            onCreated={onCreateHousemate}
             onRemove={onRemoveHousemate}
           />
           {dog.children.length > 0 && (
@@ -283,9 +283,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     }
   }
 
-  // Schnellerfassung: Fehler landen im Formular, deshalb hier kein try/catch
-  async function handleCreateHousemate(payload) {
-    const created = await api.createDog({ ...payload, housemateId: dog.id })
+  // QuickAnimalForm hat das Tier bereits angelegt und verlinkt (livesWith=dog) – hier nur neu laden
+  async function handleCreateHousemate(created) {
     await load()
     toast(`${displayName(created)} lebt jetzt mit ${displayName(dog)} zusammen`)
   }

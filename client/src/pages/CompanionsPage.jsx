@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import CompanionTimeline from '../components/CompanionTimeline.jsx'
+import QuickAnimalForm from '../components/QuickAnimalForm.jsx'
+import DogForm from '../components/DogForm.jsx'
+import Modal from '../components/Modal.jsx'
+import Icon from '../components/Icon.jsx'
+import { useToast } from '../components/Toast.jsx'
 import { companionRows, nextAnniversary, yearSpan, yearsTogether } from '../lib/companions.js'
 import { displayName } from '../lib/timeline.js'
 import { todayIso } from '../lib/dates.js'
@@ -20,13 +25,16 @@ function anniversaryText(anniversary) {
 }
 
 // „Meine Chronik“ – alle Wegbegleiter des eigenen Zuhauses über eine gemeinsame Zeitachse.
-// eslint-disable-next-line no-unused-vars -- `family` gehört zur Seiten-Signatur (wie bei den anderen Bereichs-Seiten),
-// wird hier aber noch nicht ausgewertet
 export default function CompanionsPage({ family }) {
   const { words } = useTheme()
   const [dogs, setDogs] = useState(null)
   const [error, setError] = useState(null)
+  // null: Modal zu. { livesWith: null, moreValues: null }: QuickAnimalForm. moreValues gesetzt:
+  // "Mehr Angaben …" gewechselt, zeigt stattdessen DogForm damit vorbefüllt (wie in OverviewPage).
+  const [animalForm, setAnimalForm] = useState(null)
   const today = useMemo(() => todayIso(), [])
+  const navigate = useNavigate()
+  const toast = useToast()
 
   useEffect(() => {
     api
@@ -40,6 +48,25 @@ export default function CompanionsPage({ family }) {
   const anniversary = useMemo(() => nextAnniversary(dogs || [], today), [dogs, today])
   const livingCount = useMemo(() => rows.filter((row) => row.ongoing).length, [rows])
   const years = useMemo(() => yearsTogether(rows), [rows])
+
+  function openAnimalForm() {
+    setAnimalForm({ livesWith: null, moreValues: null })
+  }
+
+  function closeAnimalForm() {
+    setAnimalForm(null)
+  }
+
+  function announceCreated(dog) {
+    closeAnimalForm()
+    toast(`${displayName(dog)} ist jetzt dabei`)
+    navigate(`/tier/${dog.id}`)
+  }
+
+  async function handleCreate(payload) {
+    const dog = await api.createDog(payload)
+    announceCreated(dog)
+  }
 
   return (
     <div className="page">
@@ -56,8 +83,8 @@ export default function CompanionsPage({ family }) {
             {words.TheGroup} pflegst du im <Link to="/stammbaum">Stammbaum</Link>.
           </p>
         </div>
-        {rows.length > 0 && (
-          <div className="page-hero-side">
+        <div className="page-hero-side">
+          {rows.length > 0 && (
             <dl className="stats">
               <div>
                 <dt>{words.animals} gesamt</dt>
@@ -72,8 +99,14 @@ export default function CompanionsPage({ family }) {
                 <dd>{years}</dd>
               </div>
             </dl>
+          )}
+          <div className="hero-actions">
+            <button type="button" className="btn btn-primary btn-lg" onClick={openAnimalForm}>
+              <Icon name="plus" />
+              Tier hinzufügen
+            </button>
           </div>
-        )}
+        </div>
       </header>
 
       {error && (
@@ -100,6 +133,27 @@ export default function CompanionsPage({ family }) {
       )}
 
       {dogs && rows.length > 0 && <CompanionTimeline rows={rows} span={span} today={today} />}
+
+      <Modal open={Boolean(animalForm)} title="Neues Tier anlegen" onClose={closeAnimalForm}>
+        {animalForm &&
+          (animalForm.moreValues ? (
+            <DogForm
+              allDogs={dogs || []}
+              ownFamilyId={family.id}
+              initialValues={animalForm.moreValues}
+              onSubmit={handleCreate}
+              onCancel={closeAnimalForm}
+            />
+          ) : (
+            <QuickAnimalForm
+              allDogs={dogs || []}
+              livesWith={animalForm.livesWith}
+              onCreated={announceCreated}
+              onCancel={closeAnimalForm}
+              onMore={(moreValues) => setAnimalForm((current) => ({ ...current, moreValues }))}
+            />
+          ))}
+      </Modal>
     </div>
   )
 }

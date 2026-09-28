@@ -129,3 +129,37 @@ describe('DogForm – „Bei uns“', () => {
     expect(container.querySelector('button[type="submit"]').textContent).toBe('Tier anlegen')
   })
 })
+
+describe('DogForm – initialValues (Neuanlegen aus QuickAnimalForm "Mehr Angaben …")', () => {
+  test('übernimmt Name, Tierart, Geschlecht, Einzug und "lebt mit" beim Neuanlegen', async () => {
+    await render({
+      allDogs: [{ id: 3, name: 'Nele', geschlecht: 'huendin' }],
+      initialValues: {
+        name: 'Hoppel',
+        nameUnbekannt: false,
+        tierart: 'anderes',
+        rasse: 'Kaninchen',
+        geschlecht: 'ruede',
+        beiUnsSeit: '2024-05-01',
+        housemateId: 3
+      }
+    })
+
+    expect(container.querySelector('#dog-name').value).toBe('Hoppel')
+    expect(container.querySelector('.segmented button[aria-pressed="true"]').textContent).toBe('Anderes Tier')
+    expect(container.querySelector('#dog-breed').value).toBe('Kaninchen')
+    expect(container.querySelector('#dog-housemate').value).toBe('3')
+    // "Bei uns" ist wegen initialValues.beiUnsSeit schon aufgeklappt
+    expect(container.querySelector('#dog-bei-uns-seit').value).toBe('2024-05-01')
+  })
+
+  test('initialValues wirkt nicht beim Bearbeiten – die Werte des Tiers gewinnen immer', async () => {
+    await render({
+      dog: { id: 1, name: 'Aiko', geschlecht: 'ruede', tierart: 'hund' },
+      initialValues: { name: 'Hoppel', tierart: 'anderes' }
+    })
+
+    expect(container.querySelector('#dog-name').value).toBe('Aiko')
+    expect(container.querySelector('.segmented button[aria-pressed="true"]').textContent).toBe('Hund')
+  })
+})
