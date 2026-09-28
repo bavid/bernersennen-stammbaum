@@ -8,7 +8,7 @@ import Modal from '../components/Modal.jsx'
 import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
-import RenameFamilyForm from '../components/RenameFamilyForm.jsx'
+import FamilySettings from '../components/FamilySettings.jsx'
 import { nextTermin } from '../lib/notes.js'
 import { useToast } from '../components/Toast.jsx'
 import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
@@ -44,7 +44,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const [activity, setActivity] = useState(null)
   const [error, setError] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
-  const [renameOpen, setRenameOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -67,9 +67,15 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   }, [])
 
   function handleRenamed(renamed) {
-    setRenameOpen(false)
-    onFamilyChange(renamed)
+    setSettingsOpen(false)
+    onFamilyChange({ ...family, ...renamed })
     toast(`${words.TheGroup} heißt jetzt „${renamed.name}“`)
+  }
+
+  function handleThemeSaved(updated) {
+    setSettingsOpen(false)
+    onFamilyChange({ ...family, ...updated })
+    toast('Neues Aussehen gespeichert')
   }
 
   async function handleCreate(payload) {
@@ -89,9 +95,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
             <button
               type="button"
               className="icon-btn title-edit"
-              onClick={() => setRenameOpen(true)}
-              aria-label={words.renameGroup}
-              title={words.renameGroup}
+              onClick={() => setSettingsOpen(true)}
+              aria-label={words.groupSettings}
+              title={words.groupSettings}
             >
               <Icon name="edit" />
             </button>
@@ -131,8 +137,13 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
 
       {dogs && dogs.length > 0 && <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} />}
 
-      <Modal open={renameOpen} title={words.renameGroup} onClose={() => setRenameOpen(false)}>
-        <RenameFamilyForm family={family} onRenamed={handleRenamed} onCancel={() => setRenameOpen(false)} />
+      <Modal open={settingsOpen} title={words.groupSettings} onClose={() => setSettingsOpen(false)}>
+        <FamilySettings
+          family={family}
+          onRenamed={handleRenamed}
+          onChange={handleThemeSaved}
+          onCancel={() => setSettingsOpen(false)}
+        />
       </Modal>
 
       <Modal open={formOpen} title="Neues Tier anlegen" onClose={() => setFormOpen(false)}>

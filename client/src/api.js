@@ -52,6 +52,7 @@ export const api = {
   createFamily: (payload) => request('/families', json('POST', payload)),
   logout: () => request('/logout', { method: 'POST' }),
   renameFamily: (name) => request('/family', json('PUT', { name })),
+  updateFamily: (payload) => request('/family', json('PUT', payload)),
   invite: () => request('/invite'),
 
   listDogs: () => request('/dogs'),
