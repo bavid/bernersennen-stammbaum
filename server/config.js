@@ -2,6 +2,8 @@ const path = require('node:path')
 
 const isProduction = process.env.NODE_ENV === 'production'
 const DEV_JWT_SECRET = 'dev-only-secret-never-use-in-production'
+const DEV_CODE_PEPPER = 'dev-code-pepper'
+const MIN_CODE_PEPPER_LENGTH = 32
 
 const APP_ENVS = ['production', 'staging', 'dev']
 
@@ -22,6 +24,23 @@ function readJwtSecret() {
     throw new Error('JWT_SECRET muss in Produktion gesetzt sein (siehe .env.example)')
   }
   return DEV_JWT_SECRET
+}
+
+// Wie readJwtSecret: in Produktion Pflicht, sonst throw beim Start (siehe .env.example). Anders als
+// beim JWT-Secret prüfen wir hier zusätzlich eine Mindestlänge, weil CODE_PEPPER sowohl den Such-HMAC
+// als auch den AES-256-GCM-Schlüssel der Gutschein-Codes ableitet.
+function readCodePepper() {
+  const pepper = process.env.CODE_PEPPER
+  if (!pepper) {
+    if (isProduction) {
+      throw new Error('CODE_PEPPER muss in Produktion gesetzt sein (siehe .env.example)')
+    }
+    return DEV_CODE_PEPPER
+  }
+  if (isProduction && pepper.length < MIN_CODE_PEPPER_LENGTH) {
+    throw new Error(`CODE_PEPPER muss in Produktion mindestens ${MIN_CODE_PEPPER_LENGTH} Zeichen haben`)
+  }
+  return pepper
 }
 
 function readCorsOrigin() {
@@ -54,6 +73,9 @@ module.exports = {
   adminCookie: `${cookiePrefix}admin_session`,
   port: Number(process.env.PORT) || 4000,
   jwtSecret: readJwtSecret(),
+  codePepper: readCodePepper(),
+  // Gutscheine je Bereich, die zum Weitergeben nachgelegt werden (Task 4)
+  voucherQuota: Number(process.env.RUDEL_VOUCHER_QUOTA) || 3,
   dbPath: process.env.DB_PATH || path.join(dataDir, 'data.db'),
   uploadDir: process.env.UPLOAD_DIR || path.join(dataDir, 'uploads'),
   clientDist: process.env.CLIENT_DIST || path.join(__dirname, '..', 'client', 'dist'),

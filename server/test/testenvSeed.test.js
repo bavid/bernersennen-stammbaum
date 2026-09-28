@@ -11,7 +11,18 @@ function run(env, args = []) {
   return spawnSync(process.execPath, [script, ...args], {
     // DB_PATH/UPLOAD_DIR leer: config.js gibt ihnen Vorrang vor DATA_DIR (||-Fallback) - eine Shell,
     // in der DB_PATH zufällig gesetzt ist, würde sonst die falsche DB zurücksetzen.
-    env: { ...process.env, JWT_SECRET: 'test-secret', NODE_ENV: 'development', DB_PATH: '', UPLOAD_DIR: '', ...env },
+    // CODE_PEPPER mitgeben wie JWT_SECRET: config.js verlangt beides in Produktion (readCodePepper),
+    // sonst würde dieser generische Start-Fehler testenv-seed's eigene "nie in Produktion"-Prüfung
+    // (appEnv === 'production', siehe scripts/testenv-seed.js) nie erreichen.
+    env: {
+      ...process.env,
+      JWT_SECRET: 'test-secret',
+      CODE_PEPPER: 'test-code-pepper-'.repeat(2),
+      NODE_ENV: 'development',
+      DB_PATH: '',
+      UPLOAD_DIR: '',
+      ...env
+    },
     encoding: 'utf8'
   })
 }

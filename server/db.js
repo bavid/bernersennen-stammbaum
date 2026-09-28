@@ -195,4 +195,55 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_uploads_family ON uploads(family_id);
 `)
 
+// Phase 1: Gutschein-Codes als Login/PUK. voucher_batches/vouchers halten die Codes (nur Hash + optional
+// verschlüsselter Klartext, solange ein Gutschein noch offen ist); users sind optionale eigene Zugänge
+// je Bereich, die über die Identität hinweg gelten (session_epoch statt eines Bereichs-Passworts).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS voucher_batches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    label TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('admin','rudel','partner','demo')),
+    partner_id INTEGER,
+    size INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS vouchers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id INTEGER NOT NULL REFERENCES voucher_batches(id),
+    code_hash TEXT NOT NULL UNIQUE,
+    code_cipher TEXT,
+    code_hint TEXT NOT NULL,
+    partner_id INTEGER,
+    issued_by_family_id INTEGER REFERENCES families(id),
+    join_family_id INTEGER REFERENCES families(id),
+    redeemed_by_family_id INTEGER REFERENCES families(id),
+    redeemed_at TEXT,
+    expires_at TEXT,
+    revoked_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_vouchers_issued ON vouchers(issued_by_family_id);
+  CREATE INDEX IF NOT EXISTS idx_vouchers_batch ON vouchers(batch_id);
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_id INTEGER NOT NULL REFERENCES families(id),
+    username TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    password_hash TEXT NOT NULL,
+    email TEXT,
+    session_epoch INTEGER NOT NULL DEFAULT 0,
+    last_login_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_users_family ON users(family_id);
+`)
+// access_key_hash: Hash des Schlüssels (Gutschein-Code), mit dem sich der Bereich direkt anmeldet.
+// legacy_password: 1 = das alte Bereichs-Passwort gilt noch (Bestandsrudel), 0 = nur noch der Schlüssel.
+// auth_epoch: wird beim Erneuern des Schlüssels erhöht, damit alte Sitzungen dieses Bereichs enden.
+// voucher_id: der Gutschein, aus dem dieser Bereich entstanden ist (falls per Einlösen angelegt).
+addColumnIfMissing('families', 'access_key_hash', 'TEXT')
+addColumnIfMissing('families', 'legacy_password', 'INTEGER NOT NULL DEFAULT 1')
+addColumnIfMissing('families', 'auth_epoch', 'INTEGER NOT NULL DEFAULT 0')
+addColumnIfMissing('families', 'voucher_id', 'INTEGER')
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_families_access_key ON families(access_key_hash) WHERE access_key_hash IS NOT NULL')
+
 module.exports = db
