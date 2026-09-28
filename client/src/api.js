@@ -65,6 +65,9 @@ export const api = {
   },
   publicPartner: (slug) => request(`/public/partners/${encodeURIComponent(slug)}`),
 
+  // "In der Nähe" (/umgebung, angemeldet): location ist { plz } oder { lat, lon }, nie beides.
+  searchPlaces: (location, radius) => request('/places/search', json('POST', { ...location, radius })),
+
   checkVoucher: (code) => request('/vouchers/check', json('POST', { code })),
   redeemVoucher: (payload) => request('/vouchers/redeem', json('POST', payload)),
   recover: (payload) => request('/recover', json('POST', payload)),

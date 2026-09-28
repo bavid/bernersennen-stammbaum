@@ -79,8 +79,11 @@ export default function CompanionsPage({ family }) {
               ? `Alle ${words.animals}, die bei euch gelebt haben und leben – seit ${span.from}.`
               : `Alle ${words.animals}, die bei euch gelebt haben und leben.`}
           </p>
-          <p className="companions-hint">
+          <p className="hero-hint">
             {words.TheGroup} pflegst du im <Link to="/stammbaum">Stammbaum</Link>.
+          </p>
+          <p className="hero-hint">
+            <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
           </p>
         </div>
         <div className="page-hero-side">

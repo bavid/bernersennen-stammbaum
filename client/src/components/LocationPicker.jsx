@@ -12,6 +12,12 @@ function geolocationAvailable(allowGeolocation) {
   return Boolean(allowGeolocation) && typeof window !== 'undefined' && window.isSecureContext && 'geolocation' in navigator
 }
 
+// Wird der Standort-Knopf angeboten (allowGeolocation), aber die Verbindung ist nicht sicher, erklärt
+// insecureHint (siehe unten) den Grund statt den Knopf einfach kommentarlos wegzulassen.
+function isInsecureContext(allowGeolocation) {
+  return Boolean(allowGeolocation) && typeof window !== 'undefined' && !window.isSecureContext
+}
+
 // PLZ + Umkreis, wahlweise mit „Standort verwenden" (Task 6 schaltet das für die App frei). Reiner
 // Formular-Baustein: die aufrufende Seite hält plz/radius als State und ruft bei onSubmit den Server.
 export default function LocationPicker({
@@ -22,11 +28,14 @@ export default function LocationPicker({
   onSubmit,
   onLocate,
   allowGeolocation = false,
-  hint
+  hint,
+  geoHint,
+  insecureHint
 }) {
   const [locating, setLocating] = useState(false)
   const [locateError, setLocateError] = useState(null)
   const showLocateButton = geolocationAvailable(allowGeolocation)
+  const showInsecureHint = isInsecureContext(allowGeolocation)
 
   function handlePlzChange(value) {
     onPlzChange(value.replace(/\D/g, '').slice(0, PLZ_LENGTH))
@@ -87,16 +96,20 @@ export default function LocationPicker({
         </button>
       </div>
       {showLocateButton && (
-        <button type="button" className="btn btn-ghost location-picker-locate" onClick={handleLocate} disabled={locating}>
-          <Icon name="locate" />
-          {locating ? 'Ermittle Standort …' : 'Standort verwenden'}
-        </button>
+        <>
+          <button type="button" className="btn btn-ghost location-picker-locate" onClick={handleLocate} disabled={locating}>
+            <Icon name="locate" />
+            {locating ? 'Ermittle Standort …' : 'Standort verwenden'}
+          </button>
+          {geoHint && <p className="field-hint location-picker-privacy">{geoHint}</p>}
+        </>
       )}
       {locateError && (
         <p className="field-error" role="alert">
           {locateError}
         </p>
       )}
+      {showInsecureHint && insecureHint && <p className="field-hint">{insecureHint}</p>}
       {hint && <p className="field-hint">{hint}</p>}
     </form>
   )

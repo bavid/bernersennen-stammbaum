@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import PedigreeTree from '../components/PedigreeTree.jsx'
@@ -125,6 +125,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
             </button>
           </div>
           <p className="page-lede">{theme.texts.overviewLede}</p>
+          <p className="hero-hint">
+            <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
+          </p>
         </div>
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}

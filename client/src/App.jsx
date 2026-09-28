@@ -20,6 +20,7 @@ import AdminPage from './pages/AdminPage.jsx'
 import ContactAdminPage from './pages/ContactAdminPage.jsx'
 import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
 import PartnersPage from './pages/PartnersPage.jsx'
+import NearbyPage from './pages/NearbyPage.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 
@@ -127,6 +128,9 @@ export function AppFooter({ onInvite }) {
       <button type="button" className="footer-link" onClick={onInvite}>
         Jemanden einladen
       </button>
+      <Link to="/umgebung" className="footer-link">
+        Tierheime & Hundeschulen in der Nähe →
+      </Link>
     </footer>
   )
 }
@@ -288,6 +292,7 @@ export default function App() {
               <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
               <Route path="/admin-schreiben" element={<ContactAdminPage />} />
               <Route path="/collage" element={<CollagePage family={family} />} />
+              <Route path="/umgebung" element={<NearbyPage />} />
               <Route path="*" element={<Navigate to={startRoute(family)} replace />} />
             </Routes>
           </main>

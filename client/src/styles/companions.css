@@ -1,11 +1,5 @@
 /* Wegbegleiter: waagrechte Zeitleiste über alle Tiere */
 
-.companions-hint {
-  margin-top: var(--space-1);
-  font-size: var(--text-sm);
-  color: var(--muted);
-}
-
 .companions-anniversary {
   display: flex;
   align-items: center;

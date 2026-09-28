@@ -267,6 +267,85 @@
   gap: var(--space-4);
 }
 
+/* "In der Nähe" (App, /umgebung) – nutzt dieselben Karten/Listen wie /partner (.partner-list, .partner-card) */
+
+.location-picker-privacy {
+  max-width: 30rem;
+}
+
+.place-list-wrap {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.place-list-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.place-list-head h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.filter-chip {
+  padding: 0 var(--space-4);
+  min-height: 2.1rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+.filter-chip:hover {
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+.filter-chip-active {
+  border-color: var(--rust);
+  background: var(--rust);
+  color: var(--on-rust);
+}
+
+.place-list-limited-hint {
+  padding: var(--space-3) var(--space-5);
+  border: 1.5px dashed var(--tan);
+  border-radius: var(--radius-md);
+  background: var(--rust-wash);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.place-item-address {
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.place-list-attribution {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
 @media (max-width: 720px) {
   .location-picker-fields {
     flex-direction: column;
@@ -279,5 +358,10 @@
 
   .partner-portal-action {
     max-width: none;
+  }
+
+  .place-list-head {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

@@ -1,20 +1,10 @@
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { TYPE_LABELS, BADGE_LABELS } from '../lib/partnerTypes.js'
-import { formatDistanceKm, isExternalUrl } from '../lib/format.js'
+import { formatDistanceKm, isExternalUrl, googleMapsUrl, osmUrl } from '../lib/format.js'
 
 function hasCoords(partner) {
   return Number.isFinite(partner.lat) && Number.isFinite(partner.lon)
-}
-
-// Google/OSM erwarten nur die reinen Zahlen in der Adresse – lat/lon kommen bereits geprüft vom Server
-// (server/lib/geo.js validCoords), hier trotzdem nur Number.isFinite-Werte verwenden.
-function googleMapsUrl({ lat, lon }) {
-  return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`
-}
-
-function osmUrl({ lat, lon }) {
-  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}`
 }
 
 // Eine Karte in der Partnerliste (/partner): Logo, Name, Typ, Entfernung, Badge und Links zum Portal,

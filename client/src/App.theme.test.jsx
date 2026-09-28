@@ -43,9 +43,11 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
 
   test('Footer zeigt den Footer-Text des Themes, Streifen nur wenn das Theme einen hat', async () => {
     await render(
-      <ThemeProvider themeId={themeId}>
-        <AppFooter onInvite={() => {}} />
-      </ThemeProvider>
+      <MemoryRouter>
+        <ThemeProvider themeId={themeId}>
+          <AppFooter onInvite={() => {}} />
+        </ThemeProvider>
+      </MemoryRouter>
     )
     expect(container.querySelector('.app-footer p').textContent).toBe(theme.footer)
     const stripe = container.querySelector('.app-footer .tricolor')

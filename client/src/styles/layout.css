@@ -255,6 +255,14 @@
   line-height: 1.55;
 }
 
+/* Schmale Zusatzzeile im Hero, z. B. der Link "Tierheime & Hundeschulen in der Nähe" (/umgebung) auf
+   Wegbegleiter- und Stammbaum-Seite – bewusst kein Reiter, siehe App.jsx. */
+.hero-hint {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
 /* Kennzahlen und Knöpfe: linksbündig untereinander – egal ob neben dem Titel oder darunter umgebrochen */
 .page-hero-side {
   display: flex;
