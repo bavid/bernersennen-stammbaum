@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import AdminDonationReports from './AdminDonationReports.jsx'
+import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { settingsError } from '../lib/adminMarketing.js'
 
 const GOFUNDME_ID = 'admin-support-gofundme'
@@ -22,6 +23,7 @@ function SupportSettings() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
 
   useEffect(() => {
     api.admin
@@ -50,6 +52,7 @@ function SupportSettings() {
       const mapped = settingsError(err.message)
       if (mapped) setFieldErrors({ [mapped.field]: mapped.message })
       else setError(err.message)
+      focusFirstError()
     } finally {
       setSaving(false)
     }
@@ -65,10 +68,10 @@ function SupportSettings() {
   if (!form) return <p className="muted">Lade …</p>
 
   return (
-    <form className="admin-support-settings admin-support-block form-stack" onSubmit={handleSubmit} noValidate>
+    <form ref={formRef} className="admin-support-settings admin-support-block form-stack" onSubmit={handleSubmit} noValidate>
       <h3>GoFundMe und Text</h3>
       {error && (
-        <div className="error-banner" role="alert">
+        <div ref={bannerRef} className="error-banner" role="alert" tabIndex={-1}>
           {error}
         </div>
       )}

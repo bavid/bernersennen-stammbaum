@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import Icon from './Icon.jsx'
+import { isPartnerMedia } from '../lib/discover.js'
 
 // Direkter Bild-Upload im Admin (Partner-Logo, Bild einer Empfehlung) - genau eine Datei an einen
 // eigenen Endpunkt, der Server prüft PNG/JPG/WebP (Magic Bytes) und die Größe. upload(file) liefert die
-// neue öffentliche URL.
+// neue öffentliche URL. Die Vorschau zeigt nur Bilder unter /partner-media (isPartnerMedia) - nie eine
+// beliebige Adresse in einem src.
 export default function AdminImageUpload({ label, buttonLabel, imageUrl, upload, onUploaded, previewClassName = 'admin-upload-preview' }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -26,7 +28,7 @@ export default function AdminImageUpload({ label, buttonLabel, imageUrl, upload,
   return (
     <div className="field">
       <span className="field-label">{label}</span>
-      {imageUrl && <img src={imageUrl} alt="" className={previewClassName} />}
+      {isPartnerMedia(imageUrl) && <img src={imageUrl} alt="" className={previewClassName} />}
       {error && (
         <p className="field-error" role="alert">
           {error}

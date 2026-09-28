@@ -119,6 +119,50 @@ describe('AdminSupport – GoFundMe-Link und Text', () => {
   })
 })
 
+describe('AdminSupport – Fokus nach einem abgelehnten Speichern', () => {
+  test('Einstellungen: Fehler am Feld -> das Feld hat den Fokus; nur oben -> das Banner', async () => {
+    await render()
+
+    updateSettings.mockRejectedValue(new Error('unterstuetzen_text darf höchstens 600 Zeichen haben'))
+    await act(async () => container.querySelector('.admin-support-settings').requestSubmit())
+    expect(document.activeElement).toBe(byId('admin-support-text'))
+
+    updateSettings.mockRejectedValue(new Error('Unbekannte Einstellung: x'))
+    await act(async () => container.querySelector('.admin-support-settings').requestSubmit())
+    const banner = container.querySelector('.admin-support-settings .error-banner')
+    expect(banner.getAttribute('tabindex')).toBe('-1')
+    expect(document.activeElement).toBe(banner)
+  })
+
+  test('Spendenbericht: erster ungültiger Betrag (Client) bzw. Feld der Server-Meldung hat den Fokus', async () => {
+    await render()
+    await act(async () => buttonByText('Bericht anlegen').click())
+    await act(async () => {
+      setInputValue(byId('admin-report-zeitraum'), '2026 Q3')
+      setInputValue(byId('admin-report-kosten'), 'viel')
+      setInputValue(byId('admin-report-weitergeleitet'), '-1')
+    })
+    // Eingang ist leer, Kosten und Weitergegeben ungültig - Eingang steht zuerst.
+    await act(async () => container.querySelector('.admin-report-form').requestSubmit())
+    expect(createDonationReport).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(byId('admin-report-eingang'))
+
+    createDonationReport.mockRejectedValue(new Error('Der Nachweis-Link: ungültige Adresse'))
+    await act(async () => {
+      setInputValue(byId('admin-report-eingang'), '10')
+      setInputValue(byId('admin-report-kosten'), '0')
+      setInputValue(byId('admin-report-weitergeleitet'), '10')
+    })
+    await act(async () => container.querySelector('.admin-report-form').requestSubmit())
+    expect(createDonationReport).toHaveBeenCalledTimes(1)
+    expect(document.activeElement).toBe(byId('admin-report-nachweis'))
+
+    createDonationReport.mockRejectedValue(new Error('Fehler 500'))
+    await act(async () => container.querySelector('.admin-report-form').requestSubmit())
+    expect(document.activeElement).toBe(container.querySelector('.admin-report-form .error-banner'))
+  })
+})
+
 describe('AdminSupport – Spendenberichte', () => {
   test('zeigt Beträge als Euro (de-DE) statt Cent', async () => {
     await render({ reports: [report] })

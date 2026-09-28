@@ -291,6 +291,42 @@ describe('AdminPromotions – Formular', () => {
     expect(createPromotion).toHaveBeenCalledWith(expect.objectContaining({ kennzeichnung: 'Empfehlung', empfohlenVon: 'Tierheim Sonnenhang' }))
   })
 
+  test('nach einem abgelehnten Absenden hat das erste fehlerhafte Feld den Fokus (Client- und Server-Fehler)', async () => {
+    promotions.mockResolvedValue([])
+    createPromotion.mockRejectedValue(new Error('Der Link: ungültige Adresse'))
+    await render()
+    await openNewForm()
+
+    // Titel und "Empfohlen von" fehlen - der Titel steht zuerst im Formular.
+    await act(async () => setSelectValue(field('kennzeichnung'), 'Empfehlung'))
+    await act(async () => container.querySelector('.admin-promo-form').requestSubmit())
+    expect(document.activeElement).toBe(field('titel'))
+
+    await act(async () => setInputValue(field('titel'), 'Welpenkurs'))
+    await act(async () => container.querySelector('.admin-promo-form').requestSubmit())
+    expect(document.activeElement).toBe(field('empfohlen-von'))
+
+    // Fehler vom Server, einem Feld zugeordnet.
+    await act(async () => setInputValue(field('empfohlen-von'), 'Tierheim Sonnenhang'))
+    await act(async () => container.querySelector('.admin-promo-form').requestSubmit())
+    expect(createPromotion).toHaveBeenCalledTimes(1)
+    expect(document.activeElement).toBe(field('url'))
+  })
+
+  test('eine Meldung nur oben (Banner) bekommt nach dem Absenden den Fokus', async () => {
+    promotions.mockResolvedValue([])
+    createPromotion.mockRejectedValue(new Error('Züchter und Zucht-Angebote werden hier nicht aufgenommen.'))
+    await render()
+    await openNewForm()
+
+    await act(async () => setInputValue(field('titel'), 'Welpenkurs'))
+    await act(async () => container.querySelector('.admin-promo-form').requestSubmit())
+
+    const banner = container.querySelector('.admin-promo-form .error-banner')
+    expect(banner.getAttribute('tabindex')).toBe('-1')
+    expect(document.activeElement).toBe(banner)
+  })
+
   test('beim Neuanlegen gibt es noch keinen Bild-Upload', async () => {
     promotions.mockResolvedValue([])
     await render()

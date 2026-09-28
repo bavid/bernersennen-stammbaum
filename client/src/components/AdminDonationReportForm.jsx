@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import AdminField, { fieldProps } from './AdminField.jsx'
+import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { AMOUNT_FIELDS, donationErrorField, initialDonationForm, parseDonationForm } from '../lib/adminMarketing.js'
 import { formatEuroCents } from '../lib/discover.js'
 import { parseEuroToCents } from '../lib/euro.js'
@@ -29,6 +30,7 @@ export default function AdminDonationReportForm({ report, onSaved, onCancel }) {
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
 
   function update(key, value) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -40,7 +42,10 @@ export default function AdminDonationReportForm({ report, onSaved, onCancel }) {
     setError(null)
     const { payload, errors } = parseDonationForm(form)
     setFieldErrors(errors)
-    if (!payload) return
+    if (!payload) {
+      focusFirstError()
+      return
+    }
 
     setSaving(true)
     try {
@@ -51,16 +56,17 @@ export default function AdminDonationReportForm({ report, onSaved, onCancel }) {
       if (field) setFieldErrors({ [field]: err.message })
       else setError(err.message)
       setSaving(false)
+      focusFirstError()
     }
   }
 
   const bind = (key, hint) => fieldProps(IDS[key], { error: fieldErrors[key], hint })
 
   return (
-    <form className="admin-report-form form-stack" onSubmit={handleSubmit} noValidate>
+    <form ref={formRef} className="admin-report-form form-stack" onSubmit={handleSubmit} noValidate>
       <h3>{report ? `Spendenbericht bearbeiten – ${report.zeitraum}` : 'Spendenbericht anlegen'}</h3>
       {error && (
-        <div className="error-banner" role="alert">
+        <div ref={bannerRef} className="error-banner" role="alert" tabIndex={-1}>
           {error}
         </div>
       )}
