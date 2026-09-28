@@ -6,13 +6,19 @@
 const config = require('../../config')
 const { distanceKm } = require('../geo')
 const { looksLikeBreeder } = require('../breederGuard')
-const { cacheKey, readCache, writeCache, consumeOverpassBudget } = require('./cache')
+const { cacheKey, cellCenter, readCache, writeCache, consumeOverpassBudget, consumeIdentityBudget } = require('./cache')
 const { searchFixture } = require('./providers/fixture')
 const { searchOverpass } = require('./providers/overpass')
 
 const MAX_RESULTS = 60
 const DEDUPE_RADIUS_KM = 0.15
 const ATTRIBUTION = ['© OpenStreetMap-Mitwirkende (ODbL)']
+
+// Overpass wird an der 0,05°-Zell-Mitte abgefragt (nicht an den exakten Nutzer-Koordinaten) und mit
+// diesem Polster über den angefragten Radius hinaus - sonst würde ein zweiter Suchpunkt in derselben
+// Zelle (Cache-Treffer) Orte verpassen, die zwar in seinem eigenen Radius liegen, aber außerhalb des
+// Kreises um den ERSTEN Suchpunkt, der ursprünglich abgefragt wurde (security-review Phase 2 Finding 3).
+const CELL_RADIUS_PAD_KM = 4
 
 function normalizeName(name) {
   return String(name || '')
@@ -73,33 +79,84 @@ function dedupe(results) {
   return kept
 }
 
-async function fetchProviderResults(db, { lat, lon, radiusKm, isDemo, providers }) {
+function filterByRadius(places, center, radiusKm) {
+  return places.filter((place) => distanceKm(center, { lat: place.lat, lon: place.lon }) <= radiusKm)
+}
+
+// Ein In-Flight-Promise pro Cache-Schlüssel (Finding 10): mehrere gleichzeitige Anfragen für dieselbe
+// Zelle/denselben Radius teilen sich EINEN Overpass-Aufruf, statt jede für sich das Budget zu belasten.
+// Rein im Prozessspeicher - bei mehreren Server-Prozessen ist das kein Ersatz für das DB-Budget
+// (places_budget), nur eine zusätzliche Bremse innerhalb eines Prozesses.
+const inFlightOverpass = new Map() // cacheKey -> Promise<{ results, limited }>
+
+// Fragt Overpass an der Zell-Mitte mit gepoltertem Radius an (siehe CELL_RADIUS_PAD_KM), schreibt bei
+// Erfolg den Cache und gibt bei einem Anbieter-Fehler `limited: true` zurück, OHNE die Suche insgesamt
+// scheitern zu lassen (Finding 4) - der Aufrufer bekommt dann nur Partner + ggf. Cache. Das Tages- UND
+// Identitäts-Budget wird jeweils genau EINMAL je tatsächlichem Versuch verbraucht, nie mehrfach für
+// gleichzeitige identische Anfragen (die sich das eine In-Flight-Promise teilen).
+async function runOverpassFetch(db, { key, cellLat, cellLon, radiusKm, homeId, searchFn }) {
+  if (inFlightOverpass.has(key)) return inFlightOverpass.get(key)
+
+  if (!consumeIdentityBudget(homeId) || !consumeOverpassBudget(db, config.placesDailyLimit)) {
+    return { results: [], limited: true }
+  }
+
+  const promise = (async () => {
+    try {
+      const results = await searchFn({ lat: cellLat, lon: cellLon, radiusKm: radiusKm + CELL_RADIUS_PAD_KM })
+      writeCache(db, key, results)
+      return { results, limited: false }
+    } catch {
+      return { results: [], limited: true }
+    }
+  })()
+
+  inFlightOverpass.set(key, promise)
+  try {
+    return await promise
+  } finally {
+    inFlightOverpass.delete(key)
+  }
+}
+
+async function fetchProviderResults(db, { lat, lon, radiusKm, isDemo, homeId, providers }) {
   const providerName = isDemo ? 'fixture' : config.placesProviders[0] || 'fixture'
   const searchFn = providers?.[providerName] || (providerName === 'overpass' ? searchOverpass : searchFixture)
 
   if (providerName !== 'overpass') {
-    return { results: await searchFn({ lat, lon, radiusKm }), limited: false }
+    // Ein Anbieter-Fehler darf die Suche nie scheitern lassen (Finding 4) - Partner bleiben in jedem
+    // Fall verfügbar, hier gibt es nur nichts vom Anbieter dazu.
+    try {
+      return { results: await searchFn({ lat, lon, radiusKm }), limited: false }
+    } catch {
+      return { results: [], limited: true }
+    }
   }
 
+  // Cache-Schlüssel und tatsächlicher Anfrage-Mittelpunkt sind bewusst getrennt: der Schlüssel rundet
+  // auf die 0,05°-Zelle (cacheKey rundet intern selbst), abgefragt wird explizit an der Zell-MITTE mit
+  // Polster (CELL_RADIUS_PAD_KM) - NUR diese gerundete Zell-Mitte erreicht je Overpass, nie die exakten
+  // Nutzer-Koordinaten (Finding 3). Das Ergebnis (ob aus dem Cache oder frisch geholt) wird danach immer
+  // anhand der ECHTEN Anfrage (lat/lon/radiusKm) neu gefiltert - zwei Suchpunkte in derselben Zelle
+  // bekommen so beide ihre korrekte, eigene Trefferliste aus demselben gecachten Zell-Ergebnis.
   const key = cacheKey('overpass', lat, lon, radiusKm)
+  const center = { lat, lon }
+
   const cached = readCache(db, key)
-  if (cached) return { results: cached, limited: false }
+  if (cached) return { results: filterByRadius(cached, center, radiusKm), limited: false }
 
-  if (!consumeOverpassBudget(db, config.placesDailyLimit)) {
-    return { results: [], limited: true }
-  }
-
-  const results = await searchFn({ lat, lon, radiusKm })
-  writeCache(db, key, results)
-  return { results, limited: false }
+  const { lat: cellLat, lon: cellLon } = cellCenter(lat, lon)
+  const { results: raw, limited } = await runOverpassFetch(db, { key, cellLat, cellLon, radiusKm, homeId, searchFn })
+  return { results: filterByRadius(raw, center, radiusKm), limited }
 }
 
-// searchPlaces(db, { lat, lon, radiusKm, isDemo }, { providers }) - providers erlaubt Tests, einzelne
-// Anbieter zu ersetzen ({ fixture: fn } bzw. { overpass: fn }), ohne echte Netzwerkanfragen.
-async function searchPlaces(db, { lat, lon, radiusKm, isDemo }, { providers } = {}) {
+// searchPlaces(db, { lat, lon, radiusKm, isDemo, homeId }, { providers }) - homeId (aus requireSession)
+// steuert das Pro-Identität-Budget (Finding 10), providers erlaubt Tests, einzelne Anbieter zu ersetzen
+// ({ fixture: fn } bzw. { overpass: fn }), ohne echte Netzwerkanfragen.
+async function searchPlaces(db, { lat, lon, radiusKm, isDemo, homeId }, { providers } = {}) {
   const center = { lat, lon }
   const partners = findActivePartnersNear(db, { lat, lon, radiusKm, isDemo })
-  const { results: providerResults, limited } = await fetchProviderResults(db, { lat, lon, radiusKm, isDemo, providers })
+  const { results: providerResults, limited } = await fetchProviderResults(db, { lat, lon, radiusKm, isDemo, homeId, providers })
 
   const cleanProviderResults = providerResults
     .filter((place) => place && typeof place.name === 'string' && place.name.trim() && !looksLikeBreeder(place.name))

@@ -52,7 +52,8 @@ router.post('/search', placesLimiter, requireSession, async (req, res, next) => 
       lat: center.lat,
       lon: center.lon,
       radiusKm,
-      isDemo: req.isDemo
+      isDemo: req.isDemo,
+      homeId: req.homeId
     })
 
     res.json({ center, radius: radiusKm, results, limited, attribution })
