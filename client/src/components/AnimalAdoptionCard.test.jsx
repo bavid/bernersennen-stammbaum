@@ -70,4 +70,14 @@ describe('AnimalAdoptionCard', () => {
     expect(container.querySelector('img')).toBeNull()
     expect(container.querySelector('.avatar-fallback').textContent).toBe('P')
   })
+
+  test('zeigt die Entfernung mit deutschem Komma, wenn der Server sie mitliefert (Entdecken)', async () => {
+    await render({ distanceKm: 12.4 })
+    expect(container.querySelector('.animal-card-distance').textContent).toBe('12,4 km')
+  })
+
+  test('ohne distanceKm keine Entfernungsangabe', async () => {
+    await render()
+    expect(container.querySelector('.animal-card-distance')).toBeNull()
+  })
 })

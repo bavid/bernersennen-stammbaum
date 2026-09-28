@@ -3,6 +3,7 @@ import Avatar from './Avatar.jsx'
 import { speciesSexLabel } from '../lib/timeline.js'
 import { ageText } from '../lib/dates.js'
 import { vermittlungStatusLabel } from '../lib/shelter.js'
+import { formatDistanceKm } from '../lib/format.js'
 
 // Karte für ein Tier in Vermittlung auf dem Portal seines Tierheims (/p/:slug, Sektion "Fellnasen/Tiere
 // suchen ein Zuhause") - verlinkt auf den öffentlichen Steckbrief (/t/:slug). Teilt sich die Kartenoptik
@@ -26,6 +27,7 @@ export default function AnimalAdoptionCard({ animal }) {
         <span className="shelter-card-chips">
           {statusLabel && <span className={`chip status-chip status-chip-${animal.vermittlung_status}`}>{statusLabel}</span>}
           {age && <span className="chip">{age}</span>}
+          {typeof animal.distanceKm === 'number' && <span className="chip animal-card-distance">{formatDistanceKm(animal.distanceKm)}</span>}
         </span>
       </span>
     </Link>

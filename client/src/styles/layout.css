@@ -183,12 +183,58 @@
     height: 1.35rem;
   }
 
+  /* Fünf Reiter (Haushalt/Rudel mit "Entdecken", App.jsx DENSE_NAV_MIN_ITEMS): kleinere Schrift und
+     weniger Rand, damit "Wegbegleiter" bei 375 px nicht an den Nachbarn stößt (gemessen: mindestens
+     8 px Luft zwischen den Beschriftungen). */
+  .app-nav-dense {
+    padding-inline: var(--space-1);
+  }
+
+  .app-nav-dense a {
+    font-size: 0.65rem;
+    letter-spacing: -0.01em;
+  }
+
   .app-logout {
     margin-left: auto;
   }
 
   .app-shell {
     padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Sehr schmale Handys (bis 350 px, z. B. 320er Geräte): fünf Reiter passen nur mit noch kleinerer Schrift */
+@media (max-width: 350px) {
+  .app-nav-dense a {
+    font-size: 0.6rem;
+  }
+
+  .app-nav-dense a svg {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+}
+
+/* Schmaler Desktop/Tablet mit fünf Reitern: Symbol über der Beschriftung wie unten am Handy, sonst
+   drückt die Leiste Logo und Namen zusammen (gemessen: ab 1251 px ist wieder Platz für die Zeile,
+   auch mit ausgeschriebenem "Schreib dem Admin" ab 1101 px). */
+@media (min-width: 721px) and (max-width: 1250px) {
+  .app-header-inner:has(.app-nav-dense) {
+    gap: var(--space-4);
+  }
+
+  .app-nav-dense a {
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: 0.72rem;
+  }
+
+  .app-nav-dense a svg {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 }
 

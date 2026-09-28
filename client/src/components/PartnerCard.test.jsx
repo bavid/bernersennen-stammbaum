@@ -101,4 +101,19 @@ describe('PartnerCard', () => {
     expect(linkByText('In Google Maps öffnen')).toBeUndefined()
     expect(linkByText('OpenStreetMap')).toBeUndefined()
   })
+
+  test('Entdecken: mit clickUrl führt der Website-Link über die Klickzählung /r/...', async () => {
+    const { website, ...withoutWebsite } = basePartner
+    await render({ ...withoutWebsite, url: website, clickUrl: '/r/partner-website/1' })
+    const link = [...container.querySelectorAll('a')].find((a) => a.textContent.includes('Website'))
+    expect(link.getAttribute('href')).toBe('/r/partner-website/1')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+  })
+
+  test('eine clickUrl, die nicht auf /r/ zeigt, wird nie verlinkt', async () => {
+    const { website, ...withoutWebsite } = basePartner
+    await render({ ...withoutWebsite, clickUrl: 'https://example.org/woanders' })
+    expect([...container.querySelectorAll('a')].some((a) => a.textContent.includes('Website'))).toBe(false)
+  })
 })

@@ -1,0 +1,204 @@
+/* Reiter "Entdecken" (/entdecken, DiscoverPage): vier Kapitel mit großer Nummer und Überschrift.
+   Karten kommen aus partners.css (.partner-list/.partner-card) und shelter.css (.shelter-grid/
+   .shelter-card), Empfehlungen aus promotion.css, Unterstützen aus support.css - hier nur der
+   Kapitelrahmen, Hinweise, Leerzustände und der Fokus. */
+
+.discover-chapters {
+  display: grid;
+  gap: clamp(var(--space-12), 7vw, 5.5rem);
+}
+
+.discover-chapter {
+  display: grid;
+  gap: var(--space-6);
+  /* Sprungziel unter dem klebenden Kopf */
+  scroll-margin-top: calc(var(--header-height) + var(--space-4));
+}
+
+.discover-chapter-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-2) var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.discover-chapter-number {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 1.9rem + 2.6vw, 4.25rem);
+  font-weight: 400;
+  line-height: 0.82;
+  color: var(--tan);
+  font-variant-numeric: lining-nums;
+  font-variation-settings: 'SOFT' 100, 'opsz' 144;
+}
+
+.discover-chapter-head h2 {
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+
+.discover-chapter-lede {
+  margin-top: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+.discover-subheading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.discover-subheading::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* Umkreis-Fallback: alles außerhalb des Radius gesammelt unter "Weiter weg" */
+.discover-far {
+  display: grid;
+  gap: var(--space-5);
+  padding-top: var(--space-2);
+}
+
+.discover-fallback-note,
+.discover-trust-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.discover-fallback-note {
+  border: 1.5px dashed var(--tan);
+  background: var(--rust-wash);
+  color: var(--ink);
+}
+
+.discover-trust-note {
+  background: var(--alpine-wash);
+  color: var(--alpine);
+}
+
+.discover-fallback-note svg,
+.discover-trust-note svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.discover-fallback-note svg {
+  color: var(--rust);
+}
+
+.discover-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+}
+
+.discover-empty svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  color: var(--tan);
+}
+
+.discover-empty p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.discover-empty a {
+  font-weight: 700;
+}
+
+.discover-more-link {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  color: var(--rust);
+  font-weight: 800;
+  text-decoration: none;
+  border-bottom: 2px solid color-mix(in srgb, var(--rust) 35%, transparent);
+  transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.discover-more-link span[aria-hidden] {
+  display: inline-block;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.discover-more-link:hover {
+  color: var(--rust-deep);
+  border-bottom-color: currentColor;
+}
+
+.discover-more-link:hover span[aria-hidden] {
+  transform: translateX(3px);
+}
+
+/* Karten einer Rasterzeile gleich hoch (Partner- und Empfehlungskarten stehen gemischt nebeneinander) */
+.discover-page .partner-list > li {
+  display: grid;
+}
+
+/* Tierkarten als Liste (AnimalAdoptionCard, .shelter-card) */
+.discover-animals {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.discover-animals > li {
+  display: grid;
+}
+
+/* Deutlich sichtbarer Fokus für alle Links/Knöpfe der Seite - als outline, weil Karten und Knöpfe
+   ihren box-shadow (Schatten) selbst setzen und den globalen Fokusring sonst überdecken. */
+.discover-page a:focus-visible,
+.discover-page button:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 3px;
+}
+
+.discover-page .shelter-card:hover,
+.discover-page .shelter-card:focus-visible {
+  border-color: var(--tan);
+}
+
+@media (max-width: 720px) {
+  .discover-chapter-head {
+    gap: var(--space-1) var(--space-4);
+  }
+
+  .discover-empty {
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+  }
+}

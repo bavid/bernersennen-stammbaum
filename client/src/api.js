@@ -86,6 +86,9 @@ export const api = {
 
   // "In der Nähe" (/umgebung, angemeldet): location ist { plz } oder { lat, lon }, nie beides.
   searchPlaces: (location, radius) => request('/places/search', json('POST', { ...location, radius })),
+  // Reiter "Entdecken" (Phase 3): alle vier Abschnitte in einer Antwort. Die PLZ steht wie bei
+  // publicPartners im Body, nie in der URL; ohne PLZ liefert der Server alles, nach Name sortiert.
+  discover: ({ plz, radius } = {}) => request('/discover', json('POST', plz ? { plz, radius } : {})),
 
   checkVoucher: (code) => request('/vouchers/check', json('POST', { code })),
   redeemVoucher: (payload) => request('/vouchers/redeem', json('POST', payload)),

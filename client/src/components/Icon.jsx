@@ -179,6 +179,12 @@ const PATHS = {
     </>
   ),
   external: <path d="M7 17 17 7M9 7h8v8" />,
+  compass: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m15.5 8.5-1.6 4.8a1 1 0 0 1-.6.6l-4.8 1.6 1.6-4.8a1 1 0 0 1 .6-.6Z" />
+    </>
+  ),
   paw: (
     <>
       <circle cx="6.5" cy="8" r="2" />

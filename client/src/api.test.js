@@ -106,3 +106,28 @@ describe('api.claimVoucher – Übergabe-Gutschein ins eigene Zuhause übernehme
     expect(JSON.parse(options.body)).toEqual({ code: 'ABCD-1234-HJKM', shelterMayRead: true })
   })
 })
+
+describe('api.discover – Reiter "Entdecken" (Phase 3)', () => {
+  test('mit PLZ: POST an /discover, PLZ und Radius stehen im Body, nicht in der URL', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.discover({ plz: '20095', radius: 10 })
+
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/discover')
+    expect(url).not.toContain('20095')
+    expect(options.method).toBe('POST')
+    expect(JSON.parse(options.body)).toEqual({ plz: '20095', radius: 10 })
+  })
+
+  test('ohne PLZ: POST mit leerem Body (alle Einträge, nach Name)', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.discover()
+
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/discover')
+    expect(options.method).toBe('POST')
+    expect(JSON.parse(options.body)).toEqual({})
+  })
+})
