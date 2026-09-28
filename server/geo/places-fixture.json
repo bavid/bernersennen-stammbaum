@@ -1,0 +1,25 @@
+[
+  { "id": "fixture:tierheim-waldpfote", "name": "Tierheim Waldpfote", "typ": "tierheim", "lat": 52.542, "lon": 13.395, "website": "https://example.org/waldpfote", "telefon": "+49 30 5550101", "email": "info@example.org", "adresse": "Waldweg 3, 10115 Berlin" },
+  { "id": "fixture:tierheim-nordlicht", "name": "Tierheim Nordlicht", "typ": "tierheim", "lat": 52.520, "lon": 13.370, "website": null, "telefon": "+49 30 5550102", "email": null, "adresse": "Nordring 12, 10115 Berlin" },
+  { "id": "fixture:hundeschule-pfotentanz", "name": "Hundeschule Pfotentanz", "typ": "hundeschule", "lat": 52.545, "lon": 13.360, "website": "https://example.org/pfotentanz", "telefon": null, "email": "kurse@example.org", "adresse": "Tanzstraße 8, 10115 Berlin" },
+  { "id": "fixture:hundeschule-bellstern", "name": "Hundeschule Bellstern", "typ": "hundeschule", "lat": 52.515, "lon": 13.400, "website": null, "telefon": "+49 30 5550104", "email": null, "adresse": null },
+  { "id": "fixture:tierheim-storchennest", "name": "Tierheim Storchennest", "typ": "tierheim", "lat": 52.550, "lon": 13.410, "website": "https://example.org/storchennest", "telefon": "+49 30 5550105", "email": "kontakt@example.org", "adresse": "Storchenallee 21, 10115 Berlin" },
+  { "id": "fixture:hundeschule-wedelglueck", "name": "Hundeschule Wedelglück", "typ": "hundeschule", "lat": 52.525, "lon": 13.350, "website": null, "telefon": null, "email": null, "adresse": "Wedelweg 5, 10115 Berlin" },
+  { "id": "fixture:tierheim-fellfreunde", "name": "Tierheim Fellfreunde", "typ": "tierheim", "lat": 52.560, "lon": 13.380, "website": "https://example.org/fellfreunde", "telefon": "+49 30 5550107", "email": null, "adresse": "Fellgasse 2, 10115 Berlin" },
+
+  { "id": "fixture:tierheim-hafenherz", "name": "Tierheim Hafenherz", "typ": "tierheim", "lat": 53.559, "lon": 10.016, "website": "https://example.org/hafenherz", "telefon": "+49 40 5550201", "email": "info@example.org", "adresse": "Hafenweg 4, 20095 Hamburg" },
+  { "id": "fixture:tierheim-elbpfote", "name": "Tierheim Elbpfote", "typ": "tierheim", "lat": 53.538, "lon": 9.990, "website": null, "telefon": "+49 40 5550202", "email": null, "adresse": "Elbufer 17, 20095 Hamburg" },
+  { "id": "fixture:hundeschule-wellenschweif", "name": "Hundeschule Wellenschweif", "typ": "hundeschule", "lat": 53.560, "lon": 9.985, "website": "https://example.org/wellenschweif", "telefon": null, "email": "kurse@example.org", "adresse": "Wellenweg 9, 20095 Hamburg" },
+  { "id": "fixture:hundeschule-nordwind", "name": "Hundeschule Nordwind", "typ": "hundeschule", "lat": 53.535, "lon": 10.025, "website": null, "telefon": "+49 40 5550204", "email": null, "adresse": null },
+  { "id": "fixture:tierheim-deichtier", "name": "Tierheim Deichtier", "typ": "tierheim", "lat": 53.545, "lon": 10.040, "website": "https://example.org/deichtier", "telefon": "+49 40 5550205", "email": "kontakt@example.org", "adresse": "Deichstraße 31, 20095 Hamburg" },
+  { "id": "fixture:hundeschule-kajuetenhund", "name": "Hundeschule Kajütenhund", "typ": "hundeschule", "lat": 53.565, "lon": 10.010, "website": null, "telefon": null, "email": null, "adresse": "Kajütenweg 6, 20095 Hamburg" },
+  { "id": "fixture:tierheim-moorwiese", "name": "Tierheim Moorwiese", "typ": "tierheim", "lat": 53.530, "lon": 10.000, "website": "https://example.org/moorwiese", "telefon": "+49 40 5550207", "email": null, "adresse": "Moorweg 14, 20095 Hamburg" },
+
+  { "id": "fixture:tierheim-alpenpfote", "name": "Tierheim Alpenpfote", "typ": "tierheim", "lat": 48.145, "lon": 11.581, "website": "https://example.org/alpenpfote", "telefon": "+49 89 5550301", "email": "info@example.org", "adresse": "Alpenweg 3, 80331 München" },
+  { "id": "fixture:tierheim-isarfreund", "name": "Tierheim Isarfreund", "typ": "tierheim", "lat": 48.125, "lon": 11.560, "website": null, "telefon": "+49 89 5550302", "email": null, "adresse": "Isarufer 8, 80331 München" },
+  { "id": "fixture:hundeschule-gipfeltatze", "name": "Hundeschule Gipfeltatze", "typ": "hundeschule", "lat": 48.150, "lon": 11.555, "website": "https://example.org/gipfeltatze", "telefon": null, "email": "kurse@example.org", "adresse": "Gipfelstraße 11, 80331 München" },
+  { "id": "fixture:hundeschule-sonnentatze", "name": "Hundeschule Sonnentatze", "typ": "hundeschule", "lat": 48.120, "lon": 11.590, "website": null, "telefon": "+49 89 5550304", "email": null, "adresse": null },
+  { "id": "fixture:tierheim-wiesentier", "name": "Tierheim Wiesentier", "typ": "tierheim", "lat": 48.155, "lon": 11.600, "website": "https://example.org/wiesentier", "telefon": "+49 89 5550305", "email": "kontakt@example.org", "adresse": "Wiesenweg 27, 80331 München" },
+  { "id": "fixture:hundeschule-bergecho", "name": "Hundeschule Bergecho", "typ": "hundeschule", "lat": 48.128, "lon": 11.545, "website": null, "telefon": null, "email": null, "adresse": "Bergweg 5, 80331 München" },
+  { "id": "fixture:tierheim-lechpfote", "name": "Tierheim Lechpfote", "typ": "tierheim", "lat": 48.160, "lon": 11.575, "website": "https://example.org/lechpfote", "telefon": "+49 89 5550307", "email": null, "adresse": "Lechweg 19, 80331 München" }
+]

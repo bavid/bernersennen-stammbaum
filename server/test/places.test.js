@@ -1,0 +1,220 @@
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = require('./helpers')
+
+const dataDir = useTempDataDir('places')
+
+test('Umkreissuche: lib/places (Sortierung, Dubletten, Züchter, Cache, Budget, Demo) und Route', async (t) => {
+  const { server, base } = await startApp()
+  t.after(() => cleanup(dataDir, server))
+
+  const db = require('../db')
+  const config = require('../config')
+  const { searchPlaces } = require('../lib/places')
+
+  const originalProviders = config.placesProviders
+  const originalDailyLimit = config.placesDailyLimit
+  t.after(() => {
+    config.placesProviders = originalProviders
+    config.placesDailyLimit = originalDailyLimit
+  })
+
+  let nextSlug = 0
+  function insertPartner(overrides = {}) {
+    const slug = `partner-${(nextSlug += 1)}`
+    const row = { slug, name: 'Tierheim Testpartner', typ: 'tierheim', status: 'aktiv', lat: 0, lon: 0, is_demo: 0, osm_ref: null, ...overrides }
+    db.prepare('INSERT INTO partners (slug, name, typ, status, lat, lon, is_demo, osm_ref) VALUES (@slug, @name, @typ, @status, @lat, @lon, @is_demo, @osm_ref)').run(
+      row
+    )
+    return db.prepare('SELECT * FROM partners WHERE slug = ?').get(slug)
+  }
+
+  await t.test('Sortierung: echte Fixture-Treffer um Berlin, Partner immer zuerst (auch wenn weiter weg)', async () => {
+    const partner = insertPartner({ name: 'Tierheim Weiter weg', lat: 52.6, lon: 13.5 }) // ~9 km von 10115 entfernt
+
+    const { results, attribution, limited } = await searchPlaces(db, { lat: 52.532, lon: 13.385, radiusKm: 25, isDemo: false })
+
+    assert.equal(limited, false)
+    assert.deepEqual(attribution, ['© OpenStreetMap-Mitwirkende (ODbL)'])
+    assert.ok(results.length >= 8, 'Partner + mindestens die 7 Berliner Fixture-Orte')
+    assert.equal(results[0].id, `partner:${partner.id}`)
+    assert.equal(results[0].quelle, 'partner')
+    assert.equal(results[0].badge, 'partner')
+
+    const rest = results.slice(1)
+    assert.ok(rest.every((r) => r.quelle === 'fixture'))
+    for (let i = 1; i < rest.length; i += 1) {
+      assert.ok(rest[i - 1].distanceKm <= rest[i].distanceKm)
+    }
+  })
+
+  await t.test('Dubletten: gleicher Name innerhalb 150 m - Partner gewinnt, kein doppelter Treffer', async () => {
+    const providerHit = { id: 'fixture:dup-1', name: '  tierheim dublette  ', typ: 'tierheim', lat: 2.0001, lon: 2.0001 }
+    const partner = insertPartner({ name: 'Tierheim Dublette', lat: 2, lon: 2 })
+
+    const { results } = await searchPlaces(
+      db,
+      { lat: 2, lon: 2, radiusKm: 5, isDemo: false },
+      { providers: { fixture: async () => [providerHit] } }
+    )
+
+    const matches = results.filter((r) => r.name.toLowerCase().includes('dublette'))
+    assert.equal(matches.length, 1, 'nur ein zusammengeführter Treffer statt zweier')
+    assert.equal(matches[0].quelle, 'partner')
+    assert.equal(matches[0].id, `partner:${partner.id}`)
+  })
+
+  await t.test('Dubletten: gleiche osm_ref/id - Partner gewinnt auch ohne Namens-/Orts-Übereinstimmung', async () => {
+    const partner = insertPartner({ name: 'Tierheim Mit OSM-Referenz', lat: 3, lon: 3, osm_ref: 'osm:node/555' })
+    const providerHit = { id: 'osm:node/555', name: 'Ganz anderer Name', typ: 'tierheim', lat: 3.05, lon: 3.05 } // > 150 m entfernt
+
+    const { results } = await searchPlaces(
+      db,
+      { lat: 3, lon: 3, radiusKm: 10, isDemo: false },
+      { providers: { fixture: async () => [providerHit] } }
+    )
+
+    const matches = results.filter((r) => r.quelle === 'partner' && r.id === `partner:${partner.id}`)
+    assert.equal(matches.length, 1)
+    assert.ok(!results.some((r) => r.quelle === 'fixture' && r.name === 'Ganz anderer Name'))
+  })
+
+  await t.test('Züchter-Treffer werden verworfen', async () => {
+    const breederHit = { id: 'fixture:zucht-1', name: 'Hundezucht Testhof', typ: 'tierheim', lat: 4, lon: 4 }
+    const okHit = { id: 'fixture:ok-1', name: 'Tierheim Redlich', typ: 'tierheim', lat: 4, lon: 4 }
+
+    const { results } = await searchPlaces(
+      db,
+      { lat: 4, lon: 4, radiusKm: 5, isDemo: false },
+      { providers: { fixture: async () => [breederHit, okHit] } }
+    )
+
+    assert.ok(!results.some((r) => r.name.includes('Hundezucht')))
+    assert.ok(results.some((r) => r.name === 'Tierheim Redlich'))
+  })
+
+  await t.test('Cache-Treffer: zweiter Aufruf ruft den Anbieter nicht erneut auf', async () => {
+    config.placesProviders = ['overpass']
+    let calls = 0
+    const providers = { overpass: async () => { calls += 1; return [{ id: 'osm:node/1', name: 'Tierheim Gecacht', typ: 'tierheim', lat: 5, lon: 5 }] } }
+
+    const first = await searchPlaces(db, { lat: 5, lon: 5, radiusKm: 11, isDemo: false }, { providers })
+    assert.equal(calls, 1)
+    assert.ok(first.results.some((r) => r.name === 'Tierheim Gecacht'))
+
+    const second = await searchPlaces(db, { lat: 5, lon: 5, radiusKm: 11, isDemo: false }, { providers })
+    assert.equal(calls, 1, 'der zweite Aufruf kommt aus dem Cache, kein erneuter Provider-Aufruf')
+    assert.ok(second.results.some((r) => r.name === 'Tierheim Gecacht'))
+  })
+
+  await t.test('Budget erschöpft: liefert nur Partner/Cache und limited:true, ohne den Anbieter aufzurufen', async () => {
+    config.placesProviders = ['overpass']
+    config.placesDailyLimit = 0
+    let calls = 0
+    const providers = { overpass: async () => { calls += 1; return [{ id: 'osm:node/2', name: 'Sollte nicht erscheinen', typ: 'tierheim', lat: 6, lon: 6 }] } }
+    const partner = insertPartner({ name: 'Tierheim Trotzdem Da', lat: 6, lon: 6 })
+
+    const { results, limited } = await searchPlaces(db, { lat: 6, lon: 6, radiusKm: 12, isDemo: false }, { providers })
+
+    assert.equal(limited, true)
+    assert.equal(calls, 0)
+    assert.ok(results.some((r) => r.id === `partner:${partner.id}`))
+    assert.ok(!results.some((r) => r.name === 'Sollte nicht erscheinen'))
+  })
+
+  await t.test('Demo nutzt immer die Fixture, unabhängig von config.placesProviders', async () => {
+    config.placesProviders = ['overpass']
+    let overpassCalls = 0
+    const providers = {
+      overpass: async () => { overpassCalls += 1; return [] },
+      fixture: async () => [{ id: 'fixture:demo-1', name: 'Tierheim Demo-Treffer', typ: 'tierheim', lat: 7, lon: 7, quelle: 'fixture' }]
+    }
+
+    const { results } = await searchPlaces(db, { lat: 7, lon: 7, radiusKm: 5, isDemo: true }, { providers })
+
+    assert.equal(overpassCalls, 0)
+    assert.ok(results.some((r) => r.name === 'Tierheim Demo-Treffer' && r.quelle === 'fixture'))
+  })
+
+  // --- Route: POST /api/places/search ------------------------------------------------------------
+
+  await t.test('Route: ohne Session -> 401', async () => {
+    const res = await call(base, '/api/places/search', { method: 'POST', body: { plz: '10115', radius: 10 } })
+    assert.equal(res.status, 401)
+  })
+
+  const household = await createHousehold(base, 'Familie Umkreis')
+
+  await t.test('Route: Validierung - Radius, unbekannte PLZ, ungültiger Standort', async () => {
+    const badRadius = await call(base, '/api/places/search', { method: 'POST', cookie: household.cookie, body: { plz: '10115', radius: 7 } })
+    assert.equal(badRadius.status, 400)
+
+    const unknownPlz = await call(base, '/api/places/search', { method: 'POST', cookie: household.cookie, body: { plz: '00000', radius: 10 } })
+    assert.equal(unknownPlz.status, 400)
+    assert.match(unknownPlz.data.error, /Postleitzahl/)
+
+    const badCoords = await call(base, '/api/places/search', { method: 'POST', cookie: household.cookie, body: { lat: 0, lon: 0, radius: 10 } })
+    assert.equal(badCoords.status, 400)
+
+    const missingEverything = await call(base, '/api/places/search', { method: 'POST', cookie: household.cookie, body: { radius: 10 } })
+    assert.equal(missingEverything.status, 400)
+  })
+
+  await t.test('Route: gültige PLZ liefert center/ort, Radius und Attribution', async () => {
+    const res = await call(base, '/api/places/search', { method: 'POST', cookie: household.cookie, body: { plz: '10115', radius: 10 } })
+    assert.equal(res.status, 200)
+    assert.equal(res.data.center.ort, 'Berlin')
+    assert.equal(res.data.radius, 10)
+    assert.deepEqual(res.data.attribution, ['© OpenStreetMap-Mitwirkende (ODbL)'])
+    assert.ok(Array.isArray(res.data.results))
+  })
+
+  await t.test('Route: Standort-Koordinaten werden auf 0,01° gerundet', async () => {
+    const res = await call(base, '/api/places/search', { method: 'POST', cookie: household.cookie, body: { lat: 52.5321234, lon: 13.3849, radius: 10 } })
+    assert.equal(res.status, 200)
+    assert.equal(res.data.center.lat, 52.53)
+    assert.equal(res.data.center.lon, 13.38)
+  })
+
+  await t.test('Route: eine Demo-Session darf mitsuchen (requireSession statt requireAuth)', async () => {
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(household.data.id)
+    const res = await call(base, '/api/places/search', { method: 'POST', cookie: household.cookie, body: { plz: '20095', radius: 10 } })
+    assert.equal(res.status, 200)
+    db.prepare('UPDATE families SET is_demo = 0 WHERE id = ?').run(household.data.id)
+  })
+
+  await t.test('Datenschutz: ein unerwarteter Fehler in der Route loggt die Koordinaten nicht', async () => {
+    const originalPrepare = db.prepare.bind(db)
+    db.prepare = (sql, ...rest) => {
+      if (typeof sql === 'string' && sql.includes("FROM partners WHERE status = 'aktiv'")) {
+        throw new Error('absichtlich kaputt für diesen Test')
+      }
+      return originalPrepare(sql, ...rest)
+    }
+
+    const logs = []
+    const originalError = console.error
+    const originalLog = console.log
+    console.error = (...args) => logs.push(args)
+    console.log = (...args) => logs.push(args)
+
+    const secretLat = 53.1171
+    const secretLon = 9.2123
+    try {
+      const res = await call(base, '/api/places/search', {
+        method: 'POST',
+        cookie: household.cookie,
+        body: { lat: secretLat, lon: secretLon, radius: 10 }
+      })
+      assert.equal(res.status, 500)
+    } finally {
+      db.prepare = originalPrepare
+      console.error = originalError
+      console.log = originalLog
+    }
+
+    const dump = JSON.stringify(logs)
+    assert.ok(!dump.includes(String(secretLat)), 'die Breite darf nicht in Logs auftauchen')
+    assert.ok(!dump.includes(String(secretLon)), 'die Länge darf nicht in Logs auftauchen')
+  })
+})

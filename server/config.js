@@ -56,6 +56,15 @@ function readTrustProxy() {
   return /^\d+$/.test(value) ? Number(value) : value
 }
 
+// Umkreissuche (Task 3): welche(r) Anbieter liefert Treffer neben den Partnern - 'overpass' (OSM, echte
+// Anfragen) oder 'fixture' (fiktive Testdaten, nie externe Anfragen). Komma-getrennt für später mehrere
+// Anbieter, heute wird nur der erste tatsächlich abgefragt (siehe lib/places/index.js).
+function readPlacesProviders(env) {
+  const raw = (process.env.PLACES_PROVIDERS || '').trim()
+  if (raw) return raw.split(',').map((s) => s.trim()).filter(Boolean)
+  return [env === 'production' ? 'overpass' : 'fixture']
+}
+
 const dataDir = process.env.DATA_DIR || __dirname
 
 const appEnv = readAppEnv(process.env.APP_ENV)
@@ -94,5 +103,10 @@ module.exports = {
   writeRateLimit: Number(process.env.WRITE_RATE_LIMIT) || 150,
   adminUsername: process.env.ADMIN_USERNAME || 'admin',
   // "scrypt:<salt>:<key>", erzeugt mit `npm run admin:hash -- <passwort>`; leer = kein Admin-Zugang
-  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || ''
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || '',
+  // Umkreissuche (Task 3, siehe lib/places/) - Anbieter, Tages-Obergrenze für echte Overpass-Anfragen,
+  // optionale eigene Adresse für den Bot-User-Agent (siehe lib/http.js)
+  placesProviders: readPlacesProviders(appEnv),
+  placesDailyLimit: Number(process.env.PLACES_DAILY_LIMIT) || 500,
+  publicUrl: process.env.PUBLIC_URL || null
 }

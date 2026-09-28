@@ -271,4 +271,19 @@ db.exec(`
 // gesetzt beim Einlösen aus vouchers.partner_id (siehe lib/vouchers.js redeemVoucher).
 addColumnIfMissing('families', 'partner_id', 'INTEGER')
 
+// Phase 2 Task 3: Umkreissuche (lib/places/). places_cache hält OSM-Ergebnisse 7 Tage (Schlüssel siehe
+// lib/places/cache.js), places_budget zählt echte Overpass-Anfragen pro Kalendertag gegen
+// config.placesDailyLimit - beides nie mit Nutzer-Koordinaten/PLZ im Klartext geloggt.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS places_cache (
+    key TEXT PRIMARY KEY,
+    payload TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS places_budget (
+    day TEXT PRIMARY KEY,
+    count INTEGER NOT NULL DEFAULT 0
+  );
+`)
+
 module.exports = db
