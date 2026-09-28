@@ -4,18 +4,21 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { getDog, listTimeline, listBreedingEvents, listAllDogs, updateDog, setSteckbrief, createHandover } = vi.hoisted(() => ({
-  getDog: vi.fn(),
-  listTimeline: vi.fn(),
-  listBreedingEvents: vi.fn(),
-  listAllDogs: vi.fn(),
-  updateDog: vi.fn(),
-  setSteckbrief: vi.fn(),
-  createHandover: vi.fn()
-}))
+const { getDog, listTimeline, listBreedingEvents, listAllDogs, updateDog, setSteckbrief, createHandover, withdrawHandover } = vi.hoisted(
+  () => ({
+    getDog: vi.fn(),
+    listTimeline: vi.fn(),
+    listBreedingEvents: vi.fn(),
+    listAllDogs: vi.fn(),
+    updateDog: vi.fn(),
+    setSteckbrief: vi.fn(),
+    createHandover: vi.fn(),
+    withdrawHandover: vi.fn()
+  })
+)
 
 vi.mock('../api', () => ({
-  api: { getDog, listTimeline, listBreedingEvents, listAllDogs, updateDog, setSteckbrief, createHandover }
+  api: { getDog, listTimeline, listBreedingEvents, listAllDogs, updateDog, setSteckbrief, createHandover, withdrawHandover }
 }))
 
 import DogDetailPage from './DogDetailPage.jsx'
@@ -109,6 +112,7 @@ afterEach(() => {
   updateDog.mockReset()
   setSteckbrief.mockReset()
   createHandover.mockReset()
+  withdrawHandover.mockReset()
 })
 
 describe('DogDetailPage – Tierheim: Status', () => {
@@ -200,5 +204,34 @@ describe('DogDetailPage – Tierheim: Übergabe', () => {
 
     expect(createHandover).toHaveBeenCalledWith(20)
     expect(container.querySelector('.handover-code').textContent).toBe('ABCD-1234-EFGH')
+  })
+
+  test('kein "Übergabe zurückziehen" bei Status "in Vermittlung"', async () => {
+    getDog.mockResolvedValue(shelterDog({ vermittlung_status: 'in_vermittlung' }))
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render()
+
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.includes('Übergabe zurückziehen'))).toBe(false)
+  })
+
+  test('bei Status "reserviert" ruft "Übergabe zurückziehen" api.withdrawHandover auf und übernimmt den neuen Status', async () => {
+    getDog.mockResolvedValue(shelterDog({ vermittlung_status: 'reserviert' }))
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    withdrawHandover.mockResolvedValue({ id: 20, vermittlung_status: 'in_vermittlung' })
+    await render()
+
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes('Übergabe zurückziehen'))
+    expect(button).not.toBeUndefined()
+    await act(async () => button.click())
+
+    expect(withdrawHandover).toHaveBeenCalledWith(20)
+    const select = container.querySelector('#vermittlung-status')
+    expect(select.value).toBe('in_vermittlung')
+    // Der Knopf verschwindet, sobald der Status nicht mehr "reserviert" ist (dog-State neu gemischt).
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.includes('Übergabe zurückziehen'))).toBe(false)
   })
 })

@@ -5,6 +5,7 @@ import ThemeMark from '../components/ThemeMark.jsx'
 import RedeemForm from '../components/RedeemForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
 import AnimalAdoptionCard from '../components/AnimalAdoptionCard.jsx'
+import HappyEndCard from '../components/HappyEndCard.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
 import { startRoute } from '../lib/areas.js'
@@ -61,9 +62,12 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
   const location = useLocation()
   const [partner, setPartner] = useState(undefined) // undefined: lädt, null: nicht gefunden
   const [animals, setAnimals] = useState([])
+  const [happyEnds, setHappyEnds] = useState([])
   const [redeemResult, setRedeemResult] = useState(null)
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoError, setDemoError] = useState(null)
+  const [shelterDemoLoading, setShelterDemoLoading] = useState(false)
+  const [shelterDemoError, setShelterDemoError] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -101,6 +105,23 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
     }
   }, [slug, location.search])
 
+  // Happy Ends (Task 6) - unabhängig vom Tiere-Fetch oben, gleiche demo-Konvention. Schlägt es fehl
+  // (z. B. kein Tierheim), bleibt es bei einer leeren Liste, ohne die restliche Portalseite zu blockieren.
+  useEffect(() => {
+    let cancelled = false
+    setHappyEnds([])
+    const demo = new URLSearchParams(location.search).get('demo') === '1' ? '1' : undefined
+    api
+      .publicHappyEnds(slug, { demo })
+      .then((data) => {
+        if (!cancelled) setHappyEnds(data)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [slug, location.search])
+
   function handleRedeemed(response) {
     const { key, fromOthers, ...me } = response
     setRedeemResult({ key, me })
@@ -116,6 +137,19 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
     } catch (err) {
       setDemoError(err.message)
       setDemoLoading(false)
+    }
+  }
+
+  // "Demo als Tierheim ansehen" (Task 6): derselbe Ablauf wie handleDemo, nur mit { as: 'tierheim' } -
+  // nur sichtbar, wenn der Server diesen Partner als demo-fähig meldet (partner.demo, siehe unten).
+  async function handleShelterDemo() {
+    setShelterDemoError(null)
+    setShelterDemoLoading(true)
+    try {
+      onRedeemed(await api.demo({ as: 'tierheim' }))
+    } catch (err) {
+      setShelterDemoError(err.message)
+      setShelterDemoLoading(false)
     }
   }
 
@@ -195,6 +229,18 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
               <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
                 {demoLoading ? 'Lädt …' : 'Demo ansehen'}
               </button>
+              {partner.demo && (
+                <>
+                  {shelterDemoError && (
+                    <div className="error-banner" role="alert">
+                      {shelterDemoError}
+                    </div>
+                  )}
+                  <button type="button" className="btn btn-ghost btn-block" onClick={handleShelterDemo} disabled={shelterDemoLoading}>
+                    {shelterDemoLoading ? 'Lädt …' : 'Demo als Tierheim ansehen'}
+                  </button>
+                </>
+              )}
             </div>
           </>
         )}
@@ -206,6 +252,17 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout }
           <div className="shelter-grid">
             {animals.map((animal) => (
               <AnimalAdoptionCard key={animal.slug} animal={animal} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {happyEnds.length > 0 && (
+        <section className="partner-portal-animals partner-portal-happy-ends">
+          <h2>Happy Ends</h2>
+          <div className="shelter-grid">
+            {happyEnds.map((happyEnd, index) => (
+              <HappyEndCard key={`${happyEnd.name}-${index}`} happyEnd={happyEnd} />
             ))}
           </div>
         </section>

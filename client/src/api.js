@@ -49,7 +49,9 @@ export const api = {
   me: () => request('/me'),
   login: (secret) => request('/login', json('POST', { secret })),
   loginUser: (username, password) => request('/login', json('POST', { username, password })),
-  demo: () => request('/demo', { method: 'POST' }),
+  // as: 'tierheim' (Phase T Task 6) loggt ins Demo-Tierheim statt ins Demo-Zuhause ein - siehe
+  // PartnerPortalPage "Demo als Tierheim ansehen".
+  demo: ({ as } = {}) => request('/demo', json('POST', as ? { as } : {})),
   logout: () => request('/logout', { method: 'POST' }),
   renameFamily: (name) => request('/family', json('PUT', { name })),
   updateFamily: (payload) => request('/family', json('PUT', payload)),
@@ -75,6 +77,12 @@ export const api = {
   },
   // Öffentlicher Steckbrief eines Tiers (/t/:slug) - kein Login, immer noindex (siehe SteckbriefPage).
   publicAnimal: (slug) => request(`/public/animals/${encodeURIComponent(slug)}`),
+  // Happy Ends (Phase T Task 6): bis zu 6 vermittelte Tiere mit Einwilligung ihrer neuen Familie, für
+  // die Sektion "Happy Ends" auf dem Portal. demo wie publicPartnerAnimals oben.
+  publicHappyEnds: (slug, { demo } = {}) => {
+    const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
+    return request(`/public/partners/${encodeURIComponent(slug)}/happy-ends${qs}`)
+  },
 
   // "In der Nähe" (/umgebung, angemeldet): location ist { plz } oder { lat, lon }, nie beides.
   searchPlaces: (location, radius) => request('/places/search', json('POST', { ...location, radius })),
@@ -113,6 +121,9 @@ export const api = {
   // Phase T – Tierheim: Steckbrief veröffentlichen/zurückziehen und Übergabe-Gutschein erzeugen.
   setSteckbrief: (id, published) => request(`/dogs/${id}/steckbrief`, json('PUT', { published })),
   createHandover: (id) => request(`/dogs/${id}/handover`, { method: 'POST' }),
+  // Übergabe zurückziehen (Phase T Task 6): zieht offene Übergabe-Gutscheine zurück und setzt den
+  // Status wieder auf "in Vermittlung", falls er noch "reserviert" war - siehe DogDetailPage.
+  withdrawHandover: (id) => request(`/dogs/${id}/handover`, { method: 'DELETE' }),
   // Einwilligung "Tierheim darf mitlesen" (Phase T Task 5, Besitzer-Zuhause) - siehe ShelterSharePanel.
   setShelterShare: (id, payload) => request(`/dogs/${id}/shelter-share`, json('PUT', payload)),
 

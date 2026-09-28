@@ -113,6 +113,31 @@
   color: var(--muted);
 }
 
+/* Happy-End-Karte (Portal, Sektion "Happy Ends") - teilt sich die .shelter-card-Optik, ist aber kein
+   Link (kein Steckbrief mehr für ein längst vermitteltes Tier), darum ohne den Hover-"anklickbar"-Effekt. */
+
+.happy-end-card {
+  cursor: default;
+}
+
+.happy-end-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-card);
+  border-color: var(--line);
+}
+
+.happy-end-title {
+  margin: var(--space-2) 0 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.happy-end-text {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
 /* Tierseite im Tierheim: Status, Steckbrief, Übergabe */
 
 .shelter-panel {

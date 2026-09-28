@@ -4,13 +4,14 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { publicPartner, publicPartnerAnimals, redeemVoucher, demo } = vi.hoisted(() => ({
+const { publicPartner, publicPartnerAnimals, publicHappyEnds, redeemVoucher, demo } = vi.hoisted(() => ({
   publicPartner: vi.fn(),
   publicPartnerAnimals: vi.fn(),
+  publicHappyEnds: vi.fn(),
   redeemVoucher: vi.fn(),
   demo: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { publicPartner, publicPartnerAnimals, redeemVoucher, demo } }))
+vi.mock('../api', () => ({ api: { publicPartner, publicPartnerAnimals, publicHappyEnds, redeemVoucher, demo } }))
 
 import PartnerPortalPage from './PartnerPortalPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -28,9 +29,10 @@ function setInputValue(input, value) {
 }
 
 beforeEach(() => {
-  // Sinnvoller Standard, damit Tests, die die Vermittlungs-Sektion nicht betreffen, api.publicPartnerAnimals
-  // nicht extra mocken müssen - Tests, die eine Liste brauchen, überschreiben das gezielt.
+  // Sinnvoller Standard, damit Tests, die die Vermittlungs-Sektion/Happy-Ends nicht betreffen, die
+  // beiden nicht extra mocken müssen - Tests, die eine Liste brauchen, überschreiben das gezielt.
   publicPartnerAnimals.mockResolvedValue([])
+  publicHappyEnds.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -46,6 +48,7 @@ afterEach(() => {
   document.title = ''
   publicPartner.mockReset()
   publicPartnerAnimals.mockReset()
+  publicHappyEnds.mockReset()
   redeemVoucher.mockReset()
   demo.mockReset()
 })
@@ -345,5 +348,87 @@ describe('PartnerPortalPage – Vermittlungs-Sektion "Fellnasen/Tiere suchen ein
     publicPartner.mockResolvedValue(partner)
     await render({ path: '/p/tierheim-sonnenhang?demo=1' })
     expect(publicPartnerAnimals).toHaveBeenCalledWith('tierheim-sonnenhang', { demo: '1' })
+  })
+})
+
+describe('PartnerPortalPage – Sektion "Happy Ends" (Task 6)', () => {
+  const happyEnd = {
+    name: 'Nele',
+    tierart: 'hund',
+    fotoUrl: '/public-media/nele.jpg',
+    entry: { titel: 'Nele zieht ein – die ersten Tage', datum: '2021-06-12', text: 'Anfangs schüchtern, heute die Chefin.', fotoUrl: null }
+  }
+
+  test('ohne Happy Ends erscheint die Sektion gar nicht', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render()
+    expect(container.querySelector('.partner-portal-happy-ends')).toBeNull()
+  })
+
+  test('zeigt "Happy Ends" mit Name, Eintragstitel/-datum und gekürztem Text je Tier', async () => {
+    publicPartner.mockResolvedValue(partner)
+    publicHappyEnds.mockResolvedValue([happyEnd])
+    await render()
+
+    const section = container.querySelector('.partner-portal-happy-ends')
+    expect(section).not.toBeNull()
+    expect(section.querySelector('h2').textContent).toBe('Happy Ends')
+    expect(section.textContent).toContain('Nele')
+    expect(section.textContent).toContain('Nele zieht ein – die ersten Tage')
+    expect(section.textContent).toContain('Anfangs schüchtern, heute die Chefin.')
+  })
+
+  test('ruft api.publicHappyEnds ohne demo auf, wenn das Portal normal geladen wurde', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render()
+    expect(publicHappyEnds).toHaveBeenCalledWith('tierheim-sonnenhang', { demo: undefined })
+  })
+
+  test('ruft api.publicHappyEnds mit demo=1 auf, wenn das Portal selbst mit ?demo=1 geladen wurde', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render({ path: '/p/tierheim-sonnenhang?demo=1' })
+    expect(publicHappyEnds).toHaveBeenCalledWith('tierheim-sonnenhang', { demo: '1' })
+  })
+})
+
+describe('PartnerPortalPage – "Demo als Tierheim ansehen" (Task 6)', () => {
+  test('kein Knopf, wenn der Partner nicht demo-fähig ist', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render()
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')).toBe(false)
+  })
+
+  test('zeigt den Knopf für einen demo-fähigen Partner; ein Klick ruft api.demo({ as: "tierheim" }) und onRedeemed auf', async () => {
+    publicPartner.mockResolvedValue({ ...partner, demo: true })
+    const me = { id: 9, name: 'Tierheim Sonnenhang', theme: 'standard', art: 'tierheim', isDemo: true, home: null, memberships: [] }
+    demo.mockResolvedValue(me)
+    const onRedeemed = vi.fn()
+    await render({ onRedeemed })
+
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')
+    expect(button).not.toBeUndefined()
+    await act(async () => button.click())
+
+    expect(demo).toHaveBeenCalledWith({ as: 'tierheim' })
+    expect(onRedeemed).toHaveBeenCalledWith(me)
+  })
+
+  test('ein Fehler von api.demo() erscheint als Alert', async () => {
+    publicPartner.mockResolvedValue({ ...partner, demo: true })
+    demo.mockRejectedValue(new Error('Demo gerade nicht verfügbar'))
+    await render()
+
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')
+    await act(async () => button.click())
+
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Demo gerade nicht verfügbar')
+  })
+
+  test('kein Knopf im angemeldeten Zustand', async () => {
+    publicPartner.mockResolvedValue({ ...partner, demo: true })
+    const loggedInHome = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: null, memberships: [] }
+    await render({ family: loggedInHome })
+
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')).toBe(false)
   })
 })

@@ -184,6 +184,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   const [editingDog, setEditingDog] = useState(false)
   const [photo, setPhoto] = useState(null)
   const [handoverOpen, setHandoverOpen] = useState(false)
+  const [withdrawing, setWithdrawing] = useState(false)
   const [highlightKey, setHighlightKey] = useState(null)
   const [newestFirst, setNewestFirst] = useState(() => readSetting('newestFirst', false))
 
@@ -365,6 +366,22 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     setDog((current) => ({ ...current, vermittlung_status: 'reserviert' }))
   }
 
+  // Übergabe zurückziehen (Task 6): DELETE /api/dogs/:id/handover zieht offene Übergabe-Gutscheine
+  // zurück und setzt den Status wieder auf "in Vermittlung" - Antwort ist die rohe Hund-Zeile, wie bei
+  // handleStatusChange oben also in den bestehenden dog-State gemischt statt ihn zu ersetzen.
+  async function handleWithdrawHandover() {
+    setWithdrawing(true)
+    try {
+      const updated = await api.withdrawHandover(dog.id)
+      setDog((current) => ({ ...current, ...updated }))
+      toast(`Übergabe zurückgezogen – ${displayName(dog)} ist wieder in Vermittlung.`)
+    } catch (err) {
+      toast(err.message)
+    } finally {
+      setWithdrawing(false)
+    }
+  }
+
   async function handleDeleteDog() {
     await api.deleteDog(dog.id)
     toast(`${dog.name} wurde entfernt`)
@@ -443,10 +460,18 @@ export default function DogDetailPage({ family, onFamilyChange }) {
 
           <SteckbriefPanel dog={dog} onDogChange={handleSteckbriefChange} />
 
-          <button type="button" className="btn btn-ghost" onClick={() => setHandoverOpen(true)}>
-            <Icon name="logout" />
-            Vermittelt – Übergabe vorbereiten
-          </button>
+          <div className="steckbrief-actions">
+            <button type="button" className="btn btn-ghost" onClick={() => setHandoverOpen(true)}>
+              <Icon name="logout" />
+              Vermittelt – Übergabe vorbereiten
+            </button>
+            {dog.vermittlung_status === 'reserviert' && (
+              <button type="button" className="btn btn-ghost" disabled={withdrawing} onClick={handleWithdrawHandover}>
+                <Icon name="close" />
+                {withdrawing ? 'Ziehe zurück …' : 'Übergabe zurückziehen'}
+              </button>
+            )}
+          </div>
         </section>
       )}
 
