@@ -215,9 +215,11 @@ backup_if_running() {
 }
 
 cmd="${1:-status}"
+# Schützt vor Instanz-Verwechslung bei JEDEM Befehl (nicht nur setup/deploy/showcase) - lesend, kehrt
+# ohne .env sofort zurück.
+check_instance
 case "$cmd" in
   setup)
-    check_instance
     install_docker
     checkout
     ensure_env
@@ -225,7 +227,6 @@ case "$cmd" in
     log "Einladungscode für neue Rudel: $(env_value FAMILY_INVITE_CODE)"
     ;;
   deploy)
-    check_instance
     backup_if_running
     checkout
     ensure_env
@@ -252,7 +253,6 @@ case "$cmd" in
     $COMPOSE exec -T chronik node scripts/demo.js
     ;;
   showcase)
-    check_instance
     cd "$APP_DIR"
     case "$(env_value APP_ENV)" in
       staging|dev) ;;

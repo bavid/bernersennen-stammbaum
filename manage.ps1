@@ -15,15 +15,28 @@ $ErrorActionPreference = 'Stop'
 $DeployEnvPath = Join-Path $PSScriptRoot $(if ($Target -eq 'staging') { '.deploy.staging.env' } else { '.deploy.env' })
 $RemoteScriptPath = Join-Path $PSScriptRoot 'deploy/remote.sh'
 $BackupDir = Join-Path $PSScriptRoot 'backups'
+if ($Target -eq 'staging') { $BackupDir = Join-Path $BackupDir 'staging' }
 
 if (-not (Test-Path $DeployEnvPath)) {
     Write-Host "  $(Split-Path -Leaf $DeployEnvPath) fehlt. Kopiere die passende .example-Datei und trage den Server ein." -ForegroundColor Red
     exit 1
 }
 
-$cfg = @{}
-Get-Content $DeployEnvPath | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=\s*([^#]*)' } | ForEach-Object {
-    $cfg[$Matches[1]] = $Matches[2].Trim()
+# Liest eine .deploy(.staging).env-Datei (KEY=VALUE, # Kommentare) in eine Hashtable. Auch von
+# Invoke-Promote genutzt, um .deploy.staging.env unabhängig vom aktuell gewählten -Target zu lesen.
+function Read-DeployConfig {
+    param([string]$Path)
+    $result = @{}
+    Get-Content $Path | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=\s*([^#]*)' } | ForEach-Object {
+        $result[$Matches[1]] = $Matches[2].Trim()
+    }
+    return $result
+}
+
+$cfg = Read-DeployConfig $DeployEnvPath
+if ($Target -eq 'staging' -and (-not $cfg.APP_DIR -or -not $cfg.APP_ENV)) {
+    Write-Host "  APP_DIR oder APP_ENV fehlt in .deploy.staging.env – ohne diese Werte würde remote.sh die Prod-Instanz treffen." -ForegroundColor Red
+    exit 1
 }
 $Server = "$(if ($cfg.DEPLOY_USER) { $cfg.DEPLOY_USER } else { 'root' })@$($cfg.DEPLOY_HOST)"
 $HttpsPort = if ($cfg.HTTPS_PORT) { $cfg.HTTPS_PORT } else { '3010' }
@@ -68,12 +81,35 @@ function Save-Backup {
     }
 }
 
+# Prüft, dass die Vorschau tatsächlich genau das SHA laufen hat, das promotet werden soll - sonst
+# könnte ein ungetesteter Stand nach Prod gehen. Gibt bei Erfolg $true zurück, sonst $false (Meldung
+# ist bereits ausgegeben).
+function Test-PreviewMatchesSha {
+    param([string]$Sha)
+    $stagingEnvPath = Join-Path $PSScriptRoot '.deploy.staging.env'
+    if (-not (Test-Path $stagingEnvPath)) {
+        Write-Host "  .deploy.staging.env fehlt - der Vorschau-Stand kann nicht geprüft werden." -ForegroundColor Yellow
+        return $true
+    }
+    $stagingCfg = Read-DeployConfig $stagingEnvPath
+    $stagingServer = "$(if ($stagingCfg.DEPLOY_USER) { $stagingCfg.DEPLOY_USER } else { 'root' })@$($stagingCfg.DEPLOY_HOST)"
+    $previewSha = (ssh -o StrictHostKeyChecking=accept-new $stagingServer "git -C '$($stagingCfg.APP_DIR)' rev-parse HEAD" 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $previewSha) { $previewSha = $null } else { $previewSha = $previewSha.Trim() }
+    if ($previewSha -ne $Sha) {
+        $previewShort = if ($previewSha) { $previewSha.Substring(0, 7) } else { 'unbekannt' }
+        Write-Host "  Die Vorschau läuft auf $previewShort, origin/staging ist $($Sha.Substring(0, 7)) – erst die Vorschau deployen und testen." -ForegroundColor Red
+        return $false
+    }
+    return $true
+}
+
 # Bringt genau das auf der Vorschau getestete SHA nach Prod: main wird vorgespult, Prod deployt dieses SHA
 function Invoke-Promote {
     git -C $PSScriptRoot fetch -q origin staging
     if ($LASTEXITCODE -ne 0) { Write-Host "  git fetch fehlgeschlagen (kein Netzwerk?) - Abbruch, um keinen veralteten Stand zu übernehmen." -ForegroundColor Red; return }
     $sha = (git -C $PSScriptRoot rev-parse origin/staging).Trim()
     if ($LASTEXITCODE -ne 0 -or $sha -notmatch '^[0-9a-f]{40}$') { Write-Host "  Konnte SHA von origin/staging nicht ermitteln." -ForegroundColor Red; return }
+    if (-not (Test-PreviewMatchesSha $sha)) { return }
     Write-Host "  Übernimmt Vorschau-Stand $($sha.Substring(0, 7)) nach Prod (main)." -ForegroundColor Yellow
     if ((Read-Host "  Zum Bestätigen PROD eintippen") -ne 'PROD') { return }
     git -C $PSScriptRoot push origin "${sha}:refs/heads/main"
