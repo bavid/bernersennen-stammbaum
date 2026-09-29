@@ -1,0 +1,212 @@
+/* Postfach der Partner (Phase P2, /nachrichten - PartnerInboxPage, InboxMessage): eine Liste zum
+   Aufklappen, ungelesene fett mit Punkt. Die Nachricht selbst bleibt reiner Text (pre-wrap). */
+
+.inbox-retention {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.inbox-retention svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.inbox-summary {
+  margin: var(--space-2) 0 var(--space-3);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.inbox-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inbox-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.inbox-item.is-unread {
+  border-color: color-mix(in srgb, var(--rust) 40%, var(--line));
+  box-shadow: inset 3px 0 0 var(--rust), var(--shadow-sm);
+}
+
+.inbox-item.is-open {
+  box-shadow: var(--shadow-card);
+}
+
+.inbox-item-head {
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  width: 100%;
+  padding: var(--space-4) calc(var(--space-5) + 1.5rem) var(--space-4) var(--space-5);
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inbox-item-head:hover {
+  background: var(--surface-sunk);
+}
+
+.inbox-item-head:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.inbox-item-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  width: 100%;
+}
+
+.inbox-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex-shrink: 0;
+  align-self: center;
+  border-radius: 50%;
+  background: var(--rust);
+}
+
+.inbox-item-sender {
+  color: var(--ink-soft);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.inbox-item.is-unread .inbox-item-sender {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.inbox-item-date {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.inbox-bezug {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.inbox-item-excerpt {
+  width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inbox-item.is-unread .inbox-item-excerpt {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.inbox-item-chevron {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--muted);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.inbox-item.is-open .inbox-item-chevron {
+  transform: rotate(180deg);
+}
+
+.inbox-item-detail {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0 var(--space-5) var(--space-5);
+}
+
+/* Reiner Text - Zeilenumbrüche der Absenderin bleiben stehen, lange Wörter/Links brechen um. */
+.inbox-message-text {
+  margin: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.inbox-reply,
+.inbox-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Lange E-Mail-Adressen dürfen im Knopf umbrechen (.btn ist sonst nowrap) - bei 375 px sonst zu breit. */
+.inbox-reply .btn {
+  max-width: 100%;
+  padding-block: var(--space-2);
+  border-radius: var(--radius-md);
+  text-align: left;
+  white-space: normal;
+}
+
+.inbox-reply .btn > span {
+  display: grid;
+  min-width: 0;
+}
+
+.inbox-reply-value {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.inbox-empty {
+  padding: var(--space-10) var(--space-6);
+}
+
+.inbox-empty svg {
+  width: 3rem;
+  height: 3rem;
+}
+
+.inbox-empty p {
+  max-width: 28rem;
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .inbox-item-date {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+}

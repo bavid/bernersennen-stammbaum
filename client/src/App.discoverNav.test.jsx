@@ -108,12 +108,13 @@ describe('Reiter "Entdecken" in der Hauptnavigation', () => {
     expect(navLabels()).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
   })
 
-  test('Tierheim: Tiere, Pinnwand, Collage und (Phase P) Profil - kein Entdecken', async () => {
+  test('Tierheim: Tiere, Pinnwand, Collage, (Phase P) Profil und (P2) Nachrichten - kein Entdecken', async () => {
     await render(shelter, '/tiere')
-    expect(navLabels()).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil'])
+    expect(navLabels()).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
   })
 
-  test('mit fünf Einträgen bekommt die Leiste die kompakte Variante, mit vier nicht', async () => {
+  // Mit vier Einträgen (Partner-Bereich) nicht - siehe App.partnerArea.test.jsx.
+  test('mit fünf Einträgen (Zuhause, seit Phase P2 auch Tierheim) bekommt die Leiste die kompakte Variante', async () => {
     await render(home, '/entdecken')
     expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(true)
 
@@ -121,7 +122,7 @@ describe('Reiter "Entdecken" in der Hauptnavigation', () => {
     root = null
     container.remove()
     await render(shelter, '/tiere')
-    expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(false)
+    expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(true)
   })
 
   test('"Entdecken" verlinkt auf /entdecken, ist dort aktiv und zeigt die Seite', async () => {

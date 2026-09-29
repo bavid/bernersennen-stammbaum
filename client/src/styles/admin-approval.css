@@ -1,0 +1,102 @@
+/* Zur Freigabe (Phase P2, AdminPostApproval): eingereichte Beiträge der Partner - Herkunft, Vorschau als
+   Karte (so, wie Kundinnen und Kunden sie sähen) und die Entscheidung. */
+
+.admin-approval {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.admin-approval-count {
+  margin-left: var(--space-1);
+  vertical-align: middle;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.admin-approval-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-approval-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+  gap: var(--space-4) var(--space-6);
+  align-items: start;
+  padding: var(--space-5);
+  border: 1px dashed var(--tan);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--tan) 6%, transparent);
+}
+
+.admin-approval-meta {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.admin-approval-meta p {
+  margin: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.admin-approval-partner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+}
+
+.admin-approval-partner svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--rust);
+  flex-shrink: 0;
+}
+
+.admin-approval-url {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: var(--text-xs);
+}
+
+.admin-approval-preview {
+  grid-row: span 2;
+}
+
+.admin-approval-reject,
+.admin-approval-item > .admin-row-actions {
+  align-self: end;
+}
+
+.admin-promo-origin,
+.admin-promo-reason {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+.admin-promo-reason {
+  color: var(--danger);
+}
+
+.admin-header-pending svg {
+  color: var(--rust);
+}
+
+/* Mit dem Zähler "x zur Freigabe" passen drei Knöpfe am Handy nicht mehr in eine Zeile. */
+.admin-header-actions:has(.admin-header-pending) {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+  .admin-approval-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-approval-preview {
+    grid-row: auto;
+  }
+}

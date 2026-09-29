@@ -67,6 +67,15 @@ export function promotionRel(kennzeichnung) {
   return isAnzeige(kennzeichnung) ? 'sponsored noopener noreferrer' : 'noopener noreferrer'
 }
 
+// Kundensicht (Phase P2): eigene Beiträge tragen vorschau: true und ihre Freigabe - solange der Admin nicht
+// freigegeben hat, zeigt die Karte "Wartet auf Freigabe" (und hat keinen clickUrl). Öffentliche Karten
+// haben kein freigabe-Feld, gelten hier also nie als wartend.
+export const PENDING_APPROVAL_LABEL = 'Wartet auf Freigabe'
+
+export function isPendingApproval(promotion) {
+  return promotion?.vorschau === true && typeof promotion.freigabe === 'string' && promotion.freigabe !== 'freigegeben'
+}
+
 // Umkreis-Fallback: Einträge mit ausserhalb: true hängt der Server nur an, wenn im Radius weniger als
 // fünf lagen - die Seite zeigt sie gesondert unter "Weiter weg".
 export function splitByDistance(items) {
@@ -97,10 +106,15 @@ function normalizeSupport(unterstuetzen) {
 export function normalizeDiscover(data) {
   const source = data && typeof data === 'object' ? data : {}
   const hundeschulen = asArray(source.hundeschulen)
+  // Phase P2: Hundesalons und Betreuung (Partner-Typen hundesalon/betreuung) plus Beiträge mit bereich salon -
+  // dieselbe Form wie hundeschulen (Partner- und Empfehlungs-Karten gemischt, kind unterscheidet).
+  const salon = asArray(source.salon)
   const begleiter = source.begleiter && typeof source.begleiter === 'object' ? source.begleiter : {}
   return {
     hundeschulPartner: hundeschulen.filter((item) => item.kind === 'partner'),
     hundeschulPromotions: hundeschulen.filter((item) => item.kind === 'promotion'),
+    salonPartner: salon.filter((item) => item.kind === 'partner'),
+    salonPromotions: salon.filter((item) => item.kind === 'promotion'),
     begleiterPartner: asArray(begleiter.partner),
     begleiterTiere: asArray(begleiter.tiere),
     begleiterPromotions: asArray(begleiter.promotions),
@@ -108,6 +122,7 @@ export function normalizeDiscover(data) {
     unterstuetzen: normalizeSupport(source.unterstuetzen),
     fallback: {
       hundeschulen: Boolean(source.fallback?.hundeschulen),
+      salon: Boolean(source.fallback?.salon),
       begleiter: Boolean(source.fallback?.begleiter)
     },
     // Nur die Kundensicht (POST /api/partner-area/preview/discover) liefert ihn - für Typen ohne eigenen

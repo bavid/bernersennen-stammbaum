@@ -75,6 +75,18 @@ export const api = {
     const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
     return request(`/public/partners/${encodeURIComponent(slug)}/animals${qs}`)
   },
+  // Beiträge des Partners fürs Portal (Phase P2): nur freigegebene, als Karten wie in "Entdecken" (mit
+  // kennzeichnung und clickUrl). demo wie publicPartnerAnimals.
+  publicPartnerPosts: (slug, { demo } = {}) => {
+    const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
+    return request(`/public/partners/${encodeURIComponent(slug)}/posts${qs}`)
+  },
+  // "Schreib uns" (Phase P2): payload { name?, email?, telefon?, nachricht, bezugSlug?, website } - website
+  // ist der Honigtopf. demo wie oben, damit ein Demo-Portal (?demo=1) die Demo-Meldung (403) statt 404 bekommt.
+  contactPartner: (slug, payload, { demo } = {}) => {
+    const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
+    return request(`/public/partners/${encodeURIComponent(slug)}/contact${qs}`, json('POST', payload))
+  },
   // Öffentlicher Steckbrief eines Tiers (/t/:slug) - kein Login, immer noindex (siehe SteckbriefPage).
   publicAnimal: (slug) => request(`/public/animals/${encodeURIComponent(slug)}`),
   // Happy Ends (Phase T Task 6): bis zu 6 vermittelte Tiere mit Einwilligung ihrer neuen Familie, für
@@ -184,7 +196,12 @@ export const api = {
     // Reiter "Entdecken" pflegen (Phase 3 Task 5, server/routes/adminMarketing.js): Empfehlungen/Anzeigen
     // (Zeilen snake_case, dazu bildUrl, clicks7, clicksTotal), Einstellungen (gofundme_url/
     // unterstuetzen_text) und Spendenberichte (Beträge in Cent).
-    promotions: () => request('/admin/promotions'),
+    // freigabe (Phase P2): nur Beiträge mit dieser Freigabe, z. B. 'eingereicht' für "Zur Freigabe".
+    promotions: ({ freigabe } = {}) =>
+      request(freigabe ? `/admin/promotions?${new URLSearchParams({ freigabe }).toString()}` : '/admin/promotions'),
+    approvePromotion: (id) => request(`/admin/promotions/${id}/freigeben`, { method: 'POST' }),
+    // grund: 3-300 Zeichen, der Partner sieht ihn in seiner Beitragsliste.
+    rejectPromotion: (id, grund) => request(`/admin/promotions/${id}/ablehnen`, json('POST', { grund })),
     createPromotion: (payload) => request('/admin/promotions', json('POST', payload)),
     updatePromotion: (id, payload) => request(`/admin/promotions/${id}`, json('PUT', payload)),
     deletePromotion: (id) => request(`/admin/promotions/${id}`, { method: 'DELETE' }),
@@ -222,7 +239,25 @@ export const api = {
     previewPortal: () => request('/partner-area/preview/portal'),
     // Wie api.discover: die PLZ steht im Body, nie in der URL.
     previewDiscover: ({ plz, radius } = {}) => request('/partner-area/preview/discover', json('POST', plz ? { plz, radius } : {})),
-    previewAnimal: (dogId) => request(`/partner-area/preview/animals/${encodeURIComponent(dogId)}`)
+    previewAnimal: (dogId) => request(`/partner-area/preview/animals/${encodeURIComponent(dogId)}`),
+
+    // Beiträge (Phase P2, server/routes/partnerArea/posts.js): immer "Anzeige", öffentlich erst nach Freigabe;
+    // jede Änderung (auch ein neues Bild) reicht wieder ein. payload: titel, text, bereich, url, start, ende, aktiv.
+    posts: () => request('/partner-area/posts'),
+    createPost: (payload) => request('/partner-area/posts', json('POST', payload)),
+    updatePost: (id, payload) => request(`/partner-area/posts/${encodeURIComponent(id)}`, json('PUT', payload)),
+    deletePost: (id) => request(`/partner-area/posts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    // Nur JPG oder PNG - Antwort: der ganze Beitrag (mit bildUrl und zurückgesetzter Freigabe).
+    uploadPostImage: (id, file) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      return request(`/partner-area/posts/${encodeURIComponent(id)}/image`, { method: 'POST', body: formData })
+    },
+
+    // Postfach (Phase P2, server/routes/partnerArea/messages.js): { messages, unread }.
+    messages: () => request('/partner-area/messages'),
+    markMessageRead: (id) => request(`/partner-area/messages/${encodeURIComponent(id)}/read`, { method: 'POST' }),
+    deleteMessage: (id) => request(`/partner-area/messages/${encodeURIComponent(id)}`, { method: 'DELETE' })
   },
 
   listBreedingEvents: () => request('/breeding'),

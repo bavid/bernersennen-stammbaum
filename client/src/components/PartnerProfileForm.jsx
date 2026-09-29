@@ -164,7 +164,7 @@ export default function PartnerProfileForm({ profile, onSaved, onLogoUploaded })
               Formular ‚Schreib uns‘ anbieten
             </label>
             <p className="field-hint" id="profile-kontaktformularAktiv-hint">
-              kommt bald – Nachrichten landen dann in eurem Postfach hier
+              Nachrichten landen in eurem Postfach unter ‚Nachrichten‘.
             </p>
           </div>
         </div>

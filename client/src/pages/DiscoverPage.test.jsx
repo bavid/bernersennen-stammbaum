@@ -246,12 +246,12 @@ describe('DiscoverPage – Kopf und Laden', () => {
   })
 })
 
-describe('DiscoverPage – vier Kapitel', () => {
-  test('rendert alle vier Abschnitte als Landmarks mit Überschrift', async () => {
+describe('DiscoverPage – Kapitel', () => {
+  test('rendert alle fünf Abschnitte (seit Phase P2 mit "Salon & Betreuung") als Landmarks mit Überschrift', async () => {
     discover.mockResolvedValue(fullResponse)
     await render()
     const titles = [...container.querySelectorAll('section[aria-labelledby] h2')].map((h) => h.textContent)
-    expect(titles).toEqual(['Hundeschule gesucht?', 'Neuer Begleiter gesucht?', 'Futter-Empfehlungen', 'Unterstützen'])
+    expect(titles).toEqual(['Hundeschule gesucht?', 'Salon & Betreuung', 'Neuer Begleiter gesucht?', 'Futter-Empfehlungen', 'Unterstützen'])
   })
 
   test('Hundeschulen: Partnerkarte mit Portal-Link und Empfehlung als PromotionCard', async () => {

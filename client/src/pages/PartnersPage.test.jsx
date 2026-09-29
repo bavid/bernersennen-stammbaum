@@ -161,3 +161,48 @@ describe('PartnersPage – Fuß', () => {
     expect([...container.querySelectorAll('a')].find((a) => a.textContent === 'Datenschutz').getAttribute('href')).toBe('/datenschutz')
   })
 })
+
+// Phase P2: weniger als fünf im Umkreis - der Server hängt die nächsten weiteren an (ausserhalb: true).
+describe('PartnersPage – "Weiter weg"', () => {
+  async function searchPlz(result) {
+    publicPartners.mockResolvedValue([])
+    await render()
+    await act(async () => Promise.resolve())
+    publicPartners.mockResolvedValue(result)
+    await act(async () => setInputValue(container.querySelector('#location-plz'), '10115'))
+    await act(async () => container.querySelector('.location-picker').requestSubmit())
+  }
+
+  test('erst die im Umkreis, dann "Weiter weg" mit den übrigen, darüber der Hinweis', async () => {
+    await searchPlz([
+      { ...sonnenhang, distanceKm: 1.2, ausserhalb: false },
+      { ...pfotenglueck, distanceKm: 255.4, ausserhalb: true }
+    ])
+
+    expect(container.querySelector('.discover-fallback-note').textContent).toContain(
+      'In eurer Nähe gibt es nur wenige – hier die nächsten weiteren.'
+    )
+    const far = container.querySelector('.partners-far')
+    expect(far.querySelector('h2').textContent).toBe('Weiter weg')
+    expect(far.textContent).toContain('Hundeschule Pfotenglück')
+    expect(far.textContent).not.toContain('Tierheim Sonnenhang')
+    const cards = [...container.querySelectorAll('.partner-card h3')].map((h) => h.textContent)
+    expect(cards).toEqual(['Tierheim Sonnenhang', 'Hundeschule Pfotenglück'])
+  })
+
+  test('nur Treffer außerhalb: Hinweis und "Weiter weg", keine leere Liste davor', async () => {
+    await searchPlz([{ ...pfotenglueck, distanceKm: 255.4, ausserhalb: true }])
+
+    expect(container.querySelector('.discover-fallback-note')).not.toBeNull()
+    expect(container.querySelectorAll('.partner-list')).toHaveLength(1)
+    expect(container.querySelector('.partners-far .partner-list')).not.toBeNull()
+  })
+
+  test('alle im Umkreis: weder Hinweis noch "Weiter weg"', async () => {
+    await searchPlz([{ ...sonnenhang, distanceKm: 1.2, ausserhalb: false }])
+
+    expect(container.querySelector('.discover-fallback-note')).toBeNull()
+    expect(container.querySelector('.partners-far')).toBeNull()
+    expect(container.textContent).toContain('Tierheim Sonnenhang')
+  })
+})

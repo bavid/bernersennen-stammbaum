@@ -121,6 +121,7 @@
 }
 
 .app-nav a {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -146,6 +147,24 @@
 .app-nav a.active {
   color: var(--rust);
   background: var(--rust-wash);
+}
+
+/* Ungelesene Nachrichten (Phase P2) an "Nachrichten": in der Zeile hinter der Beschriftung, in den
+   Spalten-Varianten (Handy, schmaler Desktop mit fünf Reitern) als Punkt oben rechts am Symbol. */
+.app-nav-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: var(--radius-pill);
+  background: var(--rust);
+  color: var(--on-rust);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--surface);
 }
 
 @media (max-width: 720px) {
@@ -181,6 +200,15 @@
   .app-nav a svg {
     width: 1.35rem;
     height: 1.35rem;
+  }
+
+  .app-nav-badge {
+    position: absolute;
+    top: 2px;
+    left: calc(50% + 0.35rem);
+    min-width: 1.1rem;
+    height: 1.1rem;
+    font-size: 0.62rem;
   }
 
   /* Fünf Reiter (Haushalt/Rudel mit "Entdecken", App.jsx DENSE_NAV_MIN_ITEMS): kleinere Schrift und
@@ -235,6 +263,12 @@
   .app-nav-dense a svg {
     width: 1.25rem;
     height: 1.25rem;
+  }
+
+  .app-nav-dense .app-nav-badge {
+    position: absolute;
+    top: 0;
+    left: calc(50% + 0.3rem);
   }
 }
 

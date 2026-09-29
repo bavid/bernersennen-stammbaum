@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import LocationPicker from '../components/LocationPicker.jsx'
-import { BegleiterSection, FutterSection, HundeschulenSection, SupportSection } from '../components/DiscoverSections.jsx'
+import { BegleiterSection, FutterSection, HundeschulenSection, SalonSection, SupportSection } from '../components/DiscoverSections.jsx'
 import { normalizeDiscover } from '../lib/discover.js'
 import { PreviewProvider } from '../lib/preview.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
@@ -35,9 +35,9 @@ function friendlyError(err) {
   return message
 }
 
-// /entdecken (angemeldet, auch in der Demo): Hundeschulen, neue Begleiter aus Tierheimen und
-// Vermittlungsstellen, Futter-Empfehlungen und Unterstützen - alles aus einer Antwort von POST
-// /api/discover. Mit PLZ sortiert der Server nach Entfernung, ohne liefert er alles nach Namen.
+// /entdecken (angemeldet, auch in der Demo): Hundeschulen, Salon & Betreuung (Phase P2), neue Begleiter
+// aus Tierheimen und Vermittlungsstellen, Futter-Empfehlungen und Unterstützen - alles aus einer Antwort
+// von POST /api/discover. Mit PLZ sortiert der Server nach Entfernung, ohne liefert er alles nach Namen.
 // Kundensicht (Phase P1, CustomerViewPage): load ersetzt api.discover (gleiche Signatur { plz, radius },
 // z. B. api.partnerArea.previewDiscover), preview schaltet Links ab und zeigt die eigene Karte markiert.
 export default function DiscoverPage({ load, preview = false }) {
@@ -104,8 +104,8 @@ export default function DiscoverPage({ load, preview = false }) {
             <span className="eyebrow">Rund ums Tier</span>
             <h1>Entdecken</h1>
             <p className="page-lede">
-              Hundeschulen, neue Begleiter aus Tierheimen, Futter-Empfehlungen und Wege, Tieren zu helfen – mit Postleitzahl
-              zuerst das, was in eurer Nähe ist.
+              Hundeschulen, Salons und Betreuung, neue Begleiter aus Tierheimen, Futter-Empfehlungen und Wege, Tieren zu
+              helfen – mit Postleitzahl zuerst das, was in eurer Nähe ist.
             </p>
           </div>
         </header>
@@ -134,6 +134,7 @@ export default function DiscoverPage({ load, preview = false }) {
         {data && (
           <div className="discover-chapters" aria-busy={loading || undefined}>
             <HundeschulenSection partner={data.hundeschulPartner} promotions={data.hundeschulPromotions} fallback={data.fallback.hundeschulen} />
+            <SalonSection partner={data.salonPartner} promotions={data.salonPromotions} fallback={data.fallback.salon} />
             <BegleiterSection
               partner={data.begleiterPartner}
               tiere={data.begleiterTiere}

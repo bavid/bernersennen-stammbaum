@@ -1,0 +1,104 @@
+/* "Schreib uns" und "Aktuelles" (Phase P2): Kontakt-Knöpfe auf Portal und Steckbrief (PortalContact,
+   SteckbriefShelterBox, ContactPartnerButton), das Formular im Modal (ContactPartnerForm) und der
+   Abschnitt mit den Beiträgen des Partners (PortalPosts). */
+
+.partner-portal-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+/* Lange Partner-Namen ("Zum Kontaktformular von …") dürfen umbrechen statt bei 375 px überzustehen. */
+.partner-portal-contact-actions .btn,
+.steckbrief-shelter > .btn {
+  max-width: 100%;
+  padding-block: var(--space-2);
+  white-space: normal;
+  text-align: center;
+}
+
+.contact-partner-preview {
+  display: inline-grid;
+  justify-items: start;
+  gap: var(--space-1);
+}
+
+.steckbrief-shelter .contact-partner-preview {
+  display: grid;
+  justify-items: stretch;
+}
+
+.contact-partner-form {
+  gap: var(--space-4);
+}
+
+.contact-partner-reachable {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.contact-partner-reachable legend {
+  padding: 0;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.contact-partner-reachable .field-hint {
+  margin: 0;
+}
+
+.contact-partner-reachable .form-grid {
+  gap: var(--space-4);
+}
+
+.contact-partner-success {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-weight: 700;
+}
+
+.contact-partner-success svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.contact-partner-privacy {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+}
+
+.contact-partner-privacy a {
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.partner-portal-posts {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.partner-portal-posts h2 {
+  font-size: var(--text-lg);
+}

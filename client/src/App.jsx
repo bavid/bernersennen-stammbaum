@@ -37,15 +37,31 @@ const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
 // Bei der Höchstzahl von Einträgen (MAX_NAV_ITEMS) wird die Leiste kompakter (layout.css .app-nav-dense),
 // damit sie am Handy bei 375 px und am schmalen Desktop ohne Überlappung passt.
 
-export function DemoBanner({ onLeave }) {
+// Partner- und Tierheim-Demos (Phase P2): statt "Eigene Familie anlegen" (ein Gutschein für ein Zuhause
+// hilft einem Partner nicht) führt der Knopf zu "Schreib dem Admin" - dort melden sich Partner für ein
+// eigenes Profil.
+function PartnerDemoContactLink() {
+  const { pathname } = useLocation()
+  return (
+    <Link to="/admin-schreiben" state={{ from: pathname }} className="btn btn-primary">
+      Eigenes Partner-Profil? Schreib uns
+    </Link>
+  )
+}
+
+export function DemoBanner({ onLeave, partnerArea = false }) {
   const { words } = useTheme()
   return (
     <div className="demo-banner" role="status">
       <Icon name="alert" />
       <span>Du siehst eine schreibgeschützte Demo – nichts wird gespeichert oder hochgeladen.</span>
-      <button type="button" className="btn btn-primary" onClick={onLeave}>
-        {words.createOwnGroup}
-      </button>
+      {partnerArea ? (
+        <PartnerDemoContactLink />
+      ) : (
+        <button type="button" className="btn btn-primary" onClick={onLeave}>
+          {words.createOwnGroup}
+        </button>
+      )}
     </div>
   )
 }
@@ -174,10 +190,22 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
           </span>
         </div>
         <nav className={`app-nav${navItems.length >= MAX_NAV_ITEMS ? ' app-nav-dense' : ''}`} aria-label="Hauptnavigation">
+          {/* badge/ariaLabel (Phase P2): ungelesene Nachrichten an "Nachrichten" - die Zahl ist nur Optik,
+              Screenreader hören "Nachrichten, 2 ungelesen" (lib/navItems.js). */}
           {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} className={({ isActive: active }) => (isActive(item, active) ? 'active' : '')}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              aria-label={item.ariaLabel}
+              className={({ isActive: active }) => (isActive(item, active) ? 'active' : '')}
+            >
               <Icon name={item.icon} />
               <span>{item.label}</span>
+              {item.badge && (
+                <span className="app-nav-badge" aria-hidden="true">
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -381,7 +409,7 @@ export default function App() {
       <DemoProvider value={Boolean(family.isDemo)}>
         <div className="app-shell">
           <ScrollToTop />
-          {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} />}
+          {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />}
           <AppHeader family={family} onLogout={handleLogout} onFamilyChange={setFamily} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
           {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}

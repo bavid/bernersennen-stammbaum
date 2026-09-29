@@ -6,12 +6,11 @@ import Avatar from '../components/Avatar.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
-import { ExternalLink, InternalLink } from '../components/PreviewLink.jsx'
+import SteckbriefShelterBox from '../components/SteckbriefShelterBox.jsx'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 import { groupByYear, speciesSexLabel } from '../lib/timeline.js'
 import { kategorieLabel } from '../lib/shelter.js'
 import { PAUSED_HINT, vermittlungStatusLabel } from '../lib/vermittlung.js'
-import { isExternalUrl, isValidPhone, telHref } from '../lib/format.js'
 import { PREVIEW_DISABLED_HINT, PreviewProvider } from '../lib/preview.js'
 
 const SHARE_COPIED_MS = 2000
@@ -107,59 +106,10 @@ function VermittlungStatus({ status }) {
   )
 }
 
-function ShelterBox({ shelter }) {
-  return (
-    <section className="card steckbrief-shelter">
-      <div className="steckbrief-shelter-head">
-        {shelter.logoUrl && <img src={shelter.logoUrl} alt={`Logo von ${shelter.name}`} className="partner-logo" />}
-        <div>
-          <span className="eyebrow">Tierheim</span>
-          <h2>{shelter.name}</h2>
-        </div>
-      </div>
-      <p className="steckbrief-shelter-note">Die Vermittlung läuft direkt über das Tierheim.</p>
-      <div className="partner-portal-contact">
-        <h3>Anfrage direkt beim Tierheim</h3>
-        <ul>
-          {isExternalUrl(shelter.website) && (
-            <li>
-              <Icon name="globe" />
-              <ExternalLink href={shelter.website}>{shelter.website}</ExternalLink>
-            </li>
-          )}
-          {shelter.kontakt_email && (
-            <li>
-              <Icon name="mail" />
-              <ExternalLink href={`mailto:${shelter.kontakt_email}`} newTab={false}>
-                {shelter.kontakt_email}
-              </ExternalLink>
-            </li>
-          )}
-          {isValidPhone(shelter.kontakt_telefon) && (
-            <li>
-              <Icon name="phone" />
-              <ExternalLink href={telHref(shelter.kontakt_telefon)} newTab={false}>
-                {shelter.kontakt_telefon}
-              </ExternalLink>
-            </li>
-          )}
-        </ul>
-        {isExternalUrl(shelter.vermittlung_url) && (
-          <ExternalLink href={shelter.vermittlung_url} className="btn btn-ghost">
-            Zur Vermittlungsseite
-          </ExternalLink>
-        )}
-      </div>
-      <InternalLink className="btn btn-primary btn-block" to={`/p/${shelter.slug}`}>
-        Zum Portal von {shelter.name}
-      </InternalLink>
-    </section>
-  )
-}
-
 // /t/:slug - der öffentliche Steckbrief eines Tiers in Vermittlung (Phase T Task 5). Kein Login, immer
 // noindex (auch die 404-Antwort: der Server setzt X-Robots-Tag, hier zusätzlich das Meta-Tag im head -
-// siehe server/routes/publicAnimals.js). Kontakt läuft ausschließlich über das Tierheim, nie über die App.
+// siehe server/routes/publicAnimals.js). Kontakt läuft ausschließlich zum Tierheim - direkt oder (Phase P2)
+// per "Schreib uns" in dessen Postfach (SteckbriefShelterBox).
 // Kundensicht (Phase P1): load liefert den Steckbrief statt api.publicAnimal(slug) (z. B.
 // api.partnerArea.previewAnimal, auch für ein noch unveröffentlichtes Tier), preview schaltet Links und
 // "Teilen" ab.
@@ -248,7 +198,7 @@ export default function SteckbriefPage({ slug, load, preview = false }) {
 
   return (
     <PreviewProvider value={preview}>
-      <SteckbriefContent animal={animal} age={age} preview={preview} shareCopied={shareCopied} onShare={handleShare} />
+      <SteckbriefContent animal={animal} slug={slug} age={age} preview={preview} shareCopied={shareCopied} onShare={handleShare} />
     </PreviewProvider>
   )
 }
@@ -256,7 +206,7 @@ export default function SteckbriefPage({ slug, load, preview = false }) {
 // Der geladene Steckbrief. In der Vorschau ist "Teilen" sichtbar, aber deaktiviert - es gäbe (noch) keine
 // öffentliche Adresse, und die Kundensicht soll nichts nach außen tragen. Ohne Fußzeile: die Links dort
 // würden die Vorschau verlassen.
-function SteckbriefContent({ animal, age, preview, shareCopied, onShare }) {
+function SteckbriefContent({ animal, slug, age, preview, shareCopied, onShare }) {
   return (
     <div className="public-page steckbrief-page">
       <header className="dog-hero steckbrief-hero">
@@ -294,7 +244,7 @@ function SteckbriefContent({ animal, age, preview, shareCopied, onShare }) {
 
       <PublicChronicle entries={animal.entries || []} />
 
-      <ShelterBox shelter={animal.shelter} />
+      <SteckbriefShelterBox shelter={animal.shelter} animalName={animal.name} animalSlug={slug} />
 
       {!preview && <PublicFooter />}
     </div>

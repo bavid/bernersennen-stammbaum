@@ -8,6 +8,7 @@ import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
 import PortalAction from '../components/PortalAction.jsx'
 import PortalContact from '../components/PortalContact.jsx'
+import PortalPosts from '../components/PortalPosts.jsx'
 import EinblickeGallery from '../components/EinblickeGallery.jsx'
 import { ExternalLink } from '../components/PreviewLink.jsx'
 import { isValidHexColor, darkenHex, hexToRgba } from '../lib/color.js'
@@ -89,7 +90,8 @@ function usePortalList(fetchList, slug, search, skip) {
 }
 
 // /p/:slug – Portal eines Partners: Logo/Akzentfarbe, Willkommenstext, „Gutschein einlösen" (PortalAction)
-// und Links zu Spenden/Vermittlung, dazu Tiere, Happy Ends und Einblicke. Angemeldete sehen dasselbe
+// und Links zu Spenden/Vermittlung, dazu Tiere, Happy Ends, Einblicke, „Aktuelles" (Beiträge) und Kontakt
+// (samt „Schreib uns", Phase P2). Angemeldete sehen dasselbe
 // Portal, nur die Aktion ist ersetzt – man muss sich nicht abmelden, um es anzuschauen.
 // Kundensicht (Phase P1): load liefert die Portal-Daten statt api.publicPartner(slug) (z. B.
 // api.partnerArea.previewPortal, samt tiere) und preview schaltet Links, Einlösen und Demo-Knöpfe ab.
@@ -98,9 +100,13 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
   const injected = typeof load === 'function'
   const [partner, setPartner] = useState(undefined) // undefined: lädt, null: nicht gefunden
   const [injectedAnimals, setInjectedAnimals] = useState([])
+  const [injectedPosts, setInjectedPosts] = useState([])
   const fetchedAnimals = usePortalList(api.publicPartnerAnimals, slug, location.search, injected)
   const happyEnds = usePortalList(api.publicHappyEnds, slug, location.search, injected)
+  // Phase P2: Beiträge ("Aktuelles") - in der Kundensicht aus der Vorschau-Antwort (posts, samt eingereichter).
+  const fetchedPosts = usePortalList(api.publicPartnerPosts, slug, location.search, injected)
   const animals = injected ? injectedAnimals : fetchedAnimals
+  const posts = injected ? injectedPosts : asList(fetchedPosts)
 
   useEffect(() => {
     let cancelled = false
@@ -110,7 +116,10 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
       .then((data) => {
         if (cancelled) return
         setPartner(data)
-        if (injected) setInjectedAnimals(asList(data?.tiere))
+        if (injected) {
+          setInjectedAnimals(asList(data?.tiere))
+          setInjectedPosts(asList(data?.posts))
+        }
       })
       .catch(() => {
         if (!cancelled) setPartner(null)
@@ -205,6 +214,8 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
         )}
 
         <EinblickeGallery einblicke={partner.einblicke} />
+
+        <PortalPosts partner={partner} posts={posts} />
 
         <PortalContact partner={partner} />
 

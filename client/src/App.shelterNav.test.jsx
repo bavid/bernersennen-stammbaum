@@ -91,14 +91,14 @@ async function render(initialEntry) {
 }
 
 describe('Navigation für Tierheime (family.art === "tierheim")', () => {
-  test('die Hauptnavigation zeigt Tiere, Pinnwand, Collage, Profil - kein Stammbaum/Wegbegleiter/Würfe', async () => {
+  test('die Hauptnavigation zeigt Tiere, Pinnwand, Collage, Profil, Nachrichten - kein Stammbaum/Wegbegleiter/Würfe', async () => {
     me.mockResolvedValue(shelterFamily)
     listDogs.mockResolvedValue([])
     recentActivity.mockResolvedValue([])
     await render('/tiere')
 
     const labels = [...container.querySelectorAll('.app-nav a')].map((a) => a.textContent)
-    expect(labels).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil'])
+    expect(labels).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
     expect(labels.length).toBeLessThanOrEqual(5)
   })
 

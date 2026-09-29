@@ -199,4 +199,19 @@ describe('LegalPage – /datenschutz', () => {
     expect(container.textContent).toMatch(/solange das Profil veröffentlicht ist/)
     expect(container.textContent).toMatch(/blenden den Einblick dann aus/)
   })
+
+  // Phase P2: "Schreib uns" speichert Kontaktdaten und Nachrichten für den Partner - was, wer es sieht, wie lange.
+  test('Absatz "Nachrichten an Partner": was gespeichert wird, nur der Partner sieht es, keine E-Mails, 180 Tage, Limit', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect([...container.querySelectorAll('h2')].some((h) => h.textContent === 'Nachrichten an Partner')).toBe(true)
+    expect(container.textContent).toMatch(/E-Mail-Adresse oder Telefonnummer/)
+    expect(container.textContent).toMatch(/freiwillig ein Name/)
+    expect(container.textContent).toMatch(/auf welches Tier sich die Anfrage bezieht/)
+    expect(container.textContent).toMatch(/sieht nur der Partner selbst/)
+    expect(container.textContent).toMatch(/keine E-Mails/)
+    expect(container.textContent).toMatch(/nach\s+180 Tagen automatisch gelöscht/)
+    expect(container.textContent).toMatch(/wie\s+viele Nachrichten in kurzer Zeit/)
+  })
 })

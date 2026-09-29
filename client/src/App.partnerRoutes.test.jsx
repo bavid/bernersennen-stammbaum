@@ -4,18 +4,21 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds } = vi.hoisted(() => ({
-  me: vi.fn(),
-  logout: vi.fn(),
-  redeemVoucher: vi.fn(),
-  listDogs: vi.fn(),
-  publicPartner: vi.fn(),
-  publicPartners: vi.fn(),
-  publicPartnerAnimals: vi.fn(),
-  publicHappyEnds: vi.fn()
-}))
+const { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts } =
+  vi.hoisted(() => ({
+    me: vi.fn(),
+    logout: vi.fn(),
+    redeemVoucher: vi.fn(),
+    listDogs: vi.fn(),
+    publicPartner: vi.fn(),
+    publicPartners: vi.fn(),
+    publicPartnerAnimals: vi.fn(),
+    publicHappyEnds: vi.fn(),
+    // Phase P2: "Aktuelles" auf dem Portal - hier reicht eine leere Liste.
+    publicPartnerPosts: vi.fn(() => Promise.resolve([]))
+  }))
 vi.mock('./api', () => ({
-  api: { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds },
+  api: { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts },
   setUnauthorizedHandler: () => {}
 }))
 

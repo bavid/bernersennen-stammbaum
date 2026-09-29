@@ -5,6 +5,8 @@ import LocationPicker from '../components/LocationPicker.jsx'
 import PartnerCard from '../components/PartnerCard.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
+import { FallbackNote } from '../components/DiscoverChapter.jsx'
+import { splitByDistance } from '../lib/discover.js'
 
 const DEFAULT_RADIUS = 25
 const PLZ_LENGTH = 5
@@ -14,12 +16,28 @@ const INCOMPLETE_PLZ_ERROR = 'Bitte eine 5-stellige Postleitzahl eingeben.'
 // 5-stelligen PLZ die im Umkreis, nach Entfernung sortiert (der Server übernimmt Sortierung/Filter).
 // Der Standort-Knopf bleibt für Gäste in dieser Phase aus (LocationPicker allowGeolocation=false,
 // Standard) – er gehört erst zur In-App-Suche aus Task 6.
+// Phase P2: liegen im Umkreis weniger als fünf, hängt der Server die nächsten weiteren an (ausserhalb: true) -
+// sie stehen gesammelt unter "Weiter weg", mit dem Hinweis darüber (wie in "Entdecken").
+
+function PartnerCards({ items }) {
+  return (
+    <ul className="partner-list">
+      {items.map((partner) => (
+        <li key={partner.id}>
+          <PartnerCard partner={partner} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export default function PartnersPage() {
   const [plz, setPlz] = useState('')
   const [radius, setRadius] = useState(DEFAULT_RADIUS)
   const [partners, setPartners] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { near, far } = splitByDistance(partners)
 
   async function search(nextPlz, nextRadius) {
     setLoading(true)
@@ -27,7 +45,7 @@ export default function PartnersPage() {
     try {
       const complete = nextPlz.length === PLZ_LENGTH
       const result = await api.publicPartners(complete ? { plz: nextPlz, radius: nextRadius } : {})
-      setPartners(result)
+      setPartners(Array.isArray(result) ? result.filter((item) => item && typeof item === 'object') : [])
     } catch (err) {
       setError(err.message)
       setPartners([])
@@ -82,13 +100,17 @@ export default function PartnersPage() {
           <p className="muted">Versucht es mit einer anderen Postleitzahl oder einem größeren Umkreis.</p>
         </div>
       ) : (
-        <ul className="partner-list">
-          {partners.map((partner) => (
-            <li key={partner.id}>
-              <PartnerCard partner={partner} />
-            </li>
-          ))}
-        </ul>
+        <>
+          {far.length > 0 && <FallbackNote />}
+          {near.length > 0 && <PartnerCards items={near} />}
+          {far.length > 0 && (
+            <div className="discover-far partners-far">
+              {/* h2 statt DiscoverSubheading (h3): hier gibt es keine Kapitel-Überschrift darüber. */}
+              <h2 className="discover-subheading">Weiter weg</h2>
+              <PartnerCards items={far} />
+            </div>
+          )}
+        </>
       )}
 
       <PublicFooter />

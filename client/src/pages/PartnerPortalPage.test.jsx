@@ -4,14 +4,15 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { publicPartner, publicPartnerAnimals, publicHappyEnds, redeemVoucher, demo } = vi.hoisted(() => ({
+const { publicPartner, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts, redeemVoucher, demo } = vi.hoisted(() => ({
   publicPartner: vi.fn(),
   publicPartnerAnimals: vi.fn(),
   publicHappyEnds: vi.fn(),
+  publicPartnerPosts: vi.fn(),
   redeemVoucher: vi.fn(),
   demo: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { publicPartner, publicPartnerAnimals, publicHappyEnds, redeemVoucher, demo } }))
+vi.mock('../api', () => ({ api: { publicPartner, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts, redeemVoucher, demo } }))
 
 import PartnerPortalPage from './PartnerPortalPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -33,6 +34,7 @@ beforeEach(() => {
   // beiden nicht extra mocken müssen - Tests, die eine Liste brauchen, überschreiben das gezielt.
   publicPartnerAnimals.mockResolvedValue([])
   publicHappyEnds.mockResolvedValue([])
+  publicPartnerPosts.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -49,6 +51,7 @@ afterEach(() => {
   publicPartner.mockReset()
   publicPartnerAnimals.mockReset()
   publicHappyEnds.mockReset()
+  publicPartnerPosts.mockReset()
   redeemVoucher.mockReset()
   demo.mockReset()
 })

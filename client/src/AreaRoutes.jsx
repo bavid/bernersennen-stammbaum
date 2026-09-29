@@ -19,6 +19,9 @@ import AccessPage from './pages/AccessPage.jsx'
 // sitzt in App.jsx um <AreaRoutes> (in <main>), Kopf und Navigation bleiben beim Nachladen stehen.
 const PartnerProfilePage = lazy(() => import('./pages/PartnerProfilePage.jsx'))
 const CustomerViewPage = lazy(() => import('./pages/CustomerViewPage.jsx'))
+// Phase P2: Beiträge und Postfach - ebenso nur für Partner- und Tierheim-Bereiche.
+const PartnerPostsPage = lazy(() => import('./pages/PartnerPostsPage.jsx'))
+const PartnerInboxPage = lazy(() => import('./pages/PartnerInboxPage.jsx'))
 // Die Fotocollage (samt Seiten-Layout, Canvas-Export und Druckbogen) ruft kaum jemand auf - ebenfalls
 // erst bei Bedarf.
 const CollagePage = lazy(() => import('./pages/CollagePage.jsx'))
@@ -35,13 +38,15 @@ function ToStart({ family }) {
 }
 
 // Partner-Bereich (Phase P, family.art 'partner' - Hundeschule, Hundesalon, Betreuung, …): keine Tiere,
-// keine Chronik, kein Rudel - nur Profil, Zugang und die Kundensicht, dazu die allgemeinen Seiten aus
-// Kopf und Fuß (Schreib dem Admin, In der Nähe). Alles andere (Stammbaum, Pinnwand, Wegbegleiter,
-// Entdecken, …) führt zurück zum Profil.
+// keine Chronik, kein Rudel - nur Profil, Beiträge und Nachrichten (P2), Zugang und die Kundensicht, dazu
+// die allgemeinen Seiten aus Kopf und Fuß (Schreib dem Admin, In der Nähe). Alles andere (Stammbaum,
+// Pinnwand, Wegbegleiter, Entdecken, …) führt zurück zum Profil.
 function PartnerAreaRoutes({ family, onFamilyChange }) {
   return (
     <Routes>
       <Route path="/profil" element={<PartnerProfilePage family={family} />} />
+      <Route path="/beitraege" element={<PartnerPostsPage family={family} />} />
+      <Route path="/nachrichten" element={<PartnerInboxPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/zugang" element={<AccessPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/kundensicht" element={<CustomerViewPage family={family} />} />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
@@ -81,6 +86,13 @@ export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
         element={partnerArea ? <AccessPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
       />
       <Route path="/kundensicht" element={partnerArea ? <CustomerViewPage family={family} /> : <ToStart family={family} />} />
+      {/* Phase P2: Tierheime haben "Nachrichten" in der Navigation, die Beiträge als Reiter im Profil - die
+          eigene Seite /beitraege bleibt trotzdem erreichbar (z. B. über einen gemerkten Link). */}
+      <Route path="/beitraege" element={partnerArea ? <PartnerPostsPage family={family} /> : <ToStart family={family} />} />
+      <Route
+        path="/nachrichten"
+        element={partnerArea ? <PartnerInboxPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
+      />
       <Route path="*" element={<ToStart family={family} />} />
     </Routes>
   )

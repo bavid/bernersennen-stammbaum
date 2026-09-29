@@ -29,6 +29,13 @@
   box-shadow: var(--shadow-raised);
 }
 
+/* Kennzeichnung und (nur in der Kundensicht) "Wartet auf Freigabe" nebeneinander. */
+.promotion-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .promotion-badge {
   align-self: flex-start;
   margin: 0;
@@ -85,4 +92,24 @@
   min-height: 2.3rem;
   padding: 0 var(--space-4);
   font-size: var(--text-xs);
+}
+
+/* Kundensicht (Phase P2): eigener Beitrag, den der Admin noch nicht freigegeben hat - gestrichelt wie der
+   Freigabe-Chip beim Partner, damit klar ist, dass Kundinnen und Kunden ihn so noch nicht sehen. */
+.promotion-badge-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px dashed var(--tan);
+  background: color-mix(in srgb, var(--tan) 16%, transparent);
+  color: var(--ink-soft);
+}
+
+.promotion-badge-pending svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.promotion-card.is-pending {
+  border-style: dashed;
 }

@@ -6,6 +6,8 @@ import { centsToEuroInput, parseEuroToCents } from './euro.js'
 
 export const BEREICH_LABELS = {
   hundeschule: 'Hundeschule',
+  // Phase P2: eigener Abschnitt "Salon & Betreuung" in "Entdecken" (server BEREICH_VALUES).
+  salon: 'Salon & Betreuung',
   begleiter: 'Neue Begleiter',
   futter: 'Futter',
   unterstuetzen: 'Unterstützen'

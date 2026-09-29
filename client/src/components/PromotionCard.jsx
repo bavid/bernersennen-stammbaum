@@ -1,17 +1,38 @@
 import Icon from './Icon.jsx'
 import { ExternalLink } from './PreviewLink.jsx'
-import { isAnzeige, isClickUrl, isPartnerMedia, kennzeichnungLabel, promotionRel } from '../lib/discover.js'
+import {
+  PENDING_APPROVAL_LABEL,
+  isAnzeige,
+  isClickUrl,
+  isPartnerMedia,
+  isPendingApproval,
+  kennzeichnungLabel,
+  promotionRel
+} from '../lib/discover.js'
+import { useIsPreview } from '../lib/preview.js'
 
-// Eine Empfehlung/Anzeige im Reiter "Entdecken" (Hundeschule, Begleiter, Futter, Unterstützen):
-// Kennzeichnung zuerst und als Text (auch für Screenreader), dann Bild, Titel, Text und der Link über die
-// Klickzählung (clickUrl). "Anzeige" ist bezahlt/provisioniert: auffälliges Badge und rel="sponsored".
+// Eine Empfehlung/Anzeige im Reiter "Entdecken" (Hundeschule, Salon, Begleiter, Futter, Unterstützen) und
+// auf dem Portal ("Aktuelles"): Kennzeichnung zuerst und als Text (auch für Screenreader), dann Bild, Titel,
+// Text und der Link über die Klickzählung (clickUrl). "Anzeige" ist bezahlt/provisioniert: auffälliges Badge
+// und rel="sponsored". In der Kundensicht (Phase P2) tragen eigene, noch nicht freigegebene Beiträge
+// zusätzlich "Wartet auf Freigabe".
 export default function PromotionCard({ promotion }) {
+  const preview = useIsPreview()
   const anzeige = isAnzeige(promotion.kennzeichnung)
   const hasLink = isClickUrl(promotion.clickUrl)
+  const pending = preview && isPendingApproval(promotion)
 
   return (
-    <article className={`promotion-card card${anzeige ? ' promotion-card-anzeige' : ''}`}>
-      <p className={`promotion-badge${anzeige ? ' promotion-badge-anzeige' : ''}`}>{kennzeichnungLabel(promotion)}</p>
+    <article className={`promotion-card card${anzeige ? ' promotion-card-anzeige' : ''}${pending ? ' is-pending' : ''}`}>
+      <div className="promotion-badges">
+        <p className={`promotion-badge${anzeige ? ' promotion-badge-anzeige' : ''}`}>{kennzeichnungLabel(promotion)}</p>
+        {pending && (
+          <p className="promotion-badge promotion-badge-pending">
+            <Icon name="clock" />
+            {PENDING_APPROVAL_LABEL}
+          </p>
+        )}
+      </div>
       {/* Das Bild steht außerhalb des Links ("Mehr erfahren") - es ist also nicht Teil eines Namens, der
           den Titel schon nennt, und bekommt den Titel als Alternativtext. */}
       {isPartnerMedia(promotion.bildUrl) && (

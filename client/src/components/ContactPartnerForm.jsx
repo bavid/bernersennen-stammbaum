@@ -1,0 +1,146 @@
+import { useState } from 'react'
+import { api } from '../api'
+import useFocusFirstError from '../hooks/useFocusFirstError.js'
+import AdminField, { fieldProps } from './AdminField.jsx'
+import Honeypot from './Honeypot.jsx'
+import Icon from './Icon.jsx'
+import {
+  EMPTY_CONTACT_FORM,
+  MAX_NACHRICHT_LENGTH,
+  MAX_NAME_LENGTH,
+  MIN_NACHRICHT_LENGTH,
+  contactClientErrors,
+  contactErrorField,
+  contactErrorMessage,
+  toContactPayload
+} from '../lib/contactPartner.js'
+
+const IDS = {
+  name: 'contact-partner-name',
+  email: 'contact-partner-email',
+  telefon: 'contact-partner-telefon',
+  nachricht: 'contact-partner-nachricht'
+}
+const HONEYPOT_ID = 'contact-partner-hp'
+const REACHABLE_HINT_ID = 'contact-partner-reachable-hint'
+const REACHABLE_FIELDS = ['email', 'telefon']
+
+function withoutKeys(object, keys) {
+  return Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key)))
+}
+
+function nachrichtHint(length) {
+  const minimum = length < MIN_NACHRICHT_LENGTH ? ` · mindestens ${MIN_NACHRICHT_LENGTH}` : ''
+  return `${length} / ${MAX_NACHRICHT_LENGTH} Zeichen${minimum}`
+}
+
+// "Schreib uns" (Phase P2): Nachricht an einen Partner, landet in dessen Postfach (/nachrichten). Name
+// freiwillig, E-Mail ODER Telefon Pflicht (sonst gäbe es keine Antwort), Nachricht 10-2000 Zeichen, dazu
+// der Honigtopf "website" (Honeypot). bezugSlug: vom Steckbrief aus das Tier, um das es geht. demo: '1',
+// wenn das Portal mit ?demo=1 geladen wurde. Nach dem Absenden bleibt das Formular leer stehen, darüber
+// der Dank. Fehler stehen am Feld (400) oder oben (403 Demo, 404, 429) - der Fokus springt hin.
+export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
+  const [form, setForm] = useState(EMPTY_CONTACT_FORM)
+  const [website, setWebsite] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [error, setError] = useState(null)
+  const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+  const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
+  const bind = (key, { hint } = {}) => fieldProps(IDS[key], { error: fieldErrors[key], hint })
+
+  function update(patch) {
+    setForm((current) => ({ ...current, ...patch }))
+    // E-Mail und Telefon hängen zusammen: wer eins davon ausfüllt, erledigt den Fehler "eins von beiden".
+    const keys = Object.keys(patch)
+    const cleared = keys.some((key) => REACHABLE_FIELDS.includes(key)) ? [...keys, ...REACHABLE_FIELDS] : keys
+    setFieldErrors((current) => withoutKeys(current, cleared))
+    setSent(false)
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setError(null)
+    setSent(false)
+    const clientErrors = contactClientErrors(form)
+    setFieldErrors(clientErrors)
+    if (Object.keys(clientErrors).length) {
+      focusFirstError()
+      return
+    }
+
+    setSending(true)
+    try {
+      const payload = { ...toContactPayload(form), ...(bezugSlug ? { bezugSlug } : {}), website }
+      await api.contactPartner(partner.slug, payload, { demo })
+      setForm(EMPTY_CONTACT_FORM)
+      setSent(true)
+    } catch (err) {
+      const field = contactErrorField(err)
+      if (field) setFieldErrors({ [field]: err.message })
+      else setError(contactErrorMessage(err))
+      focusFirstError()
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <form ref={formRef} className="contact-partner-form form-stack" onSubmit={handleSubmit} noValidate>
+      {sent && (
+        <p className="contact-partner-success" role="status">
+          <Icon name="check" />
+          Danke! {partner.name} meldet sich bei dir.
+        </p>
+      )}
+      {error && (
+        <div ref={bannerRef} className="error-banner" role="alert" tabIndex={-1}>
+          {error}
+        </div>
+      )}
+
+      <AdminField id={IDS.name} label="Dein Name (freiwillig)" error={fieldErrors.name}>
+        <input {...bind('name')} value={form.name} onChange={(e) => update({ name: e.target.value })} maxLength={MAX_NAME_LENGTH} autoComplete="name" />
+      </AdminField>
+
+      <fieldset className="contact-partner-reachable" aria-describedby={REACHABLE_HINT_ID}>
+        <legend>So erreicht {partner.name} dich</legend>
+        <p className="field-hint" id={REACHABLE_HINT_ID}>
+          E-Mail oder Telefon – mindestens eins davon.
+        </p>
+        <div className="form-grid">
+          <AdminField id={IDS.email} label="E-Mail" error={fieldErrors.email}>
+            <input {...bind('email')} type="email" value={form.email} onChange={(e) => update({ email: e.target.value })} autoComplete="email" />
+          </AdminField>
+          <AdminField id={IDS.telefon} label="Telefon" error={fieldErrors.telefon}>
+            <input {...bind('telefon')} type="tel" value={form.telefon} onChange={(e) => update({ telefon: e.target.value })} autoComplete="tel" />
+          </AdminField>
+        </div>
+      </fieldset>
+
+      <AdminField id={IDS.nachricht} label="Deine Nachricht" hint={nachrichtHint(form.nachricht.trim().length)} error={fieldErrors.nachricht}>
+        <textarea
+          {...bind('nachricht', { hint: true })}
+          value={form.nachricht}
+          onChange={(e) => update({ nachricht: e.target.value })}
+          maxLength={MAX_NACHRICHT_LENGTH}
+          rows={6}
+        />
+      </AdminField>
+
+      <Honeypot id={HONEYPOT_ID} value={website} onChange={setWebsite} />
+
+      <p className="contact-partner-privacy">
+        Deine Angaben gehen nur an {partner.name}. Wir verschicken keine E-Mails; Nachrichten werden nach 180 Tagen gelöscht.{' '}
+        <a href="/datenschutz" target="_blank" rel="noopener noreferrer">
+          Mehr zum Datenschutz
+        </a>
+      </p>
+
+      <button type="submit" className="btn btn-primary btn-block" disabled={sending}>
+        <Icon name="send" />
+        {sending ? 'Sende …' : 'Nachricht senden'}
+      </button>
+    </form>
+  )
+}

@@ -194,6 +194,20 @@ const PATHS = {
       <circle cx="19" cy="11.5" r="2" />
       <path d="M12 21c-3 0-6-1.8-6-4.5 0-2 2-3.5 6-3.5s6 1.5 6 3.5c0 2.7-3 4.5-6 4.5Z" />
     </>
+  ),
+  // Beiträge der Partner (Phase P2): Anzeigen, die nach Freigabe in "Entdecken" und auf dem Portal stehen.
+  megaphone: (
+    <>
+      <path d="m3 11 16-6v14L3 13v-2Z" />
+      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+    </>
+  ),
+  // Postfach der Partner (Phase P2): Nachrichten aus "Schreib uns".
+  inbox: (
+    <>
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1Z" />
+    </>
   )
 }
 

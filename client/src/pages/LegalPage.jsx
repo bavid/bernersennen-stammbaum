@@ -144,6 +144,21 @@ function Datenschutz({ legal }) {
         an den Partner oder an uns – wir blenden den Einblick dann aus.
       </p>
 
+      <h2>Nachrichten an Partner</h2>
+      <p>
+        Über „Schreib uns“ auf dem Portal eines Partners oder auf dem Steckbrief eines Tiers könnt ihr dem Partner eine
+        Nachricht schicken. Gespeichert werden dabei die Nachricht, eine E-Mail-Adresse oder Telefonnummer (mindestens
+        eins davon, damit eine Antwort möglich ist), freiwillig ein Name und – wenn ihr vom Steckbrief aus schreibt –
+        auf welches Tier sich die Anfrage bezieht.
+      </p>
+      <p>
+        Die Nachricht sieht nur der Partner selbst, in seinem Bereich unter „Nachrichten“; sie erscheint nirgends
+        öffentlich. Wir verschicken dafür keine E-Mails – die Antwort kommt direkt vom Partner. Nachrichten werden nach
+        180 Tagen automatisch gelöscht, der Partner kann sie auch früher löschen. Gegen Missbrauch begrenzen wir, wie
+        viele Nachrichten in kurzer Zeit von einem Anschluss aus verschickt werden können; die Inhalte und Kontaktdaten
+        landen dabei nicht in Protokollen.
+      </p>
+
       <h2>Rechte und Kontakt</h2>
       <p>
         Für Auskunft über gespeicherte Daten oder deren Löschung wendet euch bitte an{' '}

@@ -5,24 +5,30 @@ import Icon from '../components/Icon.jsx'
 import PartnerStatusCard from '../components/PartnerStatusCard.jsx'
 import PartnerProfileForm from '../components/PartnerProfileForm.jsx'
 import EinblickeEditor from '../components/EinblickeEditor.jsx'
+import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { navItemsFor } from '../lib/navItems.js'
 
 const ACCESS_ROUTE = '/zugang'
 
-const TABS = [
-  { key: 'angaben', label: 'Angaben' },
-  { key: 'einblicke', label: 'Einblicke' }
-]
+const TAB_ANGABEN = { key: 'angaben', label: 'Angaben' }
+const TAB_EINBLICKE = { key: 'einblicke', label: 'Einblicke' }
+// Phase P2: Tierheime haben keinen Navigationspunkt "Beiträge" (sonst wären es mehr als fünf) - bei ihnen
+// stehen die Beiträge als dritter Reiter hier.
+const TAB_BEITRAEGE = { key: 'beitraege', label: 'Beiträge' }
+
+function tabsFor(family) {
+  return family?.art === 'tierheim' ? [TAB_ANGABEN, TAB_EINBLICKE, TAB_BEITRAEGE] : [TAB_ANGABEN, TAB_EINBLICKE]
+}
 
 // Reiter wie im Rest der App (JoinFamilyDialog, LoginPage): .segmented mit aria-pressed. Ein Reiter
 // bleibt nach dem ersten Öffnen eingehängt (nur verborgen), damit ungespeicherte Eingaben im Formular
 // den Wechsel überstehen.
-function ProfileTabs({ tab, onSelect }) {
+function ProfileTabs({ tabs, tab, onSelect }) {
   return (
     <div className="segmented partner-profile-tabs" role="group" aria-label="Profil-Bereich">
-      {TABS.map((item) => (
+      {tabs.map((item) => (
         <button
           type="button"
           key={item.key}
@@ -39,8 +45,9 @@ function ProfileTabs({ tab, onSelect }) {
 
 // /profil (Phase P) - das eigene Profil eines Partner- oder Tierheim-Bereichs (api.partnerArea): oben
 // die Statuskarte (Status, Checkliste, Veröffentlichen/Pausieren), darunter die Reiter "Angaben"
-// (PartnerProfileForm) und "Einblicke" (EinblickeEditor). Den Typ ändert nur der Betreiber. Wo "Zugang"
-// nicht in der Hauptnavigation steht (Tierheim), führt ein Link dorthin.
+// (PartnerProfileForm), "Einblicke" (EinblickeEditor) und bei Tierheimen "Beiträge" (PartnerPostsEditor).
+// Den Typ ändert nur der Betreiber. Wo "Zugang" nicht in der Hauptnavigation steht (Tierheim), führt ein
+// Link dorthin.
 export default function PartnerProfilePage({ family }) {
   const toast = useToast()
   const [profile, setProfile] = useState(null)
@@ -48,6 +55,7 @@ export default function PartnerProfilePage({ family }) {
   const [tab, setTab] = useState('angaben')
   const [openedTabs, setOpenedTabs] = useState(['angaben'])
   const showAccessLink = !navItemsFor(family).some((item) => item.to === ACCESS_ROUTE)
+  const tabs = tabsFor(family)
   const name = profile?.name || family.partner?.name || family.name
   const typ = profile?.typ || family.partner?.typ
 
@@ -110,13 +118,18 @@ export default function PartnerProfilePage({ family }) {
           <PartnerStatusCard profile={profile} onProfileChange={setProfile} />
 
           <div className="partner-profile-panels">
-            <ProfileTabs tab={tab} onSelect={selectTab} />
+            <ProfileTabs tabs={tabs} tab={tab} onSelect={selectTab} />
             <div id="partner-profile-panel-angaben" hidden={tab !== 'angaben'}>
               <PartnerProfileForm profile={profile} onSaved={setProfile} onLogoUploaded={handleLogoUploaded} />
             </div>
             <div id="partner-profile-panel-einblicke" hidden={tab !== 'einblicke'}>
               {openedTabs.includes('einblicke') && <EinblickeEditor onChanged={refreshProfile} />}
             </div>
+            {tabs.includes(TAB_BEITRAEGE) && (
+              <div id="partner-profile-panel-beitraege" hidden={tab !== 'beitraege'}>
+                {openedTabs.includes('beitraege') && <PartnerPostsEditor typ={typ} />}
+              </div>
+            )}
           </div>
         </>
       )}

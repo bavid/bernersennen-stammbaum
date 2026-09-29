@@ -135,13 +135,16 @@ function navLinks() {
 }
 
 describe('Partner-Bereich (family.art === "partner") – Navigation', () => {
-  test('die Hauptnavigation zeigt nur Profil und Zugang', async () => {
+  test('die Hauptnavigation zeigt Profil, Beiträge, Nachrichten (Phase P2) und Zugang - ohne kompakte Leiste', async () => {
     await render('/profil')
 
     expect(navLinks().map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Profil', '/profil'],
+      ['Beiträge', '/beitraege'],
+      ['Nachrichten', '/nachrichten'],
       ['Zugang', '/zugang']
     ])
+    expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(false)
   })
 
   test('kein Bereichswechsler ("Familie beitreten/gründen"), nur der Name', async () => {
@@ -243,7 +246,7 @@ describe('Partner-Zugang auf /v einlösen', () => {
     await act(async () => continueButton.click())
 
     expect(container.querySelector('h1').textContent).toBe('Hundeschule Wiesengrund')
-    expect(navLinks().map((a) => a.textContent)).toEqual(['Profil', 'Zugang'])
+    expect(navLinks().map((a) => a.textContent)).toEqual(['Profil', 'Beiträge', 'Nachrichten', 'Zugang'])
   })
 })
 

@@ -7,6 +7,7 @@ import {
   isPreviewMedia,
   isPublicMedia,
   kennzeichnungLabel,
+  isPendingApproval,
   normalizeDiscover,
   promotionRel,
   splitByDistance
@@ -110,12 +111,14 @@ describe('normalizeDiscover', () => {
     const result = normalizeDiscover(undefined)
     expect(result.hundeschulPartner).toEqual([])
     expect(result.hundeschulPromotions).toEqual([])
+    expect(result.salonPartner).toEqual([])
+    expect(result.salonPromotions).toEqual([])
     expect(result.begleiterPartner).toEqual([])
     expect(result.begleiterTiere).toEqual([])
     expect(result.begleiterPromotions).toEqual([])
     expect(result.futter).toEqual([])
     expect(result.unterstuetzen).toEqual({ gofundmeClickUrl: null, text: null, bericht: null, partnerSpenden: [], promotions: [] })
-    expect(result.fallback).toEqual({ hundeschulen: false, begleiter: false })
+    expect(result.fallback).toEqual({ hundeschulen: false, salon: false, begleiter: false })
   })
 
   test('teilt hundeschulen in Partner und Empfehlungen und übernimmt die übrigen Abschnitte', () => {
@@ -144,7 +147,24 @@ describe('normalizeDiscover', () => {
     expect(result.unterstuetzen.gofundmeClickUrl).toBe('/r/gofundme/0')
     expect(result.unterstuetzen.partnerSpenden).toHaveLength(1)
     expect(result.unterstuetzen.promotions.map((item) => item.id)).toEqual([6])
-    expect(result.fallback).toEqual({ hundeschulen: true, begleiter: false })
+    expect(result.fallback).toEqual({ hundeschulen: true, salon: false, begleiter: false })
+  })
+
+  // Phase P2: Hundesalons und Betreuung - eigener Abschnitt salon, dieselbe Form wie hundeschulen.
+  test('teilt salon in Partner und Empfehlungen und übernimmt fallback.salon', () => {
+    const result = normalizeDiscover({
+      fallback: { hundeschulen: false, salon: true, begleiter: false },
+      salon: [
+        { id: 7, kind: 'partner', name: 'Hundesalon Flocke', typ: 'hundesalon' },
+        { id: 8, kind: 'partner', name: 'Pension Wilma', typ: 'betreuung' },
+        { id: 9, kind: 'promotion', titel: 'Herbst-Pflegetag', bereich: 'salon' },
+        null
+      ]
+    })
+    expect(result.salonPartner.map((item) => item.id)).toEqual([7, 8])
+    expect(result.salonPromotions.map((item) => item.id)).toEqual([9])
+    expect(result.fallback.salon).toBe(true)
+    expect(result.hundeschulPartner).toEqual([])
   })
 
   test('null-Einträge in einer Liste fallen heraus', () => {
@@ -213,5 +233,22 @@ describe('normalizeDiscover – vorschauHinweis', () => {
     expect(normalizeDiscover({}).vorschauHinweis).toBeNull()
     expect(normalizeDiscover({ vorschauHinweis: '  ' }).vorschauHinweis).toBeNull()
     expect(normalizeDiscover({ vorschauHinweis: { text: 'x' } }).vorschauHinweis).toBeNull()
+  })
+})
+
+// Phase P2: eigene Beiträge in der Kundensicht - wartend nur mit vorschau: true und einer Freigabe außer
+// "freigegeben"; öffentliche Karten (ohne freigabe) nie.
+describe('isPendingApproval', () => {
+  test('eingereichte oder abgelehnte eigene Beiträge warten, freigegebene nicht', () => {
+    expect(isPendingApproval({ vorschau: true, freigabe: 'eingereicht' })).toBe(true)
+    expect(isPendingApproval({ vorschau: true, freigabe: 'abgelehnt' })).toBe(true)
+    expect(isPendingApproval({ vorschau: true, freigabe: 'freigegeben' })).toBe(false)
+  })
+
+  test('Karten ohne vorschau oder ohne freigabe gelten nie als wartend', () => {
+    expect(isPendingApproval({ freigabe: 'eingereicht' })).toBe(false)
+    expect(isPendingApproval({ vorschau: true })).toBe(false)
+    expect(isPendingApproval({ kennzeichnung: 'Anzeige', clickUrl: '/r/promotion/3' })).toBe(false)
+    expect(isPendingApproval(null)).toBe(false)
   })
 })

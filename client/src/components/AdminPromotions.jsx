@@ -3,6 +3,7 @@ import { api } from '../api'
 import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import AdminPromotionForm from './AdminPromotionForm.jsx'
+import FreigabeChip from './FreigabeChip.jsx'
 import { BEREICH_LABELS, formatZeitraum } from '../lib/adminMarketing.js'
 import { isAnzeige, kennzeichnungLabel } from '../lib/discover.js'
 
@@ -11,11 +12,13 @@ function clickCount(value) {
 }
 
 // Eine Empfehlung/Anzeige in der Liste: Titel mit derselben Kennzeichnung wie im Reiter "Entdecken"
-// (PromotionCard), darunter Bereich, aktiv, Zeitraum und die anonymen Klicks (server/routes/adminMarketing.js
-// clicks7 = letzte 7 Tage inkl. heute, clicksTotal = gesamt).
+// (PromotionCard) und der Freigabe (Phase P2), darunter Bereich, aktiv, Zeitraum und die anonymen Klicks
+// (server/routes/adminMarketing.js clicks7 = letzte 7 Tage inkl. heute, clicksTotal = gesamt). Beiträge
+// eines Partners tragen "von Partner {Name}", abgelehnte zusätzlich den Grund.
 function PromotionRow({ promotion, onEdit, onDelete }) {
   const anzeige = isAnzeige(promotion.kennzeichnung)
   const aktiv = Boolean(promotion.aktiv)
+  const fromPartner = Boolean(promotion.erstelltVonPartner)
 
   return (
     <li className="admin-promo-row">
@@ -25,8 +28,17 @@ function PromotionRow({ promotion, onEdit, onDelete }) {
           <span className={`promotion-badge${anzeige ? ' promotion-badge-anzeige' : ''}`}>
             {kennzeichnungLabel({ kennzeichnung: promotion.kennzeichnung, empfohlenVon: promotion.empfohlen_von })}
           </span>
+          <FreigabeChip freigabe={promotion.freigabe} />
           {Boolean(promotion.is_demo) && <span className="pill">Demo</span>}
         </span>
+        {fromPartner && (
+          <span className="admin-promo-origin">
+            von Partner <strong>{promotion.partnerName || 'unbekannt'}</strong>
+          </span>
+        )}
+        {promotion.freigabe === 'abgelehnt' && promotion.ablehnungsgrund && (
+          <span className="admin-promo-reason">Abgelehnt: {promotion.ablehnungsgrund}</span>
+        )}
         <dl className="admin-entry-meta">
           <div>
             <dt>Bereich</dt>
@@ -62,26 +74,42 @@ function PromotionRow({ promotion, onEdit, onDelete }) {
 
 // Admin-Pflege der Empfehlungen und Anzeigen im Reiter "Entdecken" (Phase 3 Task 5): Liste mit
 // Klickzahlen, Formular zum Anlegen/Bearbeiten. partners kommt aus AdminPage (api.admin.partners, von
-// AdminPartners synchron gehalten) und füllt die Partner-Auswahl im Formular.
-export default function AdminPromotions({ partners = [] }) {
+// AdminPartners synchron gehalten) und füllt die Partner-Auswahl im Formular. version/onChanged (Phase P2):
+// mit "Zur Freigabe" (AdminPostApproval) abgestimmt - ändert sich hier etwas, meldet onChanged es (AdminPage
+// zählt version hoch und beide laden neu); ohne onChanged lädt die Liste selbst neu.
+export default function AdminPromotions({ partners = [], version = 0, onChanged }) {
   const [promotions, setPromotions] = useState(undefined)
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(null) // null, 'new' oder eine Zeile
+  // Eigenes Neuladen ohne onChanged. Nur die Antwort der jüngsten Anfrage zählt (cancelled) - version und
+  // reloadKey können kurz hintereinander wechseln.
+  const [reloadKey, setReloadKey] = useState(0)
 
-  function load() {
+  useEffect(() => {
+    let cancelled = false
     api.admin
       .promotions()
-      .then(setPromotions)
-      .catch((err) => setError(err.message))
-  }
+      .then((rows) => {
+        if (!cancelled) setPromotions(rows)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [version, reloadKey])
 
-  useEffect(load, [])
+  function changed() {
+    if (onChanged) onChanged()
+    else setReloadKey((key) => key + 1)
+  }
 
   async function handleDelete(promotion) {
     setError(null)
     try {
       await api.admin.deletePromotion(promotion.id)
-      load()
+      changed()
     } catch (err) {
       setError(err.message)
     }
@@ -90,7 +118,7 @@ export default function AdminPromotions({ partners = [] }) {
   function handleSaved() {
     setEditing(null)
     setError(null)
-    load()
+    changed()
   }
 
   return (
@@ -119,7 +147,7 @@ export default function AdminPromotions({ partners = [] }) {
           partners={partners}
           onSaved={handleSaved}
           onCancel={() => setEditing(null)}
-          onImageUploaded={load}
+          onImageUploaded={changed}
         />
       )}
 

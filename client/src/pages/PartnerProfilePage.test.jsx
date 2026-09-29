@@ -4,14 +4,15 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { profile, updateProfile, uploadLogo, publish, einblicke } = vi.hoisted(() => ({
+const { profile, updateProfile, uploadLogo, publish, einblicke, posts } = vi.hoisted(() => ({
   profile: vi.fn(),
   updateProfile: vi.fn(),
   uploadLogo: vi.fn(),
   publish: vi.fn(),
-  einblicke: vi.fn()
+  einblicke: vi.fn(),
+  posts: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { partnerArea: { profile, updateProfile, uploadLogo, publish, einblicke } } }))
+vi.mock('../api', () => ({ api: { partnerArea: { profile, updateProfile, uploadLogo, publish, einblicke, posts } } }))
 
 import PartnerProfilePage from './PartnerProfilePage.jsx'
 import { DemoProvider } from '../lib/demo.js'
@@ -107,7 +108,7 @@ afterEach(() => {
     container.remove()
     container = null
   }
-  for (const mock of [profile, updateProfile, uploadLogo, publish, einblicke]) mock.mockReset()
+  for (const mock of [profile, updateProfile, uploadLogo, publish, einblicke, posts]) mock.mockReset()
 })
 
 describe('PartnerProfilePage – Statuskarte', () => {
@@ -199,7 +200,8 @@ describe('PartnerProfilePage – Angaben', () => {
     expect(container.querySelector('#profile-spendenUrl')).toBeNull()
     expect(container.querySelector('#profile-vermittlungUrl')).toBeNull()
     expect(container.textContent).toContain('Link zu eurem eigenen Kontaktformular')
-    expect(container.textContent).toContain('kommt bald – Nachrichten landen dann in eurem Postfach hier')
+    expect(container.textContent).toContain('Nachrichten landen in eurem Postfach unter ‚Nachrichten‘.')
+    expect(container.textContent).not.toContain('kommt bald')
     expect(container.textContent).toContain('Formular ‚Schreib uns‘ anbieten')
   })
 
@@ -331,5 +333,33 @@ describe('PartnerProfilePage – Demo', () => {
   test('auch "Pausieren" ist in der Demo gesperrt', async () => {
     await render({ data: { ...completeProfile, status: 'aktiv' }, isDemo: true })
     expect(button('Pausieren').disabled).toBe(true)
+  })
+})
+
+// Phase P2: Tierheime haben "Beiträge" nicht in der Navigation (dort stünden sonst sechs Einträge), sondern
+// als dritten Reiter im Profil.
+describe('PartnerProfilePage – Reiter "Beiträge" (Tierheim)', () => {
+  test('ein Tierheim bekommt den Reiter; die Beiträge laden erst beim Öffnen, mit den Bereichen des Typs', async () => {
+    posts.mockResolvedValue([])
+    await render({ data: { ...completeProfile, typ: 'tierheim', slug: 'tierheim-sonnenhang' }, family: shelterFamily })
+
+    const tabs = [...container.querySelectorAll('.partner-profile-tabs button')].map((btn) => btn.textContent)
+    expect(tabs).toEqual(['Angaben', 'Einblicke', 'Beiträge'])
+    expect(posts).not.toHaveBeenCalled()
+
+    await act(async () => button('Beiträge').click())
+    expect(posts).toHaveBeenCalledTimes(1)
+    expect(document.getElementById('partner-profile-panel-beitraege').hidden).toBe(false)
+    expect(container.querySelector('#partner-posts-title').textContent).toBe('Eure Beiträge')
+
+    await act(async () => button('Beitrag anlegen').click())
+    expect([...container.querySelector('#post-bereich').options].map((option) => option.value)).toEqual(['', 'begleiter', 'unterstuetzen'])
+  })
+
+  test('ein Partner-Bereich hat "Beiträge" in der Navigation - im Profil nur Angaben und Einblicke', async () => {
+    await render()
+    const tabs = [...container.querySelectorAll('.partner-profile-tabs button')].map((btn) => btn.textContent)
+    expect(tabs).toEqual(['Angaben', 'Einblicke'])
+    expect(document.getElementById('partner-profile-panel-beitraege')).toBeNull()
   })
 })

@@ -13,6 +13,7 @@
 @import './thread.css';
 @import './pinboard.css';
 @import './admin.css';
+@import './admin-approval.css';
 @import './collage.css';
 @import './contact.css';
 @import './settings.css';
@@ -24,3 +25,6 @@
 @import './support.css';
 @import './partner-area.css';
 @import './customer-view.css';
+@import './partner-posts.css';
+@import './partner-inbox.css';
+@import './contact-partner.css';

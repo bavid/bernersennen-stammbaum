@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
@@ -9,6 +9,7 @@ import AdminMessages from '../components/AdminMessages.jsx'
 import AdminVouchers from '../components/AdminVouchers.jsx'
 import AdminPartners from '../components/AdminPartners.jsx'
 import AdminPromotions from '../components/AdminPromotions.jsx'
+import AdminPostApproval from '../components/AdminPostApproval.jsx'
 import AdminSupport from '../components/AdminSupport.jsx'
 import { relativeTime } from '../lib/dates.js'
 
@@ -115,6 +116,11 @@ function Dashboard({ onLogout }) {
   const [partners, setPartners] = useState([])
   const [openId, setOpenId] = useState(null)
   const [error, setError] = useState(null)
+  // Phase P2: "Zur Freigabe" und "Empfehlungen & Anzeigen" zeigen dieselben Zeilen - ändert eine Karte etwas,
+  // zählt promotionsVersion hoch und beide laden neu. pendingCount: Zähler im Kopf.
+  const [promotionsVersion, setPromotionsVersion] = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
+  const bumpPromotions = useCallback(() => setPromotionsVersion((version) => version + 1), [])
 
   useEffect(() => {
     api.admin
@@ -140,6 +146,12 @@ function Dashboard({ onLogout }) {
           <ThemeMark size={34} /> {theme.appName} · <strong>Admin</strong>
         </span>
         <span className="admin-header-actions">
+          {pendingCount > 0 && (
+            <a href="#admin-approval-title" className="btn btn-ghost admin-header-pending">
+              <Icon name="megaphone" />
+              {pendingCount} zur Freigabe
+            </a>
+          )}
           <Link to="/" className="btn btn-ghost">
             Zur App
           </Link>
@@ -173,8 +185,11 @@ function Dashboard({ onLogout }) {
               accessPartners={partners.filter(partnerAccessBindable)}
             />
 
+            {/* Phase P2: eingereichte Beiträge der Partner zuerst - ganz oben im Marketing-Teil. */}
+            <AdminPostApproval version={promotionsVersion} onChanged={bumpPromotions} onCountChange={setPendingCount} />
+
             {/* Reiter "Entdecken" (Phase 3 Task 5): dieselbe Partnerliste füllt die Partner-Auswahl. */}
-            <AdminPromotions partners={partners} />
+            <AdminPromotions partners={partners} version={promotionsVersion} onChanged={bumpPromotions} />
 
             <AdminSupport />
 

@@ -40,3 +40,12 @@ export function isValidPhone(value) {
 export function telHref(value) {
   return `tel:${value.replace(/[^0-9+]/g, '')}`
 }
+
+// E-Mail-Adressen für einen mailto:-Link (Portal, Steckbrief, Postfach, Phase P2): wie beim Telefon nur ein
+// Wert in der erwarteten Form - ohne Leerzeichen, spitze Klammern, Anführungszeichen oder ?/& (sonst ließen
+// sich Betreff oder weitere Empfänger anhängen). Sonst null.
+const EMAIL_RE = /^[^\s@<>"'()?&]+@[^\s@<>"'()?&]+\.[^\s@<>"'()?&]+$/
+
+export function mailtoHref(email) {
+  return typeof email === 'string' && EMAIL_RE.test(email) ? `mailto:${email}` : null
+}

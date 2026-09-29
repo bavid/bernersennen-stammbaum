@@ -314,3 +314,81 @@ describe('api.admin – Partner-Bereiche und Einblicke (Phase P1)', () => {
     expect(JSON.parse(options.body)).toEqual({ ausgeblendet: true })
   })
 })
+
+describe('Phase P2 – Beiträge, Postfach, Schreib uns, Freigabe', () => {
+  const callsOf = (fetchMock) => fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+
+  test('Beiträge: Liste, Anlegen, Ändern, Löschen und Bild (multipart) an /partner-area/posts', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.partnerArea.posts()
+    await api.partnerArea.createPost({ titel: 'Welpenkurs', bereich: 'hundeschule' })
+    await api.partnerArea.updatePost(3, { titel: 'Welpenkurs neu', bereich: 'hundeschule' })
+    await api.partnerArea.deletePost(3)
+    await api.partnerArea.uploadPostImage(3, new File(['x'], 'bild.jpg', { type: 'image/jpeg' }))
+
+    expect(callsOf(fetchMock)).toEqual([
+      ['/api/partner-area/posts', 'GET'],
+      ['/api/partner-area/posts', 'POST'],
+      ['/api/partner-area/posts/3', 'PUT'],
+      ['/api/partner-area/posts/3', 'DELETE'],
+      ['/api/partner-area/posts/3/image', 'POST']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ titel: 'Welpenkurs', bereich: 'hundeschule' })
+    expect(fetchMock.mock.calls[4][1].body.get('file')).toBeInstanceOf(File)
+  })
+
+  test('Postfach: Liste, gelesen, löschen', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.partnerArea.messages()
+    await api.partnerArea.markMessageRead(9)
+    await api.partnerArea.deleteMessage(9)
+
+    expect(callsOf(fetchMock)).toEqual([
+      ['/api/partner-area/messages', 'GET'],
+      ['/api/partner-area/messages/9/read', 'POST'],
+      ['/api/partner-area/messages/9', 'DELETE']
+    ])
+  })
+
+  test('Schreib uns: POST an /contact, Nachricht im Body, demo nur als Query-Parameter', async () => {
+    const fetchMock = stubFetch({ ok: true })
+
+    await api.contactPartner('hundeschule-wiesengrund', { nachricht: 'Hallo, habt ihr noch Plätze?', website: '' })
+    await api.contactPartner('hundeschule-wiesengrund', { nachricht: 'Hallo, habt ihr noch Plätze?' }, { demo: '1' })
+
+    expect(callsOf(fetchMock)).toEqual([
+      ['/api/public/partners/hundeschule-wiesengrund/contact', 'POST'],
+      ['/api/public/partners/hundeschule-wiesengrund/contact?demo=1', 'POST']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ nachricht: 'Hallo, habt ihr noch Plätze?', website: '' })
+  })
+
+  test('Portal-Beiträge: GET /posts, mit demo als Query-Parameter', async () => {
+    const fetchMock = stubFetch([])
+
+    await api.publicPartnerPosts('pfotenglueck')
+    await api.publicPartnerPosts('pfotenglueck', { demo: '1' })
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      '/api/public/partners/pfotenglueck/posts',
+      '/api/public/partners/pfotenglueck/posts?demo=1'
+    ])
+  })
+
+  test('Admin: Liste mit Freigabe-Filter, freigeben und ablehnen mit Grund', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.admin.promotions({ freigabe: 'eingereicht' })
+    await api.admin.approvePromotion(5)
+    await api.admin.rejectPromotion(5, 'Bitte ohne Preisangaben.')
+
+    expect(callsOf(fetchMock)).toEqual([
+      ['/api/admin/promotions?freigabe=eingereicht', 'GET'],
+      ['/api/admin/promotions/5/freigeben', 'POST'],
+      ['/api/admin/promotions/5/ablehnen', 'POST']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ grund: 'Bitte ohne Preisangaben.' })
+  })
+})

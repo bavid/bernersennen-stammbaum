@@ -63,3 +63,23 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
     expect(container.querySelector('button').textContent).toBe(theme.words.createOwnGroup)
   })
 })
+
+describe('DemoBanner in Partner- und Tierheim-Demos (Phase P2)', () => {
+  test('statt "Eigene Familie anlegen" führt der Knopf zu "Schreib dem Admin"', async () => {
+    const onLeave = () => {
+      throw new Error('darf die Demo nicht verlassen')
+    }
+    await render(
+      <MemoryRouter initialEntries={['/profil']}>
+        <ThemeProvider themeId="standard">
+          <DemoBanner onLeave={onLeave} partnerArea />
+        </ThemeProvider>
+      </MemoryRouter>
+    )
+    const link = container.querySelector('.demo-banner a')
+    expect(link.textContent).toBe('Eigenes Partner-Profil? Schreib uns')
+    expect(link.getAttribute('href')).toBe('/admin-schreiben')
+    expect(container.querySelector('.demo-banner button')).toBeNull()
+    expect(container.textContent).not.toContain('Eigene Familie anlegen')
+  })
+})
