@@ -79,12 +79,14 @@ export default function CompanionsPage({ family }) {
               ? `Alle ${words.animals}, die bei euch gelebt haben und leben – seit ${span.from}.`
               : `Alle ${words.animals}, die bei euch gelebt haben und leben.`}
           </p>
-          <p className="hero-hint">
-            {words.TheGroup} pflegst du {words.inTreeArticle} <Link to="/stammbaum">{words.treeLabel}</Link>.
-          </p>
-          <p className="hero-hint">
-            <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
-          </p>
+          <div className="hero-hints">
+            <p className="hero-hint">
+              {words.TheGroup} pflegst du {words.inTreeArticle} <Link to="/stammbaum">{words.treeLabel}</Link>.
+            </p>
+            <p className="hero-hint">
+              <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
+            </p>
+          </div>
         </div>
         <div className="page-hero-side">
           {rows.length > 0 && (

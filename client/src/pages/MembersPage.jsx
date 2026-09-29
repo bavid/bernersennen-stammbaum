@@ -134,6 +134,8 @@ export default function MembersPage({ family, onFamilyChange }) {
           <p className="hero-hint">
             <Link to="/stammbaum">← {words.toTree}</Link>
           </p>
+          {/* Phase U: der Demo-Hinweis gehört zum Kopf - nicht als eigene Zeile zwischen Kopf und erster Karte. */}
+          {isDemo && <p className="field-hint members-demo-hint">{readOnlyHint}</p>}
         </div>
         {data && (
           <div className="page-hero-side">
@@ -156,8 +158,6 @@ export default function MembersPage({ family, onFamilyChange }) {
           {error}
         </div>
       )}
-      {isDemo && <p className="field-hint members-demo-hint">{readOnlyHint}</p>}
-
       <VisibilityCard />
 
       <section className="card members-section" aria-labelledby="members-title">

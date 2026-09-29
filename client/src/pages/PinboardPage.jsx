@@ -144,7 +144,8 @@ export default function PinboardPage({ family }) {
     <div className="page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">Pinnwand</span>
+          {/* Phase U: über der Überschrift der Name des Bereichs statt "Pinnwand" ein zweites Mal. */}
+          <span className="eyebrow">{family?.name || 'Pinnwand'}</span>
           <h1>Pinnwand</h1>
           <p className="page-lede">
             Treffen ausmachen, Neuigkeiten teilen, Grüße dalassen – alle {words.inGroup} sehen es. Kommende Termine
