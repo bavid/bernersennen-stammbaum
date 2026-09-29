@@ -130,6 +130,20 @@ function Datenschutz({ legal }) {
         zwischengespeichertes Foto kann noch kurz sichtbar bleiben.
       </p>
 
+      <h2>Partner-Profile und Einblicke</h2>
+      <p>
+        Partner (zum Beispiel Hundeschulen, Tierheime oder Hundesalons) pflegen ihr öffentliches Profil selbst. Sie
+        können „Einblicke“ zeigen – Fotos mit Datum und kurzem Text aus ihrer Arbeit. Beim Hochladen bestätigen
+        sie, dass die Halterinnen und Halter der gezeigten Tiere einverstanden sind; Personen, Nachnamen oder
+        Adressen gehören nicht hinein. Fotos werden nur als JPG oder PNG angenommen, Kamera- und Standortdaten
+        (EXIF) entfernen wir vor dem Speichern.
+      </p>
+      <p>
+        Einblicke sind nur öffentlich sichtbar, solange das Profil veröffentlicht ist. Der Partner kann jeden
+        Einblick jederzeit löschen; wer sein Tier auf einem Einblick wiederfindet und das nicht möchte, wendet sich
+        an den Partner oder an uns – wir blenden den Einblick dann aus.
+      </p>
+
       <h2>Rechte und Kontakt</h2>
       <p>
         Für Auskunft über gespeicherte Daten oder deren Löschung wendet euch bitte an{' '}

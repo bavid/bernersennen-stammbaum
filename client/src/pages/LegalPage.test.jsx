@@ -187,4 +187,16 @@ describe('LegalPage – /datenschutz', () => {
     expect(container.textContent).toMatch(/keine IP-Adressen/)
     expect(container.textContent).toMatch(/Suchmaschinen- und anderen Bots/)
   })
+
+  // Phase P1: Einblicke zeigen Fotos fremder Tiere öffentlich - Einwilligung, Metadaten und Ausblenden erklären.
+  test('Absatz "Partner-Profile und Einblicke": Einwilligung der Halter, EXIF entfernt, nur bei veröffentlichtem Profil', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect([...container.querySelectorAll('h2')].some((h) => h.textContent === 'Partner-Profile und Einblicke')).toBe(true)
+    expect(container.textContent).toMatch(/Halterinnen und Halter der gezeigten Tiere einverstanden/)
+    expect(container.textContent).toMatch(/EXIF/)
+    expect(container.textContent).toMatch(/solange das Profil veröffentlicht ist/)
+    expect(container.textContent).toMatch(/blenden den Einblick dann aus/)
+  })
 })

@@ -78,6 +78,15 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   (`/p/kurzname`) mit Logo, Akzentfarbe und einem direkt einlösbaren Gutschein; die öffentliche Partnerliste
   (`/partner`) lässt sich nach PLZ und Umkreis filtern. Der Admin pflegt Partner, Status (Entwurf/Aktiv/
   Pausiert) und Logo, und kann Gutschein-Stapel gezielt „für Partner” anlegen. Züchter gibt es hier nie.
+- **Zwei Produkte – Chronik und Partner-Profil**: Tierhalter starten mit einem **Kunden-Gutschein** („Meine
+  Chronik“). Hundeschulen, Tierheime, Hundesalons, Betreuung & Co. bekommen vom Betreiber einen
+  **Partner-Zugang** (Gutschein, von Hand verteilt): Beim Einlösen richten sie ihr Profil selbst ein (Name, Typ,
+  PLZ) und erhalten einen eigenen Partner-Bereich. Dort pflegen sie ihren öffentlichen Auftritt (Texte, Farbe,
+  Logo, Links, Kontakt), veröffentlichen oder pausieren ihn selbst und zeigen **Einblicke** – Fotos mit Datum aus
+  ihrer Arbeit, nur mit Einwilligung der Halter. Der Umschalter **„Bearbeiten | Kundensicht“** zeigt jederzeit
+  live, wie das Profil in einer Beispiel-Kundenoberfläche („Entdecken“, Portal, Steckbriefe) aussieht – auch vor
+  dem Veröffentlichen. Der Admin kann Profile sperren und Einblicke ausblenden. Privat nutzt man die Chronik mit
+  einem eigenen Kunden-Gutschein; Partner können Kunden-Gutscheine an ihre Kundschaft weitergeben.
 - **Tierheime**: Ein eigener Bereich für Tierheime und Vermittlungsstellen (vom Admin aus der
   Partnerverwaltung angelegt). Sie pflegen eine Chronik je Tier (Ankunft, Tierarzt, Verhalten, Gassi …),
   zeigen Tiere in Vermittlung mit öffentlichem Steckbrief (`/t/kurzname`) und erzeugen bei einer
