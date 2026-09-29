@@ -5,11 +5,12 @@ const { useTempDataDir, startApp, cleanup, call, getCookie } = require('./helper
 // Phase T Task 6: das Demo-Tierheim "Tierheim Sonnenhang" (seed/demo-shelter.js, lib/demoPack.js
 // createDemoShelter) und seine Verknüpfung mit der Demo-Nele ("Zuhause am Deich"). Der allgemeine
 // Ersetzungs-Mechanismus (Photos, Partner, Orphans) steht in demoPack.test.js - diese Datei prüft nur
-// die Task-6-spezifischen Inhalte: die vier Tiere, /api/demo {as:'tierheim'} und die Nele-Verknüpfung.
+// die Task-6-spezifischen Inhalte: die Tiere (seit Phase P2 Task 9 fünf, Lotte pausiert), /api/demo
+// {as:'tierheim'} und die Nele-Verknüpfung.
 // APP_ENV=staging: Demo-Partner/-Tiere sind dort ohne ?demo=1 sichtbar (wie demoPack.test.js).
 const dataDir = useTempDataDir('demo-shelter', { APP_ENV: 'staging' })
 
-test('Demo-Tierheim: vier Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verknüpfung mit Nele', async (t) => {
+test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verknüpfung mit Nele', async (t) => {
   const { server, base } = await startApp()
   t.after(() => cleanup(dataDir, server))
   const db = require('../db')
@@ -18,21 +19,23 @@ test('Demo-Tierheim: vier Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn�
 
   const { created, household, shelter } = replaceDemoPack(db, uploadDir)
 
-  await t.test('vier Tiere im Demo-Tierheim, drei davon mit veröffentlichtem Steckbrief', () => {
-    assert.equal(shelter.dogs, 4)
+  await t.test('fünf Tiere im Demo-Tierheim, vier davon mit veröffentlichtem Steckbrief (Lotte pausiert)', () => {
+    assert.equal(shelter.dogs, 5)
     const dogs = db.prepare('SELECT name, tierart, vermittlung_status, public_slug FROM dogs WHERE family_id = ? ORDER BY name').all(
       shelter.familyId
     )
     assert.deepEqual(
       dogs.map((d) => d.name),
-      ['Momo', 'Oskar', 'Pepper', 'Sunny']
+      ['Lotte', 'Momo', 'Oskar', 'Pepper', 'Sunny']
     )
     const published = dogs.filter((d) => d.public_slug !== null)
-    assert.equal(published.length, 3, 'Pepper, Sunny und Oskar sind veröffentlicht')
+    assert.equal(published.length, 4, 'Pepper, Sunny, Oskar und Lotte sind veröffentlicht')
     assert.deepEqual(
       published.map((d) => d.name).sort(),
-      ['Oskar', 'Pepper', 'Sunny']
+      ['Lotte', 'Oskar', 'Pepper', 'Sunny']
     )
+    const lotte = dogs.find((d) => d.name === 'Lotte')
+    assert.equal(lotte.vermittlung_status, 'pausiert')
     const momo = dogs.find((d) => d.name === 'Momo')
     assert.equal(momo.public_slug, null, 'Momo hat keinen Steckbrief')
     assert.equal(momo.vermittlung_status, 'in_vermittlung')
@@ -51,7 +54,7 @@ test('Demo-Tierheim: vier Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn�
     assert.equal(entries.filter((e) => e.is_public).length, 3)
   })
 
-  await t.test('der öffentliche Steckbrief eines Tiers funktioniert; die Partner-Tierliste zeigt nur die drei veröffentlichten', async () => {
+  await t.test('der öffentliche Steckbrief eines Tiers funktioniert; die Partner-Tierliste zeigt nur die vier veröffentlichten', async () => {
     const pepperSlug = db.prepare('SELECT public_slug FROM dogs WHERE family_id = ? AND name = ?').get(shelter.familyId, 'Pepper')
       .public_slug
     const view = await call(base, `/api/public/animals/${pepperSlug}`)
@@ -63,8 +66,26 @@ test('Demo-Tierheim: vier Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn�
     assert.equal(list.status, 200)
     assert.deepEqual(
       list.data.map((a) => a.name).sort(),
-      ['Oskar', 'Pepper', 'Sunny']
+      ['Lotte', 'Oskar', 'Pepper', 'Sunny']
     )
+    assert.equal(list.data.find((a) => a.name === 'Lotte').vermittlung_status, 'pausiert')
+  })
+
+  await t.test('Lotte (Phase P2 Task 9): pausiert - Steckbrief und Portal ja, Entdecken nein', async () => {
+    const lotte = db.prepare('SELECT id, public_slug, beschreibung FROM dogs WHERE family_id = ? AND name = ?').get(shelter.familyId, 'Lotte')
+    assert.match(lotte.beschreibung, /tierärztlicher Behandlung/)
+    const view = await call(base, `/api/public/animals/${lotte.public_slug}`)
+    assert.equal(view.status, 200)
+    assert.equal(view.data.vermittlung_status, 'pausiert')
+    assert.equal(view.data.entries.length, 1, 'genau ein öffentlicher Eintrag')
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM timeline_entries WHERE dog_id = ?').get(lotte.id).n, 1)
+
+    const demoLogin = await call(base, '/api/demo', { method: 'POST' })
+    const discover = await call(base, '/api/discover', { method: 'POST', body: {}, cookie: getCookie(demoLogin.res) })
+    assert.equal(discover.status, 200)
+    const tiere = discover.data.begleiter.tiere.map((a) => a.name)
+    assert.ok(tiere.includes('Pepper'))
+    assert.ok(!tiere.includes('Lotte'), 'pausiert erscheint nicht in Entdecken')
   })
 
   await t.test('POST /api/demo {as: "tierheim"} loggt ins Demo-Tierheim, mit Partner-Info', async () => {
@@ -79,9 +100,9 @@ test('Demo-Tierheim: vier Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn�
     const shelterCookie = getCookie(login.res)
     const dogs = await call(base, '/api/dogs', { cookie: shelterCookie })
     assert.equal(dogs.status, 200)
-    // Vier eigene Tiere plus Nele, die geteilt (dog_shares mit story_consent) unter "Ehemalige" erscheint.
-    assert.equal(dogs.data.length, 5)
-    assert.equal(dogs.data.filter((d) => d.can_edit).length, 4, 'vier davon eigene, bearbeitbare Tiere')
+    // Fünf eigene Tiere plus Nele, die geteilt (dog_shares mit story_consent) unter "Ehemalige" erscheint.
+    assert.equal(dogs.data.length, 6)
+    assert.equal(dogs.data.filter((d) => d.can_edit).length, 5, 'fünf davon eigene, bearbeitbare Tiere')
 
     // Schreibgeschützt wie jede Demo-Sitzung
     const write = await call(base, '/api/dogs', {

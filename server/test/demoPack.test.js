@@ -209,7 +209,7 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     const second = replaceDemoPack(db, uploadDir)
     assert.equal(second.removed.length, 5)
     assert.equal(second.household.dogs, 4)
-    assert.equal(second.shelter.dogs, 4, 'wieder genau vier Tiere im Demo-Tierheim')
+    assert.equal(second.shelter.dogs, 5, 'wieder genau fünf Tiere im Demo-Tierheim')
 
     assert.equal(second.partnerIds.length, 4, 'wieder genau vier Demo-Partner')
     assert.equal(

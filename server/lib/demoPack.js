@@ -274,7 +274,7 @@ function insertShelterTimeline(db, familyId, ids, copyImage) {
 }
 
 // Legt das Demo-Tierheim an (art='tierheim', is_demo=1, partner_id = der übergebene Demo-Partner) mit
-// seinen vier Tieren und ihrer Chronik (seed/demo-shelter.js). password_hash='!'/legacy_password=0 wie
+// seinen Tieren und ihrer Chronik (seed/demo-shelter.js). password_hash='!'/legacy_password=0 wie
 // ein echter Tierheim-Bereich (siehe routes/admin.js POST /partners/:id/shelter) - kein access_key_hash,
 // der Zugang läuft für die Demo ausschließlich über POST /api/demo { as: 'tierheim' } (routes/auth.js).
 function createDemoShelter(db, { copyImage, partnerId }) {

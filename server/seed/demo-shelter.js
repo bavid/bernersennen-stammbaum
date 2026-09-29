@@ -1,9 +1,10 @@
-// Demo-Tierheim "Tierheim Sonnenhang" (Phase T Task 6): eigener Tierheim-Bereich mit vier Tieren in
-// Vermittlung/reserviert, ihrer Chronik (Kategorien, teils öffentlich) und veröffentlichten
-// Steckbriefen. Angelegt von lib/demoPack.js (art='tierheim', partner_id = der Demo-Partner mit slug
-// 'tierheim-sonnenhang', siehe seed/demo-partners.js).
+// Demo-Tierheim "Tierheim Sonnenhang" (Phase T Task 6): eigener Tierheim-Bereich mit Tieren in
+// Vermittlung/reserviert/pausiert, ihrer Chronik (Kategorien, teils öffentlich) und veröffentlichten
+// Steckbriefen. Phase P2 Task 9: Lotte ist pausiert - ihr Steckbrief und das Portal zeigen sie mit dem Status,
+// "Entdecken" nicht (lib/vermittlung.js PUBLISHABLE_STATUS/LISTED_STATUS). Angelegt von lib/demoPack.js
+// (art='tierheim', partner_id = der Demo-Partner mit slug 'tierheim-sonnenhang', siehe seed/demo-partners.js).
 //
-// Bilder liegen in ./images, wiederverwendet: die vier Portraits kommen bewusst aus den Bildern, die
+// Bilder liegen in ./images, wiederverwendet: die Hunde-Portraits kommen bewusst aus den Bildern, die
 // sonst NIRGENDS als Portrait eines Tiers im Rudel/Zuhause dienen (ausstellung/garten-ida/schnee/see/
 // welpen, siehe seed/demo-data.js und seed/demo-household.js) - anders als z. B. finn.jpg oder
 // wanderung.jpg, die dort schon "vergeben" sind. Für Sunny (Katze) und Momo (Kaninchen) gibt es im
@@ -62,10 +63,23 @@ const DOGS = [
       'Neugieriges Kaninchen, sucht Gesellschaft von Artgenossen. Noch ohne Steckbrief, da wir gerade nach einer passenden Partnerin für ihn suchen.',
     vermittlungStatus: 'in_vermittlung',
     published: false
+  },
+  {
+    key: 'lotte',
+    name: 'Lotte',
+    tierart: 'hund',
+    rasse: 'Mischling',
+    geschlecht: 'huendin',
+    geburtsdatum: '2020-03-15',
+    foto: 'ausstellung.jpg',
+    beschreibung:
+      'Ruhige, verschmuste Hündin. Gerade in tierärztlicher Behandlung, bald wieder vermittelbar – bis dahin ist ihre Vermittlung pausiert.',
+    vermittlungStatus: 'pausiert',
+    published: true
   }
 ]
 
-// isPublic gilt nur für Pepper/Sunny/Oskar, deren Steckbrief veröffentlicht ist (published: true oben) -
+// isPublic gilt nur für Pepper/Sunny/Oskar/Lotte, deren Steckbrief veröffentlicht ist (published: true oben) -
 // bei Momo (kein Steckbrief) bleibt es überall false, rein kosmetisch ohne Wirkung nach außen.
 const TIMELINE = [
   {
@@ -151,6 +165,15 @@ const TIMELINE = [
     text: 'Momo kam zusammen mit zwei Geschwistern zu uns, die schon vermittelt sind. Sucht noch eine passende Partnerin.',
     kategorie: 'ankunft',
     isPublic: false
+  },
+  {
+    dog: 'lotte',
+    datum: '2026-09-15',
+    autor: 'Team Sonnenhang',
+    titel: 'Vermittlung kurz pausiert',
+    text: 'Lotte ist gerade in tierärztlicher Behandlung. Sobald sie wieder fit ist, ist sie bald wieder vermittelbar.',
+    kategorie: 'tierarzt',
+    isPublic: true
   }
 ]
 
