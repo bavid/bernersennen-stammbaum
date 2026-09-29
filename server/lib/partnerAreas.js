@@ -5,7 +5,9 @@
 // /partners/:id/area) oder vom Partner selbst per Partner-Zugang-Gutschein (lib/partnerAccess.js) -
 // beide Wege nutzen insertPartnerArea, damit die Bereichs-Zeile überall gleich aussieht.
 
-const { ART, PARTNER_AREA_ARTS } = require('./context')
+// Aus lib/areaArt.js statt lib/context.js: lib/partnerMessages.js braucht findPartnerArea und wird selbst von
+// lib/context.js geladen - so entsteht kein Require-Zyklus.
+const { ART, PARTNER_AREA_ARTS } = require('./areaArt')
 const { SHELTER_TYP_VALUES } = require('./partners')
 
 // Nur diese beiden Arten zählen als Bereich eines Partners: ein Zuhause trägt families.partner_id bloß

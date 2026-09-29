@@ -5,6 +5,7 @@ const { optionalSession } = require('../middleware/auth')
 const { publicPartnerSql, isPubliclyVisible } = require('../lib/partners')
 const { publishableSql, listedSql } = require('../lib/vermittlung')
 const { toPublicMediaUrl } = require('../lib/mediaUrls')
+const { contactFormFlags } = require('../lib/partnerMessages')
 
 const router = express.Router()
 
@@ -34,7 +35,8 @@ const findPublishedDog = db.prepare(`SELECT * FROM dogs WHERE public_slug = @slu
 // geführter Partner darf nichts öffentlich zeigen - auch wenn ein Tier seiner Tierheim-Familie technisch
 // noch public_slug + veröffentlichbaren Status trägt (siehe auch lib/publicMedia.js für die Fotos).
 const findShelterPartner = db.prepare(
-  `SELECT p.name, p.slug, p.website, p.kontakt_email, p.kontakt_telefon, p.vermittlung_url, p.logo_file, p.is_demo
+  `SELECT p.id, p.name, p.slug, p.website, p.kontakt_email, p.kontakt_telefon, p.vermittlung_url, p.logo_file, p.is_demo,
+          p.status, p.gesperrt, p.kontaktformular_aktiv
    FROM families f JOIN partners p ON p.id = f.partner_id
    WHERE f.id = @familyId AND f.art = 'tierheim' AND ${publicPartnerSql('p')}`
 )
@@ -58,7 +60,8 @@ function mediaUrl(url, preview) {
 // Die Steckbrief-Antwort eines Tiers - eigene Funktion, damit die Kundensicht des Tierheims
 // (routes/partnerArea/preview.js GET /preview/animals/:dogId) genau dieselbe Form liefert, auch für ein
 // noch unveröffentlichtes Tier. shelter: die partners-Zeile (name, slug, website, kontakt_email,
-// kontakt_telefon, vermittlung_url, logo_file). Ob das Tier gezeigt werden darf, prüft der Aufrufer.
+// kontakt_telefon, vermittlung_url, logo_file, dazu für "Schreib uns" id, status, gesperrt, is_demo,
+// kontaktformular_aktiv). Ob das Tier gezeigt werden darf, prüft der Aufrufer.
 // Einträge: in beiden Fällen nur öffentliche - die Kundensicht zeigt, was Kundinnen und Kunden sehen.
 function buildSteckbrief(dog, shelter, { preview = false } = {}) {
   const entries = findPublicEntries.all({ dogId: dog.id }).map((entry) => ({
@@ -88,7 +91,9 @@ function buildSteckbrief(dog, shelter, { preview = false } = {}) {
       kontakt_email: shelter.kontakt_email,
       kontakt_telefon: shelter.kontakt_telefon,
       vermittlung_url: shelter.vermittlung_url,
-      logoUrl: shelter.logo_file ? `/partner-media/${shelter.logo_file}` : null
+      logoUrl: shelter.logo_file ? `/partner-media/${shelter.logo_file}` : null,
+      // Phase P2 Task 9: "Schreib uns" zum Tier - dieselbe Regel wie auf dem Portal (lib/partnerMessages.js).
+      ...contactFormFlags(shelter, { preview })
     }
   }
 }

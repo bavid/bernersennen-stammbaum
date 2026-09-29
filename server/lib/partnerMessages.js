@@ -12,7 +12,8 @@
 
 const db = require('../db')
 const { cleanId } = require('./validate')
-const { stripUnsafeChars, validateEmail, validatePhone } = require('./partners')
+const { stripUnsafeChars, validateEmail, validatePhone, isPubliclyVisible } = require('./partners')
+const { findPartnerArea } = require('./partnerAreas')
 const { publishableSql } = require('./vermittlung')
 const { ART } = require('./areaArt')
 
@@ -30,6 +31,26 @@ function httpError(status, message) {
   const err = new Error(message)
   err.status = status
   return err
+}
+
+// --- Nimmt der Partner Nachrichten an? ------------------------------------------------------------
+
+// EINE Regel für das Kontaktformular (routes/partners.js POST /:slug/contact) und die Kennzeichen auf Portal
+// und Steckbrief (contactFormFlags), damit "Schreib uns" nie angeboten wird, wo die Anfrage scheitern würde:
+// Kontaktformular an UND ein Bereich (sonst gäbe es keinen Posteingang) UND öffentlich sichtbar - in der
+// Kundensicht (preview) zählen nur die ersten beiden. Ein Demo-Partner nimmt nichts an ('demo', Anfrage -> 403).
+// Ergebnis: 'offen' | 'demo' | 'geschlossen'.
+function contactFormStatus(partner, { preview = false } = {}) {
+  const open = Boolean(partner.kontaktformular_aktiv) && (preview || isPubliclyVisible(partner)) && Boolean(findPartnerArea(db, partner.id))
+  if (!open) return 'geschlossen'
+  return partner.is_demo ? 'demo' : 'offen'
+}
+
+// { kontaktformular } für Portal und Steckbrief; ein Demo-Partner zusätzlich kontaktformularDemo: true, damit
+// der Knopf deaktiviert mit Hinweis erscheinen kann ("In der Demo werden keine Nachrichten verschickt.").
+function contactFormFlags(partner, options) {
+  const status = contactFormStatus(partner, options)
+  return { kontaktformular: status === 'offen', ...(status === 'demo' ? { kontaktformularDemo: true } : {}) }
 }
 
 // --- Prüfung -------------------------------------------------------------------------------------
@@ -186,6 +207,8 @@ module.exports = {
   MIN_NACHRICHT_LENGTH,
   MAX_NACHRICHT_LENGTH,
   MAX_NAME_LENGTH,
+  contactFormStatus,
+  contactFormFlags,
   validateContactMessage,
   insertMessage,
   listMessages,

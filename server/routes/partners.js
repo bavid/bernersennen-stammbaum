@@ -14,8 +14,7 @@ const { listPublicPosts } = require('../lib/partnerPosts')
 const { promotionCard } = require('./discover')
 const { rejectHoneypot } = require('../middleware/abuse')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
-const { findPartnerArea } = require('../lib/partnerAreas')
-const { validateContactMessage, insertMessage } = require('../lib/partnerMessages')
+const { contactFormStatus, validateContactMessage, insertMessage } = require('../lib/partnerMessages')
 
 const router = express.Router()
 
@@ -142,12 +141,12 @@ const contactLimiter = rateLimit({
 // geloggt. Demo-Partner nehmen nichts an (403): ihr Posteingang ist für alle Demo-Besucher sichtbar.
 router.post('/:slug/contact', contactLimiter, rejectHoneypot, (req, res, next) => {
   try {
+    // Dieselbe Regel wie kontaktformular/kontaktformularDemo auf Portal und Steckbrief (lib/partnerMessages.js).
     const found = findPortalPartner(req)
-    const partner = found && !found.preview ? found.partner : null
-    if (!partner || !partner.kontaktformular_aktiv || !findPartnerArea(db, partner.id)) {
-      return res.status(404).json({ error: PARTNER_NOT_FOUND })
-    }
-    if (partner.is_demo) return res.status(403).json({ error: DEMO_CONTACT_MESSAGE })
+    const status = found && !found.preview ? contactFormStatus(found.partner) : 'geschlossen'
+    if (status === 'geschlossen') return res.status(404).json({ error: PARTNER_NOT_FOUND })
+    if (status === 'demo') return res.status(403).json({ error: DEMO_CONTACT_MESSAGE })
+    const partner = found.partner
 
     insertMessage(partner, validateContactMessage(req.body, partner))
     res.status(201).json({ ok: true })

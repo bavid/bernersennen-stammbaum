@@ -9,6 +9,7 @@ const db = require('../db')
 const { publicPartner } = require('./partners')
 const { listVisibleEinblicke, publicEinblick } = require('./einblicke')
 const { findDemoPartnerArea } = require('./partnerAreas')
+const { contactFormFlags } = require('./partnerMessages')
 
 // Gibt es für diesen Partner überhaupt einen Tierheim-Bereich? Ohne ihn wäre "Demo als Tierheim ansehen"
 // (Phase T Task 6) ein toter Knopf: api.demo({ as: 'tierheim' }) schlägt fehl, wenn der Demo-Partner (noch)
@@ -27,6 +28,9 @@ function buildPortal(partner, { preview = false } = {}) {
     vermittlung_url: partner.vermittlung_url,
     // Phase P Task 1: Link zum eigenen Kontaktformular des Partners (nur http(s), siehe validatePartner).
     kontakt_formular_url: partner.kontakt_formular_url,
+    // Phase P2 Task 9: "Schreib uns" - true genau dann, wenn das Kontaktformular eine Nachricht annähme; ein
+    // Demo-Partner zusätzlich kontaktformularDemo (lib/partnerMessages.js contactFormFlags).
+    ...contactFormFlags(partner, { preview }),
     farbe: partner.farbe,
     // Phase T Task 6: der Client zeigt für Demo-Partner mit einem tatsächlich bestehenden Demo-Tierheim
     // zusätzlich "Demo als Tierheim ansehen" (PartnerPortalPage.jsx) - ohne extra Anfrage.
