@@ -7,6 +7,7 @@ import PartnerProfileForm from '../components/PartnerProfileForm.jsx'
 import EinblickeEditor from '../components/EinblickeEditor.jsx'
 import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
 import PartnerVoucherStacks from '../components/PartnerVoucherStacks.jsx'
+import PartnerShareSection from '../components/PartnerShareSection.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { navItemsFor } from '../lib/navItems.js'
@@ -18,13 +19,13 @@ const TAB_EINBLICKE = { key: 'einblicke', label: 'Einblicke' }
 // Phase P2: Tierheime haben keinen Navigationspunkt "Beiträge" (sonst wären es mehr als fünf) - bei ihnen
 // stehen die Beiträge als dritter Reiter hier.
 const TAB_BEITRAEGE = { key: 'beitraege', label: 'Beiträge' }
-// Phase 5 Task 4: die Kunden-Gutschein-Stapel des Partners (PartnerVoucherStacks) - für jeden Partner-Bereich.
-const TAB_GUTSCHEINE = { key: 'gutscheine', label: 'Kunden-Gutscheine' }
+// Phase U: alles, was ein Partner nach außen weitergibt, unter einem Reiter - der Portal-Link samt QR-Code,
+// Website-Knopf und Social-Media-Text (PartnerShareSection) und darunter die Kunden-Gutschein-Stapel
+// (PartnerVoucherStacks, Phase 5 Task 4). So bleiben es höchstens vier Reiter.
+const TAB_TEILEN = { key: 'teilen', label: 'Teilen' }
 
 function tabsFor(family) {
-  return family?.art === 'tierheim'
-    ? [TAB_ANGABEN, TAB_EINBLICKE, TAB_BEITRAEGE, TAB_GUTSCHEINE]
-    : [TAB_ANGABEN, TAB_EINBLICKE, TAB_GUTSCHEINE]
+  return family?.art === 'tierheim' ? [TAB_ANGABEN, TAB_EINBLICKE, TAB_BEITRAEGE, TAB_TEILEN] : [TAB_ANGABEN, TAB_EINBLICKE, TAB_TEILEN]
 }
 
 // Reiter wie im Rest der App (JoinFamilyDialog, LoginPage): .segmented mit aria-pressed. Ein Reiter
@@ -51,7 +52,7 @@ function ProfileTabs({ tabs, tab, onSelect }) {
 // /profil (Phase P) - das eigene Profil eines Partner- oder Tierheim-Bereichs (api.partnerArea): oben
 // die Statuskarte (Status, Checkliste, Veröffentlichen/Pausieren), darunter die Reiter "Angaben"
 // (PartnerProfileForm), "Einblicke" (EinblickeEditor), bei Tierheimen "Beiträge" (PartnerPostsEditor) und
-// "Kunden-Gutscheine" (PartnerVoucherStacks, Phase 5 Task 4).
+// "Teilen" (Portal-Link, QR-Code, Website-Knopf, Social-Media-Text und die Kunden-Gutscheine).
 // Den Typ ändert nur der Betreiber. Wo "Zugang" nicht in der Hauptnavigation steht (Tierheim), führt ein
 // Link dorthin.
 export default function PartnerProfilePage({ family }) {
@@ -136,8 +137,13 @@ export default function PartnerProfilePage({ family }) {
                 {openedTabs.includes('beitraege') && <PartnerPostsEditor typ={typ} />}
               </div>
             )}
-            <div id="partner-profile-panel-gutscheine" hidden={tab !== 'gutscheine'}>
-              {openedTabs.includes('gutscheine') && <PartnerVoucherStacks />}
+            <div id="partner-profile-panel-teilen" className="partner-profile-share" hidden={tab !== 'teilen'}>
+              {openedTabs.includes('teilen') && (
+                <>
+                  <PartnerShareSection profile={profile} />
+                  <PartnerVoucherStacks />
+                </>
+              )}
             </div>
           </div>
         </>

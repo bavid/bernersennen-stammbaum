@@ -1,0 +1,149 @@
+/* "Teilen" im Partner-Profil (Phase U, PartnerShareSection): Portal-Link, QR-Code, Website-Knopf und
+   Social-Media-Text in einer Karte, Blöcke durch feine Linien getrennt - darunter die Kunden-Gutscheine. */
+
+.partner-profile-share {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.partner-share {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.partner-share-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-5);
+  border: 1.5px dashed var(--tan);
+  border-radius: var(--radius-md);
+  background: var(--rust-wash);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.partner-share-note svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--rust);
+}
+
+.partner-share-card {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.partner-share-block {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.partner-share-block + .partner-share-block {
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+.partner-share-block h3 {
+  font-size: var(--text-lg);
+}
+
+.partner-share-open {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--rust);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.partner-share-open svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* QR-Code links, Downloads daneben - am Handy darunter */
+.partner-share-qr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4) var(--space-6);
+}
+
+.partner-share-qr-code {
+  width: 10rem;
+  height: 10rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.partner-share-qr-actions {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  max-width: 16rem;
+}
+
+.partner-share-qr-actions .field-hint {
+  margin: 0;
+}
+
+.partner-share-preview {
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.partner-share-preview span[style] {
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* Kopier-Feld (CopyField) */
+
+.copy-field {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.copy-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.copy-field-row input,
+.copy-field-row textarea {
+  flex: 1 1 14rem;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.copy-field-row textarea {
+  min-height: 0;
+  line-height: 1.5;
+}
+
+.copy-field.is-code textarea {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: var(--text-xs);
+}
+
+.copy-field-row .btn {
+  flex-shrink: 0;
+}
+
+.copy-field .field-hint {
+  margin: 0;
+}
