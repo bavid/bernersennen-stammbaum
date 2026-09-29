@@ -1,13 +1,8 @@
 const db = require('../db')
 const { countUnread } = require('./partnerMessages')
-
-// partner (Phase P Task 1): Bereich eines Partners, der kein Tierheim ist (Hundeschule, Hundesalon,
-// Betreuung, ...) - angelegt vom Admin über routes/admin.js POST /partners/:id/area. Keine Tiere.
-const ART = { zuhause: 'zuhause', rudel: 'rudel', tierheim: 'tierheim', partner: 'partner' }
-
-// Bereichsarten, die zu einem Partner gehören (families.partner_id zeigt dann auf "seinen" Partner). Ein
-// Zuhause trägt partner_id nur als Herkunft ("kam über Partner X") und zählt deshalb NICHT dazu.
-const PARTNER_AREA_ARTS = [ART.tierheim, ART.partner]
+// ART und PARTNER_AREA_ARTS liegen in lib/areaArt.js (ohne Abhängigkeiten, kein Require-Zyklus mit
+// lib/partnerMessages.js) und werden hier weiter exportiert.
+const { ART, PARTNER_AREA_ARTS } = require('./areaArt')
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist
 function membershipsOf(homeId) {

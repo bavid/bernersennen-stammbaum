@@ -6,12 +6,15 @@
 //
 // Datenschutz: höchstens RETENTION_DAYS Tage aufbewahrt - jeder Eingang (insertMessage) und jedes Öffnen des
 // Posteingangs (listMessages) löscht vorher die älteren Nachrichten dieses Partners, unread zählt sie schon vorher
-// nicht mehr mit. Inhalte und Kontaktdaten landen nie im Log (keine Ausgabe hier, Fehlermeldungen ohne Werte).
+// nicht mehr mit. Damit auch die Nachrichten eines Partners verschwinden, der seinen Posteingang nie öffnet,
+// räumt purgeAllExpiredMessages über alle Partner auf - index.js startet sie beim Hochfahren und danach alle
+// 24 Stunden (scheduleMessagePurge). Inhalte und Kontaktdaten landen nie im Log (geloggt wird nur die Anzahl).
 
 const db = require('../db')
 const { cleanId } = require('./validate')
 const { stripUnsafeChars, validateEmail, validatePhone } = require('./partners')
 const { publishableSql } = require('./vermittlung')
+const { ART } = require('./areaArt')
 
 const RETENTION_DAYS = 180
 const MIN_NACHRICHT_LENGTH = 10
@@ -20,6 +23,7 @@ const MAX_NAME_LENGTH = 80
 // Obergrenze der Liste im Posteingang (neueste zuerst) - unread zählt trotzdem alle.
 const MAX_INBOX = 500
 const RETENTION_SQL = `datetime('now', '-${RETENTION_DAYS} days')`
+const PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000
 const HTML_RE = /[<>]/
 
 function httpError(status, message) {
@@ -57,7 +61,7 @@ function validateName(value) {
 // Tierheim-Bereich GENAU dieses Partners - sonst gäbe es eine "Anfrage zu" einem fremden Tier.
 const findBezugDog = db.prepare(
   `SELECT d.name FROM dogs d JOIN families f ON f.id = d.family_id
-   WHERE d.public_slug = ? AND f.partner_id = ? AND f.art = 'tierheim' AND ${publishableSql('d')}`
+   WHERE d.public_slug = ? AND f.partner_id = ? AND f.art = '${ART.tierheim}' AND ${publishableSql('d')}`
 )
 
 function validateBezug(bezugSlug, partner) {
@@ -82,6 +86,7 @@ function validateContactMessage(body, partner) {
 // --- Abfragen ------------------------------------------------------------------------------------
 
 const purgeStmt = db.prepare(`DELETE FROM partner_messages WHERE partner_id = ? AND created_at < ${RETENTION_SQL}`)
+const purgeAllStmt = db.prepare(`DELETE FROM partner_messages WHERE created_at < ${RETENTION_SQL}`)
 const insertStmt = db.prepare(
   `INSERT INTO partner_messages (partner_id, name, email, telefon, bezug, nachricht, gelesen_at, is_demo, created_at)
    VALUES (@partner_id, @name, @email, @telefon, @bezug, @nachricht, @gelesen_at, @is_demo, COALESCE(@created_at, datetime('now')))`
@@ -99,6 +104,31 @@ const deleteOwnStmt = db.prepare('DELETE FROM partner_messages WHERE id = ? AND 
 
 function purgeExpired(partnerId) {
   purgeStmt.run(partnerId)
+}
+
+// Alle Nachrichten älter als RETENTION_DAYS, über alle Partner hinweg. Gibt die Anzahl der gelöschten zurück.
+function purgeAllExpiredMessages() {
+  return purgeAllStmt.run().changes
+}
+
+// Ein Lauf, der den Server nie mitreißt: Fehler werden abgefangen. Geloggt wird nur die Anzahl bzw. die
+// Fehlermeldung der Datenbank - nie Inhalte oder Kontaktdaten.
+function runMessagePurge(logger = console) {
+  try {
+    const count = purgeAllExpiredMessages()
+    if (count > 0) logger.log(`Kontaktnachrichten älter als ${RETENTION_DAYS} Tage gelöscht: ${count}`)
+    return count
+  } catch (err) {
+    logger.error(`Aufräumen der Kontaktnachrichten fehlgeschlagen: ${err.message}`)
+    return 0
+  }
+}
+
+// Einmal sofort, danach alle 24 Stunden. unref(): der Timer hält den Prozess nicht am Leben. Nur aus index.js
+// (wenn der Server lauscht) aufrufen, nie beim require von app.js - Tests bleiben so ohne Timer.
+function scheduleMessagePurge(logger = console) {
+  runMessagePurge(logger)
+  return setInterval(() => runMessagePurge(logger), PURGE_INTERVAL_MS).unref()
 }
 
 // Aufräumen und Speichern in EINER Transaktion. is_demo folgt dem Partner. gelesenAt/createdAt nur für den
@@ -149,6 +179,10 @@ function ownMessage(row) {
 
 module.exports = {
   RETENTION_DAYS,
+  PURGE_INTERVAL_MS,
+  purgeAllExpiredMessages,
+  runMessagePurge,
+  scheduleMessagePurge,
   MIN_NACHRICHT_LENGTH,
   MAX_NACHRICHT_LENGTH,
   MAX_NAME_LENGTH,
