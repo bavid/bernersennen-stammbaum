@@ -54,6 +54,13 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
       1,
       'Zuhause ist Mitglied im Rudel'
     )
+    // Phase R Task 1: der Demo-Haushalt leitet das Demo-Rudel (sieht also auch "Einladen")
+    assert.equal(
+      db
+        .prepare('SELECT rolle FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
+        .get(household.familyId, created.familyId).rolle,
+      'leitung'
+    )
   })
 
   await t.test('exactly four demo partners with the expected slugs and badges; the real partner is untouched', () => {

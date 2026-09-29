@@ -419,7 +419,12 @@ function createDemoHousehold(db, { password, isDemo, copyImage, groupFamilyId, s
     const entryIds = insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId })
 
     if (groupFamilyId) {
-      db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(familyId, groupFamilyId)
+      // Phase R Task 1: der Haushalt ist das (einzige) Mitglied dieses Rudels und damit dessen Leitung -
+      // so zeigt die Demo (und das Test-Rudel der Testumgebung) alle Knöpfe bis hin zum Einladen.
+      db.prepare("INSERT OR IGNORE INTO family_members (member_family_id, group_family_id, rolle) VALUES (?, ?, 'leitung')").run(
+        familyId,
+        groupFamilyId
+      )
       const share = db.prepare('INSERT OR IGNORE INTO dog_shares (dog_id, family_id) VALUES (?, ?)')
       share.run(ids.nele, groupFamilyId)
       share.run(ids.mira, groupFamilyId)

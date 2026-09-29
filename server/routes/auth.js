@@ -8,6 +8,7 @@ const { codeLimiter, authLimiter } = require('../middleware/abuse')
 const { cleanId } = require('../lib/validate')
 const { isTheme } = require('../lib/themes')
 const { ART, canEnter, buildMe } = require('../lib/context')
+const { requireRole } = require('../lib/roles')
 const { generateCode, normalizeCode, hashCode, formatCode } = require('../lib/codes')
 const { validatePassword, validateUsername, validateEmail } = require('../lib/vouchers')
 const { SLUG_MAX_LENGTH } = require('../lib/partners')
@@ -207,8 +208,9 @@ router.post('/logout', (req, res) => {
   res.status(204).end()
 })
 
-// Name und/oder Aussehen der Familie ändern – betrifft alle, die das gemeinsame Passwort nutzen
-router.put('/family', requireAuth, (req, res) => {
+// Name und/oder Aussehen der Familie ändern – betrifft alle, die das gemeinsame Passwort nutzen.
+// In einer Familie nur für die Leitung (Phase R Task 1, lib/roles.js).
+router.put('/family', requireAuth, requireRole('leitung'), (req, res) => {
   const { name, theme } = req.body || {}
   if (name === undefined && theme === undefined) {
     return res.status(400).json({ error: 'Nichts zu ändern' })
@@ -266,7 +268,8 @@ router.post('/families/join', authLimiter, requireAuth, async (req, res, next) =
   }
 })
 
-// Ein neues Rudel gründen und ihm gleich beitreten – nur aus "Meine Chronik" heraus
+// Ein neues Rudel gründen und ihm gleich beitreten – nur aus "Meine Chronik" heraus. Die gründende
+// Identität wird Leitung (Phase R Task 1); wer später beitritt, bekommt die Standardrolle 'mitglied'.
 router.post('/families/group', authLimiter, requireAuth, async (req, res, next) => {
   try {
     if (!requireHomeIdentity(req, res)) return
@@ -292,7 +295,10 @@ router.post('/families/group', authLimiter, requireAuth, async (req, res, next) 
       const result = db
         .prepare("INSERT INTO families (name, password_hash, art, theme) VALUES (?, ?, 'rudel', 'standard')")
         .run(trimmedName, passwordHash)
-      db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(req.homeId, result.lastInsertRowid)
+      db.prepare("INSERT INTO family_members (member_family_id, group_family_id, rolle) VALUES (?, ?, 'leitung')").run(
+        req.homeId,
+        result.lastInsertRowid
+      )
     })()
 
     res.status(201).json(buildMe(req.homeId, req.familyId, false, req.userId))
@@ -349,7 +355,9 @@ function requireOwnIdentity(req, res) {
 // Berechtigungsnachweis ist Pflicht (verifyCurrentCredential) - sonst könnte eine übernommene Sitzung
 // (z. B. ein Benutzer-Login ohne Kenntnis des Schlüssels) die ganze Identität an sich reißen, indem sie
 // einfach einen neuen Schlüssel erzeugt und damit jede andere Sitzung aussperrt.
-router.post('/family/key', authLimiter, requireAuth, async (req, res, next) => {
+// requireRole('leitung') (Phase R Task 1) vor requireOwnIdentity: in einer Familie bekommt jede andere
+// Rolle 403; die Leitung selbst erneuert weiterhin nur den Schlüssel ihres eigenen Bereichs.
+router.post('/family/key', authLimiter, requireAuth, requireRole('leitung'), async (req, res, next) => {
   try {
     if (!requireOwnIdentity(req, res)) return
     if (!(await verifyCurrentCredential(req))) {
@@ -366,8 +374,9 @@ router.post('/family/key', authLimiter, requireAuth, async (req, res, next) => {
 })
 
 // Eigene Benutzer-Logins der Identität (req.homeId) - gelten bereichsübergreifend, unabhängig vom
-// gerade aktiven Bereich (Zuhause oder ein beigetretenes Rudel).
-router.get('/users', requireAuth, (req, res) => {
+// gerade aktiven Bereich (Zuhause oder ein beigetretenes Rudel). Ist der aktive Bereich eine Familie,
+// braucht jeder /users-Endpunkt die Leitung (Phase R Task 1) - im eigenen Bereich ist man das immer.
+router.get('/users', requireAuth, requireRole('leitung'), (req, res) => {
   res.json(
     db.prepare('SELECT id, username, email, last_login_at FROM users WHERE family_id = ? ORDER BY created_at, id').all(req.homeId)
   )
@@ -376,7 +385,7 @@ router.get('/users', requireAuth, (req, res) => {
 // Ein neuer Benutzer-Login ist ein zusätzlicher, bereichsübergreifend gültiger Zugang zur Identität -
 // genau wie beim Schlüssel erneuern (siehe oben) braucht das einen aktuellen Berechtigungsnachweis,
 // sonst könnte eine übernommene Sitzung sich unbemerkt einen dauerhaften eigenen Zugang anlegen.
-router.post('/users', authLimiter, requireAuth, async (req, res, next) => {
+router.post('/users', authLimiter, requireAuth, requireRole('leitung'), async (req, res, next) => {
   try {
     if (!(await verifyCurrentCredential(req))) {
       return res.status(403).json({ error: REAUTH_ERROR })
@@ -404,7 +413,7 @@ router.post('/users', authLimiter, requireAuth, async (req, res, next) => {
 })
 
 // Wie beim Anlegen: einen Benutzer-Login zu entfernen braucht einen aktuellen Berechtigungsnachweis.
-router.delete('/users/:id', authLimiter, requireAuth, async (req, res, next) => {
+router.delete('/users/:id', authLimiter, requireAuth, requireRole('leitung'), async (req, res, next) => {
   try {
     const id = cleanId(req.params.id)
     if (!id) return res.status(404).json({ error: 'Diesen Benutzer gibt es nicht' })

@@ -3,6 +3,7 @@ const { countUnread } = require('./partnerMessages')
 // ART und PARTNER_AREA_ARTS liegen in lib/areaArt.js (ohne Abhängigkeiten, kein Require-Zyklus mit
 // lib/partnerMessages.js) und werden hier weiter exportiert.
 const { ART, PARTNER_AREA_ARTS } = require('./areaArt')
+const { roleOf } = require('./roles')
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist
 function membershipsOf(homeId) {
@@ -53,11 +54,20 @@ function currentAuthInfo(homeId, userId) {
 // Ist der aktive Bereich ein Partner-Bereich (art 'tierheim' oder 'partner'), kommt zusätzlich "partner"
 // dazu (der Partner, aus dem der Admin diesen Bereich angelegt hat, siehe routes/admin.js POST
 // /partners/:id/area) - der Client zeigt damit z. B. Name/Slug/Typ und eine Sperre, ohne extra nachzufragen.
+// role (Phase R Task 1): die Rolle der Identität im aktiven Bereich (lib/roles.js roleOf) - 'leitung' im
+// eigenen Bereich und mit dem gemeinsamen Schlüssel einer Familie, sonst die Rolle der Mitgliedschaft.
 function buildMe(homeId, activeId, isDemo, userId = null) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
   const active = family(activeId)
   const home = family(homeId)
-  const me = { ...active, isDemo: Boolean(isDemo), home, memberships: membershipsOf(homeId), auth: currentAuthInfo(homeId, userId) }
+  const me = {
+    ...active,
+    isDemo: Boolean(isDemo),
+    role: roleOf(homeId, activeId),
+    home,
+    memberships: membershipsOf(homeId),
+    auth: currentAuthInfo(homeId, userId)
+  }
   if (PARTNER_AREA_ARTS.includes(active?.art)) {
     const partner = db
       .prepare(

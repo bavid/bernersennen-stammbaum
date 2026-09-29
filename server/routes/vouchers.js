@@ -6,6 +6,7 @@ const { ART, buildMe } = require('../lib/context')
 const { normalizeCode, hashCode, formatCode, decryptCode } = require('../lib/codes')
 const { voucherStatus, redeemVoucher, claimVoucher, ensureVoucherQuota, findVoucherByHash, ZWECK, DEMO_VOUCHERS } = require('../lib/vouchers')
 const { isPartnerAccessCode, partnerAccessCheckInfo, redeemPartnerAccess } = require('../lib/partnerAccess')
+const { requireRole } = require('../lib/roles')
 
 const router = express.Router()
 
@@ -82,7 +83,11 @@ router.post('/claim', requireAuth, codeLimiter, (req, res, next) => {
 // Eigene Weitergabe-Gutscheine des aktiven Bereichs (nicht der Identität - im beigetretenen Rudel
 // unterwegs sieht man dessen Gutscheine, siehe InviteDialog). Füllt das Kontingent bei jedem Aufruf
 // auf; die Demo bekommt eine feste Schein-Liste und legt nie echte Gutscheine an.
-router.get('/mine', requireAuth, (req, res) => {
+// Phase R Task 1: in einer Familie erst ab 'stellvertretung' (lib/roles.js). Gast und Mitglied bekommen
+// 403 - bewusst auch für die bloße Liste, nicht nur fürs Auffüllen: sie enthält die offenen Codes im
+// Klartext, und wer einen offenen Einladungs-Code weitergeben kann, lädt ein. Im eigenen Bereich
+// (Zuhause, Tierheim, Partner) ist man immer Leitung - dort bleibt alles wie bisher.
+router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
   if (req.isDemo) return res.json(DEMO_VOUCHERS)
 
   const area = db.prepare('SELECT id, name, art FROM families WHERE id = ?').get(req.familyId)

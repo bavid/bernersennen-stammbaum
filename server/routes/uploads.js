@@ -3,6 +3,7 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { requireFreeDisk } = require('../middleware/abuse')
 const { MAX_FILE_BYTES, uploadLimiter, createPhotoUpload, stripMetadataInPlace } = require('../lib/photoUpload')
+const { requireRole } = require('../lib/roles')
 
 // Foto-Upload für Tiere/Chronik: MIME-Whitelist, Größe, Dateiname und Metadaten-Entfernung stecken in
 // lib/photoUpload.js (dieselben Regeln gelten für Einblicke, routes/partnerArea/einblicke.js).
@@ -13,7 +14,9 @@ const upload = createPhotoUpload({ fields: 5, fieldSize: 1024, parts: 6 })
 
 const insertUpload = db.prepare('INSERT INTO uploads (filename, family_id) VALUES (?, ?)')
 
-router.post('/', requireAuth, uploadLimiter, requireFreeDisk, upload.single('file'), (req, res) => {
+// Phase R Task 1: Fotos hängen an Tieren, Einträgen und Würfen - in einer Familie also erst ab 'mitglied'.
+// Die Prüfung läuft vor multer, damit von einem Gast gar keine Datei auf der Platte landet.
+router.post('/', requireAuth, requireRole('mitglied'), uploadLimiter, requireFreeDisk, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Keine Datei hochgeladen' })
   }

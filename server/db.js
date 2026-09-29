@@ -202,6 +202,32 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_family_members_group ON family_members(group_family_id);
 `)
 
+// Phase R Task 1: Rolle eines Haushalts in einer Familie (family_members.rolle).
+// rolle: 'gast' | 'mitglied' | 'stellvertretung' | 'leitung' - bewusst ohne CHECK (wie promotions.freigabe),
+// geprüft im Code (lib/roles.js ROLES; ein unbekannter Wert zählt dort als "keine Berechtigung").
+// Wer mit dem gemeinsamen Schlüssel der Familie angemeldet ist (homeId === familyId), hat keine Zeile
+// hier und gilt trotzdem als Leitung (lib/roles.js roleOf).
+// Jede Familie mit Mitgliedern, aber ohne Leitung, bekommt ihr ältestes Mitglied (created_at, bei
+// Gleichstand die kleinste member_family_id) als Leitung. Spalte und Nachtrag laufen als EINE Transaktion
+// und bei jedem Start: idempotent, denn danach hat jede Familie mit Mitgliedern eine Leitung - ein
+// zweiter Lauf findet nichts mehr. Je Familie trifft die Bedingung genau eine Zeile (das älteste Mitglied
+// ist über created_at + member_family_id eindeutig), also nie zwei Leitungen auf einmal.
+const PROMOTE_OLDEST_MEMBER_SQL = `
+  UPDATE family_members SET rolle = 'leitung'
+  WHERE group_family_id IN (SELECT id FROM families WHERE art = 'rudel')
+    AND NOT EXISTS (
+      SELECT 1 FROM family_members l WHERE l.group_family_id = family_members.group_family_id AND l.rolle = 'leitung'
+    )
+    AND member_family_id = (
+      SELECT o.member_family_id FROM family_members o WHERE o.group_family_id = family_members.group_family_id
+      ORDER BY o.created_at, o.member_family_id LIMIT 1
+    )
+`
+db.transaction(() => {
+  addColumnIfMissing('family_members', 'rolle', "TEXT NOT NULL DEFAULT 'mitglied'")
+  db.exec(PROMOTE_OLDEST_MEMBER_SQL)
+})()
+
 // Bestehende Rudel behalten ihren Berner-Auftritt, neue Familien starten mit „Familie auf Pfoten".
 // Spalte anlegen und Bestandsdaten umstellen als eine Transaktion, damit ein Absturz dazwischen
 // nicht neue Zeilen fälschlich auf 'standard' stehen lässt, während alte noch die Spalte vermissen.

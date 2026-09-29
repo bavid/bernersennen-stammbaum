@@ -7,12 +7,18 @@ const { isIsoDate, cleanText, cleanId, isUploadUrl } = require('../lib/validate'
 const { dogLabel } = require('../lib/labels')
 const { ART, membershipsOf, canEnter, canSeeDog, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL } = require('../lib/context')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
+const { requireRole, hasRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { slugify } = require('../lib/partners')
 const { createBatch, revokeOpenHandoverVouchers } = require('../lib/vouchers')
 const { formatCode } = require('../lib/codes')
 const { VERMITTLUNG_STATUS, PUBLISHABLE_STATUS, statusInSql } = require('../lib/vermittlung')
 
 const router = express.Router()
+
+// Phase R Task 1: jeder Schreibweg an Tieren des aktiven Bereichs (anlegen, pflegen, Mitbewohner,
+// Stammbaum über mother/father, löschen) braucht in einer Familie mindestens 'mitglied' (lib/roles.js).
+// Im eigenen Bereich (Zuhause, Tierheim) ist man immer Leitung - dort ändert sich nichts.
+const canWrite = requireRole('mitglied')
 
 const SEXES = ['ruede', 'huendin']
 const SPECIES = ['hund', 'katze', 'anderes']
@@ -359,7 +365,7 @@ router.get('/:id', requireAuth, (req, res) => {
 })
 
 // Mitbewohner verbinden – beide müssen zum eigenen Rudel gehören
-router.post('/:id/housemates', requireAuth, (req, res) => {
+router.post('/:id/housemates', requireAuth, canWrite, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
   const otherId = cleanId((req.body || {}).otherDogId)
@@ -372,7 +378,7 @@ router.post('/:id/housemates', requireAuth, (req, res) => {
   res.status(201).json(findHousemates.all({ id: dog.id, familyId: req.familyId }))
 })
 
-router.delete('/:id/housemates/:otherId', requireAuth, (req, res) => {
+router.delete('/:id/housemates/:otherId', requireAuth, canWrite, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
   const otherId = cleanId(req.params.otherId)
@@ -397,7 +403,7 @@ function validateHousemate(housemateId, familyId) {
   return null
 }
 
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, canWrite, (req, res) => {
   // Phase P Task 1: ein Partner-Bereich (Hundeschule, Hundesalon, Betreuung, ...) führt keine Tiere -
   // Tiere mit Chronik gibt es nur im Zuhause, im Rudel und im Tierheim.
   if (findFamilyArt.get(req.familyId)?.art === ART.partner) {
@@ -444,7 +450,7 @@ const updateDog = db.transaction((existing, record) => {
   }
 })
 
-router.put('/:id', requireAuth, (req, res) => {
+router.put('/:id', requireAuth, canWrite, (req, res) => {
   const existing = loadOwnDog(req, res)
   if (!existing) return
 
@@ -486,7 +492,7 @@ function generatePublicSlug(name) {
   throw new Error('Konnte keinen eindeutigen Steckbrief-Link erzeugen')
 }
 
-router.put('/:id/steckbrief', requireAuth, (req, res) => {
+router.put('/:id/steckbrief', requireAuth, canWrite, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
 
@@ -539,7 +545,7 @@ const createHandover = db.transaction((dog, identity) => {
   })
 })
 
-router.post('/:id/handover', authLimiter, requireAuth, (req, res) => {
+router.post('/:id/handover', authLimiter, requireAuth, canWrite, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
 
@@ -569,7 +575,7 @@ const cancelHandover = db.transaction((dog) => {
   }
 })
 
-router.delete('/:id/handover', requireAuth, (req, res) => {
+router.delete('/:id/handover', requireAuth, canWrite, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
 
@@ -582,7 +588,10 @@ router.delete('/:id/handover', requireAuth, (req, res) => {
   res.json(findDog.get(dog.id))
 })
 
-// Teilen: nur aus "Meine Chronik" heraus, nur in Rudel, in denen der Haushalt Mitglied ist.
+// Teilen: nur aus "Meine Chronik" heraus, nur in Rudel, in denen der Haushalt Mitglied ist. Phase R
+// Task 1: eine NEUE Freigabe braucht in der Ziel-Familie mindestens 'mitglied' (ein Gast teilt nichts);
+// eine schon bestehende Freigabe darf bleiben (z. B. nach einer Herabstufung zum Gast), und Entfernen
+// geht immer. canWrite gilt hier für den aktiven Bereich - das eigene Zuhause, also immer Leitung.
 // Ersetzt jeweils die komplette Menge (nicht additiv) – einfacher fürs Frontend als Diffing. Löscht
 // dabei NUR Rudel-Freigaben - eine eventuelle Tierheim-Freigabe (dog_shares mit story_consent, siehe
 // PUT /:id/shelter-share) blieb bisher fälschlich mit gelöscht (security-review Phase T Finding 2).
@@ -596,7 +605,7 @@ const replaceShares = db.transaction((dogId, familyIds) => {
 
 const MAX_SHARE_TARGETS = 50
 
-router.put('/:id/shares', requireAuth, (req, res) => {
+router.put('/:id/shares', requireAuth, canWrite, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
 
@@ -620,6 +629,11 @@ router.put('/:id/shares', requireAuth, (req, res) => {
   if (!allowed) {
     return res.status(400).json({ error: 'Nur Familien, in denen ihr Mitglied seid' })
   }
+  const current = new Set(listShares.all(dog.id).map((row) => row.family_id))
+  const added = uniqueIds.filter((id) => !current.has(id))
+  if (!added.every((id) => hasRole(req.familyId, id, 'mitglied'))) {
+    return res.status(403).json({ error: FORBIDDEN_MESSAGE })
+  }
 
   replaceShares(dog.id, uniqueIds)
   res.json({ shares: listShares.all(dog.id).map((row) => row.family_id).sort((a, b) => a - b) })
@@ -634,7 +648,7 @@ const setShelterShare = db.transaction((dogId, familyId, storyConsent) => {
   db.prepare('INSERT INTO dog_shares (dog_id, family_id, story_consent) VALUES (?, ?, ?)').run(dogId, familyId, storyConsent)
 })
 
-router.put('/:id/shelter-share', requireAuth, (req, res) => {
+router.put('/:id/shelter-share', requireAuth, canWrite, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
 
@@ -678,7 +692,7 @@ const deleteDog = db.transaction((dog) => {
   db.prepare('DELETE FROM dogs WHERE id = ?').run(dog.id)
 })
 
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete('/:id', requireAuth, canWrite, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
   deleteDog(dog)

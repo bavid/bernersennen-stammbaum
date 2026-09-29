@@ -2,8 +2,14 @@ const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText } = require('../lib/validate')
+const { requireRole } = require('../lib/roles')
 
 const router = express.Router()
+
+// Phase R Task 1 (lib/roles.js): einen Zettel anhängen oder abnehmen braucht in einer Familie mindestens
+// 'mitglied'. Auf einen Zettel antworten ist wie ein Kommentar - das darf schon ein 'gast'.
+const canWrite = requireRole('mitglied')
+const canReply = requireRole('gast')
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 const MAX_REPLY_LENGTH = 1000
@@ -45,7 +51,7 @@ router.get('/', requireAuth, (req, res) => {
   res.json(notes.map((note) => ({ ...note, replies: byNote.get(note.id) })))
 })
 
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, canWrite, (req, res) => {
   const { error, values } = readNoteInput(req.body || {})
   if (error) return res.status(400).json({ error })
 
@@ -64,14 +70,14 @@ const deleteNote = db.transaction((noteId) => {
   db.prepare('DELETE FROM notes WHERE id = ?').run(noteId)
 })
 
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete('/:id', requireAuth, canWrite, (req, res) => {
   const note = loadOwnNote(req, res)
   if (!note) return
   deleteNote(note.id)
   res.status(204).end()
 })
 
-router.post('/:id/replies', requireAuth, (req, res) => {
+router.post('/:id/replies', requireAuth, canReply, (req, res) => {
   const note = loadOwnNote(req, res)
   if (!note) return
 
@@ -86,7 +92,7 @@ router.post('/:id/replies', requireAuth, (req, res) => {
   res.status(201).json(db.prepare('SELECT * FROM note_replies WHERE id = ?').get(result.lastInsertRowid))
 })
 
-router.delete('/:id/replies/:replyId', requireAuth, (req, res) => {
+router.delete('/:id/replies/:replyId', requireAuth, canReply, (req, res) => {
   const reply = db.prepare('SELECT * FROM note_replies WHERE id = ? AND note_id = ?').get(req.params.replyId, req.params.id)
   if (!reply || reply.family_id !== req.familyId) {
     return res.status(404).json({ error: 'Antwort nicht gefunden' })

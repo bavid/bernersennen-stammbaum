@@ -3,8 +3,12 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { canAttachUpload } = require('../lib/uploadAccess')
+const { requireRole } = require('../lib/roles')
 
 const router = express.Router()
+
+// Phase R Task 1: Würfe/Deckakte eintragen und löschen braucht in einer Familie mindestens 'mitglied'.
+const canWrite = requireRole('mitglied')
 
 const SELECT_EVENTS = `
   SELECT b.*, m.name AS mutter_name, v.name AS vater_name
@@ -67,7 +71,7 @@ router.get('/', requireAuth, (req, res) => {
   res.json(rows.map(toEvent))
 })
 
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, canWrite, (req, res) => {
   const { status, error, values } = validateEvent(req.body || {}, req)
   if (error) return res.status(status).json({ error })
 
@@ -83,7 +87,7 @@ router.post('/', requireAuth, (req, res) => {
   res.status(201).json(toEvent(entry))
 })
 
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete('/:id', requireAuth, canWrite, (req, res) => {
   const event = db.prepare('SELECT family_id FROM breeding_events WHERE id = ?').get(req.params.id)
   if (!event || event.family_id !== req.familyId) {
     return res.status(404).json({ error: 'Eintrag nicht gefunden' })

@@ -4,8 +4,15 @@ const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { ART, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
+const { requireRole } = require('../lib/roles')
 
 const router = express.Router()
+
+// Phase R Task 1 (lib/roles.js): Einträge schreiben, ändern und löschen braucht in einer Familie
+// mindestens 'mitglied'; kommentieren (und eigene bzw. im Bereich geschriebene Kommentare löschen) darf
+// schon ein 'gast'. Kommentare anderer zu moderieren (Stellvertretung) folgt in Task 2.
+const canWrite = requireRole('mitglied')
+const canComment = requireRole('gast')
 
 const MAX_COMMENT_LENGTH = 1000
 // Phase T Task 2: Kategorien für die Tierheim-Chronik; kategorie bleibt auch außerhalb eines
@@ -175,7 +182,7 @@ router.get('/', requireAuth, (req, res) => {
   res.json(rows.map((row) => toEntry(row, comments.get(row.id))))
 })
 
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, canWrite, (req, res) => {
   const body = req.body || {}
   const dogId = cleanId(body.dogId)
   if (!dogId) return res.status(400).json({ error: 'dogId ist erforderlich' })
@@ -199,7 +206,7 @@ router.post('/', requireAuth, (req, res) => {
   res.status(201).json(toEntry(entry))
 })
 
-router.put('/:id', requireAuth, (req, res) => {
+router.put('/:id', requireAuth, canWrite, (req, res) => {
   const existing = loadOwnEntry(req, res)
   if (!existing) return
 
@@ -229,7 +236,7 @@ const deleteEntry = db.transaction((entryId) => {
   db.prepare('DELETE FROM timeline_entries WHERE id = ?').run(entryId)
 })
 
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete('/:id', requireAuth, canWrite, (req, res) => {
   const existing = loadOwnEntry(req, res)
   if (!existing) return
   deleteEntry(existing.id)
@@ -238,7 +245,7 @@ router.delete('/:id', requireAuth, (req, res) => {
 
 // Andere Mitglieder kommentieren einen Eintrag – mit Namen, wie auf der Pinnwand.
 // Erlaubt für jeden im Bereich sichtbaren Eintrag (eigen oder geteilt nicht-privat).
-router.post('/:id/comments', requireAuth, (req, res) => {
+router.post('/:id/comments', requireAuth, canComment, (req, res) => {
   const entry = loadVisibleEntry(req, res)
   if (!entry) return
 
@@ -254,7 +261,7 @@ router.post('/:id/comments', requireAuth, (req, res) => {
 })
 
 // Löschen darf, wer den Kommentar geschrieben hat, oder wem der Eintrag gehört (Moderation)
-router.delete('/:id/comments/:commentId', requireAuth, (req, res) => {
+router.delete('/:id/comments/:commentId', requireAuth, canComment, (req, res) => {
   const comment = db
     .prepare('SELECT * FROM entry_comments WHERE id = ? AND entry_id = ?')
     .get(req.params.commentId, req.params.id)

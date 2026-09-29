@@ -175,8 +175,17 @@ test('Benutzer, Wiederherstellung per Schlüssel, Schlüssel erneuern, Einladung
     assert.equal(view.status, 200)
     const asRudelCookie = getCookie(view.res)
 
+    // Phase R Task 1: als Mitglied greift schon die Rollenprüfung (nur die Leitung darf) ...
     const renew = await post('/api/family/key', undefined, asRudelCookie)
-    assert.equal(renew.status, 400)
+    assert.equal(renew.status, 403)
+
+    // ... und auch die Leitung erneuert weiterhin nur den Schlüssel ihres eigenen Bereichs
+    db.prepare("UPDATE family_members SET rolle = 'leitung' WHERE member_family_id = ? AND group_family_id = ?").run(
+      household.data.id,
+      rudel.data.id
+    )
+    const renewAsLead = await post('/api/family/key', undefined, asRudelCookie)
+    assert.equal(renewAsLead.status, 400)
   })
 
   await t.test('Demo darf weder Schlüssel erneuern noch Benutzer anlegen', async () => {
