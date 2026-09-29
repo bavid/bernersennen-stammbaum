@@ -24,8 +24,8 @@ test('scripts/demo.js legt die öffentliche Demo (Rudel + Zuhause) im neuen Stan
   assert.match(output, /Partner-Bereich "hundesalon-wuschelglueck" angelegt: 5 Einblicke/)
 
   const db = new Database(path.join(dir, 'data.db'))
-  // Phase T Task 6: seit dem Demo-Tierheim drei Demo-Familien; Phase P1 Task 4: dazu zwei Demo-Partner-Bereiche
-  // (ORDER BY art, name: partner, partner, rudel, tierheim, zuhause).
+  // Phase T Task 6: seit dem Demo-Tierheim drei Demo-Familien; Phase P1 Task 4: dazu zwei Demo-Partner-Bereiche;
+  // Phase R Task 3: dazu drei Demo-Haushalte je Rolle (ORDER BY art, name: partner, partner, rudel, tierheim, zuhause ...).
   const families = db.prepare('SELECT id, name, theme, is_demo, art FROM families WHERE is_demo = 1 ORDER BY art, name').all()
   assert.deepEqual(
     families.map(({ name, theme, is_demo: isDemo, art }) => ({ name, theme, isDemo, art })),
@@ -34,15 +34,20 @@ test('scripts/demo.js legt die öffentliche Demo (Rudel + Zuhause) im neuen Stan
       { name: 'Hundeschule Pfotenglück', theme: 'standard', isDemo: 1, art: 'partner' },
       { name: 'Familie Sonnenhang', theme: 'standard', isDemo: 1, art: 'rudel' },
       { name: 'Tierheim Sonnenhang', theme: 'standard', isDemo: 1, art: 'tierheim' },
+      { name: 'Zuhause Heidekamp (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
+      { name: 'Zuhause Lindenhof (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
+      { name: 'Zuhause Möwenweg (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
       { name: 'Zuhause am Deich', theme: 'standard', isDemo: 1, art: 'zuhause' }
     ]
   )
   const rudel = families.find((f) => f.art === 'rudel')
-  const household = families.find((f) => f.art === 'zuhause')
+  const household = families.find((f) => f.name === 'Zuhause am Deich')
   const membership = db
-    .prepare('SELECT 1 FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
+    .prepare('SELECT rolle FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
     .get(household.id, rudel.id)
-  assert.ok(membership, 'Zuhause ist Mitglied des Rudels')
+  assert.equal(membership?.rolle, 'leitung', 'Zuhause am Deich leitet das Rudel')
+  const roles = db.prepare('SELECT rolle FROM family_members WHERE group_family_id = ? ORDER BY rolle').all(rudel.id).map((r) => r.rolle)
+  assert.deepEqual(roles, ['gast', 'leitung', 'mitglied', 'stellvertretung'])
 
   // replaceDemoPack() legt (Task 4) auch die Demo-Partner neu an, auch wenn scripts/demo.js selbst
   // nichts darüber ausgibt - siehe lib/demoPack.js, seed/demo-partners.js.

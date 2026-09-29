@@ -77,6 +77,18 @@ try {
   } else {
     console.log(`Test-Zuhause "${TEST_HOUSEHOLD_NAME}" besteht schon (Passwort unverändert)`)
   }
+  // Phase R Task 3: das Test-Zuhause leitet das Test-Rudel - createDemoHousehold legt die Mitgliedschaft
+  // schon als Leitung an, aber ein Bestand aus der Zeit vor den Rollen (oder eine Herabstufung beim
+  // Ausprobieren) soll den nächsten Seed-Lauf nicht überdauern. Idempotent, INSERT OR IGNORE für den Fall,
+  // dass die Mitgliedschaft fehlt (z. B. nach "Familie verlassen" beim Testen).
+  db.prepare(
+    `INSERT OR IGNORE INTO family_members (member_family_id, group_family_id, rolle)
+     SELECT id, ?, 'leitung' FROM families WHERE name = ?`
+  ).run(testFamily.id, TEST_HOUSEHOLD_NAME)
+  db.prepare(
+    `UPDATE family_members SET rolle = 'leitung'
+     WHERE group_family_id = ? AND member_family_id = (SELECT id FROM families WHERE name = ?)`
+  ).run(testFamily.id, TEST_HOUSEHOLD_NAME)
 
   // Admin-Stapel zum Ausprobieren von "Gutscheine weitergeben" bzw. der Admin-Übersicht - Klartext
   // NUR hier in der Konsole (Codes landen sonst nie in Logs, siehe lib/codes.js).

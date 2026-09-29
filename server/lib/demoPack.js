@@ -18,6 +18,7 @@ const { DEMO_PARTNERS } = require('../seed/demo-partners')
 const { SHELTER_NAME, DOGS: SHELTER_DOGS, TIMELINE: SHELTER_TIMELINE } = require('../seed/demo-shelter')
 const { DEMO_PROMOTIONS, DEMO_SETTINGS, DEMO_DONATION_REPORT } = require('../seed/demo-discover')
 const { createDemoPartnerAreas, createDemoPartnerContent } = require('./demoPartnerAreas')
+const { createDemoMembers } = require('./demoMembers')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -467,9 +468,10 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, t
   })()
 }
 
-// Ersetzt die öffentliche Demo: legt zuerst die neue an (Rudel, dann das Zuhause "Zuhause am Deich"
-// als Mitglied mit zwei geteilten Tieren, beides in EINER Transaktion) und löscht erst danach alle
-// alten Demo-Familien (is_demo = 1, egal ob Rudel oder Zuhause) samt Fotos. Scheitert das Anlegen,
+// Ersetzt die öffentliche Demo: legt zuerst die neue an (Rudel, dann die Demo-Haushalte je Rolle
+// (Phase R Task 3, lib/demoMembers.js) und das Zuhause "Zuhause am Deich" als Leitung mit zwei geteilten
+// Tieren, alles in EINER Transaktion) und löscht erst danach alle alten Demo-Familien (is_demo = 1, egal ob
+// Rudel oder Zuhause) samt Fotos. Scheitert das Anlegen,
 // bleibt die alte Demo unangetastet erreichbar; die alten Ids werden vorher eingesammelt, damit das
 // Löschen die gerade frisch angelegten (höheren) Ids nicht treffen kann.
 // Das Passwort ist zufällig – in die Demo kommt man über "Demo ansehen".
@@ -537,6 +539,11 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     // Demo-Partner (auch des Tierheims) - nach insertDemoPartners (neue Ids) und removeDemoEinblicke oben.
     const partnerAreaResult = createDemoPartnerAreas(db, { copyImage })
 
+    // Phase R Task 3: die Demo-Haushalte für Stellvertretung, Mitglied und Gast (lib/demoMembers.js) VOR
+    // "Zuhause am Deich" - POST /api/demo landet im neuesten Demo-Zuhause (routes/auth.js findDemoFamily),
+    // und das soll die Leitung bleiben.
+    const membersResult = createDemoMembers(db, { copyImage, groupFamilyId: rudelResult.familyId })
+
     const householdResult = createDemoHousehold(db, {
       password: crypto.randomBytes(24).toString('base64url'),
       isDemo: true,
@@ -554,6 +561,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     return {
       created: rudelResult,
       household: householdResult,
+      members: membersResult,
       shelter: shelterResult,
       partnerIds: newPartnerIds,
       partnerAreas: partnerAreaResult,
@@ -573,7 +581,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     for (const file of newPromotionImages) fs.rmSync(path.join(mediaDir, file), { force: true })
     throw err
   }
-  const { created, household, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos } = built
+  const { created, household, members, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos } = built
 
   for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
   removeUploads(uploadDir, unusedEinblickPhotos(db, removedEinblickPhotos))
@@ -595,6 +603,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     removed: previous,
     created,
     household,
+    members,
     shelter,
     partnerIds,
     partnerAreas: partnerAreas.areas,

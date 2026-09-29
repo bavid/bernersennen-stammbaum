@@ -30,20 +30,21 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
   const firstUploads = fs.readdirSync(uploadDir).length
   const { removed, created, household, shelter, partnerIds } = replaceDemoPack(db, uploadDir)
 
-  await t.test('replacing removes all five old demo families and their photos', async () => {
+  await t.test('replacing removes all eight old demo families and their photos', async () => {
     // Phase T Task 6: seit dem Demo-Tierheim drei Demo-Familien (Rudel, Zuhause, Tierheim); Phase P1 Task 4:
-    // dazu die zwei Demo-Partner-Bereiche (Pfotenglück, Wuschelglück, siehe test/demoPartnerArea.test.js).
-    assert.equal(removed.length, 5)
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 5)
+    // dazu die zwei Demo-Partner-Bereiche (Pfotenglück, Wuschelglück, siehe test/demoPartnerArea.test.js);
+    // Phase R Task 3: dazu drei Demo-Haushalte je Rolle (Stellvertretung, Mitglied, Gast, test/demoMembers.test.js).
+    assert.equal(removed.length, 8)
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 8)
     assert.equal(fs.readdirSync(uploadDir).length, firstUploads, 'no orphaned demo photos pile up')
     const realDogs = await call(base, '/api/dogs', { cookie: real.cookie })
     assert.deepEqual(realDogs.data.map((d) => d.name), ['Bleibt'])
   })
 
-  await t.test('exactly five demo families (Rudel, Zuhause, Tierheim, zwei Partner-Bereiche), linked by membership', () => {
+  await t.test('exactly eight demo families (Rudel, vier Zuhause, Tierheim, zwei Partner-Bereiche), linked by membership', () => {
     const demoFamilies = db.prepare('SELECT id, art FROM families WHERE is_demo = 1').all()
-    assert.equal(demoFamilies.length, 5)
-    assert.deepEqual(demoFamilies.map((f) => f.art).sort(), ['partner', 'partner', 'rudel', 'tierheim', 'zuhause'])
+    assert.equal(demoFamilies.length, 8)
+    assert.deepEqual(demoFamilies.map((f) => f.art).sort(), ['partner', 'partner', 'rudel', 'tierheim', 'zuhause', 'zuhause', 'zuhause', 'zuhause'])
     assert.equal(demoFamilies.some((f) => f.id === created.familyId), true)
     assert.equal(demoFamilies.some((f) => f.id === household.familyId), true)
     assert.equal(demoFamilies.some((f) => f.id === shelter.familyId), true)
@@ -104,9 +105,14 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     assert.ok(list.data.some((p) => p.slug === 'tierheim-sonnenhang'), 'erscheint auch in der öffentlichen Liste')
   })
 
-  await t.test('two dog_shares, at least two private entries, exactly one foreign comment', () => {
+  await t.test('four dog_shares (two vom Deich, je eins von Stellvertretung und Mitglied), private entries, one foreign comment', () => {
     assert.equal(household.dogs, 4)
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM dog_shares WHERE family_id = ?').get(created.familyId).n, 2)
+    // Phase R Task 3: Nele + Mira vom Deich, dazu Wilma (Möwenweg) und Pepper (Lindenhof), siehe seed/demo-members.js
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM dog_shares WHERE family_id = ?').get(created.familyId).n, 4)
+    assert.equal(
+      db.prepare('SELECT COUNT(*) AS n FROM dog_shares ds JOIN dogs d ON d.id = ds.dog_id WHERE ds.family_id = ? AND d.family_id = ?').get(created.familyId, household.familyId).n,
+      2
+    )
     const privateCount = db
       .prepare('SELECT COUNT(*) AS n FROM timeline_entries WHERE family_id = ? AND privat = 1')
       .get(household.familyId).n
@@ -207,14 +213,14 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     assert.equal(res.status, 403)
   })
 
-  await t.test('a second replace fully replaces all five demo families, no orphans left behind', async () => {
+  await t.test('a second replace fully replaces all eight demo families, no orphans left behind', async () => {
     const oldRudelId = created.familyId
     const oldHouseholdId = household.familyId
     const oldShelterId = shelter.familyId
     const oldPartnerIds = partnerIds.slice()
 
     const second = replaceDemoPack(db, uploadDir)
-    assert.equal(second.removed.length, 5)
+    assert.equal(second.removed.length, 8)
     assert.equal(second.household.dogs, 4)
     assert.equal(second.shelter.dogs, 5, 'wieder genau fünf Tiere im Demo-Tierheim')
 
@@ -232,7 +238,7 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
       0,
       'alte Demo-Ids (auch das alte Tierheim) sind weg'
     )
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 5)
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 8)
 
     const orphanMembers = db
       .prepare(
