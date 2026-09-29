@@ -208,6 +208,14 @@ const PATHS = {
       <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
     </>
   ),
+  // Mitglieder einer Familie (Phase R): "Wer sieht was?" und Mitglieder-Seite.
+  users: (
+    <>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
+    </>
+  ),
   // Postfach der Partner (Phase P2): Nachrichten aus "Schreib uns".
   inbox: (
     <>

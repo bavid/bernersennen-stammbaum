@@ -27,6 +27,17 @@ describe('themes', () => {
     expect(getTheme('standard').words.newsTitle).toBe('Neu in der Familie')
   })
 
+  test('role words (Phase R): berner says Rudelführer, standard Familienleitung, the rest is shared', () => {
+    expect(getTheme('berner').words.roleLeitung).toBe('Rudelführer')
+    expect(getTheme('standard').words.roleLeitung).toBe('Familienleitung')
+    for (const id of THEME_IDS) {
+      const { words } = getTheme(id)
+      expect([words.roleGast, words.roleMitglied, words.roleStellvertretung]).toEqual(['Gast', 'Mitglied', 'Stellvertretung'])
+    }
+    expect(getTheme('berner').words.dissolveGroup).toBe('Rudel auflösen')
+    expect(getTheme('standard').words.groupNeverPublic).toBe('Eine Familie ist nie öffentlich.')
+  })
+
   test('each theme defines a Mark component', () => {
     for (const id of THEME_IDS) expect(typeof getTheme(id).Mark).toBe('function')
   })

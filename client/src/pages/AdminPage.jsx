@@ -4,14 +4,14 @@ import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import Icon from '../components/Icon.jsx'
-import AdminFamilyDetails from '../components/AdminFamilyDetails.jsx'
+import AdminStats from '../components/AdminStats.jsx'
+import AdminFamilyList from '../components/AdminFamilyList.jsx'
 import AdminMessages from '../components/AdminMessages.jsx'
 import AdminVouchers from '../components/AdminVouchers.jsx'
 import AdminPartners from '../components/AdminPartners.jsx'
 import AdminPromotions from '../components/AdminPromotions.jsx'
 import AdminPostApproval from '../components/AdminPostApproval.jsx'
 import AdminSupport from '../components/AdminSupport.jsx'
-import { relativeTime } from '../lib/dates.js'
 
 // Gültiges Ziel für einen Partner-Gutscheinstapel (siehe routes/admin.js POST /voucher-batches)
 function partnerVoucherEligible(partner) {
@@ -114,7 +114,6 @@ function Dashboard({ onLogout }) {
   const { theme } = useTheme()
   const [overview, setOverview] = useState(null)
   const [partners, setPartners] = useState([])
-  const [openId, setOpenId] = useState(null)
   const [error, setError] = useState(null)
   // Phase P2: "Zur Freigabe" und "Empfehlungen & Anzeigen" zeigen dieselben Zeilen - ändert eine Karte etwas,
   // zählt promotionsVersion hoch und beide laden neu. pendingCount: Zähler im Kopf.
@@ -166,6 +165,9 @@ function Dashboard({ onLogout }) {
         {!overview && !error && <p className="muted">Lade …</p>}
         {overview && (
           <>
+            {/* Phase 5: „Übersicht“ zuerst - Einlösungen, Mundpropaganda, Klicks, Partner (ohne Demo-Daten). */}
+            <AdminStats bereiche={overview.stats.families} />
+
             <StatsGrid stats={overview.stats} />
 
             <AdminMessages
@@ -193,38 +195,7 @@ function Dashboard({ onLogout }) {
 
             <AdminSupport />
 
-            <section className="admin-families" aria-labelledby="admin-families-title">
-              <h2 id="admin-families-title">Alle Rudel</h2>
-              {overview.families.map((family) => {
-                const open = openId === family.id
-                return (
-                  <article key={family.id} className={`admin-family card ${open ? 'is-open' : ''}`}>
-                    <button
-                      type="button"
-                      className="admin-family-head"
-                      aria-expanded={open}
-                      onClick={() => setOpenId(open ? null : family.id)}
-                    >
-                      <span>
-                        <strong className="admin-family-name">{family.name}</strong>
-                        <span className="muted">
-                          angelegt {relativeTime(family.created_at)}
-                          {family.last_activity ? ` · zuletzt aktiv ${relativeTime(family.last_activity)}` : ''}
-                          {family.quelle ? ` · über: ${family.quelle}` : ''}
-                        </span>
-                      </span>
-                      <span className="admin-family-counts">
-                        <span className="pill">{family.dogs} Hunde</span>
-                        <span className="pill">{family.entries} Einträge</span>
-                        <span className="pill">{family.notes} Zettel</span>
-                        <span className="pill">{family.replies} Antworten</span>
-                      </span>
-                    </button>
-                    {open && <AdminFamilyDetails familyId={family.id} />}
-                  </article>
-                )
-              })}
-            </section>
+            <AdminFamilyList families={overview.families} />
           </>
         )}
       </main>

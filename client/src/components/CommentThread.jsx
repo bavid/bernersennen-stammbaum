@@ -98,7 +98,9 @@ export default function CommentThread({
             {items.map((item) => (
               <li key={item.id} className="reply">
                 <p className="reply-meta">
-                  <strong>{item.autor_name}</strong> · {relativeTime(item.created_at)}
+                  <strong>{item.autor_name}</strong>
+                  {/* ehemalig (Phase R): der Haushalt der Autorin ist heute nicht mehr Mitglied der Familie */}
+                  {item.ehemalig && <span className="reply-former">ehemaliges Mitglied</span>} · {relativeTime(item.created_at)}
                 </p>
                 <p className="reply-text">{item.text}</p>
                 {canDelete(item) && (

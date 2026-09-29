@@ -45,7 +45,9 @@ const AUTH_COPY = {
   }
 }
 
-function authCopyFor(family) {
+// Auch die Mitglieder-Seite (FamilyKeySection) fragt so nach dem eigenen Nachweis, bevor sie den
+// Schlüssel der Familie erneuert.
+export function authCopyFor(family) {
   const kind = family?.auth?.kind
   return AUTH_COPY[kind] || AUTH_COPY.key
 }

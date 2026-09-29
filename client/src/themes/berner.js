@@ -33,6 +33,13 @@ export default {
     groupsDative: 'Rudeln',
     noGroupConnected: 'Noch kein Rudel verbunden.',
     leaveGroup: 'Rudel verlassen',
+    dissolveGroup: 'Rudel auflösen',
+    groupNeverPublic: 'Ein Rudel ist nie öffentlich.',
+    // Rollen in einem Rudel (lib/roles.js roleLabel), aufsteigend nach Rang
+    roleGast: 'Gast',
+    roleMitglied: 'Mitglied',
+    roleStellvertretung: 'Stellvertretung',
+    roleLeitung: 'Rudelführer',
     newsTitle: 'Neu im Rudel',
     animal: 'Hund',
     animals: 'Hunde',

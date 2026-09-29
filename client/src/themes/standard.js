@@ -33,6 +33,13 @@ export default {
     groupsDative: 'Familien',
     noGroupConnected: 'Noch keine Familie verbunden.',
     leaveGroup: 'Familie verlassen',
+    dissolveGroup: 'Familie auflösen',
+    groupNeverPublic: 'Eine Familie ist nie öffentlich.',
+    // Rollen in einer Familie (lib/roles.js roleLabel), aufsteigend nach Rang
+    roleGast: 'Gast',
+    roleMitglied: 'Mitglied',
+    roleStellvertretung: 'Stellvertretung',
+    roleLeitung: 'Familienleitung',
     newsTitle: 'Neu in der Familie',
     animal: 'Tier',
     animals: 'Tiere',

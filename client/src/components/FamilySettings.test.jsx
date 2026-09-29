@@ -135,6 +135,41 @@ describe('FamilySettings – "Familie verlassen"', () => {
     expect(heading()).toBeUndefined()
   })
 
+  test('Nicht-Leitung in einer Familie (Phase R): statt Name/Aussehen ein Hinweis, "Zugang" verweist auf „Meine Chronik“, Link zu Mitglieder & Rollen', async () => {
+    await renderWith({ ...groupActive, role: 'mitglied' })
+
+    const headings = [...container.querySelectorAll('.settings-section h3')].map((h) => h.textContent)
+    expect(headings).toEqual(['Name und Aussehen', 'Zugang', 'Mitglieder', 'Familie verlassen'])
+    expect(container.querySelector('#family-rename')).toBeNull()
+    expect(container.querySelector('.theme-picker')).toBeNull()
+    expect(container.textContent).toContain('Name und Aussehen der Familie ändert nur die Familienleitung.')
+    expect(container.textContent).toContain('Benutzer verwaltest du in „Meine Chronik“.')
+    expect(container.textContent).not.toContain('Den Schlüssel der Familie erneuerst du')
+    const link = container.querySelector('a[href="/mitglieder"]')
+    expect(link.textContent).toContain('Mitglieder & Rollen')
+  })
+
+  test('die Leitung in einer Familie behält Name und Aussehen und bekommt den Hinweis auf den Familien-Schlüssel', async () => {
+    const onCancel = vi.fn()
+    await renderWith({ ...groupActive, role: 'leitung' }, {}, { onCancel })
+
+    const headings = [...container.querySelectorAll('.settings-section h3')].map((h) => h.textContent)
+    expect(headings).toEqual(['Name', 'Aussehen', 'Zugang', 'Mitglieder', 'Familie verlassen'])
+    expect(container.querySelector('#family-rename')).not.toBeNull()
+    expect(container.textContent).toContain('Den Schlüssel der Familie erneuerst du auf der Mitglieder-Seite.')
+    // Der Link schließt den Dialog (die Seite dahinter wechselt)
+    act(() => container.querySelector('a[href="/mitglieder"]').click())
+    expect(onCancel).toHaveBeenCalled()
+  })
+
+  test('ein klassischer Rudel-Login (Identität = Familie) gilt als Leitung: Name, Aussehen und der eigene Zugang bleiben, kein Hinweis auf „Meine Chronik“', async () => {
+    await renderWith({ ...groupActive, home: { id: 3, name: 'Familie Sonnenhang', art: 'rudel' } })
+    const headings = [...container.querySelectorAll('.settings-section h3')].map((h) => h.textContent)
+    expect(headings).toEqual(['Name', 'Aussehen', 'Zugang', 'Mitglieder'])
+    expect(container.querySelector('#access-confirm')).not.toBeNull()
+    expect(container.textContent).not.toContain('Benutzer verwaltest du in „Meine Chronik“.')
+  })
+
   test('zweistufiges Verlassen ruft api.leaveFamily, dann onFamilyChange mit dem zurückgegebenen "me" und schließt', async () => {
     const me = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: groupActive.home, memberships: [] }
     leaveFamily.mockResolvedValue(me)

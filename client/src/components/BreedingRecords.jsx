@@ -136,8 +136,9 @@ export function BreedingEvent({ event, onDelete, onOpenPhoto }) {
   )
 }
 
-// Das bisherige Zuchtbuch als Abschnitt der Würfe-Seite: für die, die züchten – alle anderen sehen es zugeklappt
-export default function BreedingRecords({ events, ownDogs, allDogs, onCreated, onDelete, onOpenPhoto }) {
+// Das bisherige Zuchtbuch als Abschnitt der Würfe-Seite: für die, die züchten – alle anderen sehen es zugeklappt.
+// canWrite (Phase R): ohne Schreibrecht (Gast in einer Familie) kein "Deckakt eintragen"; Löschen hängt an onDelete.
+export default function BreedingRecords({ events, ownDogs, allDogs, canWrite = true, onCreated, onDelete, onOpenPhoto }) {
   const [writing, setWriting] = useState(false)
   return (
     <section className="breeding-records" aria-labelledby="breeding-records-title">
@@ -145,7 +146,7 @@ export default function BreedingRecords({ events, ownDogs, allDogs, onCreated, o
         <h2 id="breeding-records-title" className="section-title">
           Zuchtbuch
         </h2>
-        {!writing && (
+        {canWrite && !writing && (
           <button type="button" className="btn btn-ghost" onClick={() => setWriting(true)}>
             <Icon name="plus" /> Deckakt eintragen
           </button>

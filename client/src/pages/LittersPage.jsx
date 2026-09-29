@@ -10,6 +10,7 @@ import Lightbox from '../components/Lightbox.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { formatDateLong } from '../lib/dates.js'
 import { buildLitters, latestEntries, photosByAge } from '../lib/litters.js'
+import { hasRole } from '../lib/roles.js'
 import { displayName, shortName } from '../lib/timeline.js'
 
 function PlannedLitter({ planned }) {
@@ -34,8 +35,11 @@ function PlannedLitter({ planned }) {
   )
 }
 
-export default function LittersPage() {
+// family: der aktive Bereich (AreaRoutes). Deckakte eintragen und löschen ab Mitglied (Phase R) - ein Gast
+// sieht das Zuchtbuch nur.
+export default function LittersPage({ family }) {
   const { words } = useTheme()
+  const canWrite = hasRole(family, 'mitglied')
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
   const [events, setEvents] = useState([])
@@ -167,8 +171,9 @@ export default function LittersPage() {
           events={events}
           ownDogs={dogs}
           allDogs={allDogs}
+          canWrite={canWrite}
           onCreated={handleCreated}
-          onDelete={handleDelete}
+          onDelete={canWrite ? handleDelete : undefined}
           onOpenPhoto={setPhoto}
         />
       )}

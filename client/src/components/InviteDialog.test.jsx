@@ -3,8 +3,8 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { myVouchers } = vi.hoisted(() => ({ myVouchers: vi.fn() }))
-vi.mock('../api', () => ({ api: { myVouchers } }))
+const { myVouchers, setVoucherRole } = vi.hoisted(() => ({ myVouchers: vi.fn(), setVoucherRole: vi.fn() }))
+vi.mock('../api', () => ({ api: { myVouchers, setVoucherRole } }))
 
 // Kein <ToastProvider> in diesem Test-Setup (siehe render() unten) – useToast() mocken, um die
 // Fehlermeldung beim gescheiterten "Link kopieren" ohne echte Toast-UI zu prüfen.
@@ -56,6 +56,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
   document.title = ''
   myVouchers.mockReset()
+  setVoucherRole.mockReset()
   toast.mockReset()
   vi.restoreAllMocks()
 })
@@ -183,6 +184,77 @@ describe('InviteDialog – eigene Gutscheine', () => {
     myVouchers.mockRejectedValue(new Error('Server nicht erreichbar'))
     await render(rudel)
     expect(container.querySelector('[role="alert"]').textContent).toBe('Server nicht erreichbar')
+  })
+})
+
+describe('InviteDialog – Einladungen mit Rolle (Phase R)', () => {
+  const home = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' }
+  const groupAs = (role) => ({ ...rudel, role, home, memberships: [{ id: 3, name: 'Familie Sonnenhang', rolle: role }] })
+  const invite = { ...openVoucher, rolle: 'mitglied' }
+  const changeSelect = (select, value) =>
+    act(() => {
+      select.value = value
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+
+  test('die Leitung wählt je offener Einladung aus allen vier Rollen; die Auswahl schreibt sofort per api.setVoucherRole', async () => {
+    myVouchers.mockResolvedValue([invite])
+    setVoucherRole.mockResolvedValue({ id: 1, rolle: 'gast' })
+    await render(groupAs('leitung'))
+
+    const row = container.querySelector('.voucher-row')
+    expect(row.textContent).toContain('Tritt bei als')
+    const select = row.querySelector('.role-select')
+    expect([...select.options].map((o) => o.value)).toEqual(['gast', 'mitglied', 'stellvertretung', 'leitung'])
+    expect(select.value).toBe('mitglied')
+
+    changeSelect(select, 'gast')
+    await act(async () => {})
+    expect(setVoucherRole).toHaveBeenCalledWith(1, 'gast')
+    expect(row.querySelector('.role-select').value).toBe('gast')
+  })
+
+  test('die Stellvertretung darf nur Gast und Mitglied vergeben', async () => {
+    myVouchers.mockResolvedValue([invite])
+    await render(groupAs('stellvertretung'))
+    expect([...container.querySelector('.role-select').options].map((o) => o.value)).toEqual(['gast', 'mitglied'])
+  })
+
+  test('Mitglied/Gast bekommen keine Auswahl (sie sehen den Dialog ohnehin nicht), das Zuhause auch nicht', async () => {
+    myVouchers.mockResolvedValue([invite])
+    await render(groupAs('mitglied'))
+    expect(container.querySelector('.role-select')).toBeNull()
+    act(() => root.unmount())
+    root = null
+
+    myVouchers.mockResolvedValue([{ ...openVoucher, joins: false, rolle: null }])
+    await render(zuhause)
+    expect(container.querySelector('.role-select')).toBeNull()
+    expect(container.querySelector('.role-badge')).toBeNull()
+  })
+
+  test('eine eingelöste Einladung zeigt ihre Rolle nur noch als Chip', async () => {
+    myVouchers.mockResolvedValue([{ ...redeemedVoucher, rolle: 'gast' }])
+    await render(groupAs('leitung'))
+    expect(container.querySelector('.role-select')).toBeNull()
+    expect(container.querySelector('.voucher-row .role-badge').textContent).toBe('Gast')
+  })
+
+  test('schlägt das Schreiben fehl, springt die Auswahl zurück und ein Toast erklärt es', async () => {
+    myVouchers.mockResolvedValue([invite])
+    setVoucherRole.mockRejectedValue(new Error('Dafür fehlt dir die Berechtigung in dieser Familie.'))
+    await render(groupAs('stellvertretung'))
+
+    changeSelect(container.querySelector('.role-select'), 'gast')
+    await act(async () => {})
+    expect(container.querySelector('.role-select').value).toBe('mitglied')
+    expect(toast).toHaveBeenCalledWith('Dafür fehlt dir die Berechtigung in dieser Familie.')
+  })
+
+  test('in der Demo ist die Auswahl gesperrt', async () => {
+    myVouchers.mockResolvedValue([invite])
+    await render(groupAs('leitung'), { isDemo: true })
+    expect(container.querySelector('.role-select').disabled).toBe(true)
   })
 })
 

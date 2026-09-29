@@ -76,6 +76,61 @@ afterEach(() => {
   listUsers.mockReset()
 })
 
+describe('OverviewPage – Rechte je Rolle in einer Familie (Phase R)', () => {
+  const groupAs = (role) => ({
+    id: 3,
+    name: 'Familie Sonnenhang',
+    theme: 'standard',
+    art: 'rudel',
+    isDemo: false,
+    role,
+    home: homeFamily.home,
+    memberships: [{ id: 3, name: 'Familie Sonnenhang', theme: 'standard', rolle: role }]
+  })
+  const buttonWith = (text) => [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes(text))
+
+  function mockEmpty() {
+    listDogs.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    recentActivity.mockResolvedValue([])
+    listNotes.mockResolvedValue([])
+    listLinks.mockResolvedValue([])
+  }
+
+  test('Gast: weder "Tier hinzufügen" noch "Jemanden einladen", der leere Stammbaum lädt nicht zum Anlegen ein', async () => {
+    mockEmpty()
+    await render(groupAs('gast'))
+    expect(buttonWith('Tier hinzufügen')).toBeUndefined()
+    expect(buttonWith('Jemanden einladen')).toBeUndefined()
+    expect(buttonWith('Erstes Tier anlegen')).toBeUndefined()
+    expect(container.querySelector('.empty-state').textContent).toContain('Sobald Mitglieder Tiere anlegen')
+    expect(container.querySelector('a[href="/mitglieder"]').textContent).toContain('Mitglieder & Rollen')
+  })
+
+  test('Mitglied: "Tier hinzufügen", aber kein "Jemanden einladen"', async () => {
+    mockEmpty()
+    await render(groupAs('mitglied'))
+    expect(buttonWith('Tier hinzufügen')).not.toBeUndefined()
+    expect(buttonWith('Erstes Tier anlegen')).not.toBeUndefined()
+    expect(buttonWith('Jemanden einladen')).toBeUndefined()
+  })
+
+  test('Stellvertretung: beides', async () => {
+    mockEmpty()
+    await render(groupAs('stellvertretung'))
+    expect(buttonWith('Tier hinzufügen')).not.toBeUndefined()
+    expect(buttonWith('Jemanden einladen')).not.toBeUndefined()
+  })
+
+  test('das eigene Zuhause hat beides und keinen Mitglieder-Link', async () => {
+    mockEmpty()
+    await render(homeFamily)
+    expect(buttonWith('Tier hinzufügen')).not.toBeUndefined()
+    expect(buttonWith('Jemanden einladen')).not.toBeUndefined()
+    expect(container.querySelector('a[href="/mitglieder"]')).toBeNull()
+  })
+})
+
 describe('OverviewPage – Umbenennen des eigenen Zuhauses', () => {
   test('aktualisiert auch family.home.name, wenn der aktive Bereich das eigene Zuhause ist', async () => {
     listDogs.mockResolvedValue([])

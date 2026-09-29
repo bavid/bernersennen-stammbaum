@@ -13,11 +13,13 @@ import ShelterSharePanel from '../components/ShelterSharePanel.jsx'
 import SteckbriefPanel from '../components/SteckbriefPanel.jsx'
 import VermittlungStatusPanel from '../components/VermittlungStatusPanel.jsx'
 import HandoverDialog from '../components/HandoverDialog.jsx'
+import TakeOverPanel from '../components/TakeOverPanel.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { useIsDemo } from '../lib/demo.js'
+import { hasRole } from '../lib/roles.js'
 import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { companionLine } from '../lib/companions.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
@@ -55,7 +57,9 @@ function housemateLine(dog) {
   return livesWithLabel(dog.housemates)
 }
 
-function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
+// canWrite (Phase R): dog.isOwn UND die Rolle darf schreiben - ein Gast in einer Familie sieht deren Tiere
+// ohne Bearbeiten/Erinnerung/Mitbewohner-Knöpfe.
+function DogHero({ dog, allDogs, canWrite, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
   const livesWith = housemateLine(dog)
   const age = dog.geburtsdatum ? ageText(dog.geburtsdatum) : null
   // Für geteilte Tiere im fremden Bereich (!dog.canEdit) ersetzt der Name des besitzenden Bereichs
@@ -124,7 +128,7 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
           <Housemates
             dog={dog}
             allDogs={allDogs}
-            canEdit={dog.isOwn}
+            canEdit={canWrite}
             onAdd={onAddHousemate}
             onCreated={onCreateHousemate}
             onRemove={onRemoveHousemate}
@@ -146,7 +150,7 @@ function DogHero({ dog, allDogs, onEdit, onAddEntry, onOpenPhoto, onAddHousemate
 
         {dog.beschreibung && <ExpandableText text={dog.beschreibung} className="dog-hero-description" lines={4} />}
 
-        {dog.isOwn && (
+        {canWrite && (
           <div className="dog-hero-actions">
             <button type="button" className="btn btn-primary" onClick={onAddEntry}>
               <Icon name="plus" />
@@ -294,9 +298,23 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     }
   }
 
-  // Löschen-Knopf nur für Kommentare, die der Server auch löschen ließe: eigene (aktiver Bereich) oder
-  // auf einem Eintrag, den der aktive Bereich besitzt (dog.canEdit) – Moderation wie beim Server.
+  // Rollen (Phase R, lib/roles.js): in einer Familie schreibt ab Mitglied, löscht Tiere ab Stellvertretung -
+  // außerhalb (Zuhause, Tierheim) ist man immer Leitung, dort ändert sich nichts.
+  const inGroup = family.art === 'rudel'
+  const canWrite = dog.isOwn && hasRole(family, 'mitglied')
+  const canDeleteDog = !inGroup || hasRole(family, 'stellvertretung')
+  // Tier der Familie in die eigene Chronik übernehmen: GET /dogs liefert kannUebernehmen, die Detailansicht
+  // (noch) nicht - dann dieselbe Regel wie server/routes/dogs.js canTakeOverInArea: Leitungs-Mitglied mit
+  // eigenem Zuhause (nicht der gemeinsame Schlüssel), Tier gehört der Familie.
+  const canTakeOver =
+    dog.kannUebernehmen ??
+    (inGroup && dog.canEdit && family.home?.art === 'zuhause' && family.home.id !== family.id && hasRole(family, 'leitung'))
+
+  // Löschen-Knopf nur für Kommentare, die der Server auch löschen ließe. In einer Familie (lib/authorship.js):
+  // die eigenen (vonMir) oder ab Stellvertretung (Moderation). Sonst wie bisher: eigene (aktiver Bereich)
+  // oder auf einem Eintrag, den der aktive Bereich besitzt (dog.canEdit).
   function canDeleteComment(_entry, comment) {
+    if (inGroup) return Boolean(comment.vonMir) || hasRole(family, 'stellvertretung')
     return comment.family_id === family.id || dog.canEdit
   }
 
@@ -410,6 +428,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
       <DogHero
         dog={dog}
         allDogs={allDogs}
+        canWrite={canWrite}
         onAddHousemate={handleAddHousemate}
         onCreateHousemate={handleCreateHousemate}
         onRemoveHousemate={handleRemoveHousemate}
@@ -420,6 +439,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         }}
         onOpenPhoto={setPhoto}
       />
+
+      {canTakeOver && <TakeOverPanel key={dog.id} dog={dog} onTakenOver={load} />}
 
       {dog.canEdit && family.art === 'zuhause' && (
         <SharePanel key={dog.id} dog={dog} family={family} onFamilyChange={onFamilyChange} />
@@ -490,7 +511,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
           </div>
         )}
 
-        {dog.isOwn && (
+        {canWrite && (
           <div id="composer" className={`composer ${composerOpen ? 'is-open' : ''}`}>
             {composerOpen ? (
               <>
@@ -517,7 +538,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
             items={items}
             birthDate={dog.geburtsdatum}
             highlightKey={highlightKey}
-            canEdit={dog.isOwn}
+            canEdit={canWrite}
             onEdit={setEditingEntry}
             onOpenPhoto={setPhoto}
             onAddComment={handleAddComment}
@@ -525,7 +546,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
             canDeleteComment={canDeleteComment}
           />
         ) : (
-          dog.isOwn && <p className="muted chronicle-empty">Noch keine Einträge – die erste Erinnerung wartet.</p>
+          canWrite && <p className="muted chronicle-empty">Noch keine Einträge – die erste Erinnerung wartet.</p>
         )}
       </section>
 
@@ -548,7 +569,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
           allDogs={allDogs}
           ownFamilyId={family.id}
           onSubmit={handleUpdateDog}
-          onDelete={handleDeleteDog}
+          onDelete={canDeleteDog ? handleDeleteDog : undefined}
           onCancel={() => setEditingDog(false)}
         />
       </Modal>

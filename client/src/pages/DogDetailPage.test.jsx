@@ -24,14 +24,18 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 let container
 let root
 
+// Ein Haushalt (Zuhause 3) als gewöhnliches Mitglied in Familie Sonnenhang (aktiver Bereich, id 2). Löschen von
+// Kommentaren richtet sich in einer Familie nach vonMir/Rolle (Phase R, lib/roles.js) - siehe auch
+// DogDetailPage.roles.test.jsx.
 const activeFamily = {
   id: 2,
   name: 'Familie Sonnenhang',
   theme: 'standard',
   art: 'rudel',
   isDemo: false,
-  home: { id: 2, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel' },
-  memberships: []
+  role: 'mitglied',
+  home: { id: 3, name: 'Haus Birkenweg', theme: 'standard', art: 'zuhause' },
+  memberships: [{ id: 2, name: 'Familie Sonnenhang', theme: 'standard', rolle: 'mitglied' }]
 }
 
 // Nele: ein von "Zuhause am Deich" (Bereich 1) in Familie Sonnenhang (aktiver Bereich, id 2) geteiltes Tier.
@@ -74,8 +78,8 @@ const entryWithComments = () => ({
   foto_urls: [],
   privat: 0,
   comments: [
-    { id: 100, family_id: 2, autor_name: 'Nachbar', text: 'Süß!', created_at: '2024-01-01T00:00:00.000Z' },
-    { id: 101, family_id: 1, autor_name: 'Zuhause am Deich', text: 'Danke', created_at: '2024-01-02T00:00:00.000Z' }
+    { id: 100, family_id: 2, autor_name: 'Nachbar', text: 'Süß!', created_at: '2024-01-01T00:00:00.000Z', vonMir: true, ehemalig: false },
+    { id: 101, family_id: 1, autor_name: 'Zuhause am Deich', text: 'Danke', created_at: '2024-01-02T00:00:00.000Z', vonMir: false, ehemalig: false }
   ]
 })
 
@@ -160,7 +164,7 @@ describe('DogDetailPage – geteiltes Tier: Kommentare bleiben sichtbar', () => 
     expect(container.querySelector('.reply-open')).not.toBeNull()
   })
 
-  test('der Löschen-Knopf erscheint nur für Kommentare des aktiven Bereichs oder auf einem eigenen Eintrag', async () => {
+  test('in einer Familie erscheint der Löschen-Knopf als Mitglied nur für eigene Kommentare (vonMir)', async () => {
     getDog.mockResolvedValue(sharedDog())
     listTimeline.mockResolvedValue([entryWithComments()])
     listBreedingEvents.mockResolvedValue([])
@@ -169,14 +173,14 @@ describe('DogDetailPage – geteiltes Tier: Kommentare bleiben sichtbar', () => 
     await render()
 
     const replies = [...container.querySelectorAll('.reply')]
-    const own = replies.find((li) => li.querySelector('.reply-text').textContent === 'Süß!') // family_id 2 === aktiver Bereich
-    const foreign = replies.find((li) => li.querySelector('.reply-text').textContent === 'Danke') // family_id 1, dog.canEdit false
+    const own = replies.find((li) => li.querySelector('.reply-text').textContent === 'Süß!') // vonMir
+    const foreign = replies.find((li) => li.querySelector('.reply-text').textContent === 'Danke') // fremd, Rolle nur Mitglied
 
     expect(own.querySelector('.reply-delete')).not.toBeNull()
     expect(foreign.querySelector('.reply-delete')).toBeNull()
   })
 
-  test('gehört das Tier dem aktiven Bereich, sind beide Löschen-Knöpfe da (Moderation)', async () => {
+  test('auch auf einem Tier der Familie bleibt es als Mitglied bei den eigenen Kommentaren - Moderation erst ab Stellvertretung', async () => {
     const ownDog = { ...sharedDog(), isOwn: true, canEdit: true, ownerFamilyId: 2 }
     getDog.mockResolvedValue(ownDog)
     listTimeline.mockResolvedValue([entryWithComments()])
@@ -184,6 +188,23 @@ describe('DogDetailPage – geteiltes Tier: Kommentare bleiben sichtbar', () => 
     listAllDogs.mockResolvedValue([])
 
     await render()
+    expect(container.querySelectorAll('.reply-delete').length).toBe(1)
+
+    act(() => root.unmount())
+    root = null
+    container.remove()
+    await render({ ...activeFamily, role: 'stellvertretung' })
+    expect(container.querySelectorAll('.reply-delete').length).toBe(2)
+  })
+
+  test('außerhalb einer Familie (eigenes Tierheim) gilt wie bisher: eigener Bereich oder eigener Eintrag', async () => {
+    const shelter = { id: 2, name: 'Tierheim Birkenweg', theme: 'standard', art: 'tierheim', isDemo: false, home: { id: 2, art: 'tierheim' }, memberships: [] }
+    getDog.mockResolvedValue({ ...sharedDog(), isOwn: true, canEdit: true, ownerFamilyId: 2 })
+    listTimeline.mockResolvedValue([entryWithComments()])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+
+    await render(shelter)
 
     expect(container.querySelectorAll('.reply-delete').length).toBe(2)
   })

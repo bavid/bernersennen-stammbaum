@@ -1,0 +1,287 @@
+/* Rollen in Familien (Phase R): Rollen-Chip, Mitglieder-Seite (/mitglieder), "Wer sieht was?" */
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--alpine-wash);
+  color: var(--alpine);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.role-badge-leitung {
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.role-badge-stellvertretung {
+  background: color-mix(in srgb, var(--tan) 28%, transparent);
+  color: var(--ink-soft);
+}
+
+.role-badge-gast {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--muted);
+}
+
+/* Im Kopf: neben dem Namen der aktiven Familie (Bereichswechsler bzw. brand-sub) */
+.context-switcher-trigger .role-badge,
+.brand-sub .role-badge {
+  margin-left: var(--space-2);
+  font-size: 0.65rem;
+  padding: 0 var(--space-2);
+}
+
+.brand-sub {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Im Menü des Bereichswechslers rechts neben dem Namen der Familie */
+.context-switcher-item .role-badge {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+}
+
+/* Mitglieder-Seite */
+
+.members-my-role {
+  align-self: center;
+}
+
+.members-demo-hint {
+  margin-top: calc(-1 * var(--space-4));
+}
+
+.members-section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.members-section h2 {
+  font-size: var(--text-xl);
+}
+
+.members-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* LeaveFamilySection innerhalb der Karte: ohne eigene Überschrift-Optik doppeln */
+.members-section .leave-family-section h3 {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.members-danger {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+}
+
+/* "Wer sieht was?" */
+
+.visibility-card {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.visibility-card h2 {
+  font-size: var(--text-xl);
+}
+
+.visibility-rows {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.visibility-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.visibility-icon {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  color: var(--rust);
+}
+
+.visibility-icon svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.visibility-row strong {
+  display: block;
+  color: var(--ink);
+}
+
+.visibility-who {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.visibility-row p {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Mitglieder- und Einladungsliste */
+
+.member-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.member-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.member-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.member-row-main strong {
+  color: var(--ink);
+}
+
+.member-row-meta {
+  flex-basis: 100%;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.member-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.member-row-actions .btn {
+  min-height: 2.2rem;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.member-row-actions .field-hint {
+  max-width: 12rem;
+  text-align: right;
+}
+
+.role-select {
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.member-remove-confirm {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--danger-wash);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.member-remove-confirm .form-actions {
+  padding-top: 0;
+}
+
+@media (max-width: 560px) {
+  .member-row {
+    grid-template-columns: 1fr;
+  }
+
+  .member-row-actions {
+    justify-content: flex-start;
+  }
+
+  .member-row-actions .field-hint {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+/* Rolle je Einladung im Einladen-Dialog (InviteDialog VoucherRow) */
+.voucher-row-role {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Einstellungen-Dialog: Link zur Mitglieder-Seite, Hinweis für Nicht-Leitung */
+.settings-members-link {
+  justify-self: start;
+}
+
+/* Tier der Familie übernehmen (DogDetailPage TakeOverPanel) */
+.take-over-panel {
+  align-items: flex-start;
+}
+
+.take-over-panel .take-over-text {
+  margin-top: var(--space-1);
+  font-weight: 500;
+}
+
+.take-over-panel .btn {
+  flex-shrink: 0;
+}
+
+/* Familie auflösen: Liste der Tiere, die vorher zu übernehmen sind */
+.dissolve-animals {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.dissolve-animals .chip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dissolve-animals .chip {
+  padding-left: var(--space-3);
+}

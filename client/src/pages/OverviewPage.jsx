@@ -11,6 +11,7 @@ import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
 import FamilySettings from '../components/FamilySettings.jsx'
 import { nextTermin } from '../lib/notes.js'
+import { hasRole } from '../lib/roles.js'
 import { useToast } from '../components/Toast.jsx'
 import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
 import { displayName } from '../lib/timeline.js'
@@ -51,6 +52,11 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
+  // Rollen (Phase R): in einer Familie legt ab Mitglied Tiere an, lädt ab Stellvertretung ein - außerhalb
+  // (eigenes Zuhause) darf man alles.
+  const inGroup = family.art === 'rudel'
+  const canWrite = hasRole(family, 'mitglied')
+  const canInvite = !inGroup || hasRole(family, 'stellvertretung')
 
   async function loadDogs() {
     const [own, all, recent, notes, dogLinks] = await Promise.all([
@@ -125,22 +131,33 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
             </button>
           </div>
           <p className="page-lede">{theme.texts.overviewLede}</p>
+          {inGroup && (
+            <p className="hero-hint">
+              <Link to="/mitglieder">Mitglieder & Rollen →</Link>
+            </p>
+          )}
           <p className="hero-hint">
             <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
           </p>
         </div>
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}
-          <div className="hero-actions">
-            <button type="button" className="btn btn-primary btn-lg" onClick={() => openAnimalForm()}>
-              <Icon name="plus" />
-              Tier hinzufügen
-            </button>
-            <button type="button" className="btn btn-ghost btn-lg" onClick={onInvite}>
-              <Icon name="send" />
-              Jemanden einladen
-            </button>
-          </div>
+          {(canWrite || canInvite) && (
+            <div className="hero-actions">
+              {canWrite && (
+                <button type="button" className="btn btn-primary btn-lg" onClick={() => openAnimalForm()}>
+                  <Icon name="plus" />
+                  Tier hinzufügen
+                </button>
+              )}
+              {canInvite && (
+                <button type="button" className="btn btn-ghost btn-lg" onClick={onInvite}>
+                  <Icon name="send" />
+                  Jemanden einladen
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -150,18 +167,24 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
         <div className="empty-state">
           <ThemeMark size={72} />
           <h3>Euer Stammbaum ist noch leer</h3>
-          <p>Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
-          <button type="button" className="btn btn-primary" onClick={() => openAnimalForm()}>
-            <Icon name="plus" />
-            Erstes Tier anlegen
-          </button>
+          {canWrite ? (
+            <>
+              <p>Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
+              <button type="button" className="btn btn-primary" onClick={() => openAnimalForm()}>
+                <Icon name="plus" />
+                Erstes Tier anlegen
+              </button>
+            </>
+          ) : (
+            <p>Sobald Mitglieder Tiere anlegen oder eigene hierher teilen, stehen sie hier.</p>
+          )}
         </div>
       )}
 
       {dogs && dogs.length > 0 && activity && <ActivityFeed entries={activity.entries} termin={activity.termin} />}
 
       {dogs && dogs.length > 0 && (
-        <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={openAnimalForm} />
+        <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={canWrite ? openAnimalForm : undefined} />
       )}
 
       <Modal open={settingsOpen} title={words.groupSettings} onClose={() => setSettingsOpen(false)}>

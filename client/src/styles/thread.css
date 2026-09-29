@@ -25,6 +25,17 @@
   color: var(--ink);
 }
 
+/* "ehemaliges Mitglied" (Phase R): der Haushalt der Autorin ist heute nicht mehr in der Familie */
+.reply-former {
+  display: inline-block;
+  margin-left: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .reply-text {
   font-size: var(--text-sm);
   line-height: 1.5;

@@ -1,0 +1,305 @@
+/* Übersicht (Phase 5 Task 3, AdminStats): Kennzahlen, Gutschein-Stapel mit Verteilungsbalken, Partner-Ranking,
+   Mundpropaganda, Klick-Sparkline und Partner-Status. Balken und Chips nur aus Theme-Tokens: eingelöst = Rost
+   (Akzent), offen = helle Spur (line-strong), zurückgezogen = gedämpft (muted); zwischen Segmenten eine 2px-Lücke in
+   der Kartenfläche statt Rahmen. Die Zahlen stehen immer daneben - ein Balken zeigt nur die Verteilung. */
+
+.admin-overview {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.admin-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-4);
+}
+
+.admin-overview-block {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  min-width: 0;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.admin-overview-block.is-wide {
+  grid-column: 1 / -1;
+}
+
+.admin-overview-block h3 {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.admin-overview-hint {
+  margin: calc(-1 * var(--space-2)) 0 0;
+  font-size: var(--text-sm);
+}
+
+/* Tabellen: Zahlen rechtsbündig in Tabellenziffern, Zeilenköpfe wie Text */
+
+.stat-table tbody th {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.stat-table .stat-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-table-bar {
+  width: 30%;
+  min-width: 9rem;
+}
+
+/* Verteilungsbalken: höchstens 10px dick, rundes Datenende rechts, eckig an der Grundlinie links */
+
+.stat-bar {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 10px;
+  border-radius: 0 4px 4px 0;
+  overflow: hidden;
+}
+
+.stat-bar-segment {
+  display: block;
+  height: 100%;
+}
+
+.stat-bar-segment.is-leer {
+  background: var(--surface-sunk);
+}
+
+.stat-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: var(--space-1);
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+.stat-bar-segment.is-eingeloest,
+.stat-dot.is-eingeloest {
+  background: var(--rust);
+}
+
+.stat-bar-segment.is-offen,
+.stat-dot.is-offen {
+  background: var(--line-strong);
+}
+
+.stat-bar-segment.is-widerrufen,
+.stat-dot.is-widerrufen {
+  background: var(--muted);
+}
+
+/* Partner-Ranking: eine Reihe, eine Farbe */
+
+.stat-ranking {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.stat-ranking > li {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) minmax(4rem, 2fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.stat-ranking-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.stat-ranking-bar {
+  display: block;
+  height: 8px;
+}
+
+.stat-ranking-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background: var(--rust);
+}
+
+.stat-ranking-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Mundpropaganda: Kernaussage groß, die Ketten eingerückt wie Antworten am Zettel */
+
+.stat-lead {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.stat-chains {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 0 var(--space-2);
+  padding: 0 0 0 var(--space-4);
+  border-left: 2px solid var(--line-strong);
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.stat-chains-name {
+  font-weight: 700;
+}
+
+/* Sparkline: Linie und Endpunkt in currentColor (Rost), Grundlinie als Haarlinie */
+
+.stat-sparkline {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.stat-sparkline-svg {
+  display: block;
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+  overflow: visible;
+  color: var(--rust);
+}
+
+.stat-sparkline-baseline {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.stat-sparkline-area {
+  fill: currentColor;
+  opacity: 0.1;
+}
+
+.stat-sparkline-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.stat-sparkline-dot {
+  fill: currentColor;
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+/* Unsichtbare Trefferflächen je Tag (title beim Zeigen) - transparent statt none, sonst fangen sie keine Zeiger */
+.stat-sparkline-hit {
+  fill: transparent;
+}
+
+.stat-sparkline-axis {
+  display: flex;
+  justify-content: space-between;
+  max-width: 40rem;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+/* Partner-Status: Chips wie die Status-Pills der Partnerliste, gesperrt in Gefahr-Tönung */
+
+.stat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat-chip-gesperrt {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.stat-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin: 0;
+}
+
+.stat-facts dt {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stat-facts dd {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.stat-beitraege {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.stat-beitraege-link {
+  text-decoration: none;
+}
+
+.stat-beitraege-link:hover {
+  text-decoration: underline;
+}
+
+/* Herkunft-Chip in der Rudel-Liste (AdminFamilyList): Partner in Rost, Weitergabe in Alpin (Standard-Pill),
+   Stapel in Tinte, Altbestand und Freitext gestrichelt gedämpft */
+
+.admin-herkunft {
+  justify-self: start;
+  margin-top: 2px;
+  white-space: normal;
+}
+
+.admin-herkunft-partner {
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.admin-herkunft-stapel {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.admin-herkunft-altbestand,
+.admin-herkunft-quelle {
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+}
+
+.admin-herkunft-hint {
+  font-weight: 600;
+}

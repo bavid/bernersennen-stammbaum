@@ -219,6 +219,26 @@ describe('AdminVouchers – Liste und Details', () => {
     expect(container.querySelectorAll('.admin-voucher-detail button')).toHaveLength(1)
   })
 
+  test('eingelöste Gutscheine bleiben in der Liste – mit Einlösedatum und dem entstandenen Bereich', async () => {
+    voucherBatches.mockResolvedValue([{ id: 1, label: 'Testkarten', kind: 'admin', size: 2, open: 1, redeemed: 1, revoked: 0, created_at: '2026-01-05 10:00:00' }])
+    voucherBatch.mockResolvedValue({
+      batch: { id: 1, label: 'Testkarten', kind: 'admin', size: 2, created_at: '2026-01-05 10:00:00' },
+      vouchers: [
+        { id: 10, code: null, hint: 'HJKM', status: 'eingeloest', redeemed_at: '2026-03-14 09:30:00', redeemed_by_name: 'Zuhause Möwenweg' },
+        { id: 11, code: 'EFGH-5678-NPQR', hint: 'NPQR', status: 'offen', redeemed_at: null, redeemed_by_name: null }
+      ]
+    })
+    await render()
+
+    await act(async () => container.querySelector('.admin-voucher-batch-head').click())
+    const rows = [...container.querySelectorAll('.admin-voucher-detail li')]
+    expect(rows).toHaveLength(2)
+    expect(rows[0].textContent).toContain('eingelöst am 14.03.2026')
+    expect(rows[0].textContent).toContain('Zuhause Möwenweg')
+    expect(rows[0].querySelector('button')).toBeNull()
+    expect(rows[1].textContent).not.toContain('eingelöst am')
+  })
+
   test('zeigt sprechende Status-Labels statt des rohen Server-Werts (z. B. "Zurückgezogen" statt "widerrufen")', async () => {
     voucherBatches.mockResolvedValue([{ id: 1, label: 'Testkarten', kind: 'admin', size: 2, open: 1, redeemed: 0, revoked: 1, created_at: '2026-01-05 10:00:00' }])
     voucherBatch.mockResolvedValue({

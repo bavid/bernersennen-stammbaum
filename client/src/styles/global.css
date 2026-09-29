@@ -14,10 +14,12 @@
 @import './pinboard.css';
 @import './admin.css';
 @import './admin-approval.css';
+@import './admin-stats.css';
 @import './collage.css';
 @import './contact.css';
 @import './settings.css';
 @import './context-switcher.css';
+@import './members.css';
 @import './partners.css';
 @import './shelter.css';
 @import './discover.css';

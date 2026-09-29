@@ -25,6 +25,9 @@ const PartnerInboxPage = lazy(() => import('./pages/PartnerInboxPage.jsx'))
 // Die Fotocollage (samt Seiten-Layout, Canvas-Export und Druckbogen) ruft kaum jemand auf - ebenfalls
 // erst bei Bedarf.
 const CollagePage = lazy(() => import('./pages/CollagePage.jsx'))
+// Mitglieder & Rollen (Phase R): nur in Familien (art 'rudel'), erreichbar über Stammbaum-Hinweis,
+// Einstellungen und Bereichswechsler - die Rudel-Navigation ist mit fünf Einträgen voll (lib/navItems.js).
+const MembersPage = lazy(() => import('./pages/MembersPage.jsx'))
 
 // Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
 function RedirectTierUrl() {
@@ -72,8 +75,12 @@ export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
         element={family.art === 'zuhause' ? <CompanionsPage family={family} /> : <ToStart family={family} />}
       />
       <Route path="/tiere" element={family.art === 'tierheim' ? <ShelterAnimalsPage family={family} /> : <ToStart family={family} />} />
-      <Route path="/pinnwand" element={<PinboardPage />} />
-      <Route path="/wuerfe" element={<LittersPage />} />
+      <Route path="/pinnwand" element={<PinboardPage family={family} />} />
+      <Route path="/wuerfe" element={<LittersPage family={family} />} />
+      <Route
+        path="/mitglieder"
+        element={family.art === 'rudel' ? <MembersPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
+      />
       <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
       <Route path="/collage" element={<CollagePage family={family} />} />

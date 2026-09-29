@@ -4,9 +4,12 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
+import RoleBadge from './RoleBadge.jsx'
+import RoleSelect from './RoleSelect.jsx'
 import { formatDateShort } from '../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
 import { isPartnerArea } from '../lib/areas.js'
+import { inviteRoleOptions, roleOf } from '../lib/roles.js'
 
 function statusText(voucher) {
   if (voucher.status === 'eingelöst' && voucher.redeemed_at) {
@@ -45,10 +48,14 @@ function CopyField({ label, value }) {
 
 const LINK_COPY_FAILED_MESSAGE = 'Kopieren nicht möglich – Link bitte markieren'
 
-function VoucherRow({ voucher }) {
+// roleOptions (Phase R, nur in einer Familie): welche Rollen die eigene Rolle vergeben darf - leer heißt
+// keine Auswahl. Die Rolle stellt man ein, BEVOR man Code oder Link weitergibt (onRoleChange schreibt
+// sie sofort über PUT /vouchers/:id/rolle); eingelöste Einladungen zeigen sie nur noch an.
+function VoucherRow({ voucher, roleOptions = [], onRoleChange, disabled }) {
   const toast = useToast()
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
   const [linkCopyFailed, setLinkCopyFailed] = useState(false)
+  const canChooseRole = voucher.status === 'offen' && voucher.joins && roleOptions.length > 0
 
   async function copy(text) {
     try {
@@ -86,7 +93,19 @@ function VoucherRow({ voucher }) {
       <div className="voucher-row-main">
         <span className="voucher-code">{voucher.code || `…${voucher.hint}`}</span>
         <span className={`pill ${voucher.status === 'offen' ? '' : 'pill-rust'}`}>{statusText(voucher)}</span>
+        {voucher.rolle && !canChooseRole && <RoleBadge rolle={voucher.rolle} />}
       </div>
+      {canChooseRole && (
+        <label className="voucher-row-role">
+          <span className="field-hint">Tritt bei als</span>
+          <RoleSelect
+            value={voucher.rolle || 'mitglied'}
+            options={roleOptions}
+            disabled={disabled}
+            onChange={(rolle) => onRoleChange(voucher, rolle)}
+          />
+        </label>
+      )}
       {voucher.code && (
         <div className="voucher-row-actions">
           <button type="button" className="btn btn-ghost" onClick={() => copy(voucher.code)}>
@@ -138,6 +157,7 @@ function explanationFor(family) {
 export default function InviteDialog({ family }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
+  const toast = useToast()
   const [vouchers, setVouchers] = useState(undefined)
   const [error, setError] = useState(null)
 
@@ -149,6 +169,19 @@ export default function InviteDialog({ family }) {
   }, [])
 
   const explanation = explanationFor(family)
+  // Rolle je Einladung (Phase R): nur in einer Familie, nur was die eigene Rolle vergeben darf.
+  const roleOptions = family.art === 'rudel' ? inviteRoleOptions(roleOf(family)) : []
+
+  async function handleRoleChange(voucher, rolle) {
+    const previous = voucher.rolle
+    setVouchers((list) => list.map((v) => (v.id === voucher.id ? { ...v, rolle } : v)))
+    try {
+      await api.setVoucherRole(voucher.id, rolle)
+    } catch (err) {
+      setVouchers((list) => list.map((v) => (v.id === voucher.id ? { ...v, rolle: previous } : v)))
+      toast(err.message)
+    }
+  }
 
   return (
     <div className="invite">
@@ -166,7 +199,7 @@ export default function InviteDialog({ family }) {
         {vouchers && vouchers.length > 0 && (
           <ul className="voucher-list">
             {vouchers.map((voucher) => (
-              <VoucherRow key={voucher.id} voucher={voucher} />
+              <VoucherRow key={voucher.id} voucher={voucher} roleOptions={roleOptions} onRoleChange={handleRoleChange} disabled={isDemo} />
             ))}
           </ul>
         )}

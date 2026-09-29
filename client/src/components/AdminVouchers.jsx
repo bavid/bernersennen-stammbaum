@@ -3,18 +3,11 @@ import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
-import AdminVoucherForm, { ZWECK_PARTNERZUGANG } from './AdminVoucherForm.jsx'
-import { relativeTime } from '../lib/dates.js'
-import { TYPE_LABELS } from '../lib/partnerTypes.js'
+import AdminVoucherForm from './AdminVoucherForm.jsx'
+// Zweck-Badge (Phase 5 Task 3 ausgelagert): dieselbe Anzeige in der Statistik-Karte „Übersicht“.
+import ZweckBadge from './ZweckBadge.jsx'
+import { formatDateShort, relativeTime } from '../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
-
-// Zweck eines Stapels als Badge: Partner-Zugang (mit Typ-Vorgabe, falls gesetzt) oder Kunden-Gutscheine
-// (auch ältere Stapel ohne zweck).
-function ZweckBadge({ batch }) {
-  if (batch.zweck !== ZWECK_PARTNERZUGANG) return <span className="pill admin-voucher-zweck-badge">Kunden-Gutscheine</span>
-  const typ = batch.partnerTyp ? ` · ${TYPE_LABELS[batch.partnerTyp] || batch.partnerTyp}` : ''
-  return <span className="pill admin-voucher-zweck-badge is-access">Partner-Zugang{typ}</span>
-}
 
 function CreatedCodes({ codes, onDismiss }) {
   const toast = useToast()
@@ -102,7 +95,15 @@ function BatchDetail({ batchId, onRevoked }) {
           <span className={`pill ${voucher.status === 'offen' ? '' : 'pill-rust'}`}>
             {VOUCHER_STATUS_LABEL[voucher.status] || voucher.status}
           </span>
-          {voucher.redeemed_by_name && <span className="muted">{voucher.redeemed_by_name}</span>}
+          {/* Eingelöste Gutscheine bleiben sichtbar: wann und welcher Bereich daraus entstand */}
+          {voucher.redeemed_at ? (
+            <span className="muted">
+              eingelöst am {formatDateShort(voucher.redeemed_at.slice(0, 10))}
+              {voucher.redeemed_by_name ? ` · ${voucher.redeemed_by_name}` : ''}
+            </span>
+          ) : (
+            voucher.redeemed_by_name && <span className="muted">{voucher.redeemed_by_name}</span>
+          )}
           {voucher.status === 'offen' && (
             <button type="button" className="btn btn-ghost" onClick={() => handleRevoke(voucher.id)}>
               Zurückziehen

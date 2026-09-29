@@ -6,7 +6,18 @@ import { formatTermin, relativeTime } from '../lib/dates.js'
 import { isPastTermin } from '../lib/notes.js'
 
 // Ein Zettel mit Gesprächsverlauf. order hält die sortierte Reihenfolge auch im Einspalten-Layout.
-export default function PinboardNote({ note, order, onDelete, onReplyAdded, onReplyDeleted, onError }) {
+// canDelete (Phase R): darf der Zettel abgenommen werden (ab Mitglied); canDeleteReply(reply): darf diese
+// Antwort gelöscht werden (in einer Familie: eigene oder ab Stellvertretung) - beides Standard "ja", wie bisher.
+export default function PinboardNote({
+  note,
+  order,
+  onDelete,
+  onReplyAdded,
+  onReplyDeleted,
+  onError,
+  canDelete = true,
+  canDeleteReply = () => true
+}) {
   const past = isPastTermin(note)
 
   async function handleAddReply(payload) {
@@ -37,7 +48,7 @@ export default function PinboardNote({ note, order, onDelete, onReplyAdded, onRe
         <span>
           {note.autor_name} · {relativeTime(note.created_at)}
         </span>
-        <ConfirmButton onConfirm={() => onDelete(note)} label="Abnehmen" confirmLabel="Wirklich?" />
+        {canDelete && <ConfirmButton onConfirm={() => onDelete(note)} label="Abnehmen" confirmLabel="Wirklich?" />}
       </footer>
 
       <CommentThread
@@ -45,6 +56,7 @@ export default function PinboardNote({ note, order, onDelete, onReplyAdded, onRe
         placeholder="Deine Antwort …"
         onAdd={handleAddReply}
         onDelete={handleDeleteReply}
+        canDelete={canDeleteReply}
       />
     </article>
   )

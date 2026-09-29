@@ -32,10 +32,11 @@ const family = {
   theme: 'standard',
   art: 'rudel',
   isDemo: false,
+  role: 'mitglied',
   home: { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' },
   memberships: [
-    { id: 3, name: 'Familie Klein', theme: 'standard' },
-    { id: 5, name: 'Rudel Nachbarn', theme: 'berner' }
+    { id: 3, name: 'Familie Klein', theme: 'standard', rolle: 'mitglied' },
+    { id: 5, name: 'Rudel Nachbarn', theme: 'berner', rolle: 'leitung' }
   ]
 }
 
@@ -85,20 +86,60 @@ describe('ContextSwitcher', () => {
     expect(trigger().getAttribute('aria-expanded')).toBe('false')
   })
 
-  test('Menü listet „Meine Chronik" (mit echtem Haushaltsnamen als Zusatz) und die Mitgliedschaften, markiert den aktiven Bereich', async () => {
+  test('Menü listet „Meine Chronik" (mit echtem Haushaltsnamen als Zusatz), die Mitgliedschaften mit Rolle und "Mitglieder & Rollen", markiert den aktiven Bereich', async () => {
     await render()
     act(() => trigger().click())
     expect(trigger().getAttribute('aria-expanded')).toBe('true')
     const labels = items().map((item) => item.textContent)
     expect(labels).toEqual([
       'Meine Chronik · Zuhause am Deich',
-      'Familie Klein',
-      'Rudel Nachbarn',
+      'Familie KleinMitglied',
+      'Rudel NachbarnFamilienleitung',
+      'Mitglieder & Rollen',
       'Familie beitreten oder gründen …'
     ])
+    expect(items()[1].querySelector('.role-badge').textContent).toBe('Mitglied')
     expect(items()[1].getAttribute('aria-current')).toBe('true')
     expect(items()[0].getAttribute('aria-current')).toBeNull()
     expect(items()[2].getAttribute('aria-current')).toBeNull()
+  })
+
+  test('Der Knopf zeigt in einer Familie die eigene Rolle als Chip neben dem Namen (Phase R)', async () => {
+    await render()
+    expect(trigger().querySelector('.role-badge').textContent).toBe('Mitglied')
+  })
+
+  test('im Berner-Auftritt heißt die Leitung im Menü „Rudelführer"', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <MemoryRouter>
+          <ThemeProvider themeId="berner">
+            <ContextSwitcher family={family} onChange={() => {}} />
+          </ThemeProvider>
+        </MemoryRouter>
+      )
+    )
+    act(() => trigger().click())
+    expect(items()[2].querySelector('.role-badge').textContent).toBe('Rudelführer')
+    expect(items()[3].textContent).toBe('Mitglieder & Rollen')
+  })
+
+  test('"Mitglieder & Rollen" führt zu /mitglieder und schließt das Menü', async () => {
+    await render()
+    act(() => trigger().click())
+    await act(async () => items()[3].click())
+    expect(container.querySelector('[role="menu"]')).toBeNull()
+    expect(document.activeElement).toBe(trigger())
+  })
+
+  test('Ist "Meine Chronik" aktiv, gibt es weder Rollen-Chip am Knopf noch "Mitglieder & Rollen" im Menü', async () => {
+    await render({ family: { ...family, id: 1, name: 'Zuhause am Deich', art: 'zuhause', role: 'leitung' } })
+    expect(trigger().querySelector('.role-badge')).toBeNull()
+    act(() => trigger().click())
+    expect(items().map((item) => item.textContent)).not.toContain('Mitglieder & Rollen')
   })
 
   test('Ist der Haushalt selbst der aktive Bereich, zeigen Knopf und Menüpunkt "Meine Chronik" statt des gespeicherten Namens', async () => {
@@ -192,7 +233,7 @@ describe('ContextSwitcher', () => {
   test('„Familie beitreten oder gründen …" öffnet den Dialog im Modal', async () => {
     await render()
     act(() => trigger().click())
-    await act(async () => items()[3].click())
+    await act(async () => items()[4].click())
     expect(container.querySelector('[role="menu"]')).toBeNull()
     expect(container.querySelector('.modal').open).toBe(true)
     expect(container.querySelector('.join-family')).not.toBeNull()

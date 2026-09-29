@@ -5,12 +5,14 @@ import { DemoProvider } from './lib/demo.js'
 import { readSetting, writeSetting } from './lib/storage.js'
 import { inviteLabel, isPartnerArea, startRoute } from './lib/areas.js'
 import { MAX_NAV_ITEMS, navItemsFor } from './lib/navItems.js'
+import { hasRole } from './lib/roles.js'
 import { formatVoucherCode } from './lib/voucherCode.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import ContextSwitcher from './components/ContextSwitcher.jsx'
+import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
 import NavBadge from './components/NavBadge.jsx'
 import ViewModeSwitch from './components/ViewModeSwitch.jsx'
@@ -165,7 +167,11 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
             {isHouseholdIdentity ? (
               <ContextSwitcher family={family} onChange={onFamilyChange} />
             ) : (
-              <span className="brand-sub">{family.name}</span>
+              <span className="brand-sub">
+                {family.name}
+                {/* Rolle (Phase R) als Zusatz zum Namen der Familie - "Rudel vom Sonnenhang · Rudelführer" */}
+                {family.art === 'rudel' && <RoleBadge rolle={family.role} />}
+              </span>
             )}
           </span>
         </div>
@@ -202,15 +208,20 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
 }
 
 // family ist optional (z. B. im Theme-Test) - ohne gilt die Beschriftung für Haushalte/Rudel.
+// In einer Familie (Phase R) laden nur Stellvertretung und Leitung ein - der Server gibt Gast und Mitglied
+// für die Gutscheine ohnehin 403, der Knopf bleibt für sie deshalb weg.
 export function AppFooter({ family, onInvite }) {
   const { theme } = useTheme()
+  const canInvite = family?.art !== 'rudel' || hasRole(family, 'stellvertretung')
   return (
     <footer className="app-footer">
       {theme.tricolor && <div className="tricolor" aria-hidden="true" />}
       <p>{theme.footer}</p>
-      <button type="button" className="footer-link" onClick={onInvite}>
-        {inviteLabel(family)}
-      </button>
+      {canInvite && (
+        <button type="button" className="footer-link" onClick={onInvite}>
+          {inviteLabel(family)}
+        </button>
+      )}
       <Link to="/umgebung" className="footer-link">
         Tierheime & Hundeschulen in der Nähe →
       </Link>

@@ -7,6 +7,7 @@ import PinboardNote from '../components/PinboardNote.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { formatTermin } from '../lib/dates.js'
 import { sortNotes } from '../lib/notes.js'
+import { hasRole } from '../lib/roles.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
 const EMPTY_NOTE = { text: '', terminDatum: '', terminZeit: '' }
@@ -91,12 +92,18 @@ function NoteComposer({ onCreated, draft }) {
   )
 }
 
-export default function PinboardPage() {
+// family: der aktive Bereich (AreaRoutes). Rollen (Phase R): Zettel schreiben und abnehmen ab Mitglied,
+// Antworten darf jede Rolle; fremde Antworten löschen ab Stellvertretung - außerhalb einer Familie wie bisher.
+export default function PinboardPage({ family }) {
   const { words } = useTheme()
   const draft = useLocation().state?.draft
   const [notes, setNotes] = useState(null)
   const [error, setError] = useState(null)
   const toast = useToast()
+  const inGroup = family?.art === 'rudel'
+  const canWrite = hasRole(family, 'mitglied')
+  const canModerate = hasRole(family, 'stellvertretung')
+  const canDeleteReply = (reply) => (inGroup ? Boolean(reply.vonMir) || canModerate : true)
 
   useEffect(() => {
     api
@@ -149,13 +156,20 @@ export default function PinboardPage() {
       {error && <div className="error-banner" role="alert">{error}</div>}
 
       <div className="pinboard-layout">
-        <NoteComposer onCreated={handleCreated} draft={draft} />
+        {canWrite ? (
+          <NoteComposer onCreated={handleCreated} draft={draft} />
+        ) : (
+          <div className="card note-composer">
+            <h2>Mitlesen und antworten</h2>
+            <p className="muted">Als {words.roleGast} kannst du auf Zettel antworten – eigene Zettel pinnen Mitglieder an.</p>
+          </div>
+        )}
         <section aria-label="Angepinnte Zettel">
           {notes && notes.length === 0 && (
             <div className="empty-state">
               <Icon name="pin" />
               <h3>Noch nichts angepinnt</h3>
-              <p>Mach den Anfang – zum Beispiel mit einem Treffen im Park.</p>
+              <p>{canWrite ? 'Mach den Anfang – zum Beispiel mit einem Treffen im Park.' : 'Sobald jemand etwas anpinnt, steht es hier.'}</p>
             </div>
           )}
           {sorted.length > 0 && (
@@ -175,6 +189,8 @@ export default function PinboardPage() {
                           onReplyAdded={handleReplyAdded}
                           onReplyDeleted={handleReplyDeleted}
                           onError={setError}
+                          canDelete={canWrite}
+                          canDeleteReply={canDeleteReply}
                         />
                       )
                   )}

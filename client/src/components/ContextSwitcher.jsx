@@ -5,12 +5,14 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { startRoute, HOME_LABEL } from '../lib/areas.js'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
+import RoleBadge from './RoleBadge.jsx'
 import JoinFamilyDialog from './JoinFamilyDialog.jsx'
 import { useToast } from './Toast.jsx'
 
 // Bereichswechsler im Kopfbereich: nur für Haushalte (family.home.art === 'zuhause'). Zeigt den Namen
-// des aktiven Bereichs, öffnet ein Menü mit "Meine Chronik", den beigetretenen Familien/Rudeln und
-// dem Einstieg zum Beitreten/Gründen. family ist das volle "me"-Objekt, onChange bekommt das neue.
+// des aktiven Bereichs, öffnet ein Menü mit "Meine Chronik", den beigetretenen Familien/Rudeln (mit der
+// eigenen Rolle dort, Phase R) und dem Einstieg zum Beitreten/Gründen; in einer Familie zusätzlich den
+// Weg zu "Mitglieder & Rollen" (/mitglieder). family ist das volle "me"-Objekt, onChange bekommt das neue.
 export default function ContextSwitcher({ family, onChange }) {
   const { words } = useTheme()
   const toast = useToast()
@@ -90,6 +92,12 @@ export default function ContextSwitcher({ family, onChange }) {
   }
 
   const isHomeActive = family.id === family.home.id
+  const isGroupActive = !isHomeActive && family.art === 'rudel'
+
+  function openMembers() {
+    closeMenu()
+    navigate('/mitglieder')
+  }
 
   return (
     <div className="context-switcher" ref={rootRef}>
@@ -104,6 +112,7 @@ export default function ContextSwitcher({ family, onChange }) {
         {/* Der eigene Bereich heißt hier immer "Meine Chronik" – der gespeicherte Name des Haushalts
             ist nur relevant, wo andere Familien ihn sehen (z. B. "aus <Name>" bei geteilten Tieren). */}
         <span className="context-switcher-name">{isHomeActive ? HOME_LABEL : family.name}</span>
+        {isGroupActive && <RoleBadge rolle={family.role} />}
         <Icon name="chevronDown" />
       </button>
       {open && (
@@ -137,10 +146,20 @@ export default function ContextSwitcher({ family, onChange }) {
                 onClick={() => switchTo(membership.id, membership.name)}
               >
                 <span>{membership.name}</span>
+                <RoleBadge rolle={membership.rolle} />
                 {isCurrent && <Icon name="check" />}
               </button>
             )
           })}
+          {isGroupActive && (
+            <>
+              <div className="context-switcher-sep" role="separator" />
+              <button type="button" role="menuitem" className="context-switcher-item" onClick={openMembers}>
+                <span>Mitglieder & Rollen</span>
+                <Icon name="users" />
+              </button>
+            </>
+          )}
           <div className="context-switcher-sep" role="separator" />
           <button
             type="button"

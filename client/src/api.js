@@ -122,12 +122,32 @@ export const api = {
   createGroup: (payload) => request('/families/group', json('POST', payload)),
   leaveFamily: (id) => request(`/memberships/${id}`, { method: 'DELETE' }),
 
+  // Mitglieder einer Familie (Phase R, server/routes/members.js) - nur wenn der aktive Bereich eine Familie
+  // ist. Die Antwort { familyId, name, ichBin, mitglieder, einladungen? } kommt von GET wie von jeder
+  // Änderung zurück; Entfernen/Widerrufen antworten mit 204.
+  familyMembers: () => request('/family/members'),
+  setMemberRole: (homeId, rolle) => request(`/family/members/${homeId}`, json('PUT', { rolle })),
+  removeMember: (homeId) => request(`/family/members/${homeId}`, { method: 'DELETE' }),
+  handOverLeitung: (homeId) => request(`/family/members/leitung/${homeId}`, { method: 'POST' }),
+  revokeInvite: (voucherId) => request(`/family/members/einladungen/${voucherId}`, { method: 'DELETE' }),
+  // bestaetigung: der genaue Name der Familie. Antwort: das neue "me" (eigenes Zuhause) - oder null (204),
+  // wenn die Sitzung mit dem gemeinsamen Schlüssel der Familie lief und mit ihr endet.
+  dissolveFamily: (bestaetigung) => request('/family/members/aufloesen', json('POST', { bestaetigung })),
+  // payload wie renewKey (currentKey/currentPassword der EIGENEN Identität) - der neue Schlüssel der Familie
+  // kommt einmalig zurück ({ key }).
+  renewFamilyKey: (payload) => request('/family/members/key', json('POST', payload)),
+  // Rolle einer offenen Einladung setzen (Phase R): Leitung jede, Stellvertretung gast/mitglied.
+  setVoucherRole: (id, rolle) => request(`/vouchers/${id}/rolle`, json('PUT', { rolle })),
+
   listDogs: () => request('/dogs'),
   listAllDogs: () => request('/dogs/all'),
   getDog: (id) => request(`/dogs/${id}`),
   createDog: (payload) => request('/dogs', json('POST', payload)),
   updateDog: (id, payload) => request(`/dogs/${id}`, json('PUT', payload)),
   deleteDog: (id) => request(`/dogs/${id}`, { method: 'DELETE' }),
+  // Tier der Familie in die eigene Chronik übernehmen (Phase R, Leitung mit eigenem Zuhause) - Antwort:
+  // das Tier, wie die Familie es jetzt sieht (dort weiter geteilt).
+  takeOverDog: (id) => request(`/dogs/${id}/uebernehmen`, { method: 'POST' }),
   listLinks: () => request('/dogs/links'),
   addHousemate: (dogId, otherDogId) => request(`/dogs/${dogId}/housemates`, json('POST', { otherDogId })),
   removeHousemate: (dogId, otherDogId) => request(`/dogs/${dogId}/housemates/${otherDogId}`, { method: 'DELETE' }),
@@ -178,6 +198,9 @@ export const api = {
     printBatch: (id) => request(`/admin/voucher-batches/${encodeURIComponent(id)}/print`),
     // CSV-Export ohne Codes - als Link mit download, kein fetch nötig (die Sitzung geht als Cookie mit).
     voucherCsvUrl: (id) => `/api/admin/voucher-batches/${encodeURIComponent(id)}/export.csv`,
+    // Statistik der Karte „Übersicht“ (Phase 5, server/routes/adminStats.js): Einlösungen je Stapel/Partner/
+    // Zweck, Mundpropaganda-Ketten, Klicks der letzten 30 Tage und Partner-Status - alles ohne Demo-Daten.
+    stats: () => request('/admin/stats'),
 
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),
