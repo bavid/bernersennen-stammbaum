@@ -25,6 +25,7 @@ const placesRoutes = require('./routes/places')
 const discoverRoutes = require('./routes/discover')
 const partnerAreaRoutes = require('./routes/partnerArea')
 const redirectRoutes = require('./routes/redirect')
+const seoRoutes = require('./routes/seo')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
 const { denyAdminViewWrites } = require('./middleware/auth')
@@ -39,7 +40,12 @@ const PARTNER_LOGO_CACHE = 'public, max-age=2592000, immutable'
 // eines Browsers/Proxys zu überleben (dafür lohnt sich der ETag/If-None-Match-Roundtrip von express.static).
 const PUBLIC_MEDIA_CACHE = 'public, no-cache'
 
-// Kein upgrade-insecure-requests/HSTS: die App läuft auch per http://IP:PORT ohne TLS.
+// Ein Jahr, ohne preload und ohne includeSubDomains: der gemeinsame Server-Proxy bedient auch andere
+// Projekte, die Vorschau läuft womöglich auf einer Sub-Domain - HSTS soll nur für genau diese Adresse gelten.
+const HSTS_MAX_AGE_SECONDS = 365 * 24 * 60 * 60
+
+// Kein upgrade-insecure-requests. HSTS (Phase G Task 2) nur, wenn die App laut PUBLIC_URL per https läuft -
+// per http://IP:PORT ohne TLS würde der Header den Browser für ein Jahr aussperren.
 const securityHeaders = helmet({
   contentSecurityPolicy: {
     useDefaults: false,
@@ -56,7 +62,7 @@ const securityHeaders = helmet({
       formAction: ["'self'"]
     }
   },
-  strictTransportSecurity: false,
+  strictTransportSecurity: config.httpsPublicUrl ? { maxAge: HSTS_MAX_AGE_SECONDS, includeSubDomains: false } : false,
   crossOriginOpenerPolicy: false,
   originAgentCluster: false
 })
@@ -174,6 +180,9 @@ function createApp() {
   // stehen, sonst würde die Client-Auslieferung unten (Catch-all für alles außer api/uploads/health) jede
   // /r/...-Anfrage stattdessen mit index.html beantworten.
   app.use('/r', apiLimiter, redirectRoutes)
+
+  // /robots.txt und /sitemap.xml (Phase G Task 2, routes/seo.js): ebenfalls vor serveClient(), aus demselben Grund.
+  app.use(seoRoutes)
 
   serveClient(app)
   app.use(errorHandler)

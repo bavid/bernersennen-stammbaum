@@ -80,4 +80,37 @@ test('security and deployment behaviour', async (t) => {
     const missing = await call(base, '/api/gibtsnicht')
     assert.equal(missing.status, 404)
   })
+
+  // Phase G Task 2: ohne PUBLIC_URL bleibt alles wie bisher - kein HSTS (die App läuft auch per http://IP:PORT),
+  // Cookies ohne Secure, relative Links.
+  await t.test('ohne PUBLIC_URL: kein HSTS, Cookies ohne Secure, relative Links', async () => {
+    const { absoluteUrl } = require('../lib/publicUrl')
+    assert.equal(config.publicUrl, null)
+    assert.equal(config.httpsPublicUrl, false)
+    assert.equal(config.cookieSecure, false)
+    assert.equal(absoluteUrl('/p/pfotenglueck'), '/p/pfotenglueck')
+
+    const health = await fetch(`${base}/health`)
+    assert.equal(health.headers.get('strict-transport-security'), null)
+
+    const login = await call(base, '/api/login', { method: 'POST', body: { password: 'geheim123' } })
+    assert.equal(login.status, 200)
+    assert.doesNotMatch(login.headers.get('set-cookie'), /;\s*Secure/i)
+  })
+
+  await t.test('robots.txt kommt vor dem SPA-Fallback und nennt ohne PUBLIC_URL keine Sitemap', async () => {
+    const robots = await fetch(`${base}/robots.txt`)
+    assert.equal(robots.status, 200)
+    assert.match(robots.headers.get('content-type'), /^text\/plain/)
+    const text = await robots.text()
+    assert.doesNotMatch(text, /Chronik/, 'nicht die index.html des Clients')
+    assert.match(text, /^User-agent: \*\n/)
+    assert.match(text, /^Disallow: \/api\/$/m)
+    assert.match(text, /^Disallow: \/t\/$/m)
+    assert.doesNotMatch(text, /Sitemap:/)
+
+    // Ohne absolute Adresse gibt es keine gültige Sitemap - 404 statt relativer Pfade
+    const sitemap = await fetch(`${base}/sitemap.xml`)
+    assert.equal(sitemap.status, 404)
+  })
 })

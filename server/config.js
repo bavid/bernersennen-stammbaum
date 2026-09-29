@@ -79,9 +79,34 @@ function readLegal(env = process.env) {
   }
 }
 
+// Öffentliche Adresse der App (Phase G Task 2): Ziel der QR-Codes, Basis der sitemap.xml und des
+// Bot-User-Agents (lib/publicUrl.js absoluteUrl). Nur eine echte http(s)-Adresse mit Host zählt - ein Tippfehler
+// wie "https://" darf nicht halb greifen (Sitemap an, HSTS aus). Query/Fragment und abschließende Schrägstriche
+// fallen weg, damit Pfade einfach angehängt werden können; ohne (gültige) Angabe null, Links bleiben dann relativ.
+function readPublicUrl(value) {
+  const raw = (value || '').trim()
+  if (!raw) return null
+  let parsed
+  try {
+    parsed = new URL(raw)
+  } catch {
+    return null
+  }
+  if (!/^https?:$/.test(parsed.protocol) || !parsed.host) return null
+  return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`
+}
+
+function isHttpsUrl(url) {
+  return /^https:\/\//i.test(url || '')
+}
+
 const dataDir = process.env.DATA_DIR || __dirname
 
 const appEnv = readAppEnv(process.env.APP_ENV)
+const publicUrl = readPublicUrl(process.env.PUBLIC_URL)
+// Läuft die App laut PUBLIC_URL per https, gelten HSTS (app.js) und Secure-Cookies automatisch - COOKIE_SECURE
+// bleibt für Instanzen ohne Domain (https://IP:PORT hinter dem Server-Proxy) weiterhin der Schalter.
+const httpsPublicUrl = isHttpsUrl(publicUrl)
 // Prod und Vorschau laufen auf derselben IP (nur der Port unterscheidet sich) – Browser scopen Cookies
 // aber nicht nach Port. Ohne Präfix würde ein Login auf der Vorschau die Prod-Sitzung überschreiben.
 // Prod behält bewusst die unpräfixierten Namen, damit ein Rollout niemanden ausloggt.
@@ -92,6 +117,8 @@ module.exports = {
   appEnv,
   readAppEnv,
   readLegal,
+  readPublicUrl,
+  isHttpsUrl,
   cookiePrefix,
   sessionCookie: `${cookiePrefix}session`,
   adminCookie: `${cookiePrefix}admin_session`,
@@ -105,7 +132,7 @@ module.exports = {
   // Partner-Logos (öffentlich, anders als /uploads) - siehe routes/partners.js und lib/partners.js
   partnerMediaDir: process.env.PARTNER_MEDIA_DIR || path.join(dataDir, 'partner-media'),
   clientDist: process.env.CLIENT_DIST || path.join(__dirname, '..', 'client', 'dist'),
-  cookieSecure: process.env.COOKIE_SECURE === 'true',
+  cookieSecure: process.env.COOKIE_SECURE === 'true' || httpsPublicUrl,
   trustProxy: readTrustProxy(),
   corsOrigin: readCorsOrigin(),
   loginRateLimit: Number(process.env.LOGIN_RATE_LIMIT) || 20,
@@ -125,7 +152,8 @@ module.exports = {
   // optionale eigene Adresse für den Bot-User-Agent (siehe lib/http.js)
   placesProviders: readPlacesProviders(appEnv),
   placesDailyLimit: Number(process.env.PLACES_DAILY_LIMIT) || 500,
-  publicUrl: process.env.PUBLIC_URL || null,
+  publicUrl,
+  httpsPublicUrl,
   // Impressum/Datenschutz (Task 7, siehe routes/auth.js GET /config und lib/geo.js-Nachbarn)
   legal: readLegal()
 }

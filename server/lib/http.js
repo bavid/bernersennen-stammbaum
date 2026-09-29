@@ -15,6 +15,7 @@ const https = require('node:https')
 const { BlockList, isIP } = require('node:net')
 const { URL } = require('node:url')
 const config = require('../config')
+const { absoluteUrl } = require('./publicUrl')
 
 const DEFAULT_TIMEOUT_MS = 8000
 const DEFAULT_MAX_BYTES = 1_000_000
@@ -92,9 +93,10 @@ function withDeadline(promise, deadlineAt) {
   ])
 }
 
+// Infoadresse im User-Agent: mit PUBLIC_URL die eigene Domain (lib/publicUrl.js), sonst der angefragte Host.
 function userAgent(hostname) {
-  const infoUrl = config.publicUrl || `https://${hostname}`
-  return `FamilieAufPfotenBot/1.0 (+${infoUrl}/bot)`
+  const infoUrl = config.publicUrl ? absoluteUrl('/bot') : `https://${hostname}/bot`
+  return `FamilieAufPfotenBot/1.0 (+${infoUrl})`
 }
 
 function pickModule(protocol) {

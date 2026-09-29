@@ -18,6 +18,12 @@
 #   CONTAINER_NAME=fap-preview IMAGE_TAG=staging APP_ENV=staging bash -s -- setup
 # REVISION=<volles SHA> deployt genau diesen Stand (z. B. das auf der Vorschau getestete SHA nach Prod).
 #
+# Eigene Domain (Phase G): DEPLOY_DOMAIN=<domain> lässt setup/deploy am Ende den passenden Caddy-Block für
+# den gemeinsamen Proxy ausgeben - nur ein Vorschlag auf stdout, dieses Skript fasst /opt/proxy nie an.
+# PUBLIC_URL=https://<domain> landet beim ersten Mal in der .env der Instanz (später nur noch von Hand
+# ändern, env_default überschreibt nie) und schaltet in der App HSTS, Secure-Cookies, QR-Ziele und
+# sitemap.xml scharf.
+#
 # Die App lauscht nur auf 127.0.0.1:$HTTPS_PORT. HTTPS nach außen (Let's Encrypt, Port 80 für die
 # Zertifikatsprüfung) macht der gemeinsame Caddy des Servers in /opt/proxy (Repo "server").
 set -euo pipefail
@@ -34,6 +40,7 @@ REPO_URL="${REPO_URL:-https://github.com/bavid/bernersennen-stammbaum.git}"
 BRANCH="${BRANCH:-main}"
 HTTPS_PORT="${HTTPS_PORT:-3010}"
 DEPLOY_DOMAIN="${DEPLOY_DOMAIN:-}"
+PUBLIC_URL="${PUBLIC_URL:-}"
 REVISION="${REVISION:-}"
 APP_ENV="${APP_ENV:-production}"
 CONTAINER_NAME="${CONTAINER_NAME:-bernersennen-stammbaum}"
@@ -90,8 +97,16 @@ default_public_host() {
   fi
 }
 
+# Öffentliche Adresse der Instanz für Health-Check und Hinweise: mit PUBLIC_URL in der .env die Domain
+# (hinter dem Proxy auf 443), sonst wie bisher https://IP:PORT.
 site_url() {
-  echo "https://$(env_value PUBLIC_HOST):$(env_value HTTPS_PORT)"
+  local url
+  url="$(env_value PUBLIC_URL || true)"
+  if [ -n "$url" ]; then
+    echo "${url%/}"
+  else
+    echo "https://$(env_value PUBLIC_HOST):$(env_value HTTPS_PORT)"
+  fi
 }
 
 # Setzt KEY=VALUE in .env, falls KEY noch fehlt (bestehende Werte bleiben unangetastet)
@@ -147,6 +162,10 @@ ensure_env() {
     env_default CONTAINER_NAME "$CONTAINER_NAME"
     env_default IMAGE_TAG "$IMAGE_TAG"
     env_default COMPOSE_PROJECT_NAME "$(basename "$APP_DIR")"
+    # Optional (eigene Domain): nur ergänzen, wenn übergeben - und wie alles hier nie überschreiben.
+    if [ -n "$PUBLIC_URL" ]; then
+      env_default PUBLIC_URL "$PUBLIC_URL"
+    fi
   )
   chmod 600 .env
   mkdir -p data backups
@@ -220,6 +239,28 @@ backup_if_running() {
   fi
 }
 
+# Eigene Domain: fertiger Block für die Caddyfile des gemeinsamen Proxys (/opt/proxy, Repo "server") - nur
+# ein Vorschlag auf stdout. Der Proxy wird bewusst nie von hier aus verändert; ohne DEPLOY_DOMAIN passiert nichts.
+print_caddy_block() {
+  [ -n "$DEPLOY_DOMAIN" ] || return 0
+  cat <<EOF
+
+Caddy-Block für die eigene Domain: gehört in die Caddyfile des gemeinsamen Proxys (/opt/proxy, Repo "server"),
+danach den Proxy dort neu laden - dieses Deploy ändert den Proxy nie selbst.
+
+https://$DEPLOY_DOMAIN {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:$HTTPS_PORT
+}
+EOF
+}
+
+# Nur die Funktionen laden, keinen Befehl ausführen - für die Tests (server/test/deployScript.test.js), die
+# das Skript sourcen und einzelne Funktionen aufrufen. Im echten Aufruf (bash -s) ist die Variable nie gesetzt.
+if [ "${REMOTE_SH_SOURCE_ONLY:-}" = 1 ]; then
+  return 0 2>/dev/null || exit 0
+fi
+
 cmd="${1:-status}"
 # Schützt vor Instanz-Verwechslung bei JEDEM Befehl (nicht nur setup/deploy/showcase) - lesend, kehrt
 # ohne .env sofort zurück.
@@ -230,12 +271,14 @@ case "$cmd" in
     checkout
     ensure_env
     start
+    print_caddy_block
     ;;
   deploy)
     backup_if_running
     checkout
     ensure_env
     start
+    print_caddy_block
     ;;
   status)
     cd "$APP_DIR"

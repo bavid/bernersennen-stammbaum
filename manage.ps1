@@ -41,8 +41,11 @@ if ($Target -eq 'staging' -and (-not $cfg.APP_DIR -or -not $cfg.APP_ENV)) {
 $Server = "$(if ($cfg.DEPLOY_USER) { $cfg.DEPLOY_USER } else { 'root' })@$($cfg.DEPLOY_HOST)"
 $HttpsPort = if ($cfg.HTTPS_PORT) { $cfg.HTTPS_PORT } else { '3010' }
 $SiteHost = if ($cfg.DEPLOY_DOMAIN) { $cfg.DEPLOY_DOMAIN } else { $cfg.DEPLOY_HOST }
+# Mit PUBLIC_URL (eigene Domain hinter dem Proxy auf 443) ist das die Adresse der Seite, sonst https://IP:PORT
+$SiteUrl = if ($cfg.PUBLIC_URL) { $cfg.PUBLIC_URL.TrimEnd('/') } else { "https://${SiteHost}:$HttpsPort" }
 $RemoteEnv = "APP_DIR='$($cfg.APP_DIR)' REPO_URL='$($cfg.REPO_URL)' BRANCH='$($cfg.BRANCH)' HTTPS_PORT='$HttpsPort' DEPLOY_DOMAIN='$($cfg.DEPLOY_DOMAIN)'"
-foreach ($key in 'APP_ENV', 'CONTAINER_NAME', 'IMAGE_TAG') {
+# PUBLIC_URL nur mitgeben, wenn gesetzt - remote.sh trägt es dann beim ersten Mal in die .env der Instanz ein
+foreach ($key in 'APP_ENV', 'CONTAINER_NAME', 'IMAGE_TAG', 'PUBLIC_URL') {
     if ($cfg[$key]) { $RemoteEnv += " $key='$($cfg[$key])'" }
 }
 
@@ -125,7 +128,7 @@ function Invoke-Action {
         { $_ -in '3', 'deploy' } { if (Assert-GitPushed) { Invoke-Remote 'deploy' } }
         { $_ -in '4', 'logs' } { Invoke-Remote 'logs' }
         { $_ -in '5', 'backup' } { Save-Backup }
-        { $_ -in '6', 'admin-page' } { Start-Process "https://${SiteHost}:$HttpsPort/admin" }
+        { $_ -in '6', 'admin-page' } { Start-Process "$SiteUrl/admin" }
         { $_ -in '7', 'demo' } { Invoke-Remote 'demo' }
         { $_ -in '8', 'wipe' } {
             Write-Host "  Löscht ALLE Rudel, Hunde, Einträge und Fotos (vorher wird ein Backup erstellt)." -ForegroundColor Red
@@ -163,7 +166,7 @@ while ($true) {
     Write-Host "  ============================================" -ForegroundColor DarkYellow
     $label = if ($Target -eq 'staging') { 'VORSCHAU' } else { 'PROD' }
     $color = if ($Target -eq 'staging') { 'Yellow' } else { 'DarkYellow' }
-    Write-Host "    Familienchronik [$label]  |  https://${SiteHost}:$HttpsPort" -ForegroundColor $color
+    Write-Host "    Familienchronik [$label]  |  $SiteUrl" -ForegroundColor $color
     Write-Host "  ============================================" -ForegroundColor DarkYellow
     Write-Host ""
     Write-Host "  [1]  SSH-Konsole öffnen"

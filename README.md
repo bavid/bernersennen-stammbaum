@@ -224,13 +224,33 @@ docker compose up -d --build
 | `IMPRESSUM_NAME`, `IMPRESSUM_ADRESSE`, `IMPRESSUM_EMAIL`, `IMPRESSUM_TELEFON` | Betreiberangaben für `/impressum`. `IMPRESSUM_ADRESSE` ist mehrzeilig, Zeilen mit literalem `\n` trennen. Ohne diese Angaben zeigt `/impressum` einen ehrlichen Hinweis statt erfundener Daten |
 | `PLACES_PROVIDERS`   | Anbieter für „In der Nähe“ neben den Partnern: `overpass` (echte OSM-Anfragen, Standard in Produktion) oder `fixture` (feste Testdaten ohne Internetzugriff, Standard sonst) |
 | `PLACES_DAILY_LIMIT` | Höchstens so viele echte Overpass-Anfragen pro Tag (Standard 500)      |
-| `PUBLIC_URL`         | Öffentliche Adresse (`https://…`) im User-Agent gegenüber Overpass/OSM; ohne Angabe wird der angefragte Hostname verwendet |
+| `PUBLIC_URL`         | Öffentliche Adresse der App (`https://…`, ohne Schrägstrich am Ende) – siehe „Eigene Domain“. Ohne Angabe bleiben Links relativ, und im Bot-User-Agent gegenüber Overpass/OSM steht der angefragte Hostname |
 
-Mit Domain: `PUBLIC_HOST=chronik.example.de` setzen und die Domain im Server-Proxy eintragen.
+### Eigene Domain
+
+Sobald die App unter einer Domain laufen soll, reichen zwei Werte in `.deploy.env` (bzw. `.deploy.staging.env`
+für die Vorschau), siehe `.deploy.env.example`:
+
+- `DEPLOY_DOMAIN=chronik.example.de` – der Deploy gibt danach den fertigen Block für die **Caddyfile des
+  gemeinsamen Proxys** aus (`https://chronik.example.de { encode zstd gzip / reverse_proxy 127.0.0.1:3010 }`).
+  Den Block trägt man dort von Hand ein und lädt den Proxy neu – das Deploy selbst ändert den Proxy nie.
+- `PUBLIC_URL=https://chronik.example.de` – landet beim nächsten Deploy in der `.env` der Instanz (nur beim
+  ersten Mal; später dort von Hand ändern). Damit schaltet die App automatisch um:
+  - **HSTS** (`Strict-Transport-Security: max-age=31536000`, ohne preload) auf jeder Antwort und **Secure**
+    auf Sitzungs- und Admin-Cookies – unabhängig von `COOKIE_SECURE`. Ohne https-`PUBLIC_URL` bleibt beides aus,
+    damit eine Instanz per `http://IP:PORT` weiter funktioniert.
+  - **`/robots.txt`** erlaubt Suchmaschinen die Startseite, `/partner`, `/partner-werden` und die Portale
+    `/p/…`, sperrt API, Admin, `/v`, Steckbriefe `/t/…` und alle Foto-Verzeichnisse aus. Mit `PUBLIC_URL`
+    nennt sie die **`/sitemap.xml`** (Startseite, Partnerseiten, alle öffentlich sichtbaren Portale; zehn
+    Minuten im Speicher gehalten). Ohne `PUBLIC_URL` gibt es keine Sitemap (Sitemaps brauchen absolute
+    Adressen), `robots.txt` lässt die Zeile dann weg.
+  - Die **QR-Codes** der Druckbögen (Admin und Partner-Bereich) zeigen auf `PUBLIC_URL` – vor dem Drucken
+    setzen, sonst warnt die Druckseite und die Codes zeigen auf die gerade geöffnete Adresse.
 
 ## Sicherheit
 
-- HTTPS mit Let's-Encrypt-Zertifikat (Caddy), Cookies nur über HTTPS
+- HTTPS mit Let's-Encrypt-Zertifikat (Caddy), Cookies nur über HTTPS; mit https-`PUBLIC_URL` zusätzlich HSTS
+  (ein Jahr, ohne preload)
 - Strikte Trennung der Rudel: fremde Hunde sind per geänderter URL nicht abrufbar (404),
   Fotos nur mit Login
 - Passwörter mit bcrypt gehasht, Session als httpOnly-Cookie (JWT, 30 Tage); Schlüssel erneuern beendet
