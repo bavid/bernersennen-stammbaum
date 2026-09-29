@@ -334,7 +334,9 @@ test('Partner-Bereiche für alle Typen, Hundesalon/Betreuung, Kontaktformular-Li
       name: 'Hundeschule Bereichstest',
       typ: 'hundeschule',
       status: 'aktiv',
-      gesperrt: false
+      gesperrt: false,
+      // Phase P2 Task 9: ungelesene Nachrichten im Posteingang
+      unread: 0
     })
 
     const again = await get('/api/me', cookie)
@@ -390,7 +392,7 @@ test('Partner-Bereiche für alle Typen, Hundesalon/Betreuung, Kontaktformular-Li
 
     const { me } = await loginWithKey(area.data.key)
     assert.equal(me.art, 'tierheim')
-    assert.deepEqual(me.partner, { id: shelterPartner.id, slug: 'tierheim-lindenweg', name: 'Tierheim Lindenweg', typ: 'tierheim', status: 'aktiv', gesperrt: false })
+    assert.deepEqual(me.partner, { id: shelterPartner.id, slug: 'tierheim-lindenweg', name: 'Tierheim Lindenweg', typ: 'tierheim', status: 'aktiv', gesperrt: false, unread: 0 })
 
     // Vermittlung über den alten Pfad, danach /area -> 409, beide Schlüssel-Pfade funktionieren
     const vermittlung = await createPartner({ name: 'Vermittlung Seeblick', typ: 'vermittlung', slug: 'vermittlung-seeblick' })

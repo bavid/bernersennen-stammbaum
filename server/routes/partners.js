@@ -1,5 +1,6 @@
 const fs = require('node:fs')
 const express = require('express')
+const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
 const { lookupPlz, distanceKm } = require('../lib/geo')
@@ -10,6 +11,10 @@ const { teaserFotoSql, teaserFoto } = require('../lib/einblicke')
 const { buildPortal } = require('../lib/partnerPortal')
 const { listPublicPosts } = require('../lib/partnerPosts')
 const { promotionCard } = require('./discover')
+const { rejectHoneypot } = require('../middleware/abuse')
+const { ipKeyGenerator } = require('../lib/rateLimitKey')
+const { findPartnerArea } = require('../lib/partnerAreas')
+const { validateContactMessage, insertMessage } = require('../lib/partnerMessages')
 
 const router = express.Router()
 
@@ -120,6 +125,45 @@ router.get('/:slug/posts', (req, res) => {
   const found = findPortalPartner(req)
   if (!found) return res.status(404).json({ error: PARTNER_NOT_FOUND })
   res.json(listPublicPosts(found.partner.id).map(promotionCard))
+})
+
+// --- Kontaktformular (Phase P2 Task 9) ----------------------------------------------------------------
+
+const ONE_HOUR = 60 * 60 * 1000
+const DEMO_CONTACT_MESSAGE = 'In der Demo werden keine Nachrichten verschickt.'
+
+// Eigenes, knappes Limit pro IP (Standard 5 je Stunde, config.contactRateLimit) zusätzlich zum globalen
+// apiLimiter - mit demselben IPv6-maskierenden Schlüssel wie routes/discover.js discoverLimiter. Zählt jede
+// Anfrage, auch abgelehnte: sonst ließe sich das Formular zum Ausprobieren von Adressen missbrauchen.
+const contactLimiter = rateLimit({
+  windowMs: ONE_HOUR,
+  limit: config.contactRateLimit,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
+  message: { error: 'Zu viele Nachrichten in kurzer Zeit – bitte später noch einmal versuchen.' }
+})
+
+// POST /api/public/partners/:slug/contact { name?, email?, telefon?, nachricht, bezugSlug?, website } - nur an
+// einen öffentlich sichtbaren Partner (Portal-Regel, OHNE die Admin-Vorschau), dessen Kontaktformular aktiv
+// ist und der einen Bereich hat (sonst gäbe es keinen Posteingang) - sonst 404. website ist der Honigtopf
+// (middleware/abuse.js rejectHoneypot). Antwort ohne Echo der Nachricht; Inhalte und Kontaktdaten werden nie
+// geloggt. Demo-Partner nehmen nichts an (403): ihr Posteingang ist für alle Demo-Besucher sichtbar.
+router.post('/:slug/contact', contactLimiter, rejectHoneypot, (req, res, next) => {
+  try {
+    const found = findPortalPartner(req)
+    const partner = found && !found.preview ? found.partner : null
+    if (!partner || !partner.kontaktformular_aktiv || !findPartnerArea(db, partner.id)) {
+      return res.status(404).json({ error: PARTNER_NOT_FOUND })
+    }
+    if (partner.is_demo) return res.status(403).json({ error: DEMO_CONTACT_MESSAGE })
+
+    insertMessage(partner, validateContactMessage(req.body, partner))
+    res.status(201).json({ ok: true })
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
 })
 
 module.exports = router

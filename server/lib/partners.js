@@ -373,6 +373,8 @@ module.exports = {
   sanitizeExternalUrl,
   sanitizeExternalEmail,
   sanitizeExternalPhone,
+  validateEmail,
+  validatePhone,
   TYP_VALUES,
   STATUS_VALUES,
   SHELTER_TYP_VALUES,

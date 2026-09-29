@@ -4,6 +4,7 @@ const profileRoutes = require('./partnerArea/profile')
 const einblickeRoutes = require('./partnerArea/einblicke')
 const previewRoutes = require('./partnerArea/preview')
 const postsRoutes = require('./partnerArea/posts')
+const messagesRoutes = require('./partnerArea/messages')
 
 // Phase P Task 3 (docs/superpowers/plans/2026-09-29-phase-p-partnerbereich.md): alle Endpunkte des
 // Partner-Bereichs unter /api/partner-area. Jede Anfrage braucht eine Sitzung in einem Partner-Bereich
@@ -17,5 +18,6 @@ router.use('/profile', profileRoutes)
 router.use('/einblicke', einblickeRoutes)
 router.use('/preview', previewRoutes)
 router.use('/posts', postsRoutes)
+router.use('/messages', messagesRoutes)
 
 module.exports = router

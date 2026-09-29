@@ -484,4 +484,24 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_einblicke_foto ON partner_einblicke(foto_url);
 `)
 
+// Phase P2 Task 9: Nachrichten aus dem Kontaktformular eines Portals (POST /api/public/partners/:slug/contact)
+// an den Posteingang des Partners (/api/partner-area/messages), siehe lib/partnerMessages.js.
+// Datenschutz: Name, E-Mail, Telefon und Nachricht sind personenbezogene Daten von Kundinnen und Kunden. Sie
+// werden höchstens 180 Tage aufbewahrt - jeder Eingang und jedes Öffnen des Posteingangs löscht vorher die
+// älteren Nachrichten dieses Partners (lib/partnerMessages.js RETENTION_DAYS); löschen kann der Partner jederzeit
+// selbst. Nie im Log. Bewusst ohne REFERENCES auf partners(id) - wie partner_einblicke.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS partner_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partner_id INTEGER NOT NULL,
+    name TEXT, email TEXT, telefon TEXT,
+    bezug TEXT,
+    nachricht TEXT NOT NULL,
+    gelesen_at TEXT,
+    is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_partner_messages_partner ON partner_messages(partner_id, created_at);
+`)
+
 module.exports = db

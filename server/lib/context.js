@@ -1,4 +1,5 @@
 const db = require('../db')
+const { countUnread } = require('./partnerMessages')
 
 // partner (Phase P Task 1): Bereich eines Partners, der kein Tierheim ist (Hundeschule, Hundesalon,
 // Betreuung, ...) - angelegt vom Admin über routes/admin.js POST /partners/:id/area. Keine Tiere.
@@ -69,7 +70,8 @@ function buildMe(homeId, activeId, isDemo, userId = null) {
          FROM families f JOIN partners p ON p.id = f.partner_id WHERE f.id = ?`
       )
       .get(activeId)
-    if (partner) me.partner = { ...partner, gesperrt: Boolean(partner.gesperrt) }
+    // unread (Phase P2 Task 9): ungelesene Nachrichten im Posteingang (lib/partnerMessages.js).
+    if (partner) me.partner = { ...partner, gesperrt: Boolean(partner.gesperrt), unread: countUnread(partner.id) }
   }
   return me
 }

@@ -112,6 +112,8 @@ module.exports = {
   // Gutschein prüfen/einlösen: eigenes Limit, weil beides öffentlich ohne Login erreichbar ist
   codeRateLimit: Number(process.env.CODE_RATE_LIMIT) || 20,
   uploadRateLimit: Number(process.env.UPLOAD_RATE_LIMIT) || 200,
+  // Kontaktformular der Partner-Portale (Phase P2 Task 9): Anfragen pro IP je Stunde - öffentlich ohne Login
+  contactRateLimit: Number(process.env.CONTACT_RATE_LIMIT) || 5,
   // Anfragen pro IP je 5 Minuten (API bzw. Fotos) und Schreibzugriffe pro Rudel je 10 Minuten
   apiRateLimit: Number(process.env.API_RATE_LIMIT) || 900,
   photoRateLimit: Number(process.env.PHOTO_RATE_LIMIT) || 3000,
