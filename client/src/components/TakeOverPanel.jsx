@@ -32,6 +32,7 @@ export default function TakeOverPanel({ dog, onTakenOver }) {
       await onTakenOver()
     } catch (err) {
       setError(err.message)
+    } finally {
       setSaving(false)
       setArmed(false)
     }

@@ -17,13 +17,15 @@ export function rank(rolle) {
   return ROLES.indexOf(rolle)
 }
 
-// Rolle der Identität im aktiven Bereich (me = Antwort von /api/me): außerhalb einer Familie (Zuhause,
-// Tierheim, Partner) und mit dem gemeinsamen Schlüssel einer Familie (home.id === id) immer Leitung -
-// wie server/lib/roles.js roleOf; sonst me.role aus der Mitgliedschaft (unbekannt: null, fail closed).
+// Rolle der Identität im aktiven Bereich (me = Antwort von /api/me). Maßgeblich ist me.role vom Server
+// (server/lib/roles.js roleOf). Fehlt es (ältere Antwort), gilt dieselbe Regel wie dort: eigener Bereich
+// bzw. gemeinsamer Schlüssel (home.id === id) ist Leitung; sonst null (fail closed). Außerhalb von Familien
+// gibt es keine Mitgliedschaften, dort ist die Identität immer der Bereich selbst.
 export function roleOf(me) {
   if (!me) return null
-  if (me.art !== 'rudel' || (me.home && me.home.id === me.id)) return 'leitung'
-  return isRole(me.role) ? me.role : null
+  if (isRole(me.role)) return me.role
+  if (me.home && me.home.id === me.id) return 'leitung'
+  return me.art !== 'rudel' ? 'leitung' : null
 }
 
 export function hasRole(me, min) {

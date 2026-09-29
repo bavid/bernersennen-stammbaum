@@ -15,10 +15,15 @@ describe('rank / roleOf', () => {
     expect(rank('chef')).toBe(-1)
   })
 
-  test('own areas (zuhause, tierheim, partner) are always leitung, whatever me.role says', () => {
+  test('own areas (zuhause, tierheim, partner) are leitung when the server sends no role', () => {
     expect(roleOf({ id: 1, art: 'zuhause', home })).toBe('leitung')
-    expect(roleOf({ id: 5, art: 'tierheim', role: 'gast' })).toBe('leitung')
+    expect(roleOf({ id: 5, art: 'tierheim' })).toBe('leitung')
     expect(roleOf({ id: 6, art: 'partner' })).toBe('leitung')
+  })
+
+  test('a role sent by the server is authoritative, even outside a family (fail closed)', () => {
+    expect(roleOf({ id: 5, art: 'tierheim', role: 'gast' })).toBe('gast')
+    expect(roleOf({ id: 3, art: 'rudel', role: 'mitglied', home: { id: 3, art: 'rudel' } })).toBe('mitglied')
   })
 
   test('a classic shared-key session (identity is the family itself) counts as leitung', () => {

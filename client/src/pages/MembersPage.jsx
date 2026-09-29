@@ -67,15 +67,24 @@ export default function MembersPage({ family, onFamilyChange }) {
     }
   }
 
+  // Laufende Nummer je Aktion: Kommen zwei Änderungen kurz nacheinander, zählt nur die Antwort der letzten -
+  // eine verspätete ältere Antwort darf den neueren Stand nicht überschreiben.
+  const runId = useRef(0)
   async function run(action, message) {
+    const id = ++runId.current
     setError(null)
     try {
       const payload = await action()
+      if (id !== runId.current) return
       if (payload) applyPayload(payload)
-      else await load()
+      else {
+        const fresh = await api.familyMembers()
+        if (id !== runId.current) return
+        setData(fresh)
+      }
       if (message) toast(message)
     } catch (err) {
-      setError(err.message)
+      if (id === runId.current) setError(err.message)
     }
   }
 

@@ -28,7 +28,6 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
       onDissolved(await api.dissolveFamily(name.trim()))
     } catch (err) {
       setError(err.message)
-      setSaving(false)
       if (err.status === HAS_ANIMALS_STATUS) {
         try {
           const dogs = await api.listDogs()
@@ -37,6 +36,8 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
           setAnimals([])
         }
       }
+    } finally {
+      setSaving(false)
     }
   }
 
