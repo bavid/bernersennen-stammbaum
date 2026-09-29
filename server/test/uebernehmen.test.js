@@ -58,14 +58,25 @@ test('Tier der Familie in die eigene Chronik übernehmen', async (t) => {
   const deputy = await join(family, 'stellvertretung', 'Übernahme Vertretung')
   const member = await join(family, 'mitglied', 'Übernahme Mitglied')
 
-  // Tiere der Familie: Frieda (Mutter) mit Kind Fritzi, ein Wurf von Frieda, die beiden wohnen zusammen,
-  // ein Eintrag mit Foto und Kommentar des Mitglieds. Dazu Greta, aus M's Zuhause in die Familie geteilt.
+  // Tiere der Familie: Frieda (Mutter) und Oskar (Vater) mit den Kindern Fritzi und Fanny, ein Wurf von Frieda
+  // und Oskar mit Foto, Frieda wohnt mit beiden Kindern zusammen, ein Eintrag mit Foto und Kommentar des
+  // Mitglieds. Dazu Greta, aus M's Zuhause in die Familie geteilt.
   const frieda = (await post('/api/dogs', { name: 'Frieda', geschlecht: 'huendin', herkunftArt: 'zuechter', herkunftText: 'Zwinger Talblick' }, leitung.cookie)).data
+  const oskar = (await post('/api/dogs', { name: 'Oskar', geschlecht: 'ruede' }, leitung.cookie)).data
   const fritzi = (await post('/api/dogs', { name: 'Fritzi', geschlecht: 'ruede', motherDogId: frieda.id }, leitung.cookie)).data
+  const fanny = (await post('/api/dogs', { name: 'Fanny', geschlecht: 'huendin', motherDogId: frieda.id, fatherDogId: oskar.id }, leitung.cookie)).data
   assert.equal(fritzi.mother_dog_id, frieda.id)
+  assert.equal(fanny.father_dog_id, oskar.id)
   assert.equal((await post(`/api/dogs/${frieda.id}/housemates`, { otherDogId: fritzi.id }, leitung.cookie)).status, 201)
-  const litter = await post('/api/breeding', { mutterDogId: frieda.id, datum: '2025-03-01', wurfInfo: 'Ein Welpe' }, leitung.cookie)
+  assert.equal((await post(`/api/dogs/${frieda.id}/housemates`, { otherDogId: fanny.id }, leitung.cookie)).status, 201)
+  const litterFotoUrl = await upload(leitung.cookie)
+  const litter = await post(
+    '/api/breeding',
+    { mutterDogId: frieda.id, vaterDogId: oskar.id, datum: '2025-03-01', wurfInfo: 'Zwei Welpen', fotoUrls: [litterFotoUrl] },
+    leitung.cookie
+  )
   assert.equal(litter.status, 201)
+  const litterFotoFile = litterFotoUrl.split('/').pop()
   const fotoUrl = await upload(leitung.cookie)
   const entry = (
     await post('/api/timeline', { dogId: frieda.id, autorName: 'Leitung', datum: '2025-05-01', titel: 'Am See', fotoUrls: [fotoUrl] }, leitung.cookie)
@@ -82,9 +93,11 @@ test('Tier der Familie in die eigene Chronik übernehmen', async (t) => {
     assert.deepEqual(
       asLead.map((d) => [d.name, d.kannUebernehmen]).sort(),
       [
+        ['Fanny', true],
         ['Frieda', true],
         ['Fritzi', true],
-        ['Greta', false]
+        ['Greta', false],
+        ['Oskar', true]
       ]
     )
     const asDeputy = (await get('/api/dogs', deputy.cookie)).data
@@ -129,8 +142,8 @@ test('Tier der Familie in die eigene Chronik übernehmen', async (t) => {
     assert.equal(res.data.ownerFamilyId, leitung.id)
     assert.equal(res.data.canEdit, false)
     assert.equal(res.data.familyName, 'Zuhause Übernahme Leitung')
-    assert.deepEqual(res.data.children.map((c) => c.name), ['Fritzi'], 'Kind bleibt sichtbar, obwohl es einem anderen Bereich gehört')
-    assert.deepEqual(res.data.housemates.map((h) => h.name), ['Fritzi'])
+    assert.deepEqual(res.data.children.map((c) => c.name), ['Fanny', 'Fritzi'], 'Kinder bleiben sichtbar, obwohl sie einem anderen Bereich gehören')
+    assert.deepEqual(res.data.housemates.map((h) => h.name), ['Fanny', 'Fritzi'])
 
     const row = dogRow(frieda.id)
     assert.equal(row.family_id, leitung.id)
@@ -147,7 +160,7 @@ test('Tier der Familie in die eigene Chronik übernehmen', async (t) => {
     assert.ok(db.prepare('SELECT 1 FROM dog_shares WHERE dog_id = ? AND family_id = ?').get(frieda.id, family.id), 'Freigabe in die Familie')
     assert.equal(dogRow(fritzi.id).mother_dog_id, frieda.id, 'Fritzis Mutter-Verweis bleibt')
     assert.equal(db.prepare('SELECT COUNT(*) AS c FROM breeding_events WHERE mutter_dog_id = ? AND family_id = ?').get(frieda.id, family.id).c, 1, 'Wurf bleibt')
-    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM dog_links WHERE dog_a_id = ? OR dog_b_id = ?').get(frieda.id, frieda.id).c, 1, 'Mitbewohner bleiben')
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM dog_links WHERE dog_a_id = ? OR dog_b_id = ?').get(frieda.id, frieda.id).c, 2, 'Mitbewohner bleiben')
     assert.deepEqual(
       db.prepare('SELECT from_family_id, to_family_id, voucher_id FROM dog_transfers WHERE dog_id = ?').all(frieda.id),
       [{ from_family_id: family.id, to_family_id: leitung.id, voucher_id: null }]
@@ -161,18 +174,21 @@ test('Tier der Familie in die eigene Chronik übernehmen', async (t) => {
     const entries = (await get(`/api/timeline?dogId=${frieda.id}`, member.cookie)).data
     assert.deepEqual(entries.map((e) => e.titel), ['Am See', 'Nur für uns'])
     assert.deepEqual(entries[0].comments.map((c) => [c.id, c.vonMir]), [[comment.id, true]])
-    assert.equal((await get('/api/breeding', member.cookie)).data.find((b) => b.mutter_dog_id === frieda.id)?.mutter_name, 'Frieda')
+    const litterInFamily = (await get('/api/breeding', member.cookie)).data.find((b) => b.mutter_dog_id === frieda.id)
+    assert.equal(litterInFamily?.mutter_name, 'Frieda')
+    assert.equal(litterInFamily.vater_dog_id, oskar.id, 'im Zuchtbuch der Familie bleibt der Vater sichtbar')
     const fritziInFamily = (await get(`/api/dogs/${fritzi.id}`, member.cookie)).data
     assert.equal(fritziInFamily.mother?.id, frieda.id, 'Stammbaum: Fritzis Mutter bleibt sichtbar')
     assert.equal((await fetch(`${base}/uploads/${fotoFile}`, { headers: { Cookie: member.cookie } })).status, 200, 'Foto in der Familie')
 
-    // Im Zuhause der Leitung: eigenes Tier, mit Chronik und Foto, bearbeitbar; Fritzi (der Familie) taucht als Kind nicht auf
+    // Im Zuhause der Leitung: eigenes Tier, mit Chronik und Foto, bearbeitbar; die Kinder (der Familie) tauchen nicht auf
     const atHome = (await get('/api/dogs', leitung.homeCookie)).data
     assert.deepEqual(atHome.map((d) => [d.name, d.can_edit, d.kannUebernehmen]), [['Frieda', 1, false]])
     const detail = (await get(`/api/dogs/${frieda.id}`, leitung.homeCookie)).data
     assert.equal(detail.isOwn, true)
     assert.deepEqual(detail.shares, [family.id])
-    assert.deepEqual(detail.children, [], 'Fritzi ist im Zuhause nicht sichtbar')
+    assert.deepEqual(detail.children, [], 'Fritzi und Fanny sind im Zuhause nicht sichtbar')
+    assert.deepEqual(detail.housemates, [], 'auch nicht als Mitbewohner')
     const homeEntries = (await get(`/api/timeline?dogId=${frieda.id}`, leitung.homeCookie)).data
     assert.equal(homeEntries.length, 2)
     assert.deepEqual(homeEntries[0].comments.map((c) => [c.autor_name, c.ehemalig]), [['Mitglied', false]])
@@ -193,12 +209,48 @@ test('Tier der Familie in die eigene Chronik übernehmen', async (t) => {
     const saved = await put(`/api/dogs/${fritzi.id}`, { beschreibung: 'Zu Hause' }, leitung.homeCookie)
     assert.equal(saved.status, 200, JSON.stringify(saved.data))
     assert.equal(saved.data.mother_dog_id, frieda.id)
-    const other = (await post('/api/dogs', { name: 'Oskar', geschlecht: 'ruede' }, deputy.cookie)).data
-    assert.equal((await put(`/api/dogs/${fritzi.id}`, { fatherDogId: other.id }, leitung.homeCookie)).status, 400)
-    assert.equal((await get(`/api/dogs/${frieda.id}`, leitung.homeCookie)).data.children.map((c) => c.name).join(), 'Fritzi', 'beide im Zuhause: Kind sichtbar')
-    assert.equal((await get(`/api/dogs/${frieda.id}`, member.cookie)).data.children.map((c) => c.name).join(), 'Fritzi', 'in der Familie ebenfalls')
-    // Oskar wieder weg, sonst hätte die Familie unten noch ein eigenes Tier
-    assert.equal((await call(base, `/api/dogs/${other.id}`, { method: 'DELETE', cookie: deputy.cookie })).status, 204)
+    assert.equal((await put(`/api/dogs/${fritzi.id}`, { fatherDogId: oskar.id }, leitung.homeCookie)).status, 400)
+    assert.equal((await get(`/api/dogs/${frieda.id}`, member.cookie)).data.children.map((c) => c.name).join(), 'Fanny,Fritzi', 'in der Familie beide Kinder')
+  })
+
+  await t.test('Im Zuhause: Wurf und Mitbewohner der übernommenen Mutter erscheinen - nur mit dort sichtbaren Tieren', async () => {
+    // Zuchtbuch: der Wurf steht im Buch der Familie, erscheint aber im Zuhause der Mutter - der Vater Oskar (Familie,
+    // dort nicht sichtbar) ist ausgeblendet, in der Familie selbst bleibt er
+    const atHome = (await get('/api/breeding', leitung.homeCookie)).data
+    assert.equal(atHome.length, 1)
+    assert.equal(atHome[0].id, litter.data.id)
+    assert.equal(atHome[0].family_id, family.id, 'bleibt ein Eintrag der Familie')
+    assert.equal(atHome[0].mutter_dog_id, frieda.id)
+    assert.equal(atHome[0].mutter_name, 'Frieda')
+    assert.equal(atHome[0].vater_dog_id, null, 'Oskar ist im Zuhause nicht sichtbar')
+    assert.equal(atHome[0].vater_name, null)
+    assert.deepEqual(atHome[0].foto_urls, [litterFotoUrl])
+    assert.equal((await fetch(`${base}/uploads/${litterFotoFile}`, { headers: { Cookie: leitung.homeCookie } })).status, 200, 'Wurf-Foto im Zuhause')
+    const inFamily = (await get('/api/breeding', member.cookie)).data.find((b) => b.id === litter.data.id)
+    assert.equal(inFamily.vater_dog_id, oskar.id)
+    assert.equal(inFamily.vater_name, 'Oskar')
+    assert.deepEqual((await get('/api/breeding', member.homeCookie)).data, [], 'ein Mitglied ohne eigene Tiere im Wurf sieht nichts')
+    assert.equal((await fetch(`${base}/uploads/${litterFotoFile}`, { headers: { Cookie: member.homeCookie } })).status, 404)
+    assert.equal((await call(base, `/api/breeding/${litter.data.id}`, { method: 'DELETE', cookie: leitung.homeCookie })).status, 404, 'löschen nur im Buch der Familie')
+
+    // Kinder und Mitbewohner: Fritzi (übernommen) ja, Fanny (noch in der Familie) nein
+    const detail = (await get(`/api/dogs/${frieda.id}`, leitung.homeCookie)).data
+    assert.deepEqual(detail.children.map((c) => c.name), ['Fritzi'])
+    assert.deepEqual(detail.housemates.map((h) => h.name), ['Fritzi'])
+    const links = (await get('/api/dogs/links', leitung.homeCookie)).data
+    assert.deepEqual(links, [{ dog_a_id: Math.min(frieda.id, fritzi.id), dog_b_id: Math.max(frieda.id, fritzi.id) }])
+    // In der Familie weiterhin alles
+    const inFamilyDetail = (await get(`/api/dogs/${frieda.id}`, member.cookie)).data
+    assert.deepEqual(inFamilyDetail.children.map((c) => c.name), ['Fanny', 'Fritzi'])
+    assert.deepEqual(inFamilyDetail.housemates.map((h) => h.name), ['Fanny', 'Fritzi'])
+
+    // Fanny und Oskar weg (Stellvertretung darf), sonst hätte die Familie unten noch eigene Tiere
+    for (const dog of [fanny, oskar]) {
+      assert.equal((await call(base, `/api/dogs/${dog.id}`, { method: 'DELETE', cookie: deputy.cookie })).status, 204)
+    }
+    const afterDelete = (await get('/api/breeding', leitung.homeCookie)).data[0]
+    assert.equal(afterDelete.vater_dog_id, null)
+    assert.equal(afterDelete.vater_freitext, 'Oskar', 'gelöschter Vater wird zum Freitext (wie bisher)')
   })
 
   await t.test('Auflösen klappt, sobald alle Tiere übernommen sind - die übernommenen Tiere bleiben samt Chronik', async () => {

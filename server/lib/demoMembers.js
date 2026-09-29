@@ -9,7 +9,7 @@
 // Tierheim) - hinein kommt niemand, sie sind nur als Mitglieder sichtbar. Alle is_demo = 1: replaceDemoPack
 // räumt sie beim nächsten Lauf mit deleteFamily weg (Mitgliedschaften, Freigaben, Kommentare inklusive).
 
-const { MEMBERS, INVITE } = require('../seed/demo-members')
+const { MEMBERS, LEITUNG_COMMENT, INVITE } = require('../seed/demo-members')
 const { isRole } = require('./roles')
 const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
 
@@ -101,15 +101,25 @@ function insertDemoInvite(db, groupFamilyId) {
   return { batchId, voucherId, rolle: INVITE.rolle }
 }
 
+// Kommentar der Leitung "Zuhause am Deich" auf den Eintrag eines Demo-Haushalts (seed LEITUNG_COMMENT) - läuft in
+// replaceDemoPack NACH createDemoHousehold (braucht dessen Id); entryIds stammen aus createDemoMembers.
+function insertLeitungComment(db, { entryIds, groupFamilyId, householdId }) {
+  const entryId = entryIds[LEITUNG_COMMENT.tier]
+  if (!entryId) throw new Error(`Demo-Kommentar der Leitung: kein Eintrag für das Tier "${LEITUNG_COMMENT.tier}"`)
+  db.prepare(insertCommentSql).run(entryId, groupFamilyId, householdId, LEITUNG_COMMENT.autor, LEITUNG_COMMENT.text, `-${LEITUNG_COMMENT.hoursAgo} hours`)
+}
+
 function createDemoMembers(db, { copyImage, groupFamilyId }) {
   const households = MEMBERS.map((member) => ({ name: member.name, ...insertMemberHousehold(db, member, { copyImage, groupFamilyId }) }))
   const comments = insertMemberComments(db, households, groupFamilyId)
   const invite = insertDemoInvite(db, groupFamilyId)
   return {
     households: households.map(({ familyId, name, rolle }) => ({ familyId, name, rolle })),
+    // Einträge je Tier-Schlüssel (für insertLeitungComment in replaceDemoPack)
+    entryIds: Object.assign({}, ...households.map((household) => household.entryIds)),
     comments,
     invite
   }
 }
 
-module.exports = { createDemoMembers }
+module.exports = { createDemoMembers, insertLeitungComment }

@@ -129,6 +129,24 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     assert.equal(foreignComments, 1)
   })
 
+  await t.test('seeded comments and replies carry their author (Phase R): the family for its own, the household for its own', () => {
+    // Kommentare der Familie auf ihren eigenen Einträgen und der Familien-Kommentar auf Neles Einzug: geschrieben
+    // von der Familie selbst (wie ein Login mit dem gemeinsamen Schlüssel) - nie ohne Autor
+    const familyComments = db
+      .prepare(
+        `SELECT c.author_family_id FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
+         WHERE c.family_id = ? AND (t.family_id = ? OR t.family_id = ?)`
+      )
+      .all(created.familyId, created.familyId, household.familyId)
+    assert.ok(familyComments.length >= 8, `${familyComments.length} Familien-Kommentare`)
+    assert.ok(familyComments.every((row) => row.author_family_id === created.familyId), 'alle von der Familie selbst')
+    const replies = db.prepare('SELECT author_family_id FROM note_replies WHERE family_id = ?').all(created.familyId)
+    assert.ok(replies.length >= 4)
+    assert.ok(replies.every((row) => row.author_family_id === created.familyId))
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM entry_comments WHERE author_family_id IS NULL').get().n, 0, 'kein Demo-Kommentar ohne Autor')
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM note_replies WHERE author_family_id IS NULL').get().n, 0)
+  })
+
   const demoLogin = await call(base, '/api/demo', { method: 'POST' })
   const demoCookie = getCookie(demoLogin.res)
 
@@ -194,7 +212,12 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     assert.equal(entries.some((e) => e.titel === 'Tierarzt-Termin'), false, 'Neles privater Eintrag bleibt dem Rudel verborgen')
     const arrivalEntry = entries.find((e) => e.titel === 'Nele zieht ein – die ersten Tage')
     assert.ok(arrivalEntry, 'der öffentliche Einzugseintrag ist sichtbar')
-    assert.ok(arrivalEntry.comments.some((c) => c.autor_name === 'Familie Keller'), 'das Rudel hat kommentiert')
+    const kellerComment = arrivalEntry.comments.find((c) => c.autor_name === 'Familie Keller')
+    assert.ok(kellerComment, 'das Rudel hat kommentiert')
+    assert.equal(kellerComment.vonMir, false, 'von der Familie, nicht von der Besucherin (Zuhause am Deich)')
+    assert.equal(kellerComment.ehemalig, false)
+    const wilmaEntry = entries.find((e) => e.titel === 'Wilma im ersten Schnee')
+    assert.ok(wilmaEntry.comments.some((c) => c.autor_name === 'Familie Nissen' && c.vonMir === true), 'die Besucherin hat selbst kommentiert (vonMir)')
 
     const notes = (await call(base, '/api/notes', { cookie: rudelCookie })).data
     assert.ok(notes.some((n) => n.replies.length > 0) && notes.some((n) => n.termin_datum), 'pinboard with replies and dates')

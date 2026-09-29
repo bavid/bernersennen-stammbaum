@@ -145,10 +145,19 @@ test('Demo-Familie mit allen Rollen', async (t) => {
     const entries = (await get('/api/timeline', rudelCookie)).data
     const wilma = entries.find((e) => e.titel === 'Wilma im ersten Schnee')
     assert.ok(wilma, 'Wilmas Eintrag ist in der Familie sichtbar')
+    // Der Gast (Heidekamp) und die Leitung "Zuhause am Deich" (die Demo-Besucherin selbst: vonMir) haben kommentiert
     assert.deepEqual(
       wilma.comments.map((c) => [c.autor_name, c.vonMir, c.ehemalig]),
-      [['Familie Voss', false, false]]
+      [
+        ['Familie Voss', false, false],
+        ['Familie Nissen', true, false]
+      ]
     )
+    const authors = db
+      .prepare('SELECT c.author_family_id FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id WHERE t.titel = ? ORDER BY c.created_at')
+      .all('Wilma im ersten Schnee')
+      .map((row) => row.author_family_id)
+    assert.deepEqual(authors, [members.households.find((h) => h.rolle === 'gast').familyId, household.familyId])
   })
 
   await t.test('die Mitglieder-Seite ist in der Demo nur lesbar: jedes Schreiben 403', async () => {

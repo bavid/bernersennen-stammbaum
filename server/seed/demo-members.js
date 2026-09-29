@@ -77,8 +77,12 @@ const MEMBERS = [
   }
 ]
 
+// Kommentar der Leitung "Zuhause am Deich" (seed/demo-household.js, Persona "Familie Nissen") in der Familie auf
+// den Eintrag eines geteilten Tiers - für die Demo-Besucherin ein Kommentar mit vonMir: true.
+const LEITUNG_COMMENT = { tier: 'wilma', autor: 'Familie Nissen', text: 'Willkommen im Schnee-Club, Wilma! Nele lässt grüßen.', hoursAgo: 3 }
+
 // Eine offene Einladung der Demo-Familie mit Rolle - nur zum Anschauen auf der Mitglieder-Seite, nie einlösbar
 // (lib/vouchers.js DEMO_BATCH_KIND).
 const INVITE = { rolle: 'gast' }
 
-module.exports = { MEMBERS, INVITE }
+module.exports = { MEMBERS, LEITUNG_COMMENT, INVITE }

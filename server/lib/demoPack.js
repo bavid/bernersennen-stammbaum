@@ -18,7 +18,7 @@ const { DEMO_PARTNERS } = require('../seed/demo-partners')
 const { SHELTER_NAME, DOGS: SHELTER_DOGS, TIMELINE: SHELTER_TIMELINE } = require('../seed/demo-shelter')
 const { DEMO_PROMOTIONS, DEMO_SETTINGS, DEMO_DONATION_REPORT } = require('../seed/demo-discover')
 const { createDemoPartnerAreas, createDemoPartnerContent } = require('./demoPartnerAreas')
-const { createDemoMembers } = require('./demoMembers')
+const { createDemoMembers, insertLeitungComment } = require('./demoMembers')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -85,13 +85,18 @@ function insertDogs(db, familyId, copyImage) {
   return ids
 }
 
+// Kommentare und Antworten der Familie selbst tragen seit Phase R Task 2 die schreibende Identität
+// (author_family_id, lib/authorship.js): in der Familie geschrieben mit deren gemeinsamem Schlüssel ist das die
+// Familie - genau so sähe echter Bestand aus, den ein Rudel-Login hinterlässt (vonMir: false für die Demo-
+// Besucherin, die als "Zuhause am Deich" hineinschaut).
 function insertTimeline(db, familyId, ids, copyImage) {
   const insertEntry = db.prepare(
     `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(datetime('now', ?), datetime(?, '+18 hours')))`
   )
   const insertComment = db.prepare(
-    `INSERT INTO entry_comments (entry_id, family_id, autor_name, text, created_at) VALUES (?, ?, ?, ?, datetime('now', ?))`
+    `INSERT INTO entry_comments (entry_id, family_id, author_family_id, autor_name, text, created_at)
+     VALUES (?, ?, ?, ?, ?, datetime('now', ?))`
   )
   for (const entry of TIMELINE) {
     const fotos = (entry.fotos || []).map(copyImage)
@@ -101,7 +106,7 @@ function insertTimeline(db, familyId, ids, copyImage) {
       writtenAgo, entry.datum
     ).lastInsertRowid
     for (const comment of entry.comments || []) {
-      insertComment.run(entryId, familyId, comment.autor, comment.text, ago(comment.hoursAgo))
+      insertComment.run(entryId, familyId, familyId, comment.autor, comment.text, ago(comment.hoursAgo))
     }
   }
 }
@@ -112,13 +117,14 @@ function insertNotes(db, familyId) {
      VALUES (?, ?, ?, ?, ?, datetime('now', ?))`
   )
   const insertReply = db.prepare(
-    `INSERT INTO note_replies (note_id, family_id, autor_name, text, created_at) VALUES (?, ?, ?, ?, datetime('now', ?))`
+    `INSERT INTO note_replies (note_id, family_id, author_family_id, autor_name, text, created_at)
+     VALUES (?, ?, ?, ?, ?, datetime('now', ?))`
   )
   for (const note of NOTES) {
     const noteId = insertNote.run(
       familyId, note.autor, note.text, note.terminDatum || null, note.terminZeit || null, ago(note.hoursAgo)
     ).lastInsertRowid
-    for (const reply of note.replies || []) insertReply.run(noteId, familyId, reply.autor, reply.text, ago(reply.hoursAgo))
+    for (const reply of note.replies || []) insertReply.run(noteId, familyId, familyId, reply.autor, reply.text, ago(reply.hoursAgo))
   }
 }
 
@@ -429,9 +435,12 @@ function createDemoHousehold(db, { password, isDemo, copyImage, groupFamilyId, s
       const share = db.prepare('INSERT OR IGNORE INTO dog_shares (dog_id, family_id) VALUES (?, ?)')
       share.run(ids.nele, groupFamilyId)
       share.run(ids.mira, groupFamilyId)
+      // Der Kommentar der Familie auf Neles Einzug: in der Familie geschrieben, von der Familie selbst
+      // (author_family_id = Familie, wie ein Login mit dem gemeinsamen Schlüssel, siehe insertTimeline).
       if (entryIds.neleEinzug) {
-        db.prepare('INSERT INTO entry_comments (entry_id, family_id, autor_name, text) VALUES (?, ?, ?, ?)').run(
+        db.prepare('INSERT INTO entry_comments (entry_id, family_id, author_family_id, autor_name, text) VALUES (?, ?, ?, ?, ?)').run(
           entryIds.neleEinzug,
+          groupFamilyId,
           groupFamilyId,
           'Familie Keller',
           'Willkommen, Nele! Am Deich wird es dir bestimmt gefallen.'
@@ -551,6 +560,9 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       groupFamilyId: rudelResult.familyId,
       shelterFamilyId: shelterResult.familyId
     })
+    // "Zuhause am Deich" kommentiert in der Familie auf Wilmas Eintrag (lib/demoMembers.js) - so zeigt die Demo
+    // einen Kommentar mit vonMir: true, den die Besucherin "selbst" geschrieben hat.
+    insertLeitungComment(db, { entryIds: membersResult.entryIds, groupFamilyId: rudelResult.familyId, householdId: householdResult.familyId })
 
     const discoverResult = replaceDemoDiscoverContent(db, mediaDir, newPromotionImages)
 

@@ -103,6 +103,10 @@ function buildMe(homeId, activeId, isDemo, userId = null) {
 const VISIBLE_DOGS_SQL = `(SELECT id FROM dogs WHERE family_id = @familyId
   UNION SELECT dog_id FROM dog_shares WHERE family_id = @familyId)`
 
+// Nur die EIGENEN Tiere des Bereichs @familyId (ohne geteilte) - für Würfe eigener Tiere in fremden Zuchtbüchern
+// (routes/breeding.js GET /, lib/uploadAccess.js): ein geteiltes Tier bringt das Zuchtbuch seines Zuhauses nicht mit.
+const OWN_DOGS_SQL = '(SELECT id FROM dogs WHERE family_id = @familyId)'
+
 // Chronik-Einträge, die im Bereich @familyId sichtbar sind: eigene (alle) und geteilte (nur nicht-private).
 // Erwartet einen Alias "t" auf timeline_entries im umgebenden Query.
 const VISIBLE_ENTRY_SQL = `(t.family_id = @familyId OR (t.dog_id IN (SELECT dog_id FROM dog_shares WHERE family_id = @familyId) AND t.privat = 0))`
@@ -129,6 +133,7 @@ module.exports = {
   canEnter,
   buildMe,
   VISIBLE_DOGS_SQL,
+  OWN_DOGS_SQL,
   VISIBLE_ENTRY_SQL,
   VISIBLE_COMMENT_SQL,
   canSeeDog

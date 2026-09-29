@@ -1,6 +1,6 @@
 const path = require('node:path')
 const db = require('../db')
-const { VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL, PARTNER_AREA_ARTS } = require('./context')
+const { VISIBLE_DOGS_SQL, OWN_DOGS_SQL, VISIBLE_ENTRY_SQL, PARTNER_AREA_ARTS } = require('./context')
 
 // uploads.js erzeugt Dateinamen ausschließlich aus crypto.randomUUID() (36 Zeichen: Hex-Ziffern und
 // Bindestriche) plus einer Endung aus EXTENSION_BY_MIME - das sind nur jpg, png, webp und gif ("jpeg"
@@ -27,9 +27,12 @@ const entryPhotoStmt = db.prepare(
   `SELECT 1 FROM timeline_entries t WHERE foto_urls LIKE @pattern AND ${VISIBLE_ENTRY_SQL}`
 )
 
-// Foto in einem Wurf-Eintrag der eigenen Familie (Zucht-Events werden nicht geteilt)
+// Foto in einem Wurf-Eintrag der eigenen Familie oder eines Wurfs EIGENER Tiere in einem fremden Zuchtbuch (Phase R:
+// nach dem Übernehmen eines Tiers aus der Familie zeigt routes/breeding.js GET / dessen Wurf auch im Zuhause) -
+// Zucht-Events werden weiterhin nicht dadurch geteilt, dass ein Tier geteilt ist (OWN_DOGS_SQL, nicht VISIBLE_DOGS_SQL).
 const breedingPhotoStmt = db.prepare(
-  'SELECT 1 FROM breeding_events WHERE family_id = @familyId AND foto_urls LIKE @pattern'
+  `SELECT 1 FROM breeding_events WHERE foto_urls LIKE @pattern
+     AND (family_id = @familyId OR mutter_dog_id IN ${OWN_DOGS_SQL} OR vater_dog_id IN ${OWN_DOGS_SQL})`
 )
 
 // Foto eines Einblicks (Phase P Task 3b, lib/einblicke.js) des Partners, dessen Bereich gerade aktiv ist -

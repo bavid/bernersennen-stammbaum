@@ -288,18 +288,23 @@ router.get('/links', requireAuth, (req, res) => {
   res.json(links)
 })
 
-// Mitbewohner aus den Verbindungen der Eigentümerfamilie (@ownerFamilyId) UND des gerade aktiven Bereichs
-// (@familyId): nach dem Übernehmen eines Tiers aus der Familie (POST /:id/uebernehmen) gehört die Verbindung
-// weiter der Familie, das Tier aber einem Zuhause - in der Familie soll das Paar sichtbar bleiben. Der
-// Aufrufer filtert zusätzlich mit canSeeDog.
+// Mitbewohner über die Tier-Ids, unabhängig davon, welcher Bereich die Verbindung angelegt hat: nach dem
+// Übernehmen eines Tiers aus der Familie (POST /:id/uebernehmen) gehört die Verbindung weiter der Familie, das
+// Tier aber einem Zuhause - in der Familie soll das Paar sichtbar bleiben, und im Zuhause ebenfalls, sobald beide
+// dort sichtbar sind. Der Aufrufer filtert IMMER mit canSeeDog(req.familyId, ...): ein Mitbewohner, den der
+// Bereich nicht sehen darf, fällt weg.
 const findHousemates = db.prepare(
   `SELECT DISTINCT ${SUMMARY_COLUMNS}
    FROM dog_links l
    JOIN dogs ON dogs.id = CASE WHEN l.dog_a_id = @id THEN l.dog_b_id ELSE l.dog_a_id END
    JOIN families ON families.id = dogs.family_id
-   WHERE (l.dog_a_id = @id OR l.dog_b_id = @id) AND l.family_id IN (@ownerFamilyId, @familyId)
+   WHERE l.dog_a_id = @id OR l.dog_b_id = @id
    ORDER BY dogs.name`
 )
+
+function visibleHousemates(dogId, viewFamilyId) {
+  return findHousemates.all({ id: dogId }).filter((mate) => canSeeDog(viewFamilyId, mate))
+}
 
 const summaryById = db.prepare(
   `SELECT ${SUMMARY_COLUMNS} FROM dogs JOIN families ON families.id = dogs.family_id WHERE dogs.id = ?`
@@ -362,9 +367,7 @@ const findChildren = db.prepare(
 function dogDetail(req, dog) {
   const canEdit = dog.family_id === req.familyId
   const children = findChildren.all({ id: dog.id }).filter((child) => canSeeDog(req.familyId, child))
-  const housemates = findHousemates
-    .all({ id: dog.id, ownerFamilyId: dog.family_id, familyId: req.familyId })
-    .filter((mate) => canSeeDog(req.familyId, mate))
+  const housemates = visibleHousemates(dog.id, req.familyId)
   const family = db.prepare('SELECT name FROM families WHERE id = ?').get(dog.family_id)
 
   return {
@@ -435,7 +438,7 @@ router.post('/:id/housemates', requireAuth, canWrite, (req, res) => {
   if (!other || other.family_id !== req.familyId) return res.status(404).json({ error: 'Tier nicht gefunden' })
 
   insertLink.run(req.familyId, Math.min(dog.id, other.id), Math.max(dog.id, other.id))
-  res.status(201).json(findHousemates.all({ id: dog.id, ownerFamilyId: req.familyId, familyId: req.familyId }))
+  res.status(201).json(visibleHousemates(dog.id, req.familyId))
 })
 
 router.delete('/:id/housemates/:otherId', requireAuth, canWrite, (req, res) => {

@@ -3,6 +3,7 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { canAttachUpload } = require('../lib/uploadAccess')
+const { canSeeDog, OWN_DOGS_SQL } = require('../lib/context')
 const { requireRole } = require('../lib/roles')
 
 const router = express.Router()
@@ -66,9 +67,36 @@ function validateEvent(body, req) {
   }
 }
 
+// Zuchtbuch des Bereichs UND Würfe EIGENER Tiere, die in einem anderen Bereich eingetragen wurden (Phase R:
+// nach dem Übernehmen eines Tiers aus der Familie, routes/dogs.js POST /:id/uebernehmen, bleibt sein Wurf im
+// Zuchtbuch der Familie - im Zuhause des neuen Eigentümers soll er trotzdem erscheinen). Bewusst nur eigene
+// Tiere (dogs.family_id), nicht bloß sichtbare: das Zuchtbuch eines Haushalts wird nicht dadurch geteilt, dass
+// er ein Tier in eine Familie teilt (test/uploadAccess.test.js "Wurf-Fotos werden nicht geteilt").
+const LIST_EVENTS_SQL = `${SELECT_EVENTS}
+  WHERE b.family_id = @familyId OR b.mutter_dog_id IN ${OWN_DOGS_SQL} OR b.vater_dog_id IN ${OWN_DOGS_SQL}
+  ORDER BY b.datum DESC, b.id DESC`
+const findDogForVisibility = db.prepare('SELECT id, family_id FROM dogs WHERE id = ?')
+
+// Bei einem fremden Wurf-Eintrag (anderer Bereich) bleibt nur, was hier sichtbar ist: ein beteiligtes Tier,
+// das der Bereich nicht sehen darf, verschwindet samt Name (Id und Name null; ein Freitext-Vater bleibt) -
+// dieselbe Regel wie visibleParentId/canSeeDog in routes/dogs.js. Eigene Einträge bleiben wie bisher komplett.
+function hideInvisibleDogs(row, familyId) {
+  if (row.family_id === familyId) return row
+  const event = { ...row }
+  if (!canSeeDog(familyId, findDogForVisibility.get(row.mutter_dog_id))) {
+    event.mutter_dog_id = null
+    event.mutter_name = null
+  }
+  if (row.vater_dog_id && !canSeeDog(familyId, findDogForVisibility.get(row.vater_dog_id))) {
+    event.vater_dog_id = null
+    event.vater_name = null
+  }
+  return event
+}
+
 router.get('/', requireAuth, (req, res) => {
-  const rows = db.prepare(`${SELECT_EVENTS} WHERE b.family_id = ? ORDER BY b.datum DESC, b.id DESC`).all(req.familyId)
-  res.json(rows.map(toEvent))
+  const rows = db.prepare(LIST_EVENTS_SQL).all({ familyId: req.familyId })
+  res.json(rows.map((row) => toEvent(hideInvisibleDogs(row, req.familyId))))
 })
 
 router.post('/', requireAuth, canWrite, (req, res) => {
