@@ -4,14 +4,15 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listDogs, recentActivity } = vi.hoisted(() => ({
+const { me, logout, listDogs, recentActivity, profile } = vi.hoisted(() => ({
   me: vi.fn(),
+  profile: vi.fn(),
   logout: vi.fn(),
   listDogs: vi.fn(),
   recentActivity: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listDogs, recentActivity },
+  api: { me, logout, listDogs, recentActivity, partnerArea: { profile } },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -33,6 +34,21 @@ const shelterFamily = {
   partner: { id: 1, slug: 'tierheim-sonnenhang', name: 'Tierheim Sonnenhang' }
 }
 
+// Antwort von GET /api/partner-area/profile (PartnerProfilePage) - nur, was die Seite hier braucht.
+const shelterProfile = {
+  id: 1,
+  slug: 'tierheim-sonnenhang',
+  name: 'Tierheim Sonnenhang',
+  typ: 'tierheim',
+  status: 'aktiv',
+  gesperrt: false,
+  plz: '10115',
+  ort: 'Berlin',
+  portalText: 'Wir vermitteln Hunde und Katzen in liebevolle Hände.',
+  kontaktformularAktiv: true,
+  vollstaendig: { ok: true, fehlt: [], empfohlen: [] }
+}
+
 afterEach(() => {
   if (root) {
     act(() => root.unmount())
@@ -49,11 +65,13 @@ afterEach(() => {
   logout.mockReset()
   listDogs.mockReset()
   recentActivity.mockReset()
+  profile.mockReset()
   window.localStorage.clear()
   vi.restoreAllMocks()
 })
 
 async function render(initialEntry) {
+  profile.mockResolvedValue(shelterProfile)
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -79,7 +97,7 @@ describe('Navigation für Tierheime (family.art === "tierheim")', () => {
     expect(labels.length).toBeLessThanOrEqual(5)
   })
 
-  test('"Profil" (Phase P) zeigt den Platzhalter mit Name und Status des Tierheim-Partners', async () => {
+  test('"Profil" (Phase P) zeigt das Profil mit Name und Status des Tierheim-Partners', async () => {
     me.mockResolvedValue({ ...shelterFamily, partner: { ...shelterFamily.partner, status: 'aktiv', gesperrt: false } })
     await render('/profil')
 
@@ -87,8 +105,7 @@ describe('Navigation für Tierheime (family.art === "tierheim")', () => {
     expect(link.getAttribute('href')).toBe('/profil')
     expect(link.classList.contains('active')).toBe(true)
     expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
-    expect(container.querySelector('.partner-status-chip').textContent).toBe('Aktiv')
-    expect(container.textContent).toContain('Hier pflegt ihr bald euer Profil.')
+    expect(container.querySelector('.partner-status-badge').textContent).toBe('Aktiv (öffentlich)')
   })
 
   test('der Fuß bietet "Kunden-Gutschein weitergeben" (Phase P)', async () => {
@@ -135,5 +152,32 @@ describe('Navigation für Tierheime (family.art === "tierheim")', () => {
     await render('/wegbegleiter')
 
     expect(container.querySelector('h1').textContent).toBe('Unsere Tiere')
+  })
+})
+
+describe('Umschalter "Bearbeiten | Kundensicht" für Tierheime (Phase P1)', () => {
+  function switchLink(label) {
+    return [...container.querySelectorAll('.view-mode-switch a')].find((a) => a.textContent === label)
+  }
+
+  test('steht auch über "Unsere Tiere" - "Bearbeiten" ist aktiv und zeigt auf die aktuelle Seite', async () => {
+    me.mockResolvedValue(shelterFamily)
+    listDogs.mockResolvedValue([])
+    recentActivity.mockResolvedValue([])
+    await render('/tiere')
+
+    expect(switchLink('Bearbeiten').getAttribute('aria-current')).toBe('page')
+    expect(switchLink('Bearbeiten').getAttribute('href')).toBe('/tiere')
+    expect(switchLink('Kundensicht').getAttribute('href')).toBe('/kundensicht')
+    expect(switchLink('Kundensicht').hasAttribute('aria-current')).toBe(false)
+  })
+
+  test('/kundensicht gibt es auch für Tierheime', async () => {
+    me.mockResolvedValue(shelterFamily)
+    await render('/kundensicht')
+
+    expect(container.querySelector('h1').textContent).toBe('Kundensicht – kommt gleich')
+    expect(switchLink('Kundensicht').getAttribute('aria-current')).toBe('page')
+    expect(switchLink('Bearbeiten').getAttribute('href')).toBe('/profil')
   })
 })

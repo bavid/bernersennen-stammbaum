@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
 import { readSetting, writeSetting } from './lib/storage.js'
-import { inviteLabel, startRoute } from './lib/areas.js'
+import { inviteLabel, isPartnerArea, startRoute } from './lib/areas.js'
 import { MAX_NAV_ITEMS, navItemsFor } from './lib/navItems.js'
 import { formatVoucherCode } from './lib/voucherCode.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
@@ -11,6 +11,7 @@ import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import ContextSwitcher from './components/ContextSwitcher.jsx'
+import ViewModeSwitch from './components/ViewModeSwitch.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
@@ -376,6 +377,8 @@ export default function App() {
           <ScrollToTop />
           {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} />}
           <AppHeader family={family} onLogout={handleLogout} onFamilyChange={setFamily} />
+          {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
+          {isPartnerArea(family) && <ViewModeSwitch />}
           {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
               bliebe beim Wechsel des Bereichs (ContextSwitcher navigiert zur Start-Route, die dem
               aktuellen Pfad entsprechen kann, z. B. Stammbaum -> Stammbaum) die alte Seiteninstanz

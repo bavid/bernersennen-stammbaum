@@ -1,0 +1,480 @@
+/* Partner-Bereich (Phase P1): Umschalter "Bearbeiten | Kundensicht", Profil (/profil) mit Statuskarte,
+   Angaben und Einblicken. Nur Tokens aus tokens.css - hell und dunkel passen damit von selbst. */
+
+/* Umschalter unter dem Kopf (ViewModeSwitch) - .segmented, aber mit Links statt Knöpfen */
+
+.view-mode-bar {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: var(--space-3) clamp(var(--space-4), 4vw, var(--space-8)) 0;
+}
+
+.view-mode-switch a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.1rem;
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.view-mode-switch a svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.view-mode-switch a:hover {
+  color: var(--ink);
+}
+
+.view-mode-switch a[aria-current='page'] {
+  background: var(--surface);
+  color: var(--rust);
+  box-shadow: var(--shadow-sm);
+}
+
+.view-mode-switch a:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 720px) {
+  .view-mode-bar {
+    padding-top: var(--space-2);
+  }
+
+  .view-mode-switch {
+    width: 100%;
+  }
+
+  .view-mode-switch a {
+    flex: 1;
+    min-height: 1.9rem;
+    padding: 0 var(--space-3);
+    font-size: var(--text-xs);
+  }
+}
+
+/* Profil-Seite */
+
+.partner-profile-typ {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.partner-profile-typ strong {
+  color: var(--ink);
+}
+
+.partner-profile-panels {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.partner-profile-tabs {
+  justify-self: start;
+}
+
+.partner-profile-notes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  padding: var(--space-5) var(--space-6);
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Statuskarte: der linke Rand trägt die Farbe des Status */
+
+.partner-status-card {
+  --status-accent: var(--line-strong);
+  display: grid;
+  gap: var(--space-5);
+  color: var(--text);
+  border-left: 5px solid var(--status-accent);
+}
+
+.partner-status-card.is-entwurf {
+  --status-accent: var(--alpine);
+}
+
+.partner-status-card.is-aktiv {
+  --status-accent: var(--success);
+}
+
+.partner-status-card.is-pausiert {
+  --status-accent: var(--tan);
+}
+
+.partner-status-card.is-gesperrt {
+  --status-accent: var(--danger);
+}
+
+.partner-status-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.partner-status-head h2 {
+  font-size: var(--text-xl);
+  color: var(--ink);
+}
+
+.partner-status-badge {
+  font-size: var(--text-sm);
+  font-weight: 800;
+  padding: 0.3rem var(--space-4);
+}
+
+.partner-status-entwurf {
+  background: var(--alpine-wash);
+  color: var(--alpine);
+}
+
+.partner-status-aktiv {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+
+.partner-status-pausiert {
+  background: color-mix(in srgb, var(--tan) 18%, transparent);
+  color: var(--ink-soft);
+  box-shadow: inset 0 0 0 1px var(--tan);
+}
+
+.partner-status-gesperrt {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.partner-checklist {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.partner-checklist-title {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.partner-checklist ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.partner-checklist li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.partner-checklist li svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.partner-checklist li.is-missing svg,
+.partner-checklist li.is-missing .partner-checklist-tag {
+  color: var(--danger);
+}
+
+.partner-checklist li.is-recommended svg {
+  color: var(--tan);
+}
+
+.partner-checklist-tag {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.partner-checklist-done {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--success);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.partner-checklist-done svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.partner-status-actions,
+.partner-status-portal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.partner-status-actions .field-hint {
+  flex-basis: 100%;
+}
+
+.partner-status-portal .muted {
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.partner-status-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--danger-wash);
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.partner-status-locked svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Reiter "Angaben": Fieldsets mit Überschrift statt Rahmen */
+
+.partner-profile-form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: clamp(var(--space-5), 3vw, var(--space-8));
+}
+
+.partner-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-6) 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.partner-fieldset:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* float: aus der gerenderten Legende (sitzt sonst im Rahmen) wird ein normaler Block */
+.partner-fieldset legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.partner-fieldset legend + * {
+  clear: both;
+}
+
+.partner-logo-field {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.admin-upload-btn.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Reiter "Einblicke" */
+
+.einblicke-editor {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.einblicke-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.einblicke-head h2 {
+  font-size: var(--text-xl);
+  color: var(--ink);
+}
+
+.einblicke-count {
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.einblick-form {
+  color: var(--text);
+}
+
+.einblick-form h3 {
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.einblick-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .einblick-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.einblick-photo-field {
+  justify-items: start;
+}
+
+.einblick-preview {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--paper-deep);
+}
+
+.einblick-form-fields {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.einblick-consent {
+  align-items: flex-start;
+  color: var(--ink-soft);
+}
+
+.einblick-consent input {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.einblicke-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.einblick-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.einblick-photo {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--paper-deep);
+}
+
+.einblick-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.einblick-card.is-hidden-by-admin .einblick-photo img {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+}
+
+.einblick-hidden-badge {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.einblick-hidden-badge svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.einblick-body {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.einblick-date {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.einblick-text {
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.einblick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.einblick-actions .btn {
+  min-height: 2.2rem;
+  padding: 0 var(--space-4);
+}

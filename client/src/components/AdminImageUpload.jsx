@@ -5,8 +5,17 @@ import { isPartnerMedia } from '../lib/discover.js'
 // Direkter Bild-Upload im Admin (Partner-Logo, Bild einer Empfehlung) - genau eine Datei an einen
 // eigenen Endpunkt, der Server prüft PNG/JPG/WebP (Magic Bytes) und die Größe. upload(file) liefert die
 // neue öffentliche URL. Die Vorschau zeigt nur Bilder unter /partner-media (isPartnerMedia) - nie eine
-// beliebige Adresse in einem src.
-export default function AdminImageUpload({ label, buttonLabel, imageUrl, upload, onUploaded, previewClassName = 'admin-upload-preview' }) {
+// beliebige Adresse in einem src. disabled (z. B. in der Demo) sperrt die Dateiauswahl - den Grund dazu
+// zeigt der Aufrufer an.
+export default function AdminImageUpload({
+  label,
+  buttonLabel,
+  imageUrl,
+  upload,
+  onUploaded,
+  previewClassName = 'admin-upload-preview',
+  disabled = false
+}) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -34,12 +43,12 @@ export default function AdminImageUpload({ label, buttonLabel, imageUrl, upload,
           {error}
         </p>
       )}
-      <label className="btn btn-ghost admin-upload-btn">
+      <label className={`btn btn-ghost admin-upload-btn${disabled ? ' is-disabled' : ''}`}>
         <Icon name="camera" />
         {busy ? 'Lädt …' : buttonLabel}
         {/* Visuell versteckt statt hidden (wie PhotoPicker.jsx .photo-add input): mit hidden verschwindet
             das Feld aus der Tab-Reihenfolge und ist per Tastatur nicht erreichbar. */}
-        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleChange} disabled={busy} className="admin-upload-input" />
+        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleChange} disabled={busy || disabled} className="admin-upload-input" />
       </label>
       <p className="field-hint">PNG, JPG oder WebP, höchstens 512 KB.</p>
     </div>

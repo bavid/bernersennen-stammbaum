@@ -196,3 +196,75 @@ describe('api.admin – Entdecken pflegen (Phase 3 Task 5)', () => {
     expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ zeitraum: '2026 Q3', eingangCents: 125050 })
   })
 })
+
+describe('api.partnerArea – eigenes Profil, Einblicke, Vorschau (Phase P)', () => {
+  test('Profil: lesen, nur geänderte Felder per PUT, veröffentlichen mit { aktiv }', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.partnerArea.profile()
+    await api.partnerArea.updateProfile({ portalTitel: 'Willkommen' })
+    await api.partnerArea.publish(false)
+
+    const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+    expect(calls).toEqual([
+      ['/api/partner-area/profile', 'GET'],
+      ['/api/partner-area/profile', 'PUT'],
+      ['/api/partner-area/profile/publish', 'POST']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ portalTitel: 'Willkommen' })
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ aktiv: false })
+  })
+
+  test('Logo: multipart mit dem Feld "file", ohne JSON-Content-Type', async () => {
+    const fetchMock = stubFetch({ logoUrl: '/partner-media/a.png' })
+
+    await api.partnerArea.uploadLogo(new File(['x'], 'logo.png', { type: 'image/png' }))
+
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/partner-area/profile/logo')
+    expect(options.method).toBe('POST')
+    expect(options.body.get('file')).toBeInstanceOf(File)
+    expect(options.headers).toBeUndefined()
+  })
+
+  test('Einblicke: Liste, Anlegen (FormData), Ändern, Löschen', async () => {
+    const fetchMock = stubFetch({})
+    const formData = new FormData()
+    formData.append('datum', '2026-09-01')
+
+    await api.partnerArea.einblicke()
+    await api.partnerArea.createEinblick(formData)
+    await api.partnerArea.updateEinblick(4, { text: 'Neu' })
+    await api.partnerArea.deleteEinblick(4)
+
+    const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+    expect(calls).toEqual([
+      ['/api/partner-area/einblicke', 'GET'],
+      ['/api/partner-area/einblicke', 'POST'],
+      ['/api/partner-area/einblicke/4', 'PUT'],
+      ['/api/partner-area/einblicke/4', 'DELETE']
+    ])
+    expect(fetchMock.mock.calls[1][1].body).toBe(formData)
+    expect(fetchMock.mock.calls[1][1].headers).toBeUndefined()
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ text: 'Neu' })
+  })
+
+  test('Vorschau: Portal, Entdecken (PLZ im Body, nicht in der URL), Steckbrief eines Tiers', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.partnerArea.previewPortal()
+    await api.partnerArea.previewDiscover({ plz: '10115', radius: 25 })
+    await api.partnerArea.previewDiscover()
+    await api.partnerArea.previewAnimal(9)
+
+    const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+    expect(calls).toEqual([
+      ['/api/partner-area/preview/portal', 'GET'],
+      ['/api/partner-area/preview/discover', 'POST'],
+      ['/api/partner-area/preview/discover', 'POST'],
+      ['/api/partner-area/preview/animals/9', 'GET']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ plz: '10115', radius: 25 })
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({})
+  })
+})

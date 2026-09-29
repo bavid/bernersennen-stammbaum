@@ -155,7 +155,7 @@
 }
 
 .input,
-input:not([type='radio']):not([type='checkbox']):not([type='file']),
+input:not([type='radio']):not([type='checkbox']):not([type='file']):not([type='color']),
 select,
 textarea {
   width: 100%;

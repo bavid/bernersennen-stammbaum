@@ -4,8 +4,9 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers } = vi.hoisted(() => ({
+const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile } = vi.hoisted(() => ({
   me: vi.fn(),
+  profile: vi.fn(),
   myVouchers: vi.fn(),
   logout: vi.fn(),
   listUsers: vi.fn(),
@@ -15,7 +16,7 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   redeemVoucher: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers },
+  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile } },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -49,6 +50,33 @@ const partnerArea = {
   partner: { id: 4, slug: 'hundeschule-wiesengrund', name: 'Hundeschule Wiesengrund', typ: 'hundeschule', status: 'entwurf', gesperrt: false }
 }
 
+// Antwort von GET /api/partner-area/profile passend zu me.partner (PartnerProfilePage lädt sie).
+function profileFor(family) {
+  const partner = family.partner
+  return {
+    id: partner.id,
+    slug: partner.slug,
+    name: partner.name,
+    typ: partner.typ,
+    status: partner.status,
+    gesperrt: Boolean(partner.gesperrt),
+    plz: null,
+    ort: null,
+    portalTitel: null,
+    portalText: null,
+    farbe: null,
+    logoUrl: null,
+    website: null,
+    spendenUrl: null,
+    vermittlungUrl: null,
+    kontaktEmail: null,
+    kontaktTelefon: null,
+    kontaktFormularUrl: null,
+    kontaktformularAktiv: true,
+    vollstaendig: { ok: false, fehlt: ['Postleitzahl'], empfohlen: [] }
+  }
+}
+
 const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
 const nativeSelectValueSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set
 
@@ -74,7 +102,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
   document.title = ''
   window.history.replaceState(null, '', '/')
-  for (const mock of [me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers]) mock.mockReset()
+  for (const mock of [me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile]) mock.mockReset()
   window.localStorage.clear()
   vi.restoreAllMocks()
 })
@@ -82,6 +110,7 @@ afterEach(() => {
 async function render(initialEntry, family = partnerArea) {
   if (family) me.mockResolvedValue(family)
   else me.mockRejectedValue(new Error('401'))
+  profile.mockResolvedValue(profileFor(family?.partner ? family : partnerArea))
   listUsers.mockResolvedValue([])
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -124,17 +153,17 @@ describe('Partner-Bereich (family.art === "partner") – Navigation', () => {
 })
 
 describe('Partner-Bereich – Seiten', () => {
-  test('/profil zeigt den Platzhalter mit Partnername, Status "Entwurf" und dem Hinweis', async () => {
+  test('/profil lädt das eigene Profil: Partnername, Status "Entwurf"', async () => {
     await render('/profil')
 
+    expect(profile).toHaveBeenCalledTimes(1)
     expect(container.querySelector('h1').textContent).toBe('Hundeschule Wiesengrund')
-    expect(container.querySelector('.partner-status-chip').textContent).toBe('Entwurf')
-    expect(container.textContent).toContain('Hier pflegt ihr bald euer Profil.')
+    expect(container.querySelector('.partner-status-badge').textContent).toBe('Entwurf')
   })
 
   test('ein gesperrter Partner trägt den Status "Gesperrt"', async () => {
     await render('/profil', { ...partnerArea, partner: { ...partnerArea.partner, status: 'pausiert', gesperrt: true } })
-    expect(container.querySelector('.partner-status-chip').textContent).toBe('Gesperrt')
+    expect(container.querySelector('.partner-status-badge').textContent).toBe('Gesperrt')
   })
 
   test('/zugang zeigt die Zugangs-Einstellungen (Schlüssel erneuern, Benutzer)', async () => {
@@ -242,5 +271,86 @@ describe('Redeem-Seite – Kopfzeile', () => {
     await render('/v#abcd1234hjkm', null)
 
     expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Neue Chronik')
+  })
+})
+
+describe('Umschalter "Bearbeiten | Kundensicht" (Phase P1)', () => {
+  function switchLinks() {
+    return [...container.querySelectorAll('.view-mode-switch a')]
+  }
+
+  function switchLink(label) {
+    return switchLinks().find((a) => a.textContent === label)
+  }
+
+  test('steht über jeder Seite eines Partner-Bereichs, "Bearbeiten" ist aktiv', async () => {
+    await render('/profil')
+
+    expect(container.querySelector('.view-mode-switch').tagName).toBe('NAV')
+    expect(switchLinks().map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
+      ['Bearbeiten', '/profil'],
+      ['Kundensicht', '/kundensicht']
+    ])
+    expect(switchLink('Bearbeiten').getAttribute('aria-current')).toBe('page')
+    expect(switchLink('Kundensicht').hasAttribute('aria-current')).toBe(false)
+  })
+
+  test('/kundensicht gibt es: Platzhalter-Seite, "Kundensicht" ist aktiv, "Bearbeiten" führt zu /profil', async () => {
+    await render('/kundensicht')
+
+    expect(container.querySelector('h1').textContent).toBe('Kundensicht – kommt gleich')
+    expect(switchLink('Kundensicht').getAttribute('aria-current')).toBe('page')
+    expect(switchLink('Bearbeiten').hasAttribute('aria-current')).toBe(false)
+    expect(switchLink('Bearbeiten').getAttribute('href')).toBe('/profil')
+  })
+
+  test('"Bearbeiten" führt zurück zur zuletzt besuchten Seite', async () => {
+    await render('/zugang')
+
+    await act(async () => switchLink('Kundensicht').click())
+    expect(container.querySelector('h1').textContent).toBe('Kundensicht – kommt gleich')
+    expect(switchLink('Bearbeiten').getAttribute('href')).toBe('/zugang')
+
+    await act(async () => switchLink('Bearbeiten').click())
+    expect(container.querySelector('h1').textContent).toBe('Zugang')
+    expect(switchLink('Bearbeiten').getAttribute('aria-current')).toBe('page')
+  })
+
+  test('fehlt in Zuhause und Rudel', async () => {
+    const home = {
+      id: 1,
+      name: 'Zuhause am Deich',
+      theme: 'standard',
+      art: 'zuhause',
+      isDemo: false,
+      home: { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' },
+      memberships: []
+    }
+    listDogs.mockResolvedValue([])
+    recentActivity.mockResolvedValue([])
+    await render('/wegbegleiter', home)
+    expect(container.querySelector('.view-mode-switch')).toBeNull()
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render('/stammbaum', { ...home, id: 2, name: 'Rudel vom Heidekamp', art: 'rudel' })
+    expect(container.querySelector('.app-nav')).not.toBeNull()
+    expect(container.querySelector('.view-mode-switch')).toBeNull()
+  })
+
+  test('ein Zuhause wird von /kundensicht auf seine Start-Route umgeleitet', async () => {
+    listDogs.mockResolvedValue([])
+    await render('/kundensicht', {
+      id: 1,
+      name: 'Zuhause am Deich',
+      theme: 'standard',
+      art: 'zuhause',
+      isDemo: false,
+      home: { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' },
+      memberships: []
+    })
+
+    expect(container.querySelector('h1').textContent).toBe('Wegbegleiter')
   })
 })

@@ -5,12 +5,10 @@ import ConfirmButton from './ConfirmButton.jsx'
 import Modal from './Modal.jsx'
 import KeyReveal from './KeyReveal.jsx'
 import AdminImageUpload from './AdminImageUpload.jsx'
-import { isValidHexColor } from '../lib/color.js'
-import { contrastRatio, hasEnoughContrast, ON_RUST, MIN_CONTRAST } from '../lib/contrast.js'
+import ColorField from './ColorField.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 
 const STATUS_LABELS = { entwurf: 'Entwurf', aktiv: 'Aktiv', pausiert: 'Pausiert' }
-const DEFAULT_FARBE = '#2f6b3f'
 // Tierheim-Bereich (final-review Phase T Finding 4): nur Partner dieser beiden Typen können einen
 // eigenen App-Bereich bekommen (server/routes/admin.js POST /:id/shelter prüft dieselbe Liste).
 const SHELTER_TYPES = ['tierheim', 'vermittlung']
@@ -52,22 +50,6 @@ function toPayload(form) {
     portalText: form.portalText || null,
     farbe: form.farbe || null
   }
-}
-
-// Live-Kontrastanzeige beim Tippen/Wählen der Farbe - dieselbe WCAG-Formel wie der Server
-// (lib/contrast.js spiegelt server/lib/partners.js), ersetzt die Server-Prüfung beim Speichern nicht.
-function ContrastHint({ farbe }) {
-  if (!farbe) return null
-  if (!isValidHexColor(farbe)) return <p className="field-hint">Format: #rrggbb</p>
-
-  const ratio = contrastRatio(farbe, ON_RUST)
-  const ok = hasEnoughContrast(farbe)
-  return (
-    <p className={`field-hint admin-partner-contrast ${ok ? 'is-ok' : 'is-warning'}`} role={ok ? undefined : 'alert'}>
-      Kontrast gegen die Schrift: {ratio.toFixed(2)}:1 –{' '}
-      {ok ? 'gut lesbar.' : `zu niedrig (mind. ${MIN_CONTRAST}:1 nötig) – Schrift wäre schlecht lesbar.`}
-    </p>
-  )
 }
 
 // Logo nur für einen bereits gespeicherten Partner (Server braucht die id) - lib/partners.js prüft
@@ -258,26 +240,13 @@ function PartnerForm({ partner, onSaved, onCancel }) {
             rows={4}
           />
         </div>
-        <div className="field span-2">
-          <span className="field-label">Akzentfarbe</span>
-          <div className="admin-partner-color">
-            <input
-              type="color"
-              aria-label="Akzentfarbe wählen"
-              value={isValidHexColor(form.farbe) ? form.farbe : DEFAULT_FARBE}
-              onChange={(e) => update({ farbe: e.target.value })}
-            />
-            <input
-              id="admin-partner-farbe-text"
-              value={form.farbe}
-              onChange={(e) => update({ farbe: e.target.value })}
-              placeholder="#rrggbb"
-              maxLength={7}
-              aria-label="Akzentfarbe als Hex-Wert"
-            />
-          </div>
-          <ContrastHint farbe={form.farbe} />
-        </div>
+        <ColorField
+          id="admin-partner-farbe-text"
+          label="Akzentfarbe"
+          className="span-2"
+          value={form.farbe}
+          onChange={(farbe) => update({ farbe })}
+        />
       </div>
 
       {partner && <LogoUpload partnerId={partner.id} logoUrl={logoUrl} onUploaded={setLogoUrl} />}

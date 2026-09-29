@@ -429,15 +429,21 @@
   gap: var(--space-3);
 }
 
+/* Farbwähler (ColorField): die allgemeine input-Regel in components.css lässt type=color aus - Maße,
+   Rahmen und Fläche kommen deshalb vollständig von hier. */
 .admin-partner-color input[type='color'] {
+  flex: 0 0 2.9rem;
   width: 2.9rem;
-  min-height: 2.9rem;
+  height: 2.9rem;
   padding: 4px;
-  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
 .admin-partner-color input[type='text'] {
+  flex: 1 1 auto;
   max-width: 10rem;
 }
 

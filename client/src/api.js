@@ -198,6 +198,30 @@ export const api = {
     deleteDonationReport: (id) => request(`/admin/donation-reports/${id}`, { method: 'DELETE' })
   },
 
+  // Partner-Bereich (Phase P, server/routes/partnerArea/*): eigenes Profil, Einblicke und die Vorschau
+  // für die Kundensicht. Nur mit Sitzung in einem Partner- oder Tierheim-Bereich; Demo-Sitzungen lesen
+  // nur (jeder Schreibversuch -> 403).
+  partnerArea: {
+    profile: () => request('/partner-area/profile'),
+    // Nur die geänderten Felder (camelCase wie die Antwort) - unbekannte Felder lehnt der Server mit 400 ab.
+    updateProfile: (fields) => request('/partner-area/profile', json('PUT', fields)),
+    uploadLogo: (file) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      return request('/partner-area/profile/logo', { method: 'POST', body: formData })
+    },
+    publish: (aktiv) => request('/partner-area/profile/publish', json('POST', { aktiv })),
+    einblicke: () => request('/partner-area/einblicke'),
+    // formData: foto, datum (JJJJ-MM-TT), text, einwilligung ('true') - siehe EinblickForm.
+    createEinblick: (formData) => request('/partner-area/einblicke', { method: 'POST', body: formData }),
+    updateEinblick: (id, fields) => request(`/partner-area/einblicke/${encodeURIComponent(id)}`, json('PUT', fields)),
+    deleteEinblick: (id) => request(`/partner-area/einblicke/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    previewPortal: () => request('/partner-area/preview/portal'),
+    // Wie api.discover: die PLZ steht im Body, nie in der URL.
+    previewDiscover: ({ plz, radius } = {}) => request('/partner-area/preview/discover', json('POST', plz ? { plz, radius } : {})),
+    previewAnimal: (dogId) => request(`/partner-area/preview/animals/${encodeURIComponent(dogId)}`)
+  },
+
   listBreedingEvents: () => request('/breeding'),
   createBreedingEvent: (payload) => request('/breeding', json('POST', payload)),
   deleteBreedingEvent: (id) => request(`/breeding/${id}`, { method: 'DELETE' }),

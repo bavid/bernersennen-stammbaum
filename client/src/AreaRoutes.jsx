@@ -12,6 +12,7 @@ import NearbyPage from './pages/NearbyPage.jsx'
 import DiscoverPage from './pages/DiscoverPage.jsx'
 import PartnerProfilePage from './pages/PartnerProfilePage.jsx'
 import AccessPage from './pages/AccessPage.jsx'
+import CustomerViewPage from './pages/CustomerViewPage.jsx'
 
 // Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
 function RedirectTierUrl() {
@@ -25,14 +26,15 @@ function ToStart({ family }) {
 }
 
 // Partner-Bereich (Phase P, family.art 'partner' - Hundeschule, Hundesalon, Betreuung, …): keine Tiere,
-// keine Chronik, kein Rudel - nur Profil und Zugang, dazu die allgemeinen Seiten aus Kopf und Fuß
-// (Schreib dem Admin, In der Nähe). Alles andere (Stammbaum, Pinnwand, Wegbegleiter, Entdecken, …)
-// führt zurück zum Profil.
+// keine Chronik, kein Rudel - nur Profil, Zugang und die Kundensicht, dazu die allgemeinen Seiten aus
+// Kopf und Fuß (Schreib dem Admin, In der Nähe). Alles andere (Stammbaum, Pinnwand, Wegbegleiter,
+// Entdecken, …) führt zurück zum Profil.
 function PartnerAreaRoutes({ family, onFamilyChange }) {
   return (
     <Routes>
       <Route path="/profil" element={<PartnerProfilePage family={family} />} />
       <Route path="/zugang" element={<AccessPage family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/kundensicht" element={<CustomerViewPage />} />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
       <Route path="/umgebung" element={<NearbyPage />} />
       <Route path="*" element={<ToStart family={family} />} />
@@ -63,12 +65,13 @@ export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/collage" element={<CollagePage family={family} />} />
       <Route path="/umgebung" element={<NearbyPage />} />
       <Route path="/entdecken" element={family.art === 'tierheim' ? <ToStart family={family} /> : <DiscoverPage />} />
-      {/* Profil/Zugang (Phase P) auch für Tierheime - die sind ebenfalls Partner-Bereiche. */}
+      {/* Profil/Zugang/Kundensicht (Phase P) auch für Tierheime - die sind ebenfalls Partner-Bereiche. */}
       <Route path="/profil" element={partnerArea ? <PartnerProfilePage family={family} /> : <ToStart family={family} />} />
       <Route
         path="/zugang"
         element={partnerArea ? <AccessPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
       />
+      <Route path="/kundensicht" element={partnerArea ? <CustomerViewPage /> : <ToStart family={family} />} />
       <Route path="*" element={<ToStart family={family} />} />
     </Routes>
   )
