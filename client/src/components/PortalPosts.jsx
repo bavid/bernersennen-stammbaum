@@ -1,15 +1,17 @@
+import PortalSection from './PortalSection.jsx'
 import { PromotionList } from './PromotionCard.jsx'
 
-// "Aktuelles von {Name}" auf dem Portal (Phase P2): die Beiträge des Partners als Anzeigen-Karten
-// (PromotionCard - Badge "Anzeige", Link mit rel="sponsored"). Öffentlich nur freigegebene (GET
-// /api/public/partners/:slug/posts); in der Kundensicht auch die eingereichten, mit "Wartet auf Freigabe"
-// und ohne Link. Ohne Beiträge erscheint der Abschnitt nicht.
-export default function PortalPosts({ partner, posts }) {
+// "Angebote & Aktuelles" auf dem Portal (Phase P2, seit Phase U ohne Kennzeichnung): die Beiträge des
+// Partners auf SEINER Seite - dort braucht es kein "Anzeige"-Badge, die Kennzeichnung gilt nur, wenn die
+// Beiträge in "Entdecken" neben anderen stehen. Der Link behält rel="sponsored" für Anzeigen. Öffentlich
+// nur freigegebene (GET /api/public/partners/:slug/posts, nur Beiträge dieses Partners - keine fremden);
+// in der Kundensicht auch die eingereichten, mit "Wartet auf Freigabe" und ohne Link. Ohne Beiträge
+// erscheint der Abschnitt nicht.
+export default function PortalPosts({ posts }) {
   if (!posts.length) return null
   return (
-    <section className="partner-portal-posts" aria-labelledby="partner-portal-posts-title">
-      <h2 id="partner-portal-posts-title">Aktuelles von {partner.name}</h2>
-      <PromotionList items={posts} />
-    </section>
+    <PortalSection id="partner-portal-posts" title="Angebote & Aktuelles" className="partner-portal-posts">
+      <PromotionList items={posts} labelled={false} />
+    </PortalSection>
   )
 }

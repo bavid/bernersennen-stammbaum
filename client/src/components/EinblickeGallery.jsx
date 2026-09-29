@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import EinblickViewer, { einblickAlt } from './EinblickViewer.jsx'
+import PortalSection from './PortalSection.jsx'
 import { formatDateLong } from '../lib/dates.js'
 import { isAllowedMedia } from '../lib/discover.js'
 import { useIsPreview } from '../lib/preview.js'
@@ -43,8 +44,7 @@ export default function EinblickeGallery({ einblicke }) {
   }
 
   return (
-    <section className="partner-portal-einblicke" aria-labelledby="portal-einblicke-title">
-      <h2 id="portal-einblicke-title">Einblicke</h2>
+    <PortalSection id="portal-einblicke" title="Einblicke" className="partner-portal-einblicke">
       <ul className="einblicke-gallery">
         {items.map((einblick, index) => (
           <li key={einblick.id ?? `${einblick.fotoUrl}-${index}`}>
@@ -66,6 +66,6 @@ export default function EinblickeGallery({ einblicke }) {
         ))}
       </ul>
       <EinblickViewer items={items} index={openIndex} onIndexChange={setOpenIndex} onClose={handleClose} />
-    </section>
+    </PortalSection>
   )
 }

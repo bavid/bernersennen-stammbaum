@@ -20,11 +20,11 @@ afterEach(() => {
   }
 })
 
-async function render(promotion) {
+async function render(promotion, props = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
-  await act(async () => root.render(<PromotionCard promotion={promotion} />))
+  await act(async () => root.render(<PromotionCard promotion={promotion} {...props} />))
   return container
 }
 
@@ -124,5 +124,13 @@ describe('PromotionCard', () => {
     await render({ ...empfehlung, bildUrl: null, text: null })
     expect(container.querySelector('img')).toBeNull()
     expect(container.querySelector('h3').textContent).toBe('Haferflocken-Knabber')
+  })
+
+  test('labelled={false} (eigenes Portal): kein Kennzeichnungs-Badge, der Link behält rel="sponsored"', async () => {
+    await render(anzeige, { labelled: false })
+    expect(container.querySelector('.promotion-badge')).toBeNull()
+    expect(container.querySelector('.promotion-card-anzeige')).toBeNull()
+    expect(container.textContent).not.toContain('Anzeige')
+    expect(link().getAttribute('rel')).toBe('sponsored noopener noreferrer')
   })
 })

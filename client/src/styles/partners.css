@@ -1,7 +1,5 @@
-/* Öffentliche Seiten ohne App-Rahmen: Partner-Portal (/p/:slug) und Partnerliste (/partner).
-   .partner-portal setzt --rust/--rust-deep/--rust-wash/--on-rust inline (siehe PartnerPortalPage) –
-   alles darunter, das diese Token nutzt (Knöpfe, Pills, Fokusringe), übernimmt die Partnerfarbe
-   automatisch, weil Custom Properties vererbt werden. Ohne gültige Farbe bleiben die Theme-Töne. */
+/* Öffentliche Seiten ohne App-Rahmen: Rahmen und Kopf, Partnerliste (/partner), "In der Nähe" und
+   Steckbrief. Das Partner-Portal (/p/:slug) hat seit Phase U eigene Regeln in portal.css. */
 
 .public-page {
   max-width: 44rem;
@@ -99,42 +97,7 @@
   color: var(--rust);
 }
 
-.preview-banner {
-  justify-self: center;
-  padding: var(--space-2) var(--space-5);
-  border-radius: var(--radius-pill);
-  background: var(--rust);
-  color: var(--on-rust);
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-/* Portal-Kopf: dunkle Hero-Fläche wie der Login, hier als eigenständige Karte statt Split-Screen */
-.partner-portal-hero {
-  display: grid;
-  gap: var(--space-4);
-  justify-items: start;
-  padding: clamp(var(--space-8), 6vw, var(--space-12));
-  border-radius: var(--radius-lg);
-  background-color: var(--hero-bg);
-  background-image: radial-gradient(ellipse 70% 60% at 90% 0%, color-mix(in srgb, var(--rust) 55%, transparent), transparent 70%),
-    radial-gradient(ellipse 60% 50% at 0% 100%, color-mix(in srgb, var(--tan) 20%, transparent), transparent 65%);
-  color: var(--hero-text);
-  box-shadow: var(--shadow-raised);
-}
-
-.partner-portal-marks {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.partner-portal-mark {
-  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.4));
-}
-
+/* Logo eines Partners (Portal-Kopf, Tierheim-Kasten im Steckbrief) */
 .partner-logo {
   max-height: 3.5rem;
   max-width: 9rem;
@@ -142,103 +105,6 @@
   border-radius: var(--radius-sm);
   background: var(--snow);
   padding: var(--space-1) var(--space-2);
-}
-
-.partner-portal-hero .eyebrow {
-  color: var(--tan);
-}
-
-.partner-portal-hero h1 {
-  color: var(--hero-text);
-  font-size: clamp(2.2rem, 1.6rem + 2.4vw, 3.4rem);
-  hyphens: auto;
-  overflow-wrap: anywhere;
-}
-
-.partner-portal-text {
-  color: var(--hero-muted);
-  max-width: 38rem;
-  line-height: 1.6;
-  font-size: var(--text-lg);
-}
-
-.partner-portal-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
-}
-
-.partner-portal-hero .btn-ghost {
-  border-color: rgba(246, 236, 221, 0.35);
-  color: var(--hero-text);
-  background: rgba(246, 236, 221, 0.06);
-}
-
-.partner-portal-hero .btn-ghost:hover:not(:disabled) {
-  border-color: var(--tan);
-  color: var(--tan);
-  background: rgba(246, 236, 221, 0.12);
-}
-
-.partner-portal-action {
-  max-width: 26rem;
-  justify-self: center;
-  width: 100%;
-}
-
-.partner-portal-contact h2 {
-  margin-bottom: var(--space-4);
-}
-
-.partner-portal-contact ul {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.partner-portal-contact li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  color: var(--text);
-  min-width: 0;
-}
-
-/* Lange Website-/E-Mail-Adressen dürfen bei 375px umbrechen statt den Container zu sprengen. */
-.partner-portal-contact li a {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.partner-portal-contact li svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  color: var(--rust);
-  flex-shrink: 0;
-}
-
-.partner-portal-missing {
-  min-height: 70vh;
-  align-content: center;
-}
-
-.partner-portal-missing .empty-state {
-  gap: var(--space-4);
-}
-
-/* Vermittlungs-Sektion auf dem Portal (Task 5): teilt sich die Kartenoptik mit ShelterAnimalsPage
-   (.shelter-grid/.shelter-card, shelter.css) - hier nur die Überschrift und der Grid-Abstand dazu. */
-
-.partner-portal-animals {
-  display: grid;
-  gap: var(--space-5);
-}
-
-.partner-portal-animals h2 {
-  font-size: var(--text-lg);
 }
 
 /* Öffentlicher Steckbrief /t/:slug (SteckbriefPage, Task 5): Hero/Facts/Beschreibung teilen sich die
@@ -546,10 +412,6 @@
 
   .location-picker-fields .btn {
     width: 100%;
-  }
-
-  .partner-portal-action {
-    max-width: none;
   }
 
   .place-list-head {

@@ -95,11 +95,13 @@ const partner = {
 }
 
 describe('PartnerPortalPage – Name, Text und Akzentfarbe', () => {
-  test('rendert Name (als Willkommenstitel), Text als Absätze und setzt die Akzentfarbe als Inline-Style', async () => {
+  test('rendert den Namen als Überschrift, Art und Ort als Meta-Zeile, Text als Absätze und die Akzentfarbe', async () => {
     publicPartner.mockResolvedValue(partner)
     await render()
 
-    expect(container.querySelector('h1').textContent).toBe('Willkommen von Tierheim Sonnenhang')
+    expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
+    expect(container.querySelector('.partner-portal-meta').textContent).toBe('Tierheim · Berlin')
+    expect(container.querySelector('.partner-portal-tagline')).toBeNull()
     const paragraphs = [...container.querySelectorAll('.partner-portal-text')].map((p) => p.textContent)
     expect(paragraphs).toEqual(['Wir freuen uns über jeden Besuch.', 'Schaut gern vorbei.'])
 
@@ -110,10 +112,11 @@ describe('PartnerPortalPage – Name, Text und Akzentfarbe', () => {
     expect(portalEl.style.getPropertyValue('--rust-wash')).toMatch(/^rgba\(/)
   })
 
-  test('nutzt portal_titel statt des Standardtitels, wenn gesetzt', async () => {
+  test('portal_titel erscheint als Unterzeile unter dem Namen', async () => {
     publicPartner.mockResolvedValue({ ...partner, portal_titel: 'Schön, dass ihr da seid' })
     await render()
-    expect(container.querySelector('h1').textContent).toBe('Schön, dass ihr da seid')
+    expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
+    expect(container.querySelector('.partner-portal-tagline').textContent).toBe('Schön, dass ihr da seid')
   })
 
   test('eine ungültige Farbe wird ignoriert – kein Inline-Style, keine Injektion', async () => {
@@ -219,7 +222,7 @@ describe('PartnerPortalPage – angemeldete Besucher', () => {
     publicPartner.mockResolvedValue(partner)
     await render({ family: loggedInHome })
 
-    expect(container.querySelector('h1').textContent).toBe('Willkommen von Tierheim Sonnenhang')
+    expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
     expect(container.querySelector('#redeem-code')).toBeNull()
     expect(container.textContent).toContain('Zuhause am Deich')
 

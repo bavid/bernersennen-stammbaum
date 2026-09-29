@@ -1,6 +1,5 @@
 /* "Schreib uns" und "Aktuelles" (Phase P2): Kontakt-Knöpfe auf Portal und Steckbrief (PortalContact,
-   SteckbriefShelterBox, ContactPartnerButton), das Formular im Modal (ContactPartnerForm) und der
-   Abschnitt mit den Beiträgen des Partners (PortalPosts). */
+   SteckbriefShelterBox, ContactPartnerButton) und das Formular im Modal (ContactPartnerForm). */
 
 .partner-portal-contact-actions {
   display: flex;
@@ -92,13 +91,4 @@
 .contact-partner-privacy a {
   color: var(--rust);
   font-weight: 700;
-}
-
-.partner-portal-posts {
-  display: grid;
-  gap: var(--space-5);
-}
-
-.partner-portal-posts h2 {
-  font-size: var(--text-lg);
 }

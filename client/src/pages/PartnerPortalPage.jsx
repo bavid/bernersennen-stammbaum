@@ -6,16 +6,15 @@ import AnimalAdoptionCard from '../components/AnimalAdoptionCard.jsx'
 import HappyEndCard from '../components/HappyEndCard.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import PublicHeader from '../components/PublicHeader.jsx'
-import Icon from '../components/Icon.jsx'
 import PortalAction from '../components/PortalAction.jsx'
-import PortalContact from '../components/PortalContact.jsx'
+import PortalBrandStrip from '../components/PortalBrandStrip.jsx'
+import PortalContact, { PORTAL_CONTACT_ID, hasPortalContact } from '../components/PortalContact.jsx'
+import PortalHero from '../components/PortalHero.jsx'
 import PortalPosts from '../components/PortalPosts.jsx'
+import PortalSection from '../components/PortalSection.jsx'
 import EinblickeGallery from '../components/EinblickeGallery.jsx'
-import { ExternalLink } from '../components/PreviewLink.jsx'
 import { isValidHexColor, darkenHex, hexToRgba } from '../lib/color.js'
-import { isExternalUrl } from '../lib/format.js'
 import { PreviewProvider } from '../lib/preview.js'
-import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { adoptionSectionTitle } from '../lib/shelter.js'
 
 const ON_RUST = '#fffaf2'
@@ -33,14 +32,6 @@ function accentStyle(farbe) {
     '--rust-wash': hexToRgba(farbe, ACCENT_WASH_ALPHA),
     '--on-rust': ON_RUST
   }
-}
-
-// portal_text ist reiner Text (nie HTML) - Absätze trennt eine Leerzeile.
-function paragraphsOf(text) {
-  return (text || '')
-    .split(/\n{2,}/)
-    .map((part) => part.trim())
-    .filter(Boolean)
 }
 
 function asList(value) {
@@ -91,10 +82,11 @@ function usePortalList(fetchList, slug, search, skip) {
   return items
 }
 
-// /p/:slug – Portal eines Partners: Logo/Akzentfarbe, Willkommenstext, „Gutschein einlösen" (PortalAction)
-// und Links zu Spenden/Vermittlung, dazu Tiere, Happy Ends, Einblicke, „Aktuelles" (Beiträge) und Kontakt
-// (samt „Schreib uns", Phase P2). Angemeldete sehen dasselbe
-// Portal, nur die Aktion ist ersetzt – man muss sich nicht abmelden, um es anzuschauen.
+// /p/:slug – Portal eines Partners, seit Phase U als ruhige Landingpage, auf die Partner von ihrer Website,
+// Instagram oder Visitenkarte verlinken: Kopf (Logo, Art · Ort, Name, Text, „Kontakt“), dann „Angebote &
+// Aktuelles“ (eigene Beiträge ohne Anzeige-Badge), Einblicke, bei Tierheimen Tiere und Happy Ends, Kontakt
+// (samt „Schreib uns“, Phase P2), „Gutschein einlösen“ (PortalAction) und ein dezenter Fuß. Angemeldete sehen
+// dasselbe Portal, nur die Aktion ist ersetzt – man muss sich nicht abmelden, um es anzuschauen.
 // Kundensicht (Phase P1): load liefert die Portal-Daten statt api.publicPartner(slug) (z. B.
 // api.partnerArea.previewPortal, samt tiere) und preview schaltet Links, Einlösen und Demo-Knöpfe ab.
 export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, load, preview = false }) {
@@ -153,7 +145,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
     )
   }
 
-  const typeLabel = TYPE_LABELS[partner.typ] || partner.typ
+  const contactId = hasPortalContact(partner) ? PORTAL_CONTACT_ID : null
 
   return (
     <PreviewProvider value={preview}>
@@ -165,64 +157,44 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
             Vorschau – nur für Admins sichtbar
           </div>
         )}
-        <div className="partner-portal-hero">
-          <div className="partner-portal-marks">
-            <ThemeMark size={56} className="partner-portal-mark" />
-            {partner.logoUrl && <img src={partner.logoUrl} alt={`Logo von ${partner.name}`} className="partner-logo" />}
-          </div>
-          <span className="eyebrow">{typeLabel}</span>
-          <h1>{partner.portal_titel || `Willkommen von ${partner.name}`}</h1>
-          {paragraphsOf(partner.portal_text).map((paragraph, index) => (
-            <p key={index} className="partner-portal-text">
-              {paragraph}
-            </p>
-          ))}
-          {(isExternalUrl(partner.spenden_url) || isExternalUrl(partner.vermittlung_url)) && (
-            <div className="partner-portal-links">
-              {isExternalUrl(partner.spenden_url) && (
-                <ExternalLink href={partner.spenden_url} className="btn btn-ghost">
-                  <Icon name="heart" /> Spenden an {partner.name}
-                </ExternalLink>
-              )}
-              {isExternalUrl(partner.vermittlung_url) && (
-                <ExternalLink href={partner.vermittlung_url} className="btn btn-ghost">
-                  Tiere in Vermittlung
-                </ExternalLink>
-              )}
-            </div>
-          )}
-        </div>
+        <PortalHero partner={partner} contactId={contactId} />
 
-        <PortalAction partner={partner} family={family} preview={preview} onRedeemed={onRedeemed} onLogout={onLogout} />
+        <PortalPosts posts={posts} />
+
+        <EinblickeGallery einblicke={partner.einblicke} />
 
         {animals.length > 0 && (
-          <section className="partner-portal-animals">
-            <h2>{adoptionSectionTitle(animals)}</h2>
+          <PortalSection id="partner-portal-animals" title={adoptionSectionTitle(animals)} className="partner-portal-animals">
             <div className="shelter-grid">
               {animals.map((animal) => (
                 <AnimalAdoptionCard key={animal.slug} animal={animal} />
               ))}
             </div>
-          </section>
+          </PortalSection>
         )}
 
         {happyEnds.length > 0 && (
-          <section className="partner-portal-animals partner-portal-happy-ends">
-            <h2>Happy Ends</h2>
+          <PortalSection id="partner-portal-happy-ends" title="Happy Ends" className="partner-portal-animals partner-portal-happy-ends">
             <div className="shelter-grid">
               {happyEnds.map((happyEnd, index) => (
                 <HappyEndCard key={`${happyEnd.name}-${index}`} happyEnd={happyEnd} />
               ))}
             </div>
-          </section>
+          </PortalSection>
         )}
-
-        <EinblickeGallery einblicke={partner.einblicke} />
-
-        <PortalPosts partner={partner} posts={posts} />
 
         <PortalContact partner={partner} />
 
+        <PortalSection
+          id="partner-portal-gutschein"
+          title="Gutschein einlösen"
+          lede={`Du hast von ${partner.name} einen Gutschein bekommen? Hier legst du deine eigene Chronik an – kostenlos.`}
+          className="partner-portal-redeem"
+        >
+          <PortalAction partner={partner} family={family} preview={preview} onRedeemed={onRedeemed} onLogout={onLogout} />
+        </PortalSection>
+
+        <PortalBrandStrip />
         {!preview && <PublicFooter />}
       </div>
     </PreviewProvider>

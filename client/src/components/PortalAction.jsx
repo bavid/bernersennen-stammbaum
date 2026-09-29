@@ -64,15 +64,15 @@ export default function PortalAction({ partner, family, preview, onRedeemed, onL
 
   if (preview) {
     return (
-      <section className="card partner-portal-action preview-placeholder">
+      <div className="card partner-portal-action preview-placeholder">
         <Icon name="lock" />
         <p>Hier lösen eure Kundinnen und Kunden ihren Gutschein ein – in der Vorschau ausgeblendet.</p>
-      </section>
+      </div>
     )
   }
 
   return (
-    <section className="card partner-portal-action">
+    <div className="card partner-portal-action">
       {family ? (
         <>
           <p>
@@ -97,6 +97,6 @@ export default function PortalAction({ partner, family, preview, onRedeemed, onL
           </div>
         </>
       )}
-    </section>
+    </div>
   )
 }

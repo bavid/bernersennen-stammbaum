@@ -391,11 +391,6 @@
 
 /* Einblicke auf dem Portal (EinblickeGallery) und die große Ansicht (EinblickViewer) */
 
-.partner-portal-einblicke {
-  display: grid;
-  gap: var(--space-5);
-}
-
 .einblicke-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));

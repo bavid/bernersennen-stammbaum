@@ -251,7 +251,8 @@ describe('CustomerViewPage – Euer Portal', () => {
 
     expect(tab('Euer Portal').getAttribute('aria-pressed')).toBe('true')
     expect(previewPortal).toHaveBeenCalledTimes(1)
-    expect(frame().querySelector('h1').textContent).toBe('Willkommen in der Hundeschule Wiesengrund')
+    expect(frame().querySelector('h1').textContent).toBe('Hundeschule Wiesengrund')
+    expect(frame().querySelector('.partner-portal-tagline').textContent).toBe('Willkommen in der Hundeschule Wiesengrund')
     expect(frame().querySelector('.einblick-tile img').getAttribute('src')).toBe('/uploads/33333333-3333-3333-3333-333333333333.jpg')
     expect(frame().querySelectorAll('a')).toHaveLength(0)
     expect(frame().querySelector('form')).toBeNull()

@@ -15,24 +15,27 @@ import { useIsPreview } from '../lib/preview.js'
 // auf dem Portal ("Aktuelles"): Kennzeichnung zuerst und als Text (auch für Screenreader), dann Bild, Titel,
 // Text und der Link über die Klickzählung (clickUrl). "Anzeige" ist bezahlt/provisioniert: auffälliges Badge
 // und rel="sponsored". In der Kundensicht (Phase P2) tragen eigene, noch nicht freigegebene Beiträge
-// zusätzlich "Wartet auf Freigabe".
-export default function PromotionCard({ promotion }) {
+// zusätzlich "Wartet auf Freigabe". labelled={false} (Phase U): auf dem eigenen Portal des Partners ohne
+// Kennzeichnung - es ist seine Seite; "Wartet auf Freigabe" bleibt, der Link behält sein rel.
+export default function PromotionCard({ promotion, labelled = true }) {
   const preview = useIsPreview()
-  const anzeige = isAnzeige(promotion.kennzeichnung)
+  const anzeige = labelled && isAnzeige(promotion.kennzeichnung)
   const hasLink = isClickUrl(promotion.clickUrl)
   const pending = preview && isPendingApproval(promotion)
 
   return (
     <article className={`promotion-card card${anzeige ? ' promotion-card-anzeige' : ''}${pending ? ' is-pending' : ''}`}>
-      <div className="promotion-badges">
-        <p className={`promotion-badge${anzeige ? ' promotion-badge-anzeige' : ''}`}>{kennzeichnungLabel(promotion)}</p>
-        {pending && (
-          <p className="promotion-badge promotion-badge-pending">
-            <Icon name="clock" />
-            {PENDING_APPROVAL_LABEL}
-          </p>
-        )}
-      </div>
+      {(labelled || pending) && (
+        <div className="promotion-badges">
+          {labelled && <p className={`promotion-badge${anzeige ? ' promotion-badge-anzeige' : ''}`}>{kennzeichnungLabel(promotion)}</p>}
+          {pending && (
+            <p className="promotion-badge promotion-badge-pending">
+              <Icon name="clock" />
+              {PENDING_APPROVAL_LABEL}
+            </p>
+          )}
+        </div>
+      )}
       {/* Das Bild steht außerhalb des Links ("Mehr erfahren") - es ist also nicht Teil eines Namens, der
           den Titel schon nennt, und bekommt den Titel als Alternativtext. */}
       {isPartnerMedia(promotion.bildUrl) && (
@@ -52,15 +55,15 @@ export default function PromotionCard({ promotion }) {
   )
 }
 
-// Empfehlungen als eigenes Raster (Begleiter, Futter, Unterstützen) - eine leere Liste rendert nichts, damit
-// sie die Leerzustände der Kapitel nicht verändert.
-export function PromotionList({ items }) {
+// Empfehlungen als eigenes Raster (Begleiter, Futter, Unterstützen, Portal) - eine leere Liste rendert
+// nichts, damit sie die Leerzustände der Kapitel nicht verändert.
+export function PromotionList({ items, labelled = true }) {
   if (items.length === 0) return null
   return (
     <ul className="promotion-list">
       {items.map((promotion) => (
         <li key={promotion.id}>
-          <PromotionCard promotion={promotion} />
+          <PromotionCard promotion={promotion} labelled={labelled} />
         </li>
       ))}
     </ul>

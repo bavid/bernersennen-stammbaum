@@ -96,18 +96,21 @@ function postsSection() {
   return container.querySelector('.partner-portal-posts')
 }
 
-describe('PartnerPortalPage – "Aktuelles von {Name}" (Phase P2)', () => {
-  test('zeigt die freigegebenen Beiträge als Anzeige mit rel="sponsored noopener noreferrer"', async () => {
+describe('PartnerPortalPage – "Angebote & Aktuelles" (Phase P2, Phase U)', () => {
+  test('zeigt die freigegebenen eigenen Beiträge ohne "Anzeige"-Badge, der Link behält rel="sponsored"', async () => {
     publicPartner.mockResolvedValue(partner)
     publicPartnerPosts.mockResolvedValue([card(), card({ id: 6, titel: 'Tag der offenen Tür', url: null, clickUrl: null })])
     await render()
 
     expect(publicPartnerPosts).toHaveBeenCalledWith('pfotenglueck', { demo: undefined })
     const section = postsSection()
-    expect(section.querySelector('h2').textContent).toBe('Aktuelles von Hundeschule Pfotenglück')
+    expect(section.querySelector('h2').textContent).toBe('Angebote & Aktuelles')
     const cards = [...section.querySelectorAll('.promotion-card')]
     expect(cards).toHaveLength(2)
-    expect(cards.every((el) => el.querySelector('.promotion-badge').textContent === 'Anzeige')).toBe(true)
+    // Es ist ihre eigene Seite: keine Kennzeichnung, auch nicht als Text.
+    expect(section.querySelector('.promotion-badge')).toBeNull()
+    expect(section.querySelector('.promotion-card-anzeige')).toBeNull()
+    expect(section.textContent).not.toContain('Anzeige')
     const link = cards[0].querySelector('a')
     expect(link.getAttribute('href')).toBe('/r/promotion/5')
     expect(link.getAttribute('rel')).toBe('sponsored noopener noreferrer')
