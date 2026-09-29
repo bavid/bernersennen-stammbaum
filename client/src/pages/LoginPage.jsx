@@ -26,21 +26,20 @@ function keyRevealProps(me) {
   return isPartnerArea(me) ? PARTNER_KEY_REVEAL : {}
 }
 
+// Kopf der Anmelde-Karte je Modus. Über der Überschrift steht nur das Etikett des Einstiegs ("Für Tierhalter" bzw.
+// "Partner-Zugang") - wie im Partner-Einstieg daneben, ohne zweite Zeile darüber (Phase U, ruhiger).
 const MODE_COPY = {
-  login: { eyebrow: 'Willkommen zurück', title: 'Anmelden', lede: 'Mit eurem Schlüssel oder Passwort geht’s weiter.' },
+  login: { title: 'Anmelden', lede: 'Mit eurem Schlüssel oder Passwort geht’s weiter.' },
   redeem: {
-    eyebrow: 'Neue Chronik',
     title: 'Gutschein einlösen',
     lede: 'Löst euren Gutschein ein und legt eure Chronik an.'
   },
   // Einlöse-Modus mit einem Partner-Zugang (RedeemForm meldet es über onPartnerModeChange, Phase P).
   partnerRedeem: {
-    eyebrow: 'Partner-Profil einrichten',
     title: 'Gutschein einlösen',
     lede: 'Löst euren Partner-Zugang ein und richtet euer Partner-Profil ein.'
   },
   recover: {
-    eyebrow: 'Passwort vergessen',
     title: 'Passwort wiederherstellen',
     lede: 'Mit eurem Schlüssel setzt ihr ein neues Passwort.'
   }
@@ -135,7 +134,6 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
               <p className="login-entry-label" id="login-owner-label">
                 <Icon name="paw" /> {mode === 'redeem' && partnerRedeem ? 'Partner-Zugang' : 'Für Tierhalter'}
               </p>
-              <span className="eyebrow">{copy.eyebrow}</span>
               <h1>{copy.title}</h1>
               <p className="muted">{copy.lede}</p>
             </div>
@@ -178,7 +176,7 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
                   </div>
                 )}
                 <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
-                  {demoLoading ? 'Lädt …' : 'Erst mal unverbindlich reinschauen: Demo ansehen'}
+                  {demoLoading ? 'Lädt …' : 'Demo ansehen'}
                 </button>
                 <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
               </div>

@@ -343,12 +343,12 @@ describe('LoginPage – zwei Einstiege', () => {
   test('ein erkannter Partner-Zugang bleibt erkannt, wenn "Gutschein einlösen" noch einmal gedrückt wird', async () => {
     checkVoucher.mockResolvedValue({ status: 'offen', zweck: 'partnerzugang', partnerTyp: 'hundeschule', partnerName: 'Hundeschule Wiesengrund' })
     await render({ initialMode: 'redeem', initialCode: 'abcd1234hjkm' })
-    expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Partner-Profil einrichten')
+    expect(container.querySelector('.login-card-head .muted').textContent).toBe('Löst euren Partner-Zugang ein und richtet euer Partner-Profil ein.')
     expect(labels()).toEqual(['Partner-Zugang'])
 
     await act(async () => segmentButton('Gutschein einlösen').click())
 
-    expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Partner-Profil einrichten')
+    expect(container.querySelector('.login-card-head .muted').textContent).toBe('Löst euren Partner-Zugang ein und richtet euer Partner-Profil ein.')
     expect(labels()).toEqual(['Partner-Zugang'])
   })
 

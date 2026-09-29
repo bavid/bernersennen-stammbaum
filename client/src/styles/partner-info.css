@@ -113,11 +113,18 @@
   gap: var(--space-3);
 }
 
-/* Lange Beschriftungen ("Demo als Hundeschule ansehen") dürfen am Handy umbrechen, statt überzustehen. */
+/* Jeder Knopf so breit wie seine Beschriftung (eine Zeile), übrige Breite teilen sie sich; passt keiner mehr
+   daneben, rückt er in die nächste Zeile. Am Handy volle Breite, dort darf eine lange Beschriftung umbrechen. */
 .partner-info-demo .btn {
-  flex: 1 1 16rem;
-  white-space: normal;
-  text-align: center;
+  flex: 1 1 auto;
+}
+
+@media (max-width: 560px) {
+  .partner-info-demo .btn {
+    flex-basis: 100%;
+    white-space: normal;
+    text-align: center;
+  }
 }
 
 .partner-info-demo .error-banner,

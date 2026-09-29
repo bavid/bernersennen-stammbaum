@@ -232,7 +232,7 @@ describe('Partner-Zugang auf /v einlösen', () => {
     redeemVoucher.mockResolvedValue({ ...partnerArea, key: 'ABCD-1234-HJKM', fromOthers: true })
     await render('/v#abcd1234hjkm', null)
 
-    expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Partner-Profil einrichten')
+    expect(container.querySelector('.login-card-head .muted').textContent).toBe('Löst euren Partner-Zugang ein und richtet euer Partner-Profil ein.')
     await act(async () => {
       setInputValue(container.querySelector('#partner-name'), 'Hundeschule Wiesengrund')
       setSelectValue(container.querySelector('#partner-typ'), 'hundeschule')
@@ -274,11 +274,12 @@ describe('Partner-Bereich – Kunden-Gutscheine weitergeben', () => {
 })
 
 describe('Redeem-Seite – Kopfzeile', () => {
-  test('ein Kunden-Gutschein behält "Neue Chronik"', async () => {
+  test('ein Kunden-Gutschein behält den Kopf "Für Tierhalter" mit dem Text zur neuen Chronik', async () => {
     checkVoucher.mockResolvedValue({ status: 'offen' })
     await render('/v#abcd1234hjkm', null)
 
-    expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Neue Chronik')
+    expect(container.querySelector('.login-entry-label').textContent.trim()).toBe('Für Tierhalter')
+    expect(container.querySelector('.login-card-head .muted').textContent).toBe('Löst euren Gutschein ein und legt eure Chronik an.')
   })
 })
 

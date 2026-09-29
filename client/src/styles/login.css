@@ -349,10 +349,11 @@
   gap: var(--space-3);
 }
 
-/* Zwei Demos nebeneinander (Hundeschule, Tierheim), in schmalen Spalten untereinander. */
+/* Zwei Demos nebeneinander (Hundeschule, Tierheim), in schmalen Spalten untereinander - jede Beschriftung in einer
+   Zeile (11rem: "Demo: Hundeschule" samt Innenabstand). */
 .login-partner-demos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: var(--space-2);
 }
 
@@ -445,5 +446,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
     gap: var(--space-8);
+  }
+
+  /* Die Etiketten beider Einstiege auf einer Linie: so weit eingerückt wie der Inhalt der Partner-Karte daneben
+     (deren Innenabstand ist hier space-6, dazu 1px Rahmen). */
+  .login-entries > .login-card {
+    padding-top: calc(var(--space-6) + 1px);
   }
 }

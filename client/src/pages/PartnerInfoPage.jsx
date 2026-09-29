@@ -63,17 +63,18 @@ function DemoButtons({ onDemo }) {
   )
 }
 
-// Kontakt: die E-Mail aus dem Impressum (server/config.js readLegal); ohne sie der Weg zum Impressum.
+// Kontakt: die E-Mail aus dem Impressum (server/config.js readLegal); ohne sie der Weg zum Impressum. Bewusst ein
+// zweitrangiger Knopf - die Hauptwege der Seite sind die Demo und die Anfrage darüber.
 function ContactAction({ legal }) {
   if (legal?.email) {
     return (
-      <a href={`mailto:${legal.email}`} className="btn btn-primary btn-lg">
+      <a href={`mailto:${legal.email}`} className="btn btn-ghost btn-lg">
         <Icon name="mail" /> Kontakt aufnehmen
       </a>
     )
   }
   return (
-    <Link to="/impressum" className="btn btn-primary btn-lg">
+    <Link to="/impressum" className="btn btn-ghost btn-lg">
       Kontakt über das Impressum
     </Link>
   )
@@ -141,7 +142,7 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
       <section className="partner-info-section partner-info-showcase card" aria-labelledby="partner-info-demo-title">
         <div>
           <h2 id="partner-info-demo-title">So sieht euer Partner-Bereich aus</h2>
-          <p className="muted">Zwei Demo-Partner zeigen Profil, Kundensicht, Beiträge, Postfach und Kunden-Gutscheine – einfach reinklicken.</p>
+          <p className="muted">Drei Demo-Partner zeigen Profil, Kundensicht, Beiträge, Postfach und Kunden-Gutscheine – einfach reinklicken.</p>
         </div>
         <DemoButtons onDemo={onDemo} />
       </section>
