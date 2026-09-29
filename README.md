@@ -87,6 +87,13 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   live, wie das Profil in einer Beispiel-Kundenoberfläche („Entdecken“, Portal, Steckbriefe) aussieht – auch vor
   dem Veröffentlichen. Der Admin kann Profile sperren und Einblicke ausblenden. Privat nutzt man die Chronik mit
   einem eigenen Kunden-Gutschein; Partner können Kunden-Gutscheine an ihre Kundschaft weitergeben.
+- **Beiträge und „Schreib uns“**: Partner stellen Beiträge ein (Kurse, Aktionen, Angebote) – immer als
+  „Anzeige“ gekennzeichnet und erst nach Freigabe durch den Admin sichtbar (in „Entdecken“ und auf dem Portal,
+  jede Änderung wird neu geprüft). Besucher schreiben Partnern über **„Schreib uns“** auf Portal und
+  Steckbrief (mit Bezug zum Tier); die Nachrichten landen im Postfach des Partner-Bereichs – wir verschicken
+  keine E-Mails, Nachrichten werden nach 180 Tagen gelöscht. Hundesalons und Betreuung haben in „Entdecken“ ein
+  eigenes Kapitel „Salon & Betreuung“; gibt es im Umkreis weniger als 5 Treffer, zeigen „Entdecken“ und die
+  Partnerliste die nächsten weiteren unter „Weiter weg“.
 - **Tierheime**: Ein eigener Bereich für Tierheime und Vermittlungsstellen (vom Admin aus der
   Partnerverwaltung angelegt). Sie pflegen eine Chronik je Tier (Ankunft, Tierarzt, Verhalten, Gassi …),
   zeigen Tiere in Vermittlung mit öffentlichem Steckbrief (`/t/kurzname`) und erzeugen bei einer
