@@ -1,9 +1,9 @@
 // Phase R Task 3: weitere Demo-Haushalte in der Demo-Familie, damit dort alle vier Rollen besetzt sind -
 // "Zuhause am Deich" (seed/demo-household.js) ist die Leitung, hier kommen Stellvertretung, Mitglied und Gast
 // dazu. Stellvertretung und Mitglied teilen je ein Tier in die Familie, der Gast keins (er darf nur ansehen
-// und kommentieren - und tut genau das einmal). Rein fiktive Namen; Bilder aus ../seed/images, bewusst
-// keine, die in der Familie schon als Profilfoto eines Tiers dienen (sonst sähe das geteilte Tier dort wie
-// ein Duplikat aus, siehe seed/demo-household.js zu Nele/Mira).
+// und kommentieren - und tut genau das einmal). Rein fiktive Namen; jedes geteilte Tier hat ein eigenes Foto
+// aus ./images (ein Bild, das in der Familie schon ein anderes Tier zeigt, sähe dort wie ein Duplikat aus,
+// siehe seed/demo-household.js zu Nele/Mira).
 // Mitgliedschaft, Freigaben, Kommentar und die offene Einladung legt lib/demoMembers.js an (kennt die Ids).
 // Jede neue Rollen-Funktion gehört auch hierher, damit die Demo alles zeigt.
 
@@ -24,7 +24,7 @@ const MEMBERS = [
         geburtsdatum: '2020-05-04',
         beiUnsSeit: '2020-07-10',
         herkunftArt: 'zuechter',
-        foto: 'schnee.jpg',
+        foto: 'wilma.jpg',
         beschreibung: 'Liebt Schnee mehr als jedes Leckerli. Im Sommer der Schatten unter der Bank, im Winter die Erste im Garten.',
         eintrag: {
           datum: '2026-01-12',
@@ -53,7 +53,7 @@ const MEMBERS = [
         beiUnsSeit: '2023-02-01',
         herkunftArt: 'privat',
         herkunftText: 'Von Freunden übernommen',
-        foto: 'see.jpg',
+        foto: 'pepper.jpg',
         beschreibung: 'Ein Wasserfreund mit Stock im Maul. Wer einen Ball wirft, sieht Pepper erst wieder, wenn der Ball trocken ist.',
         eintrag: {
           datum: '2026-07-20',

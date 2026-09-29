@@ -4,13 +4,9 @@
 // "Entdecken" nicht (lib/vermittlung.js PUBLISHABLE_STATUS/LISTED_STATUS). Angelegt von lib/demoPack.js
 // (art='tierheim', partner_id = der Demo-Partner mit slug 'tierheim-sonnenhang', siehe seed/demo-partners.js).
 //
-// Bilder liegen in ./images, wiederverwendet: die Hunde-Portraits kommen bewusst aus den Bildern, die
-// sonst NIRGENDS als Portrait eines Tiers im Rudel/Zuhause dienen (ausstellung/garten-ida/schnee/see/
-// welpen, siehe seed/demo-data.js und seed/demo-household.js) - anders als z. B. finn.jpg oder
-// wanderung.jpg, die dort schon "vergeben" sind. Für Sunny (Katze) und Momo (Kaninchen) gibt es im
-// ganzen Bildersatz nur je ein passendes Motiv (minka.jpg/hoppel.jpg), das eigentlich Minka (Rudel)
-// bzw. Flocke (Zuhause am Deich) "gehört" - unbedenklich, weil der Tierheim-Bereich nie in derselben
-// Ansicht wie Rudel/Zuhause auftaucht (komplett eigener Bereich, siehe lib/context.js ART.tierheim).
+// Bilder liegen in ./images (Quellen in images/QUELLEN.md): jedes Tierheim-Tier hat ein eigenes Foto
+// (tierheim-*.jpg), keines davon zeigt ein Tier aus Rudel oder Zuhause. Peppers Porträt und ihr
+// Gassi-Eintrag zeigen denselben Hund (gleiche Fotoserie).
 const SHELTER_NAME = 'Tierheim Sonnenhang'
 
 const DOGS = [
@@ -21,7 +17,7 @@ const DOGS = [
     rasse: 'Mischling',
     geschlecht: 'huendin',
     geburtsdatum: '2021-04-02',
-    foto: 'garten-ida.jpg',
+    foto: 'tierheim-pepper.jpg',
     beschreibung:
       'Freundliche Mischlingshündin, anfangs schüchtern, inzwischen aufgeschlossen. Verträgt sich gut mit anderen Hunden und liebt lange Spaziergänge.',
     vermittlungStatus: 'in_vermittlung',
@@ -33,7 +29,7 @@ const DOGS = [
     tierart: 'katze',
     geschlecht: 'huendin',
     geburtsdatum: '2022-06-10',
-    foto: 'minka.jpg',
+    foto: 'tierheim-sunny.jpg',
     beschreibung:
       'Verschmuste Katze, die am liebsten auf dem Fensterbrett in der Sonne liegt. Sucht ein ruhiges Zuhause, gern mit Freigang.',
     vermittlungStatus: 'in_vermittlung',
@@ -45,7 +41,7 @@ const DOGS = [
     tierart: 'hund',
     geschlecht: 'ruede',
     geburtsdatum: '2019-11-20',
-    foto: 'schnee.jpg',
+    foto: 'tierheim-oskar.jpg',
     beschreibung:
       'Ruhiger, erwachsener Rüde. Gut erzogen, hört auf die Grundkommandos und würde sich über ein Zuhause mit Garten freuen.',
     vermittlungStatus: 'reserviert',
@@ -58,7 +54,7 @@ const DOGS = [
     rasse: 'Kaninchen',
     geschlecht: 'ruede',
     geburtsdatum: '2023-02-14',
-    foto: 'hoppel.jpg',
+    foto: 'tierheim-momo.jpg',
     beschreibung:
       'Neugieriges Kaninchen, sucht Gesellschaft von Artgenossen. Noch ohne Steckbrief, da wir gerade nach einer passenden Partnerin für ihn suchen.',
     vermittlungStatus: 'in_vermittlung',
@@ -71,7 +67,7 @@ const DOGS = [
     rasse: 'Mischling',
     geschlecht: 'huendin',
     geburtsdatum: '2020-03-15',
-    foto: 'ausstellung.jpg',
+    foto: 'tierheim-lotte.jpg',
     beschreibung:
       'Ruhige, verschmuste Hündin. Gerade in tierärztlicher Behandlung, bald wieder vermittelbar – bis dahin ist ihre Vermittlung pausiert.',
     vermittlungStatus: 'pausiert',
@@ -117,7 +113,7 @@ const TIMELINE = [
     text: 'Erster großer Spaziergang außerhalb des Geländes – Pepper war ruhig an der Leine und hat sich über jede Ente gefreut.',
     kategorie: 'gassi',
     isPublic: true,
-    fotos: ['see.jpg'],
+    fotos: ['tierheim-pepper-gassi.jpg'],
     hoursAgo: 60
   },
   {

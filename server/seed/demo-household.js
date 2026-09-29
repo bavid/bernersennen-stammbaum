@@ -1,6 +1,6 @@
 // Demo-Zuhause "Zuhause am Deich": ein privater Chronik-Bereich (art='zuhause') für Vorführungen und
 // Tests. Zeigt Einzug/Abschied/Herkunft, private Chronik-Einträge und "lebt zusammen mit" außerhalb
-// einer Abstammungslinie. Bilder liegen in ../seed/images (wiederverwendet, keine eigenen Bilder).
+// einer Abstammungslinie. Bilder liegen in ./images (eigene Fotos je Tier, Quellen in images/QUELLEN.md).
 // Mitgliedschaft im Demo-Rudel, geteilte Tiere, der fremde Kommentar sowie (Phase T Task 6) die
 // Verknüpfung von Neles frühen Tierheim-Einträgen mit dem Demo-Tierheim (dog_transfers, dog_shares mit
 // story_consent) werden von lib/demoPack.js hergestellt (die kennt die jeweiligen Ids) - hier stehen
@@ -21,7 +21,7 @@ const COMPANIONS = [
     abschiedGrund: 'verstorben',
     herkunftArt: 'privat',
     herkunftText: 'Von Nachbarn übernommen',
-    foto: 'max.jpg',
+    foto: 'balu.jpg',
     beschreibung:
       'Kam als erwachsener Rüde zu uns, als unsere Nachbarn nicht mehr für ihn sorgen konnten. Ruhig, treu und unser erster Wegbegleiter am Deich.'
   },
@@ -34,9 +34,8 @@ const COMPANIONS = [
     beiUnsSeit: '2012-08-01',
     herkunftArt: 'privat',
     herkunftText: 'Bauernhof der Cousine',
-    // Kein Foto: Minka (Rudel) ist im Bildersatz die einzige Katze - Mira wird nach Rudel geteilt,
-    // ein zweites Tier mit demselben Bild sähe dort wie ein Duplikat aus. Der Client zeigt statt
-    // eines Fotos die Initialen.
+    // Bewusst ohne Foto: Mira zeigt in der Demo den Initialen-Avatar, den der Client statt eines
+    // Fotos anzeigt (test/demoPack.test.js prüft das).
     beschreibung: 'Vom Bauernhof der Cousine, mit acht Wochen zu uns geholt. Schläft am liebsten auf dem Fensterbrett.'
   },
   {
@@ -49,11 +48,9 @@ const COMPANIONS = [
     beiUnsSeit: '2021-06-12',
     herkunftArt: 'tierheim',
     herkunftText: 'Tierheim Sonnenhang',
-    // Bewusst NICHT finn.jpg: Nele wird nach Rudel geteilt, wo Finn selbst mit genau diesem Bild
-    // auftritt - dasselbe Foto für zwei Tiere sähe dort wie ein Duplikat aus. wanderung.jpg ist im
-    // Rudel nur als Eintragsfoto bei Aiko/Gustav zu sehen (nie als deren Profilbild) und zeigt keine
-    // Nähe zu Finn.
-    foto: 'wanderung.jpg',
+    // Eigenes Foto: Nele wird nach Rudel geteilt - ein Bild, das dort schon ein anderes Tier zeigt,
+    // sähe wie ein Duplikat aus.
+    foto: 'nele.jpg',
     beschreibung: 'Aus dem Tierheim Sonnenhang zu uns gezogen. Anfangs schüchtern, heute die Chefin am Deich.'
   },
   {
@@ -66,7 +63,7 @@ const COMPANIONS = [
     beiUnsSeit: '2023-06-01',
     herkunftArt: 'anderes',
     herkunftText: 'Aus einer Tierschutz-Pflegestelle',
-    foto: 'hoppel.jpg',
+    foto: 'flocke.jpg',
     beschreibung: 'Aus einer Pflegestelle für Kleintiere übernommen. Hoppelt am liebsten über die Terrasse.'
   }
 ]

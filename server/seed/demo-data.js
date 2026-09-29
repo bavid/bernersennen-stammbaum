@@ -1,7 +1,8 @@
 // Demo-Rudel für Vorführungen und Tests: vier Generationen, bekannte und unbekannte Vorfahren,
 // Mitbewohner (Hund, Katze, Kaninchen), Chronik mit Kommentaren, Zuchtbuch und Pinnwand.
-// Bilder liegen in ./images. Tiere referenzieren Eltern über ihren `key`; Timeline-Einträge sind
-// absichtlich nicht chronologisch sortiert, damit die automatische Einordnung sichtbar wird.
+// Bilder liegen in ./images (echte Fotos, Herkunft und Lizenz in images/QUELLEN.md). Tiere referenzieren
+// Eltern über ihren `key`; Timeline-Einträge sind absichtlich nicht chronologisch sortiert, damit die
+// automatische Einordnung sichtbar wird.
 // Jede neue Funktion der Chronik gehört auch hierher, damit die Demo alles zeigt.
 
 const FAMILY_NAME = 'Rudel vom Sonnenhang'
@@ -241,15 +242,15 @@ const TIMELINE = [
   { dog: 'bella', datum: '2017-06-18', autor: 'Anna', titel: 'Sechs Welpen!', text: 'Drei Rüden, drei Hündinnen. Mutter und Welpen sind wohlauf.', fotos: ['welpen.jpg'] },
   { dog: 'bella', datum: '2015-05-10', autor: 'David', titel: 'Ankunft aus dem Emmental', text: 'Abgeholt beim Züchter, zwei Stunden Autofahrt auf dem Schoß.' },
   { dog: 'bella', datum: '2016-08-14', autor: 'Anna', titel: 'Ausstellung in Bern', text: 'Formwert „Vorzüglich“ und eine Rosette für die Wand.', fotos: ['ausstellung.jpg'] },
-  { dog: 'cora', datum: '2020-04-09', autor: 'Anna', titel: 'Cora ist Mama', text: 'Fünf gesunde Welpen, darunter Emma und Finn.', fotos: ['welpen.jpg'] },
+  { dog: 'cora', datum: '2020-04-09', autor: 'Anna', titel: 'Cora ist Mama', text: 'Fünf gesunde Welpen, darunter Emma und Finn.', fotos: ['welpen-mama.jpg'] },
   { dog: 'cora', datum: '2018-07-02', autor: 'David', titel: 'Erstes Mal schwimmen', text: 'Vom Steg gesprungen, als hätte sie nie etwas anderes gemacht.', fotos: ['see.jpg'] },
   { dog: 'cora', datum: '2017-08-20', autor: 'Anna', titel: 'Die Geschwister ziehen aus', text: 'Cora bleibt bei uns, Dante auch – die anderen vier haben tolle Familien gefunden.' },
   { dog: 'dante', datum: '2019-05-05', autor: 'David', titel: 'HD/ED-Auswertung', text: 'Beide Ergebnisse frei. Große Erleichterung!' },
   { dog: 'dante', datum: '2018-10-12', autor: 'Anna', titel: 'Begleithundeprüfung bestanden', fotos: ['dante.jpg'] },
-  { dog: 'luna', datum: '2016-11-20', autor: 'Familie Brunner', titel: 'Luna zieht an die Aare', text: 'Vom Bauernhof zu uns in die Stadt. Die Enten am Fluss haben keine ruhige Minute mehr.', fotos: ['see.jpg'] },
-  { dog: 'luna', datum: '2020-11-03', autor: 'Familie Brunner', titel: 'Zwei Welpen: Gustav und Juna', text: 'Ein Brummbär und ein Wirbelwind. Beide bleiben bei uns.', fotos: ['welpen.jpg'] },
+  { dog: 'luna', datum: '2016-11-20', autor: 'Familie Brunner', titel: 'Luna zieht an die Aare', text: 'Vom Bauernhof zu uns in die Stadt. Die Enten am Fluss haben keine ruhige Minute mehr.', fotos: ['luna-aare.jpg'] },
+  { dog: 'luna', datum: '2020-11-03', autor: 'Familie Brunner', titel: 'Zwei Welpen: Gustav und Juna', text: 'Ein Brummbär und ein Wirbelwind. Beide bleiben bei uns.', fotos: ['welpen-zwei.jpg'] },
   { dog: 'emma', datum: '2021-01-10', autor: 'Anna', titel: 'Schneetag im Garten', fotos: ['schnee.jpg'] },
-  { dog: 'emma', datum: '2023-02-14', autor: 'Anna', titel: 'Emmas erster Wurf', hoursAgo: 70, text: 'Vier Welpen am Valentinstag – Hermes und Ida bleiben bei uns, Kira zieht zu Lea nach Bern.', fotos: ['welpen.jpg'],
+  { dog: 'emma', datum: '2023-02-14', autor: 'Anna', titel: 'Emmas erster Wurf', hoursAgo: 70, text: 'Vier Welpen am Valentinstag – Hermes und Ida bleiben bei uns, Kira zieht zu Lea nach Bern.', fotos: ['welpen-mama.jpg'],
     comments: [
       { autor: 'Familie Keller', hoursAgo: 40, text: 'Herzlichen Glückwunsch, Emma! Die sind ja winzig.' },
       { autor: 'Lea', hoursAgo: 30, text: 'Ich zähle schon die Tage, bis Kira bei mir einzieht 🥰' }
@@ -275,18 +276,18 @@ const TIMELINE = [
     comments: [{ autor: 'David', hoursAgo: 20, text: 'Hermes und Minka haben ein Jahr gebraucht – Respekt!' }] },
   { dog: 'moritz', datum: '2026-01-18', autor: 'Familie Brunner', titel: 'Moritz’ erster Schnee', hoursAgo: 52, fotos: ['moritz.jpg'] },
   { dog: 'max', datum: '2025-08-30', autor: 'David', titel: 'Max’ Adoptionstag', text: 'Ein Jahr bei uns. Es gab Kuchen – natürlich hundegeeignet.' },
-  { dog: 'minka', datum: '2024-11-11', autor: 'Anna', titel: 'Minka erobert das Hundekörbchen', hoursAgo: 96, text: 'Hermes schläft jetzt daneben. Diskussion zwecklos.', fotos: ['minka.jpg'] }
+  { dog: 'minka', datum: '2024-11-11', autor: 'Anna', titel: 'Minka erobert das Hundekörbchen', hoursAgo: 96, text: 'Hermes schläft jetzt daneben. Diskussion zwecklos.', fotos: ['minka-hermes.jpg'] }
 ]
 
 // Zusätzliche Einträge mit Fotos: so zeigt die Würfe-Seite Geschwister "im gleichen Alter"
 TIMELINE.push(
   { dog: 'ida', datum: '2023-04-22', autor: 'Anna', titel: 'Erste Nacht im Garten', text: 'Ida hat die Sterne angebellt. Einzeln.', fotos: ['garten-ida.jpg'] },
-  { dog: 'kira', datum: '2023-04-20', autor: 'Lea', titel: 'Einzug in Bern', text: 'Die Autofahrt verschlafen, die Wohnung sofort erobert.', fotos: ['welpen.jpg'] },
+  { dog: 'kira', datum: '2023-04-20', autor: 'Lea', titel: 'Einzug in Bern', text: 'Die Autofahrt verschlafen, die Wohnung sofort erobert.', fotos: ['kira-einzug.jpg'] },
   { dog: 'hermes', datum: '2024-02-14', autor: 'Anna', titel: 'Ein Jahr alt!', text: 'Geburtstagskuchen aus Leberwurst und Haferflocken.', fotos: ['hermes.jpg'] },
   { dog: 'kira', datum: '2024-02-18', autor: 'Lea', titel: 'Geburtstagsrunde an der Aare', fotos: ['kira.jpg'] },
   { dog: 'finn', datum: '2021-02-14', autor: 'Familie Keller', titel: 'Finn im Tiefschnee', fotos: ['finn.jpg'] },
   { dog: 'juna', datum: '2022-08-14', autor: 'Familie Brunner', titel: 'Am Wohlensee', text: 'Juna schwimmt, Gustav bewacht die Handtücher.', fotos: ['juna.jpg'] },
-  { dog: 'moritz', datum: '2025-06-01', autor: 'Familie Brunner', titel: 'Moritz entdeckt den Garten', fotos: ['moritz.jpg'] },
+  { dog: 'moritz', datum: '2025-06-01', autor: 'Familie Brunner', titel: 'Moritz entdeckt den Garten', fotos: ['moritz-garten.jpg'] },
   { dog: 'paula', datum: '2026-03-21', autor: 'Jonas', titel: 'Paulas erster Geburtstag', text: 'Hoppel war eingeladen und hat die Deko gefressen.', fotos: ['paula.jpg'] }
 )
 

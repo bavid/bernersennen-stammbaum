@@ -5,7 +5,8 @@
 // DEMO_PROMOTIONS: Felder wie bei POST /api/admin/promotions (camelCase) - lib/demoPack.js prüft sie mit
 // derselben validatePromotion() wie der Admin (Kennzeichnung, "Empfehlung von"-Pflicht, Link, Züchter-
 // Schutz). Statt einer partnerId steht hier der Slug des Demo-Partners (seed/demo-partners.js), weil
-// dessen Id bei jedem Demo-Wechsel neu vergeben wird. bild: optionales Seed-Bild aus seed/images.
+// dessen Id bei jedem Demo-Wechsel neu vergeben wird. bild: optionales Seed-Bild aus seed/images (Quellen in
+// seed/images/QUELLEN.md) - drei Empfehlungen mit, zwei ohne Bild, damit die Demo beide Kartenformen zeigt.
 // Jeder Bereich (futter, hundeschule, begleiter, unterstuetzen) kommt mindestens einmal vor, damit die Demo
 // alle Stellen zeigt, an denen "Entdecken" Empfehlungen anzeigt.
 // Rechtliches: Futtertexte sachlich, ohne Gesundheitsversprechen.
@@ -19,7 +20,8 @@ const DEMO_PROMOTIONS = [
       'Trockenfutter mit Ente als einziger tierischer Proteinquelle, dazu Kartoffeln und Karotten, ohne Weizen. ' +
       'Kleine Kroketten, erhältlich in 2- und 10-kg-Säcken. Viele Familien aus unseren Kursen fragen danach.',
     url: 'https://example.org/knusperkorn',
-    tierart: 'hund'
+    tierart: 'hund',
+    bild: 'futter.jpg'
   },
   {
     bereich: 'futter',
@@ -36,7 +38,7 @@ const DEMO_PROMOTIONS = [
     text: 'Sechs Termine für Welpen bis 16 Wochen, samstags vormittags in kleinen Gruppen. Anmeldung direkt bei der Hundeschule.',
     url: 'https://example.org/pfotenglueck-welpenkurs',
     tierart: 'hund',
-    bild: 'welpen.jpg'
+    bild: 'welpenkurs.jpg'
   },
   {
     bereich: 'begleiter',
@@ -48,7 +50,8 @@ const DEMO_PROMOTIONS = [
       'Sonnenhang: Futter, Tierarztbesuche und Pflege. Der Hund bleibt im Tierheim, ihr bekommt regelmäßig ' +
       'Neuigkeiten und könnt ihn besuchen.',
     url: 'https://example.org/patenschaft',
-    tierart: 'hund'
+    tierart: 'hund',
+    bild: 'senior.jpg'
   },
   {
     bereich: 'unterstuetzen',

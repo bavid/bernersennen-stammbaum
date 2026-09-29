@@ -10,37 +10,38 @@ const DEFAULT_DEMO_PARTNER_SLUG = 'hundeschule-pfotenglueck'
 
 // EINBLICKE: wie ein echter Einblick (Datum, Text, Foto) - datum/text laufen durch dieselbe Prüfung wie
 // POST /api/partner-area/einblicke (lib/einblicke.js validateNewEinblick). partnerSlug zeigt auf einen
-// Demo-Partner, foto auf ein Bild in ./images (jeder Einblick bekommt beim Anlegen eine eigene Kopie).
+// Demo-Partner, foto auf ein Bild in ./images (jeder Einblick bekommt beim Anlegen eine eigene Kopie) -
+// eigene Motive je Partner (Training, Salon, Tierheim), keine Porträts aus dem Demo-Rudel.
 // Feste Daten wie in den übrigen Demo-Seeds; die Samstags-Termine fallen auf echte Samstage.
 const EINBLICKE = [
   {
     partnerSlug: 'hundeschule-pfotenglueck',
     datum: '2026-09-26',
     text: 'Welpengruppe am Samstag – heute ging es um Ruhe an der Leine.',
-    foto: 'welpen.jpg'
+    foto: 'training-welpen.jpg'
   },
-  { partnerSlug: 'hundeschule-pfotenglueck', datum: '2026-09-12', text: 'Rückruftraining am Deich', foto: 'wanderung.jpg' },
+  { partnerSlug: 'hundeschule-pfotenglueck', datum: '2026-09-12', text: 'Rückruftraining am Deich', foto: 'training.jpg' },
   {
     partnerSlug: 'hundeschule-pfotenglueck',
     datum: '2026-08-22',
     text: 'Abschlussprüfung im Begleithundekurs – alle bestanden!',
-    foto: 'dante.jpg'
+    foto: 'training-pruefung.jpg'
   },
-  { partnerSlug: 'hundeschule-pfotenglueck', datum: '2026-07-04', text: 'Neue Trainingsfläche mit Agility-Parcours', foto: 'garten-ida.jpg' },
+  { partnerSlug: 'hundeschule-pfotenglueck', datum: '2026-07-04', text: 'Neue Trainingsfläche mit Agility-Parcours', foto: 'agility.jpg' },
 
-  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-09-24', text: 'Frisch getrimmt: Pudeldame Flocke', foto: 'luna.jpg' },
-  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-09-10', text: 'Wellness-Bad für einen Golden Retriever', foto: 'see.jpg' },
-  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-08-27', text: 'Krallenpflege ganz entspannt', foto: 'emma.jpg' },
-  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-07-16', text: 'Sommerschnitt für die Hitze', foto: 'max.jpg' },
+  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-09-24', text: 'Frisch getrimmt: Pudeldame Flocke', foto: 'salon-pudel.jpg' },
+  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-09-10', text: 'Wellness-Bad für einen Golden Retriever', foto: 'salon-bad.jpg' },
+  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-08-27', text: 'Krallenpflege ganz entspannt', foto: 'salon-pflege.jpg' },
+  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-07-16', text: 'Sommerschnitt für die Hitze', foto: 'salon-sommerschnitt.jpg' },
   {
     partnerSlug: 'hundesalon-wuschelglueck',
     datum: '2026-06-20',
     text: 'Welpen-Kennenlerntermin – erste Schritte im Salon',
-    foto: 'kira.jpg'
+    foto: 'salon-welpe.jpg'
   },
 
-  { partnerSlug: 'tierheim-sonnenhang', datum: '2026-09-05', text: 'Tag der offenen Tür im Tierheim', foto: 'ausstellung.jpg' },
-  { partnerSlug: 'tierheim-sonnenhang', datum: '2026-08-08', text: 'Neue Kuschelecke im Katzenhaus', foto: 'minka.jpg' }
+  { partnerSlug: 'tierheim-sonnenhang', datum: '2026-09-05', text: 'Tag der offenen Tür im Tierheim', foto: 'tierheim-alltag.jpg' },
+  { partnerSlug: 'tierheim-sonnenhang', datum: '2026-08-08', text: 'Neue Kuschelecke im Katzenhaus', foto: 'katzenhaus.jpg' }
 ]
 
 // POSTS (Phase P2 Task 9): Beiträge der Demo-Partner - Felder wie bei POST /api/partner-area/posts, geprüft
