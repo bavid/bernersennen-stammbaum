@@ -183,22 +183,12 @@
   gap: var(--space-12);
 }
 
-.preview-frame-screen .discover-chapter-number {
-  font-size: 2.6rem;
-}
-
 /* Die Seiten schalten ihre Handy-Regeln per Media-Query am Viewport um - im handybreiten Rahmen gelten
    sie darum auch am Desktop (layout.css, partners.css, support.css, discover.css, dog.css). */
 .preview-frame-screen .card {
   padding: var(--space-5);
 }
 
-.preview-frame-screen .location-picker-fields {
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.preview-frame-screen .location-picker-fields .btn,
 .preview-frame-screen .support-cta .btn {
   width: 100%;
 }
@@ -215,8 +205,13 @@
   max-width: none;
 }
 
-.preview-frame-screen .discover-chapter-head {
-  gap: var(--space-1) var(--space-4);
+.preview-frame-screen .partner-portal-text {
+  font-size: var(--text-base);
+}
+
+.preview-frame-screen .partner-portal-einblicke .einblicke-gallery {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-3);
 }
 
 .preview-frame-screen .dog-hero {
@@ -383,7 +378,6 @@
   width: 3.5rem;
   height: 3.5rem;
   flex-shrink: 0;
-  margin-left: auto;
   border-radius: var(--radius-md);
   background: var(--paper-deep);
   object-fit: cover;

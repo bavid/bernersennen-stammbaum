@@ -6,37 +6,32 @@ import PromotionCard, { PromotionList } from './PromotionCard.jsx'
 import SupportBlock from './SupportBlock.jsx'
 import DiscoverChapter, { DiscoverEmpty, DiscoverSubheading, FallbackNote } from './DiscoverChapter.jsx'
 import { splitByDistance } from '../lib/discover.js'
+import { countItems, donationsOf, limitGroups, sectionCounts, tabLabel } from '../lib/discoverTabs.js'
 
-// Die Kapitel des Reiters "Entdecken" - jedes bekommt seine Daten bereits normalisiert
-// (lib/discover.js normalizeDiscover), fehlende Abschnitte sind also leere Listen.
+// Die Bereiche des Reiters "Entdecken" - jeder bekommt die bereits normalisierte Antwort (lib/discover.js
+// normalizeDiscover, fehlende Abschnitte sind leere Listen), dazu limit (unter "Alle" PREVIEW_LIMIT, im
+// eigenen Reiter unbegrenzt) und onShowAll (nur unter "Alle": "Alle anzeigen" wechselt den Reiter).
 
-// Partnerkarten, optional gefolgt von Empfehlungen im selben Raster (Hundeschulen: Kurse und Angebote
-// stehen direkt neben den Schulen statt in einer eigenen, halb leeren Zeile).
-function PartnerList({ items, promotions = [] }) {
-  if (items.length === 0 && promotions.length === 0) return null
+// Alle Karten eines Bereichs in EINEM Raster, in dieser Reihenfolge: Partner, Tiere, Empfehlungen (Kurse und
+// Angebote stehen direkt neben den Schulen, Tiere neben ihren Tierheimen - keine halb leeren Zeilen, eine
+// linke Kante, gleiche Spalten).
+function CardList({ partners = [], animals = [], promotions = [] }) {
+  if (partners.length + animals.length + promotions.length === 0) return null
   return (
     <ul className="partner-list">
-      {items.map((partner) => (
+      {partners.map((partner) => (
         <li key={`partner-${partner.id}`}>
           <PartnerCard partner={partner} />
+        </li>
+      ))}
+      {animals.map((animal) => (
+        <li key={`animal-${animal.slug}`}>
+          <AnimalAdoptionCard animal={animal} />
         </li>
       ))}
       {promotions.map((promotion) => (
         <li key={`promotion-${promotion.id}`}>
           <PromotionCard promotion={promotion} />
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function AnimalList({ items }) {
-  if (items.length === 0) return null
-  return (
-    <ul className="shelter-grid discover-animals">
-      {items.map((animal) => (
-        <li key={animal.slug}>
-          <AnimalAdoptionCard animal={animal} />
         </li>
       ))}
     </ul>
@@ -53,6 +48,11 @@ function FarAway({ children }) {
   )
 }
 
+// "Alle anzeigen" nur, wenn es mehr gibt als gezeigt - und nur unter "Alle" (dort gibt es onShowAll).
+function showAllFor(onShowAll, total, shown) {
+  return onShowAll && total > shown ? { count: total, onClick: onShowAll } : null
+}
+
 function PartnerListHint({ children }) {
   return (
     <DiscoverEmpty>
@@ -61,23 +61,25 @@ function PartnerListHint({ children }) {
   )
 }
 
-// Kapitel aus Partnerkarten und den Empfehlungen desselben Bereichs (Hundeschulen, Salon & Betreuung):
+// Bereich aus Partnerkarten und den Empfehlungen desselben Bereichs (Hundeschulen, Salon & Betreuung):
 // Umkreis-Hinweis, die nahen Partner samt Empfehlungen, dann "Weiter weg".
-function PartnerChapter({ id, number, title, lede, emptyHint, partner, promotions, fallback }) {
+function PartnerChapter({ id, title, lede, emptyHint, partner, promotions, fallback, limit, onShowAll }) {
   const { near, far } = splitByDistance(partner)
-  const isEmpty = partner.length === 0 && promotions.length === 0
+  const groups = limitGroups([near, promotions, far], limit)
+  const [nearShown, promotionsShown, farShown] = groups
+  const total = partner.length + promotions.length
 
   return (
-    <DiscoverChapter id={id} number={number} title={title} lede={lede}>
+    <DiscoverChapter id={id} title={title} lede={lede} showAll={showAllFor(onShowAll, total, countItems(groups))}>
       {fallback && <FallbackNote />}
-      {isEmpty ? (
+      {total === 0 ? (
         <PartnerListHint>{emptyHint}</PartnerListHint>
       ) : (
         <>
-          <PartnerList items={near} promotions={promotions} />
-          {far.length > 0 && (
+          <CardList partners={nearShown} promotions={promotionsShown} />
+          {farShown.length > 0 && (
             <FarAway>
-              <PartnerList items={far} />
+              <CardList partners={farShown} />
             </FarAway>
           )}
         </>
@@ -86,69 +88,69 @@ function PartnerChapter({ id, number, title, lede, emptyHint, partner, promotion
   )
 }
 
-export function HundeschulenSection({ partner, promotions, fallback }) {
+export function HundeschulenSection({ data, limit, onShowAll }) {
   return (
     <PartnerChapter
       id="entdecken-hundeschulen"
-      number="01"
-      title="Hundeschule gesucht?"
+      title={tabLabel('hundeschulen')}
       lede="Partner-Hundeschulen, Kurse und Angebote."
       emptyHint="Noch keine Hundeschulen in der Nähe"
-      partner={partner}
-      promotions={promotions}
-      fallback={fallback}
+      partner={data.hundeschulPartner}
+      promotions={data.hundeschulPromotions}
+      fallback={data.fallback.hundeschulen}
+      limit={limit}
+      onShowAll={onShowAll}
     />
   )
 }
 
-// Phase P2: Hundesalons und Betreuung (Hundesitter, Tagesstätte, Pension) - eigenes Kapitel nach den
-// Hundeschulen, gleicher Aufbau.
-export function SalonSection({ partner, promotions, fallback }) {
+// Phase P2: Hundesalons und Betreuung (Hundesitter, Tagesstätte, Pension) - gleicher Aufbau.
+export function SalonSection({ data, limit, onShowAll }) {
   return (
     <PartnerChapter
       id="entdecken-salon"
-      number="02"
-      title="Salon & Betreuung"
+      title={tabLabel('salon')}
       lede="Hundesalons, Hundesitter, Tagesstätten und Pensionen."
       emptyHint="Noch keine Hundesalons oder Betreuung in der Nähe"
-      partner={partner}
-      promotions={promotions}
-      fallback={fallback}
+      partner={data.salonPartner}
+      promotions={data.salonPromotions}
+      fallback={data.fallback.salon}
+      limit={limit}
+      onShowAll={onShowAll}
     />
   )
 }
 
 // Empfehlungen (bereich "begleiter", z. B. Patenschaften) stehen nach Tierheimen und Tieren im Umkreis,
 // aber VOR "Weiter weg" - sonst läsen sie sich (auch per Überschriften-Navigation) als weit entfernt.
-export function BegleiterSection({ partner, tiere, promotions, fallback }) {
+export function BegleiterSection({ data, limit, onShowAll }) {
+  const { begleiterPartner: partner, begleiterTiere: tiere, begleiterPromotions: promotions } = data
   const shelters = splitByDistance(partner)
   const animals = splitByDistance(tiere)
-  const isEmpty = partner.length === 0 && tiere.length === 0 && promotions.length === 0
-  const hasFar = shelters.far.length > 0 || animals.far.length > 0
+  const groups = limitGroups([shelters.near, animals.near, promotions, shelters.far, animals.far], limit)
+  const [sheltersNear, animalsNear, promotionsShown, sheltersFar, animalsFar] = groups
+  const total = partner.length + tiere.length + promotions.length
 
   return (
     <DiscoverChapter
       id="entdecken-begleiter"
-      number="03"
-      title="Neuer Begleiter gesucht?"
+      title={tabLabel('begleiter')}
       lede="Tierheime, Vermittlungsstellen und Tiere, die ein Zuhause suchen."
+      showAll={showAllFor(onShowAll, total, countItems(groups))}
     >
       <p className="discover-trust-note">
         <Icon name="check" />
         Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.
       </p>
-      {fallback && <FallbackNote />}
-      {isEmpty ? (
+      {data.fallback.begleiter && <FallbackNote />}
+      {total === 0 ? (
         <PartnerListHint>Noch keine Tierheime oder Vermittlungsstellen in der Nähe</PartnerListHint>
       ) : (
         <>
-          <PartnerList items={shelters.near} />
-          <AnimalList items={animals.near} />
-          <PromotionList items={promotions} />
-          {hasFar && (
+          <CardList partners={sheltersNear} animals={animalsNear} promotions={promotionsShown} />
+          {sheltersFar.length + animalsFar.length > 0 && (
             <FarAway>
-              <PartnerList items={shelters.far} />
-              <AnimalList items={animals.far} />
+              <CardList partners={sheltersFar} animals={animalsFar} />
             </FarAway>
           )}
         </>
@@ -162,27 +164,36 @@ export function BegleiterSection({ partner, tiere, promotions, fallback }) {
   )
 }
 
-export function FutterSection({ futter }) {
+export function FutterSection({ data, limit, onShowAll }) {
+  const [shown] = limitGroups([data.futter], limit)
   return (
     <DiscoverChapter
       id="entdecken-futter"
-      number="04"
-      title="Futter-Empfehlungen"
+      title={tabLabel('futter')}
       lede="Klar gekennzeichnet: was eine Empfehlung ist und was eine Anzeige."
+      showAll={showAllFor(onShowAll, data.futter.length, shown.length)}
     >
-      {futter.length === 0 ? (
+      {data.futter.length === 0 ? (
         <DiscoverEmpty icon="star">Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.</DiscoverEmpty>
       ) : (
-        <PromotionList items={futter} />
+        <PromotionList items={shown} />
       )}
     </DiscoverChapter>
   )
 }
 
-export function SupportSection({ support }) {
+// Unterstützen: unter "Alle" nur der Aufruf und die ersten Empfehlungen (compact) - Transparenzbericht und
+// Spendenlinks der Tierheime stehen im eigenen Reiter, "Alle anzeigen" führt dorthin.
+export function SupportSection({ data, limit, onShowAll }) {
+  const support = data.unterstuetzen
+  const compact = Number.isFinite(limit)
+  const [promotions] = limitGroups([support.promotions], limit)
+  const hidesMore = compact && (promotions.length < support.promotions.length || donationsOf(support).length > 0 || Boolean(support.bericht))
+  const showAll = onShowAll && hidesMore ? { count: sectionCounts(data).unterstuetzen, onClick: onShowAll } : null
+
   return (
-    <DiscoverChapter id="entdecken-unterstuetzen" number="05" title="Unterstützen" lede="Tieren in Vermittlung helfen – und sehen, wohin das Geld geht.">
-      <SupportBlock support={support} />
+    <DiscoverChapter id="entdecken-unterstuetzen" title={tabLabel('unterstuetzen')} lede="Tieren in Vermittlung helfen – und sehen, wohin das Geld geht." showAll={showAll}>
+      <SupportBlock support={{ ...support, promotions }} compact={compact} />
     </DiscoverChapter>
   )
 }

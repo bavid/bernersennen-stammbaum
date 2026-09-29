@@ -8,7 +8,8 @@ import { formatDistanceKm } from '../lib/format.js'
 // Karte für ein Tier in Vermittlung auf dem Portal seines Tierheims (/p/:slug, Sektion "Fellnasen/Tiere
 // suchen ein Zuhause") - verlinkt auf den öffentlichen Steckbrief (/t/:slug). Teilt sich die Kartenoptik
 // mit ShelterAnimalsPage (.shelter-card, shelter.css), nur ohne die dortigen Tierheim-eigenen Elemente
-// (Steckbrief-Status, letzter Eintrag) - animal kommt roh von api.publicPartnerAnimals (camelCase).
+// (Steckbrief-Status, letzter Eintrag) - animal kommt roh von api.publicPartnerAnimals (camelCase). Seit
+// Phase U nur EIN Chip (Vermittlungsstatus); Alter und Entfernung stehen als ruhige Meta-Zeile darüber.
 export default function AnimalAdoptionCard({ animal }) {
   const age = animal.geburtsdatum ? ageText(animal.geburtsdatum) : null
   const statusLabel = vermittlungStatusLabel(animal.vermittlung_status)
@@ -24,11 +25,17 @@ export default function AnimalAdoptionCard({ animal }) {
           {speciesSexLabel(animal.tierart, animal.geschlecht)}
           {animal.rasse ? ` · ${animal.rasse}` : ''}
         </span>
-        <span className="shelter-card-chips">
-          {statusLabel && <span className={`chip status-chip status-chip-${animal.vermittlung_status}`}>{statusLabel}</span>}
-          {age && <span className="chip">{age}</span>}
-          {typeof animal.distanceKm === 'number' && <span className="chip animal-card-distance">{formatDistanceKm(animal.distanceKm)}</span>}
-        </span>
+        {(age || typeof animal.distanceKm === 'number') && (
+          <span className="animal-card-meta">
+            {age && <span>{age}</span>}
+            {typeof animal.distanceKm === 'number' && <span className="animal-card-distance">{formatDistanceKm(animal.distanceKm)}</span>}
+          </span>
+        )}
+        {statusLabel && (
+          <span className="shelter-card-chips">
+            <span className={`chip status-chip status-chip-${animal.vermittlung_status}`}>{statusLabel}</span>
+          </span>
+        )}
       </span>
     </InternalLink>
   )

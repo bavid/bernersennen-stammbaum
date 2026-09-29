@@ -27,9 +27,13 @@ export function setupTypeLabel(typ) {
   return SETUP_TYPE_OPTIONS.find((option) => option.value === typ)?.label || typ
 }
 
-export const BADGE_LABELS = {
-  partner: 'Partner',
-  geprueft: 'geprüft'
+// Öffentliche Kennzeichnung (server/lib/partners.js publicPartner: badge 'partner' bei ist_partner, sonst
+// 'geprueft'). Seit Phase U zeigt eine Karte höchstens EIN ruhiges Merkmal: offizielle Partner ein kleines
+// Pfoten-Zeichen "Partner" (PartnerMark), alle anderen keins - keine zwei konkurrierenden Pillen mehr.
+export const PARTNER_MARK_LABEL = 'Partner'
+
+export function isOfficialPartner(badge) {
+  return badge === 'partner'
 }
 
 // Status eines Partners (server/lib/partners.js STATUS_VALUES) - eine Admin-Sperre schlägt ihn.

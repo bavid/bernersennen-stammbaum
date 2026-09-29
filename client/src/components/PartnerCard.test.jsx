@@ -59,17 +59,26 @@ function linkByText(text) {
 }
 
 describe('PartnerCard', () => {
-  test('zeigt Name, Typ-Label, Badge und Entfernung mit deutschem Komma', async () => {
+  test('zeigt Name, Typ-Label, das Partner-Merkmal und die Entfernung mit deutschem Komma', async () => {
     await render({ ...basePartner, distanceKm: 3.4 })
-    expect(container.textContent).toContain('Tierheim Sonnenhang')
-    expect(container.textContent).toContain('Tierheim')
-    expect(container.textContent).toContain('Partner')
-    expect(container.textContent).toContain('3,4 km')
+    expect(container.querySelector('h3').textContent).toBe('Tierheim Sonnenhang')
+    const meta = container.querySelector('.partner-card-meta')
+    expect(meta.querySelector('.partner-mark').textContent).toBe('Partner')
+    expect(meta.textContent).toContain('Tierheim')
+    expect(meta.textContent).toContain('10115 Berlin')
+    expect(meta.textContent).toContain('3,4 km')
   })
 
-  test('zeigt "geprüft" statt "Partner", wenn ist_partner=0', async () => {
+  test('Phase U: höchstens EIN Merkmal - "geprüft" (ist_partner=0) zeigt gar keins, keine Pillen mehr', async () => {
     await render({ ...basePartner, badge: 'geprueft' })
-    expect(container.textContent).toContain('geprüft')
+    expect(container.textContent).not.toContain('geprüft')
+    expect(container.querySelector('.partner-mark')).toBeNull()
+    expect(container.querySelector('.pill')).toBeNull()
+  })
+
+  test('ein offizieller Partner trägt genau ein Merkmal', async () => {
+    await render(basePartner)
+    expect(container.querySelectorAll('.partner-mark, .pill')).toHaveLength(1)
   })
 
   test('verlinkt "Zum Portal" auf /p/:slug', async () => {
@@ -92,8 +101,8 @@ describe('PartnerCard', () => {
 
   test('Maps-Links sind korrekt kodiert (Google und OpenStreetMap)', async () => {
     await render(basePartner)
-    const google = linkByText('In Google Maps öffnen')
-    const osm = linkByText('OpenStreetMap')
+    const google = linkByText('Tierheim Sonnenhang in Google Maps')
+    const osm = linkByText('Tierheim Sonnenhang in OpenStreetMap')
     expect(google.getAttribute('href')).toBe('https://www.google.com/maps/search/?api=1&query=52.523406,13.411899')
     expect(osm.getAttribute('href')).toBe('https://www.openstreetmap.org/?mlat=52.523406&mlon=13.411899#map=16/52.523406/13.411899')
     expect(google.getAttribute('rel')).toBe('noopener noreferrer')
@@ -101,8 +110,8 @@ describe('PartnerCard', () => {
 
   test('keine Maps-Links ohne Koordinaten', async () => {
     await render({ ...basePartner, lat: null, lon: null })
-    expect(linkByText('In Google Maps öffnen')).toBeUndefined()
-    expect(linkByText('OpenStreetMap')).toBeUndefined()
+    expect(linkByText('Tierheim Sonnenhang in Google Maps')).toBeUndefined()
+    expect(linkByText('Tierheim Sonnenhang in OpenStreetMap')).toBeUndefined()
   })
 
   test('Entdecken: mit clickUrl führt der Website-Link über die Klickzählung /r/...', async () => {
@@ -132,6 +141,12 @@ describe('PartnerCard – Teaser-Foto', () => {
     expect(teaser.getAttribute('loading')).toBe('lazy')
     expect(teaser.getAttribute('width')).toBe('72')
     expect(teaser.getAttribute('height')).toBe('72')
+  })
+
+  test('mit Logo steht das Logo links, das teaserFoto entfällt (kein zweites Bild neben dem Namen)', async () => {
+    await render({ ...basePartner, logoUrl: '/partner-media/logo.png', teaserFoto: '/public-media/11111111-2222-3333-4444-555555555555.jpg' })
+    expect(container.querySelector('.partner-card-logo').getAttribute('src')).toBe('/partner-media/logo.png')
+    expect(container.querySelector('.partner-card-teaser')).toBeNull()
   })
 
   test('ohne teaserFoto kein Bild', async () => {
@@ -164,7 +179,12 @@ describe('PartnerCard – Kundensicht', () => {
     expect(container.querySelector('.preview-own-badge').textContent).toBe('Das seid ihr')
     expect(container.querySelectorAll('a')).toHaveLength(0)
     const disabled = [...container.querySelectorAll('[aria-disabled="true"]')]
-    expect(disabled.map((el) => el.textContent.trim())).toEqual(['Zum Portal', 'Website', 'In Google Maps öffnen', 'OpenStreetMap'])
+    expect(disabled.map((el) => el.textContent.trim())).toEqual([
+      'Zum Portal',
+      'Website',
+      'Tierheim Sonnenhang in Google Maps',
+      'Tierheim Sonnenhang in OpenStreetMap'
+    ])
     for (const el of disabled) {
       expect(el.getAttribute('role')).toBe('link')
       expect(el.getAttribute('title')).toBe('In der Vorschau deaktiviert')

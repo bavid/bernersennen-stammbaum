@@ -1,0 +1,31 @@
+import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { ALL_TAB, TAB_PARAM, tabFromParam } from '../lib/discoverTabs.js'
+
+// Gewählter Reiter in "Entdecken" (Phase U): öffentlich in der Adresse (?bereich=, "Alle" ohne Parameter) -
+// so lässt sich ein Bereich verlinken und der Zurück-Knopf bleibt ruhig (replace). In der Kundensicht
+// (preview) nur im State, damit die Vorschau die Adresse von /kundensicht nicht verändert.
+export default function useDiscoverTab(preview) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [localTab, setLocalTab] = useState(ALL_TAB)
+  const tab = preview ? localTab : tabFromParam(searchParams.get(TAB_PARAM))
+
+  function selectTab(key) {
+    const next = tabFromParam(key)
+    if (preview) {
+      setLocalTab(next)
+      return
+    }
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current)
+        if (next === ALL_TAB) params.delete(TAB_PARAM)
+        else params.set(TAB_PARAM, next)
+        return params
+      },
+      { replace: true }
+    )
+  }
+
+  return [tab, selectTab]
+}

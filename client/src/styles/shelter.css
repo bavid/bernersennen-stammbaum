@@ -63,6 +63,27 @@
   color: var(--muted);
 }
 
+/* Alter und Entfernung einer Tierkarte (AnimalAdoptionCard) als ruhige Meta-Zeile - der Status bleibt der
+   einzige Chip. */
+.animal-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.animal-card-meta > span:not(:last-child)::after {
+  content: '·';
+  margin-left: var(--space-2);
+  color: var(--line-strong);
+}
+
+.animal-card-distance {
+  font-weight: 700;
+  color: var(--rust);
+}
+
 .shelter-card-chips {
   display: flex;
   flex-wrap: wrap;

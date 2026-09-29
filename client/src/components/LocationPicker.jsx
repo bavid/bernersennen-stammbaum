@@ -20,6 +20,8 @@ function isInsecureContext(allowGeolocation) {
 
 // PLZ + Umkreis, wahlweise mit „Standort verwenden" (Task 6 schaltet das für die App frei). Reiner
 // Formular-Baustein: die aufrufende Seite hält plz/radius als State und ruft bei onSubmit den Server.
+// Seit Phase U kompakt: PLZ (ca. 7 Zeichen breit), Umkreis und „Suchen" in einer Zeile, der Standort als
+// kleiner Text-Link darunter - auf Entdecken, /partner und /umgebung gleich.
 export default function LocationPicker({
   plz,
   radius,
@@ -67,7 +69,7 @@ export default function LocationPicker({
     // schon nativ (stiller Blick, kein eigener Text) und unser onSubmit läuft nie (Finding 10).
     <form className="location-picker" onSubmit={onSubmit} noValidate>
       <div className="location-picker-fields">
-        <div className="field">
+        <div className="field location-picker-plz">
           <label className="field-label" htmlFor="location-plz">
             Postleitzahl
           </label>
@@ -78,11 +80,11 @@ export default function LocationPicker({
             inputMode="numeric"
             pattern="[0-9]{5}"
             maxLength={PLZ_LENGTH}
-            placeholder="z. B. 10115"
+            placeholder="10115"
             autoComplete="postal-code"
           />
         </div>
-        <div className="field">
+        <div className="field location-picker-radius">
           <label className="field-label" htmlFor="location-radius">
             Umkreis
           </label>
@@ -100,7 +102,7 @@ export default function LocationPicker({
       </div>
       {showLocateButton && (
         <>
-          <button type="button" className="btn btn-ghost location-picker-locate" onClick={handleLocate} disabled={locating}>
+          <button type="button" className="location-picker-locate" onClick={handleLocate} disabled={locating}>
             <Icon name="locate" />
             {locating ? 'Ermittle Standort …' : 'Standort verwenden'}
           </button>

@@ -31,13 +31,13 @@ afterEach(() => {
   window.localStorage.clear()
 })
 
-async function render(props = {}) {
+async function render(props = {}, path = '/entdecken') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <DiscoverPage {...props} />
       </MemoryRouter>
     )
@@ -100,7 +100,7 @@ function response(overrides) {
 }
 
 describe('DiscoverPage – Kapitel "Salon & Betreuung" (Phase P2)', () => {
-  test('steht direkt nach "Hundeschule gesucht?", mit Salons, Betreuung und Anzeigen (rel="sponsored")', async () => {
+  test('Reiter direkt nach "Hundeschulen", mit Salons, Betreuung und Anzeigen (rel="sponsored")', async () => {
     discover.mockResolvedValue(
       response({
         salon: [salonPartner(), salonPartner({ id: 12, slug: 'pension-wilma', name: 'Pension Wilma', typ: 'betreuung' }), salonPromotion()]
@@ -108,20 +108,19 @@ describe('DiscoverPage – Kapitel "Salon & Betreuung" (Phase P2)', () => {
     )
     await render()
 
-    const titles = [...container.querySelectorAll('section[aria-labelledby] h2')].map((h) => h.textContent)
-    expect(titles.slice(0, 2)).toEqual(['Hundeschule gesucht?', 'Salon & Betreuung'])
+    const tabs = [...container.querySelectorAll('[role="tab"]')].map((tab) => tab.firstChild.textContent)
+    expect(tabs.slice(1, 3)).toEqual(['Hundeschulen', 'Salon & Betreuung'])
 
     const el = section('Salon & Betreuung')
-    expect(el.querySelector('.discover-chapter-number').textContent).toBe('02')
     expect([...el.querySelectorAll('.partner-card h3')].map((h) => h.textContent)).toEqual(['Hundesalon Flocke', 'Pension Wilma'])
     const card = el.querySelector('.promotion-card')
     expect(card.querySelector('.promotion-badge').textContent).toBe('Anzeige')
     expect(card.querySelector('a').getAttribute('rel')).toBe('sponsored noopener noreferrer')
   })
 
-  test('ohne Einträge: freundlicher Hinweis mit Link zur Partnerliste', async () => {
+  test('ohne Einträge: im eigenen Reiter ein freundlicher Hinweis mit Link zur Partnerliste', async () => {
     discover.mockResolvedValue(response())
-    await render()
+    await render({}, '/entdecken?bereich=salon')
 
     const el = section('Salon & Betreuung')
     expect(el.textContent).toContain('Noch keine Hundesalons oder Betreuung in der Nähe')

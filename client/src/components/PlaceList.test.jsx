@@ -102,10 +102,10 @@ describe('PlaceList – Treffer-Kopf', () => {
 })
 
 describe('PlaceList – Einträge', () => {
-  test('Partner zeigen die Badge "Partner" und einen Link zum Portal', async () => {
+  test('Partner zeigen das Merkmal "Partner" und einen Link zum Portal', async () => {
     await render({ results: [sonnenhang] })
     expect(container.textContent).toContain('Tierheim Sonnenhang')
-    expect(container.textContent).toContain('Partner')
+    expect(container.querySelector('.partner-mark').textContent).toBe('Partner')
     const portalLink = [...container.querySelectorAll('a')].find((a) => a.textContent === 'Zum Portal')
     expect(portalLink.getAttribute('href')).toBe('/p/tierheim-sonnenhang')
   })
@@ -117,10 +117,12 @@ describe('PlaceList – Einträge', () => {
     expect(website).not.toBeUndefined()
     const tel = [...container.querySelectorAll('a')].find((a) => a.getAttribute('href') === 'tel:030 1234567')
     expect(tel).not.toBeUndefined()
-    const maps = [...container.querySelectorAll('a')].find((a) => a.textContent === 'In Google Maps öffnen')
+    const maps = [...container.querySelectorAll('a')].find((a) => a.textContent.endsWith('in Google Maps'))
     expect(maps.getAttribute('href')).toBe('https://www.google.com/maps/search/?api=1&query=52.5,13.4')
-    const osm = [...container.querySelectorAll('a')].find((a) => a.textContent === 'OpenStreetMap')
+    const osm = [...container.querySelectorAll('a')].find((a) => a.textContent.endsWith('in OpenStreetMap'))
     expect(osm.getAttribute('href')).toBe('https://www.openstreetmap.org/?mlat=52.5&mlon=13.4#map=16/52.5/13.4')
+    // Orte ohne Partner-Status tragen kein Merkmal.
+    expect(container.querySelector('.partner-mark')).toBeNull()
   })
 })
 

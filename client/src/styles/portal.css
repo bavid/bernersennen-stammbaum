@@ -106,6 +106,7 @@
 
 .portal-section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   min-width: 0;
   scroll-margin-top: var(--space-6);

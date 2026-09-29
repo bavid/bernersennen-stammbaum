@@ -70,8 +70,9 @@ function PartnerDonations({ items }) {
 // Kapitel "Unterstützen": GoFundMe-Knopf, Text, Empfehlungen (bereich "unterstuetzen", direkt unter dem
 // Aufruf), Transparenzblock und Spendenlinks der Partner-Tierheime. Alle externen Links laufen über die
 // Klickzählung (clickUrl /r/...), nur der Nachweis ist ein direkter Link auf das hinterlegte Dokument.
-// Leer ist das Kapitel nur, wenn ALLES davon fehlt.
-export default function SupportBlock({ support }) {
+// Leer ist das Kapitel nur, wenn ALLES davon fehlt. compact (Entdecken unter "Alle", Phase U): nur Aufruf
+// und Empfehlungen - Bericht und Spendenlinks stehen im eigenen Reiter.
+export default function SupportBlock({ support, compact = false }) {
   const hasGofundme = isClickUrl(support.gofundmeClickUrl)
   const donations = support.partnerSpenden.filter((item) => isClickUrl(item.clickUrl))
 
@@ -97,8 +98,8 @@ export default function SupportBlock({ support }) {
         </div>
       )}
       <PromotionList items={support.promotions} />
-      {support.bericht && <DonationReport report={support.bericht} />}
-      {donations.length > 0 && <PartnerDonations items={donations} />}
+      {!compact && support.bericht && <DonationReport report={support.bericht} />}
+      {!compact && donations.length > 0 && <PartnerDonations items={donations} />}
     </div>
   )
 }

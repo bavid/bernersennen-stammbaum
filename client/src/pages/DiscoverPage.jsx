@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import LocationPicker from '../components/LocationPicker.jsx'
-import { BegleiterSection, FutterSection, HundeschulenSection, SalonSection, SupportSection } from '../components/DiscoverSections.jsx'
+import DiscoverPanel from '../components/DiscoverPanel.jsx'
+import DiscoverTabs from '../components/DiscoverTabs.jsx'
+import useDiscoverTab from '../hooks/useDiscoverTab.js'
 import { normalizeDiscover } from '../lib/discover.js'
+import { DISCOVER_TABS, sectionCounts } from '../lib/discoverTabs.js'
 import { PreviewProvider } from '../lib/preview.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
@@ -14,6 +17,7 @@ const PLZ_RE = /^\d{0,5}$/
 const INCOMPLETE_PLZ_ERROR = 'Bitte eine 5-stellige Postleitzahl eingeben.'
 const LOAD_ERROR = 'Entdecken konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
 const PLZ_HINT = 'Ohne Postleitzahl zeigen wir alles, nach Namen sortiert.'
+const PANEL_ID = 'entdecken-panel'
 
 // Gemerkte Werte teilt sich die Seite mit "In der Nähe" (/umgebung, NearbyPage) - dieselben Schlüssel,
 // damit eine dort eingegebene PLZ hier gleich gilt und umgekehrt. Nur PLZ und Radius, nie Koordinaten.
@@ -38,6 +42,7 @@ function friendlyError(err) {
 // /entdecken (angemeldet, auch in der Demo): Hundeschulen, Salon & Betreuung (Phase P2), neue Begleiter
 // aus Tierheimen und Vermittlungsstellen, Futter-Empfehlungen und Unterstützen - alles aus einer Antwort
 // von POST /api/discover. Mit PLZ sortiert der Server nach Entfernung, ohne liefert er alles nach Namen.
+// Seit Phase U in Reitern mit Zählern (DiscoverTabs, ?bereich=): "Alle" zeigt je Bereich die ersten drei.
 // Kundensicht (Phase P1, CustomerViewPage): load ersetzt api.discover (gleiche Signatur { plz, radius },
 // z. B. api.partnerArea.previewDiscover), preview schaltet Links ab und zeigt die eigene Karte markiert.
 export default function DiscoverPage({ load, preview = false }) {
@@ -48,6 +53,22 @@ export default function DiscoverPage({ load, preview = false }) {
   const [error, setError] = useState(null)
   // Nur die Antwort der jüngsten Anfrage zählt - eine langsame ältere überschreibt nie eine neuere.
   const latestRequest = useRef(0)
+  const [tab, selectTab] = useDiscoverTab(preview)
+  // "Alle anzeigen" verschwindet mit dem Wechsel - der Fokus springt darum auf den neuen Reiter.
+  const focusTabAfterSwitch = useRef(false)
+
+  useEffect(() => {
+    if (!focusTabAfterSwitch.current) return
+    focusTabAfterSwitch.current = false
+    const tabButton = document.getElementById(`discover-tab-${tab}`)
+    tabButton?.focus()
+    tabButton?.closest('.discover-tabs')?.scrollIntoView?.({ block: 'nearest' })
+  }, [tab])
+
+  function showAll(key) {
+    focusTabAfterSwitch.current = true
+    selectTab(key)
+  }
 
   useEffect(() => {
     writeSetting('nearbyPlz', plz)
@@ -96,6 +117,8 @@ export default function DiscoverPage({ load, preview = false }) {
     search(plz)
   }
 
+  const counts = data ? sectionCounts(data) : null
+
   return (
     <PreviewProvider value={preview}>
       <div className="page discover-page">
@@ -118,12 +141,6 @@ export default function DiscoverPage({ load, preview = false }) {
           </div>
         )}
 
-        {loading && (
-          <p className="muted" role="status" aria-busy="true">
-            Lädt …
-          </p>
-        )}
-
         {preview && data?.vorschauHinweis && (
           <p className="preview-hint" role="note">
             <Icon name="eye" />
@@ -131,20 +148,22 @@ export default function DiscoverPage({ load, preview = false }) {
           </p>
         )}
 
-        {data && (
-          <div className="discover-chapters" aria-busy={loading || undefined}>
-            <HundeschulenSection partner={data.hundeschulPartner} promotions={data.hundeschulPromotions} fallback={data.fallback.hundeschulen} />
-            <SalonSection partner={data.salonPartner} promotions={data.salonPromotions} fallback={data.fallback.salon} />
-            <BegleiterSection
-              partner={data.begleiterPartner}
-              tiere={data.begleiterTiere}
-              promotions={data.begleiterPromotions}
-              fallback={data.fallback.begleiter}
-            />
-            <FutterSection futter={data.futter} />
-            <SupportSection support={data.unterstuetzen} />
-          </div>
-        )}
+        <DiscoverTabs tabs={DISCOVER_TABS} current={tab} counts={counts} panelId={PANEL_ID} onSelect={selectTab} />
+
+        <div
+          id={PANEL_ID}
+          role="tabpanel"
+          aria-labelledby={`discover-tab-${tab}`}
+          className="discover-chapters"
+          aria-busy={loading || undefined}
+        >
+          {loading && (
+            <p className="muted" role="status" aria-busy="true">
+              Lädt …
+            </p>
+          )}
+          {data && <DiscoverPanel data={data} tab={tab} onShowAll={showAll} />}
+        </div>
       </div>
     </PreviewProvider>
   )

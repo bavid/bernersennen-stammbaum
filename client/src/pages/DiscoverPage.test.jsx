@@ -40,13 +40,14 @@ afterEach(() => {
   window.localStorage.clear()
 })
 
-async function render() {
+// path: z. B. '/entdecken?bereich=begleiter' - öffnet gleich den Reiter eines Bereichs (Phase U).
+async function render(path = '/entdecken') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <DiscoverPage />
       </MemoryRouter>
     )
@@ -168,6 +169,14 @@ function isBefore(a, b) {
   return Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
 }
 
+function tabButton(label) {
+  return [...container.querySelectorAll('[role="tab"]')].find((tab) => tab.firstChild.textContent === label)
+}
+
+async function openTab(label) {
+  await act(async () => tabButton(label).click())
+}
+
 async function submitPlz(value, radius) {
   const input = container.querySelector('#location-plz')
   await act(async () => setInputValue(input, value))
@@ -241,23 +250,23 @@ describe('DiscoverPage – Kopf und Laden', () => {
   test('eine Antwort ohne Abschnitte bringt die Seite nicht zum Absturz', async () => {
     discover.mockResolvedValue({})
     await render()
-    expect(section('Hundeschule gesucht?')).toBeDefined()
-    expect(section('Unterstützen')).toBeDefined()
+    expect(container.querySelectorAll('[role="tab"]')).toHaveLength(6)
+    expect(container.querySelector('[role="tabpanel"]').textContent).toContain('Hier ist gerade noch nichts')
   })
 })
 
 describe('DiscoverPage – Kapitel', () => {
-  test('rendert alle fünf Abschnitte (seit Phase P2 mit "Salon & Betreuung") als Landmarks mit Überschrift', async () => {
+  test('"Alle" zeigt jeden Bereich mit Inhalt als Landmark mit Überschrift - leere (hier Salon) bleiben weg', async () => {
     discover.mockResolvedValue(fullResponse)
     await render()
     const titles = [...container.querySelectorAll('section[aria-labelledby] h2')].map((h) => h.textContent)
-    expect(titles).toEqual(['Hundeschule gesucht?', 'Salon & Betreuung', 'Neuer Begleiter gesucht?', 'Futter-Empfehlungen', 'Unterstützen'])
+    expect(titles).toEqual(['Hundeschulen', 'Neue Begleiter', 'Futter', 'Unterstützen'])
   })
 
   test('Hundeschulen: Partnerkarte mit Portal-Link und Empfehlung als PromotionCard', async () => {
     discover.mockResolvedValue(fullResponse)
     await render()
-    const el = section('Hundeschule gesucht?')
+    const el = section('Hundeschulen')
     expect(el.textContent).toContain('Hundeschule Wiesengrund')
     expect(linkIn(el, 'Zum Portal').getAttribute('href')).toBe('/p/hundeschule-wiesengrund')
     expect(el.querySelector('.promotion-card h3').textContent).toBe('Welpenkurs im Herbst')
@@ -265,8 +274,8 @@ describe('DiscoverPage – Kapitel', () => {
 
   test('Begleiter: Tierheim, Tierkarte → /t/:slug, Hinweis ohne Züchter und Link "Mehr in der Nähe"', async () => {
     discover.mockResolvedValue(fullResponse)
-    await render()
-    const el = section('Neuer Begleiter gesucht?')
+    await render('/entdecken?bereich=begleiter')
+    const el = section('Neue Begleiter')
     expect(el.textContent).toContain('Tierheim Birkenweg')
     expect(linkIn(el, 'Fips').getAttribute('href')).toBe('/t/fips-ab12cd')
     expect(el.textContent).toContain('Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.')
@@ -276,7 +285,7 @@ describe('DiscoverPage – Kapitel', () => {
   test('Futter: Anzeigen-Links tragen sponsored, Empfehlungen nicht', async () => {
     discover.mockResolvedValue(fullResponse)
     await render()
-    const el = section('Futter-Empfehlungen')
+    const el = section('Futter')
     const anzeige = linkIn(el, 'Probierpaket Mühlental')
     const empfehlung = linkIn(el, 'Haferflocken-Knabber')
     expect(anzeige.getAttribute('rel')).toBe('sponsored noopener noreferrer')
@@ -292,9 +301,9 @@ describe('DiscoverPage – Kapitel', () => {
     for (const a of external) expect(a.getAttribute('href')).toMatch(/^\/r\/[a-z-]+\/\d+$/)
   })
 
-  test('Unterstützen: GoFundMe-Knopf und deutsch formatierte Beträge', async () => {
+  test('Unterstützen: GoFundMe-Knopf und deutsch formatierte Beträge (im eigenen Reiter)', async () => {
     discover.mockResolvedValue(fullResponse)
-    await render()
+    await render('/entdecken?bereich=unterstuetzen')
     const el = section('Unterstützen')
     expect(linkIn(el, 'GoFundMe').getAttribute('href')).toBe('/r/gofundme/0')
     const text = plain(el.textContent)
@@ -308,8 +317,8 @@ describe('DiscoverPage – Kapitel', () => {
 describe('DiscoverPage – Empfehlungen bei Begleiter und Unterstützen', () => {
   test('Begleiter: Empfehlungen als PromotionCard nach Tierheim und Tieren, vor "Mehr in der Nähe"', async () => {
     discover.mockResolvedValue(fullResponse)
-    await render()
-    const el = section('Neuer Begleiter gesucht?')
+    await render('/entdecken?bereich=begleiter')
+    const el = section('Neue Begleiter')
     const cards = [...el.querySelectorAll('.promotion-card h3')].map((h) => h.textContent)
     expect(cards).toEqual(['Patenschaft für Senioren-Hunde', 'Leinenwerk Starterset'])
 
@@ -321,8 +330,8 @@ describe('DiscoverPage – Empfehlungen bei Begleiter und Unterstützen', () => 
 
   test('Begleiter: Kennzeichnung wie bei Futter - Anzeige mit sponsored, Partner ohne', async () => {
     discover.mockResolvedValue(fullResponse)
-    await render()
-    const el = section('Neuer Begleiter gesucht?')
+    await render('/entdecken?bereich=begleiter')
+    const el = section('Neue Begleiter')
     const anzeige = cardIn(el, 'Leinenwerk Starterset')
     expect(anzeige.querySelector('.promotion-badge').textContent).toBe('Anzeige')
     expect(linkIn(anzeige, 'Mehr erfahren').getAttribute('rel')).toBe('sponsored noopener noreferrer')
@@ -361,8 +370,8 @@ describe('DiscoverPage – Empfehlungen bei Begleiter und Unterstützen', () => 
         promotions: begleiterPromotions
       }
     })
-    await render()
-    const el = section('Neuer Begleiter gesucht?')
+    await render('/entdecken?bereich=begleiter')
+    const el = section('Neue Begleiter')
     const far = el.querySelector('.discover-far')
     expect(far.querySelector('.promotion-card')).toBeNull()
     expect(isBefore(cardIn(el, 'Leinenwerk Starterset'), far)).toBe(true)
@@ -386,7 +395,7 @@ describe('DiscoverPage – Umkreis-Fallback', () => {
   test('Einträge außerhalb stehen unter "Weiter weg", mit Entfernung', async () => {
     discover.mockResolvedValue(fallbackResponse)
     await render()
-    const el = section('Hundeschule gesucht?')
+    const el = section('Hundeschulen')
     const far = el.querySelector('.discover-far')
     expect(far.querySelector('h3').textContent).toBe('Weiter weg')
     expect(far.textContent).toContain('Hundeschule Heidekamp')
@@ -399,15 +408,15 @@ describe('DiscoverPage – Umkreis-Fallback', () => {
     discover.mockResolvedValue(fallbackResponse)
     await render()
     const note = 'In eurer Nähe gibt es nur wenige – hier die nächsten weiteren.'
-    expect(section('Hundeschule gesucht?').textContent).toContain(note)
-    expect(section('Neuer Begleiter gesucht?').textContent).toContain(note)
-    expect(section('Futter-Empfehlungen').textContent).not.toContain(note)
+    expect(section('Hundeschulen').textContent).toContain(note)
+    expect(section('Neue Begleiter').textContent).toContain(note)
+    expect(section('Futter').textContent).not.toContain(note)
   })
 
   test('Tiere außerhalb landen ebenfalls unter "Weiter weg"', async () => {
     discover.mockResolvedValue(fallbackResponse)
-    await render()
-    const far = section('Neuer Begleiter gesucht?').querySelector('.discover-far')
+    await render('/entdecken?bereich=begleiter')
+    const far = section('Neue Begleiter').querySelector('.discover-far')
     expect(far.textContent).toContain('Fips')
     expect(far.textContent).toContain('62,0 km')
   })
@@ -421,26 +430,31 @@ describe('DiscoverPage – Umkreis-Fallback', () => {
 })
 
 describe('DiscoverPage – Leerzustände', () => {
-  test('jeder Abschnitt hat einen eigenen Leerzustand', async () => {
+  test('jeder Bereich hat in seinem Reiter einen eigenen Leerzustand', async () => {
     discover.mockResolvedValue(emptyResponse)
     await render()
-    const hundeschulen = section('Hundeschule gesucht?')
+    expect(container.querySelector('.promotion-card')).toBeNull()
+
+    await openTab('Hundeschulen')
+    const hundeschulen = section('Hundeschulen')
     expect(hundeschulen.textContent).toContain('Noch keine Hundeschulen in der Nähe – schaut in die Partnerliste.')
     expect(linkIn(hundeschulen, 'Partnerliste').getAttribute('href')).toBe('/partner')
 
-    const begleiter = section('Neuer Begleiter gesucht?')
+    await openTab('Neue Begleiter')
+    const begleiter = section('Neue Begleiter')
     expect(begleiter.textContent).toContain('Noch keine Tierheime oder Vermittlungsstellen in der Nähe – schaut in die Partnerliste.')
     expect(linkIn(begleiter, 'Mehr in der Nähe').getAttribute('href')).toBe('/umgebung')
 
-    expect(section('Futter-Empfehlungen').textContent).toContain('Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.')
+    await openTab('Futter')
+    expect(section('Futter').textContent).toContain('Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.')
+    await openTab('Unterstützen')
     expect(section('Unterstützen').textContent).toContain('Noch keine Spendenmöglichkeiten hinterlegt – schaut in die Partnerliste.')
-    expect(container.querySelector('.promotion-card')).toBeNull()
   })
 
   test('Begleiter nur mit Empfehlungen: kein Leerzustand, die Empfehlungen und "Mehr in der Nähe" bleiben', async () => {
     discover.mockResolvedValue({ ...emptyResponse, begleiter: { partner: [], tiere: [], promotions: begleiterPromotions } })
     await render()
-    const el = section('Neuer Begleiter gesucht?')
+    const el = section('Neue Begleiter')
     expect(el.textContent).not.toContain('Noch keine Tierheime oder Vermittlungsstellen')
     expect(cardIn(el, 'Patenschaft für Senioren-Hunde')).toBeDefined()
     expect(linkIn(el, 'Mehr in der Nähe').getAttribute('href')).toBe('/umgebung')
@@ -493,7 +507,7 @@ describe('DiscoverPage – überlappende Suchen (Race Condition)', () => {
     await act(async () => newer.resolve(responseWithSchool('Hundeschule Neuland')))
     await act(async () => older.resolve(responseWithSchool('Hundeschule Altmarkt')))
 
-    const text = section('Hundeschule gesucht?').textContent
+    const text = section('Hundeschulen').textContent
     expect(text).toContain('Hundeschule Neuland')
     expect(text).not.toContain('Hundeschule Altmarkt')
     expect(container.querySelector('[role="status"]')).toBeNull()
@@ -511,6 +525,6 @@ describe('DiscoverPage – überlappende Suchen (Race Condition)', () => {
     await act(async () => older.reject(Object.assign(new Error('Fehler 500'), { status: 500 })))
 
     expect(container.querySelector('[role="alert"]')).toBeNull()
-    expect(section('Hundeschule gesucht?').textContent).toContain('Hundeschule Neuland')
+    expect(section('Hundeschulen').textContent).toContain('Hundeschule Neuland')
   })
 })

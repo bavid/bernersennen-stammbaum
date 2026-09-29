@@ -6,6 +6,9 @@
   margin: 0 auto;
   padding: clamp(var(--space-6), 5vw, var(--space-12)) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
   display: grid;
+  /* minmax(0, …): ein breiter Inhalt (Karten-Raster, lange Wörter) verbreitert nie die Seite - bei 320 px
+     stand sie sonst über den rechten Rand. */
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(var(--space-8), 4vw, var(--space-10));
 }
 
@@ -196,26 +199,41 @@
   justify-items: start;
 }
 
+/* PLZ-Suche (LocationPicker, Phase U): kompakt in einer Zeile, ohne eigenen Kasten - PLZ ca. 7 Zeichen
+   breit, Umkreis so schmal wie sein Inhalt, "Suchen" daneben; bei 320 px rutscht nur der Knopf in die
+   nächste Zeile. Der Standort ist ein kleiner Text-Link darunter. */
 .location-picker {
   display: grid;
-  gap: var(--space-4);
-  padding: clamp(var(--space-5), 3vw, var(--space-6));
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  justify-items: start;
+  gap: var(--space-2);
 }
 
 .location-picker-fields {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: var(--space-4);
+  align-items: flex-end;
+  gap: var(--space-3);
 }
 
 .location-picker-fields .field {
-  min-width: 9rem;
-  flex: 1 1 9rem;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+}
+
+.location-picker #location-plz,
+.location-picker #location-radius {
+  min-height: 2.6rem;
+  padding-inline: var(--space-3);
+}
+
+/* Über die id: die allgemeine Feld-Regel (components.css, input:not(...) mit width: 100 %) wiegt sonst schwerer. */
+.location-picker #location-plz {
+  width: calc(7ch + 2 * var(--space-3) + 2px);
+  font-variant-numeric: tabular-nums;
+}
+
+.location-picker-radius select {
+  width: auto;
 }
 
 .location-picker-fields .btn {
@@ -223,22 +241,56 @@
 }
 
 .location-picker-locate {
-  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--rust);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.location-picker-locate:hover:not(:disabled) {
+  color: var(--rust-deep);
+  text-decoration: underline;
+}
+
+.location-picker-locate:disabled {
+  color: var(--muted);
+  cursor: progress;
+}
+
+.location-picker-locate svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.location-picker .field-hint {
+  margin: 0;
 }
 
 .partner-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
-  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: var(--space-5);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Partnerkarte (PartnerCard, PlaceList): Kopf mit Logo und Name, EINE ruhige Meta-Zeile, darunter "Zum
+   Portal" und leise Text-Links - gleicher Innenabstand wie Tier- und Empfehlungskarten. */
 .partner-card {
   display: grid;
   gap: var(--space-4);
   align-content: start;
+}
+
+.partner-card.card {
+  padding: var(--space-5);
 }
 
 .partner-card-head {
@@ -268,18 +320,32 @@
   height: 1.5rem;
 }
 
+.partner-card-title {
+  min-width: 0;
+}
+
 .partner-card-title h3 {
   font-size: var(--text-lg);
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .partner-card-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-2);
   margin-top: var(--space-1);
   color: var(--muted);
   font-size: var(--text-sm);
+}
+
+/* Punkte zwischen den Angaben (nicht nach dem Partner-Merkmal) - am Ende der Angabe, damit ein Umbruch nie
+   mit einem Punkt beginnt. */
+.partner-card-meta > span:not(.partner-mark):not(:last-child)::after {
+  content: '·';
+  margin-left: var(--space-2);
+  color: var(--line-strong);
 }
 
 .partner-card-distance {
@@ -287,22 +353,72 @@
   color: var(--rust);
 }
 
+/* Das eine Merkmal offizieller Partner: kleines Pfoten-Zeichen statt Pille */
+.partner-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--rust);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.partner-mark svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
 .partner-card-links {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
 }
 
 .partner-card-links .btn {
   padding: 0 var(--space-4);
   min-height: 2.3rem;
   font-size: var(--text-xs);
-  /* Lange Website-/E-Mail-Texte (PartnerCard, PlaceList) dürfen bei 375px umbrechen statt den Knopf
-     bzw. die Karte horizontal zu sprengen - überschreibt .btn white-space: nowrap gezielt hier. */
+}
+
+/* Leise Text-Links auf Karten (Website, Telefon, E-Mail, Karte) - lange Adressen dürfen bei 375 px umbrechen. */
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   min-width: 0;
   max-width: 100%;
-  white-space: normal;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
   overflow-wrap: anywhere;
+}
+
+.card-link:hover {
+  color: var(--rust);
+  text-decoration: underline;
+}
+
+.card-link svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.card-map-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  color: var(--muted);
+}
+
+.card-map-links > svg {
+  width: 1rem;
+  height: 1rem;
+  margin-right: calc(var(--space-2) * -1);
 }
 
 /* Fuß der öffentlichen Seiten */
@@ -333,6 +449,7 @@
 
 .place-list-wrap {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-6);
 }
 
@@ -405,15 +522,6 @@
 }
 
 @media (max-width: 720px) {
-  .location-picker-fields {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .location-picker-fields .btn {
-    width: 100%;
-  }
-
   .place-list-head {
     flex-direction: column;
     align-items: stretch;

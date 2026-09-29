@@ -112,3 +112,27 @@ describe('LocationPicker – Standort-Knopf (Task 6 schaltet ihn für die App fr
     expect(onLocate).toHaveBeenCalledWith({ lat: 52.52, lon: 13.41 })
   })
 })
+
+// Phase U: kompakt - PLZ, Umkreis und "Suchen" in EINER Zeile, der Standort als kleiner Text-Link darunter.
+describe('LocationPicker – kompakt', () => {
+  test('PLZ-Feld, Umkreis und "Suchen" stehen gemeinsam in einer Zeile, das PLZ-Feld ist schmal ausgezeichnet', async () => {
+    await render()
+    const row = container.querySelector('.location-picker-fields')
+    expect(row.querySelector('.location-picker-plz #location-plz')).not.toBeNull()
+    expect(row.querySelector('.location-picker-radius #location-radius')).not.toBeNull()
+    expect(row.querySelector('button[type="submit"]').textContent).toBe('Suchen')
+    expect(container.querySelector('#location-plz').getAttribute('maxlength')).toBe('5')
+    // Kein eigener Kasten mehr (früher eine Karte mit Schatten).
+    expect(container.querySelector('form.location-picker').classList.contains('card')).toBe(false)
+  })
+
+  test('"Standort verwenden" ist ein kleiner Text-Link unter der Zeile, kein großer Knopf', async () => {
+    setSecureContext(true)
+    Object.defineProperty(navigator, 'geolocation', { value: { getCurrentPosition: vi.fn() }, configurable: true })
+    await render({ allowGeolocation: true, onLocate: () => {} })
+    const locate = locateButton()
+    expect(locate.classList.contains('location-picker-locate')).toBe(true)
+    expect(locate.classList.contains('btn')).toBe(false)
+    expect(locate.closest('.location-picker-fields')).toBeNull()
+  })
+})

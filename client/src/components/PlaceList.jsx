@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
-import { TYPE_LABELS, BADGE_LABELS } from '../lib/partnerTypes.js'
-import { formatDistanceKm, isExternalUrl, googleMapsUrl, osmUrl, isOsmAttribution, OSM_COPYRIGHT_URL, GEONAMES_ATTRIBUTION } from '../lib/format.js'
+import MapLinks from './MapLinks.jsx'
+import PartnerMark from './PartnerMark.jsx'
+import { TYPE_LABELS } from '../lib/partnerTypes.js'
+import { formatDistanceKm, isExternalUrl, isOsmAttribution, OSM_COPYRIGHT_URL, GEONAMES_ATTRIBUTION } from '../lib/format.js'
 
 const FILTERS = [
   { key: 'alle', label: 'Alle' },
@@ -18,14 +20,9 @@ function matchesFilter(place, filter) {
   return place.typ === filter
 }
 
-function hasCoords(place) {
-  return Number.isFinite(place.lat) && Number.isFinite(place.lon)
-}
-
 function PlaceItem({ place }) {
   const typeLabel = TYPE_LABELS[place.typ] || place.typ
   const isPartner = place.quelle === 'partner'
-  const badgeLabel = place.badge ? BADGE_LABELS[place.badge] || place.badge : null
 
   return (
     <article className="partner-card card place-item">
@@ -40,7 +37,7 @@ function PlaceItem({ place }) {
         <div className="partner-card-title">
           <h3>{place.name}</h3>
           <p className="partner-card-meta">
-            {badgeLabel && <span className={`pill ${place.badge === 'partner' ? 'pill-rust' : ''}`}>{badgeLabel}</span>}
+            <PartnerMark badge={place.badge} />
             <span>{typeLabel}</span>
             {typeof place.distanceKm === 'number' && <span className="partner-card-distance">{formatDistanceKm(place.distanceKm)}</span>}
           </p>
@@ -54,30 +51,21 @@ function PlaceItem({ place }) {
           </Link>
         )}
         {!isPartner && isExternalUrl(place.website) && (
-          <a className="btn btn-ghost" href={place.website} target="_blank" rel="noopener noreferrer">
+          <a className="card-link" href={place.website} target="_blank" rel="noopener noreferrer">
             <Icon name="globe" /> Website
           </a>
         )}
         {!isPartner && place.telefon && (
-          <a className="btn btn-ghost" href={`tel:${place.telefon}`}>
+          <a className="card-link" href={`tel:${place.telefon}`}>
             <Icon name="phone" /> {place.telefon}
           </a>
         )}
         {!isPartner && place.email && (
-          <a className="btn btn-ghost" href={`mailto:${place.email}`}>
+          <a className="card-link" href={`mailto:${place.email}`}>
             <Icon name="mail" /> {place.email}
           </a>
         )}
-        {hasCoords(place) && (
-          <>
-            <a className="btn btn-ghost" href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
-              In Google Maps öffnen
-            </a>
-            <a className="btn btn-ghost" href={osmUrl(place)} target="_blank" rel="noopener noreferrer">
-              OpenStreetMap
-            </a>
-          </>
-        )}
+        <MapLinks item={place} />
       </div>
     </article>
   )

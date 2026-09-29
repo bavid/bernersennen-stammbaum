@@ -1,51 +1,152 @@
-/* Reiter "Entdecken" (/entdecken, DiscoverPage): vier Kapitel mit großer Nummer und Überschrift.
-   Karten kommen aus partners.css (.partner-list/.partner-card) und shelter.css (.shelter-grid/
-   .shelter-card), Empfehlungen aus promotion.css, Unterstützen aus support.css - hier nur der
-   Kapitelrahmen, Hinweise, Leerzustände und der Fokus. */
+/* Reiter "Entdecken" (/entdecken, DiscoverPage): seit Phase U eine Reiter-Leiste mit Zählern (DiscoverTabs)
+   und darunter die Bereiche (DiscoverPanel) - unter "Alle" je höchstens drei Einträge. Karten kommen aus
+   partners.css (.partner-list/.partner-card) und shelter.css (.shelter-grid/.shelter-card), Empfehlungen aus
+   promotion.css, Unterstützen aus support.css - hier Leiste, Bereichskopf, Hinweise, Leerzustände, Fokus. */
+
+/* Reiter-Leiste: eine Zeile, am Handy waagerecht scrollbar (ohne sichtbaren Balken), Zähler als leise Zahl */
+.discover-tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0 calc(var(--space-2) * -1);
+  padding: var(--space-1) var(--space-2) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.discover-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.discover-tab {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.6rem;
+  margin-bottom: -1px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+
+.discover-tab:hover {
+  color: var(--ink);
+}
+
+.discover-tab[aria-selected='true'] {
+  color: var(--ink);
+  border-bottom-color: var(--rust);
+}
+
+.discover-tab-count {
+  min-width: 1.5rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--paper-deep);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  line-height: 1.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.discover-tab[aria-selected='true'] .discover-tab-count {
+  background: var(--rust-wash);
+  color: var(--rust);
+}
 
 .discover-chapters {
   display: grid;
-  gap: clamp(var(--space-12), 7vw, 5.5rem);
+  /* minmax(0, …): die Karten-Raster bestimmen nie die Breite - bei 320 px ragte sie sonst über den Rand */
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(var(--space-10), 5vw, var(--space-16));
 }
 
 .discover-chapter {
   display: grid;
-  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
   /* Sprungziel unter dem klebenden Kopf */
   scroll-margin-top: calc(var(--header-height) + var(--space-4));
 }
 
+/* Bereichskopf: Überschrift und Kurztext links, "Alle anzeigen" rechts - am Handy darunter */
 .discover-chapter-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: var(--space-2) var(--space-5);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--line);
 }
 
-.discover-chapter-number {
-  font-family: var(--font-display);
-  font-size: clamp(2.6rem, 1.9rem + 2.6vw, 4.25rem);
-  font-weight: 400;
-  line-height: 0.82;
-  color: var(--tan);
-  font-variant-numeric: lining-nums;
-  font-variation-settings: 'SOFT' 100, 'opsz' 144;
+.discover-chapter-titles {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
 .discover-chapter-head h2 {
-  font-size: var(--text-2xl);
-  line-height: 1.1;
+  font-size: var(--text-xl);
+  line-height: 1.15;
   hyphens: auto;
   overflow-wrap: anywhere;
 }
 
 .discover-chapter-lede {
-  margin-top: var(--space-2);
+  margin: 0;
   color: var(--muted);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   line-height: 1.5;
+}
+
+.discover-show-all {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--rust);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.discover-show-all svg {
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.discover-show-all:hover {
+  color: var(--rust-deep);
+}
+
+.discover-show-all:hover svg {
+  transform: translateX(3px);
+}
+
+.discover-show-all-count {
+  color: var(--muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.discover-show-all-count::before {
+  content: '(';
+}
+
+.discover-show-all-count::after {
+  content: ')';
 }
 
 .discover-subheading {
@@ -70,6 +171,7 @@
 /* Umkreis-Fallback: alles außerhalb des Radius gesammelt unter "Weiter weg" */
 .discover-far {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   padding-top: var(--space-2);
 }
@@ -94,8 +196,9 @@
 }
 
 .discover-trust-note {
-  background: var(--alpine-wash);
+  padding: 0;
   color: var(--alpine);
+  font-weight: 700;
 }
 
 .discover-fallback-note svg,
@@ -168,11 +271,9 @@
   display: grid;
 }
 
-/* Tierkarten als Liste (AnimalAdoptionCard, .shelter-card) */
-.discover-animals {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* Tierkarten (AnimalAdoptionCard, .shelter-card) stehen im selben Raster wie Partner und Empfehlungen */
+.discover-page .partner-list .shelter-card {
+  height: 100%;
 }
 
 .discover-animals > li {
@@ -193,10 +294,6 @@
 }
 
 @media (max-width: 720px) {
-  .discover-chapter-head {
-    gap: var(--space-1) var(--space-4);
-  }
-
   .discover-empty {
     align-items: flex-start;
     padding: var(--space-4) var(--space-5);
