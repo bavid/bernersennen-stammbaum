@@ -6,9 +6,10 @@
 // lib/anfrageGutschein.js.
 //
 // Datenschutz: Name, E-Mail und Nachricht sind personenbezogene Daten. Aufbewahrt werden erledigte und abgelehnte
-// Anfragen bis RETENTION_DAYS_CLOSED Tage nach dem Abschluss, offene bis RETENTION_DAYS_OPEN Tage nach dem Eingang
-// (purgeExpiredAnfragen - jeder Eingang räumt vorher auf, index.js zusätzlich beim Start und alle 24 Stunden).
-// Inhalte und E-Mail-Adressen landen nie im Log (geloggt wird nur die Anzahl).
+// Anfragen bis RETENTION_DAYS_CLOSED Tage nach dem Abschluss, offene bis RETENTION_DAYS_OPEN Tage nach der letzten
+// Bearbeitung (aktualisiert_at, sonst dem Eingang) - purgeExpiredAnfragen läuft beim Start und alle 24 Stunden
+// (index.js), nicht bei jedem Eingang. Speicher begrenzt: ab MAX_OPEN_ANFRAGEN offenen Anfragen werden neue still
+// verworfen (gleiche Antwort, eine Logzeile je Stunde mit der Anzahl). Inhalte und E-Mail-Adressen landen nie im Log.
 
 const db = require('../db')
 const { cleanId } = require('./validate')
@@ -26,7 +27,10 @@ const MAX_NAME_LENGTH = 80
 const MAX_FIRMA_LENGTH = 120
 const MAX_NACHRICHT_LENGTH = 1000
 const MAX_NOTIZ_LENGTH = 1000
-const MAX_LIST = 500
+const PAGE_SIZE = 100
+const MAX_SEITE = 100000
+const MAX_OPEN_ANFRAGEN = 1000
+const DROP_LOG_INTERVAL_MS = 60 * 60 * 1000
 const DUPLICATE_WINDOW_HOURS = 24
 const RETENTION_DAYS_CLOSED = 180
 const RETENTION_DAYS_OPEN = 365
@@ -125,10 +129,18 @@ function validateStatusFilter(value) {
   return value
 }
 
+// ?seite= der Admin-Liste: fehlt sie, Seite 1; sonst eine ganze Zahl von 1 bis MAX_SEITE.
+function validateSeite(value) {
+  if (value === undefined || value === '') return 1
+  const seite = typeof value === 'string' && /^\d{1,6}$/.test(value) ? Number(value) : NaN
+  if (!Number.isInteger(seite) || seite < 1 || seite > MAX_SEITE) throw httpError(400, 'Die Seite muss eine positive ganze Zahl sein.')
+  return seite
+}
+
 // --- Abfragen ------------------------------------------------------------------------------------
 
 const PURGE_SQL = `DELETE FROM anfragen WHERE
-   (status = '${STATUS.offen}' AND created_at < datetime('now', '-${RETENTION_DAYS_OPEN} days'))
+   (status = '${STATUS.offen}' AND COALESCE(aktualisiert_at, created_at) < datetime('now', '-${RETENTION_DAYS_OPEN} days'))
    OR (status <> '${STATUS.offen}' AND COALESCE(erledigt_at, created_at) < datetime('now', '-${RETENTION_DAYS_CLOSED} days'))`
 
 // Anfrage samt zugewiesenem Gutschein (nur Hinweis und Status, nie der Code).
@@ -142,19 +154,23 @@ const findDuplicateStmt = db.prepare(
   `SELECT 1 FROM anfragen WHERE email = ? AND typ = ? AND status = '${STATUS.offen}'
      AND created_at > datetime('now', '-${DUPLICATE_WINDOW_HOURS} hours')`
 )
+const countOpenStmt = db.prepare(`SELECT COUNT(*) AS n FROM anfragen WHERE status = '${STATUS.offen}'`)
 const insertStmt = db.prepare(
   `INSERT INTO anfragen (typ, name, email, nachricht, firma, partner_typ, plz)
    VALUES (@typ, @name, @email, @nachricht, @firma, @partner_typ, @plz)`
 )
+const countListStmt = db.prepare('SELECT COUNT(*) AS n FROM anfragen WHERE (@status IS NULL OR status = @status)')
 const listStmt = db.prepare(
   `${SELECT_SQL} WHERE (@status IS NULL OR a.status = @status)
-   ORDER BY a.status = '${STATUS.offen}' DESC, a.created_at DESC, a.id DESC LIMIT ${MAX_LIST}`
+   ORDER BY a.status = '${STATUS.offen}' DESC, a.created_at DESC, a.id DESC LIMIT ${PAGE_SIZE} OFFSET @offset`
 )
 const findStmt = db.prepare(`${SELECT_SQL} WHERE a.id = ?`)
 // Im SET beziehen sich status/erledigt_at auf die bisherigen Werte. Abschluss-Zeitpunkt: neu beim Wechsel nach
 // erledigt/abgelehnt, bleibt bei einem erneuten Setzen desselben Status, fällt weg beim Zurück auf offen.
+// aktualisiert_at: jede Bearbeitung (Status oder Notiz) - davon hängt die Aufbewahrung offener Anfragen ab.
 const updateStmt = db.prepare(
   `UPDATE anfragen SET
+     aktualisiert_at = datetime('now'),
      status = COALESCE(@status, status),
      notiz = CASE WHEN @setNotiz = 1 THEN @notiz ELSE notiz END,
      erledigt_at = CASE
@@ -189,17 +205,43 @@ function scheduleAnfragenPurge(logger = console) {
   return setInterval(() => runAnfragenPurge(logger), PURGE_INTERVAL_MS).unref()
 }
 
-// Speichert eine geprüfte Anfrage - außer es gibt schon dieselbe offene (E-Mail + Typ) aus den letzten 24 Stunden:
-// dann bleibt alles, wie es ist (kein Spam im Admin), die Route antwortet trotzdem gleich. Aufräumen, Prüfen und
-// Einfügen in EINER Transaktion. Ergebnis: { created: true, id } oder { created: false }.
-const insertAnfrage = db.transaction((clean) => {
-  purgeExpiredAnfragen()
-  if (findDuplicateStmt.get(clean.email, clean.typ)) return { created: false }
-  return { created: true, id: Number(insertStmt.run(clean).lastInsertRowid) }
+// Prüfen und Einfügen in EINER Transaktion: 'duplikat' (dieselbe offene Anfrage, E-Mail + Typ, aus den letzten 24
+// Stunden), 'voll' (schon MAX_OPEN_ANFRAGEN offene) oder die neue id.
+const insertIfRoom = db.transaction((clean) => {
+  if (findDuplicateStmt.get(clean.email, clean.typ)) return { outcome: 'duplikat' }
+  if (countOpenStmt.get().n >= MAX_OPEN_ANFRAGEN) return { outcome: 'voll' }
+  return { outcome: 'neu', id: Number(insertStmt.run(clean).lastInsertRowid) }
 })
 
-function listAnfragen(status) {
-  return listStmt.all({ status })
+// Verworfene Anfragen (Grenze erreicht): höchstens eine Logzeile je DROP_LOG_INTERVAL_MS, mit der Anzahl seit der
+// letzten Zeile - nie Inhalte oder Adressen.
+let dropLog = Object.freeze({ lastLoggedAt: null, pending: 0 })
+
+function noteDropped(now, logger) {
+  const pending = dropLog.pending + 1
+  if (dropLog.lastLoggedAt !== null && now - dropLog.lastLoggedAt < DROP_LOG_INTERVAL_MS) {
+    dropLog = Object.freeze({ ...dropLog, pending })
+    return
+  }
+  logger.warn(`Neue Anfragen verworfen (schon ${MAX_OPEN_ANFRAGEN} offene) – seit der letzten Meldung: ${pending}`)
+  dropLog = Object.freeze({ lastLoggedAt: now, pending: 0 })
+}
+
+// Speichert eine geprüfte Anfrage. Ein Duplikat oder eine volle Liste legen nichts an (kein Spam im Admin, begrenzter
+// Speicher) - die Route antwortet trotzdem gleich. Ergebnis: { created: true, id } oder { created: false }.
+// logger/now nur für Tests.
+function insertAnfrage(clean, { logger = console, now = Date.now() } = {}) {
+  const result = insertIfRoom(clean)
+  if (result.outcome === 'neu') return { created: true, id: result.id }
+  if (result.outcome === 'voll') noteDropped(now, logger)
+  return { created: false }
+}
+
+// Eine Seite der Admin-Liste (PAGE_SIZE je Seite): { rows, gesamt, seiten }.
+function listAnfragen({ status = null, seite = 1 } = {}) {
+  const gesamt = countListStmt.get({ status }).n
+  const rows = listStmt.all({ status, offset: (seite - 1) * PAGE_SIZE })
+  return { rows, gesamt, seiten: Math.max(1, Math.ceil(gesamt / PAGE_SIZE)) }
 }
 
 function findAnfrage(id) {
@@ -244,7 +286,8 @@ function adminAnfrage(row) {
     notiz: row.notiz,
     gutschein: assignedVoucher(row),
     createdAt: row.created_at,
-    erledigtAt: row.erledigt_at
+    erledigtAt: row.erledigt_at,
+    aktualisiertAt: row.aktualisiert_at
   }
 }
 
@@ -259,12 +302,15 @@ module.exports = {
   MAX_NOTIZ_LENGTH,
   RETENTION_DAYS_CLOSED,
   RETENTION_DAYS_OPEN,
+  PAGE_SIZE,
+  MAX_OPEN_ANFRAGEN,
   EMAIL_UNKNOWN_MESSAGE,
   NOT_FOUND_MESSAGE,
   httpError,
   validateAnfrage,
   validateAnfrageUpdate,
   validateStatusFilter,
+  validateSeite,
   purgeExpiredAnfragen,
   runAnfragenPurge,
   scheduleAnfragenPurge,

@@ -8,13 +8,17 @@
 //
 // Datenschutz: Telegram ist ein externer Dienst. Standard sind Texte OHNE personenbezogene Daten ("Neue
 // Gutschein-Anfrage – im Admin ansehen"); erst der Schalter "Details mitsenden" (details) nimmt Name/E-Mail,
-// Bereichs- bzw. Partnername, Beitragstitel oder den Anfang einer Nachricht mit. Reiner Text ohne parse_mode.
+// Bereichs- bzw. Partnername, Beitragstitel oder den Anfang einer Nachricht mit. Reiner Text ohne parse_mode; Details
+// werden entschärft (eine Zeile je Angabe, "https://" -> "https[:]//", "@" -> "(at)"), damit Nutzereingaben weder
+// Zeilen vortäuschen noch anklickbare Links oder Erwähnungen ergeben.
 // Demo-Inhalte (Demo-Sitzungen, Demo-Bereiche, Demo-Partner) lösen nie etwas aus (daten.demo). Eine Anfrage aus einer
 // Demo-Sitzung ist dagegen eine echte Anfrage eines Besuchers und meldet sich wie jede andere (routes/anfragen.js).
 //
-// Obergrenze je Server-Prozess: höchstens CAP_PER_WINDOW Nachrichten in einer gleitenden Stunde. Die nächste wird
-// durch EINE Warnung ersetzt (CAP_WARNING_TEXT), danach fällt eine Stunde lang alles weg; das Ende der Pause loggt
-// EINE Zeile mit der Anzahl der nicht gemeldeten Ereignisse (ohne Inhalt). Die Testnachricht zählt nicht mit.
+// Obergrenze je Server-Prozess, in zwei Töpfen (security-review Phase N): Anfragen (ohne Login auslösbar) höchstens
+// CAP_ANFRAGEN_PER_WINDOW, alles andere (Registrierung, Feedback, Beitrag) höchstens CAP_PER_WINDOW Nachrichten in
+// einer gleitenden Stunde - eine Flut anonymer Anfragen verdrängt so nie die übrigen Hinweise. Je Topf wird die
+// nächste Nachricht durch EINE Warnung ersetzt, danach fällt in diesem Topf eine Stunde lang alles weg; das Ende der
+// Pause loggt EINE Zeile mit der Anzahl der nicht gemeldeten Ereignisse (ohne Inhalt). Die Testnachricht zählt nie mit.
 
 const { readNotifySettings } = require('./notifySettings')
 const { telegramCredentials } = require('./telegramConfig')
@@ -39,9 +43,16 @@ const FAILURE_LOG = 'Telegram-Benachrichtigung fehlgeschlagen'
 // Nur Fehlercodes wie ECONNRESET/ETIMEDOUT landen im Log - alles andere als "unbekannt".
 const SAFE_CODE_RE = /^[A-Z][A-Z0-9_]{1,39}$/
 const CAP_PER_WINDOW = 20
+const CAP_ANFRAGEN_PER_WINDOW = 10
 const CAP_WINDOW_MS = 60 * 60 * 1000
 const CAP_WARNING_TEXT = '⚠️ Viele neue Ereignisse – weitere Benachrichtigungen pausieren für diese Stunde. Details im Admin.'
+const CAP_ANFRAGEN_WARNING_TEXT = '⚠️ Viele neue Anfragen – weitere Hinweise zu Anfragen pausieren für diese Stunde. Details im Admin.'
 const CAP = Object.freeze({ send: 'send', warn: 'warn', drop: 'drop' })
+const CAP_BUCKETS = Object.freeze({
+  anfragen: Object.freeze({ limit: CAP_ANFRAGEN_PER_WINDOW, warning: CAP_ANFRAGEN_WARNING_TEXT, label: 'Anfragen' }),
+  allgemein: Object.freeze({ limit: CAP_PER_WINDOW, warning: CAP_WARNING_TEXT, label: 'übrige Ereignisse' })
+})
+const ANFRAGEN_EREIGNISSE = Object.freeze([EREIGNIS.gutscheinAnfrage, EREIGNIS.partnerAnfrage])
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -74,12 +85,18 @@ const DETAILS = Object.freeze({
   [EREIGNIS.beitrag]: (daten) => [['Partner', daten.partnerName], ['Titel', daten.titel]]
 })
 
-// Reiner Text ohne Steuer-/Bidi-Zeichen, höchstens DETAIL_MAX_LENGTH Zeichen (danach "…"). Gezählt wird in
-// Unicode-Zeichen statt UTF-16-Einheiten - sonst könnte der Schnitt ein Emoji zerreißen (ein halbes Ersatzzeichen
+// Nutzereingaben entschärfen: jeder Leerraum (auch Zeilenumbrüche) wird ein Leerzeichen - keine vorgetäuschten
+// "Beschriftung: Wert"-Zeilen; "://" -> "[:]//" und "@" -> "(at)" - keine anklickbaren Links, Mails oder Erwähnungen.
+function neutralize(text) {
+  return text.replace(/\s+/g, ' ').replace(/:\/\//g, '[:]//').replace(/@/g, '(at)')
+}
+
+// Reiner, entschärfter Text ohne Steuer-/Bidi-Zeichen, höchstens DETAIL_MAX_LENGTH Zeichen (danach "…"). Gezählt wird
+// in Unicode-Zeichen statt UTF-16-Einheiten - sonst könnte der Schnitt ein Emoji zerreißen (ein halbes Ersatzzeichen
 // ist kein gültiger Text, Telegram lehnt die Nachricht womöglich ab).
 function detailValue(value) {
   if (typeof value !== 'string' && typeof value !== 'number') return ''
-  const chars = Array.from(stripUnsafeChars(String(value), { allowNewline: true }).trim())
+  const chars = Array.from(neutralize(stripUnsafeChars(String(value), { allowNewline: true })).trim())
   return chars.length > DETAIL_MAX_LENGTH ? `${chars.slice(0, DETAIL_MAX_LENGTH).join('')}…` : chars.join('')
 }
 
@@ -103,39 +120,45 @@ const DEFAULT_RUNTIME = Object.freeze({
   now: () => Date.now()
 })
 const EMPTY_CAP_STATE = Object.freeze({ sent: Object.freeze([]), pausedUntil: null, dropped: 0 })
+const EMPTY_CAP_STATES = Object.freeze({ anfragen: EMPTY_CAP_STATE, allgemein: EMPTY_CAP_STATE })
 let runtime = DEFAULT_RUNTIME
-let capState = EMPTY_CAP_STATE
+let capStates = EMPTY_CAP_STATES
 const inFlight = new Set()
 
 // Nur für Tests: sender, retryDelaysMs, logger, sleep, now (Uhr) und telegram (Zugangsdaten, null = nicht
-// eingerichtet) austauschen - setzt auch die Obergrenze zurück. Gibt restore() zurück.
+// eingerichtet) austauschen - setzt auch die Obergrenzen zurück. Gibt restore() zurück.
 function setNotifyRuntimeForTests(overrides) {
   runtime = { ...DEFAULT_RUNTIME, ...overrides }
-  capState = EMPTY_CAP_STATE
+  capStates = EMPTY_CAP_STATES
   return () => {
     runtime = DEFAULT_RUNTIME
-    capState = EMPTY_CAP_STATE
+    capStates = EMPTY_CAP_STATES
   }
 }
 
-// Obergrenze (siehe Dateikopf): 'send' (zählt mit), 'warn' (die Warnung statt dieses Ereignisses, Pause beginnt)
-// oder 'drop'. Nach der Pause EINE Logzeile mit der Anzahl der weggefallenen Ereignisse.
-function admitToCap(now) {
-  if (capState.pausedUntil !== null) {
-    if (now < capState.pausedUntil) {
-      capState = { ...capState, dropped: capState.dropped + 1 }
-      return CAP.drop
-    }
-    runtime.logger.warn(`Telegram-Benachrichtigungen pausiert – nicht gemeldete Ereignisse: ${capState.dropped}`)
-    capState = { ...capState, pausedUntil: null, dropped: 0 }
+function bucketOf(ereignis) {
+  return ANFRAGEN_EREIGNISSE.includes(ereignis) ? 'anfragen' : 'allgemein'
+}
+
+// Nächster Zustand eines Topfs und die Entscheidung: 'send' (zählt mit), 'warn' (die Warnung statt dieses
+// Ereignisses, Pause beginnt) oder 'drop'. Nach der Pause EINE Logzeile mit der Anzahl der weggefallenen Ereignisse.
+function nextCapState(state, bucket, now) {
+  let current = state
+  if (current.pausedUntil !== null) {
+    if (now < current.pausedUntil) return { decision: CAP.drop, state: { ...current, dropped: current.dropped + 1 } }
+    runtime.logger.warn(`Telegram-Benachrichtigungen pausiert (${bucket.label}) – nicht gemeldete Ereignisse: ${current.dropped}`)
+    current = { ...current, pausedUntil: null, dropped: 0 }
   }
-  const recent = capState.sent.filter((sentAt) => sentAt > now - CAP_WINDOW_MS)
-  if (recent.length < CAP_PER_WINDOW) {
-    capState = { ...capState, sent: [...recent, now] }
-    return CAP.send
-  }
-  capState = { sent: recent, pausedUntil: now + CAP_WINDOW_MS, dropped: 1 }
-  return CAP.warn
+  const recent = current.sent.filter((sentAt) => sentAt > now - CAP_WINDOW_MS)
+  if (recent.length < bucket.limit) return { decision: CAP.send, state: { ...current, sent: [...recent, now] } }
+  return { decision: CAP.warn, state: { sent: recent, pausedUntil: now + CAP_WINDOW_MS, dropped: 1 } }
+}
+
+function admitToCap(ereignis, now) {
+  const name = bucketOf(ereignis)
+  const { decision, state } = nextCapState(capStates[name], CAP_BUCKETS[name], now)
+  capStates = { ...capStates, [name]: state }
+  return { decision, warning: CAP_BUCKETS[name].warning }
 }
 
 function currentCredentials() {
@@ -194,9 +217,9 @@ function notify(ereignis, daten = {}) {
     if (!credentials) return null
     const settings = readNotifySettings()
     if (!settings[ereignis]) return null
-    const decision = admitToCap(runtime.now())
+    const { decision, warning } = admitToCap(ereignis, runtime.now())
     if (decision === CAP.drop) return null
-    const text = decision === CAP.warn ? CAP_WARNING_TEXT : buildText(ereignis, daten ?? {}, { details: settings.details })
+    const text = decision === CAP.warn ? warning : buildText(ereignis, daten ?? {}, { details: settings.details })
     const delivery = new Promise((resolve) => setImmediate(resolve)).then(() => deliver(credentials, text, MAX_ATTEMPTS))
     return track(delivery)
   } catch (err) {
@@ -223,8 +246,10 @@ module.exports = {
   MAX_ATTEMPTS,
   RETRY_DELAYS_MS,
   CAP_PER_WINDOW,
+  CAP_ANFRAGEN_PER_WINDOW,
   CAP_WINDOW_MS,
   CAP_WARNING_TEXT,
+  CAP_ANFRAGEN_WARNING_TEXT,
   buildText,
   notify,
   sendTestMessage,

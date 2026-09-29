@@ -101,18 +101,35 @@ test('extractChats: verschiedene Chats, neueste zuerst, nur numerische IDs, rein
   assert.equal(extractChats([{ message: { chat: { id: 1, type: 'group', title: 'x'.repeat(300) } } }])[0].titel.length, 100)
 })
 
-test('encryptSecret/decryptSecret: AES-256-GCM mit eigenem Schlüssel (nicht mit Gutschein-Codes vertauschbar)', () => {
+// Geheimtext ohne AAD, wie ihn encryptSecret vor der AAD-Bindung geschrieben hat (gleicher Schlüssel aus CODE_PEPPER).
+function legacySecret(plaintext) {
+  const crypto = require('node:crypto')
+  const { codePepper } = require('../config')
+  const key = crypto.createHash('sha256').update(`${codePepper}:settings-secret`).digest()
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
+  const data = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
+  return [iv, cipher.getAuthTag(), data].map((b) => b.toString('base64')).join('.')
+}
+
+test('encryptSecret/decryptSecret: AES-256-GCM mit eigenem Schlüssel und dem Settings-Schlüssel als AAD', () => {
   const { encryptSecret, decryptSecret, encryptCode, decryptCode } = require('../lib/codes')
-  const first = encryptSecret(TOKEN)
-  const second = encryptSecret(TOKEN)
+  const KEY = 'telegram_bot_token_cipher'
+  const first = encryptSecret(TOKEN, KEY)
+  const second = encryptSecret(TOKEN, KEY)
   assert.notEqual(first, second, 'zufälliger IV')
   assert.ok(!first.includes(TOKEN))
-  assert.equal(decryptSecret(first), TOKEN)
+  assert.equal(decryptSecret(first, KEY), TOKEN)
+  assert.throws(() => decryptSecret(first, 'anderer_schluessel'), 'an einen anderen Settings-Schlüssel gebunden -> ungültig')
   assert.throws(() => decryptCode(first), 'ein Geheimnis ist kein Gutschein-Geheimtext')
-  assert.throws(() => decryptSecret(encryptCode('ABCDEFGHJKMN')))
+  assert.throws(() => decryptSecret(encryptCode('ABCDEFGHJKMN'), KEY))
   const tampered = `${first.slice(0, -2)}AA`
-  assert.throws(() => decryptSecret(tampered), (err) => !err.message.includes(TOKEN))
-  assert.throws(() => decryptSecret('kaputt'))
+  assert.throws(() => decryptSecret(tampered, KEY), (err) => !err.message.includes(TOKEN))
+  assert.throws(() => decryptSecret('kaputt', KEY))
+  assert.throws(() => encryptSecret(TOKEN), 'ohne AAD kein Verschlüsseln')
+
+  // Alte Werte (vor der AAD-Bindung) bleiben lesbar.
+  assert.equal(decryptSecret(legacySecret(TOKEN), KEY), TOKEN)
 })
 
 test('telegramConfig: verschlüsselt gespeichert, Status nur mit Hinweis, Rückfall auf die Umgebung je Wert, Löschen', () => {
@@ -145,12 +162,26 @@ test('telegramConfig: verschlüsselt gespeichert, Status nur mit Hinweis, Rückf
   cfg.saveTelegram({ chatId: null })
   assert.deepEqual(cfg.telegramStatus(env).quelle, 'umgebung')
 
-  // Ein nicht lesbarer Geheimtext zählt als "nicht gesetzt" - mit Warnung ohne Inhalt.
+  // Ein nicht lesbarer Geheimtext zählt als "nicht gesetzt" - mit Warnung ohne Inhalt, EINMAL je Prozess.
   db.prepare("INSERT INTO settings (key, value) VALUES ('telegram_bot_token_cipher', 'kaputt.kaputt.kaputt')").run()
   const warnings = []
-  assert.equal(cfg.telegramCredentials({ envTelegram: null, logger: { warn: (line) => warnings.push(line) } }), null)
-  assert.equal(warnings.length, 1)
+  const warnLogger = { envTelegram: null, logger: { warn: (line) => warnings.push(line) } }
+  assert.equal(cfg.telegramCredentials(warnLogger), null)
+  assert.equal(cfg.telegramCredentials(warnLogger), null)
+  cfg.telegramStatus(warnLogger)
+  assert.equal(warnings.length, 1, 'nur einmal, nicht bei jedem Aufruf')
   db.prepare("DELETE FROM settings WHERE key = 'telegram_bot_token_cipher'").run()
+
+  // Ein alter Geheimtext ohne AAD bleibt lesbar und wird beim nächsten Speichern mit AAD neu verschlüsselt.
+  db.prepare("INSERT INTO settings (key, value) VALUES ('telegram_bot_token_cipher', ?)").run(legacySecret(TOKEN))
+  assert.deepEqual(cfg.telegramCredentials({ ...noEnv, envTelegram: { botToken: ENV_TOKEN, chatId: '1' } }), { botToken: TOKEN, chatId: '1' })
+  cfg.saveTelegram({ chatId: '4242' })
+  const reencrypted = db.prepare("SELECT value FROM settings WHERE key = 'telegram_bot_token_cipher'").get().value
+  const { decryptSecret } = require('../lib/codes')
+  assert.equal(decryptSecret(reencrypted, 'telegram_bot_token_cipher'), TOKEN)
+  assert.throws(() => decryptSecret(reencrypted, 'anderer_schluessel'), 'jetzt mit AAD gebunden')
+  assert.deepEqual(cfg.telegramCredentials(noEnv), { botToken: TOKEN, chatId: '4242' })
+  cfg.saveTelegram({ token: null, chatId: null })
 })
 
 test('validateTelegramInput: Format von Token und Chat-ID, leer löscht, mindestens eine Angabe', () => {

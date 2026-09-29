@@ -6,6 +6,7 @@ const {
   NOT_FOUND_MESSAGE,
   validateAnfrageUpdate,
   validateStatusFilter,
+  validateSeite,
   listAnfragen,
   findAnfrage,
   updateAnfrage,
@@ -29,10 +30,14 @@ function sendError(res, next, err) {
   next(err)
 }
 
-// GET /api/admin/anfragen?status=offen|erledigt|abgelehnt - ohne status alle; offene zuerst, darin neueste oben.
+// GET /api/admin/anfragen?status=offen|erledigt|abgelehnt&seite=1 - ohne status alle; offene zuerst, darin neueste
+// oben; 100 je Seite. Antwort: { anfragen, gesamt, seite, seiten } (seite hinter der letzten: anfragen leer).
 router.get('/anfragen', noStore, requireAdmin, (req, res, next) => {
   try {
-    res.json(listAnfragen(validateStatusFilter(req.query.status)).map(adminAnfrage))
+    const status = validateStatusFilter(req.query.status)
+    const seite = validateSeite(req.query.seite)
+    const { rows, gesamt, seiten } = listAnfragen({ status, seite })
+    res.json({ anfragen: rows.map(adminAnfrage), gesamt, seite, seiten })
   } catch (err) {
     sendError(res, next, err)
   }

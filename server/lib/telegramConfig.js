@@ -25,20 +25,40 @@ function httpError(status, message) {
 }
 
 const readStmt = db.prepare('SELECT key, value FROM settings WHERE key IN (?, ?)')
+const readOneStmt = db.prepare('SELECT value FROM settings WHERE key = ?')
 const upsertStmt = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
 const deleteStmt = db.prepare('DELETE FROM settings WHERE key = ?')
 
 // Ein nicht mehr lesbarer Geheimtext (z. B. nach einem geänderten CODE_PEPPER) zählt als "nicht gesetzt" - mit einer
-// Warnung ohne Inhalt, damit der Admin weiß, dass er den Token neu eintragen muss.
+// Warnung ohne Inhalt, damit der Admin weiß, dass er den Token neu eintragen muss. Die Warnung kommt EINMAL je Prozess
+// (sonst bei jedem Ereignis und jedem Aufruf des Admins), nach dem Speichern eines neuen Tokens wieder.
+let unreadableWarned = false
+
 function readStoredToken(cipher, logger) {
   if (!cipher) return null
   try {
-    const token = decryptSecret(cipher)
+    const token = decryptSecret(cipher, TOKEN_KEY)
     return isValidToken(token) ? token : null
   } catch {
-    logger.warn('Gespeicherter Telegram-Bot-Token ist nicht lesbar – bitte im Admin neu eintragen.')
+    if (!unreadableWarned) logger.warn('Gespeicherter Telegram-Bot-Token ist nicht lesbar – bitte im Admin neu eintragen.')
+    unreadableWarned = true
     return null
   }
+}
+
+// Bleibt der Token beim Speichern unverändert, wird er trotzdem neu verschlüsselt - so bekommt ein Wert von vor der
+// AAD-Bindung (lib/codes.js decryptSecret) sie beim nächsten Speichern. Ein unlesbarer Wert bleibt, wie er ist
+// (readStoredToken warnt).
+function reencryptStoredToken() {
+  const cipher = readOneStmt.get(TOKEN_KEY)?.value
+  if (!cipher) return
+  let token
+  try {
+    token = decryptSecret(cipher, TOKEN_KEY)
+  } catch {
+    return
+  }
+  upsertStmt.run(TOKEN_KEY, encryptSecret(token, TOKEN_KEY))
 }
 
 // { token, chatId } aus dem Admin (entschlüsselt), fehlende Werte null.
@@ -104,7 +124,7 @@ function validateOptionalToken(value) {
 // Transaktion. Ergebnis: { gesetzt, geloescht } - ob etwas eingetragen bzw. entfernt wurde (fürs Admin-Protokoll).
 function saveTelegram({ token, chatId }) {
   const changes = [
-    [TOKEN_KEY, token === undefined ? undefined : token && encryptSecret(token)],
+    [TOKEN_KEY, token === undefined ? undefined : token && encryptSecret(token, TOKEN_KEY)],
     [CHAT_ID_KEY, chatId]
   ].filter(([, value]) => value !== undefined)
   db.transaction(() => {
@@ -112,7 +132,9 @@ function saveTelegram({ token, chatId }) {
       if (value === null) deleteStmt.run(key)
       else upsertStmt.run(key, value)
     }
+    if (token === undefined) reencryptStoredToken()
   })()
+  if (token !== undefined) unreadableWarned = false
   return { gesetzt: changes.some(([, value]) => value !== null), geloescht: changes.some(([, value]) => value === null) }
 }
 

@@ -581,5 +581,8 @@ db.exec(`
 // zweimal vergeben. Bewusst ohne REFERENCES: eine gelöschte Anfrage gibt ihren (womöglich schon verschickten)
 // Code damit NICHT wieder frei. Der Gutschein selbst bleibt offen und druckbar, bis er eingelöst wird.
 addColumnIfMissing('vouchers', 'zugewiesen_an_anfrage_id', 'INTEGER')
+// security-review Phase N (L1): Zeitpunkt der letzten Bearbeitung im Admin (Status, Notiz, Zuweisung). Eine wieder
+// geöffnete Anfrage zählt ihre Aufbewahrung ab hier statt ab dem Eingang (lib/anfragen.js PURGE_SQL). NULL = nie bearbeitet.
+addColumnIfMissing('anfragen', 'aktualisiert_at', 'TEXT')
 
 module.exports = db

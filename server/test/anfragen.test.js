@@ -15,11 +15,12 @@ function dnsError(code) {
   return err
 }
 
-// example.org hat MX, gibt-es-nicht.example gar nichts, langsam.example antwortet mit einem vorübergehenden Fehler.
+// example.org hat MX, gibt-es-nicht.example.net gar nichts, langsam.example.net antwortet mit einem vorübergehenden
+// Fehler. (.example selbst gilt als reserviert und wird gar nicht erst nachgefragt, lib/emailCheck.js.)
 const stubResolver = {
   resolveMx: async (domain) => {
     if (domain === 'example.org') return [{ exchange: 'mail.example.org', priority: 10 }]
-    if (domain === 'langsam.example') throw dnsError('ETIMEOUT')
+    if (domain === 'langsam.example.net') throw dnsError('ETIMEOUT')
     throw dnsError('ENOTFOUND')
   },
   resolve4: async () => {
@@ -79,16 +80,16 @@ test('Anfragen: öffentlich stellen, im Admin bearbeiten und einen Gutschein zuw
 
   await t.test('Domain ohne MX/A/AAAA -> 400 mit Hinweis, nichts gespeichert', async () => {
     const before = countRows()
-    const res = await ask({ typ: 'gutschein', email: 'pepper@gibt-es-nicht.example' })
+    const res = await ask({ typ: 'gutschein', email: 'pepper@gibt-es-nicht.example.net' })
     assert.equal(res.status, 400)
     assert.equal(res.data.error, 'Diese E-Mail-Adresse scheint es nicht zu geben.')
     assert.equal(countRows(), before)
   })
 
   await t.test('vorübergehender DNS-Fehler -> die Anfrage wird angenommen', async () => {
-    const res = await ask({ typ: 'gutschein', email: 'flocke@langsam.example' })
+    const res = await ask({ typ: 'gutschein', email: 'flocke@langsam.example.net' })
     assert.equal(res.status, 201)
-    assert.equal(lastRow().email, 'flocke@langsam.example')
+    assert.equal(lastRow().email, 'flocke@langsam.example.net')
   })
 
   await t.test('Honigtopf (website) und unbekannter Typ werden abgelehnt', async () => {
@@ -200,7 +201,7 @@ test('Anfragen: öffentlich stellen, im Admin bearbeiten und einen Gutschein zuw
     assert.equal(duplicate.status, 201)
     assert.equal(countRows(), before + 1, 'Duplikat-Schutz gilt auch hier')
     assert.equal((await ask({ typ: 'gutschein', email: 'demo@example.org', website: 'x' }, demo.cookie)).status, 400, 'Honigtopf')
-    assert.equal((await ask({ typ: 'gutschein', email: 'demo@gibt-es-nicht.example' }, demo.cookie)).status, 400, 'E-Mail-Prüfung')
+    assert.equal((await ask({ typ: 'gutschein', email: 'demo@gibt-es-nicht.example.net' }, demo.cookie)).status, 400, 'E-Mail-Prüfung')
   })
 
   await t.test('Admin-Liste: nur mit Admin-Cookie, offene zuerst, ?status filtert', async () => {
@@ -208,24 +209,33 @@ test('Anfragen: öffentlich stellen, im Admin bearbeiten und einen Gutschein zuw
 
     const all = await admin('/api/admin/anfragen')
     assert.equal(all.status, 200)
-    assert.equal(all.data.length, countRows())
-    const wilma = all.data.find((item) => item.email === 'wilma@example.org')
+    assert.deepEqual(Object.keys(all.data).sort(), ['anfragen', 'gesamt', 'seite', 'seiten'])
+    assert.equal(all.data.gesamt, countRows())
+    assert.equal(all.data.anfragen.length, countRows())
+    assert.equal(all.data.seite, 1)
+    assert.equal(all.data.seiten, 1)
+    const wilma = all.data.anfragen.find((item) => item.email === 'wilma@example.org')
     assert.deepEqual(Object.keys(wilma).sort(), [
-      'createdAt', 'email', 'erledigtAt', 'firma', 'gutschein', 'id', 'nachricht', 'name', 'notiz', 'ort', 'partnerTyp', 'plz', 'status', 'typ'
+      'aktualisiertAt', 'createdAt', 'email', 'erledigtAt', 'firma', 'gutschein', 'id', 'nachricht', 'name', 'notiz', 'ort', 'partnerTyp', 'plz', 'status', 'typ'
     ])
     assert.equal(wilma.gutschein, null)
-    const greta = all.data.find((item) => item.firma === 'Hundeschule Pfotenweg' && item.plz)
+    assert.equal(wilma.aktualisiertAt, null)
+    const greta = all.data.anfragen.find((item) => item.firma === 'Hundeschule Pfotenweg' && item.plz)
     assert.equal(greta.ort, 'Berlin')
     assert.equal(greta.partnerTyp, 'hundeschule')
-    const firstClosed = all.data.findIndex((item) => item.status !== 'offen')
-    assert.ok(all.data.slice(firstClosed).every((item) => item.status !== 'offen'), 'offene stehen vorn')
+    const firstClosed = all.data.anfragen.findIndex((item) => item.status !== 'offen')
+    assert.ok(all.data.anfragen.slice(firstClosed).every((item) => item.status !== 'offen'), 'offene stehen vorn')
 
     const offen = await admin('/api/admin/anfragen?status=offen')
-    assert.ok(offen.data.length > 0)
-    assert.ok(offen.data.every((item) => item.status === 'offen'))
+    assert.ok(offen.data.anfragen.length > 0)
+    assert.ok(offen.data.anfragen.every((item) => item.status === 'offen'))
+    assert.equal(offen.data.gesamt, offen.data.anfragen.length)
     const erledigt = await admin('/api/admin/anfragen?status=erledigt')
-    assert.ok(erledigt.data.every((item) => item.status === 'erledigt'))
+    assert.ok(erledigt.data.anfragen.every((item) => item.status === 'erledigt'))
     assert.equal((await admin('/api/admin/anfragen?status=quatsch')).status, 400)
+    for (const seite of ['0', '-1', 'abc', '1.5', '99999999']) {
+      assert.equal((await admin(`/api/admin/anfragen?seite=${seite}`)).status, 400, `seite=${seite}`)
+    }
   })
 
   await t.test('PUT: Status und Notiz, Abschluss-Zeitpunkt, 404 für Unbekanntes', async () => {
@@ -241,10 +251,13 @@ test('Anfragen: öffentlich stellen, im Admin bearbeiten und einen Gutschein zuw
     assert.equal(noted.status, 200)
     assert.equal(noted.data.notiz, 'Per E-Mail nachgefragt.')
     assert.equal(noted.data.status, 'offen')
+    assert.ok(noted.data.aktualisiertAt, 'eine Notiz zählt als Änderung')
+    db.prepare("UPDATE anfragen SET aktualisiert_at = '2026-01-01 00:00:00' WHERE id = ?").run(id)
 
     const rejected = await admin(`/api/admin/anfragen/${id}`, { method: 'PUT', body: { status: 'abgelehnt' } })
     assert.equal(rejected.data.status, 'abgelehnt')
     assert.ok(rejected.data.erledigtAt)
+    assert.notEqual(rejected.data.aktualisiertAt, '2026-01-01 00:00:00', 'ein Statuswechsel zählt als Änderung')
     assert.equal(rejected.data.notiz, 'Per E-Mail nachgefragt.', 'Notiz bleibt, wenn sie fehlt')
 
     db.prepare("UPDATE anfragen SET erledigt_at = '2026-01-01 10:00:00' WHERE id = ?").run(id)
@@ -330,15 +343,28 @@ test('Anfragen: öffentlich stellen, im Admin bearbeiten und einen Gutschein zuw
     const redeemed = await call(base, '/api/vouchers/redeem', { method: 'POST', body: { code: ok.data.code, name: 'Zuhause Wilma' } })
     assert.equal(redeemed.status, 201)
     const listedAfter = await admin('/api/admin/anfragen?status=erledigt')
-    assert.equal(listedAfter.data.find((item) => item.id === first).gutschein.status, 'eingelöst')
+    assert.equal(listedAfter.data.anfragen.find((item) => item.id === first).gutschein.status, 'eingelöst')
+    assert.ok(listedAfter.data.anfragen.find((item) => item.id === first).aktualisiertAt, 'die Zuweisung zählt als Änderung')
   })
 
-  await t.test('Gutschein zuweisen: nur aus Admin-Stapeln ohne Rudel, Übergabe oder Bindung', async () => {
+  await t.test('Gutschein zuweisen: nur aus Admin-Stapeln ohne Rudel, Übergabe oder Bindung - nie aus Partner-Stapeln', async () => {
     const { createBatch } = require('../lib/vouchers')
     const rudel = await createFamily(base, 'Familie Anfragen-Rudel', 'anfragen-rudel-pw-1')
     const join = createBatch(db, { label: 'Einladung', kind: 'admin', size: 1, joinFamilyId: rudel.data.id })
     const weitergabe = createBatch(db, { label: 'Weitergabe', kind: 'rudel', size: 1, issuedByFamilyId: rudel.data.id })
     const id = db.prepare("INSERT INTO anfragen (typ, email) VALUES ('gutschein', 'stapel@example.org')").run().lastInsertRowid
+
+    // Ein Stapel mit Kunden-Gutscheinen eines Partners gehört dem Partner (er druckt ihn selbst) -> 400.
+    const partner = await admin('/api/admin/partners', {
+      method: 'POST',
+      body: { name: 'Hundeschule Stapelweg', slug: 'hundeschule-stapelweg', typ: 'hundeschule', plz: '10115' }
+    })
+    assert.equal(partner.status, 201)
+    const partnerBatch = await admin('/api/admin/voucher-batches', { method: 'POST', body: { label: 'Kunden Stapelweg', size: 2, partnerId: partner.data.id } })
+    assert.equal(partnerBatch.status, 201)
+    const partnerRes = await admin(`/api/admin/anfragen/${id}/gutschein`, { method: 'POST', body: { batchId: partnerBatch.data.batch.id } })
+    assert.equal(partnerRes.status, 400)
+    assert.match(partnerRes.data.error, /Stapel/)
 
     const joinRes = await admin(`/api/admin/anfragen/${id}/gutschein`, { method: 'POST', body: { batchId: join.batchId } })
     assert.equal(joinRes.status, 409, 'eine Rudel-Einladung ist kein freier Gutschein')
@@ -386,5 +412,48 @@ test('Anfragen: öffentlich stellen, im Admin bearbeiten und einen Gutschein zuw
     assert.equal(res.status, 204)
     assert.equal((await admin(`/api/admin/anfragen/${assigned.id}`, { method: 'DELETE' })).status, 404)
     assert.equal(db.prepare('SELECT zugewiesen_an_anfrage_id AS a FROM vouchers WHERE id = ?').get(assigned.voucher_id).a, assigned.id)
+  })
+
+  await t.test('Admin-Liste blättert: 100 je Seite, { anfragen, gesamt, seite, seiten }', async () => {
+    const insert = db.prepare("INSERT INTO anfragen (typ, email, status) VALUES ('gutschein', ?, 'abgelehnt')")
+    db.transaction(() => {
+      for (let i = 0; i < 230; i += 1) insert.run(`blaettern-${i}@example.org`)
+    })()
+    const gesamt = db.prepare("SELECT COUNT(*) AS n FROM anfragen WHERE status = 'abgelehnt'").get().n
+    const seiten = Math.ceil(gesamt / 100)
+    const first = await admin('/api/admin/anfragen?status=abgelehnt')
+    assert.deepEqual({ gesamt: first.data.gesamt, seite: first.data.seite, seiten: first.data.seiten }, { gesamt, seite: 1, seiten })
+    assert.equal(first.data.anfragen.length, 100)
+    const last = await admin(`/api/admin/anfragen?status=abgelehnt&seite=${seiten}`)
+    assert.equal(last.data.seite, seiten)
+    assert.equal(last.data.anfragen.length, gesamt - (seiten - 1) * 100)
+    const beyond = await admin(`/api/admin/anfragen?status=abgelehnt&seite=${seiten + 1}`)
+    assert.equal(beyond.status, 200)
+    assert.deepEqual(beyond.data.anfragen, [])
+    const ids = new Set([...first.data.anfragen, ...last.data.anfragen].map((item) => item.id))
+    assert.equal(ids.size, first.data.anfragen.length + last.data.anfragen.length, 'keine Anfrage auf zwei Seiten')
+  })
+
+  await t.test('Ab 1000 offenen Anfragen werden neue still verworfen - gleiche Antwort, keine Zeile', async () => {
+    const offen = () => db.prepare("SELECT COUNT(*) AS n FROM anfragen WHERE status = 'offen'").get().n
+    const insert = db.prepare("INSERT INTO anfragen (typ, email) VALUES ('gutschein', ?)")
+    db.transaction(() => {
+      for (let i = offen(); i < 1000; i += 1) insert.run(`voll-${i}@example.org`)
+    })()
+    assert.equal(offen(), 1000)
+    const warnings = []
+    const originalWarn = console.warn
+    console.warn = (line) => warnings.push(String(line))
+    try {
+      const res = await ask({ typ: 'gutschein', email: 'zu-viel@example.org' })
+      assert.equal(res.status, 201)
+      assert.deepEqual(res.data, { ok: true })
+      assert.equal(offen(), 1000, 'nichts gespeichert')
+      assert.equal(db.prepare("SELECT COUNT(*) AS n FROM anfragen WHERE email = 'zu-viel@example.org'").get().n, 0)
+    } finally {
+      console.warn = originalWarn
+    }
+    assert.equal(warnings.length, 1)
+    assert.ok(!warnings[0].includes('zu-viel'), 'kein Inhalt im Log')
   })
 })

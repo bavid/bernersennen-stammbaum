@@ -4,8 +4,9 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const { useTempDataDir } = require('./helpers')
 
-// Phase N Task 1: Aufbewahrung der Anfragen - erledigte und abgelehnte 180 Tage nach dem Abschluss, offene
-// 365 Tage nach dem Eingang. index.js startet den Lauf beim Hochfahren und danach alle 24 Stunden. Ohne Server.
+// Phase N Task 1: Aufbewahrung der Anfragen - erledigte und abgelehnte 180 Tage nach dem Abschluss, offene 365 Tage
+// nach der letzten Änderung (aktualisiert_at, sonst dem Eingang). index.js startet den Lauf beim Hochfahren und danach
+// alle 24 Stunden - nur dort, nicht mehr bei jedem Eingang. Ohne Server.
 const dataDir = useTempDataDir('anfragen-purge')
 
 after(() => {
@@ -44,10 +45,54 @@ test('purgeExpiredAnfragen: löscht nach den Fristen, lässt jüngere stehen', (
     row('erledigt', 100)
   ]
 
+  // Wieder geöffnet: eine alte Anfrage, die kürzlich bearbeitet wurde, bleibt - eine lange unbearbeitete nicht.
+  const touched = db.prepare(
+    "INSERT INTO anfragen (typ, email, status, created_at, aktualisiert_at) VALUES ('gutschein', 'frist@example.org', 'offen', datetime('now', '-400 days'), datetime('now', ?))"
+  )
+  expired.push(Number(touched.run('-366 days').lastInsertRowid))
+  kept.push(Number(touched.run('-10 days').lastInsertRowid))
+
   assert.equal(purgeExpiredAnfragen(), expired.length, 'gibt die Anzahl der gelöschten zurück')
   const remaining = db.prepare('SELECT id FROM anfragen ORDER BY id').all().map((r) => r.id)
   assert.deepEqual(remaining, kept)
   assert.equal(purgeExpiredAnfragen(), 0, 'ein zweiter Lauf findet nichts mehr')
+})
+
+test('insertAnfrage: räumt nicht mehr auf; ab 1000 offenen still verworfen, eine Logzeile je Stunde mit der Anzahl', () => {
+  const db = require('../db')
+  const { insertAnfrage, MAX_OPEN_ANFRAGEN } = require('../lib/anfragen')
+  assert.equal(MAX_OPEN_ANFRAGEN, 1000)
+  const clean = (email) => ({ typ: 'gutschein', name: null, email, nachricht: null, firma: null, partner_typ: null, plz: null })
+  const lines = []
+  const logger = { warn: (line) => lines.push(line) }
+  const HOUR = 60 * 60 * 1000
+  let clock = Date.UTC(2026, 8, 29, 12, 0, 0)
+  const options = () => ({ logger, now: clock })
+
+  db.prepare("INSERT INTO anfragen (typ, email, created_at) VALUES ('gutschein', 'uralt@example.org', datetime('now', '-400 days'))").run()
+  assert.equal(insertAnfrage(clean('neu@example.org'), options()).created, true)
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM anfragen WHERE email = 'uralt@example.org'").get().n, 1, 'der Eingang löscht nichts')
+  db.prepare('DELETE FROM anfragen').run()
+
+  const insert = db.prepare("INSERT INTO anfragen (typ, email) VALUES ('gutschein', ?)")
+  db.transaction(() => {
+    for (let i = 0; i < 1000; i += 1) insert.run(`offen-${i}@example.org`)
+  })()
+  assert.deepEqual(insertAnfrage(clean('a@example.org'), options()), { created: false })
+  assert.deepEqual(lines, ['Neue Anfragen verworfen (schon 1000 offene) – seit der letzten Meldung: 1'])
+  insertAnfrage(clean('b@example.org'), options())
+  clock += 30 * 60 * 1000
+  insertAnfrage(clean('c@example.org'), options())
+  assert.equal(lines.length, 1, 'höchstens eine Zeile je Stunde')
+  clock += HOUR
+  insertAnfrage(clean('d@example.org'), options())
+  assert.deepEqual(lines.at(-1), 'Neue Anfragen verworfen (schon 1000 offene) – seit der letzten Meldung: 3')
+  assert.ok(!lines.join(' ').includes('@'), 'keine Adressen im Log')
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM anfragen').get().n, 1000)
+
+  db.prepare("UPDATE anfragen SET status = 'erledigt' WHERE id = (SELECT MIN(id) FROM anfragen)").run()
+  assert.equal(insertAnfrage(clean('e@example.org'), options()).created, true, 'unter der Grenze wieder möglich')
+  db.prepare('DELETE FROM anfragen').run()
 })
 
 test('runAnfragenPurge: loggt nur die Anzahl, nie Inhalte; ein Fehler reißt nichts mit', () => {

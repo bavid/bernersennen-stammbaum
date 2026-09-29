@@ -16,10 +16,14 @@ const EMAIL_DOMAIN_RESULT = Object.freeze({ gueltig: 'gueltig', ungueltig: 'ungu
 // "Diesen Eintrag gibt es nicht" - jede andere Fehlerart (SERVFAIL, Timeout, Verbindung, ...) gilt als vorübergehend.
 const MISSING_CODES = new Set([dns.NODATA, dns.NOTFOUND, dns.BADNAME])
 
-// Namen, die es im öffentlichen DNS nie gibt (lokale/interne Zonen, RFC 6761/6762/8375) und IP-Adressen statt
-// einer Domain: gar nicht erst nachfragen - sonst ließe sich über die Antwort (400 oder 201) erraten, welche internen
-// Namen der Resolver des Servers kennt.
-const RESERVED_SUFFIXES = ['local', 'localhost', 'internal', 'intranet', 'lan', 'home.arpa', 'corp', 'invalid']
+// Namen, die es im öffentlichen DNS nie gibt oder die intern verwendet werden (RFC 2606/6761/6762/7686/8375, übliche
+// Container-/Service-Discovery- und Router-Zonen) und IP-Adressen statt einer Domain: gar nicht erst nachfragen - sonst
+// ließe sich über die Antwort (400 oder 201) erraten, welche internen Namen der Resolver des Servers kennt. Verglichen
+// wird je ganzem Label ("mailbox.org" ist also nicht "box").
+const RESERVED_SUFFIXES = [
+  'local', 'localhost', 'localdomain', 'internal', 'intranet', 'lan', 'home', 'box', 'private', 'corp', 'invalid', 'test', 'example',
+  'docker', 'svc', 'consul', 'onion', 'arpa'
+]
 const IPV4_LITERAL_RE = /^\d{1,3}(\.\d{1,3}){3}$/
 
 let defaultResolver = dns.promises
@@ -30,7 +34,7 @@ function domainOf(email) {
 }
 
 function isReservedDomain(domain) {
-  const withoutDot = domain.replace(/\.$/, '')
+  const withoutDot = domain.replace(/\.+$/, '')
   if (withoutDot.startsWith('[') || IPV4_LITERAL_RE.test(withoutDot)) return true
   return RESERVED_SUFFIXES.some((suffix) => withoutDot === suffix || withoutDot.endsWith(`.${suffix}`))
 }

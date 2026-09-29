@@ -14,9 +14,9 @@ const { ZWECK, voucherStatus } = require('./vouchers')
 const { AKTION, anfrageZiel, logAdminAction } = require('./adminLog')
 const { TYP, NOT_FOUND_MESSAGE, httpError } = require('./anfragen')
 
-// Nur Stapel des Admins: 'admin' (auch Partner-Zugänge) und 'partner' (Kunden-Gutscheine eines Partners, der
-// Bereich bekommt dann dessen Herkunft) - nie Weitergabe-Stapel eines Bereichs ('rudel') oder die Demo.
-const ASSIGNABLE_BATCH_KINDS = ['admin', 'partner']
+// Nur eigene Stapel des Admins (kind 'admin', auch Partner-Zugänge) - nie Kunden-Gutscheine eines Partners ('partner':
+// die gehören dem Partner, er druckt und verteilt sie selbst), Weitergabe-Stapel eines Bereichs ('rudel') oder die Demo.
+const ASSIGNABLE_BATCH_KINDS = ['admin']
 const ZWECK_FOR_TYP = Object.freeze({ [TYP.gutschein]: ZWECK.chronik, [TYP.partner]: ZWECK.partnerzugang })
 const ZWECK_MISMATCH_MESSAGE = Object.freeze({
   [TYP.gutschein]: 'Für eine Gutschein-Anfrage bitte einen Stapel mit Kunden-Gutscheinen wählen.',
@@ -31,28 +31,29 @@ const findAnfrageStmt = db.prepare('SELECT id, typ, partner_typ, voucher_id FROM
 const findBatchStmt = db.prepare('SELECT id, kind, zweck, partner_typ FROM voucher_batches WHERE id = ?')
 const findAssignedVoucherStmt = db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE id = ?')
 // Frei: offen (wie lib/vouchers.js voucherStatus), mit Geheimtext, noch keiner Anfrage zugewiesen - und kein
-// Einladungs-, Übergabe- oder Weitergabe-Gutschein (join_family_id/dog_id/issued_by_family_id). Ein an einen
-// bestehenden Partner gebundener Partner-Zugang (partner_id) gehört genau diesem Partner und ist nie frei; bei
-// Kunden-Gutscheinen ist partner_id nur die Herkunft und bleibt erlaubt (@allowPartnerId).
+// Einladungs-, Übergabe- oder Weitergabe-Gutschein (join_family_id/dog_id/issued_by_family_id) und keiner, der an einen
+// Partner gebunden ist (partner_id: ein gebundener Partner-Zugang gehört genau diesem Partner).
 const findFreeVoucherStmt = db.prepare(
   `SELECT id, code_cipher FROM vouchers
    WHERE batch_id = @batchId AND zugewiesen_an_anfrage_id IS NULL AND code_cipher IS NOT NULL
      AND redeemed_at IS NULL AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > datetime('now'))
-     AND join_family_id IS NULL AND dog_id IS NULL AND issued_by_family_id IS NULL
-     AND (@allowPartnerId = 1 OR partner_id IS NULL)
+     AND join_family_id IS NULL AND dog_id IS NULL AND issued_by_family_id IS NULL AND partner_id IS NULL
    ORDER BY id LIMIT 1`
 )
 const markVoucherStmt = db.prepare('UPDATE vouchers SET zugewiesen_an_anfrage_id = ? WHERE id = ? AND zugewiesen_an_anfrage_id IS NULL')
 // Wächter "voucher_id IS <bisheriger Wert>": NULL beim ersten Mal, sonst der zurückgezogene/abgelaufene Gutschein.
 const markAnfrageStmt = db.prepare(
-  "UPDATE anfragen SET voucher_id = @voucherId, status = 'erledigt', erledigt_at = datetime('now') WHERE id = @id AND voucher_id IS @previous"
+  `UPDATE anfragen SET voucher_id = @voucherId, status = 'erledigt', erledigt_at = datetime('now'), aktualisiert_at = datetime('now')
+   WHERE id = @id AND voucher_id IS @previous`
 )
 
 function findAssignableBatch(batchIdInput, anfrage) {
   const batchId = cleanId(batchIdInput)
   const batch = batchId ? findBatchStmt.get(batchId) : undefined
   if (!batch) throw httpError(404, 'Diesen Stapel gibt es nicht')
-  if (!ASSIGNABLE_BATCH_KINDS.includes(batch.kind)) throw httpError(400, 'Aus diesem Stapel lassen sich keine Gutscheine zuweisen.')
+  if (!ASSIGNABLE_BATCH_KINDS.includes(batch.kind)) {
+    throw httpError(400, 'Zuweisen geht nur aus eigenen Admin-Stapeln – Stapel eines Partners oder eines Bereichs gehören diesen.')
+  }
   if (batch.zweck !== ZWECK_FOR_TYP[anfrage.typ]) throw httpError(400, ZWECK_MISMATCH_MESSAGE[anfrage.typ] || 'Dieser Stapel passt nicht zur Anfrage.')
   // Die Typ-Vorgabe eines Partner-Zugang-Stapels gilt beim Einlösen (lib/partnerAccess.js) - sie muss zur Anfrage passen.
   if (batch.partner_typ && anfrage.partner_typ && batch.partner_typ !== anfrage.partner_typ) {
@@ -81,7 +82,7 @@ function assignVoucherToAnfrage(anfrageIdInput, batchIdInput) {
     assertNotYetAssigned(anfrage)
 
     const batch = findAssignableBatch(batchIdInput, anfrage)
-    const voucher = findFreeVoucherStmt.get({ batchId: batch.id, allowPartnerId: batch.zweck === ZWECK.chronik ? 1 : 0 })
+    const voucher = findFreeVoucherStmt.get({ batchId: batch.id })
     if (!voucher) throw httpError(409, 'In diesem Stapel ist kein freier Gutschein mehr.')
 
     const code = formatCode(decryptCode(voucher.code_cipher))

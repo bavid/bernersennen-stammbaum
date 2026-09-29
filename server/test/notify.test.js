@@ -98,13 +98,13 @@ test('buildText: ohne Details keine personenbezogenen Daten, mit Details das Nö
   const withDetails = buildText(EREIGNIS.gutscheinAnfrage, anfrage, { details: true })
   assert.ok(withDetails.startsWith(plain))
   assert.match(withDetails, /Name: Wilma Beispiel/)
-  assert.match(withDetails, /E-Mail: wilma@example.org/)
+  assert.match(withDetails, /E-Mail: wilma\(at\)example\.org/)
 
   const partnerPlain = buildText(EREIGNIS.partnerAnfrage, anfrage, { details: false })
   assert.ok(!/Wilma|wilma@|Pfotenweg/.test(partnerPlain))
   const partnerDetails = buildText(EREIGNIS.partnerAnfrage, anfrage, { details: true })
   assert.match(partnerDetails, /Hundeschule Pfotenweg/)
-  assert.match(partnerDetails, /wilma@example.org/)
+  assert.match(partnerDetails, /wilma\(at\)example\.org/)
   const partnerNoName = buildText(EREIGNIS.partnerAnfrage, { ...anfrage, name: null }, { details: true })
   assert.ok(!partnerNoName.includes('Name:'), 'fehlende Angaben fallen weg')
 
@@ -133,6 +133,19 @@ test('buildText: ohne Details keine personenbezogenen Daten, mit Details das Nö
   const beitragDetails = buildText(EREIGNIS.beitrag, { partnerName: 'Hundeschule Pfotenweg', titel: 'Welpenkurs im Herbst' }, { details: true })
   assert.match(beitragDetails, /Partner: Hundeschule Pfotenweg/)
   assert.match(beitragDetails, /Titel: Welpenkurs im Herbst/)
+
+  // Details bleiben harmloser Text: keine Zeilenumbrüche (keine vorgetäuschten Zeilen), keine anklickbaren Links oder
+  // Erwähnungen.
+  const tricky = buildText(
+    EREIGNIS.feedback,
+    { typ: 'feedback', text: 'Siehe https://boese.example.net/x\nE-Mail: admin@example.org\r\n  und tg://resolve @jemand' },
+    { details: true }
+  )
+  assert.equal(
+    tricky.split('\n')[1],
+    'Nachricht: Siehe https[:]//boese.example.net/x E-Mail: admin(at)example.org und tg[:]//resolve (at)jemand'
+  )
+  assert.equal(tricky.split('\n').length, 2, 'eine Zeile je Angabe')
 
   const sneaky = buildText(EREIGNIS.gutscheinAnfrage, { name: 'Flocke\u0000‮ Beispiel', email: 'f@example.org' }, { details: true })
   assert.ok(!/[\u0000‮]/.test(sneaky), 'Steuer- und Bidi-Zeichen fallen weg')
@@ -248,8 +261,9 @@ test('Versand: höchstens 3 Versuche mit Pause, Fehler nur als Zeile ohne Inhalt
   await flushNotificationsForTests()
 })
 
-// Obergrenze je Server-Prozess: höchstens 20 Nachrichten in einer gleitenden Stunde. Die 21. wird durch EINE Warnung
-// ersetzt, danach pausiert alles für eine Stunde; das Ende der Pause loggt EINE Zeile mit der Anzahl (ohne Inhalt).
+// Obergrenze je Server-Prozess: höchstens 20 Nachrichten (Registrierung, Feedback, Beitrag) in einer gleitenden Stunde.
+// Die 21. wird durch EINE Warnung ersetzt, danach pausiert alles für eine Stunde; das Ende der Pause loggt EINE Zeile
+// mit der Anzahl (ohne Inhalt). Anfragen haben einen eigenen Topf (Test darunter).
 test('Obergrenze: 20 je gleitender Stunde, dann eine Warnung und eine Stunde Pause; Testnachricht zählt nicht', async () => {
   const { notify, sendTestMessage, setNotifyRuntimeForTests, flushNotificationsForTests, EREIGNIS, CAP_PER_WINDOW, CAP_WARNING_TEXT } = require('../lib/notify')
   assert.equal(CAP_PER_WINDOW, 20)
@@ -259,7 +273,7 @@ test('Obergrenze: 20 je gleitender Stunde, dann eine Warnung und eine Stunde Pau
   const { sender, calls } = fakeSender()
   const { logger, lines } = captureLogger()
   const restore = setNotifyRuntimeForTests({ sender, logger, retryDelaysMs: [0, 0], now: () => clock })
-  const ping = () => notify(EREIGNIS.gutscheinAnfrage, { email: 'flut@example.org' })
+  const ping = () => notify(EREIGNIS.registrierung, { art: 'zuhause', name: 'Zuhause Flut' })
   try {
     // Gleitend: 15 jetzt, 5 nach 30 Minuten - nach weiteren 31 Minuten sind die ersten 15 aus dem Fenster.
     for (let i = 0; i < 15; i += 1) assert.ok(ping())
@@ -291,8 +305,8 @@ test('Obergrenze: 20 je gleitender Stunde, dann eine Warnung und eine Stunde Pau
     assert.ok(ping(), 'nach einer Stunde geht es weiter')
     await flushNotificationsForTests()
     assert.equal(calls.length, 38)
-    assert.deepEqual(lines, ['Telegram-Benachrichtigungen pausiert – nicht gemeldete Ereignisse: 4'])
-    assert.ok(!lines[0].includes('flut@'), 'kein Inhalt im Log')
+    assert.deepEqual(lines, ['Telegram-Benachrichtigungen pausiert (übrige Ereignisse) – nicht gemeldete Ereignisse: 4'])
+    assert.ok(!lines[0].includes('Flut'), 'kein Inhalt im Log')
 
     // Neues Fenster: wieder 20 (eine ist schon verschickt), dann wieder genau eine Warnung.
     for (let i = 0; i < 19; i += 1) assert.ok(ping())
@@ -301,6 +315,42 @@ test('Obergrenze: 20 je gleitender Stunde, dann eine Warnung und eine Stunde Pau
     await flushNotificationsForTests()
     assert.equal(calls.length, 58)
     assert.equal(calls.filter((call) => call.text === CAP_WARNING_TEXT).length, 2)
+  } finally {
+    restore()
+  }
+})
+
+// Öffentliche Ereignisse (Gutschein-/Partner-Anfragen, ohne Login auslösbar) haben einen eigenen, kleineren Topf: 10 je
+// Stunde. Eine Flut von Anfragen kann so Registrierung, Feedback und Beiträge nicht verdrängen.
+test('Obergrenze für Anfragen: eigener Topf mit 10 je Stunde und eigener Warnung, der Rest läuft weiter', async () => {
+  const { notify, setNotifyRuntimeForTests, flushNotificationsForTests, EREIGNIS, CAP_ANFRAGEN_PER_WINDOW, CAP_ANFRAGEN_WARNING_TEXT, CAP_WARNING_TEXT } =
+    require('../lib/notify')
+  assert.equal(CAP_ANFRAGEN_PER_WINDOW, 10)
+  assert.notEqual(CAP_ANFRAGEN_WARNING_TEXT, CAP_WARNING_TEXT)
+  let clock = Date.UTC(2026, 8, 29, 12, 0, 0)
+  const { sender, calls } = fakeSender()
+  const { logger, lines } = captureLogger()
+  const restore = setNotifyRuntimeForTests({ sender, logger, retryDelaysMs: [0, 0], now: () => clock })
+  try {
+    for (let i = 0; i < 6; i += 1) assert.ok(notify(EREIGNIS.gutscheinAnfrage, { email: 'flut@example.org' }))
+    for (let i = 0; i < 4; i += 1) assert.ok(notify(EREIGNIS.partnerAnfrage, { email: 'flut@example.org' }))
+    assert.ok(notify(EREIGNIS.gutscheinAnfrage, { email: 'flut@example.org' }), 'die 11. wird zur Warnung')
+    assert.equal(notify(EREIGNIS.partnerAnfrage, { email: 'flut@example.org' }), null)
+    assert.equal(notify(EREIGNIS.gutscheinAnfrage, { email: 'flut@example.org' }), null)
+    for (let i = 0; i < 20; i += 1) assert.ok(notify(EREIGNIS.feedback, { typ: 'feedback', text: 'x' }), 'der andere Topf ist unberührt')
+    await flushNotificationsForTests()
+    assert.equal(calls.length, 31)
+    assert.equal(calls.filter((call) => call.text === CAP_ANFRAGEN_WARNING_TEXT).length, 1)
+    assert.equal(calls.filter((call) => call.text === CAP_WARNING_TEXT).length, 0)
+
+    assert.ok(notify(EREIGNIS.registrierung, { art: 'zuhause' }), 'die 21. im anderen Topf wird zu dessen Warnung')
+    await flushNotificationsForTests()
+    assert.equal(calls.at(-1).text, CAP_WARNING_TEXT)
+
+    clock += 60 * 60 * 1000
+    assert.ok(notify(EREIGNIS.gutscheinAnfrage, { email: 'flut@example.org' }))
+    assert.deepEqual(lines, ['Telegram-Benachrichtigungen pausiert (Anfragen) – nicht gemeldete Ereignisse: 3'])
+    await flushNotificationsForTests()
   } finally {
     restore()
   }

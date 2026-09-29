@@ -51,17 +51,17 @@ test('checkEmailDomain: kein MX, aber A oder AAAA -> gültig (implizites MX)', a
 
 test('checkEmailDomain: weder MX noch A/AAAA -> ungültig', async () => {
   const nx = stubResolver({ mx: 'ENOTFOUND', a: 'ENOTFOUND', aaaa: 'ENOTFOUND' })
-  assert.equal(await checkEmailDomain('anna@gibt-es-nicht.example', { resolver: nx }), EMAIL_DOMAIN_RESULT.ungueltig)
+  assert.equal(await checkEmailDomain('anna@gibt-es-nicht.example.net', { resolver: nx }), EMAIL_DOMAIN_RESULT.ungueltig)
   const noData = stubResolver({ mx: 'ENODATA', a: 'ENODATA', aaaa: 'ENODATA' })
-  assert.equal(await checkEmailDomain('anna@leer.example', { resolver: noData }), EMAIL_DOMAIN_RESULT.ungueltig)
+  assert.equal(await checkEmailDomain('anna@leer.example.net', { resolver: noData }), EMAIL_DOMAIN_RESULT.ungueltig)
   const badName = stubResolver({ mx: 'EBADNAME', a: 'EBADNAME', aaaa: 'EBADNAME' })
-  assert.equal(await checkEmailDomain('anna@kaputt..example', { resolver: badName }), EMAIL_DOMAIN_RESULT.ungueltig)
+  assert.equal(await checkEmailDomain('anna@kaputt..example.net', { resolver: badName }), EMAIL_DOMAIN_RESULT.ungueltig)
 })
 
 test('checkEmailDomain: Zeitüberschreitung -> unbekannt (wird angenommen, nicht blockiert)', async () => {
   const hanging = { resolveMx: () => new Promise(() => {}), resolve4: () => new Promise(() => {}), resolve6: () => new Promise(() => {}) }
   const started = Date.now()
-  assert.equal(await checkEmailDomain('anna@langsam.example', { resolver: hanging, timeoutMs: 30 }), EMAIL_DOMAIN_RESULT.unbekannt)
+  assert.equal(await checkEmailDomain('anna@langsam.example.net', { resolver: hanging, timeoutMs: 30 }), EMAIL_DOMAIN_RESULT.unbekannt)
   assert.ok(Date.now() - started < 1000, 'das Zeitlimit greift')
 })
 
@@ -78,14 +78,20 @@ test('checkEmailDomain: interne Namen und IP-Adressen gelten ohne Nachfrage als 
   const { isReservedDomain } = require('../lib/emailCheck')
   const calls = []
   const resolver = stubResolver({ mx: [{ exchange: 'mx.intern', priority: 1 }] }, calls)
-  const internal = ['a@drucker.local', 'a@localhost', 'a@nas.internal', 'a@fritz.box.lan', 'a@router.home.arpa', 'a@x.corp', 'a@127.0.0.1', 'a@[10.0.0.1]', 'a@server.LOCAL.']
+  const internal = [
+    'a@drucker.local', 'a@localhost', 'a@nas.internal', 'a@fritz.box.lan', 'a@router.home.arpa', 'a@x.corp', 'a@127.0.0.1', 'a@[10.0.0.1]',
+    'a@server.LOCAL.', 'a@server.local...', 'a@shop.test', 'a@beispiel.example', 'a@pc.localdomain', 'a@nas.home', 'a@fritz.box',
+    'a@nas.private', 'a@db.docker', 'a@api.svc', 'a@web.service.consul', 'a@abcdefgh.onion', 'a@1.0.0.127.in-addr.arpa'
+  ]
   for (const email of internal) {
     assert.equal(await checkEmailDomain(email, { resolver }), EMAIL_DOMAIN_RESULT.ungueltig, email)
   }
   assert.deepEqual(calls, [], 'kein DNS-Aufruf')
   assert.equal(isReservedDomain('example.org'), false)
-  assert.equal(isReservedDomain('locals.example'), false)
-  assert.equal(isReservedDomain('mylan.example'), false)
+  assert.equal(isReservedDomain('locals.example.org'), false)
+  assert.equal(isReservedDomain('mylan.example.org'), false)
+  assert.equal(isReservedDomain('testing.example.net'), false)
+  assert.equal(isReservedDomain('mailbox.org'), false, 'box nur als ganzes Label')
 })
 
 test('useResolverForTests: ersetzt den Standard-Resolver, bis restore() aufgerufen wird', async () => {
