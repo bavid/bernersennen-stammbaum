@@ -506,9 +506,11 @@ test('Beiträge der Partner: immer Anzeige, sichtbar erst nach Freigabe durch de
   await t.test('Demo: Partner-Sitzung liest, schreibt aber nicht; Demo-Empfehlungen bleiben freigegeben', async () => {
     const { replaceDemoPack } = require('../lib/demoPack')
     replaceDemoPack(db, config.uploadDir)
-    const demoPromotions = db.prepare('SELECT freigabe, erstellt_von_partner FROM promotions WHERE is_demo = 1').all()
+    // Die Demo-Empfehlungen des Admins sind freigegeben; die Beiträge der Demo-Partner (Task 9) tragen ihre
+    // Seed-Freigabe (test/demoPartnerContent.test.js).
+    const demoPromotions = db.prepare('SELECT freigabe FROM promotions WHERE is_demo = 1 AND erstellt_von_partner = 0').all()
     assert.ok(demoPromotions.length > 0)
-    assert.ok(demoPromotions.every((row) => row.freigabe === 'freigegeben' && row.erstellt_von_partner === 0))
+    assert.ok(demoPromotions.every((row) => row.freigabe === 'freigegeben'))
 
     const login = await post('/api/demo', { as: 'partner' })
     assert.equal(login.status, 200)

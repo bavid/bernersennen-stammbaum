@@ -9,7 +9,10 @@
 const { ART } = require('./context')
 const { areaArtForTyp, findPartnerArea, insertPartnerArea } = require('./partnerAreas')
 const { MAX_EINBLICKE, validateNewEinblick } = require('./einblicke')
-const { PARTNER_AREA_SLUGS, EINBLICKE } = require('../seed/demo-partner-area')
+const { validatePartnerPost, insertPost } = require('./partnerPosts')
+const { FREIGABE } = require('./promotions')
+const { validateContactMessage, insertMessage } = require('./partnerMessages')
+const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, MESSAGES } = require('../seed/demo-partner-area')
 
 // Nur Demo-Partner (is_demo = 1): ein Seed-Eintrag darf nie an einem echten Partner landen.
 function findDemoPartner(db, slug, purpose) {
@@ -69,4 +72,80 @@ function createDemoPartnerAreas(db, { copyImage }) {
   return { areas, einblicke }
 }
 
-module.exports = { createDemoPartnerAreas }
+// --- Phase P2 Task 9: Beiträge und Posteingänge der Demo-Partner -----------------------------------------
+
+// Ohne Grund lässt sich ein Beitrag nicht ablehnen - der Seed kennt darum nur diese beiden Freigaben.
+const DEMO_POST_FREIGABEN = [FREIGABE.eingereicht, FREIGABE.freigegeben]
+
+// Fehler einer echten Prüfung mit dem Seed-Eintrag in der Meldung, damit er auffindbar ist.
+function validateSeedEntry(label, validate) {
+  try {
+    return validate()
+  } catch (err) {
+    throw new Error(`${label} ist ungültig: ${err.message}`)
+  }
+}
+
+// Dieselbe Prüfung wie POST /api/partner-area/posts (Bereich zum Partner-Typ, immer "Anzeige", Züchter-Schutz,
+// Link, Datum) und dasselbe Einfügen (lib/partnerPosts.js insertPost: erstellt_von_partner = 1, is_demo vom
+// Partner, Limit). Erst ALLE prüfen, dann einfügen; die Freigabe setzt danach der Seed (wie der Admin).
+function insertDemoPartnerPosts(db) {
+  const prepared = POSTS.map(({ partnerSlug, freigabe, ...input }) => {
+    const label = `Demo-Beitrag "${input.titel}" für "${partnerSlug}"`
+    const partner = findDemoPartner(db, partnerSlug, label)
+    if (!DEMO_POST_FREIGABEN.includes(freigabe)) throw new Error(`${label}: Freigabe muss einer von ${DEMO_POST_FREIGABEN.join(', ')} sein`)
+    return { partner, freigabe, clean: validateSeedEntry(label, () => validatePartnerPost(input, partner)) }
+  })
+  const setFreigabe = db.prepare('UPDATE promotions SET freigabe = ? WHERE id = ?')
+  return prepared.map(({ partner, freigabe, clean }) => {
+    const { id } = insertPost(partner, clean)
+    setFreigabe.run(freigabe, id)
+    return id
+  })
+}
+
+// Steckbrief-Slug eines veröffentlichten Tiers aus dem Tierheim-Bereich des Partners (für bezugTier) - die
+// eigentliche Prüfung macht danach validateContactMessage wie beim Kontaktformular.
+function findShelterAnimalSlug(db, partner, name) {
+  const row = db
+    .prepare(
+      `SELECT d.public_slug FROM dogs d JOIN families f ON f.id = d.family_id
+       WHERE f.partner_id = ? AND f.art = ? AND d.name = ? AND d.public_slug IS NOT NULL`
+    )
+    .get(partner.id, ART.tierheim, name)
+  if (!row) throw new Error(`Demo-Tier "${name}" fehlt im Tierheim-Bereich von "${partner.slug}"`)
+  return row.public_slug
+}
+
+// Dieselbe Prüfung wie das Kontaktformular (lib/partnerMessages.js validateContactMessage) und dasselbe
+// Speichern (insertMessage, is_demo vom Partner). stundenAlt/gelesen setzen Eingangs- und Lesezeitpunkt.
+function insertDemoMessages(db) {
+  const prepared = MESSAGES.map(({ partnerSlug, bezugTier, stundenAlt = 1, gelesen = false, ...input }) => {
+    const label = `Demo-Nachricht von "${input.name}" an "${partnerSlug}"`
+    const partner = findDemoPartner(db, partnerSlug, label)
+    const bezugSlug = bezugTier ? findShelterAnimalSlug(db, partner, bezugTier) : undefined
+    return { partner, stundenAlt, gelesen, clean: validateSeedEntry(label, () => validateContactMessage({ ...input, bezugSlug }, partner)) }
+  })
+  const timeAgo = db.prepare("SELECT datetime('now', ?) AS t")
+  const counts = {}
+  for (const { partner, stundenAlt, gelesen, clean } of prepared) {
+    const createdAt = timeAgo.get(`-${stundenAlt} hours`).t
+    const gelesenAt = gelesen ? timeAgo.get(`-${Math.max(stundenAlt - 1, 0)} hours`).t : null
+    insertMessage(partner, clean, { createdAt, gelesenAt })
+    counts[partner.slug] = (counts[partner.slug] || 0) + 1
+  }
+  return counts
+}
+
+// Läuft innerhalb der replaceDemoPack-Transaktion NACH replaceDemoDiscoverContent (lib/demoPack.js) - das räumt
+// alle Demo-Empfehlungen (is_demo = 1, also auch die alten Beiträge der Demo-Partner) samt Klicks weg und
+// träfe sonst auch die neuen. Die alten Demo-Nachrichten (is_demo = 1 oder an einen alten Demo-Partner) räumt
+// diese Funktion selbst weg. Gibt die neuen Beitrags-Ids und die Nachrichten je Partner-Slug zurück.
+function createDemoPartnerContent(db, { previousPartnerIds = [] } = {}) {
+  const placeholders = previousPartnerIds.map(() => '?').join(', ')
+  const where = previousPartnerIds.length ? `is_demo = 1 OR partner_id IN (${placeholders})` : 'is_demo = 1'
+  db.prepare(`DELETE FROM partner_messages WHERE ${where}`).run(...previousPartnerIds)
+  return { postIds: insertDemoPartnerPosts(db), messages: insertDemoMessages(db) }
+}
+
+module.exports = { createDemoPartnerAreas, createDemoPartnerContent }

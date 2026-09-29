@@ -17,7 +17,7 @@ const {
 const { DEMO_PARTNERS } = require('../seed/demo-partners')
 const { SHELTER_NAME, DOGS: SHELTER_DOGS, TIMELINE: SHELTER_TIMELINE } = require('../seed/demo-shelter')
 const { DEMO_PROMOTIONS, DEMO_SETTINGS, DEMO_DONATION_REPORT } = require('../seed/demo-discover')
-const { createDemoPartnerAreas } = require('./demoPartnerAreas')
+const { createDemoPartnerAreas, createDemoPartnerContent } = require('./demoPartnerAreas')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -542,6 +542,10 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
 
     const discoverResult = replaceDemoDiscoverContent(db, mediaDir, newPromotionImages)
 
+    // Phase P2 Task 9: Beiträge und Posteingänge der Demo-Partner - NACH replaceDemoDiscoverContent, das alle
+    // Demo-Empfehlungen (is_demo = 1) wegräumt und sonst auch die neuen Beiträge träfe.
+    const partnerContent = createDemoPartnerContent(db, { previousPartnerIds })
+
     return {
       created: rudelResult,
       household: householdResult,
@@ -549,6 +553,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       partnerIds: newPartnerIds,
       partnerAreas: partnerAreaResult,
       discover: discoverResult,
+      partnerContent,
       removedEinblickPhotos
     }
   })
@@ -563,7 +568,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     for (const file of newPromotionImages) fs.rmSync(path.join(mediaDir, file), { force: true })
     throw err
   }
-  const { created, household, shelter, partnerIds, partnerAreas, discover, removedEinblickPhotos } = built
+  const { created, household, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos } = built
 
   for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
   removeUploads(uploadDir, unusedEinblickPhotos(db, removedEinblickPhotos))
@@ -589,7 +594,9 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     partnerIds,
     partnerAreas: partnerAreas.areas,
     einblicke: partnerAreas.einblicke,
-    promotionIds: discover.promotionIds
+    promotionIds: discover.promotionIds,
+    partnerPostIds: partnerContent.postIds,
+    messages: partnerContent.messages
   }
 }
 

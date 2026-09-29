@@ -31,7 +31,9 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
   const { replaceDemoPack } = require('../lib/demoPack')
 
   const discover = (cookie) => call(base, '/api/discover', { method: 'POST', body: {}, cookie })
-  const demoPromotions = () => db.prepare('SELECT * FROM promotions WHERE is_demo = 1 ORDER BY titel').all()
+  // Die Demo-Empfehlungen aus seed/demo-discover.js - die Beiträge der Demo-Partner (erstellt_von_partner = 1,
+  // Phase P2 Task 9) prüft test/demoPartnerContent.test.js.
+  const demoPromotions = () => db.prepare('SELECT * FROM promotions WHERE is_demo = 1 AND erstellt_von_partner = 0 ORDER BY titel').all()
   const demoSettings = () =>
     Object.fromEntries(
       db
@@ -157,9 +159,10 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
     assert.equal(knusperkorn.empfohlenVon, 'Hundeschule Pfotenglück')
     assert.equal(knusperkorn.clickUrl, `/r/promotion/${knusperkorn.id}`)
 
+    // Dazu der freigegebene Beitrag der Demo-Hundeschule (Phase P2 Task 9, seed/demo-partner-area.js POSTS).
     const hsPromotions = res.data.hundeschulen.filter((e) => e.kind === 'promotion')
-    assert.deepEqual(hsPromotions.map((p) => p.titel), ['Welpenkurs im Frühjahr'])
-    assert.match(hsPromotions[0].bildUrl, /^\/partner-media\//)
+    assert.deepEqual(hsPromotions.map((p) => p.titel), ['Welpenkurs ab Oktober', 'Welpenkurs im Frühjahr'])
+    assert.match(hsPromotions.find((p) => p.titel === 'Welpenkurs im Frühjahr').bildUrl, /^\/partner-media\//)
     assert.ok(
       res.data.hundeschulen.some((e) => e.kind === 'partner' && e.slug === 'hundeschule-pfotenglueck'),
       'der verknüpfte Demo-Partner steht im selben Abschnitt'
@@ -302,7 +305,7 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
 
   await t.test('Rollback: scheitert eine Demo-Empfehlung (unbekannter Partner-Slug), bleibt die bisherige Demo samt echten Daten vollständig erhalten', () => {
     const before = snapshotAll()
-    assert.equal(before.demoPromotions.length, 5, 'Ausgangslage: eine vollständige Demo')
+    assert.equal(before.demoPromotions.length, 8, 'Ausgangslage: eine vollständige Demo (5 Empfehlungen, 3 Beiträge der Demo-Partner)')
 
     seed.DEMO_PROMOTIONS.push({
       bereich: 'hundeschule',
