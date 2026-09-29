@@ -1,7 +1,7 @@
 const express = require('express')
 const db = require('../db')
 const { isPubliclyVisible } = require('../lib/partners')
-const { promotionPartnerVisibleSql } = require('../lib/promotions')
+const { promotionPublicSql } = require('../lib/promotions')
 
 // Phase 3 Task 2: anonyme Klickzählung für externe Links im Reiter "Entdecken"
 // (docs/superpowers/plans/2026-09-29-phase-3-entdecken.md). Die Ziel-URL kommt AUSSCHLIESSLICH aus der
@@ -14,11 +14,12 @@ const BOT_RE = /bot|crawl|spider|preview|slurp|facebookexternalhit/i
 const GOFUNDME_SETTINGS_KEYS = { 0: 'gofundme_url', 1: 'demo_gofundme_url' }
 
 // Wie routes/discover.js activePromotionRows: eine Empfehlung eines nicht (mehr) öffentlich sichtbaren
-// Partners (gesperrt, pausiert, Entwurf) leitet nicht mehr weiter.
+// Partners (gesperrt, pausiert, Entwurf) leitet nicht mehr weiter - und (Phase P2 Task 8) eine noch nicht
+// oder nicht mehr freigegebene auch nicht.
 const findPromotion = db.prepare(
   `SELECT m.url, m.aktiv FROM promotions m
    LEFT JOIN partners p ON p.id = m.partner_id
-   WHERE m.id = ? AND ${promotionPartnerVisibleSql('m', 'p')}`
+   WHERE m.id = ? AND ${promotionPublicSql('m', 'p')}`
 )
 const findPartner = db.prepare('SELECT website, spenden_url, status, gesperrt FROM partners WHERE id = ?')
 const findSetting = db.prepare('SELECT value FROM settings WHERE key = ?')

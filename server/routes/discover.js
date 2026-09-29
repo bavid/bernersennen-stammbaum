@@ -6,7 +6,7 @@ const { requireSession } = require('../middleware/auth')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { lookupPlz, distanceKm } = require('../lib/geo')
 const { publicPartner, publicPartnerSql } = require('../lib/partners')
-const { promotionPartnerVisibleSql } = require('../lib/promotions')
+const { promotionPublicSql, promotionActiveSql, promotionImageUrl } = require('../lib/promotions')
 const { getShelterAnimalCards } = require('./publicAnimals')
 const { teaserFotoSql, teaserFoto } = require('../lib/einblicke')
 
@@ -82,16 +82,16 @@ function activePartnerRows(typs, isDemo) {
 }
 
 // Aktive Empfehlungen/Anzeigen eines Bereichs im Zeitfenster (NULL = offen), nach sort/Titel sortiert.
-// Hängt eine Empfehlung an einem Partner, muss der öffentlich sichtbar sein (promotionPartnerVisibleSql).
+// Nur freigegebene (Phase P2 Task 8: Beiträge der Partner warten auf den Admin), und hängt eine Empfehlung
+// an einem Partner, muss der öffentlich sichtbar sein (lib/promotions.js promotionPublicSql).
 function activePromotionRows(bereich, isDemo) {
   return db
     .prepare(
       `SELECT m.* FROM promotions m
        LEFT JOIN partners p ON p.id = m.partner_id
-       WHERE m.bereich = ? AND m.aktiv = 1 AND m.is_demo = ?
-         AND (m.start IS NULL OR m.start <= date('now'))
-         AND (m.ende IS NULL OR m.ende >= date('now'))
-         AND ${promotionPartnerVisibleSql('m', 'p')}
+       WHERE m.bereich = ? AND m.is_demo = ?
+         AND ${promotionActiveSql('m')}
+         AND ${promotionPublicSql('m', 'p')}
        ORDER BY m.sort, m.titel`
     )
     .all(bereich, contentDemoValue(isDemo))
@@ -221,6 +221,8 @@ function partnerCard(row, { distanceKm: distanceKmValue, ausserhalb } = {}) {
   }
 }
 
+// Empfehlungs-Karte - auch für die Beiträge auf dem Portal (routes/partners.js) und in der Kundensicht
+// (routes/partnerArea/preview.js).
 function promotionCard(row) {
   return {
     id: row.id,
@@ -230,7 +232,7 @@ function promotionCard(row) {
     empfohlenVon: row.empfohlen_von,
     titel: row.titel,
     text: row.text,
-    bildUrl: row.bild_file ? `/partner-media/${row.bild_file}` : null,
+    bildUrl: promotionImageUrl(row.bild_file),
     tierart: row.tierart,
     url: row.url,
     clickUrl: row.url ? `/r/promotion/${row.id}` : null
@@ -362,6 +364,7 @@ module.exports = router
 module.exports.buildDiscover = buildDiscover
 module.exports.resolveDiscoverCenter = resolveDiscoverCenter
 module.exports.partnerCard = partnerCard
+module.exports.promotionCard = promotionCard
 module.exports.spendenCard = spendenCard
 module.exports.discoverLimiter = discoverLimiter
 module.exports.MAX_BEGLEITER_TIERE = MAX_BEGLEITER_TIERE

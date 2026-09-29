@@ -8,6 +8,8 @@ const { isAdmin } = require('../middleware/admin')
 const { optionalSession } = require('../middleware/auth')
 const { teaserFotoSql, teaserFoto } = require('../lib/einblicke')
 const { buildPortal } = require('../lib/partnerPortal')
+const { listPublicPosts } = require('../lib/partnerPosts')
+const { promotionCard } = require('./discover')
 
 const router = express.Router()
 
@@ -87,20 +89,37 @@ router.post('/near', (req, res) => {
   nearbyPartners(req, res, { plz, radius })
 })
 
+const PARTNER_NOT_FOUND = 'Diesen Partner gibt es nicht'
+
+// Wer ein Portal sehen darf - EINE Regel für das Portal selbst und seine Beiträge: den Partner gibt es, ein
+// Demo-Partner nur mit demoAllowed(), und er ist öffentlich sichtbar - oder die Anfrage kommt vom Admin
+// (preview: true). Sonst null (-> 404).
+function findPortalPartner(req) {
+  const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
+  if (!partner) return null
+  if (partner.is_demo && !demoAllowed(req)) return null
+  const preview = !isPubliclyVisible(partner)
+  if (preview && !isAdmin(req)) return null
+  return { partner, preview }
+}
+
 // GET /api/public/partners/:slug - Portal-Daten. Nur aktiv und nicht gesperrt (lib/partners.js
 // isPubliclyVisible), sonst 404 - ausser mit gültigem Admin-Cookie, dann als Vorschau (preview: true)
 // auch für Entwürfe, pausierte und gesperrte Partner. Die Antwort selbst baut lib/partnerPortal.js
 // buildPortal - dieselbe Form wie die Kundensicht des Partners (routes/partnerArea/preview.js).
 router.get('/:slug', (req, res) => {
-  const partner = db.prepare('SELECT * FROM partners WHERE slug = ?').get(req.params.slug)
-  const notFound = () => res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
-  if (!partner) return notFound()
-  if (partner.is_demo && !demoAllowed(req)) return notFound()
+  const found = findPortalPartner(req)
+  if (!found) return res.status(404).json({ error: PARTNER_NOT_FOUND })
+  res.json({ ...buildPortal(found.partner), ...(found.preview ? { preview: true } : {}) })
+})
 
-  const preview = !isPubliclyVisible(partner)
-  if (preview && !isAdmin(req)) return notFound()
-
-  res.json({ ...buildPortal(partner), ...(preview ? { preview: true } : {}) })
+// GET /api/public/partners/:slug/posts (Phase P2 Task 8) - die Beiträge (Empfehlungen/Anzeigen) des
+// Partners fürs Portal: freigegeben, aktiv, im Zeitfenster, höchstens 10, nach sort und neueste zuerst
+// (lib/partnerPosts.js listPublicPosts). Karten wie in "Entdecken", also mit kennzeichnung und clickUrl.
+router.get('/:slug/posts', (req, res) => {
+  const found = findPortalPartner(req)
+  if (!found) return res.status(404).json({ error: PARTNER_NOT_FOUND })
+  res.json(listPublicPosts(found.partner.id).map(promotionCard))
 })
 
 module.exports = router

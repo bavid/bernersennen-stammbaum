@@ -6,7 +6,17 @@ const { ART } = require('../../lib/context')
 const { buildPortal } = require('../../lib/partnerPortal')
 const { newestVisibleFotoUrl } = require('../../lib/einblicke')
 const { getShelterAnimalCards, buildSteckbrief } = require('../publicAnimals')
-const { buildDiscover, resolveDiscoverCenter, partnerCard, spendenCard, discoverLimiter, MAX_BEGLEITER_TIERE } = require('../discover')
+const { listPreviewPosts, MAX_PUBLIC_POSTS, NO_LIMIT } = require('../../lib/partnerPosts')
+const { FREIGABE } = require('../../lib/promotions')
+const {
+  buildDiscover,
+  resolveDiscoverCenter,
+  partnerCard,
+  promotionCard,
+  spendenCard,
+  discoverLimiter,
+  MAX_BEGLEITER_TIERE
+} = require('../discover')
 
 // Phase P Task 3c: Vorschau-Daten für die "Kundensicht" - der Partner sieht sein Portal, "Entdecken" und
 // die Steckbriefe seiner Tiere so, wie Kundinnen und Kunden sie sehen würden, auch als Entwurf, pausiert
@@ -30,6 +40,18 @@ const SECTION_BY_TYP = Object.freeze({
   vermittlung: 'begleiter'
 })
 
+// Phase P2 Task 8: eigene Beiträge (eingereicht oder freigegeben) in "Entdecken" - je Bereich derselbe
+// Abschnitt wie für freigegebene Empfehlungen (routes/discover.js buildDiscover). salon hat dort noch keinen
+// Abschnitt (kommt mit Task 9) und erscheint darum hier auch noch nicht.
+const POST_BEREICHE = Object.freeze(['hundeschule', 'begleiter', 'futter', 'unterstuetzen'])
+
+// Eigener Beitrag in der Kundensicht: Karte wie in "Entdecken", dazu vorschau und freigabe. Solange der
+// Admin nicht freigegeben hat, gibt es keinen clickUrl - /r/promotion/:id wäre dann ohnehin 404.
+function previewPostCard(row) {
+  const card = promotionCard(row)
+  return { ...card, vorschau: true, freigabe: row.freigabe, clickUrl: row.freigabe === FREIGABE.freigegeben ? card.clickUrl : null }
+}
+
 // GET /preview/portal - das eigene Portal in der öffentlichen Form (lib/partnerPortal.js buildPortal),
 // unabhängig vom Status. tiere: dieselbe Liste wie GET /api/public/partners/:slug/animals (leer für
 // Partner ohne Tierheim-Bereich) - die öffentliche Route liefert für einen Entwurf nur 404.
@@ -37,6 +59,8 @@ router.get('/portal', (req, res) => {
   res.json({
     ...buildPortal(req.partner, { preview: true }),
     tiere: getShelterAnimalCards(req.partner.id, { includePaused: true, preview: true }),
+    // Wie GET /api/public/partners/:slug/posts, dazu die noch eingereichten (lib/partnerPosts.js).
+    posts: listPreviewPosts(req.partner.id, MAX_PUBLIC_POSTS).map(previewPostCard),
     vorschau: true,
     status: req.partner.status
   })
@@ -61,14 +85,20 @@ function withOwnAnimalsFirst(partner, tiere, distance) {
 // Grundlage ist die Antwort einer Demo-Sitzung (buildDiscover mit isDemo: true). Jede Karte des eigenen
 // Partners fliegt dort heraus (sonst stünde er doppelt da), dann kommt die eigene Karte - aus der eigenen
 // partners-Zeile gebaut, also auch als Entwurf - mit vorschau: true an die erste Stelle ihres Abschnitts.
+// Ebenso die eigenen Beiträge (Phase P2 Task 8): raus aus der Grundlage, vorn in ihren Abschnitt - direkt
+// hinter der eigenen Karte, falls die im selben Abschnitt steht.
 function buildPreviewDiscover(partner, { center, radiusKm }) {
   const base = buildDiscover({ isDemo: true, center, radiusKm })
-  const withoutOwn = (cards) => cards.filter((card) => card.kind === 'promotion' || card.id !== partner.id)
+  const ownPosts = listPreviewPosts(partner.id, NO_LIMIT).map(previewPostCard)
+  const ownPostIds = new Set(ownPosts.map((card) => card.id))
+  const postsIn = Object.fromEntries(POST_BEREICHE.map((bereich) => [bereich, ownPosts.filter((card) => card.bereich === bereich)]))
+  const withoutOwn = (cards) => cards.filter((card) => (card.kind === 'promotion' ? !ownPostIds.has(card.id) : card.id !== partner.id))
+  const withOwnPosts = (bereich, cards) => [...postsIn[bereich], ...withoutOwn(cards)]
   const distance = ownDistance(partner, center, radiusKm)
   const ownCard = { ...partnerCard(partner, distance), teaserFoto: newestVisibleFotoUrl(partner.id), vorschau: true }
   const section = SECTION_BY_TYP[partner.typ]
 
-  let hundeschulen = withoutOwn(base.hundeschulen)
+  let hundeschulen = withOwnPosts('hundeschule', base.hundeschulen)
   let begleiterPartner = withoutOwn(base.begleiter.partner)
   let partnerSpenden = withoutOwn(base.unterstuetzen.partnerSpenden)
   let tiere = base.begleiter.tiere
@@ -84,8 +114,9 @@ function buildPreviewDiscover(partner, { center, radiusKm }) {
   return {
     ...base,
     hundeschulen,
-    begleiter: { ...base.begleiter, partner: begleiterPartner, tiere },
-    unterstuetzen: { ...base.unterstuetzen, partnerSpenden },
+    begleiter: { ...base.begleiter, partner: begleiterPartner, tiere, promotions: withOwnPosts('begleiter', base.begleiter.promotions) },
+    futter: withOwnPosts('futter', base.futter),
+    unterstuetzen: { ...base.unterstuetzen, partnerSpenden, promotions: withOwnPosts('unterstuetzen', base.unterstuetzen.promotions) },
     ...(section ? {} : { vorschauHinweis: VORSCHAU_HINWEIS })
   }
 }

@@ -1,16 +1,22 @@
-const crypto = require('node:crypto')
-const fs = require('node:fs')
-const path = require('node:path')
 const express = require('express')
-const multer = require('multer')
 const db = require('../db')
 const config = require('../config')
 const { requireAdmin } = require('../middleware/admin')
 const { cleanId } = require('../lib/validate')
-const { detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('../lib/partners')
-const { stripJpegMetadata } = require('../lib/stripJpegMetadata')
-const { stripPngMetadata } = require('../lib/stripPngMetadata')
-const { validatePromotion, validateDonationReport, cleanOptionalText, validateUrl } = require('../lib/promotions')
+const {
+  validatePromotion,
+  validateAblehnungsgrund,
+  validateFreigabeFilter,
+  validateDonationReport,
+  cleanOptionalText,
+  validateUrl,
+  promotionClicksJoinSql,
+  promotionImageUrl,
+  PROMOTION_CLICKS_COLUMNS_SQL,
+  FREIGABE
+} = require('../lib/promotions')
+const { handlePromotionImageUpload, removePromotionImage } = require('../lib/promotionImage')
+const { asPartnerPostInput } = require('../lib/partnerPosts')
 
 // Phase 3 Task 1: Admin-Pflege für den Reiter "Entdecken" - Empfehlungen/Anzeigen (promotions),
 // GoFundMe-Link/Text (settings) und Transparenzberichte (donation_reports). Eingehängt unter /api/admin
@@ -32,40 +38,57 @@ function httpError(status, message) {
 
 // --- Empfehlungen/Anzeigen (promotions) ----------------------------------------------------------
 
+const NOT_FOUND = 'Diese Empfehlung gibt es nicht'
+
+// partnerName (Phase P2 Task 8): Name des verknüpften Partners, null ohne Partner.
+const findPromotionStmt = db.prepare(
+  `SELECT p.*, pa.name AS partnerName FROM promotions p LEFT JOIN partners pa ON pa.id = p.partner_id WHERE p.id = ?`
+)
+
 function findPromotion(id) {
-  return id ? db.prepare('SELECT * FROM promotions WHERE id = ?').get(id) : null
+  return id ? findPromotionStmt.get(id) : null
 }
 
-// bildUrl zusätzlich zu den Spalten - wie logoUrl bei Partnern (lib/partners.js publicPartner).
+// bildUrl zusätzlich zu den Spalten - wie logoUrl bei Partnern (lib/partners.js publicPartner) - und
+// erstelltVonPartner (Phase P2 Task 8: Beitrag eines Partners aus seinem Bereich).
 function promotionRow(row) {
   if (!row) return row
-  return { ...row, bildUrl: row.bild_file ? `/partner-media/${row.bild_file}` : null }
+  return { ...row, bildUrl: promotionImageUrl(row.bild_file), erstelltVonPartner: Boolean(row.erstellt_von_partner) }
 }
 
-// Phase 3 Task 5: Klickzahlen je Empfehlung in EINER aggregierten Abfrage (kein N+1) - clicks7 zählt die
-// letzten 7 Tage inklusive heute (tag >= date('now', '-6 days'); tag schreibt routes/redirect.js als
-// date('now'), also UTC), clicksTotal alle Tage. Nur target_type 'promotion'; ohne Klicks 0/0.
+// Klickzahlen je Empfehlung in EINER aggregierten Abfrage (lib/promotions.js promotionClicksJoinSql), dazu
+// der Partner-Name. @freigabe NULL = alle, sonst nur diese Freigabe (?freigabe=eingereicht zum Prüfen).
 const listPromotionsWithClicks = db.prepare(
-  `SELECT p.*, COALESCE(c.clicks7, 0) AS clicks7, COALESCE(c.clicksTotal, 0) AS clicksTotal
+  `SELECT p.*, pa.name AS partnerName, ${PROMOTION_CLICKS_COLUMNS_SQL}
    FROM promotions p
-   LEFT JOIN (
-     SELECT target_id,
-            SUM(CASE WHEN tag >= date('now', '-6 days') THEN anzahl ELSE 0 END) AS clicks7,
-            SUM(anzahl) AS clicksTotal
-     FROM link_clicks
-     WHERE target_type = 'promotion'
-     GROUP BY target_id
-   ) c ON c.target_id = p.id
+   LEFT JOIN partners pa ON pa.id = p.partner_id
+   ${promotionClicksJoinSql('p')}
+   WHERE (@freigabe IS NULL OR p.freigabe = @freigabe)
    ORDER BY p.created_at DESC, p.id DESC`
 )
 
-router.get('/promotions', requireAdmin, (req, res) => {
-  res.json(listPromotionsWithClicks.all().map(promotionRow))
+router.get('/promotions', requireAdmin, (req, res, next) => {
+  try {
+    const freigabe = validateFreigabeFilter(req.query.freigabe)
+    res.json(listPromotionsWithClicks.all({ freigabe }).map(promotionRow))
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
 })
+
+// Was der Admin anlegt oder ändert, ist sofort freigegeben (Phase P2 Task 8) - auch ein Beitrag eines
+// Partners. Der bleibt dabei "Anzeige" ohne "Empfehlung von" und beim selben Partner (asPartnerPostInput):
+// eine bezahlte Anzeige darf nie als Empfehlung erscheinen (Roadmap-Entscheidung 9, lib/promotions.js).
+function validateAdminPromotion(body, existing) {
+  const approved = { freigabe: FREIGABE.freigegeben, ablehnungsgrund: null }
+  if (!existing?.erstellt_von_partner) return { ...validatePromotion(body, { db }), ...approved }
+  return { ...validatePromotion(asPartnerPostInput(body), { db }), partner_id: existing.partner_id, ...approved }
+}
 
 router.post('/promotions', requireAdmin, (req, res, next) => {
   try {
-    const clean = validatePromotion(req.body || {}, { db })
+    const clean = validateAdminPromotion(req.body || {}, null)
     const columns = Object.keys(clean)
     const id = db
       .prepare(`INSERT INTO promotions (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
@@ -81,9 +104,9 @@ router.put('/promotions/:id', requireAdmin, (req, res, next) => {
   try {
     const id = cleanId(req.params.id)
     const existing = findPromotion(id)
-    if (!existing) return res.status(404).json({ error: 'Diese Empfehlung gibt es nicht' })
+    if (!existing) return res.status(404).json({ error: NOT_FOUND })
 
-    const clean = validatePromotion(req.body || {}, { db })
+    const clean = validateAdminPromotion(req.body || {}, existing)
     const columns = Object.keys(clean)
     db.prepare(`UPDATE promotions SET ${columns.map((col) => `${col} = ?`).join(', ')} WHERE id = ?`).run(
       ...columns.map((col) => clean[col]),
@@ -99,58 +122,43 @@ router.put('/promotions/:id', requireAdmin, (req, res, next) => {
 router.delete('/promotions/:id', requireAdmin, (req, res) => {
   const id = cleanId(req.params.id)
   const existing = findPromotion(id)
-  if (!existing) return res.status(404).json({ error: 'Diese Empfehlung gibt es nicht' })
-  if (existing.bild_file) fs.rmSync(path.join(config.partnerMediaDir, existing.bild_file), { force: true })
+  if (!existing) return res.status(404).json({ error: NOT_FOUND })
+  removePromotionImage(existing.bild_file)
   db.prepare('DELETE FROM promotions WHERE id = ?').run(id)
   res.status(204).end()
 })
 
-// Bild: wie das Partner-Logo (routes/admin.js POST /partners/:id/logo) - server-vergebener Dateiname,
-// Magic-Byte-Prüfung statt Content-Type, Ablage im öffentlichen partner-media-Ordner. Zusätzlich
-// (security-review Phase T Finding 12): EXIF-/PNG-Metadaten raus, bevor die Datei geschrieben wird -
-// anders als beim Partner-Logo, weil hochgeladene Anzeigen-/Empfehlungsbilder ebenso von einem Handy
-// stammen können wie Tierfotos.
-const promotionImageUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_LOGO_BYTES, files: 1, fields: 0, parts: 2 }
+// Phase P2 Task 8: Freigabe der Beiträge (und jeder anderen Empfehlung). Freigeben räumt einen früheren
+// Ablehnungsgrund weg; Ablehnen braucht einen Grund (lib/promotions.js validateAblehnungsgrund), den der
+// Partner in seiner Beitragsliste sieht.
+const setFreigabe = db.prepare('UPDATE promotions SET freigabe = ?, ablehnungsgrund = ? WHERE id = ?')
+
+router.post('/promotions/:id/freigeben', requireAdmin, (req, res) => {
+  const id = cleanId(req.params.id)
+  if (!findPromotion(id)) return res.status(404).json({ error: NOT_FOUND })
+  setFreigabe.run(FREIGABE.freigegeben, null, id)
+  res.json(promotionRow(findPromotion(id)))
 })
 
-function stripImageMetadata(buffer, mimetype) {
-  if (mimetype === 'image/jpeg') return stripJpegMetadata(buffer)
-  if (mimetype === 'image/png') return stripPngMetadata(buffer)
-  return buffer
-}
+router.post('/promotions/:id/ablehnen', requireAdmin, (req, res, next) => {
+  try {
+    const id = cleanId(req.params.id)
+    if (!findPromotion(id)) return res.status(404).json({ error: NOT_FOUND })
+    const grund = validateAblehnungsgrund(req.body?.grund)
+    setFreigabe.run(FREIGABE.abgelehnt, grund, id)
+    res.json(promotionRow(findPromotion(id)))
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
+})
 
+// Bild: gemeinsame Upload-Strecke mit den Beiträgen der Partner (lib/promotionImage.js). Ein Bild vom Admin
+// ändert die Freigabe nicht.
 router.post('/promotions/:id/image', requireAdmin, (req, res, next) => {
   const id = cleanId(req.params.id)
-  const promotion = findPromotion(id)
-  if (!promotion) return res.status(404).json({ error: 'Diese Empfehlung gibt es nicht' })
-
-  promotionImageUpload.single('file')(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      const message = err.code === 'LIMIT_FILE_SIZE' ? `Das Bild ist zu groß (max. ${MAX_LOGO_BYTES / 1024} KB)` : 'Upload fehlgeschlagen'
-      return res.status(400).json({ error: message })
-    }
-    if (err) return next(err)
-    if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen' })
-
-    const ext = detectImageExt(req.file.buffer)
-    if (!ext || !LOGO_MIME_TYPES.includes(req.file.mimetype)) {
-      return res.status(400).json({ error: 'Nur PNG, JPG oder WebP sind als Bild erlaubt' })
-    }
-
-    const stripped = stripImageMetadata(req.file.buffer, req.file.mimetype)
-
-    fs.mkdirSync(config.partnerMediaDir, { recursive: true })
-    const filename = `${crypto.randomUUID()}.${ext}`
-    fs.writeFileSync(path.join(config.partnerMediaDir, filename), stripped)
-
-    if (promotion.bild_file) {
-      fs.rmSync(path.join(config.partnerMediaDir, promotion.bild_file), { force: true })
-    }
-    db.prepare('UPDATE promotions SET bild_file = ? WHERE id = ?').run(filename, id)
-    res.status(201).json({ bildUrl: `/partner-media/${filename}` })
-  })
+  if (!findPromotion(id)) return res.status(404).json({ error: NOT_FOUND })
+  handlePromotionImageUpload(req, res, next, id)
 })
 
 // --- Einstellungen (settings) ---------------------------------------------------------------------

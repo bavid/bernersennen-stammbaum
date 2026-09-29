@@ -13,9 +13,19 @@ const MAX_TEXT_LENGTH = 600
 const MAX_EMPFOHLEN_VON_LENGTH = 120
 const MAX_URL_LENGTH = 300
 
-const BEREICH_VALUES = ['futter', 'hundeschule', 'begleiter', 'unterstuetzen']
+// 'salon' (Phase P2 Task 8): Beiträge von Hundesalons und Betreuung - ein eigener Abschnitt in "Entdecken"
+// folgt in Task 9, bis dahin wird der Bereich nur geprüft. Muss zum CHECK in db.js passen.
+const BEREICH_VALUES = ['futter', 'hundeschule', 'begleiter', 'unterstuetzen', 'salon']
 const KENNZEICHNUNG_VALUES = ['Anzeige', 'Empfehlung', 'Partner']
 const TIERART_VALUES = ['hund', 'katze', 'anderes']
+
+// Phase P2 Task 8: promotions.freigabe (in db.js bewusst ohne CHECK - geprüft wird hier). Beiträge der
+// Partner starten 'eingereicht'; öffentlich erscheint nur 'freigegeben'. Was der Admin anlegt oder ändert,
+// ist sofort freigegeben (routes/adminMarketing.js).
+const FREIGABE = Object.freeze({ eingereicht: 'eingereicht', freigegeben: 'freigegeben', abgelehnt: 'abgelehnt' })
+const FREIGABE_VALUES = Object.values(FREIGABE)
+const MIN_ABLEHNUNGSGRUND_LENGTH = 3
+const MAX_ABLEHNUNGSGRUND_LENGTH = 300
 
 // Öffentlich zeigen (Entdecken, Klick-Weiterleitung) nur Empfehlungen ohne Partner oder mit einem
 // öffentlich sichtbaren Partner (aktiv und nicht gesperrt, lib/partners.js publicPartnerSql) - ein
@@ -25,11 +35,53 @@ const TIERART_VALUES = ['hund', 'katze', 'anderes']
 // <partnerAlias>.id = <promotionAlias>.partner_id im umgebenden Query.
 const SQL_ALIAS_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
 
-function promotionPartnerVisibleSql(promotionAlias, partnerAlias) {
-  if (!SQL_ALIAS_RE.test(promotionAlias) || !SQL_ALIAS_RE.test(partnerAlias)) {
+function assertSqlAlias(...aliases) {
+  if (!aliases.every((alias) => SQL_ALIAS_RE.test(alias))) {
     throw new Error('Ungültiger Tabellen-Alias für die Empfehlungs-Abfrage')
   }
+}
+
+function promotionPartnerVisibleSql(promotionAlias, partnerAlias) {
+  assertSqlAlias(promotionAlias, partnerAlias)
   return `(${promotionAlias}.partner_id IS NULL OR (${publicPartnerSql(partnerAlias)}))`
+}
+
+// Öffentlich (Entdecken, /r/promotion/:id): freigegeben UND der Partner sichtbar (siehe oben). Erwartet
+// denselben LEFT JOIN partners wie promotionPartnerVisibleSql.
+function promotionPublicSql(promotionAlias, partnerAlias) {
+  assertSqlAlias(promotionAlias, partnerAlias)
+  return `(${promotionAlias}.freigabe = '${FREIGABE.freigegeben}' AND ${promotionPartnerVisibleSql(promotionAlias, partnerAlias)})`
+}
+
+// Aktiv und im Zeitfenster (start/ende NULL = offen) - für Entdecken, das Portal und die Kundensicht.
+function promotionActiveSql(promotionAlias) {
+  assertSqlAlias(promotionAlias)
+  const a = promotionAlias
+  return `(${a}.aktiv = 1 AND (${a}.start IS NULL OR ${a}.start <= date('now')) AND (${a}.ende IS NULL OR ${a}.ende >= date('now')))`
+}
+
+// Phase 3 Task 5: Klickzahlen je Empfehlung in EINER aggregierten Abfrage (kein N+1) - clicks7 zählt die
+// letzten 7 Tage inklusive heute (tag >= date('now', '-6 days'); tag schreibt routes/redirect.js als
+// date('now'), also UTC), clicksTotal alle Tage. Nur target_type 'promotion'; ohne Klicks 0/0. Gemeinsam
+// für die Admin-Liste und die eigenen Beiträge der Partner (lib/partnerPosts.js): den JOIN hinter FROM
+// promotions <promotionAlias>, die Spalten in die SELECT-Liste.
+const PROMOTION_CLICKS_COLUMNS_SQL = 'COALESCE(c.clicks7, 0) AS clicks7, COALESCE(c.clicksTotal, 0) AS clicksTotal'
+
+function promotionClicksJoinSql(promotionAlias) {
+  assertSqlAlias(promotionAlias)
+  return `LEFT JOIN (
+     SELECT target_id,
+            SUM(CASE WHEN tag >= date('now', '-6 days') THEN anzahl ELSE 0 END) AS clicks7,
+            SUM(anzahl) AS clicksTotal
+     FROM link_clicks
+     WHERE target_type = 'promotion'
+     GROUP BY target_id
+   ) c ON c.target_id = ${promotionAlias}.id`
+}
+
+// Bild einer Empfehlung - öffentlich über /partner-media wie Partner-Logos (lib/partners.js publicPartner).
+function promotionImageUrl(bildFile) {
+  return bildFile ? `/partner-media/${bildFile}` : null
 }
 
 function httpError(status, message) {
@@ -107,9 +159,11 @@ function validatePartnerId(value, db) {
   return id
 }
 
-// Validiert und normalisiert die Eingabe für POST/PUT /api/admin/promotions. is_demo/bild_file gehören
-// bewusst nicht dazu: is_demo setzt (wie bei Partnern, siehe lib/demoPack.js) nur der Demo-Pack-Aufbau
-// selbst, bild_file nur POST /api/admin/promotions/:id/image (siehe routes/adminMarketing.js).
+// Validiert und normalisiert die Eingabe für POST/PUT /api/admin/promotions - und (Phase P2 Task 8) für die
+// Beiträge der Partner (lib/partnerPosts.js, dort mit fester Kennzeichnung "Anzeige"). is_demo/bild_file
+// gehören bewusst nicht dazu: is_demo setzt (wie bei Partnern, siehe lib/demoPack.js) nur der
+// Demo-Pack-Aufbau selbst bzw. der Partner-Beitrag vom Partner, bild_file nur der Bild-Upload
+// (lib/promotionImage.js). freigabe/ablehnungsgrund setzen allein die Aufrufer.
 function validatePromotion(input = {}, { db } = {}) {
   const bereich = validateBereich(input.bereich)
   const kennzeichnung = validateKennzeichnung(input.kennzeichnung)
@@ -151,6 +205,23 @@ function validatePromotion(input = {}, { db } = {}) {
   }
 }
 
+// Grund einer Ablehnung (POST /api/admin/promotions/:id/ablehnen): Pflicht, ohne Steuer-/Bidi-Zeichen
+// (auch ohne Zeilenumbruch), getrimmt, 3 bis 300 Zeichen. Der Partner sieht ihn in seiner Beitragsliste.
+function validateAblehnungsgrund(value) {
+  const grund = cleanTextInput(value)
+  if (grund.length < MIN_ABLEHNUNGSGRUND_LENGTH || grund.length > MAX_ABLEHNUNGSGRUND_LENGTH) {
+    throw httpError(400, `Bitte einen Grund mit ${MIN_ABLEHNUNGSGRUND_LENGTH} bis ${MAX_ABLEHNUNGSGRUND_LENGTH} Zeichen angeben`)
+  }
+  return grund
+}
+
+// Filter der Admin-Liste (?freigabe=): leer/fehlend = alle, sonst einer der FREIGABE_VALUES.
+function validateFreigabeFilter(value) {
+  if (value === undefined || value === '') return null
+  if (!FREIGABE_VALUES.includes(value)) throw httpError(400, `Freigabe muss einer von ${FREIGABE_VALUES.join(', ')} sein`)
+  return value
+}
+
 // --- Spendenberichte (donation_reports) -----------------------------------------------------------
 // Gemeinsame Prüfung für POST/PUT /api/admin/donation-reports (routes/adminMarketing.js) und den
 // Demo-Bericht (lib/demoPack.js) - eine ungültige Seed-Angabe scheitert so genauso laut wie eine
@@ -190,7 +261,16 @@ function validateDonationReport(input = {}) {
 
 module.exports = {
   validatePromotion,
+  validateAblehnungsgrund,
+  validateFreigabeFilter,
   promotionPartnerVisibleSql,
+  promotionPublicSql,
+  promotionActiveSql,
+  promotionClicksJoinSql,
+  promotionImageUrl,
+  PROMOTION_CLICKS_COLUMNS_SQL,
+  FREIGABE,
+  FREIGABE_VALUES,
   validateDonationReport,
   cleanCents,
   cleanTextInput,
