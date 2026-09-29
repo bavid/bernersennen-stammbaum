@@ -163,10 +163,33 @@ test('Admin: Druckdaten, CSV-Export, Statistik und Herkunft', async (t) => {
     assert.equal(zugang.data.codes.length, 3)
   })
 
-  await t.test('print und CSV: 404 für unbekannte Stapel', async () => {
-    assert.equal((await get('/api/admin/voucher-batches/999999/print')).status, 404)
+  await t.test('print und CSV: 404 für unbekannte Stapel, auch die 404 mit no-store', async () => {
+    const missing = await get('/api/admin/voucher-batches/999999/print')
+    assert.equal(missing.status, 404)
+    assert.equal(missing.headers.get('cache-control'), 'no-store')
     assert.equal((await get('/api/admin/voucher-batches/abc/print')).status, 404)
-    assert.equal((await raw('/api/admin/voucher-batches/999999/export.csv')).status, 404)
+    const missingCsv = await raw('/api/admin/voucher-batches/999999/export.csv')
+    assert.equal(missingCsv.status, 404)
+    assert.equal(missingCsv.headers.get('cache-control'), 'no-store')
+  })
+
+  await t.test('print, CSV und stats: kein ETag (kein Validator für Klartext-Codes)', async () => {
+    const batchId = kundenkarten.data.batch.id
+    for (const res of [
+      await get(`/api/admin/voucher-batches/${batchId}/print`),
+      await raw(`/api/admin/voucher-batches/${batchId}/export.csv`),
+      await get('/api/admin/stats'),
+      await get('/api/admin/voucher-batches/999999/print')
+    ]) {
+      assert.equal(res.headers.get('etag'), null)
+      assert.equal(res.headers.get('cache-control'), 'no-store')
+    }
+  })
+
+  await t.test('Indizes für Statistik und Herkunft sind angelegt', () => {
+    const indexNames = (table) => db.prepare(`PRAGMA index_list(${table})`).all().map((row) => row.name)
+    assert.ok(indexNames('link_clicks').includes('idx_link_clicks_tag'))
+    assert.ok(indexNames('families').includes('idx_families_partner'))
   })
 
   // --- CSV ----------------------------------------------------------------------------------------

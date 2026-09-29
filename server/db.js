@@ -352,6 +352,8 @@ db.exec(`
 // Welcher Partner den Gutschein vergeben hat, mit dem dieses Zuhause entstand ("kam über Partner X") -
 // gesetzt beim Einlösen aus vouchers.partner_id (siehe lib/vouchers.js redeemVoucher).
 addColumnIfMissing('families', 'partner_id', 'INTEGER')
+// Phase 5 Task 1: Statistik und Herkunft schlagen Bereiche je Partner nach (lib/adminStats.js, lib/herkunft.js).
+db.exec('CREATE INDEX IF NOT EXISTS idx_families_partner ON families(partner_id)')
 
 // Phase 2 Task 3: Umkreissuche (lib/places/). places_cache hält OSM-Ergebnisse 7 Tage (Schlüssel siehe
 // lib/places/cache.js), places_budget zählt echte Overpass-Anfragen pro Kalendertag gegen
@@ -437,6 +439,8 @@ db.exec(`
     target_type TEXT NOT NULL, target_id INTEGER NOT NULL, tag TEXT NOT NULL, anzahl INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (target_type, target_id, tag)
   );
+  -- Phase 5 Task 1: Tagesreihe und 7/30-Tage-Summen der Klicks filtern nach tag (lib/adminStats.js).
+  CREATE INDEX IF NOT EXISTS idx_link_clicks_tag ON link_clicks(tag);
 
   CREATE TABLE IF NOT EXISTS donation_reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT, zeitraum TEXT NOT NULL,

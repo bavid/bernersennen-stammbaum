@@ -12,13 +12,36 @@ const { collectStats } = require('../lib/adminStats')
 // und requireAdmin auf jeder einzelnen Route.
 const router = express.Router()
 
-// Ohne hinterlegten Passwort-Hash gibt es keinen Admin-Zugang - wie routes/admin.js.
+const JSON_TYPE = 'application/json; charset=utf-8'
+const CSV_TYPE = 'text/csv; charset=utf-8'
+const BATCH_NOT_FOUND = 'Diesen Stapel gibt es nicht'
+
+// security-review Phase 5: JEDE Antwort dieser Routen (auch 404/401) ohne Zwischenspeicher - kein Browser-
+// oder Proxy-Cache darf Klartext-Codes behalten. Vor dem Passwort-Hash-Gate, damit auch dessen 404 no-store trägt.
 router.use((req, res, next) => {
-  if (!config.adminPasswordHash) return res.status(404).json({ error: 'Nicht gefunden' })
+  res.setHeader('Cache-Control', 'no-store')
   next()
 })
 
-const BATCH_NOT_FOUND = 'Diesen Stapel gibt es nicht'
+// Ohne Validator: res.send/res.json erzeugen ein ETag (Express-Einstellung 'etag', app-weit) - Antworten
+// mit Klartext-Codes sollen keinen Wert bekommen, über den ein Zwischenspeicher oder Client sie
+// wiedererkennt oder per If-None-Match nachfragt. res.end schreibt den Body direkt (Express hüllt es nicht
+// ein), Node setzt Content-Length selbst und lässt den Body bei HEAD weg.
+function endWithoutEtag(res, status, contentType, body) {
+  res.status(status)
+  res.setHeader('Content-Type', contentType)
+  res.end(body)
+}
+
+function sendJson(res, status, payload) {
+  endWithoutEtag(res, status, JSON_TYPE, JSON.stringify(payload))
+}
+
+// Ohne hinterlegten Passwort-Hash gibt es keinen Admin-Zugang - wie routes/admin.js.
+router.use((req, res, next) => {
+  if (!config.adminPasswordHash) return sendJson(res, 404, { error: 'Nicht gefunden' })
+  next()
+})
 
 const findBatchStmt = db.prepare(`
   SELECT b.id, b.label, b.zweck, b.partner_typ AS partnerTyp,
@@ -44,32 +67,28 @@ function findBatch(param) {
 }
 
 // Klartext-Codes für die Druckseite (Client Task 2): nur offene Gutscheine mit Geheimtext
-// (lib/voucherPrint.js printableCodes), no-store, damit kein Browser-/Proxy-Cache sie behält. Das Protokoll
-// vermerkt nur Stapel-Id und Anzahl - nie einen Code.
+// (lib/voucherPrint.js printableCodes). Das Protokoll vermerkt nur Stapel-Id und Anzahl - nie einen Code.
 router.get('/voucher-batches/:id/print', requireAdmin, (req, res) => {
   const batch = findBatch(req.params.id)
-  if (!batch) return res.status(404).json({ error: BATCH_NOT_FOUND })
+  if (!batch) return sendJson(res, 404, { error: BATCH_NOT_FOUND })
 
   const { codes, nichtDruckbar } = printableCodes(printRowsStmt.all(batch.id))
   console.info(`[admin] Druckdaten für Stapel ${batch.id}: ${codes.length} Codes, ${nichtDruckbar} nicht druckbar`)
-  res.setHeader('Cache-Control', 'no-store')
-  res.json({ batch: printBatch(batch), codes, nichtDruckbar })
+  sendJson(res, 200, { batch: printBatch(batch), codes, nichtDruckbar })
 })
 
 // CSV ohne Codes (lib/voucherPrint.js voucherCsv): Semikolon, UTF-8 mit BOM (Excel), als Anhang.
 router.get('/voucher-batches/:id/export.csv', requireAdmin, (req, res) => {
   const batch = findBatch(req.params.id)
-  if (!batch) return res.status(404).json({ error: BATCH_NOT_FOUND })
+  if (!batch) return sendJson(res, 404, { error: BATCH_NOT_FOUND })
 
-  res.setHeader('Cache-Control', 'no-store')
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
   res.setHeader('Content-Disposition', `attachment; filename="gutscheine-stapel-${batch.id}.csv"`)
-  res.send(voucherCsv(csvRowsStmt.all(batch.id)))
+  endWithoutEtag(res, 200, CSV_TYPE, voucherCsv(csvRowsStmt.all(batch.id)))
 })
 
 // Statistik ohne Demo-Daten und ohne Personenbezug (lib/adminStats.js).
 router.get('/stats', requireAdmin, (req, res) => {
-  res.json(collectStats())
+  sendJson(res, 200, collectStats())
 })
 
 module.exports = router
