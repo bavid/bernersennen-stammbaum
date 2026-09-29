@@ -5,8 +5,15 @@ const db = require('../db')
 // Phase 5 Task 5b: Protokoll der Admin-Aktionen (Tabelle admin_log, db.js). Aktionen: 'view' - der Admin hat
 // einen Bereich in der Admin-Ansicht geöffnet (routes/admin.js POST /view/:familyId), ziel 'family:<id>';
 // 'gutschein-zugewiesen' (Phase N Task 1) - einer Anfrage wurde ein Gutschein zugewiesen
-// (routes/adminAnfragen.js), ziel 'anfrage:<id>'. ziel benennt nur das Objekt, nie Namen, Inhalte oder Codes.
-const AKTION = Object.freeze({ view: 'view', gutscheinZugewiesen: 'gutschein-zugewiesen' })
+// (routes/adminAnfragen.js), ziel 'anfrage:<id>'; 'telegram-eingerichtet'/'telegram-entfernt' (Phase N Task 2) - Bot-Token
+// oder Chat-ID im Admin eingetragen bzw. gelöscht (routes/adminNotify.js), ziel 'telegram'. ziel benennt nur das
+// Objekt, nie Namen, Inhalte, Codes oder Zugangsdaten.
+const AKTION = Object.freeze({
+  view: 'view',
+  gutscheinZugewiesen: 'gutschein-zugewiesen',
+  telegramEingerichtet: 'telegram-eingerichtet',
+  telegramEntfernt: 'telegram-entfernt'
+})
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200

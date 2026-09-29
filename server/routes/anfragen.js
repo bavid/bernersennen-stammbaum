@@ -5,7 +5,8 @@ const { rejectHoneypot } = require('../middleware/abuse')
 const { optionalSession } = require('../middleware/auth')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { checkEmailDomain, EMAIL_DOMAIN_RESULT } = require('../lib/emailCheck')
-const { validateAnfrage, insertAnfrage, httpError, EMAIL_UNKNOWN_MESSAGE } = require('../lib/anfragen')
+const { validateAnfrage, insertAnfrage, httpError, EMAIL_UNKNOWN_MESSAGE, TYP } = require('../lib/anfragen')
+const { notify, EREIGNIS } = require('../lib/notify')
 
 // Phase N Task 1: öffentliche Anfragen - "Noch keinen Gutschein?" (Login-Seite) und "Partner-Zugang anfragen"
 // (/partner-werden). Eingehängt unter /api/public/anfragen in app.js. Prüfung und Speichern: lib/anfragen.js.
@@ -30,15 +31,21 @@ const anfrageLimiter = rateLimit({
 // website ist der Honigtopf (middleware/abuse.js). Die E-Mail muss eine Domain haben, die es gibt (MX, sonst A/AAAA,
 // lib/emailCheck.js) - hängt das DNS, wird die Anfrage trotzdem angenommen. Eine gleiche offene Anfrage aus den
 // letzten 24 Stunden legt nichts neu an, die Antwort ist dieselbe: 201 { ok: true }, nie ein Echo der Eingaben.
-// Inhalte und E-Mail werden nie geloggt. In Demo-Sitzungen wird nichts verschickt (403).
+// Inhalte und E-Mail werden nie geloggt. In Demo-Sitzungen wird nichts verschickt (403). Eine neue Anfrage meldet
+// die Admin-Benachrichtigung (lib/notify.js) - ohne "Details mitsenden" nur, DASS es eine gibt.
 router.post('/', anfrageLimiter, rejectHoneypot, optionalSession, async (req, res, next) => {
   try {
     if (req.isDemo) return res.status(403).json({ error: DEMO_MESSAGE })
     const clean = validateAnfrage(req.body)
     const domain = await checkEmailDomain(clean.email)
     if (domain === EMAIL_DOMAIN_RESULT.ungueltig) throw httpError(400, EMAIL_UNKNOWN_MESSAGE)
-    insertAnfrage(clean)
+    const { created } = insertAnfrage(clean)
     res.status(201).json({ ok: true })
+    // Phase N Task 2: nur für eine neue Zeile (ein Duplikat meldet nichts), asynchron - die Antwort wartet nicht.
+    if (created) {
+      const ereignis = clean.typ === TYP.partner ? EREIGNIS.partnerAnfrage : EREIGNIS.gutscheinAnfrage
+      notify(ereignis, { name: clean.name, email: clean.email, firma: clean.firma, partnerTyp: clean.partner_typ })
+    }
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)

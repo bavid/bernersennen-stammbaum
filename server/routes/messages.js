@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { cleanText } = require('../lib/validate')
+const { notify, EREIGNIS } = require('../lib/notify')
 
 // "Schreib dem Admin": Feedback und Problemmeldungen aus den Rudeln.
 // Nur der Admin liest sie – das Rudel teilt sich ein Login, deshalb gibt es bewusst
@@ -40,6 +41,8 @@ router.post('/', requireAuth, messageLimiter, (req, res) => {
      VALUES (@family_id, @type, @autor_name, @contact, @text, @page, @user_agent)`
   ).run(values)
   res.status(201).json({ sent: true })
+  // Phase N Task 2: Hinweis an den Admin (lib/notify.js) - der Text nur mit "Details mitsenden", höchstens 200 Zeichen.
+  notify(EREIGNIS.feedback, { typ: values.type, text: values.text, demo: req.isDemo })
 })
 
 module.exports = router

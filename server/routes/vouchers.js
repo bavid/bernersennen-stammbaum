@@ -18,6 +18,7 @@ const {
 } = require('../lib/vouchers')
 const { isPartnerAccessCode, partnerAccessCheckInfo, redeemPartnerAccess } = require('../lib/partnerAccess')
 const { requireRole, roleOf, isRole, mayInviteAs, FORBIDDEN_MESSAGE } = require('../lib/roles')
+const { notify, EREIGNIS } = require('../lib/notify')
 
 const router = express.Router()
 
@@ -51,18 +52,36 @@ router.post('/check', codeLimiter, (req, res) => {
 
 // Ein Partner-Zugang legt einen Partner samt Bereich an (lib/partnerAccess.js), jeder andere Gutschein
 // "Meine Chronik" (lib/vouchers.js). Der Zweck eines Gutscheins ändert sich nach dem Anlegen nie - die
-// Weiche darf ihn also vor der eigentlichen Einlöse-Transaktion lesen.
+// Weiche darf ihn also vor der eigentlichen Einlöse-Transaktion lesen. art: 'partner' | 'zuhause' (für die
+// Benachrichtigung unten).
 function redeemAnyVoucher(body) {
   const { code, name, typ, plz, username, password, email, shelterMayRead } = body
-  if (isPartnerAccessCode(db, code)) return redeemPartnerAccess(db, { code, name, typ, plz, username, password, email })
-  return redeemVoucher(db, { code, name, username, password, email, shelterMayRead })
+  if (isPartnerAccessCode(db, code)) {
+    return { ...redeemPartnerAccess(db, { code, name, typ, plz, username, password, email }), art: 'partner' }
+  }
+  return { ...redeemVoucher(db, { code, name, username, password, email, shelterMayRead }), art: 'zuhause' }
+}
+
+const findNewAreaStmt = db.prepare('SELECT name, is_demo FROM families WHERE id = ?')
+
+// Phase N Task 2: "neue Registrierung" an den Admin (lib/notify.js) - ein Partner-Zugang mit eigenem Text; mit
+// "Details mitsenden" samt Bereichsnamen. Asynchron, die Antwort ist da schon unterwegs.
+// Wirft nie - die Antwort ist schon verschickt, ein Fehler hier darf sie nicht mehr berühren.
+function notifyRegistration(familyId, art) {
+  try {
+    const area = findNewAreaStmt.get(familyId)
+    notify(EREIGNIS.registrierung, { art, name: area?.name, demo: Boolean(area?.is_demo) })
+  } catch {
+    console.warn('Telegram-Benachrichtigung fehlgeschlagen (Bereich nicht lesbar)')
+  }
 }
 
 router.post('/redeem', codeLimiter, rejectHoneypot, (req, res, next) => {
   try {
-    const { familyId, code: normalized } = redeemAnyVoucher(req.body || {})
+    const { familyId, code: normalized, art } = redeemAnyVoucher(req.body || {})
     setSessionCookie(res, familyId)
     res.status(201).json({ ...buildMe(familyId, familyId, false), key: formatCode(normalized), fromOthers: true })
+    notifyRegistration(familyId, art)
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)

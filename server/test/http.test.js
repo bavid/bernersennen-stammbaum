@@ -209,3 +209,18 @@ test('safeFetchJson: eine hängende DNS-Auflösung löst dieselbe Zeitüberschre
   )
   assert.ok(Date.now() - t0 < 2000, 'die Gesamt-Zeitschranke greift, statt auf die DNS-Auflösung zu warten')
 })
+
+// Phase N Task 2: der Status der Gegenseite steht als Zahl am Fehler (upstreamStatus) - Telegram-Aufrufer unterscheiden
+// damit "abgelehnt" (z. B. 401 bei falschem Token) von "nicht erreichbar"; die Meldung bleibt ohne URL.
+test('safeFetchJson: Nicht-2xx-Antwort trägt upstreamStatus, die Meldung nennt keinen Pfad', async (t) => {
+  const { server, port } = await startLocalServer((req, res) => {
+    res.writeHead(401, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ok: false, description: 'Unauthorized' }))
+  })
+  t.after(() => server.close())
+
+  await assert.rejects(
+    safeFetchJson(`http://127.0.0.1:${port}/bot-geheim/getMe`, { allowHosts: ['127.0.0.1'], allowLocalHttp: true }),
+    (err) => err.status === 502 && err.upstreamStatus === 401 && !err.message.includes('geheim')
+  )
+})

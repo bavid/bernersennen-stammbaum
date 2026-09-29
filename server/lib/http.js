@@ -127,7 +127,11 @@ function performRequest({ targetIp, hostname, port, path, protocol, method, head
       }
       if (status < 200 || status >= 300) {
         response.resume()
-        return done(reject, httpLibError(502, `Unerwarteter Status ${status}`))
+        // upstreamStatus: der Status der Gegenseite als Zahl (z. B. 401 bei einem falschen Telegram-Token) - damit
+        // Aufrufer "abgelehnt" von "nicht erreichbar" unterscheiden können, ohne die Meldung zu zerlegen.
+        const err = httpLibError(502, `Unerwarteter Status ${status}`)
+        err.upstreamStatus = status
+        return done(reject, err)
       }
 
       const chunks = []

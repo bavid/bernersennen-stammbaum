@@ -1,4 +1,5 @@
 const path = require('node:path')
+const { isValidToken, isValidChatId } = require('./lib/telegramFormat')
 
 const isProduction = process.env.NODE_ENV === 'production'
 const DEV_JWT_SECRET = 'dev-only-secret-never-use-in-production'
@@ -96,6 +97,21 @@ function readPublicUrl(value) {
   return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`
 }
 
+// Telegram-Benachrichtigungen (Phase N Task 2): Bot-Token und Chat-ID trägt der Admin im Admin ein
+// (lib/telegramConfig.js, verschlüsselt in settings). TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID aus der Umgebung sind nur
+// der Rückfall, solange dort nichts eingetragen ist. Beide nötig und im erwarteten Format (lib/telegramFormat.js),
+// sonst null (aus). Der Hinweis im Log nennt nie die Werte selbst.
+function readTelegram(env = process.env, logger = console) {
+  const botToken = (env.TELEGRAM_BOT_TOKEN || '').trim()
+  const chatId = (env.TELEGRAM_CHAT_ID || '').trim()
+  if (!botToken && !chatId) return null
+  if (!isValidToken(botToken) || !isValidChatId(chatId)) {
+    logger.warn('TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID fehlen oder haben ein unerwartetes Format – der Rückfall aus der Umgebung bleibt aus.')
+    return null
+  }
+  return { botToken, chatId }
+}
+
 function isHttpsUrl(url) {
   return /^https:\/\//i.test(url || '')
 }
@@ -118,6 +134,7 @@ module.exports = {
   readAppEnv,
   readLegal,
   readPublicUrl,
+  readTelegram,
   isHttpsUrl,
   cookiePrefix,
   sessionCookie: `${cookiePrefix}session`,
@@ -157,5 +174,7 @@ module.exports = {
   publicUrl,
   httpsPublicUrl,
   // Impressum/Datenschutz (Task 7, siehe routes/auth.js GET /config und lib/geo.js-Nachbarn)
-  legal: readLegal()
+  legal: readLegal(),
+  // Rückfall für die Telegram-Benachrichtigungen (siehe readTelegram) - nie loggen, nie an einen Client geben.
+  telegram: readTelegram()
 }
