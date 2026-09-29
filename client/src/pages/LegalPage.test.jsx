@@ -215,3 +215,38 @@ describe('LegalPage – /datenschutz', () => {
     expect(container.textContent).toMatch(/wie\s+viele Nachrichten in kurzer Zeit/)
   })
 })
+
+// Phase N: Anfragen (Gutschein, Partner-Zugang) und Telegram-Benachrichtigungen des Betreibers.
+describe('LegalPage – /datenschutz, Anfragen und Benachrichtigungen', () => {
+  const headings = () => [...container.querySelectorAll('h2')].map((h) => h.textContent)
+  const text = () => container.textContent.replace(/\s+/g, ' ')
+
+  test('Abschnitt "Anfragen": was, wofür, DNS-Prüfung der Domain, Löschfristen, nur der Betreiber sieht sie', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(headings()).toContain('Anfragen')
+    expect(text()).toMatch(/eure E-Mail-Adresse \(Pflicht, damit wir antworten können\), freiwillig ein Name und eine Nachricht/)
+    expect(text()).toMatch(/Name der Hundeschule, des Tierheims oder Geschäfts, die Art des Angebots und, freiwillig, die Postleitzahl/)
+    expect(text()).toMatch(/nur, um euch einen Gutschein oder einen Partner-Zugang zu schicken/)
+    expect(text()).toMatch(/per DNS, ob es die Domain der E-Mail-Adresse gibt/)
+    expect(text()).toMatch(/Erledigte und abgelehnte Anfragen löschen wir 180 Tage nach dem Abschluss automatisch/)
+    expect(text()).toMatch(/offene spätestens 365 Tage nach dem Eingang bzw\. der letzten Bearbeitung/)
+    expect(text()).toMatch(/sieht nur der Betreiber/)
+  })
+
+  test('Abschnitt "Benachrichtigungen des Betreibers": Telegram, standardmäßig ohne personenbezogene Daten, Details nur mit Schalter', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    expect(headings()).toContain('Benachrichtigungen des Betreibers')
+    expect(text()).toMatch(/Telegram/)
+    expect(text()).toMatch(/neuen Anfragen, neuen Registrierungen, Feedback/)
+    expect(text()).toMatch(/Standardmäßig enthalten diese Nachrichten keine personenbezogenen Daten/)
+    expect(text()).toMatch(/„Details mitsenden“ ein, gehen zusätzlich Name und E-Mail-Adresse einer Anfrage/)
+    expect(text()).toMatch(/der Name eines neuen Bereichs/)
+    expect(text()).toMatch(/euer Browser hat dabei keinen Kontakt zu Telegram/)
+    // Beide Abschnitte stehen vor "Rechte und Kontakt".
+    expect(headings().indexOf('Benachrichtigungen des Betreibers')).toBeLessThan(headings().indexOf('Rechte und Kontakt'))
+  })
+})

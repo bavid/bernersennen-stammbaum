@@ -277,6 +277,35 @@ describe('AdminVouchers – Liste und Details', () => {
     expect(items[1].querySelector('.admin-voucher-batch-actions')).toBeNull()
   })
 
+  // Phase N: einer Anfrage zugewiesene Codes bleiben offen, werden aber nicht noch einmal vergeben.
+  test('zugewiesene Codes: "frei: n" im Kopf (offen minus zugewiesen), "zugewiesen" in den Details', async () => {
+    voucherBatches.mockResolvedValue([
+      { id: 1, label: 'Karten Herbst', kind: 'admin', zweck: 'chronik', size: 5, open: 4, redeemed: 1, revoked: 0, assigned: 1, created_at: '2026-01-05 10:00:00' },
+      { id: 2, label: 'Karten Winter', kind: 'admin', zweck: 'chronik', size: 5, open: 5, redeemed: 0, revoked: 0, assigned: 0, created_at: '2026-01-05 10:00:00' }
+    ])
+    voucherBatch.mockResolvedValue({
+      batch: { id: 1, label: 'Karten Herbst', kind: 'admin', size: 2, created_at: '2026-01-05 10:00:00' },
+      vouchers: [
+        { id: 10, code: 'ABCD-1234-HJKM', hint: 'HJKM', status: 'offen', redeemed_at: null, redeemed_by_name: null, zugewiesen: true },
+        { id: 11, code: 'EFGH-5678-NPQR', hint: 'NPQR', status: 'offen', redeemed_at: null, redeemed_by_name: null, zugewiesen: false }
+      ]
+    })
+    await render()
+
+    const heads = [...container.querySelectorAll('.admin-voucher-batch-head')]
+    expect(heads[0].textContent).toContain('4 offen')
+    expect(heads[0].textContent).toContain('frei: 3')
+    // Ohne Zuweisungen wäre "frei" dasselbe wie "offen" - dann bleibt die Pille weg.
+    expect(heads[1].textContent).not.toContain('frei:')
+
+    await act(async () => heads[0].click())
+    const items = [...container.querySelectorAll('.admin-voucher-detail li')]
+    expect(items[0].querySelector('.admin-voucher-assigned').textContent).toBe('zugewiesen')
+    expect(items[1].querySelector('.admin-voucher-assigned')).toBeNull()
+    // Zugewiesen, aber offen: zurückziehen bleibt möglich.
+    expect(items[0].querySelector('button').textContent).toBe('Zurückziehen')
+  })
+
   test('ein Fehler beim Laden der Liste erscheint als Alert', async () => {
     voucherBatches.mockRejectedValue(new Error('Fehler 401'))
     await render()

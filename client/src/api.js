@@ -87,6 +87,10 @@ export const api = {
     const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
     return request(`/public/partners/${encodeURIComponent(slug)}/contact${qs}`, json('POST', payload))
   },
+  // Anfragen (Phase N, server/routes/anfragen.js): "Noch keinen Gutschein?" (typ 'gutschein') und "Partner-Zugang
+  // anfragen" (typ 'partner'). payload { typ, name?, email, nachricht?, firma?, partnerTyp?, plz?, website } - website
+  // ist der Honigtopf. Antwort 201 { ok: true } (nie ein Echo), auch aus einer Demo-Sitzung.
+  sendAnfrage: (payload) => request('/public/anfragen', json('POST', payload)),
   // Öffentlicher Steckbrief eines Tiers (/t/:slug) - kein Login, immer noindex (siehe SteckbriefPage).
   publicAnimal: (slug) => request(`/public/animals/${encodeURIComponent(slug)}`),
   // Happy Ends (Phase T Task 6): bis zu 6 vermittelte Tiere mit Einwilligung ihrer neuen Familie, für
@@ -206,6 +210,32 @@ export const api = {
     viewFamily: (id) => request(`/admin/view/${encodeURIComponent(id)}`, { method: 'POST' }),
     // Protokoll dieser Aufrufe, neueste zuerst (Bereich und Zeitpunkt, keine Inhalte).
     log: () => request('/admin/log'),
+
+    // Anfragen (Phase N, server/routes/adminAnfragen.js): eine Seite der Liste (100 je Seite, ohne status alle,
+    // offene zuerst) -> { anfragen, gesamt, seite, seiten }; Status/Notiz ändern (Antwort: die ganze Anfrage),
+    // löschen (204). Die Zuweisung liefert den Code genau einmal ({ code, anfrage }, Server: no-store) - der Client
+    // hält ihn nur, solange der Dialog offen ist.
+    anfragen: ({ status, seite } = {}) => {
+      const params = new URLSearchParams()
+      if (status) params.set('status', status)
+      if (seite) params.set('seite', String(seite))
+      const qs = params.toString()
+      return request(`/admin/anfragen${qs ? `?${qs}` : ''}`)
+    },
+    updateAnfrage: (id, payload) => request(`/admin/anfragen/${encodeURIComponent(id)}`, json('PUT', payload)),
+    assignAnfrageGutschein: (id, batchId) => request(`/admin/anfragen/${encodeURIComponent(id)}/gutschein`, json('POST', { batchId })),
+    deleteAnfrage: (id) => request(`/admin/anfragen/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+    // Telegram-Benachrichtigungen (Phase N, server/routes/adminNotify.js). Alle Antworten außer Chat finden und
+    // Testnachricht: { eingerichtet, quelle, tokenHinweis, chatId, einstellungen } - der Token selbst kommt nie zurück.
+    notifySettings: () => request('/admin/notify-settings'),
+    // Nur Booleans, auch einzeln: { gutschein_anfrage?, partner_anfrage?, registrierung?, feedback?, beitrag?, details? }
+    updateNotifySettings: (payload) => request('/admin/notify-settings', json('PUT', payload)),
+    // { token?, chatId? } - fehlend = unverändert, '' = löschen. Ein neuer Token wird vorher bei Telegram geprüft.
+    saveTelegram: (payload) => request('/admin/notify-settings/telegram', json('PUT', payload)),
+    // [{ id, titel, typ }] - die Chats, die dem Bot zuletzt geschrieben haben (mit dem gespeicherten Token).
+    findTelegramChats: ({ token } = {}) => request('/admin/notify-settings/chat-finden', json('POST', token ? { token } : {})),
+    sendNotifyTest: () => request('/admin/notify-test', { method: 'POST' }),
 
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),

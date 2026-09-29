@@ -13,6 +13,8 @@ import AdminPromotions from '../components/AdminPromotions.jsx'
 import AdminPostApproval from '../components/AdminPostApproval.jsx'
 import AdminSupport from '../components/AdminSupport.jsx'
 import AdminLog from '../components/AdminLog.jsx'
+import AdminAnfragen from '../components/AdminAnfragen.jsx'
+import AdminNotify from '../components/AdminNotify.jsx'
 
 // Gültiges Ziel für einen Partner-Gutscheinstapel (siehe routes/admin.js POST /voucher-batches)
 function partnerVoucherEligible(partner) {
@@ -120,6 +122,8 @@ function Dashboard({ onLogout }) {
   // zählt promotionsVersion hoch und beide laden neu. pendingCount: Zähler im Kopf.
   const [promotionsVersion, setPromotionsVersion] = useState(0)
   const [pendingCount, setPendingCount] = useState(0)
+  // Phase N: offene Anfragen (AdminAnfragen meldet den Zähler) - ebenfalls im Kopf.
+  const [openRequests, setOpenRequests] = useState(0)
   const bumpPromotions = useCallback(() => setPromotionsVersion((version) => version + 1), [])
 
   useEffect(() => {
@@ -146,6 +150,12 @@ function Dashboard({ onLogout }) {
           <ThemeMark size={34} /> {theme.appName} · <strong>Admin</strong>
         </span>
         <span className="admin-header-actions">
+          {openRequests > 0 && (
+            <a href="#admin-anfragen-title" className="btn btn-ghost admin-header-pending">
+              <Icon name="mail" />
+              {openRequests} {openRequests === 1 ? 'Anfrage' : 'Anfragen'}
+            </a>
+          )}
           {pendingCount > 0 && (
             <a href="#admin-approval-title" className="btn btn-ghost admin-header-pending">
               <Icon name="megaphone" />
@@ -174,6 +184,11 @@ function Dashboard({ onLogout }) {
             <AdminStats bereiche={overview.stats.families} />
 
             <StatsGrid stats={overview.stats} />
+
+            {/* Phase N: Anfragen (Gutschein, Partner-Zugang) und die Telegram-Benachrichtigungen dazu. */}
+            <AdminAnfragen onCountChange={setOpenRequests} />
+
+            <AdminNotify />
 
             <AdminMessages
               onCountChange={(delta) =>

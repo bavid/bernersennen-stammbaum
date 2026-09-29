@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
+import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
 
 const DEMO_KEY = 'hundeschule'
 
@@ -43,6 +44,13 @@ export default function LoginPartnerEntry({ onLogin, onRedeem }) {
         <button type="button" className="login-link-btn" onClick={onRedeem}>
           Gutschein einlösen
         </button>
+      </p>
+      {/* Phase N: das Anfrage-Formular steht auf der Infoseite unter #anfragen (PartnerInfoPage). */}
+      <p className="field-hint">
+        Noch keinen Zugang?{' '}
+        <Link to={`/partner-werden#${PARTNER_REQUEST_ANCHOR}`} className="login-link-btn">
+          Partner-Zugang anfragen
+        </Link>
       </p>
     </section>
   )

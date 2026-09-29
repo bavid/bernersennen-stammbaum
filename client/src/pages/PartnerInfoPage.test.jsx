@@ -30,13 +30,13 @@ afterEach(() => {
   demo.mockReset()
 })
 
-async function render(props = {}) {
+async function render(props = {}, path = '/partner-werden') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <PartnerInfoPage onDemo={() => {}} {...props} />
       </MemoryRouter>
     )
@@ -145,5 +145,39 @@ describe('PartnerInfoPage – Kontakt', () => {
     config.mockRejectedValue(new Error('Fehler 500'))
     await render()
     expect([...container.querySelectorAll('a')].some((a) => a.textContent.includes('Kontakt über das Impressum'))).toBe(true)
+  })
+})
+
+// Phase N: "Partner-Zugang anfragen" direkt unter den Demo-Knöpfen, Sprungziel #anfragen.
+describe('PartnerInfoPage – Partner-Zugang anfragen', () => {
+  test('steht als zweiter Abschnitt direkt unter den Demo-Knöpfen, mit Formular und Erklärung', async () => {
+    await render()
+
+    const sections = [...container.querySelectorAll('.partner-info-page > section')]
+    const request = sections[1]
+    expect(request.id).toBe('anfragen')
+    expect(request.querySelector('h2').textContent).toBe('Partner-Zugang anfragen')
+    expect(request.querySelector('.request-why h3').textContent).toBe('Warum anfragen?')
+    expect(request.querySelector('#request-partner-firma')).not.toBeNull()
+    expect(request.querySelector('button[type="submit"]').textContent).toBe('Partner-Zugang anfragen')
+  })
+
+  test('/partner-werden#anfragen rückt den Abschnitt nach oben und fokussiert seine Überschrift', async () => {
+    // jsdom kennt scrollIntoView nicht - ein Stellvertreter prüft, dass der Abschnitt gerufen wird.
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    try {
+      await render({}, '/partner-werden#anfragen')
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' })
+      expect(scrollIntoView.mock.contexts[0]).toBe(container.querySelector('#anfragen'))
+      expect(document.activeElement).toBe(container.querySelector('#partner-info-request-title'))
+    } finally {
+      delete Element.prototype.scrollIntoView
+    }
+  })
+
+  test('ohne Sprungmarke bleibt der Fokus, wo er ist', async () => {
+    await render()
+    expect(document.activeElement).not.toBe(container.querySelector('#partner-info-request-title'))
   })
 })

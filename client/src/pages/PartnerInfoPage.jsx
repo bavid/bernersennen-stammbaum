@@ -1,18 +1,21 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { api } from '../api'
 import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
+import RequestPartnerForm from '../components/RequestPartnerForm.jsx'
 import { useNoIndex } from '../hooks/useNoIndex.js'
 import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
+import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
 
 // /partner-werden (Phase 5 Task 4): öffentliche Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung -
 // ganz oben zwei große Demo-Knöpfe (Demo-Partner-Bereiche, lib/demoPartners.js - Phase U: erst ansehen, dann
-// lesen), darunter was ein Partner-Profil bietet, wie es losgeht, und der Kontakt zum Betreiber (E-Mail aus
-// /api/config, sonst das Impressum). Verlinkt von der Login-Seite ("Mehr erfahren", "Für Partner") und aus der
-// Partnerliste. noindex, bis die Domain steht (Phase G) - dann den Hook hier entfernen.
+// lesen), darunter "Partner-Zugang anfragen" (Phase N, #anfragen), was ein Partner-Profil bietet, wie es losgeht,
+// und der Kontakt zum Betreiber (E-Mail aus /api/config, sonst das Impressum). Verlinkt von der Login-Seite ("Mehr
+// erfahren", "Partner-Zugang anfragen", "Für Partner") und aus der Partnerliste. noindex, bis die Domain steht
+// (Phase G) - dann den Hook hier entfernen.
 
 export const DEMO_PARTNERS = [
   { key: 'hundeschule', label: 'Demo als Hundeschule ansehen', slug: DEMO_PARTNER_SLUGS.hundeschule },
@@ -75,6 +78,38 @@ function ContactAction({ legal }) {
   )
 }
 
+// "Partner-Zugang anfragen" (Phase N) direkt unter den Demo-Knöpfen. /partner-werden#anfragen (LoginPartnerEntry)
+// springt hierher - ein Router-Link scrollt nicht selbst: der Abschnitt rückt nach oben, der Fokus auf seine
+// Überschrift (für Tastatur und Screenreader).
+function RequestSection() {
+  const { hash } = useLocation()
+  const sectionRef = useRef(null)
+  const headingRef = useRef(null)
+
+  useEffect(() => {
+    if (hash !== `#${PARTNER_REQUEST_ANCHOR}`) return
+    sectionRef.current?.scrollIntoView?.({ block: 'start' })
+    headingRef.current?.focus({ preventScroll: true })
+  }, [hash])
+
+  return (
+    <section
+      ref={sectionRef}
+      id={PARTNER_REQUEST_ANCHOR}
+      className="partner-info-section partner-info-request card"
+      aria-labelledby="partner-info-request-title"
+    >
+      <div>
+        <h2 id="partner-info-request-title" ref={headingRef} tabIndex={-1}>
+          Partner-Zugang anfragen
+        </h2>
+        <p className="muted">Kostenlos für Hundeschulen, Tierheime, Hundesalons und Betreuung.</p>
+      </div>
+      <RequestPartnerForm />
+    </section>
+  )
+}
+
 // family: die laufende Sitzung (App.jsx) oder null - nur für das Ziel von "Zurück" (PublicHeader).
 export default function PartnerInfoPage({ onDemo, family = null }) {
   const [legal, setLegal] = useState(null)
@@ -109,6 +144,8 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
         </div>
         <DemoButtons onDemo={onDemo} />
       </section>
+
+      <RequestSection />
 
       <section className="partner-info-section" aria-labelledby="partner-info-benefits-title">
         <h2 id="partner-info-benefits-title">Was ihr bekommt</h2>
@@ -147,7 +184,7 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
       <section className="partner-info-section partner-info-contact card" aria-labelledby="partner-info-contact-title">
         <div>
           <h2 id="partner-info-contact-title">Lust, dabei zu sein?</h2>
-          <p>Schreibt uns kurz, wer ihr seid – wir melden uns mit eurem Partner-Zugang.</p>
+          <p>Noch Fragen, bevor ihr anfragt? Schreibt uns einfach direkt.</p>
         </div>
         <ContactAction legal={legal} />
       </section>

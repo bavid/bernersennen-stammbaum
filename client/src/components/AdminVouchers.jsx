@@ -8,6 +8,7 @@ import AdminVoucherForm from './AdminVoucherForm.jsx'
 import ZweckBadge from './ZweckBadge.jsx'
 import { formatDateShort, relativeTime } from '../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
+import { freeCodes } from '../lib/anfragen.js'
 
 function CreatedCodes({ codes, onDismiss }) {
   const toast = useToast()
@@ -95,6 +96,8 @@ function BatchDetail({ batchId, onRevoked }) {
           <span className={`pill ${voucher.status === 'offen' ? '' : 'pill-rust'}`}>
             {VOUCHER_STATUS_LABEL[voucher.status] || voucher.status}
           </span>
+          {/* Phase N: einer Anfrage zugewiesen - bleibt offen und druckbar, wird aber nicht noch einmal vergeben. */}
+          {voucher.zugewiesen && voucher.status === 'offen' && <span className="pill admin-voucher-assigned">zugewiesen</span>}
           {/* Eingelöste Gutscheine bleiben sichtbar: wann und welcher Bereich daraus entstand */}
           {voucher.redeemed_at ? (
             <span className="muted">
@@ -182,6 +185,8 @@ export default function AdminVouchers({ joinableFamilies = [], partners = [], ac
                     <ZweckBadge batch={batch} />
                     {batch.partner_name && <span className="pill pill-rust">für {batch.partner_name}</span>}
                     <span className="pill">{batch.open} offen</span>
+                    {/* Phase N: sind Codes an Anfragen vergeben, zählt "frei" die noch zuweisbaren. */}
+                    {batch.assigned > 0 && <span className="pill">frei: {freeCodes(batch)}</span>}
                     <span className="pill">{batch.redeemed} eingelöst</span>
                     {batch.revoked > 0 && <span className="pill">{batch.revoked} zurückgezogen</span>}
                   </span>

@@ -4,15 +4,16 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { login, loginUser, checkVoucher, redeemVoucher, recover, demo } = vi.hoisted(() => ({
+const { login, loginUser, checkVoucher, redeemVoucher, recover, demo, sendAnfrage } = vi.hoisted(() => ({
   login: vi.fn(),
   loginUser: vi.fn(),
   checkVoucher: vi.fn(),
   redeemVoucher: vi.fn(),
   recover: vi.fn(),
-  demo: vi.fn()
+  demo: vi.fn(),
+  sendAnfrage: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { login, loginUser, checkVoucher, redeemVoucher, recover, demo } }))
+vi.mock('../api', () => ({ api: { login, loginUser, checkVoucher, redeemVoucher, recover, demo, sendAnfrage } }))
 
 import LoginPage from './LoginPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -39,6 +40,7 @@ afterEach(() => {
   redeemVoucher.mockReset()
   recover.mockReset()
   demo.mockReset()
+  sendAnfrage.mockReset()
 })
 
 async function render(props) {
@@ -367,5 +369,56 @@ describe('LoginPage – zwei Einstiege', () => {
 
     expect(container.querySelector('.login-card-head h1').textContent).toBe('Gutschein einlösen')
     expect(segmentButton('Gutschein einlösen').getAttribute('aria-pressed')).toBe('true')
+  })
+})
+
+// Phase N: "Noch keinen Gutschein?" im Einstieg für Tierhalter und "Partner-Zugang anfragen" im Partner-Einstieg.
+describe('LoginPage – Gutschein und Partner-Zugang anfragen', () => {
+  const requestCard = () => container.querySelector('.login-entries > .login-entry .login-request')
+
+  test('"Noch keinen Gutschein?" steht zugeklappt im Einstieg für Tierhalter - ein Klick öffnet das Formular', async () => {
+    await render()
+
+    const card = requestCard()
+    expect(card.querySelector('h2').textContent).toBe('Noch keinen Gutschein?')
+    expect(card.textContent).toContain('Schreib uns – wir schicken dir einen Gutschein per E-Mail.')
+    expect(card.querySelector('form')).toBeNull()
+
+    await act(async () => linkButton('Gutschein anfragen').click())
+
+    expect(card.querySelector('form')).not.toBeNull()
+    expect(card.querySelector('.request-why h3').textContent).toBe('Warum per Gutschein?')
+    expect(document.activeElement).toBe(container.querySelector('#login-request-name'))
+  })
+
+  test('Anfrage abschicken: Dank statt Formular, die Anmeldung bleibt unberührt', async () => {
+    sendAnfrage.mockResolvedValue({ ok: true })
+    await render()
+    await act(async () => linkButton('Gutschein anfragen').click())
+
+    setInputValue(container.querySelector('#login-request-email'), 'wilma@example.org')
+    await act(async () => requestCard().querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+
+    expect(sendAnfrage).toHaveBeenCalledWith(expect.objectContaining({ typ: 'gutschein', email: 'wilma@example.org' }))
+    expect(requestCard().querySelector('form')).toBeNull()
+    expect(requestCard().querySelector('[role="status"]').textContent).toBe('Danke! Wir melden uns per E-Mail, sobald wieder Platz ist.')
+    expect(login).not.toHaveBeenCalled()
+  })
+
+  test('auch beim Einlösen (z. B. /v aus der Demo) - aber nicht beim Passwort-Wiederherstellen', async () => {
+    await render({ initialMode: 'redeem' })
+    expect(requestCard()).not.toBeNull()
+
+    act(() => root.unmount())
+    container.remove()
+    await render()
+    await act(async () => linkButton('Passwort vergessen?').click())
+    expect(requestCard()).toBeNull()
+  })
+
+  test('im Partner-Einstieg: "Partner-Zugang anfragen" führt zum Formular auf /partner-werden#anfragen', async () => {
+    await render()
+    const link = [...container.querySelectorAll('.login-partner a')].find((a) => a.textContent === 'Partner-Zugang anfragen')
+    expect(link.getAttribute('href')).toBe('/partner-werden#anfragen')
   })
 })

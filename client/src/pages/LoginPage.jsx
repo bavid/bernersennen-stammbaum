@@ -6,6 +6,7 @@ import ThemeMark from '../components/ThemeMark.jsx'
 import Icon from '../components/Icon.jsx'
 import LoginForm from '../components/LoginForm.jsx'
 import LoginPartnerEntry from '../components/LoginPartnerEntry.jsx'
+import LoginVoucherRequest from '../components/LoginVoucherRequest.jsx'
 import RedeemForm from '../components/RedeemForm.jsx'
 import RecoverForm from '../components/RecoverForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
@@ -45,8 +46,8 @@ const MODE_COPY = {
   }
 }
 
-// Zwei Einstiege nebeneinander (am Handy untereinander, Phase U): "Für Tierhalter" mit Anmelden, Gutschein und
-// Demo, daneben "Für Hundeschulen, Tierheime & Co." (LoginPartnerEntry) mit Partner-Demo und "Mehr erfahren".
+// Zwei Einstiege nebeneinander (am Handy untereinander, Phase U): "Für Tierhalter" mit Anmelden, Gutschein,
+// Demo und "Noch keinen Gutschein?" (Phase N, LoginVoucherRequest), daneben "Für Hundeschulen, Tierheime & Co." (LoginPartnerEntry) mit Partner-Demo und "Mehr erfahren".
 // Auf /v (initialMode 'redeem': Gutschein-Link, "Eigene Familie anlegen" aus der Demo) geht es ums Einlösen - dort
 // bleibt der Partner-Einstieg weg.
 export default function LoginPage({ onLogin, initialMode = 'login', initialCode = '' }) {
@@ -182,6 +183,9 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
                 <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
               </div>
             )}
+
+            {/* Phase N: ohne Gutschein einen anfragen - nicht beim Einlösen eines Partner-Zugangs. */}
+            {mode !== 'recover' && !showingKeyReveal && !partnerRedeem && <LoginVoucherRequest />}
           </section>
           {showPartnerEntry && !showingKeyReveal && <LoginPartnerEntry onLogin={onLogin} onRedeem={handlePartnerRedeem} />}
         </div>

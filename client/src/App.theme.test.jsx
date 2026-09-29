@@ -65,9 +65,10 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
   })
 })
 
-describe('DemoBanner in Partner- und Tierheim-Demos (Phase P2)', () => {
-  // "Schreib dem Admin" nimmt aus Demo-Sitzungen nichts an (403) - deshalb die Kontaktdaten im Impressum.
-  test('statt "Eigene Familie anlegen" führt der Knopf zum Kontakt im Impressum', async () => {
+describe('DemoBanner in Partner- und Tierheim-Demos (Phase P2, Phase N)', () => {
+  // Ein Gutschein für ein Zuhause hilft einem Partner nicht - seit Phase N fragt der Knopf direkt einen
+  // Partner-Zugang an (Anfragen nimmt der Server auch aus Demo-Sitzungen an; Details in DemoBanner.test.jsx).
+  test('statt "Eigene Familie anlegen" fragt der Knopf einen Partner-Zugang an', async () => {
     const onLeave = () => {
       throw new Error('darf die Demo nicht verlassen')
     }
@@ -78,10 +79,9 @@ describe('DemoBanner in Partner- und Tierheim-Demos (Phase P2)', () => {
         </ThemeProvider>
       </MemoryRouter>
     )
-    const link = container.querySelector('.demo-banner a')
-    expect(link.textContent).toBe('Eigenes Partner-Profil? Kontakt im Impressum')
-    expect(link.getAttribute('href')).toBe('/impressum')
-    expect(container.querySelector('.demo-banner button')).toBeNull()
+    const buttons = [...container.querySelectorAll('.demo-banner button')]
+    expect(buttons.map((btn) => btn.textContent)).toEqual(['Partner-Zugang anfragen'])
+    expect(container.querySelector('.demo-banner a')).toBeNull()
     expect(container.textContent).not.toContain('Eigene Familie anlegen')
   })
 })

@@ -197,6 +197,63 @@ describe('api.admin – Entdecken pflegen (Phase 3 Task 5)', () => {
   })
 })
 
+// Phase N: Anfragen (öffentlich und im Admin) und Telegram-Benachrichtigungen.
+describe('api – Anfragen und Benachrichtigungen (Phase N)', () => {
+  test('sendAnfrage: POST an /public/anfragen mit Honigtopf im Body', async () => {
+    const fetchMock = stubFetch({ ok: true })
+
+    await api.sendAnfrage({ typ: 'gutschein', email: 'wilma@example.org', website: '' })
+
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/public/anfragen')
+    expect(options.method).toBe('POST')
+    expect(JSON.parse(options.body)).toEqual({ typ: 'gutschein', email: 'wilma@example.org', website: '' })
+  })
+
+  test('Admin-Anfragen: Liste mit Status und Seite, Ändern, Zuweisen, Löschen', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.admin.anfragen()
+    await api.admin.anfragen({ status: 'offen', seite: 2 })
+    await api.admin.updateAnfrage(7, { status: 'erledigt' })
+    await api.admin.assignAnfrageGutschein(7, 12)
+    await api.admin.deleteAnfrage(7)
+
+    const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+    expect(calls).toEqual([
+      ['/api/admin/anfragen', 'GET'],
+      ['/api/admin/anfragen?status=offen&seite=2', 'GET'],
+      ['/api/admin/anfragen/7', 'PUT'],
+      ['/api/admin/anfragen/7/gutschein', 'POST'],
+      ['/api/admin/anfragen/7', 'DELETE']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ status: 'erledigt' })
+    expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toEqual({ batchId: 12 })
+  })
+
+  test('Telegram: Einstellungen, Zugangsdaten, Chat finden, Testnachricht', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.admin.notifySettings()
+    await api.admin.updateNotifySettings({ details: true })
+    await api.admin.saveTelegram({ chatId: '424242' })
+    await api.admin.findTelegramChats()
+    await api.admin.sendNotifyTest()
+
+    const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+    expect(calls).toEqual([
+      ['/api/admin/notify-settings', 'GET'],
+      ['/api/admin/notify-settings', 'PUT'],
+      ['/api/admin/notify-settings/telegram', 'PUT'],
+      ['/api/admin/notify-settings/chat-finden', 'POST'],
+      ['/api/admin/notify-test', 'POST']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ details: true })
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ chatId: '424242' })
+    expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toEqual({})
+  })
+})
+
 describe('api.partnerArea – eigenes Profil, Einblicke, Vorschau (Phase P)', () => {
   test('Profil: lesen, nur geänderte Felder per PUT, veröffentlichen mit { aktiv }', async () => {
     const fetchMock = stubFetch({})

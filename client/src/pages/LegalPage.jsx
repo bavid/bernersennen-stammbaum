@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../api'
 import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
+import PrivacyRequests from '../components/PrivacyRequests.jsx'
 
 const NO_LEGAL_HINT = 'Die Betreiberangaben werden vor dem Start ergänzt.'
 
@@ -158,6 +159,9 @@ function Datenschutz({ legal }) {
         viele Nachrichten in kurzer Zeit von einem Anschluss aus verschickt werden können; die Inhalte und Kontaktdaten
         landen dabei nicht in Protokollen.
       </p>
+
+      {/* Phase N: Anfragen (Gutschein, Partner-Zugang) und Telegram-Benachrichtigungen des Betreibers. */}
+      <PrivacyRequests />
 
       <h2>Rechte und Kontakt</h2>
       <p>

@@ -1,0 +1,387 @@
+/* Anfragen und Benachrichtigungen (Phase N): die öffentlichen Formulare "Noch keinen Gutschein?" (Login-Seite,
+   Demo-Band) und "Partner-Zugang anfragen" (/partner-werden), dazu im Admin die Karten "Anfragen" und
+   "Benachrichtigungen (Telegram)". Ruhig gehalten: Flächen statt Rahmen-Gewitter, keine Warnfarben. Nur Tokens aus
+   tokens.css. */
+
+/* --- Öffentliche Formulare ---------------------------------------------------------------------- */
+
+/* "Warum per Gutschein?" / "Warum anfragen?" - kurze Erklärung über den Feldern, als ruhige Fläche. */
+.request-why {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-left: 3px solid color-mix(in srgb, var(--tan) 70%, transparent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--paper-deep);
+}
+
+.request-why h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.request-why p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.request-privacy {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.request-privacy a {
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.request-success {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.request-success svg {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 3px;
+}
+
+/* Login-Seite: eigene, gedämpfte Fläche unter "Demo ansehen" - klar ein Nebenweg, nicht die Hauptaktion. */
+.login-request {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.login-request h2 {
+  font-size: var(--text-lg);
+}
+
+.login-request > p {
+  margin: 0;
+}
+
+.login-request .btn {
+  white-space: normal;
+  text-align: center;
+}
+
+/* /partner-werden: beim Sprung auf #anfragen rückt der Abschnitt nach oben (mit etwas Luft), die Überschrift bekommt
+   den Fokus - ohne Rahmen bei Maus/Script-Fokus. */
+.partner-info-request {
+  scroll-margin-top: var(--space-6);
+}
+
+.partner-info-request h2:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.partner-info-request p {
+  margin-top: var(--space-2);
+}
+
+/* --- Admin: Anfragen ------------------------------------------------------------------------------ */
+
+.admin-anfragen,
+.admin-notify {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.admin-anfragen-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-anfrage {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.admin-anfrage.is-abgelehnt {
+  background: var(--surface-sunk);
+}
+
+.admin-anfrage-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.admin-anfrage-typ.is-access {
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.admin-anfrage-email {
+  color: var(--rust);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.admin-anfrage-head .muted {
+  font-size: var(--text-sm);
+}
+
+.admin-anfrage-meta,
+.admin-anfrage-gutschein {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.admin-anfrage-gutschein {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.admin-anfrage-gutschein svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--success);
+}
+
+.admin-anfrage-text {
+  margin: 0;
+  white-space: pre-line;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.admin-anfrage-notiz {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.admin-anfrage-notiz .admin-row-actions {
+  justify-content: flex-start;
+}
+
+.admin-anfrage-notiz-text {
+  justify-self: start;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--paper-deep);
+  font-size: var(--text-sm);
+  white-space: pre-line;
+  color: var(--ink-soft);
+}
+
+.admin-anfragen-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+/* Zuweisen-Dialog: Code groß und mittig (wie KeyReveal), darunter die E-Mail zum Kopieren. */
+.admin-anfrage-code {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.admin-anfrage-code .key-reveal-value {
+  text-align: center;
+}
+
+.admin-anfrage-mail {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.admin-anfrage-mail textarea {
+  min-height: 11rem;
+}
+
+.admin-voucher-assigned {
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+}
+
+/* --- Admin: Benachrichtigungen (Telegram) ------------------------------------------------------ */
+
+.admin-notify-intro {
+  margin: 0;
+}
+
+.admin-notify-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.admin-notify-status.is-on {
+  color: var(--success);
+}
+
+.admin-notify-status svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Fünf nummerierte Schritte: Zahl links (wie "So funktioniert's" auf /partner-werden, nur kleiner), Inhalt rechts. */
+.admin-notify-steps {
+  display: grid;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: notify-step;
+}
+
+.admin-notify-steps > li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+  counter-increment: notify-step;
+}
+
+.admin-notify-steps > li::before {
+  content: counter(notify-step);
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--paper-deep);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.admin-notify-steps > li > * {
+  grid-column: 2;
+}
+
+.admin-notify-steps h3 {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 2rem;
+}
+
+.admin-notify-steps p {
+  margin: 0;
+  color: var(--text);
+}
+
+/* Feld und Knopf nebeneinander, der Knopf auf Höhe der Eingabe. */
+.admin-notify-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2) var(--space-3);
+}
+
+.admin-notify-inline .field {
+  flex: 1 1 18rem;
+}
+
+.admin-notify-inline > .btn {
+  margin-top: 1.55rem;
+}
+
+.admin-notify-chat,
+.admin-notify-test {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.admin-notify-chat .admin-notify-inline {
+  justify-self: stretch;
+}
+
+.admin-notify-chats {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.admin-notify-switches {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.admin-notify-switches legend {
+  padding: 0 var(--space-2);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.admin-notify-switch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
+
+.admin-notify-switch {
+  color: var(--text);
+}
+
+.admin-notify-details {
+  display: grid;
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.admin-notify-remove {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+@media (max-width: 560px) {
+  .admin-notify-inline > .btn {
+    margin-top: 0;
+  }
+}
