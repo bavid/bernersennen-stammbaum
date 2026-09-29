@@ -87,3 +87,27 @@ Namen (pre-commit-Hook); Demo: Formulare sichtbar, in Demo-Sitzungen kein Versan
 - 🧑 Betreiber: Bot bei @BotFather anlegen, dem Bot „/start“ schreiben, dann im Admin unter „Benachrichtigungen“ den
   Token eintragen, „Chat finden“, Chat wählen, „Testnachricht“.
 - Review (Sicherheit: verschlüsselter Token, SSRF-Allowlist, Personendaten), Browser-Prüfung, Deploy.
+
+---
+
+### Task 5: Globale Hinweis-Banner (Wunsch 29.09.)
+
+**Ziel:** Der Admin setzt Hinweise für alle Besucher, z. B. Wartungsarbeiten oder Neuigkeiten.
+
+- **Server:** Tabelle `hinweise (id, titel, text, stufe 'info'|'wartung'|'wichtig', start, ende, aktiv, created_at)`.
+  - Admin-CRUD unter `/api/admin/hinweise`.
+  - Öffentlich `GET /api/hinweise`: nur aktive im Zeitraum (`start <= jetzt <= ende`, leeres Ende = offen), neueste zuerst, höchstens 5.
+  - Titel ≤ 80, Text ≤ 1000 Zeichen, reiner Text (Zeilenumbrüche erlaubt, kein HTML).
+  - Tests.
+- **Client:** Band oben auf allen Seiten (öffentlich, eingeloggt, Admin-Vorschau):
+  - Kopfzeile mit Titel, der Text ist aufklappbar („Mehr“).
+  - Bei mehreren Hinweisen ein Karussell mit Vor/Zurück und „1 / 3“; kein Auto-Wechsel.
+  - Wegklicken (×) merkt sich die ID in `sessionStorage` (mit try/catch). Weggeklickte bleiben in dieser Browser-Sitzung weg, ein neuer Hinweis erscheint trotzdem.
+  - Stufe „wartung“ in Warnfarbe, sonst ruhig.
+  - Tastatur und Screenreader: `role="region"`, `aria-live="polite"` nur beim Wechsel.
+- **Admin:** Reiter „Hinweise“ (bzw. unter „Einstellungen“):
+  - Liste, anlegen, bearbeiten, löschen;
+  - Zeitraum per Datum und Uhrzeit;
+  - Vorschau des Bands;
+  - Status (geplant, aktiv, abgelaufen).
+- **Demo:** ein Beispiel-Hinweis nur auf der Vorschau bzw. in der Testumgebung, nie in Prod.
