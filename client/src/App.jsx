@@ -27,6 +27,13 @@ import RouteFallback from './components/RouteFallback.jsx'
 // Der Admin-Bereich (samt aller Admin*-Komponenten) kommt erst bei Bedarf als eigener Chunk - nur der
 // Admin ruft /admin je auf, alle anderen laden ihn so nicht mit.
 const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
+// Druckseite für Gutschein-Karten (Phase 5 Task 2): ebenfalls nur für den Admin, eigener Chunk - die QR-
+// Bibliothek und die Karten lädt sonst niemand mit. Prüft die Admin-Sitzung selbst und schickt ohne zu /admin.
+const AdminPrintPage = lazy(() => import('./pages/AdminPrintPage.jsx'))
+
+// /admin/gutscheine/<stapel-id>/druck - die Id ist eine Zahl (server/lib/validate.js cleanId), alles andere
+// bleibt beim Admin-Dashboard.
+const ADMIN_PRINT_RE = /^\/admin\/gutscheine\/(\d+)\/druck\/?$/
 
 // /p/<slug> – öffentliches Partner-Portal, unabhängig von Groß-/Kleinschreibung des Pfads egal (der
 // Slug selbst bleibt roh, die Route validiert nur die Form).
@@ -284,10 +291,11 @@ export default function App() {
 
   // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login, immer im Standard-Auftritt
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    const printBatchId = pathname.match(ADMIN_PRINT_RE)?.[1]
     return (
       <ThemeProvider themeId="standard">
         <Suspense fallback={<RouteFallback />}>
-          <AdminPage />
+          {printBatchId ? <AdminPrintPage batchId={printBatchId} /> : <AdminPage />}
         </Suspense>
       </ThemeProvider>
     )

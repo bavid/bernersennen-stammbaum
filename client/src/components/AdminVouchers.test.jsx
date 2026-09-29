@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const { voucherBatches, createVoucherBatch, voucherBatch, revokeVoucher } = vi.hoisted(() => ({
@@ -9,7 +10,17 @@ const { voucherBatches, createVoucherBatch, voucherBatch, revokeVoucher } = vi.h
   voucherBatch: vi.fn(),
   revokeVoucher: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { admin: { voucherBatches, createVoucherBatch, voucherBatch, revokeVoucher } } }))
+vi.mock('../api', () => ({
+  api: {
+    admin: {
+      voucherBatches,
+      createVoucherBatch,
+      voucherBatch,
+      revokeVoucher,
+      voucherCsvUrl: (id) => `/api/admin/voucher-batches/${id}/export.csv`
+    }
+  }
+}))
 
 import AdminVouchers from './AdminVouchers.jsx'
 
@@ -49,7 +60,14 @@ async function render(props) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
-  await act(async () => root.render(<AdminVouchers joinableFamilies={families} {...props} />))
+  // MemoryRouter: "Karten drucken" ist ein Router-Link zur Druckseite.
+  await act(async () =>
+    root.render(
+      <MemoryRouter>
+        <AdminVouchers joinableFamilies={families} {...props} />
+      </MemoryRouter>
+    )
+  )
   return container
 }
 
@@ -218,6 +236,25 @@ describe('AdminVouchers – Liste und Details', () => {
     expect(items[0].textContent).toContain('Zurückgezogen')
     expect(items[0].textContent).not.toContain('widerrufen')
     expect(items[1].textContent).toContain('Offen')
+  })
+
+  // Phase 5 Task 2: Druck- und CSV-Links je Stapel, nur bei offenen Gutscheinen.
+  test('"Karten drucken" und "CSV" gibt es nur für Stapel mit offenen Gutscheinen', async () => {
+    voucherBatches.mockResolvedValue([
+      { id: 1, label: 'Frühjahr', kind: 'admin', size: 5, open: 3, redeemed: 2, revoked: 0, created_at: '2026-01-05 10:00:00' },
+      { id: 2, label: 'Aufgebraucht', kind: 'admin', size: 2, open: 0, redeemed: 2, revoked: 0, created_at: '2026-01-05 10:00:00' }
+    ])
+    await render()
+
+    const items = [...container.querySelectorAll('.admin-voucher-batch')]
+    const links = [...items[0].querySelectorAll('.admin-voucher-batch-actions a')]
+    expect(links.map((a) => a.textContent.trim())).toEqual(['Karten drucken', 'CSV'])
+    expect(links[0].getAttribute('href')).toBe('/admin/gutscheine/1/druck')
+    expect(links[1].getAttribute('href')).toBe('/api/admin/voucher-batches/1/export.csv')
+    expect(links[1].hasAttribute('download')).toBe(true)
+    // Kein Link im Kopf-Knopf, keine Klartext-Codes in der Liste.
+    expect(items[0].querySelector('.admin-voucher-batch-head a')).toBeNull()
+    expect(items[1].querySelector('.admin-voucher-batch-actions')).toBeNull()
   })
 
   test('ein Fehler beim Laden der Liste erscheint als Alert', async () => {

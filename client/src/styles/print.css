@@ -1,0 +1,351 @@
+/* Druckseite für Gutschein-Karten (AdminPrintPage, VoucherSheets, VoucherCard - Phase 5 Task 2).
+   Oben die Bildschirm-Vorschau (A4-Bögen auf Papier-Hintergrund), unten die Druckregeln: A4 mit 10 mm
+   Rand, ein Bogen je Seite, App-Oberfläche ausgeblendet. Die Karten selbst nutzen feste Druckfarben statt
+   der Theme-Tokens - auf Papier gibt es keinen Dunkelmodus. */
+
+.print-page {
+  min-height: 100dvh;
+  background: var(--paper);
+}
+
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) clamp(var(--space-4), 4vw, var(--space-8));
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.print-toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.print-main {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: var(--space-8) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
+}
+
+.print-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.print-head h1 {
+  font-size: var(--text-2xl);
+}
+
+.print-head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.voucher-sheets {
+  display: grid;
+  gap: var(--space-8);
+  justify-items: center;
+  overflow-x: auto;
+  padding-bottom: var(--space-4);
+}
+
+/* Bogen als Blatt: 210 × 297 mm, der 10-mm-Rand als Innenabstand - so sieht die Vorschau aus wie der Druck. */
+.voucher-sheet {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 10mm;
+  background: #fff;
+  color: #1c1511;
+  color-scheme: light;
+  box-shadow: var(--shadow-card);
+  break-inside: avoid;
+}
+
+.voucher-sheet-label {
+  position: absolute;
+  top: 3mm;
+  right: 10mm;
+  font-size: 7pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a8f84;
+}
+
+.voucher-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 85mm);
+  grid-auto-rows: 55mm;
+  justify-content: center;
+}
+
+/* Rückseite: die Reihenfolge läuft von rechts nach links, damit beim beidseitigen Druck (Wenden an der
+   langen Kante) jede Rückseite hinter ihrer Vorderseite liegt - auch auf einem nur teilweise gefüllten Bogen. */
+.voucher-sheet-back .voucher-sheet-grid {
+  direction: rtl;
+}
+
+/* Karte 85 × 55 mm (Scheckkarten-Maß). Gestrichelte Kante als Schnittlinie, border-box hält das Maß. */
+.voucher-card {
+  --card-ink: #1c1511;
+  --card-muted: #5b4f45;
+  --card-accent: #a4431d;
+  --card-line: #a99d90;
+
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1.5mm;
+  width: 85mm;
+  height: 55mm;
+  padding: 4mm 5mm 3.5mm;
+  border: 0.25mm dashed var(--card-line);
+  background: #fff;
+  color: var(--card-ink);
+  direction: ltr;
+  font-family: var(--font-body);
+  font-size: 7.5pt;
+  line-height: 1.3;
+  break-inside: avoid;
+  overflow: hidden;
+}
+
+/* Partner-Stapel: Platz für den Farbstreifen am linken Rand */
+.voucher-card-partner {
+  padding-left: 7.5mm;
+}
+
+.voucher-card-stripe {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3.5mm;
+  background: var(--partner-farbe, var(--card-accent));
+}
+
+.voucher-card-head {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+}
+
+.voucher-card-mark {
+  flex-shrink: 0;
+}
+
+.voucher-card-brand {
+  font-family: var(--font-display);
+  font-size: 10pt;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.voucher-card-partner-logo {
+  height: 8mm;
+  max-width: 22mm;
+  margin-left: auto;
+  object-fit: contain;
+}
+
+.voucher-card-body {
+  display: grid;
+  grid-template-columns: 1fr 24mm;
+  align-items: center;
+  gap: 3mm;
+  min-height: 0;
+}
+
+.voucher-card-text {
+  display: grid;
+  gap: 1mm;
+  min-width: 0;
+}
+
+.voucher-card-claim {
+  font-family: var(--font-display);
+  font-size: 12.5pt;
+  font-weight: 600;
+  line-height: 1.12;
+  color: var(--card-ink);
+}
+
+.voucher-card-bullets {
+  display: grid;
+  gap: 0.4mm;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-weight: 700;
+}
+
+.voucher-card-bullets li::before {
+  content: '·';
+  margin-right: 1.2mm;
+  color: var(--card-accent);
+  font-weight: 800;
+}
+
+.voucher-card-by {
+  margin: 0;
+  font-size: 7pt;
+  color: var(--card-muted);
+}
+
+/* QR mit Ruhezone (mind. 4 Module hell rundum) durch weißen Innenabstand. */
+.voucher-qr {
+  display: block;
+  width: 24mm;
+  height: 24mm;
+  padding: 1.5mm;
+  background: #fff;
+}
+
+.voucher-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1mm 3mm;
+  padding-top: 1.5mm;
+  border-top: 0.2mm solid #e3d5c1;
+}
+
+.voucher-card-code {
+  font-family: 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 10.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--card-ink);
+}
+
+.voucher-card-hint {
+  font-size: 6.5pt;
+  color: var(--card-muted);
+}
+
+/* Rückseite */
+
+.voucher-card-back {
+  grid-template-rows: auto 1fr auto;
+  gap: 2mm;
+}
+
+.voucher-card-back-title {
+  font-family: var(--font-display);
+  font-size: 11pt;
+  font-weight: 600;
+}
+
+.voucher-card-steps {
+  display: grid;
+  gap: 1mm;
+  margin: 0;
+  padding-left: 4mm;
+  font-size: 8pt;
+}
+
+.voucher-card-steps li::marker {
+  color: var(--card-accent);
+  font-weight: 800;
+}
+
+.voucher-card-privacy {
+  margin: 0;
+  padding-top: 1.5mm;
+  border-top: 0.2mm solid #e3d5c1;
+  font-size: 6.5pt;
+  line-height: 1.35;
+  color: var(--card-muted);
+}
+
+/* Druck */
+
+@media print {
+  /* Benannte Seite statt einer zweiten namenlosen @page-Regel: collage.css druckt seine Seiten randlos über
+     die namenlose @page (margin: 0) - eine weitere würde beide Drucke gegeneinander ausspielen. Der Bogen
+     bringt den 10-mm-Rand als Innenabstand selbst mit, so druckt er in jedem Browser gleich: mit benannter
+     Seite (margin: 0) ebenso wie über die namenlose Regel der Collage. */
+  @page voucher {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #1c1511;
+  }
+
+  /* collage.css versteckt beim Drucken die App (#root), weil die Collage außerhalb druckt - die Druckseite
+     setzt die Klasse am <body>, solange sie offen ist (AdminPrintPage PRINT_BODY_CLASS). */
+  body.has-voucher-print > #root {
+    display: block !important;
+  }
+
+  /* App-Oberfläche: Umgebungs- und Demo-Band, Kopf und Navigation der App, Admin-Kopf, Toasts sowie die
+     Werkzeugleiste und Hinweise der Druckseite selbst kommen nicht aufs Papier. */
+  .env-banner,
+  .demo-banner,
+  .app-header,
+  .app-nav,
+  .admin-header,
+  .toast,
+  .print-toolbar,
+  .print-head,
+  .warning-banner,
+  .error-banner {
+    display: none !important;
+  }
+
+  .print-page,
+  .print-main {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .voucher-sheets {
+    display: block;
+    overflow: visible;
+    padding: 0;
+  }
+
+  /* Ein Bogen je Blatt: 210 mm breit, 10 mm Innenabstand, knapp unter 297 mm hoch - ein Hauch Luft, damit
+     Rundungen keine leere Seite hinter jedem Bogen erzeugen. */
+  .voucher-sheet {
+    page: voucher;
+    width: 210mm;
+    height: 296mm;
+    min-height: 0;
+    margin: 0;
+    padding: 10mm;
+    box-shadow: none;
+    break-after: page;
+    break-inside: avoid;
+  }
+
+  .voucher-sheet:last-child {
+    break-after: auto;
+  }
+
+  .voucher-sheet-label {
+    display: none;
+  }
+
+  .voucher-card,
+  .voucher-card-stripe,
+  .voucher-qr {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
@@ -46,6 +47,23 @@ function CreatedCodes({ codes, onDismiss }) {
           <li key={code}>{code}</li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+// Phase 5 Task 2: Karten drucken (AdminPrintPage, /admin/gutscheine/:id/druck) und CSV ohne Codes - nur
+// solange der Stapel offene Gutscheine hat, sonst gäbe es nichts zu drucken. Außerhalb des Kopf-Knopfs,
+// damit kein Link in einem Button steckt.
+function BatchActions({ batch }) {
+  if (!(batch.open > 0)) return null
+  return (
+    <div className="admin-voucher-batch-actions">
+      <Link to={`/admin/gutscheine/${batch.id}/druck`} className="btn btn-ghost">
+        <Icon name="printer" /> Karten drucken
+      </Link>
+      <a href={api.admin.voucherCsvUrl(batch.id)} download className="btn btn-ghost">
+        <Icon name="download" /> CSV
+      </a>
     </div>
   )
 }
@@ -167,6 +185,7 @@ export default function AdminVouchers({ joinableFamilies = [], partners = [], ac
                     {batch.revoked > 0 && <span className="pill">{batch.revoked} zurückgezogen</span>}
                   </span>
                 </button>
+                <BatchActions batch={batch} />
                 {open && (
                   <div className="admin-voucher-detail">
                     <BatchDetail batchId={batch.id} onRevoked={loadBatches} />

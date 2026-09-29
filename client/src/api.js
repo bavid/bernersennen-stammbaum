@@ -173,6 +173,11 @@ export const api = {
     createVoucherBatch: (payload) => request('/admin/voucher-batches', json('POST', payload)),
     voucherBatch: (id) => request(`/admin/voucher-batches/${id}`),
     revokeVoucher: (id) => request(`/admin/vouchers/${id}/revoke`, { method: 'POST' }),
+    // Druckdaten eines Stapels (Phase 5, server/routes/adminStats.js): offene Codes im Klartext, nur für
+    // die Druckseite (AdminPrintPage) - der Server antwortet mit no-store, der Client hält sie nur im State.
+    printBatch: (id) => request(`/admin/voucher-batches/${encodeURIComponent(id)}/print`),
+    // CSV-Export ohne Codes - als Link mit download, kein fetch nötig (die Sitzung geht als Cookie mit).
+    voucherCsvUrl: (id) => `/api/admin/voucher-batches/${encodeURIComponent(id)}/export.csv`,
 
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),

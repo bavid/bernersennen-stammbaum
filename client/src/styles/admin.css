@@ -203,6 +203,20 @@
   gap: var(--space-2);
 }
 
+/* Karten drucken / CSV (Phase 5): schmale Zeile unter dem Kopf, nur bei offenen Gutscheinen */
+.admin-voucher-batch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: 0 var(--space-5) var(--space-3);
+}
+
+.admin-voucher-batch-actions .btn svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
 .admin-voucher-detail {
   padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--line);
