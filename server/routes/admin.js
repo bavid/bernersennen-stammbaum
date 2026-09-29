@@ -6,13 +6,15 @@ const db = require('../db')
 const config = require('../config')
 const { verifyPassword, safeEqual } = require('../lib/adminAuth')
 const { requireAdmin, setAdminCookie, clearAdminCookie } = require('../middleware/admin')
+const { setSessionCookie } = require('../middleware/auth')
+const { AKTION, familyZiel, logAdminAction, recentAdminLog } = require('../lib/adminLog')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
 const { createBatch, voucherStatus, validateBatchInput, validateZweck, ZWECK } = require('../lib/vouchers')
 const { formatCode, decryptCode, generateCode, hashCode } = require('../lib/codes')
 const { validatePartner, SHELTER_TYP_VALUES } = require('../lib/partners')
 const { handlePartnerLogoUpload } = require('../lib/partnerLogo')
-const { ART, PARTNER_AREA_ARTS } = require('../lib/context')
+const { ART, PARTNER_AREA_ARTS, buildMe } = require('../lib/context')
 const { PARTNER_AREA_ARTS_SQL, areaArtForTyp, areaLabel, findPartnerArea, insertPartnerArea } = require('../lib/partnerAreas')
 const { partnerAccessBatchOptions } = require('../lib/partnerAccess')
 const { findEinblick, ownEinblick, setAusgeblendet } = require('../lib/einblicke')
@@ -179,6 +181,29 @@ router.get('/families/:id', requireAdmin, (req, res) => {
   for (const reply of replies) byNote.get(reply.note_id)?.push(reply)
 
   res.json({ family, dogs, entries, notes: notes.map((note) => ({ ...note, replies: byNote.get(note.id) })) })
+})
+
+// --- Admin-Ansicht (Phase 5 Task 5b) ------------------------------------------------------------------
+
+// Öffnet einen beliebigen Bereich (Zuhause, Familie, Tierheim, Partner) als NUR-LESEN-Sitzung des Admins: das
+// normale Sitzungs-Cookie mit Identität = aktiver Bereich = dieser Bereich und der Markierung adminView
+// (middleware/auth.js signSession) - ohne Schlüssel, ohne Demo-Parität, der Admin ist vertrauenswürdig.
+// Jede Schreib-Anfrage dieser Sitzung lehnt denyAdminViewWrites (app.js) ab. Jeder Aufruf steht im
+// Protokoll (lib/adminLog.js) - Bereich und Zeitpunkt, keine Inhalte. Antwort wie /api/me, damit der Client
+// (AdminViewStartPage) direkt in den Bereich wechseln kann.
+router.post('/view/:familyId', requireAdmin, (req, res) => {
+  const id = cleanId(req.params.familyId)
+  const family = id ? db.prepare('SELECT id, is_demo FROM families WHERE id = ?').get(id) : null
+  if (!family) return res.status(404).json({ error: 'Diesen Bereich gibt es nicht' })
+
+  setSessionCookie(res, family.id, family.id, { adminView: true })
+  logAdminAction(AKTION.view, familyZiel(family.id))
+  res.json(buildMe(family.id, family.id, Boolean(family.is_demo), null, { adminView: true }))
+})
+
+// Die letzten Einträge des Protokolls, neueste zuerst. ?limit= (Standard 50, höchstens 200, lib/adminLog.js).
+router.get('/log', requireAdmin, (req, res) => {
+  res.json(recentAdminLog(req.query.limit))
 })
 
 function httpError(status, message) {

@@ -103,7 +103,8 @@ router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
   if (req.isDemo) return res.json(DEMO_VOUCHERS)
 
   const area = db.prepare('SELECT id, name, art FROM families WHERE id = ?').get(req.familyId)
-  ensureVoucherQuota(db, area)
+  // Admin-Ansicht (Phase 5 Task 5b): nur lesen - das Kontingent füllt erst der Bereich selbst wieder auf.
+  if (!req.isAdminView) ensureVoucherQuota(db, area)
 
   // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
   // Einladungen - sie gehören nicht in diese Liste (sonst könnte man einen Übergabe-Code hier als

@@ -43,9 +43,12 @@ const removeMembership = db.transaction((homeId, groupId) => {
 // Demo und Nicht-Demo dürfen nie gemischt werden, selbst wenn irgendwo eine Mitgliedschaftszeile
 // existiert (z. B. weil eine Familie nachträglich als Demo markiert wurde) – Verteidigungslinie,
 // da /join bzw. /group das im Normalbetrieb schon verhindern.
-function canEnter(homeId, familyId) {
+// adminView (Phase 5 Task 5b, middleware/auth.js): die Admin-Ansicht darf jede Mitgliedschaft der Identität
+// öffnen, auch über die Demo-Grenze hinweg - der Admin sieht ohnehin alles, die Sitzung ist nur lesend.
+function canEnter(homeId, familyId, { adminView = false } = {}) {
   if (homeId === familyId) return true
   if (!isMember(homeId, familyId)) return false
+  if (adminView) return true
   const identity = db.prepare('SELECT is_demo FROM families WHERE id = ?').get(homeId)
   const area = db.prepare('SELECT is_demo FROM families WHERE id = ?').get(familyId)
   if (!identity || !area) return false
@@ -74,13 +77,16 @@ function currentAuthInfo(homeId, userId) {
 // /partners/:id/area) - der Client zeigt damit z. B. Name/Slug/Typ und eine Sperre, ohne extra nachzufragen.
 // role (Phase R Task 1): die Rolle der Identität im aktiven Bereich (lib/roles.js roleOf) - 'leitung' im
 // eigenen Bereich und mit dem gemeinsamen Schlüssel einer Familie, sonst die Rolle der Mitgliedschaft.
-function buildMe(homeId, activeId, isDemo, userId = null) {
+// adminView (Phase 5 Task 5b): nur in einer Admin-Ansicht (routes/admin.js POST /view/:familyId) steht
+// "adminView: true" in der Antwort - normale Sitzungen tragen das Feld gar nicht.
+function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } = {}) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
   const active = family(activeId)
   const home = family(homeId)
   const me = {
     ...active,
     isDemo: Boolean(isDemo),
+    ...(adminView ? { adminView: true } : {}),
     role: roleOf(homeId, activeId),
     home,
     memberships: membershipsOf(homeId),

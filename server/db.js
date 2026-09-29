@@ -536,4 +536,17 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_partner_messages_partner ON partner_messages(partner_id, created_at);
 `)
 
+// Phase 5 Task 5b: Protokoll der Admin-Ansicht (lib/adminLog.js). Jeder Aufruf von POST /api/admin/view/:familyId
+// hinterlässt eine Zeile { aktion: 'view', ziel: 'family:<id>' } - nur Bereich und Zeitpunkt, nie Namen oder
+// Inhalte (die Zeile darf nichts verraten, was der Admin gesehen hat).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS admin_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aktion TEXT NOT NULL,
+    ziel TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_admin_log_created ON admin_log(created_at DESC, id DESC);
+`)
+
 module.exports = db

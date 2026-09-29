@@ -203,21 +203,25 @@ router.put('/family', requireAuth, requireRole('leitung'), (req, res) => {
   res.json(db.prepare('SELECT id, name, theme FROM families WHERE id = ?').get(req.familyId))
 })
 
+// adminView (Phase 5 Task 5b): eine vom Admin geöffnete Nur-Lesen-Sitzung meldet sich als solche, damit der
+// Client das Band zeigt und Schreib-Knöpfe sperrt.
 router.get('/me', requireAuth, (req, res) => {
-  res.json(buildMe(req.homeId, req.familyId, req.isDemo, req.userId))
+  res.json(buildMe(req.homeId, req.familyId, req.isDemo, req.userId, { adminView: req.isAdminView }))
 })
 
 // Bereich wechseln: eigenes Zuhause oder ein Rudel, dem der Haushalt beigetreten ist.
-// requireSession statt requireAuth: auch die Demo darf in ihren eigenen Bereich "wechseln".
+// requireSession statt requireAuth: auch die Demo darf in ihren eigenen Bereich "wechseln". Die Admin-Ansicht
+// wechselt über jede Mitgliedschaft der Identität (canEnter mit adminView) und bleibt dabei eine Admin-Ansicht
+// (refreshSession trägt die Markierung weiter).
 router.post('/view', requireSession, (req, res) => {
   // Strikt: nur ein echter JS-Integer > 0, kein Number(...)-Koerzierung (z. B. "3.0", [3], true, "abc")
   const rawId = req.body?.familyId
   const id = Number.isInteger(rawId) && rawId > 0 ? rawId : null
-  if (!id || !canEnter(req.homeId, id)) {
+  if (!id || !canEnter(req.homeId, id, { adminView: req.isAdminView })) {
     return res.status(404).json({ error: 'Diesen Bereich gibt es nicht' })
   }
   refreshSession(req, res, id)
-  res.json(buildMe(req.homeId, id, req.isDemo, req.userId))
+  res.json(buildMe(req.homeId, id, req.isDemo, req.userId, { adminView: req.isAdminView }))
 })
 
 // Einem bestehenden Rudel mit dessen Passwort beitreten – nur aus "Meine Chronik" heraus

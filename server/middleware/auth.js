@@ -4,6 +4,10 @@ const { jwtSecret, cookieSecure, sessionCookie } = require('../config')
 const { canEnter } = require('../lib/context')
 
 const SESSION_DAYS = 30
+// Phase 5 Task 5b: eine Admin-Ansicht (adminView) lebt nur so lange wie die Admin-Sitzung selbst
+// (middleware/admin.js ADMIN_SESSION_HOURS), nicht 30 Tage - sie ersetzt das normale Sitzungs-Cookie des
+// Admins im Browser und soll nicht länger als nötig ein fremdes Zuhause lesen können.
+const ADMIN_VIEW_HOURS = 12
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -13,6 +17,8 @@ const COOKIE_OPTIONS = {
   maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000
 }
 
+const ADMIN_VIEW_COOKIE_OPTIONS = { ...COOKIE_OPTIONS, maxAge: ADMIN_VIEW_HOURS * 60 * 60 * 1000 }
+
 const familyById = db.prepare('SELECT is_demo, auth_epoch FROM families WHERE id = ?')
 const userById = db.prepare('SELECT session_epoch FROM users WHERE id = ?')
 
@@ -20,6 +26,8 @@ const SESSION_EXPIRED = 'Sitzung abgelaufen – bitte neu anmelden'
 
 // Prüft die Session, ohne Schreibzugriffe im Demo-Modus zu sperren (das übernimmt requireAuth).
 // req.homeId ist die Identität (Zuhause oder klassisches Rudel-Login), req.familyId der aktive Bereich.
+// req.isAdminView (Phase 5 Task 5b): die Sitzung hat der Admin über POST /api/admin/view/:familyId geöffnet -
+// nur lesend (denyAdminViewWrites, global in app.js), Bereichswechsel über jede Mitgliedschaft der Identität.
 function requireSession(req, res, next) {
   const token = req.cookies?.[sessionCookie]
   if (!token) {
@@ -43,8 +51,9 @@ function requireSession(req, res, next) {
         return res.status(401).json({ error: SESSION_EXPIRED })
       }
     }
+    const adminView = payload.adminView === true
     let active = payload.activeFamilyId ?? payload.familyId
-    if (active !== payload.familyId && !canEnter(payload.familyId, active)) {
+    if (active !== payload.familyId && !canEnter(payload.familyId, active, { adminView })) {
       // Mitgliedschaft beendet oder Familie gelöscht: zurück in den eigenen Bereich
       active = payload.familyId
     }
@@ -55,6 +64,7 @@ function requireSession(req, res, next) {
     req.familyId = active
     req.userId = payload.uid ?? null
     req.isDemo = Boolean(family.is_demo) || Boolean(activeIsDemo)
+    req.isAdminView = adminView
     next()
   } catch {
     return res.status(401).json({ error: 'Session ungültig oder abgelaufen' })
@@ -114,9 +124,61 @@ function requireAuth(req, res, next) {
   })
 }
 
+const ADMIN_VIEW_READ_ONLY = 'Admin-Ansicht – nur lesen'
+
+// Lesende POSTs, die eine Admin-Ansicht weiterhin braucht (Pfade relativ zu /api, klein geschrieben wie
+// Express' Routing ohne "case sensitive routing"). Jeder andere POST/PUT/PATCH/DELETE ist ein Schreibzugriff:
+// - /logout: die Ansicht beenden;
+// - /view: zwischen Zuhause und seinen Familien wechseln (routes/auth.js, prüft canEnter mit adminView);
+// - /discover, /partner-area/preview/discover: "Entdecken" und seine Kundensicht-Vorschau - POST nur, damit
+//   die PLZ nicht in der URL steht (routes/discover.js, routes/partnerArea/preview.js);
+// - /places/search, /public/partners/near: Umkreissuche "In der Nähe", PLZ/Koordinaten im Body (routes/places.js,
+//   routes/partners.js);
+// - /vouchers/check: reines Nachschauen eines Codes, nie in der URL (routes/vouchers.js).
+// /api/admin/* läuft über das Admin-Cookie, nicht über die Sitzung - deshalb ebenfalls frei (sonst könnte der
+// Admin mit offener Admin-Ansicht im selben Browser nichts mehr verwalten).
+const ADMIN_VIEW_READ_ONLY_POSTS = new Set([
+  '/logout',
+  '/view',
+  '/discover',
+  '/partner-area/preview/discover',
+  '/places/search',
+  '/public/partners/near',
+  '/vouchers/check'
+])
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
+
+// Trägt das Sitzungs-Cookie dieser Anfrage die Markierung adminView? Nur die Signatur zählt - Epochen und
+// Existenz der Familie prüft requireSession dahinter; ein abgelaufenes oder manipuliertes Token ist einfach
+// keine Admin-Ansicht (und scheitert dann ganz normal an requireSession).
+function isAdminViewRequest(req) {
+  const token = req.cookies?.[sessionCookie]
+  if (!token) return false
+  try {
+    return jwt.verify(token, jwtSecret).adminView === true
+  } catch {
+    return false
+  }
+}
+
+function isAdminViewReadOnlyPath(req) {
+  const urlPath = (req.path.replace(/\/+$/, '') || '/').toLowerCase()
+  if (urlPath === '/admin' || urlPath.startsWith('/admin/')) return true
+  return req.method === 'POST' && ADMIN_VIEW_READ_ONLY_POSTS.has(urlPath)
+}
+
+// Phase 5 Task 5b: Schreibsperre der Admin-Ansicht. Global unter /api eingehängt (app.js), VOR allen Routern -
+// so wird auch ein Upload abgelehnt, bevor multer eine Datei auf die Platte schreibt, und ebenso jede
+// öffentliche Schreib-Route (Kontaktformular, Gutschein einlösen, Login), solange die Ansicht offen ist.
+function denyAdminViewWrites(req, res, next) {
+  if (SAFE_METHODS.has(req.method) || isAdminViewReadOnlyPath(req) || !isAdminViewRequest(req)) return next()
+  res.status(403).json({ error: ADMIN_VIEW_READ_ONLY })
+}
+
 // Liest die Epochen selbst, statt sie den Aufrufern zu überlassen: familyId ist die Identität (ihr
-// auth_epoch landet in "e"), userId optional (dessen session_epoch dann in "ue" landet).
-function signSession(familyId, activeFamilyId = familyId, { userId } = {}) {
+// auth_epoch landet in "e"), userId optional (dessen session_epoch dann in "ue" landet). adminView (Phase 5
+// Task 5b) markiert eine Admin-Ansicht - kürzere Laufzeit, siehe ADMIN_VIEW_HOURS.
+function signSession(familyId, activeFamilyId = familyId, { userId, adminView = false } = {}) {
   const family = familyById.get(familyId)
   const payload = { familyId, activeFamilyId, e: family?.auth_epoch ?? 0 }
   if (userId) {
@@ -124,11 +186,13 @@ function signSession(familyId, activeFamilyId = familyId, { userId } = {}) {
     payload.uid = userId
     payload.ue = user?.session_epoch ?? 0
   }
-  return jwt.sign(payload, jwtSecret, { expiresIn: `${SESSION_DAYS}d` })
+  if (adminView) payload.adminView = true
+  return jwt.sign(payload, jwtSecret, { expiresIn: adminView ? `${ADMIN_VIEW_HOURS}h` : `${SESSION_DAYS}d` })
 }
 
 function setSessionCookie(res, familyId, activeFamilyId = familyId, opts = {}) {
-  res.cookie(sessionCookie, signSession(familyId, activeFamilyId, opts), COOKIE_OPTIONS)
+  const options = opts.adminView ? ADMIN_VIEW_COOKIE_OPTIONS : COOKIE_OPTIONS
+  res.cookie(sessionCookie, signSession(familyId, activeFamilyId, opts), options)
 }
 
 function clearSessionCookie(res) {
@@ -137,17 +201,20 @@ function clearSessionCookie(res) {
 }
 
 // Signiert die Sitzung einer bereits authentifizierten Anfrage neu (Bereichswechsel, Schlüssel
-// erneuern, Mitgliedschaft verlassen, ...) und behält dabei req.userId bei. Ohne das würde jede
-// Neu-Signierung einen Benutzer-Login unbemerkt auf die reine Familien-Identität zurückfallen lassen -
-// req.userId kommt aus requireSession (payload.uid) und ist bei jeder Route hinter requireAuth gesetzt.
+// erneuern, Mitgliedschaft verlassen, ...) und behält dabei req.userId und req.isAdminView bei. Ohne das
+// würde jede Neu-Signierung einen Benutzer-Login unbemerkt auf die reine Familien-Identität zurückfallen
+// lassen (bzw. eine Admin-Ansicht zu einer vollen Sitzung machen) - beides kommt aus requireSession.
 function refreshSession(req, res, activeId) {
-  setSessionCookie(res, req.homeId, activeId, { userId: req.userId })
+  setSessionCookie(res, req.homeId, activeId, { userId: req.userId, adminView: Boolean(req.isAdminView) })
 }
 
 module.exports = {
   requireAuth,
   requireSession,
   denyDemoWrites,
+  denyAdminViewWrites,
+  ADMIN_VIEW_READ_ONLY,
+  ADMIN_VIEW_READ_ONLY_POSTS,
   optionalSession,
   signSession,
   setSessionCookie,

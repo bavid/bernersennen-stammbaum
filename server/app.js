@@ -27,6 +27,7 @@ const partnerAreaRoutes = require('./routes/partnerArea')
 const redirectRoutes = require('./routes/redirect')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
+const { denyAdminViewWrites } = require('./middleware/auth')
 const { apiLimiter, photoLimiter, limitWrites } = require('./middleware/abuse')
 const { LOGO_FILENAME_RE } = require('./lib/partners')
 const { canServePublicMedia } = require('./lib/publicMedia')
@@ -143,6 +144,9 @@ function createApp() {
   )
 
   app.use('/api', apiLimiter)
+  // Phase 5 Task 5b: die Admin-Ansicht (middleware/auth.js denyAdminViewWrites) ist nur lesend - VOR allen
+  // Routern, damit auch Uploads abgelehnt werden, bevor multer eine Datei schreibt.
+  app.use('/api', denyAdminViewWrites)
   app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding'], limitWrites)
   // Phase R Task 2: /api/family/members VOR authRoutes (dort liegen /family und /family/key) - Express
   // matcht Router-Pfade zwar exakt, so bleibt die Reihenfolge aber unabhängig von künftigen Routen dort.
