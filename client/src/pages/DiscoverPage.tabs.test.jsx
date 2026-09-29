@@ -233,4 +233,20 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
     expect(cards.map((card) => card.querySelectorAll('.promotion-badge').length)).toEqual([1, 1])
     expect(cards.every((card) => card.querySelector('.promotion-badge').textContent === 'Anzeige')).toBe(true)
   })
+
+  test('Alt+Pfeil (Zurück im Browser) wechselt keinen Reiter', async () => {
+    discover.mockResolvedValue(response)
+    await render()
+    act(() => tab('Alle').focus())
+    await act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', altKey: true, bubbles: true })))
+    expect(tab('Alle').getAttribute('aria-selected')).toBe('true')
+    expect(currentSearch).toBe('')
+  })
+
+  test('der Zähler steht für Screenreader als "n Einträge" im Namen des Reiters', async () => {
+    discover.mockResolvedValue(response)
+    await render()
+    expect(tab('Hundeschulen').textContent).toBe('Hundeschulen5 (5 Einträge)')
+    expect(tab('Hundeschulen').querySelector('.discover-tab-count').getAttribute('aria-hidden')).toBe('true')
+  })
 })

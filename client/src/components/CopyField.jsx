@@ -22,6 +22,7 @@ export default function CopyField({ id, label, value, hint, multiline = false, c
       await navigator.clipboard.writeText(value)
       setState('copied')
     } catch {
+      fieldRef.current?.focus()
       fieldRef.current?.select()
       setState('manual')
     }

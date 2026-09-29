@@ -37,15 +37,21 @@ describe('sectionCounts', () => {
     expect(sectionCounts(data)).toEqual({ hundeschulen: 2, salon: 1, begleiter: 4, futter: 2, unterstuetzen: 3, alle: 12 })
   })
 
+  test('Unterstützen zählt den Transparenzbericht mit', () => {
+    const data = normalizeDiscover({ unterstuetzen: { bericht: { zeitraum: '2026 Q3' } } })
+    expect(sectionCounts(data).unterstuetzen).toBe(1)
+  })
+
   test('eine leere Antwort zählt überall 0', () => {
     expect(sectionCounts(normalizeDiscover({}))).toEqual({ hundeschulen: 0, salon: 0, begleiter: 0, futter: 0, unterstuetzen: 0, alle: 0 })
   })
 })
 
 describe('isSectionEmpty', () => {
-  test('Unterstützen ist mit Text oder Bericht nicht leer, auch ohne Einträge', () => {
+  test('Unterstützen ist mit Aufruf-Text oder Bericht nicht leer, auch ohne Spendenwege', () => {
     const withText = normalizeDiscover({ unterstuetzen: { text: 'Jeder Euro hilft.' } })
     expect(isSectionEmpty('unterstuetzen', withText)).toBe(false)
+    expect(isSectionEmpty('unterstuetzen', normalizeDiscover({ unterstuetzen: { bericht: { zeitraum: 'Q3' } } }))).toBe(false)
     expect(isSectionEmpty('unterstuetzen', normalizeDiscover({}))).toBe(true)
     expect(isSectionEmpty('futter', normalizeDiscover({ futter: [item(1)] }))).toBe(false)
   })

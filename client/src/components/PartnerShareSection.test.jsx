@@ -45,13 +45,13 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-async function render(props = {}, { isDemo = false } = {}) {
+async function render(props = {}, { isDemo = false, adminView = false } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <DemoProvider value={isDemo}>
+      <DemoProvider value={adminView ? { isDemo, adminView } : isDemo}>
         <PartnerShareSection profile={{ ...profile, ...props }} />
       </DemoProvider>
     )
@@ -158,5 +158,27 @@ describe('PartnerShareSection', () => {
     config.mockResolvedValue({ publicUrl: null })
     await render()
     expect(container.querySelector('#partner-share-url').value).toBe(`${window.location.origin}/p/hundeschule-kiesel`)
+  })
+
+  test('solange /api/config nicht geantwortet hat, gibt es nichts zu kopieren (keine vorläufige Adresse)', async () => {
+    let resolveConfig
+    config.mockReturnValue(new Promise((resolve) => (resolveConfig = resolve)))
+    await render()
+    expect(container.querySelector('#partner-share-url')).toBeNull()
+    expect(container.textContent).toContain('Lädt …')
+
+    await act(async () => resolveConfig({ publicUrl: 'https://chronik.example.org' }))
+    expect(container.querySelector('#partner-share-url').value).toBe(PORTAL_URL)
+  })
+
+  test('scheitert /api/config, gilt der Ursprung der Seite', async () => {
+    config.mockRejectedValue(new Error('offline'))
+    await render()
+    expect(container.querySelector('#partner-share-url').value).toBe(`${window.location.origin}/p/hundeschule-kiesel`)
+  })
+
+  test('in der Admin-Ansicht eines echten Partners kein ?demo=1', async () => {
+    await render({}, { adminView: true })
+    expect(container.querySelector('#partner-share-url').value).toBe(PORTAL_URL)
   })
 })

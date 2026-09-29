@@ -4,6 +4,8 @@ import { qrFileName, qrSvgMarkup } from '../lib/partnerShare.js'
 
 // Kantenlänge der PNG-Datei - groß genug für Druck (Flyer, Visitenkarte), die Module bleiben scharf.
 const PNG_SIZE = 1024
+// Die Download-URL erst nach einer Sekunde freigeben - manche Browser (Safari) brechen sonst ab.
+const REVOKE_DELAY_MS = 1000
 
 function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob)
@@ -13,8 +15,7 @@ function downloadBlob(blob, fileName) {
   document.body.appendChild(link)
   link.click()
   link.remove()
-  // Erst nach dem Klick freigeben - sonst bricht mancher Browser den Download ab.
-  setTimeout(() => URL.revokeObjectURL(url), 0)
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS)
 }
 
 function loadImage(url) {

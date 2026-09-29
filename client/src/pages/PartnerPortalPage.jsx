@@ -188,7 +188,11 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
         <PortalSection
           id="partner-portal-gutschein"
           title="Gutschein einlösen"
-          lede={`Du hast von ${partner.name} einen Gutschein bekommen? Hier legst du deine eigene Chronik an – kostenlos.`}
+          lede={
+            family || preview
+              ? null
+              : `Du hast von ${partner.name} einen Gutschein bekommen? Hier legst du deine eigene Chronik an – kostenlos.`
+          }
           className="partner-portal-redeem"
         >
           <PortalAction partner={partner} family={family} preview={preview} onRedeemed={onRedeemed} onLogout={onLogout} />

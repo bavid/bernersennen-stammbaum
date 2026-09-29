@@ -16,7 +16,8 @@ function paragraphsOf(text) {
 function jumpTo(targetId) {
   const heading = document.getElementById(`${targetId}-title`)
   const target = document.getElementById(targetId)
-  target?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  target?.scrollIntoView?.({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
   heading?.focus({ preventScroll: true })
 }
 

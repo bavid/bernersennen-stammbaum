@@ -12,6 +12,8 @@ const DEFAULT_BUTTON_COLOR = '#a4431d'
 const BUTTON_TEXT_COLOR = '#fffaf2'
 // Heller Rand um den Code (Ruhezone, vier Module) - ohne ihn lesen manche Kameras schlecht.
 const QR_QUIET_ZONE = 4
+// Feste Größe der SVG-Datei - ohne width/height nehmen manche Programme (Office, Canvas) 0 oder 150 px an.
+const QR_FILE_SIZE = 1024
 const SHELTER_TYPES = ['tierheim', 'vermittlung']
 
 // Öffentliche Adresse des Portals: PUBLIC_URL (api.config) oder der Ursprung dieser Seite. Ein Demo-Partner
@@ -72,7 +74,7 @@ export function qrSvgMarkup(text) {
   const { size, path } = qrSvgPath(text)
   const total = size + QR_QUIET_ZONE * 2
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${QR_FILE_SIZE}" height="${QR_FILE_SIZE}" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges">` +
     `<rect width="${total}" height="${total}" fill="#fff"/>` +
     `<path transform="translate(${QR_QUIET_ZONE} ${QR_QUIET_ZONE})" d="${path}" fill="#000"/>` +
     '</svg>'

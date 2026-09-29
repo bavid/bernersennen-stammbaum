@@ -16,7 +16,7 @@ export default function PortalBrandStrip() {
       <p>
         Mit <strong>{theme.appName}</strong> – eine Chronik für deine Tiere
       </p>
-      <nav className="portal-brand-links" aria-label={theme.appName}>
+      <nav className="portal-brand-links" aria-label={`Mehr über ${theme.appName}`}>
         <InternalLink to="/">Mehr erfahren</InternalLink>
         <InternalLink to={VOUCHER_REQUEST_PATH}>Gutschein anfragen</InternalLink>
       </nav>

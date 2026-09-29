@@ -34,7 +34,7 @@ export function donationsOf(support) {
 }
 
 // Einträge je Bereich - Karten (Partner, Tiere, Empfehlungen) und bei "Unterstützen" die Spendenwege
-// (GoFundMe, Spendenlinks, Empfehlungen). "alle" ist die Summe.
+// (GoFundMe, Spendenlinks, Empfehlungen) samt Transparenzbericht. "alle" ist die Summe.
 export function sectionCounts(data) {
   const support = data.unterstuetzen
   const counts = {
@@ -42,16 +42,16 @@ export function sectionCounts(data) {
     salon: data.salonPartner.length + data.salonPromotions.length,
     begleiter: data.begleiterPartner.length + data.begleiterTiere.length + data.begleiterPromotions.length,
     futter: data.futter.length,
-    unterstuetzen: support.promotions.length + donationsOf(support).length + (isClickUrl(support.gofundmeClickUrl) ? 1 : 0)
+    unterstuetzen:
+      support.promotions.length + donationsOf(support).length + (isClickUrl(support.gofundmeClickUrl) ? 1 : 0) + (support.bericht ? 1 : 0)
   }
   return { ...counts, [ALL_TAB]: SECTION_KEYS.reduce((sum, key) => sum + counts[key], 0) }
 }
 
-// Hat ein Bereich gar nichts zu zeigen? Unterstützen erst, wenn auch Text und Bericht fehlen (wie SupportBlock).
+// Hat ein Bereich gar nichts zu zeigen? Unterstützen erst, wenn auch der Aufruf-Text fehlt (wie SupportBlock).
 export function isSectionEmpty(key, data, counts = sectionCounts(data)) {
   if (key !== 'unterstuetzen') return counts[key] === 0
-  const support = data.unterstuetzen
-  return counts.unterstuetzen === 0 && !support.text && !support.bericht
+  return counts.unterstuetzen === 0 && !data.unterstuetzen.text
 }
 
 // Die ersten `limit` Einträge über mehrere Listen hinweg, in ihrer Reihenfolge (z. B. nahe Partner, dann

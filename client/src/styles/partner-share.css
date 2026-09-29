@@ -6,6 +6,11 @@
   gap: var(--space-12);
 }
 
+/* display: grid schlüge sonst das hidden-Attribut - der Reiter bliebe unter "Angaben" stehen. */
+.partner-profile-share[hidden] {
+  display: none;
+}
+
 .partner-share {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
