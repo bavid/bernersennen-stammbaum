@@ -795,6 +795,36 @@ Eine Familie ist nie öffentlich. Die Mitglieder-Seite zeigt diese Übersicht, d
 
 ---
 
+## Phase U — Übersichtlichkeit, Wording und Einstiege (Zusatz 29.09., nach dem ersten Test)
+
+- **Zurück-Navigation:** Impressum, Datenschutz und alle öffentlichen Seiten bekommen einen schlanken Kopf mit Logo
+  und „Zurück“.
+- **Klare Einstiege:** Die Startseite zeigt zwei Wege: „Für Tierhalter“ (Gutschein, Anmelden, Demo) und „Für
+  Hundeschulen, Tierheime & Co.“ (Demo als Partner, Partner werden). Die Partner-Demo ist die Werbung: Partner sehen
+  erst alles an, bevor sie einsteigen. In der Partner-Demo führt ein kurzer Hinweis zu Profil, Kundensicht und
+  Beiträgen/Tieren.
+- **Wording im Standard-Auftritt:** „Familienbande“ statt „Stammbaum“, „Nachwuchs“ statt „Würfe“; Nachwuchs steht
+  nicht in der unteren Leiste, sondern erscheint auf „Familienbande“ nur, wenn es Würfe gibt. Der Berner-Auftritt
+  bleibt unverändert.
+- **Einfach und ruhig:** klares Raster, weniger Badges, Entdecken mit Filter-Chips statt langer Kapitel, Admin in
+  Reitern, Partner-Profil mit höchstens vier Reitern. Das Grundprinzip bleibt.
+
+---
+
+## Phase N — Anfragen und Benachrichtigungen (Zusatz 29.09.)
+
+- **Gutschein anfragen:** Besucher ohne Gutschein hinterlassen eine Anfrage; eine gültige E-Mail ist Pflicht (Format
+  und Domain per DNS geprüft). Der Admin weist im Admin einen offenen Code zu und schickt ihn selbst per E-Mail –
+  wir versenden keine E-Mails.
+- **Partner-Zugang anfragen:** Hundeschulen, Tierheime & Co. fragen über `/partner-werden` an (Firma, Typ, PLZ,
+  E-Mail).
+- **Telegram für den Admin:** je Ereignis ein-/ausschaltbar – Gutschein-Anfrage, Partner-Anfrage, neue Registrierung,
+  Feedback, eingereichter Beitrag. Standard ohne personenbezogene Daten, „Details mitsenden“ ist ein eigener
+  Schalter. Bot-Token und Chat-ID nur in der Server-`.env`.
+- **Aufbewahrung:** erledigte Anfragen 180 Tage, offene 365 Tage.
+
+---
+
 ## Phase G — Eigene Domain und Go-Live (Zusatz 29.09.)
 
 **Idee:** Wenn Vorschau und Phasen stehen, zieht alles unter eine eigene Domain. Erst danach werden Karten
