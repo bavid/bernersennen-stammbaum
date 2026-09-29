@@ -43,13 +43,13 @@ afterEach(() => {
   sendAnfrage.mockReset()
 })
 
-async function render(props) {
+async function render(props, initialEntries = ['/']) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={initialEntries}>
         <ThemeProvider themeId="standard">
           <LoginPage onLogin={() => {}} {...props} />
         </ThemeProvider>
@@ -387,6 +387,15 @@ describe('LoginPage – zwei Einstiege', () => {
 // Phase N: "Noch keinen Gutschein?" im Einstieg für Tierhalter und "Partner-Zugang anfragen" im Partner-Einstieg.
 describe('LoginPage – Gutschein und Partner-Zugang anfragen', () => {
   const requestCard = () => container.querySelector('.login-entries > .login-entry .login-request')
+
+  test('über /#gutschein-anfragen (Fuß der Partner-Portale) ist das Anfrage-Formular gleich offen', async () => {
+    await render(undefined, ['/#gutschein-anfragen'])
+
+    const card = container.querySelector('#gutschein-anfragen')
+    expect(card).not.toBeNull()
+    expect(card.querySelector('form input[type="email"]')).not.toBeNull()
+    expect(card.querySelector('button.btn-ghost')).toBeNull()
+  })
 
   test('"Noch keinen Gutschein?" steht zugeklappt im Einstieg für Tierhalter - ein Klick öffnet das Formular', async () => {
     await render()
