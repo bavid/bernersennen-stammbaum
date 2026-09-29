@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider } from './lib/demo.js'
@@ -13,7 +13,6 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import ContextSwitcher from './components/ContextSwitcher.jsx'
 import ViewModeSwitch from './components/ViewModeSwitch.jsx'
 import LoginPage from './pages/LoginPage.jsx'
-import AdminPage from './pages/AdminPage.jsx'
 import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
 import PartnersPage from './pages/PartnersPage.jsx'
 import SteckbriefPage from './pages/SteckbriefPage.jsx'
@@ -21,6 +20,11 @@ import LegalPage from './pages/LegalPage.jsx'
 import AreaRoutes from './AreaRoutes.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
+import RouteFallback from './components/RouteFallback.jsx'
+
+// Der Admin-Bereich (samt aller Admin*-Komponenten) kommt erst bei Bedarf als eigener Chunk - nur der
+// Admin ruft /admin je auf, alle anderen laden ihn so nicht mit.
+const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 
 // /p/<slug> – öffentliches Partner-Portal, unabhängig von Groß-/Kleinschreibung des Pfads egal (der
 // Slug selbst bleibt roh, die Route validiert nur die Form).
@@ -286,7 +290,9 @@ export default function App() {
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     return (
       <ThemeProvider themeId="standard">
-        <AdminPage />
+        <Suspense fallback={<RouteFallback />}>
+          <AdminPage />
+        </Suspense>
       </ThemeProvider>
     )
   }
@@ -384,7 +390,11 @@ export default function App() {
               aktuellen Pfad entsprechen kann, z. B. Stammbaum -> Stammbaum) die alte Seiteninstanz
               samt Daten des vorherigen Bereichs stehen. Der key erzwingt ein sauberes Neu-Mounten. */}
           <main className="app-main" key={family.id}>
-            <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />
+            {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
+                Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
+            <Suspense fallback={<RouteFallback />}>
+              <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />
+            </Suspense>
           </main>
           <AppFooter family={family} onInvite={() => setInviteOpen(true)} />
           <Modal open={inviteOpen} title={inviteLabel(family)} onClose={() => setInviteOpen(false)}>

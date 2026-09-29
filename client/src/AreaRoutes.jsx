@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { isPartnerArea, startRoute } from './lib/areas.js'
 import OverviewPage from './pages/OverviewPage.jsx'
@@ -5,14 +6,22 @@ import DogDetailPage from './pages/DogDetailPage.jsx'
 import CompanionsPage from './pages/CompanionsPage.jsx'
 import ShelterAnimalsPage from './pages/ShelterAnimalsPage.jsx'
 import LittersPage from './pages/LittersPage.jsx'
-import CollagePage from './pages/CollagePage.jsx'
 import PinboardPage from './pages/PinboardPage.jsx'
 import ContactAdminPage from './pages/ContactAdminPage.jsx'
 import NearbyPage from './pages/NearbyPage.jsx'
 import DiscoverPage from './pages/DiscoverPage.jsx'
-import PartnerProfilePage from './pages/PartnerProfilePage.jsx'
+// AccessPage bleibt im Haupt-Chunk: sie ist nur eine Hülle um AccessSettings, das Haushalte über
+// FamilySettings ohnehin laden - ein eigener Chunk spart kaum etwas und kostet eine Anfrage mehr.
 import AccessPage from './pages/AccessPage.jsx'
-import CustomerViewPage from './pages/CustomerViewPage.jsx'
+
+// Profil und Kundensicht gibt es nur in Partner- und Tierheim-Bereichen (isPartnerArea) - sie kommen
+// erst bei Bedarf als eigener Chunk, damit Haushalte und Rudel sie nicht mitladen. Die Suspense-Grenze
+// sitzt in App.jsx um <AreaRoutes> (in <main>), Kopf und Navigation bleiben beim Nachladen stehen.
+const PartnerProfilePage = lazy(() => import('./pages/PartnerProfilePage.jsx'))
+const CustomerViewPage = lazy(() => import('./pages/CustomerViewPage.jsx'))
+// Die Fotocollage (samt Seiten-Layout, Canvas-Export und Druckbogen) ruft kaum jemand auf - ebenfalls
+// erst bei Bedarf.
+const CollagePage = lazy(() => import('./pages/CollagePage.jsx'))
 
 // Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
 function RedirectTierUrl() {

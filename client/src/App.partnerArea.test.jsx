@@ -125,6 +125,8 @@ async function render(initialEntry, family = partnerArea) {
       </MemoryRouter>
     )
   )
+  // Profil und Kundensicht lädt AreaRoutes per React.lazy nach - auf den Chunk warten, dann steht die Seite.
+  await act(() => vi.dynamicImportSettled())
   return container
 }
 
