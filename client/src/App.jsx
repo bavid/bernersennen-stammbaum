@@ -172,15 +172,23 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed }) {
   )
 }
 
+// Seiten, die zum Stammbaum bzw. zur Familienbande gehören, ohne selbst ein Reiter zu sein: der Alias
+// /familienbande und (Phase U) im Standard-Auftritt der Nachwuchs (/wuerfe, dort kein eigener Reiter).
+function belongsToTree(pathname, theme) {
+  return pathname === '/familienbande' || (pathname === '/wuerfe' && !theme.littersInNav)
+}
+
 export function AppHeader({ family, onLogout, onFamilyChange }) {
   const { pathname } = useLocation()
   const { theme } = useTheme()
   // Tierseiten gehören zum Stammbaum bzw. (im Tierheim) zu "Tiere"
   const isActive = (item, active) =>
-    active || ((item.to === '/stammbaum' || item.to === '/tiere') && pathname.startsWith('/tier/'))
+    active ||
+    ((item.to === '/stammbaum' || item.to === '/tiere') && pathname.startsWith('/tier/')) ||
+    (item.to === '/stammbaum' && belongsToTree(pathname, theme))
   // Nur Haushalte bekommen den Bereichswechsler; klassische Rudel-Logins (kein family.home) zeigen nur den Namen.
   const isHouseholdIdentity = family.home?.art === 'zuhause'
-  const navItems = navItemsFor(family)
+  const navItems = navItemsFor(family, theme)
   return (
     <header className="app-header">
       <div className="app-header-inner">

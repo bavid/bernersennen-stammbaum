@@ -132,7 +132,7 @@ export default function MembersPage({ family, onFamilyChange }) {
             Wer zu „{family.name}“ gehört – und wer was darf. {words.groupNeverPublic}
           </p>
           <p className="hero-hint">
-            <Link to="/stammbaum">← Zum Stammbaum</Link>
+            <Link to="/stammbaum">← {words.toTree}</Link>
           </p>
         </div>
         {data && (
@@ -219,7 +219,7 @@ export default function MembersPage({ family, onFamilyChange }) {
         <section className="card members-section members-danger" aria-labelledby="dissolve-title">
           <h2 id="dissolve-title">{words.dissolveGroup}</h2>
           <p className="muted">
-            Löscht {words.theGroup} mit Stammbaum, Pinnwand und Einladungen. Geht nur, wenn {words.theGroup} keine eigenen
+            Löscht {words.theGroup} mit {words.treeLabel}, Pinnwand und Einladungen. Geht nur, wenn {words.theGroup} keine eigenen
             Tiere mehr hat – die übernimmst du vorher in deine Chronik.
           </p>
           <button type="button" className="btn btn-danger" disabled={isDemo} onClick={() => setDissolveOpen(true)}>

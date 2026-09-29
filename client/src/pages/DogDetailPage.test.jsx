@@ -18,6 +18,7 @@ vi.mock('../api', () => ({
 }))
 
 import DogDetailPage, { ParentLink } from './DogDetailPage.jsx'
+import { ThemeProvider } from '../themes/ThemeProvider.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -221,5 +222,46 @@ describe('DogDetailPage – Hero-Zeile für geteilte Tiere', () => {
 
     const companion = container.querySelector('.dog-hero-companion')
     expect(companion.textContent.trim()).toBe('Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim – Tierheim Sonnenhang')
+  })
+})
+
+// Phase U: im Standard-Auftritt "Familienbande" und "Verpaarung", im Berner-Auftritt weiter "Stammbaum" und "Deckakt".
+describe('DogDetailPage – Wörter je Auftritt', () => {
+  const breeding = [{ id: 1, mutter_dog_id: 10, mutter_name: 'Nele', vater_dog_id: null, vater_freitext: 'Balu', datum: '2022-01-10', foto_urls: [] }]
+
+  async function renderThemed(themeId) {
+    getDog.mockResolvedValue(sharedDog())
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue(breeding)
+    listAllDogs.mockResolvedValue([])
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <MemoryRouter initialEntries={['/tier/10']}>
+          <ThemeProvider themeId={themeId}>
+            <Routes>
+              <Route path="/tier/:id" element={<DogDetailPage family={activeFamily} onFamilyChange={() => {}} />} />
+            </Routes>
+          </ThemeProvider>
+        </MemoryRouter>
+      )
+    )
+  }
+
+  test('Standard: Zurück-Link "Familienbande", Meilenstein "Verpaarung mit Balu", kein "Stammbaum"/"Deckakt"', async () => {
+    await renderThemed('standard')
+
+    expect(container.querySelector('.back-link').textContent.trim()).toBe('Familienbande')
+    expect(container.textContent).toContain('Verpaarung mit Balu')
+    expect(container.textContent).not.toMatch(/Stammbaum|Deckakt/)
+  })
+
+  test('Berner: Zurück-Link "Stammbaum", Meilenstein "Deckakt mit Balu"', async () => {
+    await renderThemed('berner')
+
+    expect(container.querySelector('.back-link').textContent.trim()).toBe('Stammbaum')
+    expect(container.textContent).toContain('Deckakt mit Balu')
   })
 })

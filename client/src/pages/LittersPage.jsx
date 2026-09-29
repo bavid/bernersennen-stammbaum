@@ -14,12 +14,13 @@ import { hasRole } from '../lib/roles.js'
 import { displayName, shortName } from '../lib/timeline.js'
 
 function PlannedLitter({ planned }) {
+  const { theme, words } = useTheme()
   const { event, expectedBirth, daysUntil } = planned
   const father = event.vater_name || event.vater_freitext || 'unbekannter Rüde'
   const status =
     daysUntil > 0
-      ? `Welpen in etwa ${daysUntil} ${daysUntil === 1 ? 'Tag' : 'Tagen'} (um den ${formatDateLong(expectedBirth)})`
-      : 'Die Welpen müssten jetzt da sein – Zeit für neue Karten im Stammbaum!'
+      ? `${words.young} in etwa ${daysUntil} ${daysUntil === 1 ? 'Tag' : 'Tagen'} (um den ${formatDateLong(expectedBirth)})`
+      : theme.texts.plannedDue
   return (
     <li className="planned-litter">
       <Icon name="sprout" />
@@ -28,7 +29,7 @@ function PlannedLitter({ planned }) {
           {shortName(event.mutter_name)} × {shortName(father)}
         </p>
         <p className="muted">
-          Deckakt {formatDateLong(event.datum)} · {status}
+          {words.mating} {formatDateLong(event.datum)} · {status}
         </p>
       </div>
     </li>
@@ -36,9 +37,10 @@ function PlannedLitter({ planned }) {
 }
 
 // family: der aktive Bereich (AreaRoutes). Deckakte eintragen und löschen ab Mitglied (Phase R) - ein Gast
-// sieht das Zuchtbuch nur.
+// sieht das Zuchtbuch nur. Wörter und Sätze je Auftritt (Phase U): Standard "Nachwuchs"/"Verpaarung", Berner
+// "Würfe"/"Deckakt"; ohne eigenen Reiter (Standard) führt oben ein Link zurück zur Familienbande.
 export default function LittersPage({ family }) {
-  const { words } = useTheme()
+  const { theme, words } = useTheme()
   const canWrite = hasRole(family, 'mitglied')
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
@@ -72,7 +74,7 @@ export default function LittersPage({ family }) {
     navigate('/pinnwand', {
       state: {
         draft: {
-          text: `Wurftreffen! ${names} werden am ${formatDateLong(birthday.date)} ${birthday.age} ${birthday.age === 1 ? 'Jahr' : 'Jahre'} alt – wer ist dabei?`,
+          text: `${words.litterMeeting}! ${names} werden am ${formatDateLong(birthday.date)} ${birthday.age} ${birthday.age === 1 ? 'Jahr' : 'Jahre'} alt – wer ist dabei?`,
           terminDatum: birthday.date
         }
       }
@@ -81,7 +83,7 @@ export default function LittersPage({ family }) {
 
   function handleCreated(created) {
     setEvents((current) => [created, ...current].sort((a, b) => (a.datum < b.datum ? 1 : -1)))
-    toast('Deckakt eingetragen')
+    toast(words.matingAdded)
   }
 
   async function handleDelete(event) {
@@ -96,14 +98,16 @@ export default function LittersPage({ family }) {
 
   return (
     <div className="page">
+      {!theme.littersInNav && (
+        <Link to="/stammbaum" className="back-link">
+          <Icon name="arrowLeft" /> {words.treeLabel}
+        </Link>
+      )}
       <header className="page-hero">
         <div>
-          <span className="eyebrow">Würfe</span>
+          <span className="eyebrow">{words.littersLabel}</span>
           <h1>Geschwister auf einen Blick</h1>
-          <p className="page-lede">
-            Jeder Wurf mit allen Geschwistern: was sie gerade treiben und wie sie im gleichen Alter aussahen. Entsteht
-            automatisch aus dem Stammbaum – eintragen muss man nichts.
-          </p>
+          <p className="page-lede">{theme.texts.littersLede}</p>
         </div>
       </header>
 
@@ -123,10 +127,7 @@ export default function LittersPage({ family }) {
       )}
 
       {dogs && withSiblings.length === 0 && (
-        <p className="empty-state">
-          Noch keine Würfe: Sobald im Stammbaum Geschwister mit gleichen Eltern und gleichem Geburtstag stehen,
-          erscheinen sie hier.
-        </p>
+        <p className="empty-state">{theme.texts.littersEmpty}</p>
       )}
 
       <div className="litter-list">
@@ -147,7 +148,7 @@ export default function LittersPage({ family }) {
           <h2 id="singles-title" className="section-title">
             Ohne Geschwister {words.inGroup}
           </h2>
-          <p className="muted">Von diesen Würfen steht bisher nur ein Tier im Stammbaum.</p>
+          <p className="muted">{theme.texts.littersSingles}</p>
           <ul className="chip-list">
             {singles.map((litter) => {
               const [dog] = litter.puppies

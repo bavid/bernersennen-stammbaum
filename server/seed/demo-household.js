@@ -33,7 +33,7 @@ const COMPANIONS = [
     geburtsdatum: '2012-05-20',
     beiUnsSeit: '2012-08-01',
     herkunftArt: 'privat',
-    herkunftText: 'Bauernhof-Wurf',
+    herkunftText: 'Bauernhof der Cousine',
     // Kein Foto: Minka (Rudel) ist im Bildersatz die einzige Katze - Mira wird nach Rudel geteilt,
     // ein zweites Tier mit demselben Bild sähe dort wie ein Duplikat aus. Der Client zeigt statt
     // eines Fotos die Initialen.

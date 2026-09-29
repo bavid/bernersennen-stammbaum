@@ -17,18 +17,19 @@ export const DEMO_ZIEL = Object.freeze({ kundensicht: '/kundensicht' })
 // Wie server/lib/partners.js SLUG_RE - alles andere geht gar nicht erst zum Server.
 const SLUG_RE = /^[a-z0-9-]{3,60}$/
 
+// Die Demos laufen im Standard-Auftritt (server/scripts/demo.js) - deshalb "Familienbande" statt "Stammbaum" (Phase U).
 export const PRESENT_TILES = Object.freeze([
   {
     key: 'zuhause',
     label: 'Als Familie ansehen',
-    description: '„Meine Chronik“ eines Zuhauses – Wegbegleiter, Stammbaum, Pinnwand und Entdecken.',
+    description: '„Meine Chronik“ eines Zuhauses – Wegbegleiter, Familienbande, Pinnwand und Entdecken.',
     icon: 'home',
     as: DEMO_AS.zuhause
   },
   {
     key: 'rudel',
     label: 'Als Rudel ansehen',
-    description: 'Mehrere Zuhause, ein gemeinsamer Stammbaum – mit Mitgliedern und Rollen.',
+    description: 'Mehrere Zuhause, eine gemeinsame Familienbande – mit Mitgliedern und Rollen.',
     icon: 'users',
     as: DEMO_AS.rudel
   },

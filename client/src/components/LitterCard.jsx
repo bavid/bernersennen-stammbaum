@@ -21,12 +21,13 @@ function Parent({ parent, role }) {
 }
 
 function BirthdayBadge({ birthday, onPlanMeeting }) {
+  const { words } = useTheme()
   const when = birthday.daysUntil === 0 ? 'heute' : birthday.daysUntil === 1 ? 'morgen' : `in ${birthday.daysUntil} Tagen`
   return (
     <div className="litter-birthday" role="status">
       <Icon name="star" />
       <span>
-        Wurf-Geburtstag {when}: <strong>{birthday.age} {birthday.age === 1 ? 'Jahr' : 'Jahre'}</strong>
+        {words.litterBirthday} {when}: <strong>{birthday.age} {birthday.age === 1 ? 'Jahr' : 'Jahre'}</strong>
       </span>
       <button type="button" className="btn btn-ghost litter-meet" onClick={onPlanMeeting}>
         <Icon name="pin" /> Treffen planen
@@ -54,12 +55,13 @@ function Sibling({ dog, latest }) {
   )
 }
 
-// Ein Wurf: Eltern, Geschwister mit ihrem Neuesten, Fotos im gleichen Alter, Deckakt und Geburtstag
+// Ein Wurf: Eltern, Geschwister mit ihrem Neuesten, Fotos im gleichen Alter, Deckakt und Geburtstag - die Wörter
+// je Auftritt (Phase U: Standard "Nachwuchs"/"Verpaarung"/"Ganz klein", Berner "Wurf"/"Deckakt"/"Als Welpen").
 export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOpenPhoto }) {
   const { words } = useTheme()
   const birthday = nextLitterBirthday(litter.birthDate)
   const soon = birthday && birthday.daysUntil <= BIRTHDAY_SOON_DAYS
-  const title = litter.birthDate ? `Wurf vom ${formatDateLong(litter.birthDate)}` : 'Wurf (Geburtstag unbekannt)'
+  const title = litter.birthDate ? `${words.litter} vom ${formatDateLong(litter.birthDate)}` : `${words.litter} (Geburtstag unbekannt)`
   const count = litter.puppies.length
 
   return (
@@ -91,7 +93,7 @@ export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOp
         <section className="litter-stages" aria-label="Fotos im gleichen Alter">
           {stages.map((stage) => (
             <div key={stage.key} className="litter-stage">
-              <h3 className="litter-stage-label">{stage.label}</h3>
+              <h3 className="litter-stage-label">{stage.key === 'welpe' ? words.youngStage : stage.label}</h3>
               <div className="litter-stage-photos">
                 {stage.photos.map((photo) => (
                   <figure key={photo.dog.id} className="litter-photo">
@@ -111,7 +113,7 @@ export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOp
 
       {litter.breeding && (
         <p className="litter-breeding">
-          <Icon name="heart" /> Deckakt am {formatDateLong(litter.breeding.datum)}
+          <Icon name="heart" /> {words.mating} am {formatDateLong(litter.breeding.datum)}
           {litter.breeding.wurf_info && <span className="muted"> · {litter.breeding.wurf_info}</span>}
         </p>
       )}

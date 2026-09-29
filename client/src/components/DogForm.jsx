@@ -3,6 +3,7 @@ import ParentPicker from './ParentPicker.jsx'
 import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import { dogLabel, sexLabel, speciesLabel, speciesNoun } from '../lib/timeline.js'
 import { isEditable } from '../lib/areas.js'
 
@@ -102,6 +103,7 @@ function toPayload(form) {
 // Anlegen und Bearbeiten eines Tiers (meist Hund). onSubmit bekommt das API-Payload.
 // initialValues füllt beim Neuanlegen vor – etwa wenn QuickAnimalForm über "Mehr Angaben …" hierher wechselt.
 export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSubmit, onDelete, onCancel }) {
+  const { words } = useTheme()
   const [form, setForm] = useState(() => initialState(dog, initialValues))
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -275,7 +277,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSu
               </option>
             ))}
           </select>
-          <span className="field-hint">Ohne Verwandtschaft – im Stammbaum erscheint eine eigene Linie „lebt zusammen“.</span>
+          <span className="field-hint">Ohne Verwandtschaft – {words.inTree} erscheint eine eigene Linie „lebt zusammen“.</span>
         </div>
       )}
 

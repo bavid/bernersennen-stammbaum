@@ -38,6 +38,23 @@ describe('themes', () => {
     expect(getTheme('standard').words.groupNeverPublic).toBe('Eine Familie ist nie öffentlich.')
   })
 
+  // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - der Standard-Auftritt sagt "Familienbande" und "Nachwuchs".
+  test('tree and litters words: standard Familienbande/Nachwuchs/Verpaarung, berner keeps Stammbaum/Würfe/Deckakt', () => {
+    const standard = getTheme('standard')
+    const berner = getTheme('berner')
+    expect([standard.words.treeLabel, standard.words.littersLabel, standard.words.mating]).toEqual(['Familienbande', 'Nachwuchs', 'Verpaarung'])
+    expect([berner.words.treeLabel, berner.words.littersLabel, berner.words.mating]).toEqual(['Stammbaum', 'Würfe', 'Deckakt'])
+    expect(berner.words.breedingBook).toBe('Zuchtbuch')
+    expect(standard.littersInNav).toBe(false)
+    expect(berner.littersInNav).toBe(true)
+  })
+
+  test('no word or text of the standard theme uses breeding vocabulary', () => {
+    const { words, texts } = getTheme('standard')
+    const all = [...Object.values(words), ...Object.values(texts).flat(2)]
+    for (const value of all) expect(value).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht|züchte|Welpe/)
+  })
+
   test('each theme defines a Mark component', () => {
     for (const id of THEME_IDS) expect(typeof getTheme(id).Mark).toBe('function')
   })

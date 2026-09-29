@@ -241,8 +241,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   }, [highlightKey])
 
   const items = useMemo(
-    () => (dog ? buildTimeline({ dog, entries, breedingEvents, children: dog.children, newestFirst }) : []),
-    [dog, entries, breedingEvents, newestFirst]
+    () => (dog ? buildTimeline({ dog, entries, breedingEvents, children: dog.children, newestFirst, matingLabel: words.mating }) : []),
+    [dog, entries, breedingEvents, newestFirst, words.mating]
   )
 
   if (error) {
@@ -250,7 +250,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
       <div className="page">
         <div className="error-banner" role="alert">{error}</div>
         <Link to="/stammbaum" className="back-link">
-          <Icon name="arrowLeft" /> Zum Stammbaum
+          <Icon name="arrowLeft" /> {words.toTree}
         </Link>
       </div>
     )
@@ -423,7 +423,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   return (
     <div className="page">
       <Link to="/stammbaum" className="back-link">
-        <Icon name="arrowLeft" /> Stammbaum
+        <Icon name="arrowLeft" /> {words.treeLabel}
       </Link>
 
       <DogHero

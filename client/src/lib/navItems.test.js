@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { MAX_NAV_ITEMS, navItemsFor, unreadCount, withUnread } from './navItems.js'
+import { getTheme } from '../themes/index.js'
 
 const labels = (family) => navItemsFor(family).map((item) => item.label)
 
@@ -19,13 +20,35 @@ describe('navItemsFor', () => {
     expect(navItemsFor({ art: 'tierheim' }).find((item) => item.label === 'Nachrichten').to).toBe('/nachrichten')
   })
 
-  test('households and packs keep their items (no Profil)', () => {
-    expect(labels({ art: 'zuhause' })).toEqual(['Wegbegleiter', 'Stammbaum', 'Pinnwand', 'Entdecken', 'Collage'])
-    expect(labels({ art: 'rudel' })).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
+  test('households and packs keep their items (no Profil) - standard theme: Familienbande, no Nachwuchs tab (Phase U)', () => {
+    expect(labels({ art: 'zuhause' })).toEqual(['Wegbegleiter', 'Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
+    expect(labels({ art: 'rudel' })).toEqual(['Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
+    expect(labels({ art: 'rudel', theme: 'standard' })).toEqual(['Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
+    expect(navItemsFor({ art: 'rudel' }).some((item) => item.to === '/wuerfe')).toBe(false)
+  })
+
+  test('berner theme keeps Stammbaum and Würfe in the bar, unchanged', () => {
+    expect(labels({ art: 'zuhause', theme: 'berner' })).toEqual(['Wegbegleiter', 'Stammbaum', 'Pinnwand', 'Entdecken', 'Collage'])
+    expect(labels({ art: 'rudel', theme: 'berner' })).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
+    expect(navItemsFor({ art: 'rudel', theme: 'berner' }).find((item) => item.label === 'Würfe').to).toBe('/wuerfe')
+  })
+
+  test('an explicit theme (the one on screen, e.g. a preview) wins over the stored one', () => {
+    const rudel = { art: 'rudel', theme: 'standard' }
+    expect(navItemsFor(rudel, getTheme('berner')).map((item) => item.label)).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
+    expect(navItemsFor({ ...rudel, theme: 'berner' }, getTheme('standard')).map((item) => item.label)).toEqual([
+      'Familienbande',
+      'Pinnwand',
+      'Entdecken',
+      'Collage'
+    ])
+    expect(navItemsFor(rudel).every((item) => !('labelKey' in item))).toBe(true)
   })
 
   test.each(['zuhause', 'rudel', 'tierheim', 'partner'])('%s never exceeds the mobile bottom bar (at most 5 items)', (art) => {
-    expect(navItemsFor({ art }).length).toBeLessThanOrEqual(MAX_NAV_ITEMS)
+    for (const theme of ['standard', 'berner']) {
+      expect(navItemsFor({ art, theme }).length).toBeLessThanOrEqual(MAX_NAV_ITEMS)
+    }
     expect(MAX_NAV_ITEMS).toBe(5)
   })
 })

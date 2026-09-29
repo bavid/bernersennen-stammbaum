@@ -1,7 +1,9 @@
 import Icon from './Icon.jsx'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import { MAX_ZOOM, MIN_ZOOM } from '../lib/zoom.js'
 
-// Ansicht des Stammbaums: zoomen, einpassen, Vorfahren kompakt, Vollbild
+// Ansicht des Stammbaums: zoomen, einpassen, Vorfahren kompakt, Vollbild. Name je Auftritt (Phase U: Standard
+// "Familienbande", Berner "Stammbaum").
 export default function PedigreeToolbar({
   zoom,
   expanded,
@@ -14,8 +16,9 @@ export default function PedigreeToolbar({
   onToggleCompact,
   onToggleExpand
 }) {
+  const { words } = useTheme()
   return (
-    <div className="pedigree-toolbar" role="toolbar" aria-label="Stammbaum-Ansicht">
+    <div className="pedigree-toolbar" role="toolbar" aria-label={words.treeView}>
       <span className="pedigree-hint">Ziehen zum Verschieben · Strg + Mausrad zum Zoomen</span>
       <div className="zoom-group">
         <button type="button" className="tool-btn" onClick={onZoomOut} disabled={zoom <= MIN_ZOOM} aria-label="Verkleinern" title="Verkleinern">
@@ -28,7 +31,7 @@ export default function PedigreeToolbar({
           <Icon name="plus" />
         </button>
       </div>
-      <button type="button" className="tool-btn tool-btn-label" onClick={onFit} aria-label="Einpassen" title="Ganzen Stammbaum zeigen">
+      <button type="button" className="tool-btn tool-btn-label" onClick={onFit} aria-label="Einpassen" title={words.treeFit}>
         <Icon name="fit" /> <span>Einpassen</span>
       </button>
       {canCompact && (

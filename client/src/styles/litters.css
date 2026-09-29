@@ -325,3 +325,63 @@ a.litter-parent:hover {
     margin-left: 0;
   }
 }
+
+/* Abschnitt "Nachwuchs" auf der Familienbande (OffspringSection, Phase U): nur im Standard-Auftritt, der keinen
+   eigenen Reiter dafür hat. Geschwister als Chips, Erwartetes als ruhige Meta-Zeile, der Weg zur ganzen Seite oben. */
+
+.offspring-section {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.offspring-section h2 {
+  font-size: var(--text-xl);
+}
+
+.offspring-list,
+.offspring-planned,
+.offspring-section .chip-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offspring-list {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.offspring-item {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.offspring-item + .offspring-item {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.offspring-item-title {
+  margin: 0;
+  color: var(--ink);
+}
+
+.offspring-planned {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.offspring-planned li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.offspring-planned svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--alpine);
+}

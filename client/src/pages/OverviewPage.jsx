@@ -10,6 +10,7 @@ import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
 import FamilySettings from '../components/FamilySettings.jsx'
+import OffspringSection from '../components/OffspringSection.jsx'
 import { nextTermin } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
 import { useToast } from '../components/Toast.jsx'
@@ -117,7 +118,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
     <div className="page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">Stammbaum</span>
+          <span className="eyebrow">{words.treeLabel}</span>
           <div className="page-title-row">
             <h1>{family.name}</h1>
             <button
@@ -166,7 +167,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
       {dogs && dogs.length === 0 && (
         <div className="empty-state">
           <ThemeMark size={72} />
-          <h3>Euer Stammbaum ist noch leer</h3>
+          <h3>{words.treeEmpty}</h3>
           {canWrite ? (
             <>
               <p>Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
@@ -186,6 +187,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
       {dogs && dogs.length > 0 && (
         <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={canWrite ? openAnimalForm : undefined} />
       )}
+
+      {/* Phase U: ohne eigenen Reiter (Standard-Auftritt) steht der Nachwuchs hier - nur, wenn es welchen gibt. */}
+      {dogs && dogs.length > 0 && !theme.littersInNav && <OffspringSection dogs={dogs} />}
 
       <Modal open={settingsOpen} title={words.groupSettings} onClose={() => setSettingsOpen(false)}>
         <FamilySettings

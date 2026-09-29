@@ -49,7 +49,7 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
         <div>
           <strong>Das lässt sich nicht rückgängig machen.</strong>
           <p>
-            Stammbaum, Pinnwand, Kommentare und offene Einladungen {words.ofGroup} werden gelöscht. Die Tiere der
+            {words.treeLabel}, Pinnwand, Kommentare und offene Einladungen {words.ofGroup} werden gelöscht. Die Tiere der
             Mitglieder bleiben in ihren eigenen Chroniken – sie sind danach nur nicht mehr hier zu sehen.
           </p>
         </div>
@@ -64,7 +64,7 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
           <p className="muted">
             {animals.length > 0
               ? `Diese Tiere gehören noch ${words.ofGroup} selbst. Übernimm sie zuerst in deine Chronik – auf der Tierseite:`
-              : 'Die Tiere ließen sich gerade nicht laden – schau im Stammbaum nach.'}
+              : `Die Tiere ließen sich gerade nicht laden – schau ${words.inTree} nach.`}
           </p>
           {animals.length > 0 && (
             <ul className="chip-list">

@@ -1,3 +1,5 @@
+import { getTheme } from '../themes/index.js'
+
 // Hauptnavigation je Bereichsart (family.art) - AppHeader rendert sie, am Handy als untere Leiste.
 
 // Mehr als fünf Einträge passen am Handy (375 px) nicht mehr in die untere Leiste - bei genau so vielen
@@ -17,19 +19,26 @@ const NAV_ITEM_PROFILE = { to: '/profil', icon: 'globe', label: 'Profil' }
 const NAV_ITEM_POSTS = { to: '/beitraege', icon: 'megaphone', label: 'Beiträge' }
 const NAV_ITEM_INBOX = { to: '/nachrichten', icon: 'inbox', label: 'Nachrichten' }
 
+// Phase U: Stammbaum und Würfe heißen je Auftritt anders (Theme-Wörter treeLabel/littersLabel - Standard
+// "Familienbande"/"Nachwuchs", Berner "Stammbaum"/"Würfe"); labelKey statt label, navItemsFor setzt das Wort ein.
+const NAV_ITEM_TREE = { to: '/stammbaum', icon: 'tree', labelKey: 'treeLabel' }
+const NAV_ITEM_LITTERS = { to: '/wuerfe', icon: 'sprout', labelKey: 'littersLabel' }
+
 // Haushalte ("Meine Chronik") sehen den Wegbegleiter statt der Würfe – Rudel weiterhin wie bisher.
 const NAV_ITEMS_HOME = [
   { to: '/wegbegleiter', icon: 'route', label: 'Wegbegleiter' },
-  { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
+  NAV_ITEM_TREE,
   { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
   NAV_ITEM_DISCOVER,
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
 
+// Würfe bzw. Nachwuchs nur, wo der Auftritt sie in der Leiste führt (theme.littersInNav, Berner) - im Standard-
+// Auftritt stehen sie als Abschnitt auf der Familienbande (OffspringSection), /wuerfe bleibt erreichbar.
 const NAV_ITEMS_GROUP = [
-  { to: '/stammbaum', icon: 'tree', label: 'Stammbaum' },
+  NAV_ITEM_TREE,
   { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
-  { to: '/wuerfe', icon: 'sprout', label: 'Würfe' },
+  NAV_ITEM_LITTERS,
   NAV_ITEM_DISCOVER,
   { to: '/collage', icon: 'collage', label: 'Collage' }
 ]
@@ -74,10 +83,20 @@ function withInboxBadge(item, family) {
   }
 }
 
-// Rudel und klassische Rudel-Logins (ohne art) bekommen die Rudel-Navigation.
-export function navItemsFor(family) {
+// Beschriftung aus den Theme-Wörtern (labelKey) - labelKey selbst geht nicht mit hinaus.
+function withThemeLabel(item, words) {
+  if (!item.labelKey) return item
+  const { labelKey, ...rest } = item
+  return { ...rest, label: words[labelKey] }
+}
+
+// Rudel und klassische Rudel-Logins (ohne art) bekommen die Rudel-Navigation. theme: der angezeigte Auftritt
+// (AppHeader: useTheme().theme, samt Vorschau in den Einstellungen) - ohne Angabe der gespeicherte der Familie.
+export function navItemsFor(family, theme = getTheme(family?.theme)) {
   const items = NAV_ITEMS_BY_ART[family?.art] || NAV_ITEMS_GROUP
-  return items.map((item) => withInboxBadge(item, family))
+  return items
+    .filter((item) => item !== NAV_ITEM_LITTERS || theme.littersInNav)
+    .map((item) => withInboxBadge(withThemeLabel(item, theme.words), family))
 }
 
 // Neue family mit geänderter Zahl ungelesener Nachrichten (PartnerInboxPage nach Lesen/Löschen) - für

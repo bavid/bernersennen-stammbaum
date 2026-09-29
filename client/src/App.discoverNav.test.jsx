@@ -98,13 +98,19 @@ function navLabels() {
 }
 
 describe('Reiter "Entdecken" in der Hauptnavigation', () => {
-  test('Zuhause: Wegbegleiter, Stammbaum, Pinnwand, Entdecken, Collage', async () => {
+  // Phase U: im Standard-Auftritt heißt der Stammbaum "Familienbande", der Nachwuchs hat keinen eigenen Reiter.
+  test('Zuhause (Standard): Wegbegleiter, Familienbande, Pinnwand, Entdecken, Collage', async () => {
     await render(home, '/entdecken')
-    expect(navLabels()).toEqual(['Wegbegleiter', 'Stammbaum', 'Pinnwand', 'Entdecken', 'Collage'])
+    expect(navLabels()).toEqual(['Wegbegleiter', 'Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
   })
 
-  test('Rudel: Stammbaum, Pinnwand, Würfe, Entdecken, Collage', async () => {
+  test('Rudel (Standard): Familienbande, Pinnwand, Entdecken, Collage - kein Reiter "Nachwuchs"', async () => {
     await render(group, '/entdecken')
+    expect(navLabels()).toEqual(['Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
+  })
+
+  test('Rudel (Berner): Stammbaum, Pinnwand, Würfe, Entdecken, Collage - unverändert', async () => {
+    await render({ ...group, theme: 'berner' }, '/entdecken')
     expect(navLabels()).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
   })
 

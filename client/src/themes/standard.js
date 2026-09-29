@@ -8,6 +8,8 @@ export default {
   description: 'Pfoten-Logo, für alle Tierarten',
   appName: 'Familie auf Pfoten',
   footer: 'Familie auf Pfoten · Eine tierisch nette Familie',
+  // Phase U: "Nachwuchs" steht nicht in der unteren Leiste, sondern als Abschnitt auf der Familienbande
+  littersInNav: false,
   tricolor: false,
   favicon: '/favicon.svg',
   words: {
@@ -43,7 +45,28 @@ export default {
     newsTitle: 'Neu in der Familie',
     animal: 'Tier',
     animals: 'Tiere',
-    thisAnimalDat: 'diesem Tier'
+    thisAnimalDat: 'diesem Tier',
+    // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - im Standard-Auftritt "Familienbande" und "Nachwuchs"
+    treeLabel: 'Familienbande',
+    toTree: 'Zur Familienbande',
+    inTree: 'in der Familienbande',
+    inTreeArticle: 'in der',
+    yourTreeAcc: 'eure Familienbande',
+    treeEmpty: 'Eure Familienbande ist noch leer',
+    treeFit: 'Ganze Familienbande zeigen',
+    treeView: 'Ansicht der Familienbande',
+    littersLabel: 'Nachwuchs',
+    litter: 'Nachwuchs',
+    litterBirthday: 'Geburtstag der Geschwister',
+    litterMeeting: 'Geschwistertreffen',
+    young: 'Nachwuchs',
+    youngStage: 'Ganz klein',
+    mating: 'Verpaarung',
+    matings: 'Verpaarungen',
+    matingOf: 'der Verpaarung',
+    addMating: 'Verpaarung eintragen',
+    matingAdded: 'Verpaarung eingetragen',
+    breedingBook: 'Verpaarungen'
   },
   texts: {
     loginKicker: 'Eine Familie · viele Zuhause',
@@ -57,6 +80,14 @@ export default {
     ],
     overviewLede:
       'Damit wir wissen, was die anderen treiben: Klick ein Tier an und schau nach, wie es ihm geht – oder erzähl, was es gerade erlebt.',
-    feedEmpty: 'Klick ein Tier an und erzähl, was es so treibt'
+    feedEmpty: 'Klick ein Tier an und erzähl, was es so treibt',
+    littersLede:
+      'Geschwister mit gleichen Eltern und gleichem Geburtstag: was sie gerade treiben und wie sie im gleichen Alter aussahen. Entsteht automatisch aus der Familienbande – eintragen muss man nichts.',
+    littersEmpty:
+      'Noch kein Nachwuchs: Sobald in der Familienbande Geschwister mit gleichen Eltern und gleichem Geburtstag stehen, erscheinen sie hier.',
+    littersSingles: 'Von ihren Geschwistern steht bisher niemand in der Familienbande.',
+    plannedDue: 'Der Nachwuchs müsste jetzt da sein – Zeit für neue Karten in der Familienbande!',
+    breedingIntro: 'Für die, die Nachwuchs planen: Eine Verpaarung erscheint oben als erwarteter Nachwuchs und später bei den Jungtieren.',
+    matingNotesPlaceholder: 'Anzahl Jungtiere, Besonderheiten, Ultraschall …'
   }
 }

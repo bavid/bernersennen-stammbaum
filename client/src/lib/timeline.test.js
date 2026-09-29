@@ -47,6 +47,14 @@ describe('buildTimeline', () => {
     ])
   })
 
+  test('the breeding milestone uses the word of the theme (Phase U: standard "Verpaarung")', () => {
+    const breedingEvents = [{ id: 1, mutter_dog_id: 2, vater_dog_id: 1, mutter_name: 'Bella vom Emmental', datum: '2017-04-16' }]
+    const titles = buildTimeline({ dog, breedingEvents, matingLabel: 'Verpaarung' }).map((i) => i.titel)
+    expect(titles).toContain('Verpaarung mit Bella')
+    const lone = buildTimeline({ dog, breedingEvents: [{ id: 2, mutter_dog_id: 9, vater_dog_id: 1, datum: '2018-01-01' }], matingLabel: 'Verpaarung' })
+    expect(lone.map((i) => i.titel)).toContain('Verpaarung')
+  })
+
   test('adds an arrival milestone with the origin as text', () => {
     const items = buildTimeline({
       dog: { ...dog, bei_uns_seit: '2015-01-10', herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }

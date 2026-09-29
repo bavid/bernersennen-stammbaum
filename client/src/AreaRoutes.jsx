@@ -68,6 +68,8 @@ export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
   return (
     <Routes>
       <Route path="/stammbaum" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
+      {/* Phase U: /familienbande ist derselbe Stammbaum unter dem Namen des Standard-Auftritts (Links bleiben /stammbaum). */}
+      <Route path="/familienbande" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
       <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/hund/:id" element={<RedirectTierUrl />} />
       <Route

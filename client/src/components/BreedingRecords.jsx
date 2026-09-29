@@ -13,7 +13,7 @@ import { isEditable } from '../lib/areas.js'
 const EMPTY_FORM = { mutterDogId: '', vater: { dogId: '', freitext: '' }, datum: todayIso(), wurfInfo: '', fotos: [] }
 
 function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
-  const { words } = useTheme()
+  const { theme, words } = useTheme()
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -47,7 +47,7 @@ function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
 
   return (
     <form className="form-stack card breeding-form" onSubmit={handleSubmit}>
-      <h3>Deckakt eintragen</h3>
+      <h3>{words.addMating}</h3>
       {error && <div className="error-banner" role="alert">{error}</div>}
       <div className="field">
         <label className="field-label" htmlFor="mutter">
@@ -70,7 +70,7 @@ function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
       <ParentPicker label="Rüde" sex="ruede" dogs={allDogs} value={form.vater} onChange={(vater) => update({ vater })} />
       <div className="field">
         <label className="field-label" htmlFor="breeding-date">
-          Datum des Deckakts <span className="muted">(auch geplant)</span>
+          Datum {words.matingOf} <span className="muted">(auch geplant)</span>
         </label>
         <input id="breeding-date" type="date" value={form.datum} onChange={(e) => update({ datum: e.target.value })} required />
       </div>
@@ -82,7 +82,7 @@ function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
           id="wurf-info"
           value={form.wurfInfo}
           onChange={(e) => update({ wurfInfo: e.target.value })}
-          placeholder="Anzahl Welpen, Besonderheiten, Ultraschall …"
+          placeholder={theme.texts.matingNotesPlaceholder}
         />
       </div>
       <div className="field">
@@ -102,11 +102,12 @@ function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
 }
 
 export function BreedingEvent({ event, onDelete, onOpenPhoto }) {
+  const { words } = useTheme()
   const father = event.vater_name || event.vater_freitext
   return (
     <li className="breeding-event">
       <time className="breeding-date" dateTime={event.datum}>
-        Deckakt · {formatDateLong(event.datum)}
+        {words.mating} · {formatDateLong(event.datum)}
       </time>
       <div className="breeding-pair">
         <Link to={`/tier/${event.mutter_dog_id}`}>{shortName(event.mutter_name)}</Link>
@@ -138,23 +139,23 @@ export function BreedingEvent({ event, onDelete, onOpenPhoto }) {
 
 // Das bisherige Zuchtbuch als Abschnitt der Würfe-Seite: für die, die züchten – alle anderen sehen es zugeklappt.
 // canWrite (Phase R): ohne Schreibrecht (Gast in einer Familie) kein "Deckakt eintragen"; Löschen hängt an onDelete.
+// Phase U: im Standard-Auftritt "Verpaarungen" statt "Zuchtbuch" und "Verpaarung" statt "Deckakt".
 export default function BreedingRecords({ events, ownDogs, allDogs, canWrite = true, onCreated, onDelete, onOpenPhoto }) {
+  const { theme, words } = useTheme()
   const [writing, setWriting] = useState(false)
   return (
     <section className="breeding-records" aria-labelledby="breeding-records-title">
       <div className="section-head">
         <h2 id="breeding-records-title" className="section-title">
-          Zuchtbuch
+          {words.breedingBook}
         </h2>
         {canWrite && !writing && (
           <button type="button" className="btn btn-ghost" onClick={() => setWriting(true)}>
-            <Icon name="plus" /> Deckakt eintragen
+            <Icon name="plus" /> {words.addMating}
           </button>
         )}
       </div>
-      <p className="muted">
-        Für die, die züchten: Ein Deckakt erscheint oben als erwarteter Wurf und später bei seinen Welpen.
-      </p>
+      <p className="muted">{theme.texts.breedingIntro}</p>
       {writing && (
         <BreedingForm
           ownDogs={ownDogs}

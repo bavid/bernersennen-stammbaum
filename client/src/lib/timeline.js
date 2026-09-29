@@ -90,7 +90,8 @@ function litterItems(children = []) {
   }))
 }
 
-function breedingItems(dog, breedingEvents = []) {
+// matingLabel: "Deckakt" (Berner) bzw. "Verpaarung" (Standard, Theme-Wort mating - Phase U).
+function breedingItems(dog, breedingEvents = [], matingLabel = 'Deckakt') {
   return breedingEvents
     .filter((event) => event.mutter_dog_id === dog.id || event.vater_dog_id === dog.id)
     .map((event) => {
@@ -101,7 +102,7 @@ function breedingItems(dog, breedingEvents = []) {
         key: `breeding-${event.id}`,
         sortId: event.id,
         datum: event.datum,
-        titel: partner ? `Deckakt mit ${shortName(partner)}` : 'Deckakt',
+        titel: partner ? `${matingLabel} mit ${shortName(partner)}` : matingLabel,
         text: event.wurf_info,
         foto_urls: event.foto_urls || []
       }
@@ -117,11 +118,11 @@ function farewellTitel(dog) {
 }
 
 // Führt eigene Einträge und automatische Meilensteine (Geburt, Einzug, Deckakt, Nachwuchs, Abschied)
-// zu einer chronologisch sortierten Liste zusammen.
-export function buildTimeline({ dog, entries = [], breedingEvents = [], children = [], newestFirst = false }) {
+// zu einer chronologisch sortierten Liste zusammen. matingLabel: Wort für den Deckakt je Auftritt (words.mating).
+export function buildTimeline({ dog, entries = [], breedingEvents = [], children = [], newestFirst = false, matingLabel }) {
   const items = [
     ...entries.map((entry) => ({ ...entry, type: 'entry', key: `entry-${entry.id}`, sortId: entry.id })),
-    ...breedingItems(dog, breedingEvents),
+    ...breedingItems(dog, breedingEvents, matingLabel),
     ...litterItems(children)
   ]
   if (dog.geburtsdatum) {

@@ -212,7 +212,7 @@ export default function InviteDialog({ family }) {
         <section className="invite-legacy">
           <h3>Adresse und Passwort weitergeben</h3>
           <p className="muted">
-            Schick der Person die Adresse und euer gemeinsames {words.groupPassword}. Dann sieht sie euren Stammbaum und
+            Schick der Person die Adresse und euer gemeinsames {words.groupPassword}. Dann sieht sie {words.yourTreeAcc} und
             kann mitschreiben. Das Passwort schreibst du selbst dazu – es ist aus Sicherheitsgründen nirgends gespeichert.
           </p>
           <CopyField label="Adresse der Chronik" value={window.location.origin} />
