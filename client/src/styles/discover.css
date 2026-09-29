@@ -20,6 +20,9 @@
 }
 
 .discover-tab {
+  /* Bezugsrahmen für den unsichtbaren Zähler-Text (.visually-hidden ist absolut positioniert) - sonst ragte er
+     aus der waagerecht scrollenden Leiste und verbreiterte am Handy die ganze Seite. */
+  position: relative;
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
