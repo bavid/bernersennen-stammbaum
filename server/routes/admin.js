@@ -268,14 +268,18 @@ router.post('/voucher-batches', requireAdmin, (req, res, next) => {
 
 // Zähler je Stapel - "abgelaufen" zählt bewusst in keiner der drei Spalten mit (die Liste dient nur
 // dem Überblick, nicht der Kontingent-Logik). partner_name: bei kind='partner' und bei einem
-// gebundenen Partner-Zugang gesetzt. zweck/partnerTyp: siehe POST /voucher-batches.
+// gebundenen Partner-Zugang gesetzt. zweck/partnerTyp: siehe POST /voucher-batches. assigned (Phase N
+// Task 1): wie viele der offenen schon einer Anfrage zugewiesen sind (routes/adminAnfragen.js) - frei für eine
+// Zuweisung sind höchstens open - assigned.
 router.get('/voucher-batches', requireAdmin, (req, res) => {
   const batches = db
     .prepare(
       `SELECT b.id, b.label, b.kind, b.zweck, b.partner_typ AS partnerTyp, b.size, b.created_at, p.name AS partner_name,
          SUM(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NULL AND (v.expires_at IS NULL OR v.expires_at > datetime('now')) THEN 1 ELSE 0 END) AS open,
          SUM(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NOT NULL THEN 1 ELSE 0 END) AS redeemed,
-         SUM(CASE WHEN v.revoked_at IS NOT NULL THEN 1 ELSE 0 END) AS revoked
+         SUM(CASE WHEN v.revoked_at IS NOT NULL THEN 1 ELSE 0 END) AS revoked,
+         SUM(CASE WHEN v.zugewiesen_an_anfrage_id IS NOT NULL AND v.revoked_at IS NULL AND v.redeemed_at IS NULL
+                   AND (v.expires_at IS NULL OR v.expires_at > datetime('now')) THEN 1 ELSE 0 END) AS assigned
        FROM voucher_batches b
        LEFT JOIN vouchers v ON v.batch_id = b.id
        LEFT JOIN partners p ON p.id = b.partner_id
@@ -294,7 +298,8 @@ router.get('/voucher-batches/:id', requireAdmin, (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT v.id, v.code_cipher, v.code_hint, v.redeemed_at, v.revoked_at, v.expires_at, f.name AS redeemed_by_name
+      `SELECT v.id, v.code_cipher, v.code_hint, v.redeemed_at, v.revoked_at, v.expires_at, v.zugewiesen_an_anfrage_id,
+         f.name AS redeemed_by_name
        FROM vouchers v LEFT JOIN families f ON f.id = v.redeemed_by_family_id
        WHERE v.batch_id = ? ORDER BY v.id`
     )
@@ -308,7 +313,9 @@ router.get('/voucher-batches/:id', requireAdmin, (req, res) => {
       hint: row.code_hint,
       status,
       redeemed_at: row.redeemed_at,
-      redeemed_by_name: row.redeemed_by_name
+      redeemed_by_name: row.redeemed_by_name,
+      // Phase N Task 1: einer Anfrage zugewiesen - bleibt offen und druckbar, wird aber nicht noch einmal vergeben.
+      zugewiesen: row.zugewiesen_an_anfrage_id !== null
     }
   })
 

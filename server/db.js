@@ -549,4 +549,37 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_admin_log_created ON admin_log(created_at DESC, id DESC);
 `)
 
+// Phase N Task 1: Anfragen von Besuchern - ein Gutschein (typ 'gutschein') oder ein Partner-Zugang (typ 'partner'),
+// gestellt über POST /api/public/anfragen, bearbeitet im Admin (routes/adminAnfragen.js, lib/anfragen.js).
+// typ/status/partner_typ bewusst ohne CHECK (wie promotions.freigabe) - geprüft im Code (lib/anfragen.js
+// TYP_VALUES/STATUS_VALUES, lib/partners.js TYP_VALUES), damit spätere Werte keinen Tabellen-Umbau brauchen.
+// email COLLATE NOCASE: die Duplikat-Sperre (dieselbe offene Anfrage binnen 24 Stunden) ignoriert Groß/klein.
+// erledigt_at: Zeitpunkt des Abschlusses (erledigt ODER abgelehnt), NULL solange offen.
+// Datenschutz: Name, E-Mail und Nachricht sind personenbezogen - erledigte/abgelehnte Anfragen verschwinden
+// 180 Tage nach dem Abschluss, offene 365 Tage nach dem Eingang (lib/anfragen.js, täglich aus index.js). Nie im Log.
+// voucher_id: der zugewiesene Gutschein, bewusst ohne REFERENCES (wie families.voucher_id).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS anfragen (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    typ TEXT NOT NULL,
+    name TEXT,
+    email TEXT NOT NULL COLLATE NOCASE,
+    nachricht TEXT,
+    firma TEXT,
+    partner_typ TEXT,
+    plz TEXT,
+    status TEXT NOT NULL DEFAULT 'offen',
+    notiz TEXT,
+    voucher_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    erledigt_at TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_anfragen_status ON anfragen(status, created_at);
+  CREATE INDEX IF NOT EXISTS idx_anfragen_email ON anfragen(email, typ, created_at);
+`)
+// Welcher Anfrage ein Gutschein zugewiesen wurde (POST /api/admin/anfragen/:id/gutschein) - so wird kein Code
+// zweimal vergeben. Bewusst ohne REFERENCES: eine gelöschte Anfrage gibt ihren (womöglich schon verschickten)
+// Code damit NICHT wieder frei. Der Gutschein selbst bleibt offen und druckbar, bis er eingelöst wird.
+addColumnIfMissing('vouchers', 'zugewiesen_an_anfrage_id', 'INTEGER')
+
 module.exports = db
