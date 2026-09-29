@@ -26,13 +26,13 @@ export const BEREICHE_BY_TYP = Object.freeze({
   sonstige: ['unterstuetzen', 'futter']
 })
 
-// Wo ein Beitrag in "Entdecken" erscheint - aus Sicht des Partners beschriftet.
+// Wo ein Beitrag in "Entdecken" erscheint - seit Phase U dieselben Namen wie die Reiter dort (lib/discoverTabs.js).
 export const POST_BEREICH_LABELS = {
-  hundeschule: 'Hundeschule gesucht?',
+  hundeschule: 'Hundeschulen',
   salon: 'Salon & Betreuung',
-  begleiter: 'Neuer Begleiter gesucht?',
+  begleiter: 'Neue Begleiter',
   unterstuetzen: 'Unterstützen',
-  futter: 'Futter-Empfehlungen'
+  futter: 'Futter'
 }
 
 export function allowedBereiche(typ) {
