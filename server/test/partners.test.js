@@ -307,31 +307,40 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
     const badPlz = await get('/api/public/partners?plz=00000&radius=10')
     assert.equal(badPlz.status, 400)
 
-    // Enger Radius: Potsdam (26 km) und Hamburg (253 km) bleiben draußen, die Berlin-Partner (0 km) nicht.
+    // Enger Radius: Potsdam (26 km) und Hamburg (253 km) liegen draußen, die Berlin-Partner (0 km) nicht.
+    // Phase P2 Task 9: sind es weniger als 5 im Radius, kommen die nächsten außerhalb mit ausserhalb: true dazu.
     const tight = await get('/api/public/partners?plz=10115&radius=10')
     assert.equal(tight.status, 200)
-    assert.ok(tight.data.length >= 2, 'mehrere Berlin-Partner aus vorherigen Tests sollten da sein')
-    assert.ok(tight.data.every((p) => p.distanceKm === 0))
-    assert.ok(!tight.data.some((p) => p.slug === 'tierheim-potsdam' || p.slug === 'hundeschule-nord'))
+    const tightIn = tight.data.filter((p) => p.ausserhalb === false)
+    assert.ok(tightIn.length >= 2, 'mehrere Berlin-Partner aus vorherigen Tests sollten da sein')
+    assert.ok(tightIn.every((p) => p.distanceKm === 0))
+    assert.ok(!tightIn.some((p) => p.slug === 'tierheim-potsdam' || p.slug === 'hundeschule-nord'))
+    assert.ok(tight.data.every((p) => p.ausserhalb === (p.distanceKm > 10)))
+    if (tightIn.length < 5) {
+      assert.deepEqual(tight.data.filter((p) => p.ausserhalb).map((p) => p.slug), ['tierheim-potsdam', 'hundeschule-nord'])
+    }
 
-    // Weiter Radius: Potsdam kommt dazu (nach den 0-km-Treffern einsortiert), Hamburg bleibt draußen.
+    // Weiter Radius: Potsdam kommt dazu (nach den 0-km-Treffern einsortiert), Hamburg liegt draußen.
     const wide = await get('/api/public/partners?plz=10115&radius=50')
     assert.equal(wide.status, 200)
-    assert.ok(!wide.data.some((p) => p.slug === 'hundeschule-nord'))
+    assert.ok(!wide.data.some((p) => p.slug === 'hundeschule-nord' && !p.ausserhalb))
     for (let i = 1; i < wide.data.length; i += 1) {
       assert.ok(wide.data[i - 1].distanceKm <= wide.data[i].distanceKm)
     }
     const potsdam = wide.data.find((p) => p.slug === 'tierheim-potsdam')
     assert.ok(potsdam)
     assert.ok(potsdam.distanceKm > 20 && potsdam.distanceKm < 30)
-    assert.equal(potsdam, wide.data[wide.data.length - 1], 'Potsdam ist am weitesten entfernt, muss zuletzt kommen')
+    const wideIn = wide.data.filter((p) => !p.ausserhalb)
+    assert.equal(potsdam, wideIn[wideIn.length - 1], 'Potsdam ist im Radius am weitesten entfernt, muss dort zuletzt kommen')
 
-    // In Hamburg gesucht: nur Hundeschule Nord (0 km), Berlin/Potsdam liegen zu weit weg.
+    // In Hamburg gesucht: im Radius nur Hundeschule Nord (0 km); Berlin/Potsdam liegen zu weit weg und
+    // kommen nur als Auffüllung (ausserhalb: true) dazu.
     const nearHamburg = await get('/api/public/partners?plz=20095&radius=100')
     assert.equal(nearHamburg.status, 200)
-    assert.equal(nearHamburg.data.length, 1)
     assert.equal(nearHamburg.data[0].slug, 'hundeschule-nord')
     assert.equal(nearHamburg.data[0].distanceKm, 0)
+    assert.equal(nearHamburg.data[0].ausserhalb, false)
+    assert.ok(nearHamburg.data.slice(1).every((p) => p.ausserhalb === true && p.distanceKm > 100))
   })
 
   await t.test('POST /api/public/partners/near: gleiche Antwort wie GET ?plz - PLZ landet nicht in der URL', async () => {

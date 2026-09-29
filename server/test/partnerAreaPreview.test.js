@@ -202,12 +202,13 @@ test('Kundensicht: Vorschau-Daten für Portal, Entdecken und Steckbrief', async 
     assert.deepEqual(new Set(slugs.slice(0, ownSlugs.length)), new Set(ownSlugs))
   })
 
-  await t.test('Entdecken-Vorschau: Salon/Betreuung vorerst bei den Hundeschulen, Futter/Sonstige nur mit Hinweis', async () => {
+  await t.test('Entdecken-Vorschau: Salon/Betreuung im Abschnitt salon (Phase P2 Task 9), Futter/Sonstige nur mit Hinweis', async () => {
     for (const typ of ['hundesalon', 'betreuung']) {
       const { partner, cookie } = await createPartnerArea({ typ })
       const res = (await previewDiscover({}, cookie)).data
-      assert.equal(res.hundeschulen[0].id, partner.id, typ)
-      assert.equal(res.hundeschulen[0].vorschau, true)
+      assert.equal(res.salon[0].id, partner.id, typ)
+      assert.equal(res.salon[0].vorschau, true)
+      assert.ok(!res.hundeschulen.some((card) => card.kind === 'partner' && card.id === partner.id), typ)
     }
     for (const typ of ['futter', 'sonstige']) {
       const { partner, cookie } = await createPartnerArea({ typ })

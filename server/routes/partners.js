@@ -3,7 +3,8 @@ const express = require('express')
 const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const config = require('../config')
-const { lookupPlz, distanceKm } = require('../lib/geo')
+const { lookupPlz } = require('../lib/geo')
+const { sortByName, radiusSection } = require('../lib/nearby')
 const { publicPartner, publicPartnerSql, isPubliclyVisible } = require('../lib/partners')
 const { isAdmin } = require('../middleware/admin')
 const { optionalSession } = require('../middleware/auth')
@@ -37,10 +38,6 @@ function demoAllowed(req) {
   return Boolean(req.isDemo)
 }
 
-function sortByName(rows) {
-  return rows.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'))
-}
-
 // Öffentlich sichtbare Partner samt Teaser-Foto (neuester sichtbarer Einblick, lib/einblicke.js) - EINE
 // Abfrage für die ganze Liste.
 function visiblePartnerRows(req) {
@@ -55,7 +52,9 @@ function partnerListCard(row) {
 
 // Aktive Partner im Umkreis von plz/radius, nach Entfernung sortiert - oder eine Fehlerantwort direkt
 // über res. Gemeinsame Logik für GET ?plz= (Rückwärtskompatibilität) und POST /near (Finding 9: die PLZ
-// soll nicht mehr zwingend in der URL landen, siehe Kommentar dort).
+// soll nicht mehr zwingend in der URL landen, siehe Kommentar dort). Phase P2 Task 9: dieselbe Auffüll-Regel
+// wie "Entdecken" (lib/nearby.js radiusSection) - weniger als 5 im Radius -> die nächsten außerhalb dazu
+// (höchstens 20, ausserhalb: true), im Radius ausserhalb: false. Die Antwort bleibt ein Array.
 function nearbyPartners(req, res, { plz, radius }) {
   const radiusKm = Number(radius)
   if (!RADIUS_VALUES.includes(radiusKm)) {
@@ -64,16 +63,8 @@ function nearbyPartners(req, res, { plz, radius }) {
   const center = lookupPlz(typeof plz === 'string' ? plz.trim() : '')
   if (!center) return res.status(400).json({ error: 'Diese Postleitzahl kennen wir nicht' })
 
-  const rows = visiblePartnerRows(req)
-
-  const results = rows
-    .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lon))
-    .map((row) => ({ row, distance: distanceKm(center, { lat: row.lat, lon: row.lon }) }))
-    .filter(({ distance }) => distance <= radiusKm)
-    .sort((a, b) => a.distance - b.distance)
-    .map(({ row, distance }) => ({ ...partnerListCard(row), distanceKm: Math.round(distance * 10) / 10 }))
-
-  res.json(results)
+  const { items } = radiusSection(visiblePartnerRows(req), center, radiusKm)
+  res.json(items.map(({ row, distanceKm, ausserhalb }) => ({ ...partnerListCard(row), distanceKm, ausserhalb })))
 }
 
 // GET /api/public/partners?plz=&radius=&demo= - ohne plz: alle aktiven Partner nach Name; mit

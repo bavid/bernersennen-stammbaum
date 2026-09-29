@@ -195,7 +195,7 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
     assert.equal(res.status, 200)
     assert.equal(res.data.center, undefined)
     // Ohne PLZ gibt es keinen Umkreis, also auch keinen Fallback - beide Flaggen bleiben false.
-    assert.deepEqual(res.data.fallback, { hundeschulen: false, begleiter: false })
+    assert.deepEqual(res.data.fallback, { hundeschulen: false, salon: false, begleiter: false })
 
     // Hundeschulen: Partner + Empfehlungen - echte UND Demo-Partner (Bonus), aber sortiert nach Name
     const hsPartnerCards = res.data.hundeschulen.filter((e) => e.kind === 'partner')
@@ -251,7 +251,7 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
   await t.test('Demo-Sitzung sieht ausschließlich Demo-Daten (Partner, Tiere, Empfehlungen, Bericht, Einstellungen)', async () => {
     const res = await discover({}, demoHousehold.cookie)
     assert.equal(res.status, 200)
-    assert.deepEqual(res.data.fallback, { hundeschulen: false, begleiter: false })
+    assert.deepEqual(res.data.fallback, { hundeschulen: false, salon: false, begleiter: false })
 
     const hsPartnerSlugs = res.data.hundeschulen.filter((e) => e.kind === 'partner').map((p) => p.slug)
     assert.deepEqual(hsPartnerSlugs, [hsDemo.slug])

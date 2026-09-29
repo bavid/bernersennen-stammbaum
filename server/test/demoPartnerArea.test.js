@@ -218,9 +218,10 @@ test('Demo-Partner-Bereiche: Einblicke, Wuschelglück, Demo als Partner, Ersetze
     const discover = await post('/api/discover', {}, getCookie(demoLogin.res))
     assert.equal(discover.status, 200)
     assert.ok(
-      discover.data.hundeschulen.some((entry) => entry.kind === 'partner' && entry.slug === WUSCHELGLUECK),
-      'vorerst im Abschnitt hundeschulen'
+      discover.data.salon.some((entry) => entry.kind === 'partner' && entry.slug === WUSCHELGLUECK),
+      'im Abschnitt salon (Phase P2 Task 9)'
     )
+    assert.ok(!discover.data.hundeschulen.some((entry) => entry.kind === 'partner' && entry.slug === WUSCHELGLUECK))
   })
 
   await t.test('POST /api/demo {as: "partner"} meldet im Pfotenglück-Bereich an, mit slug in einem bestimmten Demo-Partner-Bereich', async () => {

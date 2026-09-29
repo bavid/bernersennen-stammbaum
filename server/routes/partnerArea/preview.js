@@ -30,20 +30,19 @@ const VORSCHAU_HINWEIS = 'Euer Profil erscheint in der Partnerliste und auf eure
 
 // In welchem Abschnitt von "Entdecken" die eigene Karte erscheint. futter/sonstige haben dort keinen
 // Abschnitt - die Antwort trägt dann vorschauHinweis.
+// Wie routes/discover.js (HUNDESCHULEN_TYPS, SALON_TYPS, BEGLEITER_TYPS) - Hundesalons und Betreuung stehen
+// seit Phase P2 Task 9 im eigenen Abschnitt salon.
 const SECTION_BY_TYP = Object.freeze({
   hundeschule: 'hundeschulen',
-  // P2: eigener Abschnitt salon
-  hundesalon: 'hundeschulen',
-  // P2: eigener Abschnitt salon
-  betreuung: 'hundeschulen',
+  hundesalon: 'salon',
+  betreuung: 'salon',
   tierheim: 'begleiter',
   vermittlung: 'begleiter'
 })
 
 // Phase P2 Task 8: eigene Beiträge (eingereicht oder freigegeben) in "Entdecken" - je Bereich derselbe
-// Abschnitt wie für freigegebene Empfehlungen (routes/discover.js buildDiscover). salon hat dort noch keinen
-// Abschnitt (kommt mit Task 9) und erscheint darum hier auch noch nicht.
-const POST_BEREICHE = Object.freeze(['hundeschule', 'begleiter', 'futter', 'unterstuetzen'])
+// Abschnitt wie für freigegebene Empfehlungen (routes/discover.js buildDiscover), salon seit Task 9.
+const POST_BEREICHE = Object.freeze(['hundeschule', 'salon', 'begleiter', 'futter', 'unterstuetzen'])
 
 // Eigener Beitrag in der Kundensicht: Karte wie in "Entdecken", dazu vorschau und freigabe. Solange der
 // Admin nicht freigegeben hat, gibt es keinen clickUrl - /r/promotion/:id wäre dann ohnehin 404.
@@ -99,11 +98,13 @@ function buildPreviewDiscover(partner, { center, radiusKm }) {
   const section = SECTION_BY_TYP[partner.typ]
 
   let hundeschulen = withOwnPosts('hundeschule', base.hundeschulen)
+  let salon = withOwnPosts('salon', base.salon)
   let begleiterPartner = withoutOwn(base.begleiter.partner)
   let partnerSpenden = withoutOwn(base.unterstuetzen.partnerSpenden)
   let tiere = base.begleiter.tiere
 
   if (section === 'hundeschulen') hundeschulen = [ownCard, ...hundeschulen]
+  if (section === 'salon') salon = [ownCard, ...salon]
   if (section === 'begleiter') {
     begleiterPartner = [ownCard, ...begleiterPartner]
     tiere = withOwnAnimalsFirst(partner, tiere, distance)
@@ -114,6 +115,7 @@ function buildPreviewDiscover(partner, { center, radiusKm }) {
   return {
     ...base,
     hundeschulen,
+    salon,
     begleiter: { ...base.begleiter, partner: begleiterPartner, tiere, promotions: withOwnPosts('begleiter', base.begleiter.promotions) },
     futter: withOwnPosts('futter', base.futter),
     unterstuetzen: { ...base.unterstuetzen, partnerSpenden, promotions: withOwnPosts('unterstuetzen', base.unterstuetzen.promotions) },

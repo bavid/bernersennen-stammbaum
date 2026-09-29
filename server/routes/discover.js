@@ -9,8 +9,9 @@ const { publicPartner, publicPartnerSql } = require('../lib/partners')
 const { promotionPublicSql, promotionActiveSql, promotionImageUrl } = require('../lib/promotions')
 const { getShelterAnimalCards } = require('./publicAnimals')
 const { teaserFotoSql, teaserFoto } = require('../lib/einblicke')
+const { MIN_IN_RADIUS, sortByName, roundKm, withDistances, splitByRadius, radiusSection } = require('../lib/nearby')
 
-// Phase 3 Task 2: Reiter "Entdecken" - eine Antwort bündelt alle vier Abschnitte
+// Phase 3 Task 2: Reiter "Entdecken" - eine Antwort bündelt alle Abschnitte (seit Phase P2 Task 9 auch salon)
 // (docs/superpowers/plans/2026-09-29-phase-3-entdecken.md). requireSession statt requireAuth: die Demo
 // darf mitlesen (wie bei places.js), Schreibzugriffe gibt es hier ohnehin nicht.
 
@@ -19,15 +20,12 @@ const router = express.Router()
 const TEN_MINUTES = 10 * 60 * 1000
 const RADIUS_VALUES = [5, 10, 25, 50, 100]
 const MAX_BEGLEITER_TIERE = 12
-// Umkreis-Fallback (Koordinator-Folgeauftrag): zeigt ein dünn besiedelter Umkreis weniger als 5
-// Einträge, werden die nächsten Treffer AUSSERHALB des Radius ergänzt (ausserhalb: true), damit die
-// Seite nie fast leer wirkt. Ab 5 echten Treffern im Radius bleibt es beim harten Ausschluss wie bisher.
-const MIN_IN_RADIUS = 5
-// review finding (Important): ein dünn besiedelter Umkreis mit sehr vielen Partnern insgesamt sollte
-// nicht ALLE davon außerhalb anhängen (unbegrenzte Antwortgröße) - nur die nächsten 20.
-const MAX_FALLBACK = 20
-// Partner-Typen im Abschnitt hundeschulen. P2: hundesalon/betreuung ziehen in den eigenen Abschnitt salon.
-const HUNDESCHULEN_TYPS = ['hundeschule', 'hundesalon', 'betreuung']
+// Partner-Typen je Abschnitt. Umkreis-Fallback (weniger als 5 im Radius -> die nächsten außerhalb) für alle
+// Partner-Abschnitte gleich: lib/nearby.js radiusSection. Phase P2 Task 9: Hundesalons und Betreuung haben
+// einen eigenen Abschnitt salon (vorher standen sie bei den Hundeschulen).
+const HUNDESCHULEN_TYPS = ['hundeschule']
+const SALON_TYPS = ['hundesalon', 'betreuung']
+const BEGLEITER_TYPS = ['tierheim', 'vermittlung']
 
 // Eigenes, knappes Limit pro IP zusätzlich zum globalen apiLimiter (app.js: app.use('/api', apiLimiter))
 // - wie places.js placesLimiter, gleiche Werte und derselbe IPv6-maskierende Schlüssel.
@@ -39,10 +37,6 @@ const discoverLimiter = rateLimit({
   keyGenerator: ipKeyGenerator,
   message: { error: 'Zu viele Anfragen in kurzer Zeit – bitte einen Moment warten.' }
 })
-
-function sortByName(rows) {
-  return rows.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'))
-}
 
 // Partner (Tierheime, Vermittlungsstellen, Hundeschulen): eine Demo-Sitzung sieht NUR Demo-Partner, eine
 // echte NUR echte - außer in appEnv dev/staging, wo eine echte Test-Sitzung zusätzlich die Demo-Partner
@@ -97,45 +91,6 @@ function activePromotionRows(bereich, isDemo) {
     .all(bereich, contentDemoValue(isDemo))
 }
 
-// Hängt an jede Zeile mit gültigem lat/lon die Entfernung zu center - ohne Koordinaten fliegt eine Zeile
-// bei einer Umkreissuche ganz raus (wie bisher: keine Koordinaten -> keine Entfernung -> kein Auftritt).
-function withDistances(rows, center) {
-  return rows
-    .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lon))
-    .map((row) => ({ row, dist: distanceKm(center, { lat: row.lat, lon: row.lon }) }))
-}
-
-// Teilt Zeilen-mit-Entfernung in "im Radius" (aufsteigend sortiert) und "außerhalb" (ebenfalls
-// aufsteigend, also die nächstgelegenen zuerst) - Grundlage sowohl für Partner-Listen als auch für
-// begleiter.tiere, das unabhängig von der Partner-Schwelle eine eigene Tier-Schwelle hat.
-function splitByRadius(rowsWithDistance, radiusKm) {
-  const inRadius = rowsWithDistance.filter(({ dist }) => dist <= radiusKm).sort((a, b) => a.dist - b.dist)
-  const outside = rowsWithDistance.filter(({ dist }) => dist > radiusKm).sort((a, b) => a.dist - b.dist)
-  return { inRadius, outside }
-}
-
-// Partner-Abschnitt (hundeschulen-Partner, begleiter.partner) mit Umkreis-Fallback: ohne PLZ alle nach
-// Name; mit PLZ die Treffer im Radius (distanceKm, ausserhalb: false) - und, wenn das WENIGER als
-// MIN_IN_RADIUS sind, zusätzlich die nächsten bis zu MAX_FALLBACK Treffer außerhalb (ausserhalb: true),
-// nach Entfernung sortiert, damit die Seite nie fast leer wirkt (Koordinator-Folgeauftrag). Ab
-// MIN_IN_RADIUS Treffern im Radius bleibt es beim harten Ausschluss wie bisher (fallback bleibt false).
-function partnerSection(rows, center, radiusKm) {
-  if (!center) return { items: sortByName(rows).map((row) => ({ row })), fallback: false }
-
-  const { inRadius, outside } = splitByRadius(withDistances(rows, center), radiusKm)
-  const toCardInput = (ausserhalb) => ({ row, dist }) => ({ row, distanceKm: Math.round(dist * 10) / 10, ausserhalb })
-
-  let items = inRadius.map(toCardInput(false))
-  let fallback = false
-  if (inRadius.length < MIN_IN_RADIUS && outside.length) {
-    fallback = true
-    // outside ist bereits aufsteigend nach Entfernung sortiert (splitByRadius) - slice(0, MAX_FALLBACK)
-    // sind also automatisch die MAX_FALLBACK nächstgelegenen, nicht irgendwelche.
-    items = items.concat(outside.slice(0, MAX_FALLBACK).map(toCardInput(true)))
-  }
-  return { items, fallback }
-}
-
 // begleiter.tiere: eigene Schwelle auf Tier-Ebene (nicht auf Partner-Ebene) - selbst wenn schon genug
 // Partner im Radius liegen, können deren Steckbriefe zusammen trotzdem unter MIN_IN_RADIUS bleiben, dann
 // ergänzt der Fallback Tiere weiterer, weiter entfernter Tierheime/Vermittlungsstellen.
@@ -151,7 +106,7 @@ function begleiterTiereSection(partnerRows, center, radiusKm) {
       if (tiere.length >= MAX_BEGLEITER_TIERE) break
       for (const animal of getShelterAnimalCards(row.id)) {
         if (tiere.length >= MAX_BEGLEITER_TIERE) break
-        tiere.push(dist === undefined ? animal : { ...animal, distanceKm: Math.round(dist * 10) / 10, ausserhalb })
+        tiere.push(dist === undefined ? animal : { ...animal, distanceKm: roundKm(dist), ausserhalb })
       }
     }
   }
@@ -239,7 +194,7 @@ function promotionCard(row) {
   }
 }
 
-// Karten eines Empfehlungs-Bereichs (futter, hundeschule, begleiter, unterstuetzen - lib/promotions.js
+// Karten eines Empfehlungs-Bereichs (futter, hundeschule, salon, begleiter, unterstuetzen - lib/promotions.js
 // BEREICH_VALUES): dieselbe Abfrage (aktiv, Zeitfenster, Demo-Trennung, sichtbarer Partner), dieselbe
 // Sortierung nach Partner-Entfernung und dieselbe Kartenform für jeden Abschnitt.
 function promotionCards(bereich, isDemo, distanceMap) {
@@ -294,24 +249,32 @@ function resolveDiscoverCenter({ plz, radius } = {}) {
   return { center: { lat: hit.lat, lon: hit.lon, ort: hit.ort }, radiusKm }
 }
 
+function partnerCardFromItem({ row, distanceKm: d, ausserhalb }) {
+  return partnerCard(row, { distanceKm: d, ausserhalb })
+}
+
+// Abschnitt aus Partner-Karten (Umkreis mit Fallback, lib/nearby.js) und danach den Empfehlungen des
+// passenden Bereichs - hundeschulen (bereich hundeschule) und salon (bereich salon, Phase P2 Task 9).
+function partnerAndPromotionSection(typs, bereich, { isDemo, center, radiusKm, distanceMap }) {
+  const section = radiusSection(activePartnerRows(typs, isDemo), center, radiusKm)
+  const cards = [...section.items.map(partnerCardFromItem), ...promotionCards(bereich, isDemo, distanceMap)]
+  return { cards, fallback: section.fallback }
+}
+
 // Die ganze "Entdecken"-Antwort - ohne req/res, damit die Kundensicht der Partner (routes/partnerArea/
 // preview.js) genau die Antwort einer Demo-Sitzung als Grundlage nehmen kann. isDemo: Demo- oder echte
 // Sicht (Partner, Empfehlungen, Berichte, Einstellungen); center/radiusKm aus resolveDiscoverCenter.
 function buildDiscover({ isDemo, center, radiusKm }) {
   const distanceMap = partnerDistanceMap(center)
 
-  // --- Hundeschule gesucht? ------------------------------------------------------------------------
-  // P2: hundesalon und betreuung bekommen einen eigenen Abschnitt salon - bis dahin stehen sie hier (wie in
-  // der Kundensicht, routes/partnerArea/preview.js SECTION_BY_TYP).
-  const hundeschulPartnerSection = partnerSection(activePartnerRows(HUNDESCHULEN_TYPS, isDemo), center, radiusKm)
-  const hundeschulPartner = hundeschulPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
-  const hundeschulPromotions = promotionCards('hundeschule', isDemo, distanceMap)
-  const hundeschulen = [...hundeschulPartner, ...hundeschulPromotions]
+  // --- Hundeschule gesucht? / Hundesalon oder Betreuung gesucht? --------------------------------------
+  const hundeschulen = partnerAndPromotionSection(HUNDESCHULEN_TYPS, 'hundeschule', { isDemo, center, radiusKm, distanceMap })
+  const salon = partnerAndPromotionSection(SALON_TYPS, 'salon', { isDemo, center, radiusKm, distanceMap })
 
   // --- Neuer Begleiter gesucht? --------------------------------------------------------------------
-  const begleiterPartnerRows = activePartnerRows(['tierheim', 'vermittlung'], isDemo)
-  const begleiterPartnerSection = partnerSection(begleiterPartnerRows, center, radiusKm)
-  const begleiterPartner = begleiterPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
+  const begleiterPartnerRows = activePartnerRows(BEGLEITER_TYPS, isDemo)
+  const begleiterPartnerSection = radiusSection(begleiterPartnerRows, center, radiusKm)
+  const begleiterPartner = begleiterPartnerSection.items.map(partnerCardFromItem)
   const begleiterTiereSectionResult = begleiterTiereSection(begleiterPartnerRows, center, radiusKm)
   const begleiterPromotions = promotionCards('begleiter', isDemo, distanceMap)
 
@@ -331,10 +294,12 @@ function buildDiscover({ isDemo, center, radiusKm }) {
   return {
     ...(center ? { center } : {}),
     fallback: {
-      hundeschulen: hundeschulPartnerSection.fallback,
+      hundeschulen: hundeschulen.fallback,
+      salon: salon.fallback,
       begleiter: begleiterPartnerSection.fallback || begleiterTiereSectionResult.fallback
     },
-    hundeschulen,
+    hundeschulen: hundeschulen.cards,
+    salon: salon.cards,
     begleiter: { partner: begleiterPartner, tiere: begleiterTiereSectionResult.items, promotions: begleiterPromotions },
     futter,
     unterstuetzen: {
