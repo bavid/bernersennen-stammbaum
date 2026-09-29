@@ -10,6 +10,7 @@ const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess'
 const { requireRole, hasRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { slugify } = require('../lib/partners')
 const { createBatch, revokeOpenHandoverVouchers } = require('../lib/vouchers')
+const { takeOverDog } = require('../lib/transfers')
 const { formatCode } = require('../lib/codes')
 const { VERMITTLUNG_STATUS, PUBLISHABLE_STATUS, statusInSql } = require('../lib/vermittlung')
 
@@ -109,13 +110,19 @@ function buildDogRecord(body, existing = {}) {
   return record
 }
 
-function validateParent(record, parent, dogId, familyId) {
+// existingParentId: der bisherige Verweis bei PUT (null bei POST). Ein UNVERÄNDERTER Elternteil bleibt gültig,
+// auch wenn er inzwischen in einem anderen Bereich steht - nach dem Übernehmen eines Tiers aus der Familie
+// (POST /:id/uebernehmen) zeigt dessen mother/father weiter auf ein Tier der Familie; ohne diese Ausnahme
+// ließe sich das Tier im eigenen Zuhause erst wieder speichern, nachdem man die Eltern gelöscht hat. Geprüft
+// wird also nur ein NEUER Verweis (Bereich, Tierart, Geschlecht, kein Nachkomme).
+function validateParent(record, parent, dogId, familyId, existingParentId = null) {
   const parentId = record[parent.idCol]
   if (Number.isNaN(parentId)) return `${parent.label}: ungültige Auswahl`
   if (parentId && record[parent.textCol]) {
     return `${parent.idKey} und ${parent.textKey} dürfen nicht gleichzeitig gesetzt sein`
   }
   if (!parentId) return null
+  if (existingParentId !== null && parentId === existingParentId) return null
 
   const parentDog = findDog.get(parentId)
   if (!parentDog || parentDog.family_id !== familyId) return `${parent.label} muss ein Hund des eigenen Rudels sein`
@@ -129,11 +136,14 @@ function validateParent(record, parent, dogId, familyId) {
   return null
 }
 
-// existingFotoUrl: der bisherige Wert bei PUT (null bei POST) - bleibt erlaubt, auch wenn er gerade
-// nicht (mehr) über canAttachUpload sichtbar wäre (Altbestand, siehe lib/uploadAccess.js)
-// previousVermittlungStatus: der bisherige Wert bei PUT (null bei POST) - siehe die Vermittlungsstatus-
-// Prüfung unten (security-review Phase T Finding 1).
-function validateDogRecord(record, dogId, req, existingFotoUrl = null, previousVermittlungStatus = null) {
+// existing: der bisherige Datensatz bei PUT ({} bei POST). Daraus zählen:
+// - foto_url: bleibt erlaubt, auch wenn er gerade nicht (mehr) über canAttachUpload sichtbar wäre (Altbestand,
+//   siehe lib/uploadAccess.js);
+// - vermittlung_status: siehe die Vermittlungsstatus-Prüfung unten (security-review Phase T Finding 1);
+// - mother_dog_id/father_dog_id: ein unveränderter Elternteil wird nicht erneut geprüft (validateParent).
+function validateDogRecord(record, dogId, req, existing = {}) {
+  const existingFotoUrl = existing.foto_url ?? null
+  const previousVermittlungStatus = existing.vermittlung_status ?? null
   if (!record.name) return 'Name ist erforderlich (oder „Name unbekannt“ wählen)'
   if (!SEXES.includes(record.geschlecht)) return 'Geschlecht muss ruede oder huendin sein'
   if (!SPECIES.includes(record.tierart)) return 'Tierart muss hund, katze oder anderes sein'
@@ -176,7 +186,7 @@ function validateDogRecord(record, dogId, req, existingFotoUrl = null, previousV
     return 'Unbekannter Vermittlungsstatus'
   }
   for (const parent of PARENTS) {
-    const error = validateParent(record, parent, dogId, req.familyId)
+    const error = validateParent(record, parent, dogId, req.familyId, existing[parent.idCol] ?? null)
     if (error) return error
   }
   return null
@@ -218,7 +228,11 @@ function visibleParentId(parentId, viewFamilyId) {
 // vollständig, geteilte nur nicht-private), für ein eigenes Tierheim-Tier also ALLE seine Einträge.
 // Nach created_at (zuletzt GESCHRIEBEN) statt datum sortiert, wie zuvor api.recentActivity - ein
 // rückdatierter Eintrag soll die Kartenvorschau nicht in die Vergangenheit springen lassen.
+// kannUebernehmen (Phase R, Nachtrag zu Task 2): darf die Identität dieses Tier in ihre eigene Chronik
+// übernehmen (POST /:id/uebernehmen)? Nur in einer Familie, nur als Leitungs-Mitglied mit eigener Chronik
+// (nicht der gemeinsame Schlüssel) und nur für Tiere der Familie - sonst false, auch außerhalb von Familien.
 router.get('/', requireAuth, (req, res) => {
+  const mayTakeOver = canTakeOverInArea(req)
   const dogs = db
     .prepare(
       `SELECT dogs.*,
@@ -236,9 +250,10 @@ router.get('/', requireAuth, (req, res) => {
     .all({ familyId: req.familyId })
     .map((dog) =>
       dog.can_edit
-        ? dog
+        ? { ...dog, kannUebernehmen: mayTakeOver }
         : {
             ...dog,
+            kannUebernehmen: false,
             mother_dog_id: visibleParentId(dog.mother_dog_id, req.familyId),
             father_dog_id: visibleParentId(dog.father_dog_id, req.familyId)
           }
@@ -273,12 +288,16 @@ router.get('/links', requireAuth, (req, res) => {
   res.json(links)
 })
 
+// Mitbewohner aus den Verbindungen der Eigentümerfamilie (@ownerFamilyId) UND des gerade aktiven Bereichs
+// (@familyId): nach dem Übernehmen eines Tiers aus der Familie (POST /:id/uebernehmen) gehört die Verbindung
+// weiter der Familie, das Tier aber einem Zuhause - in der Familie soll das Paar sichtbar bleiben. Der
+// Aufrufer filtert zusätzlich mit canSeeDog.
 const findHousemates = db.prepare(
-  `SELECT ${SUMMARY_COLUMNS}
+  `SELECT DISTINCT ${SUMMARY_COLUMNS}
    FROM dog_links l
    JOIN dogs ON dogs.id = CASE WHEN l.dog_a_id = @id THEN l.dog_b_id ELSE l.dog_a_id END
    JOIN families ON families.id = dogs.family_id
-   WHERE (l.dog_a_id = @id OR l.dog_b_id = @id) AND l.family_id = @familyId
+   WHERE (l.dog_a_id = @id OR l.dog_b_id = @id) AND l.family_id IN (@ownerFamilyId, @familyId)
    ORDER BY dogs.name`
 )
 
@@ -327,26 +346,28 @@ function shelterShareFor(dogId) {
   return { shelterName: shelter.name, enabled: Boolean(share), storyConsent: Boolean(share?.story_consent) }
 }
 
-router.get('/:id', requireAuth, (req, res) => {
-  const dog = loadVisibleDog(req, res)
-  if (!dog) return
+// Kinder: alle im Bereich sichtbaren Tiere, die dieses Tier als Elternteil führen - nicht nur die derselben
+// Eigentümerfamilie: nach dem Übernehmen eines Tiers aus der Familie (POST /:id/uebernehmen) gehören Mutter
+// und Kind verschiedenen Bereichen und sind über die Freigabe trotzdem beide in der Familie sichtbar.
+// canSeeDog hält die Liste wie bisher auf das Sichtbare beschränkt.
+const findChildren = db.prepare(
+  `SELECT ${SUMMARY_COLUMNS}
+   FROM dogs JOIN families ON families.id = dogs.family_id
+   WHERE mother_dog_id = @id OR father_dog_id = @id
+   ORDER BY geburtsdatum IS NULL, geburtsdatum, dogs.name`
+)
 
+// Detailansicht eines im Bereich req.familyId sichtbaren Tiers - für GET /:id und die Antwort von
+// POST /:id/uebernehmen (dort aus Sicht der Familie, in der das Tier nun geteilt ist).
+function dogDetail(req, dog) {
   const canEdit = dog.family_id === req.familyId
-  const children = db
-    .prepare(
-      `SELECT ${SUMMARY_COLUMNS}
-       FROM dogs JOIN families ON families.id = dogs.family_id
-       WHERE (mother_dog_id = ? OR father_dog_id = ?) AND dogs.family_id = ?
-       ORDER BY geburtsdatum IS NULL, geburtsdatum, dogs.name`
-    )
-    .all(dog.id, dog.id, dog.family_id)
-    .filter((child) => canSeeDog(req.familyId, child))
+  const children = findChildren.all({ id: dog.id }).filter((child) => canSeeDog(req.familyId, child))
   const housemates = findHousemates
-    .all({ id: dog.id, familyId: dog.family_id })
+    .all({ id: dog.id, ownerFamilyId: dog.family_id, familyId: req.familyId })
     .filter((mate) => canSeeDog(req.familyId, mate))
   const family = db.prepare('SELECT name FROM families WHERE id = ?').get(dog.family_id)
 
-  res.json({
+  return {
     ...dog,
     // Rohe Ids in Nicht-Bearbeiten-Ansichten redigieren, wenn der Elternteil hier nicht sichtbar ist;
     // Eigentümer sehen ihre echten mother_dog_id/father_dog_id immer (auch bei Altdaten-Sonderfällen).
@@ -364,7 +385,43 @@ router.get('/:id', requireAuth, (req, res) => {
     // Nur für den Besitzer relevant (Einwilligung "Tierheim darf mitlesen") - sonst weggelassen,
     // nicht null, damit die Form für Nicht-Besitzer nicht suggeriert, es gäbe hier etwas zu verwalten.
     ...(canEdit ? { shelterShare: shelterShareFor(dog.id) } : {})
-  })
+  }
+}
+
+router.get('/:id', requireAuth, (req, res) => {
+  const dog = loadVisibleDog(req, res)
+  if (!dog) return
+  res.json(dogDetail(req, dog))
+})
+
+// Phase R (Nachtrag zu Task 2): ein Tier der Familie in die eigene Chronik übernehmen (lib/transfers.js
+// takeOverDog) - der Weg, eine Familie mit eigenen Tieren doch noch auflösen zu können (routes/members.js
+// POST /aufloesen verlangt eine Familie ohne eigene Tiere). Nur in einer Familie, nur die Leitung
+// (requireRole; ein Mitglied bekommt 403), nur als Mitglied mit eigener Chronik (der gemeinsame Schlüssel hat
+// kein Zuhause, in das er übernehmen könnte), nie in der Demo (requireAuth). Ein im Bereich unsichtbares
+// Tier gilt wie überall als nicht gefunden (404); ein sichtbares, das einem anderen Zuhause gehört (dorthin
+// geteilt), lässt sich nicht übernehmen (409). Danach bleibt das Tier über eine Freigabe in der Familie
+// sichtbar - die Antwort zeigt es so, wie GET /:id es aus dieser Familie heraus jetzt zeigt.
+function canTakeOverInArea(req) {
+  if (req.homeId === req.familyId) return false
+  if (findFamilyArt.get(req.familyId)?.art !== ART.rudel) return false
+  if (findFamilyArt.get(req.homeId)?.art !== ART.zuhause) return false
+  return hasRole(req.homeId, req.familyId, 'leitung')
+}
+
+router.post('/:id/uebernehmen', requireAuth, requireRole('leitung'), (req, res) => {
+  if (findFamilyArt.get(req.familyId)?.art !== ART.rudel) return res.status(400).json({ error: 'Nur in einer Familie möglich' })
+  if (!canTakeOverInArea(req)) {
+    return res.status(400).json({ error: 'Übernehmen geht nur als Mitglied mit eigener Chronik („Meine Chronik“)' })
+  }
+  const dog = loadVisibleDog(req, res)
+  if (!dog) return
+  if (dog.family_id !== req.familyId) {
+    return res.status(409).json({ error: 'Dieses Tier gehört einem anderen Zuhause – nur Tiere der Familie lassen sich übernehmen.' })
+  }
+
+  takeOverDog(db, { dogId: dog.id, fromFamilyId: req.familyId, toFamilyId: req.homeId })
+  res.json(dogDetail(req, findDog.get(dog.id)))
 })
 
 // Mitbewohner verbinden – beide müssen zum eigenen Rudel gehören
@@ -378,7 +435,7 @@ router.post('/:id/housemates', requireAuth, canWrite, (req, res) => {
   if (!other || other.family_id !== req.familyId) return res.status(404).json({ error: 'Tier nicht gefunden' })
 
   insertLink.run(req.familyId, Math.min(dog.id, other.id), Math.max(dog.id, other.id))
-  res.status(201).json(findHousemates.all({ id: dog.id, familyId: req.familyId }))
+  res.status(201).json(findHousemates.all({ id: dog.id, ownerFamilyId: req.familyId, familyId: req.familyId }))
 })
 
 router.delete('/:id/housemates/:otherId', requireAuth, canWrite, (req, res) => {
@@ -458,7 +515,7 @@ router.put('/:id', requireAuth, canWrite, (req, res) => {
   if (!existing) return
 
   const record = buildDogRecord(req.body || {}, existing)
-  const error = validateDogRecord(record, existing.id, req, existing.foto_url, existing.vermittlung_status)
+  const error = validateDogRecord(record, existing.id, req, existing)
   if (error) return res.status(400).json({ error })
 
   updateDog(existing, record)

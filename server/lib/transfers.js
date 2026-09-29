@@ -85,4 +85,40 @@ function transferDog(db, { dogId, fromFamilyId, toFamilyId, voucherId, today }) 
   })()
 }
 
-module.exports = { transferDog }
+// Phase R (Nachtrag zu Task 2): ein Tier der Familie (dogs.family_id = fromFamilyId, ein Rudel) in die eigene
+// Chronik der Leitung übernehmen (routes/dogs.js POST /:id/uebernehmen). Anders als transferDog (Übergabe aus
+// dem Tierheim an ein fremdes Zuhause) ist das nur ein Eigentümerwechsel INNERHALB der Familie - das Tier
+// bleibt über eine Freigabe (dog_shares) dort sichtbar, darum bleiben alle Verweise über Tier-Ids bestehen:
+// eigene Eltern, Kinder, Würfe (breeding_events), "lebt zusammen mit" (dog_links) und Kommentare. Die ganze
+// Chronik zieht mit; "privat" (in der Familie: nur für die Familie) wird zu 0, denn genau dieselben Leute
+// sehen die Einträge künftig über die Freigabe - mit privat = 1 verschwänden sie für die Familie.
+// Herkunft nur setzen, wenn beide Felder leer sind ("aus der Familie X"), sonst bleibt die eingetragene.
+// dog_transfers protokolliert den Wechsel (voucher_id NULL - kein Gutschein im Spiel, wie der Demo-Umzug in
+// lib/demoPack.js); shelterShareFor in routes/dogs.js ignoriert ihn, weil die Herkunft kein Tierheim ist.
+// Läuft in EINER Transaktion; wirft, wenn das Tier nicht (mehr) der Familie gehört.
+function takeOverDog(db, { dogId, fromFamilyId, toFamilyId }) {
+  return db.transaction(() => {
+    const dog = db.prepare('SELECT id, herkunft_art, herkunft_text FROM dogs WHERE id = ? AND family_id = ?').get(dogId, fromFamilyId)
+    if (!dog) throw new Error(`Tier ${dogId} gehört nicht der Familie ${fromFamilyId}`)
+    const family = db.prepare('SELECT name FROM families WHERE id = ?').get(fromFamilyId)
+    if (!family) throw new Error(`Familie ${fromFamilyId} nicht gefunden`)
+
+    const keepsOrigin = Boolean(dog.herkunft_art || dog.herkunft_text)
+    db.prepare(
+      `UPDATE dogs SET family_id = @toFamilyId,
+         herkunft_art = CASE WHEN @keepsOrigin THEN herkunft_art ELSE 'privat' END,
+         herkunft_text = CASE WHEN @keepsOrigin THEN herkunft_text ELSE @herkunftText END
+       WHERE id = @dogId`
+    ).run({ toFamilyId, dogId, keepsOrigin: keepsOrigin ? 1 : 0, herkunftText: `aus der Familie ${family.name}` })
+
+    db.prepare('UPDATE timeline_entries SET family_id = ?, privat = 0 WHERE dog_id = ?').run(toFamilyId, dogId)
+    db.prepare('INSERT OR IGNORE INTO dog_shares (dog_id, family_id) VALUES (?, ?)').run(dogId, fromFamilyId)
+    db.prepare('INSERT INTO dog_transfers (dog_id, from_family_id, to_family_id, voucher_id) VALUES (?, ?, ?, NULL)').run(
+      dogId,
+      fromFamilyId,
+      toFamilyId
+    )
+  })()
+}
+
+module.exports = { transferDog, takeOverDog }
