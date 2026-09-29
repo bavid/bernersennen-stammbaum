@@ -914,6 +914,10 @@ Anbieter und Website-Prüfung bekommen ein injiziertes `fetch`. Tests gehen also
   - Partner sehen ihren Kunden-Gutschein-Stapel im Partner-Bereich (offen/eingelöst) und können ihn nachdrucken;
   - Infoseite `/partner-werden` für Partner-Karten und Gespräche.
 - **Druck erst nach Phase G:** Die Druckseite ist vorher fertig, aber gedruckt wird erst mit der Domain.
+- **Admin-Ansicht (Zusatz 29.09.):** Der Haupt-Admin kann jederzeit jeden Bereich öffnen – Zuhause, Familie,
+  Tierheim, Partner – als **Nur-Lesen-Ansicht** mit sichtbarem Band „Admin-Ansicht“. Jeder Aufruf wird
+  protokolliert (Bereich, Zeitpunkt; keine Inhalte). Schreibende Aktionen sind in dieser Ansicht gesperrt.
+- **Eingelöste Gutscheine** stehen in der Stapel-Liste mit Status, Einlösedatum und dem entstandenen Bereich.
 
 ---
 

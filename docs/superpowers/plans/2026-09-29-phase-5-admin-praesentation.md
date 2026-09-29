@@ -163,6 +163,31 @@ falls nötig
 
 - [ ] Commit: `feat: Präsentationsmodus für Vorführungen`
 
+### Task 5b: Admin-Ansicht jedes Bereichs (Server + Client)
+
+**Files:** `server/routes/admin.js` oder neu `server/routes/adminView.js`, `server/middleware/auth.js`, `server/db.js`
+(`admin_log`), `client/src/components/AdminFamilyList.jsx`, `client/src/App.jsx`, Tests
+
+- **Server:**
+  - `POST /api/admin/view/:familyId` (Admin): setzt das normale Sitzungs-Cookie für diesen Bereich mit der
+    Markierung `adminView: true` (Identität und aktiver Bereich = der Bereich; `is_demo`-Parität egal). Antwort
+    `buildMe(...)` mit `adminView: true`.
+  - `denyAdminViewWrites`: jede schreibende Anfrage (POST/PUT/DELETE außer `/api/logout`, `/api/view`) mit
+    `adminView` → 403 „Admin-Ansicht – nur lesen“. Uploads, Kommentare, Gutscheine eingeschlossen.
+  - `GET /api/me` liefert `adminView: true`.
+  - Tabelle `admin_log (id, aktion, ziel, created_at)`; Eintrag `view` mit `familyId` bei jedem Aufruf. Keine
+    Inhalte. `GET /api/admin/log?limit=` liefert die letzten 200.
+  - Tests: Cookie und `me`, Schreibsperre (Stichproben über alle Router), Log-Eintrag, nur Admin.
+- **Client:**
+  - In der Familien- und Partnerliste je Bereich „Als Admin ansehen“ (öffnet in neuem Tab: `/admin-ansicht/:id`,
+    das den Aufruf macht und dann auf die Startroute des Bereichs weiterleitet).
+  - Band oben „Admin-Ansicht – nur lesen · Zurück zum Admin“; alle Schreib-Knöpfe deaktiviert wie in der Demo
+    (`useIsDemo` um `adminView` erweitern oder eigener Hook `useIsReadOnly`).
+  - Admin-Protokoll als kleine Liste in der Übersicht.
+  - Tests: Band, Sperren, Weiterleitung.
+
+- [ ] Commit: `feat: Admin-Ansicht – jeden Bereich nur lesend öffnen, Protokoll`
+
 ### Task 6: Prüfen und ausliefern (Koordinator)
 
 - [ ] README, Roadmap.
