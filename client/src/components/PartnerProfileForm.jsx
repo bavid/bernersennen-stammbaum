@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import {
-  DEMO_HINT,
   MAX_NAME_LENGTH,
   MAX_PORTAL_TEXT_LENGTH,
   MAX_TITEL_LENGTH,
@@ -46,6 +45,7 @@ function portalTextHint(length) {
 // speichert sofort über einen eigenen Endpunkt (onLogoUploaded).
 export default function PartnerProfileForm({ profile, onSaved, onLogoUploaded }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
   const [form, setForm] = useState(() => profileForm(profile))
   const [fieldErrors, setFieldErrors] = useState({})
@@ -121,7 +121,7 @@ export default function PartnerProfileForm({ profile, onSaved, onLogoUploaded })
               upload={async (file) => (await api.partnerArea.uploadLogo(file)).logoUrl}
               onUploaded={onLogoUploaded}
             />
-            {isDemo && <p className="field-hint">{DEMO_HINT}</p>}
+            {isDemo && <p className="field-hint">{readOnlyHint}</p>}
           </div>
         </div>
       </fieldset>
@@ -198,7 +198,7 @@ export default function PartnerProfileForm({ profile, onSaved, onLogoUploaded })
         {!isDirty && !isDemo && <span className="field-hint">Keine ungespeicherten Änderungen.</span>}
         {isDemo && (
           <span id={SAVE_DEMO_HINT_ID} className="field-hint">
-            {DEMO_HINT}
+            {readOnlyHint}
           </span>
         )}
       </div>

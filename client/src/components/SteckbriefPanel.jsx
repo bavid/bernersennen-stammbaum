@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { STECKBRIEF_PUBLISHABLE_STATUS, vermittlungStatusLabel } from '../lib/vermittlung.js'
 
 const COPIED_MS = 2000
@@ -18,6 +18,7 @@ const PUBLISHABLE_STATUS_TEXT = (() => {
 // bestehenden (angereicherten) dog-State (siehe handleSteckbriefChange dort).
 export default function SteckbriefPanel({ dog, onDogChange }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -95,7 +96,7 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
           )}
         </>
       )}
-      {isDemo && <p className="field-hint">In der Demo nicht möglich.</p>}
+      {isDemo && <p className="field-hint">{readOnlyHint}</p>}
     </section>
   )
 }

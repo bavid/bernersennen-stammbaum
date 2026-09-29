@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import Modal from './Modal.jsx'
 import JoinFamilyDialog from './JoinFamilyDialog.jsx'
@@ -17,6 +17,7 @@ const DEMO_HINT_ID = 'share-panel-demo-hint'
 export default function SharePanel({ dog, family, onFamilyChange }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
   const [shares, setShares] = useState(dog.shares || [])
   const [saving, setSaving] = useState(false)
@@ -66,7 +67,7 @@ export default function SharePanel({ dog, family, onFamilyChange }) {
           </div>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
-              In der Demo nicht möglich.
+              {readOnlyHint}
             </p>
           )}
         </>

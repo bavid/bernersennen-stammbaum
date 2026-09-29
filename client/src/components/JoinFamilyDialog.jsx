@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 
 const MIN_PASSWORD_LENGTH = 6
@@ -14,6 +14,7 @@ const DEMO_HINT_ID = 'join-family-demo-hint'
 export default function JoinFamilyDialog({ onChange, onClose }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
   const [tab, setTab] = useState('join')
   const [joinPassword, setJoinPassword] = useState('')
@@ -93,7 +94,7 @@ export default function JoinFamilyDialog({ onChange, onClose }) {
           </div>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
-              In der Demo nicht möglich.
+              {readOnlyHint}
             </p>
           )}
           <div className="form-actions">
@@ -138,7 +139,7 @@ export default function JoinFamilyDialog({ onChange, onClose }) {
           <p className="field-hint">Teilt das Passwort mit allen, die dazugehören sollen.</p>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
-              In der Demo nicht möglich.
+              {readOnlyHint}
             </p>
           )}
           <div className="form-actions">

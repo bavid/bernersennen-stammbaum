@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { startRoute } from '../lib/areas.js'
 import { ROLES, inviteRoleOptions, isLastLeitung, rank, roleLabel, roleOf } from '../lib/roles.js'
 import { useToast } from '../components/Toast.jsx'
@@ -18,7 +18,6 @@ import OwnMembershipSection from '../components/members/OwnMembershipSection.jsx
 import DissolveFamilyDialog from '../components/members/DissolveFamilyDialog.jsx'
 import FamilyKeySection from '../components/members/FamilyKeySection.jsx'
 
-const DEMO_HINT = 'In der Demo nicht möglich.'
 
 // Mitglieder & Rollen einer Familie (/mitglieder, Phase R Task 4; nur für art 'rudel', siehe AreaRoutes).
 // Die Daten kommen aus GET /api/family/members; jede Änderung antwortet mit demselben Aufbau (oder 204,
@@ -28,6 +27,7 @@ const DEMO_HINT = 'In der Demo nicht möglich.'
 export default function MembersPage({ family, onFamilyChange }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const navigate = useNavigate()
   const toast = useToast()
   const [data, setData] = useState(undefined)
@@ -156,7 +156,7 @@ export default function MembersPage({ family, onFamilyChange }) {
           {error}
         </div>
       )}
-      {isDemo && <p className="field-hint members-demo-hint">{DEMO_HINT}</p>}
+      {isDemo && <p className="field-hint members-demo-hint">{readOnlyHint}</p>}
 
       <VisibilityCard />
 

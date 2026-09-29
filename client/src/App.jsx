@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
-import { DemoProvider } from './lib/demo.js'
+import { DemoProvider, isReadOnly } from './lib/demo.js'
 import { readSetting, writeSetting } from './lib/storage.js'
 import { inviteLabel, isPartnerArea, startRoute } from './lib/areas.js'
 import { MAX_NAV_ITEMS, navItemsFor } from './lib/navItems.js'
@@ -14,6 +14,7 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import ContextSwitcher from './components/ContextSwitcher.jsx'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
+import AdminViewBanner from './components/AdminViewBanner.jsx'
 import NavBadge from './components/NavBadge.jsx'
 import ViewModeSwitch from './components/ViewModeSwitch.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -32,10 +33,16 @@ const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 // Druckseite für Gutschein-Karten (Phase 5 Task 2): ebenfalls nur für den Admin, eigener Chunk - die QR-
 // Bibliothek und die Karten lädt sonst niemand mit. Prüft die Admin-Sitzung selbst und schickt ohne zu /admin.
 const AdminPrintPage = lazy(() => import('./pages/AdminPrintPage.jsx'))
+// Einstieg in die Admin-Ansicht eines Bereichs (Phase 5 Task 5b): ruft POST /api/admin/view/:id und wechselt
+// dann in den Bereich - ebenfalls nur für den Admin, eigener Chunk.
+const AdminViewStartPage = lazy(() => import('./pages/AdminViewStartPage.jsx'))
 
 // /admin/gutscheine/<stapel-id>/druck - die Id ist eine Zahl (server/lib/validate.js cleanId), alles andere
 // bleibt beim Admin-Dashboard.
 const ADMIN_PRINT_RE = /^\/admin\/gutscheine\/(\d+)\/druck\/?$/
+
+// /admin-ansicht/<bereichs-id> - aus der Familien- und Partnerliste des Admins in einem neuen Tab geöffnet.
+const ADMIN_VIEW_RE = /^\/admin-ansicht\/(\d+)\/?$/
 
 // /p/<slug> – öffentliches Partner-Portal, unabhängig von Groß-/Kleinschreibung des Pfads egal (der
 // Slug selbst bleibt roh, die Route validiert nur die Form).
@@ -67,7 +74,7 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed }) {
   // jede andere Demo-Aktion, api.claimVoucher würde ohnehin mit 403 ablehnen) - canClaim schließt sie
   // deshalb schon hier aus, statt erst den Fehler vom Server abzuwarten.
   const isHouseholdIdentity = family.home?.art === 'zuhause'
-  const canClaim = !family.isDemo && family.art === 'zuhause' && Boolean(family.home) && family.id === family.home.id
+  const canClaim = !isReadOnly(family) && family.art === 'zuhause' && Boolean(family.home) && family.id === family.home.id
   // Ein Haushalt, der gerade ein Rudel ansieht (ContextSwitcher), kann von hier aus nicht übernehmen -
   // canClaim ist dann false, ohne dass wir wüssten, ob der Code überhaupt einen offenen Übergabe-
   // Gutschein trägt. "Abmelden und neu einlösen" wäre hier die falsche Empfehlung (verschenkt die
@@ -300,6 +307,23 @@ export default function App() {
     navigate(`/tier/${dogId}`)
   }
 
+  // Admin-Ansicht (Phase 5 Task 5b): AdminViewStartPage hat POST /api/admin/view/:id gerufen, me ist die
+  // Antwort (Form von /me, adminView: true) - Sitzung übernehmen und in den Bereich wechseln, wie beim Login.
+  function handleEnterAdminView(me) {
+    setFamily(me)
+    navigate(startRoute(me), { replace: true })
+  }
+
+  // "Beenden" im Band: die Nur-Lesen-Sitzung abmelden und zurück zum Admin (dessen eigenes Cookie bleibt).
+  async function handleEndAdminView() {
+    try {
+      await api.logout()
+    } finally {
+      setFamily(null)
+      navigate('/admin', { replace: true })
+    }
+  }
+
   // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login, immer im Standard-Auftritt
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     const printBatchId = pathname.match(ADMIN_PRINT_RE)?.[1]
@@ -307,6 +331,19 @@ export default function App() {
       <ThemeProvider themeId="standard">
         <Suspense fallback={<RouteFallback />}>
           {printBatchId ? <AdminPrintPage batchId={printBatchId} /> : <AdminPage />}
+        </Suspense>
+      </ThemeProvider>
+    )
+  }
+
+  // Admin-Ansicht eines Bereichs (Phase 5 Task 5b): unabhängig von einer laufenden Sitzung - die Seite
+  // ersetzt sie durch die Nur-Lesen-Sitzung des Bereichs (handleEnterAdminView).
+  const adminViewId = pathname.match(ADMIN_VIEW_RE)?.[1]
+  if (adminViewId) {
+    return (
+      <ThemeProvider themeId="standard">
+        <Suspense fallback={<RouteFallback />}>
+          <AdminViewStartPage familyId={adminViewId} onEntered={handleEnterAdminView} />
         </Suspense>
       </ThemeProvider>
     )
@@ -393,10 +430,16 @@ export default function App() {
 
   return (
     <ThemeProvider themeId={family.theme}>
-      <DemoProvider value={Boolean(family.isDemo)}>
+      {/* Schreibschutz für Demo UND Admin-Ansicht (lib/demo.js readOnlyModeOf liest isDemo/adminView aus me). */}
+      <DemoProvider value={family}>
         <div className="app-shell">
           <ScrollToTop />
-          {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />}
+          {/* Admin-Ansicht vor Demo: öffnet der Admin eine Demo-Familie, zählt das Band der Admin-Ansicht. */}
+          {family.adminView ? (
+            <AdminViewBanner family={family} onEnd={handleEndAdminView} />
+          ) : (
+            family.isDemo && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
+          )}
           <AppHeader family={family} onLogout={handleLogout} onFamilyChange={setFamily} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
           {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}

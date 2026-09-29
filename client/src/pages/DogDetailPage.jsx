@@ -18,7 +18,7 @@ import ExpandableText from '../components/ExpandableText.jsx'
 import Timeline from '../components/Timeline.jsx'
 import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { hasRole } from '../lib/roles.js'
 import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { companionLine } from '../lib/companions.js'
@@ -174,6 +174,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   const { hash } = useLocation()
   const toast = useToast()
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
 
   const [dog, setDog] = useState(null)
   const [entries, setEntries] = useState([])
@@ -481,7 +482,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
                 {withdrawing ? 'Ziehe zurück …' : 'Übergabe zurückziehen'}
               </button>
             )}
-            {isDemo && dog.vermittlung_status === 'reserviert' && <p className="field-hint">In der Demo nicht möglich.</p>}
+            {isDemo && dog.vermittlung_status === 'reserviert' && <p className="field-hint">{readOnlyHint}</p>}
           </div>
         </section>
       )}

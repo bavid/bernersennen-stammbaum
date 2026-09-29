@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import { NO_STATUS_LABEL, STECKBRIEF_PUBLISHABLE_STATUS, VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel } from '../lib/vermittlung.js'
 
@@ -20,6 +20,7 @@ const STATUS_OPTIONS = [
 // "Speichern", und bei einer der beiden Nebenwirkungen erst nach Bestätigung.
 export default function VermittlungStatusPanel({ dog, onChange }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
   const [value, setValue] = useState(dog.vermittlung_status || '')
   const [confirming, setConfirming] = useState(false)
@@ -90,7 +91,7 @@ export default function VermittlungStatusPanel({ dog, onChange }) {
         </>
       )}
 
-      {isDemo && <p className="field-hint">In der Demo nicht möglich.</p>}
+      {isDemo && <p className="field-hint">{readOnlyHint}</p>}
     </div>
   )
 }

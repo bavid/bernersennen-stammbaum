@@ -12,6 +12,7 @@ import AdminPartners from '../components/AdminPartners.jsx'
 import AdminPromotions from '../components/AdminPromotions.jsx'
 import AdminPostApproval from '../components/AdminPostApproval.jsx'
 import AdminSupport from '../components/AdminSupport.jsx'
+import AdminLog from '../components/AdminLog.jsx'
 
 // Gültiges Ziel für einen Partner-Gutscheinstapel (siehe routes/admin.js POST /voucher-batches)
 function partnerVoucherEligible(partner) {
@@ -194,6 +195,9 @@ function Dashboard({ onLogout }) {
             <AdminPromotions partners={partners} version={promotionsVersion} onChanged={bumpPromotions} />
 
             <AdminSupport />
+
+            {/* Phase 5 Task 5b: Protokoll der Admin-Ansicht direkt vor der Liste, aus der sie geöffnet wird. */}
+            <AdminLog families={overview.families} />
 
             <AdminFamilyList families={overview.families} />
           </>

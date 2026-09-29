@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { todayIso } from '../lib/dates.js'
 import { downscaleImage } from '../lib/images.js'
-import { DEMO_HINT } from '../lib/partnerProfile.js'
 import { EINBLICK_ACCEPT, LIMIT_MESSAGE, MAX_EINBLICK_TEXT, TYPE_MESSAGE, isEinblickFileType } from '../lib/einblicke.js'
 import Icon from './Icon.jsx'
 
@@ -28,6 +27,7 @@ function usePreviewUrl(file) {
 // isFull (60 erreicht) sperrt das Formular. Fehler vom Server stehen im Banner.
 export default function EinblickForm({ isFull, onCreated }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const [file, setFile] = useState(null)
   const [datum, setDatum] = useState(todayIso)
   const [text, setText] = useState('')
@@ -150,7 +150,7 @@ export default function EinblickForm({ isFull, onCreated }) {
           <Icon name="plus" />
           {saving ? 'Lädt hoch …' : 'Einblick hinzufügen'}
         </button>
-        {isDemo && <span className="field-hint">{DEMO_HINT}</span>}
+        {isDemo && <span className="field-hint">{readOnlyHint}</span>}
         {!isDemo && isFull && <span className="field-hint">{LIMIT_MESSAGE}</span>}
       </div>
     </form>

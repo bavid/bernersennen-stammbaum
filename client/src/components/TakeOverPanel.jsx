@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { displayName } from '../lib/timeline.js'
 import useArmed from '../hooks/useArmed.js'
 import Icon from './Icon.jsx'
@@ -15,6 +15,7 @@ const DEMO_HINT_ID = 'take-over-demo-hint'
 export default function TakeOverPanel({ dog, onTakenOver }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const [armed, setArmed] = useArmed()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -55,7 +56,7 @@ export default function TakeOverPanel({ dog, onTakenOver }) {
         )}
         {isDemo && (
           <p className="field-hint" id={DEMO_HINT_ID}>
-            In der Demo nicht möglich.
+            {readOnlyHint}
           </p>
         )}
       </div>

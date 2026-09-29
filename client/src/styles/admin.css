@@ -236,6 +236,64 @@
   overflow: hidden;
 }
 
+/* Kopfzeile eines Bereichs: der aufklappbare Knopf füllt die Zeile, rechts daneben „Als Admin ansehen“. */
+.admin-family-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: var(--space-4);
+}
+
+.admin-family-row .admin-family-head {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-view-link {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.admin-view-link svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Protokoll der Admin-Ansicht (Phase 5 Task 5b) */
+.admin-log {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.admin-log-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-log-entry {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.admin-log-entry svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+}
+
+.admin-log-ziel {
+  font-weight: 600;
+}
+
 .admin-family-head {
   display: flex;
   flex-wrap: wrap;

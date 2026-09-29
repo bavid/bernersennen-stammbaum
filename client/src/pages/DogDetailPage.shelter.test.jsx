@@ -81,13 +81,14 @@ const shelterDog = (overrides = {}) => ({
   ...overrides
 })
 
-async function render({ isDemo = false } = {}) {
+// adminView: die Nur-Lesen-Sitzung des Admins (Phase 5 Task 5b) - derselbe Provider wie die Demo, mit me-Objekt.
+async function render({ isDemo = false, adminView = false } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <DemoProvider value={isDemo}>
+      <DemoProvider value={adminView ? { isDemo, adminView } : isDemo}>
         <MemoryRouter initialEntries={['/tier/20']}>
           <Routes>
             <Route path="/tier/:id" element={<DogDetailPage family={shelterFamily} onFamilyChange={() => {}} />} />
@@ -254,6 +255,24 @@ describe('DogDetailPage – Tierheim: Übergabe', () => {
     const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes('Übergabe zurückziehen'))
     expect(button.disabled).toBe(true)
     expect(container.textContent).toContain('In der Demo nicht möglich.')
+
+    await act(async () => button.click())
+    expect(withdrawHandover).not.toHaveBeenCalled()
+  })
+
+  test('in der Admin-Ansicht ebenso gesperrt - mit dem Hinweis der Admin-Ansicht statt der Demo (Phase 5 Task 5b)', async () => {
+    getDog.mockResolvedValue(shelterDog({ vermittlung_status: 'reserviert' }))
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render({ adminView: true })
+
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes('Übergabe zurückziehen'))
+    expect(button.disabled).toBe(true)
+    expect(container.textContent).toContain('In der Admin-Ansicht nicht möglich.')
+    expect(container.textContent).not.toContain('In der Demo nicht möglich.')
+    // Auch der Vermittlungsstatus (VermittlungStatusPanel) ist gesperrt.
+    expect(container.querySelector('#vermittlung-status').disabled).toBe(true)
 
     await act(async () => button.click())
     expect(withdrawHandover).not.toHaveBeenCalled()

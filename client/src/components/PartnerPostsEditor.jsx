@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import { useIsDemo } from '../lib/demo.js'
-import { DEMO_HINT } from '../lib/partnerProfile.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { LIMIT_HINT, MAX_POSTS, POSTS_HINT, allowedBereiche } from '../lib/partnerPosts.js'
 import Icon from './Icon.jsx'
 import PartnerPostForm from './PartnerPostForm.jsx'
@@ -17,6 +16,7 @@ const NO_BEREICH_HINT = 'FÃ¼r euren Partner-Typ gibt es noch keinen Bereich in â
 // In der Demo ist alles sichtbar, aber gesperrt.
 export default function PartnerPostsEditor({ typ }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
   const [posts, setPosts] = useState(undefined)
   const [loadError, setLoadError] = useState(null)
@@ -97,7 +97,7 @@ export default function PartnerPostsEditor({ typ }) {
           </button>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
-              {DEMO_HINT}
+              {readOnlyHint}
             </p>
           )}
           {!isDemo && isFull && <p className="field-hint">{LIMIT_HINT}</p>}

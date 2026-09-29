@@ -1,13 +1,16 @@
 import { useId, useState } from 'react'
 import { api } from '../api'
 import { downscaleImage } from '../lib/images.js'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsAdminView, useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import Icon from './Icon.jsx'
 
-// Lädt Fotos sofort hoch (verkleinert) und verwaltet die Liste der URLs.
+// Lädt Fotos sofort hoch (verkleinert) und verwaltet die Liste der URLs. Schreibgeschützt (Demo oder
+// Admin-Ansicht, lib/demo.js): kein Upload, kein Entfernen.
 export default function PhotoPicker({ value, onChange, multiple = true, label = 'Foto', onBusyChange, onError }) {
   const inputId = useId()
   const isDemo = useIsDemo()
+  const isAdminView = useIsAdminView()
+  const readOnlyHint = useReadOnlyHint('Im Demo-Modus deaktiviert')
   const [busy, setBusy] = useState(false)
 
   function setBusyState(next) {
@@ -64,9 +67,9 @@ export default function PhotoPicker({ value, onChange, multiple = true, label = 
         </label>
       )}
       {canAddMore && isDemo && (
-        <span className="photo-add is-disabled muted" title="Im Demo-Modus deaktiviert">
+        <span className="photo-add is-disabled muted" title={readOnlyHint}>
           <Icon name="camera" />
-          <span>Demo: kein Upload</span>
+          <span>{isAdminView ? 'Admin-Ansicht: kein Upload' : 'Demo: kein Upload'}</span>
         </span>
       )}
     </div>

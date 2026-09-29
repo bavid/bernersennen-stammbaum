@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
-import { useIsDemo } from '../../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import Icon from '../Icon.jsx'
 
 const HAS_ANIMALS_STATUS = 409
@@ -14,6 +14,7 @@ const HAS_ANIMALS_STATUS = 409
 export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const [name, setName] = useState('')
   const [error, setError] = useState(null)
   const [animals, setAnimals] = useState(null)
@@ -93,7 +94,7 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
         />
         <span className="field-hint">Tipp „{family.name}“ ein, um {words.theGroup} aufzulösen.</span>
       </div>
-      {isDemo && <p className="field-hint">In der Demo nicht möglich.</p>}
+      {isDemo && <p className="field-hint">{readOnlyHint}</p>}
       <div className="form-actions">
         <span className="form-actions-spacer" />
         <button type="button" className="btn btn-ghost" onClick={onClose}>

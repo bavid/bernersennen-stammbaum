@@ -117,4 +117,20 @@ describe('AdminFamilyList – Herkunft als Chip', () => {
     expect(container.querySelector('.admin-family-head').getAttribute('aria-expanded')).toBe('false')
     expect(container.querySelector('.admin-details')).toBeNull()
   })
+
+  test('„Als Admin ansehen“ je Bereich: neuer Tab auf /admin-ansicht/:id, außerhalb des Aufklapp-Knopfs (Phase 5 Task 5b)', async () => {
+    await render(<AdminFamilyList families={[family({ id: 7 }), family({ id: 9, name: 'Tierheim Sonnenhang', art: 'tierheim' })]} />)
+
+    const links = [...container.querySelectorAll('.admin-view-link')]
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/admin-ansicht/7', '/admin-ansicht/9'])
+    for (const link of links) {
+      expect(link.textContent).toContain('Als Admin ansehen')
+      expect(link.getAttribute('target')).toBe('_blank')
+      expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+      // Kein Link innerhalb eines <button> (ungültiges HTML, und der Klick würde aufklappen).
+      expect(link.closest('button')).toBeNull()
+    }
+    // Die Kopfzeile klappt weiterhin nur über den Knopf auf.
+    expect(container.querySelectorAll('.admin-family-head').length).toBe(2)
+  })
 })

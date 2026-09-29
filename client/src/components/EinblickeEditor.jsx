@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { MAX_EINBLICKE, sortEinblicke } from '../lib/einblicke.js'
-import { DEMO_HINT } from '../lib/partnerProfile.js'
 import EinblickCard from './EinblickCard.jsx'
 import EinblickForm from './EinblickForm.jsx'
 
@@ -14,6 +13,7 @@ const DEMO_HINT_ID = 'einblicke-demo-hint'
 // "mindestens ein Einblick" auffrischt.
 export default function EinblickeEditor({ onChanged }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const [einblicke, setEinblicke] = useState(undefined)
   const [loadError, setLoadError] = useState(null)
   const count = einblicke?.length ?? 0
@@ -70,7 +70,7 @@ export default function EinblickeEditor({ onChanged }) {
       {einblicke?.length === 0 && <p className="empty-state">Noch keine Einblicke – zeigt eurer Kundschaft, was bei euch los ist.</p>}
       {isDemo && count > 0 && (
         <p id={DEMO_HINT_ID} className="field-hint">
-          {DEMO_HINT}
+          {readOnlyHint}
         </p>
       )}
       {count > 0 && (

@@ -78,7 +78,8 @@ function apiError(message, status, details = {}) {
   return Object.assign(new Error(message), { status, details: { error: message, ...details } })
 }
 
-async function render({ data = baseProfile, family = partnerFamily, isDemo = false } = {}) {
+// adminView: die Nur-Lesen-Sitzung des Admins (Phase 5 Task 5b) - derselbe Provider wie die Demo, mit me-Objekt.
+async function render({ data = baseProfile, family = partnerFamily, isDemo = false, adminView = false } = {}) {
   profile.mockResolvedValue(data)
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -86,7 +87,7 @@ async function render({ data = baseProfile, family = partnerFamily, isDemo = fal
   await act(async () =>
     root.render(
       <MemoryRouter>
-        <DemoProvider value={isDemo}>
+        <DemoProvider value={adminView ? { isDemo, adminView } : isDemo}>
           <PartnerProfilePage family={family} />
         </DemoProvider>
       </MemoryRouter>
@@ -333,6 +334,24 @@ describe('PartnerProfilePage – Demo', () => {
   test('auch "Pausieren" ist in der Demo gesperrt', async () => {
     await render({ data: { ...completeProfile, status: 'aktiv' }, isDemo: true })
     expect(button('Pausieren').disabled).toBe(true)
+  })
+})
+
+describe('PartnerProfilePage – Admin-Ansicht (Phase 5 Task 5b)', () => {
+  test('dieselben Sperren wie in der Demo, aber mit "In der Admin-Ansicht nicht möglich."', async () => {
+    await render({ data: completeProfile, adminView: true })
+
+    expect(container.querySelector('#profile-name').value).toBe('Hundeschule Wiesengrund')
+    expect(button('Veröffentlichen').disabled).toBe(true)
+    expect(button('Speichern').disabled).toBe(true)
+    expect(container.querySelector('.partner-logo-field input[type="file"]').disabled).toBe(true)
+    expect(container.textContent).toContain('In der Admin-Ansicht nicht möglich.')
+    expect(container.textContent).not.toContain('In der Demo nicht möglich.')
+
+    await act(async () => setInputValue(container.querySelector('#profile-portalTitel'), 'Neuer Titel'))
+    expect(button('Speichern').disabled).toBe(true)
+    await act(async () => container.querySelector('.partner-profile-form').requestSubmit())
+    expect(updateProfile).not.toHaveBeenCalled()
   })
 })
 

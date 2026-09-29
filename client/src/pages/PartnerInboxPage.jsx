@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { withUnread } from '../lib/navItems.js'
 import { EMPTY_HINT, RETENTION_HINT } from '../lib/partnerInbox.js'
 import Icon from '../components/Icon.jsx'
@@ -17,6 +17,7 @@ const DEMO_INBOX_HINT = 'In der Demo nur zum Ansehen – als gelesen markieren u
 // me.partner.unread - so stimmt das Badge "Nachrichten" in der Navigation ohne weitere Anfrage.
 export default function PartnerInboxPage({ family, onFamilyChange }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint(DEMO_INBOX_HINT)
   const toast = useToast()
   const [messages, setMessages] = useState(undefined)
   const [unread, setUnread] = useState(null)
@@ -101,7 +102,7 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
       </p>
       {isDemo && (
         <p id={DEMO_HINT_ID} className="field-hint">
-          {DEMO_INBOX_HINT}
+          {readOnlyHint}
         </p>
       )}
 

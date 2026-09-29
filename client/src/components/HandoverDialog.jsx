@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { displayName } from '../lib/timeline.js'
 
 const COPIED_MS = 2000
@@ -13,6 +13,7 @@ const COPIED_MS = 2000
 // ist (Server: POST /api/dogs/:id/handover setzt vermittlung_status).
 export default function HandoverDialog({ dog, onCreated }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [creating, setCreating] = useState(false)
@@ -64,7 +65,7 @@ export default function HandoverDialog({ dog, onCreated }) {
         <button type="button" className="btn btn-primary btn-block" disabled={creating || isDemo} onClick={handleCreate}>
           {creating ? 'Erzeuge …' : 'Übergabe-Gutschein erzeugen'}
         </button>
-        {isDemo && <p className="field-hint">In der Demo nicht möglich.</p>}
+        {isDemo && <p className="field-hint">{readOnlyHint}</p>}
       </div>
     )
   }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
 import RoleBadge from './RoleBadge.jsx'
@@ -157,6 +157,9 @@ function explanationFor(family) {
 export default function InviteDialog({ family }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
+  // In der Demo sind die Gutscheine Beispiele; in der Admin-Ansicht sind es die echten des Bereichs - nur vergeben
+  // (Rolle ändern, Code weitergeben) geht dort nicht.
+  const readOnlyHint = useReadOnlyHint('Beispiel – in der Demo werden keine Gutscheine vergeben.')
   const toast = useToast()
   const [vouchers, setVouchers] = useState(undefined)
   const [error, setError] = useState(null)
@@ -188,7 +191,7 @@ export default function InviteDialog({ family }) {
       <section className="invite-vouchers">
         <h3>Gutscheine</h3>
         <p className="muted">{explanation}</p>
-        {isDemo && <p className="field-hint">Beispiel – in der Demo werden keine Gutscheine vergeben.</p>}
+        {isDemo && <p className="field-hint">{readOnlyHint}</p>}
         {error && (
           <div className="error-banner" role="alert">
             {error}

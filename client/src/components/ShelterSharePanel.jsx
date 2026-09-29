@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import { displayName } from '../lib/timeline.js'
 
@@ -12,6 +12,7 @@ import { displayName } from '../lib/timeline.js'
 // ganzen Hund) - DogDetailPage mischt sie in dog.shelterShare (siehe dort handleShelterShareChange).
 export default function ShelterSharePanel({ dog, onChange }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
   const [share, setShare] = useState(dog.shelterShare)
   const [saving, setSaving] = useState(false)
@@ -65,7 +66,7 @@ export default function ShelterSharePanel({ dog, onChange }) {
         {share.shelterName} darf {name} mit Foto und dem neuesten nicht-privaten Eintrag öffentlich auf seiner
         Portalseite zeigen (Happy End)
       </label>
-      {isDemo && <p className="field-hint">In der Demo nicht möglich.</p>}
+      {isDemo && <p className="field-hint">{readOnlyHint}</p>}
     </section>
   )
 }

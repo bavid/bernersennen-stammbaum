@@ -1,11 +1,12 @@
 import AccessSettings from '../components/AccessSettings.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 
 // /zugang (Phase P) - Schlüssel erneuern und eigene Benutzer-Logins für Partner- und Tierheim-Bereiche.
 // Dieselben Einstellungen wie im Einstellungen-Dialog am Stammbaum (FamilySettings), den es dort nicht
 // gibt. Ein Partner-Bereich ist immer selbst die Identität (kein Beitreten), nie aber in der Demo.
 export default function AccessPage({ family, onFamilyChange }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
 
   return (
     <div className="page access-page">
@@ -18,7 +19,7 @@ export default function AccessPage({ family, onFamilyChange }) {
       </header>
 
       {isDemo ? (
-        <p className="muted">In der Demo nicht möglich.</p>
+        <p className="muted">{readOnlyHint}</p>
       ) : (
         <div className="card access-page-card">
           <AccessSettings family={family} onFamilyChange={onFamilyChange} />

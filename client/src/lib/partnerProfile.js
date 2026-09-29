@@ -9,7 +9,8 @@ export const MAX_NAME_LENGTH = 120
 export const MAX_TITEL_LENGTH = 120
 
 export const LOCKED_HINT = 'Euer Profil ist gesperrt – bitte meldet euch beim Betreiber.'
-export const DEMO_HINT = 'In der Demo nicht möglich.'
+// Der Demo-Hinweis liegt seit Phase 5 Task 5b zentral in lib/demo.js (neben dem der Admin-Ansicht).
+export { DEMO_HINT } from './demo.js'
 
 // Spenden- und Vermittlungs-Link gibt es nur für Tierheime und Vermittlungen (server SHELTER_TYP_VALUES).
 const SHELTER_LINK_TYPES = ['tierheim', 'vermittlung']

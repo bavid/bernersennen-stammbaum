@@ -42,6 +42,22 @@
   flex-shrink: 0;
 }
 
+/* Admin-Ansicht (Phase 5 Task 5b): dasselbe Band, aber in Tinte statt Rost - unverkennbar kein Demo-Hinweis. */
+.admin-view-banner {
+  background: var(--ink);
+  border-bottom-color: var(--ink);
+  color: var(--hero-text);
+}
+
+.admin-view-banner svg {
+  color: var(--tan);
+}
+
+.admin-view-banner .btn-ghost {
+  color: var(--hero-text);
+  border-color: var(--hero-muted);
+}
+
 /* Header */
 
 .app-header {

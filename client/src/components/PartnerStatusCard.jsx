@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
-import { useIsDemo } from '../lib/demo.js'
-import { DEMO_HINT, LOCKED_HINT, portalPath, profileStatusKey, profileStatusLabel } from '../lib/partnerProfile.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
+import { LOCKED_HINT, portalPath, profileStatusKey, profileStatusLabel } from '../lib/partnerProfile.js'
 import Icon from './Icon.jsx'
 
 const REASON_ID = 'partner-publish-reason'
@@ -50,6 +50,7 @@ function Checklist({ fehlt, empfohlen }) {
 // gesperrt ist, steht direkt darunter und hängt per aria-describedby am Knopf.
 function PublishActions({ profile, fehlt, busy, onPublish }) {
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint()
   const isActive = profile.status === 'aktiv'
   const describedBy = [!isActive && fehlt.length > 0 && REASON_ID, isDemo && DEMO_HINT_ID].filter(Boolean).join(' ') || undefined
 
@@ -78,7 +79,7 @@ function PublishActions({ profile, fehlt, busy, onPublish }) {
       )}
       {isDemo && (
         <p id={DEMO_HINT_ID} className="field-hint">
-          {DEMO_HINT}
+          {readOnlyHint}
         </p>
       )}
     </div>

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { useIsDemo } from '../lib/demo.js'
+import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { THEME_IDS, getTheme } from '../themes/index.js'
 
 const DEMO_HINT_ID = 'theme-picker-demo-hint'
+const DEMO_PREVIEW_HINT = 'In der Demo nur als Vorschau – gespeichert wird nichts.'
 
 // Aussehen wählen: Auswahl zeigt sofort eine Live-Vorschau (setPreviewId), gespeichert wird erst mit "Übernehmen".
 // Ohne Speichern (Abbrechen, Modal schließen, Demo) endet die Vorschau beim Unmount wieder beim gespeicherten Aussehen.
@@ -14,6 +15,7 @@ const DEMO_HINT_ID = 'theme-picker-demo-hint'
 export default function ThemePicker({ family, onSaved, headingId }) {
   const { setPreviewId } = useTheme()
   const isDemo = useIsDemo()
+  const readOnlyHint = useReadOnlyHint(DEMO_PREVIEW_HINT)
   const [selected, setSelected] = useState(family.theme)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -77,7 +79,7 @@ export default function ThemePicker({ family, onSaved, headingId }) {
       </div>
       {isDemo && (
         <p id={DEMO_HINT_ID} className="field-hint">
-          In der Demo nur als Vorschau – gespeichert wird nichts.
+          {readOnlyHint}
         </p>
       )}
       <div className="form-actions">
