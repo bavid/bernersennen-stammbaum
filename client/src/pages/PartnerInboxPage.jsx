@@ -96,34 +96,39 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
         </div>
       </header>
 
-      <p className="inbox-retention" role="note">
-        <Icon name="clock" />
-        {RETENTION_HINT}
-      </p>
-      {isDemo && (
-        <p id={DEMO_HINT_ID} className="field-hint">
-          {readOnlyHint}
-        </p>
-      )}
-
-      {(error || loadError) && (
-        <div className="error-banner" role="alert">
-          {error || loadError}
-        </div>
-      )}
-      {messages === undefined && !loadError && <p className="muted">Lade …</p>}
-      {messages?.length === 0 && (
-        <div className="empty-state card inbox-empty">
-          <Icon name="inbox" />
-          <p>{EMPTY_HINT}</p>
-        </div>
-      )}
-      {messages?.length > 0 && (
-        <>
-          <p className="inbox-summary" aria-live="polite">
-            {messages.length} {messages.length === 1 ? 'Nachricht' : 'Nachrichten'}
-            {unread > 0 ? `, davon ${unread} ungelesen` : ''}
+      {/* Phase U: Zähler, Aufbewahrung und Demo-Hinweis als eine ruhige Kopfzeile direkt über der Liste. */}
+      <div className="inbox">
+        <div className="inbox-meta">
+          {messages?.length > 0 && (
+            <p className="inbox-summary" aria-live="polite">
+              {messages.length} {messages.length === 1 ? 'Nachricht' : 'Nachrichten'}
+              {unread > 0 ? `, davon ${unread} ungelesen` : ''}
+            </p>
+          )}
+          <p className="inbox-retention" role="note">
+            <Icon name="clock" />
+            {RETENTION_HINT}
           </p>
+          {isDemo && (
+            <p id={DEMO_HINT_ID} className="field-hint">
+              {readOnlyHint}
+            </p>
+          )}
+        </div>
+
+        {(error || loadError) && (
+          <div className="error-banner" role="alert">
+            {error || loadError}
+          </div>
+        )}
+        {messages === undefined && !loadError && <p className="muted">Lade …</p>}
+        {messages?.length === 0 && (
+          <div className="empty-state card inbox-empty">
+            <Icon name="inbox" />
+            <p>{EMPTY_HINT}</p>
+          </div>
+        )}
+        {messages?.length > 0 && (
           <ul className="inbox-list">
             {messages.map((message) => (
               <InboxMessage
@@ -137,8 +142,8 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
               />
             ))}
           </ul>
-        </>
-      )}
+        )}
+      </div>
     </div>
   )
 }

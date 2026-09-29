@@ -69,11 +69,12 @@ export default function CustomerViewPage({ family }) {
 
   return (
     <div className="page customer-view-page">
-      <CustomerViewBanner partner={family?.partner} />
+      {/* Phase U: Überschrift zuerst, der Vorschau-Hinweis darunter - wie auf den anderen Seiten des Bereichs. */}
       <header className="customer-view-head">
         <h1>Kundensicht</h1>
         <CustomerViewTabs tabs={tabs} current={current} onSelect={setTab} />
       </header>
+      <CustomerViewBanner partner={family?.partner} />
 
       <div id={`customer-view-panel-${current}`} className="customer-view-panel">
         {current === TAB_DISCOVER && (

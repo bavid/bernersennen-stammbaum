@@ -5,9 +5,9 @@ import { POST_BEREICH_LABELS, clickCount } from '../lib/partnerPosts.js'
 import { formatZeitraum } from '../lib/adminMarketing.js'
 import { isPartnerMedia } from '../lib/discover.js'
 
-// Ein eigener Beitrag in der Liste (PartnerPostsEditor): Freigabe (bei "Abgelehnt" samt Grund), aktiv,
-// Zeitraum und die anonymen Klicks, dazu Bearbeiten und Löschen. demoHintId: in der Demo sind beide
-// Knöpfe gesperrt, der Hinweis erklärt warum.
+// Ein eigener Beitrag in der Liste (PartnerPostsEditor): Freigabe als einziges Badge (bei "Abgelehnt" samt Grund),
+// daneben Bereich und aktiv/inaktiv als ruhige Meta-Zeile, Zeitraum und die anonymen Klicks, dazu Bearbeiten und
+// Löschen. demoHintId: in der Demo sind beide Knöpfe gesperrt, der Hinweis erklärt warum.
 export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
   const isDemo = Boolean(demoHintId)
   const rejected = post.freigabe === 'abgelehnt'
@@ -18,8 +18,11 @@ export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
       <div className="partner-post-body">
         <div className="partner-post-chips">
           <FreigabeChip freigabe={post.freigabe} />
-          <span className={`pill partner-post-aktiv${post.aktiv ? ' is-aktiv' : ''}`}>{post.aktiv ? 'Aktiv' : 'Inaktiv'}</span>
-          <span className="partner-post-bereich">{POST_BEREICH_LABELS[post.bereich] || post.bereich}</span>
+          <span className="partner-post-kind">
+            <span className="partner-post-bereich">{POST_BEREICH_LABELS[post.bereich] || post.bereich}</span>
+            {' · '}
+            <span className={`partner-post-aktiv${post.aktiv ? ' is-aktiv' : ''}`}>{post.aktiv ? 'Aktiv' : 'Inaktiv'}</span>
+          </span>
         </div>
         <h3>{post.titel}</h3>
         {post.text && <p className="partner-post-text">{post.text}</p>}

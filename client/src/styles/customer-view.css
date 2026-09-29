@@ -150,6 +150,9 @@
   --text-display: 2.1rem;
   --text-2xl: 1.55rem;
   --text-xl: 1.3rem;
+  /* Bezugsrahmen für absolut positionierte Inhalte (z. B. .visually-hidden der Reiter-Zähler) - sonst ragten sie
+     aus dem scrollenden Rahmen und verlängerten die ganze Seite um die Höhe des Rahmen-Inhalts. */
+  position: relative;
   flex: 1;
   min-height: 0;
   /* waagerecht nur Deko (z. B. der versetzte Rahmen ums Steckbrief-Foto) - kein Querscrollen im Rahmen */

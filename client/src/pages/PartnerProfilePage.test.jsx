@@ -292,14 +292,16 @@ describe('PartnerProfilePage – Reiter', () => {
     einblicke.mockResolvedValue([])
     await render()
 
-    expect(button('Angaben').getAttribute('aria-pressed')).toBe('true')
-    expect(button('Einblicke').getAttribute('aria-pressed')).toBe('false')
+    expect(button('Angaben').getAttribute('aria-selected')).toBe('true')
+    expect(button('Einblicke').getAttribute('aria-selected')).toBe('false')
+    expect(container.querySelector('.partner-profile-tabs').getAttribute('role')).toBe('tablist')
+    expect(document.getElementById('partner-profile-panel-angaben').getAttribute('aria-labelledby')).toBe(button('Angaben').id)
     expect(einblicke).not.toHaveBeenCalled()
 
     await act(async () => button('Einblicke').click())
 
     expect(einblicke).toHaveBeenCalledTimes(1)
-    expect(button('Einblicke').getAttribute('aria-pressed')).toBe('true')
+    expect(button('Einblicke').getAttribute('aria-selected')).toBe('true')
     expect(document.getElementById('partner-profile-panel-angaben').hidden).toBe(true)
     expect(document.getElementById('partner-profile-panel-einblicke').hidden).toBe(false)
     expect(container.querySelector('#einblicke-title').textContent).toBe('Einblicke')
@@ -399,7 +401,7 @@ describe('PartnerProfilePage – Kunden-Gutscheine im Reiter "Teilen"', () => {
     await act(async () => button('Teilen').click())
 
     expect(vouchers).toHaveBeenCalledTimes(1)
-    expect(button('Teilen').getAttribute('aria-pressed')).toBe('true')
+    expect(button('Teilen').getAttribute('aria-selected')).toBe('true')
     expect(document.getElementById('partner-profile-panel-teilen').hidden).toBe(false)
     expect(container.querySelector('#partner-vouchers-title').textContent).toBe('Kunden-Gutscheine')
     expect(container.textContent).toContain('Jede Karte legt für eure Kundschaft eine eigene Chronik an')

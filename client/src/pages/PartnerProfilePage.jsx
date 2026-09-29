@@ -8,6 +8,7 @@ import EinblickeEditor from '../components/EinblickeEditor.jsx'
 import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
 import PartnerVoucherStacks from '../components/PartnerVoucherStacks.jsx'
 import PartnerShareSection from '../components/PartnerShareSection.jsx'
+import TabBar from '../components/TabBar.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { navItemsFor } from '../lib/navItems.js'
@@ -28,23 +29,16 @@ function tabsFor(family) {
   return family?.art === 'tierheim' ? [TAB_ANGABEN, TAB_EINBLICKE, TAB_BEITRAEGE, TAB_TEILEN] : [TAB_ANGABEN, TAB_EINBLICKE, TAB_TEILEN]
 }
 
-// Reiter wie im Rest der App (JoinFamilyDialog, LoginPage): .segmented mit aria-pressed. Ein Reiter
-// bleibt nach dem ersten Öffnen eingehängt (nur verborgen), damit ungespeicherte Eingaben im Formular
-// den Wechsel überstehen.
-function ProfileTabs({ tabs, tab, onSelect }) {
+function panelId(key) {
+  return `partner-profile-panel-${key}`
+}
+
+// Ein Reiter-Panel: bleibt nach dem ersten Öffnen eingehängt (nur verborgen), damit ungespeicherte Eingaben im
+// Formular den Wechsel überstehen.
+function Panel({ id, tab, className, children }) {
   return (
-    <div className="segmented partner-profile-tabs" role="group" aria-label="Profil-Bereich">
-      {tabs.map((item) => (
-        <button
-          type="button"
-          key={item.key}
-          aria-pressed={tab === item.key}
-          aria-controls={`partner-profile-panel-${item.key}`}
-          onClick={() => onSelect(item.key)}
-        >
-          {item.label}
-        </button>
-      ))}
+    <div id={panelId(id)} role="tabpanel" aria-labelledby={`partner-profile-tab-${id}`} className={className} hidden={tab !== id}>
+      {children}
     </div>
   )
 }
@@ -125,26 +119,35 @@ export default function PartnerProfilePage({ family }) {
           <PartnerStatusCard profile={profile} onProfileChange={setProfile} />
 
           <div className="partner-profile-panels">
-            <ProfileTabs tabs={tabs} tab={tab} onSelect={selectTab} />
-            <div id="partner-profile-panel-angaben" hidden={tab !== 'angaben'}>
+            {/* Phase U: dieselbe Reiter-Leiste wie in Entdecken und im Admin (TabBar, echte Tabliste). */}
+            <TabBar
+              tabs={tabs}
+              current={tab}
+              label="Profil-Bereich"
+              idPrefix="partner-profile-tab"
+              panelId={panelId}
+              className="partner-profile-tabs"
+              onSelect={selectTab}
+            />
+            <Panel id="angaben" tab={tab}>
               <PartnerProfileForm profile={profile} onSaved={setProfile} onLogoUploaded={handleLogoUploaded} />
-            </div>
-            <div id="partner-profile-panel-einblicke" hidden={tab !== 'einblicke'}>
+            </Panel>
+            <Panel id="einblicke" tab={tab}>
               {openedTabs.includes('einblicke') && <EinblickeEditor onChanged={refreshProfile} />}
-            </div>
+            </Panel>
             {tabs.includes(TAB_BEITRAEGE) && (
-              <div id="partner-profile-panel-beitraege" hidden={tab !== 'beitraege'}>
+              <Panel id="beitraege" tab={tab}>
                 {openedTabs.includes('beitraege') && <PartnerPostsEditor typ={typ} />}
-              </div>
+              </Panel>
             )}
-            <div id="partner-profile-panel-teilen" className="partner-profile-share" hidden={tab !== 'teilen'}>
+            <Panel id="teilen" tab={tab} className="partner-profile-share">
               {openedTabs.includes('teilen') && (
                 <>
                   <PartnerShareSection profile={profile} />
                   <PartnerVoucherStacks />
                 </>
               )}
-            </div>
+            </Panel>
           </div>
         </>
       )}

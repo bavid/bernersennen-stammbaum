@@ -1,11 +1,22 @@
 /* Postfach der Partner (Phase P2, /nachrichten - PartnerInboxPage, InboxMessage): eine Liste zum
    Aufklappen, ungelesene fett mit Punkt. Die Nachricht selbst bleibt reiner Text (pre-wrap). */
 
+/* Liste mit Kopfzeile (Zähler, Aufbewahrung, Demo-Hinweis) - zusammen statt verstreut im großen Seitenabstand */
+.inbox {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.inbox-meta {
+  display: grid;
+  gap: var(--space-1);
+}
+
 .inbox-retention {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 0 0 var(--space-4);
+  margin: 0;
   color: var(--muted);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -18,8 +29,8 @@
 }
 
 .inbox-summary {
-  margin: var(--space-2) 0 var(--space-3);
-  color: var(--muted);
+  margin: 0;
+  color: var(--ink-soft);
   font-size: var(--text-sm);
   font-weight: 700;
 }

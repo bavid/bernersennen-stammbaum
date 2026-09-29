@@ -137,8 +137,12 @@
   gap: var(--space-6);
 }
 
+/* Reiter-Leiste (TabBar, tabs.css) wie in Entdecken: Linie über die volle Breite, der erste Reiter bündig mit
+   der Karte darüber. */
 .partner-profile-tabs {
-  justify-self: start;
+  margin-inline: calc(var(--space-3) * -1);
+  padding-inline: var(--space-3);
+  border-bottom: 1px solid var(--line);
 }
 
 .partner-profile-notes {

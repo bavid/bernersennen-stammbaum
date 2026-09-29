@@ -87,17 +87,8 @@
   gap: var(--space-2);
 }
 
-.partner-post-aktiv {
-  background: var(--surface-sunk);
-  color: var(--muted);
-}
-
-.partner-post-aktiv.is-aktiv {
-  background: var(--alpine-wash);
-  color: var(--alpine);
-}
-
-.partner-post-bereich {
+/* Bereich und aktiv/inaktiv: ruhige Meta-Zeile neben dem einzigen Badge (Freigabe) */
+.partner-post-kind {
   font-size: var(--text-xs);
   font-weight: 700;
   color: var(--muted);
