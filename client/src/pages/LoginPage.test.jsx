@@ -282,3 +282,53 @@ describe('LoginPage – Fuß', () => {
     ])
   })
 })
+
+// Phase U: zwei klare Einstiege - Tierhalter und Partner (Hundeschulen, Tierheime & Co.).
+describe('LoginPage – zwei Einstiege', () => {
+  const labels = () => [...container.querySelectorAll('.login-entry-label')].map((el) => el.textContent.trim())
+
+  test('zeigt "Für Tierhalter" (Anmelden, Gutschein, Demo) und daneben "Für Hundeschulen, Tierheime & Co."', async () => {
+    await render()
+
+    expect(labels()).toEqual(['Für Tierhalter', 'Für Hundeschulen, Tierheime & Co.'])
+    const [owners, partners] = container.querySelectorAll('.login-entries > .login-entry')
+    expect(owners.querySelector('#login-secret')).not.toBeNull()
+    expect(owners.querySelector('.login-demo button').textContent).toContain('Demo ansehen')
+    expect(partners.querySelector('h2').textContent).toBe('Euer Partner-Bereich')
+    expect(partners.querySelector('a[href="/partner-werden"]').textContent).toContain('Mehr erfahren')
+  })
+
+  test('"Demo als Partner ansehen" meldet in der Demo-Hundeschule an und liefert die Sitzung an onLogin', async () => {
+    const onLogin = vi.fn()
+    const me = { id: 90, art: 'partner', isDemo: true }
+    demo.mockResolvedValue(me)
+    await render({ onLogin })
+
+    await act(async () => linkButton('Demo als Partner ansehen').click())
+
+    expect(demo).toHaveBeenCalledWith({ as: 'partner', slug: 'hundeschule-pfotenglueck' })
+    expect(onLogin).toHaveBeenCalledWith(me)
+  })
+
+  test('ein Fehler der Partner-Demo erscheint im Partner-Einstieg, der Knopf ist wieder frei', async () => {
+    demo.mockRejectedValue(new Error('Keine Demo verfügbar'))
+    await render()
+
+    await act(async () => linkButton('Demo als Partner ansehen').click())
+
+    expect(container.querySelector('.login-partner [role="alert"]').textContent).toBe('Keine Demo verfügbar')
+    expect(linkButton('Demo als Partner ansehen').disabled).toBe(false)
+  })
+
+  test('der Hinweis zum Partner-Zugang schaltet die Anmelde-Karte auf "Gutschein einlösen"', async () => {
+    await render()
+    expect(container.querySelector('.login-card-head h1').textContent).toBe('Anmelden')
+
+    const redeemLink = container.querySelector('.login-partner .login-link-btn')
+    expect(redeemLink.closest('p').textContent).toContain('Partner-Zugang')
+    await act(async () => redeemLink.click())
+
+    expect(container.querySelector('.login-card-head h1').textContent).toBe('Gutschein einlösen')
+    expect(segmentButton('Gutschein einlösen').getAttribute('aria-pressed')).toBe('true')
+  })
+})

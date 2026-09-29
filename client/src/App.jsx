@@ -14,6 +14,7 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import ContextSwitcher from './components/ContextSwitcher.jsx'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
+import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
 import AdminViewBanner from './components/AdminViewBanner.jsx'
 import NavBadge from './components/NavBadge.jsx'
 import ViewModeSwitch from './components/ViewModeSwitch.jsx'
@@ -444,7 +445,7 @@ export default function App() {
   if (animalSlug) {
     return (
       <ThemeProvider themeId="standard">
-        <SteckbriefPage slug={animalSlug} />
+        <SteckbriefPage slug={animalSlug} family={family} />
       </ThemeProvider>
     )
   }
@@ -452,7 +453,7 @@ export default function App() {
   if (pathname === '/partner') {
     return (
       <ThemeProvider themeId="standard">
-        <PartnersPage />
+        <PartnersPage family={family} />
       </ThemeProvider>
     )
   }
@@ -463,7 +464,7 @@ export default function App() {
     return (
       <ThemeProvider themeId="standard">
         <Suspense fallback={<RouteFallback />}>
-          <PartnerInfoPage onDemo={handleVoucherLogin} />
+          <PartnerInfoPage onDemo={handleVoucherLogin} family={family} />
         </Suspense>
       </ThemeProvider>
     )
@@ -474,7 +475,7 @@ export default function App() {
   if (pathname === '/impressum' || pathname === '/datenschutz') {
     return (
       <ThemeProvider themeId="standard">
-        <LegalPage variant={pathname === '/impressum' ? 'impressum' : 'datenschutz'} />
+        <LegalPage variant={pathname === '/impressum' ? 'impressum' : 'datenschutz'} family={family} />
       </ThemeProvider>
     )
   }
@@ -522,6 +523,8 @@ export default function App() {
           <main className="app-main" key={family.id}>
             {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
                 Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
+            {/* Phase U: Rundgang durch eine Partner- oder Tierheim-Demo (schließbar, bleibt dann zu). */}
+            {family.isDemo && !family.adminView && isPartnerArea(family) && <PartnerDemoGuide family={family} />}
             <Suspense fallback={<RouteFallback />}>
               <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />
             </Suspense>

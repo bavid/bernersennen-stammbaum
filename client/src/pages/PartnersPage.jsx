@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
-import ThemeMark from '../components/ThemeMark.jsx'
+import PublicHeader from '../components/PublicHeader.jsx'
 import LocationPicker from '../components/LocationPicker.jsx'
 import PartnerCard from '../components/PartnerCard.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
@@ -32,7 +32,8 @@ function PartnerCards({ items }) {
   )
 }
 
-export default function PartnersPage() {
+// family: die laufende Sitzung (App.jsx) oder null - nur für das Ziel von "Zurück" (PublicHeader).
+export default function PartnersPage({ family = null }) {
   const [plz, setPlz] = useState('')
   const [radius, setRadius] = useState(DEFAULT_RADIUS)
   const [partners, setPartners] = useState([])
@@ -75,8 +76,8 @@ export default function PartnersPage() {
 
   return (
     <div className="public-page partners-page">
+      <PublicHeader family={family} />
       <header className="partners-hero">
-        <ThemeMark size={56} />
         <span className="eyebrow">Partner</span>
         <h1>Unsere Partner</h1>
         <p className="page-lede">Tierheime, Vermittlungsstellen und Hundeschulen, die mit uns zusammenarbeiten.</p>

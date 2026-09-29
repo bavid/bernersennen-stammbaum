@@ -5,6 +5,7 @@ import ThemeMark from '../components/ThemeMark.jsx'
 import AnimalAdoptionCard from '../components/AnimalAdoptionCard.jsx'
 import HappyEndCard from '../components/HappyEndCard.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
+import PublicHeader from '../components/PublicHeader.jsx'
 import Icon from '../components/Icon.jsx'
 import PortalAction from '../components/PortalAction.jsx'
 import PortalContact from '../components/PortalContact.jsx'
@@ -52,9 +53,10 @@ function demoParam(search) {
   return new URLSearchParams(search).get('demo') === '1' ? '1' : undefined
 }
 
-function NotFound() {
+function NotFound({ family }) {
   return (
     <div className="public-page partner-portal-missing">
+      <PublicHeader family={family} />
       <div className="card empty-state">
         <ThemeMark size={56} />
         <h1>Diesen Partner gibt es nicht</h1>
@@ -147,7 +149,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
         {PREVIEW_LOAD_ERROR}
       </div>
     ) : (
-      <NotFound />
+      <NotFound family={family} />
     )
   }
 
@@ -156,6 +158,8 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
   return (
     <PreviewProvider value={preview}>
       <div className="public-page partner-portal" style={accentStyle(partner.farbe)}>
+        {/* Kopf mit "Zurück" nur auf der öffentlichen Seite - in der Kundensicht (preview) führte er aus der Vorschau. */}
+        {!preview && <PublicHeader family={family} />}
         {partner.preview && (
           <div className="preview-banner" role="status">
             Vorschau – nur für Admins sichtbar

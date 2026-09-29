@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
-import PasswordField from '../components/PasswordField.jsx'
+import Icon from '../components/Icon.jsx'
+import LoginForm from '../components/LoginForm.jsx'
+import LoginPartnerEntry from '../components/LoginPartnerEntry.jsx'
 import RedeemForm from '../components/RedeemForm.jsx'
 import RecoverForm from '../components/RecoverForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
@@ -43,100 +45,11 @@ const MODE_COPY = {
   }
 }
 
-// Anmelden per Schlüssel (Standardfall) oder – aufklappbar – per Benutzername/Passwort. Ein offener
-// Gutschein im Schlüsselfeld beantwortet der Server mit 409 { redeem: true }: onRedeemRequired wechselt
-// dann in den Einlöse-Modus, statt nur einen Fehler zu zeigen.
-function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
-  const [useUsername, setUseUsername] = useState(false)
-  const [secret, setSecret] = useState('')
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(false)
-
-  function toggleUsername() {
-    setUseUsername((prev) => !prev)
-    setError(null)
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault()
-    setError(null)
-    setLoading(true)
-    try {
-      const me = useUsername ? await api.loginUser(username, password) : await api.login(secret)
-      onLogin(me)
-    } catch (err) {
-      if (!useUsername && err.status === 409 && err.details?.redeem) {
-        onRedeemRequired(secret)
-        return
-      }
-      setError(err.message)
-      setLoading(false)
-    }
-  }
-
-  return (
-    <form className="form-stack" onSubmit={handleSubmit}>
-      {error && (
-        <div className="error-banner" role="alert">
-          {error}
-        </div>
-      )}
-      {useUsername ? (
-        <>
-          <div className="field">
-            <label className="field-label" htmlFor="login-username">
-              Benutzername
-            </label>
-            <input
-              id="login-username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              autoFocus
-              required
-            />
-          </div>
-          <PasswordField
-            id="login-user-password"
-            label="Passwort"
-            value={password}
-            onChange={setPassword}
-            autoComplete="current-password"
-          />
-        </>
-      ) : (
-        <PasswordField
-          id="login-secret"
-          label="Schlüssel oder Passwort"
-          value={secret}
-          onChange={setSecret}
-          autoFocus
-          autoComplete="current-password"
-        />
-      )}
-      <button
-        className="btn btn-primary btn-lg btn-block"
-        type="submit"
-        disabled={loading || (useUsername ? !username || !password : !secret)}
-      >
-        {loading ? 'Öffne Chronik …' : 'Chronik öffnen'}
-      </button>
-      <div className="login-links">
-        <button type="button" className="login-link-btn" onClick={toggleUsername}>
-          {useUsername ? 'Mit Schlüssel anmelden' : 'Mit Benutzername anmelden'}
-        </button>
-        <button type="button" className="login-link-btn" onClick={onForgot}>
-          Passwort vergessen?
-        </button>
-      </div>
-    </form>
-  )
-}
-
+// Zwei Einstiege nebeneinander (am Handy untereinander, Phase U): "Für Tierhalter" mit Anmelden, Gutschein und
+// Demo, daneben "Für Hundeschulen, Tierheime & Co." (LoginPartnerEntry) mit Partner-Demo und "Mehr erfahren".
 export default function LoginPage({ onLogin, initialMode = 'login', initialCode = '' }) {
   const { theme } = useTheme()
+  const ownerCardRef = useRef(null)
   const [mode, setMode] = useState(initialMode)
   const [redeemCode, setRedeemCode] = useState(initialCode)
   const [redeemHint, setRedeemHint] = useState(null)
@@ -161,6 +74,13 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
   function handleRedeemed(response) {
     const { key, fromOthers, ...me } = response
     setRedeemResult({ key, me })
+  }
+
+  // "Gutschein einlösen" aus dem Partner-Einstieg: ein Partner-Zugang ist ein Gutschein - also die Karte daneben
+  // (am Handy darüber) umschalten und ins Bild holen.
+  function handlePartnerRedeem() {
+    switchMode('redeem')
+    ownerCardRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
   }
 
   async function handleDemo() {
@@ -202,56 +122,62 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
       </section>
 
       <section className="login-panel">
-        <div className="login-card">
-          <div className="login-card-head">
-            <span className="eyebrow">{copy.eyebrow}</span>
-            <h1>{copy.title}</h1>
-            <p className="muted">{copy.lede}</p>
+        <div className="login-entries">
+          <div className="login-card login-entry" ref={ownerCardRef}>
+            <div className="login-card-head">
+              <p className="login-entry-label">
+                <Icon name="paw" /> {mode === 'redeem' && partnerRedeem ? 'Partner-Zugang' : 'Für Tierhalter'}
+              </p>
+              <span className="eyebrow">{copy.eyebrow}</span>
+              <h1>{copy.title}</h1>
+              <p className="muted">{copy.lede}</p>
+            </div>
+
+            {mode !== 'recover' && (
+              <div className="segmented login-switch" role="group" aria-label="Modus">
+                <button type="button" aria-pressed={mode === 'login'} onClick={() => switchMode('login')}>
+                  Anmelden
+                </button>
+                <button type="button" aria-pressed={mode === 'redeem'} onClick={() => switchMode('redeem')}>
+                  Gutschein einlösen
+                </button>
+              </div>
+            )}
+
+            {mode === 'login' && (
+              <LoginForm onLogin={onLogin} onRedeemRequired={handleRedeemRequired} onForgot={() => switchMode('recover')} />
+            )}
+
+            {mode === 'redeem' &&
+              (redeemResult ? (
+                <KeyReveal value={redeemResult.key} onContinue={() => onLogin(redeemResult.me)} {...keyRevealProps(redeemResult.me)} />
+              ) : (
+                <RedeemForm
+                  initialCode={redeemCode}
+                  hint={redeemHint}
+                  onRedeemed={handleRedeemed}
+                  onPartnerModeChange={setPartnerRedeem}
+                />
+              ))}
+
+            {mode === 'recover' && <RecoverForm onBack={() => switchMode('login')} />}
+
+            {mode !== 'recover' && !showingKeyReveal && (
+              <div className="login-demo">
+                <span className="login-demo-divider">oder</span>
+                {demoError && (
+                  <div className="error-banner" role="alert">
+                    {demoError}
+                  </div>
+                )}
+                <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
+                  {demoLoading ? 'Lädt …' : 'Erst mal unverbindlich reinschauen: Demo ansehen'}
+                </button>
+                <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
+              </div>
+            )}
           </div>
-
-          {mode !== 'recover' && (
-            <div className="segmented login-switch" role="group" aria-label="Modus">
-              <button type="button" aria-pressed={mode === 'login'} onClick={() => switchMode('login')}>
-                Anmelden
-              </button>
-              <button type="button" aria-pressed={mode === 'redeem'} onClick={() => switchMode('redeem')}>
-                Gutschein einlösen
-              </button>
-            </div>
-          )}
-
-          {mode === 'login' && (
-            <LoginForm onLogin={onLogin} onRedeemRequired={handleRedeemRequired} onForgot={() => switchMode('recover')} />
-          )}
-
-          {mode === 'redeem' &&
-            (redeemResult ? (
-              <KeyReveal value={redeemResult.key} onContinue={() => onLogin(redeemResult.me)} {...keyRevealProps(redeemResult.me)} />
-            ) : (
-              <RedeemForm
-                initialCode={redeemCode}
-                hint={redeemHint}
-                onRedeemed={handleRedeemed}
-                onPartnerModeChange={setPartnerRedeem}
-              />
-            ))}
-
-          {mode === 'recover' && <RecoverForm onBack={() => switchMode('login')} />}
-
-          {mode !== 'recover' && !showingKeyReveal && (
-            <div className="login-demo">
-              <span className="login-demo-divider">oder</span>
-              {demoError && (
-                <div className="error-banner" role="alert">
-                  {demoError}
-                </div>
-              )}
-              <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
-                {demoLoading ? 'Lädt …' : 'Erst mal unverbindlich reinschauen: Demo ansehen'}
-              </button>
-              <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
-            </div>
-          )}
+          {!showingKeyReveal && <LoginPartnerEntry onLogin={onLogin} onRedeem={handlePartnerRedeem} />}
         </div>
       </section>
 

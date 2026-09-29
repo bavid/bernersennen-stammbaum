@@ -74,6 +74,22 @@ describe('PartnerInfoPage – Inhalt', () => {
 })
 
 describe('PartnerInfoPage – Demo-Knöpfe', () => {
+  test('stehen ganz oben (Phase U): direkt unter dem Seitenkopf, vor den Vorteilen', async () => {
+    await render()
+
+    const showcase = container.querySelector('.partner-info-showcase')
+    expect(showcase.querySelector('h2').textContent).toBe('So sieht euer Partner-Bereich aus')
+    const benefits = container.querySelector('.partner-info-benefits')
+    expect(showcase.compareDocumentPosition(benefits) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const sections = [...container.querySelectorAll('.partner-info-page > section')]
+    expect(sections[0]).toBe(showcase)
+    expect([...showcase.querySelectorAll('button')].map((btn) => btn.textContent)).toEqual([
+      'Demo als Hundeschule ansehen',
+      'Demo als Hundesalon ansehen'
+    ])
+    expect(container.querySelector('.partner-info-page > .public-header')).not.toBeNull()
+  })
+
   test('"Demo als Hundeschule ansehen" ruft api.demo mit as partner und dem Slug der Demo-Hundeschule, dann onDemo', async () => {
     const me = { id: 70, art: 'partner', isDemo: true }
     demo.mockResolvedValue(me)

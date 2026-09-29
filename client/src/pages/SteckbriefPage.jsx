@@ -5,6 +5,7 @@ import ThemeMark from '../components/ThemeMark.jsx'
 import Avatar from '../components/Avatar.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
+import PublicHeader from '../components/PublicHeader.jsx'
 import Icon from '../components/Icon.jsx'
 import SteckbriefShelterBox from '../components/SteckbriefShelterBox.jsx'
 import { ageText, formatDayMonth } from '../lib/dates.js'
@@ -17,9 +18,10 @@ import { useNoIndex } from '../hooks/useNoIndex.js'
 const SHARE_COPIED_MS = 2000
 const PREVIEW_LOAD_ERROR = 'Dieser Steckbrief konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
 
-function NotFound() {
+function NotFound({ family }) {
   return (
     <div className="public-page steckbrief-missing">
+      <PublicHeader family={family} />
       <div className="card empty-state">
         <ThemeMark size={56} />
         <h1>Diesen Steckbrief gibt es nicht</h1>
@@ -113,8 +115,8 @@ function VermittlungStatus({ status }) {
 // per "Schreib uns" in dessen Postfach (SteckbriefShelterBox).
 // Kundensicht (Phase P1): load liefert den Steckbrief statt api.publicAnimal(slug) (z. B.
 // api.partnerArea.previewAnimal, auch für ein noch unveröffentlichtes Tier), preview schaltet Links und
-// "Teilen" ab.
-export default function SteckbriefPage({ slug, load, preview = false }) {
+// "Teilen" ab. family: die laufende Sitzung (App.jsx) oder null - nur für das Ziel von "Zurück" (PublicHeader).
+export default function SteckbriefPage({ slug, load, preview = false, family = null }) {
   const [animal, setAnimal] = useState(undefined) // undefined: lädt, null: nicht gefunden
   const [shareCopied, setShareCopied] = useState(false)
 
@@ -162,7 +164,7 @@ export default function SteckbriefPage({ slug, load, preview = false }) {
         {PREVIEW_LOAD_ERROR}
       </div>
     ) : (
-      <NotFound />
+      <NotFound family={family} />
     )
   }
 
@@ -189,17 +191,26 @@ export default function SteckbriefPage({ slug, load, preview = false }) {
 
   return (
     <PreviewProvider value={preview}>
-      <SteckbriefContent animal={animal} slug={slug} age={age} preview={preview} shareCopied={shareCopied} onShare={handleShare} />
+      <SteckbriefContent
+        animal={animal}
+        slug={slug}
+        age={age}
+        preview={preview}
+        family={family}
+        shareCopied={shareCopied}
+        onShare={handleShare}
+      />
     </PreviewProvider>
   )
 }
 
 // Der geladene Steckbrief. In der Vorschau ist "Teilen" sichtbar, aber deaktiviert - es gäbe (noch) keine
 // öffentliche Adresse, und die Kundensicht soll nichts nach außen tragen. Ohne Fußzeile: die Links dort
-// würden die Vorschau verlassen.
-function SteckbriefContent({ animal, slug, age, preview, shareCopied, onShare }) {
+// würden die Vorschau verlassen - aus demselben Grund auch ohne Kopf mit "Zurück" (PublicHeader).
+function SteckbriefContent({ animal, slug, age, preview, family, shareCopied, onShare }) {
   return (
     <div className="public-page steckbrief-page">
+      {!preview && <PublicHeader family={family} />}
       <header className="dog-hero steckbrief-hero">
         <div className="dog-hero-photo">
           <Avatar dog={{ foto_url: animal.fotoUrl, name: animal.name }} size={320} className="dog-hero-fallback" />

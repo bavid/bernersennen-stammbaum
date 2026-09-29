@@ -287,6 +287,75 @@
   color: var(--muted);
 }
 
+/* Zwei Einstiege (Phase U, LoginPage): "Für Tierhalter" (die Anmelde-Karte) und "Für Hundeschulen, Tierheime & Co."
+   (LoginPartnerEntry) - untereinander, auf breiten Bildschirmen nebeneinander (siehe @media unten). */
+.login-entries {
+  display: grid;
+  gap: var(--space-10);
+  width: min(25rem, 100%);
+}
+
+.login-entries .login-card {
+  width: 100%;
+}
+
+/* Kennzeichnung des Einstiegs - ein Etikett statt einer Pille, damit es in schmalen Spalten sauber umbricht. */
+.login-entry-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: start;
+  margin-bottom: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.login-entry-label svg {
+  flex-shrink: 0;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--rust);
+}
+
+.login-partner {
+  display: grid;
+  gap: var(--space-5);
+  align-content: start;
+  padding: clamp(var(--space-5), 3vw, var(--space-6));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunk);
+  animation: rise 700ms 220ms var(--ease-out) both;
+}
+
+.login-partner-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.login-partner-head h2 {
+  font-size: var(--text-xl);
+}
+
+.login-partner-actions {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Lange Beschriftungen dürfen in schmalen Spalten umbrechen, statt überzustehen. */
+.login-partner .btn,
+.login-demo .btn {
+  white-space: normal;
+  text-align: center;
+}
+
 /* Fuß der Login-Seite: Impressum/Datenschutz (Task 7) - eigene Zeile unter den zwei Spalten */
 .login-footer {
   grid-column: 1 / -1;
@@ -350,5 +419,24 @@
 
   .login-panel {
     place-items: start center;
+  }
+}
+
+/* Breite Bildschirme: das Anmelde-Panel bekommt mehr Platz, die zwei Einstiege stehen nebeneinander. Die Schlagzeile
+   im Hero wird dafür etwas kleiner, damit lange Wörter ("Fellnasen?") in die schmalere Spalte passen. */
+@media (min-width: 1180px) {
+  .login {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  }
+
+  .login-headline {
+    font-size: clamp(3rem, 5.2vw, 5.5rem);
+  }
+
+  .login-entries {
+    width: min(54rem, 100%);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--space-8);
   }
 }

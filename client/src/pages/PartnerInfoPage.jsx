@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
-import ThemeMark from '../components/ThemeMark.jsx'
+import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
 import { useNoIndex } from '../hooks/useNoIndex.js'
+import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
 
 // /partner-werden (Phase 5 Task 4): öffentliche Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung -
-// was ein Partner-Profil bietet, wie es losgeht, zwei Demo-Knöpfe (Demo-Partner-Bereiche, lib/demoPartners.js,
-// wie "Demo als Partner ansehen" auf dem Portal) und der Kontakt zum Betreiber (E-Mail aus /api/config, sonst
-// das Impressum). Verlinkt vom Fuß der Login-Seite ("Für Partner") und aus der Partnerliste. noindex, bis die
-// Domain steht (Phase G) - dann den Hook hier entfernen.
+// ganz oben zwei große Demo-Knöpfe (Demo-Partner-Bereiche, lib/demoPartners.js - Phase U: erst ansehen, dann
+// lesen), darunter was ein Partner-Profil bietet, wie es losgeht, und der Kontakt zum Betreiber (E-Mail aus
+// /api/config, sonst das Impressum). Verlinkt von der Login-Seite ("Mehr erfahren", "Für Partner") und aus der
+// Partnerliste. noindex, bis die Domain steht (Phase G) - dann den Hook hier entfernen.
 
 export const DEMO_PARTNERS = [
   { key: 'hundeschule', label: 'Demo als Hundeschule ansehen', slug: DEMO_PARTNER_SLUGS.hundeschule },
@@ -33,19 +34,7 @@ const STEPS = [
 ]
 
 function DemoButtons({ onDemo }) {
-  const [pending, setPending] = useState(null)
-  const [error, setError] = useState(null)
-
-  async function startDemo(option) {
-    setError(null)
-    setPending(option.key)
-    try {
-      onDemo(await api.demo({ as: 'partner', slug: option.slug }))
-    } catch (err) {
-      setError(err.message)
-      setPending(null)
-    }
-  }
+  const { pending, error, startDemo } = usePartnerDemo(onDemo)
 
   return (
     <div className="partner-info-demo">
@@ -54,8 +43,14 @@ function DemoButtons({ onDemo }) {
           {error}
         </div>
       )}
-      {DEMO_PARTNERS.map((option) => (
-        <button key={option.key} type="button" className="btn btn-ghost" onClick={() => startDemo(option)} disabled={pending !== null}>
+      {DEMO_PARTNERS.map((option, index) => (
+        <button
+          key={option.key}
+          type="button"
+          className={`btn btn-lg ${index === 0 ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => startDemo(option.key, option.slug)}
+          disabled={pending !== null}
+        >
           {pending === option.key ? 'Lädt …' : option.label}
         </button>
       ))}
@@ -80,7 +75,8 @@ function ContactAction({ legal }) {
   )
 }
 
-export default function PartnerInfoPage({ onDemo }) {
+// family: die laufende Sitzung (App.jsx) oder null - nur für das Ziel von "Zurück" (PublicHeader).
+export default function PartnerInfoPage({ onDemo, family = null }) {
   const [legal, setLegal] = useState(null)
   useNoIndex()
 
@@ -99,18 +95,27 @@ export default function PartnerInfoPage({ onDemo }) {
 
   return (
     <div className="public-page partner-info-page">
+      <PublicHeader family={family} />
+
       <header className="partners-hero">
-        <ThemeMark size={56} />
         <span className="eyebrow">Partner werden</span>
         <h1>Euer Auftritt bei Familie auf Pfoten</h1>
+      </header>
+
+      <section className="partner-info-section partner-info-showcase card" aria-labelledby="partner-info-demo-title">
+        <div>
+          <h2 id="partner-info-demo-title">So sieht euer Partner-Bereich aus</h2>
+          <p className="muted">Zwei Demo-Partner zeigen Profil, Kundensicht, Beiträge, Postfach und Kunden-Gutscheine – einfach reinklicken.</p>
+        </div>
+        <DemoButtons onDemo={onDemo} />
+      </section>
+
+      <section className="partner-info-section" aria-labelledby="partner-info-benefits-title">
+        <h2 id="partner-info-benefits-title">Was ihr bekommt</h2>
         <p className="page-lede">
           Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein kostenloses Profil, das eure Kundschaft direkt in ihre eigene
           Chronik holt – und euch als Herkunft zeigt.
         </p>
-      </header>
-
-      <section className="partner-info-section" aria-labelledby="partner-info-benefits-title">
-        <h2 id="partner-info-benefits-title">Was ihr bekommt</h2>
         <ul className="partner-info-benefits">
           {BENEFITS.map((benefit) => (
             <li key={benefit.title} className="card partner-info-benefit">
@@ -139,18 +144,11 @@ export default function PartnerInfoPage({ onDemo }) {
         </ol>
       </section>
 
-      <section className="partner-info-section partner-info-actions card" aria-labelledby="partner-info-actions-title">
-        <div>
-          <h2 id="partner-info-actions-title">Erst mal reinschauen?</h2>
-          <p className="muted">Zwei Demo-Partner zeigen, wie Profil, Kundensicht, Postfach und Kunden-Gutscheine aussehen.</p>
-        </div>
-        <DemoButtons onDemo={onDemo} />
-        <div className="partner-info-contact">
-          <p>
-            <strong>Lust, dabei zu sein?</strong> Schreibt uns kurz, wer ihr seid – wir melden uns mit eurem Partner-Zugang.
-          </p>
-          <ContactAction legal={legal} />
-        </div>
+      <section className="partner-info-section partner-info-contact card" aria-labelledby="partner-info-contact-title">
+        <p id="partner-info-contact-title">
+          <strong>Lust, dabei zu sein?</strong> Schreibt uns kurz, wer ihr seid – wir melden uns mit eurem Partner-Zugang.
+        </p>
+        <ContactAction legal={legal} />
       </section>
 
       <PublicFooter />

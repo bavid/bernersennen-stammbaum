@@ -295,7 +295,8 @@ describe('CustomerViewPage – Steckbriefe (Tierheim)', () => {
     expect(frame().querySelector('h1').textContent).toBe('Benno')
     expect(frame().querySelector('.dog-hero-photo img').getAttribute('src')).toBe('/uploads/11111111-1111-1111-1111-111111111111.jpg')
     expect(container.textContent).toContain('Dieser Steckbrief ist noch nicht veröffentlicht')
-    // Teilen und Links sind in der Vorschau aus.
+    // Teilen und Links sind in der Vorschau aus - auch der Kopf mit "Zurück" (PublicHeader) fehlt.
+    expect(frame().querySelector('.public-header')).toBeNull()
     expect(frame().querySelectorAll('a')).toHaveLength(0)
     expect([...frame().querySelectorAll('button')].find((btn) => btn.textContent.includes('Teilen')).disabled).toBe(true)
 

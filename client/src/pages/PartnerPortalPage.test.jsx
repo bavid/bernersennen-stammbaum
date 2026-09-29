@@ -554,9 +554,10 @@ describe('PartnerPortalPage – Vorschau (Kundensicht)', () => {
     expect(container.querySelector('.shelter-card img').getAttribute('src')).toBe('/uploads/88888888-8888-8888-8888-888888888888.jpg')
   })
 
-  test('kein Einlöse-Formular, keine Demo-Knöpfe, kein Fuß - stattdessen ein Hinweis', async () => {
+  test('kein Einlöse-Formular, keine Demo-Knöpfe, kein Kopf mit "Zurück", kein Fuß - stattdessen ein Hinweis', async () => {
     await renderPreview(vi.fn().mockResolvedValue(previewData))
 
+    expect(container.querySelector('.public-header')).toBeNull()
     expect(container.querySelector('form')).toBeNull()
     expect(container.textContent).not.toContain('Demo ansehen')
     expect(container.textContent).not.toContain('Demo als Partner ansehen')

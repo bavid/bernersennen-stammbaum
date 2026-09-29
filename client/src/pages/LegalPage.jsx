@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
-import ThemeMark from '../components/ThemeMark.jsx'
+import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 
 const NO_LEGAL_HINT = 'Die Betreiberangaben werden vor dem Start ergänzt.'
@@ -181,8 +181,9 @@ const COPY = {
 }
 
 // /impressum und /datenschutz - öffentlich, Standard-Theme (siehe App.jsx). legal kommt aus
-// GET /api/config (server/config.js readLegal, aus IMPRESSUM_* - siehe .env.example).
-export default function LegalPage({ variant }) {
+// GET /api/config (server/config.js readLegal, aus IMPRESSUM_* - siehe .env.example). family: die laufende
+// Sitzung oder null - "Zurück" (PublicHeader) führt ohne Verlauf dann zur Startseite des Bereichs.
+export default function LegalPage({ variant, family = null }) {
   const [legal, setLegal] = useState(undefined)
 
   useEffect(() => {
@@ -204,8 +205,8 @@ export default function LegalPage({ variant }) {
 
   return (
     <div className="public-page legal-page">
+      <PublicHeader family={family} />
       <header className="legal-hero">
-        <ThemeMark size={56} />
         <span className="eyebrow">Rechtliches</span>
         <h1>{title}</h1>
       </header>

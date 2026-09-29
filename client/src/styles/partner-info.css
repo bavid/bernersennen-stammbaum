@@ -1,6 +1,6 @@
 /* Infoseite "Partner werden" (/partner-werden, PartnerInfoPage, Phase 5 Task 4): öffentlicher Rahmen wie die
-   Partnerliste (partners.css .public-page), darin Nutzen als Kartenraster, "So funktioniert's" als nummerierte
-   Schritte und die Karte mit Demo-Knöpfen und Kontakt. Nur Tokens aus tokens.css. */
+   Partnerliste (partners.css .public-page): oben die Karte mit den Demo-Knöpfen (Phase U), darunter Nutzen als
+   Kartenraster, "So funktioniert's" als nummerierte Schritte und der Kontakt. Nur Tokens aus tokens.css. */
 
 .partner-info-page {
   max-width: 64rem;
@@ -91,8 +91,19 @@
   font-weight: 700;
 }
 
-.partner-info-actions {
+.partner-info-showcase {
   gap: var(--space-6);
+  border-color: color-mix(in srgb, var(--rust) 28%, var(--line));
+  background: linear-gradient(135deg, var(--rust-wash), transparent 60%), var(--surface);
+}
+
+.partner-info-showcase h2 {
+  font-size: var(--text-2xl);
+}
+
+.partner-info-showcase p {
+  margin-top: var(--space-2);
+  max-width: 36rem;
 }
 
 .partner-info-demo {
@@ -100,6 +111,13 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
+}
+
+/* Lange Beschriftungen ("Demo als Hundeschule ansehen") dürfen am Handy umbrechen, statt überzustehen. */
+.partner-info-demo .btn {
+  flex: 1 1 16rem;
+  white-space: normal;
+  text-align: center;
 }
 
 .partner-info-demo .error-banner,
@@ -113,8 +131,6 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4) var(--space-6);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--line);
 }
 
 .partner-info-contact p {
