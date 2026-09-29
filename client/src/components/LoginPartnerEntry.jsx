@@ -4,10 +4,15 @@ import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
 import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
 
-const DEMO_KEY = 'hundeschule'
+// Die beiden Demos direkt auf der Login-Seite: Hundeschule (Partner-Bereich) und Tierheim (Tiere, Steckbriefe,
+// Übergabe). Weitere (Hundesalon) stehen auf /partner-werden.
+const LOGIN_DEMOS = [
+  { key: 'hundeschule', label: 'Demo: Hundeschule', target: { as: 'partner', slug: DEMO_PARTNER_SLUGS.hundeschule } },
+  { key: 'tierheim', label: 'Demo: Tierheim', target: { as: 'tierheim' } }
+]
 
 // Zweiter Einstieg der Login-Seite (Phase U): für Hundeschulen, Tierheime & Co. - erst die Demo eines Partner-
-// Bereichs (Demo-Hundeschule, wie auf /partner-werden), dann "Mehr erfahren". Ein Partner-Zugang ist ein
+// Bereichs (Hundeschule oder Tierheim, wie auf /partner-werden), dann "Mehr erfahren". Ein Partner-Zugang ist ein
 // Gutschein: onRedeem schaltet die Karte daneben auf "Gutschein einlösen". onLogin bekommt die Demo-Sitzung.
 export default function LoginPartnerEntry({ onLogin, onRedeem }) {
   const { pending, error, startDemo } = usePartnerDemo(onLogin)
@@ -27,14 +32,19 @@ export default function LoginPartnerEntry({ onLogin, onRedeem }) {
         </div>
       )}
       <div className="login-partner-actions">
-        <button
-          type="button"
-          className="btn btn-ink btn-block"
-          onClick={() => startDemo(DEMO_KEY, DEMO_PARTNER_SLUGS.hundeschule)}
-          disabled={pending !== null}
-        >
-          {pending ? 'Lädt …' : 'Demo als Partner ansehen'}
-        </button>
+        <div className="login-partner-demos">
+          {LOGIN_DEMOS.map((demo) => (
+            <button
+              key={demo.key}
+              type="button"
+              className="btn btn-ink"
+              onClick={() => startDemo(demo.key, demo.target)}
+              disabled={pending !== null}
+            >
+              {pending === demo.key ? 'Lädt …' : demo.label}
+            </button>
+          ))}
+        </div>
         <Link to="/partner-werden" className="btn btn-ghost btn-block">
           Mehr erfahren <Icon name="arrowRight" />
         </Link>

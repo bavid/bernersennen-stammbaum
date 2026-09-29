@@ -18,8 +18,9 @@ import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
 // (Phase G) - dann den Hook hier entfernen.
 
 export const DEMO_PARTNERS = [
-  { key: 'hundeschule', label: 'Demo als Hundeschule ansehen', slug: DEMO_PARTNER_SLUGS.hundeschule },
-  { key: 'hundesalon', label: 'Demo als Hundesalon ansehen', slug: DEMO_PARTNER_SLUGS.hundesalon }
+  { key: 'hundeschule', label: 'Demo als Hundeschule ansehen', target: { as: 'partner', slug: DEMO_PARTNER_SLUGS.hundeschule } },
+  { key: 'tierheim', label: 'Demo als Tierheim ansehen', target: { as: 'tierheim' } },
+  { key: 'hundesalon', label: 'Demo als Hundesalon ansehen', target: { as: 'partner', slug: DEMO_PARTNER_SLUGS.hundesalon } }
 ]
 
 const BENEFITS = [
@@ -51,7 +52,7 @@ function DemoButtons({ onDemo }) {
           key={option.key}
           type="button"
           className={`btn btn-lg ${index === 0 ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => startDemo(option.key, option.slug)}
+          onClick={() => startDemo(option.key, option.target)}
           disabled={pending !== null}
         >
           {pending === option.key ? 'Lädt …' : option.label}

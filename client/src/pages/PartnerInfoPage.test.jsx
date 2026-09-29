@@ -85,6 +85,7 @@ describe('PartnerInfoPage – Demo-Knöpfe', () => {
     expect(sections[0]).toBe(showcase)
     expect([...showcase.querySelectorAll('button')].map((btn) => btn.textContent)).toEqual([
       'Demo als Hundeschule ansehen',
+      'Demo als Tierheim ansehen',
       'Demo als Hundesalon ansehen'
     ])
     expect(container.querySelector('.partner-info-page > .public-header')).not.toBeNull()
@@ -109,7 +110,16 @@ describe('PartnerInfoPage – Demo-Knöpfe', () => {
     await act(async () => button('Demo als Hundesalon ansehen').click())
 
     expect(demo).toHaveBeenCalledWith({ as: 'partner', slug: 'hundesalon-wuschelglueck' })
-    expect(DEMO_PARTNERS.map((option) => option.slug)).toEqual(['hundeschule-pfotenglueck', 'hundesalon-wuschelglueck'])
+    expect(DEMO_PARTNERS.map((option) => option.key)).toEqual(['hundeschule', 'tierheim', 'hundesalon'])
+  })
+
+  test('"Demo als Tierheim ansehen" meldet im Demo-Tierheim an', async () => {
+    demo.mockResolvedValue({ id: 72, art: 'tierheim', isDemo: true })
+    await render()
+
+    await act(async () => button('Demo als Tierheim ansehen').click())
+
+    expect(demo).toHaveBeenCalledWith({ as: 'tierheim' })
   })
 
   test('ein Fehler der Demo erscheint als Alert, die Knöpfe sind wieder frei', async () => {

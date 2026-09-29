@@ -300,15 +300,27 @@ describe('LoginPage – zwei Einstiege', () => {
     expect(partners.querySelector('a[href="/partner-werden"]').textContent).toContain('Mehr erfahren')
   })
 
-  test('"Demo als Partner ansehen" meldet in der Demo-Hundeschule an und liefert die Sitzung an onLogin', async () => {
+  test('"Demo: Hundeschule" meldet in der Demo-Hundeschule an und liefert die Sitzung an onLogin', async () => {
     const onLogin = vi.fn()
     const me = { id: 90, art: 'partner', isDemo: true }
     demo.mockResolvedValue(me)
     await render({ onLogin })
 
-    await act(async () => linkButton('Demo als Partner ansehen').click())
+    await act(async () => linkButton('Demo: Hundeschule').click())
 
     expect(demo).toHaveBeenCalledWith({ as: 'partner', slug: 'hundeschule-pfotenglueck' })
+    expect(onLogin).toHaveBeenCalledWith(me)
+  })
+
+  test('"Demo: Tierheim" meldet im Demo-Tierheim an', async () => {
+    const onLogin = vi.fn()
+    const me = { id: 91, art: 'tierheim', isDemo: true }
+    demo.mockResolvedValue(me)
+    await render({ onLogin })
+
+    await act(async () => linkButton('Demo: Tierheim').click())
+
+    expect(demo).toHaveBeenCalledWith({ as: 'tierheim' })
     expect(onLogin).toHaveBeenCalledWith(me)
   })
 
@@ -316,10 +328,10 @@ describe('LoginPage – zwei Einstiege', () => {
     demo.mockRejectedValue(new Error('Keine Demo verfügbar'))
     await render()
 
-    await act(async () => linkButton('Demo als Partner ansehen').click())
+    await act(async () => linkButton('Demo: Hundeschule').click())
 
     expect(container.querySelector('.login-partner [role="alert"]').textContent).toBe('Keine Demo verfügbar')
-    expect(linkButton('Demo als Partner ansehen').disabled).toBe(false)
+    expect(linkButton('Demo: Hundeschule').disabled).toBe(false)
   })
 
   test('auf /v (initialMode redeem) geht es nur ums Einlösen - ohne Partner-Einstieg', async () => {

@@ -349,6 +349,13 @@
   gap: var(--space-3);
 }
 
+/* Zwei Demos nebeneinander (Hundeschule, Tierheim), in schmalen Spalten untereinander. */
+.login-partner-demos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-2);
+}
+
 /* Lange Beschriftungen dürfen in schmalen Spalten umbrechen, statt überzustehen. */
 .login-partner .btn,
 .login-demo .btn {
