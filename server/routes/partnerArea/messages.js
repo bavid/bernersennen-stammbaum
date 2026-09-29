@@ -13,7 +13,7 @@ const NOT_FOUND = 'Diese Nachricht gibt es nicht'
 
 // { messages: neueste zuerst, unread: Anzahl ungelesener }
 router.get('/', (req, res) => {
-  const messages = listMessages(req.partner.id).map(ownMessage)
+  const messages = listMessages(req.partner.id, { purge: !req.isAdminView }).map(ownMessage)
   res.json({ messages, unread: countUnread(req.partner.id) })
 })
 

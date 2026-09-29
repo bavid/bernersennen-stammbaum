@@ -53,7 +53,8 @@ router.post('/search', placesLimiter, requireSession, async (req, res, next) => 
       lon: center.lon,
       radiusKm,
       isDemo: req.isDemo,
-      homeId: req.homeId
+      // Admin-Ansicht (nur lesen): das Tageskontingent des angesehenen Bereichs nicht verbrauchen
+      homeId: req.isAdminView ? null : req.homeId
     })
 
     res.json({ center, radius: radiusKm, results, limited, attribution })

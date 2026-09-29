@@ -34,6 +34,25 @@ test('purgeAllExpiredMessages: alte Nachrichten aller Partner weg, neuere bleibe
   assert.equal(purgeAllExpiredMessages(), 0, 'ein zweiter Lauf findet nichts mehr')
 })
 
+// Admin-Ansicht (nur lesen): das Öffnen eines Posteingangs darf nichts löschen - dafür gibt es den täglichen Lauf.
+test('listMessages: purge:false lässt abgelaufene Nachrichten stehen, Standard räumt den eigenen Partner auf', () => {
+  const db = require('../db')
+  const { listMessages } = require('../lib/partnerMessages')
+  const insert = db.prepare(
+    "INSERT INTO partner_messages (partner_id, email, nachricht, created_at) VALUES (?, 'absender@example.org', ?, datetime('now', ?))"
+  )
+  insert.run(9, 'alt', '-200 days')
+  insert.run(9, 'neu', '-1 days')
+
+  // Die Liste selbst zeigt Abgelaufenes nie - entscheidend ist, ob die Zeile in der Datenbank bleibt.
+  const count = () => db.prepare('SELECT COUNT(*) AS n FROM partner_messages WHERE partner_id = 9').get().n
+  listMessages(9, { purge: false })
+  assert.equal(count(), 2, 'nur lesen: die alte Nachricht bleibt in der Datenbank')
+  listMessages(9)
+  assert.equal(count(), 1, 'normaler Aufruf: die alte Nachricht ist gelöscht')
+  db.prepare('DELETE FROM partner_messages WHERE partner_id = 9').run()
+})
+
 test('runMessagePurge: loggt nur die Anzahl, nie Inhalte; ein Fehler reißt nichts mit', () => {
   const db = require('../db')
   const { runMessagePurge } = require('../lib/partnerMessages')

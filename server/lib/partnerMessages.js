@@ -160,8 +160,9 @@ const insertMessage = db.transaction((partner, clean, { gelesenAt = null, create
     .lastInsertRowid
 })
 
-function listMessages(partnerId) {
-  purgeExpired(partnerId)
+// purge: false in der Admin-Ansicht (nur lesen) - dort räumt erst der tägliche Lauf (runMessagePurge) auf.
+function listMessages(partnerId, { purge = true } = {}) {
+  if (purge) purgeExpired(partnerId)
   return listStmt.all(partnerId)
 }
 
