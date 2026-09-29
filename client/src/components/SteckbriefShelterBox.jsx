@@ -36,20 +36,31 @@ export default function SteckbriefShelterBox({ shelter, animalName, animalSlug }
               <ExternalLink href={shelter.website}>{shelter.website}</ExternalLink>
             </li>
           )}
-          {mailto && (
+          {/* Wie PortalContact: was sich nicht sicher verlinken lässt, erscheint als reiner Text statt zu verschwinden */}
+          {shelter.kontakt_email && (
             <li>
               <Icon name="mail" />
-              <ExternalLink href={mailto} newTab={false}>
-                {shelter.kontakt_email}
-              </ExternalLink>
+              <span className="visually-hidden">E-Mail: </span>
+              {mailto ? (
+                <ExternalLink href={mailto} newTab={false}>
+                  {shelter.kontakt_email}
+                </ExternalLink>
+              ) : (
+                <span>{shelter.kontakt_email}</span>
+              )}
             </li>
           )}
-          {isValidPhone(shelter.kontakt_telefon) && (
+          {shelter.kontakt_telefon && (
             <li>
               <Icon name="phone" />
-              <ExternalLink href={telHref(shelter.kontakt_telefon)} newTab={false}>
-                {shelter.kontakt_telefon}
-              </ExternalLink>
+              <span className="visually-hidden">Telefon: </span>
+              {isValidPhone(shelter.kontakt_telefon) ? (
+                <ExternalLink href={telHref(shelter.kontakt_telefon)} newTab={false}>
+                  {shelter.kontakt_telefon}
+                </ExternalLink>
+              ) : (
+                <span>{shelter.kontakt_telefon}</span>
+              )}
             </li>
           )}
         </ul>

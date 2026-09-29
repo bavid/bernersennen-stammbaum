@@ -111,6 +111,17 @@ describe('SteckbriefPage – "Schreib uns zu {Tiername}" (Phase P2)', () => {
     expect(container.querySelector('dialog [role="status"]').textContent).toBe('Danke! Tierheim Sonnenhang meldet sich bei dir.')
   })
 
+  test('E-Mail/Telefon, die sich nicht sicher verlinken lassen, erscheinen als Text statt zu verschwinden', async () => {
+    publicAnimal.mockResolvedValue({ ...animal, shelter: { ...shelter, kontakt_email: 'info@sonnenhang?cc=x', kontakt_telefon: 'abends' } })
+    await render()
+
+    const box = container.querySelector('.steckbrief-shelter')
+    expect(box.textContent).toContain('info@sonnenhang?cc=x')
+    expect(box.textContent).toContain('abends')
+    expect(box.querySelector('a[href^="mailto:"]')).toBeNull()
+    expect(box.querySelector('a[href^="tel:"]')).toBeNull()
+  })
+
   test('ohne kontaktformular: true vom Server kein Knopf - Website, E-Mail und Telefon bleiben', async () => {
     const { kontaktformular, ...withoutFlag } = shelter
     publicAnimal.mockResolvedValue({ ...animal, shelter: withoutFlag })
