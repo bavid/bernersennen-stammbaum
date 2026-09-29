@@ -92,6 +92,16 @@ Namen (pre-commit-Hook); jede Funktion auch in der Demo.
 - Danach Gesamtdurchsicht und Refactoring aller Seiten nach den Leitlinien oben (Raster, Abstände, ein Badge je
   Karte, Formulare), mit Screenshots vorher/nachher.
 
+### Task 3b: Echte Demo-Fotos statt Comic-Bilder (Wunsch 29.09.)
+
+- Die generierten Comic-Bilder der Demo wirken wie Werbung. Ersetzen durch echte Fotos: spielende Hunde, Welpen,
+  Katzen, Training in der Hundeschule, Hundesalon, Tierheim-Alltag.
+- **Quelle und Lizenz:** Unsplash bzw. Pexels (freie, auch gewerbliche Nutzung ohne Anfrage). Nur Tiere, keine
+  erkennbaren Personen, keine Marken. `server/seed/images/QUELLEN.md` listet je Bild Fotograf, Link, Lizenz.
+- **Aufbereitung:** höchstens 1600 px, ca. 200–300 KB, EXIF entfernt; gleiche Dateinamen oder angepasste
+  Seed-Verweise.
+- Nur Demo-Daten (`is_demo = 1`) betroffen; danach Vorschau zurücksetzen.
+
 ### Task 4: Prüfen und ausliefern (Koordinator)
 
 - Browser-Prüfung auf der Vorschau (Handy/Desktop, hell/dunkel), README/Roadmap, Deploy.
