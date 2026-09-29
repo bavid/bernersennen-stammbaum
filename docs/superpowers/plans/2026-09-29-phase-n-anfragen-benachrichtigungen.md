@@ -54,8 +54,11 @@ Namen (pre-commit-Hook); Demo: Formulare sichtbar, in Demo-Sitzungen kein Versan
   Request), höchstens 3 Versuche mit Pause, Fehler nur als Zeile ohne Inhalt geloggt. Versand über den vorhandenen
   SSRF-geschützten HTTP-Client (`lib/http.js`) mit `api.telegram.org` auf der Allowlist; `POST /bot<TOKEN>/sendMessage`
   mit `chat_id`, `text`, `disable_web_page_preview`.
-- Konfiguration: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` aus der Umgebung (fehlen sie, ist der Versand aus; der
-  Admin sieht „nicht eingerichtet“). Token nie loggen, nie an den Client geben.
+- **Einrichtung im Admin-Portal (Änderung 29.09.):** Bot-Token und Chat-ID trägt der Admin in der Karte
+  „Benachrichtigungen“ ein – kein Deploy, keine `.env`. Der Token liegt AES-256-GCM-verschlüsselt in `settings`
+  (Schlüssel aus `CODE_PEPPER`), wird beim Speichern per `getMe` geprüft, nie geloggt und nie an den Client gegeben
+  (nur „…abcd“). „Chat finden“ ruft `getUpdates` auf und zeigt die Chats, die dem Bot zuletzt geschrieben haben
+  („/start“ schicken, dann auswählen). `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` in der Umgebung bleiben als Rückfall.
 - Einstellungen (Tabelle `settings`): `notify_gutschein_anfrage`, `notify_partner_anfrage`, `notify_registrierung`,
   `notify_feedback`, `notify_beitrag`, `notify_details` (alle aus, außer die ersten vier an). Demo-Sitzungen lösen
   nie etwas aus.
@@ -81,7 +84,6 @@ Namen (pre-commit-Hook); Demo: Formulare sichtbar, in Demo-Sitzungen kein Versan
 
 ### Task 4: Einrichtung und Auslieferung (Koordinator + Betreiber)
 
-- 🧑 Betreiber: Bot bei @BotFather anlegen, Token und eigene Chat-ID ermitteln (Nachricht an den Bot, dann
-  `getUpdates`), beide in die `.env` der Vorschau bzw. von Prod eintragen (`manage.ps1` bekommt dafür einen
-  Menüpunkt, der die Werte abfragt und per `env_default`/Ersetzen setzt, ohne sie anzuzeigen).
-- Review (Sicherheit: Token, SSRF-Allowlist, Personendaten), Browser-Prüfung, Deploy.
+- 🧑 Betreiber: Bot bei @BotFather anlegen, dem Bot „/start“ schreiben, dann im Admin unter „Benachrichtigungen“ den
+  Token eintragen, „Chat finden“, Chat wählen, „Testnachricht“.
+- Review (Sicherheit: verschlüsselter Token, SSRF-Allowlist, Personendaten), Browser-Prüfung, Deploy.
