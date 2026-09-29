@@ -68,6 +68,30 @@ Namen (pre-commit-Hook); jede Funktion auch in der Demo.
 - Umsetzung in kleinen Commits je Seite, mit vorher/nachher-Screenshots im Bericht. Bestehende Tests grün halten,
   neue Tests für die Filter-Chips und die Reiter.
 
+### Task 3 – Rückmeldung nach dem zweiten Test (29.09.), verbindlich
+
+- **Partner-Portal als eigene Plattform:** `/p/:slug` ist öffentlich und soll Hundeschulen, Salons & Co. als
+  vorzeigbare Mini-Website dienen, auf die sie von ihrer eigenen Website, Instagram oder Visitenkarten verlinken –
+  jeder Besuch bringt potenzielle Kundschaft zu uns.
+  - Aufbau wie eine ruhige Landingpage: großer Kopf mit Logo, Name, Ort, Kurztext und Kontakt-Knopf; danach
+    „Angebote & Aktuelles“, Einblicke (Galerie), bei Tierheimen die Tiere, Happy Ends, Kontakt.
+  - **Eigene Beiträge auf dem eigenen Portal ohne „Anzeige“-Badge** (es ist ihre Seite); die Kennzeichnung „Anzeige“
+    gilt nur, wenn Beiträge in „Entdecken“ neben anderen erscheinen. Keine fremden Anzeigen auf Partner-Portalen.
+  - Dezenter Fuß „Mit Familie auf Pfoten – eine Chronik für deine Tiere“ mit Link zur Startseite bzw. „Gutschein
+    anfragen“.
+  - Im Partner-Profil ein Reiter bzw. Bereich **„Teilen“**: Portal-Link zum Kopieren, QR-Code als SVG/PNG zum
+    Herunterladen, ein kleiner HTML-Knopf zum Einbinden auf der eigenen Website („Uns findet ihr auch auf Familie auf
+    Pfoten“), Text-Vorschlag für Social Media.
+- **Badges:** „Partner“ und „geprüft“ zusammenführen – öffentlich höchstens ein ruhiges Merkmal (z. B. kleines
+  Pfoten-Häkchen „Partner“), keine zwei konkurrierenden Pillen.
+- **PLZ-Eingabe** kompakt: eine Zeile (PLZ-Feld ca. 7 Zeichen breit, Umkreis-Auswahl, Suchen-Knopf), am Handy
+  ebenfalls schmal; der Standort-Knopf als kleiner Text-Link.
+- **Entdecken mit Reitern** statt langer Liste: Reiter „Alle | Hundeschulen | Salon & Betreuung | Neue Begleiter |
+  Futter | Unterstützen“ (am Handy horizontal scrollbar, Zähler je Reiter); „Alle“ zeigt je Bereich höchstens drei
+  Einträge plus „Alle anzeigen“ (wechselt den Reiter). Reiter in der URL (`?bereich=`).
+- Danach Gesamtdurchsicht und Refactoring aller Seiten nach den Leitlinien oben (Raster, Abstände, ein Badge je
+  Karte, Formulare), mit Screenshots vorher/nachher.
+
 ### Task 4: Prüfen und ausliefern (Koordinator)
 
 - Browser-Prüfung auf der Vorschau (Handy/Desktop, hell/dunkel), README/Roadmap, Deploy.
