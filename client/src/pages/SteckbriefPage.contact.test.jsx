@@ -123,13 +123,23 @@ describe('SteckbriefPage – "Schreib uns zu {Tiername}" (Phase P2)', () => {
   })
 
   test('Kundensicht: der Knopf ist sichtbar, aber deaktiviert', async () => {
-    const { kontaktformular, ...withoutFlag } = shelter
-    const load = vi.fn().mockResolvedValue({ ...animal, shelter: withoutFlag, vorschau: true })
+    const load = vi.fn().mockResolvedValue({ ...animal, vorschau: true })
     await render({ slug: undefined, load, preview: true })
 
     const writeUs = button('Schreib uns zu Benno')
     expect(writeUs.disabled).toBe(true)
     expect(writeUs.getAttribute('title')).toBe('In der Vorschau deaktiviert')
     expect(container.querySelector('dialog')).toBeNull()
+  })
+
+  test('Demo-Tierheim (kontaktformularDemo): der Knopf ist gesperrt, mit Hinweis', async () => {
+    publicAnimal.mockResolvedValue({ ...animal, shelter: { ...shelter, kontaktformular: false, kontaktformularDemo: true } })
+    await render()
+
+    const writeUs = button('Schreib uns zu Benno')
+    expect(writeUs.disabled).toBe(true)
+    expect(container.querySelector('.steckbrief-shelter').textContent).toContain('In der Demo werden keine Nachrichten verschickt.')
+    expect(container.querySelector('dialog')).toBeNull()
+    expect(contactPartner).not.toHaveBeenCalled()
   })
 })

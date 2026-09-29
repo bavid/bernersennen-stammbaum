@@ -11,7 +11,7 @@ import { useIsPreview } from '../lib/preview.js'
 // eigene Vermittlungsseite. animalSlug fehlt in der Kundensicht - dort ist der Knopf ohnehin deaktiviert.
 export default function SteckbriefShelterBox({ shelter, animalName, animalSlug }) {
   const preview = useIsPreview()
-  const hasForm = showContactForm(shelter, { preview }) && (preview || Boolean(animalSlug))
+  const hasForm = showContactForm(shelter) && (preview || Boolean(animalSlug))
   const mailto = mailtoHref(shelter.kontakt_email)
 
   return (

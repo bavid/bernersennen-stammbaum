@@ -227,10 +227,9 @@ describe('PortalContact – Kontakt-Kasten (Phase P2)', () => {
   })
 
   test('Kundensicht: "Schreib uns" sichtbar, aber deaktiviert ("In der Vorschau deaktiviert")', async () => {
-    const { kontaktformular, ...withoutFlag } = partner
     await render(
       <PreviewProvider value>
-        <PortalContact partner={withoutFlag} />
+        <PortalContact partner={partner} />
       </PreviewProvider>
     )
 
@@ -240,5 +239,31 @@ describe('PortalContact – Kontakt-Kasten (Phase P2)', () => {
     expect(container.textContent).toContain('In der Vorschau deaktiviert')
     expect(container.querySelector('dialog')).toBeNull()
     expect(container.querySelector('a[href="https://wiesengrund.example.org/kontakt"]')).toBeNull()
+  })
+
+  test('Kundensicht ohne kontaktformular: kein Knopf', async () => {
+    await render(
+      <PreviewProvider value>
+        <PortalContact partner={{ ...partner, kontaktformular: false }} />
+      </PreviewProvider>
+    )
+    expect(button('Schreib uns')).toBeUndefined()
+  })
+
+  test('Demo-Partner (kontaktformularDemo): "Schreib uns" sichtbar, aber gesperrt, mit Hinweis - kein Modal', async () => {
+    await render(<PortalContact partner={{ ...partner, kontaktformular: false, kontaktformularDemo: true }} />)
+
+    const writeUs = button('Schreib uns')
+    expect(writeUs.disabled).toBe(true)
+    expect(writeUs.getAttribute('title')).toBe('In der Demo werden keine Nachrichten verschickt.')
+    expect(writeUs.getAttribute('aria-description')).toBe('In der Demo werden keine Nachrichten verschickt.')
+    expect(container.querySelector('.contact-partner-preview .field-hint').textContent).toBe('In der Demo werden keine Nachrichten verschickt.')
+    expect(container.querySelector('dialog')).toBeNull()
+  })
+
+  test('die alten Felder kontaktformularAktiv/kontaktformular_aktiv zählen nicht mehr', async () => {
+    const { kontaktformular, ...withoutFlag } = partner
+    await render(<PortalContact partner={{ ...withoutFlag, kontaktformularAktiv: true, kontaktformular_aktiv: 1 }} />)
+    expect(button('Schreib uns')).toBeUndefined()
   })
 })

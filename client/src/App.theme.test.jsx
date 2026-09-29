@@ -3,7 +3,8 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test } from 'vitest'
-import { AppHeader, AppFooter, DemoBanner } from './App.jsx'
+import { AppHeader, AppFooter } from './App.jsx'
+import DemoBanner from './components/DemoBanner.jsx'
 import { ThemeProvider } from './themes/ThemeProvider.jsx'
 import { getTheme } from './themes/index.js'
 
@@ -65,7 +66,8 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
 })
 
 describe('DemoBanner in Partner- und Tierheim-Demos (Phase P2)', () => {
-  test('statt "Eigene Familie anlegen" führt der Knopf zu "Schreib dem Admin"', async () => {
+  // "Schreib dem Admin" nimmt aus Demo-Sitzungen nichts an (403) - deshalb die Kontaktdaten im Impressum.
+  test('statt "Eigene Familie anlegen" führt der Knopf zum Kontakt im Impressum', async () => {
     const onLeave = () => {
       throw new Error('darf die Demo nicht verlassen')
     }
@@ -77,8 +79,8 @@ describe('DemoBanner in Partner- und Tierheim-Demos (Phase P2)', () => {
       </MemoryRouter>
     )
     const link = container.querySelector('.demo-banner a')
-    expect(link.textContent).toBe('Eigenes Partner-Profil? Schreib uns')
-    expect(link.getAttribute('href')).toBe('/admin-schreiben')
+    expect(link.textContent).toBe('Eigenes Partner-Profil? Kontakt im Impressum')
+    expect(link.getAttribute('href')).toBe('/impressum')
     expect(container.querySelector('.demo-banner button')).toBeNull()
     expect(container.textContent).not.toContain('Eigene Familie anlegen')
   })

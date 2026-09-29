@@ -11,6 +11,8 @@ import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import ContextSwitcher from './components/ContextSwitcher.jsx'
+import DemoBanner from './components/DemoBanner.jsx'
+import NavBadge from './components/NavBadge.jsx'
 import ViewModeSwitch from './components/ViewModeSwitch.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
@@ -36,35 +38,6 @@ const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
 // Hauptnavigation je Bereichsart (lib/navItems.js navItemsFor), Routen des Bereichs in AreaRoutes.jsx.
 // Bei der Höchstzahl von Einträgen (MAX_NAV_ITEMS) wird die Leiste kompakter (layout.css .app-nav-dense),
 // damit sie am Handy bei 375 px und am schmalen Desktop ohne Überlappung passt.
-
-// Partner- und Tierheim-Demos (Phase P2): statt "Eigene Familie anlegen" (ein Gutschein für ein Zuhause
-// hilft einem Partner nicht) führt der Knopf zu "Schreib dem Admin" - dort melden sich Partner für ein
-// eigenes Profil.
-function PartnerDemoContactLink() {
-  const { pathname } = useLocation()
-  return (
-    <Link to="/admin-schreiben" state={{ from: pathname }} className="btn btn-primary">
-      Eigenes Partner-Profil? Schreib uns
-    </Link>
-  )
-}
-
-export function DemoBanner({ onLeave, partnerArea = false }) {
-  const { words } = useTheme()
-  return (
-    <div className="demo-banner" role="status">
-      <Icon name="alert" />
-      <span>Du siehst eine schreibgeschützte Demo – nichts wird gespeichert oder hochgeladen.</span>
-      {partnerArea ? (
-        <PartnerDemoContactLink />
-      ) : (
-        <button type="button" className="btn btn-primary" onClick={onLeave}>
-          {words.createOwnGroup}
-        </button>
-      )}
-    </div>
-  )
-}
 
 // Karte auf /v#CODE mit laufender Sitzung (Phase T Task 5): normalerweise nur "Abmelden und Gutschein
 // einlösen" - trägt der Code aber einen offenen Übergabe-Gutschein UND die Sitzung ist das eigene
@@ -190,8 +163,7 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
           </span>
         </div>
         <nav className={`app-nav${navItems.length >= MAX_NAV_ITEMS ? ' app-nav-dense' : ''}`} aria-label="Hauptnavigation">
-          {/* badge/ariaLabel (Phase P2): ungelesene Nachrichten an "Nachrichten" - die Zahl ist nur Optik,
-              Screenreader hören "Nachrichten, 2 ungelesen" (lib/navItems.js). */}
+          {/* badge/ariaLabel (Phase P2): ungelesene Nachrichten an "Nachrichten" (lib/navItems.js). */}
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -201,11 +173,7 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
             >
               <Icon name={item.icon} />
               <span>{item.label}</span>
-              {item.badge && (
-                <span className="app-nav-badge" aria-hidden="true">
-                  {item.badge}
-                </span>
-              )}
+              <NavBadge badge={item.badge} />
             </NavLink>
           ))}
         </nav>

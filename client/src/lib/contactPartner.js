@@ -11,22 +11,21 @@ export const REACHABLE_MESSAGE = 'Bitte gib eine E-Mail-Adresse oder Telefonnumm
 export const UNAVAILABLE_MESSAGE = 'Über dieses Formular lassen sich gerade keine Nachrichten verschicken.'
 const HTML_MESSAGE = 'Bitte nur reinen Text eingeben (kein HTML).'
 
-// Ist "Schreib uns" für diesen Partner da? Der Server soll es als kontaktformular: true melden (Formular an,
-// Postfach vorhanden, siehe Plan Phase P Task 10). 'available'/'unavailable' bei einer klaren Angabe,
-// sonst 'unknown' - öffentlich erscheint der Knopf nur bei 'available', in der Kundensicht (deaktiviert)
-// auch bei 'unknown'. kontaktformularAktiv/kontaktformular_aktiv werden als Rückfall mitgelesen.
+export const DEMO_CONTACT_HINT = 'In der Demo werden keine Nachrichten verschickt.'
+
+// Ist "Schreib uns" für diesen Partner da? Das meldet allein der Server als kontaktformular: true (Formular
+// an, Postfach vorhanden) - auf dem Portal und am Tierheim eines Steckbriefs. Demo-Partner melden
+// kontaktformular: false und kontaktformularDemo: true: der Knopf ist dann sichtbar, aber gesperrt.
+// 'available', 'demo' oder 'unavailable' (auch ohne Angabe).
 export function contactFormState(partner) {
-  if (!partner || typeof partner !== 'object') return 'unknown'
-  const flag = [partner.kontaktformular, partner.kontaktformularAktiv, partner.kontaktformular_aktiv].find(
-    (value) => value !== undefined && value !== null
-  )
-  if (flag === undefined) return 'unknown'
-  return flag === true || flag === 1 ? 'available' : 'unavailable'
+  if (partner?.kontaktformular === true) return 'available'
+  if (partner?.kontaktformularDemo === true) return 'demo'
+  return 'unavailable'
 }
 
-export function showContactForm(partner, { preview = false } = {}) {
-  const state = contactFormState(partner)
-  return preview ? state !== 'unavailable' : state === 'available'
+// Knopf zeigen (bei 'demo' und in der Kundensicht deaktiviert, siehe ContactPartnerButton)?
+export function showContactForm(partner) {
+  return contactFormState(partner) !== 'unavailable'
 }
 
 export const EMPTY_CONTACT_FORM = Object.freeze({ name: '', email: '', telefon: '', nachricht: '' })

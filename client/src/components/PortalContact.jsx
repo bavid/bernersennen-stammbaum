@@ -3,15 +3,13 @@ import ContactPartnerButton from './ContactPartnerButton.jsx'
 import { ExternalLink } from './PreviewLink.jsx'
 import { isExternalUrl, isValidPhone, mailtoHref, telHref } from '../lib/format.js'
 import { showContactForm } from '../lib/contactPartner.js'
-import { useIsPreview } from '../lib/preview.js'
 
 // Kontakt-Kasten des Portals (/p/:slug): oben die Wege, Kontakt aufzunehmen - "Schreib uns" (Phase P2,
-// Nachricht ins Postfach des Partners, nur wenn der Server das Formular meldet) und das eigene
+// Nachricht ins Postfach des Partners, nur wenn der Server kontaktformular meldet) und das eigene
 // Kontaktformular des Partners (extern) -, darunter Website, E-Mail und Telefon - nur, was hinterlegt ist.
 // In der Kundensicht ist alles sichtbar, aber nicht anklickbar (PreviewLink.jsx, ContactPartnerButton).
 export default function PortalContact({ partner }) {
-  const preview = useIsPreview()
-  const hasForm = showContactForm(partner, { preview })
+  const hasForm = showContactForm(partner)
   const hasFormUrl = isExternalUrl(partner.kontakt_formular_url)
   const hasWebsite = isExternalUrl(partner.website)
   const phone = isValidPhone(partner.kontakt_telefon) ? partner.kontakt_telefon : null

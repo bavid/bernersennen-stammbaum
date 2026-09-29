@@ -18,24 +18,23 @@ function apiError(message, status) {
 }
 
 describe('contactFormState / showContactForm', () => {
-  test('kontaktformular: true/false vom Server entscheidet', () => {
+  test('allein kontaktformular: true vom Server gibt das Formular frei', () => {
     expect(contactFormState({ kontaktformular: true })).toBe('available')
-    expect(contactFormState({ kontaktformular: false })).toBe('unavailable')
-  })
-
-  test('kontaktformularAktiv / kontaktformular_aktiv als Rückfall', () => {
-    expect(contactFormState({ kontaktformularAktiv: true })).toBe('available')
-    expect(contactFormState({ kontaktformular_aktiv: 1 })).toBe('available')
-    expect(contactFormState({ kontaktformular_aktiv: 0 })).toBe('unavailable')
-  })
-
-  test('ohne Angabe: unbekannt - öffentlich kein Knopf, in der Kundensicht (deaktiviert) schon', () => {
-    expect(contactFormState({ name: 'Hundeschule Wiesengrund' })).toBe('unknown')
-    expect(contactFormState(null)).toBe('unknown')
-    expect(showContactForm({})).toBe(false)
-    expect(showContactForm({}, { preview: true })).toBe(true)
-    expect(showContactForm({ kontaktformular: false }, { preview: true })).toBe(false)
     expect(showContactForm({ kontaktformular: true })).toBe(true)
+  })
+
+  test('Demo-Partner: kontaktformular false plus kontaktformularDemo - Knopf sichtbar (gesperrt)', () => {
+    expect(contactFormState({ kontaktformular: false, kontaktformularDemo: true })).toBe('demo')
+    expect(showContactForm({ kontaktformular: false, kontaktformularDemo: true })).toBe(true)
+  })
+
+  test('false, fehlend oder nur die alten Felder kontaktformularAktiv/kontaktformular_aktiv: kein Formular', () => {
+    expect(contactFormState({ kontaktformular: false })).toBe('unavailable')
+    expect(contactFormState({ name: 'Hundeschule Wiesengrund' })).toBe('unavailable')
+    expect(contactFormState({ kontaktformularAktiv: true, kontaktformular_aktiv: 1 })).toBe('unavailable')
+    expect(contactFormState({ kontaktformular: 'true' })).toBe('unavailable')
+    expect(contactFormState(null)).toBe('unavailable')
+    expect(showContactForm({})).toBe(false)
   })
 })
 
