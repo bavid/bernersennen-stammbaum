@@ -33,6 +33,8 @@ function matchesFilter(dog, filter) {
   return !dog.shared_from && dog.vermittlung_status === filter
 }
 
+// Eine Tierkarte: der Status ist das einzige Badge, ob der Steckbrief öffentlich ist, steht als ruhige Meta-Zeile
+// darunter (Phase U).
 function ShelterAnimalCard({ dog }) {
   const statusLabel = vermittlungStatusLabel(dog.vermittlung_status)
   return (
@@ -51,13 +53,13 @@ function ShelterAnimalCard({ dog }) {
           ) : (
             <span className="chip muted">Ohne Status</span>
           )}
-          {!dog.shared_from && (
-            <span className={`chip steckbrief-chip ${dog.public_slug ? 'is-public' : 'is-private'}`}>
-              <Icon name={dog.public_slug ? 'globe' : 'lock'} />
-              {dog.public_slug ? 'Steckbrief öffentlich' : 'Steckbrief privat'}
-            </span>
-          )}
         </span>
+        {!dog.shared_from && (
+          <span className={`steckbrief-meta ${dog.public_slug ? 'is-public' : 'is-private'}`}>
+            <Icon name={dog.public_slug ? 'globe' : 'lock'} />
+            {dog.public_slug ? 'Steckbrief öffentlich' : 'Steckbrief privat'}
+          </span>
+        )}
         {dog.latest_entry_titel && (
           <span className="shelter-card-latest">
             {formatDayMonth(dog.latest_entry_datum)} · {dog.latest_entry_titel}

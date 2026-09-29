@@ -144,6 +144,43 @@
   color: var(--ink-soft);
 }
 
+.steckbrief-shelter .partner-portal-contact {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.steckbrief-shelter .partner-portal-contact h3 {
+  font-size: var(--text-base);
+}
+
+/* Zweitrangige Wege (Vermittlungsseite, Portal) in einer Zeile unter der Hauptaktion */
+.steckbrief-shelter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.steckbrief-shelter-actions .btn {
+  max-width: 100%;
+  padding-block: var(--space-2);
+  white-space: normal;
+  text-align: center;
+}
+
+/* "Teilen" so breit wie seine Beschriftung, nicht über die ganze Spalte */
+.steckbrief-hero .dog-hero-body > .btn {
+  justify-self: start;
+}
+
+/* Hero des Steckbriefs in der schmalen öffentlichen Spalte: Foto etwas schmaler, damit Name, Status und
+   Beschreibung daneben Platz haben (sonst stand die Beschreibung Wort für Wort untereinander). */
+@media (min-width: 801px) {
+  .steckbrief-hero {
+    grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+    gap: var(--space-10);
+  }
+}
+
 /* Vermittlungsstatus unter dem Namen (Phase P), bei "pausiert" mit Hinweis daneben. */
 .steckbrief-vermittlung {
   display: flex;

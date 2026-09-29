@@ -121,8 +121,9 @@
     grid-template-columns: 1fr;
   }
 
+  /* 18px Platz für den versetzten Rahmen (::after) - sonst ragte er am Handy über den rechten Rand */
   .dog-hero-photo {
-    width: min(100%, 22rem);
+    width: min(100% - 18px, 22rem);
     aspect-ratio: 1;
   }
 }
