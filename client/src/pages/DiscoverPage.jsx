@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
+import Icon from '../components/Icon.jsx'
 import LocationPicker from '../components/LocationPicker.jsx'
 import { BegleiterSection, FutterSection, HundeschulenSection, SupportSection } from '../components/DiscoverSections.jsx'
 import { normalizeDiscover } from '../lib/discover.js'
+import { PreviewProvider } from '../lib/preview.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
 const DEFAULT_RADIUS = 25
@@ -36,7 +38,9 @@ function friendlyError(err) {
 // /entdecken (angemeldet, auch in der Demo): Hundeschulen, neue Begleiter aus Tierheimen und
 // Vermittlungsstellen, Futter-Empfehlungen und Unterstützen - alles aus einer Antwort von POST
 // /api/discover. Mit PLZ sortiert der Server nach Entfernung, ohne liefert er alles nach Namen.
-export default function DiscoverPage() {
+// Kundensicht (Phase P1, CustomerViewPage): load ersetzt api.discover (gleiche Signatur { plz, radius },
+// z. B. api.partnerArea.previewDiscover), preview schaltet Links ab und zeigt die eigene Karte markiert.
+export default function DiscoverPage({ load, preview = false }) {
   const [plz, setPlz] = useState(storedPlz)
   const [radius, setRadius] = useState(storedRadius)
   const [data, setData] = useState(null)
@@ -57,20 +61,21 @@ export default function DiscoverPage() {
   // sucht ausschließlich das Formular - Tippen in PLZ oder Umkreis löst keine Anfrage aus. Das
   // Aufräumen erklärt jede noch laufende Antwort für veraltet, damit sie nach dem Verlassen nichts setzt.
   useEffect(() => {
-    load(plz.length === PLZ_LENGTH ? plz : '')
+    search(plz.length === PLZ_LENGTH ? plz : '')
     return () => {
       latestRequest.current += 1
     }
   }, [])
 
-  async function load(searchPlz) {
+  async function search(searchPlz) {
     latestRequest.current += 1
     const requestId = latestRequest.current
     const isCurrent = () => requestId === latestRequest.current
+    const fetchDiscover = load || api.discover
     setLoading(true)
     setError(null)
     try {
-      const result = await api.discover(searchPlz ? { plz: searchPlz, radius } : {})
+      const result = await fetchDiscover(searchPlz ? { plz: searchPlz, radius } : {})
       if (isCurrent()) setData(normalizeDiscover(result))
     } catch (err) {
       if (!isCurrent()) return
@@ -88,49 +93,58 @@ export default function DiscoverPage() {
       setError(INCOMPLETE_PLZ_ERROR)
       return
     }
-    load(plz)
+    search(plz)
   }
 
   return (
-    <div className="page discover-page">
-      <header className="page-hero">
-        <div>
-          <span className="eyebrow">Rund ums Tier</span>
-          <h1>Entdecken</h1>
-          <p className="page-lede">
-            Hundeschulen, neue Begleiter aus Tierheimen, Futter-Empfehlungen und Wege, Tieren zu helfen – mit Postleitzahl
-            zuerst das, was in eurer Nähe ist.
+    <PreviewProvider value={preview}>
+      <div className="page discover-page">
+        <header className="page-hero">
+          <div>
+            <span className="eyebrow">Rund ums Tier</span>
+            <h1>Entdecken</h1>
+            <p className="page-lede">
+              Hundeschulen, neue Begleiter aus Tierheimen, Futter-Empfehlungen und Wege, Tieren zu helfen – mit Postleitzahl
+              zuerst das, was in eurer Nähe ist.
+            </p>
+          </div>
+        </header>
+
+        <LocationPicker plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} onSubmit={handleSubmit} hint={PLZ_HINT} />
+
+        {error && (
+          <div className="error-banner" role="alert">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <p className="muted" role="status" aria-busy="true">
+            Lädt …
           </p>
-        </div>
-      </header>
+        )}
 
-      <LocationPicker plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} onSubmit={handleSubmit} hint={PLZ_HINT} />
+        {preview && data?.vorschauHinweis && (
+          <p className="preview-hint" role="note">
+            <Icon name="eye" />
+            {data.vorschauHinweis}
+          </p>
+        )}
 
-      {error && (
-        <div className="error-banner" role="alert">
-          {error}
-        </div>
-      )}
-
-      {loading && (
-        <p className="muted" role="status" aria-busy="true">
-          Lädt …
-        </p>
-      )}
-
-      {data && (
-        <div className="discover-chapters" aria-busy={loading || undefined}>
-          <HundeschulenSection partner={data.hundeschulPartner} promotions={data.hundeschulPromotions} fallback={data.fallback.hundeschulen} />
-          <BegleiterSection
-            partner={data.begleiterPartner}
-            tiere={data.begleiterTiere}
-            promotions={data.begleiterPromotions}
-            fallback={data.fallback.begleiter}
-          />
-          <FutterSection futter={data.futter} />
-          <SupportSection support={data.unterstuetzen} />
-        </div>
-      )}
-    </div>
+        {data && (
+          <div className="discover-chapters" aria-busy={loading || undefined}>
+            <HundeschulenSection partner={data.hundeschulPartner} promotions={data.hundeschulPromotions} fallback={data.fallback.hundeschulen} />
+            <BegleiterSection
+              partner={data.begleiterPartner}
+              tiere={data.begleiterTiere}
+              promotions={data.begleiterPromotions}
+              fallback={data.fallback.begleiter}
+            />
+            <FutterSection futter={data.futter} />
+            <SupportSection support={data.unterstuetzen} />
+          </div>
+        )}
+      </div>
+    </PreviewProvider>
   )
 }

@@ -1,4 +1,5 @@
 import Icon from './Icon.jsx'
+import { ExternalLink } from './PreviewLink.jsx'
 import { isAnzeige, isClickUrl, isPartnerMedia, kennzeichnungLabel, promotionRel } from '../lib/discover.js'
 
 // Eine Empfehlung/Anzeige im Reiter "Entdecken" (Hundeschule, Begleiter, Futter, Unterstützen):
@@ -21,10 +22,10 @@ export default function PromotionCard({ promotion }) {
         {promotion.text && <p className="promotion-card-text">{promotion.text}</p>}
       </div>
       {hasLink && (
-        <a className="btn btn-ghost promotion-card-link" href={promotion.clickUrl} target="_blank" rel={promotionRel(promotion.kennzeichnung)}>
+        <ExternalLink className="btn btn-ghost promotion-card-link" href={promotion.clickUrl} rel={promotionRel(promotion.kennzeichnung)}>
           Mehr erfahren<span className="visually-hidden">: {promotion.titel} (öffnet in neuem Tab)</span>
           <Icon name="external" />
-        </a>
+        </ExternalLink>
       )}
     </article>
   )

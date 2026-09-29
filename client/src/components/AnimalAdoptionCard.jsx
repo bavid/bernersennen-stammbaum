@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
+import { InternalLink } from './PreviewLink.jsx'
 import { speciesSexLabel } from '../lib/timeline.js'
 import { ageText } from '../lib/dates.js'
 import { vermittlungStatusLabel } from '../lib/vermittlung.js'
@@ -14,7 +14,7 @@ export default function AnimalAdoptionCard({ animal }) {
   const statusLabel = vermittlungStatusLabel(animal.vermittlung_status)
 
   return (
-    <Link to={`/t/${animal.slug}`} className="shelter-card">
+    <InternalLink to={`/t/${animal.slug}`} className="shelter-card">
       <span className="shelter-card-avatar">
         <Avatar dog={{ foto_url: animal.fotoUrl, name: animal.name }} size={64} />
       </span>
@@ -30,6 +30,6 @@ export default function AnimalAdoptionCard({ animal }) {
           {typeof animal.distanceKm === 'number' && <span className="chip animal-card-distance">{formatDistanceKm(animal.distanceKm)}</span>}
         </span>
       </span>
-    </Link>
+    </InternalLink>
   )
 }

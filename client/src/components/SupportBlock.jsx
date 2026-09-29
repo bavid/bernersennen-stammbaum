@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { DiscoverEmpty } from './DiscoverChapter.jsx'
+import { ExternalLink, InternalLink } from './PreviewLink.jsx'
 import { PromotionList } from './PromotionCard.jsx'
 import { formatEuroCents, isClickUrl, isPartnerMedia } from '../lib/discover.js'
 import { isExternalUrl } from '../lib/format.js'
@@ -30,10 +30,10 @@ function DonationReport({ report }) {
       </dl>
       {report.empfaenger && <p className="support-report-recipient">Weitergegeben an: {report.empfaenger}</p>}
       {isExternalUrl(report.nachweisUrl) && (
-        <a className="support-report-proof" href={report.nachweisUrl} target="_blank" rel="noopener noreferrer">
+        <ExternalLink className="support-report-proof" href={report.nachweisUrl}>
           Nachweis ansehen<span className="visually-hidden">{NEW_TAB_HINT}</span>
           <Icon name="external" />
-        </a>
+        </ExternalLink>
       )}
     </div>
   )
@@ -46,7 +46,7 @@ function PartnerDonations({ items }) {
       <ul>
         {items.map((item) => (
           <li key={item.id}>
-            <a className="support-donation-link" href={item.clickUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="support-donation-link" href={item.clickUrl}>
               {/* Logo bewusst dekorativ (alt=""): es steht im selben Link wie "An <Name> spenden" - ein
                   Alternativtext würde den Namen nur doppelt vorlesen. */}
               {isPartnerMedia(item.logoUrl) ? (
@@ -59,7 +59,7 @@ function PartnerDonations({ items }) {
               <span className="support-donation-name">An {item.name} spenden</span>
               <span className="visually-hidden">{NEW_TAB_HINT}</span>
               <Icon name="external" />
-            </a>
+            </ExternalLink>
           </li>
         ))}
       </ul>
@@ -78,7 +78,7 @@ export default function SupportBlock({ support }) {
   if (!hasGofundme && !support.text && !support.bericht && donations.length === 0 && support.promotions.length === 0) {
     return (
       <DiscoverEmpty icon="heart">
-        Noch keine Spendenmöglichkeiten hinterlegt – schaut in die <Link to="/partner">Partnerliste</Link>.
+        Noch keine Spendenmöglichkeiten hinterlegt – schaut in die <InternalLink to="/partner">Partnerliste</InternalLink>.
       </DiscoverEmpty>
     )
   }
@@ -89,10 +89,10 @@ export default function SupportBlock({ support }) {
         <div className="support-cta">
           {support.text && <p className="support-text">{support.text}</p>}
           {hasGofundme && (
-            <a className="btn btn-primary btn-lg" href={support.gofundmeClickUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="btn btn-primary btn-lg" href={support.gofundmeClickUrl}>
               <Icon name="heart" />
               Über GoFundMe unterstützen<span className="visually-hidden">{NEW_TAB_HINT}</span>
-            </a>
+            </ExternalLink>
           )}
         </div>
       )}

@@ -4,15 +4,18 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listDogs, recentActivity, profile } = vi.hoisted(() => ({
+const { me, logout, listDogs, recentActivity, profile, previewDiscover, previewPortal } = vi.hoisted(() => ({
   me: vi.fn(),
   profile: vi.fn(),
+  // Kundensicht (/kundensicht): "Entdecken" lädt beim Anzeigen die Vorschau - hier reicht eine leere Antwort.
+  previewDiscover: vi.fn(() => Promise.resolve({})),
+  previewPortal: vi.fn(() => Promise.resolve({})),
   logout: vi.fn(),
   listDogs: vi.fn(),
   recentActivity: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listDogs, recentActivity, partnerArea: { profile } },
+  api: { me, logout, listDogs, recentActivity, partnerArea: { profile, previewDiscover, previewPortal } },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -176,7 +179,7 @@ describe('Umschalter "Bearbeiten | Kundensicht" für Tierheime (Phase P1)', () =
     me.mockResolvedValue(shelterFamily)
     await render('/kundensicht')
 
-    expect(container.querySelector('h1').textContent).toBe('Kundensicht – kommt gleich')
+    expect(container.querySelector('h1').textContent).toBe('Kundensicht')
     expect(switchLink('Kundensicht').getAttribute('aria-current')).toBe('page')
     expect(switchLink('Bearbeiten').getAttribute('href')).toBe('/profil')
   })

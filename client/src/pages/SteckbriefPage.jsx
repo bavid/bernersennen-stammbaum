@@ -6,13 +6,16 @@ import Avatar from '../components/Avatar.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
+import { ExternalLink, InternalLink } from '../components/PreviewLink.jsx'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 import { groupByYear, speciesSexLabel } from '../lib/timeline.js'
 import { kategorieLabel } from '../lib/shelter.js'
 import { PAUSED_HINT, vermittlungStatusLabel } from '../lib/vermittlung.js'
 import { isExternalUrl, isValidPhone, telHref } from '../lib/format.js'
+import { PREVIEW_DISABLED_HINT, PreviewProvider } from '../lib/preview.js'
 
 const SHARE_COPIED_MS = 2000
+const PREVIEW_LOAD_ERROR = 'Dieser Steckbrief konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
 
 function NotFound() {
   return (
@@ -121,33 +124,35 @@ function ShelterBox({ shelter }) {
           {isExternalUrl(shelter.website) && (
             <li>
               <Icon name="globe" />
-              <a href={shelter.website} target="_blank" rel="noopener noreferrer">
-                {shelter.website}
-              </a>
+              <ExternalLink href={shelter.website}>{shelter.website}</ExternalLink>
             </li>
           )}
           {shelter.kontakt_email && (
             <li>
               <Icon name="mail" />
-              <a href={`mailto:${shelter.kontakt_email}`}>{shelter.kontakt_email}</a>
+              <ExternalLink href={`mailto:${shelter.kontakt_email}`} newTab={false}>
+                {shelter.kontakt_email}
+              </ExternalLink>
             </li>
           )}
           {isValidPhone(shelter.kontakt_telefon) && (
             <li>
               <Icon name="phone" />
-              <a href={telHref(shelter.kontakt_telefon)}>{shelter.kontakt_telefon}</a>
+              <ExternalLink href={telHref(shelter.kontakt_telefon)} newTab={false}>
+                {shelter.kontakt_telefon}
+              </ExternalLink>
             </li>
           )}
         </ul>
         {isExternalUrl(shelter.vermittlung_url) && (
-          <a href={shelter.vermittlung_url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+          <ExternalLink href={shelter.vermittlung_url} className="btn btn-ghost">
             Zur Vermittlungsseite
-          </a>
+          </ExternalLink>
         )}
       </div>
-      <Link className="btn btn-primary btn-block" to={`/p/${shelter.slug}`}>
+      <InternalLink className="btn btn-primary btn-block" to={`/p/${shelter.slug}`}>
         Zum Portal von {shelter.name}
-      </Link>
+      </InternalLink>
     </section>
   )
 }
@@ -155,13 +160,18 @@ function ShelterBox({ shelter }) {
 // /t/:slug - der öffentliche Steckbrief eines Tiers in Vermittlung (Phase T Task 5). Kein Login, immer
 // noindex (auch die 404-Antwort: der Server setzt X-Robots-Tag, hier zusätzlich das Meta-Tag im head -
 // siehe server/routes/publicAnimals.js). Kontakt läuft ausschließlich über das Tierheim, nie über die App.
-export default function SteckbriefPage({ slug }) {
+// Kundensicht (Phase P1): load liefert den Steckbrief statt api.publicAnimal(slug) (z. B.
+// api.partnerArea.previewAnimal, auch für ein noch unveröffentlichtes Tier), preview schaltet Links und
+// "Teilen" ab.
+export default function SteckbriefPage({ slug, load, preview = false }) {
   const [animal, setAnimal] = useState(undefined) // undefined: lädt, null: nicht gefunden
   const [shareCopied, setShareCopied] = useState(false)
 
   // Gilt für die ganze Seite, auch während des Ladens und im 404-Fall - deshalb unbedingt, nicht erst
   // nach dem Laden gesetzt. Wird beim Verlassen wieder entfernt (Steckbriefe sind nur hier noindex).
+  // Die Kundensicht ist keine öffentliche Seite - dort bleibt der head unberührt.
   useEffect(() => {
+    if (preview) return undefined
     const meta = document.createElement('meta')
     meta.setAttribute('name', 'robots')
     meta.setAttribute('content', 'noindex')
@@ -169,13 +179,13 @@ export default function SteckbriefPage({ slug }) {
     return () => {
       document.head.removeChild(meta)
     }
-  }, [])
+  }, [preview])
 
   useEffect(() => {
     let cancelled = false
     setAnimal(undefined)
-    api
-      .publicAnimal(slug)
+    const request = typeof load === 'function' ? Promise.resolve().then(() => load()) : api.publicAnimal(slug)
+    request
       .then((data) => {
         if (!cancelled) setAnimal(data)
       })
@@ -185,7 +195,7 @@ export default function SteckbriefPage({ slug }) {
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [slug, load])
 
   useEffect(() => {
     if (!shareCopied) return undefined
@@ -194,14 +204,26 @@ export default function SteckbriefPage({ slug }) {
   }, [shareCopied])
 
   if (animal === undefined) {
-    return (
+    return preview ? (
+      <p className="muted preview-loading" role="status" aria-busy="true">
+        Lädt …
+      </p>
+    ) : (
       <div className="splash" aria-busy="true">
         <ThemeMark size={72} />
       </div>
     )
   }
 
-  if (animal === null) return <NotFound />
+  if (animal === null) {
+    return preview ? (
+      <div className="error-banner" role="alert">
+        {PREVIEW_LOAD_ERROR}
+      </div>
+    ) : (
+      <NotFound />
+    )
+  }
 
   const age = animal.geburtsdatum ? ageText(animal.geburtsdatum) : null
   const shareUrl = `${window.location.origin}/t/${slug}`
@@ -225,6 +247,17 @@ export default function SteckbriefPage({ slug }) {
   }
 
   return (
+    <PreviewProvider value={preview}>
+      <SteckbriefContent animal={animal} age={age} preview={preview} shareCopied={shareCopied} onShare={handleShare} />
+    </PreviewProvider>
+  )
+}
+
+// Der geladene Steckbrief. In der Vorschau ist "Teilen" sichtbar, aber deaktiviert - es gäbe (noch) keine
+// öffentliche Adresse, und die Kundensicht soll nichts nach außen tragen. Ohne Fußzeile: die Links dort
+// würden die Vorschau verlassen.
+function SteckbriefContent({ animal, age, preview, shareCopied, onShare }) {
+  return (
     <div className="public-page steckbrief-page">
       <header className="dog-hero steckbrief-hero">
         <div className="dog-hero-photo">
@@ -245,10 +278,17 @@ export default function SteckbriefPage({ slug }) {
             </div>
           </dl>
           {animal.beschreibung && <ExpandableText text={animal.beschreibung} className="dog-hero-description" lines={4} />}
-          <button type="button" className={`btn ${shareCopied ? 'btn-ink' : 'btn-ghost'}`} onClick={handleShare}>
-            <Icon name={shareCopied ? 'check' : 'share'} />
-            {shareCopied ? 'Link kopiert' : 'Teilen'}
-          </button>
+          {preview ? (
+            <button type="button" className="btn btn-ghost" disabled title={PREVIEW_DISABLED_HINT} aria-description={PREVIEW_DISABLED_HINT}>
+              <Icon name="share" />
+              Teilen
+            </button>
+          ) : (
+            <button type="button" className={`btn ${shareCopied ? 'btn-ink' : 'btn-ghost'}`} onClick={onShare}>
+              <Icon name={shareCopied ? 'check' : 'share'} />
+              {shareCopied ? 'Link kopiert' : 'Teilen'}
+            </button>
+          )}
         </div>
       </header>
 
@@ -256,7 +296,7 @@ export default function SteckbriefPage({ slug }) {
 
       <ShelterBox shelter={animal.shelter} />
 
-      <PublicFooter />
+      {!preview && <PublicFooter />}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const { voucherBatches, createVoucherBatch, voucherBatch, revokeVoucher } = vi.hoisted(() => ({
   voucherBatches: vi.fn(),
@@ -224,5 +224,106 @@ describe('AdminVouchers – Liste und Details', () => {
     voucherBatches.mockRejectedValue(new Error('Fehler 401'))
     await render()
     expect(container.querySelector('[role="alert"]').textContent).toBe('Fehler 401')
+  })
+})
+
+// Phase P: Zweck "Kunden-Gutscheine | Partner-Zugang" - ein Partner-Zugang schickt zweck/partnerTyp bzw.
+// partnerId (gebunden, dann fest Anzahl 1), Kunden-Gutscheine bleiben ohne zweck (Server-Standard).
+describe('AdminVouchers – Zweck', () => {
+  const nativeSelectSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set
+  const accessPartners = [
+    { id: 11, name: 'Hundeschule Wiesengrund', typ: 'hundeschule' },
+    { id: 12, name: 'Salon Fellglanz', typ: 'hundesalon' }
+  ]
+
+  function setSelect(id, value) {
+    const select = container.querySelector(id)
+    nativeSelectSetter.call(select, value)
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+
+  function zweckButton(label) {
+    return [...container.querySelectorAll('.admin-voucher-zweck button')].find((btn) => btn.textContent === label)
+  }
+
+  beforeEach(() => {
+    voucherBatches.mockResolvedValue([])
+    createVoucherBatch.mockResolvedValue({ batch: { id: 1, label: 'Zugang', size: 1, created_at: '2026-01-05 10:00:00' }, codes: ['A'] })
+  })
+
+  test('Kunden-Gutscheine sind vorausgewählt; Partner-Zugang tauscht Rudel/Partner gegen Typ und Bindung', async () => {
+    await render({ accessPartners })
+
+    expect(zweckButton('Kunden-Gutscheine').getAttribute('aria-pressed')).toBe('true')
+    expect(container.querySelector('#admin-voucher-join')).not.toBeNull()
+    expect(container.querySelector('#admin-voucher-typ')).toBeNull()
+
+    await act(async () => zweckButton('Partner-Zugang').click())
+
+    expect(zweckButton('Partner-Zugang').getAttribute('aria-pressed')).toBe('true')
+    expect(container.querySelector('#admin-voucher-join')).toBeNull()
+    expect(container.querySelector('#admin-voucher-partner')).toBeNull()
+    const typOptions = [...container.querySelectorAll('#admin-voucher-typ option')].map((o) => o.textContent)
+    expect(typOptions).toHaveLength(8)
+    expect(typOptions[0]).toBe('Keine Vorgabe')
+    const bindOptions = [...container.querySelectorAll('#admin-voucher-bind option')].map((o) => o.textContent)
+    expect(bindOptions).toEqual(['Neuer Partner', 'Hundeschule Wiesengrund (Hundeschule)', 'Salon Fellglanz (Hundesalon)'])
+  })
+
+  test('Partner-Zugang mit Typ-Vorgabe sendet zweck und partnerTyp', async () => {
+    await render({ accessPartners })
+    await act(async () => zweckButton('Partner-Zugang').click())
+
+    await act(async () => {
+      setInputValue(container.querySelector('#admin-voucher-label'), 'Hundeschulen Herbst')
+      setInputValue(container.querySelector('#admin-voucher-size'), '5')
+      setSelect('#admin-voucher-typ', 'hundeschule')
+    })
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(createVoucherBatch).toHaveBeenCalledWith({ label: 'Hundeschulen Herbst', size: 5, zweck: 'partnerzugang', partnerTyp: 'hundeschule' })
+  })
+
+  test('Partner-Zugang ohne Vorgabe sendet nur zweck', async () => {
+    await render({ accessPartners })
+    await act(async () => zweckButton('Partner-Zugang').click())
+    await act(async () => {
+      setInputValue(container.querySelector('#admin-voucher-label'), 'Offene Zugänge')
+      setInputValue(container.querySelector('#admin-voucher-size'), '3')
+    })
+    await act(async () => container.querySelector('form').requestSubmit())
+
+    expect(createVoucherBatch).toHaveBeenCalledWith({ label: 'Offene Zugänge', size: 3, zweck: 'partnerzugang' })
+  })
+
+  test('an einen Partner gebunden: Anzahl fest 1, Typ gesperrt, sendet partnerId statt partnerTyp', async () => {
+    await render({ accessPartners })
+    await act(async () => zweckButton('Partner-Zugang').click())
+    await act(async () => {
+      setInputValue(container.querySelector('#admin-voucher-label'), 'Zugang Fellglanz')
+      setInputValue(container.querySelector('#admin-voucher-size'), '10')
+      setSelect('#admin-voucher-typ', 'hundeschule')
+      setSelect('#admin-voucher-bind', '12')
+    })
+
+    const sizeInput = container.querySelector('#admin-voucher-size')
+    expect(sizeInput.value).toBe('1')
+    expect(sizeInput.disabled).toBe(true)
+    expect(container.querySelector('#admin-voucher-typ').disabled).toBe(true)
+    expect(container.textContent).toContain('die Anzahl ist fest 1')
+
+    await act(async () => container.querySelector('form').requestSubmit())
+    expect(createVoucherBatch).toHaveBeenCalledWith({ label: 'Zugang Fellglanz', size: 1, zweck: 'partnerzugang', partnerId: 12 })
+  })
+
+  test('die Liste zeigt den Zweck als Badge (Partner-Zugang mit Typ)', async () => {
+    voucherBatches.mockResolvedValue([
+      { id: 1, label: 'Zugänge', kind: 'admin', zweck: 'partnerzugang', partnerTyp: 'hundesalon', size: 2, open: 2, redeemed: 0, revoked: 0, created_at: '2026-01-05 10:00:00' },
+      { id: 2, label: 'Karten', kind: 'admin', zweck: 'chronik', partnerTyp: null, size: 5, open: 5, redeemed: 0, revoked: 0, created_at: '2026-01-05 10:00:00' }
+    ])
+    await render()
+
+    const badges = [...container.querySelectorAll('.admin-voucher-zweck-badge')].map((badge) => badge.textContent)
+    expect(badges).toEqual(['Partner-Zugang · Hundesalon', 'Kunden-Gutscheine'])
   })
 })

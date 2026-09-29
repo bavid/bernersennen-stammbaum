@@ -23,6 +23,27 @@ export function isPartnerMedia(url) {
   return typeof url === 'string' && url.startsWith('/partner-media/')
 }
 
+// Öffentliche Fotos: Logos/Empfehlungsbilder (/partner-media) und freigegebene Fotos von Einblicken,
+// Teasern und Steckbriefen (/public-media, server/lib/mediaUrls.js). Genau ein Dateiname nach dem
+// Präfix, ohne führenden Punkt - keine weiteren Pfadteile, kein "..", keine Query.
+const PUBLIC_MEDIA_RE = /^\/(partner-media|public-media)\/[\w-][\w.-]*$/
+// Nur in der Kundensicht zusätzlich /uploads: der Server liefert dem eigenen Bereich dort seine Fotos auch
+// als Entwurf (routes/partnerArea/preview.js) - über /public-media wären sie dann 404.
+const PREVIEW_MEDIA_RE = /^\/(partner-media|public-media|uploads)\/[\w-][\w.-]*$/
+
+export function isPublicMedia(url) {
+  return typeof url === 'string' && PUBLIC_MEDIA_RE.test(url)
+}
+
+export function isPreviewMedia(url) {
+  return typeof url === 'string' && PREVIEW_MEDIA_RE.test(url)
+}
+
+// Die passende Prüfung je Ansicht: öffentlich nur öffentliche Fotos, in der Vorschau auch /uploads.
+export function isAllowedMedia(url, { preview = false } = {}) {
+  return preview ? isPreviewMedia(url) : isPublicMedia(url)
+}
+
 const KENNZEICHNUNGEN = ['Anzeige', 'Empfehlung', 'Partner']
 
 // Rechtlich vorsichtig: eine unbekannte Kennzeichnung (sollte der Server nie liefern, siehe CHECK in
@@ -88,6 +109,9 @@ export function normalizeDiscover(data) {
     fallback: {
       hundeschulen: Boolean(source.fallback?.hundeschulen),
       begleiter: Boolean(source.fallback?.begleiter)
-    }
+    },
+    // Nur die Kundensicht (POST /api/partner-area/preview/discover) liefert ihn - für Typen ohne eigenen
+    // Abschnitt in "Entdecken" (z. B. Futter), statt der eigenen Karte.
+    vorschauHinweis: typeof source.vorschauHinweis === 'string' && source.vorschauHinweis.trim() ? source.vorschauHinweis : null
   }
 }

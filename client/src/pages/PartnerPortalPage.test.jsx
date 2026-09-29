@@ -432,3 +432,155 @@ describe('PartnerPortalPage – "Demo als Tierheim ansehen" (Task 6)', () => {
     expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')).toBe(false)
   })
 })
+
+describe('PartnerPortalPage – "Demo als Partner ansehen" (Phase P1)', () => {
+  const school = { ...partner, id: 4, slug: 'hundeschule-wiesengrund', name: 'Hundeschule Wiesengrund', typ: 'hundeschule' }
+
+  function partnerDemoButton() {
+    return [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo als Partner ansehen')
+  }
+
+  test('kein Knopf ohne partnerDemo', async () => {
+    publicPartner.mockResolvedValue(school)
+    await render({ slug: school.slug })
+    expect(partnerDemoButton()).toBeUndefined()
+  })
+
+  test('mit partnerDemo: ein Klick ruft api.demo({ as: "partner", slug }) und danach onRedeemed (-> /profil) auf', async () => {
+    publicPartner.mockResolvedValue({ ...school, partnerDemo: true })
+    const me = { id: 31, name: 'Hundeschule Wiesengrund', theme: 'standard', art: 'partner', isDemo: true, home: null, memberships: [] }
+    demo.mockResolvedValue(me)
+    const onRedeemed = vi.fn()
+    await render({ slug: school.slug, onRedeemed })
+
+    await act(async () => partnerDemoButton().click())
+
+    expect(demo).toHaveBeenCalledWith({ as: 'partner', slug: 'hundeschule-wiesengrund' })
+    expect(onRedeemed).toHaveBeenCalledWith(me)
+  })
+
+  test('ein Fehler erscheint als Alert über dem Knopf, die anderen Demos bleiben bedienbar', async () => {
+    publicPartner.mockResolvedValue({ ...school, partnerDemo: true })
+    demo.mockRejectedValue(new Error('Keine Demo verfügbar'))
+    await render({ slug: school.slug })
+
+    await act(async () => partnerDemoButton().click())
+
+    const alert = container.querySelector('[role="alert"]')
+    expect(alert.textContent).toBe('Keine Demo verfügbar')
+    expect(alert.nextElementSibling).toBe(partnerDemoButton())
+    expect(partnerDemoButton().disabled).toBe(false)
+  })
+
+  test('kein Knopf im angemeldeten Zustand', async () => {
+    publicPartner.mockResolvedValue({ ...school, partnerDemo: true })
+    const loggedInHome = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: null, memberships: [] }
+    await render({ slug: school.slug, family: loggedInHome })
+    expect(partnerDemoButton()).toBeUndefined()
+  })
+})
+
+describe('PartnerPortalPage – Einblicke (Phase P1)', () => {
+  test('zeigt die Einblicke des Portals als eigene Sektion', async () => {
+    publicPartner.mockResolvedValue({
+      ...partner,
+      einblicke: [{ id: 9, fotoUrl: '/public-media/99999999-9999-9999-9999-999999999999.jpg', datum: '2026-09-20', text: 'Tag der offenen Tür' }]
+    })
+    await render()
+
+    const section = container.querySelector('.partner-portal-einblicke')
+    expect(section.querySelector('h2').textContent).toBe('Einblicke')
+    expect(section.querySelector('img').getAttribute('src')).toBe('/public-media/99999999-9999-9999-9999-999999999999.jpg')
+    expect(section.querySelector('img').getAttribute('alt')).toBe('Tag der offenen Tür')
+  })
+
+  test('ohne Einblicke keine Sektion', async () => {
+    publicPartner.mockResolvedValue({ ...partner, einblicke: [] })
+    await render()
+    expect(container.querySelector('.partner-portal-einblicke')).toBeNull()
+  })
+})
+
+// Kundensicht: load statt api.publicPartner, preview schaltet Links, Einlösen und Demo-Knöpfe ab.
+describe('PartnerPortalPage – Vorschau (Kundensicht)', () => {
+  const previewData = {
+    ...partner,
+    shelterDemo: true,
+    partnerDemo: true,
+    vorschau: true,
+    status: 'entwurf',
+    einblicke: [{ id: 9, fotoUrl: '/uploads/99999999-9999-9999-9999-999999999999.jpg', datum: '2026-09-20', text: 'Tag der offenen Tür' }],
+    tiere: [
+      {
+        slug: 'pepper-ab12',
+        name: 'Pepper',
+        tierart: 'hund',
+        geschlecht: 'huendin',
+        rasse: 'Mischling',
+        geburtsdatum: null,
+        fotoUrl: '/uploads/88888888-8888-8888-8888-888888888888.jpg',
+        vermittlung_status: 'in_vermittlung'
+      }
+    ]
+  }
+
+  async function renderPreview(load) {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <MemoryRouter initialEntries={['/kundensicht']}>
+          <ThemeProvider themeId="standard">
+            <PartnerPortalPage load={load} preview />
+          </ThemeProvider>
+        </MemoryRouter>
+      )
+    )
+  }
+
+  test('lädt über load statt über die öffentlichen Endpunkte und zeigt /uploads-Fotos (Einblicke, Tiere)', async () => {
+    const load = vi.fn().mockResolvedValue(previewData)
+    await renderPreview(load)
+
+    expect(load).toHaveBeenCalledTimes(1)
+    expect(publicPartner).not.toHaveBeenCalled()
+    expect(publicPartnerAnimals).not.toHaveBeenCalled()
+    expect(publicHappyEnds).not.toHaveBeenCalled()
+    expect(container.querySelector('.einblick-tile img').getAttribute('src')).toBe('/uploads/99999999-9999-9999-9999-999999999999.jpg')
+    expect(container.querySelector('.shelter-card img').getAttribute('src')).toBe('/uploads/88888888-8888-8888-8888-888888888888.jpg')
+  })
+
+  test('kein Einlöse-Formular, keine Demo-Knöpfe, kein Fuß - stattdessen ein Hinweis', async () => {
+    await renderPreview(vi.fn().mockResolvedValue(previewData))
+
+    expect(container.querySelector('form')).toBeNull()
+    expect(container.textContent).not.toContain('Demo ansehen')
+    expect(container.textContent).not.toContain('Demo als Partner ansehen')
+    expect(container.querySelector('.public-footer')).toBeNull()
+    expect(container.querySelector('.preview-placeholder').textContent).toContain('in der Vorschau ausgeblendet')
+  })
+
+  test('alle Links sind deaktiviert: Spenden, Vermittlung, Website, E-Mail und die Tierkarten', async () => {
+    await renderPreview(vi.fn().mockResolvedValue(previewData))
+
+    expect(container.querySelectorAll('a')).toHaveLength(0)
+    const disabled = [...container.querySelectorAll('[aria-disabled="true"]')].map((el) => el.textContent.trim())
+    expect(disabled).toEqual(
+      expect.arrayContaining([
+        'Spenden an Tierheim Sonnenhang',
+        'Tiere in Vermittlung',
+        'https://sonnenhang.example.org',
+        'info@sonnenhang.example.org'
+      ])
+    )
+    expect(container.querySelector('.shelter-card').getAttribute('aria-disabled')).toBe('true')
+  })
+
+  test('schlägt load fehl, erscheint ein Hinweis statt "Diesen Partner gibt es nicht"', async () => {
+    await renderPreview(vi.fn().mockRejectedValue(new Error('Fehler 500')))
+
+    expect(container.querySelector('[role="alert"]').textContent).toContain('Die Vorschau konnte gerade nicht geladen werden')
+    expect(container.textContent).not.toContain('Diesen Partner gibt es nicht')
+  })
+})

@@ -4,9 +4,12 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile } = vi.hoisted(() => ({
+const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile, previewDiscover, previewPortal } = vi.hoisted(() => ({
   me: vi.fn(),
   profile: vi.fn(),
+  // Kundensicht (/kundensicht): "Entdecken" lädt beim Anzeigen die Vorschau - hier reicht eine leere Antwort.
+  previewDiscover: vi.fn(() => Promise.resolve({})),
+  previewPortal: vi.fn(() => Promise.resolve({})),
   myVouchers: vi.fn(),
   logout: vi.fn(),
   listUsers: vi.fn(),
@@ -16,7 +19,7 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   redeemVoucher: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile } },
+  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile, previewDiscover, previewPortal } },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -295,10 +298,10 @@ describe('Umschalter "Bearbeiten | Kundensicht" (Phase P1)', () => {
     expect(switchLink('Kundensicht').hasAttribute('aria-current')).toBe(false)
   })
 
-  test('/kundensicht gibt es: Platzhalter-Seite, "Kundensicht" ist aktiv, "Bearbeiten" führt zu /profil', async () => {
+  test('/kundensicht gibt es: Kundensicht-Seite, "Kundensicht" ist aktiv, "Bearbeiten" führt zu /profil', async () => {
     await render('/kundensicht')
 
-    expect(container.querySelector('h1').textContent).toBe('Kundensicht – kommt gleich')
+    expect(container.querySelector('h1').textContent).toBe('Kundensicht')
     expect(switchLink('Kundensicht').getAttribute('aria-current')).toBe('page')
     expect(switchLink('Bearbeiten').hasAttribute('aria-current')).toBe(false)
     expect(switchLink('Bearbeiten').getAttribute('href')).toBe('/profil')
@@ -308,7 +311,7 @@ describe('Umschalter "Bearbeiten | Kundensicht" (Phase P1)', () => {
     await render('/zugang')
 
     await act(async () => switchLink('Kundensicht').click())
-    expect(container.querySelector('h1').textContent).toBe('Kundensicht – kommt gleich')
+    expect(container.querySelector('h1').textContent).toBe('Kundensicht')
     expect(switchLink('Bearbeiten').getAttribute('href')).toBe('/zugang')
 
     await act(async () => switchLink('Bearbeiten').click())

@@ -49,9 +49,9 @@ export const api = {
   me: () => request('/me'),
   login: (secret) => request('/login', json('POST', { secret })),
   loginUser: (username, password) => request('/login', json('POST', { username, password })),
-  // as: 'tierheim' (Phase T Task 6) loggt ins Demo-Tierheim statt ins Demo-Zuhause ein - siehe
-  // PartnerPortalPage "Demo als Tierheim ansehen".
-  demo: ({ as } = {}) => request('/demo', json('POST', as ? { as } : {})),
+  // as: 'tierheim' (Phase T Task 6) loggt ins Demo-Tierheim statt ins Demo-Zuhause ein, as: 'partner' mit
+  // slug (Phase P1) in den Demo-Partner-Bereich dieses Partners - siehe PortalAction (Demo-Knöpfe).
+  demo: ({ as, slug } = {}) => request('/demo', json('POST', as ? { as, ...(slug ? { slug } : {}) } : {})),
   logout: () => request('/logout', { method: 'POST' }),
   renameFamily: (name) => request('/family', json('PUT', { name })),
   updateFamily: (payload) => request('/family', json('PUT', payload)),
@@ -167,11 +167,14 @@ export const api = {
     createPartner: (payload) => request('/admin/partners', json('POST', payload)),
     updatePartner: (id, payload) => request(`/admin/partners/${id}`, json('PUT', payload)),
     deletePartner: (id) => request(`/admin/partners/${id}`, { method: 'DELETE' }),
-    // Tierheim-Bereich für einen Partner (final-review Phase T Finding 4) - der Server (routes/admin.js)
-    // kennt beide Endpunkte schon, hier fehlte nur die Client-Anbindung. Beide liefern den neuen
-    // Zugangsschlüssel einmalig im Klartext zurück ({ key }, createShelter zusätzlich { familyId }).
-    createShelter: (partnerId) => request(`/admin/partners/${partnerId}/shelter`, { method: 'POST' }),
-    renewShelterKey: (partnerId) => request(`/admin/partners/${partnerId}/shelter/key`, { method: 'POST' }),
+    // Bereich eines Partners (Phase P1, jeder Typ: Tierheim-Bereich für tierheim/vermittlung, sonst
+    // Partner-Bereich - routes/admin.js POST /:id/area und /:id/area/key). Beide liefern den neuen
+    // Zugangsschlüssel einmalig im Klartext zurück ({ key }, das Anlegen zusätzlich { familyId, art }).
+    createPartnerArea: (partnerId) => request(`/admin/partners/${partnerId}/area`, { method: 'POST' }),
+    renewPartnerAreaKey: (partnerId) => request(`/admin/partners/${partnerId}/area/key`, { method: 'POST' }),
+    // Einblicke eines Partners (inkl. ausgeblendeter, Fotos über /uploads) und Ausblenden/Einblenden.
+    einblicke: (partnerId) => request(`/admin/einblicke?${new URLSearchParams({ partnerId: String(partnerId) }).toString()}`),
+    setEinblickAusgeblendet: (id, ausgeblendet) => request(`/admin/einblicke/${id}/ausblenden`, json('POST', { ausgeblendet })),
     uploadPartnerLogo: (id, file) => {
       const formData = new FormData()
       formData.append('file', file)

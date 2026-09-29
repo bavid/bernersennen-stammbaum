@@ -268,3 +268,49 @@ describe('api.partnerArea – eigenes Profil, Einblicke, Vorschau (Phase P)', ()
     expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({})
   })
 })
+
+describe('api.demo – Demo-Bereiche (Phase P1)', () => {
+  test('ohne Angabe: leerer Body (Demo-Zuhause)', async () => {
+    const fetchMock = stubFetch({})
+    await api.demo()
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({})
+  })
+
+  test('als Partner: as und slug im Body', async () => {
+    const fetchMock = stubFetch({})
+    await api.demo({ as: 'partner', slug: 'hundeschule-wiesengrund' })
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/demo')
+    expect(options.method).toBe('POST')
+    expect(JSON.parse(options.body)).toEqual({ as: 'partner', slug: 'hundeschule-wiesengrund' })
+  })
+
+  test('als Tierheim: nur as', async () => {
+    const fetchMock = stubFetch({})
+    await api.demo({ as: 'tierheim' })
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ as: 'tierheim' })
+  })
+})
+
+describe('api.admin – Partner-Bereiche und Einblicke (Phase P1)', () => {
+  test('createPartnerArea und renewPartnerAreaKey: POST an /area bzw. /area/key', async () => {
+    const fetchMock = stubFetch({ key: 'ABCD-1234-EFGH' })
+    await api.admin.createPartnerArea(4)
+    await api.admin.renewPartnerAreaKey(4)
+    expect(fetchMock.mock.calls.map(([url, options]) => [url, options.method])).toEqual([
+      ['/api/admin/partners/4/area', 'POST'],
+      ['/api/admin/partners/4/area/key', 'POST']
+    ])
+  })
+
+  test('einblicke: partnerId als Query-Parameter; ausblenden: POST mit { ausgeblendet }', async () => {
+    const fetchMock = stubFetch([])
+    await api.admin.einblicke(4)
+    await api.admin.setEinblickAusgeblendet(7, true)
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/admin/einblicke?partnerId=4')
+    const [url, options] = fetchMock.mock.calls[1]
+    expect(url).toBe('/api/admin/einblicke/7/ausblenden')
+    expect(options.method).toBe('POST')
+    expect(JSON.parse(options.body)).toEqual({ ausgeblendet: true })
+  })
+})

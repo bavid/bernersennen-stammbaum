@@ -3,25 +3,27 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo, createShelter, renewShelterKey } = vi.hoisted(() => ({
+const mocks = vi.hoisted(() => ({
   partners: vi.fn(),
   createPartner: vi.fn(),
   updatePartner: vi.fn(),
   deletePartner: vi.fn(),
   uploadPartnerLogo: vi.fn(),
-  createShelter: vi.fn(),
-  renewShelterKey: vi.fn()
+  createPartnerArea: vi.fn(),
+  renewPartnerAreaKey: vi.fn(),
+  einblicke: vi.fn(),
+  setEinblickAusgeblendet: vi.fn()
 }))
-vi.mock('../api', () => ({
-  api: { admin: { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo, createShelter, renewShelterKey } }
-}))
+const { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo, createPartnerArea, renewPartnerAreaKey, einblicke, setEinblickAusgeblendet } =
+  mocks
+vi.mock('../api', () => ({ api: { admin: mocks } }))
 
 import AdminPartners from './AdminPartners.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 // jsdom implementiert <dialog> nicht vollständig (kein showModal/close) – der KeyReveal-Dialog für den
-// Tierheim-Zugang läuft im Modal.
+// Zugang eines Partner-Bereichs läuft im Modal.
 if (!HTMLDialogElement.prototype.showModal) {
   HTMLDialogElement.prototype.showModal = function showModal() {
     this.open = true
@@ -85,13 +87,7 @@ afterEach(() => {
     container.remove()
     container = null
   }
-  partners.mockReset()
-  createPartner.mockReset()
-  updatePartner.mockReset()
-  deletePartner.mockReset()
-  uploadPartnerLogo.mockReset()
-  createShelter.mockReset()
-  renewShelterKey.mockReset()
+  for (const mock of Object.values(mocks)) mock.mockReset()
 })
 
 async function render() {
@@ -330,77 +326,188 @@ describe('AdminPartners – Formular', () => {
   })
 })
 
-// final-review Phase T Finding 4: Tierheim-Bereich anlegen/Schlüssel erneuern aus der Partnerverwaltung.
-describe('AdminPartners – Tierheim-Bereich', () => {
-  test('ohne shelter_family_id zeigt "Tierheim-Bereich anlegen"; kein Angebot für einen Typ ohne Tierheim-Fähigkeit', async () => {
-    partners.mockResolvedValue([{ ...draftPartner, shelter_family_id: null }, activePartner])
+// Phase P1: Bereich anlegen/Schlüssel erneuern für JEDEN Partner-Typ (vorher nur Tierheime, final-review
+// Phase T Finding 4) - über POST /api/admin/partners/:id/area bzw. /area/key.
+describe('AdminPartners – Partner-Bereich', () => {
+  test('ohne Bereich zeigt jede Zeile "Partner-Bereich anlegen" - auch für eine Hundeschule', async () => {
+    partners.mockResolvedValue([{ ...draftPartner, area_family_id: null }, { ...activePartner, area_family_id: null }])
     await render()
 
     const rows = [...container.querySelectorAll('.admin-partner-row')]
-    expect([...rows[0].querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Tierheim-Bereich anlegen')).toBe(true)
-    // activePartner ist vom Typ "hundeschule" - kein Tierheim-Bereich-Angebot.
-    expect(rows[1].textContent).not.toContain('Tierheim-Bereich')
+    for (const row of rows) {
+      expect([...row.querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Partner-Bereich anlegen')).toBe(true)
+    }
   })
 
-  test('mit shelter_family_id zeigt "Tierheim-Bereich: angelegt" und "Schlüssel neu ausgeben"', async () => {
-    partners.mockResolvedValue([{ ...draftPartner, typ: 'tierheim', shelter_family_id: 42 }])
+  test('mit Bereich zeigt die Art ("Tierheim-Bereich"/"Partner-Bereich: angelegt") und "Schlüssel neu ausgeben"', async () => {
+    partners.mockResolvedValue([
+      { ...draftPartner, area_family_id: 42, area_art: 'tierheim' },
+      { ...activePartner, area_family_id: 43, area_art: 'partner' }
+    ])
     await render()
 
-    expect(container.textContent).toContain('Tierheim-Bereich: angelegt')
-    expect(buttonByText('Schlüssel neu ausgeben')).not.toBeUndefined()
+    const rows = [...container.querySelectorAll('.admin-partner-row')]
+    expect(rows[0].textContent).toContain('Tierheim-Bereich: angelegt')
+    expect(rows[1].textContent).toContain('Partner-Bereich: angelegt')
+    expect(rows[1].textContent).not.toContain('Partner-Bereich anlegen')
+    expect([...rows[1].querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Schlüssel neu ausgeben')).toBe(true)
   })
 
-  test('"Tierheim-Bereich anlegen" ruft api.admin.createShelter ohne Rückfrage auf und zeigt den Schlüssel via KeyReveal', async () => {
-    partners.mockResolvedValue([{ ...draftPartner, shelter_family_id: null }])
-    createShelter.mockResolvedValue({ familyId: 42, key: 'ABCD-1234-EFGH' })
+  test('Hundeschule: "Partner-Bereich anlegen" ruft api.admin.createPartnerArea ohne Rückfrage auf, zeigt den Schlüssel und lädt neu', async () => {
+    partners.mockResolvedValue([{ ...activePartner, area_family_id: null }])
+    createPartnerArea.mockResolvedValue({ familyId: 43, key: 'ABCD-1234-EFGH', art: 'partner' })
     await render()
 
-    await act(async () => buttonByText('Tierheim-Bereich anlegen').click())
+    partners.mockResolvedValue([{ ...activePartner, area_family_id: 43, area_art: 'partner' }])
+    await act(async () => buttonByText('Partner-Bereich anlegen').click())
 
-    expect(createShelter).toHaveBeenCalledWith(1)
+    expect(createPartnerArea).toHaveBeenCalledWith(2)
     expect(container.querySelector('.key-reveal-value').textContent).toBe('ABCD-1234-EFGH')
+    expect(container.querySelector('#modal-title').textContent).toBe('Zugang für Hundeschule Pfotenglück')
     // showCardHint={false} - der übliche Kartenhinweis fehlt, dafür der admin-spezifische Text.
     expect(container.textContent).not.toContain('Wer euch die Karte gegeben hat')
-    expect(container.textContent).toContain('Diesen Schlüssel dem Tierheim geben')
+    expect(container.textContent).toContain('Diesen Schlüssel dem Partner geben')
+    expect(partners).toHaveBeenCalledTimes(2)
+    expect(container.querySelector('.admin-partner-row').textContent).toContain('Partner-Bereich: angelegt')
   })
 
-  test('"Schlüssel neu ausgeben" verlangt erst eine Bestätigung mit Erklärtext, dann erst ruft es die API', async () => {
-    partners.mockResolvedValue([{ ...draftPartner, typ: 'tierheim', shelter_family_id: 42 }])
-    renewShelterKey.mockResolvedValue({ key: 'WXYZ-5678-IJKL' })
+  test('Hundeschule: "Schlüssel neu ausgeben" verlangt erst eine Bestätigung mit Erklärtext, dann ruft es /area/key', async () => {
+    partners.mockResolvedValue([{ ...activePartner, area_family_id: 43, area_art: 'partner' }])
+    renewPartnerAreaKey.mockResolvedValue({ key: 'WXYZ-5678-IJKL' })
     await render()
 
     await act(async () => buttonByText('Schlüssel neu ausgeben').click())
-    expect(renewShelterKey).not.toHaveBeenCalled()
-    expect(container.textContent).toContain('Alle Geräte des Tierheims müssen sich neu anmelden.')
+    expect(renewPartnerAreaKey).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Alle Geräte des Partners müssen sich neu anmelden.')
 
     const confirm = buttonByText('Wirklich neu ausgeben?')
     expect(confirm).not.toBeUndefined()
     await act(async () => confirm.click())
 
-    expect(renewShelterKey).toHaveBeenCalledWith(1)
+    expect(renewPartnerAreaKey).toHaveBeenCalledWith(2)
     expect(container.querySelector('.key-reveal-value').textContent).toBe('WXYZ-5678-IJKL')
   })
 
   test('"Abbrechen" bei der Erneuern-Bestätigung ruft die API nicht auf', async () => {
-    partners.mockResolvedValue([{ ...draftPartner, typ: 'tierheim', shelter_family_id: 42 }])
+    partners.mockResolvedValue([{ ...draftPartner, area_family_id: 42, area_art: 'tierheim' }])
     await render()
 
     await act(async () => buttonByText('Schlüssel neu ausgeben').click())
     await act(async () => buttonByText('Abbrechen').click())
 
-    expect(renewShelterKey).not.toHaveBeenCalled()
+    expect(renewPartnerAreaKey).not.toHaveBeenCalled()
     expect(buttonByText('Schlüssel neu ausgeben')).not.toBeUndefined()
   })
 
   test('ein Fehler beim Anlegen erscheint inline, ohne die restliche Liste zu verstecken', async () => {
-    partners.mockResolvedValue([{ ...draftPartner, shelter_family_id: null }])
-    createShelter.mockRejectedValue(new Error('Für diesen Partner gibt es schon einen Tierheim-Bereich'))
+    partners.mockResolvedValue([{ ...draftPartner, area_family_id: null }])
+    createPartnerArea.mockRejectedValue(new Error('Für diesen Partner gibt es schon einen Tierheim-Bereich'))
     await render()
 
-    await act(async () => buttonByText('Tierheim-Bereich anlegen').click())
+    await act(async () => buttonByText('Partner-Bereich anlegen').click())
 
     expect(container.querySelector('.admin-partner-row .field-error').textContent).toBe(
       'Für diesen Partner gibt es schon einen Tierheim-Bereich'
     )
+    expect(container.querySelectorAll('.admin-partner-row')).toHaveLength(1)
+  })
+})
+
+describe('AdminPartners – Sperren', () => {
+  test('"Sperren" fragt mit Hinweis nach und sendet erst dann den vollen Datensatz mit gesperrt: true', async () => {
+    partners.mockResolvedValue([activePartner])
+    updatePartner.mockResolvedValue({ ...activePartner, gesperrt: 1, status: 'pausiert' })
+    await render()
+
+    await act(async () => buttonByText('Sperren').click())
+    expect(updatePartner).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Das Profil verschwindet sofort aus allen öffentlichen Listen.')
+
+    partners.mockResolvedValue([{ ...activePartner, gesperrt: 1, status: 'pausiert' }])
+    await act(async () => buttonByText('Wirklich sperren?').click())
+
+    expect(updatePartner).toHaveBeenCalledWith(2, expect.objectContaining({ name: activePartner.name, typ: 'hundeschule', gesperrt: true }))
+    const row = container.querySelector('.admin-partner-row')
+    expect(row.classList.contains('is-locked')).toBe(true)
+    expect(row.querySelector('.admin-partner-locked').textContent).toBe('Gesperrt')
+    expect(buttonByText('Entsperren')).not.toBeUndefined()
+  })
+
+  test('"Abbrechen" beim Sperren sendet nichts', async () => {
+    partners.mockResolvedValue([activePartner])
+    await render()
+
+    await act(async () => buttonByText('Sperren').click())
+    await act(async () => buttonByText('Abbrechen').click())
+
+    expect(updatePartner).not.toHaveBeenCalled()
+    expect(buttonByText('Sperren')).not.toBeUndefined()
+  })
+
+  test('gesperrt: Badge, "Aktivieren" ist aus, "Entsperren" sendet gesperrt: false ohne Rückfrage', async () => {
+    partners.mockResolvedValue([{ ...activePartner, status: 'pausiert', gesperrt: 1 }])
+    updatePartner.mockResolvedValue({ ...activePartner, status: 'pausiert', gesperrt: 0 })
+    await render()
+
+    expect(container.querySelector('.admin-partner-locked')).not.toBeNull()
+    expect(buttonByText('Aktivieren').disabled).toBe(true)
+
+    await act(async () => buttonByText('Entsperren').click())
+    expect(updatePartner).toHaveBeenCalledWith(2, expect.objectContaining({ gesperrt: false, status: 'pausiert' }))
+  })
+})
+
+describe('AdminPartners – Einblicke', () => {
+  const einblickList = [
+    { id: 7, fotoUrl: '/uploads/11111111-2222-3333-4444-555555555555.jpg', datum: '2026-09-01', text: 'Welpenkurs im Park', ausgeblendet: false },
+    { id: 8, fotoUrl: '/uploads/66666666-7777-8888-9999-000000000000.png', datum: '2026-08-15', text: null, ausgeblendet: true }
+  ]
+
+  test('"Einblicke" klappt die Liste mit Vorschaubild, Datum und Text auf', async () => {
+    partners.mockResolvedValue([activePartner])
+    einblicke.mockResolvedValue(einblickList)
+    await render()
+
+    const toggle = buttonByText('Einblicke')
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    await act(async () => toggle.click())
+
+    expect(einblicke).toHaveBeenCalledWith(2)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    const items = [...container.querySelectorAll('.admin-einblick')]
+    expect(items).toHaveLength(2)
+    expect(items[0].querySelector('img').getAttribute('src')).toBe(einblickList[0].fotoUrl)
+    expect(items[0].textContent).toContain('1. September 2026')
+    expect(items[0].textContent).toContain('Welpenkurs im Park')
+    expect(items[1].classList.contains('is-hidden')).toBe(true)
+    expect(items[1].querySelector('input[role="switch"]').checked).toBe(true)
+  })
+
+  test('der Schalter "ausblenden" ruft die API und übernimmt die Antwort', async () => {
+    partners.mockResolvedValue([activePartner])
+    einblicke.mockResolvedValue(einblickList)
+    setEinblickAusgeblendet.mockResolvedValue({ ...einblickList[0], ausgeblendet: true })
+    await render()
+
+    await act(async () => buttonByText('Einblicke').click())
+    const toggle = container.querySelector('.admin-einblick input[role="switch"]')
+    expect(toggle.checked).toBe(false)
+    await act(async () => toggle.click())
+
+    expect(setEinblickAusgeblendet).toHaveBeenCalledWith(7, true)
+    expect(container.querySelector('.admin-einblick').classList.contains('is-hidden')).toBe(true)
+    expect(container.querySelector('.admin-einblick input[role="switch"]').checked).toBe(true)
+  })
+
+  test('ein Fehler beim Ausblenden erscheint als Alert', async () => {
+    partners.mockResolvedValue([activePartner])
+    einblicke.mockResolvedValue(einblickList)
+    setEinblickAusgeblendet.mockRejectedValue(new Error('Diesen Einblick gibt es nicht'))
+    await render()
+
+    await act(async () => buttonByText('Einblicke').click())
+    await act(async () => container.querySelector('.admin-einblick input[role="switch"]').click())
+
+    expect(container.querySelector('.admin-partner-einblicke [role="alert"]').textContent).toBe('Diesen Einblick gibt es nicht')
   })
 })

@@ -33,6 +33,7 @@ const PATHS = {
   ),
   close: <path d="M18 6 6 18M6 6l12 12" />,
   arrowLeft: <path d="M19 12H5M12 19l-7-7 7-7" />,
+  arrowRight: <path d="M5 12h14M12 5l7 7-7 7" />,
   logout: (
     <>
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

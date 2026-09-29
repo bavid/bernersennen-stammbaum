@@ -1,5 +1,16 @@
 import { describe, expect, test } from 'vitest'
-import { formatEuroCents, isClickUrl, isPartnerMedia, kennzeichnungLabel, normalizeDiscover, promotionRel, splitByDistance } from './discover.js'
+import {
+  formatEuroCents,
+  isAllowedMedia,
+  isClickUrl,
+  isPartnerMedia,
+  isPreviewMedia,
+  isPublicMedia,
+  kennzeichnungLabel,
+  normalizeDiscover,
+  promotionRel,
+  splitByDistance
+} from './discover.js'
 
 // Intl setzt zwischen Betrag und € ein geschütztes Leerzeichen (U+00A0) - für lesbare Vergleiche hier
 // durch ein normales ersetzt.
@@ -161,5 +172,46 @@ describe('normalizeDiscover', () => {
     const withNull = normalizeDiscover({ begleiter: { promotions: [null, { id: 7 }] }, unterstuetzen: { promotions: ['x', { id: 8 }] } })
     expect(withNull.begleiterPromotions.map((item) => item.id)).toEqual([7])
     expect(withNull.unterstuetzen.promotions.map((item) => item.id)).toEqual([8])
+  })
+})
+
+// Phase P1: öffentliche Fotos (Teaser, Einblicke) und in der Kundensicht zusätzlich /uploads.
+describe('isPublicMedia / isPreviewMedia / isAllowedMedia', () => {
+  const file = '11111111-2222-3333-4444-555555555555.jpg'
+
+  test('öffentlich: /public-media und /partner-media mit genau einem Dateinamen', () => {
+    expect(isPublicMedia(`/public-media/${file}`)).toBe(true)
+    expect(isPublicMedia(`/partner-media/${file}`)).toBe(true)
+    expect(isPublicMedia(`/uploads/${file}`)).toBe(false)
+    expect(isPublicMedia(`/public-media/a/${file}`)).toBe(false)
+    expect(isPublicMedia('/public-media/')).toBe(false)
+    expect(isPublicMedia(`https://example.org/public-media/${file}`)).toBe(false)
+    expect(isPublicMedia(`/public-media/${file}?x=1`)).toBe(false)
+    expect(isPublicMedia(null)).toBe(false)
+  })
+
+  test('Vorschau: zusätzlich /uploads, sonst gleich streng', () => {
+    expect(isPreviewMedia(`/uploads/${file}`)).toBe(true)
+    expect(isPreviewMedia(`/public-media/${file}`)).toBe(true)
+    expect(isPreviewMedia('javascript:alert(1)')).toBe(false)
+    expect(isPreviewMedia(`/uploads/../${file}`)).toBe(false)
+    expect(isPreviewMedia('/uploads/..')).toBe(false)
+    expect(isPreviewMedia('/uploads/.hidden')).toBe(false)
+  })
+
+  test('isAllowedMedia wählt je nach preview', () => {
+    expect(isAllowedMedia(`/uploads/${file}`)).toBe(false)
+    expect(isAllowedMedia(`/uploads/${file}`, { preview: true })).toBe(true)
+  })
+})
+
+describe('normalizeDiscover – vorschauHinweis', () => {
+  test('übernimmt einen Text, sonst null', () => {
+    expect(normalizeDiscover({ vorschauHinweis: 'Euer Profil erscheint in der Partnerliste.' }).vorschauHinweis).toBe(
+      'Euer Profil erscheint in der Partnerliste.'
+    )
+    expect(normalizeDiscover({}).vorschauHinweis).toBeNull()
+    expect(normalizeDiscover({ vorschauHinweis: '  ' }).vorschauHinweis).toBeNull()
+    expect(normalizeDiscover({ vorschauHinweis: { text: 'x' } }).vorschauHinweis).toBeNull()
   })
 })

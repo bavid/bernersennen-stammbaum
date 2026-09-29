@@ -34,7 +34,7 @@ function PartnerAreaRoutes({ family, onFamilyChange }) {
     <Routes>
       <Route path="/profil" element={<PartnerProfilePage family={family} />} />
       <Route path="/zugang" element={<AccessPage family={family} onFamilyChange={onFamilyChange} />} />
-      <Route path="/kundensicht" element={<CustomerViewPage />} />
+      <Route path="/kundensicht" element={<CustomerViewPage family={family} />} />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
       <Route path="/umgebung" element={<NearbyPage />} />
       <Route path="*" element={<ToStart family={family} />} />
@@ -71,7 +71,7 @@ export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
         path="/zugang"
         element={partnerArea ? <AccessPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
       />
-      <Route path="/kundensicht" element={partnerArea ? <CustomerViewPage /> : <ToStart family={family} />} />
+      <Route path="/kundensicht" element={partnerArea ? <CustomerViewPage family={family} /> : <ToStart family={family} />} />
       <Route path="*" element={<ToStart family={family} />} />
     </Routes>
   )

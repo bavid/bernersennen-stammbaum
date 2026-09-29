@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
+import { InternalLink } from './PreviewLink.jsx'
 import PartnerCard from './PartnerCard.jsx'
 import AnimalAdoptionCard from './AnimalAdoptionCard.jsx'
 import PromotionCard, { PromotionList } from './PromotionCard.jsx'
@@ -56,7 +56,7 @@ function FarAway({ children }) {
 function PartnerListHint({ children }) {
   return (
     <DiscoverEmpty>
-      {children} – schaut in die <Link to="/partner">Partnerliste</Link>.
+      {children} – schaut in die <InternalLink to="/partner">Partnerliste</InternalLink>.
     </DiscoverEmpty>
   )
 }
@@ -119,11 +119,11 @@ export function BegleiterSection({ partner, tiere, promotions, fallback }) {
           )}
         </>
       )}
-      <Link to="/umgebung" className="discover-more-link">
+      <InternalLink to="/umgebung" className="discover-more-link">
         Mehr in der Nähe
         <span className="visually-hidden"> (Tierheime, Vermittlungsstellen und Hundeschulen)</span>
         <span aria-hidden="true"> →</span>
-      </Link>
+      </InternalLink>
     </DiscoverChapter>
   )
 }

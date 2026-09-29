@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
+import AdminVoucherForm, { ZWECK_PARTNERZUGANG } from './AdminVoucherForm.jsx'
 import { relativeTime } from '../lib/dates.js'
+import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
 
-const MIN_SIZE = 1
-const MAX_SIZE = 200
-const DEFAULT_SIZE = 10
+// Zweck eines Stapels als Badge: Partner-Zugang (mit Typ-Vorgabe, falls gesetzt) oder Kunden-Gutscheine
+// (auch ältere Stapel ohne zweck).
+function ZweckBadge({ batch }) {
+  if (batch.zweck !== ZWECK_PARTNERZUGANG) return <span className="pill admin-voucher-zweck-badge">Kunden-Gutscheine</span>
+  const typ = batch.partnerTyp ? ` · ${TYPE_LABELS[batch.partnerTyp] || batch.partnerTyp}` : ''
+  return <span className="pill admin-voucher-zweck-badge is-access">Partner-Zugang{typ}</span>
+}
 
 function CreatedCodes({ codes, onDismiss }) {
   const toast = useToast()
@@ -90,23 +96,18 @@ function BatchDetail({ batchId, onRevoked }) {
   )
 }
 
-// Admin-Gutschein-Stapel: anlegen (mit optionalem Beitritts-Rudel oder Partner), Liste mit Zählern,
-// Details mit Zurückziehen. joinableFamilies kommt aus der Familienliste der Übersicht, vorgefiltert
-// auf echte, nicht-demo Rudel (nur die sind ein gültiges Ziel, siehe routes/admin.js). partners kommt
-// aus AdminPartners (Task 7), vorgefiltert auf Entwurf/Aktiv (die einzigen gültigen Ziele) - ein Stapel
-// "für Partner" macht kind='partner', der Partner erscheint dann bei jedem Gutschein und, wer ihn
-// einlöst, in families.partner_id (siehe lib/vouchers.js createBatch, routes/vouchers.js redeemVoucher).
-export default function AdminVouchers({ joinableFamilies = [], partners = [] }) {
+// Admin-Gutschein-Stapel: anlegen (AdminVoucherForm - Kunden-Gutscheine mit optionalem Beitritts-Rudel
+// oder Partner, oder Partner-Zugänge), Liste mit Zweck und Zählern, Details mit Zurückziehen.
+// joinableFamilies kommt aus der Familienliste der Übersicht, vorgefiltert auf echte, nicht-demo Rudel
+// (nur die sind ein gültiges Ziel, siehe routes/admin.js). partners kommt aus AdminPartners (Task 7),
+// vorgefiltert auf Entwurf/Aktiv (die einzigen gültigen Ziele) - ein Stapel "für Partner" macht
+// kind='partner', der Partner erscheint dann bei jedem Gutschein und, wer ihn einlöst, in
+// families.partner_id (siehe lib/vouchers.js createBatch, routes/vouchers.js redeemVoucher).
+// accessPartners: Partner, an die sich ein Partner-Zugang binden lässt (keine Demo, noch kein Bereich).
+export default function AdminVouchers({ joinableFamilies = [], partners = [], accessPartners = [] }) {
   const [batches, setBatches] = useState(undefined)
   const [error, setError] = useState(null)
   const [openId, setOpenId] = useState(null)
-
-  const [label, setLabel] = useState('')
-  const [size, setSize] = useState(DEFAULT_SIZE)
-  const [joinFamilyId, setJoinFamilyId] = useState('')
-  const [partnerId, setPartnerId] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [createError, setCreateError] = useState(null)
   const [createdCodes, setCreatedCodes] = useState(null)
 
   function loadBatches() {
@@ -118,26 +119,9 @@ export default function AdminVouchers({ joinableFamilies = [], partners = [] }) 
 
   useEffect(loadBatches, [])
 
-  async function handleCreate(event) {
-    event.preventDefault()
-    setCreateError(null)
-    setCreating(true)
-    try {
-      const payload = { label, size: Number(size) }
-      if (joinFamilyId) payload.joinFamilyId = Number(joinFamilyId)
-      if (partnerId) payload.partnerId = Number(partnerId)
-      const result = await api.admin.createVoucherBatch(payload)
-      setCreatedCodes(result.codes)
-      setLabel('')
-      setSize(DEFAULT_SIZE)
-      setJoinFamilyId('')
-      setPartnerId('')
-      loadBatches()
-    } catch (err) {
-      setCreateError(err.message)
-    } finally {
-      setCreating(false)
-    }
+  function handleCreated(codes) {
+    setCreatedCodes(codes)
+    loadBatches()
   }
 
   function toggleBatch(id) {
@@ -148,67 +132,12 @@ export default function AdminVouchers({ joinableFamilies = [], partners = [] }) 
     <section className="admin-vouchers card" aria-labelledby="admin-vouchers-title">
       <h2 id="admin-vouchers-title">Gutscheine</h2>
 
-      <form className="form-stack" onSubmit={handleCreate}>
-        {createError && (
-          <div className="error-banner" role="alert">
-            {createError}
-          </div>
-        )}
-        <div className="form-grid">
-          <div className="field">
-            <label className="field-label" htmlFor="admin-voucher-label">
-              Bezeichnung
-            </label>
-            <input id="admin-voucher-label" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={80} required />
-          </div>
-          <div className="field">
-            <label className="field-label" htmlFor="admin-voucher-size">
-              Anzahl
-            </label>
-            <input
-              id="admin-voucher-size"
-              type="number"
-              min={MIN_SIZE}
-              max={MAX_SIZE}
-              value={size}
-              onChange={(e) => setSize(e.target.value)}
-              required
-            />
-          </div>
-          <div className="field span-2">
-            <label className="field-label" htmlFor="admin-voucher-join">
-              Tritt Familie bei (optional)
-            </label>
-            <select id="admin-voucher-join" value={joinFamilyId} onChange={(e) => setJoinFamilyId(e.target.value)}>
-              <option value="">Keine – eigenständiges Zuhause</option>
-              {joinableFamilies.map((family) => (
-                <option key={family.id} value={family.id}>
-                  {family.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field span-2">
-            <label className="field-label" htmlFor="admin-voucher-partner">
-              Für Partner (optional)
-            </label>
-            <select id="admin-voucher-partner" value={partnerId} onChange={(e) => setPartnerId(e.target.value)}>
-              <option value="">Kein Partner</option>
-              {partners.map((partner) => (
-                <option key={partner.id} value={partner.id}>
-                  {partner.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="form-actions">
-          <span className="form-actions-spacer" />
-          <button type="submit" className="btn btn-primary" disabled={creating || !label.trim()}>
-            {creating ? 'Lege an …' : 'Stapel anlegen'}
-          </button>
-        </div>
-      </form>
+      <AdminVoucherForm
+        joinableFamilies={joinableFamilies}
+        partners={partners}
+        accessPartners={accessPartners}
+        onCreated={handleCreated}
+      />
 
       {createdCodes && <CreatedCodes codes={createdCodes} onDismiss={() => setCreatedCodes(null)} />}
 
@@ -231,6 +160,7 @@ export default function AdminVouchers({ joinableFamilies = [], partners = [] }) 
                     <span className="muted"> · angelegt {relativeTime(batch.created_at)}</span>
                   </span>
                   <span className="admin-voucher-batch-counts">
+                    <ZweckBadge batch={batch} />
                     {batch.partner_name && <span className="pill pill-rust">für {batch.partner_name}</span>}
                     <span className="pill">{batch.open} offen</span>
                     <span className="pill">{batch.redeemed} eingelöst</span>

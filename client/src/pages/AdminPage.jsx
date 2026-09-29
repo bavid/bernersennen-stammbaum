@@ -17,6 +17,12 @@ function partnerVoucherEligible(partner) {
   return partner.status === 'entwurf' || partner.status === 'aktiv'
 }
 
+// An einen Partner gebundener Partner-Zugang (Phase P): nur ein echter Partner (keine Demo) ohne eigenen
+// Bereich (server/lib/partnerAccess.js findBindablePartner).
+function partnerAccessBindable(partner) {
+  return !partner.is_demo && !partner.area_family_id
+}
+
 const BYTES_PER_MB = 1024 * 1024
 
 function AdminLogin({ onLogin }) {
@@ -164,6 +170,7 @@ function Dashboard({ onLogout }) {
             <AdminVouchers
               joinableFamilies={overview.families.filter((family) => family.art === 'rudel' && !family.is_demo)}
               partners={partners.filter(partnerVoucherEligible)}
+              accessPartners={partners.filter(partnerAccessBindable)}
             />
 
             {/* Reiter "Entdecken" (Phase 3 Task 5): dieselbe Partnerliste füllt die Partner-Auswahl. */}

@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test } from 'vitest'
 import PartnerCard from './PartnerCard.jsx'
+import { PreviewProvider } from '../lib/preview.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -21,14 +22,16 @@ afterEach(() => {
   }
 })
 
-async function render(partner) {
+async function render(partner, { preview = false } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
       <MemoryRouter>
-        <PartnerCard partner={partner} />
+        <PreviewProvider value={preview}>
+          <PartnerCard partner={partner} />
+        </PreviewProvider>
       </MemoryRouter>
     )
   )
@@ -115,5 +118,63 @@ describe('PartnerCard', () => {
     const { website, ...withoutWebsite } = basePartner
     await render({ ...withoutWebsite, clickUrl: 'https://example.org/woanders' })
     expect([...container.querySelectorAll('a')].some((a) => a.textContent.includes('Website'))).toBe(false)
+  })
+})
+
+// Phase P1: teaserFoto - das neueste Einblick-Foto als kleines Vorschaubild.
+describe('PartnerCard – Teaser-Foto', () => {
+  test('zeigt ein öffentliches teaserFoto klein, lazy und mit Alternativtext', async () => {
+    await render({ ...basePartner, teaserFoto: '/public-media/11111111-2222-3333-4444-555555555555.jpg' })
+
+    const teaser = container.querySelector('.partner-card-teaser')
+    expect(teaser.getAttribute('src')).toBe('/public-media/11111111-2222-3333-4444-555555555555.jpg')
+    expect(teaser.getAttribute('alt')).toBe('Einblick bei Tierheim Sonnenhang')
+    expect(teaser.getAttribute('loading')).toBe('lazy')
+    expect(teaser.getAttribute('width')).toBe('72')
+    expect(teaser.getAttribute('height')).toBe('72')
+  })
+
+  test('ohne teaserFoto kein Bild', async () => {
+    await render({ ...basePartner, teaserFoto: null })
+    expect(container.querySelector('.partner-card-teaser')).toBeNull()
+  })
+
+  test.each([
+    ['fremde Adresse', 'https://example.org/foto.jpg'],
+    ['javascript:', 'javascript:alert(1)'],
+    ['/uploads außerhalb der Vorschau', '/uploads/11111111-2222-3333-4444-555555555555.jpg'],
+    ['Pfad mit weiteren Teilen', '/public-media/../uploads/geheim.jpg']
+  ])('ignoriert ein teaserFoto, das kein öffentliches Foto ist (%s)', async (_label, url) => {
+    await render({ ...basePartner, teaserFoto: url })
+    expect(container.querySelector('.partner-card-teaser')).toBeNull()
+  })
+
+  test('in der Kundensicht zählt auch das eigene Foto über /uploads', async () => {
+    await render({ ...basePartner, teaserFoto: '/uploads/11111111-2222-3333-4444-555555555555.jpg' }, { preview: true })
+    expect(container.querySelector('.partner-card-teaser').getAttribute('src')).toBe('/uploads/11111111-2222-3333-4444-555555555555.jpg')
+  })
+})
+
+describe('PartnerCard – Kundensicht', () => {
+  test('die eigene Karte (vorschau: true) bekommt "Das seid ihr"; alle Links sind deaktiviert', async () => {
+    await render({ ...basePartner, vorschau: true, clickUrl: '/r/partner-website/1' }, { preview: true })
+
+    const card = container.querySelector('.partner-card')
+    expect(card.classList.contains('is-own-preview')).toBe(true)
+    expect(container.querySelector('.preview-own-badge').textContent).toBe('Das seid ihr')
+    expect(container.querySelectorAll('a')).toHaveLength(0)
+    const disabled = [...container.querySelectorAll('[aria-disabled="true"]')]
+    expect(disabled.map((el) => el.textContent.trim())).toEqual(['Zum Portal', 'Website', 'In Google Maps öffnen', 'OpenStreetMap'])
+    for (const el of disabled) {
+      expect(el.getAttribute('role')).toBe('link')
+      expect(el.getAttribute('title')).toBe('In der Vorschau deaktiviert')
+      expect(el.getAttribute('aria-description')).toBe('In der Vorschau deaktiviert')
+    }
+  })
+
+  test('ohne Vorschau bleibt vorschau: true wirkungslos', async () => {
+    await render({ ...basePartner, vorschau: true })
+    expect(container.querySelector('.preview-own-badge')).toBeNull()
+    expect(linkByText('Zum Portal').getAttribute('href')).toBe('/p/tierheim-sonnenhang')
   })
 })
