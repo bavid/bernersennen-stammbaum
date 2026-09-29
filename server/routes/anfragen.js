@@ -2,7 +2,6 @@ const express = require('express')
 const rateLimit = require('express-rate-limit')
 const config = require('../config')
 const { rejectHoneypot } = require('../middleware/abuse')
-const { optionalSession } = require('../middleware/auth')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { checkEmailDomain, EMAIL_DOMAIN_RESULT } = require('../lib/emailCheck')
 const { validateAnfrage, insertAnfrage, httpError, EMAIL_UNKNOWN_MESSAGE, TYP } = require('../lib/anfragen')
@@ -13,7 +12,6 @@ const { notify, EREIGNIS } = require('../lib/notify')
 const router = express.Router()
 
 const ONE_HOUR = 60 * 60 * 1000
-const DEMO_MESSAGE = 'In der Demo werden keine Anfragen verschickt – bitte die Demo verlassen und dann anfragen.'
 
 // Eigenes, knappes Limit pro IP (Standard 3 je Stunde, config.anfrageRateLimit) zusätzlich zum globalen
 // apiLimiter, mit IPv6-Maske (lib/rateLimitKey.js). Zählt jede Anfrage, auch abgelehnte - sonst ließe sich das
@@ -31,11 +29,11 @@ const anfrageLimiter = rateLimit({
 // website ist der Honigtopf (middleware/abuse.js). Die E-Mail muss eine Domain haben, die es gibt (MX, sonst A/AAAA,
 // lib/emailCheck.js) - hängt das DNS, wird die Anfrage trotzdem angenommen. Eine gleiche offene Anfrage aus den
 // letzten 24 Stunden legt nichts neu an, die Antwort ist dieselbe: 201 { ok: true }, nie ein Echo der Eingaben.
-// Inhalte und E-Mail werden nie geloggt. In Demo-Sitzungen wird nichts verschickt (403). Eine neue Anfrage meldet
-// die Admin-Benachrichtigung (lib/notify.js) - ohne "Details mitsenden" nur, DASS es eine gibt.
-router.post('/', anfrageLimiter, rejectHoneypot, optionalSession, async (req, res, next) => {
+// Inhalte und E-Mail werden nie geloggt. Eine neue Anfrage meldet die Admin-Benachrichtigung (lib/notify.js) - ohne
+// "Details mitsenden" nur, DASS es eine gibt. Auch aus einer Demo-Sitzung: wer sich die Demo ansieht und einen
+// Gutschein möchte, fragt direkt dort an - eine Anfrage gehört keinem Bereich, sie geht an den Admin.
+router.post('/', anfrageLimiter, rejectHoneypot, async (req, res, next) => {
   try {
-    if (req.isDemo) return res.status(403).json({ error: DEMO_MESSAGE })
     const clean = validateAnfrage(req.body)
     const domain = await checkEmailDomain(clean.email)
     if (domain === EMAIL_DOMAIN_RESULT.ungueltig) throw httpError(400, EMAIL_UNKNOWN_MESSAGE)

@@ -166,15 +166,16 @@ test('Benachrichtigungen: jedes Ereignis genau einmal, Demo und Fehler nie', asy
     await put('/api/admin/notify-settings', { feedback: true }, adminCookie)
   })
 
-  await t.test('Demo: weder Feedback noch Beitrag noch Anfrage lösen etwas aus', async () => {
+  await t.test('Demo: weder Feedback noch Beitrag lösen etwas aus - eine Anfrage aus der Demo schon', async () => {
     const demo = await createFamily(base, 'Rudel Demo Hinweise', 'demo-hinweise-pw-1')
     db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(demo.data.id)
     const feedback = await newMessages(() => post('/api/messages', { type: 'feedback', text: 'Hallo aus der Demo' }, demo.cookie))
     assert.equal(feedback.result.status, 403)
     assert.deepEqual(feedback.texts, [])
+    // Eine Anfrage aus der Demo ist eine echte Anfrage eines Besuchers (kein Demo-Inhalt) - sie meldet sich wie jede andere.
     const anfrage = await newMessages(() => post('/api/public/anfragen', { typ: 'gutschein', email: 'demo@example.org' }, demo.cookie))
-    assert.equal(anfrage.result.status, 403)
-    assert.deepEqual(anfrage.texts, [])
+    assert.equal(anfrage.result.status, 201)
+    assert.deepEqual(anfrage.texts, ['🐾 Neue Gutschein-Anfrage – im Admin unter „Anfragen“ ansehen.'])
 
     const partnerArea = db.prepare("SELECT id, partner_id FROM families WHERE art = 'partner'").get()
     db.prepare('UPDATE partners SET is_demo = 1 WHERE id = ?').run(partnerArea.partner_id)

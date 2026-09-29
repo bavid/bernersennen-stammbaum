@@ -9,7 +9,12 @@
 // Datenschutz: Telegram ist ein externer Dienst. Standard sind Texte OHNE personenbezogene Daten ("Neue
 // Gutschein-Anfrage – im Admin ansehen"); erst der Schalter "Details mitsenden" (details) nimmt Name/E-Mail,
 // Bereichs- bzw. Partnername, Beitragstitel oder den Anfang einer Nachricht mit. Reiner Text ohne parse_mode.
-// Demo-Sitzungen und Demo-Daten lösen nie etwas aus (daten.demo).
+// Demo-Inhalte (Demo-Sitzungen, Demo-Bereiche, Demo-Partner) lösen nie etwas aus (daten.demo). Eine Anfrage aus einer
+// Demo-Sitzung ist dagegen eine echte Anfrage eines Besuchers und meldet sich wie jede andere (routes/anfragen.js).
+//
+// Obergrenze je Server-Prozess: höchstens CAP_PER_WINDOW Nachrichten in einer gleitenden Stunde. Die nächste wird
+// durch EINE Warnung ersetzt (CAP_WARNING_TEXT), danach fällt eine Stunde lang alles weg; das Ende der Pause loggt
+// EINE Zeile mit der Anzahl der nicht gemeldeten Ereignisse (ohne Inhalt). Die Testnachricht zählt nicht mit.
 
 const { readNotifySettings } = require('./notifySettings')
 const { telegramCredentials } = require('./telegramConfig')
@@ -33,6 +38,10 @@ const TEST_TEXT = `${PAW} Testnachricht von Familie auf Pfoten – die Benachric
 const FAILURE_LOG = 'Telegram-Benachrichtigung fehlgeschlagen'
 // Nur Fehlercodes wie ECONNRESET/ETIMEDOUT landen im Log - alles andere als "unbekannt".
 const SAFE_CODE_RE = /^[A-Z][A-Z0-9_]{1,39}$/
+const CAP_PER_WINDOW = 20
+const CAP_WINDOW_MS = 60 * 60 * 1000
+const CAP_WARNING_TEXT = '⚠️ Viele neue Ereignisse – weitere Benachrichtigungen pausieren für diese Stunde. Details im Admin.'
+const CAP = Object.freeze({ send: 'send', warn: 'warn', drop: 'drop' })
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -90,18 +99,43 @@ const DEFAULT_RUNTIME = Object.freeze({
   sender: (message) => telegramClient().sendMessage(message),
   retryDelaysMs: RETRY_DELAYS_MS,
   logger: console,
-  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  now: () => Date.now()
 })
+const EMPTY_CAP_STATE = Object.freeze({ sent: Object.freeze([]), pausedUntil: null, dropped: 0 })
 let runtime = DEFAULT_RUNTIME
+let capState = EMPTY_CAP_STATE
 const inFlight = new Set()
 
-// Nur für Tests: sender, retryDelaysMs, logger, sleep und telegram (Zugangsdaten, null = nicht eingerichtet)
-// austauschen. Gibt restore() zurück.
+// Nur für Tests: sender, retryDelaysMs, logger, sleep, now (Uhr) und telegram (Zugangsdaten, null = nicht
+// eingerichtet) austauschen - setzt auch die Obergrenze zurück. Gibt restore() zurück.
 function setNotifyRuntimeForTests(overrides) {
   runtime = { ...DEFAULT_RUNTIME, ...overrides }
+  capState = EMPTY_CAP_STATE
   return () => {
     runtime = DEFAULT_RUNTIME
+    capState = EMPTY_CAP_STATE
   }
+}
+
+// Obergrenze (siehe Dateikopf): 'send' (zählt mit), 'warn' (die Warnung statt dieses Ereignisses, Pause beginnt)
+// oder 'drop'. Nach der Pause EINE Logzeile mit der Anzahl der weggefallenen Ereignisse.
+function admitToCap(now) {
+  if (capState.pausedUntil !== null) {
+    if (now < capState.pausedUntil) {
+      capState = { ...capState, dropped: capState.dropped + 1 }
+      return CAP.drop
+    }
+    runtime.logger.warn(`Telegram-Benachrichtigungen pausiert – nicht gemeldete Ereignisse: ${capState.dropped}`)
+    capState = { ...capState, pausedUntil: null, dropped: 0 }
+  }
+  const recent = capState.sent.filter((sentAt) => sentAt > now - CAP_WINDOW_MS)
+  if (recent.length < CAP_PER_WINDOW) {
+    capState = { ...capState, sent: [...recent, now] }
+    return CAP.send
+  }
+  capState = { sent: recent, pausedUntil: now + CAP_WINDOW_MS, dropped: 1 }
+  return CAP.warn
 }
 
 function currentCredentials() {
@@ -145,8 +179,9 @@ function track(promise) {
   return promise
 }
 
-// Löst die Benachrichtigung aus, wenn der Schalter an ist, Telegram eingerichtet ist und es keine Demo ist. Gibt das
-// Versprechen des Versands zurück (true/false) oder null, wenn nichts verschickt wird - Routen warten nie darauf.
+// Löst die Benachrichtigung aus, wenn der Schalter an ist, Telegram eingerichtet ist, es keine Demo ist und die
+// Obergrenze nicht pausiert (an der Grenze geht stattdessen die Warnung raus). Gibt das Versprechen des Versands
+// zurück (true/false) oder null, wenn nichts verschickt wird - Routen warten nie darauf.
 // Wirft nie: die auslösende Aktion ist schon erledigt und darf nicht an einer Benachrichtigung scheitern.
 function notify(ereignis, daten = {}) {
   try {
@@ -159,7 +194,9 @@ function notify(ereignis, daten = {}) {
     if (!credentials) return null
     const settings = readNotifySettings()
     if (!settings[ereignis]) return null
-    const text = buildText(ereignis, daten ?? {}, { details: settings.details })
+    const decision = admitToCap(runtime.now())
+    if (decision === CAP.drop) return null
+    const text = decision === CAP.warn ? CAP_WARNING_TEXT : buildText(ereignis, daten ?? {}, { details: settings.details })
     const delivery = new Promise((resolve) => setImmediate(resolve)).then(() => deliver(credentials, text, MAX_ATTEMPTS))
     return track(delivery)
   } catch (err) {
@@ -168,7 +205,8 @@ function notify(ereignis, daten = {}) {
   }
 }
 
-// POST /api/admin/notify-test: einmal, ohne Wiederholung, abgewartet. true/false; 409, wenn nicht eingerichtet.
+// POST /api/admin/notify-test: einmal, ohne Wiederholung, abgewartet, an der Obergrenze vorbei. true/false; 409, wenn
+// nicht eingerichtet.
 async function sendTestMessage() {
   const credentials = currentCredentials()
   if (!credentials) throw httpError(409, 'Telegram ist nicht eingerichtet.')
@@ -184,6 +222,9 @@ module.exports = {
   EREIGNIS,
   MAX_ATTEMPTS,
   RETRY_DELAYS_MS,
+  CAP_PER_WINDOW,
+  CAP_WINDOW_MS,
+  CAP_WARNING_TEXT,
   buildText,
   notify,
   sendTestMessage,

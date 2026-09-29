@@ -184,14 +184,23 @@ test('Anfragen: öffentlich stellen, im Admin bearbeiten und einen Gutschein zuw
     assert.equal(countRows(), before + 3, 'eine erledigte Anfrage sperrt nicht')
   })
 
-  await t.test('Demo-Sitzung: 403, nichts gespeichert', async () => {
+  // Wer sich die Demo ansieht und einen Gutschein möchte, soll direkt dort anfragen können - eine Anfrage gehört
+  // keinem Bereich, sie geht an den Admin. Alle anderen Schutzmaßnahmen gelten unverändert.
+  await t.test('Demo-Sitzung: Anfrage wird wie von einem anonymen Besucher angenommen', async () => {
     const demo = await createFamily(base, 'Rudel Demo Anfragen', 'demo-anfragen-pw-1')
     db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(demo.data.id)
     const before = countRows()
-    const res = await ask({ typ: 'gutschein', email: 'demo@example.org' }, demo.cookie)
-    assert.equal(res.status, 403)
-    assert.match(res.data.error, /Demo/)
-    assert.equal(countRows(), before)
+    const res = await ask({ typ: 'gutschein', email: 'demo@example.org', nachricht: 'Die Demo gefällt mir.' }, demo.cookie)
+    assert.equal(res.status, 201)
+    assert.deepEqual(res.data, { ok: true })
+    assert.equal(countRows(), before + 1)
+    assert.equal(lastRow().email, 'demo@example.org')
+
+    const duplicate = await ask({ typ: 'gutschein', email: 'demo@example.org' }, demo.cookie)
+    assert.equal(duplicate.status, 201)
+    assert.equal(countRows(), before + 1, 'Duplikat-Schutz gilt auch hier')
+    assert.equal((await ask({ typ: 'gutschein', email: 'demo@example.org', website: 'x' }, demo.cookie)).status, 400, 'Honigtopf')
+    assert.equal((await ask({ typ: 'gutschein', email: 'demo@gibt-es-nicht.example' }, demo.cookie)).status, 400, 'E-Mail-Prüfung')
   })
 
   await t.test('Admin-Liste: nur mit Admin-Cookie, offene zuerst, ?status filtert', async () => {

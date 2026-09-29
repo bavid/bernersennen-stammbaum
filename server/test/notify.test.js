@@ -248,6 +248,64 @@ test('Versand: höchstens 3 Versuche mit Pause, Fehler nur als Zeile ohne Inhalt
   await flushNotificationsForTests()
 })
 
+// Obergrenze je Server-Prozess: höchstens 20 Nachrichten in einer gleitenden Stunde. Die 21. wird durch EINE Warnung
+// ersetzt, danach pausiert alles für eine Stunde; das Ende der Pause loggt EINE Zeile mit der Anzahl (ohne Inhalt).
+test('Obergrenze: 20 je gleitender Stunde, dann eine Warnung und eine Stunde Pause; Testnachricht zählt nicht', async () => {
+  const { notify, sendTestMessage, setNotifyRuntimeForTests, flushNotificationsForTests, EREIGNIS, CAP_PER_WINDOW, CAP_WARNING_TEXT } = require('../lib/notify')
+  assert.equal(CAP_PER_WINDOW, 20)
+  assert.equal(CAP_WARNING_TEXT, '⚠️ Viele neue Ereignisse – weitere Benachrichtigungen pausieren für diese Stunde. Details im Admin.')
+  const MINUTE = 60 * 1000
+  let clock = Date.UTC(2026, 8, 29, 12, 0, 0)
+  const { sender, calls } = fakeSender()
+  const { logger, lines } = captureLogger()
+  const restore = setNotifyRuntimeForTests({ sender, logger, retryDelaysMs: [0, 0], now: () => clock })
+  const ping = () => notify(EREIGNIS.gutscheinAnfrage, { email: 'flut@example.org' })
+  try {
+    // Gleitend: 15 jetzt, 5 nach 30 Minuten - nach weiteren 31 Minuten sind die ersten 15 aus dem Fenster.
+    for (let i = 0; i < 15; i += 1) assert.ok(ping())
+    clock += 30 * MINUTE
+    for (let i = 0; i < 5; i += 1) assert.ok(ping())
+    clock += 31 * MINUTE
+    for (let i = 0; i < 15; i += 1) assert.ok(ping(), 'die ersten 15 zählen nicht mehr')
+    await flushNotificationsForTests()
+    assert.equal(calls.length, 35)
+    assert.deepEqual(lines, [], 'bisher keine Pause')
+
+    // Jetzt 20 im Fenster (5 + 15): die nächste wird durch die Warnung ersetzt, alles weitere fällt weg.
+    const warning = ping()
+    assert.ok(warning)
+    assert.equal(ping(), null)
+    assert.equal(ping(), null)
+    await flushNotificationsForTests()
+    assert.equal(calls.length, 36)
+    assert.equal(calls.at(-1).text, CAP_WARNING_TEXT)
+
+    assert.equal(await sendTestMessage(), true, 'die Testnachricht geht trotzdem raus')
+    assert.equal(calls.length, 37)
+
+    clock += 59 * MINUTE
+    assert.equal(ping(), null, 'die Pause dauert eine Stunde')
+    assert.deepEqual(lines, [])
+
+    clock += 1 * MINUTE
+    assert.ok(ping(), 'nach einer Stunde geht es weiter')
+    await flushNotificationsForTests()
+    assert.equal(calls.length, 38)
+    assert.deepEqual(lines, ['Telegram-Benachrichtigungen pausiert – nicht gemeldete Ereignisse: 4'])
+    assert.ok(!lines[0].includes('flut@'), 'kein Inhalt im Log')
+
+    // Neues Fenster: wieder 20 (eine ist schon verschickt), dann wieder genau eine Warnung.
+    for (let i = 0; i < 19; i += 1) assert.ok(ping())
+    assert.ok(ping())
+    assert.equal(ping(), null)
+    await flushNotificationsForTests()
+    assert.equal(calls.length, 58)
+    assert.equal(calls.filter((call) => call.text === CAP_WARNING_TEXT).length, 2)
+  } finally {
+    restore()
+  }
+})
+
 test('sendTestMessage: ein Versuch, synchron; ohne Einrichtung 409', async () => {
   const { sendTestMessage, setNotifyRuntimeForTests } = require('../lib/notify')
   const ok = fakeSender()
