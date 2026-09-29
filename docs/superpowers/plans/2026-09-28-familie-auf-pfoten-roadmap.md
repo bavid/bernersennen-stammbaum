@@ -80,7 +80,7 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 | P1 | Partner-Zugang & Profil: Partner-Gutschein → Einrichtung, Profil selbst pflegen, „Bearbeiten \| Kundensicht“ (Live-Vorschau in Beispiel-Kundenoberfläche), Veröffentlichen/Sperre, Einblicke (Fotos + Datum), Hundesalon/Betreuung, Status „Pausiert“ | [Plan](2026-09-29-phase-p-partnerbereich.md) | 🚀 auf der Vorschau |
 | P2 | Anzeigen & Kontakt: Beiträge als „Anzeige“ mit Admin-Freigabe, „Schreib uns“ mit Postfach, E-Mail/Kontaktformular-Link, „Salon & Betreuung“, Partnerliste füllt dünnen Umkreis auf | [Plan](2026-09-29-phase-p-partnerbereich.md) | 🚀 auf der Vorschau |
 | R | Familien-Verwaltung: Rollen (Rudelführer/Leitung, Stellvertretung, Mitglied, Gast), Mitglieder-Seite, Einladungen mit Rolle, Leitung übergeben, auflösen, „Wer sieht was?“ | [Plan](2026-09-29-phase-r-familienverwaltung.md) | ☐ offen |
-| 5 | Admin: Druckkarten mit QR (Kunden-, Partner-, Partner-Stapel-Karten), Partner sehen ihren Kunden-Stapel, `/partner-werden`, Statistik, Präsentationsmodus | wird vor Beginn geschrieben | ☐ offen |
+| 5 | Admin: Druckkarten mit QR (Kunden-, Partner-, Partner-Stapel-Karten), Partner sehen ihren Kunden-Stapel, `/partner-werden`, Statistik, Präsentationsmodus | [Plan](2026-09-29-phase-5-admin-praesentation.md) | ☐ offen |
 | G | Eigene Domain & Go-Live: Domain/DNS/Caddy (Betreiber), `PUBLIC_URL`, HSTS, robots.txt, Prod-Übernahme mit Freigabe, danach Karten drucken | [Plan](2026-09-29-phase-g-domain-golive.md) | ☐ offen (braucht Domain) |
 | 4 | Import, Crawler, Website-Prüfung, Prüfliste | zurückgestellt | ⏸ blockiert (Frage 1) |
 
