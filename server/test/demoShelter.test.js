@@ -113,13 +113,19 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
     assert.equal(write.status, 403)
   })
 
-  await t.test('POST /api/demo ohne "as" bleibt beim Zuhause; ein ungültiger Wert -> 400', async () => {
+  await t.test('POST /api/demo ohne "as" bleibt beim Zuhause; { as: "rudel" } geht ins Demo-Rudel; ein ungültiger Wert -> 400', async () => {
     const defaultLogin = await call(base, '/api/demo', { method: 'POST' })
     assert.equal(defaultLogin.status, 200)
     assert.equal(defaultLogin.data.art, 'zuhause')
     assert.equal(defaultLogin.data.id, household.familyId)
 
-    const invalid = await call(base, '/api/demo', { method: 'POST', body: { as: 'rudel' } })
+    // Phase 5 Task 5 (Präsentationsmodus "Als Rudel ansehen"): 'rudel' ist ein gültiger Wert.
+    const asRudel = await call(base, '/api/demo', { method: 'POST', body: { as: 'rudel' } })
+    assert.equal(asRudel.status, 200)
+    assert.equal(asRudel.data.art, 'rudel')
+    assert.equal(asRudel.data.isDemo, true)
+
+    const invalid = await call(base, '/api/demo', { method: 'POST', body: { as: 'admin' } })
     assert.equal(invalid.status, 400)
   })
 

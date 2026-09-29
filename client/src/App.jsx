@@ -41,6 +41,10 @@ const AdminViewStartPage = lazy(() => import('./pages/AdminViewStartPage.jsx'))
 const PartnerPrintPage = lazy(() => import('./pages/PartnerPrintPage.jsx'))
 // Öffentliche Infoseite "Partner werden" (Phase 5 Task 4): selten aufgerufen, eigener Chunk.
 const PartnerInfoPage = lazy(() => import('./pages/PartnerInfoPage.jsx'))
+// Präsentationsmodus (Phase 5 Task 5): Vorführseite des Admins mit Kacheln, die je eine Demo in einem neuen
+// Tab starten - dort landet man auf /demo-start (DemoStartPage), das POST /api/demo ruft. Beides eigene Chunks.
+const AdminPresentPage = lazy(() => import('./pages/AdminPresentPage.jsx'))
+const DemoStartPage = lazy(() => import('./pages/DemoStartPage.jsx'))
 
 // /admin/gutscheine/<stapel-id>/druck - die Id ist eine Zahl (server/lib/validate.js cleanId), alles andere
 // bleibt beim Admin-Dashboard.
@@ -48,6 +52,12 @@ const ADMIN_PRINT_RE = /^\/admin\/gutscheine\/(\d+)\/druck\/?$/
 
 // /admin-ansicht/<bereichs-id> - aus der Familien- und Partnerliste des Admins in einem neuen Tab geöffnet.
 const ADMIN_VIEW_RE = /^\/admin-ansicht\/(\d+)\/?$/
+
+// /admin/praesentation - Präsentationsmodus (AdminPresentPage), aus dem Admin-Kopf.
+const ADMIN_PRESENT_RE = /^\/admin\/praesentation\/?$/
+
+// /demo-start?as=…&slug=…&ziel=… - Einstieg hinter jeder Kachel des Präsentationsmodus (lib/present.js).
+const DEMO_START_PATH = '/demo-start'
 
 // /partner-drucken/<stapel-id> - Druckseite eines Kunden-Gutschein-Stapels aus dem Partner-Profil (Reiter
 // "Kunden-Gutscheine"); nur mit Sitzung in einem Partner- oder Tierheim-Bereich, sonst Login bzw. Startseite.
@@ -259,7 +269,7 @@ export function AppFooter({ family, onInvite }) {
 export default function App() {
   const [family, setFamily] = useState(undefined)
   const [inviteOpen, setInviteOpen] = useState(false)
-  const { pathname, hash } = useLocation()
+  const { pathname, search, hash } = useLocation()
   const navigate = useNavigate()
   // Code aus /v#CODE einmalig einsammeln und die Adresse sofort bereinigen – noch vor jedem
   // Netzwerk-Aufruf (siehe die erste useEffect unten). Bleibt "im Speicher", auch wenn man sich auf
@@ -276,10 +286,14 @@ export default function App() {
 
   useEffect(() => {
     setUnauthorizedHandler(() => setFamily(null))
+    // Nur den Anfangszustand setzen: die Einstiege ohne Sitzung (/demo-start, /admin-ansicht/:id) können schon vor
+    // dieser Antwort eine Sitzung gesetzt haben (ihr Chunk ist geladen, die Anfrage schneller als /me) - die darf
+    // ein spätes 401 von /me nicht wieder wegnehmen.
+    const settleInitial = (value) => setFamily((current) => (current === undefined ? value : current))
     api
       .me()
-      .then(setFamily)
-      .catch(() => setFamily(null))
+      .then(settleInitial)
+      .catch(() => settleInitial(null))
   }, [])
 
   // Merkt sich das Aussehen der zuletzt angemeldeten Familie, damit der Splash-Screen beim nächsten
@@ -326,6 +340,14 @@ export default function App() {
     navigate(startRoute(me), { replace: true })
   }
 
+  // Demo aus dem Präsentationsmodus (Phase 5 Task 5): DemoStartPage hat POST /api/demo gerufen, me ist die
+  // Antwort - Sitzung übernehmen und zur Startroute des Demo-Bereichs oder zum Ziel (z. B. /kundensicht) wechseln.
+  function handleDemoStart(me, route) {
+    setFamily(me)
+    setVoucherCode('')
+    navigate(route || startRoute(me), { replace: true })
+  }
+
   // "Beenden" im Band: die Nur-Lesen-Sitzung abmelden und zurück zum Admin (dessen eigenes Cookie bleibt).
   async function handleEndAdminView() {
     try {
@@ -339,10 +361,23 @@ export default function App() {
   // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login, immer im Standard-Auftritt
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     const printBatchId = pathname.match(ADMIN_PRINT_RE)?.[1]
+    const isPresent = ADMIN_PRESENT_RE.test(pathname)
     return (
       <ThemeProvider themeId="standard">
         <Suspense fallback={<RouteFallback />}>
-          {printBatchId ? <AdminPrintPage batchId={printBatchId} /> : <AdminPage />}
+          {printBatchId ? <AdminPrintPage batchId={printBatchId} /> : isPresent ? <AdminPresentPage /> : <AdminPage />}
+        </Suspense>
+      </ThemeProvider>
+    )
+  }
+
+  // Demo-Einstieg des Präsentationsmodus (Phase 5 Task 5): unabhängig von einer laufenden Sitzung - die Seite
+  // ersetzt sie durch die Demo-Sitzung (handleDemoStart), wie /admin-ansicht/:id.
+  if (pathname === DEMO_START_PATH) {
+    return (
+      <ThemeProvider themeId="standard">
+        <Suspense fallback={<RouteFallback />}>
+          <DemoStartPage search={search} onEntered={handleDemoStart} />
         </Suspense>
       </ThemeProvider>
     )

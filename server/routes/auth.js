@@ -143,9 +143,10 @@ router.post('/login', authLimiter, async (req, res, next) => {
 // ansehen" auf dem Portal eines Demo-Partners (PartnerPortalPage.jsx). Mit { as: 'partner', slug? }
 // (Phase P1 Task 4) in einen Demo-Partner-Bereich: ohne slug der von Pfotenglück (seed/demo-partner-area.js),
 // mit slug der dieses Demo-Partners - nur Demo-Partner-Bereiche (lib/partnerAreas.js findDemoPartnerArea),
-// alles andere 404. Jeder andere Wert von "as", ein slug ohne as: 'partner' oder ein slug, der kein
-// Text ist, sind Client-Fehler (400), kein stillschweigendes Ignorieren.
-const DEMO_AS_VALUES = ['tierheim', 'partner']
+// alles andere 404. Mit { as: 'rudel' } (Phase 5 Task 5, Präsentationsmodus "Als Rudel ansehen") in die
+// Demo-Familie (art 'rudel') statt ins Demo-Zuhause. Jeder andere Wert von "as", ein slug ohne as: 'partner'
+// oder ein slug, der kein Text ist, sind Client-Fehler (400), kein stillschweigendes Ignorieren.
+const DEMO_AS_VALUES = ['tierheim', 'partner', 'rudel']
 
 function isValidDemoSlug(as, slug) {
   if (slug === undefined) return true
@@ -157,6 +158,9 @@ function findDemoFamily(as, slug) {
     return db.prepare("SELECT id FROM families WHERE is_demo = 1 AND art = 'tierheim' ORDER BY id DESC LIMIT 1").get()
   }
   if (as === 'partner') return findDemoPartnerArea(db, slug ?? DEFAULT_DEMO_PARTNER_SLUG)
+  if (as === 'rudel') {
+    return db.prepare("SELECT id FROM families WHERE is_demo = 1 AND art = 'rudel' ORDER BY id DESC LIMIT 1").get()
+  }
   // Nur Zuhause oder Rudel - Demo-Partner-Bereiche und das Demo-Tierheim sind ebenfalls Demo-Familien.
   return db
     .prepare("SELECT id FROM families WHERE is_demo = 1 AND art IN ('zuhause', 'rudel') ORDER BY (art = 'zuhause') DESC, id DESC LIMIT 1")

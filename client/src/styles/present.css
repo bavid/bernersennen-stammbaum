@@ -1,0 +1,161 @@
+/* Präsentationsmodus (/admin/praesentation, AdminPresentPage - Phase 5 Task 5): eine ruhige Vorführseite in
+   großer Schrift, ohne Admin-Kopf und -Karten. Kacheln sind echte Links (mindestens 44 px hoch, sichtbarer Fokus)
+   und brechen am Tablet in eine bzw. zwei Spalten um. /demo-start (DemoStartPage) nutzt die Login-Karte des
+   Admins (admin.css .admin-login). Nur Tokens aus tokens.css. */
+
+.present-page {
+  display: grid;
+  gap: clamp(var(--space-8), 4vw, var(--space-12));
+  min-height: 100dvh;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: clamp(var(--space-8), 5vw, var(--space-12)) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
+  font-size: var(--text-lg);
+}
+
+.present-head {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+
+.present-head h1 {
+  font-size: clamp(var(--text-2xl), 4vw, var(--text-display));
+  line-height: 1.05;
+}
+
+.present-lede {
+  max-width: 44rem;
+  font-size: var(--text-xl);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.present-back {
+  min-height: 2.75rem;
+}
+
+.present-section-title {
+  margin-bottom: var(--space-5);
+  font-size: var(--text-xl);
+}
+
+.present-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.present-tile {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  min-height: 11rem;
+  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.present-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+}
+
+.present-tile:active {
+  transform: translateY(0);
+}
+
+.present-tile:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring), var(--shadow-raised);
+}
+
+.present-tile > svg {
+  width: 2.2rem;
+  height: 2.2rem;
+  color: var(--rust);
+}
+
+.present-tile-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.present-tile-sub {
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.present-tile-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: auto;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.present-tile-hint svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.present-portal {
+  display: grid;
+  gap: var(--space-5);
+  color: var(--text);
+}
+
+.present-portal h2 {
+  font-size: var(--text-xl);
+  color: var(--ink);
+}
+
+.present-portal p {
+  max-width: 44rem;
+  line-height: 1.5;
+}
+
+.present-portal-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.present-portal-row .field {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.present-portal select {
+  min-height: 3rem;
+  font-size: var(--text-lg);
+}
+
+.present-portal-open {
+  min-height: 3rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .present-tile {
+    transition: none;
+  }
+
+  .present-tile:hover {
+    transform: none;
+  }
+}

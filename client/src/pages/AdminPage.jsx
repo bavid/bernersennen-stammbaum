@@ -152,6 +152,10 @@ function Dashboard({ onLogout }) {
               {pendingCount} zur Freigabe
             </a>
           )}
+          {/* Phase 5 Task 5: Vorführseite mit Demo-Kacheln und Portal-Vorschau (AdminPresentPage). */}
+          <Link to="/admin/praesentation" className="btn btn-ghost">
+            <Icon name="eye" /> Präsentation
+          </Link>
           <Link to="/" className="btn btn-ghost">
             Zur App
           </Link>

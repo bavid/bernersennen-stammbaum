@@ -60,4 +60,23 @@ test('demo families are read-only, however you get in', async (t) => {
     })
     assert.equal(write.status, 201)
   })
+
+  // Phase 5 Task 5 (Präsentationsmodus "Als Rudel ansehen"): mit einem Demo-Zuhause führt /api/demo ohne "as"
+  // dorthin - { as: 'rudel' } weiterhin in die Demo-Familie. Andere Werte bleiben 400.
+  await t.test('{ as: "rudel" } logs into the demo rudel even when a demo household exists', async () => {
+    const household = await createFamily(base, 'Zuhause Demo', 'demo-zuhause-pw', { art: 'zuhause' })
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(household.data.id)
+
+    const byDefault = await call(base, '/api/demo', { method: 'POST' })
+    assert.equal(byDefault.data.id, household.data.id)
+
+    const asRudel = await call(base, '/api/demo', { method: 'POST', body: { as: 'rudel' } })
+    assert.equal(asRudel.status, 200)
+    assert.equal(asRudel.data.id, rudel.data.id)
+    assert.equal(asRudel.data.art, 'rudel')
+    assert.equal(asRudel.data.isDemo, true)
+
+    assert.equal((await call(base, '/api/demo', { method: 'POST', body: { as: 'rudel', slug: 'x' } })).status, 400)
+    assert.equal((await call(base, '/api/demo', { method: 'POST', body: { as: 'zuhause' } })).status, 400)
+  })
 })
