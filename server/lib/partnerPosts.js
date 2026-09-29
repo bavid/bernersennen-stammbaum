@@ -16,7 +16,6 @@ const {
   PROMOTION_CLICKS_COLUMNS_SQL,
   FREIGABE
 } = require('./promotions')
-const { removePromotionImage } = require('./promotionImage')
 
 const ANZEIGE = 'Anzeige'
 const MAX_POSTS = 20
@@ -95,8 +94,6 @@ const updatePostStmt = db.prepare(
           freigabe = '${FREIGABE.eingereicht}', ablehnungsgrund = NULL
    WHERE id = @id`
 )
-const deleteClicksStmt = db.prepare("DELETE FROM link_clicks WHERE target_type = 'promotion' AND target_id = ?")
-const deletePostStmt = db.prepare('DELETE FROM promotions WHERE id = ?')
 
 // Beiträge eines Partners, wie Kundinnen und Kunden sie sehen: aktiv, im Zeitfenster, in einer der
 // gewünschten Freigaben - nach sort, dann neueste zuerst. Alle Empfehlungen mit dieser partner_id, auch die
@@ -130,17 +127,6 @@ const insertPost = db.transaction((partner, clean) => {
 function updatePost(partnerId, id, clean) {
   updatePostStmt.run({ ...clean, id })
   return findOwnPostStmt.get(partnerId, id)
-}
-
-// Beitrag samt Klickzählung (link_clicks) in einer Transaktion, danach das Bild von der Platte.
-const deletePostRows = db.transaction((id) => {
-  deleteClicksStmt.run(id)
-  deletePostStmt.run(id)
-})
-
-function deletePost(post) {
-  deletePostRows(post.id)
-  removePromotionImage(post.bild_file)
 }
 
 // Portal (GET /api/public/partners/:slug/posts): nur freigegebene, höchstens MAX_PUBLIC_POSTS.
@@ -194,7 +180,6 @@ module.exports = {
   findOwnPost,
   insertPost,
   updatePost,
-  deletePost,
   listPublicPosts,
   listPreviewPosts,
   ownPost

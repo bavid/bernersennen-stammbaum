@@ -185,6 +185,27 @@ test('Empfehlungen/Anzeigen, Einstellungen, Spendenberichte: Admin-Pflege für "
     assert.ok(list.data.every((p) => Number.isInteger(p.clicks7) && Number.isInteger(p.clicksTotal)))
   })
 
+  await t.test('Löschen durch den Admin entfernt auch die Klicks der Empfehlung, sonst keine', async () => {
+    const db = require('../db')
+    const doomed = await post('/api/admin/promotions', samplePromotion({ titel: 'Wird gelöscht' }))
+    const kept = await post('/api/admin/promotions', samplePromotion({ titel: 'Bleibt' }))
+    const insertClicks = db.prepare(
+      "INSERT INTO link_clicks (target_type, target_id, tag, anzahl) VALUES (?, ?, date('now', ?), ?)"
+    )
+    insertClicks.run('promotion', doomed.data.id, '+0 days', 3)
+    insertClicks.run('promotion', doomed.data.id, '-9 days', 2)
+    insertClicks.run('promotion', kept.data.id, '+0 days', 4)
+    // Andere Zieltypen mit derselben Id bleiben unberührt.
+    insertClicks.run('partner-website', doomed.data.id, '+0 days', 6)
+
+    assert.equal((await del(`/api/admin/promotions/${doomed.data.id}`)).status, 204)
+
+    const clicksOf = (type, id) => db.prepare('SELECT COUNT(*) AS n FROM link_clicks WHERE target_type = ? AND target_id = ?').get(type, id).n
+    assert.equal(clicksOf('promotion', doomed.data.id), 0)
+    assert.equal(clicksOf('promotion', kept.data.id), 1)
+    assert.equal(clicksOf('partner-website', doomed.data.id), 1)
+  })
+
   await t.test('Einstellungen: nur erlaubte Schlüssel, GoFundMe-URL geprüft, Text begrenzt, Demo-Schlüssel eigenständig', async () => {
     const initial = await get('/api/admin/settings')
     assert.equal(initial.status, 200)

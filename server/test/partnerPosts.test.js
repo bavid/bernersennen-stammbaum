@@ -15,7 +15,10 @@ const dataDir = useTempDataDir('partner-posts', { LOGIN_RATE_LIMIT: '300', CODE_
 
 const PORTAL_TEXT = 'Kleine Gruppen, viel Geduld und jede Menge Leckerli – so arbeiten wir mit euren Hunden.'
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
+const JPG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4])
+const WEBP_BYTES = Buffer.concat([Buffer.from('RIFF'), Buffer.from([4, 0, 0, 0]), Buffer.from('WEBPVP8 ')])
 const SVG_BYTES = Buffer.from('<svg onload="alert(1)"></svg>')
+const IMAGE_TYPE_MESSAGE = 'Bitte als JPG oder PNG hochladen.'
 const LIMIT_MESSAGE = 'Höchstens 20 Beiträge – bitte ältere löschen.'
 const BEREICH_MESSAGE = 'Dieser Bereich passt nicht zu eurem Partner-Typ.'
 const WELPENKURS_URL = 'https://example.org/welpenkurs'
@@ -331,11 +334,45 @@ test('Beiträge der Partner: immer Anzeige, sichtbar erst nach Freigabe durch de
     assert.equal(own.bildUrl, bildUrl)
     assert.equal(own.freigabe, 'eingereicht')
 
-    assert.equal((await uploadImage(school.cookie, firstPostId, SVG_BYTES, 'bild.svg', 'image/svg+xml')).status, 400)
-    assert.equal((await uploadImage(school.cookie, firstPostId, SVG_BYTES, 'bild.png', 'image/png')).status, 400)
     assert.equal((await uploadImage(school.cookie, 999999, PNG_BYTES, 'bild.png', 'image/png')).status, 404)
     assert.equal(promotionRow(firstPostId).bild_file, path.basename(bildUrl))
     await approve(firstPostId)
+  })
+
+  await t.test('Bild: nur JPG oder PNG (nach Magic Bytes wie bei Einblicken), sonst 400 ohne Datei-Rest', async () => {
+    const mediaFiles = () => fs.readdirSync(config.partnerMediaDir).sort()
+    const before = mediaFiles()
+    const rejected = [
+      [WEBP_BYTES, 'bild.webp', 'image/webp'],
+      [WEBP_BYTES, 'bild.png', 'image/png'],
+      [WEBP_BYTES, 'bild.jpg', 'image/jpeg'],
+      [PNG_BYTES, 'bild.webp', 'image/webp'],
+      [SVG_BYTES, 'bild.svg', 'image/svg+xml'],
+      [SVG_BYTES, 'bild.png', 'image/png']
+    ]
+    for (const [bytes, filename, mimeType] of rejected) {
+      const res = await uploadImage(school.cookie, firstPostId, bytes, filename, mimeType)
+      assert.equal(res.status, 400, `${filename} (${mimeType})`)
+      assert.equal(res.data.error, IMAGE_TYPE_MESSAGE)
+    }
+    assert.deepEqual(mediaFiles(), before, 'keine abgelehnte Datei bleibt liegen')
+    assert.equal(promotionRow(firstPostId).bild_file, path.basename(bildUrl))
+    assert.equal(promotionRow(firstPostId).freigabe, 'freigegeben', 'ein abgelehntes Bild lässt die Freigabe stehen')
+
+    const jpg = await uploadImage(school.cookie, firstPostId, JPG_BYTES, 'bild.jpg', 'image/jpeg')
+    assert.equal(jpg.status, 201)
+    assert.match(jpg.data.bildUrl, /^\/partner-media\/[0-9a-f-]{36}\.jpg$/)
+    assert.equal((await fetch(`${base}${bildUrl}`)).status, 404, 'das vorige Bild ist weg')
+    bildUrl = jpg.data.bildUrl
+    await approve(firstPostId)
+
+    // Der Admin darf weiterhin WebP hochladen
+    const adminWebp = await post('/api/admin/promotions', { bereich: 'futter', kennzeichnung: 'Anzeige', titel: 'Futterhof mit WebP' }, adminCookie)
+    const form = new FormData()
+    form.append('file', new Blob([WEBP_BYTES], { type: 'image/webp' }), 'bild.webp')
+    const res = await fetch(`${base}/api/admin/promotions/${adminWebp.data.id}/image`, { method: 'POST', headers: { Cookie: adminCookie }, body: form })
+    assert.equal(res.status, 201)
+    assert.match((await res.json()).bildUrl, /\.webp$/)
   })
 
   await t.test('Löschen entfernt Beitrag, Bild und Klicks', async () => {

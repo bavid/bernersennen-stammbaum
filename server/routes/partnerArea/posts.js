@@ -2,7 +2,7 @@ const express = require('express')
 const { denyDemoWrites } = require('../../middleware/auth')
 const { requireFreeDisk } = require('../../middleware/abuse')
 const { uploadLimiter } = require('../../lib/photoUpload')
-const { handlePromotionImageUpload } = require('../../lib/promotionImage')
+const { handlePromotionImageUpload, deletePromotion, PARTNER_IMAGE_TYPES } = require('../../lib/promotionImage')
 const {
   NOT_FOUND_MESSAGE,
   validatePartnerPost,
@@ -10,7 +10,6 @@ const {
   findOwnPost,
   insertPost,
   updatePost,
-  deletePost,
   ownPost
 } = require('../../lib/partnerPosts')
 
@@ -51,13 +50,15 @@ router.put('/:id', denyDemoWrites, (req, res, next) => {
   }
 })
 
-// Dieselbe Upload-Strecke wie beim Admin (lib/promotionImage.js); ein neues Bild reicht wieder ein.
-// Antwort: der ganze Beitrag (mit bildUrl und der zurückgesetzten Freigabe).
+// Dieselbe Upload-Strecke wie beim Admin (lib/promotionImage.js), aber nur JPG oder PNG (nur dort werden
+// Metadaten entfernt, wie bei den Einblicken); ein neues Bild reicht wieder ein. Antwort: der ganze Beitrag
+// (mit bildUrl und der zurückgesetzten Freigabe).
 router.post('/:id/image', denyDemoWrites, uploadLimiter, requireFreeDisk, (req, res, next) => {
   const post = findOwnPost(req.partner.id, req.params.id)
   if (!post) return res.status(404).json({ error: NOT_FOUND_MESSAGE })
   handlePromotionImageUpload(req, res, next, post.id, {
     resubmit: true,
+    types: PARTNER_IMAGE_TYPES,
     respond: () => res.status(201).json(ownPost(findOwnPost(req.partner.id, post.id)))
   })
 })
@@ -65,7 +66,7 @@ router.post('/:id/image', denyDemoWrites, uploadLimiter, requireFreeDisk, (req, 
 router.delete('/:id', denyDemoWrites, (req, res) => {
   const post = findOwnPost(req.partner.id, req.params.id)
   if (!post) return res.status(404).json({ error: NOT_FOUND_MESSAGE })
-  deletePost(post)
+  deletePromotion(post)
   res.status(204).end()
 })
 

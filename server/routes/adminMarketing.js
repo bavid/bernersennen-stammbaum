@@ -15,7 +15,7 @@ const {
   PROMOTION_CLICKS_COLUMNS_SQL,
   FREIGABE
 } = require('../lib/promotions')
-const { handlePromotionImageUpload, removePromotionImage } = require('../lib/promotionImage')
+const { handlePromotionImageUpload, deletePromotion } = require('../lib/promotionImage')
 const { asPartnerPostInput } = require('../lib/partnerPosts')
 
 // Phase 3 Task 1: Admin-Pflege für den Reiter "Entdecken" - Empfehlungen/Anzeigen (promotions),
@@ -119,12 +119,11 @@ router.put('/promotions/:id', requireAdmin, (req, res, next) => {
   }
 })
 
+// Löscht auch Bild und Klickzählung (lib/promotionImage.js deletePromotion) - wie bei den Beiträgen der Partner.
 router.delete('/promotions/:id', requireAdmin, (req, res) => {
-  const id = cleanId(req.params.id)
-  const existing = findPromotion(id)
+  const existing = findPromotion(cleanId(req.params.id))
   if (!existing) return res.status(404).json({ error: NOT_FOUND })
-  removePromotionImage(existing.bild_file)
-  db.prepare('DELETE FROM promotions WHERE id = ?').run(id)
+  deletePromotion(existing)
   res.status(204).end()
 })
 
