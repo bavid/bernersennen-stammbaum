@@ -385,3 +385,21 @@ a.litter-parent:hover {
   height: 1rem;
   color: var(--alpine);
 }
+
+/* Ohne Nachwuchs und Verpaarungen: nur eine leise Zeile als Weg zur ersten Verpaarung (OffspringSection). */
+.offspring-hint {
+  font-size: var(--text-sm);
+}
+
+.offspring-hint a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.offspring-hint svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}

@@ -85,7 +85,7 @@ export default {
       'Geschwister mit gleichen Eltern und gleichem Geburtstag: was sie gerade treiben und wie sie im gleichen Alter aussahen. Entsteht automatisch aus der Familienbande – eintragen muss man nichts.',
     littersEmpty:
       'Noch kein Nachwuchs: Sobald in der Familienbande Geschwister mit gleichen Eltern und gleichem Geburtstag stehen, erscheinen sie hier.',
-    littersSingles: 'Von ihren Geschwistern steht bisher niemand in der Familienbande.',
+    littersSingles: 'Diese Tiere haben bisher keine Geschwister in der Familienbande.',
     plannedDue: 'Der Nachwuchs müsste jetzt da sein – Zeit für neue Karten in der Familienbande!',
     breedingIntro: 'Für die, die Nachwuchs planen: Eine Verpaarung erscheint oben als erwarteter Nachwuchs und später bei den Jungtieren.',
     matingNotesPlaceholder: 'Anzahl Jungtiere, Besonderheiten, Ultraschall …'

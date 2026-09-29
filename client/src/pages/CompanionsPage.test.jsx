@@ -46,14 +46,14 @@ const dog = (id, name, extra = {}) => ({
   ...extra
 })
 
-async function render(dogs) {
+async function render(dogs, themeId = 'standard') {
   listDogs.mockResolvedValue(dogs)
   container = document.createElement('div')
   document.body.appendChild(container)
   await act(async () =>
     createRoot(container).render(
       <MemoryRouter>
-        <ThemeProvider themeId="standard">
+        <ThemeProvider themeId={themeId}>
           <CompanionsPage family={{ id: 1, name: 'Zuhause am See' }} />
         </ThemeProvider>
       </MemoryRouter>
@@ -63,6 +63,17 @@ async function render(dogs) {
   await act(async () => {})
   return container
 }
+
+// Phase U: der Weg zum Baum heißt wie im Auftritt - Berner wortgleich wie bisher.
+test.each([
+  ['standard', 'Die Familie pflegst du in der Familienbande.', 'Familienbande'],
+  ['berner', 'Das Rudel pflegst du im Stammbaum.', 'Stammbaum']
+])('Hinweis zum Baum im Auftritt %s', async (themeId, sentence, linkText) => {
+  await render([], themeId)
+  const hint = [...container.querySelectorAll('.hero-hint')].find((p) => p.querySelector('a[href="/stammbaum"]'))
+  expect(hint.textContent).toBe(sentence)
+  expect(hint.querySelector('a').textContent).toBe(linkText)
+})
 
 test('zeigt Kennzahlen für Tiere gesamt, aktuell lebende Tiere und Jahre gemeinsam', async () => {
   await render([

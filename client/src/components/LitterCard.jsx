@@ -3,7 +3,7 @@ import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { ageText, formatDateLong, relativeTime } from '../lib/dates.js'
-import { nextLitterBirthday } from '../lib/litters.js'
+import { YOUNG_STAGE_KEY, nextLitterBirthday } from '../lib/litters.js'
 import { displayName } from '../lib/timeline.js'
 
 const BIRTHDAY_SOON_DAYS = 30
@@ -93,7 +93,7 @@ export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOp
         <section className="litter-stages" aria-label="Fotos im gleichen Alter">
           {stages.map((stage) => (
             <div key={stage.key} className="litter-stage">
-              <h3 className="litter-stage-label">{stage.key === 'welpe' ? words.youngStage : stage.label}</h3>
+              <h3 className="litter-stage-label">{stage.key === YOUNG_STAGE_KEY ? words.youngStage : stage.label}</h3>
               <div className="litter-stage-photos">
                 {stage.photos.map((photo) => (
                   <figure key={photo.dog.id} className="litter-photo">

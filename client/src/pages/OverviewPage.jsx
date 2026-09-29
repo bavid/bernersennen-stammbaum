@@ -189,7 +189,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
       )}
 
       {/* Phase U: ohne eigenen Reiter (Standard-Auftritt) steht der Nachwuchs hier - nur, wenn es welchen gibt. */}
-      {dogs && dogs.length > 0 && !theme.littersInNav && <OffspringSection dogs={dogs} />}
+      {dogs && dogs.length > 0 && !theme.littersInNav && <OffspringSection dogs={dogs} canWrite={canWrite} />}
 
       <Modal open={settingsOpen} title={words.groupSettings} onClose={() => setSettingsOpen(false)}>
         <FamilySettings

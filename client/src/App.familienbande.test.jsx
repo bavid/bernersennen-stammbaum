@@ -103,6 +103,13 @@ describe('Familienbande und Nachwuchs in der App (Phase U)', () => {
     expect(activeNav()).toEqual(['Würfe'])
   })
 
+  test('Berner: /familienbande zeigt denselben Stammbaum, "Stammbaum" ist aktiv', async () => {
+    await render({ ...group, theme: 'berner' }, '/familienbande')
+
+    expect(container.querySelector('.page-hero .eyebrow').textContent).toBe('Stammbaum')
+    expect(activeNav()).toEqual(['Stammbaum'])
+  })
+
   test('Standard: die Kopfzeile nennt nirgends "Stammbaum" oder "Würfe"', async () => {
     await render(group, '/stammbaum')
     expect(container.querySelector('.app-header').textContent).not.toMatch(/Stammbaum|Würfe/)

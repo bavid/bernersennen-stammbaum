@@ -5,6 +5,7 @@ import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { formatDateLong } from '../lib/dates.js'
+import { isEditable } from '../lib/areas.js'
 import { buildLitters } from '../lib/litters.js'
 import { displayName, shortName } from '../lib/timeline.js'
 
@@ -55,17 +56,35 @@ function LitterSummary({ litter, words }) {
   )
 }
 
+// Eine Verpaarung trägt man mit einer eigenen Hündin ein (BreedingRecords, wie der Server) - ohne sie führt der
+// Hinweis unten ins Leere.
+function hasOwnFemaleDog(dogs) {
+  return (dogs || []).some((dog) => dog.geschlecht === 'huendin' && (dog.tierart || 'hund') === 'hund' && isEditable(dog))
+}
+
 // Abschnitt "Nachwuchs" auf der Familienbande (Phase U) - für Auftritte, die ihn nicht als eigenen Reiter führen
 // (theme.littersInNav false, OverviewPage). Erscheint nur, wenn es Geschwister (gleiche Eltern, gleicher
 // Geburtstag), erwarteten Nachwuchs oder eingetragene Verpaarungen gibt. dogs: die Tiere der Seite (listDogs).
-export default function OffspringSection({ dogs }) {
+// Ohne all das bleibt für Schreibende (canWrite) mit eigener Hündin nur eine leise Zeile als Weg zur ersten
+// Verpaarung - /wuerfe hat im Standard-Auftritt keinen Reiter.
+export default function OffspringSection({ dogs, canWrite = false }) {
   const { words } = useTheme()
   const events = useBreedingEvents()
   const { litters, planned } = useMemo(() => buildLitters(dogs || [], events || []), [dogs, events])
 
   if (events === null) return null
   const withSiblings = litters.filter((litter) => litter.puppies.length > 1)
-  if (withSiblings.length === 0 && planned.length === 0 && events.length === 0) return null
+  if (withSiblings.length === 0 && planned.length === 0 && events.length === 0) {
+    if (!canWrite || !hasOwnFemaleDog(dogs)) return null
+    return (
+      <p className="muted offspring-hint">
+        {words.littersLabel} geplant?{' '}
+        <Link to="/wuerfe">
+          {words.addMating} <Icon name="arrowRight" />
+        </Link>
+      </p>
+    )
+  }
   const hidden = withSiblings.length - MAX_LITTERS
 
   return (

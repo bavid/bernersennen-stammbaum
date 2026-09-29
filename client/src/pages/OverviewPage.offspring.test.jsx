@@ -63,7 +63,7 @@ afterEach(() => {
   document.title = ''
 })
 
-async function render({ themeId = 'standard', dogs = [...parents, ...siblings], events = [] } = {}) {
+async function render({ themeId = 'standard', dogs = [...parents, ...siblings], events = [], role = 'leitung' } = {}) {
   api.listDogs.mockResolvedValue(dogs)
   if (events instanceof Error) api.listBreedingEvents.mockRejectedValue(events)
   else api.listBreedingEvents.mockResolvedValue(events)
@@ -74,7 +74,7 @@ async function render({ themeId = 'standard', dogs = [...parents, ...siblings], 
     root.render(
       <MemoryRouter>
         <ThemeProvider themeId={themeId}>
-          <OverviewPage family={{ ...family, theme: themeId }} onFamilyChange={() => {}} onInvite={() => {}} />
+          <OverviewPage family={{ ...family, theme: themeId, role }} onFamilyChange={() => {}} onInvite={() => {}} />
         </ThemeProvider>
       </MemoryRouter>
     )
@@ -100,12 +100,55 @@ describe('Familienbande – Abschnitt "Nachwuchs" (Phase U, Standard-Auftritt)',
     expect(link.textContent).toContain('Nachwuchs ansehen')
   })
 
-  test('ohne Geschwister und ohne Verpaarungen: kein Abschnitt', async () => {
+  test('ohne Geschwister und ohne Verpaarungen: kein Abschnitt - nur eine leise Zeile zur ersten Verpaarung', async () => {
     await render({ dogs: parents })
 
     expect(api.listBreedingEvents).toHaveBeenCalled()
     expect(container.querySelector('[data-testid="pedigree-tree"]')).not.toBeNull()
     expect(section()).toBeNull()
+    const hint = container.querySelector('.offspring-hint')
+    expect(hint.textContent).toContain('Nachwuchs geplant?')
+    expect(hint.querySelector('a').getAttribute('href')).toBe('/wuerfe')
+    expect(hint.querySelector('a').textContent).toContain('Verpaarung eintragen')
+  })
+
+  test('die leise Zeile nur mit Schreibrecht und eigener Hündin', async () => {
+    await render({ dogs: parents, role: 'gast' })
+    expect(container.querySelector('.offspring-hint')).toBeNull()
+
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    const cats = [dog(1, 'Minka', { tierart: 'katze' }), dog(2, 'Kater Karlo', { tierart: 'katze', geschlecht: 'ruede' })]
+    await render({ dogs: cats })
+    expect(container.querySelector('.offspring-hint')).toBeNull()
+    expect(section()).toBeNull()
+  })
+
+  test('mehr als drei Geschwistergruppen: drei stehen da, dazu "… und N weitere."', async () => {
+    const groups = [2017, 2018, 2019, 2020, 2021].flatMap((year, index) => [
+      dog(10 + index * 2, `Erstes ${year}`, { mother_dog_id: 1, father_dog_id: 2, geburtsdatum: `${year}-05-01` }),
+      dog(11 + index * 2, `Zweites ${year}`, { mother_dog_id: 1, father_dog_id: 2, geburtsdatum: `${year}-05-01` })
+    ])
+    await render({ dogs: [...parents, ...groups] })
+
+    expect(section().querySelectorAll('.offspring-item')).toHaveLength(3)
+    expect(section().querySelector('.offspring-item-title').textContent).toContain('Nachwuchs vom 1. Mai 2021')
+    expect(section().textContent).toContain('… und 2 weitere.')
+  })
+
+  test('Erwartetes und Geschwister zusammen; genau eine Verpaarung heißt "1 Verpaarung eingetragen."', async () => {
+    await render({ events: [plannedEvent] })
+    expect(section().querySelector('.offspring-planned').textContent).toContain('Erwartet um den')
+    expect(section().querySelectorAll('.offspring-item')).toHaveLength(1)
+
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render({ dogs: parents, events: [{ ...plannedEvent, datum: '2018-01-10' }] })
+    expect(section().textContent).toContain('1 Verpaarung eingetragen.')
   })
 
   test('nur eine erwartete Verpaarung: Abschnitt mit "Erwartet"', async () => {

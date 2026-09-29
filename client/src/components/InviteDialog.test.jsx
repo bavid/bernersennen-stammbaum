@@ -61,13 +61,13 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-async function render(family, { isDemo = false } = {}) {
+async function render(family, { isDemo = false, themeId = 'standard' } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <ThemeProvider themeId="standard">
+      <ThemeProvider themeId={themeId}>
         <DemoProvider value={isDemo}>
           <InviteDialog family={family} />
         </DemoProvider>
@@ -76,6 +76,18 @@ async function render(family, { isDemo = false } = {}) {
   )
   return container
 }
+
+// Phase U: der Hinweis nennt den Baum wie der Auftritt - Berner-Text bleibt wortgleich.
+describe('InviteDialog – Adresse und Passwort: Name des Baums je Auftritt', () => {
+  test.each([
+    ['standard', 'Dann sieht sie eure Familienbande und kann mitschreiben.'],
+    ['berner', 'Dann sieht sie euren Stammbaum und kann mitschreiben.']
+  ])('%s', async (themeId, sentence) => {
+    myVouchers.mockResolvedValue([])
+    await render(rudel, { themeId })
+    expect(container.querySelector('.invite-legacy').textContent.replace(/\s+/g, ' ')).toContain(sentence)
+  })
+})
 
 describe('InviteDialog – eigene Gutscheine', () => {
   test('zeigt die Codes aus myVouchers() mit Status', async () => {

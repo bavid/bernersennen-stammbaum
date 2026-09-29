@@ -80,11 +80,15 @@ export function buildLitters(dogs, breedingEvents = [], today = todayIso()) {
   return { litters, planned, history }
 }
 
+// Schlüssel der jüngsten Altersstufe - LitterCard ersetzt deren Beschriftung durch das Wort des Auftritts
+// (words.youngStage, Phase U: Standard "Ganz klein").
+export const YOUNG_STAGE_KEY = 'welpe'
+
 // Altersstufe eines Datums, bezogen auf den Geburtstag (für "Fotos im gleichen Alter")
 export function ageBucket(birthDate, date) {
   const months = monthsBetween(birthDate, date)
   if (months < 0) return null
-  if (months < 4) return { key: 'welpe', label: 'Als Welpen', order: 0 }
+  if (months < 4) return { key: YOUNG_STAGE_KEY, label: 'Als Welpen', order: 0 }
   if (months < 9) return { key: 'halbjahr', label: 'Mit einem halben Jahr', order: 1 }
   if (months < 18) return { key: 'jahr-1', label: 'Mit einem Jahr', order: 2 }
   const years = Math.floor((months + 6) / 12)
