@@ -3,6 +3,7 @@ const { generateCode, normalizeCode, hashCode, encryptCode } = require('./codes'
 const { voucherQuota } = require('../config')
 const { transferDog } = require('./transfers')
 const { PARTNER_AREA_ARTS } = require('./context')
+const { isRole, DEFAULT_ROLE } = require('./roles')
 
 const CODE_HINT_LENGTH = 4
 const MAX_COLLISION_RETRIES = 5 // 60 Bit Zufall - eine Kollision ist praktisch ausgeschlossen
@@ -24,6 +25,11 @@ const MAX_BATCH_SIZE = 200
 // und seinen Bereich selbst einrichten (siehe lib/partnerAccess.js).
 const ZWECK = { chronik: 'chronik', partnerzugang: 'partnerzugang' }
 const ZWECK_VALUES = Object.values(ZWECK)
+
+// Phase R Task 3: Stapel-Art der Schein-Einladung der Demo-Familie (lib/demoMembers.js). Ein Gutschein aus
+// so einem Stapel gilt in /check als unbekannt und lässt sich nie einlösen (assertVoucherOpen) - er ist nur
+// da, damit die Mitglieder-Seite der Demo eine offene Einladung mit Rolle zeigen kann.
+const DEMO_BATCH_KIND = 'demo'
 const PARTNER_ACCESS_NO_CHRONIK_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang – er legt keine Chronik an'
 const PARTNER_ACCESS_CLAIM_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang – bitte über „Gutschein einlösen“ einrichten.'
 
@@ -140,6 +146,8 @@ function assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId }) {
 // /:id/handover) - nur für size=1 sinnvoll, aber hier nicht extra geprüft (der Aufrufer entscheidet).
 // zweck/partnerTyp (Phase P Task 2): siehe ZWECK; partnerTyp ist die optionale Typ-Vorgabe eines
 // Partner-Zugangs, partnerId bindet einen Partner-Zugang an einen bestehenden Partner.
+// joinRolle (Phase R Task 2): Rolle, die eine Einladung (joinFamilyId) beim Einlösen vergibt - null heißt
+// 'mitglied'. Eine unbekannte Rolle ist ein Programmierfehler (die Routen prüfen Nutzereingaben vorher).
 function createBatch(
   db,
   {
@@ -148,6 +156,7 @@ function createBatch(
     size,
     issuedByFamilyId = null,
     joinFamilyId = null,
+    joinRolle = null,
     partnerId = null,
     expiresAt = null,
     dogId = null,
@@ -156,6 +165,7 @@ function createBatch(
   }
 ) {
   assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId })
+  if (joinRolle !== null && !isRole(joinRolle)) throw new Error(`Unbekannte Einladungs-Rolle: ${joinRolle}`)
   const sqliteExpiresAt = toSqliteDatetime(expiresAt)
   return db.transaction(() => {
     const batchId = db
@@ -163,8 +173,8 @@ function createBatch(
       .run(label, kind, partnerId, size, zweck, partnerTyp).lastInsertRowid
 
     const insertVoucher = db.prepare(
-      `INSERT INTO vouchers (batch_id, code_hash, code_cipher, code_hint, partner_id, issued_by_family_id, join_family_id, expires_at, dog_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO vouchers (batch_id, code_hash, code_cipher, code_hint, partner_id, issued_by_family_id, join_family_id, join_rolle, expires_at, dog_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
 
     const codes = []
@@ -180,6 +190,7 @@ function createBatch(
             partnerId,
             issuedByFamilyId,
             joinFamilyId,
+            joinRolle,
             sqliteExpiresAt,
             dogId
           )
@@ -203,6 +214,24 @@ function revokeOpenHandoverVouchers(db, dogId) {
     `UPDATE vouchers SET revoked_at = datetime('now'), code_cipher = NULL
      WHERE dog_id = ? AND redeemed_at IS NULL AND revoked_at IS NULL`
   ).run(dogId)
+}
+
+// Phase R Task 2: Einladungen einer Familie (join_family_id) zurückziehen - eine bestimmte (voucherId, routes/
+// members.js DELETE /einladungen/:voucherId) oder alle noch offenen (ohne voucherId, beim Auflösen). Zählt
+// auch abgelaufene, aber noch nicht widerrufene mit (schadet nicht, räumt auf). Gibt die Anzahl zurück.
+function revokeOpenInvites(db, familyId, voucherId = null) {
+  return db
+    .prepare(
+      `UPDATE vouchers SET revoked_at = datetime('now'), code_cipher = NULL
+       WHERE join_family_id = @familyId AND dog_id IS NULL AND redeemed_at IS NULL AND revoked_at IS NULL
+         AND (@voucherId IS NULL OR id = @voucherId)`
+    )
+    .run({ familyId, voucherId }).changes
+}
+
+// Rolle, die eine Einladung vergibt: join_rolle, sonst (NULL oder ein unbekannter Wert) 'mitglied'.
+function inviteRoleOf(row) {
+  return isRole(row.join_rolle) ? row.join_rolle : DEFAULT_ROLE
 }
 
 // Eingaben für einen Admin-Gutschein-Stapel (POST /admin/voucher-batches): Bezeichnung Pflicht
@@ -258,20 +287,25 @@ function validateRedeemInput({ name, username, password, email }) {
   return { trimmedName, ...validateLoginInput({ username, password, email }) }
 }
 
-// Gutschein samt Zweck/Typ-Vorgabe seines Stapels - für /check, /redeem und /claim.
+// Gutschein samt Zweck/Typ-Vorgabe/Art seines Stapels - für /check, /redeem und /claim.
 function findVoucherByHash(db, codeHash) {
   return db
     .prepare(
-      `SELECT v.id, v.join_family_id, v.partner_id, v.dog_id, v.issued_by_family_id, v.redeemed_at, v.revoked_at,
-         v.expires_at, b.zweck, b.partner_typ
+      `SELECT v.id, v.join_family_id, v.join_rolle, v.partner_id, v.dog_id, v.issued_by_family_id, v.redeemed_at, v.revoked_at,
+         v.expires_at, b.zweck, b.partner_typ, b.kind
        FROM vouchers v JOIN voucher_batches b ON b.id = v.batch_id WHERE v.code_hash = ?`
     )
     .get(codeHash)
 }
 
-// 404/410 für unbekannte, zurückgezogene, schon eingelöste oder abgelaufene Gutscheine.
+// Die Schein-Einladung der Demo (DEMO_BATCH_KIND) ist nach außen ein unbekannter Gutschein.
+function isDemoVoucher(voucher) {
+  return voucher?.kind === DEMO_BATCH_KIND
+}
+
+// 404/410 für unbekannte (auch Demo-), zurückgezogene, schon eingelöste oder abgelaufene Gutscheine.
 function assertVoucherOpen(voucher) {
-  if (!voucher) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+  if (!voucher || isDemoVoucher(voucher)) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
   if (voucher.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
   if (voucher.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
   if (voucher.expires_at && voucher.expires_at <= isoNow()) throw httpError(410, 'Dieser Gutschein ist abgelaufen')
@@ -366,12 +400,15 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
       }
     }
 
+    // Phase R Task 2: die Einladung bringt ihre Rolle mit (join_rolle, gesetzt über routes/vouchers.js
+    // PUT /:id/rolle) - ohne Angabe wird das neue Zuhause 'mitglied'.
     if (voucher.join_family_id) {
       const joinable = db.prepare("SELECT 1 FROM families WHERE id = ? AND art = 'rudel' AND is_demo = 0").get(voucher.join_family_id)
       if (joinable) {
-        db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id) VALUES (?, ?)').run(
+        db.prepare('INSERT OR IGNORE INTO family_members (member_family_id, group_family_id, rolle) VALUES (?, ?, ?)').run(
           newFamilyId,
-          voucher.join_family_id
+          voucher.join_family_id,
+          inviteRoleOf(voucher)
         )
       }
     }
@@ -478,6 +515,10 @@ function ensureVoucherQuota(db, area) {
 module.exports = {
   createBatch,
   revokeOpenHandoverVouchers,
+  revokeOpenInvites,
+  inviteRoleOf,
+  isDemoVoucher,
+  DEMO_BATCH_KIND,
   voucherStatus,
   redeemVoucher,
   claimVoucher,

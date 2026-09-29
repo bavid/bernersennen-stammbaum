@@ -4,9 +4,20 @@ const { codeLimiter, rejectHoneypot } = require('../middleware/abuse')
 const { requireAuth, setSessionCookie } = require('../middleware/auth')
 const { ART, buildMe } = require('../lib/context')
 const { normalizeCode, hashCode, formatCode, decryptCode } = require('../lib/codes')
-const { voucherStatus, redeemVoucher, claimVoucher, ensureVoucherQuota, findVoucherByHash, ZWECK, DEMO_VOUCHERS } = require('../lib/vouchers')
+const { cleanId } = require('../lib/validate')
+const {
+  voucherStatus,
+  redeemVoucher,
+  claimVoucher,
+  ensureVoucherQuota,
+  findVoucherByHash,
+  inviteRoleOf,
+  isDemoVoucher,
+  ZWECK,
+  DEMO_VOUCHERS
+} = require('../lib/vouchers')
 const { isPartnerAccessCode, partnerAccessCheckInfo, redeemPartnerAccess } = require('../lib/partnerAccess')
-const { requireRole } = require('../lib/roles')
+const { requireRole, roleOf, isRole, mayInviteAs, FORBIDDEN_MESSAGE } = require('../lib/roles')
 
 const router = express.Router()
 
@@ -28,7 +39,8 @@ router.post('/check', codeLimiter, (req, res) => {
   const normalized = normalizeCode(req.body?.code)
   if (!normalized) return res.json({ status: 'unbekannt' })
   const voucher = findVoucherByHash(db, hashCode(normalized))
-  if (!voucher) return res.json({ status: 'unbekannt' })
+  // Die Schein-Einladung der Demo (Phase R Task 3) ist nach außen unbekannt, wie in assertVoucherOpen.
+  if (!voucher || isDemoVoucher(voucher)) return res.json({ status: 'unbekannt' })
 
   const status = voucherStatus(voucher)
   if (status !== 'offen') return res.json({ status })
@@ -96,9 +108,11 @@ router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
   // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
   // Einladungen - sie gehören nicht in diese Liste (sonst könnte man einen Übergabe-Code hier als
   // normalen Einladungs-Code verwenden/weitergeben).
+  // rolle (Phase R Task 2): welche Rolle eine Einladung beim Einlösen vergibt (nur bei joins: true, sonst
+  // null) - änderbar über PUT /:id/rolle unten, solange der Gutschein offen ist.
   const rows = db
     .prepare(
-      `SELECT id, code_cipher, code_hint, redeemed_at, revoked_at, expires_at, join_family_id, created_at
+      `SELECT id, code_cipher, code_hint, redeemed_at, revoked_at, expires_at, join_family_id, join_rolle, created_at
        FROM vouchers WHERE issued_by_family_id = ? AND dog_id IS NULL ORDER BY created_at DESC, id DESC`
     )
     .all(area.id)
@@ -112,11 +126,38 @@ router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
         hint: row.code_hint,
         status,
         joins: Boolean(row.join_family_id),
+        rolle: row.join_family_id ? inviteRoleOf(row) : null,
         redeemed_at: row.redeemed_at,
         created_at: row.created_at
       }
     })
   )
+})
+
+// Einladungen mit Rolle (Phase R Task 2). Gewählter Ansatz: Einladungs-Gutscheine einer Familie entstehen
+// weiterhin vorgeprägt über das Kontingent (ensureVoucherQuota in GET /mine, join_rolle NULL = 'mitglied') -
+// es gibt keinen eigenen "Einladung anlegen"-Endpunkt. Die Rolle setzt man deshalb NACHTRÄGLICH an einem
+// noch offenen Gutschein, bevor man den Code weitergibt: die Leitung jede Rolle, die Stellvertretung nur gast
+// und mitglied (lib/roles.js mayInviteAs; alles andere 403). Gilt für jede offene Einladung IN diese Familie
+// (join_family_id = aktiver Bereich, auch eine vom Admin für die Familie angelegte), nie für Übergabe-
+// Gutscheine (dog_id) und nie für Gutscheine anderer Bereiche (404). Außerhalb einer Familie gibt es keine
+// Einladungen mit join_family_id, also immer 404. Im Demo-Modus sperrt requireAuth jedes Schreiben.
+router.put('/:id/rolle', requireAuth, requireRole('stellvertretung'), (req, res) => {
+  const id = cleanId(req.params.id)
+  const { rolle } = req.body || {}
+  if (!isRole(rolle)) return res.status(400).json({ error: 'Unbekannte Rolle' })
+  if (!mayInviteAs(roleOf(req.homeId, req.familyId), rolle)) return res.status(403).json({ error: FORBIDDEN_MESSAGE })
+
+  const result = id
+    ? db
+        .prepare(
+          `UPDATE vouchers SET join_rolle = ? WHERE id = ? AND join_family_id = ? AND dog_id IS NULL
+             AND redeemed_at IS NULL AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > datetime('now'))`
+        )
+        .run(rolle, id, req.familyId)
+    : { changes: 0 }
+  if (!result.changes) return res.status(404).json({ error: 'Diese Einladung gibt es nicht' })
+  res.json({ id, rolle })
 })
 
 module.exports = router

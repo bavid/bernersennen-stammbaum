@@ -4,13 +4,14 @@ const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { ART, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
-const { requireRole } = require('../lib/roles')
+const { requireRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
+const { authorContext, withAuthorFlags, mayDeleteInArea } = require('../lib/authorship')
 
 const router = express.Router()
 
 // Phase R Task 1 (lib/roles.js): Einträge schreiben, ändern und löschen braucht in einer Familie
-// mindestens 'mitglied'; kommentieren (und eigene bzw. im Bereich geschriebene Kommentare löschen) darf
-// schon ein 'gast'. Kommentare anderer zu moderieren (Stellvertretung) folgt in Task 2.
+// mindestens 'mitglied'; kommentieren darf schon ein 'gast'. Kommentare löschen (Phase R Task 2,
+// lib/authorship.js): in einer Familie die Autorin selbst oder ab Stellvertretung (Moderation).
 const canWrite = requireRole('mitglied')
 const canComment = requireRole('gast')
 
@@ -36,20 +37,29 @@ function toEntry(row, comments = []) {
 // Kommentare aller im Bereich sichtbaren Einträge in einer Abfrage statt einer pro Eintrag.
 // Zeigt nur Kommentare, die im jeweiligen Bereich sichtbar sind (VISIBLE_COMMENT_SQL):
 // der Eintrag-Eigentümer sieht alle, andere Bereiche nur ihre eigenen plus die des Eigentümers.
-function commentsByEntry(familyId, dogId) {
+// Jeder Kommentar trägt vonMir/ehemalig (Phase R Task 2, lib/authorship.js); author_family_id bleibt innen.
+function commentsByEntry(req, dogId) {
+  const ctx = authorContext(req)
   const rows = db
     .prepare(
       `SELECT c.* FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
        WHERE ${VISIBLE_ENTRY_SQL} AND (@dogId IS NULL OR t.dog_id = @dogId) AND ${VISIBLE_COMMENT_SQL}
        ORDER BY c.created_at, c.id`
     )
-    .all({ familyId, dogId })
+    .all({ familyId: req.familyId, dogId })
   const grouped = new Map()
-  for (const row of rows) grouped.set(row.entry_id, [...(grouped.get(row.entry_id) || []), row])
+  for (const row of rows) grouped.set(row.entry_id, [...(grouped.get(row.entry_id) || []), withAuthorFlags(row, ctx)])
   return grouped
 }
 
-const commentsOf = (entryId) => db.prepare('SELECT * FROM entry_comments WHERE entry_id = ? ORDER BY created_at, id').all(entryId)
+// Alle Kommentare eines eigenen Eintrags (Antwort von PUT /:id - der Eigentümer sieht alle).
+function commentsOf(req, entryId) {
+  const ctx = authorContext(req)
+  return db
+    .prepare('SELECT * FROM entry_comments WHERE entry_id = ? ORDER BY created_at, id')
+    .all(entryId)
+    .map((row) => withAuthorFlags(row, ctx))
+}
 
 // herkunft_name (security-review Phase T Finding 14): der öffentlich zumutbare Name der Herkunfts-
 // Familie eines migrierten Eintrags (siehe lib/transfers.js herkunft_family_id) - der admin-gepflegte
@@ -178,7 +188,7 @@ router.get('/', requireAuth, (req, res) => {
        ORDER BY t.datum, t.id`
     )
     .all({ familyId: req.familyId, dogId })
-  const comments = commentsByEntry(req.familyId, dogId)
+  const comments = commentsByEntry(req, dogId)
   res.json(rows.map((row) => toEntry(row, comments.get(row.id))))
 })
 
@@ -228,7 +238,7 @@ router.put('/:id', requireAuth, canWrite, (req, res) => {
   ).run({ ...values, id: existing.id })
 
   const entry = findEntryById.get(existing.id)
-  res.json(toEntry(entry, commentsOf(entry.id)))
+  res.json(toEntry(entry, commentsOf(req, entry.id)))
 })
 
 const deleteEntry = db.transaction((entryId) => {
@@ -254,13 +264,17 @@ router.post('/:id/comments', requireAuth, canComment, (req, res) => {
   const text = cleanText(body.text, MAX_COMMENT_LENGTH)
   if (!autorName || !text) return res.status(400).json({ error: 'Name und Kommentar sind erforderlich' })
 
+  // author_family_id (Phase R Task 2): die schreibende Identität, nicht der Bereich (lib/authorship.js)
   const result = db
-    .prepare('INSERT INTO entry_comments (entry_id, family_id, autor_name, text) VALUES (?, ?, ?, ?)')
-    .run(entry.id, req.familyId, autorName, text)
-  res.status(201).json(db.prepare('SELECT * FROM entry_comments WHERE id = ?').get(result.lastInsertRowid))
+    .prepare('INSERT INTO entry_comments (entry_id, family_id, author_family_id, autor_name, text) VALUES (?, ?, ?, ?, ?)')
+    .run(entry.id, req.familyId, req.homeId, autorName, text)
+  const comment = db.prepare('SELECT * FROM entry_comments WHERE id = ?').get(result.lastInsertRowid)
+  res.status(201).json(withAuthorFlags(comment, authorContext(req)))
 })
 
-// Löschen darf, wer den Kommentar geschrieben hat, oder wem der Eintrag gehört (Moderation)
+// Löschen darf, wessen Bereich den Kommentar geschrieben hat, oder wem der Eintrag gehört (Moderation) -
+// in einer Familie zusätzlich nur die Autorin selbst oder ab Stellvertretung (Phase R Task 2,
+// lib/authorship.js mayDeleteInArea), sonst 403.
 router.delete('/:id/comments/:commentId', requireAuth, canComment, (req, res) => {
   const comment = db
     .prepare('SELECT * FROM entry_comments WHERE id = ? AND entry_id = ?')
@@ -270,6 +284,7 @@ router.delete('/:id/comments/:commentId', requireAuth, canComment, (req, res) =>
   if (!canDelete) {
     return res.status(404).json({ error: 'Kommentar nicht gefunden' })
   }
+  if (!mayDeleteInArea(comment, authorContext(req))) return res.status(403).json({ error: FORBIDDEN_MESSAGE })
   db.prepare('DELETE FROM entry_comments WHERE id = ?').run(comment.id)
   res.status(204).end()
 })

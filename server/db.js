@@ -2,6 +2,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const Database = require('better-sqlite3')
 const { dbPath } = require('./config')
+const { ensureLeitung } = require('./lib/ensureLeitung')
 
 fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 const db = new Database(dbPath)
@@ -207,26 +208,23 @@ db.exec(`
 // geprüft im Code (lib/roles.js ROLES; ein unbekannter Wert zählt dort als "keine Berechtigung").
 // Wer mit dem gemeinsamen Schlüssel der Familie angemeldet ist (homeId === familyId), hat keine Zeile
 // hier und gilt trotzdem als Leitung (lib/roles.js roleOf).
-// Jede Familie mit Mitgliedern, aber ohne Leitung, bekommt ihr ältestes Mitglied (created_at, bei
-// Gleichstand die kleinste member_family_id) als Leitung. Spalte und Nachtrag laufen als EINE Transaktion
-// und bei jedem Start: idempotent, denn danach hat jede Familie mit Mitgliedern eine Leitung - ein
-// zweiter Lauf findet nichts mehr. Je Familie trifft die Bedingung genau eine Zeile (das älteste Mitglied
-// ist über created_at + member_family_id eindeutig), also nie zwei Leitungen auf einmal.
-const PROMOTE_OLDEST_MEMBER_SQL = `
-  UPDATE family_members SET rolle = 'leitung'
-  WHERE group_family_id IN (SELECT id FROM families WHERE art = 'rudel')
-    AND NOT EXISTS (
-      SELECT 1 FROM family_members l WHERE l.group_family_id = family_members.group_family_id AND l.rolle = 'leitung'
-    )
-    AND member_family_id = (
-      SELECT o.member_family_id FROM family_members o WHERE o.group_family_id = family_members.group_family_id
-      ORDER BY o.created_at, o.member_family_id LIMIT 1
-    )
-`
+// Jede Familie mit Mitgliedern, aber ohne Leitung, bekommt ihr ältestes Mitglied als Leitung
+// (lib/ensureLeitung.js - dieselbe Regel greift in Task 2 nach dem Löschen eines Leitungs-Haushalts).
+// Spalte und Nachtrag laufen als EINE Transaktion und bei jedem Start: idempotent, denn danach hat jede
+// Familie mit Mitgliedern eine Leitung - ein zweiter Lauf findet nichts mehr.
 db.transaction(() => {
   addColumnIfMissing('family_members', 'rolle', "TEXT NOT NULL DEFAULT 'mitglied'")
-  db.exec(PROMOTE_OLDEST_MEMBER_SQL)
+  ensureLeitung(db)
 })()
+
+// Phase R Task 2: wer einen Kommentar bzw. eine Pinnwand-Antwort geschrieben hat - die Identität
+// (req.homeId, ein Zuhause oder die Familie selbst bei einem Login mit dem gemeinsamen Schlüssel).
+// family_id bleibt weiterhin der Bereich, in dem der Beitrag steht (Sichtbarkeit, VISIBLE_COMMENT_SQL).
+// NULL bei Altbestand (vor Phase R geschrieben) - den darf in einer Familie nur noch die Stellvertretung
+// oder Leitung löschen (lib/authorship.js). Bewusst ohne REFERENCES: ein Beitrag bleibt lesbar, auch wenn
+// der Haushalt längst gelöscht ist (er zeigt dann "ehemaliges Mitglied").
+addColumnIfMissing('entry_comments', 'author_family_id', 'INTEGER')
+addColumnIfMissing('note_replies', 'author_family_id', 'INTEGER')
 
 // Bestehende Rudel behalten ihren Berner-Auftritt, neue Familien starten mit „Familie auf Pfoten".
 // Spalte anlegen und Bestandsdaten umstellen als eine Transaktion, damit ein Absturz dazwischen
@@ -399,6 +397,10 @@ db.exec(`
 
 addColumnIfMissing('dog_shares', 'story_consent', 'INTEGER NOT NULL DEFAULT 0')
 addColumnIfMissing('vouchers', 'dog_id', 'INTEGER')
+// Phase R Task 2: Rolle, die ein Einladungs-Gutschein (join_family_id gesetzt) beim Einlösen vergibt -
+// NULL heißt 'mitglied' (lib/vouchers.js redeemVoucher). Bewusst ohne CHECK wie family_members.rolle,
+// geprüft im Code (lib/roles.js isRole; ein unbekannter Wert fällt beim Einlösen auf 'mitglied' zurück).
+addColumnIfMissing('vouchers', 'join_rolle', 'TEXT')
 // security-review Phase T: Übergabe-Gutscheine werden je Tier nachgeschlagen (revokeOpenHandoverVouchers,
 // die Gültigkeitsprüfung in redeem/claim) - ohne Index ein Full-Table-Scan über vouchers.
 db.exec('CREATE INDEX IF NOT EXISTS idx_vouchers_dog ON vouchers(dog_id)')

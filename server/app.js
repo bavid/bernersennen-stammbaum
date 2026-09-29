@@ -17,6 +17,7 @@ const adminRoutes = require('./routes/admin')
 const adminMarketingRoutes = require('./routes/adminMarketing')
 const adminStatsRoutes = require('./routes/adminStats')
 const vouchersRoutes = require('./routes/vouchers')
+const membersRoutes = require('./routes/members')
 const messagesRoutes = require('./routes/messages')
 const partnersRoutes = require('./routes/partners')
 const publicAnimalsRoutes = require('./routes/publicAnimals')
@@ -143,6 +144,9 @@ function createApp() {
 
   app.use('/api', apiLimiter)
   app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding'], limitWrites)
+  // Phase R Task 2: /api/family/members VOR authRoutes (dort liegen /family und /family/key) - Express
+  // matcht Router-Pfade zwar exakt, so bleibt die Reihenfolge aber unabhängig von künftigen Routen dort.
+  app.use('/api/family/members', membersRoutes)
   app.use('/api', authRoutes)
   app.use('/api/vouchers', vouchersRoutes)
   app.use('/api/dogs', dogsRoutes)

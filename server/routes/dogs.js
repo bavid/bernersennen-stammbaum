@@ -16,9 +16,12 @@ const { VERMITTLUNG_STATUS, PUBLISHABLE_STATUS, statusInSql } = require('../lib/
 const router = express.Router()
 
 // Phase R Task 1: jeder Schreibweg an Tieren des aktiven Bereichs (anlegen, pflegen, Mitbewohner,
-// Stammbaum über mother/father, löschen) braucht in einer Familie mindestens 'mitglied' (lib/roles.js).
-// Im eigenen Bereich (Zuhause, Tierheim) ist man immer Leitung - dort ändert sich nichts.
+// Stammbaum über mother/father) braucht in einer Familie mindestens 'mitglied' (lib/roles.js). Löschen
+// eines Tiers der Familie (Phase R Task 2) erst ab 'stellvertretung' - ein Mitglied könnte sonst die
+// Chronik eines Tiers löschen, das die ganze Familie pflegt. Im eigenen Bereich (Zuhause, Tierheim) ist man
+// immer Leitung - dort ändert sich nichts.
 const canWrite = requireRole('mitglied')
+const canDelete = requireRole('stellvertretung')
 
 const SEXES = ['ruede', 'huendin']
 const SPECIES = ['hund', 'katze', 'anderes']
@@ -692,7 +695,7 @@ const deleteDog = db.transaction((dog) => {
   db.prepare('DELETE FROM dogs WHERE id = ?').run(dog.id)
 })
 
-router.delete('/:id', requireAuth, canWrite, (req, res) => {
+router.delete('/:id', requireAuth, canDelete, (req, res) => {
   const dog = loadOwnDog(req, res)
   if (!dog) return
   deleteDog(dog)

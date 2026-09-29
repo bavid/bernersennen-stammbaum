@@ -7,10 +7,11 @@ const { requireAuth, requireSession, setSessionCookie, clearSessionCookie, refre
 const { codeLimiter, authLimiter } = require('../middleware/abuse')
 const { cleanId } = require('../lib/validate')
 const { isTheme } = require('../lib/themes')
-const { ART, canEnter, buildMe } = require('../lib/context')
-const { requireRole } = require('../lib/roles')
+const { ART, canEnter, buildMe, removeMembership } = require('../lib/context')
+const { requireRole, isLastLeitung } = require('../lib/roles')
 const { generateCode, normalizeCode, hashCode, formatCode } = require('../lib/codes')
 const { validatePassword, validateUsername, validateEmail } = require('../lib/vouchers')
+const { verifyCurrentCredential, REAUTH_ERROR } = require('../lib/currentCredential')
 const { SLUG_MAX_LENGTH } = require('../lib/partners')
 const { findDemoPartnerArea } = require('../lib/partnerAreas')
 const { DEFAULT_DEMO_PARTNER_SLUG } = require('../seed/demo-partner-area')
@@ -22,7 +23,7 @@ const MAX_NAME_LENGTH = 80
 const BCRYPT_ROUNDS = 10
 const USER_LOGIN_ERROR = 'Benutzername oder Passwort falsch'
 const RECOVER_MISMATCH = 'Schlüssel oder Benutzername stimmen nicht'
-const REAUTH_ERROR = 'Bitte bestätige mit deinem aktuellen Schlüssel bzw. Passwort.'
+const LAST_LEITUNG_LEAVE_MESSAGE = 'Übergib zuerst die Leitung oder löse die Familie auf.'
 
 // M1: fester Vergleichs-Hash, einmal beim Modul-Laden erzeugt (gleiche Kosten wie echte Passwort-Hashes).
 // Ohne unbekannten Benutzernamen läuft sonst kein bcrypt.compare, was einen Timing-Unterschied zwischen
@@ -40,40 +41,9 @@ async function findUserByCredentials(username, password) {
   return valid && user ? user : null
 }
 
-// Nachweis mit einem AKTUELLEN Berechtigungsnachweis für sensible Aktionen (Schlüssel erneuern,
-// Benutzer anlegen/löschen): eine bloße Sitzung darf dafür nicht genügen (Session-Übernahme z. B. über
-// ein unbeaufsichtigtes Gerät oder XSS). Zwei Felder, der Server entscheidet anhand der Sitzungsart,
-// gegen welchen Hash geprüft wird: { currentKey } für eine Schlüssel-Sitzung (Identität hat schon einen
-// access_key_hash); { currentPassword } sowohl für eine Benutzer-Sitzung (req.userId gesetzt - geprüft
-// gegen DEREN EIGENEN password_hash) als auch für eine Alt-Familie ohne Schlüssel (access_key_hash NULL,
-// legacy_password = 1 - geprüft gegen families.password_hash). So bleibt { password } in POST /users
-// ausschließlich das Passwort des NEU angelegten Benutzers, ohne Kollision mit dem Nachweis-Feld.
-async function verifyCurrentCredential(req) {
-  const body = req.body || {}
-
-  if (req.userId) {
-    if (typeof body.currentPassword !== 'string' || !body.currentPassword) return false
-    const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.userId)
-    if (!user) return false
-    return bcrypt.compare(body.currentPassword, user.password_hash)
-  }
-
-  const family = db.prepare('SELECT access_key_hash, legacy_password, password_hash FROM families WHERE id = ?').get(req.homeId)
-  if (!family) return false
-
-  if (family.access_key_hash) {
-    const normalized = typeof body.currentKey === 'string' ? normalizeCode(body.currentKey) : null
-    if (!normalized) return false
-    return hashCode(normalized) === family.access_key_hash
-  }
-
-  if (family.legacy_password) {
-    if (typeof body.currentPassword !== 'string' || !body.currentPassword) return false
-    return bcrypt.compare(body.currentPassword, family.password_hash)
-  }
-
-  return false
-}
+// Der aktuelle Berechtigungsnachweis für sensible Aktionen (Schlüssel erneuern, Benutzer anlegen/löschen)
+// liegt seit Phase R Task 2 in lib/currentCredential.js (verifyCurrentCredential, REAUTH_ERROR) - auch
+// routes/members.js POST /key (Schlüssel der Familie durch ein Leitungs-Mitglied) braucht ihn.
 
 // onlyJoinable: für /families/join – nur echte Rudel, keine Demo (kein Zuhause anderer, keine Demo-Familie)
 // legacy_password = 1 immer Pflicht: Gutschein-Zuhause haben password_hash = '!' (Schlüssel statt
@@ -307,27 +277,16 @@ router.post('/families/group', authLimiter, requireAuth, async (req, res, next) 
   }
 })
 
-// Mitgliedschaft und die eigenen Freigaben in dieses Rudel gemeinsam entfernen: ein Absturz
-// dazwischen darf keine verwaisten dog_shares hinterlassen, die auf eine tote Mitgliedschaft zeigen.
-const leaveGroup = db.transaction((homeId, groupId) => {
-  const result = db
-    .prepare('DELETE FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
-    .run(homeId, groupId)
-  if (result.changes > 0) {
-    db.prepare('DELETE FROM dog_shares WHERE family_id = ? AND dog_id IN (SELECT id FROM dogs WHERE family_id = ?)').run(
-      groupId,
-      homeId
-    )
-  }
-  return result.changes
-})
-
-// Mitgliedschaft in einem Rudel beenden. War es gerade der aktive Bereich, geht es zurück nach Hause.
+// Mitgliedschaft in einem Rudel beenden (lib/context.js removeMembership: Mitgliedschaft und eigene
+// Freigaben zusammen). War es gerade der aktive Bereich, geht es zurück nach Hause. Phase R Task 2: die
+// einzige Leitung kann nicht einfach gehen - erst übergeben (routes/members.js POST /leitung/:homeId)
+// oder die Familie auflösen (POST /aufloesen), sonst bliebe eine Familie ohne Leitung zurück.
 router.delete('/memberships/:groupId', requireAuth, (req, res) => {
   const groupId = cleanId(req.params.groupId)
   if (!groupId) return res.status(404).json({ error: 'Diese Mitgliedschaft gibt es nicht' })
+  if (isLastLeitung(req.homeId, groupId)) return res.status(409).json({ error: LAST_LEITUNG_LEAVE_MESSAGE })
 
-  const changes = leaveGroup(req.homeId, groupId)
+  const changes = removeMembership(req.homeId, groupId)
   if (changes === 0) {
     return res.status(404).json({ error: 'Diese Mitgliedschaft gibt es nicht' })
   }
@@ -356,7 +315,8 @@ function requireOwnIdentity(req, res) {
 // (z. B. ein Benutzer-Login ohne Kenntnis des Schlüssels) die ganze Identität an sich reißen, indem sie
 // einfach einen neuen Schlüssel erzeugt und damit jede andere Sitzung aussperrt.
 // requireRole('leitung') (Phase R Task 1) vor requireOwnIdentity: in einer Familie bekommt jede andere
-// Rolle 403; die Leitung selbst erneuert weiterhin nur den Schlüssel ihres eigenen Bereichs.
+// Rolle 403; die Leitung selbst erneuert hier weiterhin nur den Schlüssel ihres eigenen Bereichs - den
+// gemeinsamen Schlüssel der Familie erneuert ein Leitungs-Mitglied über routes/members.js POST /key.
 router.post('/family/key', authLimiter, requireAuth, requireRole('leitung'), async (req, res, next) => {
   try {
     if (!requireOwnIdentity(req, res)) return

@@ -2,12 +2,14 @@ const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText } = require('../lib/validate')
-const { requireRole } = require('../lib/roles')
+const { requireRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
+const { authorContext, withAuthorFlags, mayDeleteInArea } = require('../lib/authorship')
 
 const router = express.Router()
 
 // Phase R Task 1 (lib/roles.js): einen Zettel anhängen oder abnehmen braucht in einer Familie mindestens
-// 'mitglied'. Auf einen Zettel antworten ist wie ein Kommentar - das darf schon ein 'gast'.
+// 'mitglied'. Auf einen Zettel antworten ist wie ein Kommentar - das darf schon ein 'gast'. Eine Antwort
+// löschen (Phase R Task 2, lib/authorship.js): in einer Familie die Autorin selbst oder ab Stellvertretung.
 const canWrite = requireRole('mitglied')
 const canReply = requireRole('gast')
 
@@ -38,14 +40,17 @@ function loadOwnNote(req, res) {
   return note
 }
 
-// Zettel samt Antworten (älteste Antwort zuerst, wie in einem Gespräch)
+// Zettel samt Antworten (älteste Antwort zuerst, wie in einem Gespräch). Antworten tragen vonMir/ehemalig
+// (lib/authorship.js), author_family_id selbst bleibt innen.
 router.get('/', requireAuth, (req, res) => {
   const notes = db
     .prepare('SELECT * FROM notes WHERE family_id = ? ORDER BY created_at DESC, id DESC')
     .all(req.familyId)
+  const ctx = authorContext(req)
   const replies = db
     .prepare('SELECT * FROM note_replies WHERE family_id = ? ORDER BY created_at, id')
     .all(req.familyId)
+    .map((reply) => withAuthorFlags(reply, ctx))
   const byNote = new Map(notes.map((note) => [note.id, []]))
   for (const reply of replies) byNote.get(reply.note_id)?.push(reply)
   res.json(notes.map((note) => ({ ...note, replies: byNote.get(note.id) })))
@@ -86,17 +91,22 @@ router.post('/:id/replies', requireAuth, canReply, (req, res) => {
   const text = cleanText(body.text, MAX_REPLY_LENGTH)
   if (!autorName || !text) return res.status(400).json({ error: 'Name und Antwort sind erforderlich' })
 
+  // author_family_id (Phase R Task 2): die schreibende Identität, nicht der Bereich (lib/authorship.js)
   const result = db
-    .prepare('INSERT INTO note_replies (note_id, family_id, autor_name, text) VALUES (?, ?, ?, ?)')
-    .run(note.id, req.familyId, autorName, text)
-  res.status(201).json(db.prepare('SELECT * FROM note_replies WHERE id = ?').get(result.lastInsertRowid))
+    .prepare('INSERT INTO note_replies (note_id, family_id, author_family_id, autor_name, text) VALUES (?, ?, ?, ?, ?)')
+    .run(note.id, req.familyId, req.homeId, autorName, text)
+  const reply = db.prepare('SELECT * FROM note_replies WHERE id = ?').get(result.lastInsertRowid)
+  res.status(201).json(withAuthorFlags(reply, authorContext(req)))
 })
 
+// Löschen: im eigenen Bereich wie bisher jede Antwort des Bereichs; in einer Familie nur die eigene oder
+// ab Stellvertretung (Moderation, lib/authorship.js mayDeleteInArea) - sonst 403.
 router.delete('/:id/replies/:replyId', requireAuth, canReply, (req, res) => {
   const reply = db.prepare('SELECT * FROM note_replies WHERE id = ? AND note_id = ?').get(req.params.replyId, req.params.id)
   if (!reply || reply.family_id !== req.familyId) {
     return res.status(404).json({ error: 'Antwort nicht gefunden' })
   }
+  if (!mayDeleteInArea(reply, authorContext(req))) return res.status(403).json({ error: FORBIDDEN_MESSAGE })
   db.prepare('DELETE FROM note_replies WHERE id = ?').run(reply.id)
   res.status(204).end()
 })

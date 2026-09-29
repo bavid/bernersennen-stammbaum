@@ -1,6 +1,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { dogLabel } = require('./labels')
+const { ensureLeitung } = require('./ensureLeitung')
 
 function photoUrlsOf(db, familyId) {
   const dogPhotos = db.prepare('SELECT foto_url FROM dogs WHERE family_id = ? AND foto_url IS NOT NULL').all(familyId)
@@ -59,8 +60,16 @@ function deleteFamily(db, familyId) {
     db.prepare('DELETE FROM breeding_events WHERE family_id = ?').run(familyId)
     db.prepare('UPDATE dogs SET mother_dog_id = NULL, father_dog_id = NULL WHERE family_id = ?').run(familyId)
     db.prepare('DELETE FROM dogs WHERE family_id = ?').run(familyId)
-    // Mitgliedschaften in beide Richtungen: als beigetretener Haushalt und als Rudel mit Mitgliedern
+    // Mitgliedschaften in beide Richtungen: als beigetretener Haushalt und als Rudel mit Mitgliedern.
+    // Phase R Task 2: war der Haushalt irgendwo die (einzige) Leitung, rückt dort sofort das älteste
+    // verbleibende Mitglied nach (lib/ensureLeitung.js) - eine Familie ohne Leitung könnte sonst weder
+    // Rollen ändern noch einladen, bis zum nächsten Serverstart (Migration in db.js).
+    const ledFamilies = db
+      .prepare("SELECT group_family_id FROM family_members WHERE member_family_id = ? AND rolle = 'leitung'")
+      .pluck()
+      .all(familyId)
     db.prepare('DELETE FROM family_members WHERE member_family_id = ? OR group_family_id = ?').run(familyId, familyId)
+    for (const groupId of ledFamilies) ensureLeitung(db, groupId)
 
     // Phase 1: eigene Benutzer-Logins weg (users.family_id ist NOT NULL, kein SET NULL möglich).
     // Noch offene, selbst ausgegebene Gutscheine verschwinden mit der Familie (niemand kann sie mehr

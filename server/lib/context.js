@@ -5,11 +5,12 @@ const { countUnread } = require('./partnerMessages')
 const { ART, PARTNER_AREA_ARTS } = require('./areaArt')
 const { roleOf } = require('./roles')
 
-// Familien (art rudel), in denen ein Zuhause Mitglied ist
+// Familien (art rudel), in denen ein Zuhause Mitglied ist - mit der eigenen Rolle dort (Phase R Task 2,
+// für den ContextSwitcher des Clients).
 function membershipsOf(homeId) {
   return db
     .prepare(
-      `SELECT f.id, f.name, f.theme FROM family_members m JOIN families f ON f.id = m.group_family_id
+      `SELECT f.id, f.name, f.theme, m.rolle FROM family_members m JOIN families f ON f.id = m.group_family_id
        WHERE m.member_family_id = ? ORDER BY f.name COLLATE NOCASE`
     )
     .all(homeId)
@@ -20,6 +21,23 @@ function isMember(homeId, groupId) {
     db.prepare('SELECT 1 FROM family_members WHERE member_family_id = ? AND group_family_id = ?').get(homeId, groupId)
   )
 }
+
+// Mitgliedschaft und die Freigaben dieses Haushalts in dieses Rudel gemeinsam entfernen (Verlassen in
+// routes/auth.js, Entfernen durch die Leitung in routes/members.js): ein Absturz dazwischen darf keine
+// verwaisten dog_shares hinterlassen, die auf eine tote Mitgliedschaft zeigen. Die Tiere selbst bleiben in
+// ihrem Zuhause. Gibt die Anzahl entfernter Mitgliedschaften zurück (0 = war kein Mitglied).
+const removeMembership = db.transaction((homeId, groupId) => {
+  const result = db
+    .prepare('DELETE FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
+    .run(homeId, groupId)
+  if (result.changes > 0) {
+    db.prepare('DELETE FROM dog_shares WHERE family_id = ? AND dog_id IN (SELECT id FROM dogs WHERE family_id = ?)').run(
+      groupId,
+      homeId
+    )
+  }
+  return result.changes
+})
 
 // Darf die Identität homeId den Bereich familyId ansehen? (eigener Bereich oder Mitgliedschaft).
 // Demo und Nicht-Demo dürfen nie gemischt werden, selbst wenn irgendwo eine Mitgliedschaftszeile
@@ -107,6 +125,7 @@ module.exports = {
   PARTNER_AREA_ARTS,
   membershipsOf,
   isMember,
+  removeMembership,
   canEnter,
   buildMe,
   VISIBLE_DOGS_SQL,
