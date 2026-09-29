@@ -8,7 +8,7 @@ import AdminStatsKlicks from './AdminStatsKlicks.jsx'
 import AdminStatsPartnerStatus from './AdminStatsPartnerStatus.jsx'
 import { eingeloesteGesamt, klicksLetzteTage } from '../lib/adminStats.js'
 
-// „Übersicht“ (Phase 5 Task 3) - erste Karte im Admin: Kennzahlen, Gutschein-Stapel, Partner-Ranking,
+// „Kennzahlen“ (Phase 5 Task 3, seit Phase U im Reiter „Übersicht“): Kennzahlen, Gutschein-Stapel, Partner-Ranking,
 // Mundpropaganda, Klicks und Partner-Status aus GET /api/admin/stats (server/lib/adminStats.js, ohne Demo-Daten).
 // bereiche kommt aus der Übersicht der AdminPage (overview.stats.families); fehlt der Wert, entfällt die Kachel.
 export default function AdminStats({ bereiche }) {
@@ -35,7 +35,7 @@ export default function AdminStats({ bereiche }) {
   return (
     <section className="admin-overview card" aria-labelledby="admin-overview-title">
       <div className="admin-section-head">
-        <h2 id="admin-overview-title">Übersicht</h2>
+        <h2 id="admin-overview-title">Kennzahlen</h2>
       </div>
       <p className="admin-section-intro muted">
         Zahlen ohne Demo-Daten: Einlösungen der Gutscheine, Weitergaben, Klicks der letzten 30 Tage und der Stand der

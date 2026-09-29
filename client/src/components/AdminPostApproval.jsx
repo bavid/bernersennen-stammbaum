@@ -6,7 +6,7 @@ import AdminPostApprovalItem from './AdminPostApprovalItem.jsx'
 // (GET /api/admin/promotions?freigabe=eingereicht), neueste zuerst. Freigeben/Ablehnen nimmt den Beitrag
 // aus der Liste; onChanged meldet es an AdminPage, damit die Liste "Empfehlungen & Anzeigen" (Freigabe-Chip)
 // neu lädt - und umgekehrt lädt diese Karte neu, wenn sich version ändert (z. B. hat der Admin einen
-// Beitrag dort bearbeitet und damit freigegeben). onCountChange: Zähler im Admin-Kopf.
+// Beitrag dort bearbeitet und damit freigegeben). onCountChange: Zähler am Reiter "Freigaben".
 export default function AdminPostApproval({ version = 0, onChanged, onCountChange }) {
   const [promotions, setPromotions] = useState(undefined)
   const [error, setError] = useState(null)

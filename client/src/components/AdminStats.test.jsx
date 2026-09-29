@@ -93,7 +93,7 @@ describe('AdminStats – Kennzahlen', () => {
     await render(<AdminStats bereiche={8} />)
 
     expect(stats).toHaveBeenCalledTimes(1)
-    expect(container.querySelector('h2').textContent).toBe('Übersicht')
+    expect(container.querySelector('h2').textContent).toBe('Kennzahlen')
     expect(tiles()).toEqual([
       ['Bereiche', '8'],
       ['Partner aktiv', '3'],

@@ -19,37 +19,128 @@
   min-height: 100dvh;
 }
 
+/* Kopf (Phase U): Titel "Admin" mit Präsentation/Abmelden, darunter die Reiter-Leiste (TabBar, tabs.css).
+   Kopf und Inhalt teilen sich Breite und Innenabstand - eine linke Kante für Titel, Reiter und Karten. */
 .admin-header {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.admin-header-inner,
+.admin-main {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding-inline: clamp(var(--space-4), 4vw, var(--space-8));
+}
+
+.admin-header-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-3) clamp(var(--space-4), 4vw, var(--space-8));
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  gap: var(--space-3) var(--space-4);
+  padding-block: var(--space-3) var(--space-1);
 }
 
 .admin-brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  color: var(--ink);
+  gap: var(--space-3);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.admin-brand-mark {
+  display: inline-flex;
+  border-radius: var(--radius-pill);
 }
 
 .admin-header-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 
+.admin-header-actions .btn {
+  min-height: 2.25rem;
+  padding: 0 var(--space-4);
+}
+
+/* Der Text des ersten Reiters steht bündig unter dem Titel (Reiter haben space-3 Innenabstand). */
+.admin-tabs {
+  margin-inline: calc(var(--space-3) * -1);
+}
+
 .admin-main {
+  padding-block: var(--space-8) var(--space-16);
+}
+
+/* Reiter-Panels: kein eigenes display, sonst überstimmte es das hidden-Attribut. Mehrere Karten in einem
+   Reiter stehen in .admin-panel-stack mit gleichem Abstand; Überschriften der Karten einheitlich groß. */
+.admin-panel-stack {
   display: grid;
-  gap: var(--space-8);
-  max-width: 76rem;
-  margin: 0 auto;
-  padding: var(--space-8) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
+  gap: var(--space-6);
+}
+
+.admin-panel h2 {
+  font-size: var(--text-xl);
+}
+
+/* "Zu tun" in der Übersicht: je offene Sache eine Zeile, die ihren Reiter öffnet */
+.admin-todo,
+.admin-inventory {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.admin-todo-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-todo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  color: var(--text);
+  text-align: left;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+
+.admin-todo-item:hover {
+  border-color: var(--rust);
+  background: var(--rust-wash);
+}
+
+.admin-todo-item svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  color: var(--rust);
+}
+
+.admin-todo-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-todo-text strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bestand: acht schmale Kacheln passen am Desktop in eine Zeile */
+.admin-inventory .admin-stats {
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
 }
 
 .admin-stats {
@@ -456,6 +547,15 @@
   padding: var(--space-4) var(--space-5);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
+}
+
+/* Partner-Zeile: Name und Status oben, Aktionen darunter - in jeder Zeile gleich, egal wie lang der Name ist
+   (vorher rutschten die Knöpfe mal neben, mal unter den Namen). */
+.admin-partner-row {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 .admin-partner-row-main {

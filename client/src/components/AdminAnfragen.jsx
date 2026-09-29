@@ -35,7 +35,7 @@ function Pager({ page, onPage }) {
 
 // "Anfragen" im Admin (Phase N, server/routes/adminAnfragen.js): Gutschein- und Partner-Anfragen, je Status gefiltert
 // und seitenweise (100 je Seite, "Zurück/Weiter"). Die Zähler an den Filtern kommen aus gesamt; "Offen" wird immer
-// mitgeführt (auch in den anderen Filtern) und über onCountChange nach oben gemeldet (Kopf der Admin-Seite). Nach
+// mitgeführt (auch in den anderen Filtern) und über onCountChange nach oben gemeldet (Zähler am Reiter "Anfragen"). Nach
 // jeder Änderung lädt die Seite neu - die Anfrage wandert dabei womöglich in einen anderen Filter.
 export default function AdminAnfragen({ onCountChange }) {
   const [status, setStatus] = useState(ANFRAGE_STATUS.offen)
