@@ -47,7 +47,10 @@ export default function TabBar({ tabs, current, counts, label, idPrefix, panelId
   function handleKeyDown(event) {
     // Alt+Pfeil ist "Zurück" im Browser, Strg/Cmd-Kombinationen gehören dem System.
     if (event.altKey || event.ctrlKey || event.metaKey) return
-    const index = tabs.findIndex((tab) => tab.key === current)
+    // Vom fokussierten Reiter aus zählen, nicht vom gewählten: der Wechsel läuft über die Adresse (React-Router
+    // als Transition) - bei schnellem Tippen ist der neue Reiter schon fokussiert, aber noch nicht gerendert.
+    const focused = tabs.findIndex((tab) => buttons.current[tab.key] === event.target)
+    const index = focused >= 0 ? focused : tabs.findIndex((tab) => tab.key === current)
     const next = nextIndex(event.key, index, tabs.length - 1)
     if (next === null) return
     event.preventDefault()
