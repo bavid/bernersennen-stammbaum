@@ -12,6 +12,7 @@ import { groupByYear, speciesSexLabel } from '../lib/timeline.js'
 import { kategorieLabel } from '../lib/shelter.js'
 import { PAUSED_HINT, vermittlungStatusLabel } from '../lib/vermittlung.js'
 import { PREVIEW_DISABLED_HINT, PreviewProvider } from '../lib/preview.js'
+import { useNoIndex } from '../hooks/useNoIndex.js'
 
 const SHARE_COPIED_MS = 2000
 const PREVIEW_LOAD_ERROR = 'Dieser Steckbrief konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
@@ -117,19 +118,9 @@ export default function SteckbriefPage({ slug, load, preview = false }) {
   const [animal, setAnimal] = useState(undefined) // undefined: lädt, null: nicht gefunden
   const [shareCopied, setShareCopied] = useState(false)
 
-  // Gilt für die ganze Seite, auch während des Ladens und im 404-Fall - deshalb unbedingt, nicht erst
-  // nach dem Laden gesetzt. Wird beim Verlassen wieder entfernt (Steckbriefe sind nur hier noindex).
-  // Die Kundensicht ist keine öffentliche Seite - dort bleibt der head unberührt.
-  useEffect(() => {
-    if (preview) return undefined
-    const meta = document.createElement('meta')
-    meta.setAttribute('name', 'robots')
-    meta.setAttribute('content', 'noindex')
-    document.head.appendChild(meta)
-    return () => {
-      document.head.removeChild(meta)
-    }
-  }, [preview])
+  // Gilt für die ganze Seite, auch während des Ladens und im 404-Fall (hooks/useNoIndex.js). Die Kundensicht
+  // ist keine öffentliche Seite - dort bleibt der head unberührt.
+  useNoIndex(!preview)
 
   useEffect(() => {
     let cancelled = false

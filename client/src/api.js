@@ -290,7 +290,12 @@ export const api = {
     // Postfach (Phase P2, server/routes/partnerArea/messages.js): { messages, unread }.
     messages: () => request('/partner-area/messages'),
     markMessageRead: (id) => request(`/partner-area/messages/${encodeURIComponent(id)}/read`, { method: 'POST' }),
-    deleteMessage: (id) => request(`/partner-area/messages/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    deleteMessage: (id) => request(`/partner-area/messages/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+    // Kunden-Gutscheine (Phase 5 Task 4, server/routes/partnerArea/vouchers.js): { stapel } ohne Codes; die
+    // Druckdaten eines eigenen Stapels (offene Codes im Klartext, Server: no-store) nur für PartnerPrintPage.
+    vouchers: () => request('/partner-area/vouchers'),
+    printBatch: (id) => request(`/partner-area/vouchers/${encodeURIComponent(id)}/print`)
   },
 
   listBreedingEvents: () => request('/breeding'),

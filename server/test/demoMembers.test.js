@@ -17,6 +17,7 @@ test('Demo-Familie mit allen Rollen', async (t) => {
   const { createBatch, DEMO_BATCH_KIND, findVoucherByHash, assertVoucherOpen } = require('../lib/vouchers')
   const { hashCode } = require('../lib/codes')
   const { MEMBERS: SEED } = require('../seed/demo-members')
+  const { KUNDEN_GUTSCHEINE } = require('../seed/demo-partner-area')
 
   const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
   const put = (urlPath, body, cookie) => call(base, urlPath, { method: 'PUT', body, cookie })
@@ -214,7 +215,17 @@ test('Demo-Familie mit allen Rollen', async (t) => {
       demoBatches: db.prepare('SELECT COUNT(*) AS n FROM voucher_batches WHERE kind = ?').get(DEMO_BATCH_KIND).n,
       demoVouchers: db.prepare('SELECT COUNT(*) AS n FROM vouchers v JOIN voucher_batches b ON b.id = v.batch_id WHERE b.kind = ?').get(DEMO_BATCH_KIND).n
     }
-    assert.deepEqual(orphans, { members: 0, shares: 0, comments: 0, invites: 0, demoBatches: 1, demoVouchers: 1 })
+    // Demo-Stapel: die Einladung der Demo-Familie plus je ein Kunden-Gutschein-Stapel der Demo-Partner-Bereiche
+    // (Phase 5 Task 4, seed/demo-partner-area.js KUNDEN_GUTSCHEINE) - nach dem zweiten Lauf genauso viele wie nach dem ersten.
+    const demoStackCodes = KUNDEN_GUTSCHEINE.reduce((sum, stack) => sum + stack.size, 0)
+    assert.deepEqual(orphans, {
+      members: 0,
+      shares: 0,
+      comments: 0,
+      invites: 0,
+      demoBatches: 1 + KUNDEN_GUTSCHEINE.length,
+      demoVouchers: 1 + demoStackCodes
+    })
     assert.equal(db.prepare('SELECT join_rolle FROM vouchers WHERE id = ?').get(second.members.invite.voucherId).join_rolle, 'gast')
 
     assert.deepEqual(snapshotReal(), realBefore, 'echte Mitgliedschaft, Freigabe und Einladungen unverändert')

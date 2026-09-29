@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api'
 import ThemeMark from '../components/ThemeMark.jsx'
 import LocationPicker from '../components/LocationPicker.jsx'
@@ -112,6 +113,17 @@ export default function PartnersPage() {
           )}
         </>
       )}
+
+      {/* Phase 5 Task 4: Weg zur Infoseite für künftige Partner (PartnerInfoPage, /partner-werden). */}
+      <aside className="partners-cta card" aria-labelledby="partners-cta-title">
+        <div>
+          <h2 id="partners-cta-title">Ihr seid Hundeschule, Tierheim, Hundesalon oder Betreuung?</h2>
+          <p className="muted">Ein eigenes Profil bei uns ist kostenlos – mit Portal, Einblicken und Kunden-Gutscheinen.</p>
+        </div>
+        <Link to="/partner-werden" className="btn btn-primary">
+          Partner werden <Icon name="arrowRight" />
+        </Link>
+      </aside>
 
       <PublicFooter />
     </div>

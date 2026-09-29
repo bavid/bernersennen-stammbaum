@@ -36,6 +36,11 @@ const AdminPrintPage = lazy(() => import('./pages/AdminPrintPage.jsx'))
 // Einstieg in die Admin-Ansicht eines Bereichs (Phase 5 Task 5b): ruft POST /api/admin/view/:id und wechselt
 // dann in den Bereich - ebenfalls nur für den Admin, eigener Chunk.
 const AdminViewStartPage = lazy(() => import('./pages/AdminViewStartPage.jsx'))
+// Druckseite eines Kunden-Gutschein-Stapels für Partner (Phase 5 Task 4): teilt sich Karten und QR-Bibliothek
+// mit der Admin-Druckseite - nur Partner-Bereiche rufen sie auf, eigener Chunk.
+const PartnerPrintPage = lazy(() => import('./pages/PartnerPrintPage.jsx'))
+// Öffentliche Infoseite "Partner werden" (Phase 5 Task 4): selten aufgerufen, eigener Chunk.
+const PartnerInfoPage = lazy(() => import('./pages/PartnerInfoPage.jsx'))
 
 // /admin/gutscheine/<stapel-id>/druck - die Id ist eine Zahl (server/lib/validate.js cleanId), alles andere
 // bleibt beim Admin-Dashboard.
@@ -43,6 +48,13 @@ const ADMIN_PRINT_RE = /^\/admin\/gutscheine\/(\d+)\/druck\/?$/
 
 // /admin-ansicht/<bereichs-id> - aus der Familien- und Partnerliste des Admins in einem neuen Tab geöffnet.
 const ADMIN_VIEW_RE = /^\/admin-ansicht\/(\d+)\/?$/
+
+// /partner-drucken/<stapel-id> - Druckseite eines Kunden-Gutschein-Stapels aus dem Partner-Profil (Reiter
+// "Kunden-Gutscheine"); nur mit Sitzung in einem Partner- oder Tierheim-Bereich, sonst Login bzw. Startseite.
+const PARTNER_PRINT_RE = /^\/partner-drucken\/(\d+)\/?$/
+
+// Öffentliche Infoseite für künftige Partner (PartnerInfoPage), verlinkt von Login-Seite und Partnerliste.
+const PARTNER_INFO_PATH = '/partner-werden'
 
 // /p/<slug> – öffentliches Partner-Portal, unabhängig von Groß-/Kleinschreibung des Pfads egal (der
 // Slug selbst bleibt roh, die Route validiert nur die Form).
@@ -410,6 +422,18 @@ export default function App() {
     )
   }
 
+  // "Partner werden" (Phase 5 Task 4): öffentlich wie /partner. Die Demo-Knöpfe melden wie das Portal über
+  // handleVoucherLogin an (Familie setzen, zur Startroute des Demo-Partner-Bereichs - /profil).
+  if (pathname === PARTNER_INFO_PATH) {
+    return (
+      <ThemeProvider themeId="standard">
+        <Suspense fallback={<RouteFallback />}>
+          <PartnerInfoPage onDemo={handleVoucherLogin} />
+        </Suspense>
+      </ThemeProvider>
+    )
+  }
+
   // Impressum/Datenschutz (Task 7): öffentlich, unabhängig vom Login-Status - wie /partner ein eigener
   // früher Zweig statt einer Route im angemeldeten Bereich, damit sie auch ohne Sitzung erreichbar sind.
   if (pathname === '/impressum' || pathname === '/datenschutz') {
@@ -424,6 +448,19 @@ export default function App() {
     return (
       <ThemeProvider themeId="standard">
         <LoginPage onLogin={setFamily} />
+      </ThemeProvider>
+    )
+  }
+
+  // Druckseite der Partner (Phase 5 Task 4): ohne App-Hülle, damit die Bögen wie auf der Admin-Druckseite
+  // stehen. Nur Partner-Bereiche - jeder andere Bereich läuft unten in AreaRoutes und landet auf seiner Startseite.
+  const partnerPrintBatchId = pathname.match(PARTNER_PRINT_RE)?.[1]
+  if (partnerPrintBatchId && isPartnerArea(family)) {
+    return (
+      <ThemeProvider themeId={family.theme}>
+        <Suspense fallback={<RouteFallback />}>
+          <PartnerPrintPage batchId={partnerPrintBatchId} />
+        </Suspense>
       </ThemeProvider>
     )
   }

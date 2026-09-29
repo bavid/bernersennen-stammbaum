@@ -478,3 +478,100 @@
   min-height: 2.2rem;
   padding: 0 var(--space-4);
 }
+
+/* Reiter "Kunden-Gutscheine" (Phase 5 Task 4, PartnerVoucherStacks): je Stapel eine Karte mit Bezeichnung,
+   Quelle, Verteilungsbalken (admin-stats.css .stat-bar) und den drei Zahlen. */
+
+.partner-voucher-stacks {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.partner-voucher-stacks .einblicke-head h2 {
+  margin-bottom: var(--space-1);
+}
+
+.partner-voucher-stacks .einblicke-head p {
+  max-width: 40rem;
+}
+
+.partner-voucher-stacks .empty-state p {
+  max-width: 34rem;
+}
+
+.partner-stack-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.partner-stack {
+  display: grid;
+  gap: var(--space-4);
+  color: var(--text);
+}
+
+.partner-stack-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.partner-stack-head h3 {
+  flex-basis: 100%;
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.partner-stack-quelle.is-admin {
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.partner-stack-quelle.is-weitergabe {
+  background: var(--alpine-wash);
+  color: var(--alpine);
+}
+
+.partner-stack-meta {
+  font-size: var(--text-sm);
+}
+
+.partner-stack-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-8);
+  margin: 0;
+}
+
+.partner-stack-counts > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-1);
+}
+
+.partner-stack-counts dt {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.partner-stack-counts dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.partner-stack-print {
+  justify-self: start;
+}

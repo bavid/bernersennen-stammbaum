@@ -160,6 +160,17 @@ describe('PartnersPage – Fuß', () => {
     expect([...container.querySelectorAll('a')].find((a) => a.textContent === 'Impressum').getAttribute('href')).toBe('/impressum')
     expect([...container.querySelectorAll('a')].find((a) => a.textContent === 'Datenschutz').getAttribute('href')).toBe('/datenschutz')
   })
+
+  // Phase 5 Task 4: Weg zur Infoseite für künftige Partner.
+  test('wirbt um neue Partner und verlinkt /partner-werden', async () => {
+    publicPartners.mockResolvedValue([])
+    await render()
+    await act(async () => Promise.resolve())
+    const cta = container.querySelector('.partners-cta')
+    expect(cta.textContent).toContain('Ihr seid Hundeschule, Tierheim, Hundesalon oder Betreuung?')
+    expect(cta.querySelector('a').getAttribute('href')).toBe('/partner-werden')
+    expect(cta.querySelector('a').textContent).toContain('Partner werden')
+  })
 })
 
 // Phase P2: weniger als fünf im Umkreis - der Server hängt die nächsten weiteren an (ausserhalb: true).

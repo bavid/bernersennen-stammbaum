@@ -1,0 +1,180 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { api } from '../api'
+import Icon from './Icon.jsx'
+import VoucherSheets from './VoucherSheets.jsx'
+import { cardDesign, chunkCards, needsPublicUrl, printBaseUrl } from '../lib/voucherPrint.js'
+
+// Druckansicht eines Gutschein-Stapels - geteilt zwischen der Druckseite des Admins (AdminPrintPage,
+// /admin/gutscheine/:id/druck) und der des Partners (PartnerPrintPage, /partner-drucken/:id, Phase 5 Task 4):
+// Werkzeugleiste (zurück, Vorder-/Rückseite, Drucken, dazu eigene Aktionen), Kopf mit Motiv und Anzahl, Warnung
+// ohne öffentliche Domain und die A4-Bögen (VoucherSheets). Die Klartext-Codes leben nur im State der Seite und
+// im DOM der Karten: kein localStorage, keine URL, keine Ausgabe in der Konsole.
+
+// collage.css blendet beim Drucken die ganze App (#root) aus, weil die Collage ihre Seiten außerhalb
+// davon druckt. Solange eine Druckseite offen ist, hebt print.css das über diese Klasse am <body> wieder auf.
+export const PRINT_BODY_CLASS = 'has-voucher-print'
+
+export function usePrintBodyClass() {
+  useEffect(() => {
+    document.body.classList.add(PRINT_BODY_CLASS)
+    return () => document.body.classList.remove(PRINT_BODY_CLASS)
+  }, [])
+}
+
+// Druckdaten (load: api.admin.printBatch bzw. api.partnerArea.printBatch) und Konfiguration, sobald ready true
+// ist. Fehlt die Konfiguration, bleibt es beim Ursprung der Seite (mit Warnbanner) - die Karten sind davon
+// unabhängig. key: wechselt der Stapel, lädt alles neu.
+export function useVoucherPrint({ load, ready = true, key }) {
+  const [print, setPrint] = useState(null)
+  const [publicUrl, setPublicUrl] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!ready) return undefined
+    let cancelled = false
+    load()
+      .then((result) => {
+        if (!cancelled) setPrint(result)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message)
+      })
+    api
+      .config()
+      .then((config) => {
+        if (!cancelled) setPublicUrl(config.publicUrl || null)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+    // load ist eine Inline-Funktion des Aufrufers - key (Stapel-Id) und ready bestimmen, wann neu geladen wird.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, key])
+
+  return { print, publicUrl, error }
+}
+
+function pluralize(count, singular, plural) {
+  return `${count} ${count === 1 ? singular : plural}`
+}
+
+// PUBLIC_URL fehlt oder zeigt auf localhost/eine IP: die QR-Codes würden auf diese Adresse zeigen.
+function PublicUrlWarning({ baseUrl }) {
+  return (
+    <div className="warning-banner" role="alert">
+      <Icon name="alert" />
+      <div>
+        <strong>Vor dem Druck die öffentliche Domain setzen (PUBLIC_URL)</strong>
+        <p>
+          Sonst zeigen die QR-Codes auf diese Adresse: <code>{baseUrl}</code>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// back: { to, label } - wohin "zurück" führt. actions: weitere Knöpfe/Links (z. B. der CSV-Export des Admins).
+function PrintToolbar({ back, duplex, onDuplex, actions }) {
+  return (
+    <div className="print-toolbar" role="toolbar" aria-label="Druckoptionen">
+      <Link to={back.to} className="btn btn-ghost">
+        <Icon name="arrowLeft" /> {back.label}
+      </Link>
+      <span className="print-toolbar-spacer" />
+      <div className="segmented segmented-sm" role="group" aria-label="Seiten">
+        <button type="button" aria-pressed={!duplex} onClick={() => onDuplex(false)}>
+          Nur Vorderseite
+        </button>
+        <button type="button" aria-pressed={duplex} onClick={() => onDuplex(true)}>
+          Vorder- und Rückseite
+        </button>
+      </div>
+      {actions}
+      <button type="button" className="btn btn-primary" onClick={() => window.print()}>
+        <Icon name="printer" /> Drucken
+      </button>
+    </div>
+  )
+}
+
+function PrintHead({ batch, codeCount, sheetCount, nichtDruckbar, designLabel, hint }) {
+  return (
+    <header className="print-head">
+      <span className="eyebrow">Gutschein-Karten</span>
+      <h1>{batch.label}</h1>
+      <p className="print-head-meta muted">
+        <span className="pill">{designLabel(cardDesign(batch))}</span>
+        {batch.partner && <span className="pill pill-rust">{batch.partner.name}</span>}
+        <span>
+          {pluralize(codeCount, 'Karte', 'Karten')} · {pluralize(sheetCount, 'Bogen', 'Bögen')}
+        </span>
+      </p>
+      {hint && <p className="muted">{hint}</p>}
+      {nichtDruckbar > 0 && (
+        <p className="field-hint" role="note">
+          {pluralize(nichtDruckbar, 'Gutschein', 'Gutscheine')} ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)
+        </p>
+      )}
+    </header>
+  )
+}
+
+function PrintContent({ print, publicUrl, duplex, designLabel, hint }) {
+  const baseUrl = printBaseUrl(publicUrl, window.location.origin)
+  const sheets = chunkCards(print.codes)
+
+  return (
+    <>
+      <PrintHead
+        batch={print.batch}
+        codeCount={print.codes.length}
+        sheetCount={sheets.length}
+        nichtDruckbar={print.nichtDruckbar}
+        designLabel={designLabel}
+        hint={hint}
+      />
+      {needsPublicUrl(publicUrl) && <PublicUrlWarning baseUrl={baseUrl} />}
+      {sheets.length === 0 ? (
+        <p className="muted">Keine offenen Gutscheine in diesem Stapel – nichts zu drucken.</p>
+      ) : (
+        <VoucherSheets sheets={sheets} batch={print.batch} baseUrl={baseUrl} duplex={duplex} />
+      )}
+    </>
+  )
+}
+
+// state: Rückgabe von useVoucherPrint. designLabel: Beschriftung je Motiv (lib/voucherPrint.js DESIGN) für den
+// Kopf. hint: optionaler Satz unter dem Titel (Partner-Druckseite).
+export default function VoucherPrintView({ state, back, actions = null, designLabel, hint = null }) {
+  const [duplex, setDuplex] = useState(false)
+  const { print, publicUrl, error } = state
+
+  if (!print && !error) {
+    return (
+      <div className="print-page">
+        <main className="print-main">
+          <p className="muted page-loading" role="status">
+            Lade …
+          </p>
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div className="print-page">
+      <PrintToolbar back={back} duplex={duplex} onDuplex={setDuplex} actions={actions} />
+      <main className="print-main">
+        {error ? (
+          <div className="error-banner" role="alert">
+            {error}
+          </div>
+        ) : (
+          <PrintContent print={print} publicUrl={publicUrl} duplex={duplex} designLabel={designLabel} hint={hint} />
+        )}
+      </main>
+    </div>
+  )
+}

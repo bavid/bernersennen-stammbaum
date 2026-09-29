@@ -12,7 +12,8 @@ const { MAX_EINBLICKE, validateNewEinblick } = require('./einblicke')
 const { validatePartnerPost, insertPost } = require('./partnerPosts')
 const { FREIGABE } = require('./promotions')
 const { validateContactMessage, insertMessage } = require('./partnerMessages')
-const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, MESSAGES } = require('../seed/demo-partner-area')
+const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
+const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, MESSAGES, KUNDEN_GUTSCHEINE } = require('../seed/demo-partner-area')
 
 // Nur Demo-Partner (is_demo = 1): ein Seed-Eintrag darf nie an einem echten Partner landen.
 function findDemoPartner(db, slug, purpose) {
@@ -66,10 +67,58 @@ function insertDemoEinblicke(db, copyImage) {
   return counts
 }
 
+// --- Phase 5 Task 4: Kunden-Gutschein-Stapel der Demo-Partner -------------------------------------------
+
+// Die Demo-Stapel des letzten Laufs (Stapel-Art DEMO_BATCH_KIND ohne Einladung und ohne Übergabe) samt Gutscheinen
+// wegräumen - VOR dem Anlegen der neuen. deleteFamily (am Ende von replaceDemoPack) nähme nur die offenen mit
+// und ließe die als "eingelöst" markierten als verwaiste Zeilen zurück. Die Schein-Einladung der Demo-Familie
+// (join_family_id gesetzt, lib/demoMembers.js) bleibt hier unberührt: sie räumt deleteFamily selbst weg.
+function removeDemoVoucherStacks(db) {
+  db.prepare(
+    `DELETE FROM vouchers WHERE join_family_id IS NULL AND dog_id IS NULL
+       AND batch_id IN (SELECT id FROM voucher_batches WHERE kind = ?)`
+  ).run(DEMO_BATCH_KIND)
+  db.prepare(
+    `DELETE FROM voucher_batches WHERE kind = ? AND NOT EXISTS (SELECT 1 FROM vouchers WHERE batch_id = voucher_batches.id)`
+  ).run(DEMO_BATCH_KIND)
+}
+
+// Ein Weitergabe-Stapel je Eintrag in KUNDEN_GUTSCHEINE, angelegt wie ensureVoucherQuota (Bezeichnung, ausgebender
+// Bereich, partner_id) - nur mit Stapel-Art DEMO_BATCH_KIND, damit sich kein Code je einlösen lässt (lib/vouchers.js
+// assertVoucherOpen). Die ersten Codes gelten als eingelöst (redeemed_at über die letzten Wochen verteilt, Geheimtext
+// weg wie beim echten Einlösen), die nächsten als zurückgezogen. Gibt die Anzahl der Codes je Partner-Slug zurück.
+function insertDemoVoucherStacks(db, areas) {
+  const markRedeemed = db.prepare("UPDATE vouchers SET redeemed_at = datetime('now', ?), code_cipher = NULL WHERE id = ?")
+  const markRevoked = db.prepare("UPDATE vouchers SET revoked_at = datetime('now', ?), code_cipher = NULL WHERE id = ?")
+  const voucherIds = db.prepare('SELECT id FROM vouchers WHERE batch_id = ? ORDER BY id')
+
+  const counts = {}
+  for (const { partnerSlug, size, eingeloest, widerrufen } of KUNDEN_GUTSCHEINE) {
+    const area = areas.find((entry) => entry.slug === partnerSlug)
+    if (!area) throw new Error(`Demo-Partner "${partnerSlug}" hat keinen Bereich für seine Kunden-Gutscheine`)
+    if (eingeloest + widerrufen > size) throw new Error(`Demo-Kunden-Gutscheine für "${partnerSlug}": mehr eingelöst/zurückgezogen als Codes`)
+    const { name } = db.prepare('SELECT name FROM partners WHERE id = ?').get(area.partnerId)
+    const { batchId } = createBatch(db, {
+      label: `Weitergabe ${name}`,
+      kind: DEMO_BATCH_KIND,
+      size,
+      issuedByFamilyId: area.familyId,
+      partnerId: area.partnerId
+    })
+    const ids = voucherIds.all(batchId).map((row) => row.id)
+    ids.slice(0, eingeloest).forEach((id, index) => markRedeemed.run(`-${(index + 1) * 5} days`, id))
+    ids.slice(eingeloest, eingeloest + widerrufen).forEach((id) => markRevoked.run('-2 days', id))
+    counts[partnerSlug] = size
+  }
+  return counts
+}
+
 function createDemoPartnerAreas(db, { copyImage }) {
   const areas = insertDemoPartnerAreas(db)
   const einblicke = insertDemoEinblicke(db, copyImage)
-  return { areas, einblicke }
+  removeDemoVoucherStacks(db)
+  const kundenGutscheine = insertDemoVoucherStacks(db, areas)
+  return { areas, einblicke, kundenGutscheine }
 }
 
 // --- Phase P2 Task 9: Beiträge und Posteingänge der Demo-Partner -----------------------------------------

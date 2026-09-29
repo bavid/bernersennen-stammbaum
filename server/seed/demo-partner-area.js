@@ -109,4 +109,13 @@ const MESSAGES = [
   }
 ]
 
-module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, POSTS, MESSAGES }
+// KUNDEN_GUTSCHEINE (Phase 5 Task 4): je Demo-Partner-Bereich ein Stapel Weitergabe-Gutscheine für den Reiter
+// "Kunden-Gutscheine" (GET /api/partner-area/vouchers) - Stapel-Art 'demo' (lib/vouchers.js DEMO_BATCH_KIND):
+// einlösen geht nie, die Karten lassen sich in der Demo trotzdem drucken. eingeloest/widerrufen: so viele der
+// size Codes gelten als verbraucht bzw. zurückgezogen (Beispielzahlen wie bei einem Partner nach ein paar Wochen).
+const KUNDEN_GUTSCHEINE = [
+  { partnerSlug: 'hundeschule-pfotenglueck', size: 10, eingeloest: 4, widerrufen: 1 },
+  { partnerSlug: 'hundesalon-wuschelglueck', size: 8, eingeloest: 2, widerrufen: 0 }
+]
+
+module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, POSTS, MESSAGES, KUNDEN_GUTSCHEINE }

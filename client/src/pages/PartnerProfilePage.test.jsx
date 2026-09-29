@@ -4,15 +4,16 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { profile, updateProfile, uploadLogo, publish, einblicke, posts } = vi.hoisted(() => ({
+const { profile, updateProfile, uploadLogo, publish, einblicke, posts, vouchers } = vi.hoisted(() => ({
   profile: vi.fn(),
   updateProfile: vi.fn(),
   uploadLogo: vi.fn(),
   publish: vi.fn(),
   einblicke: vi.fn(),
-  posts: vi.fn()
+  posts: vi.fn(),
+  vouchers: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { partnerArea: { profile, updateProfile, uploadLogo, publish, einblicke, posts } } }))
+vi.mock('../api', () => ({ api: { partnerArea: { profile, updateProfile, uploadLogo, publish, einblicke, posts, vouchers } } }))
 
 import PartnerProfilePage from './PartnerProfilePage.jsx'
 import { DemoProvider } from '../lib/demo.js'
@@ -109,7 +110,7 @@ afterEach(() => {
     container.remove()
     container = null
   }
-  for (const mock of [profile, updateProfile, uploadLogo, publish, einblicke, posts]) mock.mockReset()
+  for (const mock of [profile, updateProfile, uploadLogo, publish, einblicke, posts, vouchers]) mock.mockReset()
 })
 
 describe('PartnerProfilePage – Statuskarte', () => {
@@ -363,7 +364,7 @@ describe('PartnerProfilePage – Reiter "Beiträge" (Tierheim)', () => {
     await render({ data: { ...completeProfile, typ: 'tierheim', slug: 'tierheim-sonnenhang' }, family: shelterFamily })
 
     const tabs = [...container.querySelectorAll('.partner-profile-tabs button')].map((btn) => btn.textContent)
-    expect(tabs).toEqual(['Angaben', 'Einblicke', 'Beiträge'])
+    expect(tabs).toEqual(['Angaben', 'Einblicke', 'Beiträge', 'Kunden-Gutscheine'])
     expect(posts).not.toHaveBeenCalled()
 
     await act(async () => button('Beiträge').click())
@@ -375,10 +376,41 @@ describe('PartnerProfilePage – Reiter "Beiträge" (Tierheim)', () => {
     expect([...container.querySelector('#post-bereich').options].map((option) => option.value)).toEqual(['', 'begleiter', 'unterstuetzen'])
   })
 
-  test('ein Partner-Bereich hat "Beiträge" in der Navigation - im Profil nur Angaben und Einblicke', async () => {
+  test('ein Partner-Bereich hat "Beiträge" in der Navigation - im Profil Angaben, Einblicke und Kunden-Gutscheine', async () => {
     await render()
     const tabs = [...container.querySelectorAll('.partner-profile-tabs button')].map((btn) => btn.textContent)
-    expect(tabs).toEqual(['Angaben', 'Einblicke'])
+    expect(tabs).toEqual(['Angaben', 'Einblicke', 'Kunden-Gutscheine'])
     expect(document.getElementById('partner-profile-panel-beitraege')).toBeNull()
+  })
+})
+
+// Phase 5 Task 4: die Kunden-Gutschein-Stapel des Partners als eigener Reiter, mit Weg zur Druckseite.
+describe('PartnerProfilePage – Reiter "Kunden-Gutscheine"', () => {
+  test('lädt die Stapel erst beim Öffnen und verlinkt "Karten drucken" auf /partner-drucken/:id', async () => {
+    vouchers.mockResolvedValue({
+      stapel: [{ id: 12, label: 'Weitergabe Hundeschule Wiesengrund', quelle: 'weitergabe', size: 5, offen: 4, eingeloest: 1, widerrufen: 0, erstelltAm: '2026-09-20 10:00:00' }]
+    })
+    await render()
+    expect(vouchers).not.toHaveBeenCalled()
+
+    await act(async () => button('Kunden-Gutscheine').click())
+
+    expect(vouchers).toHaveBeenCalledTimes(1)
+    expect(button('Kunden-Gutscheine').getAttribute('aria-pressed')).toBe('true')
+    expect(document.getElementById('partner-profile-panel-gutscheine').hidden).toBe(false)
+    expect(container.querySelector('#partner-vouchers-title').textContent).toBe('Kunden-Gutscheine')
+    expect(container.textContent).toContain('Jede Karte legt für eure Kundschaft eine eigene Chronik an')
+    const print = container.querySelector('a.partner-stack-print')
+    expect(print.getAttribute('href')).toBe('/partner-drucken/12')
+    expect(container.querySelector('.partner-stack-quelle').textContent).toBe('weitergegeben')
+  })
+
+  test('auch ein Tierheim und die Demo sehen den Reiter', async () => {
+    vouchers.mockResolvedValue({ stapel: [] })
+    await render({ data: { ...completeProfile, typ: 'tierheim', slug: 'tierheim-sonnenhang' }, family: shelterFamily, isDemo: true })
+
+    await act(async () => button('Kunden-Gutscheine').click())
+    expect(vouchers).toHaveBeenCalledTimes(1)
+    expect(container.querySelector('.empty-state').textContent).toContain('Noch keine Kunden-Gutscheine')
   })
 })

@@ -1,0 +1,145 @@
+/* Infoseite "Partner werden" (/partner-werden, PartnerInfoPage, Phase 5 Task 4): öffentlicher Rahmen wie die
+   Partnerliste (partners.css .public-page), darin Nutzen als Kartenraster, "So funktioniert's" als nummerierte
+   Schritte und die Karte mit Demo-Knöpfen und Kontakt. Nur Tokens aus tokens.css. */
+
+.partner-info-page {
+  max-width: 64rem;
+}
+
+.partner-info-section {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.partner-info-section h2 {
+  font-size: var(--text-xl);
+}
+
+.partner-info-benefits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.partner-info-benefit {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  padding: var(--space-5) var(--space-6);
+  color: var(--text);
+}
+
+.partner-info-benefit svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  color: var(--rust);
+}
+
+.partner-info-benefit h3 {
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.partner-info-benefit p {
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.partner-info-steps {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.partner-info-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  color: var(--text);
+}
+
+.partner-info-steps h3 {
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.partner-info-steps p {
+  margin-top: var(--space-1);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.partner-info-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--rust);
+  color: var(--on-rust);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.partner-info-actions {
+  gap: var(--space-6);
+}
+
+.partner-info-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.partner-info-demo .error-banner,
+.partner-info-demo .field-hint {
+  flex-basis: 100%;
+}
+
+.partner-info-contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+.partner-info-contact p {
+  max-width: 34rem;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+/* Hinweis auf die Infoseite am Ende der Partnerliste (PartnersPage) */
+
+.partners-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  color: var(--text);
+}
+
+.partners-cta h2 {
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.partners-cta p {
+  margin-top: var(--space-1);
+  max-width: 34rem;
+}

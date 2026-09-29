@@ -262,6 +262,15 @@ function voucherStatus(row) {
   return 'offen'
 }
 
+// Zähler je Stapel als SQL-Spalten (eingeloest, offen, widerrufen) - dieselbe Einteilung wie voucherStatus,
+// nur dass "abgelaufen" in keiner Spalte mitzählt (wie routes/admin.js GET /voucher-batches). Setzt den
+// Alias v (vouchers) voraus; genutzt von lib/adminStats.js und routes/partnerArea/vouchers.js.
+const VOUCHER_COUNTS_SQL = `
+  COUNT(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NOT NULL THEN 1 END) AS eingeloest,
+  COUNT(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NULL
+             AND (v.expires_at IS NULL OR v.expires_at > datetime('now')) THEN 1 END) AS offen,
+  COUNT(CASE WHEN v.revoked_at IS NOT NULL THEN 1 END) AS widerrufen`
+
 // Optionaler eigener Benutzer-Login beim Einlösen (Chronik wie Partner-Zugang): username/password
 // beide oder keins; username 3-40 [A-Za-z0-9._-]; password >=8; email optional <=120, einfaches Format.
 function validateLoginInput({ username, password, email }) {
@@ -520,6 +529,7 @@ module.exports = {
   isDemoVoucher,
   DEMO_BATCH_KIND,
   voucherStatus,
+  VOUCHER_COUNTS_SQL,
   redeemVoucher,
   claimVoucher,
   ensureVoucherQuota,

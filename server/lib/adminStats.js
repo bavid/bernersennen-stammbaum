@@ -8,6 +8,7 @@
 const db = require('../db')
 const { PARTNER_AREA_ARTS_SQL } = require('./partnerAreas')
 const { FREIGABE_VALUES } = require('./promotions')
+const { VOUCHER_COUNTS_SQL } = require('./vouchers')
 
 const TOP_LIMIT = 10
 const KLICK_TAGE = 30
@@ -18,12 +19,7 @@ const MAX_KETTEN_TIEFE = 100
 
 // --- Einlösungen ----------------------------------------------------------------------------------
 
-// Wie routes/admin.js GET /voucher-batches: "abgelaufen" zählt in keiner der drei Spalten mit.
-const VOUCHER_COUNTS_SQL = `
-  COUNT(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NOT NULL THEN 1 END) AS eingeloest,
-  COUNT(CASE WHEN v.revoked_at IS NULL AND v.redeemed_at IS NULL
-             AND (v.expires_at IS NULL OR v.expires_at > datetime('now')) THEN 1 END) AS offen,
-  COUNT(CASE WHEN v.revoked_at IS NOT NULL THEN 1 END) AS widerrufen`
+// Zähler je Stapel (eingeloest/offen/widerrufen, "abgelaufen" zählt nirgends mit): lib/vouchers.js VOUCHER_COUNTS_SQL.
 
 // Gutscheine ohne Demo-Anteil: kein Demo-Stapel, kein Demo-Partner, kein Demo-Bereich als Ausgeber.
 // Setzt die Aliase v (vouchers) und b (voucher_batches) voraus.

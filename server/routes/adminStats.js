@@ -5,6 +5,7 @@ const { requireAdmin } = require('../middleware/admin')
 const { cleanId } = require('../lib/validate')
 const { printBatch, printableCodes, voucherCsv } = require('../lib/voucherPrint')
 const { collectStats } = require('../lib/adminStats')
+const { noStore, endWithoutEtag, sendJsonWithoutEtag: sendJson, CSV_TYPE } = require('../lib/noStoreResponse')
 
 // Phase 5 Task 1: Druckdaten und CSV-Export je Gutschein-Stapel sowie die Statistik für den Admin
 // (docs/superpowers/plans/2026-09-29-phase-5-admin-praesentation.md). Eingehängt unter /api/admin in app.js,
@@ -12,30 +13,11 @@ const { collectStats } = require('../lib/adminStats')
 // und requireAdmin auf jeder einzelnen Route.
 const router = express.Router()
 
-const JSON_TYPE = 'application/json; charset=utf-8'
-const CSV_TYPE = 'text/csv; charset=utf-8'
 const BATCH_NOT_FOUND = 'Diesen Stapel gibt es nicht'
 
-// security-review Phase 5: JEDE Antwort dieser Routen (auch 404/401) ohne Zwischenspeicher - kein Browser-
-// oder Proxy-Cache darf Klartext-Codes behalten. Vor dem Passwort-Hash-Gate, damit auch dessen 404 no-store trägt.
-router.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store')
-  next()
-})
-
-// Ohne Validator: res.send/res.json erzeugen ein ETag (Express-Einstellung 'etag', app-weit) - Antworten
-// mit Klartext-Codes sollen keinen Wert bekommen, über den ein Zwischenspeicher oder Client sie
-// wiedererkennt oder per If-None-Match nachfragt. res.end schreibt den Body direkt (Express hüllt es nicht
-// ein), Node setzt Content-Length selbst und lässt den Body bei HEAD weg.
-function endWithoutEtag(res, status, contentType, body) {
-  res.status(status)
-  res.setHeader('Content-Type', contentType)
-  res.end(body)
-}
-
-function sendJson(res, status, payload) {
-  endWithoutEtag(res, status, JSON_TYPE, JSON.stringify(payload))
-}
+// security-review Phase 5: JEDE Antwort dieser Routen (auch 404/401) ohne Zwischenspeicher und ohne ETag
+// (lib/noStoreResponse.js). Vor dem Passwort-Hash-Gate, damit auch dessen 404 no-store trägt.
+router.use(noStore)
 
 // Ohne hinterlegten Passwort-Hash gibt es keinen Admin-Zugang - wie routes/admin.js.
 router.use((req, res, next) => {

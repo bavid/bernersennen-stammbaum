@@ -269,3 +269,16 @@ describe('LoginPage – Demo bleibt erreichbar', () => {
     expect(onLogin).toHaveBeenCalledWith(me)
   })
 })
+
+// Phase 5 Task 4: Weg zur Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung.
+describe('LoginPage – Fuß', () => {
+  test('verlinkt "Für Partner" (/partner-werden) neben Impressum und Datenschutz', async () => {
+    await render()
+    const links = [...container.querySelectorAll('.login-footer a')].map((a) => [a.textContent, a.getAttribute('href')])
+    expect(links).toEqual([
+      ['Für Partner', '/partner-werden'],
+      ['Impressum', '/impressum'],
+      ['Datenschutz', '/datenschutz']
+    ])
+  })
+})

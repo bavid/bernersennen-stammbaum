@@ -10,7 +10,7 @@ const { isTheme } = require('../lib/themes')
 const { ART, canEnter, buildMe, removeMembership } = require('../lib/context')
 const { requireRole, isLastLeitung } = require('../lib/roles')
 const { generateCode, normalizeCode, hashCode, formatCode } = require('../lib/codes')
-const { validatePassword, validateUsername, validateEmail } = require('../lib/vouchers')
+const { validatePassword, validateUsername, validateEmail, DEMO_BATCH_KIND } = require('../lib/vouchers')
 const { verifyCurrentCredential, REAUTH_ERROR } = require('../lib/currentCredential')
 const { SLUG_MAX_LENGTH } = require('../lib/partners')
 const { findDemoPartnerArea } = require('../lib/partnerAreas')
@@ -111,12 +111,15 @@ router.post('/login', authLimiter, async (req, res, next) => {
         setSessionCookie(res, family.id)
         return res.json(buildMe(family.id, family.id, Boolean(family.is_demo)))
       }
+      // Ein Schein-Gutschein der Demo (Stapel-Art DEMO_BATCH_KIND, seit Phase 5 Task 4 auch druckbar) ist nach
+      // außen unbekannt (lib/vouchers.js assertVoucherOpen) - er darf hier nicht in den Einlöse-Modus führen.
       const voucher = db
         .prepare(
-          `SELECT 1 FROM vouchers WHERE code_hash = ? AND redeemed_at IS NULL AND revoked_at IS NULL
-             AND (expires_at IS NULL OR expires_at > datetime('now'))`
+          `SELECT 1 FROM vouchers v JOIN voucher_batches b ON b.id = v.batch_id
+           WHERE v.code_hash = ? AND v.redeemed_at IS NULL AND v.revoked_at IS NULL
+             AND (v.expires_at IS NULL OR v.expires_at > datetime('now')) AND b.kind != ?`
         )
-        .get(codeHash)
+        .get(codeHash, DEMO_BATCH_KIND)
       if (voucher) {
         return res.status(409).json({ redeem: true })
       }
