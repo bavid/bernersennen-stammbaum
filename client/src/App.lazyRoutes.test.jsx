@@ -4,12 +4,17 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, expect, test, vi } from 'vitest'
 
-const { me, profile, chunkGate } = vi.hoisted(() => {
-  let open
-  const promise = new Promise((resolve) => {
-    open = resolve
-  })
-  return { me: vi.fn(), profile: vi.fn(), chunkGate: { promise, open: () => open() } }
+const { me, profile, chunk } = vi.hoisted(() => {
+  function deferred() {
+    let resolve
+    const promise = new Promise((done) => {
+      resolve = done
+    })
+    return { promise, resolve }
+  }
+  // release: gibt der Test frei, wenn der Chunk "fertig geladen" sein soll. delivered: meldet die
+  // Mock-Factory, sobald sie das echte Modul in der Hand hat.
+  return { me: vi.fn(), profile: vi.fn(), chunk: { release: deferred(), delivered: deferred() } }
 })
 
 vi.mock('./api', () => ({
@@ -17,11 +22,16 @@ vi.mock('./api', () => ({
   setUnauthorizedHandler: () => {}
 }))
 
-// Der Chunk der Profilseite (React.lazy in AreaRoutes.jsx) "lädt", bis der Test chunkGate.open() ruft -
-// so ist der Platzhalter verlässlich zu sehen, egal wie schnell Vitest das Modul sonst bereitstellt.
+// Der Chunk der Profilseite (React.lazy in AreaRoutes.jsx) "lädt", bis der Test chunk.release freigibt -
+// so ist der Platzhalter verlässlich zu sehen. Das Ende des Ladens meldet die Factory selbst über
+// chunk.delivered: vi.dynamicImportSettled() taugt hier nicht, es sieht weder die wartende Factory noch
+// die Pfad-Auflösung in importOriginal() (RPC an den Vitest-Hauptprozess) und kehrt unter Last zu früh
+// zurück - dann rendert React die Seite erst nach den Prüfungen.
 vi.mock('./pages/PartnerProfilePage.jsx', async (importOriginal) => {
-  await chunkGate.promise
-  return importOriginal()
+  await chunk.release.promise
+  const actual = await importOriginal()
+  chunk.delivered.resolve()
+  return actual
 })
 
 import App from './App.jsx'
@@ -79,8 +89,13 @@ test('eine erst bei Bedarf geladene Seite zeigt in <main> zuerst "Lädt …" (Ko
   expect(container.querySelector('main h1')).toBeNull()
   expect(profile).not.toHaveBeenCalled()
 
-  chunkGate.open()
-  await act(() => vi.dynamicImportSettled())
+  chunk.release.resolve()
+  // Zwischen Factory und React.lazy liegt nur noch Promise-Verkettung ohne I/O: nach delivered und einem
+  // Macrotask hat React das Modul sicher, act rendert dann die Seite samt geladenem Profil.
+  await act(async () => {
+    await chunk.delivered.promise
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
 
   expect(fallbackInMain()).toBeNull()
   expect(container.querySelector('main h1').textContent).toBe('Hundeschule Beispielwiese')
