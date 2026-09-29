@@ -19,4 +19,6 @@ test('/api/config tells the client which environment it runs in', async (t) => {
   const res = await call(base, '/api/config')
   assert.equal(res.status, 200)
   assert.equal(res.data.appEnv, 'staging')
+  // Phase 5 Task 1: publicUrl (PUBLIC_URL) für die QR-Ziele der Druckseite - ohne Angabe null.
+  assert.equal(res.data.publicUrl, null)
 })

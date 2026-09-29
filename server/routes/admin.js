@@ -16,6 +16,7 @@ const { ART, PARTNER_AREA_ARTS } = require('../lib/context')
 const { PARTNER_AREA_ARTS_SQL, areaArtForTyp, areaLabel, findPartnerArea, insertPartnerArea } = require('../lib/partnerAreas')
 const { partnerAccessBatchOptions } = require('../lib/partnerAccess')
 const { findEinblick, ownEinblick, setAusgeblendet } = require('../lib/einblicke')
+const { HERKUNFT_JOINS_SQL, HERKUNFT_COLUMNS_SQL, withHerkunft } = require('../lib/herkunft')
 
 const router = express.Router()
 
@@ -106,10 +107,12 @@ router.delete('/messages/:id', requireAdmin, (req, res) => {
   res.status(204).end()
 })
 
+// herkunft (Phase 5 Task 1, lib/herkunft.js): 'partner:<Name>' | 'weitergabe:<Bereichsname>' |
+// 'stapel:<Label>' | 'altbestand' - aus dem Gutschein, mit dem der Bereich entstand. quelle bleibt als Freitext.
 router.get('/overview', requireAdmin, (req, res) => {
   const families = db
     .prepare(
-      `SELECT f.id, f.name, f.art, f.is_demo, f.created_at, f.quelle,
+      `SELECT f.id, f.name, f.art, f.is_demo, f.created_at, f.quelle, ${HERKUNFT_COLUMNS_SQL},
          (SELECT COUNT(*) FROM dogs d WHERE d.family_id = f.id) AS dogs,
          (SELECT COUNT(*) FROM timeline_entries t WHERE t.family_id = f.id) AS entries,
          (SELECT COUNT(*) FROM notes n WHERE n.family_id = f.id) AS notes,
@@ -120,9 +123,11 @@ router.get('/overview', requireAdmin, (req, res) => {
             UNION ALL SELECT MAX(created_at) FROM notes WHERE family_id = f.id
             UNION ALL SELECT MAX(created_at) FROM note_replies WHERE family_id = f.id
          )) AS last_activity
-       FROM families f ORDER BY f.created_at`
+       FROM families f ${HERKUNFT_JOINS_SQL}
+       ORDER BY f.created_at`
     )
     .all()
+    .map(withHerkunft)
 
   res.json({
     stats: {
