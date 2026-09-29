@@ -49,3 +49,15 @@ describe('AdminImageUpload – Vorschau nur für /partner-media', () => {
     expect(input.tabIndex).not.toBe(-1)
   })
 })
+
+describe('AdminImageUpload – Vorschau mit Alternativtext', () => {
+  test('ohne Angabe beschreibt das Label die Vorschau ("Aktuelles Logo")', async () => {
+    await render({ label: 'Logo', imageUrl: '/partner-media/abc.png' })
+    expect(container.querySelector('img').getAttribute('alt')).toBe('Aktuelles Logo')
+  })
+
+  test('previewAlt überschreibt die Vorgabe', async () => {
+    await render({ imageUrl: '/partner-media/abc.png', previewAlt: 'Bild der Empfehlung' })
+    expect(container.querySelector('img').getAttribute('alt')).toBe('Bild der Empfehlung')
+  })
+})

@@ -193,6 +193,8 @@ describe('PartnerProfilePage – Angaben', () => {
     await render()
 
     expect([...container.querySelectorAll('legend')].map((legend) => legend.textContent)).toEqual(['Auftritt', 'Links', 'Kontakt', 'Standort'])
+    expect(container.querySelector('#profile-name').getAttribute('maxlength')).toBe('120')
+    expect(container.querySelector('#profile-portalTitel').getAttribute('maxlength')).toBe('120')
     expect(container.querySelector('#profile-website')).not.toBeNull()
     expect(container.querySelector('#profile-spendenUrl')).toBeNull()
     expect(container.querySelector('#profile-vermittlungUrl')).toBeNull()

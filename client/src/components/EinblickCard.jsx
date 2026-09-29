@@ -137,7 +137,13 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
                 <Icon name="edit" />
                 Bearbeiten
               </button>
-              <ConfirmButton disabled={isDemo || deleting} onConfirm={handleDelete} label="Löschen" confirmLabel="Wirklich löschen?" />
+              <ConfirmButton
+                disabled={isDemo || deleting}
+                describedBy={isDemo ? demoHintId : undefined}
+                onConfirm={handleDelete}
+                label="Löschen"
+                confirmLabel="Wirklich löschen?"
+              />
             </div>
             {error && (
               <p className="field-error" role="alert">

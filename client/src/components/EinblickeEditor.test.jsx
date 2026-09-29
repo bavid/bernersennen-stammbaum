@@ -237,6 +237,7 @@ describe('EinblickeEditor – Bearbeiten und Löschen', () => {
     expect(deleteEinblick).not.toHaveBeenCalled()
     expect(buttonIn(card, 'Wirklich löschen?')).toBeDefined()
 
+    expect(buttonIn(card, 'Wirklich löschen?').hasAttribute('aria-describedby')).toBe(false)
     await act(async () => buttonIn(card, 'Wirklich löschen?').click())
 
     expect(deleteEinblick).toHaveBeenCalledWith(1)
@@ -285,10 +286,15 @@ describe('EinblickeEditor – Demo', () => {
     expect(cards()).toHaveLength(2)
     expect(container.querySelector('.einblick-form input[type="file"]').disabled).toBe(true)
     expect(submitButton().disabled).toBe(true)
+    const hint = document.getElementById('einblicke-demo-hint')
+    expect(hint.textContent).toBe('In der Demo nicht möglich.')
     for (const card of cards()) {
-      expect(buttonIn(card, 'Bearbeiten').disabled).toBe(true)
-      expect(buttonIn(card, 'Löschen').disabled).toBe(true)
+      for (const label of ['Bearbeiten', 'Löschen']) {
+        const btn = buttonIn(card, label)
+        expect(btn.disabled).toBe(true)
+        // Screenreader erfahren über aria-describedby, warum der Knopf gesperrt ist.
+        expect(btn.getAttribute('aria-describedby')).toBe('einblicke-demo-hint')
+      }
     }
-    expect(container.textContent).toContain('In der Demo nicht möglich.')
   })
 })

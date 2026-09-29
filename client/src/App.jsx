@@ -378,7 +378,7 @@ export default function App() {
           {family.isDemo && <DemoBanner onLeave={handleLeaveDemo} />}
           <AppHeader family={family} onLogout={handleLogout} onFamilyChange={setFamily} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
-          {isPartnerArea(family) && <ViewModeSwitch />}
+          {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}
           {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
               bliebe beim Wechsel des Bereichs (ContextSwitcher navigiert zur Start-Route, die dem
               aktuellen Pfad entsprechen kann, z. B. Stammbaum -> Stammbaum) die alte Seiteninstanz

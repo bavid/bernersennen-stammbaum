@@ -5,6 +5,7 @@ import {
   DEMO_HINT,
   MAX_NAME_LENGTH,
   MAX_PORTAL_TEXT_LENGTH,
+  MAX_TITEL_LENGTH,
   MIN_PORTAL_TEXT_LENGTH,
   changedProfileFields,
   hasShelterLinks,
@@ -94,7 +95,7 @@ export default function PartnerProfileForm({ profile, onSaved, onLogoUploaded })
         <legend>Auftritt</legend>
         <div className="form-grid">
           <ProfileInput name="name" label="Name" maxLength={MAX_NAME_LENGTH} autoComplete="organization" {...fieldState} />
-          <ProfileInput name="portalTitel" label="Portal-Titel" maxLength={120} placeholder={`Willkommen bei ${form.name || '…'}`} {...fieldState} />
+          <ProfileInput name="portalTitel" label="Portal-Titel" maxLength={MAX_TITEL_LENGTH} placeholder={`Willkommen bei ${form.name || '…'}`} {...fieldState} />
           <AdminField
             id="profile-portalText"
             label="Portal-Text"

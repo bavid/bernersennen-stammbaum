@@ -8,16 +8,19 @@ const DEFAULT_EDIT_ROUTE = '/profil'
 // Umschalter "Bearbeiten | Kundensicht" (Phase P1) über jeder Seite eines Partner- oder Tierheim-
 // Bereichs (App.jsx, direkt unter dem Kopf). Zwei echte Links, der aktive mit aria-current. "Bearbeiten"
 // führt zurück zur zuletzt besuchten Seite außerhalb der Kundensicht (Vorgabe: /profil) - der Umschalter
-// lebt außerhalb von <main key=…> und merkt sich den Pfad deshalb über Seitenwechsel hinweg.
-export default function ViewModeSwitch() {
+// lebt außerhalb von <main key=…> und merkt sich den Pfad deshalb über Seitenwechsel hinweg, aber nur
+// für den Bereich areaId: nach einem Bereichswechsel gilt wieder die Vorgabe.
+export default function ViewModeSwitch({ areaId }) {
   const { pathname } = useLocation()
   const isCustomerView = pathname === CUSTOMER_VIEW_ROUTE
-  const [lastEditRoute, setLastEditRoute] = useState(DEFAULT_EDIT_ROUTE)
+  const [memory, setMemory] = useState({ areaId, route: DEFAULT_EDIT_ROUTE })
 
   useEffect(() => {
-    if (!isCustomerView) setLastEditRoute(pathname)
-  }, [pathname, isCustomerView])
+    if (!isCustomerView) setMemory({ areaId, route: pathname })
+  }, [areaId, pathname, isCustomerView])
 
+  // Gehört die gemerkte Seite zu einem anderen Bereich, zählt sie schon beim ersten Rendern nicht mehr.
+  const lastEditRoute = memory.areaId === areaId ? memory.route : DEFAULT_EDIT_ROUTE
   const editRoute = isCustomerView ? lastEditRoute : pathname
 
   return (

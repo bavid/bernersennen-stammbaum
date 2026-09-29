@@ -6,6 +6,7 @@ import { partnerStatusLabel } from './partnerTypes.js'
 export const MIN_PORTAL_TEXT_LENGTH = 40
 export const MAX_PORTAL_TEXT_LENGTH = 2000
 export const MAX_NAME_LENGTH = 120
+export const MAX_TITEL_LENGTH = 120
 
 export const LOCKED_HINT = 'Euer Profil ist gesperrt – bitte meldet euch beim Betreiber.'
 export const DEMO_HINT = 'In der Demo nicht möglich.'

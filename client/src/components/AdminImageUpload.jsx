@@ -6,7 +6,8 @@ import { isPartnerMedia } from '../lib/discover.js'
 // eigenen Endpunkt, der Server prüft PNG/JPG/WebP (Magic Bytes) und die Größe. upload(file) liefert die
 // neue öffentliche URL. Die Vorschau zeigt nur Bilder unter /partner-media (isPartnerMedia) - nie eine
 // beliebige Adresse in einem src. disabled (z. B. in der Demo) sperrt die Dateiauswahl - den Grund dazu
-// zeigt der Aufrufer an.
+// zeigt der Aufrufer an. previewAlt beschreibt die Vorschau (Vorgabe aus dem Label: "Aktuelles Logo",
+// "Aktuelles Bild").
 export default function AdminImageUpload({
   label,
   buttonLabel,
@@ -14,6 +15,7 @@ export default function AdminImageUpload({
   upload,
   onUploaded,
   previewClassName = 'admin-upload-preview',
+  previewAlt = `Aktuelles ${label}`,
   disabled = false
 }) {
   const [busy, setBusy] = useState(false)
@@ -37,7 +39,7 @@ export default function AdminImageUpload({
   return (
     <div className="field">
       <span className="field-label">{label}</span>
-      {isPartnerMedia(imageUrl) && <img src={imageUrl} alt="" className={previewClassName} />}
+      {isPartnerMedia(imageUrl) && <img src={imageUrl} alt={previewAlt} className={previewClassName} />}
       {error && (
         <p className="field-error" role="alert">
           {error}
