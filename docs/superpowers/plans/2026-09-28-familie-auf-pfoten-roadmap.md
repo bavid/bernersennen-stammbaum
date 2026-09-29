@@ -83,6 +83,7 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 | 5 | Admin: Druckkarten mit QR (Kunden-, Partner-, Partner-Stapel-Karten), Partner sehen ihren Kunden-Stapel, `/partner-werden`, Statistik, Präsentationsmodus | [Plan](2026-09-29-phase-5-admin-praesentation.md) | 🚀 auf der Vorschau |
 | U | Übersichtlichkeit & Wording: Zurück von Impressum/Datenschutz, Einstiege „Für Tierhalter / Für Partner“ mit Partner-Demo, „Familienbande“/„Nachwuchs“ im Standard-Auftritt, ruhigeres UI (Filter-Chips, Reiter, Raster) | [Plan](2026-09-29-phase-u-uebersicht-wording.md) | 🚀 auf der Vorschau |
 | N | Anfragen & Benachrichtigungen: Gutschein-/Partner-Anfrage mit gültiger E-Mail, Admin-Liste mit Code-Zuweisung, Telegram je Ereignis schaltbar | [Plan](2026-09-29-phase-n-anfragen-benachrichtigungen.md) | 🚀 auf der Vorschau (offen: Hinweis-Banner, Task 5) |
+| M | „Mein Revier“: öffentliche Profile (Opt-in, PLZ + Haken), Sichtbarkeit „öffentlich“ je Eintrag, Radar in der Nähe, Folgen, „Mein Profil für andere“ | Konzept (Plan folgt) | ☐ offen |
 | G | Eigene Domain & Go-Live: Domain/DNS/Caddy (Betreiber), `PUBLIC_URL`, HSTS, robots.txt, Prod-Übernahme mit Freigabe, danach Karten drucken | [Plan](2026-09-29-phase-g-domain-golive.md) | ⏳ Code fertig (PUBLIC_URL, HSTS, robots/sitemap) – Domain/DNS/Proxy/Prod beim Betreiber |
 | 4 | Import, Crawler, Website-Prüfung, Prüfliste | zurückgestellt | ⏸ blockiert (Frage 1) |
 

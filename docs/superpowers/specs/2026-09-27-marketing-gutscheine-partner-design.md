@@ -825,6 +825,38 @@ Eine Familie ist nie öffentlich. Die Mitglieder-Seite zeigt diese Übersicht, d
 
 ---
 
+## Phase M — „Mein Revier“: öffentliche Profile und Radar in der Nähe (Zusatz 29.09.)
+
+**Idee:** Wer möchte, schaltet sein Profil öffentlich. Andere Tierhalter in der Nähe sehen es im Radar „Mein
+Revier“, können öffentlichen Erinnerungen folgen und so die Tiere aus der Nachbarschaft kennenlernen. Das ist eine
+bewusste Ausnahme vom Grundsatz „Eine Familie ist nie öffentlich“: nur mit ausdrücklichem Opt-in.
+
+- **Öffentliches Profil (Opt-in):**
+  - Schalter „Profil öffentlich zeigen“ im eigenen Zuhause bzw. in einer Familie (dort nur die Leitung).
+  - Pflicht: PLZ und das Häkchen „Ich möchte, dass andere mein Profil sehen können“.
+  - Optional: Anzeigename (statt des Bereichsnamens), kurzer Text, Profilbild.
+  - Standort nur als PLZ, im Radar nur als Entfernungsstufe („unter 5 km“, „5–10 km“ …), nie genauer.
+  - Jederzeit wieder ausschaltbar; dann sofort unsichtbar.
+- **Was öffentlich ist:**
+  - Je Tier ein eigener Schalter „im öffentlichen Profil zeigen“ (Standard: aus; „alle zeigen“ als Abkürzung).
+  - Einträge bekommen eine dritte Sichtbarkeit: **privat** (nur Zuhause) · **Familie** (wie bisher) ·
+    **öffentlich**. Nur ausdrücklich öffentliche Einträge erscheinen im Profil und im Radar.
+  - Keine Personen-Namen nötig, keine Adresse, keine Kontaktdaten.
+- **„Mein Revier“ (Radar):**
+  - Liste öffentlicher Profile im Umkreis (5/10/25 km) mit Tieren und der neuesten öffentlichen Erinnerung,
+    sortiert nach Entfernungsstufe; Filter nach Tierart.
+  - **Folgen:** öffentlichen Profilen folgen; ein Bereich „Aus deinem Revier“ zeigt neue öffentliche Erinnerungen der
+    gefolgten Profile. Folgen ist für den anderen sichtbar nur als Zahl, nicht als Liste (Vorschlag).
+- **„Mein Profil für andere“:** Knopf im eigenen Bereich, zeigt das öffentliche Profil genau so, wie andere es
+  sehen (wie die Kundensicht der Partner) – auch vor dem Einschalten.
+- **Schutz:** melden/ausblenden je Profil, Admin kann sperren, Rate-Limits, `noindex`, keine Direktnachrichten im
+  ersten Schritt, Demo-Profile auf der Vorschau.
+- **Offene Fragen:** Kommentare unter öffentlichen Erinnerungen erlauben? Nachrichten zwischen Tierhaltern? Sollen
+  öffentliche Profile für nicht angemeldete Besucher sichtbar sein oder nur für angemeldete Nutzer (Vorschlag: nur
+  für Angemeldete)?
+
+---
+
 ## Phase G — Eigene Domain und Go-Live (Zusatz 29.09.)
 
 **Idee:** Wenn Vorschau und Phasen stehen, zieht alles unter eine eigene Domain. Erst danach werden Karten
