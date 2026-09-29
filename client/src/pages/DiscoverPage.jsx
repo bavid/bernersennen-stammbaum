@@ -62,7 +62,7 @@ export default function DiscoverPage({ load, preview = false }) {
     focusTabAfterSwitch.current = false
     const tabButton = document.getElementById(`discover-tab-${tab}`)
     tabButton?.focus()
-    tabButton?.closest('.discover-tabs')?.scrollIntoView?.({ block: 'nearest' })
+    tabButton?.closest('.tab-bar')?.scrollIntoView?.({ block: 'nearest' })
   }, [tab])
 
   function showAll(key) {

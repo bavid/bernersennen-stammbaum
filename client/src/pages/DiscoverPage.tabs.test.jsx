@@ -121,7 +121,7 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
     await render()
 
     expect(container.querySelector('[role="tablist"]').getAttribute('aria-label')).toBe('Bereiche')
-    expect(tabs().map((el) => [el.firstChild.textContent, el.querySelector('.discover-tab-count').textContent])).toEqual([
+    expect(tabs().map((el) => [el.firstChild.textContent, el.querySelector('.tab-bar-count').textContent])).toEqual([
       ['Alle', '7'],
       ['Hundeschulen', '5'],
       ['Salon & Betreuung', '0'],
@@ -247,6 +247,6 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
     discover.mockResolvedValue(response)
     await render()
     expect(tab('Hundeschulen').textContent).toBe('Hundeschulen5 (5 Einträge)')
-    expect(tab('Hundeschulen').querySelector('.discover-tab-count').getAttribute('aria-hidden')).toBe('true')
+    expect(tab('Hundeschulen').querySelector('.tab-bar-count').getAttribute('aria-hidden')).toBe('true')
   })
 })

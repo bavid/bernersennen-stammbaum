@@ -2,6 +2,7 @@
 @import './base.css';
 @import './components.css';
 @import './layout.css';
+@import './tabs.css';
 @import './login.css';
 @import './tree.css';
 @import './tree-lanes.css';
