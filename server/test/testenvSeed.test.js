@@ -67,6 +67,20 @@ function partnerBatchInfo(dir) {
   return { partnerId: partner?.id ?? null, batch, voucherCount, linkedCount }
 }
 
+// Partner-Zugang-Stapel "Partner-Zugang (Test)" (Phase P1 Task 4, siehe scripts/testenv-seed.js): ein
+// Admin-Stapel mit zweck 'partnerzugang', ohne Partner-Bindung - zum Ausprobieren von "Partner-Zugang
+// einlösen" unter /v#CODE.
+const ACCESS_BATCH_LABEL = 'Partner-Zugang (Test)'
+
+function accessBatchInfo(dir) {
+  const Database = require('better-sqlite3')
+  const db = new Database(path.join(dir, 'data.db'), { readonly: true })
+  const batches = db.prepare('SELECT id, kind, zweck, partner_id, partner_typ, size FROM voucher_batches WHERE label = ?').all(ACCESS_BATCH_LABEL)
+  const voucherCount = batches.length ? db.prepare('SELECT COUNT(*) AS n FROM vouchers WHERE batch_id = ?').get(batches[0].id).n : 0
+  db.close()
+  return { batches, voucherCount }
+}
+
 test('testenv-seed never runs in production', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-seedguard-'))
   const result = run({ DATA_DIR: dir, APP_ENV: 'production' })
@@ -96,8 +110,11 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   assert.match(first.stdout, /Passwort: sonnenhang/)
   assert.match(first.stdout, /Passwort: deich/)
   // Phase T Task 6: replaceDemoPack() legt inzwischen auch das Demo-Tierheim an (is_demo=1, 'standard').
+  // Phase P1 Task 4: dazu die zwei Demo-Partner-Bereiche (Pfotenglück, Wuschelglück).
   assert.deepEqual(familiesIn(dir), [
     ['Familie Sonnenhang', 1, 'standard'],
+    ['Hundesalon Wuschelglück', 1, 'standard'],
+    ['Hundeschule Pfotenglück', 1, 'standard'],
     ['Rudel vom Sonnenhang (Test)', 0, 'berner'],
     ['Tierheim Sonnenhang', 1, 'standard'],
     ['Zuhause am Deich', 1, 'standard'],
@@ -119,8 +136,22 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   assert.equal(firstBatch.voucherCount, 3)
   assert.equal(firstBatch.linkedCount, 3, 'alle drei Gutscheine tragen die Id des Demo-Partners')
 
-  assert.equal(run(env).status, 0)
-  assert.equal(familiesIn(dir).length, 5, 'second run replaces the demo trio (Rudel/Zuhause/Tierheim) and keeps both test packs')
+  // Partner-Zugang-Stapel: 3 Codes nach den Admin-Codes, zweck 'partnerzugang', an keinen Partner gebunden.
+  assert.match(
+    first.stdout,
+    /Admin-Stapel "Testumgebung" \(5 Codes\):[\s\S]*Partner-Zugang-Stapel "Partner-Zugang \(Test\)" \(3 Codes\):\r?\n[0-9A-Z-]+\r?\n[0-9A-Z-]+\r?\n[0-9A-Z-]+\r?\n/
+  )
+  const firstAccess = accessBatchInfo(dir)
+  assert.equal(firstAccess.batches.length, 1)
+  const { kind, zweck, partner_id: partnerId, partner_typ: partnerTyp, size } = firstAccess.batches[0]
+  assert.deepEqual({ kind, zweck, partnerId, partnerTyp, size }, { kind: 'admin', zweck: 'partnerzugang', partnerId: null, partnerTyp: null, size: 3 })
+  assert.equal(firstAccess.voucherCount, 3)
+
+  const second = run(env)
+  assert.equal(second.status, 0, second.stderr)
+  assert.equal(familiesIn(dir).length, 7, 'second run replaces the demo families (Rudel/Zuhause/Tierheim/Partner-Bereiche) and keeps both test packs')
+  assert.match(second.stdout, /Partner-Zugang-Stapel "Partner-Zugang \(Test\)" besteht schon/)
+  assert.deepEqual(accessBatchInfo(dir), firstAccess, 'idempotent: kein zweiter Stapel, keine neuen Codes')
 
   // Simuliert ein Rudel, das die Seed-Funktion nicht kennt (z. B. echte Nutzung auf der Vorschau).
   // Ohne so ein Rudel würde --reset nichts beweisen: die Familienzahl wäre mit oder ohne --reset
@@ -133,6 +164,8 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   assert.deepEqual(names(), [
     'Familie Sonnenhang',
     'Familie Vorher',
+    'Hundesalon Wuschelglück',
+    'Hundeschule Pfotenglück',
     'Rudel vom Sonnenhang (Test)',
     'Tierheim Sonnenhang',
     'Zuhause am Deich',
@@ -154,7 +187,15 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   assert.equal(run(env, ['--reset']).status, 0)
   assert.deepEqual(
     names(),
-    ['Familie Sonnenhang', 'Rudel vom Sonnenhang (Test)', 'Tierheim Sonnenhang', 'Zuhause am Deich', 'Zuhause am Deich (Test)'],
+    [
+      'Familie Sonnenhang',
+      'Hundesalon Wuschelglück',
+      'Hundeschule Pfotenglück',
+      'Rudel vom Sonnenhang (Test)',
+      'Tierheim Sonnenhang',
+      'Zuhause am Deich',
+      'Zuhause am Deich (Test)'
+    ],
     '--reset must delete families the seed did not create'
   )
 
@@ -163,6 +204,9 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   const afterReset = partnerBatchInfo(dir)
   assert.equal(afterReset.voucherCount, 3)
   assert.equal(afterReset.linkedCount, 3, '--reset stellt die Partner-Zuordnung wieder her')
+  const accessAfterReset = accessBatchInfo(dir)
+  assert.equal(accessAfterReset.batches.length, 1, '--reset legt den Partner-Zugang-Stapel frisch an')
+  assert.equal(accessAfterReset.voucherCount, 3)
 
   fs.rmSync(dir, { recursive: true, force: true })
 })

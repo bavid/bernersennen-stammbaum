@@ -17,24 +17,34 @@ const {
 const { DEMO_PARTNERS } = require('../seed/demo-partners')
 const { SHELTER_NAME, DOGS: SHELTER_DOGS, TIMELINE: SHELTER_TIMELINE } = require('../seed/demo-shelter')
 const { DEMO_PROMOTIONS, DEMO_SETTINGS, DEMO_DONATION_REPORT } = require('../seed/demo-discover')
+const { createDemoPartnerAreas } = require('./demoPartnerAreas')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
 
 // Kopiert Seed-Bilder mit zufälligem Namen in den Upload-Ordner (jedes Bild nur einmal).
+// copyOwn(): immer eine eigene, neue Kopie (Phase P1 Task 4: Demo-Einblicke, deren Fotos öffentlich sind,
+// teilen sich so keine Datei mit einem Tier oder Eintrag, siehe lib/demoPartnerAreas.js).
 // copiedUrls(): alle bisher kopierten /uploads/-Pfade - replaceDemoPack räumt sie nach einem Rollback weg.
 function createImageCopier(uploadDir) {
   fs.mkdirSync(uploadDir, { recursive: true })
   const copied = new Map()
+  const ownCopies = []
+  const copyFile = (fileName) => {
+    const target = `${crypto.randomUUID()}${path.extname(fileName)}`
+    fs.copyFileSync(path.join(IMAGE_DIR, fileName), path.join(uploadDir, target))
+    return `/uploads/${target}`
+  }
   const copyImage = (fileName) => {
-    if (!copied.has(fileName)) {
-      const target = `${crypto.randomUUID()}${path.extname(fileName)}`
-      fs.copyFileSync(path.join(IMAGE_DIR, fileName), path.join(uploadDir, target))
-      copied.set(fileName, `/uploads/${target}`)
-    }
+    if (!copied.has(fileName)) copied.set(fileName, copyFile(fileName))
     return copied.get(fileName)
   }
-  copyImage.copiedUrls = () => [...copied.values()]
+  copyImage.copyOwn = (fileName) => {
+    const url = copyFile(fileName)
+    ownCopies.push(url)
+    return url
+  }
+  copyImage.copiedUrls = () => [...copied.values(), ...ownCopies]
   return copyImage
 }
 
@@ -466,13 +476,17 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, t
 // alles innerhalb DERSELBEN Transaktion wie das restliche Anlegen, damit bei einem Fehler (z. B. eine
 // künftig ungültige Demo-Partner-Angabe) die ganze Transaktion zurückrollt und die alten Partner
 // unangetastet bleiben, statt für einen Moment ganz zu fehlen.
-// Phase T Task 6: die drei Demo-Partner entstehen in fester Reihenfolge (siehe seed/demo-partners.js),
+// Phase T Task 6: die Demo-Partner entstehen in fester Reihenfolge (siehe seed/demo-partners.js),
 // aber ein Nachschlagen über den Slug bleibt robust, falls sich die Reihenfolge dort je ändert.
 //
 // Phase 3 Task 3: auch die Demo-Inhalte für "Entdecken" (Demo-Empfehlungen samt Klickzahlen und Bildern,
 // demo_*-Einstellungen, Demo-Spendenberichte - siehe seed/demo-discover.js) werden in DERSELBEN
 // Transaktion weggeräumt und neu angelegt; echte Empfehlungen/Einstellungen/Berichte bleiben unberührt.
 // mediaDir: Ablage der Empfehlungsbilder (Standard: config.partnerMediaDir, wie beim Admin-Upload).
+//
+// Phase P1 Task 4: die Demo-Partner-Bereiche (is_demo = 1, art 'partner') sind Demo-Familien wie Rudel/
+// Zuhause/Tierheim - sie stecken in previous und gehen nach dem Neuaufbau mit deleteFamily. Die alten
+// Demo-Einblicke räumt removeDemoEinblicke in der Transaktion weg, ihre Fotos erst danach.
 const SHELTER_PARTNER_SLUG = 'tierheim-sonnenhang'
 
 function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDir } = {}) {
@@ -514,6 +528,10 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     const shelterPartner = db.prepare('SELECT id FROM partners WHERE slug = ?').get(SHELTER_PARTNER_SLUG)
     const shelterResult = createDemoShelter(db, { copyImage, partnerId: shelterPartner.id })
 
+    // Phase P1 Task 4: Demo-Partner-Bereiche (Pfotenglück, Wuschelglück) und die Demo-Einblicke aller
+    // Demo-Partner (auch des Tierheims) - nach insertDemoPartners (neue Ids) und removeDemoEinblicke oben.
+    const partnerAreaResult = createDemoPartnerAreas(db, { copyImage })
+
     const householdResult = createDemoHousehold(db, {
       password: crypto.randomBytes(24).toString('base64url'),
       isDemo: true,
@@ -529,6 +547,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       household: householdResult,
       shelter: shelterResult,
       partnerIds: newPartnerIds,
+      partnerAreas: partnerAreaResult,
       discover: discoverResult,
       removedEinblickPhotos
     }
@@ -544,7 +563,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     for (const file of newPromotionImages) fs.rmSync(path.join(mediaDir, file), { force: true })
     throw err
   }
-  const { created, household, shelter, partnerIds, discover, removedEinblickPhotos } = built
+  const { created, household, shelter, partnerIds, partnerAreas, discover, removedEinblickPhotos } = built
 
   for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
   removeUploads(uploadDir, unusedEinblickPhotos(db, removedEinblickPhotos))
@@ -562,7 +581,16 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
   }
 
   for (const family of previous) removeUploads(uploadDir, deleteFamily(db, family.id))
-  return { removed: previous, created, household, shelter, partnerIds, promotionIds: discover.promotionIds }
+  return {
+    removed: previous,
+    created,
+    household,
+    shelter,
+    partnerIds,
+    partnerAreas: partnerAreas.areas,
+    einblicke: partnerAreas.einblicke,
+    promotionIds: discover.promotionIds
+  }
 }
 
 module.exports = {

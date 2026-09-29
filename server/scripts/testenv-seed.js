@@ -13,6 +13,7 @@ const db = require('../db')
 const { deleteFamily, removeUploads } = require('../lib/families')
 const { createDemoPack, createDemoHousehold, createImageCopier, replaceDemoPack } = require('../lib/demoPack')
 const { createBatch } = require('../lib/vouchers')
+const { partnerAccessBatchOptions } = require('../lib/partnerAccess')
 const { formatCode } = require('../lib/codes')
 
 const TEST_PACK_NAME = 'Rudel vom Sonnenhang (Test)'
@@ -20,8 +21,10 @@ const TEST_HOUSEHOLD_NAME = 'Zuhause am Deich (Test)'
 const ADMIN_BATCH_LABEL = 'Testumgebung'
 const INVITE_BATCH_LABEL = 'Einladung Rudel vom Sonnenhang (Test)'
 const PARTNER_BATCH_LABEL = 'Partner-Stapel "Tierheim Sonnenhang"'
+const ACCESS_BATCH_LABEL = 'Partner-Zugang (Test)'
 const ADMIN_BATCH_SIZE = 5
 const PARTNER_BATCH_SIZE = 3
+const ACCESS_BATCH_SIZE = 3
 // Lokal ein festes Passwort (E2E-Skripte), auf der öffentlich erreichbaren Vorschau ein zufälliges
 const testPassword = appEnv === 'dev' ? 'sonnenhang' : crypto.randomBytes(9).toString('base64url')
 const testHouseholdPassword = appEnv === 'dev' ? 'deich' : crypto.randomBytes(9).toString('base64url')
@@ -99,6 +102,17 @@ try {
     console.log(`${PARTNER_BATCH_LABEL} (${PARTNER_BATCH_SIZE} Codes):\n${codes.map(formatCode).join('\n')}`)
   } else {
     console.log(`${PARTNER_BATCH_LABEL} besteht schon`)
+  }
+
+  // Partner-Zugang-Stapel (Phase P1 Task 4): Admin-Stapel mit zweck 'partnerzugang', an keinen Partner
+  // gebunden - zum Ausprobieren, wie ein neuer Partner unter /v#CODE sein Profil und seinen Bereich selbst
+  // einrichtet (lib/partnerAccess.js). Dieselben Stapel-Optionen wie POST /api/admin/voucher-batches.
+  if (!db.prepare('SELECT 1 FROM voucher_batches WHERE label = ?').get(ACCESS_BATCH_LABEL)) {
+    const options = partnerAccessBatchOptions(db, { size: ACCESS_BATCH_SIZE })
+    const { codes } = createBatch(db, { label: ACCESS_BATCH_LABEL, size: ACCESS_BATCH_SIZE, ...options })
+    console.log(`Partner-Zugang-Stapel "${ACCESS_BATCH_LABEL}" (${ACCESS_BATCH_SIZE} Codes):\n${codes.map(formatCode).join('\n')}`)
+  } else {
+    console.log(`Partner-Zugang-Stapel "${ACCESS_BATCH_LABEL}" besteht schon`)
   }
 
   // Ein Einladungs-Gutschein des Test-Rudels: löst man ihn ein, entsteht ein Zuhause, das gleich

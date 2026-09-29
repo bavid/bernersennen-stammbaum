@@ -43,4 +43,18 @@ function insertPartnerArea(db, { partner, accessKeyHash, voucherId = null }) {
   return { familyId: Number(familyId), art }
 }
 
-module.exports = { PARTNER_AREA_ARTS_SQL, areaArtForTyp, areaLabel, findPartnerArea, insertPartnerArea }
+// Phase P1 Task 4: der Demo-Partner-Bereich (art 'partner', Bereich UND Partner is_demo = 1) zum Slug eines
+// Demo-Partners - EINE Regel für POST /api/demo { as: 'partner', slug } (routes/auth.js) und das
+// partnerDemo-Kennzeichen des Portals (lib/partnerPortal.js), damit der Knopf "Demo als Partner ansehen"
+// nie ins Leere führt. Ein echter Partner, das Demo-Tierheim (art 'tierheim', dafür gibt es { as:
+// 'tierheim' }) oder ein Demo-Partner ohne Bereich liefern undefined.
+function findDemoPartnerArea(db, slug) {
+  return db
+    .prepare(
+      `SELECT f.id FROM families f JOIN partners p ON p.id = f.partner_id
+       WHERE p.slug = ? AND p.is_demo = 1 AND f.is_demo = 1 AND f.art = ? ORDER BY f.id DESC LIMIT 1`
+    )
+    .get(slug, ART.partner)
+}
+
+module.exports = { PARTNER_AREA_ARTS_SQL, areaArtForTyp, areaLabel, findPartnerArea, insertPartnerArea, findDemoPartnerArea }

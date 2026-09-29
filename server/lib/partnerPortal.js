@@ -8,6 +8,7 @@
 const db = require('../db')
 const { publicPartner } = require('./partners')
 const { listVisibleEinblicke, publicEinblick } = require('./einblicke')
+const { findDemoPartnerArea } = require('./partnerAreas')
 
 // Gibt es für diesen Partner überhaupt einen Tierheim-Bereich? Ohne ihn wäre "Demo als Tierheim ansehen"
 // (Phase T Task 6) ein toter Knopf: api.demo({ as: 'tierheim' }) schlägt fehl, wenn der Demo-Partner (noch)
@@ -30,6 +31,9 @@ function buildPortal(partner, { preview = false } = {}) {
     // Phase T Task 6: der Client zeigt für Demo-Partner mit einem tatsächlich bestehenden Demo-Tierheim
     // zusätzlich "Demo als Tierheim ansehen" (PartnerPortalPage.jsx) - ohne extra Anfrage.
     ...(partner.is_demo && findShelterFamily.get(partner.id) ? { shelterDemo: true } : {}),
+    // Phase P1 Task 4: ebenso "Demo als Partner ansehen", wenn es einen Demo-Partner-Bereich gibt - dieselbe
+    // Regel wie POST /api/demo { as: 'partner', slug } (lib/partnerAreas.js findDemoPartnerArea).
+    ...(partner.is_demo && findDemoPartnerArea(db, partner.slug) ? { partnerDemo: true } : {}),
     // Phase P Task 3b: höchstens 60 nicht ausgeblendete Einblicke, neueste zuerst.
     einblicke: listVisibleEinblicke(partner.id).map((row) => publicEinblick(row, { preview }))
   }

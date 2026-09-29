@@ -10,11 +10,14 @@ const { replaceDemoPack } = require('../lib/demoPack')
 const DEMO_NAME = 'Familie Sonnenhang'
 
 try {
-  const { removed, created, household, shelter } = replaceDemoPack(db, uploadDir, { theme: 'standard', name: DEMO_NAME })
+  const { removed, created, household, shelter, partnerAreas, einblicke } = replaceDemoPack(db, uploadDir, { theme: 'standard', name: DEMO_NAME })
   for (const family of removed) console.log(`Alte Demo entfernt: "${family.name}"`)
   console.log(`Demo "${DEMO_NAME}" angelegt: ${created.dogs} Tiere, ${created.entries} Chronik-Einträge (schreibgeschützt).`)
   console.log(`Zuhause "Zuhause am Deich" angelegt: ${household.dogs} Tiere, ${household.entries} Chronik-Einträge (schreibgeschützt, Mitglied im Rudel).`)
   console.log(`Tierheim "Tierheim Sonnenhang" angelegt: ${shelter.dogs} Tiere, ${shelter.entries} Chronik-Einträge (schreibgeschützt).`)
+  for (const area of partnerAreas) {
+    console.log(`Partner-Bereich "${area.slug}" angelegt: ${einblicke[area.slug] || 0} Einblicke (schreibgeschützt).`)
+  }
 } catch (err) {
   console.error(`Demo fehlgeschlagen: ${err.message}`)
   process.exitCode = 1

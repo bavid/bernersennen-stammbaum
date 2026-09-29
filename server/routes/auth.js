@@ -10,6 +10,9 @@ const { isTheme } = require('../lib/themes')
 const { ART, canEnter, buildMe } = require('../lib/context')
 const { generateCode, normalizeCode, hashCode, formatCode } = require('../lib/codes')
 const { validatePassword, validateUsername, validateEmail } = require('../lib/vouchers')
+const { SLUG_MAX_LENGTH } = require('../lib/partners')
+const { findDemoPartnerArea } = require('../lib/partnerAreas')
+const { DEFAULT_DEMO_PARTNER_SLUG } = require('../seed/demo-partner-area')
 
 const router = express.Router()
 
@@ -163,20 +166,37 @@ router.post('/login', authLimiter, async (req, res, next) => {
 // Öffentlicher Einstieg ohne Passwort: loggt standardmäßig ins schreibgeschützte Demo-Zuhause ein
 // (bevorzugt "Meine Chronik"; ohne Demo-Haushalt das Demo-Rudel). Mit { as: 'tierheim' } (Phase T
 // Task 6) loggt es stattdessen ins Demo-Tierheim ein - z. B. über den Knopf "Demo als Tierheim
-// ansehen" auf dem Portal eines Demo-Partners (PartnerPortalPage.jsx). Jeder andere Wert von "as" ist
-// ein Client-Fehler (400), kein stillschweigendes Ignorieren.
-const DEMO_AS_VALUES = ['tierheim']
+// ansehen" auf dem Portal eines Demo-Partners (PartnerPortalPage.jsx). Mit { as: 'partner', slug? }
+// (Phase P1 Task 4) in einen Demo-Partner-Bereich: ohne slug der von Pfotenglück (seed/demo-partner-area.js),
+// mit slug der dieses Demo-Partners - nur Demo-Partner-Bereiche (lib/partnerAreas.js findDemoPartnerArea),
+// alles andere 404. Jeder andere Wert von "as", ein slug ohne as: 'partner' oder ein slug, der kein
+// Text ist, sind Client-Fehler (400), kein stillschweigendes Ignorieren.
+const DEMO_AS_VALUES = ['tierheim', 'partner']
+
+function isValidDemoSlug(as, slug) {
+  if (slug === undefined) return true
+  return as === 'partner' && typeof slug === 'string' && slug.length > 0 && slug.length <= SLUG_MAX_LENGTH
+}
+
+function findDemoFamily(as, slug) {
+  if (as === 'tierheim') {
+    return db.prepare("SELECT id FROM families WHERE is_demo = 1 AND art = 'tierheim' ORDER BY id DESC LIMIT 1").get()
+  }
+  if (as === 'partner') return findDemoPartnerArea(db, slug ?? DEFAULT_DEMO_PARTNER_SLUG)
+  // Nur Zuhause oder Rudel - Demo-Partner-Bereiche und das Demo-Tierheim sind ebenfalls Demo-Familien.
+  return db
+    .prepare("SELECT id FROM families WHERE is_demo = 1 AND art IN ('zuhause', 'rudel') ORDER BY (art = 'zuhause') DESC, id DESC LIMIT 1")
+    .get()
+}
 
 router.post('/demo', authLimiter, (req, res) => {
-  const { as } = req.body || {}
+  const { as, slug } = req.body || {}
   if (as !== undefined && !DEMO_AS_VALUES.includes(as)) {
     return res.status(400).json({ error: 'Ungültiger Wert für „as“' })
   }
+  if (!isValidDemoSlug(as, slug)) return res.status(400).json({ error: 'Ungültiger Wert für „slug“' })
 
-  const demoFamily =
-    as === 'tierheim'
-      ? db.prepare("SELECT id, name, theme FROM families WHERE is_demo = 1 AND art = 'tierheim' ORDER BY id DESC LIMIT 1").get()
-      : db.prepare("SELECT id, name, theme FROM families WHERE is_demo = 1 ORDER BY (art = 'zuhause') DESC, id DESC LIMIT 1").get()
+  const demoFamily = findDemoFamily(as, slug)
   if (!demoFamily) return res.status(404).json({ error: 'Keine Demo verfügbar' })
   setSessionCookie(res, demoFamily.id)
   res.json(buildMe(demoFamily.id, demoFamily.id, true))

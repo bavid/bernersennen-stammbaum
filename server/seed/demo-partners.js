@@ -28,8 +28,26 @@ const DEMO_PARTNERS = [
     website: 'https://example.org/pfotenglueck'
   },
   {
+    // Phase P1 Task 4: ein Hundesalon mit eigenem Demo-Partner-Bereich und Einblicken (seed/demo-partner-area.js).
+    // PLZ in Hamburg wie Pfotenglück, damit beide in "Entdecken" nah beieinander stehen.
+    slug: 'hundesalon-wuschelglueck',
+    name: 'Hundesalon Wuschelglück',
+    typ: 'hundesalon',
+    status: 'aktiv',
+    plz: '22303',
+    farbe: '#a23e6c',
+    portalTitel: 'Pflege mit Ruhe und Zeit',
+    portalText:
+      'Bei uns bekommt euer Hund Zeit, Ruhe und eine Pflege, die zu seinem Fell passt – vom Wellness-Bad über die ' +
+      'Krallenpflege bis zum luftigen Sommerschnitt.\n\n' +
+      'Bringt gern sein Lieblingsleckerli mit. Für Welpen gibt es einen Kennenlerntermin, damit der erste Besuch im ' +
+      'Salon ganz entspannt wird.',
+    kontaktEmail: 'salon@example.org',
+    website: 'https://example.org/wuschelglueck'
+  },
+  {
     // Kein ist_partner (0) -> Badge "geprüft" statt "Partner" (siehe lib/partners.js publicPartner);
-    // keine Farbe, keine Links - bewusst der "schlichteste" der drei Demo-Partner.
+    // keine Farbe, keine Links - bewusst der "schlichteste" der Demo-Partner.
     slug: 'tierschutzverein-deichland',
     name: 'Tierschutzverein Deichland',
     typ: 'vermittlung',

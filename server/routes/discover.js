@@ -26,6 +26,8 @@ const MIN_IN_RADIUS = 5
 // review finding (Important): ein dünn besiedelter Umkreis mit sehr vielen Partnern insgesamt sollte
 // nicht ALLE davon außerhalb anhängen (unbegrenzte Antwortgröße) - nur die nächsten 20.
 const MAX_FALLBACK = 20
+// Partner-Typen im Abschnitt hundeschulen. P2: hundesalon/betreuung ziehen in den eigenen Abschnitt salon.
+const HUNDESCHULEN_TYPS = ['hundeschule', 'hundesalon', 'betreuung']
 
 // Eigenes, knappes Limit pro IP zusätzlich zum globalen apiLimiter (app.js: app.use('/api', apiLimiter))
 // - wie places.js placesLimiter, gleiche Werte und derselbe IPv6-maskierende Schlüssel.
@@ -297,7 +299,9 @@ function buildDiscover({ isDemo, center, radiusKm }) {
   const distanceMap = partnerDistanceMap(center)
 
   // --- Hundeschule gesucht? ------------------------------------------------------------------------
-  const hundeschulPartnerSection = partnerSection(activePartnerRows(['hundeschule'], isDemo), center, radiusKm)
+  // P2: hundesalon und betreuung bekommen einen eigenen Abschnitt salon - bis dahin stehen sie hier (wie in
+  // der Kundensicht, routes/partnerArea/preview.js SECTION_BY_TYP).
+  const hundeschulPartnerSection = partnerSection(activePartnerRows(HUNDESCHULEN_TYPS, isDemo), center, radiusKm)
   const hundeschulPartner = hundeschulPartnerSection.items.map(({ row, distanceKm: d, ausserhalb }) => partnerCard(row, { distanceKm: d, ausserhalb }))
   const hundeschulPromotions = promotionCards('hundeschule', isDemo, distanceMap)
   const hundeschulen = [...hundeschulPartner, ...hundeschulPromotions]
