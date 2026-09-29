@@ -28,7 +28,12 @@ async function render(family = { art: 'partner' }) {
   await act(async () =>
     root.render(
       <MemoryRouter>
-        <PartnerDemoGuide family={family} />
+        <main>
+          <PartnerDemoGuide family={family} />
+          <div className="page">
+            <h1>Hundeschule Pfotenglück</h1>
+          </div>
+        </main>
       </MemoryRouter>
     )
   )
@@ -49,6 +54,19 @@ describe('PartnerDemoGuide', () => {
     expect(window.localStorage.getItem(`chronik.${DEMO_GUIDE_SETTING}`)).toBe('true')
   })
 
+  test('keine eigene Überschrift vor der h1 der Seite; nach dem Schließen steht der Fokus auf dieser h1', async () => {
+    await render()
+    expect(container.querySelector('.demo-guide h1, .demo-guide h2, .demo-guide h3')).toBeNull()
+    const close = container.querySelector('.demo-guide-close')
+    close.focus()
+
+    await act(async () => close.click())
+
+    const heading = container.querySelector('h1')
+    expect(document.activeElement).toBe(heading)
+    expect(heading.getAttribute('tabindex')).toBe('-1')
+  })
+
   test('mit gespeichertem Merker bleibt er zu', async () => {
     window.localStorage.setItem(`chronik.${DEMO_GUIDE_SETTING}`, 'true')
     await render()
@@ -63,7 +81,7 @@ describe('PartnerDemoGuide', () => {
       throw new Error('SecurityError')
     })
     await render({ art: 'tierheim' })
-    expect(container.querySelector('.demo-guide h2').textContent).toBe('Das ist die Demo eines Partner-Bereichs')
+    expect(container.querySelector('.demo-guide-title').textContent.trim()).toBe('Das ist die Demo eines Partner-Bereichs')
 
     await act(async () => container.querySelector('.demo-guide-close').click())
     expect(container.querySelector('.demo-guide')).toBeNull()

@@ -320,6 +320,43 @@ describe('LoginPage – zwei Einstiege', () => {
     expect(linkButton('Demo als Partner ansehen').disabled).toBe(false)
   })
 
+  test('auf /v (initialMode redeem) geht es nur ums Einlösen - ohne Partner-Einstieg', async () => {
+    await render({ initialMode: 'redeem' })
+    expect(container.querySelector('.login-partner')).toBeNull()
+    expect(labels()).toEqual(['Für Tierhalter'])
+  })
+
+  test('ein erkannter Partner-Zugang bleibt erkannt, wenn "Gutschein einlösen" noch einmal gedrückt wird', async () => {
+    checkVoucher.mockResolvedValue({ status: 'offen', zweck: 'partnerzugang', partnerTyp: 'hundeschule', partnerName: 'Hundeschule Wiesengrund' })
+    await render({ initialMode: 'redeem', initialCode: 'abcd1234hjkm' })
+    expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Partner-Profil einrichten')
+    expect(labels()).toEqual(['Partner-Zugang'])
+
+    await act(async () => segmentButton('Gutschein einlösen').click())
+
+    expect(container.querySelector('.login-card-head .eyebrow').textContent).toBe('Partner-Profil einrichten')
+    expect(labels()).toEqual(['Partner-Zugang'])
+  })
+
+  test('ist "Gutschein einlösen" schon offen, holt der Hinweis im Partner-Einstieg nur den Fokus ins Code-Feld', async () => {
+    await render()
+    await act(async () => segmentButton('Gutschein einlösen').click())
+    document.activeElement.blur()
+    expect(document.activeElement.id).not.toBe('redeem-code')
+
+    await act(async () => container.querySelector('.login-partner .login-link-btn').click())
+
+    expect(document.activeElement.id).toBe('redeem-code')
+    expect(container.querySelector('.login-card-head h1').textContent).toBe('Gutschein einlösen')
+  })
+
+  test('beide Einstiege sind benannte Abschnitte', async () => {
+    await render()
+    const [owners, partners] = container.querySelectorAll('.login-entries > section')
+    expect(document.getElementById(owners.getAttribute('aria-labelledby')).textContent.trim()).toBe('Für Tierhalter')
+    expect(document.getElementById(partners.getAttribute('aria-labelledby')).textContent).toBe('Euer Partner-Bereich')
+  })
+
   test('der Hinweis zum Partner-Zugang schaltet die Anmelde-Karte auf "Gutschein einlösen"', async () => {
     await render()
     expect(container.querySelector('.login-card-head h1').textContent).toBe('Anmelden')

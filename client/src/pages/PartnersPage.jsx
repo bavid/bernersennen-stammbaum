@@ -77,11 +77,11 @@ export default function PartnersPage({ family = null }) {
   return (
     <div className="public-page partners-page">
       <PublicHeader family={family} />
-      <header className="partners-hero">
+      <div className="partners-hero">
         <span className="eyebrow">Partner</span>
         <h1>Unsere Partner</h1>
         <p className="page-lede">Tierheime, Vermittlungsstellen und Hundeschulen, die mit uns zusammenarbeiten.</p>
-      </header>
+      </div>
 
       <LocationPicker plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} onSubmit={handleSubmit} />
 

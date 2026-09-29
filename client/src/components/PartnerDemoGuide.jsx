@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { readSetting, writeSetting } from '../lib/storage.js'
@@ -19,20 +19,31 @@ export function demoGuideLinks(family) {
 
 // Kleiner Rundgang oben im Inhalt einer Partner- oder Tierheim-Demo (App.jsx, nur Demo-Sitzungen): was man hier
 // sieht und wohin es geht. Einmal geschlossen, bleibt er zu - auch in späteren Demo-Sitzungen.
+// Kein <h2>: der Hinweis steht vor der <h1> der Seite und soll deren Gliederung nicht vorwegnehmen.
 export default function PartnerDemoGuide({ family }) {
   const [closed, setClosed] = useState(() => readSetting(DEMO_GUIDE_SETTING, false) === true)
+  const ref = useRef(null)
 
   if (closed) return null
 
+  // Der Knopf verschwindet mit dem Hinweis - damit der Fokus nicht an den Anfang des Dokuments springt, geht er
+  // zur Überschrift der Seite darunter (im selben <main>).
   function handleClose() {
+    const heading = ref.current?.parentElement?.querySelector('h1')
     writeSetting(DEMO_GUIDE_SETTING, true)
     setClosed(true)
+    if (heading) {
+      if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1')
+      heading.focus({ preventScroll: true })
+    }
   }
 
   return (
-    <aside className="demo-guide" aria-labelledby="demo-guide-title">
+    <aside className="demo-guide" aria-labelledby="demo-guide-title" ref={ref}>
       <div className="demo-guide-text">
-        <h2 id="demo-guide-title">Das ist die Demo eines Partner-Bereichs</h2>
+        <p className="demo-guide-title" id="demo-guide-title">
+          Das ist die Demo eines Partner-Bereichs
+        </p>
         <p>Schaut euch in Ruhe um – hier geht’s zu den drei wichtigsten Stellen:</p>
       </div>
       <nav className="demo-guide-links" aria-label="Rundgang durch die Demo">

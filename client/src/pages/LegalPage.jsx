@@ -206,10 +206,10 @@ export default function LegalPage({ variant, family = null }) {
   return (
     <div className="public-page legal-page">
       <PublicHeader family={family} />
-      <header className="legal-hero">
+      <div className="legal-hero">
         <span className="eyebrow">Rechtliches</span>
         <h1>{title}</h1>
-      </header>
+      </div>
 
       {legal === undefined ? (
         <p className="muted" aria-busy="true">

@@ -97,10 +97,10 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
     <div className="public-page partner-info-page">
       <PublicHeader family={family} />
 
-      <header className="partners-hero">
+      <div className="partners-hero">
         <span className="eyebrow">Partner werden</span>
         <h1>Euer Auftritt bei Familie auf Pfoten</h1>
-      </header>
+      </div>
 
       <section className="partner-info-section partner-info-showcase card" aria-labelledby="partner-info-demo-title">
         <div>
@@ -145,9 +145,10 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
       </section>
 
       <section className="partner-info-section partner-info-contact card" aria-labelledby="partner-info-contact-title">
-        <p id="partner-info-contact-title">
-          <strong>Lust, dabei zu sein?</strong> Schreibt uns kurz, wer ihr seid – wir melden uns mit eurem Partner-Zugang.
-        </p>
+        <div>
+          <h2 id="partner-info-contact-title">Lust, dabei zu sein?</h2>
+          <p>Schreibt uns kurz, wer ihr seid – wir melden uns mit eurem Partner-Zugang.</p>
+        </div>
         <ContactAction legal={legal} />
       </section>
 

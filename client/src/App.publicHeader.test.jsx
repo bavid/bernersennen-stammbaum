@@ -125,6 +125,31 @@ describe('Öffentliche Seiten – Kopf mit Logo und "Zurück"', () => {
     }
   )
 
+  test.each([
+    ['/p/gibt-es-nicht', () => api.publicPartner.mockRejectedValue(new Error('Fehler 404'))],
+    ['/t/gibt-es-nicht', () => api.publicAnimal.mockRejectedValue(new Error('Fehler 404'))]
+  ])('auch die Seite "gibt es nicht" (%s) hat den Kopf mit "Zurück"', async (path, fail) => {
+    fail()
+    await render(path)
+    await waitFor(() => container.querySelector('.empty-state'))
+
+    expect(container.querySelector('.empty-state h1').textContent).toMatch(/gibt es nicht/)
+    expect(container.querySelector('.public-page > .public-header')).not.toBeNull()
+  })
+
+  test('nur der schlanke Kopf ist ein <header> (eine banner-Landmarke je Seite)', async () => {
+    for (const path of ['/impressum', '/partner', '/p/hundeschule-birkenhain', '/t/pepper-ab12cd']) {
+      await render(path)
+      await waitFor(() => container.querySelector('.public-header'))
+      const banners = [...container.querySelectorAll('header')].filter((el) => !el.parentElement.closest('article, aside, main, nav, section'))
+      expect(banners, path).toHaveLength(1)
+      act(() => root.unmount())
+      root = null
+      container.remove()
+      container = null
+    }
+  })
+
   test('mit Verlauf: von der Partnerliste ins Impressum und mit "Zurück" wieder zur Partnerliste', async () => {
     await render(['/partner', '/impressum'])
     expect(container.querySelector('h1').textContent).toBe('Impressum')

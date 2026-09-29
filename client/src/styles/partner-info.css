@@ -133,8 +133,13 @@
   gap: var(--space-4) var(--space-6);
 }
 
+.partner-info-contact h2 {
+  font-size: var(--text-lg);
+}
+
 .partner-info-contact p {
   max-width: 34rem;
+  margin-top: var(--space-1);
   color: var(--text);
   line-height: 1.55;
 }

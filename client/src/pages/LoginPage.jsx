@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
@@ -47,9 +47,11 @@ const MODE_COPY = {
 
 // Zwei Einstiege nebeneinander (am Handy untereinander, Phase U): "Für Tierhalter" mit Anmelden, Gutschein und
 // Demo, daneben "Für Hundeschulen, Tierheime & Co." (LoginPartnerEntry) mit Partner-Demo und "Mehr erfahren".
+// Auf /v (initialMode 'redeem': Gutschein-Link, "Eigene Familie anlegen" aus der Demo) geht es ums Einlösen - dort
+// bleibt der Partner-Einstieg weg.
 export default function LoginPage({ onLogin, initialMode = 'login', initialCode = '' }) {
   const { theme } = useTheme()
-  const ownerCardRef = useRef(null)
+  const showPartnerEntry = initialMode !== 'redeem'
   const [mode, setMode] = useState(initialMode)
   const [redeemCode, setRedeemCode] = useState(initialCode)
   const [redeemHint, setRedeemHint] = useState(null)
@@ -58,7 +60,10 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoError, setDemoError] = useState(null)
 
+  // Derselbe Modus noch einmal (z. B. "Gutschein einlösen" im Einlöse-Modus) setzt nichts zurück - sonst ginge die
+  // Erkennung eines Partner-Zugangs (partnerRedeem) verloren, ohne dass RedeemForm sie neu meldet.
   function switchMode(next) {
+    if (next === mode) return
     setMode(next)
     setRedeemHint(null)
     setRedeemResult(null)
@@ -77,10 +82,11 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
   }
 
   // "Gutschein einlösen" aus dem Partner-Einstieg: ein Partner-Zugang ist ein Gutschein - also die Karte daneben
-  // (am Handy darüber) umschalten und ins Bild holen.
+  // (am Handy darüber) umschalten. Beim Einblenden fokussiert RedeemForm sein Code-Feld selbst (autoFocus, der
+  // Browser holt es dabei ins Bild); ist es schon offen, genügt der Fokus.
   function handlePartnerRedeem() {
-    switchMode('redeem')
-    ownerCardRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    if (mode !== 'redeem') switchMode('redeem')
+    else document.getElementById('redeem-code')?.focus()
   }
 
   async function handleDemo() {
@@ -123,9 +129,9 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
 
       <section className="login-panel">
         <div className="login-entries">
-          <div className="login-card login-entry" ref={ownerCardRef}>
+          <section className="login-card login-entry" aria-labelledby="login-owner-label">
             <div className="login-card-head">
-              <p className="login-entry-label">
+              <p className="login-entry-label" id="login-owner-label">
                 <Icon name="paw" /> {mode === 'redeem' && partnerRedeem ? 'Partner-Zugang' : 'Für Tierhalter'}
               </p>
               <span className="eyebrow">{copy.eyebrow}</span>
@@ -176,8 +182,8 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
                 <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
               </div>
             )}
-          </div>
-          {!showingKeyReveal && <LoginPartnerEntry onLogin={onLogin} onRedeem={handlePartnerRedeem} />}
+          </section>
+          {showPartnerEntry && !showingKeyReveal && <LoginPartnerEntry onLogin={onLogin} onRedeem={handlePartnerRedeem} />}
         </div>
       </section>
 

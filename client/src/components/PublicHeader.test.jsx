@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { BrowserRouter, Link, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, test } from 'vitest'
 import PublicHeader, { backFallback, canGoBack } from './PublicHeader.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -88,6 +88,60 @@ describe('PublicHeader', () => {
     await render({ entries: ['/partner-werden'], family: { id: 30, art: 'partner' } })
     await act(async () => backButton().click())
     expect(path()).toBe('/profil')
+  })
+})
+
+// Mit echtem Browser-Verlauf (BrowserRouter legt history.state.idx an) statt MemoryRouter.
+describe('PublicHeader mit BrowserRouter', () => {
+  async function renderBrowser(startPath) {
+    window.history.replaceState(null, '', startPath)
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <BrowserRouter>
+          <ThemeProvider themeId="standard">
+            <Routes>
+              <Route path="/" element={<p>Start</p>} />
+              <Route path="/partner" element={<Link to="/impressum">Impressum</Link>} />
+              <Route path="/impressum" element={<PublicHeader />} />
+            </Routes>
+            <CurrentPath />
+          </ThemeProvider>
+        </BrowserRouter>
+      )
+    )
+  }
+
+  async function waitForPath(expected) {
+    const start = Date.now()
+    while (path() !== expected && Date.now() - start < 2000) {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+      })
+    }
+  }
+
+  test('ein Schritt in der App: "Zurück" geht im echten Verlauf zurück', async () => {
+    await renderBrowser('/partner')
+    await act(async () => container.querySelector('a[href="/impressum"]').click())
+    expect(path()).toBe('/impressum')
+    expect(window.history.state.idx).toBe(1)
+
+    await act(async () => backButton().click())
+    await waitForPath('/partner')
+
+    expect(path()).toBe('/partner')
+  })
+
+  test('direkt eingestiegen (idx 0): "Zurück" führt zur Startseite statt aus der App hinaus', async () => {
+    await renderBrowser('/impressum')
+    expect(window.history.state.idx).toBe(0)
+
+    await act(async () => backButton().click())
+
+    expect(path()).toBe('/')
   })
 })
 

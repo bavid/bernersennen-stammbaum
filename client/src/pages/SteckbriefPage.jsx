@@ -211,7 +211,7 @@ function SteckbriefContent({ animal, slug, age, preview, family, shareCopied, on
   return (
     <div className="public-page steckbrief-page">
       {!preview && <PublicHeader family={family} />}
-      <header className="dog-hero steckbrief-hero">
+      <div className="dog-hero steckbrief-hero">
         <div className="dog-hero-photo">
           <Avatar dog={{ foto_url: animal.fotoUrl, name: animal.name }} size={320} className="dog-hero-fallback" />
         </div>
@@ -242,7 +242,7 @@ function SteckbriefContent({ animal, slug, age, preview, family, shareCopied, on
             </button>
           )}
         </div>
-      </header>
+      </div>
 
       <PublicChronicle entries={animal.entries || []} />
 

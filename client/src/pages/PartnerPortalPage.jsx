@@ -165,7 +165,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
             Vorschau – nur für Admins sichtbar
           </div>
         )}
-        <header className="partner-portal-hero">
+        <div className="partner-portal-hero">
           <div className="partner-portal-marks">
             <ThemeMark size={56} className="partner-portal-mark" />
             {partner.logoUrl && <img src={partner.logoUrl} alt={`Logo von ${partner.name}`} className="partner-logo" />}
@@ -191,7 +191,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
               )}
             </div>
           )}
-        </header>
+        </div>
 
         <PortalAction partner={partner} family={family} preview={preview} onRedeemed={onRedeemed} onLogout={onLogout} />
 
