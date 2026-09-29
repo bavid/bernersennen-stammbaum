@@ -80,7 +80,7 @@ Tierheim-Übergabe (T) baut auf dem Teilen und Umziehen von Tieren auf.
 | P1 | Partner-Zugang & Profil: Partner-Gutschein → Einrichtung, Profil selbst pflegen, „Bearbeiten \| Kundensicht“ (Live-Vorschau in Beispiel-Kundenoberfläche), Veröffentlichen/Sperre, Einblicke (Fotos + Datum), Hundesalon/Betreuung, Status „Pausiert“ | [Plan](2026-09-29-phase-p-partnerbereich.md) | 🚀 auf der Vorschau |
 | P2 | Anzeigen & Kontakt: Beiträge als „Anzeige“ mit Admin-Freigabe, „Schreib uns“ mit Postfach, E-Mail/Kontaktformular-Link, „Salon & Betreuung“, Partnerliste füllt dünnen Umkreis auf | [Plan](2026-09-29-phase-p-partnerbereich.md) | 🚀 auf der Vorschau |
 | R | Familien-Verwaltung: Rollen (Rudelführer/Leitung, Stellvertretung, Mitglied, Gast), Mitglieder-Seite, Einladungen mit Rolle, Leitung übergeben, auflösen, „Wer sieht was?“ | [Plan](2026-09-29-phase-r-familienverwaltung.md) | 🚀 auf der Vorschau |
-| 5 | Admin: Druckkarten mit QR (Kunden-, Partner-, Partner-Stapel-Karten), Partner sehen ihren Kunden-Stapel, `/partner-werden`, Statistik, Präsentationsmodus | [Plan](2026-09-29-phase-5-admin-praesentation.md) | ⏳ Tasks 1–3 auf der Vorschau (Druckdaten, Druckseite, Statistik); offen: Partner-Stapel, /partner-werden, Präsentation, Admin-Ansicht |
+| 5 | Admin: Druckkarten mit QR (Kunden-, Partner-, Partner-Stapel-Karten), Partner sehen ihren Kunden-Stapel, `/partner-werden`, Statistik, Präsentationsmodus | [Plan](2026-09-29-phase-5-admin-praesentation.md) | 🚀 auf der Vorschau |
 | G | Eigene Domain & Go-Live: Domain/DNS/Caddy (Betreiber), `PUBLIC_URL`, HSTS, robots.txt, Prod-Übernahme mit Freigabe, danach Karten drucken | [Plan](2026-09-29-phase-g-domain-golive.md) | ☐ offen (braucht Domain) |
 | 4 | Import, Crawler, Website-Prüfung, Prüfliste | zurückgestellt | ⏸ blockiert (Frage 1) |
 
@@ -117,3 +117,4 @@ Legende: ☐ offen · ⏳ in Arbeit · ✅ fertig (lokal getestet) · 🚀 auf d
 | 2026-09-29 | P2 | `0a266d6` | Beiträge als „Anzeige“ mit Freigabe, „Schreib uns“ mit Postfach (180 Tage, täglicher Lösch-Lauf), „Salon & Betreuung“, Partnerliste mit „Weiter weg“ – auf der Vorschau |
 | 2026-09-29 | R | `7c55ef7` | Rollen (Leitung/Stellvertretung/Mitglied/Gast) mit Rechteprüfung, Mitglieder-Seite, Einladungen mit Rolle, Leitung übergeben, Familie auflösen, Tier übernehmen, Demo mit allen Rollen – auf der Vorschau |
 | 2026-09-29 | 5 | `7c55ef7` | Tasks 1–3: Druckdaten/CSV/Statistik (Server), Druckseite mit QR-Karten (3 Motive, A4), Statistik-Karte und Herkunft im Admin; Vorschau öffentlich unter :3005 mit Zertifikat |
+| 2026-09-29 | 5 | – | Tasks 4–5b: Partner sehen/drucken ihre Kunden-Gutscheine, `/partner-werden`, Präsentationsmodus, Admin-Ansicht (nur lesen, Protokoll), eingelöste Gutscheine mit Datum in der Liste – auf der Vorschau |

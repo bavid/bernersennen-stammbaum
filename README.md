@@ -94,6 +94,21 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   keine E-Mails, Nachrichten werden nach 180 Tagen gelöscht. Hundesalons und Betreuung haben in „Entdecken“ ein
   eigenes Kapitel „Salon & Betreuung“; gibt es im Umkreis weniger als 5 Treffer, zeigen „Entdecken“ und die
   Partnerliste die nächsten weiteren unter „Weiter weg“.
+- **Rollen in Familien**: Jede Familie (im Berner-Auftritt „Rudel“) hat eine **Leitung** („Rudelführer“ bzw.
+  „Familienleitung“), darunter Stellvertretung, Mitglied und Gast. Gäste lesen und kommentieren, Mitglieder pflegen
+  Tiere und Einträge, die Stellvertretung lädt ein und moderiert, die Leitung ändert Rollen, entfernt Mitglieder,
+  übergibt die Leitung oder löst die Familie auf. Einladungs-Gutscheine tragen die Rolle schon mit. Die
+  Mitglieder-Seite erklärt „Wer sieht was?“ (privat – Familie – öffentlich); Tiere der Familie lassen sich in die
+  eigene Chronik übernehmen. Bestehende Familien: das älteste Mitglied wird Leitung, der gemeinsame Schlüssel
+  behält Leitungsrechte.
+- **Admin: Karten, Statistik, Präsentation, Admin-Ansicht**: Gutschein-Stapel lassen sich als **Karten mit
+  QR-Code** drucken (A4, 10 Karten je Bogen, drei Motive: Kunden-Karte, Partner-Karte „Euer kostenloses
+  Partner-Profil“, Partner-Stapel mit Logo) – erst sinnvoll mit gesetzter `PUBLIC_URL`. Die Übersicht zeigt
+  Einlösungen je Stapel und Partner, Mundpropaganda-Ketten, Klicks (30 Tage) und Partner-Status; die Familienliste
+  die Herkunft jedes Bereichs. Partner sehen ihre **Kunden-Gutscheine** im Profil und drucken sie selbst;
+  `/partner-werden` wirbt um neue Partner. Der **Präsentationsmodus** startet Demo-Sitzungen (Familie, Rudel,
+  Tierheim, Hundeschule, Hundesalon, Kundensicht) mit einem Klick. Über **„Als Admin ansehen“** öffnet der Admin
+  jeden Bereich **nur lesend** (Band oben, alle Schreibaktionen gesperrt, jeder Aufruf im Protokoll).
 - **Tierheime**: Ein eigener Bereich für Tierheime und Vermittlungsstellen (vom Admin aus der
   Partnerverwaltung angelegt). Sie pflegen eine Chronik je Tier (Ankunft, Tierarzt, Verhalten, Gassi …),
   zeigen Tiere in Vermittlung mit öffentlichem Steckbrief (`/t/kurzname`) und erzeugen bei einer
