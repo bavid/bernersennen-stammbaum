@@ -138,6 +138,26 @@ Vorschau freigegebenen Stand, und danach werden Karten gedruckt (Kunden, Partner
   - Last dauerhaft über 1,5 (bei 2 Kernen);
   - Antwortzeit der Startseite über 1 s.
 
+**Admin-Reiter „Server“ (Wunsch 30.09.):**
+- **Anzeige** im Admin, jeweils mit Ampel nach den Warnschwellen oben:
+  - **Arbeitsspeicher:** gesamt, frei, davon die App.
+  - **Speicherplatz:** gesamt und frei auf dem Laufwerk der Daten.
+  - **Größe:** Datenbank, Fotos (`uploads`, `public-media`, `partner-media`), Backups.
+  - **Last:** CPU-Kerne und Last (1/5/15 min).
+  - **Laufzeit:** Server und App.
+  - **Stand:** App-Version (Commit), letztes Backup.
+- **Messwerte:**
+  - im Container über Node: `os.totalmem`/`os.freemem`/`os.loadavg`/`os.uptime`, `fs.statfs` auf dem
+    Daten-Verzeichnis, `process.memoryUsage`;
+  - Ordnergrößen einmal pro Stunde berechnet und zwischengespeichert, nie pro Aufruf;
+  - das letzte Backup über eine Markierungsdatei, die `remote.sh backup` ins Daten-Verzeichnis schreibt.
+- **Verlauf:** stündliche Messung, 30 Tage aufbewahrt, als kleine Linien (Speicher frei, Platte frei, Last) mit
+  Textalternative.
+- **Warnungen:** beim Überschreiten der Schwellen per Telegram an den Admin (vorhandener Bot, eigener Schalter
+  „Server-Warnungen“, höchstens eine Warnung je Messwert und Tag).
+- **Sicherheit:** nur Admin, `no-store`, keine Pfade oder Hostnamen im Klartext nach außen.
+- Tests mit gestubbten Messwerten (Ampel-Grenzen, Verlauf, Warn-Drosselung).
+
 **Wann aufrüsten (Richtwerte):**
 - **RAM 4 → 8 GB:** wenn der freie Speicher dauerhaft unter 1 GB fällt oder der Server auslagert. Grob ab einigen
   tausend aktiven Bereichen oder wenn weitere Projekte dazukommen.
