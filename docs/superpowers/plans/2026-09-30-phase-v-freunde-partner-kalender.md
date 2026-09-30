@@ -77,6 +77,18 @@ Worktrees; keine echten Namen (pre-commit-Hook); jede Funktion auch in der Demo;
   (bevorzugt **Fluent Emoji (MIT)**; lokal gebündelt, keine externen Aufrufe). Lizenzhinweis im README.
 - Export wie bisher (PNG, A4).
 
+## V2b – Eigene Einladungen verwalten (Wunsch 30.09.)
+
+- **Obergrenze:** Eine Privatperson (ein Zuhause) hat höchstens **5 offene**, also nicht eingelöste
+  Einladungs-Codes gleichzeitig. Gilt für Familien-Einladungen, Zuhause-Besuche und Kunden-Gutscheine zum
+  Weitergeben zusammen. Ein neuer Code geht erst, wenn einer eingelöst, zurückgezogen oder abgelaufen ist.
+  Serverseitig durchgesetzt.
+- **Beschriftung:** Jeder Code bekommt eine eigene Notiz, z. B. „…7420 – Tante Matilde“. Nur der Ersteller sieht sie.
+- **Offene Codes** lassen sich zurückziehen und löschen (mit Bestätigung).
+- **Eingelöste Codes** werden archiviert und ausgeblendet. „Eingelöste anzeigen“ blendet sie wieder ein, dazu die
+  Zahl „Du hast schon n Leute zu Familie auf Pfoten gebracht“.
+- Demo: Liste mit zwei beschrifteten offenen und drei archivierten Codes.
+
 ## V7 – Prüfen und ausliefern
 
 - Reviews (Sicherheit bei Besuchen, Markierungen und öffentlichen Terminen), Browser-Prüfung, Demo zurücksetzen,

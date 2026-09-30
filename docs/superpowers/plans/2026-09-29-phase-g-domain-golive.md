@@ -100,3 +100,52 @@ Vorschau freigegebenen Stand, und danach werden Karten gedruckt (Kunden, Partner
   - Partner-Stapel für die ersten Partner.
 - [ ] Probedruck (85×55 mm), danach die Auflage drucken.
 - [ ] Die Roadmap abschließen.
+
+---
+
+### Task 6: Sicherheit und Betrieb (DevOps) – Zusatz 30.09.
+
+**Server heute (30.09.):**
+- 2 CPU-Kerne, 3,7 GB RAM (2,8 GB frei), 38 GB SSD (16 % belegt), Ubuntu 26.04 LTS.
+- Last ~0,1; die Apps brauchen je ~35 MB RAM.
+- Daten: Prod 56 MB, Vorschau 20 MB.
+- Der Server wird mit einem weiteren Projekt geteilt (~130 MB RAM, ~3 % CPU).
+
+**Sicherheit vor dem Go-Live:**
+- **Updates:** `unattended-upgrades` für Sicherheits-Updates, Neustart-Fenster nachts. Docker-Images monatlich neu
+  bauen (Node-Basis-Image).
+- **SSH:** nur Schlüssel, kein Passwort-Login, eigener Deploy-Nutzer statt root, `fail2ban`. Firewall wie bisher
+  nur 22/80/443 (+ App-Ports bis zur Domain).
+- **Abhängigkeiten:** `npm audit` (Server + Client) vor jedem Prod-Deploy; kritische Funde beheben.
+- **Geheimnisse:** `CODE_PEPPER`, JWT-Secret und Admin-Passwort-Hash liegen nur in der Server-`.env` (Rechte 600).
+  Den Pepper zusätzlich außerhalb des Servers sichern (Passwort-Manager). Geht er verloren, sind offene Codes und
+  der Telegram-Token nicht mehr lesbar.
+- **Header prüfen:** CSP, HSTS mit Domain, Referrer-Policy, Permissions-Policy. Rate-Limits bleiben aktiv.
+- **Admin:** starkes Passwort, später optional ein zweiter Faktor (TOTP).
+
+**Backups:**
+- Täglich (bisher nur vor Deploys): DB per SQLite-Online-Backup plus Uploads, 14 Tage aufheben.
+- Wöchentlich zusätzlich außerhalb des Servers: verschlüsselt auf einen Speicher-Dienst in der EU oder per
+  `manage.ps1` auf den eigenen Rechner.
+- Die Wiederherstellung einmal testen (in die Vorschau einspielen).
+
+**Überwachung:**
+- Health-Check von außen alle 5 Minuten; bei Ausfall eine Telegram-Nachricht an den Admin (vorhandener Bot).
+- Optional ein täglicher Kurzbericht per Telegram: Anfragen, neue Bereiche, Plattenplatz, Backup ok.
+- Warnschwellen per Telegram:
+  - Platte über 70 %;
+  - RAM dauerhaft über 80 %;
+  - Last dauerhaft über 1,5 (bei 2 Kernen);
+  - Antwortzeit der Startseite über 1 s.
+
+**Wann aufrüsten (Richtwerte):**
+- **RAM 4 → 8 GB:** wenn der freie Speicher dauerhaft unter 1 GB fällt oder der Server auslagert. Grob ab einigen
+  tausend aktiven Bereichen oder wenn weitere Projekte dazukommen.
+- **CPU 2 → 4 Kerne:** wenn die Last über Stunden über 1,5 liegt oder Uploads bzw. die Collage spürbar langsam
+  werden.
+- **Platte:** ab ~70 % Belegung. Größter Treiber sind Fotos: 1.000 aktive Familien mit je ~200 Fotos à 300 KB
+  ergeben ≈ 60 GB. Dann eine größere Platte oder die Fotos auf einen S3-kompatiblen Speicher in der EU.
+- **Datenbank:** SQLite reicht für diese Größenordnung (eine Instanz, wenige gleichzeitige Schreibzugriffe).
+  PostgreSQL erst bei mehreren Server-Instanzen.
+- **Eigene Maschine** für Familie auf Pfoten statt des geteilten Servers: spätestens mit dem Go-Live einplanen, damit
+  Wartung am anderen Projekt die Vorschau und Prod nicht trifft.
