@@ -14,6 +14,42 @@ Worktrees; keine echten Namen (pre-commit-Hook); jede Funktion auch in der Demo;
 
 ---
 
+## V0 – Mehr Inhalt pro Seite: breiter am Desktop, kompakter am Handy (Wunsch 30.09., nur geplant)
+
+**Ziel:** Am Desktop wirkt alles zu zentral und schmal, am Handy etwas zu groß. Es soll mehr Inhalt auf eine Seite
+passen, ohne dass es gedrängt wirkt.
+
+**Heute** (`client/src/styles`):
+- Kopf und Inhalt: `max-width: 76rem` (`layout.css` `.app-header-inner`, `.app-main`).
+- Portal `60rem` (`portal.css`), Partnerliste und „Partner werden“ `64rem`.
+- Seitenköpfe `44rem`, Einleitungstexte `40rem`.
+- Grundschrift `--text-base: 1rem` (16 px) auf allen Geräten.
+- Außenabstand `clamp(24px, 5vw, 48px)`.
+
+**Desktop – etwas breiter:**
+- **Container:** gemeinsamer Token `--page-max` statt fester Werte. `76rem` → **`86rem`** (~1380 px) für
+  Kopf, Inhalt und Admin; Portal `60rem` → **`70rem`**; Partnerliste und „Partner werden“ `64rem` → **`74rem`**.
+- **Lesbarkeit bleibt:** Fließtexte und Einleitungen behalten ihre Zeilenlänge (`40–44rem`). Breiter werden nur
+  Raster und Kartenflächen.
+- **Raster füllen die Breite:** Karten-Raster auf `repeat(auto-fill, minmax(18rem, 1fr))`, damit bei ~1400 px drei
+  bis vier Karten nebeneinander stehen. Betrifft Entdecken, Portal-Einblicke, Tierheim-Tiere, Partnerliste,
+  Admin-Listen.
+- **Außenabstand** oben/unten am Desktop etwas kleiner: `clamp(20px, 3vw, 36px)`.
+
+**Handy – einen Schnupf kleiner (≤ 720 px):**
+- Grundschrift **15 px** statt 16 px (`html { font-size: 93.75% }` nur mobil), damit alle rem-Maße mitschrumpfen.
+- Karten-Innenabstand 20 → **16 px**, Abstände zwischen Karten 16 → **12 px**.
+- Kopfzeile etwas niedriger, untere Leiste etwas flacher (Icons 20 → 18 px). Tippflächen bleiben **mindestens
+  44 px** hoch (Barrierefreiheit).
+- Überschriften-Skala leicht kleiner (h1/h2 ~10 % kleiner), damit oben mehr Inhalt sichtbar ist.
+
+**Vorgehen und Prüfung:**
+- Zuerst die festen Breiten in Tokens sammeln (`tokens.css`), dann die Werte ändern – eine Stelle statt vieler
+  Dateien.
+- Screenshots vorher/nachher bei 320, 375, 768, 1280, 1440 und 1920 px, hell und dunkel.
+- Prüfen: kein seitliches Scrollen, Tippflächen ≥ 44 px, Fließtext-Zeilen nicht länger als ~75 Zeichen, Kopf mit Logo
+  und Navigation bricht nicht um (mit der Breite löst sich auch der Umbruch von „Familie auf Pfoten“ im Kopf).
+
 ## V1 – Entdecken: ein Partner = eine Karte, PLZ dezent
 
 - **Eine Karte je Partner** (Hundeschule, Salon, Tierheim …) statt Partner-Karte + einzelne Anzeigen-Karten:
