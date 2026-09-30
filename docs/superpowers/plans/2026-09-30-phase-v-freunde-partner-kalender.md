@@ -14,6 +14,25 @@ Worktrees; keine echten Namen (pre-commit-Hook); jede Funktion auch in der Demo;
 
 ---
 
+## V-Fehler – gemeldet beim Test der Vorschau (30.09.), zuerst beheben
+
+1. **Demo „Nele“: „Tierheim Sonnenhang“ steht ~20× untereinander**, sobald man das Tier teilen („In Familien
+   zeigen“ bzw. Tierheim-Mitlesen) will. In der lokalen Test-DB ist Nele sauber: eine Übergabe, zwei Freigaben.
+   Deshalb erst auf der Vorschau nachstellen (Demo Zuhause → Nele → Teilen) und die Ursache finden. Vermutlich
+   eine Anzeige, die je Zeile einer Abfrage das Tierheim wiederholt, oder Daten, die sich durch mehrfaches
+   Zurücksetzen der Vorschau angesammelt haben. Regressionstest und, falls Daten betroffen sind, eine Bereinigung
+   nur für `is_demo = 1`.
+2. **Tierheim-Demo: doppelter Reiter.** Neben „Vermitteln“ steht ganz rechts ein weiterer Reiter, der sinngemäß
+   dasselbe zeigt. Navigation und Profil-Reiter des Tierheims prüfen, doppelte Einträge zusammenlegen.
+3. **Freigabe-Verwaltung der Beiträge verbessern:**
+   - **Admin:** „Zur Freigabe“ mit Vorschau genau wie in Entdecken, Freigeben/Ablehnen direkt in der Liste,
+     mehrere auf einmal freigeben, Ablehnungsgründe als Vorlagen, Verlauf je Beitrag (eingereicht → geändert →
+     freigegeben).
+   - **Partner:** klarer Status je Beitrag, Grund bei Ablehnung prominent, „erneut einreichen“.
+   - **Benachrichtigung:** Telegram für den Admin (vorhanden) und für den Partner (V4).
+   - **Option „vertrauenswürdiger Partner“:** Der Admin kann einzelnen Partnern erlauben, dass Änderungen an
+     bereits freigegebenen Beiträgen ohne erneute Freigabe live gehen (neue Beiträge weiterhin mit Freigabe).
+
 ## V0 – Mehr Inhalt pro Seite: breiter am Desktop, kompakter am Handy (Wunsch 30.09., nur geplant)
 
 **Ziel:** Am Desktop wirkt alles zu zentral und schmal, am Handy etwas zu groß. Es soll mehr Inhalt auf eine Seite
@@ -124,6 +143,19 @@ passen, ohne dass es gedrängt wirkt.
 - **Eingelöste Codes** werden archiviert und ausgeblendet. „Eingelöste anzeigen“ blendet sie wieder ein, dazu die
   Zahl „Du hast schon n Leute zu Familie auf Pfoten gebracht“.
 - Demo: Liste mit zwei beschrifteten offenen und drei archivierten Codes.
+
+## V7a – UI-Audit vor dem Deploy (Pflicht, Wunsch 30.09.)
+
+Nach allen Schritten von Phase V, **bevor** Demo-Daten zurückgesetzt und die Vorschau deployt wird:
+- **Doppelungen:** gleiche Information zweimal auf einer Seite, doppelte Reiter oder Knöpfe, zweimal derselbe
+  Name (z. B. Partner-Name in Kopf und Karte), doppelte Einleitungstexte.
+- **Lesbarkeit:** Schriftgrößen, Zeilenlänge, Kontrast (hell/dunkel), Fachbegriffe, einheitliche Wortwahl
+  (Familie/Rudel, Tier/Hund je Auftritt, „Anzeige“ nur wo nötig).
+- **Ausrichtung:** eine linke Kante je Seite, gleiche Innenabstände je Kartenart, Knöpfe in einer Reihe, Raster ohne
+  Lücken, Icons mittig zum Text.
+- **Zustände:** leer, laden, Fehler, Demo (nur lesen), Admin-Ansicht.
+- **Geräte:** 320/375/768/1280/1440/1920 px, Tastatur, Screenreader-Stichproben.
+- **Ergebnis:** Liste der Befunde mit Screenshots, Befunde beheben, dann erst Deploy und Demo-Reset.
 
 ## V7 – Prüfen und ausliefern
 
