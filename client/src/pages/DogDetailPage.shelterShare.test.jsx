@@ -108,6 +108,27 @@ describe('DogDetailPage – Einwilligung "Tierheim darf mitlesen"', () => {
     expect(container.textContent).toContain('Tierheim Sonnenhang darf mitlesen')
   })
 
+  // V-Fehler 1 (Vorschau, Demo-Nele): SharePanel und ShelterSharePanel trugen beide key={dog.id} - gleiche
+  // Schlüssel unter Geschwistern lassen React bei jedem Neu-Rendern der Seite (hier: Sortierung umschalten)
+  // eine weitere Kopie von "In Familien zeigen" im DOM zurück. Nach mehreren Klicks stand die Sektion ~20× da.
+  test('Neu-Rendern der Seite verdoppelt "In Familien zeigen" und die Tierheim-Sektion nicht', async () => {
+    getDog.mockResolvedValue(homeDog({ shelterShare: { shelterName: 'Tierheim Sonnenhang', enabled: true, storyConsent: true } }))
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render()
+
+    const sortButton = [...container.querySelectorAll('button')].find((button) => /zuerst/.test(button.textContent))
+    expect(sortButton).toBeDefined()
+    for (let i = 0; i < 3; i += 1) {
+      await act(async () => sortButton.click())
+    }
+
+    expect(container.querySelectorAll('.share-panel')).toHaveLength(1)
+    expect(container.querySelectorAll('.shelter-share-panel')).toHaveLength(1)
+    expect(container.textContent.match(/Tierheim Sonnenhang darf mitlesen/g)).toHaveLength(1)
+  })
+
   test('ohne shelterShare (kein Tierheim-Ursprung) erscheint die Sektion gar nicht', async () => {
     getDog.mockResolvedValue(homeDog({ shelterShare: null }))
     listTimeline.mockResolvedValue([])

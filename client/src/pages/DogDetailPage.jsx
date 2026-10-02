@@ -441,14 +441,17 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         onOpenPhoto={setPhoto}
       />
 
-      {canTakeOver && <TakeOverPanel key={dog.id} dog={dog} onTakenOver={load} />}
+      {/* Die key-Werte setzen den Zustand der Panels bei einem anderen Tier zurück - und müssen unter diesen
+          Geschwistern eindeutig sein: zweimal key={dog.id} ließ React bei jedem Neu-Rendern der Seite eine
+          weitere Kopie von "In Familien zeigen" im DOM zurück (V-Fehler 1, Demo-Nele ~20× untereinander). */}
+      {canTakeOver && <TakeOverPanel key={`take-over-${dog.id}`} dog={dog} onTakenOver={load} />}
 
       {dog.canEdit && family.art === 'zuhause' && (
-        <SharePanel key={dog.id} dog={dog} family={family} onFamilyChange={onFamilyChange} />
+        <SharePanel key={`share-${dog.id}`} dog={dog} family={family} onFamilyChange={onFamilyChange} />
       )}
 
       {dog.canEdit && family.art === 'zuhause' && dog.shelterShare && (
-        <ShelterSharePanel key={dog.id} dog={dog} onChange={handleShelterShareChange} />
+        <ShelterSharePanel key={`shelter-share-${dog.id}`} dog={dog} onChange={handleShelterShareChange} />
       )}
 
       {dog.canEdit && family.art === 'tierheim' && (
