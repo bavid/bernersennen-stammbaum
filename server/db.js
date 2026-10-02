@@ -338,7 +338,8 @@ const PARTNERS_COLUMNS_SQL = `
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     gesperrt INTEGER NOT NULL DEFAULT 0,
     kontakt_formular_url TEXT,
-    kontaktformular_aktiv INTEGER NOT NULL DEFAULT 1
+    kontaktformular_aktiv INTEGER NOT NULL DEFAULT 1,
+    vertrauenswuerdig INTEGER NOT NULL DEFAULT 0
 `
 const PARTNERS_INDEXES_SQL = 'CREATE INDEX IF NOT EXISTS idx_partners_status ON partners(status);'
 
@@ -469,12 +470,32 @@ rebuildTableIfOutdated('promotions', {
   isCurrent: (sql) => sql.includes("'salon'")
 })
 
+// V-Fehler 3: Verlauf je Beitrag (lib/promotionFreigabe.js) - eingereicht, geaendert, freigegeben, abgelehnt
+// (mit grund), zurueckgezogen. aktion bewusst ohne CHECK (wie promotions.freigabe), geprüft im Code. Anders als
+// promotions.partner_id MIT Fremdschlüssel: der Verlauf gehört zum Beitrag und verschwindet mit ihm (ON DELETE
+// CASCADE - auch beim Wegräumen der Demo-Beiträge). Erst NACH dem Umbau oben angelegt; ein späterer Umbau von
+// promotions (foreign_keys OFF, rebuildTableIfOutdated) lässt den Verlauf stehen, die Referenz zeigt per Name
+// wieder auf die neue Tabelle.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS promotion_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    promotion_id INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+    aktion TEXT NOT NULL,
+    grund TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_promotion_events_promotion ON promotion_events(promotion_id, created_at, id);
+`)
+
 // Phase P Task 1 (docs/superpowers/plans/2026-09-29-phase-p-partnerbereich.md): Partner-Bereiche für
 // alle Partner-Typen. Neue partners-Spalten zuerst per ALTER (für den Umbau darunter sind dann alle
 // Spalten schon da), danach der einmalige Umbau für die neuen Typen im CHECK.
 addColumnIfMissing('partners', 'gesperrt', 'INTEGER NOT NULL DEFAULT 0')
 addColumnIfMissing('partners', 'kontakt_formular_url', 'TEXT')
 addColumnIfMissing('partners', 'kontaktformular_aktiv', 'INTEGER NOT NULL DEFAULT 1')
+// V-Fehler 3: vertrauenswürdige Partner - Änderungen an schon freigegebenen Beiträgen gehen ohne erneute Freigabe
+// online (lib/promotionFreigabe.js partnerEditOutcome). Setzt nur der Admin (PUT /api/admin/partners/:id).
+addColumnIfMissing('partners', 'vertrauenswuerdig', 'INTEGER NOT NULL DEFAULT 0')
 
 // Den CHECK auf partners.typ kann SQLite per ALTER nicht ändern - einmalig neu aufbauen, solange das
 // gespeicherte Schema 'hundesalon' noch nicht kennt (rebuildTableIfOutdated oben). Kein anderer Tisch hat

@@ -6,13 +6,17 @@ const db = require('../db')
 // einen Bereich in der Admin-Ansicht geöffnet (routes/admin.js POST /view/:familyId), ziel 'family:<id>';
 // 'gutschein-zugewiesen' (Phase N Task 1) - einer Anfrage wurde ein Gutschein zugewiesen
 // (routes/adminAnfragen.js), ziel 'anfrage:<id>'; 'telegram-eingerichtet'/'telegram-entfernt' (Phase N Task 2) - Bot-Token
-// oder Chat-ID im Admin eingetragen bzw. gelöscht (routes/adminNotify.js), ziel 'telegram'. ziel benennt nur das
+// oder Chat-ID im Admin eingetragen bzw. gelöscht (routes/adminNotify.js), ziel 'telegram';
+// 'partner-vertrauenswuerdig'/'partner-nicht-vertrauenswuerdig' (V-Fehler 3) - der Admin hat den Schalter
+// "Vertrauenswürdig" eines Partners umgelegt (routes/admin.js), ziel 'partner:<id>'. ziel benennt nur das
 // Objekt, nie Namen, Inhalte, Codes oder Zugangsdaten.
 const AKTION = Object.freeze({
   view: 'view',
   gutscheinZugewiesen: 'gutschein-zugewiesen',
   telegramEingerichtet: 'telegram-eingerichtet',
-  telegramEntfernt: 'telegram-entfernt'
+  telegramEntfernt: 'telegram-entfernt',
+  partnerVertrauenswuerdig: 'partner-vertrauenswuerdig',
+  partnerNichtVertrauenswuerdig: 'partner-nicht-vertrauenswuerdig'
 })
 
 const DEFAULT_LIMIT = 50
@@ -27,6 +31,10 @@ function familyZiel(familyId) {
 
 function anfrageZiel(anfrageId) {
   return `anfrage:${anfrageId}`
+}
+
+function partnerZiel(partnerId) {
+  return `partner:${partnerId}`
 }
 
 function logAdminAction(aktion, ziel) {
@@ -45,4 +53,4 @@ function recentAdminLog(limit) {
   return recentStmt.all(cleanLimit(limit))
 }
 
-module.exports = { AKTION, DEFAULT_LIMIT, MAX_LIMIT, familyZiel, anfrageZiel, logAdminAction, cleanLimit, recentAdminLog }
+module.exports = { AKTION, DEFAULT_LIMIT, MAX_LIMIT, familyZiel, anfrageZiel, partnerZiel, logAdminAction, cleanLimit, recentAdminLog }

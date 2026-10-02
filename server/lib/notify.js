@@ -73,7 +73,11 @@ const HEADLINES = Object.freeze({
     daten.typ === 'problem'
       ? `${PAW} Neue Problemmeldung über „Schreib dem Admin“ – im Admin unter den Nachrichten ansehen.`
       : `${PAW} Neues Feedback über „Schreib dem Admin“ – im Admin unter den Nachrichten ansehen.`,
-  [EREIGNIS.beitrag]: () => `${PAW} Ein Partner hat einen Beitrag eingereicht – bitte im Admin prüfen und freigeben.`
+  // V-Fehler 3: ein vertrauenswürdiger Partner hat einen freigegebenen Beitrag geändert - schon online, nur zur Kenntnis.
+  [EREIGNIS.beitrag]: (daten) =>
+    daten.vertrauenswuerdig
+      ? `${PAW} Ein Partner hat einen freigegebenen Beitrag geändert (vertrauenswürdig) – die Änderung ist schon online.`
+      : `${PAW} Ein Partner hat einen Beitrag eingereicht – bitte im Admin prüfen und freigeben.`
 })
 
 // Nur mit "Details mitsenden": [Beschriftung, Wert] - leere Werte fallen weg.

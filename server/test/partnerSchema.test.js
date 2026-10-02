@@ -154,8 +154,8 @@ test('Migration: alte partners-Tabelle wird einmalig umgebaut, Daten und Verweis
 
     // Alle alten Spalten unverändert, neue Spalten mit ihren Defaults
     assert.deepEqual(migrated.prepare(`SELECT ${OLD_PARTNER_COLUMNS.join(', ')} FROM partners ORDER BY id`).all(), oldRows)
-    for (const row of migrated.prepare('SELECT gesperrt, kontakt_formular_url, kontaktformular_aktiv FROM partners').all()) {
-      assert.deepEqual(row, { gesperrt: 0, kontakt_formular_url: null, kontaktformular_aktiv: 1 })
+    for (const row of migrated.prepare('SELECT gesperrt, kontakt_formular_url, kontaktformular_aktiv, vertrauenswuerdig FROM partners').all()) {
+      assert.deepEqual(row, { gesperrt: 0, kontakt_formular_url: null, kontaktformular_aktiv: 1, vertrauenswuerdig: 0 })
     }
 
     // Verweise über partner_id (ohne REFERENCES) und eine echte Fremdschlüssel-Referenz bleiben gültig
@@ -335,6 +335,8 @@ test('Partner-Bereiche für alle Typen, Hundesalon/Betreuung, Kontaktformular-Li
       typ: 'hundeschule',
       status: 'aktiv',
       gesperrt: false,
+      // V-Fehler 3: Änderungen an freigegebenen Beiträgen gehen nur bei vertrauenswürdigen Partnern sofort online
+      vertrauenswuerdig: false,
       // Phase P2 Task 9: ungelesene Nachrichten im Posteingang
       unread: 0
     })
@@ -392,7 +394,16 @@ test('Partner-Bereiche für alle Typen, Hundesalon/Betreuung, Kontaktformular-Li
 
     const { me } = await loginWithKey(area.data.key)
     assert.equal(me.art, 'tierheim')
-    assert.deepEqual(me.partner, { id: shelterPartner.id, slug: 'tierheim-lindenweg', name: 'Tierheim Lindenweg', typ: 'tierheim', status: 'aktiv', gesperrt: false, unread: 0 })
+    assert.deepEqual(me.partner, {
+      id: shelterPartner.id,
+      slug: 'tierheim-lindenweg',
+      name: 'Tierheim Lindenweg',
+      typ: 'tierheim',
+      status: 'aktiv',
+      gesperrt: false,
+      vertrauenswuerdig: false,
+      unread: 0
+    })
 
     // Vermittlung über den alten Pfad, danach /area -> 409, beide Schlüssel-Pfade funktionieren
     const vermittlung = await createPartner({ name: 'Vermittlung Seeblick', typ: 'vermittlung', slug: 'vermittlung-seeblick' })

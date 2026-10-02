@@ -10,9 +10,11 @@ const {
   findOwnPost,
   insertPost,
   updatePost,
-  ownPost
+  applyPartnerEdit,
+  ownPost,
+  ownPostWithVerlauf
 } = require('../../lib/partnerPosts')
-const { FREIGABE } = require('../../lib/promotions')
+const { VERLAUF_AKTION, partnerVerlaufById } = require('../../lib/promotionFreigabe')
 const { notify, EREIGNIS } = require('../../lib/notify')
 
 // Phase P2 Task 8: Beiträge des eigenen Partners (lib/partnerPosts.js) - immer "Anzeige", öffentlich erst
@@ -28,53 +30,66 @@ function sendError(res, next, err) {
 }
 
 // Phase N Task 2: "Beitrag eingereicht" an den Admin (lib/notify.js, Schalter standardmäßig aus) - nie für Demo-
-// Sitzungen oder Demo-Partner. Mit "Details mitsenden" samt Partnername und Titel.
-function notifyBeitrag(req, titel) {
-  notify(EREIGNIS.beitrag, { partnerName: req.partner.name, titel, demo: Boolean(req.isDemo || req.partner.is_demo) })
+// Sitzungen oder Demo-Partner. Mit "Details mitsenden" samt Partnername und Titel. vertrauenswuerdig (V-Fehler 3):
+// stattdessen "geändert (vertrauenswürdig)" - die Änderung ist schon online.
+function notifyBeitrag(req, titel, { vertrauenswuerdig = false } = {}) {
+  notify(EREIGNIS.beitrag, { partnerName: req.partner.name, titel, vertrauenswuerdig, demo: Boolean(req.isDemo || req.partner.is_demo) })
 }
 
+// Nach einer Änderung (lib/promotionFreigabe.js partnerEditOutcome): kommt der Beitrag dadurch NEU zur Prüfung (war
+// freigegeben oder abgelehnt), meldet sich "eingereicht"; ging die Änderung eines vertrauenswürdigen Partners sofort
+// online, "geändert (vertrauenswürdig)". Liegt er schon zur Prüfung, weiß der Admin davon.
+function notifyEdit(req, titel, outcome) {
+  if (!outcome) return
+  if (outcome.live) notifyBeitrag(req, titel, { vertrauenswuerdig: true })
+  else if (outcome.aktion === VERLAUF_AKTION.eingereicht) notifyBeitrag(req, titel)
+}
+
+// V-Fehler 3: jeder Beitrag mit seinen letzten Einträgen im Verlauf (lib/promotionFreigabe.js partnerVerlaufById).
 router.get('/', (req, res) => {
-  res.json(listOwnPosts(req.partner.id).map(ownPost))
+  const verlauf = partnerVerlaufById(req.partner.id)
+  res.json(listOwnPosts(req.partner.id).map((row) => ownPost(row, verlauf.get(row.id))))
 })
 
 router.post('/', denyDemoWrites, (req, res, next) => {
   try {
     const clean = validatePartnerPost(req.body, req.partner)
-    res.status(201).json(ownPost(insertPost(req.partner, clean)))
+    res.status(201).json(ownPostWithVerlauf(insertPost(req.partner, clean)))
     notifyBeitrag(req, clean.titel)
   } catch (err) {
     sendError(res, next, err)
   }
 })
 
-// Gleiche Regeln wie beim Anlegen; jede Änderung reicht wieder ein (lib/partnerPosts.js updatePost). Benachrichtigt
-// wird nur, wenn der Beitrag dadurch NEU zur Prüfung kommt (war freigegeben oder abgelehnt) - liegt er schon dort,
-// weiß der Admin davon.
+// Gleiche Regeln wie beim Anlegen; eine Änderung reicht wieder ein - außer ein vertrauenswürdiger Partner ändert
+// einen freigegebenen Beitrag (lib/partnerPosts.js updatePost). Benachrichtigt wird wie bei notifyEdit beschrieben.
 router.put('/:id', denyDemoWrites, (req, res, next) => {
   try {
     const post = findOwnPost(req.partner.id, req.params.id)
     if (!post) return res.status(404).json({ error: NOT_FOUND_MESSAGE })
     const clean = validatePartnerPost(req.body, req.partner)
-    res.json(ownPost(updatePost(req.partner.id, post.id, clean)))
-    if (post.freigabe !== FREIGABE.eingereicht) notifyBeitrag(req, clean.titel)
+    const outcome = updatePost(req.partner, post.id, clean)
+    if (!outcome) return res.status(404).json({ error: NOT_FOUND_MESSAGE })
+    res.json(ownPostWithVerlauf(findOwnPost(req.partner.id, post.id)))
+    notifyEdit(req, clean.titel, outcome)
   } catch (err) {
     sendError(res, next, err)
   }
 })
 
 // Dieselbe Upload-Strecke wie beim Admin (lib/promotionImage.js), aber nur JPG oder PNG (nur dort werden
-// Metadaten entfernt, wie bei den Einblicken); ein neues Bild reicht wieder ein. Antwort: der ganze Beitrag
-// (mit bildUrl und der zurückgesetzten Freigabe). Benachrichtigt wird wie bei PUT nur, wenn der Beitrag dadurch neu
-// zur Prüfung kommt.
+// Metadaten entfernt, wie bei den Einblicken); ein neues Bild ist eine Änderung wie PUT (applyPartnerEdit in derselben
+// Transaktion wie das Speichern). Antwort: der ganze Beitrag (mit bildUrl, Freigabe und Verlauf). Benachrichtigt wird
+// wie bei PUT.
 router.post('/:id/image', denyDemoWrites, uploadLimiter, requireFreeDisk, (req, res, next) => {
   const post = findOwnPost(req.partner.id, req.params.id)
   if (!post) return res.status(404).json({ error: NOT_FOUND_MESSAGE })
   handlePromotionImageUpload(req, res, next, post.id, {
-    resubmit: true,
     types: PARTNER_IMAGE_TYPES,
-    respond: () => {
-      res.status(201).json(ownPost(findOwnPost(req.partner.id, post.id)))
-      if (post.freigabe !== FREIGABE.eingereicht) notifyBeitrag(req, post.titel)
+    onStored: (id) => applyPartnerEdit(req.partner, id),
+    respond: (bildUrl, outcome) => {
+      res.status(201).json(ownPostWithVerlauf(findOwnPost(req.partner.id, post.id)))
+      notifyEdit(req, post.titel, outcome)
     }
   })
 })

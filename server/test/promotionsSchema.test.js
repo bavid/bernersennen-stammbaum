@@ -116,6 +116,47 @@ test('Migration: promotions wird einmalig umgebaut (salon, Freigabe), Daten und 
   }
 })
 
+// V-Fehler 3: der Verlauf (promotion_events) hängt per Fremdschlüssel an promotions. Gibt es ihn schon, wenn
+// promotions umgebaut wird (ein späterer Umbau, foreign_keys OFF), bleibt er stehen und zeigt danach wieder auf die
+// neue Tabelle; gelöscht wird er mit dem Beitrag (ON DELETE CASCADE).
+test('Migration: ein vorhandener Verlauf übersteht den Umbau von promotions und geht mit dem Beitrag', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-promotion-events-'))
+  const dbFile = path.join(dir, 'old.db')
+  try {
+    seedOldDatabase(dbFile)
+    const seedDb = new Database(dbFile)
+    seedDb.exec(`CREATE TABLE promotion_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      promotion_id INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+      aktion TEXT NOT NULL, grund TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`)
+    seedDb.prepare("INSERT INTO promotion_events (promotion_id, aktion) VALUES (1, 'eingereicht'), (1, 'freigegeben'), (2, 'eingereicht')").run()
+    seedDb.close()
+
+    assert.equal(runMigration(dir, dbFile), '1')
+    const migrated = new Database(dbFile)
+    migrated.pragma('foreign_keys = ON')
+    assert.match(migrated.prepare("SELECT sql FROM sqlite_master WHERE name = 'promotions'").get().sql, /'salon'/, 'promotions wurde umgebaut')
+    assert.deepEqual(
+      migrated.prepare('SELECT promotion_id, aktion FROM promotion_events ORDER BY id').all(),
+      [
+        { promotion_id: 1, aktion: 'eingereicht' },
+        { promotion_id: 1, aktion: 'freigegeben' },
+        { promotion_id: 2, aktion: 'eingereicht' }
+      ]
+    )
+    assert.deepEqual(migrated.pragma('foreign_key_check'), [])
+    assert.ok(migrated.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_promotion_events_promotion'").get())
+
+    migrated.prepare('DELETE FROM promotions WHERE id = 1').run()
+    assert.deepEqual(migrated.prepare('SELECT promotion_id FROM promotion_events').all(), [{ promotion_id: 2 }])
+    assert.throws(() => migrated.prepare("INSERT INTO promotion_events (promotion_id, aktion) VALUES (999, 'eingereicht')").run(), /FOREIGN KEY/)
+    migrated.close()
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('neue Datenbank: promotions hat salon und die Freigabe-Spalten von Anfang an', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-promotions-fresh-'))
   const dbFile = path.join(dir, 'fresh.db')
@@ -129,6 +170,8 @@ test('neue Datenbank: promotions hat salon und die Freigabe-Spalten von Anfang a
     assert.equal(byName.get('ablehnungsgrund').notnull, 0)
     assert.equal(byName.get('erstellt_von_partner').dflt_value, '0')
     assert.match(freshDb.prepare("SELECT sql FROM sqlite_master WHERE name = 'promotions'").get().sql, /'salon'/)
+    // V-Fehler 3: der Verlauf je Beitrag, mit Fremdschlüssel samt ON DELETE CASCADE
+    assert.match(freshDb.prepare("SELECT sql FROM sqlite_master WHERE name = 'promotion_events'").get().sql, /REFERENCES promotions\(id\) ON DELETE CASCADE/)
     freshDb.close()
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })

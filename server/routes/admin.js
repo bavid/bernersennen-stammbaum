@@ -7,7 +7,7 @@ const config = require('../config')
 const { verifyPassword, safeEqual } = require('../lib/adminAuth')
 const { requireAdmin, setAdminCookie, clearAdminCookie } = require('../middleware/admin')
 const { setSessionCookie } = require('../middleware/auth')
-const { AKTION, familyZiel, logAdminAction, recentAdminLog } = require('../lib/adminLog')
+const { AKTION, familyZiel, partnerZiel, logAdminAction, recentAdminLog } = require('../lib/adminLog')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
 const { createBatch, voucherStatus, validateBatchInput, validateZweck, ZWECK } = require('../lib/vouchers')
@@ -348,6 +348,12 @@ function uniqueConstraintViolation(err) {
   return typeof err.message === 'string' && err.message.includes('UNIQUE')
 }
 
+// V-Fehler 3: den Schalter "Vertrauenswürdig" protokollieren (lib/adminLog.js) - nur, wenn er sich wirklich ändert.
+function logTrustChange(partnerId, before, after) {
+  if (Boolean(before) === Boolean(after)) return
+  logAdminAction(after ? AKTION.partnerVertrauenswuerdig : AKTION.partnerNichtVertrauenswuerdig, partnerZiel(partnerId))
+}
+
 // Phase P Task 1: der Bereich eines Partners - art 'tierheim' (Typ tierheim/vermittlung) oder 'partner'
 // (alle anderen Typen), höchstens einer pro Partner. Die Helfer dazu (areaArtForTyp, findPartnerArea,
 // insertPartnerArea, ...) liegen in lib/partnerAreas.js - der Partner-Zugang per Gutschein nutzt sie auch.
@@ -378,6 +384,7 @@ router.post('/partners', requireAdmin, (req, res, next) => {
     const id = db
       .prepare(`INSERT INTO partners (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
       .run(...columns.map((col) => clean[col])).lastInsertRowid
+    logTrustChange(id, 0, clean.vertrauenswuerdig)
     res.status(201).json(findPartner(id))
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
@@ -405,6 +412,7 @@ router.put('/partners/:id', requireAdmin, (req, res, next) => {
       ...columns.map((col) => clean[col]),
       id
     )
+    logTrustChange(id, existing.vertrauenswuerdig, clean.vertrauenswuerdig)
     res.json(findPartner(id))
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })

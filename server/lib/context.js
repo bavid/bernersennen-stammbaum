@@ -95,12 +95,20 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
   if (PARTNER_AREA_ARTS.includes(active?.art)) {
     const partner = db
       .prepare(
-        `SELECT p.id, p.slug, p.name, p.typ, p.status, p.gesperrt
+        `SELECT p.id, p.slug, p.name, p.typ, p.status, p.gesperrt, p.vertrauenswuerdig
          FROM families f JOIN partners p ON p.id = f.partner_id WHERE f.id = ?`
       )
       .get(activeId)
-    // unread (Phase P2 Task 9): ungelesene Nachrichten im Posteingang (lib/partnerMessages.js).
-    if (partner) me.partner = { ...partner, gesperrt: Boolean(partner.gesperrt), unread: countUnread(partner.id) }
+    // unread (Phase P2 Task 9): ungelesene Nachrichten im Posteingang (lib/partnerMessages.js). vertrauenswuerdig
+    // (V-Fehler 3): Änderungen an freigegebenen Beiträgen gehen sofort online (lib/promotionFreigabe.js).
+    if (partner) {
+      me.partner = {
+        ...partner,
+        gesperrt: Boolean(partner.gesperrt),
+        vertrauenswuerdig: Boolean(partner.vertrauenswuerdig),
+        unread: countUnread(partner.id)
+      }
+    }
   }
   return me
 }

@@ -5,7 +5,6 @@ const { requireAdmin } = require('../middleware/admin')
 const { cleanId } = require('../lib/validate')
 const {
   validatePromotion,
-  validateAblehnungsgrund,
   validateFreigabeFilter,
   validateDonationReport,
   cleanOptionalText,
@@ -17,6 +16,17 @@ const {
 } = require('../lib/promotions')
 const { handlePromotionImageUpload, deletePromotion } = require('../lib/promotionImage')
 const { asPartnerPostInput } = require('../lib/partnerPosts')
+const {
+  VERLAUF_AKTION,
+  recordPromotionEvent,
+  approvePromotion,
+  rejectPromotion,
+  validateSammelIds,
+  approveMany,
+  ablehnungsgrundFrom,
+  promotionVerlauf,
+  listDecidedPromotions
+} = require('../lib/promotionFreigabe')
 
 // Phase 3 Task 1: Admin-Pflege für den Reiter "Entdecken" - Empfehlungen/Anzeigen (promotions),
 // GoFundMe-Link/Text (settings) und Transparenzberichte (donation_reports). Eingehängt unter /api/admin
@@ -108,10 +118,14 @@ router.put('/promotions/:id', requireAdmin, (req, res, next) => {
 
     const clean = validateAdminPromotion(req.body || {}, existing)
     const columns = Object.keys(clean)
-    db.prepare(`UPDATE promotions SET ${columns.map((col) => `${col} = ?`).join(', ')} WHERE id = ?`).run(
-      ...columns.map((col) => clean[col]),
-      id
-    )
+    // Die Änderung macht den Beitrag freigegeben - im Verlauf (V-Fehler 3) nur, wenn sie das erst bewirkt.
+    db.transaction(() => {
+      db.prepare(`UPDATE promotions SET ${columns.map((col) => `${col} = ?`).join(', ')} WHERE id = ?`).run(
+        ...columns.map((col) => clean[col]),
+        id
+      )
+      if (existing.freigabe !== FREIGABE.freigegeben) recordPromotionEvent(id, VERLAUF_AKTION.freigegeben)
+    })()
     res.json(promotionRow(findPromotion(id)))
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
@@ -128,14 +142,24 @@ router.delete('/promotions/:id', requireAdmin, (req, res) => {
 })
 
 // Phase P2 Task 8: Freigabe der Beiträge (und jeder anderen Empfehlung). Freigeben räumt einen früheren
-// Ablehnungsgrund weg; Ablehnen braucht einen Grund (lib/promotions.js validateAblehnungsgrund), den der
-// Partner in seiner Beitragsliste sieht.
-const setFreigabe = db.prepare('UPDATE promotions SET freigabe = ?, ablehnungsgrund = ? WHERE id = ?')
+// Ablehnungsgrund weg; Ablehnen braucht einen Grund, den der Partner in seiner Beitragsliste sieht - seit V-Fehler 3
+// als Vorlage mit optionalem Zusatz ({ vorlage, text }) oder wie bisher frei ({ grund }), siehe
+// lib/promotionFreigabe.js ablehnungsgrundFrom. Jede Entscheidung landet im Verlauf des Beitrags.
+
+// V-Fehler 3: mehrere eingereichte auf einmal freigeben ({ ids: [...] }, höchstens 50, in einer Transaktion).
+// Antwort { freigegeben, uebersprungen, ids } - ids sind die tatsächlich freigegebenen.
+router.post('/promotions/freigeben', requireAdmin, (req, res, next) => {
+  try {
+    res.json(approveMany(validateSammelIds(req.body?.ids)))
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
+})
 
 router.post('/promotions/:id/freigeben', requireAdmin, (req, res) => {
   const id = cleanId(req.params.id)
-  if (!findPromotion(id)) return res.status(404).json({ error: NOT_FOUND })
-  setFreigabe.run(FREIGABE.freigegeben, null, id)
+  if (!id || !approvePromotion(id)) return res.status(404).json({ error: NOT_FOUND })
   res.json(promotionRow(findPromotion(id)))
 })
 
@@ -143,13 +167,24 @@ router.post('/promotions/:id/ablehnen', requireAdmin, (req, res, next) => {
   try {
     const id = cleanId(req.params.id)
     if (!findPromotion(id)) return res.status(404).json({ error: NOT_FOUND })
-    const grund = validateAblehnungsgrund(req.body?.grund)
-    setFreigabe.run(FREIGABE.abgelehnt, grund, id)
+    if (!rejectPromotion(id, ablehnungsgrundFrom(req.body))) return res.status(404).json({ error: NOT_FOUND })
     res.json(promotionRow(findPromotion(id)))
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)
   }
+})
+
+// V-Fehler 3: "zuletzt entschieden" im Reiter "Freigaben" - mit entscheidung und entschiedenAt (lib/promotionFreigabe.js).
+router.get('/promotions/entschieden', requireAdmin, (req, res) => {
+  res.json(listDecidedPromotions().map(promotionRow))
+})
+
+// V-Fehler 3: der Verlauf eines Beitrags, älteste zuerst (bis zu 50 Einträge).
+router.get('/promotions/:id/verlauf', requireAdmin, (req, res) => {
+  const id = cleanId(req.params.id)
+  if (!findPromotion(id)) return res.status(404).json({ error: NOT_FOUND })
+  res.json(promotionVerlauf(id))
 })
 
 // Bild: gemeinsame Upload-Strecke mit den Beiträgen der Partner (lib/promotionImage.js). Ein Bild vom Admin

@@ -305,7 +305,7 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
 
   await t.test('Rollback: scheitert eine Demo-Empfehlung (unbekannter Partner-Slug), bleibt die bisherige Demo samt echten Daten vollständig erhalten', () => {
     const before = snapshotAll()
-    assert.equal(before.demoPromotions.length, 8, 'Ausgangslage: eine vollständige Demo (5 Empfehlungen, 3 Beiträge der Demo-Partner)')
+    assert.equal(before.demoPromotions.length, 9, 'Ausgangslage: eine vollständige Demo (5 Empfehlungen, 4 Beiträge der Demo-Partner)')
 
     seed.DEMO_PROMOTIONS.push({
       bereich: 'hundeschule',

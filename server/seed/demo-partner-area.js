@@ -46,12 +46,20 @@ const EINBLICKE = [
 
 // POSTS (Phase P2 Task 9): Beiträge der Demo-Partner - Felder wie bei POST /api/partner-area/posts, geprüft
 // mit derselben Prüfung (lib/partnerPosts.js validatePartnerPost: Bereich passend zum Partner-Typ, immer
-// "Anzeige", Züchter-Schutz, Link). freigabe: 'freigegeben' oder 'eingereicht' (ein abgelehnter Beitrag
-// bräuchte einen Grund und ist darum hier nicht vorgesehen). Nur example.org-Links.
+// "Anzeige", Züchter-Schutz, Link). freigabe: 'freigegeben', 'eingereicht' oder (V-Fehler 3) 'abgelehnt' - dann
+// mit ablehnungsgrund (dieselbe Prüfung wie beim Admin). verlauf (V-Fehler 3): der Verlauf des Beitrags,
+// älteste zuerst - aktion wie in lib/promotionFreigabe.js, tageAlt = vor wie vielen Tagen; er muss mit
+// "eingereicht" beginnen und bei der angegebenen Freigabe enden (beim abgelehnten Eintrag steht der Grund).
+// Nur example.org-Links. Hundesalon Wuschelglück ist vertrauenswürdig (seed/demo-partners.js) - sein
+// freigegebener Beitrag zeigt darum eine Änderung, die ohne neue Prüfung online blieb.
 const POSTS = [
   {
     partnerSlug: 'hundeschule-pfotenglueck',
     freigabe: 'freigegeben',
+    verlauf: [
+      { aktion: 'eingereicht', tageAlt: 12 },
+      { aktion: 'freigegeben', tageAlt: 11 }
+    ],
     bereich: 'hundeschule',
     titel: 'Welpenkurs ab Oktober',
     text: 'Sechs Samstage für Welpen bis 16 Wochen: Leinenführigkeit, Rückruf und viel Spiel in kleiner Gruppe.',
@@ -61,14 +69,34 @@ const POSTS = [
   {
     partnerSlug: 'hundeschule-pfotenglueck',
     freigabe: 'eingereicht',
+    verlauf: [{ aktion: 'eingereicht', tageAlt: 1 }],
     bereich: 'hundeschule',
     titel: 'Tag der offenen Tür',
     text: 'Schaut euch unseren Trainingsplatz an, lernt das Team kennen und probiert eine Schnupperstunde aus.',
     url: 'https://example.org/pfotenglueck-offene-tuer'
   },
   {
+    partnerSlug: 'hundeschule-pfotenglueck',
+    freigabe: 'abgelehnt',
+    ablehnungsgrund: 'Link führt ins Leere – die Seite zur Schnupperstunde ist nicht erreichbar.',
+    verlauf: [
+      { aktion: 'eingereicht', tageAlt: 5 },
+      { aktion: 'geaendert', tageAlt: 4 },
+      { aktion: 'abgelehnt', tageAlt: 3 }
+    ],
+    bereich: 'hundeschule',
+    titel: 'Agility-Schnupperstunde',
+    text: 'Eine Stunde Parcours für Einsteiger – Tunnel, Steg und Slalom in ruhigem Tempo.',
+    url: 'https://example.org/pfotenglueck-agility'
+  },
+  {
     partnerSlug: 'hundesalon-wuschelglueck',
     freigabe: 'freigegeben',
+    verlauf: [
+      { aktion: 'eingereicht', tageAlt: 9 },
+      { aktion: 'freigegeben', tageAlt: 8 },
+      { aktion: 'geaendert', tageAlt: 2 }
+    ],
     bereich: 'salon',
     titel: 'Herbst-Pflegetag',
     text: 'Bad, Bürsten und Krallenpflege zum Herbstanfang – mit Termin und ohne Wartezeit.',

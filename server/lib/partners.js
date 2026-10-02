@@ -288,6 +288,8 @@ function validatePartner(input = {}, { existingSlug, existingStatus, existing } 
   const kontaktTelefon = validatePhone(input.kontaktTelefon)
   const kontaktFormularUrl = validateKontaktFormularUrl(input.kontaktFormularUrl, existing?.kontakt_formular_url)
   const kontaktformularAktiv = validateFlag(input.kontaktformularAktiv, existing?.kontaktformular_aktiv, 1, 'kontaktformularAktiv')
+  // V-Fehler 3: nur der Admin (der Partner-Bereich lässt das Feld gar nicht durch, lib/partnerProfile.js PROFILE_COLUMNS).
+  const vertrauenswuerdig = validateFlag(input.vertrauenswuerdig, existing?.vertrauenswuerdig, 0, 'vertrauenswuerdig')
   const portalTitel = cleanOptionalText(input.portalTitel, MAX_TITEL_LENGTH, 'Der Portal-Titel')
   const portalText = validatePortalText(input.portalText)
   const farbe = validateFarbe(input.farbe)
@@ -314,7 +316,8 @@ function validatePartner(input = {}, { existingSlug, existingStatus, existing } 
     portal_titel: portalTitel,
     portal_text: portalText,
     farbe,
-    gesperrt
+    gesperrt,
+    vertrauenswuerdig
   }
 }
 

@@ -16,6 +16,7 @@ const {
   PROMOTION_CLICKS_COLUMNS_SQL,
   FREIGABE
 } = require('./promotions')
+const { VERLAUF_AKTION, PARTNER_VERLAUF_LIMIT, recordPromotionEvent, promotionVerlauf, partnerEditOutcome } = require('./promotionFreigabe')
 
 const ANZEIGE = 'Anzeige'
 const MAX_POSTS = 20
@@ -80,6 +81,12 @@ const OWN_POSTS_SQL = `SELECT p.*, ${PROMOTION_CLICKS_COLUMNS_SQL} FROM promotio
 const listOwnPostsStmt = db.prepare(`${OWN_POSTS_SQL} ORDER BY p.created_at DESC, p.id DESC`)
 const findOwnPostStmt = db.prepare(`${OWN_POSTS_SQL} AND p.id = ?`)
 const countOwnPostsStmt = db.prepare('SELECT COUNT(*) AS n FROM promotions WHERE partner_id = ? AND erstellt_von_partner = 1')
+// Freigabe UND der Schalter "vertrauenswürdig" frisch aus der Datenbank - ein langsamer Bild-Upload trägt sonst noch den
+// Partner vom Anfang der Anfrage (middleware/partnerArea.js), auch wenn der Admin den Schalter inzwischen umgelegt hat.
+const findOwnFreigabeStmt = db.prepare(
+  `SELECT p.freigabe, pa.vertrauenswuerdig FROM promotions p JOIN partners pa ON pa.id = p.partner_id
+   WHERE p.id = ? AND p.partner_id = ? AND p.erstellt_von_partner = 1`
+)
 
 const insertPostStmt = db.prepare(
   `INSERT INTO promotions (partner_id, bereich, kennzeichnung, empfohlen_von, titel, text, url, tierart, aktiv, start, ende,
@@ -87,13 +94,14 @@ const insertPostStmt = db.prepare(
    VALUES (@partner_id, @bereich, @kennzeichnung, @empfohlen_von, @titel, @text, @url, @tierart, @aktiv, @start, @ende,
            @is_demo, 1, '${FREIGABE.eingereicht}', NULL)`
 )
-// Jede Änderung reicht neu ein und nimmt einen Ablehnungsgrund weg. sort bleibt, wie der Admin es gesetzt hat.
+// Die Felder einer Änderung - die Freigabe setzt applyPartnerEdit danach. sort bleibt, wie der Admin es gesetzt hat.
 const updatePostStmt = db.prepare(
   `UPDATE promotions SET bereich = @bereich, kennzeichnung = @kennzeichnung, empfohlen_von = @empfohlen_von, titel = @titel,
-          text = @text, url = @url, tierart = @tierart, aktiv = @aktiv, start = @start, ende = @ende,
-          freigabe = '${FREIGABE.eingereicht}', ablehnungsgrund = NULL
+          text = @text, url = @url, tierart = @tierart, aktiv = @aktiv, start = @start, ende = @ende
    WHERE id = @id`
 )
+// Jede Änderung nimmt einen Ablehnungsgrund weg (ein freigegebener Beitrag hat ohnehin keinen).
+const setPartnerFreigabeStmt = db.prepare('UPDATE promotions SET freigabe = ?, ablehnungsgrund = NULL WHERE id = ?')
 
 // Beiträge eines Partners, wie Kundinnen und Kunden sie sehen: aktiv, im Zeitfenster, in einer der
 // gewünschten Freigaben - nach sort, dann neueste zuerst. Alle Empfehlungen mit dieser partner_id, auch die
@@ -117,16 +125,32 @@ function findOwnPost(partnerId, id) {
   return postId ? findOwnPostStmt.get(partnerId, postId) : undefined
 }
 
-// Limit und Einfügen in EINER Transaktion - zwei gleichzeitige Anfragen kommen so nicht gemeinsam über 20.
+// Limit, Einfügen und der erste Eintrag im Verlauf (eingereicht) in EINER Transaktion - zwei gleichzeitige Anfragen
+// kommen so nicht gemeinsam über 20. Neue Beiträge brauchen immer die Freigabe, auch bei vertrauenswürdigen Partnern.
 const insertPost = db.transaction((partner, clean) => {
   if (countOwnPostsStmt.get(partner.id).n >= MAX_POSTS) throw httpError(409, LIMIT_MESSAGE)
   const id = insertPostStmt.run({ ...clean, partner_id: partner.id, is_demo: partner.is_demo ? 1 : 0 }).lastInsertRowid
+  recordPromotionEvent(id, VERLAUF_AKTION.eingereicht)
   return findOwnPostStmt.get(partner.id, id)
 })
 
-function updatePost(partnerId, id, clean) {
-  updatePostStmt.run({ ...clean, id })
-  return findOwnPostStmt.get(partnerId, id)
+// V-Fehler 3: eine Änderung durch den Partner - Text (PUT, clean) oder Bild (clean = null, das Bild hat
+// lib/promotionImage.js in derselben Transaktion schon gesetzt). Freigabe nach partnerEditOutcome
+// (lib/promotionFreigabe.js: vertrauenswürdig und freigegeben bleibt online, sonst zur Prüfung) und ein Eintrag im
+// Verlauf - alles in EINER Transaktion mit frisch gelesener Freigabe und frisch gelesenem Vertrauen. Gibt das Ergebnis
+// von partnerEditOutcome zurück oder null, wenn es den eigenen Beitrag nicht (mehr) gibt.
+const applyPartnerEdit = db.transaction((partner, id, clean = null) => {
+  const current = findOwnFreigabeStmt.get(id, partner.id)
+  if (!current) return null
+  const outcome = partnerEditOutcome({ vertrauenswuerdig: current.vertrauenswuerdig }, current.freigabe)
+  if (clean) updatePostStmt.run({ ...clean, id })
+  setPartnerFreigabeStmt.run(outcome.freigabe, id)
+  recordPromotionEvent(id, outcome.aktion)
+  return outcome
+})
+
+function updatePost(partner, id, clean) {
+  return applyPartnerEdit(partner, id, clean)
 }
 
 // Portal (GET /api/public/partners/:slug/posts): nur freigegebene, höchstens MAX_PUBLIC_POSTS.
@@ -143,8 +167,8 @@ function listPreviewPosts(partnerId, limit) {
 // --- Antworten -----------------------------------------------------------------------------------
 
 // Der eigene Beitrag in camelCase (wie die Einblicke, lib/einblicke.js ownEinblick), mit Freigabe,
-// Ablehnungsgrund und Klickzahlen.
-function ownPost(row) {
+// Ablehnungsgrund, Klickzahlen und (V-Fehler 3) den letzten Einträgen im Verlauf, älteste zuerst.
+function ownPost(row, verlauf = []) {
   return {
     id: row.id,
     bereich: row.bereich,
@@ -161,8 +185,14 @@ function ownPost(row) {
     ablehnungsgrund: row.ablehnungsgrund,
     clicks7: row.clicks7,
     clicksTotal: row.clicksTotal,
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    verlauf
   }
+}
+
+// Ein einzelner eigener Beitrag samt Verlauf (Antwort auf POST, PUT und Bild).
+function ownPostWithVerlauf(row) {
+  return ownPost(row, promotionVerlauf(row.id, PARTNER_VERLAUF_LIMIT))
 }
 
 module.exports = {
@@ -180,7 +210,9 @@ module.exports = {
   findOwnPost,
   insertPost,
   updatePost,
+  applyPartnerEdit,
   listPublicPosts,
   listPreviewPosts,
-  ownPost
+  ownPost,
+  ownPostWithVerlauf
 }

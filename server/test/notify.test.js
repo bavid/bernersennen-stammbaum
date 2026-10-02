@@ -133,6 +133,12 @@ test('buildText: ohne Details keine personenbezogenen Daten, mit Details das Nö
   const beitragDetails = buildText(EREIGNIS.beitrag, { partnerName: 'Hundeschule Pfotenweg', titel: 'Welpenkurs im Herbst' }, { details: true })
   assert.match(beitragDetails, /Partner: Hundeschule Pfotenweg/)
   assert.match(beitragDetails, /Titel: Welpenkurs im Herbst/)
+  assert.equal(beitragPlain, '🐾 Ein Partner hat einen Beitrag eingereicht – bitte im Admin prüfen und freigeben.')
+  // V-Fehler 3: Änderung eines vertrauenswürdigen Partners - schon online, als solche gekennzeichnet
+  const trustedPlain = buildText(EREIGNIS.beitrag, { partnerName: 'Hundeschule Pfotenweg', titel: 'Welpenkurs', vertrauenswuerdig: true }, { details: false })
+  assert.equal(trustedPlain, '🐾 Ein Partner hat einen freigegebenen Beitrag geändert (vertrauenswürdig) – die Änderung ist schon online.')
+  const trustedDetails = buildText(EREIGNIS.beitrag, { partnerName: 'Hundeschule Pfotenweg', titel: 'Welpenkurs', vertrauenswuerdig: true }, { details: true })
+  assert.match(trustedDetails, /geändert \(vertrauenswürdig\)[^\n]*\nPartner: Hundeschule Pfotenweg\nTitel: Welpenkurs$/)
 
   // Details bleiben harmloser Text: keine Zeilenumbrüche (keine vorgetäuschten Zeilen), keine anklickbaren Links oder
   // Erwähnungen.

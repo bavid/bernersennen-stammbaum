@@ -16,7 +16,7 @@ const db = require('../db')
 const config = require('../config')
 const { detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('./partners')
 const { stripLogoMetadata } = require('./partnerLogo')
-const { promotionImageUrl, FREIGABE } = require('./promotions')
+const { promotionImageUrl } = require('./promotions')
 
 // Bild-Arten: der Admin darf PNG, JPG und WebP (wie beim Logo). Partner nur JPG und PNG - nur für diese
 // beiden entfernt stripLogoMetadata die Metadaten (EXIF/GPS), WebP bliebe unangetastet (wie bei den
@@ -39,10 +39,6 @@ const promotionImageUpload = multer({
 
 const findImageFile = db.prepare('SELECT bild_file FROM promotions WHERE id = ?')
 const updateImageFile = db.prepare('UPDATE promotions SET bild_file = ? WHERE id = ?')
-// Ein neues Bild eines Partner-Beitrags ist eine Änderung - wieder einreichen, Ablehnungsgrund weg.
-const updateImageFileAndResubmit = db.prepare(
-  `UPDATE promotions SET bild_file = ?, freigabe = '${FREIGABE.eingereicht}', ablehnungsgrund = NULL WHERE id = ?`
-)
 const deleteClicksStmt = db.prepare("DELETE FROM link_clicks WHERE target_type = 'promotion' AND target_id = ?")
 const deletePromotionStmt = db.prepare('DELETE FROM promotions WHERE id = ?')
 
@@ -62,12 +58,23 @@ function deletePromotion(row) {
   removePromotionImage(row.bild_file)
 }
 
+// Das bisherige Bild erst hier frisch lesen (nicht vor dem Upload): so bleibt auch bei zwei gleichzeitigen Uploads
+// keine Datei verwaist zurück. onStored (optional) läuft in derselben Transaktion - z. B. die Freigabe eines
+// Partner-Beitrags (lib/partnerPosts.js applyPartnerEdit). null, wenn es die Empfehlung nicht (mehr) gibt.
+const storeImageFile = db.transaction((promotionId, filename, onStored) => {
+  const previous = findImageFile.get(promotionId)?.bild_file
+  const { changes } = updateImageFile.run(filename, promotionId)
+  if (!changes) return null
+  return { previous, stored: onStored ? onStored(promotionId) : undefined }
+})
+
 // Nimmt das Bild aus dem multipart-Feld "file" entgegen, speichert es, ersetzt das bisherige und antwortet
-// 201 { bildUrl } - oder über respond(bildUrl), wenn der Aufrufer eine andere Antwort braucht. promotionId
-// muss schon geprüft sein. resubmit: true setzt die Freigabe zurück auf 'eingereicht' (Partner-Beiträge);
-// types: ADMIN_IMAGE_TYPES (Vorgabe) oder PARTNER_IMAGE_TYPES. Die Datei liegt bis zur bestandenen Prüfung
-// nur im Speicher - eine Ablehnung hinterlässt nichts auf der Platte.
-function handlePromotionImageUpload(req, res, next, promotionId, { resubmit = false, respond, types = ADMIN_IMAGE_TYPES } = {}) {
+// 201 { bildUrl } - oder über respond(bildUrl, stored), wenn der Aufrufer eine andere Antwort braucht. promotionId
+// muss schon geprüft sein. onStored(promotionId) läuft mit dem Speichern in einer Transaktion, sein Ergebnis kommt
+// als stored an respond (Partner-Beiträge: Freigabe und Verlauf, V-Fehler 3); types: ADMIN_IMAGE_TYPES (Vorgabe)
+// oder PARTNER_IMAGE_TYPES. Die Datei liegt bis zur bestandenen Prüfung nur im Speicher - eine Ablehnung
+// hinterlässt nichts auf der Platte.
+function handlePromotionImageUpload(req, res, next, promotionId, { onStored, respond, types = ADMIN_IMAGE_TYPES } = {}) {
   promotionImageUpload.single('file')(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       const message = err.code === 'LIMIT_FILE_SIZE' ? `Das Bild ist zu groß (max. ${MAX_LOGO_BYTES / 1024} KB)` : 'Upload fehlgeschlagen'
@@ -85,19 +92,22 @@ function handlePromotionImageUpload(req, res, next, promotionId, { resubmit = fa
     const filename = `${crypto.randomUUID()}.${ext}`
     fs.writeFileSync(path.join(config.partnerMediaDir, filename), stripLogoMetadata(req.file.buffer, ext))
 
-    // Das bisherige Bild erst jetzt frisch lesen (nicht vor dem Upload): so bleibt auch bei zwei
-    // gleichzeitigen Uploads keine Datei verwaist zurück.
-    const previous = findImageFile.get(promotionId)?.bild_file
-    const { changes } = (resubmit ? updateImageFileAndResubmit : updateImageFile).run(filename, promotionId)
+    let result
+    try {
+      result = storeImageFile(promotionId, filename, onStored)
+    } catch (storeErr) {
+      removePromotionImage(filename)
+      return next(storeErr)
+    }
     // Während des Uploads gelöscht: die neue Datei nicht verwaist liegen lassen.
-    if (!changes) {
+    if (!result) {
       removePromotionImage(filename)
       return res.status(404).json({ error: 'Nicht gefunden' })
     }
-    removePromotionImage(previous)
+    removePromotionImage(result.previous)
 
     const bildUrl = promotionImageUrl(filename)
-    if (respond) return respond(bildUrl)
+    if (respond) return respond(bildUrl, result.stored)
     res.status(201).json({ bildUrl })
   })
 }

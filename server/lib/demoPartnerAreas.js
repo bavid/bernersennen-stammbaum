@@ -10,7 +10,8 @@ const { ART } = require('./context')
 const { areaArtForTyp, findPartnerArea, insertPartnerArea } = require('./partnerAreas')
 const { MAX_EINBLICKE, validateNewEinblick } = require('./einblicke')
 const { validatePartnerPost, insertPost } = require('./partnerPosts')
-const { FREIGABE } = require('./promotions')
+const { FREIGABE, validateAblehnungsgrund } = require('./promotions')
+const { VERLAUF_AKTION, recordPromotionEvent } = require('./promotionFreigabe')
 const { validateContactMessage, insertMessage } = require('./partnerMessages')
 const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
 const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, MESSAGES, KUNDEN_GUTSCHEINE } = require('../seed/demo-partner-area')
@@ -123,8 +124,15 @@ function createDemoPartnerAreas(db, { copyImage }) {
 
 // --- Phase P2 Task 9: Beiträge und Posteingänge der Demo-Partner -----------------------------------------
 
-// Ohne Grund lässt sich ein Beitrag nicht ablehnen - der Seed kennt darum nur diese beiden Freigaben.
-const DEMO_POST_FREIGABEN = [FREIGABE.eingereicht, FREIGABE.freigegeben]
+// V-Fehler 3: auch abgelehnt - dann mit einem Grund, der die Prüfung des Admins besteht.
+const DEMO_POST_FREIGABEN = [FREIGABE.eingereicht, FREIGABE.freigegeben, FREIGABE.abgelehnt]
+// Welche Freigabe ein Eintrag im Verlauf hinterlässt - geaendert lässt sie, wie sie war (null = unverändert).
+const VERLAUF_FREIGABE = Object.freeze({
+  [VERLAUF_AKTION.eingereicht]: FREIGABE.eingereicht,
+  [VERLAUF_AKTION.geaendert]: null,
+  [VERLAUF_AKTION.freigegeben]: FREIGABE.freigegeben,
+  [VERLAUF_AKTION.abgelehnt]: FREIGABE.abgelehnt
+})
 
 // Fehler einer echten Prüfung mit dem Seed-Eintrag in der Meldung, damit er auffindbar ist.
 function validateSeedEntry(label, validate) {
@@ -135,20 +143,50 @@ function validateSeedEntry(label, validate) {
   }
 }
 
+// V-Fehler 3: der Verlauf eines Seed-Beitrags - beginnt mit "eingereicht", nur bekannte Aktionen, tageAlt als ganze
+// Zahl ≥ 0 und nie jünger als der Eintrag danach, und er endet bei der angegebenen Freigabe. Ohne verlauf: nur
+// "eingereicht" (und die Entscheidung) von heute.
+function validateDemoVerlauf(label, verlauf, freigabe) {
+  const entries = verlauf ?? [{ aktion: VERLAUF_AKTION.eingereicht, tageAlt: 0 }, ...(freigabe === FREIGABE.eingereicht ? [] : [{ aktion: freigabe, tageAlt: 0 }])]
+  if (!Array.isArray(entries) || entries[0]?.aktion !== VERLAUF_AKTION.eingereicht) throw new Error(`${label}: Verlauf muss mit "eingereicht" beginnen`)
+  let state = null
+  entries.forEach(({ aktion, tageAlt }, index) => {
+    if (!Object.hasOwn(VERLAUF_FREIGABE, aktion)) throw new Error(`${label}: unbekannte Aktion im Verlauf: ${aktion}`)
+    const older = entries[index - 1]
+    if (!Number.isInteger(tageAlt) || tageAlt < 0 || (older && tageAlt > older.tageAlt)) throw new Error(`${label}: Verlauf braucht tageAlt ≥ 0, älteste zuerst`)
+    state = VERLAUF_FREIGABE[aktion] ?? state
+  })
+  if (state !== freigabe) throw new Error(`${label}: Verlauf endet bei "${state}", die Freigabe ist "${freigabe}"`)
+  return entries
+}
+
 // Dieselbe Prüfung wie POST /api/partner-area/posts (Bereich zum Partner-Typ, immer "Anzeige", Züchter-Schutz,
 // Link, Datum) und dasselbe Einfügen (lib/partnerPosts.js insertPost: erstellt_von_partner = 1, is_demo vom
-// Partner, Limit). Erst ALLE prüfen, dann einfügen; die Freigabe setzt danach der Seed (wie der Admin).
+// Partner, Limit). Erst ALLE prüfen, dann einfügen; Freigabe, Ablehnungsgrund und Verlauf setzt danach der Seed
+// (wie der Admin) - der von insertPost angelegte "eingereicht"-Eintrag von heute weicht dem Verlauf aus dem Seed.
 function insertDemoPartnerPosts(db) {
-  const prepared = POSTS.map(({ partnerSlug, freigabe, ...input }) => {
+  const prepared = POSTS.map(({ partnerSlug, freigabe, ablehnungsgrund, verlauf, ...input }) => {
     const label = `Demo-Beitrag "${input.titel}" für "${partnerSlug}"`
     const partner = findDemoPartner(db, partnerSlug, label)
     if (!DEMO_POST_FREIGABEN.includes(freigabe)) throw new Error(`${label}: Freigabe muss einer von ${DEMO_POST_FREIGABEN.join(', ')} sein`)
-    return { partner, freigabe, clean: validateSeedEntry(label, () => validatePartnerPost(input, partner)) }
+    if ((freigabe === FREIGABE.abgelehnt) !== (ablehnungsgrund !== undefined)) {
+      throw new Error(`${label}: einen Ablehnungsgrund gibt es genau bei der Freigabe "${FREIGABE.abgelehnt}"`)
+    }
+    const grund = ablehnungsgrund === undefined ? null : validateSeedEntry(label, () => validateAblehnungsgrund(ablehnungsgrund))
+    const clean = validateSeedEntry(label, () => validatePartnerPost(input, partner))
+    return { partner, freigabe, grund, verlauf: validateDemoVerlauf(label, verlauf, freigabe), clean }
   })
-  const setFreigabe = db.prepare('UPDATE promotions SET freigabe = ? WHERE id = ?')
-  return prepared.map(({ partner, freigabe, clean }) => {
+  const setFreigabe = db.prepare('UPDATE promotions SET freigabe = ?, ablehnungsgrund = ? WHERE id = ?')
+  const clearVerlauf = db.prepare('DELETE FROM promotion_events WHERE promotion_id = ?')
+  const timeAgo = db.prepare("SELECT datetime('now', ?) AS t")
+  return prepared.map(({ partner, freigabe, grund, verlauf, clean }) => {
     const { id } = insertPost(partner, clean)
-    setFreigabe.run(freigabe, id)
+    setFreigabe.run(freigabe, grund, id)
+    clearVerlauf.run(id)
+    for (const { aktion, tageAlt } of verlauf) {
+      const createdAt = timeAgo.get(`-${tageAlt} days`).t
+      recordPromotionEvent(id, aktion, { grund: aktion === VERLAUF_AKTION.abgelehnt ? grund : null, createdAt })
+    }
     return id
   })
 }

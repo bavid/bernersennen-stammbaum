@@ -43,7 +43,9 @@ const DEMO_PARTNERS = [
       'Bringt gern sein Lieblingsleckerli mit. Für Welpen gibt es einen Kennenlerntermin, damit der erste Besuch im ' +
       'Salon ganz entspannt wird.',
     kontaktEmail: 'salon@example.org',
-    website: 'https://example.org/wuschelglueck'
+    website: 'https://example.org/wuschelglueck',
+    // V-Fehler 3: vertrauenswürdig - Änderungen an freigegebenen Beiträgen gehen ohne neue Prüfung online.
+    vertrauenswuerdig: true
   },
   {
     // Kein ist_partner (0) -> Badge "geprüft" statt "Partner" (siehe lib/partners.js publicPartner);
