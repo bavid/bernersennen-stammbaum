@@ -82,6 +82,31 @@ const TIMELINE = [
     titel: 'Balu zieht ein',
     text: 'Von den Nachbarn übernommen – am ersten Abend hat er sich direkt aufs Sofa gelegt, als wäre er nie woanders gewesen.'
   },
+  // Phase V2: mehr Fotos in der Demo - Balus Jahre am Deich (eigene Kopien je Eintrag, Inventar in images/QUELLEN.md).
+  {
+    dog: 'balu',
+    datum: '2008-07-12',
+    autor: 'Familie Nissen',
+    titel: 'Erster Sommer am Deich',
+    text: 'Balu rennt über den Sand, als hätte er nie woanders gewohnt. Abends schläft er sofort ein.',
+    fotos: ['training.jpg']
+  },
+  {
+    dog: 'balu',
+    datum: '2016-03-08',
+    autor: 'Familie Nissen',
+    titel: 'Balu wird grau',
+    text: 'Die Schnauze wird weiß, der Blick bleibt derselbe. Zehn Jahre alt und immer noch der Erste an der Tür.',
+    fotos: ['senior.jpg']
+  },
+  {
+    dog: 'balu',
+    datum: '2018-12-24',
+    autor: 'Familie Nissen',
+    titel: 'Lieblingsplatz Sofa',
+    text: 'Heiligabend: Balu hat das Sofa für sich reserviert - und keiner hat sich getraut, ihn zu stören.',
+    fotos: ['balu.jpg']
+  },
   {
     dog: 'balu',
     datum: '2019-11-02',

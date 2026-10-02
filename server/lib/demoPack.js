@@ -19,6 +19,7 @@ const { SHELTER_NAME, DOGS: SHELTER_DOGS, TIMELINE: SHELTER_TIMELINE } = require
 const { DEMO_PROMOTIONS, DEMO_SETTINGS, DEMO_DONATION_REPORT } = require('../seed/demo-discover')
 const { createDemoPartnerAreas, createDemoPartnerContent } = require('./demoPartnerAreas')
 const { createDemoMembers, insertLeitungComment } = require('./demoMembers')
+const { createDemoVisits } = require('./demoVisits')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -183,17 +184,20 @@ function insertCompanions(db, familyId, copyImage) {
 // shelterFamilyId (Phase T Task 6, optional): gesetzt für Einträge mit herkunftShelter (siehe
 // seed/demo-household.js, Neles frühe Tierheim-Einträge) - genau die Spalte, die auch lib/transfers.js
 // transferDog beim echten Umzug setzt, damit die Timeline "aus Tierheim Sonnenhang" zeigt.
-function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId } = {}) {
+// fotos (Phase V2, optional): Seed-Bilder als eigene Kopie je Eintrag (copyImage.copyOwn) - ein Foto, das schon ein
+// anderes Tier oder einen anderen Eintrag zeigt, teilt sich so keine Datei (und keine Sichtbarkeit) mit ihm.
+function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage } = {}) {
   const insertEntry = db.prepare(
-    `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, privat, kategorie, herkunft_family_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(datetime('now', ?), datetime(?, '+18 hours')))`
+    `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, privat, kategorie, herkunft_family_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(datetime('now', ?), datetime(?, '+18 hours')))`
   )
   const entryIds = {}
   for (const entry of HOUSEHOLD_TIMELINE) {
     const writtenAgo = entry.hoursAgo ? ago(entry.hoursAgo) : null
     const herkunftFamilyId = entry.herkunftShelter && shelterFamilyId ? shelterFamilyId : null
+    const fotos = copyImage ? (entry.fotos || []).map((file) => copyImage.copyOwn(file)) : []
     const entryId = insertEntry.run(
-      ids[entry.dog], familyId, entry.autor, entry.datum, entry.titel, entry.text || null,
+      ids[entry.dog], familyId, entry.autor, entry.datum, entry.titel, entry.text || null, JSON.stringify(fotos),
       entry.privat ? 1 : 0, entry.kategorie || null, herkunftFamilyId, writtenAgo, entry.datum
     ).lastInsertRowid
     if (entry.key) entryIds[entry.key] = entryId
@@ -423,7 +427,7 @@ function createDemoHousehold(db, { password, isDemo, copyImage, groupFamilyId, s
       .prepare("INSERT INTO families (name, password_hash, is_demo, theme, art) VALUES (?, ?, ?, ?, 'zuhause')")
       .run(name, bcrypt.hashSync(password, 10), isDemo ? 1 : 0, theme).lastInsertRowid
     const ids = insertCompanions(db, familyId, copyImage)
-    const entryIds = insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId })
+    const entryIds = insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage })
 
     if (groupFamilyId) {
       // Phase R Task 1: der Haushalt ist das (einzige) Mitglied dieses Rudels und damit dessen Leitung -
@@ -564,6 +568,14 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     // einen Kommentar mit vonMir: true, den die Besucherin "selbst" geschrieben hat.
     insertLeitungComment(db, { entryIds: membersResult.entryIds, groupFamilyId: rudelResult.familyId, householdId: householdResult.familyId })
 
+    // Phase V2: Besuch Deich <-> Möwenweg und „Erlebt mit“ (lib/demoVisits.js) - braucht beide Zuhause.
+    const visitsResult = createDemoVisits(db, {
+      copyImage,
+      householdId: householdResult.familyId,
+      householdDogIds: householdResult.dogIds,
+      memberHouseholds: membersResult.households
+    })
+
     const discoverResult = replaceDemoDiscoverContent(db, mediaDir, newPromotionImages)
 
     // Phase P2 Task 9: Beiträge und Posteingänge der Demo-Partner - NACH replaceDemoDiscoverContent, das alle
@@ -579,7 +591,8 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       partnerAreas: partnerAreaResult,
       discover: discoverResult,
       partnerContent,
-      removedEinblickPhotos
+      removedEinblickPhotos,
+      visits: visitsResult
     }
   })
 
@@ -593,7 +606,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     for (const file of newPromotionImages) fs.rmSync(path.join(mediaDir, file), { force: true })
     throw err
   }
-  const { created, household, members, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos } = built
+  const { created, household, members, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos, visits } = built
 
   for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
   removeUploads(uploadDir, unusedEinblickPhotos(db, removedEinblickPhotos))
@@ -622,7 +635,8 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     einblicke: partnerAreas.einblicke,
     promotionIds: discover.promotionIds,
     partnerPostIds: partnerContent.postIds,
-    messages: partnerContent.messages
+    messages: partnerContent.messages,
+    visits
   }
 }
 

@@ -46,10 +46,10 @@ alle Metadaten entfernt (kein EXIF/XMP/ICC; die Downloads sind sRGB). Vier Bilde
 | schnee.jpg | Rudel: Einträge „Erster richtiger Schnee“ (Aiko), „Schneetag im Garten“ (Emma), „Grüße vom Thunersee“ (Finn) |
 | see.jpg | Rudel: Einträge „Erstes Mal schwimmen“ (Cora), „Stand-up-Paddling“ (Finn), „Erster Ausflug an den See“ (Hermes) |
 | ausstellung.jpg | Rudel: Eintrag „Ausstellung in Bern“ (Bella) |
-| balu.jpg | Zuhause am Deich: Balu, Rüde (2006–2019, verstorben), von Nachbarn übernommen – Profilfoto |
+| balu.jpg | Zuhause am Deich: Balu, Rüde (2006–2019, verstorben), von Nachbarn übernommen – Profilfoto, Eintrag „Lieblingsplatz Sofa“ (eigene Kopie) |
 | nele.jpg | Zuhause am Deich: Nele, Mischling, Hündin, aus dem Tierheim – Profilfoto (wird ins Rudel geteilt) |
 | flocke.jpg | Zuhause am Deich: Flocke, Kaninchen aus einer Pflegestelle – Profilfoto |
-| wilma.jpg | Zuhause Möwenweg: Wilma, Berner-Hündin, liebt Schnee – Profilfoto (geteilt) |
+| wilma.jpg | Zuhause Möwenweg: Wilma, Berner-Hündin, liebt Schnee – Profilfoto (geteilt), Eintrag „Schneerunde mit Nele“ (eigene Kopie, „Erlebt mit“ Nele, gespiegelt am Deich) |
 | pepper.jpg | Zuhause Lindenhof: Pepper, Mischling, Rüde, Wasserfreund mit Stock – Profilfoto (geteilt) |
 | tierheim-pepper.jpg | Tierheim Sonnenhang: Pepper, Mischling, Hündin (in Vermittlung) – Profilfoto/Steckbrief |
 | tierheim-pepper-gassi.jpg | Tierheim: Peppers Eintrag „Gassi am Fluss“ (derselbe Hund) |
@@ -60,7 +60,7 @@ alle Metadaten entfernt (kein EXIF/XMP/ICC; die Downloads sind sRGB). Vier Bilde
 | tierheim-alltag.jpg | Einblick Tierheim Sonnenhang „Tag der offenen Tür im Tierheim“ |
 | katzenhaus.jpg | Einblick Tierheim Sonnenhang „Neue Kuschelecke im Katzenhaus“ |
 | training-welpen.jpg | Einblick Hundeschule Pfotenglück „Welpengruppe am Samstag – Ruhe an der Leine“ |
-| training.jpg | Einblick Hundeschule „Rückruftraining am Deich“ |
+| training.jpg | Einblick Hundeschule „Rückruftraining am Deich“; Zuhause am Deich: Balus Eintrag „Erster Sommer am Deich“ (eigene Kopie) |
 | training-pruefung.jpg | Einblick Hundeschule „Abschlussprüfung im Begleithundekurs – alle bestanden!“ |
 | agility.jpg | Einblick Hundeschule „Neue Trainingsfläche mit Agility-Parcours“ |
 | salon-pudel.jpg | Einblick Hundesalon Wuschelglück „Frisch getrimmt: Pudeldame Flocke“ |
@@ -70,7 +70,7 @@ alle Metadaten entfernt (kein EXIF/XMP/ICC; die Downloads sind sRGB). Vier Bilde
 | salon-welpe.jpg | Einblick Hundesalon „Welpen-Kennenlerntermin – erste Schritte im Salon“ |
 | welpenkurs.jpg | Entdecken, Empfehlung „Welpenkurs im Frühjahr“ (Hundeschule) |
 | futter.jpg | Entdecken, Empfehlung „Knusperkorn Sensitive“ (Futter) |
-| senior.jpg | Entdecken, Empfehlung „Patenschaft für Senioren-Hunde“ (Begleiter) |
+| senior.jpg | Entdecken, Empfehlung „Patenschaft für Senioren-Hunde“ (Begleiter); Zuhause am Deich: Balus Eintrag „Balu wird grau“ (eigene Kopie) |
 
 ## Quellen
 
