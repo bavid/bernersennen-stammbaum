@@ -68,7 +68,9 @@ test('Freigaben: Verlauf, Sammel-Freigabe, Begründungs-Vorlagen und vertrauensw
   const ownPost = async (cookie, id) => (await get('/api/partner-area/posts', cookie)).data.find((item) => item.id === id)
   const promotionRow = (id) => db.prepare('SELECT * FROM promotions WHERE id = ?').get(id)
   const hundeschulTitel = async () =>
-    (await post('/api/discover', {}, household.cookie)).data.hundeschulen.filter((card) => card.kind === 'promotion').map((card) => card.titel)
+    (await post('/api/discover', {}, household.cookie)).data.hundeschulen
+      .flatMap((card) => (card.kind === 'promotion' ? [card] : card.anzeigen || []))
+      .map((card) => card.titel)
 
   async function newMessages(fn) {
     const before = sent.length

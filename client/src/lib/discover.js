@@ -90,6 +90,15 @@ function asArray(value) {
   return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object') : []
 }
 
+// Phase V1: eine Karte je Partner (server/routes/discover.js partnerSection) - anzeigen und einblicke sind immer Listen.
+function normalizePartnerCard(card) {
+  return { ...card, anzeigen: asArray(card.anzeigen), einblicke: asArray(card.einblicke) }
+}
+
+function partnerCardsOf(items) {
+  return items.filter((item) => item.kind === 'partner').map(normalizePartnerCard)
+}
+
 function normalizeSupport(unterstuetzen) {
   const support = unterstuetzen && typeof unterstuetzen === 'object' ? unterstuetzen : {}
   return {
@@ -107,15 +116,16 @@ export function normalizeDiscover(data) {
   const source = data && typeof data === 'object' ? data : {}
   const hundeschulen = asArray(source.hundeschulen)
   // Phase P2: Hundesalons und Betreuung (Partner-Typen hundesalon/betreuung) plus Beiträge mit bereich salon -
-  // dieselbe Form wie hundeschulen (Partner- und Empfehlungs-Karten gemischt, kind unterscheidet).
+  // dieselbe Form wie hundeschulen (Partner- und Empfehlungs-Karten gemischt, kind unterscheidet). Seit Phase V1
+  // stehen die Anzeigen eines Partners auf seiner Karte; als eigene Karten bleiben nur Empfehlungen ohne Partner.
   const salon = asArray(source.salon)
   const begleiter = source.begleiter && typeof source.begleiter === 'object' ? source.begleiter : {}
   return {
-    hundeschulPartner: hundeschulen.filter((item) => item.kind === 'partner'),
+    hundeschulPartner: partnerCardsOf(hundeschulen),
     hundeschulPromotions: hundeschulen.filter((item) => item.kind === 'promotion'),
-    salonPartner: salon.filter((item) => item.kind === 'partner'),
+    salonPartner: partnerCardsOf(salon),
     salonPromotions: salon.filter((item) => item.kind === 'promotion'),
-    begleiterPartner: asArray(begleiter.partner),
+    begleiterPartner: asArray(begleiter.partner).map(normalizePartnerCard),
     begleiterTiere: asArray(begleiter.tiere),
     begleiterPromotions: asArray(begleiter.promotions),
     futter: asArray(source.futter),

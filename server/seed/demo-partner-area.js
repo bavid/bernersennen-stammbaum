@@ -13,6 +13,9 @@ const DEFAULT_DEMO_PARTNER_SLUG = 'hundeschule-pfotenglueck'
 // Demo-Partner, foto auf ein Bild in ./images (jeder Einblick bekommt beim Anlegen eine eigene Kopie) -
 // eigene Motive je Partner (Training, Salon, Tierheim), keine Porträts aus dem Demo-Rudel.
 // Feste Daten wie in den übrigen Demo-Seeds; die Samstags-Termine fallen auf echte Samstage.
+// angepinnt (Phase V1, lib/einblickPins.js): 'partner' oder 'admin' - angepinnte stehen auf der Karte in "Entdecken"
+// statt der neuesten drei. Pfotenglück pinnt seine Abschlussprüfung, bei Wuschelglück hat zusätzlich das Team einen
+// Einblick angepinnt (steht zuerst).
 const EINBLICKE = [
   {
     partnerSlug: 'hundeschule-pfotenglueck',
@@ -25,19 +28,21 @@ const EINBLICKE = [
     partnerSlug: 'hundeschule-pfotenglueck',
     datum: '2026-08-22',
     text: 'Abschlussprüfung im Begleithundekurs – alle bestanden!',
-    foto: 'training-pruefung.jpg'
+    foto: 'training-pruefung.jpg',
+    angepinnt: 'partner'
   },
   { partnerSlug: 'hundeschule-pfotenglueck', datum: '2026-07-04', text: 'Neue Trainingsfläche mit Agility-Parcours', foto: 'agility.jpg' },
 
   { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-09-24', text: 'Frisch getrimmt: Pudeldame Flocke', foto: 'salon-pudel.jpg' },
   { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-09-10', text: 'Wellness-Bad für einen Golden Retriever', foto: 'salon-bad.jpg' },
-  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-08-27', text: 'Krallenpflege ganz entspannt', foto: 'salon-pflege.jpg' },
+  { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-08-27', text: 'Krallenpflege ganz entspannt', foto: 'salon-pflege.jpg', angepinnt: 'admin' },
   { partnerSlug: 'hundesalon-wuschelglueck', datum: '2026-07-16', text: 'Sommerschnitt für die Hitze', foto: 'salon-sommerschnitt.jpg' },
   {
     partnerSlug: 'hundesalon-wuschelglueck',
     datum: '2026-06-20',
     text: 'Welpen-Kennenlerntermin – erste Schritte im Salon',
-    foto: 'salon-welpe.jpg'
+    foto: 'salon-welpe.jpg',
+    angepinnt: 'partner'
   },
 
   { partnerSlug: 'tierheim-sonnenhang', datum: '2026-09-05', text: 'Tag der offenen Tür im Tierheim', foto: 'tierheim-alltag.jpg' },
@@ -90,6 +95,20 @@ const POSTS = [
     url: 'https://example.org/pfotenglueck-agility'
   },
   {
+    // Phase V1: ein zweiter freigegebener Beitrag - auf der Karte steht er bewusst hinter dem Welpenkurs (KARTEN).
+    partnerSlug: 'hundeschule-pfotenglueck',
+    freigabe: 'freigegeben',
+    verlauf: [
+      { aktion: 'eingereicht', tageAlt: 7 },
+      { aktion: 'freigegeben', tageAlt: 6 }
+    ],
+    bereich: 'hundeschule',
+    titel: 'Einzeltraining am Abend',
+    text: 'Für ängstliche oder stürmische Junghunde: eine Stunde nur für euch, werktags ab 18 Uhr.',
+    url: 'https://example.org/pfotenglueck-einzeltraining',
+    tierart: 'hund'
+  },
+  {
     partnerSlug: 'hundesalon-wuschelglueck',
     freigabe: 'freigegeben',
     verlauf: [
@@ -101,7 +120,29 @@ const POSTS = [
     titel: 'Herbst-Pflegetag',
     text: 'Bad, Bürsten und Krallenpflege zum Herbstanfang – mit Termin und ohne Wartezeit.',
     url: 'https://example.org/wuschelglueck-pflegetag'
+  },
+  {
+    partnerSlug: 'hundesalon-wuschelglueck',
+    freigabe: 'freigegeben',
+    verlauf: [
+      { aktion: 'eingereicht', tageAlt: 6 },
+      { aktion: 'freigegeben', tageAlt: 5 }
+    ],
+    bereich: 'salon',
+    titel: 'Welpen-Kennenlerntermin',
+    text: 'Eine halbe Stunde schnuppern, ohne Schere und Föhn: so wird der erste richtige Termin ganz entspannt.',
+    url: 'https://example.org/wuschelglueck-welpen'
   }
+]
+
+// KARTEN (Phase V1): wie die Demo-Partner ihre Karte in "Entdecken" geordnet haben - dieselben Schritte wie im
+// Partner-Bereich (lib/partnerPostOrder.js setReihenfolge/setInEntdecken). reihenfolge: Titel freigegebener Anzeigen
+// der Karte (eigene Beiträge und vom Team verknüpfte Empfehlungen, seed/demo-discover.js) in der gewünschten
+// Reihenfolge - bewusst anders als "neueste zuerst"; nurPortal: Titel, die nicht auf der Karte, nur auf dem Portal
+// stehen sollen.
+const KARTEN = [
+  { partnerSlug: 'hundeschule-pfotenglueck', reihenfolge: ['Welpenkurs ab Oktober', 'Einzeltraining am Abend'], nurPortal: ['Welpenkurs im Frühjahr'] },
+  { partnerSlug: 'hundesalon-wuschelglueck', reihenfolge: ['Herbst-Pflegetag', 'Welpen-Kennenlerntermin'], nurPortal: [] }
 ]
 
 // MESSAGES (Phase P2 Task 9): Nachrichten im Posteingang der Demo-Partner - Felder wie beim Kontaktformular
@@ -147,4 +188,4 @@ const KUNDEN_GUTSCHEINE = [
   { partnerSlug: 'hundesalon-wuschelglueck', size: 8, eingeloest: 2, widerrufen: 0 }
 ]
 
-module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, POSTS, MESSAGES, KUNDEN_GUTSCHEINE }
+module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE }

@@ -251,3 +251,189 @@
     padding: var(--space-4) var(--space-5);
   }
 }
+
+/* Phase V1: EINE Karte je Partner (PartnerDiscoverCard) - Kopf mit Kurzbeschreibung und Links, darunter die
+   Anzeigen als ruhige Zeilen (Kennzeichnung, Titel als Link, eine Zeile Text) und die Einblicke als drei kleine
+   Fotos. Das Raster ist ein Container: erst wenn mindestens drei Spalten passen, darf eine Karte mit Anzeigen zwei
+   Spalten breit sein - Anzeigen dann rechts neben Kopf und Einblicken. So bleibt es auch in der schmalen
+   Kundensicht (PreviewFrame) einspaltig, unabhängig von der Fensterbreite. */
+.discover-card-list {
+  container-type: inline-size;
+}
+
+.partner-discover-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-content: start;
+}
+
+.partner-discover-head {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+.partner-discover-text {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.partner-discover-ads {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.partner-discover-ad {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+}
+
+.partner-discover-ad + .partner-discover-ad {
+  border-top: 1px solid var(--line);
+}
+
+.partner-discover-ad-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.partner-discover-ad .promotion-badge {
+  padding: 0.1rem var(--space-2);
+  font-size: 0.66rem;
+}
+
+.partner-discover-ad-heading {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.partner-discover-ad-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* Die ganze Zeile ist klickbar - der Link bleibt der eine Tab-Halt mit dem Titel als Namen. */
+.partner-discover-ad-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-sm);
+}
+
+.partner-discover-ad-link svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  color: var(--muted);
+  transform: translateY(1px);
+}
+
+.partner-discover-ad:hover .partner-discover-ad-title {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--rust) 55%, transparent);
+  text-underline-offset: 3px;
+}
+
+.discover-page .partner-discover-ad-link:focus-visible {
+  outline: none;
+}
+
+.discover-page .partner-discover-ad-link:focus-visible::after {
+  outline: 2px solid var(--rust);
+  outline-offset: 1px;
+}
+
+.partner-discover-ad-text {
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.partner-discover-einblicke {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 6rem));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.partner-discover-einblicke figure {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.partner-discover-einblicke img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--paper-deep);
+}
+
+.partner-discover-einblicke figcaption {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+@container (min-width: 57rem) {
+  .discover-card-list > li.has-anzeigen {
+    grid-column: span 2;
+  }
+
+  .partner-discover-card.has-anzeigen {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-areas:
+      'head ads'
+      'einblicke ads';
+    gap: var(--space-4) var(--space-6);
+  }
+
+  .partner-discover-card.has-anzeigen > .partner-discover-head {
+    grid-area: head;
+  }
+
+  .partner-discover-card.has-anzeigen > .partner-discover-ads {
+    grid-area: ads;
+    align-self: start;
+    padding-left: var(--space-6);
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+
+  .partner-discover-card.has-anzeigen > .partner-discover-einblicke {
+    grid-area: einblicke;
+    align-self: end;
+  }
+
+  .partner-discover-card.has-anzeigen .partner-discover-ad:first-child {
+    padding-top: 0;
+  }
+}

@@ -15,6 +15,7 @@ const {
   ownPostWithVerlauf
 } = require('../../lib/partnerPosts')
 const { VERLAUF_AKTION, partnerVerlaufById } = require('../../lib/promotionFreigabe')
+const { entdeckenAnzeigen, setReihenfolge, setInEntdecken } = require('../../lib/partnerPostOrder')
 const { notify, EREIGNIS } = require('../../lib/notify')
 
 // Phase P2 Task 8: Beiträge des eigenen Partners (lib/partnerPosts.js) - immer "Anzeige", öffentlich erst
@@ -49,6 +50,31 @@ function notifyEdit(req, titel, outcome) {
 router.get('/', (req, res) => {
   const verlauf = partnerVerlaufById(req.partner.id)
   res.json(listOwnPosts(req.partner.id).map((row) => ownPost(row, verlauf.get(row.id))))
+})
+
+// Phase V1: die Anzeigen der eigenen Karte in "Entdecken" (lib/partnerPostOrder.js) - freigegebene eigene Beiträge
+// und vom Team verknüpfte Empfehlungen des Kartenbereichs, in Karten-Reihenfolge. Reihenfolge und "in Entdecken
+// zeigen" sind reine Darstellung: keine neue Freigabe, kein Verlauf. Antwort jeweils { bereich, max, anzeigen }.
+router.get('/entdecken', (req, res) => {
+  res.json(entdeckenAnzeigen(req.partner))
+})
+
+// { ids: [...] } - die genannten in dieser Reihenfolge zuerst, die übrigen danach nach Datum. Vor PUT /:id.
+router.put('/reihenfolge', denyDemoWrites, (req, res, next) => {
+  try {
+    res.json(setReihenfolge(req.partner, req.body))
+  } catch (err) {
+    sendError(res, next, err)
+  }
+})
+
+// { inEntdecken: boolean } - aus: nicht auf der Karte, weiter auf dem Portal.
+router.put('/:id/entdecken', denyDemoWrites, (req, res, next) => {
+  try {
+    res.json(setInEntdecken(req.partner, req.params.id, req.body))
+  } catch (err) {
+    sendError(res, next, err)
+  }
 })
 
 router.post('/', denyDemoWrites, (req, res, next) => {

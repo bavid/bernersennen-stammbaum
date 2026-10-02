@@ -33,7 +33,8 @@ export function donationsOf(support) {
   return support.partnerSpenden.filter((item) => isClickUrl(item.clickUrl))
 }
 
-// Einträge je Bereich - Karten (Partner, Tiere, Empfehlungen) und bei "Unterstützen" die Spendenwege
+// Einträge je Bereich - Karten (Partner, Tiere, Empfehlungen ohne Partner; seit Phase V1 zählen die Anzeigen auf einer
+// Partner-Karte nicht extra: ein Partner = eine Karte) und bei "Unterstützen" die Spendenwege
 // (GoFundMe, Spendenlinks, Empfehlungen) samt Transparenzbericht. "alle" ist die Summe.
 export function sectionCounts(data) {
   const support = data.unterstuetzen

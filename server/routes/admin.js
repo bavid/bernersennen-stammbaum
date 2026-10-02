@@ -18,6 +18,7 @@ const { ART, PARTNER_AREA_ARTS, buildMe } = require('../lib/context')
 const { PARTNER_AREA_ARTS_SQL, areaArtForTyp, areaLabel, findPartnerArea, insertPartnerArea } = require('../lib/partnerAreas')
 const { partnerAccessBatchOptions } = require('../lib/partnerAccess')
 const { findEinblick, ownEinblick, setAusgeblendet } = require('../lib/einblicke')
+const { setAdminPin } = require('../lib/einblickPins')
 const { HERKUNFT_JOINS_SQL, HERKUNFT_COLUMNS_SQL, withHerkunft } = require('../lib/herkunft')
 
 const router = express.Router()
@@ -537,6 +538,21 @@ router.post('/einblicke/:id/ausblenden', requireAdmin, (req, res) => {
   const { ausgeblendet } = req.body || {}
   if (typeof ausgeblendet !== 'boolean') return res.status(400).json({ error: '„ausgeblendet“ muss true oder false sein' })
   res.json(ownEinblick(setAusgeblendet(einblick.id, ausgeblendet)))
+})
+
+// Phase V1: Anpinnen für die Karte in "Entdecken" (lib/einblickPins.js) - Team-Pins stehen vor denen des Partners,
+// höchstens drei je Partner; angepinnt false löst jeden Pin (auch den des Partners).
+router.post('/einblicke/:id/anpinnen', requireAdmin, (req, res, next) => {
+  try {
+    const einblick = findEinblick(req.params.id)
+    if (!einblick) return res.status(404).json({ error: 'Diesen Einblick gibt es nicht' })
+    const { angepinnt } = req.body || {}
+    if (typeof angepinnt !== 'boolean') return res.status(400).json({ error: '„angepinnt“ muss true oder false sein' })
+    res.json(ownEinblick(setAdminPin(einblick.id, angepinnt)))
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
 })
 
 module.exports = router

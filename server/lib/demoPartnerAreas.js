@@ -14,7 +14,9 @@ const { FREIGABE, validateAblehnungsgrund } = require('./promotions')
 const { VERLAUF_AKTION, recordPromotionEvent } = require('./promotionFreigabe')
 const { validateContactMessage, insertMessage } = require('./partnerMessages')
 const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
-const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, MESSAGES, KUNDEN_GUTSCHEINE } = require('../seed/demo-partner-area')
+const { MAX_ANGEPINNT, PIN_VON } = require('./einblickPins')
+const { entdeckenAnzeigen, setReihenfolge, setInEntdecken } = require('./partnerPostOrder')
+const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE } = require('../seed/demo-partner-area')
 
 // Nur Demo-Partner (is_demo = 1): ein Seed-Eintrag darf nie an einem echten Partner landen.
 function findDemoPartner(db, slug, purpose) {
@@ -46,25 +48,43 @@ function validateDemoEinblick({ partnerSlug, datum, text }) {
   }
 }
 
+// Phase V1: angepinnt ist leer, 'partner' oder 'admin' - und je Partner höchstens MAX_ANGEPINNT Pins (wie beim
+// Anpinnen im Bereich, lib/einblickPins.js).
+const PIN_VALUES = Object.values(PIN_VON)
+
+function validateDemoPins(prepared) {
+  const pins = {}
+  for (const { partnerSlug, angepinnt, text } of prepared) {
+    if (angepinnt === undefined) continue
+    if (!PIN_VALUES.includes(angepinnt)) throw new Error(`Demo-Einblick "${text}": angepinnt muss einer von ${PIN_VALUES.join(', ')} sein`)
+    pins[partnerSlug] = (pins[partnerSlug] || 0) + 1
+  }
+  const overPinned = Object.keys(pins).find((slug) => pins[slug] > MAX_ANGEPINNT)
+  if (overPinned) throw new Error(`Demo-Partner "${overPinned}" hätte mehr als ${MAX_ANGEPINNT} angepinnte Einblicke`)
+}
+
 // Erst ALLE Einblicke prüfen, dann der Reihe nach Foto kopieren und einfügen. Jeder Einblick bekommt eine
 // eigene Datei (copyImage.copyOwn): Einblick-Fotos sind öffentlich (/public-media, lib/publicMedia.js) und
 // sollen sich keine Datei mit einem Tier oder Chronik-Eintrag teilen. Gibt die Anzahl je Partner-Slug zurück.
 function insertDemoEinblicke(db, copyImage) {
   const prepared = EINBLICKE.map((einblick) => {
     const partner = findDemoPartner(db, einblick.partnerSlug, `den Demo-Einblick "${einblick.text}"`)
-    return { partnerId: partner.id, partnerSlug: einblick.partnerSlug, foto: einblick.foto, ...validateDemoEinblick(einblick) }
+    return { partnerId: partner.id, partnerSlug: einblick.partnerSlug, foto: einblick.foto, angepinnt: einblick.angepinnt, ...validateDemoEinblick(einblick) }
   })
 
   const counts = {}
   for (const { partnerSlug } of prepared) counts[partnerSlug] = (counts[partnerSlug] || 0) + 1
   const overLimit = Object.keys(counts).find((slug) => counts[slug] > MAX_EINBLICKE)
   if (overLimit) throw new Error(`Demo-Partner "${overLimit}" hätte mehr als ${MAX_EINBLICKE} Einblicke`)
+  validateDemoPins(prepared)
 
   const insert = db.prepare(
-    `INSERT INTO partner_einblicke (partner_id, foto_url, datum, text, einwilligung, is_demo, created_at)
-     VALUES (?, ?, ?, ?, 1, 1, datetime(?, '+18 hours'))`
+    `INSERT INTO partner_einblicke (partner_id, foto_url, datum, text, einwilligung, is_demo, created_at, angepinnt_von, angepinnt_at)
+     VALUES (?, ?, ?, ?, 1, 1, datetime(?, '+18 hours'), ?, CASE WHEN ? IS NULL THEN NULL ELSE datetime('now') END)`
   )
-  for (const { partnerId, foto, datum, text } of prepared) insert.run(partnerId, copyImage.copyOwn(foto), datum, text, datum)
+  for (const { partnerId, foto, datum, text, angepinnt = null } of prepared) {
+    insert.run(partnerId, copyImage.copyOwn(foto), datum, text, datum, angepinnt, angepinnt)
+  }
   return counts
 }
 
@@ -224,6 +244,21 @@ function insertDemoMessages(db) {
   return counts
 }
 
+// Phase V1: die Karten der Demo-Partner ordnen (seed/demo-partner-area.js KARTEN) - mit denselben Schritten wie im
+// Partner-Bereich, also auch mit derselben Prüfung: ein Titel, der keine freigegebene Anzeige der Karte ist, scheitert.
+function arrangeDemoCards(db) {
+  for (const { partnerSlug, reihenfolge, nurPortal } of KARTEN) {
+    const partner = findDemoPartner(db, partnerSlug, 'die Reihenfolge seiner Karte')
+    const byTitle = new Map(entdeckenAnzeigen(partner).anzeigen.map((item) => [item.titel, item.id]))
+    const idOf = (titel) => {
+      if (!byTitle.has(titel)) throw new Error(`Demo-Karte "${partnerSlug}": "${titel}" ist keine freigegebene Anzeige der Karte`)
+      return byTitle.get(titel)
+    }
+    setReihenfolge(partner, { ids: reihenfolge.map(idOf) })
+    for (const titel of nurPortal) setInEntdecken(partner, idOf(titel), { inEntdecken: false })
+  }
+}
+
 // Läuft innerhalb der replaceDemoPack-Transaktion NACH replaceDemoDiscoverContent (lib/demoPack.js) - das räumt
 // alle Demo-Empfehlungen (is_demo = 1, also auch die alten Beiträge der Demo-Partner) samt Klicks weg und
 // träfe sonst auch die neuen. Die alten Demo-Nachrichten (is_demo = 1 oder an einen alten Demo-Partner) räumt
@@ -232,7 +267,9 @@ function createDemoPartnerContent(db, { previousPartnerIds = [] } = {}) {
   const placeholders = previousPartnerIds.map(() => '?').join(', ')
   const where = previousPartnerIds.length ? `is_demo = 1 OR partner_id IN (${placeholders})` : 'is_demo = 1'
   db.prepare(`DELETE FROM partner_messages WHERE ${where}`).run(...previousPartnerIds)
-  return { postIds: insertDemoPartnerPosts(db), messages: insertDemoMessages(db) }
+  const postIds = insertDemoPartnerPosts(db)
+  arrangeDemoCards(db)
+  return { postIds, messages: insertDemoMessages(db) }
 }
 
 module.exports = { createDemoPartnerAreas, createDemoPartnerContent }

@@ -24,6 +24,7 @@ const {
   updateEinblick,
   deleteEinblick
 } = require('../../lib/einblicke')
+const { pinByPartner, unpinByPartner } = require('../../lib/einblickPins')
 
 // Phase P Task 3b: Einblicke des eigenen Partners (lib/einblicke.js). Läuft hinter
 // middleware/partnerArea.js requirePartnerArea (req.partner ist gesetzt). Fotos liegen wie Tierfotos in
@@ -102,6 +103,23 @@ router.put('/:id', denyDemoWrites, (req, res, next) => {
     sendError(res, next, err)
   }
 })
+
+// Phase V1: Anpinnen für die Karte in "Entdecken" (lib/einblickPins.js) - höchstens drei, ausgeblendete nicht; einen
+// vom Team angepinnten Einblick kann der Partner nicht lösen (409). Antwort: der Einblick mit angepinntVon.
+function handlePin(change) {
+  return (req, res, next) => {
+    try {
+      const einblick = findOwnEinblick(req.partner.id, req.params.id)
+      if (!einblick) return res.status(404).json({ error: NOT_FOUND })
+      res.json(ownEinblick(change(einblick.id)))
+    } catch (err) {
+      sendError(res, next, err)
+    }
+  }
+}
+
+router.post('/:id/anpinnen', denyDemoWrites, handlePin(pinByPartner))
+router.delete('/:id/anpinnen', denyDemoWrites, handlePin(unpinByPartner))
 
 router.delete('/:id', denyDemoWrites, (req, res) => {
   const einblick = findOwnEinblick(req.partner.id, req.params.id)

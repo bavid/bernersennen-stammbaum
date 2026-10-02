@@ -17,8 +17,9 @@ function websiteHref(partner) {
 }
 
 // Bild links neben dem Namen: das Logo - ohne Logo das neueste Einblick-Foto (teaserFoto, Phase P1), sonst ein
-// ruhiges Platzhalter-Symbol. Nie beides nebeneinander: in einer schmalen Karte bliebe dem Namen kein Platz.
-function CardVisual({ partner, teaser }) {
+// ruhiges Platzhalter-Symbol. Nie beides nebeneinander: in einer schmalen Karte bliebe dem Namen kein Platz. Auch für die
+// Partner-Karte in "Entdecken" (PartnerDiscoverCard, Phase V1).
+export function CardVisual({ partner, teaser }) {
   if (partner.logoUrl) return <img src={partner.logoUrl} alt="" className="partner-card-logo" />
   if (teaser) {
     return (

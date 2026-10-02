@@ -1,6 +1,6 @@
 import Icon from './Icon.jsx'
 import { InternalLink } from './PreviewLink.jsx'
-import PartnerCard from './PartnerCard.jsx'
+import PartnerDiscoverCard from './PartnerDiscoverCard.jsx'
 import AnimalAdoptionCard from './AnimalAdoptionCard.jsx'
 import PromotionCard, { PromotionList } from './PromotionCard.jsx'
 import SupportBlock from './SupportBlock.jsx'
@@ -12,16 +12,17 @@ import { countItems, donationsOf, limitGroups, sectionCounts, tabLabel } from '.
 // normalizeDiscover, fehlende Abschnitte sind leere Listen), dazu limit (unter "Alle" PREVIEW_LIMIT, im
 // eigenen Reiter unbegrenzt) und onShowAll (nur unter "Alle": "Alle anzeigen" wechselt den Reiter).
 
-// Alle Karten eines Bereichs in EINEM Raster, in dieser Reihenfolge: Partner, Tiere, Empfehlungen (Kurse und
-// Angebote stehen direkt neben den Schulen, Tiere neben ihren Tierheimen - keine halb leeren Zeilen, eine
-// linke Kante, gleiche Spalten).
+// Alle Karten eines Bereichs in EINEM Raster, in dieser Reihenfolge: Partner, Tiere, Empfehlungen ohne Partner (Tiere
+// neben ihren Tierheimen - keine halb leeren Zeilen, eine linke Kante, gleiche Spalten). Phase V1: ein Partner = eine
+// Karte (PartnerDiscoverCard) mit seinen Anzeigen und Einblicken; mit Anzeigen darf sie am Desktop zwei Spalten
+// breit sein (has-anzeigen).
 function CardList({ partners = [], animals = [], promotions = [] }) {
   if (partners.length + animals.length + promotions.length === 0) return null
   return (
-    <ul className="partner-list">
+    <ul className="partner-list discover-card-list">
       {partners.map((partner) => (
-        <li key={`partner-${partner.id}`}>
-          <PartnerCard partner={partner} />
+        <li key={`partner-${partner.id}`} className={partner.anzeigen?.length > 0 ? 'has-anzeigen' : undefined}>
+          <PartnerDiscoverCard partner={partner} />
         </li>
       ))}
       {animals.map((animal) => (
@@ -61,8 +62,8 @@ function PartnerListHint({ children }) {
   )
 }
 
-// Bereich aus Partnerkarten und den Empfehlungen desselben Bereichs (Hundeschulen, Salon & Betreuung):
-// Umkreis-Hinweis, die nahen Partner samt Empfehlungen, dann "Weiter weg".
+// Bereich aus Partnerkarten (samt ihren Anzeigen) und den Empfehlungen ohne Partner (Hundeschulen, Salon &
+// Betreuung): Umkreis-Hinweis, die nahen Partner, die Empfehlungen, dann "Weiter weg".
 function PartnerChapter({ id, title, lede, emptyHint, partner, promotions, fallback, limit, onShowAll }) {
   const { near, far } = splitByDistance(partner)
   const groups = limitGroups([near, promotions, far], limit)
@@ -93,7 +94,7 @@ export function HundeschulenSection({ data, limit, onShowAll }) {
     <PartnerChapter
       id="entdecken-hundeschulen"
       title={tabLabel('hundeschulen')}
-      lede="Partner-Hundeschulen, Kurse und Angebote."
+      lede="Partner-Hundeschulen mit ihren Kursen und Angeboten."
       emptyHint="Noch keine Hundeschulen in der Nähe"
       partner={data.hundeschulPartner}
       promotions={data.hundeschulPromotions}

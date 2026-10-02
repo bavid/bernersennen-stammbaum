@@ -60,6 +60,8 @@ const ownCard = {
   url: 'https://wiesengrund.example.org',
   clickUrl: '/r/partner-website/4',
   teaserFoto: '/uploads/44444444-4444-4444-4444-444444444444.jpg',
+  einblicke: [{ id: 5, fotoUrl: '/uploads/44444444-4444-4444-4444-444444444444.jpg', datum: '2026-09-20', text: 'Welpengruppe' }],
+  anzeigen: [{ id: 21, kind: 'promotion', kennzeichnung: 'Anzeige', titel: 'Welpenkurs', text: null, vorschau: true, freigabe: 'eingereicht', clickUrl: null }],
   vorschau: true
 }
 
@@ -70,6 +72,8 @@ const otherCard = {
   name: 'Hundeschule Birkenweg',
   clickUrl: '/r/partner-website/8',
   teaserFoto: '/public-media/88888888-8888-8888-8888-888888888888.jpg',
+  einblicke: [],
+  anzeigen: [],
   vorschau: undefined
 }
 
@@ -200,7 +204,7 @@ describe('CustomerViewPage – Reiter', () => {
 })
 
 describe('CustomerViewPage – Entdecken (Beispiel-Kunde)', () => {
-  test('lädt über die Vorschau: die eigene Karte steht vorn mit "Das seid ihr" und eigenem Teaser (/uploads)', async () => {
+  test('lädt über die Vorschau: die eigene Karte steht vorn mit "Das seid ihr", eigenen Einblicken (/uploads) und eingereichter Anzeige', async () => {
     await render()
 
     expect(previewDiscover).toHaveBeenCalledWith({})
@@ -208,7 +212,8 @@ describe('CustomerViewPage – Entdecken (Beispiel-Kunde)', () => {
     expect(cards.map((card) => card.querySelector('h3').textContent)).toEqual(['Hundeschule Wiesengrund', 'Hundeschule Birkenweg'])
     expect(cards[0].classList.contains('is-own-preview')).toBe(true)
     expect(cards[0].querySelector('.preview-own-badge').textContent).toBe('Das seid ihr')
-    expect(cards[0].querySelector('.partner-card-teaser').getAttribute('src')).toBe('/uploads/44444444-4444-4444-4444-444444444444.jpg')
+    expect(cards[0].querySelector('.partner-discover-einblicke img').getAttribute('src')).toBe('/uploads/44444444-4444-4444-4444-444444444444.jpg')
+    expect(cards[0].querySelector('.partner-discover-ads').textContent).toContain('Wartet auf Freigabe')
     expect(cards[1].querySelector('.preview-own-badge')).toBeNull()
   })
 

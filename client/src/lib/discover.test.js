@@ -167,6 +167,24 @@ describe('normalizeDiscover', () => {
     expect(result.hundeschulPartner).toEqual([])
   })
 
+  // Phase V1: jede Partner-Karte bringt ihre Anzeigen und Einblicke mit - garantiert als Listen.
+  test('Partner-Karten bekommen anzeigen und einblicke als Listen, falsche Einträge fallen heraus', () => {
+    const result = normalizeDiscover({
+      hundeschulen: [
+        { id: 1, kind: 'partner', anzeigen: [null, { id: 11, titel: 'Welpenkurs' }], einblicke: 'x' },
+        { id: 2, kind: 'partner' },
+        { id: 3, kind: 'promotion', titel: 'Ratgeber' }
+      ],
+      salon: [{ id: 4, kind: 'partner', einblicke: [{ id: 5, fotoUrl: '/public-media/a.jpg' }, 7] }],
+      begleiter: { partner: [{ id: 6, anzeigen: {} }] }
+    })
+    expect(result.hundeschulPartner.map((card) => card.anzeigen.map((ad) => ad.id))).toEqual([[11], []])
+    expect(result.hundeschulPartner.map((card) => card.einblicke)).toEqual([[], []])
+    expect(result.hundeschulPromotions.map((item) => item.id)).toEqual([3])
+    expect(result.salonPartner[0].einblicke.map((item) => item.id)).toEqual([5])
+    expect(result.begleiterPartner[0].anzeigen).toEqual([])
+  })
+
   test('null-Einträge in einer Liste fallen heraus', () => {
     const result = normalizeDiscover({ hundeschulen: [null, { id: 1, kind: 'partner' }], begleiter: { partner: [null, 'x', { id: 2 }] } })
     expect(result.hundeschulPartner.map((item) => item.id)).toEqual([1])

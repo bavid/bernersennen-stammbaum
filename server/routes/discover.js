@@ -9,6 +9,8 @@ const { publicPartner, publicPartnerSql } = require('../lib/partners')
 const { promotionPublicSql, promotionActiveSql, promotionImageUrl } = require('../lib/promotions')
 const { getShelterAnimalCards } = require('./publicAnimals')
 const { teaserFotoSql, teaserFoto } = require('../lib/einblicke')
+const { cardEinblicke } = require('../lib/einblickPins')
+const { groupCardAnzeigen, CARD_BEREICH_BY_TYP } = require('../lib/partnerPostOrder')
 const { MIN_IN_RADIUS, sortByName, roundKm, withDistances, splitByRadius, radiusSection } = require('../lib/nearby')
 
 // Phase 3 Task 2: Reiter "Entdecken" - eine Antwort bündelt alle Abschnitte (seit Phase P2 Task 9 auch salon)
@@ -23,9 +25,12 @@ const MAX_BEGLEITER_TIERE = 12
 // Partner-Typen je Abschnitt. Umkreis-Fallback (weniger als 5 im Radius -> die nächsten außerhalb) für alle
 // Partner-Abschnitte gleich: lib/nearby.js radiusSection. Phase P2 Task 9: Hundesalons und Betreuung haben
 // einen eigenen Abschnitt salon (vorher standen sie bei den Hundeschulen).
-const HUNDESCHULEN_TYPS = ['hundeschule']
-const SALON_TYPS = ['hundesalon', 'betreuung']
-const BEGLEITER_TYPS = ['tierheim', 'vermittlung']
+// Phase V1: aus derselben Zuordnung wie die Karten-Bereiche (lib/partnerPostOrder.js CARD_BEREICH_BY_TYP) - Abschnitt,
+// Partner-Typen und der Bereich der Anzeigen auf der Karte können so nicht auseinanderlaufen.
+const typsForBereich = (bereich) => Object.keys(CARD_BEREICH_BY_TYP).filter((typ) => CARD_BEREICH_BY_TYP[typ] === bereich)
+const HUNDESCHULEN_TYPS = typsForBereich('hundeschule')
+const SALON_TYPS = typsForBereich('salon')
+const BEGLEITER_TYPS = typsForBereich('begleiter')
 
 // Eigenes, knappes Limit pro IP zusätzlich zum globalen apiLimiter (app.js: app.use('/api', apiLimiter))
 // - wie places.js placesLimiter, gleiche Werte und derselbe IPv6-maskierende Schlüssel.
@@ -160,6 +165,22 @@ function sortPromotionsByPartnerDistance(rows, distanceMap) {
   return [...withPartnerDistance.map(({ row }) => row), ...rest]
 }
 
+// Phase V1: Kurzbeschreibung im Kopf der Partner-Karte - der Portal-Titel, sonst der erste Satz des Portal-Texts,
+// höchstens KURZTEXT_MAX Zeichen (an einer Wortgrenze gekürzt). Reiner Text wie beide Quellen; ohne beides null.
+const KURZTEXT_MAX = 140
+
+function kurztext(row) {
+  const titel = typeof row.portal_titel === 'string' ? row.portal_titel.trim() : ''
+  if (titel) return titel
+  const text = typeof row.portal_text === 'string' ? row.portal_text.trim() : ''
+  if (!text) return null
+  const [firstSentence] = text.split(/\n/)[0].split(/(?<=[.!?])\s/)
+  if (firstSentence.length <= KURZTEXT_MAX) return firstSentence
+  const cut = firstSentence.slice(0, KURZTEXT_MAX)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > 0 ? cut.slice(0, space) : cut).replace(/[\s,;:–-]+$/, '')} …`
+}
+
 // Partner-Karte: wie lib/partners.js publicPartner, aber die Website läuft über die Klickzählung
 // (clickUrl + rohe url zur Anzeige) statt roh im Feld "website" zu stehen (Aufgabenstellung: "Every
 // external link is delivered as clickUrl ... plus the raw url for display").
@@ -168,6 +189,7 @@ function partnerCard(row, { distanceKm: distanceKmValue, ausserhalb } = {}) {
   return {
     ...pub,
     kind: 'partner',
+    kurztext: kurztext(row),
     teaserFoto: teaserFoto(row),
     url: website || null,
     clickUrl: website ? `/r/partner-website/${row.id}` : null,
@@ -253,12 +275,38 @@ function partnerCardFromItem({ row, distanceKm: d, ausserhalb }) {
   return partnerCard(row, { distanceKm: d, ausserhalb })
 }
 
-// Abschnitt aus Partner-Karten (Umkreis mit Fallback, lib/nearby.js) und danach den Empfehlungen des
-// passenden Bereichs - hundeschulen (bereich hundeschule) und salon (bereich salon, Phase P2 Task 9).
-function partnerAndPromotionSection(typs, bereich, { isDemo, center, radiusKm, distanceMap }) {
-  const section = radiusSection(activePartnerRows(typs, isDemo), center, radiusKm)
-  const cards = [...section.items.map(partnerCardFromItem), ...promotionCards(bereich, isDemo, distanceMap)]
-  return { cards, fallback: section.fallback }
+// Phase V1: eine Karte je Partner - der Kopf (partnerCard), darunter anzeigen (bis zu drei Empfehlungen des Partners
+// aus dem Bereich des Abschnitts, in seiner Reihenfolge, lib/partnerPostOrder.js) und einblicke (angepinnte, sonst die
+// neuesten drei, lib/einblickPins.js). Beides für alle Karten mit je EINER Abfrage, nicht je Karte.
+function withCardContent(card, anzeigenByPartner, einblickeByPartner) {
+  return {
+    ...card,
+    anzeigen: (anzeigenByPartner.get(card.id) || []).map(promotionCard),
+    einblicke: einblickeByPartner.get(card.id) || []
+  }
+}
+
+// Ein Partner-Abschnitt (hundeschulen, salon, begleiter): Partner-Karten im Umkreis mit Fallback (lib/nearby.js),
+// samt ihren Anzeigen und Einblicken. promotions: die Empfehlungen des Bereichs, die als eigene Karte bleiben - ohne
+// Partner oder mit einem Partner, der nicht in diesen Abschnitt gehört (sortiert nach dessen Entfernung). Die eines
+// Partners aus diesem Abschnitt, dessen Karte nicht gezeigt wird (außerhalb des Umkreises), fallen mit ihr weg.
+// rows/items: alle passenden bzw. die gezeigten Partner (für die Tiere und Spendenlinks der Begleiter).
+function partnerSection(typs, bereich, { isDemo, center, radiusKm, distanceMap }) {
+  const partnerRows = activePartnerRows(typs, isDemo)
+  const section = radiusSection(partnerRows, center, radiusKm)
+  const shownIds = section.items.map(({ row }) => row.id)
+  const sectionPartnerIds = new Set(partnerRows.map((row) => row.id))
+  const promotionRows = activePromotionRows(bereich, isDemo)
+  const anzeigen = groupCardAnzeigen(promotionRows, shownIds)
+  const einblicke = cardEinblicke(shownIds)
+  const separate = promotionRows.filter((row) => row.partner_id === null || !sectionPartnerIds.has(row.partner_id))
+  return {
+    rows: partnerRows,
+    items: section.items,
+    cards: section.items.map((item) => withCardContent(partnerCardFromItem(item), anzeigen, einblicke)),
+    promotions: sortPromotionsByPartnerDistance(separate, distanceMap).map(promotionCard),
+    fallback: section.fallback
+  }
 }
 
 // Die ganze "Entdecken"-Antwort - ohne req/res, damit die Kundensicht der Partner (routes/partnerArea/
@@ -267,16 +315,12 @@ function partnerAndPromotionSection(typs, bereich, { isDemo, center, radiusKm, d
 function buildDiscover({ isDemo, center, radiusKm }) {
   const distanceMap = partnerDistanceMap(center)
 
-  // --- Hundeschule gesucht? / Hundesalon oder Betreuung gesucht? --------------------------------------
-  const hundeschulen = partnerAndPromotionSection(HUNDESCHULEN_TYPS, 'hundeschule', { isDemo, center, radiusKm, distanceMap })
-  const salon = partnerAndPromotionSection(SALON_TYPS, 'salon', { isDemo, center, radiusKm, distanceMap })
-
-  // --- Neuer Begleiter gesucht? --------------------------------------------------------------------
-  const begleiterPartnerRows = activePartnerRows(BEGLEITER_TYPS, isDemo)
-  const begleiterPartnerSection = radiusSection(begleiterPartnerRows, center, radiusKm)
-  const begleiterPartner = begleiterPartnerSection.items.map(partnerCardFromItem)
-  const begleiterTiereSectionResult = begleiterTiereSection(begleiterPartnerRows, center, radiusKm)
-  const begleiterPromotions = promotionCards('begleiter', isDemo, distanceMap)
+  // --- Hundeschule gesucht? / Hundesalon oder Betreuung gesucht? / Neuer Begleiter gesucht? ---------
+  const sectionOptions = { isDemo, center, radiusKm, distanceMap }
+  const hundeschulen = partnerSection(HUNDESCHULEN_TYPS, 'hundeschule', sectionOptions)
+  const salon = partnerSection(SALON_TYPS, 'salon', sectionOptions)
+  const begleiter = partnerSection(BEGLEITER_TYPS, 'begleiter', sectionOptions)
+  const begleiterTiereSectionResult = begleiterTiereSection(begleiter.rows, center, radiusKm)
 
   // --- Futter-Empfehlungen --------------------------------------------------------------------------
   const futter = promotionCards('futter', isDemo, distanceMap)
@@ -285,7 +329,7 @@ function buildDiscover({ isDemo, center, radiusKm }) {
   const gofundmeUrl = readSettingValue(settingsKey(isDemo, 'gofundme_url'))
   // Spendenlinks laufen über dieselbe Partner-Liste wie begleiter.partner (inkl. eines etwaigen
   // Umkreis-Fallbacks) - eigene Ausserhalb-Kennzeichnung gibt es dafür nicht (nicht Teil des Auftrags).
-  const partnerSpenden = begleiterPartnerSection.items
+  const partnerSpenden = begleiter.items
     .map(({ row }) => row)
     .filter((row) => row.spenden_url)
     .map(spendenCard)
@@ -296,11 +340,11 @@ function buildDiscover({ isDemo, center, radiusKm }) {
     fallback: {
       hundeschulen: hundeschulen.fallback,
       salon: salon.fallback,
-      begleiter: begleiterPartnerSection.fallback || begleiterTiereSectionResult.fallback
+      begleiter: begleiter.fallback || begleiterTiereSectionResult.fallback
     },
-    hundeschulen: hundeschulen.cards,
-    salon: salon.cards,
-    begleiter: { partner: begleiterPartner, tiere: begleiterTiereSectionResult.items, promotions: begleiterPromotions },
+    hundeschulen: [...hundeschulen.cards, ...hundeschulen.promotions],
+    salon: [...salon.cards, ...salon.promotions],
+    begleiter: { partner: begleiter.cards, tiere: begleiterTiereSectionResult.items, promotions: begleiter.promotions },
     futter,
     unterstuetzen: {
       gofundmeUrl,

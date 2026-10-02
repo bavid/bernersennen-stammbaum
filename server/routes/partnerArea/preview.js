@@ -8,6 +8,8 @@ const { newestVisibleFotoUrl } = require('../../lib/einblicke')
 const { getShelterAnimalCards, buildSteckbrief } = require('../publicAnimals')
 const { listPreviewPosts, MAX_PUBLIC_POSTS, NO_LIMIT } = require('../../lib/partnerPosts')
 const { FREIGABE } = require('../../lib/promotions')
+const { CARD_ANZEIGEN, CARD_BEREICH_BY_TYP } = require('../../lib/partnerPostOrder')
+const { cardEinblicke } = require('../../lib/einblickPins')
 const {
   buildDiscover,
   resolveDiscoverCenter,
@@ -41,7 +43,8 @@ const SECTION_BY_TYP = Object.freeze({
 })
 
 // Phase P2 Task 8: eigene Beiträge (eingereicht oder freigegeben) in "Entdecken" - je Bereich derselbe
-// Abschnitt wie für freigegebene Empfehlungen (routes/discover.js buildDiscover), salon seit Task 9.
+// Abschnitt wie für freigegebene Empfehlungen (routes/discover.js buildDiscover), salon seit Task 9. Seit Phase V1
+// stehen die des Kartenbereichs auf der eigenen Karte (buildOwnCard), nur die übrigen als eigene Karten.
 const POST_BEREICHE = Object.freeze(['hundeschule', 'salon', 'begleiter', 'futter', 'unterstuetzen'])
 
 // Eigener Beitrag in der Kundensicht: Karte wie in "Entdecken", dazu vorschau und freigabe. Solange der
@@ -81,20 +84,37 @@ function withOwnAnimalsFirst(partner, tiere, distance) {
   return [...own, ...tiere.filter((animal) => !ownSlugs.has(animal.slug))].slice(0, MAX_BEGLEITER_TIERE)
 }
 
+// Die eigene Karte - aus der eigenen partners-Zeile gebaut, also auch als Entwurf - mit vorschau: true. Phase V1: wie in
+// "Entdecken" mit bis zu drei Anzeigen aus dem Bereich der Karte (hier auch die eingereichten, ohne die "nur auf dem
+// Portal"; Reihenfolge wie dort, lib/partnerPosts.js listPreviewPosts) und den angepinnten oder neuesten Einblicken
+// (über /uploads - ein Entwurf gibt über /public-media nichts frei).
+function buildOwnCard(partner, ownRows, distance) {
+  const cardBereich = CARD_BEREICH_BY_TYP[partner.typ]
+  const anzeigen = ownRows.filter((row) => row.bereich === cardBereich && row.in_entdecken).slice(0, CARD_ANZEIGEN).map(previewPostCard)
+  return {
+    ...partnerCard(partner, distance),
+    teaserFoto: newestVisibleFotoUrl(partner.id),
+    vorschau: true,
+    anzeigen,
+    einblicke: cardEinblicke([partner.id], { preview: true }).get(partner.id) || []
+  }
+}
+
 // Grundlage ist die Antwort einer Demo-Sitzung (buildDiscover mit isDemo: true). Jede Karte des eigenen
-// Partners fliegt dort heraus (sonst stünde er doppelt da), dann kommt die eigene Karte - aus der eigenen
-// partners-Zeile gebaut, also auch als Entwurf - mit vorschau: true an die erste Stelle ihres Abschnitts.
-// Ebenso die eigenen Beiträge (Phase P2 Task 8): raus aus der Grundlage, vorn in ihren Abschnitt - direkt
-// hinter der eigenen Karte, falls die im selben Abschnitt steht.
+// Partners fliegt dort heraus (sonst stünde er doppelt da), dann kommt die eigene Karte (buildOwnCard) an die erste
+// Stelle ihres Abschnitts. Eigene Beiträge anderer Bereiche (Phase P2 Task 8, z. B. "Unterstützen" eines Tierheims):
+// raus aus der Grundlage, vorn in ihren Abschnitt.
 function buildPreviewDiscover(partner, { center, radiusKm }) {
   const base = buildDiscover({ isDemo: true, center, radiusKm })
-  const ownPosts = listPreviewPosts(partner.id, NO_LIMIT).map(previewPostCard)
-  const ownPostIds = new Set(ownPosts.map((card) => card.id))
-  const postsIn = Object.fromEntries(POST_BEREICHE.map((bereich) => [bereich, ownPosts.filter((card) => card.bereich === bereich)]))
+  const ownRows = listPreviewPosts(partner.id, NO_LIMIT)
+  const ownPostIds = new Set(ownRows.map((row) => row.id))
+  const cardBereich = CARD_BEREICH_BY_TYP[partner.typ]
+  const separateOwn = ownRows.filter((row) => row.bereich !== cardBereich).map(previewPostCard)
+  const postsIn = Object.fromEntries(POST_BEREICHE.map((bereich) => [bereich, separateOwn.filter((card) => card.bereich === bereich)]))
   const withoutOwn = (cards) => cards.filter((card) => (card.kind === 'promotion' ? !ownPostIds.has(card.id) : card.id !== partner.id))
   const withOwnPosts = (bereich, cards) => [...postsIn[bereich], ...withoutOwn(cards)]
   const distance = ownDistance(partner, center, radiusKm)
-  const ownCard = { ...partnerCard(partner, distance), teaserFoto: newestVisibleFotoUrl(partner.id), vorschau: true }
+  const ownCard = buildOwnCard(partner, ownRows, distance)
   const section = SECTION_BY_TYP[partner.typ]
 
   let hundeschulen = withOwnPosts('hundeschule', base.hundeschulen)

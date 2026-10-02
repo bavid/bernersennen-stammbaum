@@ -45,18 +45,22 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
 
   const first = replaceDemoPack(db, uploadDir)
 
-  await t.test('Beiträge: Pfotenglück drei (abgelehnt, eingereicht, freigegeben), Wuschelglück einer im Bereich salon - alle Anzeige und Demo', () => {
+  await t.test('Beiträge: Pfotenglück vier (abgelehnt, eingereicht, zwei freigegeben), Wuschelglück zwei im Bereich salon - alle Anzeige und Demo', () => {
     assert.deepEqual(
       postsOf(PFOTENGLUECK).map(({ titel, freigabe, bereich }) => ({ titel, freigabe, bereich })),
       [
         { titel: 'Agility-Schnupperstunde', freigabe: 'abgelehnt', bereich: 'hundeschule' },
+        { titel: 'Einzeltraining am Abend', freigabe: 'freigegeben', bereich: 'hundeschule' },
         { titel: 'Tag der offenen Tür', freigabe: 'eingereicht', bereich: 'hundeschule' },
         { titel: 'Welpenkurs ab Oktober', freigabe: 'freigegeben', bereich: 'hundeschule' }
       ]
     )
     assert.deepEqual(
       postsOf(WUSCHELGLUECK).map(({ titel, freigabe, bereich }) => ({ titel, freigabe, bereich })),
-      [{ titel: 'Herbst-Pflegetag', freigabe: 'freigegeben', bereich: 'salon' }]
+      [
+        { titel: 'Herbst-Pflegetag', freigabe: 'freigegeben', bereich: 'salon' },
+        { titel: 'Welpen-Kennenlerntermin', freigabe: 'freigegeben', bereich: 'salon' }
+      ]
     )
     for (const row of [...postsOf(PFOTENGLUECK), ...postsOf(WUSCHELGLUECK)]) {
       assert.equal(row.kennzeichnung, 'Anzeige')
@@ -66,11 +70,11 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
       assert.equal(row.ablehnungsgrund, row.freigabe === 'abgelehnt' ? 'Link führt ins Leere – die Seite zur Schnupperstunde ist nicht erreichbar.' : null)
       assert.match(row.url, /^https:\/\/example\.org\//)
     }
-    assert.equal(first.partnerPostIds.length, 4)
+    assert.equal(first.partnerPostIds.length, 6)
   })
 
   await t.test('Verlauf und Vertrauen: der abgelehnte Beitrag erzählt seine Geschichte, Wuschelglück ist vertrauenswürdig', () => {
-    const [agility, offeneTuer, welpenkurs] = postsOf(PFOTENGLUECK)
+    const [agility, , offeneTuer, welpenkurs] = postsOf(PFOTENGLUECK)
     assert.deepEqual(verlaufOf(agility.id), [
       { aktion: 'eingereicht', grund: null, tageAlt: 5 },
       { aktion: 'geaendert', grund: null, tageAlt: 4 },
@@ -110,7 +114,7 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
     assert.equal(partnerLogin.data.partner.unread, 1)
     const partnerCookie = getCookie(partnerLogin.res)
     const posts = (await get('/api/partner-area/posts', partnerCookie)).data
-    assert.deepEqual(posts.map((p) => p.titel).sort(), ['Agility-Schnupperstunde', 'Tag der offenen Tür', 'Welpenkurs ab Oktober'])
+    assert.deepEqual(posts.map((p) => p.titel).sort(), ['Agility-Schnupperstunde', 'Einzeltraining am Abend', 'Tag der offenen Tür', 'Welpenkurs ab Oktober'])
     const rejected = posts.find((p) => p.titel === 'Agility-Schnupperstunde')
     assert.equal(rejected.freigabe, 'abgelehnt')
     assert.deepEqual(rejected.verlauf.map((event) => event.aktion), ['eingereicht', 'geaendert', 'abgelehnt'])
@@ -129,7 +133,7 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
     assert.equal(salonLogin.status, 200)
     assert.equal(salonLogin.data.partner.vertrauenswuerdig, true)
     const salonPosts = (await get('/api/partner-area/posts', getCookie(salonLogin.res))).data
-    assert.deepEqual(salonPosts[0].verlauf.map((event) => event.aktion), ['eingereicht', 'freigegeben', 'geaendert'])
+    assert.deepEqual(salonPosts.find((p) => p.titel === 'Herbst-Pflegetag').verlauf.map((event) => event.aktion), ['eingereicht', 'freigegeben', 'geaendert'])
     const inbox = (await get('/api/partner-area/messages', partnerCookie)).data
     assert.equal(inbox.messages.length, 2)
     assert.equal(inbox.unread, 1)
@@ -141,11 +145,12 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
 
     const demoLogin = await post('/api/demo')
     const discover = (await post('/api/discover', {}, getCookie(demoLogin.res))).data
-    const titles = (cards) => cards.filter((card) => card.kind === 'promotion').map((card) => card.titel)
+    // Phase V1: Anzeigen der Partner stehen auf ihrer Karte (anzeigen).
+    const titles = (cards) => cards.flatMap((card) => (card.kind === 'promotion' ? [card] : card.anzeigen)).map((card) => card.titel)
     assert.ok(titles(discover.hundeschulen).includes('Welpenkurs ab Oktober'))
     assert.ok(!titles(discover.hundeschulen).includes('Tag der offenen Tür'), 'eingereicht bleibt unsichtbar')
     assert.ok(!titles(discover.hundeschulen).includes('Agility-Schnupperstunde'), 'abgelehnt bleibt unsichtbar')
-    assert.deepEqual(titles(discover.salon), ['Herbst-Pflegetag'])
+    assert.deepEqual(titles(discover.salon), ['Herbst-Pflegetag', 'Welpen-Kennenlerntermin'])
     assert.ok(discover.salon.some((card) => card.kind === 'partner' && card.slug === WUSCHELGLUECK))
 
     const portal = (await get(`/api/public/partners/${PFOTENGLUECK}/posts`)).data
@@ -153,16 +158,69 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
     assert.ok(!portal.some((card) => card.titel === 'Tag der offenen Tür'))
   })
 
+  await t.test('Karten in Entdecken (Phase V1): Pfotenglück zwei Anzeigen in gewählter Reihenfolge und ein angepinnter Einblick, Wuschelglück mit Team-Pin', async () => {
+    const demoLogin = await post('/api/demo')
+    const data = (await post('/api/discover', {}, getCookie(demoLogin.res))).data
+    const cardOf = (cards, slug) => cards.find((card) => card.kind === 'partner' && card.slug === slug)
+
+    const pfoten = cardOf(data.hundeschulen, PFOTENGLUECK)
+    assert.deepEqual(pfoten.anzeigen.map((item) => item.titel), ['Welpenkurs ab Oktober', 'Einzeltraining am Abend'])
+    assert.ok(pfoten.anzeigen.every((item) => item.kennzeichnung === 'Anzeige'))
+    assert.deepEqual(pfoten.einblicke.map((item) => item.text), ['Abschlussprüfung im Begleithundekurs – alle bestanden!'])
+    assert.ok(!data.hundeschulen.some((card) => card.kind === 'promotion'), 'keine Anzeige mehr als eigene Karte')
+
+    const salon = cardOf(data.salon, WUSCHELGLUECK)
+    assert.deepEqual(salon.anzeigen.map((item) => item.titel), ['Herbst-Pflegetag', 'Welpen-Kennenlerntermin'])
+    assert.deepEqual(
+      salon.einblicke.map((item) => item.text),
+      ['Krallenpflege ganz entspannt', 'Welpen-Kennenlerntermin – erste Schritte im Salon'],
+      'Team-Pin zuerst'
+    )
+    const sonnenhang = cardOf(data.begleiter.partner, SONNENHANG)
+    assert.deepEqual(sonnenhang.anzeigen.map((item) => item.titel), ['Patenschaft für Senioren-Hunde'])
+    assert.equal(sonnenhang.einblicke.length, 2, 'ohne Pin die neuesten')
+
+    // Die Reihenfolge ist gewählt: ohne sie stünde der neuere Beitrag ("Einzeltraining") vorn.
+    const [welpenkurs, einzeltraining] = ['Welpenkurs ab Oktober', 'Einzeltraining am Abend'].map((titel) =>
+      db.prepare('SELECT id, partner_reihenfolge FROM promotions WHERE titel = ? AND is_demo = 1').get(titel)
+    )
+    assert.ok(einzeltraining.id > welpenkurs.id)
+    assert.deepEqual([welpenkurs.partner_reihenfolge, einzeltraining.partner_reihenfolge], [1, 2])
+
+    const partnerLogin = await post('/api/demo', { as: 'partner' })
+    const cookie = getCookie(partnerLogin.res)
+    const list = (await get('/api/partner-area/posts/entdecken', cookie)).data
+    assert.deepEqual(
+      list.anzeigen.map(({ titel, reihenfolge, inEntdecken, vomTeam, aufKarte }) => ({ titel, reihenfolge, inEntdecken, vomTeam, aufKarte })),
+      [
+        { titel: 'Welpenkurs ab Oktober', reihenfolge: 1, inEntdecken: true, vomTeam: false, aufKarte: true },
+        { titel: 'Einzeltraining am Abend', reihenfolge: 2, inEntdecken: true, vomTeam: false, aufKarte: true },
+        { titel: 'Welpenkurs im Frühjahr', reihenfolge: null, inEntdecken: false, vomTeam: true, aufKarte: false }
+      ]
+    )
+    const portal = (await get(`/api/public/partners/${PFOTENGLUECK}/posts`)).data
+    assert.ok(portal.some((card) => card.titel === 'Welpenkurs im Frühjahr'), 'nur auf dem Portal')
+
+    // Die Demo liest nur - auch Reihenfolge, Schalter und Anpinnen sind gesperrt.
+    const put = (urlPath, body) => call(base, urlPath, { method: 'PUT', body, cookie })
+    assert.equal((await put('/api/partner-area/posts/reihenfolge', { ids: [] })).status, 403)
+    assert.equal((await put(`/api/partner-area/posts/${welpenkurs.id}/entdecken`, { inEntdecken: false })).status, 403)
+    const einblicke = (await get('/api/partner-area/einblicke', cookie)).data
+    assert.deepEqual(einblicke.filter((item) => item.angepinntVon).map((item) => item.angepinntVon), ['partner'])
+    assert.equal((await post(`/api/partner-area/einblicke/${einblicke[0].id}/anpinnen`, undefined, cookie)).status, 403)
+    assert.equal(db.prepare('SELECT partner_reihenfolge FROM promotions WHERE id = ?').get(welpenkurs.id).partner_reihenfolge, 1)
+  })
+
   await t.test('zweites Ersetzen: keine Duplikate, keine Nachrichten oder Beiträge an alten Demo-Partnern', () => {
     const oldPartnerIds = db.prepare('SELECT id FROM partners WHERE is_demo = 1').all().map((row) => row.id)
     replaceDemoPack(db, uploadDir)
 
-    assert.equal(postsOf(PFOTENGLUECK).length, 3)
-    assert.equal(postsOf(WUSCHELGLUECK).length, 1)
+    assert.equal(postsOf(PFOTENGLUECK).length, 4)
+    assert.equal(postsOf(WUSCHELGLUECK).length, 2)
     assert.equal(messagesOf(PFOTENGLUECK).length, 2)
     assert.equal(messagesOf(SONNENHANG).length, 1)
     assert.equal(db.prepare('SELECT COUNT(*) AS n FROM partner_messages').get().n, 3)
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM promotions WHERE is_demo = 1 AND erstellt_von_partner = 1').get().n, 4)
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM promotions WHERE is_demo = 1 AND erstellt_von_partner = 1').get().n, 6)
     // Der Verlauf der alten Demo-Beiträge geht mit ihnen (ON DELETE CASCADE) - nur der neue bleibt.
     const seededEvents = areaSeed.POSTS.reduce((sum, entry) => sum + entry.verlauf.length, 0)
     assert.equal(db.prepare('SELECT COUNT(*) AS n FROM promotion_events').get().n, seededEvents)
@@ -221,6 +279,44 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
         areaSeed.POSTS.pop()
       }
       assert.deepEqual(snapshotDemo(), before, entry.titel)
+    }
+
+    // Phase V1: Karten-Reihenfolge nur aus freigegebenen Anzeigen der Karte, jede einmal.
+    const cardCases = [
+      { entry: { partnerSlug: PFOTENGLUECK, reihenfolge: ['Tag der offenen Tür'], nurPortal: [] }, error: /keine freigegebene Anzeige/ },
+      { entry: { partnerSlug: PFOTENGLUECK, reihenfolge: [], nurPortal: ['Herbst-Pflegetag'] }, error: /keine freigegebene Anzeige/ },
+      { entry: { partnerSlug: PFOTENGLUECK, reihenfolge: ['Welpenkurs ab Oktober', 'Welpenkurs ab Oktober'], nurPortal: [] }, error: /jede einmal/ }
+    ]
+    for (const { entry, error } of cardCases) {
+      const before = snapshotDemo()
+      areaSeed.KARTEN.push(entry)
+      try {
+        assert.throws(() => replaceDemoPack(db, uploadDir), error)
+      } finally {
+        areaSeed.KARTEN.pop()
+      }
+      assert.deepEqual(snapshotDemo(), before, JSON.stringify(entry).slice(0, 60))
+    }
+
+    // Pins nur 'partner' oder 'admin', höchstens drei je Partner.
+    const pinned = areaSeed.EINBLICKE.find((entry) => entry.angepinnt === 'partner')
+    pinned.angepinnt = 'team'
+    try {
+      assert.throws(() => replaceDemoPack(db, uploadDir), /angepinnt muss/)
+    } finally {
+      pinned.angepinnt = 'partner'
+    }
+    const salonEntries = areaSeed.EINBLICKE.filter((entry) => entry.partnerSlug === WUSCHELGLUECK)
+    const originals = salonEntries.map((entry) => entry.angepinnt)
+    salonEntries.forEach((entry) => {
+      entry.angepinnt = 'partner'
+    })
+    try {
+      assert.throws(() => replaceDemoPack(db, uploadDir), /mehr als 3 angepinnte/)
+    } finally {
+      salonEntries.forEach((entry, index) => {
+        entry.angepinnt = originals[index]
+      })
     }
 
     const base = { partnerSlug: PFOTENGLUECK, name: 'Kim Beispiel', email: 'kim@example.org', nachricht: 'Eine gültige Nachricht.', stundenAlt: 2 }

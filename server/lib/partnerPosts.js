@@ -17,6 +17,7 @@ const {
   FREIGABE
 } = require('./promotions')
 const { VERLAUF_AKTION, PARTNER_VERLAUF_LIMIT, recordPromotionEvent, promotionVerlauf, partnerEditOutcome } = require('./promotionFreigabe')
+const { cardOrderSql } = require('./partnerPostOrder')
 
 const ANZEIGE = 'Anzeige'
 const MAX_POSTS = 20
@@ -104,13 +105,14 @@ const updatePostStmt = db.prepare(
 const setPartnerFreigabeStmt = db.prepare('UPDATE promotions SET freigabe = ?, ablehnungsgrund = NULL WHERE id = ?')
 
 // Beiträge eines Partners, wie Kundinnen und Kunden sie sehen: aktiv, im Zeitfenster, in einer der
-// gewünschten Freigaben - nach sort, dann neueste zuerst. Alle Empfehlungen mit dieser partner_id, auch die
+// gewünschten Freigaben - in der Reihenfolge der Partner-Karte (Phase V1, lib/partnerPostOrder.js: erst die vom
+// Partner geordneten, dann nach sort, neueste zuerst). Alle Empfehlungen mit dieser partner_id, auch die
 // vom Admin verknüpften (erstellt_von_partner = 0): das Portal zeigt "die Beiträge des Partners".
 // freigaben sind feste Werte aus FREIGABE, nie Eingaben.
 function shownPostsSql(freigaben) {
   return `SELECT m.* FROM promotions m
    WHERE m.partner_id = ? AND ${promotionActiveSql('m')} AND m.freigabe IN (${freigaben.map((value) => `'${value}'`).join(', ')})
-   ORDER BY m.sort, m.created_at DESC, m.id DESC
+   ORDER BY ${cardOrderSql('m')}
    LIMIT ?`
 }
 const listPublicPostsStmt = db.prepare(shownPostsSql([FREIGABE.freigegeben]))

@@ -32,7 +32,9 @@ test('Entdecken: Abschnitt salon für Hundesalons und Betreuung', async (t) => {
     return res.data
   }
   const partnerSlugs = (cards) => cards.filter((card) => card.kind === 'partner').map((card) => card.slug)
-  const promotionIds = (cards) => cards.filter((card) => card.kind === 'promotion').map((card) => card.id)
+  // Phase V1: Anzeigen eines Partners stehen auf seiner Karte (anzeigen), nur die übrigen als eigene Karten.
+  const shownPromotions = (cards) => cards.flatMap((card) => (card.kind === 'promotion' ? [card] : card.anzeigen || []))
+  const promotionIds = (cards) => shownPromotions(cards).map((card) => card.id)
 
   let counter = 0
   function insertPartner(typ, { lat = berlin.lat, lon = berlin.lon, name } = {}) {
@@ -100,14 +102,13 @@ test('Entdecken: Abschnitt salon für Hundesalons und Betreuung', async (t) => {
     assert.equal((await post(`/api/admin/promotions/${id}/freigeben`, undefined, adminCookie)).status, 200)
 
     res = await discover()
-    const card = res.salon.find((c) => c.kind === 'promotion' && c.id === id)
-    assert.ok(card, 'freigegebener Salon-Beitrag steht in salon')
+    const partnerCard = res.salon.find((c) => c.kind === 'partner' && c.id === area.partner.id)
+    const card = partnerCard.anzeigen.find((c) => c.id === id)
+    assert.ok(card, 'freigegebener Salon-Beitrag steht auf der Karte des Salons')
     assert.equal(card.kennzeichnung, 'Anzeige')
     assert.equal(card.clickUrl, `/r/promotion/${id}`)
+    assert.ok(!res.salon.some((c) => c.kind === 'promotion' && c.id === id), 'keine eigene Karte mehr')
     assert.ok(!promotionIds(res.hundeschulen).includes(id))
-    // Partner-Karten zuerst, dann die Empfehlungen - wie bei den Hundeschulen
-    const firstPromotion = res.salon.findIndex((c) => c.kind === 'promotion')
-    assert.ok(res.salon.slice(firstPromotion).every((c) => c.kind === 'promotion'))
   })
 
   await t.test('Kundensicht: eigene Karte und eigene Salon-Beiträge vorn in salon, für Hundesalon und Betreuung', async () => {
@@ -116,7 +117,8 @@ test('Entdecken: Abschnitt salon für Hundesalons und Betreuung', async (t) => {
       const own = (await post('/api/partner-area/posts', { titel: `Eigener Beitrag ${typ}`, bereich: 'salon' }, area.cookie)).data
       const res = await post('/api/partner-area/preview/discover', {}, area.cookie)
       assert.equal(res.status, 200)
-      const [ownCard, ownPost] = res.data.salon
+      const [ownCard] = res.data.salon
+      const [ownPost] = ownCard.anzeigen
       assert.equal(ownCard.kind, 'partner')
       assert.equal(ownCard.id, area.partner.id, typ)
       assert.equal(ownCard.vorschau, true)

@@ -159,23 +159,21 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
     assert.equal(knusperkorn.empfohlenVon, 'Hundeschule Pfotenglück')
     assert.equal(knusperkorn.clickUrl, `/r/promotion/${knusperkorn.id}`)
 
-    // Dazu der freigegebene Beitrag der Demo-Hundeschule (Phase P2 Task 9, seed/demo-partner-area.js POSTS).
-    const hsPromotions = res.data.hundeschulen.filter((e) => e.kind === 'promotion')
-    assert.deepEqual(hsPromotions.map((p) => p.titel), ['Welpenkurs ab Oktober', 'Welpenkurs im Frühjahr'])
-    assert.match(hsPromotions.find((p) => p.titel === 'Welpenkurs im Frühjahr').bildUrl, /^\/partner-media\//)
-    assert.ok(
-      res.data.hundeschulen.some((e) => e.kind === 'partner' && e.slug === 'hundeschule-pfotenglueck'),
-      'der verknüpfte Demo-Partner steht im selben Abschnitt'
-    )
+    // Phase V1: eine Karte je Partner - die freigegebenen Beiträge der Demo-Hundeschule (seed/demo-partner-area.js
+    // POSTS) stehen in ihrer gewählten Reihenfolge auf ihrer Karte. Die verknüpfte "Welpenkurs im Frühjahr" hat
+    // Pfotenglück aus der Karte genommen (KARTEN nurPortal) - sie bleibt auf dem Portal, samt Bild.
+    assert.ok(!res.data.hundeschulen.some((e) => e.kind === 'promotion'), 'keine Anzeige als eigene Karte')
+    const pfotenglueckCard = res.data.hundeschulen.find((e) => e.kind === 'partner' && e.slug === 'hundeschule-pfotenglueck')
+    assert.deepEqual(pfotenglueckCard.anzeigen.map((p) => p.titel), ['Welpenkurs ab Oktober', 'Einzeltraining am Abend'])
+    const portal = await call(base, '/api/public/partners/hundeschule-pfotenglueck/posts')
+    assert.match(portal.data.find((p) => p.titel === 'Welpenkurs im Frühjahr').bildUrl, /^\/partner-media\//)
 
-    assert.deepEqual(res.data.begleiter.promotions.map((p) => p.titel), ['Patenschaft für Senioren-Hunde'])
-    const patenschaft = res.data.begleiter.promotions[0]
+    assert.deepEqual(res.data.begleiter.promotions, [], 'die Patenschaft steht auf der Karte des Tierheims')
+    const sonnenhangCard = res.data.begleiter.partner.find((e) => e.slug === 'tierheim-sonnenhang')
+    assert.deepEqual(sonnenhangCard.anzeigen.map((p) => p.titel), ['Patenschaft für Senioren-Hunde'])
+    const patenschaft = sonnenhangCard.anzeigen[0]
     assert.equal(patenschaft.kennzeichnung, 'Partner')
     assert.equal(patenschaft.clickUrl, `/r/promotion/${patenschaft.id}`)
-    assert.ok(
-      res.data.begleiter.partner.some((e) => e.slug === 'tierheim-sonnenhang'),
-      'das verknüpfte Demo-Tierheim steht im selben Abschnitt'
-    )
 
     assert.deepEqual(res.data.unterstuetzen.promotions.map((p) => p.titel), ['Futterspende fürs Tierheim'])
     const futterspende = res.data.unterstuetzen.promotions[0]
@@ -305,7 +303,7 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
 
   await t.test('Rollback: scheitert eine Demo-Empfehlung (unbekannter Partner-Slug), bleibt die bisherige Demo samt echten Daten vollständig erhalten', () => {
     const before = snapshotAll()
-    assert.equal(before.demoPromotions.length, 9, 'Ausgangslage: eine vollständige Demo (5 Empfehlungen, 4 Beiträge der Demo-Partner)')
+    assert.equal(before.demoPromotions.length, 11, 'Ausgangslage: eine vollständige Demo (5 Empfehlungen, 6 Beiträge der Demo-Partner)')
 
     seed.DEMO_PROMOTIONS.push({
       bereich: 'hundeschule',

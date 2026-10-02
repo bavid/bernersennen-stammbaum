@@ -53,7 +53,9 @@ test('Beiträge der Partner: immer Anzeige, sichtbar erst nach Freigabe durch de
   const reject = (id, grund, cookie = adminCookie) => post(`/api/admin/promotions/${id}/ablehnen`, grund === undefined ? {} : { grund }, cookie)
   const createPost = (cookie, body) => post('/api/partner-area/posts', body, cookie)
   const ownPosts = async (cookie) => (await get('/api/partner-area/posts', cookie)).data
-  const promotionIds = (cards) => cards.filter((card) => card.kind === 'promotion').map((card) => card.id)
+  // Phase V1: Anzeigen eines Partners stehen auf seiner Karte (anzeigen), nur die übrigen als eigene Karten.
+  const shownPromotions = (cards) => cards.flatMap((card) => (card.kind === 'promotion' ? [card] : card.anzeigen || []))
+  const promotionIds = (cards) => shownPromotions(cards).map((card) => card.id)
   const promotionRow = (id) => db.prepare('SELECT * FROM promotions WHERE id = ?').get(id)
 
   let counter = 0
@@ -160,7 +162,7 @@ test('Beiträge der Partner: immer Anzeige, sichtbar erst nach Freigabe durch de
     assert.equal((await approve(firstPostId, household.cookie)).status, 401)
     assert.equal((await reject(firstPostId, 'Kein Admin', household.cookie)).status, 401)
 
-    const card = (await discover()).hundeschulen.find((c) => c.kind === 'promotion' && c.id === firstPostId)
+    const card = shownPromotions((await discover()).hundeschulen).find((c) => c.id === firstPostId)
     assert.ok(card, 'freigegebener Beitrag steht in Entdecken')
     assert.equal(card.kennzeichnung, 'Anzeige')
     assert.equal(card.clickUrl, `/r/promotion/${firstPostId}`)
@@ -464,8 +466,10 @@ test('Beiträge der Partner: immer Anzeige, sichtbar erst nach Freigabe durch de
 
     const preview = await post('/api/partner-area/preview/discover', {}, viewer.cookie)
     assert.equal(preview.status, 200)
-    const begleiter = preview.data.begleiter.promotions
-    assert.equal(begleiter[0].id, pending.id, 'eigener Beitrag zuerst')
+    // Phase V1: Begleiter-Beiträge stehen auf der eigenen Tierheim-Karte, Unterstützen-Beiträge als eigene Karten.
+    assert.equal(preview.data.begleiter.partner[0].id, viewer.partner.id)
+    const begleiter = preview.data.begleiter.partner[0].anzeigen
+    assert.equal(begleiter[0].id, pending.id, 'eigener Beitrag auf der eigenen Karte')
     assert.equal(begleiter[0].vorschau, true)
     assert.equal(begleiter[0].freigabe, 'eingereicht')
     assert.equal(begleiter[0].clickUrl, null)
@@ -478,20 +482,21 @@ test('Beiträge der Partner: immer Anzeige, sichtbar erst nach Freigabe durch de
 
     const shownIds = [
       ...promotionIds(preview.data.hundeschulen),
-      ...begleiter.map((c) => c.id),
+      ...promotionIds(preview.data.begleiter.partner),
+      ...preview.data.begleiter.promotions.map((c) => c.id),
       ...preview.data.futter.map((c) => c.id),
       ...preview.data.unterstuetzen.promotions.map((c) => c.id)
     ]
     for (const id of [rejected.id, paused.id, foreignPending.id]) assert.ok(!shownIds.includes(id), `${id} fehlt in der Vorschau`)
     assert.equal(shownIds.filter((id) => id === approved.id).length, 1, 'kein Beitrag doppelt')
 
-    // Hundeschule: eigene Karte zuerst, dann die eigenen Beiträge
+    // Hundeschule: eigene Karte zuerst, die eigenen Beiträge darauf
     const schoolPreview = await post('/api/partner-area/preview/discover', {}, school.cookie)
     assert.equal(schoolPreview.data.hundeschulen[0].kind, 'partner')
     assert.equal(schoolPreview.data.hundeschulen[0].vorschau, true)
-    const schoolPostIds = promotionIds(schoolPreview.data.hundeschulen)
+    const schoolPostIds = schoolPreview.data.hundeschulen[0].anzeigen.map((c) => c.id)
     assert.ok(schoolPostIds.includes(foreignPending.id))
-    assert.equal(schoolPreview.data.hundeschulen.find((c) => c.id === foreignPending.id && c.kind === 'promotion').clickUrl, null)
+    assert.equal(schoolPreview.data.hundeschulen[0].anzeigen.find((c) => c.id === foreignPending.id).clickUrl, null)
 
     const portal = await get('/api/partner-area/preview/portal', viewer.cookie)
     assert.equal(portal.status, 200)

@@ -92,7 +92,8 @@ test('Gesperrte Partner verschwinden aus allen öffentlichen Wegen, Status wird 
     assert.equal(found.hundeschulen.some((c) => c.slug === 'hundeschule-riegel'), expected.school, 'Entdecken hundeschulen')
     assert.equal(found.begleiter.partner.some((c) => c.slug === 'tierheim-riegel'), expected.shelter, 'Entdecken begleiter.partner')
     assert.equal(found.begleiter.tiere.some((c) => c.slug === animalSlug), expected.shelter, 'Entdecken begleiter.tiere')
-    const promotionIds = found.hundeschulen.filter((c) => c.kind === 'promotion').map((c) => c.id)
+    // Phase V1: die Empfehlung des Partners steht auf seiner Karte (anzeigen), die ohne Partner als eigene Karte.
+    const promotionIds = found.hundeschulen.flatMap((c) => (c.kind === 'promotion' ? [c] : c.anzeigen || [])).map((c) => c.id)
     assert.equal(promotionIds.includes(schoolPromotionId), expected.school, 'Empfehlung des Partners in Entdecken')
     assert.ok(promotionIds.includes(freePromotionId), 'Empfehlung ohne Partner bleibt in Entdecken')
     assert.equal(await promotionRedirectStatus(schoolPromotionId), expected.school ? 302 : 404, 'Klick-Weiterleitung Empfehlung')

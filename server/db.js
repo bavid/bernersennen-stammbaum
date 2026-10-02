@@ -427,7 +427,9 @@ const PROMOTIONS_COLUMNS_SQL = `
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     freigabe TEXT NOT NULL DEFAULT 'freigegeben',
     ablehnungsgrund TEXT,
-    erstellt_von_partner INTEGER NOT NULL DEFAULT 0
+    erstellt_von_partner INTEGER NOT NULL DEFAULT 0,
+    partner_reihenfolge INTEGER,
+    in_entdecken INTEGER NOT NULL DEFAULT 1
 `
 // idx_promotions_partner: eigene Beiträge (Liste, Limit) und die Beiträge auf dem Portal je Partner.
 const PROMOTIONS_INDEXES_SQL = `
@@ -463,6 +465,11 @@ db.exec(`
 addColumnIfMissing('promotions', 'freigabe', "TEXT NOT NULL DEFAULT 'freigegeben'")
 addColumnIfMissing('promotions', 'ablehnungsgrund', 'TEXT')
 addColumnIfMissing('promotions', 'erstellt_von_partner', 'INTEGER NOT NULL DEFAULT 0')
+// Phase V1: wie die Anzeigen auf der Partner-Karte in "Entdecken" stehen (lib/partnerPostOrder.js) - reine
+// Darstellung, braucht keine neue Freigabe. partner_reihenfolge: vom Partner gewählte Reihenfolge (NULL = nach sort
+// und Datum, hinter den geordneten); in_entdecken = 0: nur auf dem Portal, nicht auf der Karte.
+addColumnIfMissing('promotions', 'partner_reihenfolge', 'INTEGER')
+addColumnIfMissing('promotions', 'in_entdecken', 'INTEGER NOT NULL DEFAULT 1')
 db.exec(PROMOTIONS_INDEXES_SQL)
 rebuildTableIfOutdated('promotions', {
   columnsSql: PROMOTIONS_COLUMNS_SQL,
@@ -536,6 +543,10 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_einblicke_partner ON partner_einblicke(partner_id, datum DESC);
   CREATE INDEX IF NOT EXISTS idx_einblicke_foto ON partner_einblicke(foto_url);
 `)
+// Phase V1: angepinnte Einblicke stehen auf der Partner-Karte in "Entdecken" (lib/einblickPins.js) - 'partner' oder
+// 'admin' (bewusst ohne CHECK, geprüft im Code; der Admin überstimmt den Partner), NULL = nicht angepinnt.
+addColumnIfMissing('partner_einblicke', 'angepinnt_von', 'TEXT')
+addColumnIfMissing('partner_einblicke', 'angepinnt_at', 'TEXT')
 
 // Phase P2 Task 9: Nachrichten aus dem Kontaktformular eines Portals (POST /api/public/partners/:slug/contact)
 // an den Posteingang des Partners (/api/partner-area/messages), siehe lib/partnerMessages.js.

@@ -37,6 +37,17 @@ describe('sectionCounts', () => {
     expect(sectionCounts(data)).toEqual({ hundeschulen: 2, salon: 1, begleiter: 4, futter: 2, unterstuetzen: 3, alle: 12 })
   })
 
+  // Phase V1: ein Partner = eine Karte - seine Anzeigen und Einblicke zählen nicht extra.
+  test('Partner-Abschnitte zählen Partner (Karten), nicht die Anzeigen auf ihren Karten', () => {
+    const anzeigen = [item(11, { kind: 'promotion' }), item(12, { kind: 'promotion' }), item(13, { kind: 'promotion' })]
+    const data = normalizeDiscover({
+      hundeschulen: [item(1, { anzeigen, einblicke: [{ id: 1 }, { id: 2 }] }), item(2)],
+      salon: [item(3, { anzeigen: anzeigen.slice(0, 2) })],
+      begleiter: { partner: [item(4, { anzeigen: anzeigen.slice(0, 1) })], tiere: [], promotions: [] }
+    })
+    expect(sectionCounts(data)).toMatchObject({ hundeschulen: 2, salon: 1, begleiter: 1 })
+  })
+
   test('Unterstützen zählt den Transparenzbericht mit', () => {
     const data = normalizeDiscover({ unterstuetzen: { bericht: { zeitraum: '2026 Q3' } } })
     expect(sectionCounts(data).unterstuetzen).toBe(1)

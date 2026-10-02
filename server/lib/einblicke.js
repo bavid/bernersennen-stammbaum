@@ -81,7 +81,8 @@ function validateEinblickUpdate(body) {
 // --- Antwortformen -------------------------------------------------------------------------------
 
 // Für den Partner selbst und den Admin: das Foto über /uploads (nur mit Sitzung, lib/uploadAccess.js
-// gibt es dem eigenen Partner-Bereich frei), mit Ausblend-Kennzeichen.
+// gibt es dem eigenen Partner-Bereich frei), mit Ausblend-Kennzeichen und (Phase V1, lib/einblickPins.js) wer ihn
+// für die Karte in "Entdecken" angepinnt hat: 'partner', 'admin' oder null.
 function ownEinblick(row) {
   return {
     id: row.id,
@@ -89,6 +90,7 @@ function ownEinblick(row) {
     datum: row.datum,
     text: row.text,
     ausgeblendet: Boolean(row.ausgeblendet),
+    angepinntVon: row.angepinnt_von ?? null,
     createdAt: row.created_at
   }
 }
@@ -174,8 +176,14 @@ function deleteEinblick(einblick) {
   return !photoInUseStmt.get(einblick.foto_url)
 }
 
+// Phase V1: Ausblenden löst auch einen Pin (lib/einblickPins.js) - sonst stünden nach dem Wiedereinblenden mehr als
+// drei angepinnt da, weil ein ausgeblendeter Pin beim Anpinnen anderer nicht mitzählt.
 function setAusgeblendet(id, ausgeblendet) {
-  db.prepare('UPDATE partner_einblicke SET ausgeblendet = ? WHERE id = ?').run(ausgeblendet ? 1 : 0, id)
+  if (ausgeblendet) {
+    db.prepare('UPDATE partner_einblicke SET ausgeblendet = 1, angepinnt_von = NULL, angepinnt_at = NULL WHERE id = ?').run(id)
+  } else {
+    db.prepare('UPDATE partner_einblicke SET ausgeblendet = 0 WHERE id = ?').run(id)
+  }
   return findStmt.get(id)
 }
 
