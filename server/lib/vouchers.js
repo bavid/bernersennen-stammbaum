@@ -39,18 +39,35 @@ const PARTNER_ACCESS_CLAIM_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang �
 // Feste Schein-Liste für GET /vouchers/mine in der Demo: sieht aus wie echte Gutscheine, lässt sich
 // aber nicht einlösen. Jeder Klartext-Code enthält ein "U" - das kommt im Crockford-Alphabet nicht vor
 // (siehe lib/codes.js), normalizeCode lehnt die Codes also zuverlässig ab (siehe test/vouchersMine.test.js).
+// Phase V2b: zwei beschriftete offene Codes (ein Gutschein, eine Besuchs-Einladung) und - nur mit ?archiv=1
+// (DEMO_VOUCHER_ARCHIVE) - drei eingelöste, von denen zwei eine neue Chronik angelegt haben.
+const DEMO_VOUCHER_FIELDS = { joins: false, rolle: null, eigen: true, besuch: false, expires_at: null, redeemed_at: null }
 const DEMO_VOUCHERS = [
-  { id: 'demo-1', code: 'DEMU-0000-000A', hint: '000A', status: 'offen', joins: true, redeemed_at: null, created_at: '2026-01-03 10:00:00' },
   {
-    id: 'demo-2',
-    code: null,
-    hint: '000B',
-    status: 'eingelöst',
-    joins: true,
-    redeemed_at: '2026-01-02 09:00:00',
-    created_at: '2026-01-02 08:00:00'
+    ...DEMO_VOUCHER_FIELDS,
+    id: 'demo-1',
+    code: 'DEMU-0000-000A',
+    hint: '000A',
+    status: 'offen',
+    label: 'Nachbarin vom Deich',
+    created_at: '2026-09-20 10:00:00'
   },
-  { id: 'demo-3', code: null, hint: '000C', status: 'widerrufen', joins: false, redeemed_at: null, created_at: '2026-01-01 08:00:00' }
+  {
+    ...DEMO_VOUCHER_FIELDS,
+    id: 'demo-2',
+    code: 'DEMU-0000-000B',
+    hint: '000B',
+    status: 'offen',
+    label: 'Kegelrunde – Spaziergang am Sonntag',
+    besuch: true,
+    expires_at: '2026-12-31 10:00:00',
+    created_at: '2026-09-28 18:00:00'
+  }
+]
+const DEMO_VOUCHER_ARCHIVE = [
+  { ...DEMO_VOUCHER_FIELDS, id: 'demo-3', code: null, hint: '000C', status: 'eingelöst', label: 'Tante Ilse', neueChronik: true, redeemed_at: '2026-06-02 09:00:00', created_at: '2026-06-01 08:00:00' },
+  { ...DEMO_VOUCHER_FIELDS, id: 'demo-4', code: null, hint: '000D', status: 'eingelöst', label: 'Hundeschule-Gruppe', neueChronik: true, redeemed_at: '2026-04-12 17:00:00', created_at: '2026-04-10 08:00:00' },
+  { ...DEMO_VOUCHER_FIELDS, id: 'demo-5', code: null, hint: '000E', status: 'eingelöst', label: 'Familie Jansen', besuch: true, neueChronik: false, redeemed_at: '2026-03-03 12:00:00', created_at: '2026-03-01 08:00:00' }
 ]
 
 function httpError(status, message) {
@@ -188,7 +205,8 @@ function createBatch(
     dogId = null,
     zweck = ZWECK.chronik,
     partnerTyp = null,
-    visitHostFamilyId = null
+    visitHostFamilyId = null,
+    createdByFamilyId = null
   }
 ) {
   assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId, partnerId, visitHostFamilyId })
@@ -201,8 +219,8 @@ function createBatch(
 
     const insertVoucher = db.prepare(
       `INSERT INTO vouchers (batch_id, code_hash, code_cipher, code_hint, partner_id, issued_by_family_id, join_family_id, join_rolle, expires_at, dog_id,
-         visit_host_family_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         visit_host_family_id, created_by_family_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
 
     const codes = []
@@ -221,7 +239,8 @@ function createBatch(
             joinRolle,
             sqliteExpiresAt,
             dogId,
-            visitHostFamilyId
+            visitHostFamilyId,
+            createdByFamilyId
           )
           codes.push(code)
           break
@@ -540,7 +559,11 @@ function issuingPartnerId(db, area) {
 // Partner geben so Kunden-Gutscheine an ihre Kundschaft weiter: die Gutscheine eines Partner-/Tierheim-
 // Bereichs tragen dessen partner_id, das eingelöste Zuhause damit (wie bei Admin-Partner-Stapeln, siehe
 // redeemVoucher) families.partner_id als Herkunft.
-function ensureVoucherQuota(db, area) {
+// Phase V2b: createdByFamilyId - die Identität, die das Auffüllen auslöst (ihr gehören die neuen Codes, sie zählen
+// für ihre Obergrenze offener Codes); maxNew - wie viele sie davon noch anlegen darf (lib/voucherManage.js
+// openSlotsFor). Ein vom Ersteller gelöschter Code (ausgeblendet_at) zählt weiter mit: Löschen soll nicht sofort
+// einen neuen Code nachschieben - einen neuen legt man selbst an (POST /api/vouchers).
+function ensureVoucherQuota(db, area, { createdByFamilyId = null, maxNew = Infinity } = {}) {
   // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
   // Einladungen und dürfen weder mitgezählt noch als solche aufgefüllt werden. Partner-Zugänge (Phase P
   // Task 2) tragen nie issued_by_family_id (assertBatchPurpose) und zählen damit ebenfalls nie mit.
@@ -548,11 +571,12 @@ function ensureVoucherQuota(db, area) {
   const { c: counted } = db
     .prepare(
       `SELECT COUNT(*) AS c FROM vouchers
-       WHERE issued_by_family_id = ? AND revoked_at IS NULL AND dog_id IS NULL AND visit_host_family_id IS NULL
-         AND (redeemed_at IS NOT NULL OR expires_at IS NULL OR expires_at > datetime('now'))`
+       WHERE issued_by_family_id = ? AND dog_id IS NULL AND visit_host_family_id IS NULL
+         AND (ausgeblendet_at IS NOT NULL
+              OR (revoked_at IS NULL AND (redeemed_at IS NOT NULL OR expires_at IS NULL OR expires_at > datetime('now'))))`
     )
     .get(area.id)
-  const missing = voucherQuota - counted
+  const missing = Math.min(voucherQuota - counted, maxNew)
   if (missing <= 0) return
   createBatch(db, {
     label: `Weitergabe ${area.name}`,
@@ -560,7 +584,8 @@ function ensureVoucherQuota(db, area) {
     size: missing,
     issuedByFamilyId: area.id,
     joinFamilyId: area.art === 'rudel' ? area.id : null,
-    partnerId: issuingPartnerId(db, area)
+    partnerId: issuingPartnerId(db, area),
+    createdByFamilyId
   })
 }
 
@@ -591,6 +616,8 @@ module.exports = {
   cleanBooleanFlag,
   HANDOVER_GONE_MESSAGE,
   DEMO_VOUCHERS,
+  DEMO_VOUCHER_ARCHIVE,
+  issuingPartnerId,
   validatePassword,
   validateUsername,
   validateEmail,

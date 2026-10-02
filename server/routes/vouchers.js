@@ -3,7 +3,7 @@ const db = require('../db')
 const { codeLimiter, rejectHoneypot } = require('../middleware/abuse')
 const { requireAuth, setSessionCookie } = require('../middleware/auth')
 const { ART, buildMe } = require('../lib/context')
-const { normalizeCode, hashCode, formatCode, decryptCode } = require('../lib/codes')
+const { normalizeCode, hashCode, formatCode } = require('../lib/codes')
 const { cleanId } = require('../lib/validate')
 const {
   voucherStatus,
@@ -11,13 +11,14 @@ const {
   claimVoucher,
   ensureVoucherQuota,
   findVoucherByHash,
-  inviteRoleOf,
   isDemoVoucher,
   ZWECK,
-  DEMO_VOUCHERS
+  DEMO_VOUCHERS,
+  DEMO_VOUCHER_ARCHIVE
 } = require('../lib/vouchers')
+const { MAX_OPEN_CODES, openSlotsFor, limitInfo, listVouchers, createPassOnCode, setLabel, deleteCode } = require('../lib/voucherManage')
 const { isPartnerAccessCode, partnerAccessCheckInfo, redeemPartnerAccess } = require('../lib/partnerAccess')
-const { requireRole, roleOf, isRole, mayInviteAs, FORBIDDEN_MESSAGE } = require('../lib/roles')
+const { requireRole, roleOf, hasRole, isRole, mayInviteAs, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { notify, EREIGNIS } = require('../lib/notify')
 
 const router = express.Router()
@@ -125,44 +126,72 @@ router.post('/claim', requireAuth, codeLimiter, (req, res, next) => {
 // 403 - bewusst auch für die bloße Liste, nicht nur fürs Auffüllen: sie enthält die offenen Codes im
 // Klartext, und wer einen offenen Einladungs-Code weitergeben kann, lädt ein. Im eigenen Bereich
 // (Zuhause, Tierheim, Partner) ist man immer Leitung - dort bleibt alles wie bisher.
+// security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-Einladungen - sie
+// gehören nicht in diese Liste. rolle (Phase R Task 2): welche Rolle eine Einladung beim Einlösen vergibt.
+// Phase V2b (lib/voucherManage.js): ohne Parameter alles noch nicht Eingelöste (offen, abgelaufen, zurückgezogen),
+// mit ?archiv=1 die eingelösten (neueChronik: dabei entstand eine neue Chronik). Vom Ersteller gelöschte Codes
+// fehlen. label/eigen: die Beschriftung sieht nur, wer den Code angelegt hat (in der Admin-Ansicht niemand). Das
+// Auffüllen gehört dem, der es auslöst, und hält dessen Obergrenze offener Codes ein.
 router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
-  if (req.isDemo) return res.json(DEMO_VOUCHERS)
+  const archiv = req.query.archiv === '1'
+  if (req.isDemo) return res.json(archiv ? DEMO_VOUCHER_ARCHIVE : DEMO_VOUCHERS)
 
   const area = db.prepare('SELECT id, name, art FROM families WHERE id = ?').get(req.familyId)
   // Admin-Ansicht (Phase 5 Task 5b): nur lesen - das Kontingent füllt erst der Bereich selbst wieder auf.
-  if (!req.isAdminView) ensureVoucherQuota(db, area)
+  if (!req.isAdminView) {
+    ensureVoucherQuota(db, area, { createdByFamilyId: req.homeId, maxNew: openSlotsFor(db, req.homeId) })
+  }
+  res.json(listVouchers(db, { areaId: area.id, viewerId: req.isAdminView ? null : req.homeId, archiv }))
+})
 
-  // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
-  // Einladungen - sie gehören nicht in diese Liste (sonst könnte man einen Übergabe-Code hier als
-  // normalen Einladungs-Code verwenden/weitergeben).
-  // rolle (Phase R Task 2): welche Rolle eine Einladung beim Einlösen vergibt (nur bei joins: true, sonst
-  // null) - änderbar über PUT /:id/rolle unten, solange der Gutschein offen ist.
-  const rows = db
-    .prepare(
-      `SELECT id, code_cipher, code_hint, redeemed_at, revoked_at, expires_at, join_family_id, join_rolle, created_at,
-         visit_host_family_id
-       FROM vouchers WHERE issued_by_family_id = ? AND dog_id IS NULL ORDER BY created_at DESC, id DESC`
-    )
-    .all(area.id)
+// Phase V2b: wie viele offene Codes die Identität hat und noch anlegen darf ({ offen, max, frei }; ohne Grenze
+// max/frei null). Die Demo bekommt die Zahlen ihrer Schein-Liste.
+router.get('/grenze', requireAuth, (req, res) => {
+  if (req.isDemo) return res.json({ offen: DEMO_VOUCHERS.length, max: MAX_OPEN_CODES, frei: MAX_OPEN_CODES - DEMO_VOUCHERS.length })
+  res.json(limitInfo(db, req.homeId))
+})
 
-  res.json(
-    rows.map((row) => {
-      const status = voucherStatus(row)
-      return {
-        id: row.id,
-        code: status === 'offen' ? formatCode(decryptCode(row.code_cipher)) : null,
-        hint: row.code_hint,
-        status,
-        joins: Boolean(row.join_family_id),
-        rolle: row.join_family_id ? inviteRoleOf(row) : null,
-        // Phase V2: Besuchs-Einladung ("Jemanden in mein Zuhause einladen", 7 Tage gültig) statt Gutschein
-        besuch: Boolean(row.visit_host_family_id),
-        expires_at: row.expires_at,
-        redeemed_at: row.redeemed_at,
-        created_at: row.created_at
-      }
+function sendError(err, res, next) {
+  if (err.status) return res.status(err.status).json({ error: err.message })
+  next(err)
+}
+
+// Phase V2b: einen neuen Gutschein zum Weitergeben anlegen - im eigenen Zuhause (wer ihn einlöst, bekommt eine
+// eigene Chronik) oder in einer Familie ab Stellvertretung (dazu der Beitritt). Höchstens MAX_OPEN_CODES offene je
+// Identität (409). Antwort: der neue Code in der Form von GET /mine.
+router.post('/', requireAuth, requireRole('stellvertretung'), (req, res, next) => {
+  try {
+    const area = db.prepare('SELECT id, name, art FROM families WHERE id = ?').get(req.familyId)
+    if (area.art === ART.zuhause && req.familyId !== req.homeId) return res.status(400).json({ error: 'Nur im eigenen Zuhause möglich' })
+    res.status(201).json(createPassOnCode(db, area, req.homeId))
+  } catch (err) {
+    sendError(err, res, next)
+  }
+})
+
+// Phase V2b: eigene Beschriftung eines Codes (höchstens 60 Zeichen, leer = keine) - nur, wer ihn angelegt hat.
+router.put('/:id/label', requireAuth, (req, res, next) => {
+  try {
+    res.json(setLabel(db, { id: cleanId(req.params.id), homeId: req.homeId, label: req.body?.label }))
+  } catch (err) {
+    sendError(err, res, next)
+  }
+})
+
+// Phase V2b: einen noch nicht eingelösten Code zurückziehen und löschen (ausblenden). Den eigenen immer, einen
+// anderen des aktiven Bereichs im eigenen Zuhause bzw. ab Stellvertretung in einer Familie.
+router.delete('/:id', requireAuth, (req, res, next) => {
+  try {
+    deleteCode(db, {
+      id: cleanId(req.params.id),
+      homeId: req.homeId,
+      areaId: req.familyId,
+      mayModerate: hasRole(req.homeId, req.familyId, 'stellvertretung')
     })
-  )
+    res.status(204).end()
+  } catch (err) {
+    sendError(err, res, next)
+  }
 })
 
 // Einladungen mit Rolle (Phase R Task 2). Gewählter Ansatz: Einladungs-Gutscheine einer Familie entstehen

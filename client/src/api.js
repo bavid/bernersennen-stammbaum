@@ -112,7 +112,15 @@ export const api = {
   // Zuhause heraus (siehe App.jsx VoucherSessionCard) - liefert { dogId }.
   claimVoucher: (payload) => request('/vouchers/claim', json('POST', payload)),
   recover: (payload) => request('/recover', json('POST', payload)),
-  myVouchers: () => request('/vouchers/mine'),
+  // archiv (Phase V2b): die eingelösten statt der noch offenen/abgelaufenen/zurückgezogenen Codes.
+  myVouchers: ({ archiv = false } = {}) => request(archiv ? '/vouchers/mine?archiv=1' : '/vouchers/mine'),
+  // Eigene Einladungen verwalten (Phase V2b, server/routes/vouchers.js): { offen, max, frei } (ohne Grenze null),
+  // ein neuer Gutschein zum Weitergeben (409 bei 5 offenen), die eigene Beschriftung (<= 60 Zeichen, '' = keine)
+  // und zurückziehen/löschen (204).
+  voucherLimit: () => request('/vouchers/grenze'),
+  createVoucher: () => request('/vouchers', { method: 'POST' }),
+  setVoucherLabel: (id, label) => request(`/vouchers/${encodeURIComponent(id)}/label`, json('PUT', { label })),
+  deleteVoucher: (id) => request(`/vouchers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   // payload trägt den aktuellen Berechtigungsnachweis (currentKey/currentPassword/password je nach
   // Sitzungsart, siehe AccessSettings) - ohne ihn lehnt der Server mit 403 ab (Schutz vor Übernahme
   // einer fremden Sitzung).

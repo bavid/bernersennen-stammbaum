@@ -10,7 +10,7 @@ test('GET /api/vouchers/mine: Kontingent auffüllen, Rudel-Gutscheine treten bei
   const db = require('../db')
   const config = require('../config')
   const { normalizeCode } = require('../lib/codes')
-  const { DEMO_VOUCHERS } = require('../lib/vouchers')
+  const { DEMO_VOUCHERS, DEMO_VOUCHER_ARCHIVE } = require('../lib/vouchers')
 
   const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
   const mine = (cookie) => call(base, '/api/vouchers/mine', { cookie })
@@ -47,7 +47,8 @@ test('GET /api/vouchers/mine: Kontingent auffüllen, Rudel-Gutscheine treten bei
     assert.equal(redeemRes.data.memberships[0].id, rudel.data.id)
   })
 
-  await t.test('Kontingent bleibt bei voucherQuota, auch wenn einer eingelöst ist', async () => {
+  // Phase V2b: der eingelöste steht nicht mehr in der Liste, sondern im Archiv (?archiv=1).
+  await t.test('Kontingent bleibt bei voucherQuota, auch wenn einer eingelöst ist - der steht dann im Archiv', async () => {
     const household = await createHousehold(base, 'Zuhause Kontingent')
     const first = await mine(household.cookie)
     const codeToRedeem = first.data[0].code
@@ -57,12 +58,14 @@ test('GET /api/vouchers/mine: Kontingent auffüllen, Rudel-Gutscheine treten bei
 
     const second = await mine(household.cookie)
     assert.equal(second.status, 200)
-    assert.equal(second.data.length, config.voucherQuota)
-    const statuses = second.data.map((voucher) => voucher.status).sort()
-    assert.deepEqual(statuses, ['eingelöst', 'offen', 'offen'])
-    const redeemedEntry = second.data.find((voucher) => voucher.status === 'eingelöst')
+    assert.deepEqual(second.data.map((voucher) => voucher.status), ['offen', 'offen'])
+    const archive = await call(base, '/api/vouchers/mine?archiv=1', { cookie: household.cookie })
+    assert.equal(archive.data.length, 1)
+    const redeemedEntry = archive.data[0]
+    assert.equal(redeemedEntry.status, 'eingelöst')
     assert.equal(redeemedEntry.code, null)
     assert.ok(redeemedEntry.redeemed_at)
+    assert.equal(redeemedEntry.neueChronik, true)
   })
 
   await t.test('neueste zuerst', async () => {
@@ -119,13 +122,18 @@ test('GET /api/vouchers/mine: Kontingent auffüllen, Rudel-Gutscheine treten bei
     const res = await mine(demoCookie)
     assert.equal(res.status, 200)
     assert.deepEqual(res.data, DEMO_VOUCHERS)
+    const archive = await call(base, '/api/vouchers/mine?archiv=1', { cookie: demoCookie })
+    assert.deepEqual(archive.data, DEMO_VOUCHER_ARCHIVE)
+    // Phase V2b: zwei beschriftete offene, drei eingelöste
+    assert.equal(DEMO_VOUCHERS.filter((voucher) => voucher.status === 'offen' && voucher.label).length, 2)
+    assert.equal(DEMO_VOUCHER_ARCHIVE.filter((voucher) => voucher.status === 'eingelöst').length, 3)
 
     const created = db.prepare('SELECT COUNT(*) AS c FROM vouchers WHERE issued_by_family_id = ?').get(rudel.data.id).c
     assert.equal(created, 0)
   })
 
   await t.test('Die Schein-Codes der Demo lassen sich nicht einlösen (normalizeCode lehnt sie ab)', () => {
-    for (const voucher of DEMO_VOUCHERS) {
+    for (const voucher of [...DEMO_VOUCHERS, ...DEMO_VOUCHER_ARCHIVE]) {
       if (voucher.code) assert.equal(normalizeCode(voucher.code), null)
     }
   })

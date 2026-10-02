@@ -8,6 +8,7 @@
 const { normalizeCode, hashCode } = require('./codes')
 const { createBatch, findVoucherByHash, assertVoucherOpen, assertVisitHostOpen, ZWECK } = require('./vouchers')
 const { findHome, isVisiting } = require('./visits')
+const { assertOpenCodeSlot } = require('./voucherManage')
 
 const VISIT_INVITE_DAYS = 7
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -24,22 +25,27 @@ function httpError(status, message) {
 
 // Legt eine Besuchs-Einladung des Zuhauses hostId an und gibt { voucherId, code, expiresAt } zurück (code im
 // Klartext, nur für die Antwort - danach liegt er wie jeder offene Gutschein nur verschlüsselt vor).
-// now (optional, für Tests): Bezugszeitpunkt für die 7 Tage.
+// now (optional, für Tests): Bezugszeitpunkt für die 7 Tage. Phase V2b: zählt zur Obergrenze offener Codes des
+// Zuhauses (lib/voucherManage.js, 409) - Prüfen und Anlegen in einer Transaktion.
 function createVisitInvite(db, hostId, { now = new Date() } = {}) {
   const host = findHome(hostId)
   if (!host) throw httpError(400, 'Einladen geht nur aus „Meine Chronik“ heraus')
   const expiresAt = new Date(now.getTime() + VISIT_INVITE_DAYS * DAY_MS)
-  const { batchId, codes } = createBatch(db, {
-    label: `Besuch ${host.name}`,
-    kind: 'rudel',
-    size: 1,
-    issuedByFamilyId: hostId,
-    visitHostFamilyId: hostId,
-    zweck: ZWECK.besuch,
-    expiresAt
-  })
-  const row = db.prepare('SELECT id, expires_at FROM vouchers WHERE batch_id = ?').get(batchId)
-  return { voucherId: row.id, code: codes[0], expiresAt: row.expires_at }
+  return db.transaction(() => {
+    assertOpenCodeSlot(db, hostId)
+    const { batchId, codes } = createBatch(db, {
+      label: `Besuch ${host.name}`,
+      kind: 'rudel',
+      size: 1,
+      issuedByFamilyId: hostId,
+      visitHostFamilyId: hostId,
+      zweck: ZWECK.besuch,
+      expiresAt,
+      createdByFamilyId: hostId
+    })
+    const row = db.prepare('SELECT id, expires_at FROM vouchers WHERE batch_id = ?').get(batchId)
+    return { voucherId: row.id, code: codes[0], expiresAt: row.expires_at }
+  })()
 }
 
 // Löst eine Besuchs-Einladung aus dem eigenen Zuhause guestId ein: verbraucht den Code (atomar wie lib/vouchers.js

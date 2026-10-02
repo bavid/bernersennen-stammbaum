@@ -1,28 +1,16 @@
-import { useEffect, useState } from 'react'
-import { api } from '../api'
+import { useState } from 'react'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
-import RoleBadge from './RoleBadge.jsx'
-import RoleSelect from './RoleSelect.jsx'
-import { formatDateShort } from '../lib/dates.js'
-import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
 import { isPartnerArea } from '../lib/areas.js'
-import { inviteRoleOptions, roleOf } from '../lib/roles.js'
+import { hasRole, inviteRoleOptions, roleOf } from '../lib/roles.js'
 import { isOwnHome } from '../lib/visits.js'
 import VisitSection from './visits/VisitSection.jsx'
-
-function statusText(voucher) {
-  if (voucher.status === 'eingelöst' && voucher.redeemed_at) {
-    return `Eingelöst am ${formatDateShort(voucher.redeemed_at)}`
-  }
-  return VOUCHER_STATUS_LABEL[voucher.status] || voucher.status
-}
-
-function voucherLink(code) {
-  return `${window.location.origin}/v#${code.replace(/-/g, '')}`
-}
+import VoucherRow from './invite/VoucherRow.jsx'
+import VoucherArchive from './invite/VoucherArchive.jsx'
+import VoucherCreateBar from './invite/VoucherCreateBar.jsx'
+import useVoucherList from './invite/useVoucherList.js'
 
 function CopyField({ label, value }) {
   const toast = useToast()
@@ -48,103 +36,6 @@ function CopyField({ label, value }) {
   )
 }
 
-const LINK_COPY_FAILED_MESSAGE = 'Kopieren nicht möglich – Link bitte markieren'
-
-// roleOptions (Phase R, nur in einer Familie): welche Rollen die eigene Rolle vergeben darf - leer heißt
-// keine Auswahl. Die Rolle stellt man ein, BEVOR man Code oder Link weitergibt (onRoleChange schreibt
-// sie sofort über PUT /vouchers/:id/rolle); eingelöste Einladungen zeigen sie nur noch an.
-function VoucherRow({ voucher, roleOptions = [], onRoleChange, disabled }) {
-  const toast = useToast()
-  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
-  const [linkCopyFailed, setLinkCopyFailed] = useState(false)
-  const canChooseRole = voucher.status === 'offen' && voucher.joins && roleOptions.length > 0
-
-  async function copy(text) {
-    try {
-      await navigator.clipboard.writeText(text)
-      toast('Kopiert')
-    } catch {
-      // Ohne Zwischenablage-Recht bleibt nur das Abtippen - nichts weiter zu tun.
-    }
-  }
-
-  // Der Link ist der Weg, den man am ehesten weitergibt (SMS, Chat) - misslingt das Kopieren hier
-  // (fehlendes Zwischenablage-Recht, unsicherer Kontext), bekommt man ihn zusätzlich als Fallback-Feld
-  // zum Markieren angezeigt, statt ihn nur stillschweigend nicht zu kopieren.
-  async function copyLink() {
-    const link = voucherLink(voucher.code)
-    try {
-      await navigator.clipboard.writeText(link)
-      toast('Kopiert')
-    } catch {
-      setLinkCopyFailed(true)
-      toast(LINK_COPY_FAILED_MESSAGE)
-    }
-  }
-
-  async function share() {
-    try {
-      await navigator.share({ url: voucherLink(voucher.code) })
-    } catch {
-      // Abbruch oder Fehler beim Teilen-Dialog selbst ist kein Fehlerfall, den man melden müsste.
-    }
-  }
-
-  return (
-    <li className="voucher-row">
-      <div className="voucher-row-main">
-        <span className="voucher-code">{voucher.code || `…${voucher.hint}`}</span>
-        <span className={`pill ${voucher.status === 'offen' ? '' : 'pill-rust'}`}>{statusText(voucher)}</span>
-        {/* Phase V2: Besuchs-Einladung (7 Tage gültig) statt Gutschein für eine eigene Chronik */}
-        {voucher.besuch && (
-          <span className="pill pill-visit">
-            Besuch{voucher.status === 'offen' && voucher.expires_at ? ` · bis ${formatDateShort(voucher.expires_at)}` : ''}
-          </span>
-        )}
-        {voucher.rolle && !canChooseRole && <RoleBadge rolle={voucher.rolle} />}
-      </div>
-      {canChooseRole && (
-        <label className="voucher-row-role">
-          <span className="field-hint">Tritt bei als</span>
-          <RoleSelect
-            value={voucher.rolle || 'mitglied'}
-            options={roleOptions}
-            disabled={disabled}
-            onChange={(rolle) => onRoleChange(voucher, rolle)}
-          />
-        </label>
-      )}
-      {voucher.code && (
-        <div className="voucher-row-actions">
-          <button type="button" className="btn btn-ghost" onClick={() => copy(voucher.code)}>
-            <Icon name="copy" />
-            Code kopieren
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={copyLink}>
-            <Icon name="copy" />
-            Link kopieren
-          </button>
-          {canShare && (
-            <button type="button" className="btn btn-ghost" onClick={share}>
-              <Icon name="share" />
-              Teilen
-            </button>
-          )}
-        </div>
-      )}
-      {voucher.code && linkCopyFailed && (
-        <input
-          readOnly
-          className="voucher-link-fallback"
-          aria-label="Gutschein-Link zum Markieren und Kopieren"
-          value={voucherLink(voucher.code)}
-          onFocus={(e) => e.target.select()}
-        />
-      )}
-    </li>
-  )
-}
-
 const PARTNER_EXPLANATION =
   'Gebt diesen Gutschein an eure Kundschaft weiter – damit legen sie ihre eigene Chronik bei Familie auf Pfoten an.'
 
@@ -158,10 +49,21 @@ function explanationFor(family) {
   return 'Wer den Gutschein einlöst, bekommt eine eigene Chronik.'
 }
 
-// Jemanden einladen bzw. (Partner/Tierheim) Kunden-Gutscheine weitergeben: die eigenen Weitergabe-
-// Gutscheine des aktiven Bereichs (myVouchers() füllt das Kontingent bei jedem Aufruf selbst auf). Der
-// alte Weg über Adresse+Passwort bleibt als zweiter Abschnitt, aber nur für klassische Rudel mit
-// gemeinsamem Passwort - ein Zuhause hat kein Passwort zum Weitergeben.
+// Phase V2b: neue Codes anlegen im eigenen Zuhause und in einer Familie ab Stellvertretung (Partner geben
+// Kunden-Gutscheine über ihre Stapel weiter); Codes anderer zurückziehen im eigenen Bereich bzw. ab
+// Stellvertretung in einer Familie - den eigenen Code immer (voucher.eigen).
+function canCreateCodes(family) {
+  return isOwnHome(family) || (family.art === 'rudel' && hasRole(family, 'stellvertretung'))
+}
+
+function canModerateCodes(family) {
+  return family.art === 'rudel' ? hasRole(family, 'stellvertretung') : !family.zuBesuch
+}
+
+// Jemanden einladen bzw. (Partner/Tierheim) Kunden-Gutscheine weitergeben: die eigenen Codes des aktiven Bereichs
+// (myVouchers() füllt das Kontingent bei jedem Aufruf selbst auf). Phase V2b: eine kleine Liste mit eigener Notiz,
+// Status, „Zurückziehen“, „Neuen Code erstellen“ (höchstens 5 offen) und dem Archiv der eingelösten. Der alte Weg
+// über Adresse+Passwort bleibt als letzter Abschnitt, aber nur für klassische Rudel mit gemeinsamem Passwort.
 // onFamilyChange (Phase V2, optional): neues "me" nach dem Einlösen oder Beenden eines Besuchs (Bereichswechsler).
 export default function InviteDialog({ family, onFamilyChange }) {
   const { words } = useTheme()
@@ -169,59 +71,57 @@ export default function InviteDialog({ family, onFamilyChange }) {
   // In der Demo sind die Gutscheine Beispiele; in der Admin-Ansicht sind es die echten des Bereichs - nur vergeben
   // (Rolle ändern, Code weitergeben) geht dort nicht.
   const readOnlyHint = useReadOnlyHint('Beispiel – in der Demo werden keine Gutscheine vergeben.')
-  const toast = useToast()
-  const [vouchers, setVouchers] = useState(undefined)
-  const [error, setError] = useState(null)
+  const canCreate = canCreateCodes(family)
+  const list = useVoucherList({ withLimit: canCreate })
+  const [archiveOpen, setArchiveOpen] = useState(false)
+  const { vouchers, error } = list
 
-  const loadVouchers = () =>
-    api
-      .myVouchers()
-      .then(setVouchers)
-      .catch((err) => setError(err.message))
-
-  useEffect(() => {
-    loadVouchers()
-  }, [])
-
-  const explanation = explanationFor(family)
   // Rolle je Einladung (Phase R): nur in einer Familie, nur was die eigene Rolle vergeben darf.
   const roleOptions = family.art === 'rudel' ? inviteRoleOptions(roleOf(family)) : []
-
-  async function handleRoleChange(voucher, rolle) {
-    const previous = voucher.rolle
-    setVouchers((list) => list.map((v) => (v.id === voucher.id ? { ...v, rolle } : v)))
-    try {
-      await api.setVoucherRole(voucher.id, rolle)
-    } catch (err) {
-      setVouchers((list) => list.map((v) => (v.id === voucher.id ? { ...v, rolle: previous } : v)))
-      toast(err.message)
-    }
-  }
+  const canModerate = canModerateCodes(family)
 
   return (
     <div className="invite">
       <section className="invite-vouchers">
         <h3>Gutscheine</h3>
-        <p className="muted">{explanation}</p>
+        <p className="muted">{explanationFor(family)}</p>
         {isDemo && <p className="field-hint">{readOnlyHint}</p>}
         {error && (
           <div className="error-banner" role="alert">
             {error}
           </div>
         )}
+        {canCreate && <VoucherCreateBar limit={list.limit} busy={list.creating} disabled={isDemo} onCreate={list.create} />}
         {vouchers === undefined && !error && <p className="muted">Lade …</p>}
         {vouchers && vouchers.length === 0 && <p className="muted">Gerade keine Gutscheine übrig.</p>}
         {vouchers && vouchers.length > 0 && (
           <ul className="voucher-list">
             {vouchers.map((voucher) => (
-              <VoucherRow key={voucher.id} voucher={voucher} roleOptions={roleOptions} onRoleChange={handleRoleChange} disabled={isDemo} />
+              <VoucherRow
+                key={voucher.id}
+                voucher={voucher}
+                roleOptions={roleOptions}
+                onRoleChange={list.setRole}
+                onLabelChange={list.setLabel}
+                onDelete={list.remove}
+                canDelete={voucher.eigen || canModerate}
+                disabled={isDemo}
+              />
             ))}
           </ul>
         )}
+        <VoucherArchive
+          entries={list.archive}
+          open={archiveOpen}
+          onToggle={() => setArchiveOpen((value) => !value)}
+          own={isOwnHome(family)}
+          onLabelChange={list.setLabel}
+          disabled={isDemo}
+        />
       </section>
 
       {/* Phase V2: Zuhause besuchen - nur im eigenen Zuhause (nicht in einer Familie, nicht zu Besuch). */}
-      {isOwnHome(family) && <VisitSection onFamilyChange={onFamilyChange} onInviteCreated={loadVouchers} />}
+      {isOwnHome(family) && <VisitSection onFamilyChange={onFamilyChange} onInviteCreated={list.reload} />}
 
       {family.art === 'rudel' && (
         <section className="invite-legacy">

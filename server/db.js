@@ -642,4 +642,23 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_erlebt_mit_dog ON erlebt_mit(dog_id, status);
 `)
 
+// Phase V2b: eigene Einladungen verwalten (routes/vouchers.js, lib/vouchers.js MAX_OPEN_CODES).
+// created_by_family_id: die Identität (ein Zuhause, oder eine Familie mit ihrem gemeinsamen Schlüssel), die den Code
+// angelegt hat - zählt für die Obergrenze offener Codes und darf die Beschriftung setzen und sehen. Bestehende
+// Weitergabe-Gutscheine eines Zuhauses gehören beim Nachrüsten dem Zuhause selbst (einmalig, in einer Transaktion
+// mit der Spalte); ältere Einladungen einer Familie bleiben ohne Ersteller (zählen nicht, ohne Beschriftung).
+// label: eigene Notiz des Erstellers (höchstens 60 Zeichen, z. B. "Tante Ilse"). ausgeblendet_at: vom Ersteller
+// gelöscht (die Zeile bleibt für die Statistik, zurückgezogen). Alles bewusst ohne REFERENCES (lib/families.js
+// setzt created_by_family_id beim Löschen auf NULL).
+db.transaction(() => {
+  if (addColumnIfMissing('vouchers', 'created_by_family_id', 'INTEGER')) {
+    db.exec(`UPDATE vouchers SET created_by_family_id = issued_by_family_id
+             WHERE created_by_family_id IS NULL AND dog_id IS NULL
+               AND issued_by_family_id IN (SELECT id FROM families WHERE art = 'zuhause')`)
+  }
+})()
+addColumnIfMissing('vouchers', 'label', 'TEXT')
+addColumnIfMissing('vouchers', 'ausgeblendet_at', 'TEXT')
+db.exec('CREATE INDEX IF NOT EXISTS idx_vouchers_created_by ON vouchers(created_by_family_id)')
+
 module.exports = db

@@ -3,8 +3,16 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { myVouchers, setVoucherRole } = vi.hoisted(() => ({ myVouchers: vi.fn(), setVoucherRole: vi.fn() }))
-vi.mock('../api', () => ({ api: { myVouchers, setVoucherRole } }))
+const { myVouchers, setVoucherRole, voucherLimit, createVoucher, setVoucherLabel, deleteVoucher, visits } = vi.hoisted(() => ({
+  myVouchers: vi.fn(),
+  setVoucherRole: vi.fn(),
+  voucherLimit: vi.fn(),
+  createVoucher: vi.fn(),
+  setVoucherLabel: vi.fn(),
+  deleteVoucher: vi.fn(),
+  visits: vi.fn()
+}))
+vi.mock('../api', () => ({ api: { myVouchers, setVoucherRole, voucherLimit, createVoucher, setVoucherLabel, deleteVoucher, visits } }))
 
 // Kein <ToastProvider> in diesem Test-Setup (siehe render() unten) – useToast() mocken, um die
 // Fehlermeldung beim gescheiterten "Link kopieren" ohne echte Toast-UI zu prüfen.
@@ -55,13 +63,14 @@ afterEach(() => {
   }
   delete document.documentElement.dataset.theme
   document.title = ''
-  myVouchers.mockReset()
-  setVoucherRole.mockReset()
+  for (const mock of [myVouchers, setVoucherRole, voucherLimit, createVoucher, setVoucherLabel, deleteVoucher, visits]) mock.mockReset()
   toast.mockReset()
   vi.restoreAllMocks()
 })
 
 async function render(family, { isDemo = false, themeId = 'standard' } = {}) {
+  if (!voucherLimit.getMockImplementation()) voucherLimit.mockResolvedValue({ offen: 1, max: 5, frei: 4 })
+  if (!visits.getMockImplementation()) visits.mockResolvedValue({ besuche: [], gaeste: [] })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -285,5 +294,94 @@ describe('InviteDialog – Partner und Tierheime geben Kunden-Gutscheine weiter 
     expect(container.textContent).not.toContain('beitreten')
     expect(container.textContent).not.toContain('Adresse und Passwort weitergeben')
     expect(container.querySelector('.voucher-code').textContent).toBe('ABCD-1234-HJKM')
+  })
+})
+
+// Phase V2b: eigene Einladungen verwalten
+describe('InviteDialog – eigene Einladungen verwalten (Phase V2b)', () => {
+  const ownHome = { ...zuhause, home: { id: 1, name: 'Zuhause am Deich', art: 'zuhause' } }
+  const own = { ...openVoucher, id: 11, joins: false, eigen: true, label: null }
+  const foreign = { ...openVoucher, id: 12, code: 'EFGH-1234-HJKM', joins: false, eigen: false, label: null }
+  const archived = [
+    { ...redeemedVoucher, id: 21, eigen: true, label: 'Tante Ilse', neueChronik: true },
+    { ...redeemedVoucher, id: 22, eigen: true, label: null, neueChronik: true },
+    { ...redeemedVoucher, id: 23, eigen: true, label: null, besuch: true, neueChronik: false }
+  ]
+  const mockLists = (open, archive = []) => myVouchers.mockImplementation(({ archiv } = {}) => Promise.resolve(archiv ? archive : open))
+  const buttonIn = (root_, text) => [...root_.querySelectorAll('button')].find((b) => b.textContent.includes(text))
+
+  test('eigene Notiz inline: hinzufügen, speichern - nur am eigenen Code', async () => {
+    mockLists([own, foreign])
+    setVoucherLabel.mockResolvedValue({ id: 11, label: 'Tante Ilse' })
+    await render(ownHome)
+    const rows = [...container.querySelectorAll('.voucher-list > .voucher-row')]
+    expect(rows[1].querySelector('.voucher-label-edit')).toBeNull()
+    await act(async () => rows[0].querySelector('.voucher-label-edit').click())
+    const input = rows[0].querySelector('.voucher-label-form input')
+    expect(input.maxLength).toBe(60)
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Tante Ilse')
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await act(async () => buttonIn(rows[0], 'Speichern').click())
+    expect(setVoucherLabel).toHaveBeenCalledWith(11, 'Tante Ilse')
+    expect(rows[0].querySelector('.voucher-label-edit').textContent).toContain('Tante Ilse')
+  })
+
+  test('Zurückziehen ist zweistufig und nimmt den Code aus der Liste', async () => {
+    mockLists([own])
+    deleteVoucher.mockResolvedValue(null)
+    await render(ownHome)
+    const deleteButton = () => container.querySelector('.voucher-row-delete')
+    act(() => deleteButton().click())
+    expect(deleteButton().textContent).toContain('Wirklich zurückziehen und löschen?')
+    await act(async () => deleteButton().click())
+    expect(deleteVoucher).toHaveBeenCalledWith(11)
+    expect(container.querySelectorAll('.voucher-list > .voucher-row')).toHaveLength(0)
+  })
+
+  test('„Neuen Code erstellen“ legt einen an; bei 5 offenen gesperrt mit Erklärung', async () => {
+    mockLists([own])
+    createVoucher.mockResolvedValue({ ...own, id: 13, code: 'JKMN-1234-HJKM' })
+    await render(ownHome)
+    expect(container.textContent).toContain('1 von 5 offenen Codes')
+    await act(async () => buttonIn(container, 'Neuen Code erstellen').click())
+    expect(createVoucher).toHaveBeenCalled()
+    expect(container.querySelectorAll('.voucher-list > .voucher-row')).toHaveLength(2)
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    voucherLimit.mockResolvedValue({ offen: 5, max: 5, frei: 0 })
+    mockLists([own])
+    await render(ownHome)
+    expect(buttonIn(container, 'Neuen Code erstellen').disabled).toBe(true)
+    expect(container.textContent).toContain('Ein neuer geht erst, wenn einer eingelöst, zurückgezogen oder abgelaufen ist.')
+  })
+
+  test('Archiv: „Eingelöste anzeigen“ mit der Zahl der mitgebrachten Leute', async () => {
+    mockLists([own], archived)
+    await render(ownHome)
+    expect(container.textContent).toContain('Du hast schon 2 Leute zu Familie auf Pfoten gebracht.')
+    expect(container.querySelector('.voucher-list-archive')).toBeNull()
+    await act(async () => buttonIn(container, 'Eingelöste anzeigen (3)').click())
+    expect(container.querySelectorAll('.voucher-list-archive .voucher-row')).toHaveLength(3)
+    expect(container.querySelector('.voucher-list-archive').textContent).toContain('Tante Ilse')
+  })
+
+  test('in einer Familie: neue Codes ab Stellvertretung, fremde Codes zurückziehen ebenfalls', async () => {
+    const groupAs = (role) => ({ ...rudel, role, home: ownHome.home, memberships: [{ id: 3, name: 'Familie Sonnenhang', rolle: role }] })
+    mockLists([{ ...foreign, joins: true, rolle: 'mitglied' }])
+    await render(groupAs('stellvertretung'))
+    expect(buttonIn(container, 'Neuen Code erstellen')).toBeTruthy()
+    expect(container.querySelector('.voucher-row-delete')).not.toBeNull()
+  })
+
+  test('Demo: Notiz nur lesbar, Knöpfe gesperrt', async () => {
+    mockLists([{ ...own, label: 'Nachbarin vom Deich' }])
+    await render(ownHome, { isDemo: true })
+    expect(container.querySelector('.voucher-label').textContent).toBe('Nachbarin vom Deich')
+    expect(buttonIn(container, 'Neuen Code erstellen').disabled).toBe(true)
+    expect(container.querySelector('.voucher-row-delete').disabled).toBe(true)
   })
 })

@@ -4,8 +4,10 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { familyMembers, setMemberRole, removeMember, handOverLeitung, revokeInvite, setVoucherRole, leaveFamily, myVouchers, dissolveFamily, renewFamilyKey, listDogs } =
+const { familyMembers, setMemberRole, removeMember, handOverLeitung, revokeInvite, setVoucherRole, leaveFamily, myVouchers, dissolveFamily, renewFamilyKey, listDogs, voucherLimit } =
   vi.hoisted(() => ({
+    // Phase V2b: der Einladen-Dialog fragt ab Stellvertretung die Obergrenze offener Codes ab
+    voucherLimit: vi.fn(),
     familyMembers: vi.fn(),
     setMemberRole: vi.fn(),
     removeMember: vi.fn(),
@@ -19,7 +21,7 @@ const { familyMembers, setMemberRole, removeMember, handOverLeitung, revokeInvit
     listDogs: vi.fn()
   }))
 vi.mock('../api', () => ({
-  api: { familyMembers, setMemberRole, removeMember, handOverLeitung, revokeInvite, setVoucherRole, leaveFamily, myVouchers, dissolveFamily, renewFamilyKey, listDogs }
+  api: { familyMembers, setMemberRole, removeMember, handOverLeitung, revokeInvite, setVoucherRole, leaveFamily, myVouchers, dissolveFamily, renewFamilyKey, listDogs, voucherLimit }
 }))
 
 import MembersPage from './MembersPage.jsx'
@@ -102,6 +104,7 @@ async function renderPage(family, { onFamilyChange = () => {} } = {}) {
 
 beforeEach(() => {
   myVouchers.mockResolvedValue([])
+  voucherLimit.mockResolvedValue({ offen: 1, max: 5, frei: 4 })
 })
 
 afterEach(() => {
@@ -113,7 +116,7 @@ afterEach(() => {
   container = null
   delete document.documentElement.dataset.theme
   document.title = ''
-  for (const mock of [familyMembers, setMemberRole, removeMember, handOverLeitung, revokeInvite, setVoucherRole, leaveFamily, myVouchers, dissolveFamily, renewFamilyKey, listDogs]) mock.mockReset()
+  for (const mock of [familyMembers, setMemberRole, removeMember, handOverLeitung, revokeInvite, setVoucherRole, leaveFamily, myVouchers, dissolveFamily, renewFamilyKey, listDogs, voucherLimit]) mock.mockReset()
 })
 
 describe('MembersPage – Leitung übergeben', () => {

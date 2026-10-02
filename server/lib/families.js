@@ -90,15 +90,16 @@ function deleteFamily(db, familyId) {
       .map((row) => row.batch_id)
 
     db.prepare('DELETE FROM vouchers WHERE issued_by_family_id = ? AND redeemed_at IS NULL').run(familyId)
-    // visit_host_family_id (Phase V2, ohne REFERENCES) verliert den Verweis genauso; die Besuche selbst (besuche)
-    // verschwinden per ON DELETE CASCADE mit der families-Zeile.
+    // visit_host_family_id (Phase V2) und created_by_family_id (Phase V2b), beide ohne REFERENCES, verlieren den
+    // Verweis genauso; die Besuche selbst (besuche) verschwinden per ON DELETE CASCADE mit der families-Zeile.
     db.prepare(
       `UPDATE vouchers SET
          issued_by_family_id = NULLIF(issued_by_family_id, @familyId),
          join_family_id = NULLIF(join_family_id, @familyId),
          redeemed_by_family_id = NULLIF(redeemed_by_family_id, @familyId),
-         visit_host_family_id = NULLIF(visit_host_family_id, @familyId)
-       WHERE @familyId IN (issued_by_family_id, join_family_id, redeemed_by_family_id, visit_host_family_id)`
+         visit_host_family_id = NULLIF(visit_host_family_id, @familyId),
+         created_by_family_id = NULLIF(created_by_family_id, @familyId)
+       WHERE @familyId IN (issued_by_family_id, join_family_id, redeemed_by_family_id, visit_host_family_id, created_by_family_id)`
     ).run({ familyId })
 
     db.prepare('DELETE FROM families WHERE id = ?').run(familyId)
