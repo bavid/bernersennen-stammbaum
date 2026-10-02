@@ -28,9 +28,9 @@
 .print-main {
   display: grid;
   gap: var(--space-6);
-  max-width: 76rem;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: var(--space-8) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
+  padding: var(--space-8) var(--page-gutter) var(--space-16);
 }
 
 .print-head {

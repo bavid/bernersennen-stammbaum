@@ -74,10 +74,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-6);
-  max-width: 76rem;
+  max-width: var(--page-max);
   height: var(--header-height);
   margin: 0 auto;
-  padding: 0 clamp(var(--space-4), 4vw, var(--space-8));
+  padding: 0 var(--page-gutter);
 }
 
 .brand {
@@ -197,25 +197,29 @@
     z-index: 45;
     justify-content: space-around;
     gap: 0;
-    padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom));
+    padding: var(--space-1) var(--space-2) calc(var(--space-1) + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-top: 1px solid var(--line);
   }
 
+  /* V0: etwas flacher als vorher (Symbole ~18 statt ~20 px, weniger Rand oben/unten) - jeder Reiter bleibt
+     aber mindestens 44 px hoch. */
   .app-nav a {
     flex-direction: column;
+    justify-content: center;
     gap: 2px;
     flex: 1;
+    min-height: 44px;
     padding: var(--space-2) var(--space-1);
     border-radius: var(--radius-md);
     font-size: 0.7rem;
   }
 
   .app-nav a svg {
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 1.2rem;
+    height: 1.2rem;
   }
 
   .app-nav-badge {
@@ -243,8 +247,24 @@
     margin-left: auto;
   }
 
+  /* Niedrigere Kopfzeile (--header-height, tokens.css): engerer Abstand, und auf sehr schmalen Handys darf
+     sie wachsen, falls "Familie auf Pfoten" doch zweizeilig wird - statt über den Rand zu laufen. Die Knöpfe
+     rechts ("Schreib dem Admin", Abmelden) bekommen volle 44 px Tippfläche. */
+  .app-header-inner {
+    gap: var(--space-3);
+    height: auto;
+    min-height: var(--header-height);
+  }
+
+  .app-header .icon-btn,
+  .app-header .app-contact {
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .app-shell {
-    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -255,8 +275,8 @@
   }
 
   .app-nav-dense a svg {
-    width: 1.2rem;
-    height: 1.2rem;
+    width: 1.1rem;
+    height: 1.1rem;
   }
 }
 
@@ -293,9 +313,9 @@
 .app-main {
   flex: 1;
   width: 100%;
-  max-width: 76rem;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: clamp(var(--space-6), 5vw, var(--space-12)) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
+  padding: var(--page-pad-top) var(--page-gutter) var(--space-16);
 }
 
 .app-footer {
@@ -346,13 +366,13 @@
 .page-hero > div:first-child {
   display: grid;
   gap: var(--space-3);
-  max-width: 44rem;
+  max-width: var(--measure);
 }
 
 .page-lede {
   font-size: var(--text-lg);
   color: var(--muted);
-  max-width: 40rem;
+  max-width: var(--measure-lede);
   line-height: 1.55;
 }
 

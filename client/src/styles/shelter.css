@@ -12,15 +12,15 @@
 
 .shelter-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr));
+  gap: var(--card-gap);
 }
 
 .shelter-card {
   display: flex;
   align-items: flex-start;
   gap: var(--space-4);
-  padding: var(--space-5);
+  padding: var(--card-pad-compact);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -179,7 +179,7 @@
 .shelter-panel {
   display: grid;
   gap: var(--space-5);
-  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  padding: var(--card-pad);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -196,7 +196,7 @@
 .shelter-share-panel {
   display: grid;
   gap: var(--space-3);
-  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  padding: var(--card-pad);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);

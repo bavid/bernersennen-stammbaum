@@ -2,9 +2,9 @@
    Steckbrief. Das Partner-Portal (/p/:slug) hat seit Phase U eigene Regeln in portal.css. */
 
 .public-page {
-  max-width: 44rem;
+  max-width: var(--measure);
   margin: 0 auto;
-  padding: clamp(var(--space-6), 5vw, var(--space-12)) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
+  padding: var(--page-pad-top) var(--page-gutter) var(--space-16);
   display: grid;
   /* minmax(0, …): ein breiter Inhalt (Karten-Raster, lange Wörter) verbreitert nie die Seite - bei 320 px
      stand sie sonst über den rechten Rand. */
@@ -13,7 +13,7 @@
 }
 
 .partners-page {
-  max-width: 64rem;
+  max-width: var(--list-max);
 }
 
 /* Kopf aller öffentlichen Seiten (PublicHeader, Phase U): Logo und Name links (zur Startseite), "Zurück" rechts -
@@ -311,8 +311,8 @@
 
 .partner-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr));
+  gap: var(--card-gap);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -327,7 +327,7 @@
 }
 
 .partner-card.card {
-  padding: var(--space-5);
+  padding: var(--card-pad-compact);
 }
 
 .partner-card-head {

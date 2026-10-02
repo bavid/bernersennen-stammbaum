@@ -7,9 +7,9 @@
   display: grid;
   gap: clamp(var(--space-8), 4vw, var(--space-12));
   min-height: 100dvh;
-  max-width: 76rem;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: clamp(var(--space-8), 5vw, var(--space-12)) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-16);
+  padding: clamp(var(--space-8), 5vw, var(--space-12)) var(--page-gutter) var(--space-16);
   font-size: var(--text-lg);
 }
 

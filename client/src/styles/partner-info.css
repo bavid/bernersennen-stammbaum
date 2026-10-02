@@ -3,7 +3,7 @@
    Kartenraster, "So funktioniert's" als nummerierte Schritte und der Kontakt. Nur Tokens aus tokens.css. */
 
 .partner-info-page {
-  max-width: 64rem;
+  max-width: var(--list-max);
 }
 
 .partner-info-section {

@@ -28,9 +28,9 @@
 
 .admin-header-inner,
 .admin-main {
-  max-width: 76rem;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding-inline: clamp(var(--space-4), 4vw, var(--space-8));
+  padding-inline: var(--page-gutter);
 }
 
 .admin-header-row {

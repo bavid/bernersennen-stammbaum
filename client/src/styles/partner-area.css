@@ -7,9 +7,9 @@
   display: flex;
   justify-content: flex-end;
   width: 100%;
-  max-width: 76rem;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: var(--space-3) clamp(var(--space-4), 4vw, var(--space-8)) 0;
+  padding: var(--space-3) var(--page-gutter) 0;
 }
 
 .view-mode-switch a {
@@ -454,8 +454,8 @@
 
 .einblicke-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr));
+  gap: var(--card-gap);
   margin: 0;
   padding: 0;
   list-style: none;

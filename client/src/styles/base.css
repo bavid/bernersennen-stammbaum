@@ -9,6 +9,14 @@ html {
   scroll-padding-top: calc(var(--header-height) + var(--space-6));
 }
 
+/* V0: am Handy 15 statt 16 px Grundschrift - alle rem-Maße schrumpfen mit (siehe tokens.css). Prozent statt
+   px, damit eine im Browser eingestellte größere Schrift weiter wirkt. */
+@media (max-width: 720px) {
+  html {
+    font-size: 93.75%;
+  }
+}
+
 html,
 body,
 #root {

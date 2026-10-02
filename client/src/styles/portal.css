@@ -5,7 +5,7 @@
    Theme-Töne. */
 
 .partner-portal {
-  max-width: 60rem;
+  max-width: var(--portal-max);
   gap: clamp(var(--space-10), 5vw, var(--space-16));
 }
 

@@ -257,7 +257,7 @@ textarea {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  padding: var(--card-pad);
 }
 
 .eyebrow {
