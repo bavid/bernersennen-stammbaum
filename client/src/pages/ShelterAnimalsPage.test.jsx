@@ -74,12 +74,14 @@ function chip(label) {
 }
 
 describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
-  test('zeigt sieben Filter-Chips: Alle, Verfügbar, Reserviert, Pausiert, Vermittelt, Ohne Status, Ehemalige (mitgelesen)', async () => {
+  // V-Fehler 2: "Vermittelt" und ganz rechts "Ehemalige (mitgelesen)" zeigten sinngemäß dasselbe (ein vermitteltes
+  // Tier ist ein Ehemaliges) - jetzt ein Chip je Funktion.
+  test('zeigt sechs Filter-Chips, jede Ansicht genau einmal: Alle, Verfügbar, Reserviert, Pausiert, Vermittelt, Ohne Status', async () => {
     listDogs.mockResolvedValue([])
     await render()
 
     const labels = [...container.querySelectorAll('.filter-chip')].map((btn) => btn.textContent.split(' ·')[0])
-    expect(labels).toEqual(['Alle', 'Verfügbar', 'Reserviert', 'Pausiert', 'Vermittelt', 'Ohne Status', 'Ehemalige (mitgelesen)'])
+    expect(labels).toEqual(['Alle', 'Verfügbar', 'Reserviert', 'Pausiert', 'Vermittelt', 'Ohne Status'])
   })
 
   test('Standardfilter "Verfügbar" zeigt nur Tiere mit Status in_vermittlung', async () => {
@@ -123,7 +125,7 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
     expect(container.textContent).toContain('Findus')
   })
 
-  test('"Ohne Status" zeigt eigene Tiere ohne vermittlung_status, keine Ehemaligen', async () => {
+  test('"Ohne Status" zeigt eigene Tiere ohne vermittlung_status, keine mitgelesenen Ehemaligen', async () => {
     listDogs.mockResolvedValue([
       dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
       dog({ id: 4, name: 'Findus', vermittlung_status: null, shared_from: null }),
@@ -138,18 +140,34 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
     expect(container.textContent).not.toContain('Nele')
   })
 
-  test('"Ehemalige (mitgelesen)" zeigt Tiere mit shared_from, nicht die eigenen', async () => {
+  test('"Vermittelt" zeigt vermittelte eigene Tiere und die mitgelesenen Ehemaligen, sonst nichts', async () => {
     listDogs.mockResolvedValue([
       dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
-      dog({ id: 3, name: 'Nele', vermittlung_status: null, shared_from: 'Zuhause am Deich' })
+      dog({ id: 2, name: 'Benno', vermittlung_status: 'vermittelt' }),
+      dog({ id: 3, name: 'Nele', vermittlung_status: null, shared_from: 'Zuhause am Deich' }),
+      dog({ id: 4, name: 'Findus', vermittlung_status: null, shared_from: null })
     ])
     await render()
 
-    act(() => chip('Ehemalige').click())
+    expect(chip('Vermittelt').textContent).toContain('· 2')
+    act(() => chip('Vermittelt').click())
 
+    expect(container.textContent).toContain('Benno')
     expect(container.textContent).toContain('Nele')
-    expect(container.textContent).toContain('aus Zuhause am Deich')
     expect(container.textContent).not.toContain('Pepper')
+    expect(container.textContent).not.toContain('Findus')
+  })
+
+  test('ein mitgelesenes Tier trägt den Status "Vermittelt" und nennt sein neues Zuhause', async () => {
+    listDogs.mockResolvedValue([dog({ id: 3, name: 'Nele', vermittlung_status: null, shared_from: 'Zuhause am Deich' })])
+    await render()
+
+    act(() => chip('Vermittelt').click())
+
+    const card = container.querySelector('.shelter-card')
+    expect(card.querySelector('.status-chip').textContent).toBe('Vermittelt')
+    expect(card.textContent).toContain('Ihr lest mit · Zuhause am Deich')
+    expect(card.textContent).not.toContain('Steckbrief')
   })
 
   test('eine Karte zeigt den Steckbrief-Status', async () => {

@@ -12,31 +12,33 @@ import { formatDayMonth } from '../lib/dates.js'
 import { VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel, vermittlungStatusShortLabel } from '../lib/vermittlung.js'
 
 // "Alle" und "Ohne Status" (final-review Phase T Finding 1) dazu, sonst verschwanden Tiere ohne
-// vermittlung_status (z. B. frisch aufgenommen, Status noch nicht gesetzt) aus jeder Ansicht - sie
-// passten weder in eine der Status-Kacheln noch in "Ehemalige" (kein shared_from). Ehemalige sind
-// Tiere, die nicht mehr dem Tierheim gehören, aber (mit Einwilligung des neuen Zuhauses) hierher
-// geteilt sind, siehe dog.shared_from (GET /api/dogs). Je Status ein Chip (lib/vermittlung.js, seit
-// Phase P inkl. "Pausiert"), Default bleibt in_vermittlung ("Verfügbar", siehe unten).
+// vermittlung_status (z. B. frisch aufgenommen, Status noch nicht gesetzt) aus jeder Ansicht. Je Status ein
+// Chip (lib/vermittlung.js, seit Phase P inkl. "Pausiert"), Default bleibt in_vermittlung ("Verfügbar").
+// Ehemalige - Tiere, die nach der Übergabe einem neuen Zuhause gehören und (mit dessen Einwilligung) hierher
+// geteilt sind, siehe dog.shared_from (GET /api/dogs) - stehen unter "Vermittelt": ein eigener Chip
+// "Ehemalige (mitgelesen)" ganz rechts zeigte sinngemäß dasselbe (V-Fehler 2).
 const FILTERS = [
   { key: 'alle', label: 'Alle' },
   ...VERMITTLUNG_STATUS_VALUES.map((status) => ({ key: status, label: vermittlungStatusShortLabel(status) })),
-  { key: 'ohne_status', label: 'Ohne Status' },
-  { key: 'ehemalige', label: 'Ehemalige (mitgelesen)' }
+  { key: 'ohne_status', label: 'Ohne Status' }
 ]
 
 const DEFAULT_FILTER = 'in_vermittlung'
+const ADOPTED_STATUS = 'vermittelt'
 
 function matchesFilter(dog, filter) {
   if (filter === 'alle') return true
-  if (filter === 'ehemalige') return Boolean(dog.shared_from)
-  if (filter === 'ohne_status') return !dog.shared_from && !dog.vermittlung_status
-  return !dog.shared_from && dog.vermittlung_status === filter
+  if (dog.shared_from) return filter === ADOPTED_STATUS
+  if (filter === 'ohne_status') return !dog.vermittlung_status
+  return dog.vermittlung_status === filter
 }
 
 // Eine Tierkarte: der Status ist das einzige Badge, ob der Steckbrief öffentlich ist, steht als ruhige Meta-Zeile
-// darunter (Phase U).
+// darunter (Phase U). Ein mitgelesenes Tier (shared_from) ist vermittelt - statt des Steckbriefs nennt die
+// Meta-Zeile sein neues Zuhause.
 function ShelterAnimalCard({ dog }) {
-  const statusLabel = vermittlungStatusLabel(dog.vermittlung_status)
+  const status = dog.shared_from ? ADOPTED_STATUS : dog.vermittlung_status
+  const statusLabel = vermittlungStatusLabel(status)
   return (
     <Link to={`/tier/${dog.id}`} className="shelter-card">
       <span className="shelter-card-avatar">
@@ -46,15 +48,18 @@ function ShelterAnimalCard({ dog }) {
         <span className="shelter-card-name">{displayName(dog)}</span>
         <span className="shelter-card-species">{speciesLabel(dog.tierart)}</span>
         <span className="shelter-card-chips">
-          {dog.shared_from ? (
-            <span className="chip">aus {dog.shared_from}</span>
-          ) : statusLabel ? (
-            <span className={`chip status-chip status-chip-${dog.vermittlung_status}`}>{statusLabel}</span>
+          {statusLabel ? (
+            <span className={`chip status-chip status-chip-${status}`}>{statusLabel}</span>
           ) : (
             <span className="chip muted">Ohne Status</span>
           )}
         </span>
-        {!dog.shared_from && (
+        {dog.shared_from ? (
+          <span className="steckbrief-meta is-shared">
+            <Icon name="eye" />
+            Ihr lest mit · {dog.shared_from}
+          </span>
+        ) : (
           <span className={`steckbrief-meta ${dog.public_slug ? 'is-public' : 'is-private'}`}>
             <Icon name={dog.public_slug ? 'globe' : 'lock'} />
             {dog.public_slug ? 'Steckbrief öffentlich' : 'Steckbrief privat'}
@@ -70,8 +75,8 @@ function ShelterAnimalCard({ dog }) {
   )
 }
 
-// "Unsere Tiere" - die Tiere des Tierheims (verfügbar/reserviert/pausiert/vermittelt), plus die
-// Ehemaligen, die es (mit Einwilligung) weiter mitlesen darf.
+// "Unsere Tiere" - die Tiere des Tierheims (verfügbar/reserviert/pausiert/vermittelt); unter "Vermittelt" auch
+// die Ehemaligen, die es (mit Einwilligung des neuen Zuhauses) weiter mitlesen darf.
 export default function ShelterAnimalsPage({ family }) {
   const [dogs, setDogs] = useState(null)
   const [error, setError] = useState(null)
@@ -115,7 +120,8 @@ export default function ShelterAnimalsPage({ family }) {
           <span className="eyebrow">{family.name}</span>
           <h1>Unsere Tiere</h1>
           <p className="page-lede">
-            Alle eure Tiere – verfügbar, reserviert, pausiert oder vermittelt – dazu Ehemalige, die ihr weiter mitlesen dürft.
+            Alle eure Tiere – verfügbar, reserviert, pausiert oder vermittelt. Bei vermittelten Tieren lest ihr weiter mit,
+            wenn ihr neues Zuhause es erlaubt.
           </p>
         </div>
         <div className="page-hero-side">
