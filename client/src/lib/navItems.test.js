@@ -5,6 +5,10 @@ import { getTheme } from '../themes/index.js'
 const labels = (family) => navItemsFor(family).map((item) => item.label)
 
 describe('navItemsFor', () => {
+  test('zu Besuch in einem anderen Zuhause (Phase V2): nur Wegbegleiter und Familienbande', () => {
+    expect(labels({ art: 'zuhause', zuBesuch: true })).toEqual(['Wegbegleiter', 'Familienbande'])
+  })
+
   test('a partner area gets Profil, Beiträge, Nachrichten (Phase P2) and Zugang', () => {
     expect(navItemsFor({ art: 'partner' }).map(({ to, label }) => ({ to, label }))).toEqual([
       { to: '/profil', label: 'Profil' },

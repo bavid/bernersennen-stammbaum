@@ -13,6 +13,7 @@ import FamilySettings from '../components/FamilySettings.jsx'
 import OffspringSection from '../components/OffspringSection.jsx'
 import { nextTermin } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
+import { isVisit } from '../lib/visits.js'
 import { useToast } from '../components/Toast.jsx'
 import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
 import { displayName } from '../lib/timeline.js'
@@ -57,7 +58,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   // (eigenes Zuhause) darf man alles.
   const inGroup = family.art === 'rudel'
   const canWrite = hasRole(family, 'mitglied')
-  const canInvite = !inGroup || hasRole(family, 'stellvertretung')
+  // Phase V2: zu Besuch (Rolle gast) weder einladen noch Einstellungen - nur ansehen.
+  const visiting = isVisit(family)
+  const canInvite = !visiting && (!inGroup || hasRole(family, 'stellvertretung'))
 
   async function loadDogs() {
     const [own, all, recent, notes, dogLinks] = await Promise.all([
@@ -121,15 +124,17 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
           <span className="eyebrow">{words.treeLabel}</span>
           <div className="page-title-row">
             <h1>{family.name}</h1>
-            <button
-              type="button"
-              className="icon-btn title-edit"
-              onClick={() => setSettingsOpen(true)}
-              aria-label={words.groupSettings}
-              title={words.groupSettings}
-            >
-              <Icon name="edit" />
-            </button>
+            {!visiting && (
+              <button
+                type="button"
+                className="icon-btn title-edit"
+                onClick={() => setSettingsOpen(true)}
+                aria-label={words.groupSettings}
+                title={words.groupSettings}
+              >
+                <Icon name="edit" />
+              </button>
+            )}
           </div>
           <p className="page-lede">{theme.texts.overviewLede}</p>
           {inGroup && (
@@ -137,9 +142,11 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
               <Link to="/mitglieder">Mitglieder & Rollen →</Link>
             </p>
           )}
-          <p className="hero-hint">
-            <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
-          </p>
+          {!visiting && (
+            <p className="hero-hint">
+              <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
+            </p>
+          )}
         </div>
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}

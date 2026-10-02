@@ -58,6 +58,10 @@ const NAV_ITEMS_SHELTER = [
 // eigene Profil, Beiträge und Nachrichten (P2) und der Zugang (Schlüssel, Benutzer).
 const NAV_ITEMS_PARTNER = [NAV_ITEM_PROFILE, NAV_ITEM_POSTS, NAV_ITEM_INBOX, { to: '/zugang', icon: 'lock', label: 'Zugang' }]
 
+// Zu Besuch in einem anderen Zuhause (Phase V2, me.zuBesuch): nur ansehen - dessen Wegbegleiter und Stammbaum.
+// Pinnwand, Entdecken und Collage gehören nicht zu einem Besuch (der Server sperrt sie für Gäste ohnehin).
+const NAV_ITEMS_VISIT = [{ to: '/wegbegleiter', icon: 'route', label: 'Wegbegleiter' }, NAV_ITEM_TREE]
+
 const NAV_ITEMS_BY_ART = {
   zuhause: NAV_ITEMS_HOME,
   tierheim: NAV_ITEMS_SHELTER,
@@ -93,7 +97,7 @@ function withThemeLabel(item, words) {
 // Rudel und klassische Rudel-Logins (ohne art) bekommen die Rudel-Navigation. theme: der angezeigte Auftritt
 // (AppHeader: useTheme().theme, samt Vorschau in den Einstellungen) - ohne Angabe der gespeicherte der Familie.
 export function navItemsFor(family, theme = getTheme(family?.theme)) {
-  const items = NAV_ITEMS_BY_ART[family?.art] || NAV_ITEMS_GROUP
+  const items = family?.zuBesuch ? NAV_ITEMS_VISIT : NAV_ITEMS_BY_ART[family?.art] || NAV_ITEMS_GROUP
   return items
     .filter((item) => item !== NAV_ITEM_LITTERS || theme.littersInNav)
     .map((item) => withInboxBadge(withThemeLabel(item, theme.words), family))

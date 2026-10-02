@@ -23,8 +23,11 @@ const MAX_BATCH_SIZE = 200
 // Wofür ein Gutschein-Stapel da ist (voucher_batches.zweck, Phase P Task 2): 'chronik' legt beim
 // Einlösen "Meine Chronik" an (bisheriges Verhalten), 'partnerzugang' lässt einen Partner sein Profil
 // und seinen Bereich selbst einrichten (siehe lib/partnerAccess.js).
-const ZWECK = { chronik: 'chronik', partnerzugang: 'partnerzugang' }
+// Phase V2: 'besuch' - eine Besuchs-Einladung eines Zuhauses (vouchers.visit_host_family_id = der Gastgeber, 7 Tage
+// gültig, lib/visitInvites.js). Entsteht nur über POST /api/besuche/einladungen, nie über den Admin (validateZweck).
+const ZWECK = { chronik: 'chronik', partnerzugang: 'partnerzugang', besuch: 'besuch' }
 const ZWECK_VALUES = Object.values(ZWECK)
+const ADMIN_ZWECK_VALUES = [ZWECK.chronik, ZWECK.partnerzugang]
 
 // Phase R Task 3: Stapel-Art der Schein-Einladung der Demo-Familie (lib/demoMembers.js). Ein Gutschein aus
 // so einem Stapel gilt in /check als unbekannt und lässt sich nie einlösen (assertVoucherOpen) - er ist nur
@@ -82,6 +85,19 @@ function assertHandoverStillRedeemable(db, voucher) {
   if (dog.vermittlung_status !== 'reserviert') throw httpError(410, HANDOVER_GONE_MESSAGE)
 }
 
+const VISIT_GONE_MESSAGE = 'Diese Einladung gilt nicht mehr'
+const VISIT_CLAIM_MESSAGE = 'Das ist eine Besuchs-Einladung – bitte unter „Ein anderes Zuhause besuchen“ einlösen.'
+
+// Phase V2: eine Besuchs-Einladung lässt sich nur einlösen, solange ihr Gastgeber noch ein echtes (nicht-Demo)
+// Zuhause ist und die Einladung selbst ausgegeben hat - sonst 410, OHNE den Gutschein zu verbrauchen (wie
+// assertHandoverStillRedeemable, VOR der verbrauchenden UPDATE aufrufen).
+function assertVisitHostOpen(db, voucher) {
+  const hostId = voucher.visit_host_family_id
+  if (!hostId || hostId !== voucher.issued_by_family_id) throw httpError(410, VISIT_GONE_MESSAGE)
+  const host = db.prepare('SELECT art, is_demo FROM families WHERE id = ?').get(hostId)
+  if (!host || host.art !== 'zuhause' || host.is_demo) throw httpError(410, VISIT_GONE_MESSAGE)
+}
+
 // Aktueller Zeitpunkt im selben Format wie sqlite datetime('now') - lexikographisch vergleichbar
 function isoNow() {
   return new Date().toISOString().slice(0, 19).replace('T', ' ')
@@ -133,10 +149,19 @@ function validateEmail(email) {
 // Ein Partner-Zugang ist nie zugleich Einladung (join_family_id), Übergabe (dog_id) oder Weitergabe-
 // Gutschein eines Bereichs (issued_by_family_id) - so zählt er auch nie zum Kontingent in
 // ensureVoucherQuota. Programmierfehler statt Nutzereingabe: routes/admin.js prüft das vorher mit 400.
-function assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId }) {
+// Eine Besuchs-Einladung (Phase V2) gehört immer genau dem Zuhause, das sie ausgibt (visitHostFamilyId =
+// issuedByFamilyId), und ist nie zugleich Beitritt, Übergabe oder Partner-Gutschein; umgekehrt trägt nur sie einen
+// Gastgeber.
+function assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId, partnerId, visitHostFamilyId }) {
   if (!ZWECK_VALUES.includes(zweck)) throw new Error(`Unbekannter Gutschein-Zweck: ${zweck}`)
   if (zweck === ZWECK.partnerzugang && (issuedByFamilyId || joinFamilyId || dogId)) {
     throw new Error('Ein Partner-Zugang trägt weder Rudel, Übergabe noch ausgebenden Bereich')
+  }
+  if (zweck === ZWECK.besuch) {
+    if (!visitHostFamilyId || visitHostFamilyId !== issuedByFamilyId) throw new Error('Eine Besuchs-Einladung braucht ihr Zuhause')
+    if (joinFamilyId || dogId || partnerId) throw new Error('Eine Besuchs-Einladung trägt weder Rudel, Übergabe noch Partner')
+  } else if (visitHostFamilyId) {
+    throw new Error('Nur eine Besuchs-Einladung trägt einen Gastgeber')
   }
 }
 
@@ -148,6 +173,7 @@ function assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId }) {
 // Partner-Zugangs, partnerId bindet einen Partner-Zugang an einen bestehenden Partner.
 // joinRolle (Phase R Task 2): Rolle, die eine Einladung (joinFamilyId) beim Einlösen vergibt - null heißt
 // 'mitglied'. Eine unbekannte Rolle ist ein Programmierfehler (die Routen prüfen Nutzereingaben vorher).
+// visitHostFamilyId (Phase V2): nur für zweck 'besuch' - das Zuhause, das zu Besuch einlädt.
 function createBatch(
   db,
   {
@@ -161,10 +187,11 @@ function createBatch(
     expiresAt = null,
     dogId = null,
     zweck = ZWECK.chronik,
-    partnerTyp = null
+    partnerTyp = null,
+    visitHostFamilyId = null
   }
 ) {
-  assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId })
+  assertBatchPurpose({ zweck, issuedByFamilyId, joinFamilyId, dogId, partnerId, visitHostFamilyId })
   if (joinRolle !== null && !isRole(joinRolle)) throw new Error(`Unbekannte Einladungs-Rolle: ${joinRolle}`)
   const sqliteExpiresAt = toSqliteDatetime(expiresAt)
   return db.transaction(() => {
@@ -173,8 +200,9 @@ function createBatch(
       .run(label, kind, partnerId, size, zweck, partnerTyp).lastInsertRowid
 
     const insertVoucher = db.prepare(
-      `INSERT INTO vouchers (batch_id, code_hash, code_cipher, code_hint, partner_id, issued_by_family_id, join_family_id, join_rolle, expires_at, dog_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO vouchers (batch_id, code_hash, code_cipher, code_hint, partner_id, issued_by_family_id, join_family_id, join_rolle, expires_at, dog_id,
+         visit_host_family_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
 
     const codes = []
@@ -192,7 +220,8 @@ function createBatch(
             joinFamilyId,
             joinRolle,
             sqliteExpiresAt,
-            dogId
+            dogId,
+            visitHostFamilyId
           )
           codes.push(code)
           break
@@ -248,10 +277,11 @@ function validateBatchInput({ label, size }) {
   return trimmedLabel
 }
 
-// Fehlt zweck, bleibt es beim bisherigen Chronik-Stapel.
+// Fehlt zweck, bleibt es beim bisherigen Chronik-Stapel. Besuchs-Einladungen legt nur ein Zuhause für sich selbst
+// an (lib/visitInvites.js) - der Admin bekommt dafür 400.
 function validateZweck(value) {
   if (value === undefined || value === null || value === '') return ZWECK.chronik
-  if (!ZWECK_VALUES.includes(value)) throw httpError(400, `Zweck muss einer von ${ZWECK_VALUES.join(', ')} sein`)
+  if (!ADMIN_ZWECK_VALUES.includes(value)) throw httpError(400, `Zweck muss einer von ${ADMIN_ZWECK_VALUES.join(', ')} sein`)
   return value
 }
 
@@ -301,7 +331,7 @@ function findVoucherByHash(db, codeHash) {
   return db
     .prepare(
       `SELECT v.id, v.join_family_id, v.join_rolle, v.partner_id, v.dog_id, v.issued_by_family_id, v.redeemed_at, v.revoked_at,
-         v.expires_at, b.zweck, b.partner_typ, b.kind
+         v.expires_at, v.visit_host_family_id, b.zweck, b.partner_typ, b.kind
        FROM vouchers v JOIN voucher_batches b ON b.id = v.batch_id WHERE v.code_hash = ?`
     )
     .get(codeHash)
@@ -372,27 +402,36 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
   const cleanShelterMayRead = cleanBooleanFlag(shelterMayRead, 'shelterMayRead')
   const codeHash = hashCode(normalized)
 
-  const familyId = db.transaction(() => {
+  const { familyId, key } = db.transaction(() => {
     // security-review Phase T Finding 3: erst prüfen (Gutschein selbst UND - bei einem Übergabe-
     // Gutschein - die Übergabe dahinter), dann verbrauchen. So bleibt ein Gutschein unangetastet
     // (redeemed_at weiterhin NULL), wenn die Übergabe inzwischen nicht mehr passt.
     const voucher = findVoucherByHash(db, codeHash)
     assertVoucherOpen(voucher)
     // Phase P Task 2: ein Partner-Zugang läuft über lib/partnerAccess.js (routes/vouchers.js verzweigt
-    // dorthin) - hier entsteht daraus nie ein Zuhause.
-    if (voucher.zweck !== ZWECK.chronik) throw httpError(400, PARTNER_ACCESS_NO_CHRONIK_MESSAGE)
+    // dorthin) - hier entsteht daraus nie ein Zuhause. Phase V2: eine Besuchs-Einladung legt das Zuhause samt
+    // Besuch beim Gastgeber an (assertVisitHostOpen prüft den Gastgeber VOR dem Verbrauchen).
+    const isVisitInvite = voucher.zweck === ZWECK.besuch
+    if (voucher.zweck !== ZWECK.chronik && !isVisitInvite) throw httpError(400, PARTNER_ACCESS_NO_CHRONIK_MESSAGE)
+    if (isVisitInvite) assertVisitHostOpen(db, voucher)
     assertHandoverStillRedeemable(db, voucher)
 
     claimOpenVoucher(db, codeHash)
 
+    // Eine Besuchs-Einladung kennt der Gastgeber im Klartext - sie wird deshalb NICHT der Schlüssel des neuen
+    // Zuhauses (sonst könnte sich der Gastgeber damit dort anmelden); das Zuhause bekommt einen frischen.
+    const key = isVisitInvite ? generateCode() : normalized
     const newFamilyId = db
       .prepare(
         `INSERT INTO families (name, password_hash, art, theme, legacy_password, access_key_hash, voucher_id, partner_id)
          VALUES (?, '!', 'zuhause', 'standard', 0, ?, ?, ?)`
       )
-      .run(trimmedName, codeHash, voucher.id, voucher.partner_id).lastInsertRowid
+      .run(trimmedName, hashCode(key), voucher.id, voucher.partner_id).lastInsertRowid
 
     markRedeemedBy(db, voucher.id, newFamilyId)
+    if (isVisitInvite) {
+      db.prepare('INSERT INTO besuche (gast_family_id, gastgeber_family_id) VALUES (?, ?)').run(newFamilyId, voucher.visit_host_family_id)
+    }
 
     if (voucher.dog_id) {
       // assertHandoverStillRedeemable hat die Existenz des Tiers bereits bestätigt.
@@ -424,10 +463,11 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
 
     if (hasUsername) insertAreaUser(db, newFamilyId, { username, password, cleanEmail })
 
-    return newFamilyId
+    return { familyId: newFamilyId, key }
   })()
 
-  return { familyId, code: normalized }
+  // code: der Schlüssel des neuen Zuhauses (bei einer Besuchs-Einladung der frische, sonst der Gutschein selbst).
+  return { familyId, code: key }
 }
 
 // Löst einen Übergabe-Gutschein OHNE ein neues Zuhause anzulegen ein: POST /vouchers/claim, nur aus
@@ -452,6 +492,8 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
     assertVoucherOpen(voucherRow)
     // Phase P Task 2: ein Partner-Zugang wird nie "nebenbei" aus einem Zuhause heraus verbraucht.
     if (voucherRow.zweck === ZWECK.partnerzugang) throw httpError(400, PARTNER_ACCESS_CLAIM_MESSAGE)
+    // Phase V2: eine Besuchs-Einladung hat ihren eigenen Weg (POST /api/besuche/einloesen) und bleibt hier unberührt.
+    if (voucherRow.zweck === ZWECK.besuch) throw httpError(400, VISIT_CLAIM_MESSAGE)
     if (!voucherRow.dog_id) throw httpError(400, 'Das ist kein Übergabe-Gutschein – zum Einlösen bitte abmelden.')
     assertHandoverStillRedeemable(db, voucherRow)
 
@@ -502,10 +544,11 @@ function ensureVoucherQuota(db, area) {
   // security-review Phase T Finding 4: Übergabe-Gutscheine (dog_id gesetzt) sind keine Weitergabe-
   // Einladungen und dürfen weder mitgezählt noch als solche aufgefüllt werden. Partner-Zugänge (Phase P
   // Task 2) tragen nie issued_by_family_id (assertBatchPurpose) und zählen damit ebenfalls nie mit.
+  // Besuchs-Einladungen (Phase V2, visit_host_family_id gesetzt) sind ebenfalls keine Weitergabe-Gutscheine.
   const { c: counted } = db
     .prepare(
       `SELECT COUNT(*) AS c FROM vouchers
-       WHERE issued_by_family_id = ? AND revoked_at IS NULL AND dog_id IS NULL
+       WHERE issued_by_family_id = ? AND revoked_at IS NULL AND dog_id IS NULL AND visit_host_family_id IS NULL
          AND (redeemed_at IS NOT NULL OR expires_at IS NULL OR expires_at > datetime('now'))`
     )
     .get(area.id)
@@ -542,6 +585,9 @@ module.exports = {
   markRedeemedBy,
   insertAreaUser,
   ZWECK,
+  ADMIN_ZWECK_VALUES,
+  VISIT_GONE_MESSAGE,
+  assertVisitHostOpen,
   cleanBooleanFlag,
   HANDOVER_GONE_MESSAGE,
   DEMO_VOUCHERS,

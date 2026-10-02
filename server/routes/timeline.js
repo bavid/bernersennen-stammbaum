@@ -3,6 +3,7 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { ART, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
+const { GUEST_ENTRY_SQL, GUEST_COMMENT_SQL } = require('../lib/visits')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
 const { requireRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { authorContext, withAuthorFlags, mayDeleteInArea } = require('../lib/authorship')
@@ -21,6 +22,13 @@ const MAX_COMMENT_LENGTH = 1000
 const KATEGORIEN = ['ankunft', 'tierarzt', 'verhalten', 'training', 'gassi', 'sonstiges']
 
 const hasKey = (body, key) => Object.prototype.hasOwnProperty.call(body, key)
+
+// Phase V2: eine Besuchs-Sitzung (req.isGuest, middleware/auth.js) sieht im besuchten Zuhause nur dessen nicht-private
+// Einträge und von den Kommentaren nur die eigenen und die des Gastgebers (lib/visits.js). Beide SQL-Teile erwarten
+// @familyId (aktiver Bereich) und - für Gäste - @homeId (die Identität des Gasts), siehe viewParams.
+const entrySql = (req) => (req.isGuest ? GUEST_ENTRY_SQL : VISIBLE_ENTRY_SQL)
+const commentSql = (req) => (req.isGuest ? GUEST_COMMENT_SQL : VISIBLE_COMMENT_SQL)
+const viewParams = (req) => ({ familyId: req.familyId, homeId: req.homeId })
 // leerer String/undefined/null -> null (kein Wunsch), sonst der Wert unverändert (Enum-Prüfung folgt)
 const cleanEnum = (value) => (value === null || value === undefined || value === '' ? null : value)
 const findFamilyArt = db.prepare('SELECT art FROM families WHERE id = ?')
@@ -43,10 +51,10 @@ function commentsByEntry(req, dogId) {
   const rows = db
     .prepare(
       `SELECT c.* FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
-       WHERE ${VISIBLE_ENTRY_SQL} AND (@dogId IS NULL OR t.dog_id = @dogId) AND ${VISIBLE_COMMENT_SQL}
+       WHERE ${entrySql(req)} AND (@dogId IS NULL OR t.dog_id = @dogId) AND ${commentSql(req)}
        ORDER BY c.created_at, c.id`
     )
-    .all({ familyId: req.familyId, dogId })
+    .all({ ...viewParams(req), dogId })
   const grouped = new Map()
   for (const row of rows) grouped.set(row.entry_id, [...(grouped.get(row.entry_id) || []), withAuthorFlags(row, ctx)])
   return grouped
@@ -140,10 +148,11 @@ function loadOwnEntry(req, res) {
 }
 
 const findVisibleEntry = db.prepare(`SELECT t.* FROM timeline_entries t WHERE t.id = @id AND ${VISIBLE_ENTRY_SQL}`)
+const findGuestEntry = db.prepare(`SELECT t.* FROM timeline_entries t WHERE t.id = @id AND ${GUEST_ENTRY_SQL}`)
 
-// Für Kommentare: eigener Eintrag oder ein geteilter, nicht-privater Eintrag
+// Für Kommentare: eigener Eintrag oder ein geteilter, nicht-privater Eintrag (als Gast: ein nicht-privater des Gastgebers)
 function loadVisibleEntry(req, res) {
-  const entry = findVisibleEntry.get({ id: req.params.id, familyId: req.familyId })
+  const entry = (req.isGuest ? findGuestEntry : findVisibleEntry).get({ id: req.params.id, familyId: req.familyId })
   if (!entry) {
     res.status(404).json({ error: 'Eintrag nicht gefunden' })
     return null
@@ -162,15 +171,15 @@ router.get('/recent', requireAuth, (req, res) => {
     .prepare(
       `SELECT t.*, d.name AS dog_name, d.name_unbekannt AS dog_name_unbekannt, d.rasse AS dog_rasse,
               d.foto_url AS dog_foto_url,
-              (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id AND ${VISIBLE_COMMENT_SQL}) AS comment_count,
+              (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id AND ${commentSql(req)}) AS comment_count,
               ${HERKUNFT_NAME_SELECT_SQL}
        FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id
        ${HERKUNFT_NAME_JOIN_SQL}
-       WHERE ${VISIBLE_ENTRY_SQL}
+       WHERE ${entrySql(req)}
        ORDER BY t.created_at DESC, t.id DESC
        LIMIT @limit`
     )
-    .all({ familyId: req.familyId, limit })
+    .all({ ...viewParams(req), limit })
   res.json(rows.map((row) => toEntry(row)))
 })
 
@@ -184,10 +193,10 @@ router.get('/', requireAuth, (req, res) => {
     .prepare(
       `SELECT t.*, ${HERKUNFT_NAME_SELECT_SQL} FROM timeline_entries t
        ${HERKUNFT_NAME_JOIN_SQL}
-       WHERE ${VISIBLE_ENTRY_SQL} AND (@dogId IS NULL OR t.dog_id = @dogId)
+       WHERE ${entrySql(req)} AND (@dogId IS NULL OR t.dog_id = @dogId)
        ORDER BY t.datum, t.id`
     )
-    .all({ familyId: req.familyId, dogId })
+    .all({ ...viewParams(req), dogId })
   const comments = commentsByEntry(req, dogId)
   res.json(rows.map((row) => toEntry(row, comments.get(row.id))))
 })
@@ -264,10 +273,13 @@ router.post('/:id/comments', requireAuth, canComment, (req, res) => {
   const text = cleanText(body.text, MAX_COMMENT_LENGTH)
   if (!autorName || !text) return res.status(400).json({ error: 'Name und Kommentar sind erforderlich' })
 
-  // author_family_id (Phase R Task 2): die schreibende Identität, nicht der Bereich (lib/authorship.js)
+  // author_family_id (Phase R Task 2): die schreibende Identität, nicht der Bereich (lib/authorship.js). Ein Gast
+  // (Phase V2) schreibt unter seinem eigenen Zuhause (family_id = req.homeId): so sehen ihn nur er selbst und der
+  // Gastgeber (VISIBLE_COMMENT_SQL beim Gastgeber, GUEST_COMMENT_SQL beim Gast) - andere Gäste und Familien nicht.
+  const areaId = req.isGuest ? req.homeId : req.familyId
   const result = db
     .prepare('INSERT INTO entry_comments (entry_id, family_id, author_family_id, autor_name, text) VALUES (?, ?, ?, ?, ?)')
-    .run(entry.id, req.familyId, req.homeId, autorName, text)
+    .run(entry.id, areaId, req.homeId, autorName, text)
   const comment = db.prepare('SELECT * FROM entry_comments WHERE id = ?').get(result.lastInsertRowid)
   res.status(201).json(withAuthorFlags(comment, authorContext(req)))
 })
@@ -280,7 +292,12 @@ router.delete('/:id/comments/:commentId', requireAuth, canComment, (req, res) =>
     .prepare('SELECT * FROM entry_comments WHERE id = ? AND entry_id = ?')
     .get(req.params.commentId, req.params.id)
   const entry = db.prepare('SELECT family_id FROM timeline_entries WHERE id = ?').get(req.params.id)
-  const canDelete = comment && entry && (comment.family_id === req.familyId || entry.family_id === req.familyId)
+  // Ein Gast (Phase V2) löscht nur seine eigenen Kommentare auf einem für ihn sichtbaren Eintrag des Gastgebers -
+  // nie die des Gastgebers oder anderer, auch wenn der Eintrag dem aktiven Bereich gehört.
+  const canDelete = req.isGuest
+    ? comment && comment.family_id === req.homeId && comment.author_family_id === req.homeId &&
+      Boolean(findGuestEntry.get({ id: comment.entry_id, familyId: req.familyId }))
+    : comment && entry && (comment.family_id === req.familyId || entry.family_id === req.familyId)
   if (!canDelete) {
     return res.status(404).json({ error: 'Kommentar nicht gefunden' })
   }

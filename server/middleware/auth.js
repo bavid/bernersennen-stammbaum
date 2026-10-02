@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken')
 const db = require('../db')
 const { jwtSecret, cookieSecure, sessionCookie } = require('../config')
 const { canEnter } = require('../lib/context')
+const { isVisiting } = require('../lib/visits')
+const { isGuestAllowed, GUEST_READ_ONLY } = require('../lib/guestAccess')
 
 const SESSION_DAYS = 30
 // Phase 5 Task 5b: eine Admin-Ansicht (adminView) lebt nur so lange wie die Admin-Sitzung selbst
@@ -28,6 +30,9 @@ const SESSION_EXPIRED = 'Sitzung abgelaufen – bitte neu anmelden'
 // req.homeId ist die Identität (Zuhause oder klassisches Rudel-Login), req.familyId der aktive Bereich.
 // req.isAdminView (Phase 5 Task 5b): die Sitzung hat der Admin über POST /api/admin/view/:familyId geöffnet -
 // nur lesend (denyAdminViewWrites, global in app.js), Bereichswechsel über jede Mitgliedschaft der Identität.
+// req.isGuest/req.guestOf (Phase V2): der aktive Bereich ist ein Zuhause, das die Identität besucht (lib/visits.js).
+// Eine solche Besuchs-Sitzung darf NUR, was lib/guestAccess.js ausdrücklich erlaubt (ansehen, kommentieren, eigene
+// Kommentare löschen, zurückwechseln) - jede andere Anfrage endet hier mit 403, bevor eine Route sie sieht.
 function requireSession(req, res, next) {
   const token = req.cookies?.[sessionCookie]
   if (!token) {
@@ -53,9 +58,11 @@ function requireSession(req, res, next) {
     }
     const adminView = payload.adminView === true
     let active = payload.activeFamilyId ?? payload.familyId
+    let isGuest = false
     if (active !== payload.familyId && !canEnter(payload.familyId, active, { adminView })) {
-      // Mitgliedschaft beendet oder Familie gelöscht: zurück in den eigenen Bereich
-      active = payload.familyId
+      // Zu Besuch (Phase V2) - oder Mitgliedschaft/Besuch beendet bzw. Familie gelöscht: zurück in den eigenen Bereich
+      if (isVisiting(payload.familyId, active)) isGuest = true
+      else active = payload.familyId
     }
     // Identität ODER aktiver Bereich demo -> als Demo behandeln (Verteidigungslinie neben canEnter,
     // das ein Auseinanderlaufen von Identität und Bereich im Normalbetrieb schon verhindert)
@@ -65,6 +72,9 @@ function requireSession(req, res, next) {
     req.userId = payload.uid ?? null
     req.isDemo = Boolean(family.is_demo) || Boolean(activeIsDemo)
     req.isAdminView = adminView
+    req.isGuest = isGuest
+    req.guestOf = isGuest ? active : null
+    if (isGuest && !isGuestAllowed(req)) return res.status(403).json({ error: GUEST_READ_ONLY })
     next()
   } catch {
     return res.status(401).json({ error: 'Session ungültig oder abgelaufen' })

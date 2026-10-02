@@ -190,6 +190,35 @@ describe('DogDetailPage – Rechte je Rolle auf einem Tier der Familie', () => {
   })
 })
 
+describe('DogDetailPage – zu Besuch in einem anderen Zuhause (Phase V2)', () => {
+  const visitor = {
+    id: 9,
+    name: 'Zuhause Möwenweg',
+    theme: 'standard',
+    art: 'zuhause',
+    isDemo: false,
+    role: 'gast',
+    zuBesuch: true,
+    home,
+    memberships: [],
+    besuche: [{ id: 9, name: 'Zuhause Möwenweg' }]
+  }
+
+  test('nur ansehen und kommentieren: kein Schreiben, Hinweis zum Besuch, nur eigene Kommentare löschbar', async () => {
+    mockLoad({ ...familyDog(), isOwn: false, canEdit: false, ownerFamilyId: 9, familyName: 'Zuhause Möwenweg' })
+    await render(visitor)
+    expect(container.querySelector('#composer')).toBeNull()
+    expect(buttonWith('Bearbeiten')).toBeUndefined()
+    expect(container.textContent).toContain('Du bist zu Besuch bei „Zuhause Möwenweg“')
+    expect(container.textContent).not.toContain('wird hier geteilt')
+    expect(container.querySelector('.reply-open')).not.toBeNull()
+    const replies = [...container.querySelectorAll('.reply')]
+    expect(replies[0].querySelector('.reply-delete')).not.toBeNull()
+    expect(replies[1].querySelector('.reply-delete')).toBeNull()
+    expect(container.querySelector('.share-panel')).toBeNull()
+  })
+})
+
 describe('DogDetailPage – „In meine Chronik übernehmen“ (Leitung mit eigenem Zuhause)', () => {
   test('erscheint für die Leitung auf einem Tier der Familie, erklärt Umzug und Sichtbarkeit, zweistufig → api.takeOverDog, dann neu laden', async () => {
     mockLoad()

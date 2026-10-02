@@ -606,4 +606,22 @@ addColumnIfMissing('vouchers', 'zugewiesen_an_anfrage_id', 'INTEGER')
 // geöffnete Anfrage zählt ihre Aufbewahrung ab hier statt ab dem Eingang (lib/anfragen.js PURGE_SQL). NULL = nie bearbeitet.
 addColumnIfMissing('anfragen', 'aktualisiert_at', 'TEXT')
 
+// Phase V2: Zuhause besuchen (lib/visits.js). Eine Zeile = das Zuhause gast_family_id darf das Zuhause
+// gastgeber_family_id ansehen und kommentieren. Entsteht über eine Besuchs-Einladung (Gutschein-Stapel mit zweck
+// 'besuch', vouchers.visit_host_family_id = der Gastgeber, 7 Tage gültig, lib/visitInvites.js). ON DELETE CASCADE:
+// verschwindet ein Zuhause (lib/families.js deleteFamily), gehen seine Besuche in beide Richtungen mit.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS besuche (
+    gast_family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    gastgeber_family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (gast_family_id, gastgeber_family_id),
+    CHECK (gast_family_id != gastgeber_family_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_besuche_gastgeber ON besuche(gastgeber_family_id);
+`)
+// Bewusst ohne REFERENCES (wie families.voucher_id): ein eingelöster Besuchs-Gutschein bleibt als Verlauf stehen,
+// auch wenn der Gastgeber später gelöscht wird (lib/families.js setzt den Verweis dann auf NULL).
+addColumnIfMissing('vouchers', 'visit_host_family_id', 'INTEGER')
+
 module.exports = db

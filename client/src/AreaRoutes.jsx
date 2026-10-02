@@ -59,10 +59,28 @@ function PartnerAreaRoutes({ family, onFamilyChange }) {
   )
 }
 
+// Zu Besuch in einem anderen Zuhause (Phase V2, family.zuBesuch): nur ansehen - Wegbegleiter, Stammbaum und die
+// Tierseiten (dort darf man kommentieren). Alles andere (Pinnwand, Collage, Entdecken, Würfe, Schreib dem Admin,
+// In der Nähe, ...) führt zurück zu den Wegbegleitern - der Server sperrt es für Gäste ohnehin (Kopf und Fuß
+// blenden die Links dazu während eines Besuchs aus).
+function VisitRoutes({ family, onFamilyChange }) {
+  return (
+    <Routes>
+      <Route path="/wegbegleiter" element={<CompanionsPage family={family} />} />
+      <Route path="/stammbaum" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/familienbande" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/hund/:id" element={<RedirectTierUrl />} />
+      <Route path="*" element={<ToStart family={family} />} />
+    </Routes>
+  )
+}
+
 // Routen des angemeldeten Bereichs (App.jsx, unter <main key={family.id}>) je Bereichsart: Zuhause,
 // Rudel und Tierheim teilen sich eine Tabelle mit Weichen je art, der Partner-Bereich hat eine eigene.
 export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
   if (family.art === 'partner') return <PartnerAreaRoutes family={family} onFamilyChange={onFamilyChange} />
+  if (family.zuBesuch) return <VisitRoutes family={family} onFamilyChange={onFamilyChange} />
 
   const partnerArea = isPartnerArea(family)
   return (

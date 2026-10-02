@@ -1,0 +1,136 @@
+/* Phase V2: Zuhause besuchen - Band während eines Besuchs, Einladen/Einlösen und die Listen im Einladen-Dialog. */
+
+/* Band wie .demo-banner, aber in Alpin-Grün: "zu Besuch" ist kein Warnhinweis, sondern ein Ort. */
+.visit-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--page-gutter, var(--space-4));
+  background: var(--alpine-wash);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.visit-banner p {
+  margin: 0;
+}
+
+.visit-banner-back {
+  min-height: 2.1rem;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.pill-visit {
+  background: var(--surface-sunk);
+  color: var(--ink-soft);
+}
+
+.visit-section {
+  display: grid;
+  gap: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.visit-panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.visit-panel h3 {
+  font-size: var(--text-lg);
+}
+
+.visit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.visit-invite-result {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.visit-redeem-form {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.visit-redeem-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.visit-redeem-row input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+.visit-lists {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .visit-lists {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.visit-list {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.visit-list h4 {
+  font-size: var(--text-base);
+}
+
+.visit-rows {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.visit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.visit-row-name {
+  flex: 1 1 auto;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.visit-row-since {
+  font-size: var(--text-xs);
+}
+
+.visit-row .btn {
+  min-height: 2.1rem;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+}

@@ -94,7 +94,10 @@ function hideInvisibleDogs(row, familyId) {
   return event
 }
 
+// Phase V2: ein Gast sieht Tiere und Einträge, nicht das Zuchtbuch des besuchten Zuhauses - die Tierseite lädt
+// die Liste trotzdem mit, darum eine leere statt 403.
 router.get('/', requireAuth, (req, res) => {
+  if (req.isGuest) return res.json([])
   const rows = db.prepare(LIST_EVENTS_SQL).all({ familyId: req.familyId })
   res.json(rows.map((row) => toEvent(hideInvisibleDogs(row, req.familyId))))
 })

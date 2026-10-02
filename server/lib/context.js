@@ -4,6 +4,7 @@ const { countUnread } = require('./partnerMessages')
 // lib/partnerMessages.js) und werden hier weiter exportiert.
 const { ART, PARTNER_AREA_ARTS } = require('./areaArt')
 const { roleOf } = require('./roles')
+const { isVisiting, visitTargetsOf } = require('./visits')
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist - mit der eigenen Rolle dort (Phase R Task 2,
 // für den ContextSwitcher des Clients).
@@ -79,17 +80,22 @@ function currentAuthInfo(homeId, userId) {
 // eigenen Bereich und mit dem gemeinsamen Schlüssel einer Familie, sonst die Rolle der Mitgliedschaft.
 // adminView (Phase 5 Task 5b): nur in einer Admin-Ansicht (routes/admin.js POST /view/:familyId) steht
 // "adminView: true" in der Antwort - normale Sitzungen tragen das Feld gar nicht.
+// besuche (Phase V2, lib/visits.js): die Zuhause, die die Identität besucht ([{ id, name }], für "Zu Besuch bei …").
+// zuBesuch: nur gesetzt (true), wenn der aktive Bereich so ein besuchtes Zuhause ist - role ist dann 'gast'.
 function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } = {}) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
   const active = family(activeId)
   const home = family(homeId)
+  const zuBesuch = activeId !== homeId && !isMember(homeId, activeId) && isVisiting(homeId, activeId)
   const me = {
     ...active,
     isDemo: Boolean(isDemo),
     ...(adminView ? { adminView: true } : {}),
+    ...(zuBesuch ? { zuBesuch: true } : {}),
     role: roleOf(homeId, activeId),
     home,
     memberships: membershipsOf(homeId),
+    besuche: visitTargetsOf(homeId),
     auth: currentAuthInfo(homeId, userId)
   }
   if (PARTNER_AREA_ARTS.includes(active?.art)) {

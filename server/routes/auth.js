@@ -8,6 +8,7 @@ const { codeLimiter, authLimiter } = require('../middleware/abuse')
 const { cleanId } = require('../lib/validate')
 const { isTheme } = require('../lib/themes')
 const { ART, canEnter, buildMe, removeMembership } = require('../lib/context')
+const { isVisiting } = require('../lib/visits')
 const { requireRole, isLastLeitung } = require('../lib/roles')
 const { generateCode, normalizeCode, hashCode, formatCode } = require('../lib/codes')
 const { validatePassword, validateUsername, validateEmail, DEMO_BATCH_KIND } = require('../lib/vouchers')
@@ -220,11 +221,13 @@ router.get('/me', requireAuth, (req, res) => {
 // requireSession statt requireAuth: auch die Demo darf in ihren eigenen Bereich "wechseln". Die Admin-Ansicht
 // wechselt über jede Mitgliedschaft der Identität (canEnter mit adminView) und bleibt dabei eine Admin-Ansicht
 // (refreshSession trägt die Markierung weiter).
+// Phase V2: auch in ein Zuhause, das die Identität besucht (lib/visits.js) - dort gilt die Sitzung als Besuch
+// (middleware/auth.js req.isGuest: nur ansehen und kommentieren).
 router.post('/view', requireSession, (req, res) => {
   // Strikt: nur ein echter JS-Integer > 0, kein Number(...)-Koerzierung (z. B. "3.0", [3], true, "abc")
   const rawId = req.body?.familyId
   const id = Number.isInteger(rawId) && rawId > 0 ? rawId : null
-  if (!id || !canEnter(req.homeId, id, { adminView: req.isAdminView })) {
+  if (!id || !(canEnter(req.homeId, id, { adminView: req.isAdminView }) || isVisiting(req.homeId, id))) {
     return res.status(404).json({ error: 'Diesen Bereich gibt es nicht' })
   }
   refreshSession(req, res, id)

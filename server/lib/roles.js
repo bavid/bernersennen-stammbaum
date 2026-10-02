@@ -2,6 +2,7 @@
 
 const db = require('../db')
 const { ensureLeitung } = require('./ensureLeitung')
+const { isVisiting } = require('./visits')
 
 // Phase R Task 1: Rollen in Familien (families.art 'rudel'), aufsteigend nach Rang. Die Rolle steht an der
 // Mitgliedschaft (family_members.rolle, siehe db.js). Was welche Rolle darf:
@@ -16,6 +17,7 @@ const { ensureLeitung } = require('./ensureLeitung')
 const ROLES = ['gast', 'mitglied', 'stellvertretung', 'leitung']
 const LEITUNG = 'leitung'
 const STELLVERTRETUNG = 'stellvertretung'
+const GAST = 'gast'
 const DEFAULT_ROLE = 'mitglied'
 const FORBIDDEN_MESSAGE = 'Dafür fehlt dir die Berechtigung in dieser Familie.'
 
@@ -35,11 +37,14 @@ const countLeitungStmt = db.prepare("SELECT COUNT(*) AS c FROM family_members WH
 // - homeId === familyId: 'leitung' - der eigene Bereich (Zuhause, Tierheim, Partner) oder eine Familie,
 //   die mit ihrem gemeinsamen Schlüssel angemeldet ist (alte Rudel-Logins, wie bisher);
 // - sonst die Rolle der Mitgliedschaft (ein unbekannter Wert aus der DB zählt als null: fail closed);
+// - sonst 'gast', wenn homeId das Zuhause familyId besucht (Phase V2, lib/visits.js) - ansehen und kommentieren,
+//   mehr nicht (die Schreibsperre selbst sitzt in middleware/auth.js, lib/guestAccess.js);
 // - sonst null (kein Mitglied).
 function roleOf(homeId, familyId) {
   if (homeId === familyId) return LEITUNG
   const row = findMembershipRole.get(homeId, familyId)
-  return row && isRole(row.rolle) ? row.rolle : null
+  if (row) return isRole(row.rolle) ? row.rolle : null
+  return isVisiting(homeId, familyId) ? GAST : null
 }
 
 function hasRole(homeId, familyId, min) {

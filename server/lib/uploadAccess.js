@@ -1,6 +1,7 @@
 const path = require('node:path')
 const db = require('../db')
 const { VISIBLE_DOGS_SQL, OWN_DOGS_SQL, VISIBLE_ENTRY_SQL, PARTNER_AREA_ARTS } = require('./context')
+const { GUEST_ENTRY_SQL } = require('./visits')
 
 // uploads.js erzeugt Dateinamen ausschließlich aus crypto.randomUUID() (36 Zeichen: Hex-Ziffern und
 // Bindestriche) plus einer Endung aus EXTENSION_BY_MIME - das sind nur jpg, png, webp und gif ("jpeg"
@@ -42,6 +43,12 @@ const einblickPhotoStmt = db.prepare(
    WHERE e.foto_url = @url AND f.id = @familyId AND f.art IN (${PARTNER_AREA_ARTS.map((art) => `'${art}'`).join(', ')})`
 )
 
+// Phase V2: was ein Gast (Besuchs-Sitzung, aktiver Bereich = das besuchte Zuhause) sieht - nur die Tierfotos des
+// Gastgebers und Fotos in dessen nicht-privaten Einträgen. Kein frisch hochgeladenes (uploads-Zeile), kein
+// Zuchtbuch- und kein Einblick-Foto: ein privater Eintrag des Gastgebers bleibt samt Fotos privat.
+const guestDogPhotoStmt = db.prepare('SELECT 1 FROM dogs WHERE foto_url = @url AND family_id = @familyId')
+const guestEntryPhotoStmt = db.prepare(`SELECT 1 FROM timeline_entries t WHERE foto_urls LIKE @pattern AND ${GUEST_ENTRY_SQL}`)
+
 function uploadParams({ familyId, homeId }, filename) {
   return { familyId, homeId, filename, url: `/uploads/${filename}`, pattern: `%"/uploads/${filename}"%` }
 }
@@ -60,9 +67,11 @@ function isAttachableUpload(params) {
 // "filename" abrufen? Erst die Form prüfen, danach die unabhängigen "sichtbar, weil..."-Gründe - dazu
 // zählt auch ein Einblick-Foto des eigenen Partners (nur ansehen, nicht anhängen: ein Einblick-Foto soll
 // nicht über einen Hund/Eintrag weiterleben, nachdem der Einblick gelöscht wurde).
-function canSeeUpload({ familyId, homeId }, filename) {
+// isGuest (Phase V2): die Sitzung besucht das Zuhause familyId - dann gelten allein die Gast-Regeln oben.
+function canSeeUpload({ familyId, homeId, isGuest = false }, filename) {
   if (!FILENAME_RE.test(filename)) return false
   const params = uploadParams({ familyId, homeId }, filename)
+  if (isGuest) return Boolean(guestDogPhotoStmt.get(params) || guestEntryPhotoStmt.get(params))
   return isAttachableUpload(params) || Boolean(einblickPhotoStmt.get(params))
 }
 

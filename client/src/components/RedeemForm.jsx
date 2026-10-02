@@ -54,6 +54,8 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
 
   const status = checkResult?.status || null
   const handover = checkResult?.handover || null
+  // Phase V2: eine Besuchs-Einladung - mit der neuen Chronik ist man gleich mit diesem Zuhause verbunden.
+  const visit = checkResult?.besuch || null
   const partnerAccess = partnerAccessFrom(checkResult)
   const isPartnerMode = Boolean(partnerAccess)
   const checking = checkingCode === code
@@ -180,6 +182,12 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
         <PartnerSetupFields access={partnerAccess} values={partnerValues} errors={partnerErrors} onChange={handlePartnerChange} />
       ) : (
         <>
+          {visit && (
+            <p className="handover-notice" role="status">
+              Eine Einladung von „{visit.name}“: Mit eurer neuen Chronik seid ihr gleich verbunden und könnt dort zu
+              Besuch vorbeischauen.
+            </p>
+          )}
           {handover && (
             <div className="handover-notice" role="status">
               <p>

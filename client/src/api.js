@@ -122,6 +122,15 @@ export const api = {
   deleteUser: (id, payload) => request(`/users/${id}`, json('DELETE', payload)),
 
   view: (familyId) => request('/view', json('POST', { familyId })),
+
+  // Zuhause besuchen (Phase V2, server/routes/besuche.js): { besuche, gaeste } je [{ id, name, seit }]; eine neue
+  // Besuchs-Einladung (7 Tage gültig) -> { id, code, expires_at, gueltigTage }; einlösen -> { gastgeber, me };
+  // den eigenen Besuch beenden -> das neue "me" (zurück nach Hause, falls man gerade dort war); einen Gast entfernen -> 204.
+  visits: () => request('/besuche'),
+  createVisitInvite: () => request('/besuche/einladungen', { method: 'POST' }),
+  redeemVisit: (code) => request('/besuche/einloesen', json('POST', { code })),
+  endVisit: (hostId) => request(`/besuche/bei/${encodeURIComponent(hostId)}`, { method: 'DELETE' }),
+  removeGuest: (guestId) => request(`/besuche/gaeste/${encodeURIComponent(guestId)}`, { method: 'DELETE' }),
   joinFamily: (password) => request('/families/join', json('POST', { password })),
   createGroup: (payload) => request('/families/group', json('POST', payload)),
   leaveFamily: (id) => request(`/memberships/${id}`, { method: 'DELETE' }),

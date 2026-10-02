@@ -20,6 +20,7 @@ import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { hasRole } from '../lib/roles.js'
+import { isVisit } from '../lib/visits.js'
 import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { companionLine } from '../lib/companions.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
@@ -302,6 +303,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   // Rollen (Phase R, lib/roles.js): in einer Familie schreibt ab Mitglied, löscht Tiere ab Stellvertretung -
   // außerhalb (Zuhause, Tierheim) ist man immer Leitung, dort ändert sich nichts.
   const inGroup = family.art === 'rudel'
+  const visiting = isVisit(family)
   const canWrite = dog.isOwn && hasRole(family, 'mitglied')
   const canDeleteDog = !inGroup || hasRole(family, 'stellvertretung')
   // Tier der Familie in die eigene Chronik übernehmen: GET /dogs liefert kannUebernehmen, die Detailansicht
@@ -314,7 +316,9 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   // Löschen-Knopf nur für Kommentare, die der Server auch löschen ließe. In einer Familie (lib/authorship.js):
   // die eigenen (vonMir) oder ab Stellvertretung (Moderation). Sonst wie bisher: eigene (aktiver Bereich)
   // oder auf einem Eintrag, den der aktive Bereich besitzt (dog.canEdit).
+  // Zu Besuch (Phase V2) nur die eigenen Kommentare.
   function canDeleteComment(_entry, comment) {
+    if (visiting) return Boolean(comment.vonMir)
     if (inGroup) return Boolean(comment.vonMir) || hasRole(family, 'stellvertretung')
     return comment.family_id === family.id || dog.canEdit
   }
@@ -504,7 +508,13 @@ export default function DogDetailPage({ family, onFamilyChange }) {
           )}
         </div>
 
-        {!dog.canEdit && (
+        {!dog.canEdit && visiting && (
+          <div className="notice">
+            <p>Du bist zu Besuch bei „{dog.familyName}“ – ansehen und kommentieren geht, ändern nicht.</p>
+          </div>
+        )}
+
+        {!dog.canEdit && !visiting && (
           <div className="notice notice-with-action">
             <p>Lebt im Zuhause „{dog.familyName}“ und wird hier geteilt.</p>
             {dog.ownerFamilyId === family.home?.id && (

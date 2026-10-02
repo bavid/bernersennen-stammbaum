@@ -19,6 +19,7 @@ const adminStatsRoutes = require('./routes/adminStats')
 const adminAnfragenRoutes = require('./routes/adminAnfragen')
 const adminNotifyRoutes = require('./routes/adminNotify')
 const vouchersRoutes = require('./routes/vouchers')
+const besucheRoutes = require('./routes/besuche')
 const membersRoutes = require('./routes/members')
 const messagesRoutes = require('./routes/messages')
 const partnersRoutes = require('./routes/partners')
@@ -156,12 +157,14 @@ function createApp() {
   // Phase 5 Task 5b: die Admin-Ansicht (middleware/auth.js denyAdminViewWrites) ist nur lesend - VOR allen
   // Routern, damit auch Uploads abgelehnt werden, bevor multer eine Datei schreibt.
   app.use('/api', denyAdminViewWrites)
-  app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding'], limitWrites)
+  app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding', '/api/besuche'], limitWrites)
   // Phase R Task 2: /api/family/members VOR authRoutes (dort liegen /family und /family/key) - Express
   // matcht Router-Pfade zwar exakt, so bleibt die Reihenfolge aber unabhängig von künftigen Routen dort.
   app.use('/api/family/members', membersRoutes)
   app.use('/api', authRoutes)
   app.use('/api/vouchers', vouchersRoutes)
+  // Phase V2: Zuhause besuchen (Einladungen, Einlösen, Besuche und Gäste beenden).
+  app.use('/api/besuche', besucheRoutes)
   app.use('/api/dogs', dogsRoutes)
   app.use('/api/timeline', timelineRoutes)
   app.use('/api/breeding', breedingRoutes)

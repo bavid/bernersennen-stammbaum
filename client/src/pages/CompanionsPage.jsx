@@ -12,6 +12,7 @@ import { useToast } from '../components/Toast.jsx'
 import { companionRows, nextAnniversary, yearSpan, yearsTogether } from '../lib/companions.js'
 import { displayName } from '../lib/timeline.js'
 import { todayIso } from '../lib/dates.js'
+import { isVisit, visitLabel } from '../lib/visits.js'
 
 const ANNIVERSARY_WINDOW_DAYS = 30
 
@@ -35,6 +36,8 @@ export default function CompanionsPage({ family }) {
   const today = useMemo(() => todayIso(), [])
   const navigate = useNavigate()
   const toast = useToast()
+  // Phase V2: zu Besuch die Wegbegleiter des besuchten Zuhauses - nur ansehen, kein "Tier hinzufügen".
+  const visiting = isVisit(family)
 
   useEffect(() => {
     api
@@ -72,21 +75,23 @@ export default function CompanionsPage({ family }) {
     <div className="page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">Meine Chronik</span>
+          <span className="eyebrow">{visiting ? visitLabel(family.name) : 'Meine Chronik'}</span>
           <h1>Wegbegleiter</h1>
           <p className="page-lede">
             {span
               ? `Alle ${words.animals}, die bei euch gelebt haben und leben – seit ${span.from}.`
               : `Alle ${words.animals}, die bei euch gelebt haben und leben.`}
           </p>
-          <div className="hero-hints">
-            <p className="hero-hint">
-              {words.TheGroup} pflegst du {words.inTreeArticle} <Link to="/stammbaum">{words.treeLabel}</Link>.
-            </p>
-            <p className="hero-hint">
-              <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
-            </p>
-          </div>
+          {!visiting && (
+            <div className="hero-hints">
+              <p className="hero-hint">
+                {words.TheGroup} pflegst du {words.inTreeArticle} <Link to="/stammbaum">{words.treeLabel}</Link>.
+              </p>
+              <p className="hero-hint">
+                <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
+              </p>
+            </div>
+          )}
         </div>
         <div className="page-hero-side">
           {rows.length > 0 && (
@@ -105,12 +110,14 @@ export default function CompanionsPage({ family }) {
               </div>
             </dl>
           )}
-          <div className="hero-actions">
-            <button type="button" className="btn btn-primary btn-lg" onClick={openAnimalForm}>
-              <Icon name="plus" />
-              Tier hinzufügen
-            </button>
-          </div>
+          {!visiting && (
+            <div className="hero-actions">
+              <button type="button" className="btn btn-primary btn-lg" onClick={openAnimalForm}>
+                <Icon name="plus" />
+                Tier hinzufügen
+              </button>
+            </div>
+          )}
         </div>
       </header>
 

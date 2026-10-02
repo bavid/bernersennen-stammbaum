@@ -6,6 +6,7 @@ const { authLimiter } = require('../middleware/abuse')
 const { isIsoDate, cleanText, cleanId, isUploadUrl } = require('../lib/validate')
 const { dogLabel } = require('../lib/labels')
 const { ART, membershipsOf, canEnter, canSeeDog, VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL } = require('../lib/context')
+const { GUEST_ENTRY_SQL } = require('../lib/visits')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
 const { requireRole, hasRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { slugify } = require('../lib/partners')
@@ -231,23 +232,30 @@ function visibleParentId(parentId, viewFamilyId) {
 // kannUebernehmen (Phase R, Nachtrag zu Task 2): darf die Identität dieses Tier in ihre eigene Chronik
 // übernehmen (POST /:id/uebernehmen)? Nur in einer Familie, nur als Leitungs-Mitglied mit eigener Chronik
 // (nicht der gemeinsame Schlüssel) und nur für Tiere der Familie - sonst false, auch außerhalb von Familien.
+// Phase V2: ein Gast (req.isGuest) sieht die Tiere des besuchten Zuhauses, zählt aber nur dessen nicht-private
+// Einträge (GUEST_ENTRY_SQL) und darf nichts bearbeiten (can_edit 0 über @gast).
+function guestParams(req) {
+  return { familyId: req.familyId, gast: req.isGuest ? 1 : 0 }
+}
+
 router.get('/', requireAuth, (req, res) => {
   const mayTakeOver = canTakeOverInArea(req)
+  const entrySql = req.isGuest ? GUEST_ENTRY_SQL : VISIBLE_ENTRY_SQL
   const dogs = db
     .prepare(
       `SELECT dogs.*,
-         (SELECT COUNT(*) FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${VISIBLE_ENTRY_SQL}) AS timeline_count,
-         (SELECT t.titel FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${VISIBLE_ENTRY_SQL}
+         (SELECT COUNT(*) FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${entrySql}) AS timeline_count,
+         (SELECT t.titel FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${entrySql}
             ORDER BY t.created_at DESC, t.id DESC LIMIT 1) AS latest_entry_titel,
-         (SELECT t.datum FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${VISIBLE_ENTRY_SQL}
+         (SELECT t.datum FROM timeline_entries t WHERE t.dog_id = dogs.id AND ${entrySql}
             ORDER BY t.created_at DESC, t.id DESC LIMIT 1) AS latest_entry_datum,
-         (dogs.family_id = @familyId) AS can_edit,
+         (dogs.family_id = @familyId AND @gast = 0) AS can_edit,
          CASE WHEN dogs.family_id != @familyId THEN (SELECT name FROM families f WHERE f.id = dogs.family_id) END AS shared_from
        FROM dogs
        WHERE dogs.id IN ${VISIBLE_DOGS_SQL}
        ORDER BY geburtsdatum IS NULL, geburtsdatum, name`
     )
-    .all({ familyId: req.familyId })
+    .all(guestParams(req))
     .map((dog) =>
       dog.can_edit
         ? { ...dog, kannUebernehmen: mayTakeOver }
@@ -265,13 +273,13 @@ router.get('/all', requireAuth, (req, res) => {
   const dogs = db
     .prepare(
       `SELECT ${SUMMARY_COLUMNS},
-         (dogs.family_id = @familyId) AS can_edit,
+         (dogs.family_id = @familyId AND @gast = 0) AS can_edit,
          CASE WHEN dogs.family_id != @familyId THEN families.name END AS shared_from
        FROM dogs JOIN families ON families.id = dogs.family_id
        WHERE dogs.id IN ${VISIBLE_DOGS_SQL}
        ORDER BY dogs.name`
     )
-    .all({ familyId: req.familyId })
+    .all(guestParams(req))
   res.json(dogs)
 })
 
@@ -365,7 +373,8 @@ const findChildren = db.prepare(
 // Detailansicht eines im Bereich req.familyId sichtbaren Tiers - für GET /:id und die Antwort von
 // POST /:id/uebernehmen (dort aus Sicht der Familie, in der das Tier nun geteilt ist).
 function dogDetail(req, dog) {
-  const canEdit = dog.family_id === req.familyId
+  // Ein Gast (Phase V2) sieht das Tier des besuchten Zuhauses wie ein geteiltes: ohne Bearbeiten, Freigaben, Mitlesen.
+  const canEdit = dog.family_id === req.familyId && !req.isGuest
   const children = findChildren.all({ id: dog.id }).filter((child) => canSeeDog(req.familyId, child))
   const housemates = visibleHousemates(dog.id, req.familyId)
   const family = db.prepare('SELECT name FROM families WHERE id = ?').get(dog.family_id)

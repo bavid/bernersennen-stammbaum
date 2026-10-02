@@ -10,6 +10,8 @@ import { formatDateShort } from '../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
 import { isPartnerArea } from '../lib/areas.js'
 import { inviteRoleOptions, roleOf } from '../lib/roles.js'
+import { isOwnHome } from '../lib/visits.js'
+import VisitSection from './visits/VisitSection.jsx'
 
 function statusText(voucher) {
   if (voucher.status === 'eingelöst' && voucher.redeemed_at) {
@@ -93,6 +95,12 @@ function VoucherRow({ voucher, roleOptions = [], onRoleChange, disabled }) {
       <div className="voucher-row-main">
         <span className="voucher-code">{voucher.code || `…${voucher.hint}`}</span>
         <span className={`pill ${voucher.status === 'offen' ? '' : 'pill-rust'}`}>{statusText(voucher)}</span>
+        {/* Phase V2: Besuchs-Einladung (7 Tage gültig) statt Gutschein für eine eigene Chronik */}
+        {voucher.besuch && (
+          <span className="pill pill-visit">
+            Besuch{voucher.status === 'offen' && voucher.expires_at ? ` · bis ${formatDateShort(voucher.expires_at)}` : ''}
+          </span>
+        )}
         {voucher.rolle && !canChooseRole && <RoleBadge rolle={voucher.rolle} />}
       </div>
       {canChooseRole && (
@@ -154,7 +162,8 @@ function explanationFor(family) {
 // Gutscheine des aktiven Bereichs (myVouchers() füllt das Kontingent bei jedem Aufruf selbst auf). Der
 // alte Weg über Adresse+Passwort bleibt als zweiter Abschnitt, aber nur für klassische Rudel mit
 // gemeinsamem Passwort - ein Zuhause hat kein Passwort zum Weitergeben.
-export default function InviteDialog({ family }) {
+// onFamilyChange (Phase V2, optional): neues "me" nach dem Einlösen oder Beenden eines Besuchs (Bereichswechsler).
+export default function InviteDialog({ family, onFamilyChange }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
   // In der Demo sind die Gutscheine Beispiele; in der Admin-Ansicht sind es die echten des Bereichs - nur vergeben
@@ -164,11 +173,14 @@ export default function InviteDialog({ family }) {
   const [vouchers, setVouchers] = useState(undefined)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
+  const loadVouchers = () =>
     api
       .myVouchers()
       .then(setVouchers)
       .catch((err) => setError(err.message))
+
+  useEffect(() => {
+    loadVouchers()
   }, [])
 
   const explanation = explanationFor(family)
@@ -207,6 +219,9 @@ export default function InviteDialog({ family }) {
           </ul>
         )}
       </section>
+
+      {/* Phase V2: Zuhause besuchen - nur im eigenen Zuhause (nicht in einer Familie, nicht zu Besuch). */}
+      {isOwnHome(family) && <VisitSection onFamilyChange={onFamilyChange} onInviteCreated={loadVouchers} />}
 
       {family.art === 'rudel' && (
         <section className="invite-legacy">

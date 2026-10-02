@@ -38,7 +38,7 @@ function requireUploadAccess(req, res, next) {
   if (isAdmin(req)) return next()
   requireSession(req, res, () => {
     const filename = path.basename(req.path)
-    if (!canSeeUpload({ familyId: req.familyId, homeId: req.homeId }, filename)) {
+    if (!canSeeUpload({ familyId: req.familyId, homeId: req.homeId, isGuest: req.isGuest }, filename)) {
       return res.status(404).json({ error: 'Nicht gefunden' })
     }
     next()

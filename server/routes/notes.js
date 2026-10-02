@@ -42,7 +42,9 @@ function loadOwnNote(req, res) {
 
 // Zettel samt Antworten (älteste Antwort zuerst, wie in einem Gespräch). Antworten tragen vonMir/ehemalig
 // (lib/authorship.js), author_family_id selbst bleibt innen.
+// Phase V2: die Pinnwand gehört nicht zu einem Besuch - ein Gast bekommt eine leere Liste (der Stammbaum lädt sie mit).
 router.get('/', requireAuth, (req, res) => {
+  if (req.isGuest) return res.json([])
   const notes = db
     .prepare('SELECT * FROM notes WHERE family_id = ? ORDER BY created_at DESC, id DESC')
     .all(req.familyId)

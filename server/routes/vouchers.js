@@ -27,6 +27,9 @@ const router = express.Router()
 // shelterName: der admin-gepflegte Partnername (partners.name), nicht der (vom Tierheim selbst frei
 // änderbare) Familienname - Fallback auf families.name nur, wenn kein Partner verknüpft ist
 // (security-review Phase T Finding 8, wie herkunft_text in lib/transfers.js).
+// Phase V2: Name des einladenden Zuhauses zu einer offenen Besuchs-Einladung ("Einladung zu Besuch bei …").
+const findVisitHostName = db.prepare("SELECT name FROM families WHERE id = ? AND art = 'zuhause'").pluck()
+
 const findHandoverInfo = db.prepare(
   `SELECT d.name AS animalName, COALESCE(p.name, f.name) AS shelterName
    FROM dogs d JOIN families f ON f.id = d.family_id LEFT JOIN partners p ON p.id = f.partner_id
@@ -46,6 +49,10 @@ router.post('/check', codeLimiter, (req, res) => {
   const status = voucherStatus(voucher)
   if (status !== 'offen') return res.json({ status })
   if (voucher.zweck === ZWECK.partnerzugang) return res.json({ status, ...partnerAccessCheckInfo(db, voucher) })
+  if (voucher.zweck === ZWECK.besuch) {
+    const hostName = findVisitHostName.get(voucher.visit_host_family_id)
+    return res.json(hostName ? { status, besuch: { name: hostName } } : { status: 'abgelaufen' })
+  }
   const handover = voucher.dog_id ? findHandoverInfo.get(voucher.dog_id) : null
   res.json(handover ? { status, handover } : { status })
 })
@@ -132,7 +139,8 @@ router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
   // null) - änderbar über PUT /:id/rolle unten, solange der Gutschein offen ist.
   const rows = db
     .prepare(
-      `SELECT id, code_cipher, code_hint, redeemed_at, revoked_at, expires_at, join_family_id, join_rolle, created_at
+      `SELECT id, code_cipher, code_hint, redeemed_at, revoked_at, expires_at, join_family_id, join_rolle, created_at,
+         visit_host_family_id
        FROM vouchers WHERE issued_by_family_id = ? AND dog_id IS NULL ORDER BY created_at DESC, id DESC`
     )
     .all(area.id)
@@ -147,6 +155,9 @@ router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
         status,
         joins: Boolean(row.join_family_id),
         rolle: row.join_family_id ? inviteRoleOf(row) : null,
+        // Phase V2: Besuchs-Einladung ("Jemanden in mein Zuhause einladen", 7 Tage gültig) statt Gutschein
+        besuch: Boolean(row.visit_host_family_id),
+        expires_at: row.expires_at,
         redeemed_at: row.redeemed_at,
         created_at: row.created_at
       }

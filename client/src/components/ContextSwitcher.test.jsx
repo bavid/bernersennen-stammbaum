@@ -238,4 +238,36 @@ describe('ContextSwitcher', () => {
     expect(container.querySelector('.modal').open).toBe(true)
     expect(container.querySelector('.join-family')).not.toBeNull()
   })
+
+  // Phase V2: besuchte Zuhause (me.besuche) als "Zu Besuch bei …"
+  const visitingHome = {
+    ...family,
+    id: 1,
+    name: 'Zuhause am Deich',
+    art: 'zuhause',
+    role: 'leitung',
+    memberships: [],
+    besuche: [{ id: 9, name: 'Zuhause Möwenweg' }]
+  }
+
+  test('besuchte Zuhause stehen als „Zu Besuch bei …“ im Menü und wechseln per api.view', async () => {
+    const onChange = vi.fn()
+    const me = { ...visitingHome, id: 9, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast' }
+    view.mockResolvedValue(me)
+    await render({ family: visitingHome, onChange })
+    act(() => trigger().click())
+    const visitItem = items().find((item) => item.textContent.includes('Zu Besuch bei Zuhause Möwenweg'))
+    expect(visitItem).toBeTruthy()
+    await act(async () => visitItem.click())
+    expect(view).toHaveBeenCalledWith(9)
+    expect(onChange).toHaveBeenCalledWith(me)
+  })
+
+  test('während eines Besuchs zeigt der Knopf „Zu Besuch bei …“ und markiert den Besuch im Menü', async () => {
+    await render({ family: { ...visitingHome, id: 9, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast' } })
+    expect(trigger().textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
+    act(() => trigger().click())
+    const current = items().find((item) => item.getAttribute('aria-current') === 'true')
+    expect(current.textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
+  })
 })

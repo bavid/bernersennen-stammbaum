@@ -27,6 +27,8 @@ import AreaRoutes from './AreaRoutes.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 import RouteFallback from './components/RouteFallback.jsx'
+import VisitBanner from './components/visits/VisitBanner.jsx'
+import VisitClaimCard from './components/visits/VisitClaimCard.jsx'
 
 // Der Admin-Bereich (samt aller Admin*-Komponenten) kommt erst bei Bedarf als eigener Chunk - nur der
 // Admin ruft /admin je auf, alle anderen laden ihn so nicht mit.
@@ -84,8 +86,11 @@ const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
 // stattdessen "In Meine Chronik übernehmen" (api.claimVoucher, ohne Ab-/Anmelden). code kommt aus dem
 // #Hash der Adresse (App.jsx voucherCode) - ohne Code (z. B. direkter Aufruf von /v) bleibt es bei der
 // einfachen Karte, ganz ohne Prüf-Anfrage.
-function VoucherSessionCard({ family, code, onLogout, onClaimed }) {
+// Phase V2: trägt der Code eine offene Besuchs-Einladung (checkVoucher meldet besuch), bietet die Karte im eigenen
+// Zuhause stattdessen das Verbinden an (VisitClaimCard, onVisitConnected bekommt das neue "me").
+function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnected }) {
   const [handover, setHandover] = useState(null)
+  const [visit, setVisit] = useState(null)
   const [shelterMayRead, setShelterMayRead] = useState(false)
   const [claiming, setClaiming] = useState(false)
   const [error, setError] = useState(null)
@@ -108,12 +113,15 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed }) {
     let cancelled = false
     if (!formattedCode || !canClaim) {
       setHandover(null)
+      setVisit(null)
       return undefined
     }
     api
       .checkVoucher(formattedCode)
       .then((result) => {
-        if (!cancelled) setHandover(result.handover || null)
+        if (cancelled) return
+        setHandover(result.handover || null)
+        setVisit(result.besuch || null)
       })
       .catch(() => {
         if (!cancelled) setHandover(null)
@@ -134,6 +142,8 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed }) {
       setClaiming(false)
     }
   }
+
+  if (visit) return <VisitClaimCard code={formattedCode} visit={visit} onConnected={onVisitConnected} />
 
   if (handover) {
     return (
@@ -228,15 +238,18 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
             </NavLink>
           ))}
         </nav>
-        <Link
-          to="/admin-schreiben"
-          state={{ from: pathname }}
-          className={`app-contact ${pathname === '/admin-schreiben' ? 'active' : ''}`}
-          title="Schreib dem Admin"
-        >
-          <Icon name="message" />
-          <span>Schreib dem Admin</span>
-        </Link>
+        {/* Phase V2: zu Besuch schreibt man dem Admin aus der eigenen Chronik (die Nachricht gehört dorthin). */}
+        {!family.zuBesuch && (
+          <Link
+            to="/admin-schreiben"
+            state={{ from: pathname }}
+            className={`app-contact ${pathname === '/admin-schreiben' ? 'active' : ''}`}
+            title="Schreib dem Admin"
+          >
+            <Icon name="message" />
+            <span>Schreib dem Admin</span>
+          </Link>
+        )}
         <button type="button" className="icon-btn app-logout" onClick={onLogout} aria-label="Abmelden" title="Abmelden">
           <Icon name="logout" />
         </button>
@@ -250,7 +263,8 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
 // für die Gutscheine ohnehin 403, der Knopf bleibt für sie deshalb weg.
 export function AppFooter({ family, onInvite }) {
   const { theme } = useTheme()
-  const canInvite = family?.art !== 'rudel' || hasRole(family, 'stellvertretung')
+  // Phase V2: zu Besuch in einem anderen Zuhause lädt man nicht ein (der Server sperrt das ohnehin).
+  const canInvite = !family?.zuBesuch && (family?.art !== 'rudel' || hasRole(family, 'stellvertretung'))
   return (
     <footer className="app-footer">
       {theme.tricolor && <div className="tricolor" aria-hidden="true" />}
@@ -260,9 +274,11 @@ export function AppFooter({ family, onInvite }) {
           {inviteLabel(family)}
         </button>
       )}
-      <Link to="/umgebung" className="footer-link">
-        Tierheime & Hundeschulen in der Nähe →
-      </Link>
+      {!family?.zuBesuch && (
+        <Link to="/umgebung" className="footer-link">
+          Tierheime & Hundeschulen in der Nähe →
+        </Link>
+      )}
       <span className="app-footer-legal">
         <Link to="/impressum" className="footer-link">
           Impressum
@@ -340,6 +356,13 @@ export default function App() {
   function handleClaimed(dogId) {
     setVoucherCode('')
     navigate(`/tier/${dogId}`)
+  }
+
+  // Besuchs-Einladung über /v#CODE aus dem eigenen Zuhause verbunden (Phase V2): Sitzung bleibt, "me" kennt den Besuch.
+  function handleVisitConnected(me) {
+    setFamily(me)
+    setVoucherCode('')
+    navigate(startRoute(me), { replace: true })
   }
 
   // Admin-Ansicht (Phase 5 Task 5b): AdminViewStartPage hat POST /api/admin/view/:id gerufen, me ist die
@@ -423,7 +446,13 @@ export default function App() {
         {family ? (
           <div className="login voucher-session">
             <section className="login-panel">
-              <VoucherSessionCard family={family} code={voucherCode} onLogout={handleLogout} onClaimed={handleClaimed} />
+              <VoucherSessionCard
+                family={family}
+                code={voucherCode}
+                onLogout={handleLogout}
+                onClaimed={handleClaimed}
+                onVisitConnected={handleVisitConnected}
+              />
             </section>
           </div>
         ) : (
@@ -521,6 +550,8 @@ export default function App() {
           ) : (
             family.isDemo && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
           )}
+          {/* Phase V2: zu Besuch in einem anderen Zuhause - nur ansehen und kommentieren, mit Weg zurück. */}
+          {family.zuBesuch && <VisitBanner family={family} onFamilyChange={setFamily} />}
           <AppHeader family={family} onLogout={handleLogout} onFamilyChange={setFamily} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
           {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}
@@ -539,7 +570,7 @@ export default function App() {
           </main>
           <AppFooter family={family} onInvite={() => setInviteOpen(true)} />
           <Modal open={inviteOpen} title={inviteLabel(family)} onClose={() => setInviteOpen(false)}>
-            <InviteDialog family={family} />
+            <InviteDialog family={family} onFamilyChange={setFamily} />
           </Modal>
         </div>
       </DemoProvider>

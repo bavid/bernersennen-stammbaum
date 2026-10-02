@@ -13,6 +13,11 @@ import { useToast } from './Toast.jsx'
 // des aktiven Bereichs, öffnet ein Menü mit "Meine Chronik", den beigetretenen Familien/Rudeln (mit der
 // eigenen Rolle dort, Phase R) und dem Einstieg zum Beitreten/Gründen; in einer Familie zusätzlich den
 // Weg zu "Mitglieder & Rollen" (/mitglieder). family ist das volle "me"-Objekt, onChange bekommt das neue.
+// Phase V2: dazu die Zuhause, die der Haushalt besucht (family.besuche) - "Zu Besuch bei …", nur ansehen.
+function visitLabel(name) {
+  return `Zu Besuch bei ${name}`
+}
+
 export default function ContextSwitcher({ family, onChange }) {
   const { words } = useTheme()
   const toast = useToast()
@@ -93,6 +98,7 @@ export default function ContextSwitcher({ family, onChange }) {
 
   const isHomeActive = family.id === family.home.id
   const isGroupActive = !isHomeActive && family.art === 'rudel'
+  const visits = family.besuche || []
 
   function openMembers() {
     closeMenu()
@@ -111,7 +117,9 @@ export default function ContextSwitcher({ family, onChange }) {
       >
         {/* Der eigene Bereich heißt hier immer "Meine Chronik" – der gespeicherte Name des Haushalts
             ist nur relevant, wo andere Familien ihn sehen (z. B. "aus <Name>" bei geteilten Tieren). */}
-        <span className="context-switcher-name">{isHomeActive ? HOME_LABEL : family.name}</span>
+        <span className="context-switcher-name">
+          {isHomeActive ? HOME_LABEL : family.zuBesuch ? visitLabel(family.name) : family.name}
+        </span>
         {isGroupActive && <RoleBadge rolle={family.role} />}
         <Icon name="chevronDown" />
       </button>
@@ -147,6 +155,24 @@ export default function ContextSwitcher({ family, onChange }) {
               >
                 <span>{membership.name}</span>
                 <RoleBadge rolle={membership.rolle} />
+                {isCurrent && <Icon name="check" />}
+              </button>
+            )
+          })}
+          {visits.length > 0 && <div className="context-switcher-sep" role="separator" />}
+          {visits.map((visit) => {
+            const isCurrent = visit.id === family.id
+            return (
+              <button
+                key={`besuch-${visit.id}`}
+                type="button"
+                role="menuitem"
+                className="context-switcher-item"
+                aria-current={isCurrent ? 'true' : undefined}
+                onClick={() => switchTo(visit.id, visit.name)}
+              >
+                <span>{visitLabel(visit.name)}</span>
+                <Icon name="eye" />
                 {isCurrent && <Icon name="check" />}
               </button>
             )
