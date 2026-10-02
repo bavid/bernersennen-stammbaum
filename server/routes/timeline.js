@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { ART, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
 const { GUEST_ENTRY_SQL, GUEST_COMMENT_SQL } = require('../lib/visits')
+const { readTagInput, applyTags, withTags, mirroredForDog } = require('../lib/erlebtMitView')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
 const { requireRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { authorContext, withAuthorFlags, mayDeleteInArea } = require('../lib/authorship')
@@ -198,7 +199,43 @@ router.get('/', requireAuth, (req, res) => {
     )
     .all({ ...viewParams(req), dogId })
   const comments = commentsByEntry(req, dogId)
-  res.json(rows.map((row) => toEntry(row, comments.get(row.id))))
+  // Phase V2 "Erlebt mit": im eigenen Zuhause tragen eigene Einträge ihre Markierungen, und die Chronik eines Tiers
+  // zeigt bestätigte Einträge verbundener Zuhause gespiegelt dazu (lib/erlebtMitView.js).
+  const entries = withTags(req, rows.map((row) => toEntry(row, comments.get(row.id))))
+  res.json([...entries, ...mirroredForDog(req, dogId)])
+})
+
+// readTagInput wirft 400 mit Meldung; alles andere ist ein echter Fehler.
+function readTags(body, req, privat, res) {
+  try {
+    return { tags: readTagInput(body, req, privat) }
+  } catch (err) {
+    if (!err.status) throw err
+    res.status(err.status).json({ error: err.message })
+    return null
+  }
+}
+
+const insertEntry = db.prepare(
+  `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, privat, kategorie, is_public)
+   VALUES (@dog_id, @family_id, @autor_name, @datum, @titel, @text, @foto_urls, @privat, @kategorie, @is_public)`
+)
+const updateEntry = db.prepare(
+  `UPDATE timeline_entries
+   SET autor_name = @autor_name, datum = @datum, titel = @titel, text = @text, foto_urls = @foto_urls,
+       privat = @privat, kategorie = @kategorie, is_public = @is_public
+   WHERE id = @id`
+)
+
+// Eintrag und seine "Erlebt mit"-Markierungen zusammen: ein Absturz dazwischen darf keine halbe Markierung hinterlassen.
+const createEntryWithTags = db.transaction((values, tags) => {
+  const entryId = insertEntry.run(values).lastInsertRowid
+  applyTags(entryId, tags, values.privat)
+  return entryId
+})
+const updateEntryWithTags = db.transaction((values, tags) => {
+  updateEntry.run(values)
+  applyTags(values.id, tags, values.privat)
 })
 
 router.post('/', requireAuth, canWrite, (req, res) => {
@@ -213,16 +250,12 @@ router.post('/', requireAuth, canWrite, (req, res) => {
   if (!dog || dog.family_id !== req.familyId) {
     return res.status(403).json({ error: 'Kein Zugriff auf diesen Hund' })
   }
+  const tagInput = readTags(body, req, values.privat, res)
+  if (!tagInput) return
 
-  const result = db
-    .prepare(
-      `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, privat, kategorie, is_public)
-       VALUES (@dog_id, @family_id, @autor_name, @datum, @titel, @text, @foto_urls, @privat, @kategorie, @is_public)`
-    )
-    .run({ ...values, dog_id: dogId, family_id: req.familyId })
-
-  const entry = findEntryById.get(result.lastInsertRowid)
-  res.status(201).json(toEntry(entry))
+  const entryId = createEntryWithTags({ ...values, dog_id: dogId, family_id: req.familyId }, tagInput.tags)
+  const entry = findEntryById.get(entryId)
+  res.status(201).json(withTags(req, [toEntry(entry)])[0])
 })
 
 router.put('/:id', requireAuth, canWrite, (req, res) => {
@@ -238,16 +271,12 @@ router.put('/:id', requireAuth, canWrite, (req, res) => {
     existing.is_public
   )
   if (error) return res.status(400).json({ error })
+  const tagInput = readTags(req.body || {}, req, values.privat, res)
+  if (!tagInput) return
 
-  db.prepare(
-    `UPDATE timeline_entries
-     SET autor_name = @autor_name, datum = @datum, titel = @titel, text = @text, foto_urls = @foto_urls,
-         privat = @privat, kategorie = @kategorie, is_public = @is_public
-     WHERE id = @id`
-  ).run({ ...values, id: existing.id })
-
+  updateEntryWithTags({ ...values, id: existing.id }, tagInput.tags)
   const entry = findEntryById.get(existing.id)
-  res.json(toEntry(entry, commentsOf(req, entry.id)))
+  res.json(withTags(req, [toEntry(entry, commentsOf(req, entry.id))])[0])
 })
 
 const deleteEntry = db.transaction((entryId) => {

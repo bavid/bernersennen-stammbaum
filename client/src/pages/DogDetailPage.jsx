@@ -20,7 +20,8 @@ import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { hasRole } from '../lib/roles.js'
-import { isVisit } from '../lib/visits.js'
+import { isOwnHome, isVisit } from '../lib/visits.js'
+import useMirrorActions from '../components/erlebtMit/useMirrorActions.js'
 import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { companionLine } from '../lib/companions.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
@@ -240,6 +241,14 @@ export default function DogDetailPage({ family, onFamilyChange }) {
       clearTimeout(timer)
     }
   }, [highlightKey])
+
+  // Phase V2 "Erlebt mit": gespiegelte Einträge verbundener Zuhause (zum Original wechseln, wieder entfernen).
+  const mirror = useMirrorActions({
+    family,
+    dog,
+    onFamilyChange,
+    onRemoved: (item) => setEntries((current) => current.filter((e) => !(e.gespiegelt && e.id === item.id)))
+  })
 
   const items = useMemo(
     () => (dog ? buildTimeline({ dog, entries, breedingEvents, children: dog.children, newestFirst, matingLabel: words.mating }) : []),
@@ -531,6 +540,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
               <>
                 <h3 className="composer-title">Neue Erinnerung zu {about}</h3>
                 <TimelineEntryForm
+                  canTag={isOwnHome(family)}
                   isHousehold={family.art === 'zuhause'}
                   isShelter={family.art === 'tierheim'}
                   onSubmit={handleCreateEntry}
@@ -558,6 +568,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
             canDeleteComment={canDeleteComment}
+            mirror={mirror}
           />
         ) : (
           canWrite && <p className="muted chronicle-empty">Noch keine Einträge – die erste Erinnerung wartet.</p>
@@ -568,6 +579,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         {editingEntry && (
           <TimelineEntryForm
             entry={editingEntry}
+            canTag={isOwnHome(family)}
             isHousehold={family.art === 'zuhause'}
             isShelter={family.art === 'tierheim'}
             onSubmit={handleUpdateEntry}

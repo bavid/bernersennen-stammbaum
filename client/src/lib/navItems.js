@@ -25,8 +25,10 @@ const NAV_ITEM_TREE = { to: '/stammbaum', icon: 'tree', labelKey: 'treeLabel' }
 const NAV_ITEM_LITTERS = { to: '/wuerfe', icon: 'sprout', labelKey: 'littersLabel' }
 
 // Haushalte ("Meine Chronik") sehen den Wegbegleiter statt der Würfe – Rudel weiterhin wie bisher.
+// Phase V2: dort stehen auch die offenen "Erlebt mit"-Anfragen - der Eintrag bekommt dafür ein Badge (withRequestBadge).
+const NAV_ITEM_COMPANIONS = { to: '/wegbegleiter', icon: 'route', label: 'Wegbegleiter' }
 const NAV_ITEMS_HOME = [
-  { to: '/wegbegleiter', icon: 'route', label: 'Wegbegleiter' },
+  NAV_ITEM_COMPANIONS,
   NAV_ITEM_TREE,
   { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
   NAV_ITEM_DISCOVER,
@@ -87,6 +89,14 @@ function withInboxBadge(item, family) {
   }
 }
 
+// Offene "Erlebt mit"-Anfragen an das eigene Zuhause (me.erlebtMitOffen, Phase V2) als Badge an "Wegbegleiter".
+function withRequestBadge(item, family) {
+  const offen = Number.isInteger(family?.erlebtMitOffen) ? family.erlebtMitOffen : 0
+  if (item !== NAV_ITEM_COMPANIONS || offen === 0 || family?.zuBesuch) return item
+  const label = offen === 1 ? 'offene Anfrage' : 'offene Anfragen'
+  return { ...item, badge: offen > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : String(offen), ariaLabel: `${item.label}, ${offen} ${label}` }
+}
+
 // Beschriftung aus den Theme-Wörtern (labelKey) - labelKey selbst geht nicht mit hinaus.
 function withThemeLabel(item, words) {
   if (!item.labelKey) return item
@@ -100,7 +110,7 @@ export function navItemsFor(family, theme = getTheme(family?.theme)) {
   const items = family?.zuBesuch ? NAV_ITEMS_VISIT : NAV_ITEMS_BY_ART[family?.art] || NAV_ITEMS_GROUP
   return items
     .filter((item) => item !== NAV_ITEM_LITTERS || theme.littersInNav)
-    .map((item) => withInboxBadge(withThemeLabel(item, theme.words), family))
+    .map((item) => withRequestBadge(withInboxBadge(withThemeLabel(item, theme.words), family), family))
 }
 
 // Neue family mit geänderter Zahl ungelesener Nachrichten (PartnerInboxPage nach Lesen/Löschen) - für

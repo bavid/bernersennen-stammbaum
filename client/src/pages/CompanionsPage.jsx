@@ -12,7 +12,10 @@ import { useToast } from '../components/Toast.jsx'
 import { companionRows, nextAnniversary, yearSpan, yearsTogether } from '../lib/companions.js'
 import { displayName } from '../lib/timeline.js'
 import { todayIso } from '../lib/dates.js'
-import { isVisit, visitLabel } from '../lib/visits.js'
+import { isOwnHome, isVisit, visitLabel } from '../lib/visits.js'
+import { withErlebtMitOffen } from '../lib/erlebtMit.js'
+import ErlebtMitRequests from '../components/erlebtMit/ErlebtMitRequests.jsx'
+import Lightbox from '../components/Lightbox.jsx'
 
 const ANNIVERSARY_WINDOW_DAYS = 30
 
@@ -26,7 +29,8 @@ function anniversaryText(anniversary) {
 }
 
 // „Meine Chronik“ – alle Wegbegleiter des eigenen Zuhauses über eine gemeinsame Zeitachse.
-export default function CompanionsPage({ family }) {
+// onFamilyChange (Phase V2, optional): setFamily aus App.jsx - für die Zahl offener "Erlebt mit"-Anfragen (Badge).
+export default function CompanionsPage({ family, onFamilyChange }) {
   const { words } = useTheme()
   const [dogs, setDogs] = useState(null)
   const [error, setError] = useState(null)
@@ -38,6 +42,7 @@ export default function CompanionsPage({ family }) {
   const toast = useToast()
   // Phase V2: zu Besuch die Wegbegleiter des besuchten Zuhauses - nur ansehen, kein "Tier hinzufügen".
   const visiting = isVisit(family)
+  const [photo, setPhoto] = useState(null)
 
   useEffect(() => {
     api
@@ -127,6 +132,14 @@ export default function CompanionsPage({ family }) {
         </div>
       )}
 
+      {/* Phase V2: nur wenn /me offene "Erlebt mit"-Anfragen meldet - sonst keine zusätzliche Anfrage beim Laden. */}
+      {isOwnHome(family) && family.erlebtMitOffen > 0 && (
+        <ErlebtMitRequests
+          onOpenPhoto={setPhoto}
+          onCountChange={(offen) => onFamilyChange?.((current) => withErlebtMitOffen(current, offen))}
+        />
+      )}
+
       {anniversary && anniversary.daysUntil <= ANNIVERSARY_WINDOW_DAYS && (
         <div className="companions-anniversary">
           <p>{anniversaryText(anniversary)}</p>
@@ -166,6 +179,8 @@ export default function CompanionsPage({ family }) {
             />
           ))}
       </Modal>
+
+      <Lightbox src={photo} onClose={() => setPhoto(null)} />
     </div>
   )
 }

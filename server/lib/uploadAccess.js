@@ -2,6 +2,7 @@ const path = require('node:path')
 const db = require('../db')
 const { VISIBLE_DOGS_SQL, OWN_DOGS_SQL, VISIBLE_ENTRY_SQL, PARTNER_AREA_ARTS } = require('./context')
 const { GUEST_ENTRY_SQL } = require('./visits')
+const { isMirroredPhoto } = require('./erlebtMit')
 
 // uploads.js erzeugt Dateinamen ausschließlich aus crypto.randomUUID() (36 Zeichen: Hex-Ziffern und
 // Bindestriche) plus einer Endung aus EXTENSION_BY_MIME - das sind nur jpg, png, webp und gif ("jpeg"
@@ -68,11 +69,13 @@ function isAttachableUpload(params) {
 // zählt auch ein Einblick-Foto des eigenen Partners (nur ansehen, nicht anhängen: ein Einblick-Foto soll
 // nicht über einen Hund/Eintrag weiterleben, nachdem der Einblick gelöscht wurde).
 // isGuest (Phase V2): die Sitzung besucht das Zuhause familyId - dann gelten allein die Gast-Regeln oben.
+// Dazu (Phase V2 "Erlebt mit"): Fotos eines Eintrags, der ein Tier des eigenen Zuhauses (homeId) markiert - nur
+// ansehen, nicht anhängen (deshalb nicht in isAttachableUpload), und nur solange die Verbindung besteht.
 function canSeeUpload({ familyId, homeId, isGuest = false }, filename) {
   if (!FILENAME_RE.test(filename)) return false
   const params = uploadParams({ familyId, homeId }, filename)
   if (isGuest) return Boolean(guestDogPhotoStmt.get(params) || guestEntryPhotoStmt.get(params))
-  return isAttachableUpload(params) || Boolean(einblickPhotoStmt.get(params))
+  return isAttachableUpload(params) || Boolean(einblickPhotoStmt.get(params)) || (Number.isInteger(homeId) && isMirroredPhoto(homeId, params.pattern))
 }
 
 // Für Schreibzugriffe: darf { familyId, homeId } die Foto-URL "url" an einen Hund/Eintrag/Wurf

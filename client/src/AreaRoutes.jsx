@@ -92,7 +92,7 @@ export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/hund/:id" element={<RedirectTierUrl />} />
       <Route
         path="/wegbegleiter"
-        element={family.art === 'zuhause' ? <CompanionsPage family={family} /> : <ToStart family={family} />}
+        element={family.art === 'zuhause' ? <CompanionsPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
       />
       <Route path="/tiere" element={family.art === 'tierheim' ? <ShelterAnimalsPage family={family} /> : <ToStart family={family} />} />
       <Route path="/pinnwand" element={<PinboardPage family={family} />} />

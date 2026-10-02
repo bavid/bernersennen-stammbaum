@@ -9,6 +9,15 @@ describe('navItemsFor', () => {
     expect(labels({ art: 'zuhause', zuBesuch: true })).toEqual(['Wegbegleiter', 'Familienbande'])
   })
 
+  test('offene „Erlebt mit“-Anfragen (Phase V2): Badge an „Wegbegleiter“, nicht zu Besuch', () => {
+    const item = navItemsFor({ art: 'zuhause', erlebtMitOffen: 2 }).find((entry) => entry.to === '/wegbegleiter')
+    expect(item.badge).toBe('2')
+    expect(item.ariaLabel).toBe('Wegbegleiter, 2 offene Anfragen')
+    expect(navItemsFor({ art: 'zuhause', erlebtMitOffen: 1 })[0].ariaLabel).toBe('Wegbegleiter, 1 offene Anfrage')
+    expect(navItemsFor({ art: 'zuhause', erlebtMitOffen: 0 })[0].badge).toBeUndefined()
+    expect(navItemsFor({ art: 'zuhause', erlebtMitOffen: 2, zuBesuch: true })[0].badge).toBeUndefined()
+  })
+
   test('a partner area gets Profil, Beiträge, Nachrichten (Phase P2) and Zugang', () => {
     expect(navItemsFor({ art: 'partner' }).map(({ to, label }) => ({ to, label }))).toEqual([
       { to: '/profil', label: 'Profil' },

@@ -4,8 +4,8 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
-const { listDogs } = vi.hoisted(() => ({ listDogs: vi.fn() }))
-vi.mock('../api', () => ({ api: { listDogs } }))
+const { listDogs, erlebtMitOffen } = vi.hoisted(() => ({ listDogs: vi.fn(), erlebtMitOffen: vi.fn() }))
+vi.mock('../api', () => ({ api: { listDogs, erlebtMitOffen } }))
 
 import CompanionsPage from './CompanionsPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -27,6 +27,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
   document.title = ''
   listDogs.mockReset()
+  erlebtMitOffen.mockReset()
   vi.useRealTimers()
 })
 
@@ -46,7 +47,7 @@ const dog = (id, name, extra = {}) => ({
   ...extra
 })
 
-async function render(dogs, themeId = 'standard') {
+async function render(dogs, themeId = 'standard', family = { id: 1, name: 'Zuhause am See' }) {
   listDogs.mockResolvedValue(dogs)
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -54,7 +55,7 @@ async function render(dogs, themeId = 'standard') {
     createRoot(container).render(
       <MemoryRouter>
         <ThemeProvider themeId={themeId}>
-          <CompanionsPage family={{ id: 1, name: 'Zuhause am See' }} />
+          <CompanionsPage family={family} />
         </ThemeProvider>
       </MemoryRouter>
     )
@@ -107,4 +108,25 @@ test('zeigt die Zeitleiste, sobald Tiere mit Datum vorhanden sind', async () => 
   await render([dog(1, 'Nele', { bei_uns_seit: '2016-09-20' })])
   expect(container.querySelector('.companion-timeline')).toBeTruthy()
   expect(container.querySelector('.empty-state')).toBeNull()
+})
+
+// Phase V2: Besuch und "Erlebt mit"
+const home = { id: 1, name: 'Zuhause am See', art: 'zuhause' }
+
+test('zu Besuch: Eyebrow „Zu Besuch bei …“, kein „Tier hinzufügen“', async () => {
+  await render([], 'standard', { id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home })
+  expect(container.textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
+  expect(container.textContent).not.toContain('Tier hinzufügen')
+})
+
+test('offene „Erlebt mit“-Anfragen erscheinen im eigenen Zuhause, nur wenn /me welche meldet', async () => {
+  erlebtMitOffen.mockResolvedValue([
+    { requestId: 3, dogName: 'Wilma', tier: 'Nele', zuhause: 'Zuhause am Deich', titel: 'Deichrunde', datum: '2026-08-30', foto_urls: [], autor_name: 'Nissen' }
+  ])
+  await render([], 'standard', { ...home, home, erlebtMitOffen: 1 })
+  expect(container.textContent).toContain('Wilma war dabei – übernehmen?')
+  act(() => container.remove())
+  erlebtMitOffen.mockClear()
+  await render([], 'standard', { ...home, home, erlebtMitOffen: 0 })
+  expect(erlebtMitOffen).not.toHaveBeenCalled()
 })

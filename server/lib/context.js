@@ -5,6 +5,7 @@ const { countUnread } = require('./partnerMessages')
 const { ART, PARTNER_AREA_ARTS } = require('./areaArt')
 const { roleOf } = require('./roles')
 const { isVisiting, visitTargetsOf } = require('./visits')
+const { countOpenRequests } = require('./erlebtMit')
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist - mit der eigenen Rolle dort (Phase R Task 2,
 // für den ContextSwitcher des Clients).
@@ -82,6 +83,7 @@ function currentAuthInfo(homeId, userId) {
 // "adminView: true" in der Antwort - normale Sitzungen tragen das Feld gar nicht.
 // besuche (Phase V2, lib/visits.js): die Zuhause, die die Identität besucht ([{ id, name }], für "Zu Besuch bei …").
 // zuBesuch: nur gesetzt (true), wenn der aktive Bereich so ein besuchtes Zuhause ist - role ist dann 'gast'.
+// erlebtMitOffen (Phase V2, lib/erlebtMit.js): offene "Erlebt mit"-Anfragen an das eigene Zuhause (Badge im Client).
 function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } = {}) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
   const active = family(activeId)
@@ -96,6 +98,7 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
     home,
     memberships: membershipsOf(homeId),
     besuche: visitTargetsOf(homeId),
+    erlebtMitOffen: home?.art === ART.zuhause ? countOpenRequests(homeId) : 0,
     auth: currentAuthInfo(homeId, userId)
   }
   if (PARTNER_AREA_ARTS.includes(active?.art)) {

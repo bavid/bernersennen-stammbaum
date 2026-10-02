@@ -3,6 +3,9 @@ import Icon from './Icon.jsx'
 import Avatar from './Avatar.jsx'
 import CommentThread from './CommentThread.jsx'
 import ExpandableText from './ExpandableText.jsx'
+import EntryPhotos from './EntryPhotos.jsx'
+import ErlebtMitChips from './erlebtMit/ErlebtMitChips.jsx'
+import MirroredEntry from './erlebtMit/MirroredEntry.jsx'
 import { dogLabel, groupByYear } from '../lib/timeline.js'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 import { kategorieLabel } from '../lib/shelter.js'
@@ -10,19 +13,6 @@ import { kategorieLabel } from '../lib/shelter.js'
 // Kein eigenes Einzugs-/Abschieds-Icon vorhanden – 'pin' (Stecknadel, "hier verankert") und
 // 'logout' (Tür mit Pfeil, "geht") aus Icon.jsx passen inhaltlich am besten.
 const MILESTONE_ICONS = { birth: 'star', breeding: 'heart', litter: 'sprout', arrival: 'pin', farewell: 'logout' }
-
-function Photos({ urls, onOpenPhoto }) {
-  if (!urls?.length) return null
-  return (
-    <div className={`entry-photos count-${Math.min(urls.length, 4)}`}>
-      {urls.map((url) => (
-        <button type="button" key={url} className="entry-photo" onClick={() => onOpenPhoto(url)} aria-label="Foto vergrößern">
-          <img src={url} alt="" loading="lazy" />
-        </button>
-      ))}
-    </div>
-  )
-}
 
 function Milestone({ item, onOpenPhoto }) {
   return (
@@ -43,7 +33,7 @@ function Milestone({ item, onOpenPhoto }) {
             ))}
           </div>
         )}
-        <Photos urls={item.foto_urls} onOpenPhoto={onOpenPhoto} />
+        <EntryPhotos urls={item.foto_urls} onOpenPhoto={onOpenPhoto} />
       </div>
     </div>
   )
@@ -87,7 +77,8 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
         )}
       </header>
       {item.text && <ExpandableText text={item.text} className="entry-text" lines={6} />}
-      <Photos urls={item.foto_urls} onOpenPhoto={onOpenPhoto} />
+      <EntryPhotos urls={item.foto_urls} onOpenPhoto={onOpenPhoto} />
+      <ErlebtMitChips tags={item.erlebt_mit} />
       {onAddComment && (
         <div className="entry-comments">
           <CommentThread
@@ -106,6 +97,8 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
   )
 }
 
+// mirror (Phase V2, optional): { onOpenOrigin(item)?, onHide(item)?, hideDisabled } für gespiegelte Einträge
+// ("Erlebt mit", item.gespiegelt) - die erscheinen ohne Bearbeiten und Kommentare.
 export default function Timeline({
   items,
   birthDate,
@@ -115,7 +108,8 @@ export default function Timeline({
   onOpenPhoto,
   onAddComment,
   onDeleteComment,
-  canDeleteComment
+  canDeleteComment,
+  mirror = {}
 }) {
   const groups = groupByYear(items)
   return (
@@ -134,7 +128,15 @@ export default function Timeline({
                   {formatDayMonth(item.datum)}
                 </time>
                 <span className="timeline-node" aria-hidden="true" />
-                {item.type === 'entry' ? (
+                {item.type === 'entry' && item.gespiegelt ? (
+                  <MirroredEntry
+                    item={item}
+                    onOpenPhoto={onOpenPhoto}
+                    onOpenOrigin={mirror.canOpenOrigin?.(item) ? mirror.onOpenOrigin : undefined}
+                    onHide={mirror.onHide}
+                    hideDisabled={mirror.hideDisabled}
+                  />
+                ) : item.type === 'entry' ? (
                   <Entry
                     item={item}
                     birthDate={birthDate}

@@ -624,4 +624,22 @@ db.exec(`
 // auch wenn der Gastgeber später gelöscht wird (lib/families.js setzt den Verweis dann auf NULL).
 addColumnIfMissing('vouchers', 'visit_host_family_id', 'INTEGER')
 
+// Phase V2: "Erlebt mit" (lib/erlebtMit.js). Ein Eintrag (entry_id) markiert ein Tier eines verbundenen Zuhauses
+// (dog_id, Besuch in einer der Richtungen oder gemeinsame Familie). status: 'offen' (Anfrage an die Besitzer des
+// Tiers), 'bestaetigt' (der Eintrag erscheint gespiegelt in dessen Chronik - als Verweis, keine Kopie) oder
+// 'abgelehnt' (überall ausgeblendet; bleibt stehen, damit dieselbe Markierung nicht erneut anfragt). ON DELETE
+// CASCADE: verschwindet der Eintrag oder das Tier, verschwindet die Markierung mit.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS erlebt_mit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entry_id INTEGER NOT NULL REFERENCES timeline_entries(id) ON DELETE CASCADE,
+    dog_id INTEGER NOT NULL REFERENCES dogs(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'offen' CHECK (status IN ('offen', 'bestaetigt', 'abgelehnt')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    entschieden_at TEXT,
+    UNIQUE (entry_id, dog_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_erlebt_mit_dog ON erlebt_mit(dog_id, status);
+`)
+
 module.exports = db

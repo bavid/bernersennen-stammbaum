@@ -4,13 +4,17 @@ import ConfirmButton from './ConfirmButton.jsx'
 import { todayIso } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import { KATEGORIE_VALUES, kategorieLabel } from '../lib/shelter.js'
+import { taggedDogIds } from '../lib/erlebtMit.js'
+import ErlebtMitPicker from './erlebtMit/ErlebtMitPicker.jsx'
 
 // Neuer oder bearbeiteter Timeline-Eintrag. Das Datum bestimmt die Position in der Chronik.
 // isHousehold: der aktive Bereich ist ein Haushalt ("Meine Chronik") – nur dort kann ein Eintrag als
 // privat markiert werden (sonst gibt es niemanden, vor dem er verborgen bleiben könnte).
 // isShelter: der aktive Bereich ist ein Tierheim – statt "privat" gibt es hier eine Kategorie und die
 // Checkbox "Im Steckbrief zeigen (öffentlich)" (isPublic), s. Phase T Task 4.
-export default function TimelineEntryForm({ entry, isHousehold, isShelter, onSubmit, onDelete, onCancel }) {
+// canTag (Phase V2): im eigenen Zuhause lassen sich Tiere verbundener Zuhause markieren ("Erlebt mit", erlebtMit im
+// Payload) - nie bei einem privaten Eintrag.
+export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTag, onSubmit, onDelete, onCancel }) {
   const [autorName, setAutorName] = useState(() => entry?.autor_name || readSetting('autorName', ''))
   const [datum, setDatum] = useState(() => entry?.datum || todayIso())
   const [titel, setTitel] = useState(entry?.titel || '')
@@ -19,6 +23,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, onSub
   const [privat, setPrivat] = useState(Boolean(entry?.privat))
   const [kategorie, setKategorie] = useState(entry?.kategorie || '')
   const [isPublic, setIsPublic] = useState(Boolean(entry?.is_public))
+  const [erlebtMit, setErlebtMit] = useState(() => taggedDogIds(entry))
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -29,7 +34,8 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, onSub
     setSaving(true)
     try {
       writeSetting('autorName', autorName.trim())
-      await onSubmit({ autorName, datum, titel, text, fotoUrls: fotos, privat, kategorie: kategorie || null, isPublic })
+      const tags = canTag ? { erlebtMit: privat ? [] : erlebtMit } : {}
+      await onSubmit({ autorName, datum, titel, text, fotoUrls: fotos, privat, kategorie: kategorie || null, isPublic, ...tags })
     } catch (err) {
       setError(err.message)
       setSaving(false)
@@ -105,6 +111,11 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, onSub
             Nur für uns (privat)
           </label>
           <span className="field-hint">Private Einträge sehen nur die Menschen in eurem Zuhause.</span>
+        </div>
+      )}
+      {canTag && (
+        <div className="field span-2">
+          <ErlebtMitPicker value={erlebtMit} onChange={setErlebtMit} disabled={privat} />
         </div>
       )}
       {isShelter && (

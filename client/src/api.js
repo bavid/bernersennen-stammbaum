@@ -131,6 +131,15 @@ export const api = {
   redeemVisit: (code) => request('/besuche/einloesen', json('POST', { code })),
   endVisit: (hostId) => request(`/besuche/bei/${encodeURIComponent(hostId)}`, { method: 'DELETE' }),
   removeGuest: (guestId) => request(`/besuche/gaeste/${encodeURIComponent(guestId)}`, { method: 'DELETE' }),
+
+  // "Erlebt mit" (Phase V2, server/routes/erlebtMit.js): Tiere verbundener Zuhause zum Markieren ([{ id, name,
+  // nameUnbekannt, tierart, zuhauseId, zuhause }]), offene Anfragen an das eigene Zuhause und die Entscheidung dazu
+  // ({ id, status, offen } - offen: wie viele danach noch offen sind). Markiert wird über erlebtMit: [dogId] beim
+  // Speichern eines Eintrags (createTimelineEntry/updateTimelineEntry).
+  erlebtMitTiere: () => request('/erlebt-mit/tiere'),
+  erlebtMitOffen: () => request('/erlebt-mit/offen'),
+  confirmErlebtMit: (id) => request(`/erlebt-mit/${encodeURIComponent(id)}/bestaetigen`, { method: 'POST' }),
+  rejectErlebtMit: (id) => request(`/erlebt-mit/${encodeURIComponent(id)}/ablehnen`, { method: 'POST' }),
   joinFamily: (password) => request('/families/join', json('POST', { password })),
   createGroup: (payload) => request('/families/group', json('POST', payload)),
   leaveFamily: (id) => request(`/memberships/${id}`, { method: 'DELETE' }),
