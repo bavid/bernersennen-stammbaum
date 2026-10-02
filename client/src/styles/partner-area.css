@@ -537,6 +537,39 @@
   padding: 0 var(--space-4);
 }
 
+/* Phase V1: Anpinnen für die Karte in "Entdecken" (EinblickPinButton) - angepinnt kräftig, sonst leise. */
+.einblick-pin svg,
+.einblick-pin-team svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.einblick-pin.is-pinned {
+  border-color: var(--rust);
+  background: var(--rust-wash);
+  color: var(--rust-deep);
+}
+
+.einblick-pin-team {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--rust-deep);
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+.einblicke-pin-hint {
+  max-width: 44rem;
+  margin: var(--space-1) 0 0;
+}
+
+.einblicke-pin-count {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Reiter "Kunden-Gutscheine" (Phase 5 Task 4, PartnerVoucherStacks): je Stapel eine Karte mit Bezeichnung,
    Quelle, Verteilungsbalken (admin-stats.css .stat-bar) und den drei Zahlen. */
 

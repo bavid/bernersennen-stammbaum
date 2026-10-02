@@ -12,7 +12,8 @@ const mocks = vi.hoisted(() => ({
   createPartnerArea: vi.fn(),
   renewPartnerAreaKey: vi.fn(),
   einblicke: vi.fn(),
-  setEinblickAusgeblendet: vi.fn()
+  setEinblickAusgeblendet: vi.fn(),
+  setEinblickAngepinnt: vi.fn()
 }))
 const { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo, createPartnerArea, renewPartnerAreaKey, einblicke, setEinblickAusgeblendet } =
   mocks
@@ -497,6 +498,27 @@ describe('AdminPartners – Einblicke', () => {
     expect(setEinblickAusgeblendet).toHaveBeenCalledWith(7, true)
     expect(container.querySelector('.admin-einblick').classList.contains('is-hidden')).toBe(true)
     expect(container.querySelector('.admin-einblick input[role="switch"]').checked).toBe(true)
+  })
+
+  // Phase V1: Team-Pin für die Partner-Karte in "Entdecken".
+  test('der Schalter "anpinnen" setzt einen Team-Pin; ein Partner-Pin ist markiert', async () => {
+    partners.mockResolvedValue([activePartner])
+    einblicke.mockResolvedValue([{ ...einblickList[0], angepinntVon: 'partner' }, einblickList[1]])
+    mocks.setEinblickAngepinnt.mockResolvedValue({ ...einblickList[0], angepinntVon: 'admin' })
+    await render()
+
+    await act(async () => buttonByText('Einblicke').click())
+    const [first, hidden] = [...container.querySelectorAll('.admin-einblick')]
+    expect(first.textContent).toContain('vom Partner angepinnt')
+    const pin = first.querySelector('.admin-einblick-pin input[role="switch"]')
+    expect(pin.checked).toBe(false)
+    expect(hidden.querySelector('.admin-einblick-pin input').disabled).toBe(true)
+    await act(async () => pin.click())
+
+    expect(mocks.setEinblickAngepinnt).toHaveBeenCalledWith(7, true)
+    const updated = container.querySelector('.admin-einblick')
+    expect(updated.querySelector('.admin-einblick-pin input').checked).toBe(true)
+    expect(updated.textContent).not.toContain('vom Partner angepinnt')
   })
 
   test('ein Fehler beim Ausblenden erscheint als Alert', async () => {

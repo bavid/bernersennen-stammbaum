@@ -14,7 +14,7 @@ const { profile, updateProfile, uploadLogo, publish, einblicke, posts, vouchers,
   vouchers: vi.fn(),
   config: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { config, partnerArea: { profile, updateProfile, uploadLogo, publish, einblicke, posts, vouchers } } }))
+vi.mock('../api', () => ({ api: { config, partnerArea: { profile, updateProfile, uploadLogo, publish, einblicke, posts, vouchers, cardAnzeigen: () => Promise.resolve({ bereich: null, max: 3, anzeigen: [] }) } } }))
 
 import PartnerProfilePage from './PartnerProfilePage.jsx'
 import { DemoProvider } from '../lib/demo.js'

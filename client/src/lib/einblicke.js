@@ -9,6 +9,15 @@ export const EINBLICK_ACCEPT = 'image/jpeg,image/png'
 
 const EINBLICK_MIME_TYPES = EINBLICK_ACCEPT.split(',')
 
+// Phase V1: angepinnte Einblicke für die Karte in "Entdecken" - wie server/lib/einblickPins.js (höchstens drei, Team-
+// Pins zählen mit, ausgeblendete nicht).
+export const MAX_ANGEPINNT = 3
+export const PIN_VON = Object.freeze({ partner: 'partner', admin: 'admin' })
+
+export function countPinned(list) {
+  return (list || []).filter((einblick) => einblick.angepinntVon && !einblick.ausgeblendet).length
+}
+
 export function isEinblickFileType(file) {
   return Boolean(file) && EINBLICK_MIME_TYPES.includes(file.type)
 }

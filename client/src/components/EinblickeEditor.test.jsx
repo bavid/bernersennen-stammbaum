@@ -3,13 +3,15 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { einblicke, createEinblick, updateEinblick, deleteEinblick } = vi.hoisted(() => ({
+const { einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick } = vi.hoisted(() => ({
   einblicke: vi.fn(),
   createEinblick: vi.fn(),
   updateEinblick: vi.fn(),
-  deleteEinblick: vi.fn()
+  deleteEinblick: vi.fn(),
+  pinEinblick: vi.fn(),
+  unpinEinblick: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { partnerArea: { einblicke, createEinblick, updateEinblick, deleteEinblick } } }))
+vi.mock('../api', () => ({ api: { partnerArea: { einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick } } }))
 
 import EinblickeEditor from './EinblickeEditor.jsx'
 import { DemoProvider } from '../lib/demo.js'
@@ -83,7 +85,7 @@ afterEach(() => {
     container.remove()
     container = null
   }
-  for (const mock of [einblicke, createEinblick, updateEinblick, deleteEinblick]) mock.mockReset()
+  for (const mock of [einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick]) mock.mockReset()
   delete URL.createObjectURL
   delete URL.revokeObjectURL
 })
@@ -296,5 +298,61 @@ describe('EinblickeEditor – Demo', () => {
         expect(btn.getAttribute('aria-describedby')).toBe('einblicke-demo-hint')
       }
     }
+  })
+})
+
+// Phase V1: Anpinnen für die Karte in "Entdecken" - höchstens drei, Team-Pins nur ansehen.
+describe('EinblickeEditor – Anpinnen', () => {
+  const pinButton = (card) => card.querySelector('.einblick-pin')
+
+  test('Anpinnen schickt den Einblick an den Server und zeigt ihn als angepinnt', async () => {
+    pinEinblick.mockResolvedValue({ ...einblickA, angepinntVon: 'partner' })
+    await render({ list: [einblickA] })
+    const button = pinButton(cards()[0])
+    expect(button.getAttribute('aria-pressed')).toBe('false')
+    expect(button.textContent).toContain('Anpinnen')
+    await act(async () => button.click())
+    expect(pinEinblick).toHaveBeenCalledWith(1)
+    expect(pinButton(cards()[0]).getAttribute('aria-pressed')).toBe('true')
+    expect(container.textContent).toContain('1 von 3 angepinnt')
+  })
+
+  test('ein angepinnter wird wieder gelöst', async () => {
+    unpinEinblick.mockResolvedValue({ ...einblickA, angepinntVon: null })
+    await render({ list: [{ ...einblickA, angepinntVon: 'partner' }] })
+    await act(async () => pinButton(cards()[0]).click())
+    expect(unpinEinblick).toHaveBeenCalledWith(1)
+    expect(pinButton(cards()[0]).getAttribute('aria-pressed')).toBe('false')
+  })
+
+  test('bei drei Pins sind weitere gesperrt, mit Hinweis; Team-Pins zählen mit und lassen sich nicht lösen', async () => {
+    const list = [
+      { ...einblickA, id: 1, angepinntVon: 'partner' },
+      { ...einblickA, id: 2, datum: '2026-08-13', angepinntVon: 'admin' },
+      { ...einblickA, id: 3, datum: '2026-08-12', angepinntVon: 'partner' },
+      { ...einblickA, id: 4, datum: '2026-08-11', angepinntVon: null }
+    ]
+    await render({ list })
+    const [first, team, , free] = cards()
+    expect(pinButton(free).disabled).toBe(true)
+    expect(container.textContent).toContain('Drei sind angepinnt – löst einen, um einen anderen anzupinnen.')
+    expect(pinButton(team)).toBeNull()
+    expect(team.textContent).toContain('Vom Team angepinnt')
+    expect(pinButton(first).disabled).toBe(false)
+    expect(container.textContent).toContain('3 von 3 angepinnt. Vom Team angepinnte stehen zuerst.')
+  })
+
+  test('ausgeblendete lassen sich nicht anpinnen; ein Fehler steht in der Karte', async () => {
+    pinEinblick.mockRejectedValue(new Error('Höchstens 3 Einblicke angepinnt – löst zuerst einen anderen.'))
+    await render({ list: [einblickA, { ...einblickB, datum: '2026-07-01' }] })
+    const [visible, hidden] = cards()
+    expect(pinButton(hidden).disabled).toBe(true)
+    await act(async () => pinButton(visible).click())
+    expect(visible.querySelector('[role="alert"]').textContent).toBe('Höchstens 3 Einblicke angepinnt – löst zuerst einen anderen.')
+  })
+
+  test('in der Demo gesperrt', async () => {
+    await render({ list: [einblickA], isDemo: true })
+    expect(pinButton(cards()[0]).disabled).toBe(true)
   })
 })

@@ -4,14 +4,16 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { posts, createPost, updatePost, deletePost, uploadPostImage } = vi.hoisted(() => ({
+const { posts, createPost, updatePost, deletePost, uploadPostImage, cardAnzeigen } = vi.hoisted(() => ({
   posts: vi.fn(),
   createPost: vi.fn(),
   updatePost: vi.fn(),
   deletePost: vi.fn(),
-  uploadPostImage: vi.fn()
+  uploadPostImage: vi.fn(),
+  // Phase V1: "Eure Karte in Entdecken" (PartnerCardOrder) - ohne eigene Vorgabe keine Karte.
+  cardAnzeigen: vi.fn(() => Promise.resolve({ bereich: null, max: 3, anzeigen: [] }))
 }))
-vi.mock('../api', () => ({ api: { partnerArea: { posts, createPost, updatePost, deletePost, uploadPostImage } } }))
+vi.mock('../api', () => ({ api: { partnerArea: { posts, createPost, updatePost, deletePost, uploadPostImage, cardAnzeigen } } }))
 
 import PartnerPostsPage from './PartnerPostsPage.jsx'
 import { DemoProvider } from '../lib/demo.js'
@@ -384,5 +386,28 @@ describe('PartnerPostsPage – Demo', () => {
     expect(actions.length).toBe(6)
     expect(actions.every((btn) => btn.disabled)).toBe(true)
     expect(actions.every((btn) => btn.getAttribute('aria-describedby') === 'partner-posts-demo-hint')).toBe(true)
+  })
+})
+
+// Phase V1: über der Liste "Eure Karte in Entdecken" - nach einer Änderung an den Beiträgen neu geladen.
+describe('PartnerPostsPage – Eure Karte in Entdecken', () => {
+  test('steht über der Liste und lädt nach dem Löschen eines Beitrags neu', async () => {
+    cardAnzeigen.mockClear()
+    cardAnzeigen.mockResolvedValue({
+      bereich: 'hundeschule',
+      max: 3,
+      anzeigen: [{ id: 1, titel: 'Welpenkurs ab Oktober', text: null, kennzeichnung: 'Anzeige', reihenfolge: null, inEntdecken: true, sichtbar: true, vomTeam: false, aufKarte: true }]
+    })
+    deletePost.mockResolvedValue(null)
+    await render()
+    const panel = container.querySelector('.partner-card-order')
+    expect(panel.querySelector('h3').textContent).toBe('Eure Karte in Entdecken')
+    expect(Boolean(panel.compareDocumentPosition(container.querySelector('.partner-post-list')) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true)
+    expect(cardAnzeigen).toHaveBeenCalledTimes(1)
+
+    await click(row('Tag der offenen Tür').querySelector('button[aria-label="Tag der offenen Tür löschen"]'))
+    await click([...row('Tag der offenen Tür').querySelectorAll('button')].find((btn) => btn.textContent.includes('Wirklich löschen?')))
+    expect(cardAnzeigen).toHaveBeenCalledTimes(2)
+    cardAnzeigen.mockResolvedValue({ bereich: null, max: 3, anzeigen: [] })
   })
 })

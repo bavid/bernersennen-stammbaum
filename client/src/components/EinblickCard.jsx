@@ -4,6 +4,7 @@ import { useIsDemo } from '../lib/demo.js'
 import { formatDateLong, todayIso } from '../lib/dates.js'
 import { MAX_EINBLICK_TEXT, einblickChanges, isUploadUrl } from '../lib/einblicke.js'
 import ConfirmButton from './ConfirmButton.jsx'
+import EinblickPinButton from './EinblickPinButton.jsx'
 import Icon from './Icon.jsx'
 
 // Datum und Text eines Einblicks direkt in der Karte ändern - das Foto bleibt (neues Foto = neuer Einblick).
@@ -80,8 +81,9 @@ function EinblickEditForm({ einblick, onSaved, onCancel }) {
 
 // Ein Einblick im Raster: Foto, Datum, Text, dazu "ausgeblendet vom Betreiber", wenn der Admin ihn
 // verborgen hat (dann erscheint er nicht auf dem Portal). Bearbeiten klappt Datum/Text inline auf,
-// Löschen fragt einmal nach (ConfirmButton). In der Demo sind beide gesperrt.
-export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintId }) {
+// Löschen fragt einmal nach (ConfirmButton). In der Demo sind beide gesperrt. Phase V1: dazu "Anpinnen" für die Karte in
+// "Entdecken" (EinblickPinButton) - canPin false, sobald drei angepinnt sind.
+export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintId, canPin = true }) {
   const isDemo = useIsDemo()
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -144,6 +146,7 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
                 label="Löschen"
                 confirmLabel="Wirklich löschen?"
               />
+              <EinblickPinButton einblick={einblick} canPin={canPin} readOnly={isDemo} demoHintId={demoHintId} onUpdated={onUpdated} />
             </div>
             {error && (
               <p className="field-error" role="alert">

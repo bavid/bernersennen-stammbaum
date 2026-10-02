@@ -276,6 +276,8 @@ export const api = {
     // Einblicke eines Partners (inkl. ausgeblendeter, Fotos über /uploads) und Ausblenden/Einblenden.
     einblicke: (partnerId) => request(`/admin/einblicke?${new URLSearchParams({ partnerId: String(partnerId) }).toString()}`),
     setEinblickAusgeblendet: (id, ausgeblendet) => request(`/admin/einblicke/${id}/ausblenden`, json('POST', { ausgeblendet })),
+    // Phase V1: für die Partner-Karte in "Entdecken" anpinnen (Team-Pins stehen zuerst) oder jeden Pin lösen.
+    setEinblickAngepinnt: (id, angepinnt) => request(`/admin/einblicke/${id}/anpinnen`, json('POST', { angepinnt })),
     uploadPartnerLogo: (id, file) => {
       const formData = new FormData()
       formData.append('file', file)
@@ -332,6 +334,9 @@ export const api = {
     createEinblick: (formData) => request('/partner-area/einblicke', { method: 'POST', body: formData }),
     updateEinblick: (id, fields) => request(`/partner-area/einblicke/${encodeURIComponent(id)}`, json('PUT', fields)),
     deleteEinblick: (id) => request(`/partner-area/einblicke/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    // Phase V1: für die eigene Karte in "Entdecken" anpinnen (höchstens drei) bzw. lösen - Antwort: der Einblick.
+    pinEinblick: (id) => request(`/partner-area/einblicke/${encodeURIComponent(id)}/anpinnen`, { method: 'POST' }),
+    unpinEinblick: (id) => request(`/partner-area/einblicke/${encodeURIComponent(id)}/anpinnen`, { method: 'DELETE' }),
     previewPortal: () => request('/partner-area/preview/portal'),
     // Wie api.discover: die PLZ steht im Body, nie in der URL.
     previewDiscover: ({ plz, radius } = {}) => request('/partner-area/preview/discover', json('POST', plz ? { plz, radius } : {})),
@@ -343,6 +348,11 @@ export const api = {
     createPost: (payload) => request('/partner-area/posts', json('POST', payload)),
     updatePost: (id, payload) => request(`/partner-area/posts/${encodeURIComponent(id)}`, json('PUT', payload)),
     deletePost: (id) => request(`/partner-area/posts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    // Phase V1: die Anzeigen der eigenen Karte in "Entdecken" - { bereich, max, anzeigen } -, ihre Reihenfolge und
+    // "in Entdecken zeigen". Reine Darstellung: keine neue Freigabe. Beide Änderungen antworten mit der neuen Liste.
+    cardAnzeigen: () => request('/partner-area/posts/entdecken'),
+    setCardOrder: (ids) => request('/partner-area/posts/reihenfolge', json('PUT', { ids })),
+    setPostInEntdecken: (id, inEntdecken) => request(`/partner-area/posts/${encodeURIComponent(id)}/entdecken`, json('PUT', { inEntdecken })),
     // Nur JPG oder PNG - Antwort: der ganze Beitrag (mit bildUrl und zurückgesetzter Freigabe).
     uploadPostImage: (id, file) => {
       const formData = new FormData()

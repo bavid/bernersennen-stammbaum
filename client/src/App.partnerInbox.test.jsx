@@ -13,7 +13,7 @@ const { me, logout, messages, markMessageRead, deleteMessage, posts } = vi.hoist
   posts: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, partnerArea: { messages, markMessageRead, deleteMessage, posts } },
+  api: { me, logout, partnerArea: { messages, markMessageRead, deleteMessage, posts, cardAnzeigen: () => Promise.resolve({ bereich: null, max: 3, anzeigen: [] }) } },
   setUnauthorizedHandler: () => {}
 }))
 

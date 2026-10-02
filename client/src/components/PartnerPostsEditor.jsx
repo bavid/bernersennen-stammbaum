@@ -3,6 +3,7 @@ import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { LIMIT_HINT, MAX_POSTS, POSTS_HINT, POSTS_HINT_TRUSTED, TRUSTED_HINT, allowedBereiche, savedMessage } from '../lib/partnerPosts.js'
 import Icon from './Icon.jsx'
+import PartnerCardOrder from './PartnerCardOrder.jsx'
 import PartnerPostForm from './PartnerPostForm.jsx'
 import PartnerPostRow from './PartnerPostRow.jsx'
 import { useToast } from './Toast.jsx'
@@ -11,8 +12,8 @@ const DEMO_HINT_ID = 'partner-posts-demo-hint'
 const NO_BEREICH_HINT = 'Für euren Partner-Typ gibt es noch keinen Bereich in „Entdecken“ – schreibt uns gern.'
 
 // Eigene Beiträge (Phase P2) - auf /beitraege (Partner) bzw. als Reiter "Beiträge" im Profil (Tierheim):
-// oben Hinweis und Zähler "x von 20", dann entweder das Formular (Anlegen/Bearbeiten) oder die Liste,
-// neueste zuerst (wie der Server sie liefert). typ: Partner-Typ (me.partner.typ) für die erlaubten Bereiche.
+// oben Hinweis und Zähler "x von 20", dann entweder das Formular (Anlegen/Bearbeiten) oder - seit Phase V1 unter
+// "Eure Karte in Entdecken" (Reihenfolge, PartnerCardOrder) - die Liste, neueste zuerst (wie der Server sie liefert). typ: Partner-Typ (me.partner.typ) für die erlaubten Bereiche.
 // vertrauenswuerdig (V-Fehler 3, me.partner.vertrauenswuerdig): Änderungen an freigegebenen Beiträgen gehen sofort
 // online - das sagt ein Hinweis oben und das Formular. In der Demo ist alles sichtbar, aber gesperrt.
 export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false }) {
@@ -23,6 +24,8 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false }) {
   const [loadError, setLoadError] = useState(null)
   const [error, setError] = useState(null)
   const [editing, setEditing] = useState(null) // null, 'new' oder ein Beitrag
+  // Phase V1: jede Änderung an den Beiträgen lädt "Eure Karte in Entdecken" (PartnerCardOrder) neu.
+  const [version, setVersion] = useState(0)
   const count = posts?.length ?? 0
   const isFull = count >= MAX_POSTS
   const hasBereich = allowedBereiche(typ).length > 0
@@ -45,11 +48,13 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false }) {
   // Nach einem Bild-Upload: Liste UND das offene Formular bekommen den neuen Stand (z. B. ist ein abgelehnter Beitrag
   // damit schon wieder eingereicht - Hinweis und Knopf im Formular folgen). Das Formular behält seine Eingaben.
   function replacePost(saved) {
+    setVersion((current) => current + 1)
     setPosts((list) => list.map((item) => (item.id === saved.id ? saved : item)))
     setEditing((current) => (current && current !== 'new' && current.id === saved.id ? saved : current))
   }
 
   function handleSaved(saved, { created }) {
+    setVersion((current) => current + 1)
     setPosts((list) => (created ? [saved, ...list] : list.map((item) => (item.id === saved.id ? saved : item))))
     setEditing(null)
     setError(null)
@@ -61,6 +66,7 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false }) {
     try {
       await api.partnerArea.deletePost(post.id)
       setPosts((list) => list.filter((item) => item.id !== post.id))
+      setVersion((current) => current + 1)
       toast('Beitrag gelöscht.')
     } catch (err) {
       setError(err.message)
@@ -127,6 +133,7 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false }) {
         </div>
       )}
       {posts === undefined && !loadError && <p className="muted">Lade …</p>}
+      {!editing && <PartnerCardOrder refreshKey={version} />}
       {!editing && posts?.length === 0 && (
         <p className="empty-state partner-posts-empty">Noch keine Beiträge – kündigt Kurse, Aktionen oder Termine an.</p>
       )}

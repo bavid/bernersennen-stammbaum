@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
-import { MAX_EINBLICKE, sortEinblicke } from '../lib/einblicke.js'
+import { MAX_ANGEPINNT, MAX_EINBLICKE, countPinned, sortEinblicke } from '../lib/einblicke.js'
 import EinblickCard from './EinblickCard.jsx'
 import EinblickForm from './EinblickForm.jsx'
 
@@ -17,6 +17,8 @@ export default function EinblickeEditor({ onChanged }) {
   const [einblicke, setEinblicke] = useState(undefined)
   const [loadError, setLoadError] = useState(null)
   const count = einblicke?.length ?? 0
+  const pinned = countPinned(einblicke)
+  const teamPinned = (einblicke || []).some((einblick) => einblick.angepinntVon === 'admin' && !einblick.ausgeblendet)
 
   useEffect(() => {
     let cancelled = false
@@ -53,6 +55,12 @@ export default function EinblickeEditor({ onChanged }) {
         <div>
           <h2 id="einblicke-title">Einblicke</h2>
           <p className="muted">Fotos aus eurem Alltag – sie erscheinen mit Datum auf eurem Portal.</p>
+          <p className="field-hint einblicke-pin-hint">
+            Angepinnte Einblicke (höchstens {MAX_ANGEPINNT === 3 ? 'drei' : MAX_ANGEPINNT}) stehen auf eurer Karte in „Entdecken“ – sonst
+            die neuesten drei. <span className="einblicke-pin-count">{Math.min(pinned, MAX_ANGEPINNT)} von {MAX_ANGEPINNT} angepinnt.</span>
+            {teamPinned && <> Vom Team angepinnte stehen zuerst.</>}
+            {pinned >= MAX_ANGEPINNT && <> Drei sind angepinnt – löst einen, um einen anderen anzupinnen.</>}
+          </p>
         </div>
         <span className="pill einblicke-count" aria-live="polite">
           {count} von {MAX_EINBLICKE}
@@ -82,6 +90,7 @@ export default function EinblickeEditor({ onChanged }) {
               onUpdated={handleUpdated}
               onDeleted={handleDeleted}
               demoHintId={isDemo ? DEMO_HINT_ID : undefined}
+              canPin={pinned < MAX_ANGEPINNT}
             />
           ))}
         </ul>
