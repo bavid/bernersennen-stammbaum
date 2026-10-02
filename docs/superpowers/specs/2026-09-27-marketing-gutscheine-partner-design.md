@@ -851,9 +851,13 @@ bewusste Ausnahme vom Grundsatz „Eine Familie ist nie öffentlich“: nur mit 
   sehen (wie die Kundensicht der Partner) – auch vor dem Einschalten.
 - **Schutz:** melden/ausblenden je Profil, Admin kann sperren, Rate-Limits, `noindex`, keine Direktnachrichten im
   ersten Schritt, Demo-Profile auf der Vorschau.
-- **Offene Fragen:** Kommentare unter öffentlichen Erinnerungen erlauben? Nachrichten zwischen Tierhaltern? Sollen
-  öffentliche Profile für nicht angemeldete Besucher sichtbar sein oder nur für angemeldete Nutzer (Vorschlag: nur
-  für Angemeldete)?
+- **Entschieden (03.10., vorläufig, der Betreiber kann umsteuern):**
+  - **Kommentare:** ja, nur von angemeldeten Nutzern. Der Profil-Inhaber kann Kommentare je Profil ausschalten und
+    einzelne löschen. Melden ist möglich.
+  - **Nachrichten zwischen Tierhaltern:** im ersten Schritt nicht.
+  - **Sichtbarkeit:** öffentliche Profile und das Radar nur für angemeldete Nutzer, nicht für Besucher ohne
+    Anmeldung.
+  - Gebaut wird Phase M erst nach Phase V.
 
 ---
 
