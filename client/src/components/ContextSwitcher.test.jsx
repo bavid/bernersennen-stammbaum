@@ -269,5 +269,6 @@ describe('ContextSwitcher', () => {
     act(() => trigger().click())
     const current = items().find((item) => item.getAttribute('aria-current') === 'true')
     expect(current.textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
+    expect(items().some((item) => item.textContent.includes('beitreten oder gründen'))).toBe(false)
   })
 })

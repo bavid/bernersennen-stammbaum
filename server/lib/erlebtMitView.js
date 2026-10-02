@@ -12,6 +12,7 @@ const {
   assertTaggable,
   syncTags,
   clearTags,
+  reopenConfirmedTags,
   tagsForEntries,
   mirroredEntries
 } = require('./erlebtMit')
@@ -39,10 +40,20 @@ function readTagInput(body, req, privat) {
 }
 
 // Innerhalb der Speicher-Transaktion: ein privater Eintrag verliert jede Markierung, sonst gilt die neue Liste
-// (null = unverändert).
-function applyTags(entryId, dogIds, privat) {
-  if (privat) clearTags(entryId)
-  else if (dogIds !== null) syncTags(entryId, dogIds)
+// (null = unverändert). contentChanged (PUT): Titel, Text, Datum oder Fotos haben sich geändert - schon bestätigte
+// Markierungen werden wieder zur Anfrage (reopenConfirmedTags).
+function applyTags(entryId, dogIds, privat, { contentChanged = false } = {}) {
+  if (privat) {
+    clearTags(entryId)
+    return
+  }
+  if (dogIds !== null) syncTags(entryId, dogIds)
+  if (contentChanged) reopenConfirmedTags(entryId)
+}
+
+// Hat sich am Inhalt etwas geändert, das die markierte Seite in ihrer Chronik sieht?
+function entryContentChanged(existing, values) {
+  return ['titel', 'text', 'datum', 'foto_urls'].some((key) => (existing[key] ?? null) !== (values[key] ?? null))
 }
 
 // Ergänzt Einträge des eigenen Zuhauses um erlebt_mit ([{ id, dogId, name, zuhause, status }]) - nur in der Ansicht
@@ -66,4 +77,4 @@ function mirroredForDog(req, dogId) {
   }))
 }
 
-module.exports = { isOwnHomeView, readTagInput, applyTags, withTags, mirroredForDog }
+module.exports = { isOwnHomeView, readTagInput, applyTags, entryContentChanged, withTags, mirroredForDog }

@@ -185,7 +185,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
           {visit && (
             <p className="handover-notice" role="status">
               Eine Einladung von „{visit.name}“: Mit eurer neuen Chronik seid ihr gleich verbunden und könnt dort zu
-              Besuch vorbeischauen.
+              Besuch vorbeischauen. Verbunden sehen beide Zuhause die Namen der Tiere des anderen (für „Erlebt mit“).
             </p>
           )}
           {handover && (

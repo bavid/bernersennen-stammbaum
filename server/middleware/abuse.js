@@ -43,8 +43,12 @@ const authLimiter = limiter(
   'Zu viele Versuche. Bitte warte ein paar Minuten und probiere es dann erneut.'
 )
 
+// Phase V2: ein Gast (Besuchs-Sitzung) zählt unter seinem eigenen Zuhause - sonst könnte er mit Kommentaren das
+// Schreib-Budget des besuchten Zuhauses aufbrauchen.
+const writeLimitKey = (req) => (req.isGuest ? `guest-${req.homeId}` : `family-${req.familyId}`)
+
 const writeLimiter = limiter(
-  { windowMs: TEN_MINUTES, limit: config.writeRateLimit, keyGenerator: (req) => `family-${req.familyId}` },
+  { windowMs: TEN_MINUTES, limit: config.writeRateLimit, keyGenerator: writeLimitKey },
   'Sehr viele Änderungen in kurzer Zeit – bitte ein paar Minuten warten.'
 )
 
@@ -73,4 +77,4 @@ function requireFreeDisk(req, res, next) {
   })
 }
 
-module.exports = { apiLimiter, photoLimiter, codeLimiter, authLimiter, limitWrites, rejectHoneypot, requireFreeDisk }
+module.exports = { apiLimiter, photoLimiter, codeLimiter, authLimiter, limitWrites, writeLimitKey, rejectHoneypot, requireFreeDisk }

@@ -4,7 +4,7 @@ const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
 const { ART, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
 const { GUEST_ENTRY_SQL, GUEST_COMMENT_SQL } = require('../lib/visits')
-const { readTagInput, applyTags, withTags, mirroredForDog } = require('../lib/erlebtMitView')
+const { readTagInput, applyTags, entryContentChanged, withTags, mirroredForDog } = require('../lib/erlebtMitView')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
 const { requireRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { authorContext, withAuthorFlags, mayDeleteInArea } = require('../lib/authorship')
@@ -233,9 +233,9 @@ const createEntryWithTags = db.transaction((values, tags) => {
   applyTags(entryId, tags, values.privat)
   return entryId
 })
-const updateEntryWithTags = db.transaction((values, tags) => {
+const updateEntryWithTags = db.transaction((values, tags, contentChanged) => {
   updateEntry.run(values)
-  applyTags(values.id, tags, values.privat)
+  applyTags(values.id, tags, values.privat, { contentChanged })
 })
 
 router.post('/', requireAuth, canWrite, (req, res) => {
@@ -274,7 +274,7 @@ router.put('/:id', requireAuth, canWrite, (req, res) => {
   const tagInput = readTags(req.body || {}, req, values.privat, res)
   if (!tagInput) return
 
-  updateEntryWithTags({ ...values, id: existing.id }, tagInput.tags)
+  updateEntryWithTags({ ...values, id: existing.id }, tagInput.tags, entryContentChanged(existing, values))
   const entry = findEntryById.get(existing.id)
   res.json(withTags(req, [toEntry(entry, commentsOf(req, entry.id))])[0])
 })

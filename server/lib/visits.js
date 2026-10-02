@@ -79,13 +79,18 @@ function findHome(id) {
 
 // Zuhause, die mit @homeId verbunden sind: ein Besuch in einer der beiden Richtungen oder eine gemeinsame Familie
 // (beide Mitglied derselben Familie, art 'rudel'). Für "Erlebt mit" (lib/erlebtMit.js): wen man markieren darf und
-// wessen Einträge man gespiegelt sieht, solange die Verbindung besteht. Erwartet den Parameter @homeId.
+// wessen Einträge man gespiegelt sieht, solange die Verbindung besteht. Erwartet den Parameter @homeId. Nie über die
+// Demo-Grenze hinweg (wie isVisiting - Verteidigungslinie, security-review Phase V2 LOW-6).
 const CONNECTED_HOMES_SQL = `(
-  SELECT gastgeber_family_id FROM besuche WHERE gast_family_id = @homeId
-  UNION SELECT gast_family_id FROM besuche WHERE gastgeber_family_id = @homeId
-  UNION SELECT m2.member_family_id FROM family_members m1
-    JOIN family_members m2 ON m2.group_family_id = m1.group_family_id
-    WHERE m1.member_family_id = @homeId AND m2.member_family_id != @homeId
+  SELECT connected.id FROM (
+    SELECT gastgeber_family_id AS id FROM besuche WHERE gast_family_id = @homeId
+    UNION SELECT gast_family_id FROM besuche WHERE gastgeber_family_id = @homeId
+    UNION SELECT m2.member_family_id FROM family_members m1
+      JOIN family_members m2 ON m2.group_family_id = m1.group_family_id
+      WHERE m1.member_family_id = @homeId AND m2.member_family_id != @homeId
+  ) connected
+  JOIN families cf ON cf.id = connected.id
+  WHERE cf.is_demo = (SELECT is_demo FROM families WHERE id = @homeId)
 )`
 
 // Was eine Besuchs-Sitzung (aktiver Bereich @familyId = der Gastgeber, @homeId = das Zuhause des Gasts) sieht:

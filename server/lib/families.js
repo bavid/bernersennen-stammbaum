@@ -92,6 +92,8 @@ function deleteFamily(db, familyId) {
     db.prepare('DELETE FROM vouchers WHERE issued_by_family_id = ? AND redeemed_at IS NULL').run(familyId)
     // visit_host_family_id (Phase V2) und created_by_family_id (Phase V2b), beide ohne REFERENCES, verlieren den
     // Verweis genauso; die Besuche selbst (besuche) verschwinden per ON DELETE CASCADE mit der families-Zeile.
+    // Die eigene Notiz (label, z. B. ein Name) ist persönlich und geht mit ihrer Verfasserin (security-review V2, LOW-5).
+    db.prepare('UPDATE vouchers SET label = NULL WHERE created_by_family_id = ?').run(familyId)
     db.prepare(
       `UPDATE vouchers SET
          issued_by_family_id = NULLIF(issued_by_family_id, @familyId),

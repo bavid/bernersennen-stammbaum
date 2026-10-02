@@ -55,6 +55,9 @@ function cleanTagList(value) {
 }
 
 const listEntryTagsStmt = db.prepare('SELECT id, dog_id, status FROM erlebt_mit WHERE entry_id = ?')
+const reopenConfirmedStmt = db.prepare(
+  "UPDATE erlebt_mit SET status = 'offen', entschieden_at = NULL, created_at = datetime('now') WHERE entry_id = ? AND status = 'bestaetigt'"
+)
 const insertTagStmt = db.prepare("INSERT INTO erlebt_mit (entry_id, dog_id, status) VALUES (?, ?, 'offen')")
 const deleteTagStmt = db.prepare('DELETE FROM erlebt_mit WHERE id = ?')
 const clearTagsStmt = db.prepare('DELETE FROM erlebt_mit WHERE entry_id = ?')
@@ -83,6 +86,13 @@ function syncTags(entryId, dogIds) {
 
 function clearTags(entryId) {
   clearTagsStmt.run(entryId)
+}
+
+// Ändert die Autorin Titel, Text, Datum oder Fotos eines schon bestätigten Eintrags, muss die andere Seite erneut
+// zustimmen - sonst ließe sich nach der Bestätigung ein ganz anderer Inhalt in deren Chronik schieben
+// (security-review Phase V2, MEDIUM-2). Innerhalb der Speicher-Transaktion aufrufen.
+function reopenConfirmedTags(entryId) {
+  reopenConfirmedStmt.run(entryId)
 }
 
 // Markierungen für die Ansicht der Autorin (ihr eigenes Zuhause): je Eintrag [{ id, dogId, name, zuhause, status }],
@@ -183,6 +193,7 @@ module.exports = {
   assertTaggable,
   syncTags,
   clearTags,
+  reopenConfirmedTags,
   tagsForEntries,
   openRequests,
   countOpenRequests,

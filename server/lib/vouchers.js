@@ -350,7 +350,7 @@ function findVoucherByHash(db, codeHash) {
   return db
     .prepare(
       `SELECT v.id, v.join_family_id, v.join_rolle, v.partner_id, v.dog_id, v.issued_by_family_id, v.redeemed_at, v.revoked_at,
-         v.expires_at, v.visit_host_family_id, b.zweck, b.partner_typ, b.kind
+         v.expires_at, v.visit_host_family_id, v.created_by_family_id, b.zweck, b.partner_typ, b.kind
        FROM vouchers v JOIN voucher_batches b ON b.id = v.batch_id WHERE v.code_hash = ?`
     )
     .get(codeHash)
@@ -438,8 +438,11 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
     claimOpenVoucher(db, codeHash)
 
     // Eine Besuchs-Einladung kennt der Gastgeber im Klartext - sie wird deshalb NICHT der Schlüssel des neuen
-    // Zuhauses (sonst könnte sich der Gastgeber damit dort anmelden); das Zuhause bekommt einen frischen.
-    const key = isVisitInvite ? generateCode() : normalized
+    // Zuhauses (sonst könnte sich der Gastgeber damit dort anmelden); das Zuhause bekommt einen frischen. Dasselbe
+    // gilt für jeden Code, den eine Person oder ein Bereich selbst angelegt hat (Phase V2b, created_by_family_id:
+    // Weitergabe-Gutscheine, Familien-Einladungen) - nur gedruckte Karten des Admins/Partners bleiben "Karte =
+    // Schlüssel" (security-review Phase V2, MEDIUM-1).
+    const key = isVisitInvite || voucher.created_by_family_id ? generateCode() : normalized
     const newFamilyId = db
       .prepare(
         `INSERT INTO families (name, password_hash, art, theme, legacy_password, access_key_hash, voucher_id, partner_id)

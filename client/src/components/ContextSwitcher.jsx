@@ -186,18 +186,23 @@ export default function ContextSwitcher({ family, onChange }) {
               </button>
             </>
           )}
-          <div className="context-switcher-sep" role="separator" />
-          <button
-            type="button"
-            role="menuitem"
-            className="context-switcher-item"
-            onClick={() => {
-              setOpen(false)
-              setJoinOpen(true)
-            }}
-          >
-            {words.group} beitreten oder gründen …
-          </button>
+          {/* Phase V2: zu Besuch nur wechseln - beitreten/gründen geht aus der eigenen Chronik heraus. */}
+          {!family.zuBesuch && (
+            <>
+              <div className="context-switcher-sep" role="separator" />
+              <button
+                type="button"
+                role="menuitem"
+                className="context-switcher-item"
+                onClick={() => {
+                  setOpen(false)
+                  setJoinOpen(true)
+                }}
+              >
+                {words.group} beitreten oder gründen …
+              </button>
+            </>
+          )}
         </div>
       )}
       <Modal

@@ -35,7 +35,8 @@ export default function VisitInviteCreator({ onCreated }) {
       <h3 id="visit-invite-title">Jemanden in mein Zuhause einladen</h3>
       <p className="muted">
         Wer den Code einlöst, sieht eure Tiere und alle nicht-privaten Einträge und darf kommentieren – ändern kann er
-        nichts. Der Code gilt 7 Tage und nur einmal; beenden könnt ihr den Besuch jederzeit.
+        nichts. Der Code gilt 7 Tage und nur einmal; beenden könnt ihr den Besuch jederzeit. Verbunden könnt ihr euch
+        gegenseitig bei „Erlebt mit“ markieren.
       </p>
       {error && (
         <div className="error-banner" role="alert">

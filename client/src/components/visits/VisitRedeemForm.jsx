@@ -33,7 +33,8 @@ export default function VisitRedeemForm({ onRedeemed }) {
       <h3 id="visit-redeem-title">Ein anderes Zuhause besuchen</h3>
       <p className="muted">
         Du hast einen Einladungs-Code bekommen? Gib ihn hier ein – danach findest du das Zuhause oben im Bereichswechsler
-        unter „Zu Besuch bei …“.
+        unter „Zu Besuch bei …“. Verbundene Zuhause sehen die Namen eurer Tiere, damit ihr euch gegenseitig bei
+        „Erlebt mit“ markieren könnt.
       </p>
       <form className="visit-redeem-form" onSubmit={handleSubmit}>
         {error && (

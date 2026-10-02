@@ -1,6 +1,6 @@
 const express = require('express')
 const db = require('../db')
-const { codeLimiter, rejectHoneypot } = require('../middleware/abuse')
+const { codeLimiter, rejectHoneypot, limitWrites } = require('../middleware/abuse')
 const { requireAuth, setSessionCookie } = require('../middleware/auth')
 const { ART, buildMe } = require('../lib/context')
 const { normalizeCode, hashCode, formatCode } = require('../lib/codes')
@@ -159,7 +159,8 @@ function sendError(err, res, next) {
 // Phase V2b: einen neuen Gutschein zum Weitergeben anlegen - im eigenen Zuhause (wer ihn einlöst, bekommt eine
 // eigene Chronik) oder in einer Familie ab Stellvertretung (dazu der Beitritt). Höchstens MAX_OPEN_CODES offene je
 // Identität (409). Antwort: der neue Code in der Form von GET /mine.
-router.post('/', requireAuth, requireRole('stellvertretung'), (req, res, next) => {
+// limitWrites (security-review Phase V2, LOW-4): Anlegen/Löschen im Wechsel ließe sonst beliebig viele Zeilen wachsen.
+router.post('/', limitWrites, requireRole('stellvertretung'), (req, res, next) => {
   try {
     const area = db.prepare('SELECT id, name, art FROM families WHERE id = ?').get(req.familyId)
     if (area.art === ART.zuhause && req.familyId !== req.homeId) return res.status(400).json({ error: 'Nur im eigenen Zuhause möglich' })
@@ -170,7 +171,7 @@ router.post('/', requireAuth, requireRole('stellvertretung'), (req, res, next) =
 })
 
 // Phase V2b: eigene Beschriftung eines Codes (höchstens 60 Zeichen, leer = keine) - nur, wer ihn angelegt hat.
-router.put('/:id/label', requireAuth, (req, res, next) => {
+router.put('/:id/label', limitWrites, (req, res, next) => {
   try {
     res.json(setLabel(db, { id: cleanId(req.params.id), homeId: req.homeId, label: req.body?.label }))
   } catch (err) {
@@ -180,7 +181,7 @@ router.put('/:id/label', requireAuth, (req, res, next) => {
 
 // Phase V2b: einen noch nicht eingelösten Code zurückziehen und löschen (ausblenden). Den eigenen immer, einen
 // anderen des aktiven Bereichs im eigenen Zuhause bzw. ab Stellvertretung in einer Familie.
-router.delete('/:id', requireAuth, (req, res, next) => {
+router.delete('/:id', limitWrites, (req, res, next) => {
   try {
     deleteCode(db, {
       id: cleanId(req.params.id),
