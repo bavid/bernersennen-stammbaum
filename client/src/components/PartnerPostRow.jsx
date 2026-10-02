@@ -1,16 +1,22 @@
 import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import FreigabeChip from './FreigabeChip.jsx'
+import FreigabeVerlauf from './FreigabeVerlauf.jsx'
 import { POST_BEREICH_LABELS, clickCount } from '../lib/partnerPosts.js'
 import { formatZeitraum } from '../lib/adminMarketing.js'
 import { isPartnerMedia } from '../lib/discover.js'
+import { latestVerlauf } from '../lib/freigabeVerlauf.js'
+import { relativeTime } from '../lib/dates.js'
 
 // Ein eigener Beitrag in der Liste (PartnerPostsEditor): Freigabe als einziges Badge (bei "Abgelehnt" samt Grund),
 // daneben Bereich und aktiv/inaktiv als ruhige Meta-Zeile, Zeitraum und die anonymen Klicks, dazu Bearbeiten und
-// Löschen. demoHintId: in der Demo sind beide Knöpfe gesperrt, der Hinweis erklärt warum.
+// Löschen. V-Fehler 3: ein abgelehnter Beitrag bietet ausdrücklich "Erneut einreichen" (öffnet das Formular mit dem
+// Grund oben), und der Verlauf steht als kleine, zugeklappte Zeitleiste mit dem jüngsten Eintrag darunter.
+// demoHintId: in der Demo sind beide Knöpfe gesperrt, der Hinweis erklärt warum.
 export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
   const isDemo = Boolean(demoHintId)
   const rejected = post.freigabe === 'abgelehnt'
+  const latest = latestVerlauf(post.verlauf)
 
   return (
     <li className={`partner-post card${rejected ? ' is-rejected' : ''}`}>
@@ -30,7 +36,7 @@ export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
           <p className="partner-post-reason">
             <Icon name="alert" />
             <span>
-              <strong>Grund:</strong> {post.ablehnungsgrund}
+              <strong>Grund:</strong> {post.ablehnungsgrund} Bitte anpassen und erneut einreichen.
             </span>
           </p>
         )}
@@ -46,17 +52,30 @@ export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
             </dd>
           </div>
         </dl>
+        {latest && (
+          <details className="partner-post-verlauf">
+            <summary>
+              Verlauf
+              <span className="partner-post-verlauf-latest">
+                {' · '}
+                {latest.label}
+                {typeof latest.createdAt === 'string' ? `, ${relativeTime(latest.createdAt)}` : ''}
+              </span>
+            </summary>
+            <FreigabeVerlauf verlauf={post.verlauf} />
+          </details>
+        )}
         <div className="partner-post-actions">
           <button
             type="button"
-            className="btn btn-ghost"
+            className={`btn ${rejected ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => onEdit(post)}
             disabled={isDemo}
             aria-describedby={demoHintId}
-            aria-label={`${post.titel} bearbeiten`}
+            aria-label={`${post.titel} ${rejected ? 'erneut einreichen' : 'bearbeiten'}`}
           >
             <Icon name="edit" />
-            Bearbeiten
+            {rejected ? 'Erneut einreichen' : 'Bearbeiten'}
           </button>
           <ConfirmButton
             onConfirm={() => onDelete(post)}

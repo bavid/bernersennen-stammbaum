@@ -448,4 +448,22 @@ describe('Phase P2 – Beiträge, Postfach, Schreib uns, Freigabe', () => {
     ])
     expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ grund: 'Bitte ohne Preisangaben.' })
   })
+
+  test('Admin (V-Fehler 3): Ablehnen mit Vorlage, Sammel-Freigabe, zuletzt entschieden und Verlauf', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.admin.rejectPromotion(5, { vorlage: 'Link führt ins Leere', text: 'Die Seite fehlt.' })
+    await api.admin.approvePromotions([5, 6])
+    await api.admin.decidedPromotions()
+    await api.admin.promotionVerlauf(5)
+
+    expect(callsOf(fetchMock)).toEqual([
+      ['/api/admin/promotions/5/ablehnen', 'POST'],
+      ['/api/admin/promotions/freigeben', 'POST'],
+      ['/api/admin/promotions/entschieden', 'GET'],
+      ['/api/admin/promotions/5/verlauf', 'GET']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ vorlage: 'Link führt ins Leere', text: 'Die Seite fehlt.' })
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ ids: [5, 6] })
+  })
 })

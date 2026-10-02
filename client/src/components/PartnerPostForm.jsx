@@ -3,14 +3,16 @@ import { api } from '../api'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import AdminImageUpload from './AdminImageUpload.jsx'
+import Icon from './Icon.jsx'
 import {
+  EDIT_MODES,
   IMAGE_LATER_HINT,
   MAX_TEXT_LENGTH,
   MAX_TITEL_LENGTH,
   MAX_URL_LENGTH,
   POST_BEREICH_LABELS,
-  RESUBMIT_HINT,
   allowedBereiche,
+  editMode,
   initialPostForm,
   postClientErrors,
   postErrorField,
@@ -28,6 +30,7 @@ const IDS = {
 
 const IMAGE_ACCEPT = 'image/png,image/jpeg'
 const IMAGE_HINT = 'JPG oder PNG, höchstens 512 KB – ein neues Bild wird ebenfalls erneut geprüft.'
+const IMAGE_HINT_LIVE = 'JPG oder PNG, höchstens 512 KB – auch ein neues Bild geht sofort online.'
 
 function withoutKeys(object, keys) {
   return Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key)))
@@ -37,7 +40,10 @@ function withoutKeys(object, keys) {
 // erlaubten Werten (bei genau einem schon gewählt). Das Bild gibt es erst für einen gespeicherten Beitrag
 // - wie im Admin-Formular (AdminPromotionForm); onChanged meldet den vom Bild-Upload zurückgesetzten
 // Beitrag an die Liste. Fehler vom Server stehen am passenden Feld (postErrorField), sonst oben.
-export default function PartnerPostForm({ post, typ, onSaved, onChanged, onCancel }) {
+// V-Fehler 3: Hinweis und Knopf sagen, was Speichern bewirkt (lib/partnerPosts.js editMode) - bei einem abgelehnten
+// Beitrag steht der Grund gleich oben und der Knopf heißt "Erneut einreichen"; bei vertrauenswürdigen Partnern
+// (vertrauenswuerdig) gehen Änderungen an freigegebenen Beiträgen sofort online.
+export default function PartnerPostForm({ post, typ, vertrauenswuerdig = false, onSaved, onChanged, onCancel }) {
   const [form, setForm] = useState(() => initialPostForm(post, typ))
   const [bildUrl, setBildUrl] = useState(post?.bildUrl || null)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -45,6 +51,8 @@ export default function PartnerPostForm({ post, typ, onSaved, onChanged, onCance
   const [saving, setSaving] = useState(false)
   const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
   const bereiche = allowedBereiche(typ)
+  const mode = editMode(post, vertrauenswuerdig)
+  const { hint, submit } = EDIT_MODES[mode]
   const bind = (key, { hint } = {}) => fieldProps(IDS[key], { error: fieldErrors[key], hint })
 
   function update(patch) {
@@ -85,7 +93,15 @@ export default function PartnerPostForm({ post, typ, onSaved, onChanged, onCance
   return (
     <form ref={formRef} className="partner-post-form card form-stack" onSubmit={handleSubmit} noValidate>
       <h3>{post ? `Bearbeiten – ${post.titel}` : 'Neuer Beitrag'}</h3>
-      <p className={post ? 'partner-post-resubmit' : 'field-hint'}>{post ? RESUBMIT_HINT : 'Der Beitrag erscheint immer als ‚Anzeige‘.'}</p>
+      {mode === 'abgelehnt' && post.ablehnungsgrund && (
+        <div className="partner-post-rejected" role="note">
+          <Icon name="alert" />
+          <p>
+            <strong>Abgelehnt</strong> – {post.ablehnungsgrund}
+          </p>
+        </div>
+      )}
+      <p className={post ? 'partner-post-resubmit' : 'field-hint'}>{hint}</p>
       {error && (
         <div ref={bannerRef} className="error-banner" role="alert" tabIndex={-1}>
           {error}
@@ -139,7 +155,7 @@ export default function PartnerPostForm({ post, typ, onSaved, onChanged, onCance
           imageUrl={bildUrl}
           previewClassName="admin-upload-preview-wide"
           accept={IMAGE_ACCEPT}
-          hint={IMAGE_HINT}
+          hint={mode === 'sofort' ? IMAGE_HINT_LIVE : IMAGE_HINT}
           upload={uploadImage}
           onUploaded={setBildUrl}
         />
@@ -152,7 +168,7 @@ export default function PartnerPostForm({ post, typ, onSaved, onChanged, onCance
           Abbrechen
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? 'Speichere …' : 'Speichern und einreichen'}
+          {saving ? 'Speichere …' : submit}
         </button>
       </div>
     </form>

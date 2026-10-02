@@ -3,6 +3,7 @@ import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import AdminPartnerArea from './AdminPartnerArea.jsx'
 import AdminPartnerLock from './AdminPartnerLock.jsx'
+import AdminPartnerTrust from './AdminPartnerTrust.jsx'
 import AdminPartnerEinblicke from './AdminPartnerEinblicke.jsx'
 import { AdminViewLink } from './AdminFamilyList.jsx'
 import { STATUS_LABELS } from '../lib/adminPartnerForm.js'
@@ -10,8 +11,9 @@ import { TYPE_LABELS } from '../lib/partnerTypes.js'
 
 // Ein Partner in der Admin-Liste: Status-Chip (und "Gesperrt"), Typ, Aktionen (Bearbeiten, Portal
 // ansehen, Pausieren/Aktivieren, Löschen nur im Entwurf, Sperren/Entsperren, Einblicke aufklappen, mit
-// Bereich "Als Admin ansehen" - Phase 5 Task 5b) und darunter die Verwaltung seines Bereichs. Solange
-// gesperrt, lässt er sich nicht aktivieren (der Server würde ihn ohnehin pausiert lassen) - erst entsperren.
+// Bereich "Als Admin ansehen" - Phase 5 Task 5b), der Schalter "Vertrauenswürdig" (V-Fehler 3) und darunter die
+// Verwaltung seines Bereichs. Solange gesperrt, lässt er sich nicht aktivieren (der Server würde ihn ohnehin
+// pausiert lassen) - erst entsperren.
 export default function AdminPartnerRow({ partner, onEdit, onToggleStatus, onDelete, onKeyIssued, onChanged }) {
   const [showEinblicke, setShowEinblicke] = useState(false)
   const einblickeId = `admin-partner-einblicke-${partner.id}`
@@ -56,6 +58,7 @@ export default function AdminPartnerRow({ partner, onEdit, onToggleStatus, onDel
           Einblicke
         </button>
       </span>
+      <AdminPartnerTrust partner={partner} onChanged={onChanged} />
       <AdminPartnerArea partner={partner} onKeyIssued={onKeyIssued} onChanged={onChanged} />
       {showEinblicke && <AdminPartnerEinblicke partnerId={partner.id} id={einblickeId} />}
     </li>

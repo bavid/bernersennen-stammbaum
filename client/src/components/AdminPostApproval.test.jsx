@@ -3,20 +3,20 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { promotions, approvePromotion, rejectPromotion, createPromotion, updatePromotion, deletePromotion, uploadPromotionImage } = vi.hoisted(
-  () => ({
-    promotions: vi.fn(),
-    approvePromotion: vi.fn(),
-    rejectPromotion: vi.fn(),
-    createPromotion: vi.fn(),
-    updatePromotion: vi.fn(),
-    deletePromotion: vi.fn(),
-    uploadPromotionImage: vi.fn()
-  })
-)
-vi.mock('../api', () => ({
-  api: { admin: { promotions, approvePromotion, rejectPromotion, createPromotion, updatePromotion, deletePromotion, uploadPromotionImage } }
+const mocks = vi.hoisted(() => ({
+  promotions: vi.fn(),
+  approvePromotion: vi.fn(),
+  rejectPromotion: vi.fn(),
+  approvePromotions: vi.fn(),
+  decidedPromotions: vi.fn(),
+  promotionVerlauf: vi.fn(),
+  createPromotion: vi.fn(),
+  updatePromotion: vi.fn(),
+  deletePromotion: vi.fn(),
+  uploadPromotionImage: vi.fn()
 }))
+const { promotions, approvePromotion, rejectPromotion, approvePromotions, decidedPromotions, promotionVerlauf, deletePromotion } = mocks
+vi.mock('../api', () => ({ api: { admin: mocks } }))
 
 import AdminPostApproval from './AdminPostApproval.jsx'
 import AdminPromotions from './AdminPromotions.jsx'
@@ -55,10 +55,18 @@ function row(overrides) {
 }
 
 const nativeTextareaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set
+const nativeSelectValueSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set
 
 function typeInto(textarea, value) {
   nativeTextareaValueSetter.call(textarea, value)
   textarea.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+async function choose(select, value) {
+  await act(async () => {
+    nativeSelectValueSetter.call(select, value)
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+  })
 }
 
 afterEach(() => {
@@ -70,9 +78,7 @@ afterEach(() => {
     container.remove()
     container = null
   }
-  for (const mock of [promotions, approvePromotion, rejectPromotion, createPromotion, updatePromotion, deletePromotion, uploadPromotionImage]) {
-    mock.mockReset()
-  }
+  for (const mock of Object.values(mocks)) mock.mockReset()
 })
 
 async function render(ui) {
@@ -122,6 +128,44 @@ describe('AdminPostApproval – "Zur Freigabe"', () => {
     expect(onCountChange).toHaveBeenLastCalledWith(0)
   })
 
+  test('Fokus: "Ablehnen …" öffnet die Auswahl, "Abbrechen" führt zurück, nach der Entscheidung Überschrift und Status', async () => {
+    promotions.mockResolvedValue([row(), row({ id: 12, titel: 'Herbst-Pflegetag' })])
+    approvePromotion.mockResolvedValue(row({ freigabe: 'freigegeben' }))
+    rejectPromotion.mockResolvedValue(row({ id: 12, freigabe: 'abgelehnt' }))
+    await render(<AdminPostApproval />)
+    const status = container.querySelector('.admin-approval-status')
+    expect(status.getAttribute('role')).toBe('status')
+    expect(status.textContent).toBe('')
+
+    const [first] = container.querySelectorAll('.admin-approval-item')
+    await click(button('Ablehnen …', first))
+    expect(document.activeElement).toBe(container.querySelector('#admin-reject-vorlage-11'))
+    await click(button('Abbrechen', first))
+    expect(document.activeElement).toBe(button('Ablehnen …', first))
+
+    await click(button('Freigeben', first))
+    expect(document.activeElement).toBe(container.querySelector('#admin-approval-title'))
+    expect(container.querySelector('.admin-approval-status')).toBe(status)
+    expect(status.textContent).toBe('„Tag der offenen Tür“ freigegeben.')
+
+    await click(button('Ablehnen …'))
+    await choose(container.querySelector('#admin-reject-vorlage-12'), 'Kennzeichnung unklar')
+    await act(async () => container.querySelector('.admin-approval-reject').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(status.textContent).toBe('„Herbst-Pflegetag“ abgelehnt.')
+    expect(document.activeElement).toBe(container.querySelector('#admin-approval-title'))
+  })
+
+  test('mehr als 50 eingereicht: "Alle auswählen" nimmt die ersten 50, ein Hinweis sagt es', async () => {
+    promotions.mockResolvedValue(Array.from({ length: 51 }, (_, index) => row({ id: 100 + index, titel: `Kurs ${index + 1}` })))
+    await render(<AdminPostApproval />)
+
+    expect(container.querySelector('.admin-approval-limit').textContent).toBe('Höchstens 50 auf einmal.')
+    await click(container.querySelector('.admin-approval-select-all input'))
+    const bulk = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim().startsWith('Ausgewählte freigeben'))
+    expect(bulk.textContent.trim()).toBe('Ausgewählte freigeben (50)')
+    expect(container.querySelector('input[aria-label="„Kurs 51“ auswählen"]')).toBeNull()
+  })
+
   test('Freigeben ruft die API und nimmt den Beitrag aus der Liste', async () => {
     promotions.mockResolvedValue([row(), row({ id: 12, titel: 'Herbst-Pflegetag' })])
     approvePromotion.mockResolvedValue(row({ freigabe: 'freigegeben' }))
@@ -137,30 +181,145 @@ describe('AdminPostApproval – "Zur Freigabe"', () => {
     expect(onCountChange).toHaveBeenLastCalledWith(1)
   })
 
-  test('Ablehnen verlangt einen Grund mit 3-300 Zeichen und schickt ihn mit', async () => {
+  test('Ablehnen: Vorlage wählen, optionaler Zusatz, "Sonstiges" braucht Text - geschickt wird { vorlage, text }', async () => {
     promotions.mockResolvedValue([row()])
-    rejectPromotion.mockResolvedValue(row({ freigabe: 'abgelehnt', ablehnungsgrund: 'Bitte ohne Preisangaben im Titel.' }))
+    rejectPromotion.mockResolvedValue(row({ freigabe: 'abgelehnt', ablehnungsgrund: 'Link führt ins Leere – Die Kursseite fehlt.' }))
     await render(<AdminPostApproval />)
+    const submitReject = () =>
+      act(async () => container.querySelector('.admin-approval-reject').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
 
     await click(button('Ablehnen …'))
-    const textarea = container.querySelector('#admin-reject-grund-11')
-    expect(textarea.getAttribute('maxlength')).toBe('300')
+    const select = container.querySelector('#admin-reject-vorlage-11')
+    const textarea = container.querySelector('#admin-reject-text-11')
+    expect([...select.options].map((option) => option.value)).toEqual([
+      '',
+      'Gesundheitsversprechen',
+      'Kennzeichnung unklar',
+      'Bild passt nicht / Rechte unklar',
+      'Link führt ins Leere',
+      'Kein Bezug zu Tieren',
+      'Sonstiges'
+    ])
+    expect(container.querySelector('label[for="admin-reject-text-11"]').textContent).toBe('Zusatz (optional)')
 
-    // Ohne Grund: Fehler am Feld, keine Anfrage.
-    await act(async () => container.querySelector('.admin-approval-reject').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    // Ohne Vorlage: Fehler an der Auswahl, keine Anfrage.
+    await submitReject()
     expect(rejectPromotion).not.toHaveBeenCalled()
-    expect(container.querySelector('#admin-reject-grund-11-error').textContent).toBe('Bitte einen Grund mit 3 bis 300 Zeichen angeben')
-    expect(textarea.getAttribute('aria-invalid')).toBe('true')
+    expect(container.querySelector('#admin-reject-vorlage-11-error').textContent).toBe('Bitte einen Grund wählen')
+    expect(select.getAttribute('aria-invalid')).toBe('true')
+    expect(document.activeElement).toBe(select)
+
+    // "Sonstiges" ohne Text: Fehler am Textfeld, das jetzt Pflicht ist.
+    await choose(select, 'Sonstiges')
+    expect(container.querySelector('label[for="admin-reject-text-11"]').textContent).toBe('Grund')
+    await submitReject()
+    expect(rejectPromotion).not.toHaveBeenCalled()
+    expect(container.querySelector('#admin-reject-text-11-error').textContent).toBe('Bei „Sonstiges“ bitte den Grund kurz beschreiben')
     expect(document.activeElement).toBe(textarea)
 
-    typeInto(textarea, '  ok ')
-    await act(async () => container.querySelector('.admin-approval-reject').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
-    expect(rejectPromotion).not.toHaveBeenCalled()
-
-    typeInto(textarea, '  Bitte ohne Preisangaben im Titel.  ')
-    await act(async () => container.querySelector('.admin-approval-reject').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
-    expect(rejectPromotion).toHaveBeenCalledWith(11, 'Bitte ohne Preisangaben im Titel.')
+    await choose(select, 'Link führt ins Leere')
+    expect(textarea.getAttribute('maxlength')).toBe(String(300 - 'Link führt ins Leere'.length - 3))
+    await act(async () => typeInto(textarea, '  Die Kursseite fehlt. '))
+    expect(container.querySelector('.admin-approval-grund-preview').textContent).toBe('Der Partner liest: „Link führt ins Leere – Die Kursseite fehlt.“')
+    await submitReject()
+    expect(rejectPromotion).toHaveBeenCalledWith(11, { vorlage: 'Link führt ins Leere', text: 'Die Kursseite fehlt.' })
     expect(container.querySelector('.admin-approval-item')).toBeNull()
+  })
+
+  test('mehrere freigeben: auswählen (auch alle), "Ausgewählte freigeben", Ergebnis als Status', async () => {
+    promotions.mockResolvedValue([row(), row({ id: 12, titel: 'Herbst-Pflegetag' }), row({ id: 13, titel: 'Agility für Einsteiger' })])
+    approvePromotions.mockResolvedValue({ freigegeben: 1, uebersprungen: 1, ids: [11] })
+    const onChanged = vi.fn()
+    const onCountChange = vi.fn()
+    await render(<AdminPostApproval onChanged={onChanged} onCountChange={onCountChange} />)
+
+    const bulk = () => [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim().startsWith('Ausgewählte freigeben'))
+    const selectBox = (titel) => container.querySelector(`input[aria-label="„${titel}“ auswählen"]`)
+    expect(bulk().disabled).toBe(true)
+
+    const selectAll = container.querySelector('.admin-approval-select-all input')
+    await click(selectAll)
+    expect(bulk().textContent.trim()).toBe('Ausgewählte freigeben (3)')
+    await click(selectAll)
+    expect(bulk().disabled).toBe(true)
+
+    await click(selectBox('Tag der offenen Tür'))
+    await click(selectBox('Agility für Einsteiger'))
+    expect(selectAll.checked).toBe(false)
+    expect(bulk().textContent.trim()).toBe('Ausgewählte freigeben (2)')
+    await click(bulk())
+
+    expect(approvePromotions).toHaveBeenCalledWith([11, 13])
+    // Freigegebene und übersprungene (nicht mehr eingereicht) verlassen die Liste.
+    expect([...container.querySelectorAll('.admin-approval-item h3')].map((h) => h.textContent)).toEqual(['Herbst-Pflegetag'])
+    expect(container.querySelector('.admin-approval-status').textContent).toBe('1 Beitrag freigegeben, 1 übersprungen (nicht mehr eingereicht).')
+    expect(container.querySelector('.admin-approval-status').getAttribute('role')).toBe('status')
+    expect(onChanged).toHaveBeenCalledTimes(1)
+    expect(onCountChange).toHaveBeenLastCalledWith(1)
+    expect(bulk().disabled).toBe(true)
+  })
+
+  test('Filter "zuletzt entschieden": Ergebnis, Zeitpunkt und Grund - ohne Auswahl, mit Umentscheiden', async () => {
+    promotions.mockResolvedValue([row()])
+    decidedPromotions.mockResolvedValue([
+      row({ id: 21, titel: 'Agility-Schnupperstunde', freigabe: 'abgelehnt', entscheidung: 'abgelehnt', entschiedenAt: '2026-10-01 09:00:00', ablehnungsgrund: 'Kennzeichnung unklar' }),
+      row({ id: 22, titel: 'Welpenkurs ab Oktober', freigabe: 'freigegeben', entscheidung: 'freigegeben', entschiedenAt: '2026-09-30 09:00:00' })
+    ])
+    approvePromotion.mockResolvedValue(row({ id: 21, freigabe: 'freigegeben' }))
+    const onCountChange = vi.fn()
+    await render(<AdminPostApproval onCountChange={onCountChange} />)
+    expect(decidedPromotions).not.toHaveBeenCalled()
+
+    const filter = button('Zuletzt entschieden')
+    expect(button('Eingereicht').getAttribute('aria-pressed')).toBe('true')
+    await click(filter)
+    expect(filter.getAttribute('aria-pressed')).toBe('true')
+    expect(decidedPromotions).toHaveBeenCalledTimes(1)
+
+    const [rejected, approved] = container.querySelectorAll('.admin-approval-item')
+    expect(rejected.querySelector('.freigabe-chip').textContent).toBe('Abgelehnt')
+    expect(rejected.querySelector('.admin-approval-decision time').getAttribute('datetime')).toBe('2026-10-01T09:00:00Z')
+    expect(rejected.querySelector('.admin-promo-reason').textContent).toBe('Grund: Kennzeichnung unklar')
+    expect(approved.querySelector('.freigabe-chip').textContent).toBe('Freigegeben')
+    expect(container.querySelector('.admin-approval-select-all')).toBeNull()
+    expect(rejected.querySelector('input[type="checkbox"]')).toBeNull()
+    expect(button('Ablehnen …', approved)).toBeDefined()
+    expect(button('Freigeben', approved)).toBeUndefined()
+    // Der Zähler am Reiter bleibt der der eingereichten.
+    expect(onCountChange).toHaveBeenLastCalledWith(1)
+
+    await click(button('Doch freigeben', rejected))
+    expect(approvePromotion).toHaveBeenCalledWith(21)
+    expect(decidedPromotions).toHaveBeenCalledTimes(2)
+
+    await click(button('Eingereicht'))
+    expect(container.querySelector('.admin-approval-item h3').textContent).toBe('Tag der offenen Tür')
+  })
+
+  test('Verlauf je Beitrag: Aufklappen lädt ihn einmal und zeigt die Einträge samt Grund', async () => {
+    promotions.mockResolvedValue([row()])
+    promotionVerlauf.mockResolvedValue([
+      { id: 1, aktion: 'eingereicht', grund: null, createdAt: '2026-09-28 10:00:00' },
+      { id: 2, aktion: 'abgelehnt', grund: 'Kennzeichnung unklar', createdAt: '2026-09-29 10:00:00' },
+      { id: 3, aktion: 'eingereicht', grund: null, createdAt: '2026-09-30 10:00:00' }
+    ])
+    await render(<AdminPostApproval />)
+
+    const toggle = button('Verlauf')
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    await click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(promotionVerlauf).toHaveBeenCalledWith(11)
+    const panel = container.querySelector(`#${toggle.getAttribute('aria-controls')}`)
+    const items = [...panel.querySelectorAll('.freigabe-verlauf-item')]
+    expect(items.map((item) => item.querySelector('.freigabe-verlauf-label').textContent)).toEqual(['Eingereicht', 'Abgelehnt', 'Erneut eingereicht'])
+    expect(items[1].querySelector('.freigabe-verlauf-grund').textContent).toBe('Kennzeichnung unklar')
+    expect(items[0].querySelector('time').getAttribute('datetime')).toBe('2026-09-28T10:00:00Z')
+
+    await click(toggle)
+    expect(container.querySelector('.freigabe-verlauf')).toBeNull()
+    await click(toggle)
+    expect(promotionVerlauf).toHaveBeenCalledTimes(1)
   })
 
   test('ein Fehler beim Freigeben erscheint oben, der Beitrag bleibt', async () => {

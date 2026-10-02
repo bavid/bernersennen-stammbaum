@@ -137,7 +137,9 @@ export default function PartnerProfilePage({ family }) {
             </Panel>
             {tabs.includes(TAB_BEITRAEGE) && (
               <Panel id="beitraege" tab={tab}>
-                {openedTabs.includes('beitraege') && <PartnerPostsEditor typ={typ} />}
+                {openedTabs.includes('beitraege') && (
+                  <PartnerPostsEditor typ={typ} vertrauenswuerdig={Boolean(family.partner?.vertrauenswuerdig)} />
+                )}
               </Panel>
             )}
             <Panel id="teilen" tab={tab} className="partner-profile-share">

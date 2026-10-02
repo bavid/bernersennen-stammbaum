@@ -16,7 +16,7 @@ export default function PartnerPostsPage({ family }) {
         </div>
       </header>
 
-      <PartnerPostsEditor typ={family.partner?.typ} />
+      <PartnerPostsEditor typ={family.partner?.typ} vertrauenswuerdig={Boolean(family.partner?.vertrauenswuerdig)} />
     </div>
   )
 }

@@ -210,3 +210,141 @@
   background: var(--danger-wash);
   color: var(--danger);
 }
+
+/* V-Fehler 3: Symbol im Freigabe-Chip - der Zustand ist auch ohne Farbe zu erkennen. */
+.freigabe-chip svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* Vertrauenswürdige Partner: Änderungen an freigegebenen Beiträgen gehen sofort online. */
+.partner-posts-trusted {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.partner-posts-trusted svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* Abgelehnt: der Grund steht im Formular ganz oben, noch vor dem Hinweis - das ist der Grund, warum man hier ist. */
+.partner-post-rejected {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.partner-post-rejected svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.partner-post-rejected p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* Verlauf als kleine Zeitleiste - in der Karte zugeklappt, mit dem jüngsten Eintrag in der Zusammenfassung. */
+.partner-post-verlauf summary {
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.partner-post-verlauf-latest {
+  letter-spacing: normal;
+  text-transform: none;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.partner-post-verlauf[open] summary {
+  margin-bottom: var(--space-3);
+}
+
+.freigabe-verlauf {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0 0 0 var(--space-5);
+  list-style: none;
+  border-left: 2px solid var(--line);
+}
+
+.freigabe-verlauf-item {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  font-size: var(--text-sm);
+}
+
+/* Punkt auf der Linie, Farbe nach dem Zustand danach (neutral, freigegeben, abgelehnt). */
+.freigabe-verlauf-item::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--space-5) - 6px);
+  top: 0.4em;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--tan);
+}
+
+.freigabe-verlauf-item.is-ok::before {
+  background: var(--success);
+}
+
+.freigabe-verlauf-item.is-danger::before {
+  background: var(--danger);
+}
+
+.freigabe-verlauf-item.is-muted::before {
+  background: var(--muted);
+}
+
+.freigabe-verlauf-label {
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.freigabe-verlauf-time {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.freigabe-verlauf-grund {
+  flex-basis: 100%;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+
+.freigabe-verlauf-empty {
+  margin: 0;
+  font-size: var(--text-sm);
+}

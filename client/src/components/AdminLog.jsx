@@ -3,11 +3,18 @@ import { api } from '../api'
 import Icon from './Icon.jsx'
 import { relativeTime } from '../lib/dates.js'
 
-const AKTION_LABELS = { view: 'Bereich angesehen' }
+// V-Fehler 3: auch der Schalter "Vertrauenswürdig" eines Partners (server/lib/adminLog.js, ziel 'partner:<id>').
+const AKTION_LABELS = {
+  view: 'Bereich angesehen',
+  'partner-vertrauenswuerdig': 'Partner vertrauenswürdig gesetzt',
+  'partner-nicht-vertrauenswuerdig': 'Partner nicht mehr vertrauenswürdig'
+}
 
 // ziel aus dem Protokoll ('family:<id>', server/lib/adminLog.js) lesbar machen. Das Protokoll selbst speichert
 // keine Namen - der Name kommt, falls bekannt, aus der Übersicht (families), sonst bleibt es bei der Nummer.
 export function describeZiel(ziel, families = []) {
+  const partner = /^partner:(\d+)$/.exec(ziel || '')
+  if (partner) return `Partner #${partner[1]}`
   const match = /^family:(\d+)$/.exec(ziel || '')
   if (!match) return ziel || ''
   const id = Number(match[1])

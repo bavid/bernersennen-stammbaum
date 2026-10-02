@@ -11,6 +11,11 @@ export const MAX_URL_LENGTH = 300
 export const POSTS_HINT =
   'Beiträge erscheinen nach Freigabe durch uns als ‚Anzeige‘ bei Menschen in eurer Nähe. Jede Änderung wird erneut geprüft.'
 export const RESUBMIT_HINT = 'Nach dem Speichern prüfen wir den Beitrag erneut – bis zur Freigabe ist er nicht öffentlich.'
+// V-Fehler 3: vertrauenswürdige Partner (server/lib/promotionFreigabe.js partnerEditOutcome).
+export const POSTS_HINT_TRUSTED = 'Beiträge erscheinen nach Freigabe durch uns als ‚Anzeige‘ bei Menschen in eurer Nähe.'
+export const TRUSTED_HINT = 'Änderungen an freigegebenen Beiträgen gehen sofort online.'
+export const PENDING_EDIT_HINT = 'Der Beitrag wartet noch auf die Freigabe – eure Änderung prüfen wir gleich mit.'
+export const REJECTED_HINT = 'Passt den Beitrag an und reicht ihn erneut ein – bis zur Freigabe ist er nicht öffentlich.'
 export const LIMIT_HINT = `Höchstens ${MAX_POSTS} Beiträge – bitte ältere löschen, um neue anzulegen.`
 export const IMAGE_LATER_HINT = 'Ein Bild könnt ihr nach dem Speichern über „Bearbeiten“ hochladen.'
 export const HTML_MESSAGE = 'Titel und Text dürfen nur reinen Text enthalten (kein HTML).'
@@ -49,6 +54,32 @@ export const FREIGABE_LABELS = {
 // Unbekannte Werte gelten als "wartet" - lieber zu vorsichtig als fälschlich "Freigegeben".
 export function freigabeKey(freigabe) {
   return Object.hasOwn(FREIGABE_LABELS, freigabe) ? freigabe : 'eingereicht'
+}
+
+// V-Fehler 3: was Speichern bewirkt - wie server/lib/promotionFreigabe.js partnerEditOutcome. neu: zur Prüfung;
+// abgelehnt: ausdrücklich erneut einreichen; wartet: liegt schon zur Prüfung; pruefung: freigegeben, kommt erneut
+// zur Prüfung; sofort: freigegeben bei einem vertrauenswürdigen Partner, bleibt online.
+export function editMode(post, vertrauenswuerdig) {
+  if (!post) return 'neu'
+  const key = freigabeKey(post.freigabe)
+  if (key === 'abgelehnt') return 'abgelehnt'
+  if (key === 'eingereicht') return 'wartet'
+  return vertrauenswuerdig ? 'sofort' : 'pruefung'
+}
+
+export const EDIT_MODES = Object.freeze({
+  neu: Object.freeze({ hint: 'Der Beitrag erscheint immer als ‚Anzeige‘.', submit: 'Speichern und einreichen' }),
+  abgelehnt: Object.freeze({ hint: REJECTED_HINT, submit: 'Erneut einreichen' }),
+  wartet: Object.freeze({ hint: PENDING_EDIT_HINT, submit: 'Speichern' }),
+  pruefung: Object.freeze({ hint: RESUBMIT_HINT, submit: 'Speichern und erneut einreichen' }),
+  sofort: Object.freeze({ hint: TRUSTED_HINT, submit: 'Speichern' })
+})
+
+// Rückmeldung nach dem Speichern - je nachdem, was der Server aus der Freigabe gemacht hat.
+export function savedMessage(saved, { created }) {
+  if (created) return 'Eingereicht – nach der Freigabe ist der Beitrag sichtbar.'
+  if (saved?.freigabe === 'freigegeben') return 'Gespeichert – die Änderung ist sofort online.'
+  return 'Gespeichert – der Beitrag wird erneut geprüft.'
 }
 
 export function clickCount(value) {

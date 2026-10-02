@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
-import { LIMIT_HINT, MAX_POSTS, POSTS_HINT, allowedBereiche } from '../lib/partnerPosts.js'
+import { LIMIT_HINT, MAX_POSTS, POSTS_HINT, POSTS_HINT_TRUSTED, TRUSTED_HINT, allowedBereiche, savedMessage } from '../lib/partnerPosts.js'
 import Icon from './Icon.jsx'
 import PartnerPostForm from './PartnerPostForm.jsx'
 import PartnerPostRow from './PartnerPostRow.jsx'
@@ -13,8 +13,9 @@ const NO_BEREICH_HINT = 'Für euren Partner-Typ gibt es noch keinen Bereich in �
 // Eigene Beiträge (Phase P2) - auf /beitraege (Partner) bzw. als Reiter "Beiträge" im Profil (Tierheim):
 // oben Hinweis und Zähler "x von 20", dann entweder das Formular (Anlegen/Bearbeiten) oder die Liste,
 // neueste zuerst (wie der Server sie liefert). typ: Partner-Typ (me.partner.typ) für die erlaubten Bereiche.
-// In der Demo ist alles sichtbar, aber gesperrt.
-export default function PartnerPostsEditor({ typ }) {
+// vertrauenswuerdig (V-Fehler 3, me.partner.vertrauenswuerdig): Änderungen an freigegebenen Beiträgen gehen sofort
+// online - das sagt ein Hinweis oben und das Formular. In der Demo ist alles sichtbar, aber gesperrt.
+export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false }) {
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
@@ -41,15 +42,18 @@ export default function PartnerPostsEditor({ typ }) {
     }
   }, [])
 
+  // Nach einem Bild-Upload: Liste UND das offene Formular bekommen den neuen Stand (z. B. ist ein abgelehnter Beitrag
+  // damit schon wieder eingereicht - Hinweis und Knopf im Formular folgen). Das Formular behält seine Eingaben.
   function replacePost(saved) {
     setPosts((list) => list.map((item) => (item.id === saved.id ? saved : item)))
+    setEditing((current) => (current && current !== 'new' && current.id === saved.id ? saved : current))
   }
 
   function handleSaved(saved, { created }) {
     setPosts((list) => (created ? [saved, ...list] : list.map((item) => (item.id === saved.id ? saved : item))))
     setEditing(null)
     setError(null)
-    toast(created ? 'Eingereicht – nach der Freigabe ist der Beitrag sichtbar.' : 'Gespeichert – der Beitrag wird erneut geprüft.')
+    toast(savedMessage(saved, { created }))
   }
 
   async function handleDelete(post) {
@@ -68,7 +72,13 @@ export default function PartnerPostsEditor({ typ }) {
       <div className="partner-posts-head">
         <div>
           <h2 id="partner-posts-title">Eure Beiträge</h2>
-          <p className="partner-posts-hint">{POSTS_HINT}</p>
+          <p className="partner-posts-hint">{vertrauenswuerdig ? POSTS_HINT_TRUSTED : POSTS_HINT}</p>
+          {vertrauenswuerdig && (
+            <p className="partner-posts-trusted">
+              <Icon name="check" />
+              {TRUSTED_HINT}
+            </p>
+          )}
         </div>
         <span className="pill partner-posts-count" aria-live="polite">
           {count} von {MAX_POSTS}
@@ -80,6 +90,7 @@ export default function PartnerPostsEditor({ typ }) {
           key={editing === 'new' ? 'new' : editing.id}
           post={editing === 'new' ? null : editing}
           typ={typ}
+          vertrauenswuerdig={vertrauenswuerdig}
           onSaved={handleSaved}
           onChanged={replacePost}
           onCancel={() => setEditing(null)}

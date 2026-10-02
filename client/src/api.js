@@ -263,8 +263,15 @@ export const api = {
     promotions: ({ freigabe } = {}) =>
       request(freigabe ? `/admin/promotions?${new URLSearchParams({ freigabe }).toString()}` : '/admin/promotions'),
     approvePromotion: (id) => request(`/admin/promotions/${id}/freigeben`, { method: 'POST' }),
-    // grund: 3-300 Zeichen, der Partner sieht ihn in seiner Beitragsliste.
-    rejectPromotion: (id, grund) => request(`/admin/promotions/${id}/ablehnen`, json('POST', { grund })),
+    // reason: { vorlage, text } (V-Fehler 3, Vorlage aus lib/adminApproval.js) oder wie bisher ein freier Grund als
+    // Text (3-300 Zeichen) - der Partner sieht ihn in seiner Beitragsliste.
+    rejectPromotion: (id, reason) =>
+      request(`/admin/promotions/${id}/ablehnen`, json('POST', typeof reason === 'string' ? { grund: reason } : reason)),
+    // V-Fehler 3: mehrere eingereichte freigeben (höchstens 50) -> { freigegeben, uebersprungen, ids }, die zuletzt
+    // entschiedenen (mit entscheidung, entschiedenAt) und der Verlauf eines Beitrags (älteste zuerst).
+    approvePromotions: (ids) => request('/admin/promotions/freigeben', json('POST', { ids })),
+    decidedPromotions: () => request('/admin/promotions/entschieden'),
+    promotionVerlauf: (id) => request(`/admin/promotions/${id}/verlauf`),
     createPromotion: (payload) => request('/admin/promotions', json('POST', payload)),
     updatePromotion: (id, payload) => request(`/admin/promotions/${id}`, json('PUT', payload)),
     deletePromotion: (id) => request(`/admin/promotions/${id}`, { method: 'DELETE' }),

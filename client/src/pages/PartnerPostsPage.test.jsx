@@ -264,6 +264,115 @@ describe('PartnerPostsPage – Bearbeiten und Löschen', () => {
   })
 })
 
+// V-Fehler 3: klarer Status, Grund vor dem Formular, "Erneut einreichen", Verlauf und vertrauenswürdige Partner.
+describe('PartnerPostsPage – Freigabe-Verlauf und erneut einreichen', () => {
+  const verlauf = [
+    { id: 1, aktion: 'eingereicht', grund: null, createdAt: '2026-09-25 10:00:00' },
+    { id: 2, aktion: 'geaendert', grund: null, createdAt: '2026-09-26 10:00:00' },
+    { id: 3, aktion: 'abgelehnt', grund: 'Bitte ohne Preisangaben im Titel.', createdAt: '2026-09-27 10:00:00' }
+  ]
+  const withVerlauf = [threePosts[0], { ...threePosts[1], verlauf }, threePosts[2]]
+
+  test('abgelehnt: "Erneut einreichen" statt "Bearbeiten"; das Formular zeigt den Grund oben und reicht ausdrücklich erneut ein', async () => {
+    updatePost.mockResolvedValue(post({ id: 2, titel: 'Agility-Schnupperstunde', freigabe: 'eingereicht', verlauf: [...verlauf, { id: 4, aktion: 'eingereicht', grund: null, createdAt: '2026-09-28 10:00:00' }] }))
+    await render({ list: withVerlauf })
+
+    const rejected = row('Agility-Schnupperstunde')
+    expect(rejected.querySelector('button[aria-label="Agility-Schnupperstunde bearbeiten"]')).toBeNull()
+    const resubmit = rejected.querySelector('button[aria-label="Agility-Schnupperstunde erneut einreichen"]')
+    expect(resubmit.textContent.trim()).toBe('Erneut einreichen')
+    expect(rejected.querySelector('.partner-post-reason').textContent).toContain('Bitte anpassen und erneut einreichen.')
+
+    await click(resubmit)
+    const banner = container.querySelector('.partner-post-rejected')
+    expect(banner.textContent).toContain('Abgelehnt')
+    expect(banner.textContent).toContain('Bitte ohne Preisangaben im Titel.')
+    const form = container.querySelector('form')
+    expect(form.firstElementChild.nextElementSibling).toBe(banner)
+    expect(container.querySelector('.partner-post-resubmit').textContent).toBe(
+      'Passt den Beitrag an und reicht ihn erneut ein – bis zur Freigabe ist er nicht öffentlich.'
+    )
+    expect(form.querySelector('button[type="submit"]').textContent).toBe('Erneut einreichen')
+
+    await submit()
+    expect(updatePost).toHaveBeenCalledWith(2, expect.objectContaining({ titel: 'Agility-Schnupperstunde' }))
+    expect(row('Agility-Schnupperstunde').querySelector('.freigabe-chip').textContent).toBe('Wartet auf Freigabe')
+    expect(row('Agility-Schnupperstunde').querySelector('.partner-post-verlauf summary').textContent).toContain('Erneut eingereicht')
+  })
+
+  test('abgelehnt: ein neues Bild reicht schon ein - das offene Formular folgt (kein "Erneut einreichen" mehr), Eingaben bleiben', async () => {
+    uploadPostImage.mockResolvedValue(
+      post({ id: 2, titel: 'Agility-Schnupperstunde', freigabe: 'eingereicht', ablehnungsgrund: null, bildUrl: '/partner-media/neu.png' })
+    )
+    await render({ list: withVerlauf })
+
+    await click(row('Agility-Schnupperstunde').querySelector('button[aria-label="Agility-Schnupperstunde erneut einreichen"]'))
+    setInputValue(container.querySelector('#post-titel'), 'Agility für Einsteiger')
+    const fileInput = container.querySelector('input[type="file"]')
+    const file = new File(['x'], 'bild.png', { type: 'image/png' })
+    await act(async () => {
+      Object.defineProperty(fileInput, 'files', { value: [file], configurable: true })
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+
+    expect(uploadPostImage).toHaveBeenCalledWith(2, file)
+    expect(container.querySelector('.partner-post-rejected')).toBeNull()
+    expect(container.querySelector('.partner-post-resubmit').textContent).toBe(
+      'Der Beitrag wartet noch auf die Freigabe – eure Änderung prüfen wir gleich mit.'
+    )
+    expect(container.querySelector('form button[type="submit"]').textContent).toBe('Speichern')
+    expect(container.querySelector('#post-titel').value).toBe('Agility für Einsteiger')
+  })
+
+  test('der Verlauf als kleine Zeitleiste - zugeklappt mit dem jüngsten Eintrag, aufgeklappt mit Grund', async () => {
+    await render({ list: withVerlauf })
+
+    const details = row('Agility-Schnupperstunde').querySelector('details.partner-post-verlauf')
+    expect(details.open).toBe(false)
+    expect(details.querySelector('summary').textContent).toContain('Verlauf')
+    expect(details.querySelector('summary').textContent).toContain('Abgelehnt')
+    const items = [...details.querySelectorAll('.freigabe-verlauf-item')]
+    expect(items.map((item) => item.querySelector('.freigabe-verlauf-label').textContent)).toEqual(['Eingereicht', 'Geändert', 'Abgelehnt'])
+    expect(items[2].querySelector('.freigabe-verlauf-grund').textContent).toBe('Bitte ohne Preisangaben im Titel.')
+    // Ohne Verlauf (ältere Antwort) gibt es keine leere Zeitleiste.
+    expect(row('Welpenkurs ab Oktober').querySelector('.partner-post-verlauf')).toBeNull()
+  })
+
+  test('Status je Beitrag mit Symbol und Text', async () => {
+    await render()
+    expect(row('Tag der offenen Tür').querySelector('.freigabe-chip svg')).not.toBeNull()
+    expect([...container.querySelectorAll('.freigabe-chip')].map((chip) => chip.textContent)).toEqual(['Wartet auf Freigabe', 'Abgelehnt', 'Freigegeben'])
+  })
+})
+
+describe('PartnerPostsPage – vertrauenswürdige Partner', () => {
+  const trustedFamily = { ...schoolFamily, partner: { ...schoolFamily.partner, vertrauenswuerdig: true } }
+
+  test('Hinweis oben; Änderungen an freigegebenen Beiträgen gehen sofort online, eingereichte warten weiter', async () => {
+    updatePost.mockResolvedValue(post({ titel: 'Welpenkurs ab November', freigabe: 'freigegeben' }))
+    await render({ family: trustedFamily })
+
+    expect(container.querySelector('.partner-posts-trusted').textContent).toBe('Änderungen an freigegebenen Beiträgen gehen sofort online.')
+    expect(container.querySelector('.partner-posts-hint').textContent).not.toContain('Jede Änderung wird erneut geprüft.')
+
+    await click(row('Tag der offenen Tür').querySelector('button[aria-label="Tag der offenen Tür bearbeiten"]'))
+    expect(container.querySelector('.partner-post-resubmit').textContent).toBe('Der Beitrag wartet noch auf die Freigabe – eure Änderung prüfen wir gleich mit.')
+    await click(button('Abbrechen'))
+
+    await click(row('Welpenkurs ab Oktober').querySelector('button[aria-label="Welpenkurs ab Oktober bearbeiten"]'))
+    expect(container.querySelector('.partner-post-resubmit').textContent).toBe('Änderungen an freigegebenen Beiträgen gehen sofort online.')
+    expect(container.querySelector('form button[type="submit"]').textContent).toBe('Speichern')
+    setInputValue(container.querySelector('#post-titel'), 'Welpenkurs ab November')
+    await submit()
+    expect(row('Welpenkurs ab November').querySelector('.freigabe-chip').textContent).toBe('Freigegeben')
+  })
+
+  test('ohne Vertrauen kein Hinweis', async () => {
+    await render()
+    expect(container.querySelector('.partner-posts-trusted')).toBeNull()
+  })
+})
+
 describe('PartnerPostsPage – Demo', () => {
   test('alles sichtbar, aber Anlegen, Bearbeiten und Löschen sind gesperrt', async () => {
     await render({ isDemo: true })

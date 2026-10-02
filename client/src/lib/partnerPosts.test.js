@@ -1,12 +1,19 @@
 import { describe, expect, test } from 'vitest'
 import {
   BEREICHE_BY_TYP,
+  EDIT_MODES,
+  POSTS_HINT,
+  POSTS_HINT_TRUSTED,
+  RESUBMIT_HINT,
+  TRUSTED_HINT,
   allowedBereiche,
   clickCount,
+  editMode,
   freigabeKey,
   initialPostForm,
   postClientErrors,
   postErrorField,
+  savedMessage,
   toPostPayload
 } from './partnerPosts.js'
 
@@ -116,5 +123,38 @@ describe('freigabeKey und clickCount', () => {
     expect(clickCount(null)).toBe(0)
     expect(clickCount(-1)).toBe(0)
     expect(clickCount('3')).toBe(0)
+  })
+})
+
+// V-Fehler 3: was Speichern bewirkt - wie server/lib/promotionFreigabe.js partnerEditOutcome.
+describe('editMode, EDIT_MODES und savedMessage', () => {
+  test('neu, abgelehnt, wartet, erneut prüfen - und bei vertrauenswürdigen Partnern sofort online', () => {
+    expect(editMode(null, false)).toBe('neu')
+    expect(editMode(null, true)).toBe('neu')
+    expect(editMode({ freigabe: 'abgelehnt' }, true)).toBe('abgelehnt')
+    expect(editMode({ freigabe: 'eingereicht' }, true)).toBe('wartet')
+    expect(editMode({ freigabe: 'freigegeben' }, false)).toBe('pruefung')
+    expect(editMode({ freigabe: 'freigegeben' }, true)).toBe('sofort')
+    expect(editMode({ freigabe: 'unbekannt' }, true)).toBe('wartet')
+  })
+
+  test('Hinweis und Knopf je Fall - "Erneut einreichen" ausdrücklich bei abgelehnten', () => {
+    expect(EDIT_MODES.abgelehnt.submit).toBe('Erneut einreichen')
+    expect(EDIT_MODES.pruefung).toEqual({ hint: RESUBMIT_HINT, submit: 'Speichern und erneut einreichen' })
+    expect(EDIT_MODES.sofort).toEqual({ hint: TRUSTED_HINT, submit: 'Speichern' })
+    expect(TRUSTED_HINT).toBe('Änderungen an freigegebenen Beiträgen gehen sofort online.')
+    expect(EDIT_MODES.neu.submit).toBe('Speichern und einreichen')
+    expect(Object.isFrozen(EDIT_MODES)).toBe(true)
+  })
+
+  test('Hinweis oben: ohne "Jede Änderung wird erneut geprüft" bei vertrauenswürdigen Partnern', () => {
+    expect(POSTS_HINT).toContain('Jede Änderung wird erneut geprüft.')
+    expect(POSTS_HINT_TRUSTED).not.toContain('erneut geprüft')
+  })
+
+  test('savedMessage: eingereicht, sofort online oder erneut geprüft', () => {
+    expect(savedMessage({ freigabe: 'eingereicht' }, { created: true })).toBe('Eingereicht – nach der Freigabe ist der Beitrag sichtbar.')
+    expect(savedMessage({ freigabe: 'freigegeben' }, { created: false })).toBe('Gespeichert – die Änderung ist sofort online.')
+    expect(savedMessage({ freigabe: 'eingereicht' }, { created: false })).toBe('Gespeichert – der Beitrag wird erneut geprüft.')
   })
 })

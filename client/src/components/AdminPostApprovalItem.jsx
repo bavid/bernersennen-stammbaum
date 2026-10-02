@@ -1,35 +1,70 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import PromotionCard from './PromotionCard.jsx'
+import FreigabeChip from './FreigabeChip.jsx'
+import AdminRejectForm from './AdminRejectForm.jsx'
+import AdminApprovalVerlauf from './AdminApprovalVerlauf.jsx'
 import { BEREICH_LABELS, formatZeitraum } from '../lib/adminMarketing.js'
 import { PreviewProvider } from '../lib/preview.js'
-import { MAX_GRUND_LENGTH, MIN_GRUND_LENGTH, grundError, promotionPreviewCard } from '../lib/adminApproval.js'
+import { promotionPreviewCard } from '../lib/adminApproval.js'
+import { relativeTime } from '../lib/dates.js'
+import { verlaufDateTime } from '../lib/freigabeVerlauf.js'
 
-// Ein eingereichter Beitrag in "Zur Freigabe" (AdminPostApproval): von welchem Partner, eine Vorschau
-// genau so, wie Kundinnen und Kunden ihn sähen (PromotionCard, Link deaktiviert), dazu "Freigeben" und
-// "Ablehnen" - Ablehnen fragt nach dem Grund (3-300 Zeichen), den der Partner in seiner Liste sieht.
-export default function AdminPostApprovalItem({ promotion, busy, onApprove, onReject }) {
+// Ein Beitrag in "Zur Freigabe" (AdminPostApproval): von welchem Partner, eine Vorschau genau so, wie Kundinnen und
+// Kunden ihn sähen (PromotionCard, Link deaktiviert), der Verlauf zum Aufklappen und die Entscheidung direkt hier.
+// mode 'eingereicht': Auswahl für die Sammel-Freigabe (onSelect), "Freigeben" und "Ablehnen …" (Vorlage + Zusatz,
+// AdminRejectForm). mode 'entschieden' (V-Fehler 3): Ergebnis, Zeitpunkt und Grund - und die Gegen-Entscheidung
+// ("Doch freigeben" bzw. "Ablehnen …"), falls sich der Admin umentscheidet. refreshKey: ändert sich bei jedem Laden der
+// Liste - der Verlauf wird dann neu geholt (der Partner kann den Beitrag inzwischen geändert haben).
+export default function AdminPostApprovalItem({
+  promotion,
+  busy,
+  mode = 'eingereicht',
+  selected = false,
+  refreshKey = 0,
+  onSelect,
+  onApprove,
+  onReject
+}) {
   const [rejecting, setRejecting] = useState(false)
-  const [grund, setGrund] = useState('')
-  const [error, setError] = useState(null)
-  const grundRef = useRef(null)
-  const grundId = `admin-reject-grund-${promotion.id}`
+  const rejectButtonRef = useRef(null)
+  const returnFocus = useRef(false)
+  const decided = mode === 'entschieden'
+  const canApprove = !decided || promotion.freigabe === 'abgelehnt'
+  const canReject = !decided || promotion.freigabe === 'freigegeben'
 
-  async function handleReject(event) {
-    event.preventDefault()
-    const message = grundError(grund)
-    setError(message)
-    if (message) {
-      grundRef.current?.focus()
-      return
-    }
-    const done = await onReject(promotion, grund.trim())
+  // "Abbrechen" schließt das Formular - der Fokus kehrt auf "Ablehnen …" zurück (nach einer Entscheidung setzt ihn
+  // AdminPostApproval auf die Überschrift).
+  useEffect(() => {
+    if (rejecting || !returnFocus.current) return
+    returnFocus.current = false
+    rejectButtonRef.current?.focus()
+  }, [rejecting])
+
+  function cancelReject() {
+    returnFocus.current = true
+    setRejecting(false)
+  }
+
+  async function handleReject(reason) {
+    const done = await onReject(promotion, reason)
     if (done) setRejecting(false)
   }
 
   return (
-    <li className="admin-approval-item">
+    <li className={`admin-approval-item${selected ? ' is-selected' : ''}`}>
       <div className="admin-approval-meta">
+        {!decided && onSelect && (
+          <label className="check admin-approval-select">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={(e) => onSelect(promotion, e.target.checked)}
+              aria-label={`„${promotion.titel}“ auswählen`}
+            />
+            Auswählen
+          </label>
+        )}
         <p className="admin-approval-partner">
           <Icon name="megaphone" />
           <span>
@@ -46,6 +81,18 @@ export default function AdminPostApprovalItem({ promotion, busy, onApprove, onRe
             </>
           )}
         </p>
+        {decided && (
+          <p className="admin-approval-decision">
+            <FreigabeChip freigabe={promotion.freigabe} />
+            {promotion.entschiedenAt && (
+              <time dateTime={verlaufDateTime(promotion.entschiedenAt)}>{relativeTime(promotion.entschiedenAt)}</time>
+            )}
+          </p>
+        )}
+        {decided && promotion.freigabe === 'abgelehnt' && promotion.ablehnungsgrund && (
+          <p className="admin-promo-reason">Grund: {promotion.ablehnungsgrund}</p>
+        )}
+        <AdminApprovalVerlauf key={`${promotion.id}-${promotion.freigabe}-${refreshKey}`} promotionId={promotion.id} />
       </div>
 
       {/* Vorschau: PreviewProvider schaltet den Link ab - der Admin soll prüfen, nicht klicken (und nicht zählen). */}
@@ -56,50 +103,19 @@ export default function AdminPostApprovalItem({ promotion, busy, onApprove, onRe
       </PreviewProvider>
 
       {rejecting ? (
-        <form className="admin-approval-reject form-stack" onSubmit={handleReject} noValidate>
-          <div className="field">
-            <label className="field-label" htmlFor={grundId}>
-              Grund für die Ablehnung
-            </label>
-            <textarea
-              ref={grundRef}
-              id={grundId}
-              value={grund}
-              onChange={(e) => {
-                setGrund(e.target.value)
-                setError(null)
-              }}
-              maxLength={MAX_GRUND_LENGTH}
-              rows={3}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={`${grundId}-hint${error ? ` ${grundId}-error` : ''}`}
-            />
-            <p className="field-hint" id={`${grundId}-hint`}>
-              {MIN_GRUND_LENGTH}–{MAX_GRUND_LENGTH} Zeichen – der Partner sieht den Grund bei seinem Beitrag.
-            </p>
-            {error && (
-              <p className="field-error" id={`${grundId}-error`} role="alert">
-                {error}
-              </p>
-            )}
-          </div>
-          <div className="form-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setRejecting(false)}>
-              Abbrechen
-            </button>
-            <button type="submit" className="btn btn-danger" disabled={busy}>
-              Ablehnen
-            </button>
-          </div>
-        </form>
+        <AdminRejectForm promotionId={promotion.id} busy={busy} onSubmit={handleReject} onCancel={cancelReject} />
       ) : (
         <div className="admin-row-actions">
-          <button type="button" className="btn btn-primary" onClick={() => onApprove(promotion)} disabled={busy}>
-            <Icon name="check" /> Freigeben
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => setRejecting(true)} disabled={busy}>
-            Ablehnen …
-          </button>
+          {canApprove && (
+            <button type="button" className="btn btn-primary" onClick={() => onApprove(promotion)} disabled={busy}>
+              <Icon name="check" /> {decided ? 'Doch freigeben' : 'Freigeben'}
+            </button>
+          )}
+          {canReject && (
+            <button ref={rejectButtonRef} type="button" className="btn btn-ghost" onClick={() => setRejecting(true)} disabled={busy}>
+              Ablehnen …
+            </button>
+          )}
         </div>
       )}
     </li>
