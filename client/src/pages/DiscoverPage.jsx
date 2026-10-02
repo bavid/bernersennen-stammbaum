@@ -42,12 +42,17 @@ function friendlyError(err) {
 // /entdecken (angemeldet, auch in der Demo): Hundeschulen, Salon & Betreuung (Phase P2), neue Begleiter
 // aus Tierheimen und Vermittlungsstellen, Futter-Empfehlungen und Unterstützen - alles aus einer Antwort
 // von POST /api/discover. Mit PLZ sortiert der Server nach Entfernung, ohne liefert er alles nach Namen.
+// Phase V1: die Seite öffnet sofort mit Inhalten (gemerkte PLZ oder überall); die Ortswahl ist eine Zeile
+// ("In der Nähe von … · ändern"), die Eingabe erscheint erst auf Wunsch.
 // Seit Phase U in Reitern mit Zählern (DiscoverTabs, ?bereich=): "Alle" zeigt je Bereich die ersten drei.
 // Kundensicht (Phase P1, CustomerViewPage): load ersetzt api.discover (gleiche Signatur { plz, radius },
 // z. B. api.partnerArea.previewDiscover), preview schaltet Links ab und zeigt die eigene Karte markiert.
 export default function DiscoverPage({ load, preview = false }) {
   const [plz, setPlz] = useState(storedPlz)
   const [radius, setRadius] = useState(storedRadius)
+  // Phase V1: der Ort der zuletzt gezeigten Inhalte für die Kurzzeile der Ortswahl - zu Beginn die gemerkte PLZ (den
+  // Ortsnamen liefert erst die Antwort), danach jede erfolgreiche Suche.
+  const [applied, setApplied] = useState(() => ({ plz: plz.length === PLZ_LENGTH ? plz : null, ort: null, radius }))
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -97,7 +102,9 @@ export default function DiscoverPage({ load, preview = false }) {
     setError(null)
     try {
       const result = await fetchDiscover(searchPlz ? { plz: searchPlz, radius } : {})
-      if (isCurrent()) setData(normalizeDiscover(result))
+      if (!isCurrent()) return
+      setData(normalizeDiscover(result))
+      setApplied({ plz: searchPlz || null, ort: result?.center?.ort || null, radius })
     } catch (err) {
       if (!isCurrent()) return
       setError(friendlyError(err))
@@ -112,9 +119,10 @@ export default function DiscoverPage({ load, preview = false }) {
     // Eine angefangene PLZ gilt nicht stillschweigend als "keine PLZ" (wie PartnersPage).
     if (plz.length > 0 && plz.length < PLZ_LENGTH) {
       setError(INCOMPLETE_PLZ_ERROR)
-      return
+      return false
     }
     search(plz)
+    return true
   }
 
   const counts = data ? sectionCounts(data) : null
@@ -133,7 +141,17 @@ export default function DiscoverPage({ load, preview = false }) {
           </div>
         </header>
 
-        <LocationPicker plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} onSubmit={handleSubmit} hint={PLZ_HINT} />
+        <LocationPicker
+          plz={plz}
+          radius={radius}
+          onPlzChange={setPlz}
+          onRadiusChange={setRadius}
+          onSubmit={handleSubmit}
+          hint={PLZ_HINT}
+          collapsible
+          applied={applied}
+          allowEverywhere
+        />
 
         {error && (
           <div className="error-banner" role="alert">

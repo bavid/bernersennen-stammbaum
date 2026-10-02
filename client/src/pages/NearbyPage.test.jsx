@@ -118,6 +118,29 @@ describe('NearbyPage – Kopf', () => {
   })
 })
 
+// Phase V1: dezente Ortswahl - ohne Ort offen, nach der Suche nur noch eine Zeile mit "ändern".
+describe('NearbyPage – dezente Ortswahl', () => {
+  test('ohne gemerkte PLZ offen; nach der Suche zugeklappt auf "In der Nähe von 10115 Berlin · ändern"', async () => {
+    searchPlaces.mockResolvedValue(baseResponse)
+    await render()
+    expect(container.querySelector('.location-summary')).toBeNull()
+    await act(async () => setInputValue(container.querySelector('#location-plz'), '10115'))
+    await act(async () => container.querySelector('.location-picker').requestSubmit())
+    expect(container.querySelector('#location-plz')).toBeNull()
+    expect(container.querySelector('.location-summary').textContent).toContain('In der Nähe von 10115 Berlin')
+    expect(container.querySelector('.location-summary-toggle').textContent).toContain('ändern')
+  })
+
+  test('mit gemerkter PLZ sucht die Seite gleich und zeigt nur die Zeile', async () => {
+    window.localStorage.setItem('chronik.nearbyPlz', JSON.stringify('10115'))
+    searchPlaces.mockResolvedValue(baseResponse)
+    await render()
+    expect(searchPlaces).toHaveBeenCalledWith({ plz: '10115' }, 25)
+    expect(container.querySelector('#location-plz')).toBeNull()
+    expect(container.querySelector('.location-summary').textContent).toContain('In der Nähe von 10115')
+  })
+})
+
 describe('NearbyPage – Suche mit PLZ', () => {
   test('ruft api.searchPlaces mit { plz } und dem gewählten Radius auf und zeigt die Treffer', async () => {
     searchPlaces.mockResolvedValue(baseResponse)

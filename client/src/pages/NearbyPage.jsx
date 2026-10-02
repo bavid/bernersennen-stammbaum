@@ -20,6 +20,9 @@ export default function NearbyPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  // Phase V1: dezente Ortswahl - mit gemerkter PLZ gleich "In der Nähe von 20095 · ändern", ohne bleibt die Eingabe
+  // offen (hier gibt es kein "überall"). Jede erfolgreiche Suche setzt den Ort neu (samt Ortsnamen).
+  const [applied, setApplied] = useState(() => (plz.length === PLZ_LENGTH ? { plz, radius } : null))
 
   useEffect(() => {
     writeSetting('nearbyPlz', plz)
@@ -41,6 +44,7 @@ export default function NearbyPage() {
     try {
       const result = await api.searchPlaces(location, radius)
       setData(result)
+      setApplied(location.plz ? { plz: location.plz, ort: result?.center?.ort || null, radius } : { standort: true, radius })
     } catch (err) {
       setError(err.message)
       setData(null)
@@ -54,9 +58,10 @@ export default function NearbyPage() {
     if (plz.length !== PLZ_LENGTH) {
       setError(INCOMPLETE_PLZ_ERROR)
       setData(null)
-      return
+      return false
     }
     search({ plz })
+    return true
   }
 
   function handleLocate({ lat, lon }) {
@@ -86,6 +91,8 @@ export default function NearbyPage() {
         allowGeolocation
         geoHint={GEO_PRIVACY_HINT}
         insecureHint={INSECURE_HINT}
+        collapsible
+        applied={applied}
       />
 
       {error && (

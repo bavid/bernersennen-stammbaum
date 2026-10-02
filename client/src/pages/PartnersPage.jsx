@@ -39,6 +39,8 @@ export default function PartnersPage({ family = null }) {
   const [partners, setPartners] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Phase V1: dezente Ortswahl - "Überall · Ort wählen", nach einer Suche "In der Nähe von 20095 · ändern".
+  const [applied, setApplied] = useState(null)
   const { near, far } = splitByDistance(partners)
 
   async function search(nextPlz, nextRadius) {
@@ -48,6 +50,7 @@ export default function PartnersPage({ family = null }) {
       const complete = nextPlz.length === PLZ_LENGTH
       const result = await api.publicPartners(complete ? { plz: nextPlz, radius: nextRadius } : {})
       setPartners(Array.isArray(result) ? result.filter((item) => item && typeof item === 'object') : [])
+      setApplied({ plz: complete ? nextPlz : null, radius: nextRadius })
     } catch (err) {
       setError(err.message)
       setPartners([])
@@ -69,9 +72,10 @@ export default function PartnersPage({ family = null }) {
     if (plz.length > 0 && plz.length < PLZ_LENGTH) {
       setError(INCOMPLETE_PLZ_ERROR)
       setPartners([])
-      return
+      return false
     }
     search(plz, radius)
+    return true
   }
 
   return (
@@ -83,7 +87,16 @@ export default function PartnersPage({ family = null }) {
         <p className="page-lede">Tierheime, Vermittlungsstellen und Hundeschulen, die mit uns zusammenarbeiten.</p>
       </div>
 
-      <LocationPicker plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} onSubmit={handleSubmit} />
+      <LocationPicker
+        plz={plz}
+        radius={radius}
+        onPlzChange={setPlz}
+        onRadiusChange={setRadius}
+        onSubmit={handleSubmit}
+        collapsible
+        applied={applied}
+        allowEverywhere
+      />
 
       {error && (
         <div className="error-banner" role="alert">

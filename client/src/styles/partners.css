@@ -309,6 +309,68 @@
   margin: 0;
 }
 
+/* Phase V1: dezente Ortswahl (LocationPicker collapsible) - eine leise Zeile "In der Nähe von 20095 Hamburg ·
+   25 km · ändern" über den Inhalten; die Eingabe klappt erst auf Wunsch darunter auf. */
+.location-picker-box {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.location-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.location-summary > svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--tan);
+}
+
+.location-summary-text {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+/* Trennpunkte hinter Ort und Umkreis (nicht vor dem Knopf), damit eine umbrechende Zeile nie mit einem Punkt beginnt. */
+.location-summary-text::after,
+.location-summary-radius::after {
+  content: '·';
+  margin-left: var(--space-2);
+  color: var(--line-strong);
+  font-weight: 400;
+}
+
+.location-summary-radius {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tippfläche mindestens 44 px hoch, optisch aber ein Text-Link */
+.location-summary-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rust);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.location-summary-toggle:hover {
+  color: var(--rust-deep);
+}
+
 .partner-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr));

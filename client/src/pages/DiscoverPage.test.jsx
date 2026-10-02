@@ -177,7 +177,14 @@ async function openTab(label) {
   await act(async () => tabButton(label).click())
 }
 
+// Phase V1: die Ortswahl ist zugeklappt - erst "ändern"/"Ort wählen", dann die Eingabe.
+async function openLocationPicker() {
+  if (container.querySelector('#location-plz')) return
+  await act(async () => container.querySelector('.location-summary-toggle').click())
+}
+
 async function submitPlz(value, radius) {
+  await openLocationPicker()
   const input = container.querySelector('#location-plz')
   await act(async () => setInputValue(input, value))
   if (radius) {
@@ -192,10 +199,12 @@ async function submitPlz(value, radius) {
 }
 
 describe('DiscoverPage – Kopf und Laden', () => {
-  test('zeigt die Überschrift "Entdecken" und den PLZ-/Umkreis-Wähler', async () => {
+  test('zeigt die Überschrift "Entdecken" und den PLZ-/Umkreis-Wähler (aufgeklappt über die Ortszeile)', async () => {
     discover.mockResolvedValue(fullResponse)
     await render()
     expect(container.querySelector('h1').textContent).toBe('Entdecken')
+    expect(container.querySelector('#location-plz')).toBeNull()
+    await openLocationPicker()
     expect(container.querySelector('#location-plz')).not.toBeNull()
     expect(container.querySelector('#location-radius')).not.toBeNull()
   })
@@ -212,6 +221,7 @@ describe('DiscoverPage – Kopf und Laden', () => {
     discover.mockResolvedValue(fullResponse)
     await render()
     expect(discover).toHaveBeenCalledWith({ plz: '20095', radius: 50 })
+    await openLocationPicker()
     expect(container.querySelector('#location-plz').value).toBe('20095')
   })
 

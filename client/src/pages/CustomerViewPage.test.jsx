@@ -231,6 +231,7 @@ describe('CustomerViewPage – Entdecken (Beispiel-Kunde)', () => {
     await render()
     previewDiscover.mockClear()
 
+    await act(async () => container.querySelector('.location-summary-toggle').click())
     await act(async () => {
       const input = container.querySelector('#location-plz')
       nativeInputValueSetter.call(input, '20095')

@@ -75,6 +75,47 @@ describe('LocationPicker – PLZ und Umkreis', () => {
   })
 })
 
+// Phase V1: collapsible - eine Zeile statt des Formulars, aufklappbar.
+describe('LocationPicker – zugeklappt (collapsible)', () => {
+  test('ohne Ort und ohne "überall" bleibt das Formular offen, ohne Zeile', async () => {
+    await render({ collapsible: true })
+    expect(container.querySelector('.location-summary')).toBeNull()
+    expect(container.querySelector('#location-plz')).not.toBeNull()
+  })
+
+  test('mit Standort: "In der Nähe eures Standorts", der Knopf nennt für Screenreader Ort und Umkreis', async () => {
+    await render({ collapsible: true, applied: { standort: true, radius: 10 } })
+    expect(container.querySelector('.location-summary').textContent).toContain('In der Nähe eures Standorts')
+    expect(container.querySelector('.location-summary-radius').textContent).toBe('10 km')
+    expect(container.querySelector('.location-summary-toggle').textContent).toBe('ändern: Ort und Umkreis')
+    expect(container.querySelector('#location-plz')).toBeNull()
+  })
+
+  test('"Überall" ohne Umkreis-Angabe, der Knopf heißt "Ort wählen"', async () => {
+    await render({ collapsible: true, allowEverywhere: true, applied: { plz: null, radius: 25 } })
+    expect(container.querySelector('.location-summary-text').textContent).toBe('Überall')
+    expect(container.querySelector('.location-summary-radius')).toBeNull()
+    expect(container.querySelector('.location-summary-toggle').textContent).toBe('Ort wählen')
+  })
+
+  test('sucht die Seite nicht (onSubmit gibt false zurück), klappt ein später neuer Ort die Eingabe nicht zu', async () => {
+    const props = { collapsible: true, allowEverywhere: true, applied: { plz: null, radius: 25 }, onSubmit: (e) => (e.preventDefault(), false) }
+    await render(props)
+    await act(async () => container.querySelector('.location-summary-toggle').click())
+    await act(async () => container.querySelector('.location-picker').requestSubmit())
+    await act(async () =>
+      root.render(<LocationPicker plz="" radius={25} onPlzChange={() => {}} onRadiusChange={() => {}} {...props} applied={{ plz: '10115', radius: 25 }} />)
+    )
+    expect(container.querySelector('#location-plz')).not.toBeNull()
+  })
+
+  test('ohne collapsible bleibt alles wie bisher (nur das Formular)', async () => {
+    await render({ applied: { plz: '10115' } })
+    expect(container.querySelector('.location-summary')).toBeNull()
+    expect(container.querySelector('form.location-picker')).not.toBeNull()
+  })
+})
+
 describe('LocationPicker – Standort-Knopf (Task 6 schaltet ihn für die App frei)', () => {
   test('fehlt ohne allowGeolocation, selbst in einem sicheren Kontext mit Geolocation-API', async () => {
     setSecureContext(true)

@@ -33,6 +33,12 @@ afterEach(() => {
   publicPartners.mockReset()
 })
 
+// Phase V1: die Ortswahl ist zugeklappt ("Überall · Ort wählen") - erst aufklappen, dann tippen.
+async function plzInput() {
+  if (!container.querySelector('#location-plz')) await act(async () => container.querySelector('.location-summary-toggle').click())
+  return container.querySelector('#location-plz')
+}
+
 async function render() {
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -99,6 +105,22 @@ describe('PartnersPage – Liste ohne PLZ', () => {
   })
 })
 
+// Phase V1: dezente Ortswahl - die Liste steht sofort da, oben nur "Überall · Ort wählen".
+describe('PartnersPage – dezente Ortswahl', () => {
+  test('öffnet mit allen Partnern und "Überall · Ort wählen", nach einer Suche "In der Nähe von 10115 · ändern"', async () => {
+    publicPartners.mockResolvedValue([])
+    await render()
+    expect(container.querySelector('#location-plz')).toBeNull()
+    expect(container.querySelector('.location-summary').textContent).toContain('Überall')
+    expect(container.querySelector('.location-summary-toggle').textContent).toBe('Ort wählen')
+    const plzField = await plzInput()
+    await act(async () => setInputValue(plzField, '10115'))
+    await act(async () => container.querySelector('.location-picker').requestSubmit())
+    expect(container.querySelector('#location-plz')).toBeNull()
+    expect(container.querySelector('.location-summary').textContent).toContain('In der Nähe von 10115')
+  })
+})
+
 describe('PartnersPage – Liste mit PLZ', () => {
   test('das Absenden mit einer 5-stelligen PLZ ruft api.publicPartners mit plz und radius auf', async () => {
     publicPartners.mockResolvedValue([sonnenhang, pfotenglueck])
@@ -107,7 +129,8 @@ describe('PartnersPage – Liste mit PLZ', () => {
     publicPartners.mockClear()
     publicPartners.mockResolvedValue([sonnenhang])
 
-    await act(async () => setInputValue(container.querySelector('#location-plz'), '10115'))
+    const plzField = await plzInput()
+    await act(async () => setInputValue(plzField, '10115'))
     await act(async () => container.querySelector('.location-picker').requestSubmit())
 
     expect(publicPartners).toHaveBeenCalledWith({ plz: '10115', radius: 25 })
@@ -121,7 +144,8 @@ describe('PartnersPage – Liste mit PLZ', () => {
     await act(async () => Promise.resolve())
     publicPartners.mockRejectedValue(Object.assign(new Error('Diese Postleitzahl kennen wir nicht'), { status: 400 }))
 
-    await act(async () => setInputValue(container.querySelector('#location-plz'), '99999'))
+    const plzField = await plzInput()
+    await act(async () => setInputValue(plzField, '99999'))
     await act(async () => container.querySelector('.location-picker').requestSubmit())
 
     expect(container.querySelector('[role="alert"]').textContent).toBe('Diese Postleitzahl kennen wir nicht')
@@ -133,7 +157,8 @@ describe('PartnersPage – Liste mit PLZ', () => {
     await act(async () => Promise.resolve())
     publicPartners.mockClear()
 
-    await act(async () => setInputValue(container.querySelector('#location-plz'), '101'))
+    const plzField = await plzInput()
+    await act(async () => setInputValue(plzField, '101'))
     await act(async () => container.querySelector('.location-picker').requestSubmit())
 
     expect(container.querySelector('[role="alert"]').textContent).toBe('Bitte eine 5-stellige Postleitzahl eingeben.')
@@ -180,7 +205,8 @@ describe('PartnersPage – "Weiter weg"', () => {
     await render()
     await act(async () => Promise.resolve())
     publicPartners.mockResolvedValue(result)
-    await act(async () => setInputValue(container.querySelector('#location-plz'), '10115'))
+    const plzField = await plzInput()
+    await act(async () => setInputValue(plzField, '10115'))
     await act(async () => container.querySelector('.location-picker').requestSubmit())
   }
 
