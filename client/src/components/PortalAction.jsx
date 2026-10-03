@@ -59,7 +59,7 @@ export default function PortalAction({ partner, family, preview, onRedeemed, onL
 
   function handleRedeemed(response) {
     const { key, fromOthers, ...me } = response
-    setRedeemResult({ key, me })
+    setRedeemResult({ key, freshKey: fromOthers === false, me })
   }
 
   if (preview) {
@@ -87,7 +87,7 @@ export default function PortalAction({ partner, family, preview, onRedeemed, onL
           </button>
         </>
       ) : redeemResult ? (
-        <KeyReveal value={redeemResult.key} onContinue={() => onRedeemed(redeemResult.me)} />
+        <KeyReveal value={redeemResult.key} freshKey={redeemResult.freshKey} onContinue={() => onRedeemed(redeemResult.me)} />
       ) : (
         <>
           <RedeemForm onRedeemed={handleRedeemed} />

@@ -78,7 +78,7 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
 
   function handleRedeemed(response) {
     const { key, fromOthers, ...me } = response
-    setRedeemResult({ key, me })
+    setRedeemResult({ key, freshKey: fromOthers === false, me })
   }
 
   // "Gutschein einlösen" aus dem Partner-Einstieg: ein Partner-Zugang ist ein Gutschein - also die Karte daneben
@@ -155,7 +155,12 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
 
             {mode === 'redeem' &&
               (redeemResult ? (
-                <KeyReveal value={redeemResult.key} onContinue={() => onLogin(redeemResult.me)} {...keyRevealProps(redeemResult.me)} />
+                <KeyReveal
+                  value={redeemResult.key}
+                  freshKey={redeemResult.freshKey}
+                  onContinue={() => onLogin(redeemResult.me)}
+                  {...keyRevealProps(redeemResult.me)}
+                />
               ) : (
                 <RedeemForm
                   initialCode={redeemCode}

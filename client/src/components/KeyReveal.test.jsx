@@ -83,6 +83,12 @@ describe('KeyReveal', () => {
     expect(container.textContent).toContain('Wer euch die Karte gegeben hat, kennt diesen Code.')
   })
 
+  test('freshKey (persönlicher Code, frischer Schlüssel): kein Kartenhinweis, sondern "nur ihr kennt ihn"', async () => {
+    await render({ freshKey: true })
+    expect(container.textContent).not.toContain('Wer euch die Karte gegeben hat, kennt diesen Code.')
+    expect(container.textContent).toContain('Diesen Schlüssel haben wir eben neu erzeugt – nur ihr kennt ihn.')
+  })
+
   test('zeigt einen zusätzlichen "note"-Hinweis, wenn er übergeben wird (z. B. AdminPartners Tierheim-Zugang)', async () => {
     await render({ note: 'Diesen Schlüssel dem Tierheim geben.' })
     expect(container.textContent).toContain('Diesen Schlüssel dem Tierheim geben.')

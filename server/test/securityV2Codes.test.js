@@ -35,12 +35,14 @@ test('security-review V2 (Runde 2): Codes', async (t) => {
     const redeem = await post('/api/vouchers/redeem', { code: handover.data.code, name: 'Zuhause Oskar' })
     assert.equal(redeem.status, 201)
     assert.notEqual(redeem.data.key, handover.data.code)
+    assert.equal(redeem.data.fromOthers, false, 'frischer Schlüssel - den kennt nur das neue Zuhause')
     assert.equal((await post('/api/login', { secret: handover.data.code })).status, 401, 'das Tierheim kommt nicht ins neue Zuhause')
 
     const batch = await post('/api/admin/voucher-batches', { label: 'Karten Herbst', size: 1 }, admin)
     const card = batch.data.codes[0]
     const cardRedeem = await post('/api/vouchers/redeem', { code: card, name: 'Zuhause Karte Herbst' })
     assert.equal(cardRedeem.data.key, card, 'Karte = Schlüssel')
+    assert.equal(cardRedeem.data.fromOthers, true, 'wer die Karte weitergab, kennt den Schlüssel')
   })
 
   await t.test('Punkt 10: die Start-Codes einer Familie zählen für niemandes Obergrenze', async () => {

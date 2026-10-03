@@ -227,6 +227,40 @@ describe('LoginPage – Gutschein einlösen', () => {
   })
 })
 
+describe('LoginPage – Hinweis unter dem Schlüssel (Audit V7a)', () => {
+  async function redeemWith(fromOthers) {
+    redeemVoucher.mockResolvedValue({
+      id: 5,
+      name: 'Zuhause am Deich',
+      art: 'zuhause',
+      theme: 'standard',
+      isDemo: false,
+      home: null,
+      memberships: [],
+      key: 'ABCD-1234-HJKM',
+      fromOthers
+    })
+    await render()
+    act(() => segmentButton('Gutschein einlösen').click())
+    await act(async () => {
+      setInputValue(container.querySelector('#redeem-code'), 'abcd1234hjkm')
+      setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
+    })
+    await act(async () => container.querySelector('.form-stack').requestSubmit())
+  }
+
+  test('Karte = Schlüssel (fromOthers): "Wer euch die Karte gegeben hat, kennt diesen Code"', async () => {
+    await redeemWith(true)
+    expect(container.textContent).toContain('Wer euch die Karte gegeben hat, kennt diesen Code.')
+  })
+
+  test('persönlicher Code mit frischem Schlüssel: kein Kartenhinweis, sondern "nur ihr kennt ihn"', async () => {
+    await redeemWith(false)
+    expect(container.textContent).not.toContain('Wer euch die Karte gegeben hat')
+    expect(container.textContent).toContain('nur ihr kennt ihn')
+  })
+})
+
 describe('LoginPage – Wiederherstellung', () => {
   test('"Passwort vergessen?" wechselt in die Wiederherstellung, der Modus-Umschalter verschwindet', async () => {
     await render()

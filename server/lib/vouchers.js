@@ -500,8 +500,10 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
     return { familyId: newFamilyId, key }
   })()
 
-  // code: der Schlüssel des neuen Zuhauses (bei einer Besuchs-Einladung der frische, sonst der Gutschein selbst).
-  return { familyId, code: key }
+  // code: der Schlüssel des neuen Zuhauses (bei einem persönlichen Code ein frischer, sonst der Gutschein selbst).
+  // keyIsCode: ist der Schlüssel der Code von der Karte? Nur dann kennt ihn auch, wer die Karte weitergegeben hat
+  // (routes/vouchers.js meldet das als fromOthers, der Client wählt danach den Hinweis unter dem Schlüssel).
+  return { familyId, code: key, keyIsCode: key === normalized }
 }
 
 // Löst einen Übergabe-Gutschein OHNE ein neues Zuhause anzulegen ein: POST /vouchers/claim, nur aus

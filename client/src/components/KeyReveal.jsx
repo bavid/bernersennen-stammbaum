@@ -11,7 +11,9 @@ const COPIED_MS = 2000
 // note (final-review Phase T Finding 4, AdminPartners "Tierheim-Bereich anlegen"): ein zusätzlicher,
 // aufrufer-spezifischer Hinweis unter dem Kartenhinweis - für Kontexte, in denen die Standardtexte
 // (an ein Zuhause gerichtet) nicht passen, ohne die Kernerklärung selbst zu verdoppeln oder zu ersetzen.
-export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu Meiner Chronik', showCardHint = true, note }) {
+// freshKey (Audit V7a): nach einem persönlichen Code (Weitergabe, Besuch, Übergabe, Familien-Einladung) ist der
+// Schlüssel neu erzeugt (Server: fromOthers false) - dann kennt ihn niemand sonst, statt des Kartenhinweises steht das da.
+export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu Meiner Chronik', showCardHint = true, freshKey = false, note }) {
   const { words } = useTheme()
   const [copied, setCopied] = useState(false)
   const headingRef = useRef(null)
@@ -53,7 +55,8 @@ export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter z
       <p className="key-reveal-text">
         Mit diesem Schlüssel meldet ihr euch an – auf jedem Gerät. Hebt ihn gut auf, er ist auch eure Wiederherstellung.
       </p>
-      {showCardHint && (
+      {freshKey && <p className="field-hint">Diesen Schlüssel haben wir eben neu erzeugt – nur ihr kennt ihn.</p>}
+      {showCardHint && !freshKey && (
         <p className="field-hint">
           Wer euch die Karte gegeben hat, kennt diesen Code. Erneuert den Schlüssel später unter „{words.groupSettings}“, wenn
           ihr sicher gehen wollt.

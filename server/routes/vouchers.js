@@ -86,9 +86,11 @@ function notifyRegistration(familyId, art) {
 
 router.post('/redeem', codeLimiter, rejectHoneypot, (req, res, next) => {
   try {
-    const { familyId, code: normalized, art } = redeemAnyVoucher(req.body || {})
+    const { familyId, code: normalized, art, keyIsCode } = redeemAnyVoucher(req.body || {})
     setSessionCookie(res, familyId)
-    res.status(201).json({ ...buildMe(familyId, familyId, false), key: formatCode(normalized), fromOthers: true })
+    // fromOthers: der Schlüssel ist der Code der Karte (Admin- und Partner-Karten, Partner-Zugang) - den kennt auch, wer
+    // sie weitergegeben hat. Ein persönlicher Code bekommt einen frischen Schlüssel (lib/vouchers.js redeemVoucher).
+    res.status(201).json({ ...buildMe(familyId, familyId, false), key: formatCode(normalized), fromOthers: keyIsCode !== false })
     notifyRegistration(familyId, art)
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
