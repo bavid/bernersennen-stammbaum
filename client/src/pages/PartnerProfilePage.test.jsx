@@ -367,7 +367,7 @@ describe('PartnerProfilePage – Reiter "Beiträge" (Tierheim)', () => {
     await render({ data: { ...completeProfile, typ: 'tierheim', slug: 'tierheim-sonnenhang' }, family: shelterFamily })
 
     const tabs = [...container.querySelectorAll('.partner-profile-tabs button')].map((btn) => btn.textContent)
-    expect(tabs).toEqual(['Angaben', 'Einblicke', 'Beiträge', 'Teilen'])
+    expect(tabs).toEqual(['Angaben', 'Einblicke', 'Beiträge', 'Kalender', 'Teilen'])
     expect(posts).not.toHaveBeenCalled()
 
     await act(async () => button('Beiträge').click())

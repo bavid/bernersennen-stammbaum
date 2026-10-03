@@ -42,7 +42,7 @@ describe('allowedBereiche – wie server/lib/partnerPosts.js BEREICHE_BY_TYP', (
 
 describe('initialPostForm', () => {
   test('neu: mit genau einem erlaubten Bereich ist er vorgewählt, aktiv an', () => {
-    expect(initialPostForm(null, 'hundeschule')).toEqual({ titel: '', text: '', bereich: 'hundeschule', url: '', start: '', ende: '', aktiv: true })
+    expect(initialPostForm(null, 'hundeschule')).toEqual({ titel: '', text: '', bereich: 'hundeschule', url: '', start: '', ende: '', aktiv: true, zeitraeume: [] })
   })
 
   test('neu: mit mehreren erlaubten Bereichen muss man wählen', () => {
@@ -50,7 +50,16 @@ describe('initialPostForm', () => {
   })
 
   test('bearbeiten: übernimmt die Werte des Beitrags', () => {
-    const post = { titel: 'Welpenkurs', text: null, bereich: 'hundeschule', url: 'https://example.org', start: '2026-10-01', ende: null, aktiv: false }
+    const post = {
+      titel: 'Welpenkurs',
+      text: null,
+      bereich: 'hundeschule',
+      url: 'https://example.org',
+      start: '2026-10-01',
+      ende: null,
+      aktiv: false,
+      zeitraeume: [{ von: '2026-10-10', bis: null }, { von: '2026-11-01', bis: '2026-11-03' }]
+    }
     expect(initialPostForm(post, 'hundeschule')).toEqual({
       titel: 'Welpenkurs',
       text: '',
@@ -58,15 +67,29 @@ describe('initialPostForm', () => {
       url: 'https://example.org',
       start: '2026-10-01',
       ende: '',
-      aktiv: false
+      aktiv: false,
+      // Phase V4a: die Termine als Formularzeilen (bis leer = ein Tag).
+      zeitraeume: [
+        { von: '2026-10-10', bis: '' },
+        { von: '2026-11-01', bis: '2026-11-03' }
+      ]
     })
   })
 })
 
 describe('toPostPayload', () => {
   test('trimmt und schickt leere Felder als null', () => {
-    const form = { titel: '  Welpenkurs ', text: '  ', bereich: 'salon', url: ' ', start: '', ende: '2026-12-01', aktiv: true }
-    expect(toPostPayload(form)).toEqual({ titel: 'Welpenkurs', text: null, bereich: 'salon', url: null, start: null, ende: '2026-12-01', aktiv: true })
+    const form = { titel: '  Welpenkurs ', text: '  ', bereich: 'salon', url: ' ', start: '', ende: '2026-12-01', aktiv: true, zeitraeume: [{ von: '', bis: '' }, { von: '2026-10-10', bis: '' }] }
+    expect(toPostPayload(form)).toEqual({
+      titel: 'Welpenkurs',
+      text: null,
+      bereich: 'salon',
+      url: null,
+      start: null,
+      ende: '2026-12-01',
+      aktiv: true,
+      zeitraeume: [{ von: '2026-10-10', bis: null }]
+    })
   })
 })
 

@@ -487,6 +487,8 @@ test('Entdecken: POST /api/discover (Abschnitte, PLZ/Umkreis, Demo-Trennung) und
       text: null,
       bildUrl: null,
       tierart: null,
+      // Phase V4a: kommende Termine der Anzeige (lib/promotionZeitraeume.js) - hier keine.
+      zeitraeume: [],
       url: 'https://example.org/begleiter-anzeige',
       clickUrl: `/r/promotion/${begleiterOhnePartner.id}`
     })

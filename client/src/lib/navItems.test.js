@@ -25,10 +25,11 @@ describe('navItemsFor', () => {
     expect(navItemsFor({ art: 'zuhause', neueGaeste: 2 })[0].ariaLabel).toBe('Wegbegleiter, 2 neue Gäste')
   })
 
-  test('a partner area gets Profil, Beiträge, Nachrichten (Phase P2) and Zugang', () => {
+  test('a partner area gets Profil, Beiträge, Kalender (Phase V4a), Nachrichten (Phase P2) and Zugang', () => {
     expect(navItemsFor({ art: 'partner' }).map(({ to, label }) => ({ to, label }))).toEqual([
       { to: '/profil', label: 'Profil' },
       { to: '/beitraege', label: 'Beiträge' },
+      { to: '/kalender', label: 'Kalender' },
       { to: '/nachrichten', label: 'Nachrichten' },
       { to: '/zugang', label: 'Zugang' }
     ])

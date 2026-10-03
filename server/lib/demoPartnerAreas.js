@@ -16,7 +16,9 @@ const { validateContactMessage, insertMessage } = require('./partnerMessages')
 const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
 const { MAX_ANGEPINNT, PIN_VON } = require('./einblickPins')
 const { entdeckenAnzeigen, setReihenfolge, setInEntdecken } = require('./partnerPostOrder')
-const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE } = require('../seed/demo-partner-area')
+const { validateTermin, insertTermin, addAbsage } = require('./partnerTermine')
+const { addDays, weekdayOf, nthWeekdayOf, expandTermin, maxSerieBis, berlinNow } = require('./terminSerien')
+const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE } = require('../seed/demo-partner-area')
 
 // Nur Demo-Partner (is_demo = 1): ein Seed-Eintrag darf nie an einem echten Partner landen.
 function findDemoPartner(db, slug, purpose) {
@@ -184,8 +186,16 @@ function validateDemoVerlauf(label, verlauf, freigabe) {
 // Link, Datum) und dasselbe Einfügen (lib/partnerPosts.js insertPost: erstellt_von_partner = 1, is_demo vom
 // Partner, Limit). Erst ALLE prüfen, dann einfügen; Freigabe, Ablehnungsgrund und Verlauf setzt danach der Seed
 // (wie der Admin) - der von insertPost angelegte "eingereicht"-Eintrag von heute weicht dem Verlauf aus dem Seed.
+// Phase V4a: zeitraeumeInTagen (Tage ab heute) -> zeitraeume (JJJJ-MM-TT), wie der Partner sie schicken würde.
+function demoZeitraeume(zeitraeumeInTagen, today) {
+  if (zeitraeumeInTagen === undefined) return undefined
+  return zeitraeumeInTagen.map(({ von, bis }) => ({ von: addDays(today, von), bis: bis === undefined ? null : addDays(today, bis) }))
+}
+
 function insertDemoPartnerPosts(db) {
-  const prepared = POSTS.map(({ partnerSlug, freigabe, ablehnungsgrund, verlauf, ...input }) => {
+  const today = berlinNow().datum
+  const prepared = POSTS.map(({ partnerSlug, freigabe, ablehnungsgrund, verlauf, zeitraeumeInTagen, ...seedInput }) => {
+    const input = { ...seedInput, zeitraeume: demoZeitraeume(zeitraeumeInTagen, today) }
     const label = `Demo-Beitrag "${input.titel}" für "${partnerSlug}"`
     const partner = findDemoPartner(db, partnerSlug, label)
     if (!DEMO_POST_FREIGABEN.includes(freigabe)) throw new Error(`${label}: Freigabe muss einer von ${DEMO_POST_FREIGABEN.join(', ')} sein`)
@@ -259,17 +269,62 @@ function arrangeDemoCards(db) {
   }
 }
 
+// --- Phase V4a: Kalender der Demo-Partner ---------------------------------------------------------------
+
+// Der erste Tag ab heute (höchstens ein gutes Jahr voraus), der zur Angabe passt - siehe seed/demo-partner-area.js TERMINE.
+const MAX_SUCHE_TAGE = 400
+
+function demoStartDatum(start, today, label) {
+  if (Number.isInteger(start?.inTagen) && start.inTagen >= 0) return addDays(today, start.inTagen)
+  const matches = (datum) => {
+    if (Number.isInteger(start?.tagImMonat)) return Number(datum.slice(8, 10)) === start.tagImMonat
+    if (!Number.isInteger(start?.wochentag) || weekdayOf(datum) !== start.wochentag) return false
+    return start.nter === undefined || nthWeekdayOf(datum) === start.nter
+  }
+  for (let offset = 0; offset < MAX_SUCHE_TAGE; offset += 1) {
+    const datum = addDays(today, offset)
+    if (matches(datum)) return datum
+  }
+  throw new Error(`${label}: start passt zu keinem Tag (${JSON.stringify(start)})`)
+}
+
+// Erst ALLE prüfen (dieselbe Prüfung wie POST /api/partner-area/termine), dann einfügen (lib/partnerTermine.js insertTermin:
+// is_demo vom Partner, Limit) und die abgesagten Tage absagen wie im Partner-Bereich. Gibt die Anzahl je Partner-Slug zurück.
+function insertDemoTermine(db) {
+  const today = berlinNow().datum
+  const prepared = TERMINE.map(({ partnerSlug, start, abgesagt = [], ...input }) => {
+    const label = `Demo-Termin "${input.titel}" für "${partnerSlug}"`
+    const partner = findDemoPartner(db, partnerSlug, label)
+    const clean = validateSeedEntry(label, () => validateTermin({ ...input, datum: demoStartDatum(start, today, label) }, { today }))
+    const kommende = expandTermin(clean, { von: today, bis: maxSerieBis(clean.datum) })
+    const absagen = abgesagt.map((index) => {
+      if (!kommende[index]) throw new Error(`${label}: einen ${index + 1}. Termin gibt es nicht`)
+      return kommende[index].datum
+    })
+    return { partner, clean, absagen }
+  })
+  const counts = {}
+  for (const { partner, clean, absagen } of prepared) {
+    const termin = insertTermin(partner, clean)
+    for (const datum of absagen) addAbsage(termin, datum, today)
+    counts[partner.slug] = (counts[partner.slug] || 0) + 1
+  }
+  return counts
+}
+
 // Läuft innerhalb der replaceDemoPack-Transaktion NACH replaceDemoDiscoverContent (lib/demoPack.js) - das räumt
 // alle Demo-Empfehlungen (is_demo = 1, also auch die alten Beiträge der Demo-Partner) samt Klicks weg und
-// träfe sonst auch die neuen. Die alten Demo-Nachrichten (is_demo = 1 oder an einen alten Demo-Partner) räumt
-// diese Funktion selbst weg. Gibt die neuen Beitrags-Ids und die Nachrichten je Partner-Slug zurück.
+// träfe sonst auch die neuen. Die alten Demo-Nachrichten und (Phase V4a) Demo-Termine (is_demo = 1 oder an einem alten
+// Demo-Partner, die Absagen gehen per ON DELETE CASCADE mit) räumt diese Funktion selbst weg. Gibt die neuen
+// Beitrags-Ids, die Nachrichten und die Termine je Partner-Slug zurück.
 function createDemoPartnerContent(db, { previousPartnerIds = [] } = {}) {
   const placeholders = previousPartnerIds.map(() => '?').join(', ')
   const where = previousPartnerIds.length ? `is_demo = 1 OR partner_id IN (${placeholders})` : 'is_demo = 1'
   db.prepare(`DELETE FROM partner_messages WHERE ${where}`).run(...previousPartnerIds)
+  db.prepare(`DELETE FROM partner_termine WHERE ${where}`).run(...previousPartnerIds)
   const postIds = insertDemoPartnerPosts(db)
   arrangeDemoCards(db)
-  return { postIds, messages: insertDemoMessages(db) }
+  return { postIds, messages: insertDemoMessages(db), termine: insertDemoTermine(db) }
 }
 
 module.exports = { createDemoPartnerAreas, createDemoPartnerContent }

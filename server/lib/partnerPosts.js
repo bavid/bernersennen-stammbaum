@@ -18,6 +18,8 @@ const {
 } = require('./promotions')
 const { VERLAUF_AKTION, PARTNER_VERLAUF_LIMIT, recordPromotionEvent, promotionVerlauf, partnerEditOutcome } = require('./promotionFreigabe')
 const { cardOrderSql } = require('./partnerPostOrder')
+const { validateZeitraeume, serializeZeitraeume, parseZeitraeume } = require('./promotionZeitraeume')
+const { berlinNow } = require('./terminSerien')
 
 const ANZEIGE = 'Anzeige'
 const MAX_POSTS = 20
@@ -60,8 +62,9 @@ function asPartnerPostInput(input) {
 }
 
 // Eingabe des Partners -> saubere Spalten (bereich, kennzeichnung, empfohlen_von, titel, text, url, tierart,
-// aktiv, start, ende). Bereich zuerst gegen den Partner-Typ, danach dieselbe Prüfung wie beim Admin
-// (lib/promotions.js validatePromotion: Züchter-Schutz, Link nur http(s), Datumsangaben, Längen).
+// aktiv, start, ende, zeitraeume). Bereich zuerst gegen den Partner-Typ, danach dieselbe Prüfung wie beim Admin
+// (lib/promotions.js validatePromotion: Züchter-Schutz, Link nur http(s), Datumsangaben, Längen). Phase V4a: dazu bis
+// zu zwölf Termine (lib/promotionZeitraeume.js) - nur bei Partner-Beiträgen; eine Änderung des Admins lässt sie stehen.
 function validatePartnerPost(body, partner) {
   const input = body && typeof body === 'object' && !Array.isArray(body) ? body : {}
   const allowed = BEREICHE_BY_TYP[partner.typ] || []
@@ -72,7 +75,7 @@ function validatePartnerPost(body, partner) {
   const { partner_id: _partnerId, sort: _sort, ...clean } = validatePromotion(asPartnerPostInput(picked))
   // Wie Portal-Text (lib/partners.js) und Einblicke (lib/einblicke.js): Texte von Partnern sind reiner Text.
   if (HTML_RE.test(clean.titel) || HTML_RE.test(clean.text || '')) throw httpError(400, HTML_MESSAGE)
-  return clean
+  return { ...clean, zeitraeume: serializeZeitraeume(validateZeitraeume(input.zeitraeume, { today: berlinNow().datum })) }
 }
 
 // --- Abfragen ------------------------------------------------------------------------------------
@@ -91,14 +94,14 @@ const findOwnFreigabeStmt = db.prepare(
 
 const insertPostStmt = db.prepare(
   `INSERT INTO promotions (partner_id, bereich, kennzeichnung, empfohlen_von, titel, text, url, tierart, aktiv, start, ende,
-                           is_demo, erstellt_von_partner, freigabe, ablehnungsgrund)
+                           zeitraeume, is_demo, erstellt_von_partner, freigabe, ablehnungsgrund)
    VALUES (@partner_id, @bereich, @kennzeichnung, @empfohlen_von, @titel, @text, @url, @tierart, @aktiv, @start, @ende,
-           @is_demo, 1, '${FREIGABE.eingereicht}', NULL)`
+           @zeitraeume, @is_demo, 1, '${FREIGABE.eingereicht}', NULL)`
 )
 // Die Felder einer Änderung - die Freigabe setzt applyPartnerEdit danach. sort bleibt, wie der Admin es gesetzt hat.
 const updatePostStmt = db.prepare(
   `UPDATE promotions SET bereich = @bereich, kennzeichnung = @kennzeichnung, empfohlen_von = @empfohlen_von, titel = @titel,
-          text = @text, url = @url, tierart = @tierart, aktiv = @aktiv, start = @start, ende = @ende
+          text = @text, url = @url, tierart = @tierart, aktiv = @aktiv, start = @start, ende = @ende, zeitraeume = @zeitraeume
    WHERE id = @id`
 )
 // Jede Änderung nimmt einen Ablehnungsgrund weg (ein freigegebener Beitrag hat ohnehin keinen).
@@ -182,6 +185,8 @@ function ownPost(row, verlauf = []) {
     aktiv: Boolean(row.aktiv),
     start: row.start,
     ende: row.ende,
+    // Phase V4a: alle Termine, auch vergangene - der Partner bearbeitet sie hier.
+    zeitraeume: parseZeitraeume(row.zeitraeume),
     bildUrl: promotionImageUrl(row.bild_file),
     freigabe: row.freigabe,
     ablehnungsgrund: row.ablehnungsgrund,

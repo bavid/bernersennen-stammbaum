@@ -185,7 +185,8 @@ describe('PartnerPostsPage – Anlegen', () => {
       url: null,
       start: null,
       ende: null,
-      aktiv: true
+      aktiv: true,
+      zeitraeume: []
     })
     expect(container.querySelector('.partner-post h3').textContent).toBe('Junghunde-Kurs')
     expect(container.querySelector('.partner-posts-count').textContent).toBe('4 von 20')
@@ -409,5 +410,46 @@ describe('PartnerPostsPage – Eure Karte in Entdecken', () => {
     await click([...row('Tag der offenen Tür').querySelectorAll('button')].find((btn) => btn.textContent.includes('Wirklich löschen?')))
     expect(cardAnzeigen).toHaveBeenCalledTimes(2)
     cardAnzeigen.mockResolvedValue({ bereich: null, max: 3, anzeigen: [] })
+  })
+})
+
+// Phase V4a: mehrere Termine je Anzeige - Zeilen hinzufügen und entfernen, ein Fehler steht am Feld.
+describe('PartnerPostsPage – Termine einer Anzeige', () => {
+  test('zwei Termine anlegen, einen leeren weglassen - das Ende vor dem Beginn meldet das Formular', async () => {
+    createPost.mockResolvedValue(post({ id: 9, titel: 'Tag der offenen Tür', freigabe: 'eingereicht' }))
+    await render()
+    await click(button('Beitrag anlegen'))
+    setInputValue(container.querySelector('#post-titel'), 'Tag der offenen Tür')
+
+    for (let i = 0; i < 3; i += 1) await click(button('Termin hinzufügen'))
+    const dateInputs = () => [...container.querySelectorAll('.post-zeitraeume-row input[type="date"]')]
+    expect(dateInputs()).toHaveLength(6)
+    expect(container.querySelector('.post-zeitraeume-row label span').textContent).toBe('Termin 1: am bzw. ab')
+    setInputValue(dateInputs()[0], '2026-11-01')
+    setInputValue(dateInputs()[2], '2026-12-10')
+    setInputValue(dateInputs()[3], '2026-12-05')
+    await submit()
+    expect(createPost).not.toHaveBeenCalled()
+    expect(container.querySelector('#post-zeitraeume-error').textContent).toBe('Termin 2: das Ende darf nicht vor dem Beginn liegen')
+
+    setInputValue(dateInputs()[3], '2026-12-12')
+    await click(container.querySelector('[aria-label="Termin 3 entfernen"]'))
+    expect(dateInputs()).toHaveLength(4)
+    await submit()
+    expect(createPost).toHaveBeenCalledWith(
+      expect.objectContaining({
+        titel: 'Tag der offenen Tür',
+        zeitraeume: [
+          { von: '2026-11-01', bis: null },
+          { von: '2026-12-10', bis: '2026-12-12' }
+        ]
+      })
+    )
+  })
+
+  test('die Liste zeigt die Termine eines Beitrags', async () => {
+    await render({ list: [post({ id: 5, titel: 'Flohmarkt', zeitraeume: [{ von: '2099-02-01', bis: null }, { von: '2099-05-05', bis: '2099-05-10' }] })] })
+    const meta = [...row('Flohmarkt').querySelectorAll('.partner-post-meta > div')].find((div) => div.querySelector('dt').textContent === 'Termine')
+    expect(meta.querySelector('dd').textContent).toBe('1.2.2099, 5.–10.5.2099')
   })
 })

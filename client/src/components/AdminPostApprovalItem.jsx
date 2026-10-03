@@ -7,7 +7,8 @@ import AdminApprovalVerlauf from './AdminApprovalVerlauf.jsx'
 import { BEREICH_LABELS, formatZeitraum } from '../lib/adminMarketing.js'
 import { PreviewProvider } from '../lib/preview.js'
 import { promotionPreviewCard } from '../lib/adminApproval.js'
-import { relativeTime } from '../lib/dates.js'
+import { relativeTime, todayIso } from '../lib/dates.js'
+import { formatZeitraeume } from '../lib/zeitraeume.js'
 import { verlaufDateTime } from '../lib/freigabeVerlauf.js'
 
 // Ein Beitrag in "Zur Freigabe" (AdminPostApproval): von welchem Partner, eine Vorschau genau so, wie Kundinnen und
@@ -81,6 +82,10 @@ export default function AdminPostApprovalItem({
             </>
           )}
         </p>
+        {/* Phase V4a: alle Termine der Anzeige, auch vergangene - die Vorschau unten zeigt nur die kommenden. */}
+        {promotion.zeitraeume?.length > 0 && (
+          <p className="muted admin-approval-termine">Termine: {formatZeitraeume(promotion.zeitraeume, todayIso(), { includePast: true })}</p>
+        )}
         {decided && (
           <p className="admin-approval-decision">
             <FreigabeChip freigabe={promotion.freigabe} />

@@ -70,7 +70,8 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
       assert.equal(row.ablehnungsgrund, row.freigabe === 'abgelehnt' ? 'Link führt ins Leere – die Seite zur Schnupperstunde ist nicht erreichbar.' : null)
       assert.match(row.url, /^https:\/\/example\.org\//)
     }
-    assert.equal(first.partnerPostIds.length, 6)
+    // Phase V4a: dazu der Pfoten-Flohmarkt des Tierheims (Anzeige mit mehreren Terminen, test/demoTermine.test.js).
+    assert.equal(first.partnerPostIds.length, 7)
   })
 
   await t.test('Verlauf und Vertrauen: der abgelehnte Beitrag erzählt seine Geschichte, Wuschelglück ist vertrauenswürdig', () => {
@@ -220,7 +221,7 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
     assert.equal(messagesOf(PFOTENGLUECK).length, 2)
     assert.equal(messagesOf(SONNENHANG).length, 1)
     assert.equal(db.prepare('SELECT COUNT(*) AS n FROM partner_messages').get().n, 3)
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM promotions WHERE is_demo = 1 AND erstellt_von_partner = 1').get().n, 6)
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM promotions WHERE is_demo = 1 AND erstellt_von_partner = 1').get().n, 7)
     // Der Verlauf der alten Demo-Beiträge geht mit ihnen (ON DELETE CASCADE) - nur der neue bleibt.
     const seededEvents = areaSeed.POSTS.reduce((sum, entry) => sum + entry.verlauf.length, 0)
     assert.equal(db.prepare('SELECT COUNT(*) AS n FROM promotion_events').get().n, seededEvents)

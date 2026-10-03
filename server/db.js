@@ -429,7 +429,8 @@ const PROMOTIONS_COLUMNS_SQL = `
     ablehnungsgrund TEXT,
     erstellt_von_partner INTEGER NOT NULL DEFAULT 0,
     partner_reihenfolge INTEGER,
-    in_entdecken INTEGER NOT NULL DEFAULT 1
+    in_entdecken INTEGER NOT NULL DEFAULT 1,
+    zeitraeume TEXT
 `
 // idx_promotions_partner: eigene Beiträge (Liste, Limit) und die Beiträge auf dem Portal je Partner.
 const PROMOTIONS_INDEXES_SQL = `
@@ -470,6 +471,12 @@ addColumnIfMissing('promotions', 'erstellt_von_partner', 'INTEGER NOT NULL DEFAU
 // und Datum, hinter den geordneten); in_entdecken = 0: nur auf dem Portal, nicht auf der Karte.
 addColumnIfMissing('promotions', 'partner_reihenfolge', 'INTEGER')
 addColumnIfMissing('promotions', 'in_entdecken', 'INTEGER NOT NULL DEFAULT 1')
+// Phase V4a: Termine einer Anzeige ("Tag der offenen Tür am 1.1., 1.2. und 5.–10.5.") als JSON-Liste
+// [{ von, bis }] (lib/promotionZeitraeume.js) - NULL = keine. Bewusst eine Spalte statt einer eigenen Tabelle: die
+// Daten gehören zum Inhalt des Beitrags, ändern sich mit ihm in derselben Anweisung (lib/partnerPosts.js
+// applyPartnerEdit, also mit derselben Freigabe-Regel) und kommen mit jedem SELECT p.* mit - ohne zweite Abfrage je
+// Karte, in der Freigabe-Liste des Admins genauso wie in "Entdecken".
+addColumnIfMissing('promotions', 'zeitraeume', 'TEXT')
 db.exec(PROMOTIONS_INDEXES_SQL)
 rebuildTableIfOutdated('promotions', {
   columnsSql: PROMOTIONS_COLUMNS_SQL,
@@ -680,5 +687,37 @@ db.transaction(() => {
 addColumnIfMissing('vouchers', 'label', 'TEXT')
 addColumnIfMissing('vouchers', 'ausgeblendet_at', 'TEXT')
 db.exec('CREATE INDEX IF NOT EXISTS idx_vouchers_created_by ON vouchers(created_by_family_id)')
+
+// Phase V4a: Kalender der Partner (lib/partnerTermine.js, routes/partnerArea/termine.js). Ortszeit als Text - datum
+// 'JJJJ-MM-TT', uhrzeit/ende 'HH:MM', gemeint ist Europe/Berlin; Serien rechnet lib/terminSerien.js aus datum, serie
+// und serie_bis (höchstens ein Jahr). Gehen ohne Freigabe online (reiner Text, geprüft im Code); ausgeblendet = 1 setzt
+// nur der Admin (routes/adminTermine.js). Bewusst ohne REFERENCES auf partners(id) - wie partner_einblicke.
+// partner_termin_absagen: einzelne abgesagte Daten ("fällt aus") - verschwinden mit ihrem Termin (ON DELETE CASCADE).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS partner_termine (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partner_id INTEGER NOT NULL,
+    titel TEXT NOT NULL,
+    text TEXT,
+    ort TEXT,
+    datum TEXT NOT NULL,
+    uhrzeit TEXT NOT NULL,
+    ende TEXT,
+    serie TEXT NOT NULL DEFAULT 'keine'
+      CHECK (serie IN ('keine', 'woechentlich', 'zweiwoechentlich', 'monatlich_tag', 'monatlich_wochentag')),
+    serie_bis TEXT,
+    ausgeblendet INTEGER NOT NULL DEFAULT 0,
+    is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_partner_termine_partner ON partner_termine(partner_id, datum);
+  CREATE TABLE IF NOT EXISTS partner_termin_absagen (
+    termin_id INTEGER NOT NULL REFERENCES partner_termine(id) ON DELETE CASCADE,
+    datum TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (termin_id, datum)
+  );
+`)
 
 module.exports = db

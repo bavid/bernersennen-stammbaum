@@ -16,7 +16,12 @@ const AKTION = Object.freeze({
   telegramEingerichtet: 'telegram-eingerichtet',
   telegramEntfernt: 'telegram-entfernt',
   partnerVertrauenswuerdig: 'partner-vertrauenswuerdig',
-  partnerNichtVertrauenswuerdig: 'partner-nicht-vertrauenswuerdig'
+  partnerNichtVertrauenswuerdig: 'partner-nicht-vertrauenswuerdig',
+  // Phase V4a: ein Termin eines Partners ausgeblendet, wieder eingeblendet oder gelöscht (routes/adminTermine.js),
+  // ziel 'termin:<id>'.
+  terminAusgeblendet: 'termin-ausgeblendet',
+  terminEingeblendet: 'termin-eingeblendet',
+  terminGeloescht: 'termin-geloescht'
 })
 
 const DEFAULT_LIMIT = 50
@@ -37,6 +42,10 @@ function partnerZiel(partnerId) {
   return `partner:${partnerId}`
 }
 
+function terminZiel(terminId) {
+  return `termin:${terminId}`
+}
+
 function logAdminAction(aktion, ziel) {
   insertStmt.run(aktion, ziel)
 }
@@ -53,4 +62,4 @@ function recentAdminLog(limit) {
   return recentStmt.all(cleanLimit(limit))
 }
 
-module.exports = { AKTION, DEFAULT_LIMIT, MAX_LIMIT, familyZiel, anfrageZiel, partnerZiel, logAdminAction, cleanLimit, recentAdminLog }
+module.exports = { AKTION, DEFAULT_LIMIT, MAX_LIMIT, familyZiel, anfrageZiel, partnerZiel, terminZiel, logAdminAction, cleanLimit, recentAdminLog }

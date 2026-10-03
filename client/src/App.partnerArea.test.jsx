@@ -4,9 +4,11 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile, previewDiscover, previewPortal } = vi.hoisted(() => ({
+const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile, previewDiscover, previewPortal, termine } = vi.hoisted(() => ({
   me: vi.fn(),
   profile: vi.fn(),
+  // Phase V4a: der Kalender (/kalender) lädt seine Termine.
+  termine: vi.fn(() => Promise.resolve({ max: 50, heute: '2026-10-03', termine: [], vorkommen: [] })),
   // Kundensicht (/kundensicht): "Entdecken" lädt beim Anzeigen die Vorschau - hier reicht eine leere Antwort.
   previewDiscover: vi.fn(() => Promise.resolve({})),
   previewPortal: vi.fn(() => Promise.resolve({})),
@@ -19,7 +21,7 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   redeemVoucher: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile, previewDiscover, previewPortal } },
+  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile, previewDiscover, previewPortal, termine } },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -135,16 +137,18 @@ function navLinks() {
 }
 
 describe('Partner-Bereich (family.art === "partner") – Navigation', () => {
-  test('die Hauptnavigation zeigt Profil, Beiträge, Nachrichten (Phase P2) und Zugang - ohne kompakte Leiste', async () => {
+  // Phase V4a: dazu der Kalender - fünf Einträge, die Leiste wird kompakt (lib/navItems.js MAX_NAV_ITEMS).
+  test('die Hauptnavigation zeigt Profil, Beiträge, Kalender, Nachrichten und Zugang - als kompakte Leiste', async () => {
     await render('/profil')
 
     expect(navLinks().map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Profil', '/profil'],
       ['Beiträge', '/beitraege'],
+      ['Kalender', '/kalender'],
       ['Nachrichten', '/nachrichten'],
       ['Zugang', '/zugang']
     ])
-    expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(false)
+    expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(true)
   })
 
   test('kein Bereichswechsler ("Familie beitreten/gründen"), nur der Name', async () => {
@@ -182,6 +186,14 @@ describe('Partner-Bereich – Seiten', () => {
     expect(listUsers).toHaveBeenCalled()
     const link = navLinks().find((a) => a.textContent === 'Zugang')
     expect(link.classList.contains('active')).toBe(true)
+  })
+
+  test('/kalender zeigt den Kalender (Phase V4a) und markiert ihn in der Leiste', async () => {
+    await render('/kalender')
+
+    expect(container.querySelector('h1').textContent).toBe('Kalender')
+    expect(termine).toHaveBeenCalled()
+    expect(navLinks().find((a) => a.textContent === 'Kalender').classList.contains('active')).toBe(true)
   })
 
   test('das Profil verlinkt nicht doppelt auf Zugang, wenn es schon in der Leiste steht', async () => {
@@ -246,7 +258,7 @@ describe('Partner-Zugang auf /v einlösen', () => {
     await act(async () => continueButton.click())
 
     expect(container.querySelector('h1').textContent).toBe('Hundeschule Wiesengrund')
-    expect(navLinks().map((a) => a.textContent)).toEqual(['Profil', 'Beiträge', 'Nachrichten', 'Zugang'])
+    expect(navLinks().map((a) => a.textContent)).toEqual(['Profil', 'Beiträge', 'Kalender', 'Nachrichten', 'Zugang'])
   })
 })
 

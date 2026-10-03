@@ -5,18 +5,22 @@ import AdminPartnerArea from './AdminPartnerArea.jsx'
 import AdminPartnerLock from './AdminPartnerLock.jsx'
 import AdminPartnerTrust from './AdminPartnerTrust.jsx'
 import AdminPartnerEinblicke from './AdminPartnerEinblicke.jsx'
+import AdminPartnerTermine from './AdminPartnerTermine.jsx'
 import { AdminViewLink } from './AdminFamilyList.jsx'
 import { STATUS_LABELS } from '../lib/adminPartnerForm.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 
 // Ein Partner in der Admin-Liste: Status-Chip (und "Gesperrt"), Typ, Aktionen (Bearbeiten, Portal
 // ansehen, Pausieren/Aktivieren, Löschen nur im Entwurf, Sperren/Entsperren, Einblicke aufklappen, mit
-// Bereich "Als Admin ansehen" - Phase 5 Task 5b), der Schalter "Vertrauenswürdig" (V-Fehler 3) und darunter die
+// Bereich "Als Admin ansehen" - Phase 5 Task 5b, Termine aufklappen - Phase V4a), der Schalter "Vertrauenswürdig"
+// (V-Fehler 3) und darunter die
 // Verwaltung seines Bereichs. Solange gesperrt, lässt er sich nicht aktivieren (der Server würde ihn ohnehin
 // pausiert lassen) - erst entsperren.
 export default function AdminPartnerRow({ partner, onEdit, onToggleStatus, onDelete, onKeyIssued, onChanged }) {
   const [showEinblicke, setShowEinblicke] = useState(false)
+  const [showTermine, setShowTermine] = useState(false)
   const einblickeId = `admin-partner-einblicke-${partner.id}`
+  const termineId = `admin-partner-termine-${partner.id}`
   const locked = Boolean(partner.gesperrt)
 
   return (
@@ -57,10 +61,15 @@ export default function AdminPartnerRow({ partner, onEdit, onToggleStatus, onDel
           <Icon name="image" />
           Einblicke
         </button>
+        <button type="button" className="btn btn-ghost" aria-expanded={showTermine} aria-controls={termineId} onClick={() => setShowTermine((open) => !open)}>
+          <Icon name="calendar" />
+          Termine
+        </button>
       </span>
       <AdminPartnerTrust partner={partner} onChanged={onChanged} />
       <AdminPartnerArea partner={partner} onKeyIssued={onKeyIssued} onChanged={onChanged} />
       {showEinblicke && <AdminPartnerEinblicke partnerId={partner.id} id={einblickeId} />}
+      {showTermine && <AdminPartnerTermine partnerId={partner.id} id={termineId} />}
     </li>
   )
 }

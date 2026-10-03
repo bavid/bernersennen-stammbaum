@@ -7,7 +7,11 @@ import { relativeTime } from '../lib/dates.js'
 const AKTION_LABELS = {
   view: 'Bereich angesehen',
   'partner-vertrauenswuerdig': 'Partner vertrauenswürdig gesetzt',
-  'partner-nicht-vertrauenswuerdig': 'Partner nicht mehr vertrauenswürdig'
+  'partner-nicht-vertrauenswuerdig': 'Partner nicht mehr vertrauenswürdig',
+  // Phase V4a: Termine eines Partners (server/routes/adminTermine.js, ziel 'termin:<id>').
+  'termin-ausgeblendet': 'Termin ausgeblendet',
+  'termin-eingeblendet': 'Termin wieder eingeblendet',
+  'termin-geloescht': 'Termin gelöscht'
 }
 
 // ziel aus dem Protokoll ('family:<id>', server/lib/adminLog.js) lesbar machen. Das Protokoll selbst speichert
@@ -15,6 +19,8 @@ const AKTION_LABELS = {
 export function describeZiel(ziel, families = []) {
   const partner = /^partner:(\d+)$/.exec(ziel || '')
   if (partner) return `Partner #${partner[1]}`
+  const termin = /^termin:(\d+)$/.exec(ziel || '')
+  if (termin) return `Termin #${termin[1]}`
   const match = /^family:(\d+)$/.exec(ziel || '')
   if (!match) return ziel || ''
   const id = Number(match[1])

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import PromotionCard from './PromotionCard.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -132,5 +132,19 @@ describe('PromotionCard', () => {
     expect(container.querySelector('.promotion-card-anzeige')).toBeNull()
     expect(container.textContent).not.toContain('Anzeige')
     expect(link().getAttribute('rel')).toBe('sponsored noopener noreferrer')
+  })
+})
+
+// Phase V4a: Termine einer Anzeige - nur die kommenden, ohne kommende keine Zeile.
+describe('PromotionCard – Termine', () => {
+  afterEach(() => vi.useRealTimers())
+
+  test('"Termine: …" unter dem Text', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-03T10:00:00'))
+    await render({ ...empfehlung, zeitraeume: [{ von: '2026-10-20', bis: null }, { von: '2027-05-05', bis: '2027-05-10' }] })
+    expect(container.querySelector('.promotion-card-termine').textContent).toBe('Termine: 20.10., 5.–10.5.2027')
+    await render({ ...empfehlung, zeitraeume: [{ von: '2026-01-01', bis: null }] })
+    expect(container.querySelector('.promotion-card-termine')).toBeNull()
   })
 })

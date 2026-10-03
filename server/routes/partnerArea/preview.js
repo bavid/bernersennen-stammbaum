@@ -10,6 +10,7 @@ const { listPreviewPosts, MAX_PUBLIC_POSTS, NO_LIMIT } = require('../../lib/part
 const { FREIGABE } = require('../../lib/promotions')
 const { CARD_ANZEIGEN, CARD_BEREICH_BY_TYP } = require('../../lib/partnerPostOrder')
 const { cardEinblicke } = require('../../lib/einblickPins')
+const { nextTermine } = require('../../lib/partnerTermine')
 const {
   buildDiscover,
   resolveDiscoverCenter,
@@ -96,7 +97,9 @@ function buildOwnCard(partner, ownRows, distance) {
     teaserFoto: newestVisibleFotoUrl(partner.id),
     vorschau: true,
     anzeigen,
-    einblicke: cardEinblicke([partner.id], { preview: true }).get(partner.id) || []
+    einblicke: cardEinblicke([partner.id], { preview: true }).get(partner.id) || [],
+    // Phase V4a: wie in "Entdecken" (routes/discover.js withCardContent) - Termine brauchen keine Freigabe.
+    naechsterTermin: nextTermine([partner.id]).get(partner.id) || null
   }
 }
 

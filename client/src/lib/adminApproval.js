@@ -68,6 +68,8 @@ export function promotionPreviewCard(row) {
     text: row.text,
     bildUrl: row.bildUrl || null,
     url: row.url || null,
-    clickUrl: row.url ? `/r/promotion/${row.id}` : null
+    clickUrl: row.url ? `/r/promotion/${row.id}` : null,
+    // Phase V4a: die Termine der Anzeige - PromotionCard zeigt davon nur die kommenden.
+    zeitraeume: Array.isArray(row.zeitraeume) ? row.zeitraeume : []
   }
 }

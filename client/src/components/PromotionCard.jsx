@@ -10,6 +10,8 @@ import {
   promotionRel
 } from '../lib/discover.js'
 import { useIsPreview } from '../lib/preview.js'
+import { todayIso } from '../lib/dates.js'
+import { zeitraeumeText } from '../lib/zeitraeume.js'
 
 // Eine Empfehlung/Anzeige im Reiter "Entdecken" (Hundeschule, Salon, Begleiter, Futter, Unterstützen) und
 // auf dem Portal ("Aktuelles"): Kennzeichnung zuerst und als Text (auch für Screenreader), dann Bild, Titel,
@@ -22,6 +24,8 @@ export default function PromotionCard({ promotion, labelled = true }) {
   const anzeige = labelled && isAnzeige(promotion.kennzeichnung)
   const hasLink = isClickUrl(promotion.clickUrl)
   const pending = preview && isPendingApproval(promotion)
+  // Phase V4a: kommende Termine der Anzeige - "Termine: 1.2., 1.3., 5.–10.5.".
+  const termine = zeitraeumeText(promotion.zeitraeume, todayIso())
 
   return (
     <article className={`promotion-card card${anzeige ? ' promotion-card-anzeige' : ''}${pending ? ' is-pending' : ''}`}>
@@ -44,6 +48,12 @@ export default function PromotionCard({ promotion, labelled = true }) {
       <div className="promotion-card-body">
         <h3>{promotion.titel}</h3>
         {promotion.text && <p className="promotion-card-text">{promotion.text}</p>}
+        {termine && (
+          <p className="promotion-card-termine">
+            <Icon name="calendar" />
+            {termine}
+          </p>
+        )}
       </div>
       {hasLink && (
         <ExternalLink className="btn btn-ghost promotion-card-link" href={promotion.clickUrl} rel={promotionRel(promotion.kennzeichnung)}>

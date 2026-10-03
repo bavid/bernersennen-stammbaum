@@ -18,6 +18,8 @@ const NAV_ITEM_PROFILE = { to: '/profil', icon: 'globe', label: 'Profil' }
 // Phase P2: eigene Beiträge (Anzeigen mit Freigabe) und das Postfach für "Schreib uns".
 const NAV_ITEM_POSTS = { to: '/beitraege', icon: 'megaphone', label: 'Beiträge' }
 const NAV_ITEM_INBOX = { to: '/nachrichten', icon: 'inbox', label: 'Nachrichten' }
+// Phase V4a: der Kalender der Partner (Termine und Serien).
+const NAV_ITEM_CALENDAR = { to: '/kalender', icon: 'calendar', label: 'Kalender' }
 
 // Phase U: Stammbaum und Würfe heißen je Auftritt anders (Theme-Wörter treeLabel/littersLabel - Standard
 // "Familienbande"/"Nachwuchs", Berner "Stammbaum"/"Würfe"); labelKey statt label, navItemsFor setzt das Wort ein.
@@ -47,7 +49,7 @@ const NAV_ITEMS_GROUP = [
 
 // Tierheime (Phase T): kein Stammbaum/Würfe, sondern "Unsere Tiere" als Startseite - Pinnwand und
 // Collage bleiben unverändert nutzbar, dazu (Phase P) das eigene Profil und (P2) die Nachrichten. Kein
-// "Entdecken". Die Beiträge stehen hier als dritter Reiter im Profil, damit es bei fünf Einträgen bleibt.
+// "Entdecken". Die Beiträge und (Phase V4a) der Kalender stehen hier als Reiter im Profil, damit es bei fünf Einträgen bleibt.
 const NAV_ITEMS_SHELTER = [
   { to: '/tiere', icon: 'paw', label: 'Tiere' },
   { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' },
@@ -57,8 +59,9 @@ const NAV_ITEMS_SHELTER = [
 ]
 
 // Partner-Bereich (Hundeschule, Hundesalon, Betreuung, …, Phase P): keine Tiere, keine Chronik - das
-// eigene Profil, Beiträge und Nachrichten (P2) und der Zugang (Schlüssel, Benutzer).
-const NAV_ITEMS_PARTNER = [NAV_ITEM_PROFILE, NAV_ITEM_POSTS, NAV_ITEM_INBOX, { to: '/zugang', icon: 'lock', label: 'Zugang' }]
+// eigene Profil, Beiträge und Nachrichten (P2), der Kalender (V4a) und der Zugang (Schlüssel, Benutzer) - fünf Einträge,
+// die Leiste wird am Handy kompakt (MAX_NAV_ITEMS).
+const NAV_ITEMS_PARTNER = [NAV_ITEM_PROFILE, NAV_ITEM_POSTS, NAV_ITEM_CALENDAR, NAV_ITEM_INBOX, { to: '/zugang', icon: 'lock', label: 'Zugang' }]
 
 // Zu Besuch in einem anderen Zuhause (Phase V2, me.zuBesuch): nur ansehen - dessen Wegbegleiter und Stammbaum.
 // Pinnwand, Entdecken und Collage gehören nicht zu einem Besuch (der Server sperrt sie für Gäste ohnehin).

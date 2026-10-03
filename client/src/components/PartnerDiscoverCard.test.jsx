@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import PartnerDiscoverCard from './PartnerDiscoverCard.jsx'
 import { PreviewProvider } from '../lib/preview.js'
 
@@ -159,5 +159,26 @@ describe('PartnerDiscoverCard – Einblicke', () => {
     const row = container.querySelector('.partner-discover-ads > li')
     expect(row.textContent).toContain('Wartet auf Freigabe')
     expect(row.querySelector('a')).toBeNull()
+  })
+})
+
+// Phase V4a: "Nächster Termin" aus dem Kalender und die kommenden Termine einer Anzeige.
+describe('PartnerDiscoverCard – Termine', () => {
+  afterEach(() => vi.useRealTimers())
+
+  test('"Nächster Termin" im Kopf - ohne Termin keine Zeile', async () => {
+    await render({ ...school, naechsterTermin: { datum: '2026-10-10', uhrzeit: '10:00', ende: '11:00', titel: 'Welpenspielstunde', ort: null } })
+    const line = container.querySelector('.partner-discover-next')
+    expect(line.textContent).toBe('Nächster Termin: Sa, 10.10., 10:00 · Welpenspielstunde')
+    await render({ ...school, naechsterTermin: null })
+    expect(container.querySelector('.partner-discover-next')).toBeNull()
+  })
+
+  test('eine Anzeige zeigt ihre kommenden Termine', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-03T10:00:00'))
+    const zeitraeume = [{ von: '2026-09-01', bis: null }, { von: '2026-11-01', bis: null }, { von: '2026-12-05', bis: '2026-12-10' }]
+    await render({ ...school, anzeigen: [anzeige({ zeitraeume })] })
+    expect(container.querySelector('.partner-discover-ad-termine').textContent).toBe('Termine: 1.11., 5.–10.12.')
   })
 })

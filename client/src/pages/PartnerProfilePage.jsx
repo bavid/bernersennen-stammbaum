@@ -6,6 +6,7 @@ import PartnerStatusCard from '../components/PartnerStatusCard.jsx'
 import PartnerProfileForm from '../components/PartnerProfileForm.jsx'
 import EinblickeEditor from '../components/EinblickeEditor.jsx'
 import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
+import PartnerTermineEditor from '../components/PartnerTermineEditor.jsx'
 import PartnerVoucherStacks from '../components/PartnerVoucherStacks.jsx'
 import PartnerShareSection from '../components/PartnerShareSection.jsx'
 import TabBar from '../components/TabBar.jsx'
@@ -20,13 +21,16 @@ const TAB_EINBLICKE = { key: 'einblicke', label: 'Einblicke' }
 // Phase P2: Tierheime haben keinen Navigationspunkt "Beiträge" (sonst wären es mehr als fünf) - bei ihnen
 // stehen die Beiträge als dritter Reiter hier.
 const TAB_BEITRAEGE = { key: 'beitraege', label: 'Beiträge' }
+// Phase V4a: ebenso der Kalender (Partner: eigener Navigationspunkt "Kalender").
+const TAB_KALENDER = { key: 'kalender', label: 'Kalender' }
 // Phase U: alles, was ein Partner nach außen weitergibt, unter einem Reiter - der Portal-Link samt QR-Code,
 // Website-Knopf und Social-Media-Text (PartnerShareSection) und darunter die Kunden-Gutschein-Stapel
-// (PartnerVoucherStacks, Phase 5 Task 4). So bleiben es höchstens vier Reiter.
+// (PartnerVoucherStacks, Phase 5 Task 4). Partner haben drei Reiter, Tierheime dazu Beiträge und Kalender (die Leiste
+// scrollt am Handy waagerecht, TabBar).
 const TAB_TEILEN = { key: 'teilen', label: 'Teilen' }
 
 function tabsFor(family) {
-  return family?.art === 'tierheim' ? [TAB_ANGABEN, TAB_EINBLICKE, TAB_BEITRAEGE, TAB_TEILEN] : [TAB_ANGABEN, TAB_EINBLICKE, TAB_TEILEN]
+  return family?.art === 'tierheim' ? [TAB_ANGABEN, TAB_EINBLICKE, TAB_BEITRAEGE, TAB_KALENDER, TAB_TEILEN] : [TAB_ANGABEN, TAB_EINBLICKE, TAB_TEILEN]
 }
 
 function panelId(key) {
@@ -45,7 +49,8 @@ function Panel({ id, tab, className, children }) {
 
 // /profil (Phase P) - das eigene Profil eines Partner- oder Tierheim-Bereichs (api.partnerArea): oben
 // die Statuskarte (Status, Checkliste, Veröffentlichen/Pausieren), darunter die Reiter "Angaben"
-// (PartnerProfileForm), "Einblicke" (EinblickeEditor), bei Tierheimen "Beiträge" (PartnerPostsEditor) und
+// (PartnerProfileForm), "Einblicke" (EinblickeEditor), bei Tierheimen "Beiträge" (PartnerPostsEditor) und "Kalender"
+// (PartnerTermineEditor) und
 // "Teilen" (Portal-Link, QR-Code, Website-Knopf, Social-Media-Text und die Kunden-Gutscheine).
 // Den Typ ändert nur der Betreiber. Wo "Zugang" nicht in der Hauptnavigation steht (Tierheim), führt ein
 // Link dorthin.
@@ -140,6 +145,11 @@ export default function PartnerProfilePage({ family }) {
                 {openedTabs.includes('beitraege') && (
                   <PartnerPostsEditor typ={typ} vertrauenswuerdig={Boolean(family.partner?.vertrauenswuerdig)} />
                 )}
+              </Panel>
+            )}
+            {tabs.includes(TAB_KALENDER) && (
+              <Panel id="kalender" tab={tab}>
+                {openedTabs.includes('kalender') && <PartnerTermineEditor />}
               </Panel>
             )}
             <Panel id="teilen" tab={tab} className="partner-profile-share">

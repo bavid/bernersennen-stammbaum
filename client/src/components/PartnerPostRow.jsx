@@ -6,7 +6,8 @@ import { POST_BEREICH_LABELS, clickCount } from '../lib/partnerPosts.js'
 import { formatZeitraum } from '../lib/adminMarketing.js'
 import { isPartnerMedia } from '../lib/discover.js'
 import { latestVerlauf } from '../lib/freigabeVerlauf.js'
-import { relativeTime } from '../lib/dates.js'
+import { relativeTime, todayIso } from '../lib/dates.js'
+import { formatZeitraeume } from '../lib/zeitraeume.js'
 
 // Ein eigener Beitrag in der Liste (PartnerPostsEditor): Freigabe als einziges Badge (bei "Abgelehnt" samt Grund),
 // daneben Bereich und aktiv/inaktiv als ruhige Meta-Zeile, Zeitraum und die anonymen Klicks, dazu Bearbeiten und
@@ -45,6 +46,12 @@ export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
             <dt>Zeitraum</dt>
             <dd>{formatZeitraum(post.start, post.ende)}</dd>
           </div>
+          {post.zeitraeume?.length > 0 && (
+            <div>
+              <dt>Termine</dt>
+              <dd>{formatZeitraeume(post.zeitraeume, todayIso()) || 'alle vorbei'}</dd>
+            </div>
+          )}
           <div>
             <dt>Klicks 7 Tage / gesamt</dt>
             <dd className="partner-post-clicks">

@@ -2,6 +2,7 @@
 // server/lib/partnerPosts.js (erlaubte Bereiche je Typ, höchstens 20, immer "Anzeige") und die Felder
 // von server/lib/promotions.js validatePromotion.
 import { promotionErrorField } from './adminMarketing.js'
+import { toZeitraeumePayload, zeitraeumeClientError, zeitraeumeFormRows } from './zeitraeume.js'
 
 export const MAX_POSTS = 20
 export const MAX_TITEL_LENGTH = 120
@@ -86,8 +87,8 @@ export function clickCount(value) {
   return Number.isInteger(value) && value > 0 ? value : 0
 }
 
-// Formularwerte (Strings, dazu aktiv) aus einem eigenen Beitrag (camelCase, server ownPost) bzw. leer
-// beim Neuanlegen - mit genau einem erlaubten Bereich ist er schon gewählt.
+// Formularwerte (Strings, dazu aktiv und - Phase V4a - die Termine als Zeilen) aus einem eigenen Beitrag (camelCase,
+// server ownPost) bzw. leer beim Neuanlegen - mit genau einem erlaubten Bereich ist er schon gewählt.
 export function initialPostForm(post, typ) {
   const allowed = allowedBereiche(typ)
   return {
@@ -97,7 +98,8 @@ export function initialPostForm(post, typ) {
     url: post?.url || '',
     start: post?.start || '',
     ende: post?.ende || '',
-    aktiv: post ? Boolean(post.aktiv) : true
+    aktiv: post ? Boolean(post.aktiv) : true,
+    zeitraeume: zeitraeumeFormRows(post)
   }
 }
 
@@ -110,7 +112,8 @@ export function toPostPayload(form) {
     url: form.url.trim() || null,
     start: form.start || null,
     ende: form.ende || null,
-    aktiv: form.aktiv
+    aktiv: form.aktiv,
+    zeitraeume: toZeitraeumePayload(form.zeitraeume || [])
   }
 }
 
@@ -124,6 +127,8 @@ export function postClientErrors(form, typ) {
   if (HTML_RE.test(form.text)) errors.text = HTML_MESSAGE
   if (!allowedBereiche(typ).includes(form.bereich)) errors.bereich = 'Bitte einen Bereich wählen'
   if (form.start && form.ende && form.ende < form.start) errors.ende = 'Das Ende darf nicht vor dem Start liegen'
+  const zeitraeumeError = zeitraeumeClientError(form.zeitraeume || [])
+  if (zeitraeumeError) errors.zeitraeume = zeitraeumeError
   return errors
 }
 
@@ -131,5 +136,7 @@ export function postClientErrors(form, typ) {
 // Bereich-Prüfung der Partner. Alles andere (Limit, Demo, HTML) steht oben im Formular.
 export function postErrorField(message) {
   if (typeof message === 'string' && /^Dieser Bereich /.test(message)) return 'bereich'
+  // Phase V4a: Meldungen zu den Terminen (server/lib/promotionZeitraeume.js).
+  if (typeof message === 'string' && /^(Termin \d+:|Höchstens \d+ Termine|Die Termine )/.test(message)) return 'zeitraeume'
   return promotionErrorField(message)
 }

@@ -282,6 +282,10 @@ export const api = {
     setEinblickAusgeblendet: (id, ausgeblendet) => request(`/admin/einblicke/${id}/ausblenden`, json('POST', { ausgeblendet })),
     // Phase V1: für die Partner-Karte in "Entdecken" anpinnen (Team-Pins stehen zuerst) oder jeden Pin lösen.
     setEinblickAngepinnt: (id, angepinnt) => request(`/admin/einblicke/${id}/anpinnen`, json('POST', { angepinnt })),
+    // Phase V4a: Termine eines Partners (auch ausgeblendete), ausblenden/einblenden und löschen - beides im Protokoll.
+    termine: (partnerId) => request(`/admin/termine?${new URLSearchParams({ partnerId: String(partnerId) }).toString()}`),
+    setTerminAusgeblendet: (id, ausgeblendet) => request(`/admin/termine/${id}/ausblenden`, json('POST', { ausgeblendet })),
+    deleteTermin: (id) => request(`/admin/termine/${id}`, { method: 'DELETE' }),
     uploadPartnerLogo: (id, file) => {
       const formData = new FormData()
       formData.append('file', file)
@@ -363,6 +367,17 @@ export const api = {
       formData.append('file', file)
       return request(`/partner-area/posts/${encodeURIComponent(id)}/image`, { method: 'POST', body: formData })
     },
+
+    // Kalender (Phase V4a, server/routes/partnerArea/termine.js): { max, heute, termine, vorkommen } - jede Änderung
+    // antwortet mit derselben Liste (POST/PUT dazu mit termin). payload: titel, text, ort, datum, uhrzeit, ende, serie,
+    // serieBis. Absagen/wieder stattfinden lassen gelten für einen Tag (datum JJJJ-MM-TT) der Serie.
+    termine: () => request('/partner-area/termine'),
+    createTermin: (payload) => request('/partner-area/termine', json('POST', payload)),
+    updateTermin: (id, payload) => request(`/partner-area/termine/${encodeURIComponent(id)}`, json('PUT', payload)),
+    deleteTermin: (id) => request(`/partner-area/termine/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    absagenTermin: (id, datum) => request(`/partner-area/termine/${encodeURIComponent(id)}/absagen`, json('POST', { datum })),
+    wiederTermin: (id, datum) =>
+      request(`/partner-area/termine/${encodeURIComponent(id)}/absagen/${encodeURIComponent(datum)}`, { method: 'DELETE' }),
 
     // Postfach (Phase P2, server/routes/partnerArea/messages.js): { messages, unread }.
     messages: () => request('/partner-area/messages'),

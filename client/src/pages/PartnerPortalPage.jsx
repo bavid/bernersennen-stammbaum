@@ -11,6 +11,7 @@ import PortalBrandStrip from '../components/PortalBrandStrip.jsx'
 import PortalContact, { PORTAL_CONTACT_ID, hasPortalContact } from '../components/PortalContact.jsx'
 import PortalHero from '../components/PortalHero.jsx'
 import PortalPosts from '../components/PortalPosts.jsx'
+import PortalTermine from '../components/PortalTermine.jsx'
 import PortalSection from '../components/PortalSection.jsx'
 import EinblickeGallery from '../components/EinblickeGallery.jsx'
 import { isValidHexColor, darkenHex, hexToRgba } from '../lib/color.js'
@@ -84,7 +85,7 @@ function usePortalList(fetchList, slug, search, skip) {
 
 // /p/:slug – Portal eines Partners, seit Phase U als ruhige Landingpage, auf die Partner von ihrer Website,
 // Instagram oder Visitenkarte verlinken: Kopf (Logo, Art · Ort, Name, Text, „Kontakt“), dann „Angebote &
-// Aktuelles“ (eigene Beiträge ohne Anzeige-Badge), Einblicke, bei Tierheimen Tiere und Happy Ends, Kontakt
+// Aktuelles“ (eigene Beiträge ohne Anzeige-Badge), „Termine“ (Phase V4a), Einblicke, bei Tierheimen Tiere und Happy Ends, Kontakt
 // (samt „Schreib uns“, Phase P2), „Gutschein einlösen“ (PortalAction) und ein dezenter Fuß. Angemeldete sehen
 // dasselbe Portal, nur die Aktion ist ersetzt – man muss sich nicht abmelden, um es anzuschauen.
 // Kundensicht (Phase P1): load liefert die Portal-Daten statt api.publicPartner(slug) (z. B.
@@ -160,6 +161,9 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
         <PortalHero partner={partner} contactId={contactId} />
 
         <PortalPosts posts={posts} />
+
+        {/* Phase V4a: kommende Termine (aus der Portal-Antwort, in der Kundensicht genauso). */}
+        <PortalTermine termine={partner.termine} />
 
         <EinblickeGallery einblicke={partner.einblicke} />
 

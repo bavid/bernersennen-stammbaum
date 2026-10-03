@@ -11,6 +11,9 @@ const { getShelterAnimalCards } = require('./publicAnimals')
 const { teaserFotoSql, teaserFoto } = require('../lib/einblicke')
 const { cardEinblicke } = require('../lib/einblickPins')
 const { groupCardAnzeigen, CARD_BEREICH_BY_TYP } = require('../lib/partnerPostOrder')
+const { nextTermine } = require('../lib/partnerTermine')
+const { parseZeitraeume, upcomingZeitraeume } = require('../lib/promotionZeitraeume')
+const { berlinNow } = require('../lib/terminSerien')
 const { MIN_IN_RADIUS, sortByName, roundKm, withDistances, splitByRadius, radiusSection } = require('../lib/nearby')
 
 // Phase 3 Task 2: Reiter "Entdecken" - eine Antwort bündelt alle Abschnitte (seit Phase P2 Task 9 auch salon)
@@ -199,7 +202,7 @@ function partnerCard(row, { distanceKm: distanceKmValue, ausserhalb } = {}) {
 }
 
 // Empfehlungs-Karte - auch für die Beiträge auf dem Portal (routes/partners.js) und in der Kundensicht
-// (routes/partnerArea/preview.js).
+// (routes/partnerArea/preview.js). Phase V4a: zeitraeume - nur die Termine, die heute oder später noch laufen.
 function promotionCard(row) {
   return {
     id: row.id,
@@ -211,6 +214,7 @@ function promotionCard(row) {
     text: row.text,
     bildUrl: promotionImageUrl(row.bild_file),
     tierart: row.tierart,
+    zeitraeume: upcomingZeitraeume(parseZeitraeume(row.zeitraeume), berlinNow().datum),
     url: row.url,
     clickUrl: row.url ? `/r/promotion/${row.id}` : null
   }
@@ -277,12 +281,14 @@ function partnerCardFromItem({ row, distanceKm: d, ausserhalb }) {
 
 // Phase V1: eine Karte je Partner - der Kopf (partnerCard), darunter anzeigen (bis zu drei Empfehlungen des Partners
 // aus dem Bereich des Abschnitts, in seiner Reihenfolge, lib/partnerPostOrder.js) und einblicke (angepinnte, sonst die
-// neuesten drei, lib/einblickPins.js). Beides für alle Karten mit je EINER Abfrage, nicht je Karte.
-function withCardContent(card, anzeigenByPartner, einblickeByPartner) {
+// neuesten drei, lib/einblickPins.js), seit Phase V4a dazu naechsterTermin (lib/partnerTermine.js, null ohne kommenden
+// Termin). Alles für alle Karten mit je EINER Abfrage, nicht je Karte.
+function withCardContent(card, { anzeigen, einblicke, termine }) {
   return {
     ...card,
-    anzeigen: (anzeigenByPartner.get(card.id) || []).map(promotionCard),
-    einblicke: einblickeByPartner.get(card.id) || []
+    anzeigen: (anzeigen.get(card.id) || []).map(promotionCard),
+    einblicke: einblicke.get(card.id) || [],
+    naechsterTermin: termine.get(card.id) || null
   }
 }
 
@@ -299,11 +305,12 @@ function partnerSection(typs, bereich, { isDemo, center, radiusKm, distanceMap }
   const promotionRows = activePromotionRows(bereich, isDemo)
   const anzeigen = groupCardAnzeigen(promotionRows, shownIds)
   const einblicke = cardEinblicke(shownIds)
+  const termine = nextTermine(shownIds)
   const separate = promotionRows.filter((row) => row.partner_id === null || !sectionPartnerIds.has(row.partner_id))
   return {
     rows: partnerRows,
     items: section.items,
-    cards: section.items.map((item) => withCardContent(partnerCardFromItem(item), anzeigen, einblicke)),
+    cards: section.items.map((item) => withCardContent(partnerCardFromItem(item), { anzeigen, einblicke, termine })),
     promotions: sortPromotionsByPartnerDistance(separate, distanceMap).map(promotionCard),
     fallback: section.fallback
   }

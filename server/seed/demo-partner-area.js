@@ -78,7 +78,9 @@ const POSTS = [
     bereich: 'hundeschule',
     titel: 'Tag der offenen Tür',
     text: 'Schaut euch unseren Trainingsplatz an, lernt das Team kennen und probiert eine Schnupperstunde aus.',
-    url: 'https://example.org/pfotenglueck-offene-tuer'
+    url: 'https://example.org/pfotenglueck-offene-tuer',
+    // Phase V4a: zwei Termine, relativ zu heute (siehe zeitraeumeInTagen unten bei POSTS).
+    zeitraeumeInTagen: [{ von: 15 }, { von: 43 }]
   },
   {
     partnerSlug: 'hundeschule-pfotenglueck',
@@ -132,8 +134,26 @@ const POSTS = [
     titel: 'Welpen-Kennenlerntermin',
     text: 'Eine halbe Stunde schnuppern, ohne Schere und Föhn: so wird der erste richtige Termin ganz entspannt.',
     url: 'https://example.org/wuschelglueck-welpen'
+  },
+  {
+    // Phase V4a: eine Anzeige mit mehreren Terminen - drei einzelne Tage und ein Zeitraum über mehrere Tage.
+    partnerSlug: 'tierheim-sonnenhang',
+    freigabe: 'freigegeben',
+    verlauf: [
+      { aktion: 'eingereicht', tageAlt: 4 },
+      { aktion: 'freigegeben', tageAlt: 3 }
+    ],
+    bereich: 'unterstuetzen',
+    titel: 'Pfoten-Flohmarkt',
+    text: 'Leinen, Decken, Näpfe und Spielzeug aus zweiter Hand – der Erlös geht in unsere Tierarztkasse.',
+    url: 'https://example.org/tierheim-sonnenhang/flohmarkt',
+    zeitraeumeInTagen: [{ von: 9 }, { von: 37 }, { von: 65 }, { von: 120, bis: 124 }]
   }
 ]
+
+// zeitraeumeInTagen (Phase V4a): die Termine einer Anzeige relativ zum Tag des Demo-Aufbaus - { von, bis? } in Tagen ab
+// heute (bis fehlt: ein einzelner Tag). lib/demoPartnerAreas.js macht daraus zeitraeume (JJJJ-MM-TT) und prüft sie wie
+// beim Partner (lib/promotionZeitraeume.js), damit die Demo nie veraltet aussieht.
 
 // KARTEN (Phase V1): wie die Demo-Partner ihre Karte in "Entdecken" geordnet haben - dieselben Schritte wie im
 // Partner-Bereich (lib/partnerPostOrder.js setReihenfolge/setInEntdecken). reihenfolge: Titel freigegebener Anzeigen
@@ -188,4 +208,64 @@ const KUNDEN_GUTSCHEINE = [
   { partnerSlug: 'hundesalon-wuschelglueck', size: 8, eingeloest: 2, widerrufen: 0 }
 ]
 
-module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE }
+// TERMINE (Phase V4a): der Kalender der Demo-Partner - Felder wie bei POST /api/partner-area/termine, geprüft mit
+// derselben Prüfung (lib/partnerTermine.js validateTermin). Der erste Termin liegt relativ zum Tag des Demo-Aufbaus,
+// damit die Demo nie veraltet aussieht - start ist eines von:
+// { inTagen: n } (heute + n Tage), { wochentag: w } (der nächste Wochentag w ab heute, 0 = Sonntag … 6 = Samstag),
+// { wochentag: w, nter: n } (der nächste n. Wochentag w im Monat, z. B. der 2. Sonntag) oder { tagImMonat: d } (der
+// nächste d. eines Monats). abgesagt: die wievielten kommenden Termine der Serie ausfallen (0 = der erste).
+const TERMINE = [
+  {
+    partnerSlug: 'hundeschule-pfotenglueck',
+    titel: 'Welpenspielstunde',
+    text: 'Freies Spiel in kleiner Gruppe für Welpen bis 16 Wochen – mit Pausen, Ruhe-Übungen und Zeit für eure Fragen.',
+    ort: 'Trainingsplatz am Deich',
+    start: { wochentag: 6 },
+    uhrzeit: '10:00',
+    ende: '11:00',
+    serie: 'woechentlich',
+    abgesagt: [1]
+  },
+  {
+    partnerSlug: 'hundeschule-pfotenglueck',
+    titel: 'Social Walk',
+    text: 'Gemeinsamer Spaziergang an der Leine – ideal für Hunde, die Begegnungen entspannter erleben sollen.',
+    ort: 'Treffpunkt Parkplatz am Stadtpark',
+    start: { wochentag: 0, nter: 2 },
+    uhrzeit: '11:00',
+    ende: '12:30',
+    serie: 'monatlich_wochentag'
+  },
+  {
+    partnerSlug: 'hundeschule-pfotenglueck',
+    titel: 'Erste-Hilfe-Kurs am Hund',
+    text: 'Verbände, Zecken, Hitzschlag: ein Abend mit einer Tierärztin, mit Übungen am eigenen Hund.',
+    ort: 'Seminarraum der Hundeschule',
+    start: { inTagen: 16 },
+    uhrzeit: '18:00',
+    ende: '21:00',
+    serie: 'keine'
+  },
+  {
+    partnerSlug: 'tierheim-sonnenhang',
+    titel: 'Tag der offenen Tür',
+    text: 'Führungen durchs Tierheim, Kaffee und Kuchen – und ganz viel Zeit, unsere Tiere kennenzulernen.',
+    ort: 'Tierheim Sonnenhang',
+    start: { wochentag: 0, nter: 1 },
+    uhrzeit: '14:00',
+    ende: '17:00',
+    serie: 'monatlich_wochentag'
+  },
+  {
+    partnerSlug: 'hundesalon-wuschelglueck',
+    titel: 'Krallen-Sprechstunde',
+    text: 'Ohne Termin: Krallen schneiden und Pfoten pflegen, in Ruhe und mit Leckerli.',
+    ort: 'Hundesalon Wuschelglück',
+    start: { tagImMonat: 12 },
+    uhrzeit: '15:00',
+    ende: '17:00',
+    serie: 'monatlich_tag'
+  }
+]
+
+module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE }

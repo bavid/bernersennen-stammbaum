@@ -636,6 +636,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     promotionIds: discover.promotionIds,
     partnerPostIds: partnerContent.postIds,
     messages: partnerContent.messages,
+    termine: partnerContent.termine,
     visits
   }
 }

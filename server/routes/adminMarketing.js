@@ -16,6 +16,7 @@ const {
 } = require('../lib/promotions')
 const { handlePromotionImageUpload, deletePromotion } = require('../lib/promotionImage')
 const { asPartnerPostInput } = require('../lib/partnerPosts')
+const { parseZeitraeume } = require('../lib/promotionZeitraeume')
 const {
   VERLAUF_AKTION,
   recordPromotionEvent,
@@ -60,10 +61,16 @@ function findPromotion(id) {
 }
 
 // bildUrl zusätzlich zu den Spalten - wie logoUrl bei Partnern (lib/partners.js publicPartner) - und
-// erstelltVonPartner (Phase P2 Task 8: Beitrag eines Partners aus seinem Bereich).
+// erstelltVonPartner (Phase P2 Task 8: Beitrag eines Partners aus seinem Bereich). Phase V4a: zeitraeume als Liste
+// (alle, auch vergangene) - der Admin sieht beim Freigeben, für welche Tage die Anzeige wirbt.
 function promotionRow(row) {
   if (!row) return row
-  return { ...row, bildUrl: promotionImageUrl(row.bild_file), erstelltVonPartner: Boolean(row.erstellt_von_partner) }
+  return {
+    ...row,
+    zeitraeume: parseZeitraeume(row.zeitraeume),
+    bildUrl: promotionImageUrl(row.bild_file),
+    erstelltVonPartner: Boolean(row.erstellt_von_partner)
+  }
 }
 
 // Klickzahlen je Empfehlung in EINER aggregierten Abfrage (lib/promotions.js promotionClicksJoinSql), dazu

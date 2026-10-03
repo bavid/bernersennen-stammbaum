@@ -4,6 +4,7 @@ import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import AdminImageUpload from './AdminImageUpload.jsx'
 import Icon from './Icon.jsx'
+import PostZeitraeumeField from './PostZeitraeumeField.jsx'
 import {
   EDIT_MODES,
   IMAGE_LATER_HINT,
@@ -139,6 +140,8 @@ export default function PartnerPostForm({ post, typ, vertrauenswuerdig = false, 
         <AdminField id={IDS.ende} label="Sichtbar bis (optional)" error={fieldErrors.ende}>
           <input {...bind('ende')} type="date" value={form.ende} onChange={(e) => update({ ende: e.target.value })} />
         </AdminField>
+
+        <PostZeitraeumeField rows={form.zeitraeume} error={fieldErrors.zeitraeume} onChange={(zeitraeume) => update({ zeitraeume })} />
 
         <div className="field span-2">
           <label className="check">

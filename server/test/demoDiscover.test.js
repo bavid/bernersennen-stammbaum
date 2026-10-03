@@ -175,7 +175,8 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
     assert.equal(patenschaft.kennzeichnung, 'Partner')
     assert.equal(patenschaft.clickUrl, `/r/promotion/${patenschaft.id}`)
 
-    assert.deepEqual(res.data.unterstuetzen.promotions.map((p) => p.titel), ['Futterspende fürs Tierheim'])
+    // Phase V4a: dazu der Pfoten-Flohmarkt des Tierheims (seed/demo-partner-area.js POSTS, mit mehreren Terminen).
+    assert.deepEqual(res.data.unterstuetzen.promotions.map((p) => p.titel), ['Futterspende fürs Tierheim', 'Pfoten-Flohmarkt'])
     const futterspende = res.data.unterstuetzen.promotions[0]
     assert.equal(futterspende.kennzeichnung, 'Empfehlung')
     assert.equal(futterspende.empfohlenVon, 'Familie auf Pfoten')
@@ -303,7 +304,7 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
 
   await t.test('Rollback: scheitert eine Demo-Empfehlung (unbekannter Partner-Slug), bleibt die bisherige Demo samt echten Daten vollständig erhalten', () => {
     const before = snapshotAll()
-    assert.equal(before.demoPromotions.length, 11, 'Ausgangslage: eine vollständige Demo (5 Empfehlungen, 6 Beiträge der Demo-Partner)')
+    assert.equal(before.demoPromotions.length, 12, 'Ausgangslage: eine vollständige Demo (5 Empfehlungen, 7 Beiträge der Demo-Partner)')
 
     seed.DEMO_PROMOTIONS.push({
       bereich: 'hundeschule',

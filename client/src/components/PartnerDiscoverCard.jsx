@@ -4,7 +4,9 @@ import { CardVisual } from './PartnerCard.jsx'
 import { ExternalLink, InternalLink } from './PreviewLink.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { formatDistanceKm, isExternalUrl } from '../lib/format.js'
-import { formatDateLong, formatDateShort } from '../lib/dates.js'
+import { formatDateLong, formatDateShort, todayIso } from '../lib/dates.js'
+import { naechsterTerminText } from '../lib/termine.js'
+import { zeitraeumeText } from '../lib/zeitraeume.js'
 import {
   PENDING_APPROVAL_LABEL,
   isAllowedMedia,
@@ -82,7 +84,34 @@ function AdRow({ ad }) {
         )}
       </h4>
       {ad.text && <p className="partner-discover-ad-text">{ad.text}</p>}
+      <AdTermine zeitraeume={ad.zeitraeume} />
     </li>
+  )
+}
+
+// Phase V4a: die kommenden Termine einer Anzeige ("Termine: 1.2., 1.3., 5.–10.5.") - ohne kommende nichts.
+function AdTermine({ zeitraeume }) {
+  const text = zeitraeumeText(zeitraeume, todayIso())
+  if (!text) return null
+  return (
+    <p className="partner-discover-ad-termine">
+      <Icon name="calendar" />
+      {text}
+    </p>
+  )
+}
+
+// Phase V4a: der nächste Termin aus dem Kalender des Partners ("Sa, 12.10., 10:00 · Welpenspielstunde").
+function NextTermin({ termin }) {
+  const text = naechsterTerminText(termin)
+  if (!text) return null
+  return (
+    <p className="partner-discover-next">
+      <Icon name="calendar" />
+      <span>
+        <span className="partner-discover-next-label">Nächster Termin:</span> {text}
+      </span>
+    </p>
   )
 }
 
@@ -114,6 +143,7 @@ function EinblickStrip({ partner, einblicke }) {
 // Phase V1: EINE Karte je Partner in "Entdecken" (Hundeschulen, Salon & Betreuung, Neue Begleiter) statt Partner-Karte
 // plus einzelner Anzeigen-Karten: oben Logo, Name, Merkmal und Kurzbeschreibung mit "Zum Portal" und "Website",
 // darunter bis zu drei Anzeigen des Partners (in seiner Reihenfolge) und seine angepinnten oder neuesten Einblicke.
+// Phase V4a: im Kopf eine Zeile "Nächster Termin" (naechsterTermin), an den Anzeigen ihre kommenden Termine.
 // Mit Anzeigen darf die Karte am Desktop zwei Spalten breit sein (has-anzeigen, discover.css). In der Kundensicht
 // trägt die eigene Karte (vorschau: true) "Das seid ihr".
 export default function PartnerDiscoverCard({ partner }) {
@@ -137,6 +167,7 @@ export default function PartnerDiscoverCard({ partner }) {
         )}
         <CardHead partner={partner} preview={preview} />
         {partner.kurztext && <p className="partner-discover-text">{partner.kurztext}</p>}
+        <NextTermin termin={partner.naechsterTermin} />
         <div className="partner-card-links">
           <InternalLink className="btn btn-ghost" to={`/p/${partner.slug}`}>
             Zum Portal
