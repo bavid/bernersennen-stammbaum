@@ -283,7 +283,7 @@
      nach unten geschoben, sobald die Inhalte da sind (Layout-Verschiebung). */
   min-height: 100dvh;
   margin: 0 auto;
-  padding: var(--page-pad-top) var(--page-gutter) var(--space-16);
+  padding: var(--page-pad-top) var(--page-gutter) var(--space-12);
 }
 
 .app-footer {
@@ -315,7 +315,7 @@
 .page {
   /* Abstand der Abschnitte einer Seite - als Variable, damit eng zusammengehörige Teile ihn gezielt verkleinern können
      (z. B. Ort und Reiter in "Entdecken", discover.css). */
-  --page-gap: clamp(var(--space-8), 4vw, var(--space-12));
+  --page-gap: clamp(var(--space-6), 3vw, var(--space-8));
   display: grid;
   /* minmax(0, …): breite Inhalte (Stammbaum) scrollen in sich, statt die Seite zu verbreitern */
   grid-template-columns: minmax(0, 1fr);
@@ -331,14 +331,14 @@
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: var(--space-6) var(--space-10);
-  padding-bottom: clamp(var(--space-6), 3vw, var(--space-10));
+  gap: var(--space-4) var(--space-8);
+  padding-bottom: clamp(var(--space-4), 2vw, var(--space-6));
   border-bottom: 1px solid var(--line);
 }
 
 .page-hero > div:first-child {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   max-width: var(--measure);
 }
 
@@ -346,7 +346,7 @@
   font-size: var(--text-lg);
   color: var(--muted);
   max-width: var(--measure-lede);
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 /* Schmale Zusatzzeile im Hero, z. B. der Link "Tierheime & Hundeschulen in der Nähe" (/umgebung) auf
@@ -372,7 +372,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .hero-actions {
@@ -401,7 +401,7 @@
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4) var(--space-8);
+  gap: var(--space-3) var(--space-6);
   margin: 0;
 }
 
@@ -413,7 +413,7 @@
 .stats dd {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 2.4rem;
+  font-size: var(--text-stat);
   font-weight: 500;
   line-height: 1;
   color: var(--ink);
@@ -431,7 +431,7 @@
 
 .section-title {
   font-size: var(--text-xl);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .back-link {

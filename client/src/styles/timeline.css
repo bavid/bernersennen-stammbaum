@@ -111,7 +111,7 @@
   width: var(--date-col);
   padding-right: var(--space-3);
   text-align: right;
-  font-size: 1.9rem;
+  font-size: 1.5rem;
   font-style: italic;
   font-weight: 500;
   color: var(--rust);

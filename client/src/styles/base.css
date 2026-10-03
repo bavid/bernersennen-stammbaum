@@ -9,12 +9,10 @@ html {
   scroll-padding-top: calc(var(--header-height) + var(--space-6));
 }
 
-/* V0: am Handy 15 statt 16 px Grundschrift - alle rem-Maße schrumpfen mit (siehe tokens.css). Prozent statt
-   px, damit eine im Browser eingestellte größere Schrift weiter wirkt. */
-@media (max-width: 720px) {
-  html {
-    font-size: 93.75%;
-  }
+/* Calm-down-Runde: 15 statt 16 px Grundschrift auf allen Breiten (V0: vorher nur am Handy) - alle rem-Maße schrumpfen
+   mit (--root-size, tokens.css). Prozent statt px, damit eine im Browser eingestellte größere Schrift weiter wirkt. */
+html {
+  font-size: var(--root-size, 93.75%);
 }
 
 html,
@@ -32,7 +30,7 @@ body {
   color: var(--text);
   font-family: var(--font-body);
   font-size: var(--text-base);
-  line-height: 1.6;
+  line-height: 1.55;
   font-feature-settings: 'ss01';
   -webkit-font-smoothing: antialiased;
 }
@@ -53,7 +51,7 @@ h4 {
 h1 {
   font-size: var(--text-display);
   font-weight: 560;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
 }
 

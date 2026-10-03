@@ -33,13 +33,19 @@
   --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
   --font-body: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
 
-  --text-xs: 0.75rem;
+  /* Calm-down-Runde: kleinere, ruhigere Skala - die Grundschrift ist überall 15 px (--root-size, base.css), alle
+     rem-Maße schrumpfen mit. Bei 15 px: Etiketten 12, klein 13, Text 15, Einleitung 17; Abschnittstitel 17-20,
+     h2 20-24 und die Seitenüberschrift 28-38 px (vorher bis 72). Schriftgröße "Größer" (Einstellungen) hebt die
+     Grundschrift um eine Stufe, die ganze Skala zieht mit. */
+  --root-size: 93.75%;
+  --text-xs: 0.8rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
-  --text-lg: 1.1875rem;
-  --text-xl: clamp(1.35rem, 1.2rem + 0.6vw, 1.75rem);
-  --text-2xl: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
-  --text-display: clamp(2.4rem, 1.6rem + 3.4vw, 4.5rem);
+  --text-lg: 1.125rem;
+  --text-xl: clamp(1.15rem, 1.05rem + 0.3vw, 1.3rem);
+  --text-2xl: clamp(1.3rem, 1.1rem + 0.55vw, 1.6rem);
+  --text-display: clamp(1.9rem, 1.45rem + 1.4vw, 2.5rem);
+  --text-stat: 1.7rem;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -88,14 +94,11 @@
   --card-pad-compact: var(--space-5);
 }
 
-/* Handy (≤ 720 px) einen Schnupf kleiner: die Grundschrift sinkt auf 15 px (base.css), damit schrumpfen alle
-   rem-Maße mit; dazu engere Karten, eine niedrigere Kopfzeile und eine leicht kleinere Überschriften-Skala
-   (h1/h2 ~10 % kleiner als vorher). Tippflächen bleiben trotzdem mindestens 44 px (layout.css). */
+/* Handy (≤ 720 px): engere Karten und eine niedrigere Kopfzeile - die Schrift-Skala regelt clamp() oben von selbst.
+   Tippflächen bleiben trotzdem mindestens 44 px (layout.css). */
 @media (max-width: 720px) {
   :root {
     --header-height: 3.25rem;
-    --text-2xl: clamp(1.7rem, 1.35rem + 1.4vw, 2.5rem);
-    --text-display: clamp(2.3rem, 1.5rem + 3.4vw, 4.5rem);
     --card-gap: 12px;
     --card-pad: 16px;
     --card-pad-compact: 16px;
