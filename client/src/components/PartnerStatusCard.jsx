@@ -72,9 +72,11 @@ function PublishActions({ profile, fehlt, busy, onPublish }) {
           {busy ? 'Veröffentliche …' : 'Veröffentlichen'}
         </button>
       )}
+      {/* Audit V7a: was fehlt, steht schon in der Checkliste darüber - sichtbar nur der Verweis, die Aufzählung bleibt für
+          Screenreader am Knopf (aria-describedby). */}
       {!isActive && fehlt.length > 0 && (
         <p id={REASON_ID} className="field-hint">
-          Zum Veröffentlichen fehlt noch: {fehlt.join(', ')}.
+          Erst die Pflichtangaben oben ergänzen.<span className="visually-hidden"> Es fehlt noch: {fehlt.join(', ')}.</span>
         </p>
       )}
       {isDemo && (

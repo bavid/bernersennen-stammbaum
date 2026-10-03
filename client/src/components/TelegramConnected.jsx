@@ -76,7 +76,7 @@ export default function TelegramConnected({ status, onStatus }) {
           <Icon name="send" />
           {busy === 'test' ? 'Sende …' : 'Testnachricht senden'}
         </button>
-        <ConfirmButton label="Trennen" confirmLabel="Wirklich trennen?" disabled={isDemo || busy !== null} onConfirm={disconnect} />
+        <ConfirmButton label="Trennen" confirmLabel="Wirklich trennen?" icon="close" disabled={isDemo || busy !== null} onConfirm={disconnect} />
       </div>
     </div>
   )

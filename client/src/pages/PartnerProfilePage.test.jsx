@@ -133,7 +133,9 @@ describe('PartnerProfilePage – Statuskarte', () => {
     const publishButton = button('Veröffentlichen')
     expect(publishButton.disabled).toBe(true)
     const reason = document.getElementById(publishButton.getAttribute('aria-describedby'))
-    expect(reason.textContent).toBe('Zum Veröffentlichen fehlt noch: Postleitzahl, Portal-Text (mind. 40 Zeichen).')
+    // Audit V7a: sichtbar nur der Verweis auf die Checkliste, vorgelesen auch die Aufzählung.
+    expect(reason.textContent).toBe('Erst die Pflichtangaben oben ergänzen. Es fehlt noch: Postleitzahl, Portal-Text (mind. 40 Zeichen).')
+    expect(reason.querySelector('.visually-hidden').textContent).toBe(' Es fehlt noch: Postleitzahl, Portal-Text (mind. 40 Zeichen).')
   })
 
   test('vollständig: "Veröffentlichen" ruft publish(true), danach "Aktiv (öffentlich)" und der Link zum Portal', async () => {

@@ -107,7 +107,7 @@ describe('EinblickeEditor – Liste', () => {
     await render()
 
     const [hidden, visible] = cards()
-    expect(hidden.querySelector('.einblick-hidden-badge').textContent).toBe('ausgeblendet vom Betreiber')
+    expect(hidden.querySelector('.einblick-hidden-badge').textContent).toBe('Vom Team ausgeblendet')
     expect(visible.querySelector('.einblick-hidden-badge')).toBeNull()
   })
 

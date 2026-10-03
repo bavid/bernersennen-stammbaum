@@ -741,7 +741,8 @@
 .partner-stack-counts {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3) var(--space-8);
+  /* Audit V7a: am Handy enger, damit die drei Zahlen in einer Zeile stehen (vorher rutschte „Zurückgezogen“ allein nach unten). */
+  gap: var(--space-3) clamp(var(--space-4), 4vw, var(--space-8));
   margin: 0;
 }
 

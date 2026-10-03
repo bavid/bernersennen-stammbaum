@@ -21,6 +21,8 @@ export default function PostZeitraeumeField({ rows, error, onChange }) {
       <legend className="field-label">Termine (optional)</legend>
       <p className="field-hint" id={HINT_ID}>
         Für Aktionen an mehreren Tagen, z. B. am 1.2., 1.3. und 5.–10.5. Auf der Anzeige stehen nur die kommenden.
+        {/* Audit V7a: Termine gibt es auch im Kalender - hier sagen, was wohin gehört. */} Regelmäßige Kurse und offene Stunden
+        tragt ihr besser im Kalender ein.
       </p>
       {rows.length > 0 && (
         <ol className="post-zeitraeume-list">

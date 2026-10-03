@@ -4,7 +4,8 @@ import Icon from './Icon.jsx'
 const ARM_TIMEOUT_MS = 3500
 
 // Zweistufiger Löschen-Knopf: erst scharf schalten, dann bestätigen. describedBy (optional): id eines
-// Hinweises, der z. B. erklärt, warum der Knopf gesperrt ist (aria-describedby).
+// Hinweises, der z. B. erklärt, warum der Knopf gesperrt ist (aria-describedby). icon (Audit V7a): z. B. "close" für
+// "Trennen" - der Mülleimer passt nur, wo wirklich etwas gelöscht wird.
 export default function ConfirmButton({
   onConfirm,
   label = 'Löschen',
@@ -12,7 +13,8 @@ export default function ConfirmButton({
   disabled,
   className = '',
   ariaLabel,
-  describedBy
+  describedBy,
+  icon = 'trash'
 }) {
   const [armed, setArmed] = useState(false)
 
@@ -40,7 +42,7 @@ export default function ConfirmButton({
       aria-label={armed ? confirmLabel : ariaLabel || undefined}
       aria-describedby={describedBy}
     >
-      <Icon name="trash" />
+      <Icon name={icon} />
       {armed ? confirmLabel : label}
     </button>
   )

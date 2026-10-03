@@ -79,7 +79,7 @@ function EinblickEditForm({ einblick, onSaved, onCancel }) {
   )
 }
 
-// Ein Einblick im Raster: Foto, Datum, Text, dazu "ausgeblendet vom Betreiber", wenn der Admin ihn
+// Ein Einblick im Raster: Foto, Datum, Text, dazu "Vom Team ausgeblendet" (Audit V7a: dieselben Worte wie im Kalender), wenn der Admin ihn
 // verborgen hat (dann erscheint er nicht auf dem Portal). Bearbeiten klappt Datum/Text inline auf,
 // Löschen fragt einmal nach (ConfirmButton). In der Demo sind beide gesperrt. Phase V1: dazu "Anpinnen" für die Karte in
 // "Entdecken" (EinblickPinButton) - canPin false, sobald drei angepinnt sind.
@@ -113,8 +113,8 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
         {isUploadUrl(einblick.fotoUrl) && <img src={einblick.fotoUrl} alt={`Einblick vom ${dateLabel}`} loading="lazy" />}
         {einblick.ausgeblendet && (
           <span className="pill einblick-hidden-badge">
-            <Icon name="eye" />
-            ausgeblendet vom Betreiber
+            <Icon name="eyeOff" />
+            Vom Team ausgeblendet
           </span>
         )}
       </div>

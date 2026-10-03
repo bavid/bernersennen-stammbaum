@@ -141,6 +141,12 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
       {!editing && posts?.length === 0 && (
         <p className="empty-state partner-posts-empty">Noch keine Beiträge – kündigt Kurse, Aktionen oder Termine an.</p>
       )}
+      {/* Audit V7a: die Liste folgt einer anderen Reihenfolge als die Karte darüber - die Überschrift sagt das. */}
+      {!editing && count > 0 && (
+        <h3 className="partner-posts-list-title">
+          Alle Beiträge <span>· neueste zuerst</span>
+        </h3>
+      )}
       {!editing && count > 0 && (
         <ul className="partner-post-list">
           {posts.map((post) => (
