@@ -1,29 +1,6 @@
-/* Phase V2: Zuhause besuchen - Band während eines Besuchs, Einladen/Einlösen und die Listen im Einladen-Dialog. */
+/* Phase V2: Zuhause besuchen - Einladen/Einlösen und die Listen im Einladen-Dialog. */
 
-/* Band wie .demo-banner, aber in Alpin-Grün: "zu Besuch" ist kein Warnhinweis, sondern ein Ort. */
-.visit-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--page-gutter, var(--space-4));
-  background: var(--alpine-wash);
-  border-bottom: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-  text-align: center;
-}
-
-.visit-banner p {
-  margin: 0;
-}
-
-.visit-banner-back {
-  min-height: 2.1rem;
-  padding: 0 var(--space-3);
-  font-size: var(--text-xs);
-}
+/* Der Besuchs-Hinweis selbst steht als schmale Zeile in der Leiste oben (top-strip.css). */
 
 .pill-visit {
   background: var(--surface-sunk);

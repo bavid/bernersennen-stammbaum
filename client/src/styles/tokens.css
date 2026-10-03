@@ -66,7 +66,8 @@
   --duration-normal: 260ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --header-height: 4.25rem;
+  /* Calm-down-Runde: flacher als vorher (4.25rem) - Logo und Name stehen weiter bequem darin. */
+  --header-height: 3.6rem;
 
   /* Breiten (V0, Wunsch 30.09.: am Desktop mehr Inhalt pro Seite) - eine Stelle statt fester Werte in vielen
      Dateien. Breiter werden nur Raster und Kartenflächen: Seitenköpfe und Einleitungen behalten ihre
@@ -92,7 +93,7 @@
    (h1/h2 ~10 % kleiner als vorher). Tippflächen bleiben trotzdem mindestens 44 px (layout.css). */
 @media (max-width: 720px) {
   :root {
-    --header-height: 3.75rem;
+    --header-height: 3.25rem;
     --text-2xl: clamp(1.7rem, 1.35rem + 1.4vw, 2.5rem);
     --text-display: clamp(2.3rem, 1.5rem + 3.4vw, 4.5rem);
     --card-gap: 12px;

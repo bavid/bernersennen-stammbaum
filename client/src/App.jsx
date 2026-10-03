@@ -206,7 +206,7 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
           {/* Eigenes, aus der Tab-Reihenfolge ausgeblendetes Icon-Link: der Name daneben ist das
               eigentliche, für Tastatur und Screenreader erreichbare Ziel zum Stammbaum/Wegbegleiter. */}
           <Link to={startRoute(family)} className="brand-mark" tabIndex={-1} aria-hidden="true">
-            <ThemeMark size={40} />
+            <ThemeMark size={34} />
           </Link>
           <span className="brand-text">
             <Link to={startRoute(family)} className="brand-name">
@@ -546,11 +546,14 @@ export default function App() {
       <DemoProvider value={family}>
         <div className="app-shell">
           <ScrollToTop />
-          {/* Admin-Ansicht vor Demo: öffnet der Admin eine Demo-Familie, zählt das Band der Admin-Ansicht. */}
+          {/* Admin-Ansicht vor Demo: öffnet der Admin eine Demo-Familie, zählt der Hinweis der Admin-Ansicht. Beide (und der
+              Besuch darunter) stehen per Portal in der schmalen Leiste oben (TopStrip, main.jsx). */}
           {family.adminView ? (
             <AdminViewBanner family={family} onEnd={handleEndAdminView} />
           ) : (
-            family.isDemo && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
+            family.isDemo && (
+              <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} compact={Boolean(family.zuBesuch)} />
+            )
           )}
           {/* Phase V2: zu Besuch in einem anderen Zuhause - nur ansehen und kommentieren, mit Weg zurück. */}
           {family.zuBesuch && <VisitBanner family={family} onFamilyChange={setFamily} />}

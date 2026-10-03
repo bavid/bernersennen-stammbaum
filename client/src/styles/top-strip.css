@@ -1,0 +1,178 @@
+/* Schmale Leiste über dem Kopf (TopStrip.jsx, Calm-down-Runde): früher bis zu drei volle Bänder (Vorschau, Hinweis,
+   Demo/Besuch) mit gut 30 % der Handy-Höhe - jetzt eine 3-px-Linie für Vorschau/Testsystem und EINE Zeile von 32 px, die
+   sich der Hinweis des Admins (hinweise.css) und der Sitzungs-Hinweis (Demo, Besuch, Admin-Ansicht) teilen. Zusammen
+   höchstens 35 px. Keine Schatten, keine großen Abstände; Text 13 px. Knöpfe und Links bleiben sichtbar klein, ihre
+   Tippfläche wächst unsichtbar auf 44 px (::after) - sie ragt dafür ein Stück über den Kopf darunter (z-index). */
+
+/* --- Vorschau / Testsystem: Linie mit winzigem Etikett rechts ------------------------------------------------------ */
+
+.env-banner {
+  --env-color: #e8b931;
+  position: relative;
+  z-index: 46;
+  height: 3px;
+  background: var(--env-color);
+}
+
+.env-banner.env-dev {
+  --env-color: #74b896;
+}
+
+/* Hängt 9 px unter die Linie - unterhalb der Symbole der Zeile darunter (die stehen mittig) und ohne Klicks abzufangen. */
+.env-banner-label {
+  position: absolute;
+  top: 0;
+  right: var(--space-2);
+  height: 12px;
+  padding: 2px 6px 0;
+  border-radius: 0 0 4px 4px;
+  background: var(--env-color);
+  color: #2a211a;
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* --- Die eine Zeile ------------------------------------------------------------------------------------------------- */
+
+/* Ohne Inhalt 0 px hoch (nur waagerechter Rand) - die feine Linie unten ist ein Schatten nach innen und verschwindet mit. */
+.top-strip {
+  position: relative;
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  box-shadow: inset 0 -1px 0 var(--line);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  line-height: 1.3;
+}
+
+.top-strip-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 var(--page-gutter);
+}
+
+.top-strip-session {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.top-strip-session:empty {
+  display: none;
+}
+
+/* Sitzungs-Hinweise: Demo, Admin-Ansicht (.demo-banner), Besuch (.visit-banner) */
+.demo-banner,
+.visit-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.demo-banner > svg,
+.visit-banner > svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--rust);
+}
+
+.visit-banner > svg {
+  color: var(--alpine);
+}
+
+/* Neben dem Besuch bleibt die Demo kurz und schrumpft nicht - abgekürzt wird der Name des besuchten Zuhauses. */
+.demo-banner.is-compact {
+  flex-shrink: 0;
+}
+
+.admin-view-banner > svg {
+  color: var(--ink);
+}
+
+.top-strip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-strip-tag {
+  color: var(--rust);
+  font-weight: 800;
+}
+
+.admin-view-banner .top-strip-tag {
+  color: var(--ink);
+}
+
+/* Text-Link (Knopf oder Link) - sichtbar wie ein Link, Tippfläche 44 px hoch. */
+.top-strip-link {
+  position: relative;
+  z-index: 41;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rust);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.top-strip-link::after {
+  content: '';
+  position: absolute;
+  inset: -13px -6px;
+}
+
+.top-strip-link:hover {
+  color: var(--rust-deep);
+  text-decoration-color: currentColor;
+}
+
+.top-strip-link:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--focus-ring);
+}
+
+/* Handy: nur das Nötigste - „Demo“ und der Link, „Zu Besuch bei …“ und „Zurück“. */
+@media (max-width: 720px) {
+  .top-strip-inner {
+    gap: var(--space-3);
+  }
+
+  .top-strip-session {
+    flex: 1 1 auto;
+    gap: var(--space-3);
+  }
+
+  .top-strip-long {
+    display: none;
+  }
+
+  /* Demo und Besuch zugleich: von der Demo bleibt am Handy nur das Wort. */
+  .demo-banner.is-compact .top-strip-link {
+    display: none;
+  }
+
+  .visit-banner {
+    flex: 1 1 auto;
+  }
+}

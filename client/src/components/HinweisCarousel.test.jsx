@@ -36,25 +36,45 @@ const live = () => container.querySelector('[aria-live="polite"]')
 const click = (el) => act(() => el.click())
 
 describe('HinweisCarousel – ein Hinweis', () => {
-  test('Region "Hinweise", Titel, Text erst nach „Mehr“ (aria-expanded), kein Blättern', () => {
+  test('Region "Hinweise", Titel in der Zeile, Titel und Text erst nach „Mehr“ im Fenster (aria-expanded), kein Blättern', () => {
     render({ hinweise: [WARTUNG], onDismiss: () => {} })
     expect(region().getAttribute('aria-label')).toBe('Hinweise')
     expect(titel()).toBe('Wartung heute Abend')
     expect(container.querySelector('.hinweis-count')).toBeNull()
     expect(button('Nächster Hinweis')).toBeUndefined()
 
-    const text = container.querySelector('.hinweis-text')
+    const pop = container.querySelector('.hinweis-pop')
     const more = button('Mehr')
     expect(more.getAttribute('aria-expanded')).toBe('false')
-    expect(more.getAttribute('aria-controls')).toBe(text.id)
-    expect(text.hidden).toBe(true)
+    expect(more.getAttribute('aria-controls')).toBe(pop.id)
+    expect(pop.hidden).toBe(true)
 
     click(more)
     expect(more.getAttribute('aria-expanded')).toBe('true')
     expect(more.textContent).toContain('Weniger')
-    expect(text.hidden).toBe(false)
+    expect(pop.hidden).toBe(false)
+    expect(pop.querySelector('.hinweis-pop-titel').textContent).toBe('Wartung heute Abend')
     // Zeilenumbrüche bleiben im Text (white-space: pre-line in hinweise.css), kein HTML.
-    expect(text.textContent).toBe(WARTUNG.text)
+    expect(pop.querySelector('.hinweis-text').textContent).toBe(WARTUNG.text)
+  })
+
+  test('das Fenster schließt mit Escape (Fokus zurück auf „Mehr“) und mit einem Klick daneben', () => {
+    render({ hinweise: [WARTUNG], onDismiss: () => {} })
+    const pop = container.querySelector('.hinweis-pop')
+    const more = button('Mehr')
+    more.focus()
+    click(more)
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
+    expect(pop.hidden).toBe(true)
+    expect(document.activeElement).toBe(more)
+
+    click(more)
+    act(() => document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })))
+    expect(pop.hidden).toBe(true)
+    // Ein Klick im Fenster selbst lässt es offen.
+    click(more)
+    act(() => pop.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })))
+    expect(pop.hidden).toBe(false)
   })
 
   test('ohne Text kein „Mehr“; Stufe als Klasse und für Screenreader als Wort', () => {
@@ -134,6 +154,34 @@ describe('HinweisCarousel – mehrere Hinweise', () => {
 test('ohne Hinweise rendert das Band nichts', () => {
   render({ hinweise: [], onDismiss: () => {} })
   expect(container.innerHTML).toBe('')
+})
+
+describe('HinweisCarousel – compact (neben Demo/Besuch, am Handy nur ein Symbol)', () => {
+  test('ein Symbol-Knopf mit sprechendem Namen öffnet dasselbe Fenster, das dann auch Blättern und × trägt', () => {
+    const onDismiss = vi.fn()
+    render({ hinweise: [WARTUNG, WICHTIG], onDismiss, compact: true })
+    expect(region().classList.contains('is-compact')).toBe(true)
+    const trigger = container.querySelector('.hinweis-trigger')
+    expect(trigger.getAttribute('aria-label')).toBe('2 Hinweise, zuerst: Wartung heute Abend')
+    expect(trigger.getAttribute('aria-controls')).toBe(container.querySelector('.hinweis-pop').id)
+
+    click(trigger)
+    const pop = container.querySelector('.hinweis-pop')
+    expect(pop.hidden).toBe(false)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    // Blättern im Fenster lässt es offen.
+    click(pop.querySelector('[aria-label="Nächster Hinweis"]'))
+    expect(pop.hidden).toBe(false)
+    expect(pop.querySelector('.hinweis-pop-titel').textContent).toBe('Bitte Schlüssel sichern')
+    click(pop.querySelector('[aria-label="Hinweis ausblenden"]'))
+    expect(onDismiss).toHaveBeenCalledWith(1)
+  })
+
+  test('ohne compact kein Symbol-Knopf und keine Aktionen im Fenster', () => {
+    render({ hinweise: [WARTUNG], onDismiss: () => {} })
+    expect(container.querySelector('.hinweis-trigger')).toBeNull()
+    expect(container.querySelector('.hinweis-pop-actions')).toBeNull()
+  })
 })
 
 describe('HinweisCarousel – Vorschau im Admin', () => {

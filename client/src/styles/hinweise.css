@@ -1,58 +1,66 @@
-/* Globale Hinweise (Phase N Task 5): das Band ganz oben auf jeder Seite (HinweisCarousel/HinweisBand) und der Reiter
-   "Hinweise" im Admin. Das Band gehört zum Stapel oben - Umgebungs-Streifen (env-banner), Hinweis, Demo-/Besuchs-Band,
-   dann der Kopf: alle randlos über die volle Breite, je eine feine Linie darunter, keine Schatten, keine Rundungen -
-   unterschieden nur durch die Fläche. Der Inhalt sitzt in derselben Spalte wie der Kopf (--page-max, --page-gutter).
-   Farbe je Stufe über zwei Variablen: --hinweis-accent (Fläche, Linie, Hover) und --hinweis-ink (Symbol, Stufe).
-   Nur Tokens aus tokens.css - hell und dunkel ziehen von selbst mit. */
+/* Globale Hinweise (Phase N Task 5): der Hinweis ganz oben auf jeder Seite (HinweisCarousel/HinweisBand) und der Reiter
+   "Hinweise" im Admin. Calm-down-Runde: der Hinweis ist kein eigenes Band mehr, sondern ein Teil der schmalen Leiste über
+   dem Kopf (top-strip.css) - eine Zeile von 32 px: Symbol, Titel in einer Zeile, „Mehr“, Blättern, ×. Titel und Text
+   stehen in einem kleinen Fenster darunter (.hinweis-pop), das die Seite überlagert statt sie zu verschieben.
+   Farbe je Stufe über zwei Variablen: --hinweis-accent (Fläche, Hover) und --hinweis-ink (Symbol, Stufe); Info ohne
+   Fläche, Wartung und Wichtig mit einer leisen Tönung. Nur Tokens - hell und dunkel ziehen von selbst mit. */
 
 .hinweis-band {
   --hinweis-accent: var(--alpine);
   --hinweis-ink: var(--alpine);
-  --hinweis-tint: 9%;
-  --hinweis-tap: 2.25rem;
+  --hinweis-tint: 0%;
   position: relative;
-  background: color-mix(in srgb, var(--hinweis-accent) var(--hinweis-tint), var(--paper));
-  border-bottom: 1px solid color-mix(in srgb, var(--hinweis-accent) 32%, var(--line));
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  min-height: 32px;
   color: var(--ink-soft);
   font-size: var(--text-sm);
+  line-height: 1.3;
 }
 
-/* Wartung: die Warnfarbe der Seite (wie .warning-banner), deutlich, aber nicht alarmierend. */
+/* Wartung: die Warnfarbe der Seite (wie .warning-banner), leise getönt. */
 .hinweis-wartung {
   --hinweis-accent: var(--tan);
   --hinweis-ink: var(--rust-deep);
-  --hinweis-tint: 26%;
+  --hinweis-tint: 20%;
 }
 
-/* Wichtig: der Akzent (Rost). */
+/* Wichtig: der Akzent. */
 .hinweis-wichtig {
   --hinweis-accent: var(--rust);
   --hinweis-ink: var(--rust);
-  --hinweis-tint: 13%;
+  --hinweis-tint: 9%;
 }
 
 .hinweis-band-inner {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas:
-    'icon titel actions'
-    '. text text';
+  display: flex;
+  flex: 1 1 auto;
   align-items: center;
-  column-gap: var(--space-3);
-  max-width: var(--page-max);
-  min-height: 2.75rem;
-  margin: 0 auto;
-  padding: var(--space-1) var(--page-gutter);
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 26px;
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--hinweis-accent) var(--hinweis-tint), transparent);
+}
+
+.hinweis-info .hinweis-band-inner {
+  padding-left: 0;
+}
+
+/* Neben einem Demo-/Besuchs-Hinweis (TopStrip .has-session) rechtsbündig und höchstens halb so breit wie die Zeile. */
+.top-strip.has-session .hinweis-band {
+  flex: 0 1 auto;
+  max-width: 50%;
+  margin-left: auto;
 }
 
 .hinweis-icon {
-  grid-area: icon;
   display: inline-grid;
+  flex-shrink: 0;
   place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--hinweis-accent) 22%, transparent);
   color: var(--hinweis-ink);
 }
 
@@ -62,20 +70,21 @@
 }
 
 .hinweis-titel {
-  grid-area: titel;
   display: flex;
+  flex: 1 1 auto;
   align-items: baseline;
   gap: var(--space-2);
   min-width: 0;
   margin: 0;
   color: var(--ink);
   font-weight: 700;
-  line-height: 1.35;
 }
 
 .hinweis-titel-text {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hinweis-stufe {
@@ -88,10 +97,9 @@
 }
 
 .hinweis-actions {
-  grid-area: actions;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: var(--space-1);
 }
 
 .hinweis-pager {
@@ -100,7 +108,7 @@
 }
 
 .hinweis-count {
-  min-width: 2.5rem;
+  min-width: 2.25rem;
   color: var(--muted);
   font-size: var(--text-xs);
   font-weight: 700;
@@ -108,13 +116,16 @@
   text-align: center;
 }
 
+/* Sichtbar 28 px hoch, Tippfläche 44 px (::after, über den Rand der Zeile hinaus). */
 .hinweis-btn {
+  position: relative;
+  z-index: 41;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-1);
-  min-width: var(--hinweis-tap);
-  height: var(--hinweis-tap);
+  min-width: 32px;
+  height: 28px;
   padding: 0;
   border: 0;
   border-radius: var(--radius-pill);
@@ -125,6 +136,12 @@
   transition:
     background var(--duration-fast) var(--ease-out),
     color var(--duration-fast) var(--ease-out);
+}
+
+.hinweis-btn::after {
+  content: '';
+  position: absolute;
+  inset: -8px 0;
 }
 
 .hinweis-btn:hover:not(:disabled) {
@@ -142,13 +159,13 @@
 }
 
 .hinweis-btn svg {
-  width: 1.1rem;
-  height: 1.1rem;
   flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
 }
 
 .hinweis-more {
-  padding: 0 var(--space-3) 0 var(--space-2);
+  padding: 0 var(--space-2);
 }
 
 .hinweis-more svg {
@@ -159,49 +176,77 @@
   transform: rotate(180deg);
 }
 
+/* Nur in der kompakten Fassung am Handy (siehe unten). */
+.hinweis-trigger {
+  display: none;
+  color: var(--hinweis-ink);
+}
+
+.hinweis-trigger-count {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: var(--radius-pill);
+  background: var(--hinweis-ink);
+  color: var(--surface);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Das kleine Fenster unter der Zeile: überlagert die Seite (auch den Kopf), schiebt nichts nach unten. */
+.hinweis-pop {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  z-index: 50;
+  display: grid;
+  gap: var(--space-2);
+  width: min(26rem, calc(100vw - 2 * var(--page-gutter)));
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--ink-soft);
+  white-space: normal;
+}
+
+.hinweis-pop[hidden] {
+  display: none;
+}
+
+.hinweis-pop-titel {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 /* Zeilenumbrüche des Admins bleiben stehen (reiner Text, nie HTML). */
 .hinweis-text {
-  grid-area: text;
-  max-width: var(--measure);
-  margin: 0 0 var(--space-2);
+  margin: 0;
   color: var(--ink-soft);
-  line-height: 1.6;
+  line-height: 1.55;
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
 
-.hinweis-text[hidden] {
+.hinweis-pop-actions {
   display: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
 }
 
-/* Handy: eine Zeile - Titel mit Auslassungspunkten (aufgeklappt in voller Länge), Aktionen als Symbol-Knöpfe mit
-   mindestens 44 px Tippfläche (in px, weil die Grundschrift hier auf 15 px sinkt). Ohne Text bricht der Titel um -
-   sonst gäbe es keinen Weg, ihn ganz zu lesen. */
+/* Handy: Aktionen nur als Symbole, die Stufe nur für Screenreader. compact (neben Demo/Besuch): nur ein Symbol-Knopf,
+   das Fenster trägt Titel, Text, Blättern und ×. */
 @media (max-width: 720px) {
-  .hinweis-band {
-    --hinweis-tap: 44px;
-  }
-
-  .hinweis-band-inner {
-    column-gap: var(--space-2);
-    padding: 0 var(--space-1) 0 var(--page-gutter);
-  }
-
-  .hinweis-actions {
-    gap: 0;
-  }
-
-  /* Das Symbol ohne eigene Fläche - jeder Pixel Breite gehört hier dem Titel. */
-  .hinweis-icon {
-    width: auto;
-    height: auto;
-    background: none;
-  }
-
-  .hinweis-more {
-    padding: 0;
-  }
-
   .hinweis-btn-label,
   .hinweis-stufe {
     position: absolute;
@@ -212,18 +257,36 @@
     white-space: nowrap;
   }
 
+  .hinweis-more {
+    padding: 0;
+  }
+
   .hinweis-count {
-    min-width: 2rem;
+    min-width: 1.9rem;
   }
 
-  .has-text:not(.is-expanded) .hinweis-titel-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .hinweis-band.is-compact {
+    flex: 0 0 auto;
+    max-width: none;
   }
 
-  .hinweis-text {
-    padding-right: var(--space-3);
+  .is-compact .hinweis-band-inner {
+    padding: 0;
+    background: none;
+  }
+
+  .is-compact .hinweis-trigger {
+    display: inline-flex;
+  }
+
+  .is-compact .hinweis-icon,
+  .is-compact .hinweis-titel,
+  .is-compact .hinweis-actions {
+    display: none;
+  }
+
+  .is-compact .hinweis-pop-actions {
+    display: flex;
   }
 }
 
@@ -349,20 +412,17 @@
   font-size: var(--text-lg);
 }
 
-/* Vorschau: das echte Band in einem Rahmen, der wie der obere Rand einer Seite aussieht. */
+/* Vorschau: der echte Hinweis in einem Rahmen, der wie die Leiste oben auf einer Seite aussieht. */
 .admin-hinweis-preview {
   display: grid;
   gap: var(--space-2);
 }
 
 .admin-hinweis-preview .hinweis-band {
-  overflow: hidden;
+  padding: 2px var(--space-2) 2px var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-}
-
-.admin-hinweis-preview .hinweis-band-inner {
-  padding-inline: var(--space-4) var(--space-2);
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
 }
 
 .admin-hinweis-aktiv {

@@ -21,73 +21,7 @@
   flex-direction: column;
 }
 
-.demo-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--rust-wash);
-  border-bottom: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-  text-align: center;
-}
-
-.demo-banner svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  color: var(--rust);
-  flex-shrink: 0;
-}
-
-/* Am Handy kompakt (Audit V7a): vorher Hinweis und zwei große Knöpfe untereinander, gut 190 px hoch. Jetzt Symbol und
-   Text links in einer Zeile, darunter beide Knöpfe klein nebeneinander - gilt auch für das Band der Admin-Ansicht. */
-@media (max-width: 720px) {
-  .demo-banner {
-    justify-content: flex-start;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--page-gutter);
-    font-size: var(--text-xs);
-    text-align: left;
-  }
-
-  .demo-banner > span {
-    flex: 1 1 calc(100% - 2rem);
-  }
-
-  .demo-banner > .btn {
-    flex: 1 1 auto;
-    min-height: 2.1rem;
-    padding: 0 var(--space-3);
-    font-size: var(--text-xs);
-  }
-}
-
-/* Audit V7a: unter 360 px passen beide Knöpfe nur mit der Ersatzschrift nebeneinander - nach dem Laden der Webschrift
-   brachen sie um und schoben die Seite 39 px nach unten (Layout-Shift 0,15). Hier gleich untereinander. */
-@media (max-width: 359px) {
-  .demo-banner > .btn {
-    flex-basis: 100%;
-  }
-}
-
-/* Admin-Ansicht (Phase 5 Task 5b): dasselbe Band, aber in Tinte statt Rost - unverkennbar kein Demo-Hinweis. */
-.admin-view-banner {
-  background: var(--ink);
-  border-bottom-color: var(--ink);
-  color: var(--hero-text);
-}
-
-.admin-view-banner svg {
-  color: var(--tan);
-}
-
-.admin-view-banner .btn-ghost {
-  color: var(--hero-text);
-  border-color: var(--hero-muted);
-}
+/* Demo-, Besuchs- und Admin-Ansicht-Hinweis: als schmale Zeile in der Leiste oben, top-strip.css. */
 
 /* Header */
 
@@ -147,7 +81,7 @@
 .brand-name {
   display: block;
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 650;
   letter-spacing: -0.01em;
 }
@@ -617,21 +551,4 @@
   .toast {
     bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
-}
-
-/* Band für Vorschau (staging) und lokale Testumgebung (dev) */
-.env-banner {
-  position: relative;
-  z-index: 60;
-  padding: 4px var(--space-4);
-  background: repeating-linear-gradient(-45deg, #f4c542 0 12px, #f7d774 12px 24px);
-  color: #2a211a;
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  text-align: center;
-}
-
-.env-banner.env-dev {
-  background: repeating-linear-gradient(-45deg, #9ed1b8 0 12px, #b9e2cd 12px 24px);
 }
