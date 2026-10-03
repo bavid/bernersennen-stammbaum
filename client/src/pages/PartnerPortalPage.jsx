@@ -2,25 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api } from '../api'
 import ThemeMark from '../components/ThemeMark.jsx'
-import AnimalAdoptionCard from '../components/AnimalAdoptionCard.jsx'
-import HappyEndCard from '../components/HappyEndCard.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import PublicHeader from '../components/PublicHeader.jsx'
-import PortalAction from '../components/PortalAction.jsx'
+import PortalBody from '../components/PortalBody.jsx'
 import PortalBrandStrip from '../components/PortalBrandStrip.jsx'
-import PortalContact, { PORTAL_CONTACT_ID, hasPortalContact } from '../components/PortalContact.jsx'
-import PortalHero from '../components/PortalHero.jsx'
-import PortalPosts from '../components/PortalPosts.jsx'
-import PortalTermine from '../components/PortalTermine.jsx'
-import PortalSection from '../components/PortalSection.jsx'
-import EinblickeGallery from '../components/EinblickeGallery.jsx'
 import { isValidHexColor, darkenHex, hexToRgba } from '../lib/color.js'
 import { PreviewProvider } from '../lib/preview.js'
-import { adoptionSectionTitle } from '../lib/shelter.js'
 
 const ON_RUST = '#fffaf2'
 const ACCENT_WASH_ALPHA = 0.1
 const PREVIEW_LOAD_ERROR = 'Die Vorschau konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
+const EMPTY = Object.freeze([])
 
 // Nie einen rohen String ins Inline-Style schreiben: die Akzentfarbe kommt vom Server (partners.farbe,
 // dort schon auf #rrggbb geprüft), hier zur Sicherheit noch einmal validiert. Ungültig -> kein Style,
@@ -62,46 +54,52 @@ function NotFound({ family }) {
   )
 }
 
-// Eine öffentliche Liste des Portals (Tiere in Vermittlung, Happy Ends) - lädt unabhängig vom Partner:
-// schlägt es fehl (z. B. kein Tierheim), bleibt es bei einer leeren Liste, ohne die restliche Portalseite
-// zu blockieren. skip: mit eingespeisten Daten (Kundensicht) wird nichts nachgeladen.
-function usePortalList(fetchList, slug, search, skip) {
-  const [items, setItems] = useState([])
+// Eine öffentliche Liste des Portals (Tiere in Vermittlung, Happy Ends, Beiträge) - lädt unabhängig vom Partner:
+// schlägt es fehl (z. B. kein Tierheim), bleibt es bei einer leeren Liste, ohne die restliche Portalseite zu
+// blockieren. null, solange sie lädt (die Reiter warten darauf, sonst sprängen Zähler und Reiter nach). Abhängig nur
+// von slug und ?demo= - ein Reiterwechsel (?reiter=) lädt nichts neu. skip: mit eingespeisten Daten (Kundensicht)
+// wird nichts nachgeladen.
+function usePortalList(fetchList, slug, demo, skip) {
+  const [items, setItems] = useState(null)
   useEffect(() => {
     if (skip) return undefined
     let cancelled = false
-    setItems([])
-    fetchList(slug, { demo: demoParam(search) })
+    setItems(null)
+    fetchList(slug, { demo })
       .then((data) => {
-        if (!cancelled) setItems(data)
+        if (!cancelled) setItems(asList(data))
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setItems(EMPTY)
+      })
     return () => {
       cancelled = true
     }
-  }, [slug, search, skip])
-  return items
+  }, [slug, demo, skip])
+  return skip ? EMPTY : items
 }
 
 // /p/:slug – Portal eines Partners, seit Phase U als ruhige Landingpage, auf die Partner von ihrer Website,
-// Instagram oder Visitenkarte verlinken: Kopf (Logo, Art · Ort, Name, Text, „Kontakt“), dann „Angebote &
-// Aktuelles“ (eigene Beiträge ohne Anzeige-Badge), „Termine“ (Phase V4a), Einblicke, bei Tierheimen Tiere und Happy Ends, Kontakt
-// (samt „Schreib uns“, Phase P2), „Gutschein einlösen“ (PortalAction) und ein dezenter Fuß. Angemeldete sehen
-// dasselbe Portal, nur die Aktion ist ersetzt – man muss sich nicht abmelden, um es anzuschauen.
+// Instagram oder Visitenkarte verlinken. Seit den Portal-Reitern: Kopf (Banner, Logo, Name, Unterzeile, "Schreib
+// uns" und "Gutschein einlösen"), darunter Reiter statt eines langen Stapels - Übersicht, bei Tierheimen Tiere (samt
+// Happy Ends), Angebote, Termine, Einblicke, Kontakt (samt "Gutschein einlösen"), siehe PortalBody - und ein dezenter
+// Fuß. Angemeldete sehen dasselbe Portal, nur die Aktion ist ersetzt – man muss sich nicht abmelden, um es anzuschauen.
 // Kundensicht (Phase P1): load liefert die Portal-Daten statt api.publicPartner(slug) (z. B.
-// api.partnerArea.previewPortal, samt tiere) und preview schaltet Links, Einlösen und Demo-Knöpfe ab.
+// api.partnerArea.previewPortal, samt tiere und posts) und preview schaltet Links, Einlösen und Demo-Knöpfe ab.
 export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, load, preview = false }) {
   const location = useLocation()
   const injected = typeof load === 'function'
+  const demo = demoParam(location.search)
   const [partner, setPartner] = useState(undefined) // undefined: lädt, null: nicht gefunden
-  const [injectedAnimals, setInjectedAnimals] = useState([])
-  const [injectedPosts, setInjectedPosts] = useState([])
-  const fetchedAnimals = usePortalList(api.publicPartnerAnimals, slug, location.search, injected)
-  const happyEnds = usePortalList(api.publicHappyEnds, slug, location.search, injected)
+  const [injectedAnimals, setInjectedAnimals] = useState(EMPTY)
+  const [injectedPosts, setInjectedPosts] = useState(EMPTY)
+  const fetchedAnimals = usePortalList(api.publicPartnerAnimals, slug, demo, injected)
+  const happyEnds = usePortalList(api.publicHappyEnds, slug, demo, injected)
   // Phase P2: Beiträge ("Aktuelles") - in der Kundensicht aus der Vorschau-Antwort (posts, samt eingereichter).
-  const fetchedPosts = usePortalList(api.publicPartnerPosts, slug, location.search, injected)
+  const fetchedPosts = usePortalList(api.publicPartnerPosts, slug, demo, injected)
   const animals = injected ? injectedAnimals : fetchedAnimals
-  const posts = injected ? injectedPosts : asList(fetchedPosts)
+  const posts = injected ? injectedPosts : fetchedPosts
+  const listsReady = [animals, happyEnds, posts].every(Array.isArray)
 
   useEffect(() => {
     let cancelled = false
@@ -124,7 +122,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
     }
   }, [slug, load])
 
-  if (partner === undefined) {
+  if (partner === undefined || (partner && !listsReady)) {
     return preview ? (
       <p className="muted preview-loading" role="status" aria-busy="true">
         Lädt …
@@ -146,8 +144,6 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
     )
   }
 
-  const contactId = hasPortalContact(partner) ? PORTAL_CONTACT_ID : null
-
   return (
     <PreviewProvider value={preview}>
       <div className={`public-page partner-portal${isValidHexColor(partner.farbe) ? ' has-accent' : ''}`} style={accentStyle(partner.farbe)}>
@@ -158,50 +154,16 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
             Vorschau – nur für Admins sichtbar
           </div>
         )}
-        <PortalHero partner={partner} contactId={contactId} />
-
-        <PortalPosts posts={posts} />
-
-        {/* Phase V4a: kommende Termine (aus der Portal-Antwort, in der Kundensicht genauso). */}
-        <PortalTermine termine={partner.termine} />
-
-        <EinblickeGallery einblicke={partner.einblicke} />
-
-        {animals.length > 0 && (
-          <PortalSection id="partner-portal-animals" title={adoptionSectionTitle(animals)} className="partner-portal-animals">
-            <div className="shelter-grid">
-              {animals.map((animal) => (
-                <AnimalAdoptionCard key={animal.slug} animal={animal} />
-              ))}
-            </div>
-          </PortalSection>
-        )}
-
-        {happyEnds.length > 0 && (
-          <PortalSection id="partner-portal-happy-ends" title="Happy Ends" className="partner-portal-animals partner-portal-happy-ends">
-            <div className="shelter-grid">
-              {happyEnds.map((happyEnd, index) => (
-                <HappyEndCard key={`${happyEnd.name}-${index}`} happyEnd={happyEnd} />
-              ))}
-            </div>
-          </PortalSection>
-        )}
-
-        <PortalContact partner={partner} />
-
-        <PortalSection
-          id="partner-portal-gutschein"
-          title="Gutschein einlösen"
-          lede={
-            family || preview
-              ? null
-              : `Du hast von ${partner.name} einen Gutschein bekommen? Hier legst du deine eigene Chronik an – kostenlos.`
-          }
-          className="partner-portal-redeem"
-        >
-          <PortalAction partner={partner} family={family} preview={preview} onRedeemed={onRedeemed} onLogout={onLogout} />
-        </PortalSection>
-
+        <PortalBody
+          partner={partner}
+          posts={posts}
+          animals={animals}
+          happyEnds={happyEnds}
+          family={family}
+          preview={preview}
+          onRedeemed={onRedeemed}
+          onLogout={onLogout}
+        />
         <PortalBrandStrip />
         {!preview && <PublicFooter />}
       </div>

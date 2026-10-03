@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import EinblickViewer, { einblickAlt } from './EinblickViewer.jsx'
 import PortalSection from './PortalSection.jsx'
 import { formatDateLong } from '../lib/dates.js'
-import { isAllowedMedia } from '../lib/discover.js'
+import { SECTION_IDS, galleryEinblicke } from '../lib/portalTabs.js'
 import { useIsPreview } from '../lib/preview.js'
 
 // Feste Maße im Seitenverhältnis 4:3 (CSS aspect-ratio) - der Platz steht schon vor dem Laden fest.
 const TILE_WIDTH = 400
 const TILE_HEIGHT = 300
 
-// Sektion "Einblicke" auf dem Portal (/p/:slug, Phase P1): Fotos mit Datum und Text, neueste zuerst (so
+// Reiter "Einblicke" auf dem Portal (/p/:slug, Phase P1): Fotos mit Datum und Text, neueste zuerst (so
 // liefert sie der Server). Ein Klick öffnet die große Ansicht (EinblickViewer); nach dem Schließen kehrt
 // der Fokus zum angeklickten Foto zurück. Nur öffentliche Fotos (/public-media), in der Kundensicht auch
 // die eigenen über /uploads - alles andere wird nicht angezeigt.
@@ -18,9 +18,7 @@ export default function EinblickeGallery({ einblicke }) {
   const [openIndex, setOpenIndex] = useState(null)
   const lastTrigger = useRef(null)
   const wasOpen = useRef(false)
-  const items = (Array.isArray(einblicke) ? einblicke : []).filter(
-    (einblick) => einblick && typeof einblick === 'object' && isAllowedMedia(einblick.fotoUrl, { preview })
-  )
+  const items = galleryEinblicke(einblicke, { preview })
 
   // Fokus zurück, sobald der Dialog zu ist (Effekte der Kinder - Modal schließt den <dialog> - laufen zuerst).
   useEffect(() => {
@@ -44,7 +42,7 @@ export default function EinblickeGallery({ einblicke }) {
   }
 
   return (
-    <PortalSection id="portal-einblicke" title="Einblicke" className="partner-portal-einblicke">
+    <PortalSection id={SECTION_IDS.einblicke} title="Einblicke" className="partner-portal-einblicke">
       <ul className="einblicke-gallery">
         {items.map((einblick, index) => (
           <li key={einblick.id ?? `${einblick.fotoUrl}-${index}`}>

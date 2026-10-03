@@ -32,7 +32,7 @@ function hasCount(value) {
 // - idPrefix: Reiter-Ids `${idPrefix}-${key}` (für aria-labelledby der Panels)
 // - panelId: Id des Panels - ein String (ein gemeinsames Panel) oder eine Funktion key => Id (ein Panel je Reiter)
 // - counts: { [key]: Zahl } - ein Reiter ohne Eintrag (undefined/null) bleibt ohne Zähler; null = noch nichts geladen
-// - countText: Zahl => vorgelesener Text zum Zähler, z. B. "3 Einträge" oder "2 offen"
+// - countText: (Zahl, key) => vorgelesener Text zum Zähler, z. B. "3 Einträge" oder "2 offen" (key: je Reiter eigene Wörter)
 export default function TabBar({ tabs, current, counts, label, idPrefix, panelId, countText, className = '', onSelect }) {
   const list = useRef(null)
   const buttons = useRef({})
@@ -98,7 +98,7 @@ export default function TabBar({ tabs, current, counts, label, idPrefix, panelId
                 <span className="tab-bar-count" aria-hidden="true">
                   {count}
                 </span>
-                <span className="visually-hidden"> ({countText(count)})</span>
+                <span className="visually-hidden"> ({countText(count, tab.key)})</span>
               </>
             )}
           </button>

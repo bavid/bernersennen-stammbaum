@@ -3,10 +3,7 @@ import PortalSection from './PortalSection.jsx'
 import TerminDate from './TerminDate.jsx'
 import { PORTAL_MONATE, SERIE, formatUhrzeit, groupByMonth, serieLabel, splitByHorizon, vorkommenKey } from '../lib/termine.js'
 import { todayIso } from '../lib/dates.js'
-
-function asTermine(value) {
-  return Array.isArray(value) ? value.filter((item) => item && typeof item.datum === 'string' && typeof item.titel === 'string') : []
-}
+import { SECTION_IDS, portalTermine } from '../lib/portalTabs.js'
 
 // Text und Regel nur beim ersten stattfindenden Tag eines Termins - sonst stünden sie bei jeder Woche einer Serie erneut.
 function firstKeys(items) {
@@ -38,13 +35,13 @@ function PortalTermin({ item, first }) {
   )
 }
 
-// "Termine" auf dem Portal (Phase V4a): die kommenden Termine des Partners nach Monat - zuerst die nächsten drei Monate,
+// Reiter "Termine" auf dem Portal (Phase V4a): die kommenden Termine des Partners nach Monat - zuerst die nächsten drei Monate,
 // "Mehr anzeigen" zeigt den Rest (der Server liefert bis zu zwölf Monate). Abgesagte stehen durchgestrichen mit
 // "fällt aus" da; Text und Regel einer Serie stehen nur beim ersten Tag. Ohne Termine erscheint der Abschnitt nicht.
 // today: nur für Tests, sonst heute.
 export default function PortalTermine({ termine, today = todayIso() }) {
   const [showAll, setShowAll] = useState(false)
-  const items = asTermine(termine)
+  const items = portalTermine(termine)
   if (items.length === 0) return null
   const { sichtbar } = splitByHorizon(items, today, PORTAL_MONATE)
   // Liegt in den nächsten drei Monaten nichts, gleich die späteren zeigen statt eines leeren Abschnitts.
@@ -53,7 +50,7 @@ export default function PortalTermine({ termine, today = todayIso() }) {
   const first = firstKeys(shown)
 
   return (
-    <PortalSection id="partner-portal-termine" title="Termine" className="partner-portal-termine">
+    <PortalSection id={SECTION_IDS.termine} title="Termine" className="partner-portal-termine">
       <div className="termin-overview">
         {groupByMonth(shown).map((group) => (
           <div key={group.key} className="termin-month">

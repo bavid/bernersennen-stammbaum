@@ -107,43 +107,52 @@ function sectionTitles() {
   return [...container.querySelectorAll('.portal-section h2')].map((h) => h.textContent)
 }
 
-function button(text) {
-  return [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === text)
+function tabLabels() {
+  return [...container.querySelectorAll('[role="tab"]')].map((tab) => tab.firstChild.textContent)
 }
 
-describe('PartnerPortalPage – Landingpage (Phase U)', () => {
-  test('Abschnitte in fester Reihenfolge: Angebote, Einblicke, Tiere, Happy Ends, Kontakt, Gutschein', async () => {
+function heroButton(text) {
+  return [...container.querySelectorAll('.partner-portal-hero button')].find((btn) => btn.textContent.trim() === text)
+}
+
+describe('PartnerPortalPage – Landingpage (Phase U, seit den Portal-Reitern)', () => {
+  test('Reiter statt Stapel: Übersicht, Tiere, Angebote, Einblicke, Kontakt - Abschnitte in fester Reihenfolge im Dokument', async () => {
     publicPartner.mockResolvedValue(partner)
     await render()
+    expect(tabLabels()).toEqual(['Übersicht', 'Tiere', 'Angebote', 'Einblicke', 'Kontakt'])
+    // Alle Reiter stehen (verborgen) im Dokument - die Seite bleibt vollständig.
     expect(sectionTitles()).toEqual([
-      'Angebote & Aktuelles',
-      'Einblicke',
       'Fellnasen suchen ein Zuhause',
       'Happy Ends',
+      'Angebote & Aktuelles',
+      'Einblicke',
       'Kontakt',
       'Gutschein einlösen'
     ])
   })
 
-  test('"Kontakt" im Kopf springt zum Kontakt-Abschnitt und setzt den Fokus auf dessen Überschrift', async () => {
+  test('"Kontakt" im Kopf öffnet den Reiter Kontakt und setzt den Fokus auf dessen Überschrift', async () => {
     publicPartner.mockResolvedValue(partner)
     await render()
     const heading = container.querySelector('#partner-portal-contact-title')
-    heading.scrollIntoView = vi.fn()
     const target = container.querySelector('#partner-portal-contact')
     target.scrollIntoView = vi.fn()
+    expect(target.closest('[role="tabpanel"]').hidden).toBe(true)
 
-    await act(async () => button('Kontakt').click())
+    await act(async () => heroButton('Kontakt').click())
 
+    expect(target.closest('[role="tabpanel"]').hidden).toBe(false)
     expect(target.scrollIntoView).toHaveBeenCalled()
     expect(document.activeElement).toBe(heading)
   })
 
-  test('ohne jeden Kontaktweg: kein Kontakt-Abschnitt und kein Kopf-Knopf', async () => {
+  test('ohne jeden Kontaktweg: kein Kontakt-Abschnitt und kein Kopf-Knopf "Kontakt" - der Reiter bleibt für den Gutschein', async () => {
     publicPartner.mockResolvedValue({ ...partner, website: null })
     await render()
-    expect(button('Kontakt')).toBeUndefined()
+    expect(heroButton('Kontakt')).toBeUndefined()
+    expect(heroButton('Gutschein einlösen').className).toContain('btn-primary')
     expect(sectionTitles()).not.toContain('Kontakt')
+    expect(tabLabels()).toContain('Kontakt')
   })
 
   test('der dezente Fuß führt zur Startseite und zum Gutschein-Anfragen', async () => {

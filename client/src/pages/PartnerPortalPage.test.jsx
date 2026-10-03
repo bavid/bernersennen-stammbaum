@@ -581,10 +581,11 @@ describe('PartnerPortalPage – Vorschau (Kundensicht)', () => {
 
     expect(container.querySelectorAll('a')).toHaveLength(0)
     const disabled = [...container.querySelectorAll('[aria-disabled="true"]')].map((el) => el.textContent.trim())
+    // Mit eigenen Tieren steht die Vermittlungsseite im Reiter "Tiere" statt im Kopf.
     expect(disabled).toEqual(
       expect.arrayContaining([
         'Spenden an Tierheim Sonnenhang',
-        'Tiere in Vermittlung',
+        'Alle Tiere auf der Vermittlungsseite',
         'https://sonnenhang.example.org',
         'info@sonnenhang.example.org'
       ])
