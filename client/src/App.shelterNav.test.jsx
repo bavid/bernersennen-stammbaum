@@ -4,9 +4,28 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listDogs, recentActivity, profile, previewDiscover, previewPortal } = vi.hoisted(() => ({
+const { me, logout, listDogs, recentActivity, profile, previewDiscover, previewPortal, visitenkarte } = vi.hoisted(() => ({
   me: vi.fn(),
   profile: vi.fn(),
+  // Phase V5: /visitenkarten lädt die gespeicherte Gestaltung (Demo-Tierheim: Klassisch).
+  visitenkarte: vi.fn(() =>
+    Promise.resolve({
+      design: {
+        vorlage: 'klassisch',
+        farbe: '#2f6b3f',
+        kurztext: 'Hunde und Katzen suchen ein Zuhause',
+        zeigeAnsprechperson: false,
+        zeigeWebsite: true,
+        zeigeTelefon: true,
+        zeigeEmail: true,
+        mitGutschein: false
+      },
+      gespeichert: true,
+      vorschlag: '',
+      gutscheine: { offen: 0, ungedruckt: 0 },
+      maxJeAbruf: 50
+    })
+  ),
   // Kundensicht (/kundensicht): "Entdecken" lädt beim Anzeigen die Vorschau - hier reicht eine leere Antwort.
   previewDiscover: vi.fn(() => Promise.resolve({})),
   previewPortal: vi.fn(() => Promise.resolve({})),
@@ -15,7 +34,7 @@ const { me, logout, listDogs, recentActivity, profile, previewDiscover, previewP
   recentActivity: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listDogs, recentActivity, partnerArea: { profile, previewDiscover, previewPortal } },
+  api: { me, logout, listDogs, recentActivity, partnerArea: { profile, previewDiscover, previewPortal, visitenkarte } },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -175,6 +194,14 @@ describe('Umschalter "Bearbeiten | Kundensicht" für Tierheime (Phase P1)', () =
     expect(switchLink('Bearbeiten').getAttribute('href')).toBe('/tiere')
     expect(switchLink('Kundensicht').getAttribute('href')).toBe('/kundensicht')
     expect(switchLink('Kundensicht').hasAttribute('aria-current')).toBe(false)
+  })
+
+  test('/visitenkarten gibt es auch für Tierheime (Phase V5)', async () => {
+    me.mockResolvedValue(shelterFamily)
+    await render('/visitenkarten')
+
+    expect(container.querySelector('h1').textContent).toBe('Visitenkarten gestalten')
+    expect(container.querySelector('.vk-stage .vk-front').dataset.vorlage).toBe('klassisch')
   })
 
   test('/kundensicht gibt es auch für Tierheime', async () => {

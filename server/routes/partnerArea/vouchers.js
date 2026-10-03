@@ -1,7 +1,8 @@
 const express = require('express')
 const db = require('../../db')
 const { cleanId } = require('../../lib/validate')
-const { ZWECK, VOUCHER_COUNTS_SQL } = require('../../lib/vouchers')
+const { VOUCHER_COUNTS_SQL } = require('../../lib/vouchers')
+const { OWN_STACK_SQL, ownStackParams: stackParams } = require('../../lib/partnerStacks')
 const { printBatch, printableCodes } = require('../../lib/voucherPrint')
 const { noStore, sendJsonWithoutEtag } = require('../../lib/noStoreResponse')
 
@@ -22,13 +23,8 @@ const QUELLE = Object.freeze({ admin: 'admin', weitergabe: 'weitergabe' })
 
 router.use(noStore)
 
-// Ein Stapel gehört zum Partner, wenn er ein Admin-Partner-Stapel mit seiner partner_id ist (ohne ausgebenden
-// Bereich) ODER sein Bereich die Gutscheine ausgegeben hat. Weitergabe-Stapel heißen so, weil ihre Gutscheine
-// aus dem Bereich kommen - egal, welche Art der Stapel trägt (kind 'rudel', in der Demo 'demo').
-const OWN_STACK_SQL = `
-  b.zweck = @zweck AND v.dog_id IS NULL
-  AND ((b.kind = 'partner' AND b.partner_id = @partnerId AND v.issued_by_family_id IS NULL)
-    OR v.issued_by_family_id = @familyId)`
+// Welche Gutscheine zum Partner gehören (Admin-Partner-Stapel und Weitergabe des Bereichs): lib/partnerStacks.js -
+// dieselbe Regel wie für die Codes der Visitenkarten (Phase V5).
 
 const listStmt = db.prepare(`
   SELECT b.id, b.label, b.size, b.created_at AS erstelltAm,
@@ -52,7 +48,7 @@ const printRowsStmt = db.prepare(
 )
 
 function ownStackParams(req) {
-  return { zweck: ZWECK.chronik, partnerId: req.partner.id, familyId: req.familyId }
+  return stackParams({ partnerId: req.partner.id, familyId: req.familyId })
 }
 
 // GET /vouchers - { stapel: [{ id, label, quelle, size, offen, eingeloest, widerrufen, erstelltAm }] }, neueste

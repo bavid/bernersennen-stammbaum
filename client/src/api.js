@@ -416,7 +416,15 @@ export const api = {
     // Kunden-Gutscheine (Phase 5 Task 4, server/routes/partnerArea/vouchers.js): { stapel } ohne Codes; die
     // Druckdaten eines eigenen Stapels (offene Codes im Klartext, Server: no-store) nur für PartnerPrintPage.
     vouchers: () => request('/partner-area/vouchers'),
-    printBatch: (id) => request(`/partner-area/vouchers/${encodeURIComponent(id)}/print`)
+    printBatch: (id) => request(`/partner-area/vouchers/${encodeURIComponent(id)}/print`),
+
+    // Visitenkarten (Phase V5, server/routes/partnerArea/visitenkarte.js): { design, gespeichert, vorschlag, gutscheine:
+    // { offen, ungedruckt }, maxJeAbruf } - Speichern antwortet genauso. Die Gutschein-Codes für den Druck ({ codes, fehlen,
+    // gutscheine }, Server: no-store, als gedruckt vermerkt) stehen nur im Body der Antwort, nie in einer URL.
+    visitenkarte: () => request('/partner-area/visitenkarte'),
+    saveVisitenkarte: (design) => request('/partner-area/visitenkarte', json('PUT', design)),
+    visitenkarteGutscheine: ({ anzahl, nurUngedruckt }) =>
+      request('/partner-area/visitenkarte/gutscheine', json('POST', { anzahl, nurUngedruckt }))
   },
 
   listBreedingEvents: () => request('/breeding'),

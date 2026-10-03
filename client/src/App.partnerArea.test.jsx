@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile, previewDiscover, previewPortal, termine, telegram } = vi.hoisted(() => ({
+const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile, previewDiscover, previewPortal, termine, telegram, visitenkarte } = vi.hoisted(() => ({
   me: vi.fn(),
   profile: vi.fn(),
   // Phase V4a: der Kalender (/kalender) lädt seine Termine.
@@ -14,6 +14,25 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   previewPortal: vi.fn(() => Promise.resolve({})),
   // Phase V4b: /zugang lädt den Stand der Telegram-Hinweise.
   telegram: vi.fn(() => Promise.resolve({ eingerichtet: false, verbunden: false, getrennt: null, hinweise: {} })),
+  // Phase V5: /visitenkarten lädt die gespeicherte Gestaltung.
+  visitenkarte: vi.fn(() =>
+    Promise.resolve({
+      design: {
+        vorlage: 'klassisch',
+        farbe: '#a4431d',
+        kurztext: '',
+        zeigeAnsprechperson: false,
+        zeigeWebsite: true,
+        zeigeTelefon: true,
+        zeigeEmail: true,
+        mitGutschein: false
+      },
+      gespeichert: false,
+      vorschlag: '',
+      gutscheine: { offen: 0, ungedruckt: 0 },
+      maxJeAbruf: 50
+    })
+  ),
   myVouchers: vi.fn(),
   logout: vi.fn(),
   listUsers: vi.fn(),
@@ -23,7 +42,7 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   redeemVoucher: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile, previewDiscover, previewPortal, termine, telegram } },
+  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile, previewDiscover, previewPortal, termine, telegram, visitenkarte } },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -198,6 +217,15 @@ describe('Partner-Bereich – Seiten', () => {
     expect(navLinks().find((a) => a.textContent === 'Kalender').classList.contains('active')).toBe(true)
   })
 
+  test('/visitenkarten zeigt den Designer (Phase V5) - ohne eigenen Punkt in der Leiste', async () => {
+    await render('/visitenkarten')
+
+    expect(container.querySelector('h1').textContent).toBe('Visitenkarten gestalten')
+    expect(visitenkarte).toHaveBeenCalled()
+    expect(navLinks().map((a) => a.textContent)).toEqual(['Profil', 'Beiträge', 'Kalender', 'Nachrichten', 'Zugang'])
+    expect(navLinks().some((a) => a.classList.contains('active'))).toBe(false)
+  })
+
   test('das Profil verlinkt nicht doppelt auf Zugang, wenn es schon in der Leiste steht', async () => {
     await render('/profil')
     expect([...container.querySelectorAll('main a')].some((a) => a.getAttribute('href') === '/zugang')).toBe(false)
@@ -232,7 +260,7 @@ describe('Profil und Zugang gibt es nur für Partner-Bereiche', () => {
     expect(container.querySelector('.app-footer .footer-link').textContent).toBe('Jemanden einladen')
   })
 
-  test.each(['/profil', '/zugang'])('ein Zuhause wird von %s auf seine Start-Route umgeleitet', async (path) => {
+  test.each(['/profil', '/zugang', '/visitenkarten'])('ein Zuhause wird von %s auf seine Start-Route umgeleitet', async (path) => {
     listDogs.mockResolvedValue([])
     await render(path, home)
 

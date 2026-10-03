@@ -1,0 +1,664 @@
+/* Visitenkarten-Designer für Partner (Phase V5, PartnerVisitenkartenPage, components/visitenkarte/*).
+   Die Karte (85 × 55 mm) und der A4-Bogen rechnen alles in --u: 1 mm im Druck, in der Vorschau so viel, wie der
+   Platz hergibt (--vk-mm am umgebenden Element) - so bleiben Proportionen, Schrift und QR-Codes überall gleich.
+   Die Karten nutzen feste Druckfarben statt der Theme-Tokens: Papier kennt keinen Dunkelmodus (Karte und Bogen selbst:
+   visitenkarte-karte.css). Gedruckt wird die Fassung in <body> (.vk-print, VisitenkartenDruck) auf der benannten
+   A4-Seite "voucher" aus print.css. */
+
+/* --- Seite -------------------------------------------------------------------------------------------- */
+
+.vk-lead {
+  max-width: var(--measure-lede);
+  line-height: 1.55;
+}
+
+.vk-designer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+@media (min-width: 68rem) {
+  .vk-designer {
+    grid-template-columns: minmax(0, 1fr) minmax(21rem, 26rem);
+  }
+
+  .vk-stage-col {
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+
+.vk-controls {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.vk-panel {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+  padding: var(--card-pad);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.vk-panel-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.vk-fieldset {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-5) 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.vk-fieldset legend {
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-3);
+}
+
+.vk-label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.vk-note {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.vk-note p {
+  margin: 0;
+}
+
+/* Ein einzelner Satz als Hinweis: Icon und Text in einer Zeile. */
+p.vk-note {
+  display: block;
+}
+
+.vk-note svg {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.15em;
+}
+
+.vk-note.is-ok {
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
+  background: color-mix(in srgb, var(--success) 9%, var(--surface));
+}
+
+.vk-note.is-warning {
+  display: block;
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  background: var(--danger-wash);
+}
+
+.vk-textlink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rust);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.vk-textlink:hover {
+  color: var(--rust-deep);
+}
+
+.vk-textlink:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--focus-ring);
+}
+
+/* --- Vorschau (Bühne) ------------------------------------------------------------------------------ */
+
+.vk-stage {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--space-5);
+  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 90% at 20% 0%, color-mix(in srgb, var(--surface) 70%, transparent), transparent 60%),
+    var(--paper-deep);
+}
+
+.vk-stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.vk-stage-cards {
+  --vk-mm: min(1.5mm, calc((100cqi - 1.5rem) / 170));
+
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+@container (max-width: 40rem) {
+  .vk-stage-cards {
+    --vk-mm: min(1.5mm, calc(100cqi / 85));
+
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.vk-stage-card {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  margin: 0;
+}
+
+.vk-stage-card .vk-card {
+  border-radius: calc(0.8 * var(--u));
+  box-shadow: 0 1px 1px rgba(28, 21, 17, 0.08), 0 16px 32px -16px rgba(28, 21, 17, 0.5);
+}
+
+.vk-stage-card figcaption {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* --- Gestaltung: Vorlagen ---------------------------------------------------------------------------- */
+
+.vk-vorlagen {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+/* Am Handy untereinander, die Skizze klein links neben dem Text. */
+@media (max-width: 30rem) {
+  .vk-vorlagen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vk-vorlage {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-3);
+  }
+}
+
+.vk-vorlage {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.vk-vorlage:hover {
+  border-color: var(--rust);
+}
+
+.vk-vorlage.is-selected {
+  border-color: var(--rust);
+  background: var(--rust-wash);
+  box-shadow: inset 0 0 0 1px var(--rust);
+}
+
+.vk-vorlage:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.vk-vorlage input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vk-vorlage-text {
+  display: grid;
+  gap: 2px;
+  font-size: var(--text-sm);
+}
+
+.vk-vorlage-skizze {
+  position: relative;
+  display: block;
+  aspect-ratio: 85 / 55;
+  overflow: hidden;
+  border: 1px solid rgba(28, 21, 17, 0.12);
+  border-radius: 5px;
+  background: #fff;
+}
+
+.vk-vorlage-skizze span {
+  position: absolute;
+  display: block;
+}
+
+.vk-skizze-klassisch span:nth-child(1) {
+  left: 9%;
+  top: 26%;
+  width: 22%;
+  height: 34%;
+  border-radius: 50%;
+  background: var(--vk-farbe);
+}
+
+.vk-skizze-klassisch span:nth-child(2) {
+  left: 40%;
+  top: 24%;
+  width: 50%;
+  height: 44%;
+  background: linear-gradient(#3a2e25 0 18%, transparent 18% 34%, #b9ada1 34% 46%, transparent 46% 58%, #b9ada1 58% 70%, transparent 70%);
+}
+
+.vk-skizze-klassisch span:nth-child(3) {
+  inset: auto 0 0;
+  height: 9%;
+  background: var(--vk-farbe);
+}
+
+.vk-skizze-foto {
+  background: linear-gradient(160deg, #c9a27a, #6f7f5c 55%, #3f4b39);
+}
+
+.vk-skizze-foto span:nth-child(1) {
+  inset: 0;
+  background: linear-gradient(to top, rgba(18, 12, 8, 0.7), transparent 75%);
+}
+
+.vk-skizze-foto span:nth-child(2) {
+  left: 9%;
+  bottom: 16%;
+  width: 56%;
+  height: 22%;
+  background: linear-gradient(#fff 0 40%, transparent 40% 62%, rgba(255, 255, 255, 0.7) 62%);
+}
+
+.vk-skizze-foto span:nth-child(3) {
+  left: 9%;
+  top: 12%;
+  width: 18%;
+  height: 18%;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.vk-skizze-schlicht span:nth-child(1) {
+  inset: 0 0 auto;
+  height: 34%;
+  background: var(--vk-farbe);
+}
+
+.vk-skizze-schlicht span:nth-child(2) {
+  left: 9%;
+  top: 48%;
+  width: 66%;
+  height: 10%;
+  background: #3a2e25;
+}
+
+.vk-skizze-schlicht span:nth-child(3) {
+  left: 9%;
+  bottom: 14%;
+  width: 82%;
+  height: 8%;
+  background: linear-gradient(90deg, #b9ada1 0 40%, transparent 40% 60%, #b9ada1 60%);
+}
+
+/* --- Gestaltung: Farbe und Inhalt ------------------------------------------------------------------- */
+
+.vk-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.vk-swatch {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 3.4rem;
+  cursor: pointer;
+}
+
+.vk-swatch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vk-swatch-dot {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.vk-swatch:hover .vk-swatch-dot {
+  transform: scale(1.06);
+}
+
+.vk-swatch.is-selected .vk-swatch-dot {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink);
+}
+
+.vk-swatch:has(input:focus-visible) .vk-swatch-dot {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--rust), var(--focus-ring);
+}
+
+.vk-swatch-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.vk-swatch.is-selected .vk-swatch-label {
+  color: var(--ink);
+}
+
+.vk-hex {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.vk-hex-field {
+  flex: 0 1 9rem;
+}
+
+.vk-hex-field input {
+  font-family: 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  text-transform: lowercase;
+}
+
+.vk-hex-field input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.vk-picker input {
+  width: 2.9rem;
+  height: 2.9rem;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.vk-kontrast.is-knapp {
+  color: var(--danger);
+}
+
+.vk-kurztext-hint {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.vk-toggles {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.vk-toggle {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.vk-save-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.vk-save-row .field-error {
+  flex-basis: 100%;
+}
+
+.vk-dirty {
+  color: var(--rust);
+  font-weight: 700;
+}
+
+/* --- Gutschein und Drucken -------------------------------------------------------------------------- */
+
+.vk-gutschein-body {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.vk-counts {
+  margin: 0;
+  font-weight: 700;
+}
+
+.vk-segmented {
+  flex-wrap: wrap;
+  border-radius: var(--radius-md);
+}
+
+.vk-segmented button {
+  min-width: 2.6rem;
+}
+
+.vk-segmented button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.vk-print-button {
+  width: 100%;
+}
+
+.vk-druck-hints {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.vk-druck-hints strong {
+  color: var(--text);
+}
+
+/* --- Druckbogen-Vorschau ---------------------------------------------------------------------------- */
+
+.vk-bogen-vorschau {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.vk-bogen-vorschau > p {
+  margin: 0;
+}
+
+.vk-bogen-vorschau .vk-sheets {
+  --vk-mm: min(1.15mm, calc((100cqi - 2rem) / 420));
+
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--paper-deep);
+}
+
+@container (max-width: 40rem) {
+  .vk-bogen-vorschau .vk-sheets {
+    --vk-mm: calc((100cqi - 2rem) / 210);
+
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+  }
+}
+
+/* --- Einstiege: Profil-Reiter "Teilen" und Kunden-Gutscheine --------------------------------------- */
+
+.vk-teaser {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-5) var(--space-6);
+}
+
+@media (max-width: 40rem) {
+  .vk-teaser {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+}
+
+.vk-teaser-text {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.vk-teaser-text h2,
+.vk-teaser-text p {
+  margin: 0;
+}
+
+.vk-teaser-art {
+  position: relative;
+  display: block;
+  width: 7.4rem;
+  height: 4.8rem;
+}
+
+.vk-teaser-back,
+.vk-teaser-front {
+  position: absolute;
+  width: 5.6rem;
+  height: 3.6rem;
+  border-radius: 5px;
+  box-shadow: 0 10px 20px -12px rgba(28, 21, 17, 0.6);
+}
+
+.vk-teaser-back {
+  top: 0;
+  right: 0;
+  background: var(--rust);
+  transform: rotate(7deg);
+}
+
+.vk-teaser-front {
+  bottom: 0;
+  left: 0;
+  border: 1px solid rgba(28, 21, 17, 0.1);
+  background:
+    linear-gradient(#3a2e25, #3a2e25) 42% 32% / 46% 9% no-repeat,
+    linear-gradient(#b9ada1, #b9ada1) 42% 54% / 46% 6% no-repeat,
+    radial-gradient(circle at 20% 42%, var(--rust) 0 0.62rem, transparent 0.66rem),
+    linear-gradient(var(--rust), var(--rust)) 0 100% / 100% 0.3rem no-repeat,
+    #fff;
+  transform: rotate(-4deg);
+}
+
+.partner-stacks-visitenkarten {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+/* --- Druck ------------------------------------------------------------------------------------------ */
+
+.vk-print {
+  display: none;
+}
+
+@media print {
+  /* Nur die Druckfassung in <body> kommt aufs Papier - die App (#root) mit Kopf, Navigation und Designer nicht. */
+  body.has-visitenkarten-print > #root {
+    display: none !important;
+  }
+
+  body.has-visitenkarten-print > .vk-print {
+    display: block;
+  }
+
+  .vk-print .vk-sheets {
+    display: block;
+  }
+
+  /* Ein Bogen je Blatt auf der benannten A4-Seite aus print.css (Rand 0, der Bogen bringt seinen Rand selbst mit) -
+     knapp unter 297 mm hoch, damit Rundungen keine leere Seite erzeugen. */
+  .vk-print .vk-sheet {
+    --vk-mm: 1mm;
+
+    page: voucher;
+    height: 296mm;
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
+    break-inside: avoid;
+  }
+
+  .vk-print .vk-sheet:last-child {
+    break-after: auto;
+  }
+
+  .vk-print .vk-sheet-label {
+    display: none;
+  }
+
+  .vk-print .vk-sheet,
+  .vk-print .vk-card,
+  .vk-print .vk-card * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

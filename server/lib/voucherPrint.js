@@ -68,4 +68,4 @@ function voucherCsv(rows) {
   return `${CSV_BOM}${lines.join(CSV_LINE_END)}${CSV_LINE_END}`
 }
 
-module.exports = { printBatch, printableCodes, voucherCsv, CSV_COLUMNS }
+module.exports = { printBatch, printableCode, printableCodes, voucherCsv, CSV_COLUMNS }

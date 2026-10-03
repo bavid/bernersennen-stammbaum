@@ -19,7 +19,9 @@ const { MAX_BANNER, validateAlt, addBanner } = require('./partnerBanner')
 const { entdeckenAnzeigen, setReihenfolge, setInEntdecken } = require('./partnerPostOrder')
 const { validateTermin, insertTermin, addAbsage } = require('./partnerTermine')
 const { addDays, weekdayOf, nthWeekdayOf, expandTermin, maxSerieBis, berlinNow } = require('./terminSerien')
-const { PARTNER_AREA_SLUGS, EINBLICKE, BANNER, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE } = require('../seed/demo-partner-area')
+const { validateDesign } = require('./visitenkarteDesign')
+const { saveDesign, removeDemoVisitenkarten } = require('./visitenkarte')
+const { PARTNER_AREA_SLUGS, EINBLICKE, BANNER, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE, VISITENKARTEN } = require('../seed/demo-partner-area')
 
 // Nur Demo-Partner (is_demo = 1): ein Seed-Eintrag darf nie an einem echten Partner landen.
 function findDemoPartner(db, slug, purpose) {
@@ -335,19 +337,37 @@ function insertDemoTermine(db) {
   return counts
 }
 
+// Phase V5: die gespeicherten Visitenkarten der Demo-Partner (seed/demo-partner-area.js VISITENKARTEN) - erst alle prüfen
+// (Partner, eine Gestaltung je Partner, dieselbe Prüfung wie PUT /api/partner-area/visitenkarte), dann speichern
+// (lib/visitenkarte.js saveDesign, is_demo folgt dem Partner). Gibt die Vorlage je Partner-Slug zurück.
+function insertDemoVisitenkarten(db) {
+  const prepared = VISITENKARTEN.map(({ partnerSlug, design }) => {
+    const label = `Demo-Visitenkarte für "${partnerSlug}"`
+    return { partner: findDemoPartner(db, partnerSlug, label), design: validateSeedEntry(label, () => validateDesign(design)) }
+  })
+  const vorlagen = {}
+  for (const { partner, design } of prepared) {
+    if (vorlagen[partner.slug]) throw new Error(`Demo-Partner "${partner.slug}" hätte mehr als eine Visitenkarte`)
+    vorlagen[partner.slug] = design.vorlage
+  }
+  for (const { partner, design } of prepared) saveDesign(partner, design)
+  return vorlagen
+}
+
 // Läuft innerhalb der replaceDemoPack-Transaktion NACH replaceDemoDiscoverContent (lib/demoPack.js) - das räumt
 // alle Demo-Empfehlungen (is_demo = 1, also auch die alten Beiträge der Demo-Partner) samt Klicks weg und
-// träfe sonst auch die neuen. Die alten Demo-Nachrichten und (Phase V4a) Demo-Termine (is_demo = 1 oder an einem alten
-// Demo-Partner, die Absagen gehen per ON DELETE CASCADE mit) räumt diese Funktion selbst weg. Gibt die neuen
-// Beitrags-Ids, die Nachrichten und die Termine je Partner-Slug zurück.
+// träfe sonst auch die neuen. Die alten Demo-Nachrichten, (Phase V4a) Demo-Termine (is_demo = 1 oder an einem alten
+// Demo-Partner, die Absagen gehen per ON DELETE CASCADE mit) und (Phase V5) Demo-Visitenkarten räumt diese Funktion
+// selbst weg. Gibt die neuen Beitrags-Ids, die Nachrichten, die Termine und die Visitenkarten je Partner-Slug zurück.
 function createDemoPartnerContent(db, { previousPartnerIds = [] } = {}) {
   const placeholders = previousPartnerIds.map(() => '?').join(', ')
   const where = previousPartnerIds.length ? `is_demo = 1 OR partner_id IN (${placeholders})` : 'is_demo = 1'
   db.prepare(`DELETE FROM partner_messages WHERE ${where}`).run(...previousPartnerIds)
   db.prepare(`DELETE FROM partner_termine WHERE ${where}`).run(...previousPartnerIds)
+  removeDemoVisitenkarten(previousPartnerIds)
   const postIds = insertDemoPartnerPosts(db)
   arrangeDemoCards(db)
-  return { postIds, messages: insertDemoMessages(db), termine: insertDemoTermine(db) }
+  return { postIds, messages: insertDemoMessages(db), termine: insertDemoTermine(db), visitenkarten: insertDemoVisitenkarten(db) }
 }
 
 module.exports = { createDemoPartnerAreas, createDemoPartnerContent }

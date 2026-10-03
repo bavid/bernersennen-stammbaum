@@ -428,6 +428,11 @@ describe('PartnerProfilePage – Kunden-Gutscheine im Reiter "Teilen"', () => {
     const print = container.querySelector('a.partner-stack-print')
     expect(print.getAttribute('href')).toBe('/partner-drucken/12')
     expect(container.querySelector('.partner-stack-quelle').textContent).toBe('weitergegeben')
+    // Phase V5: der Weg zum Visitenkarten-Designer steht im selben Reiter.
+    const teaser = container.querySelector('.vk-teaser')
+    expect(teaser.querySelector('h2').textContent).toBe('Visitenkarten')
+    expect(teaser.querySelector('a').getAttribute('href')).toBe('/visitenkarten')
+    expect(teaser.querySelector('a').textContent).toContain('Visitenkarten gestalten')
   })
 
   test('auch ein Tierheim und die Demo sehen den Reiter', async () => {

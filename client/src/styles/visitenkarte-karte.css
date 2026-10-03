@@ -1,0 +1,475 @@
+/* Visitenkarte und A4-Bogen (Phase V5, components/visitenkarte/VisitenkarteFront/-Back/VisitenkartenBogen).
+   Alles in --u: 1 mm im Druck, in der Vorschau so viel, wie der Platz hergibt (--vk-mm am umgebenden Element, gesetzt in
+   visitenkarten.css) - so bleiben Proportionen, Schrift und QR-Codes überall gleich. Feste Druckfarben statt der
+   Theme-Tokens: Papier kennt keinen Dunkelmodus. */
+
+/* --- Bogen (A4) ------------------------------------------------------------------------------------ */
+
+.vk-sheet {
+  --u: var(--vk-mm, 1mm);
+
+  position: relative;
+  flex: none;
+  width: calc(210 * var(--u));
+  height: calc(297 * var(--u));
+  overflow: hidden;
+  background: #fff;
+  color: #1c1511;
+  color-scheme: light;
+  box-shadow: var(--shadow-card);
+}
+
+.vk-cropmarks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(210 * var(--u));
+  height: calc(297 * var(--u));
+}
+
+.vk-cropmarks line {
+  stroke: #1c1511;
+  stroke-width: 0.2;
+}
+
+.vk-sheet-label {
+  position: absolute;
+  top: calc(3.5 * var(--u));
+  left: calc(26 * var(--u));
+  font-size: calc(2.4 * var(--u));
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a8f84;
+}
+
+.vk-sheet-grid {
+  position: absolute;
+  top: calc(11 * var(--u));
+  left: calc(20 * var(--u));
+  display: grid;
+  grid-template-columns: repeat(2, calc(85 * var(--u)));
+  grid-auto-rows: calc(55 * var(--u));
+}
+
+/* --- Karte ------------------------------------------------------------------------------------------ */
+
+.vk-card {
+  --u: var(--vk-mm, 1mm);
+  --vk-ink: #1c1511;
+  --vk-muted: #5b4f45;
+  --vk-line: #e3d5c1;
+  --vk-line-strong: #a99d90;
+
+  position: relative;
+  box-sizing: border-box;
+  width: calc(85 * var(--u));
+  height: calc(55 * var(--u));
+  overflow: hidden;
+  background: #fff;
+  color: var(--vk-ink);
+  color-scheme: light;
+  font-family: var(--font-body);
+  font-size: calc(2.55 * var(--u));
+  line-height: 1.3;
+  text-align: left;
+  break-inside: avoid;
+}
+
+.vk-card p {
+  margin: 0;
+}
+
+.vk-name {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: calc(4.1 * var(--u));
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: var(--vk-akzent-text);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.vk-kurztext {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--vk-muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.vk-person {
+  font-size: calc(2.4 * var(--u));
+  font-weight: 700;
+}
+
+.vk-foot {
+  display: grid;
+  align-self: end;
+  gap: calc(0.9 * var(--u));
+  min-width: 0;
+}
+
+.vk-kontakte {
+  display: grid;
+  gap: calc(0.5 * var(--u));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: calc(2.25 * var(--u));
+}
+
+.vk-kontakte li {
+  display: flex;
+  align-items: center;
+  gap: calc(1.2 * var(--u));
+  min-width: 0;
+}
+
+.vk-kontakte span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vk-kontakt-icon {
+  flex: none;
+  width: calc(2.5 * var(--u));
+  height: calc(2.5 * var(--u));
+  color: var(--vk-akzent-text);
+}
+
+/* Klassisch: Logo links, Text rechts, Farbkante unten */
+
+.vk-klassisch.vk-front {
+  display: grid;
+  grid-template-columns: calc(20 * var(--u)) minmax(0, 1fr);
+  gap: calc(4 * var(--u));
+  padding: calc(5 * var(--u)) calc(5 * var(--u)) calc(6.4 * var(--u));
+}
+
+.vk-klassisch-logo {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: calc(20 * var(--u));
+  height: calc(20 * var(--u));
+}
+
+.vk-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.vk-monogram {
+  display: grid;
+  place-items: center;
+  width: calc(17 * var(--u));
+  height: calc(17 * var(--u));
+  border-radius: 50%;
+  background: var(--vk-farbe);
+  color: var(--vk-on);
+  font-family: var(--font-display);
+  font-size: calc(6.4 * var(--u));
+  font-weight: 600;
+}
+
+.vk-klassisch-text {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: calc(1.4 * var(--u));
+  min-width: 0;
+  padding-left: calc(4 * var(--u));
+  border-left: calc(0.3 * var(--u)) solid var(--vk-line);
+}
+
+.vk-rule {
+  position: absolute;
+  inset: auto 0 0;
+  height: calc(2.2 * var(--u));
+  background: var(--vk-farbe);
+}
+
+/* Foto: Bannerfoto mit ruhigem Schleier, Schrift hell darüber */
+
+.vk-foto.vk-front {
+  background: #2a211a;
+}
+
+.vk-foto-bild {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vk-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(18, 12, 8, 0.82) 0%, rgba(18, 12, 8, 0.55) 48%, rgba(18, 12, 8, 0.06) 100%);
+}
+
+.vk-foto-logo {
+  position: absolute;
+  top: calc(4 * var(--u));
+  left: calc(5 * var(--u));
+  display: flex;
+  align-items: center;
+  height: calc(9.5 * var(--u));
+  max-width: calc(26 * var(--u));
+  padding: calc(1.2 * var(--u)) calc(1.8 * var(--u));
+  border-radius: calc(1.4 * var(--u));
+  background: #fff;
+}
+
+.vk-foto-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.vk-foto-text {
+  position: absolute;
+  inset: auto calc(5 * var(--u)) calc(5.2 * var(--u));
+  display: grid;
+  gap: calc(0.9 * var(--u));
+  color: #fff;
+}
+
+.vk-foto-bar {
+  position: absolute;
+  inset: auto calc(-5 * var(--u)) calc(-5.2 * var(--u));
+  height: calc(2 * var(--u));
+  background: var(--vk-farbe);
+}
+
+.vk-foto .vk-name {
+  font-size: calc(4.8 * var(--u));
+  color: #fff;
+  text-shadow: 0 calc(0.2 * var(--u)) calc(0.9 * var(--u)) rgba(0, 0, 0, 0.35);
+}
+
+.vk-foto .vk-kurztext {
+  color: rgba(255, 255, 255, 0.92);
+  -webkit-line-clamp: 2;
+}
+
+.vk-foto .vk-person {
+  font-size: calc(2.25 * var(--u));
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.vk-kontakte-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.4 * var(--u)) calc(2.6 * var(--u));
+  font-size: calc(2.15 * var(--u));
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.vk-foto .vk-kontakt-icon {
+  color: #fff;
+}
+
+/* Schlicht: Farbband mit dem Namen, darunter nur Schrift */
+
+.vk-schlicht.vk-front {
+  display: grid;
+  grid-template-rows: calc(17 * var(--u)) minmax(0, 1fr);
+}
+
+.vk-band {
+  display: flex;
+  align-items: center;
+  padding: 0 calc(5.5 * var(--u));
+  background: var(--vk-farbe);
+}
+
+.vk-schlicht .vk-name {
+  font-size: calc(5 * var(--u));
+  color: var(--vk-on);
+}
+
+.vk-schlicht-body {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: calc(2 * var(--u));
+  padding: calc(3.8 * var(--u)) calc(5.5 * var(--u)) calc(4.2 * var(--u));
+}
+
+.vk-schlicht .vk-kurztext {
+  font-family: var(--font-display);
+  font-size: calc(3 * var(--u));
+  font-style: italic;
+  line-height: 1.22;
+  color: var(--vk-ink);
+  -webkit-line-clamp: 2;
+}
+
+.vk-schlicht .vk-foot {
+  padding-top: calc(2 * var(--u));
+  border-top: calc(0.25 * var(--u)) solid var(--vk-line);
+}
+
+/* Rückseiten */
+
+.vk-back-text {
+  display: grid;
+  gap: calc(1.2 * var(--u));
+  min-width: 0;
+}
+
+.vk-back-brand {
+  display: flex;
+  align-items: center;
+  gap: calc(1.3 * var(--u));
+  font-size: calc(2 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vk-muted);
+}
+
+.vk-back-mark {
+  flex: none;
+  width: calc(4.2 * var(--u));
+  height: calc(4.2 * var(--u));
+}
+
+.vk-back-title {
+  font-family: var(--font-display);
+  font-size: calc(4.2 * var(--u));
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--vk-akzent-text);
+}
+
+.vk-back-lead {
+  font-size: calc(2.35 * var(--u));
+  color: var(--vk-muted);
+}
+
+.vk-back-url {
+  font-size: calc(2.45 * var(--u));
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.vk-nowrap {
+  white-space: nowrap;
+}
+
+.vk-qr-box {
+  padding: calc(1.6 * var(--u));
+  border-radius: calc(1 * var(--u));
+  background: #fff;
+}
+
+.vk-qr {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.vk-stripe {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(3.5 * var(--u));
+  background: var(--vk-farbe);
+}
+
+.vk-back-portal {
+  display: grid;
+  grid-template-columns: calc(27 * var(--u)) minmax(0, 1fr);
+  gap: calc(4 * var(--u));
+  align-items: center;
+  padding: calc(5 * var(--u)) calc(5.5 * var(--u)) calc(5 * var(--u)) calc(8 * var(--u));
+}
+
+.vk-back-portal.vk-schlicht {
+  padding-left: calc(5.5 * var(--u));
+  background: var(--vk-farbe);
+  color: var(--vk-on);
+}
+
+.vk-back-portal.vk-schlicht .vk-stripe {
+  display: none;
+}
+
+.vk-back-portal.vk-schlicht .vk-back-brand,
+.vk-back-portal.vk-schlicht .vk-back-title,
+.vk-back-portal.vk-schlicht .vk-back-lead,
+.vk-back-portal.vk-schlicht .vk-back-url {
+  color: var(--vk-on);
+}
+
+.vk-back-gutschein {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(23 * var(--u));
+  gap: calc(3.5 * var(--u));
+  align-items: center;
+  padding: calc(5.6 * var(--u)) calc(5 * var(--u)) calc(4 * var(--u)) calc(5.5 * var(--u));
+}
+
+.vk-band-top {
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(2.2 * var(--u));
+  background: var(--vk-farbe);
+}
+
+.vk-back-gutschein .vk-back-text {
+  gap: calc(1 * var(--u));
+}
+
+.vk-back-gutschein .vk-back-title {
+  font-size: calc(3.5 * var(--u));
+  color: var(--vk-ink);
+}
+
+.vk-back-gutschein .vk-back-lead {
+  font-size: calc(2.2 * var(--u));
+}
+
+.vk-code {
+  display: flex;
+  gap: calc(1.5 * var(--u));
+  width: max-content;
+  max-width: 100%;
+  margin-top: calc(0.4 * var(--u));
+  padding: calc(0.8 * var(--u)) calc(1.6 * var(--u));
+  border: calc(0.3 * var(--u)) dashed var(--vk-line-strong);
+  border-radius: calc(1 * var(--u));
+  font-family: 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: calc(3.6 * var(--u));
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.vk-back-hint {
+  font-size: calc(1.9 * var(--u));
+  line-height: 1.35;
+  color: var(--vk-muted);
+}
+
+.vk-muster {
+  position: absolute;
+  top: calc(4.4 * var(--u));
+  right: calc(4 * var(--u));
+  padding: calc(0.3 * var(--u)) calc(1.4 * var(--u));
+  border: calc(0.35 * var(--u)) solid #b3261e;
+  border-radius: calc(0.8 * var(--u));
+  background: rgba(255, 255, 255, 0.9);
+  color: #b3261e;
+  font-size: calc(2.2 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transform: rotate(-6deg);
+}

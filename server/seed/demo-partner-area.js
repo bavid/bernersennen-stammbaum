@@ -279,4 +279,36 @@ const TERMINE = [
   }
 ]
 
-module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, BANNER, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE }
+// VISITENKARTEN (Phase V5): gespeicherte Visitenkarten-Gestaltungen - Felder wie PUT /api/partner-area/visitenkarte,
+// geprüft mit derselben Prüfung (lib/visitenkarteDesign.js validateDesign). Pfotenglück zeigt die Vorlage "Foto" mit
+// seinem Bannerfoto und Kunden-Gutschein (in der Demo mit Muster-Codes "DEMO-…"), das Demo-Tierheim "Klassisch".
+const VISITENKARTEN = [
+  {
+    partnerSlug: 'hundeschule-pfotenglueck',
+    design: {
+      vorlage: 'foto',
+      farbe: '#1f5f8b',
+      kurztext: 'Welpenkurse und Hundetraining für Familien aus der Region',
+      zeigeAnsprechperson: true,
+      zeigeWebsite: true,
+      zeigeTelefon: true,
+      zeigeEmail: true,
+      mitGutschein: true
+    }
+  },
+  {
+    partnerSlug: 'tierheim-sonnenhang',
+    design: {
+      vorlage: 'klassisch',
+      farbe: '#2f6b3f',
+      kurztext: 'Hunde, Katzen und andere Tiere suchen bei uns ein neues Zuhause',
+      zeigeAnsprechperson: true,
+      zeigeWebsite: true,
+      zeigeTelefon: true,
+      zeigeEmail: true,
+      mitGutschein: false
+    }
+  }
+]
+
+module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, BANNER, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE, VISITENKARTEN }

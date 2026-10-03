@@ -10,6 +10,7 @@ import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
 import PartnerTermineEditor from '../components/PartnerTermineEditor.jsx'
 import PartnerVoucherStacks from '../components/PartnerVoucherStacks.jsx'
 import PartnerShareSection from '../components/PartnerShareSection.jsx'
+import VisitenkartenTeaser from '../components/visitenkarte/VisitenkartenTeaser.jsx'
 import TabBar from '../components/TabBar.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
@@ -52,7 +53,7 @@ function Panel({ id, tab, className, children }) {
 // die Statuskarte (Status, Checkliste, Veröffentlichen/Pausieren), darunter die Reiter "Angaben"
 // (PartnerProfileForm), "Einblicke" (EinblickeEditor), bei Tierheimen "Beiträge" (PartnerPostsEditor) und "Kalender"
 // (PartnerTermineEditor) und
-// "Teilen" (Portal-Link, QR-Code, Website-Knopf, Social-Media-Text und die Kunden-Gutscheine).
+// "Teilen" (Portal-Link, QR-Code, Website-Knopf, Social-Media-Text, der Weg zu den Visitenkarten und die Kunden-Gutscheine).
 // Den Typ ändert nur der Betreiber. Wo "Zugang" nicht in der Hauptnavigation steht (Tierheim), führt ein
 // Link dorthin.
 export default function PartnerProfilePage({ family }) {
@@ -163,6 +164,8 @@ export default function PartnerProfilePage({ family }) {
               {openedTabs.includes('teilen') && (
                 <>
                   <PartnerShareSection profile={profile} />
+                  {/* Phase V5: Visitenkarten mit QR-Code zum Portal und optionalem Kunden-Gutschein. */}
+                  <VisitenkartenTeaser />
                   <PartnerVoucherStacks />
                 </>
               )}

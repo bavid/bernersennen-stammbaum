@@ -326,6 +326,26 @@ describe('api.partnerArea – eigenes Profil, Einblicke, Vorschau (Phase P)', ()
   })
 })
 
+describe('api.partnerArea – Visitenkarten (Phase V5)', () => {
+  test('Gestaltung lesen und speichern, Gutschein-Codes per POST - Anzahl im Body, nie in der URL', async () => {
+    const fetchMock = stubFetch({})
+    const design = { vorlage: 'foto', farbe: '#1f5f8b' }
+
+    await api.partnerArea.visitenkarte()
+    await api.partnerArea.saveVisitenkarte(design)
+    await api.partnerArea.visitenkarteGutscheine({ anzahl: 20, nurUngedruckt: true })
+
+    const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
+    expect(calls).toEqual([
+      ['/api/partner-area/visitenkarte', 'GET'],
+      ['/api/partner-area/visitenkarte', 'PUT'],
+      ['/api/partner-area/visitenkarte/gutscheine', 'POST']
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual(design)
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ anzahl: 20, nurUngedruckt: true })
+  })
+})
+
 describe('api.demo – Demo-Bereiche (Phase P1)', () => {
   test('ohne Angabe: leerer Body (Demo-Zuhause)', async () => {
     const fetchMock = stubFetch({})

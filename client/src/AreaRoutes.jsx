@@ -24,6 +24,8 @@ const PartnerPostsPage = lazy(() => import('./pages/PartnerPostsPage.jsx'))
 const PartnerInboxPage = lazy(() => import('./pages/PartnerInboxPage.jsx'))
 // Phase V4a: der Kalender (Termine und Serien) - ebenso nur für Partner- und Tierheim-Bereiche.
 const PartnerCalendarPage = lazy(() => import('./pages/PartnerCalendarPage.jsx'))
+// Phase V5: der Visitenkarten-Designer (/visitenkarten) - aus Profil und Kunden-Gutscheinen verlinkt, ohne Navigationspunkt.
+const PartnerVisitenkartenPage = lazy(() => import('./pages/PartnerVisitenkartenPage.jsx'))
 // Die Fotocollage (samt Seiten-Layout, Canvas-Export und Druckbogen) ruft kaum jemand auf - ebenfalls
 // erst bei Bedarf.
 const CollagePage = lazy(() => import('./pages/CollagePage.jsx'))
@@ -43,7 +45,7 @@ function ToStart({ family }) {
 }
 
 // Partner-Bereich (Phase P, family.art 'partner' - Hundeschule, Hundesalon, Betreuung, …): keine Tiere,
-// keine Chronik, kein Rudel - nur Profil, Beiträge und Nachrichten (P2), Kalender (V4a), Zugang und die Kundensicht, dazu
+// keine Chronik, kein Rudel - nur Profil, Beiträge und Nachrichten (P2), Kalender (V4a), Visitenkarten (V5), Zugang und die Kundensicht, dazu
 // die allgemeinen Seiten aus Kopf und Fuß (Schreib dem Admin, In der Nähe). Alles andere (Stammbaum,
 // Pinnwand, Wegbegleiter, Entdecken, …) führt zurück zum Profil.
 function PartnerAreaRoutes({ family, onFamilyChange }) {
@@ -52,6 +54,7 @@ function PartnerAreaRoutes({ family, onFamilyChange }) {
       <Route path="/profil" element={<PartnerProfilePage family={family} />} />
       <Route path="/beitraege" element={<PartnerPostsPage family={family} />} />
       <Route path="/kalender" element={<PartnerCalendarPage family={family} />} />
+      <Route path="/visitenkarten" element={<PartnerVisitenkartenPage />} />
       <Route path="/nachrichten" element={<PartnerInboxPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/zugang" element={<AccessPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/kundensicht" element={<CustomerViewPage family={family} />} />
@@ -121,6 +124,8 @@ export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/beitraege" element={partnerArea ? <PartnerPostsPage family={family} /> : <ToStart family={family} />} />
       {/* Phase V4a: bei Tierheimen steht der Kalender als Reiter im Profil - /kalender bleibt trotzdem erreichbar. */}
       <Route path="/kalender" element={partnerArea ? <PartnerCalendarPage family={family} /> : <ToStart family={family} />} />
+      {/* Phase V5: Visitenkarten auch für Tierheime (Link im Profil-Reiter "Teilen"). */}
+      <Route path="/visitenkarten" element={partnerArea ? <PartnerVisitenkartenPage /> : <ToStart family={family} />} />
       <Route
         path="/nachrichten"
         element={partnerArea ? <PartnerInboxPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
