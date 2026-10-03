@@ -16,7 +16,11 @@ const TELEGRAM_HOST = 'api.telegram.org'
 const SEND_TIMEOUT_MS = 8000
 const CHECK_TIMEOUT_MS = 5000
 const MAX_RESPONSE_BYTES = 1_000_000
-const UPDATES_LIMIT = 100
+// security-review V4b: getUpdates in kleinen Stapeln mit eigener, größerer Grenze - 25 Nachrichten mit je 4096 Zeichen
+// (als Escape-Folgen bis ~12 Byte je Zeichen) bleiben weit unter 8 MB. Mit 100 Updates und 1 MB ließe sich der
+// gemeinsame Leser (lib/telegramUpdates.js) durch wenige lange Nachrichten bis zu 24 Stunden blockieren.
+const UPDATES_LIMIT = 25
+const UPDATES_MAX_BYTES = 8_000_000
 const MAX_CHATS = 20
 const MAX_TITLE_LENGTH = 100
 const NUMERIC_CHAT_ID_RE = /^-?\d{1,20}$/
@@ -35,14 +39,14 @@ function isRejectedByTelegram(err) {
 
 // Ruft eine Methode der Bot-API auf und liefert result. Ein Token im falschen Format wird gar nicht erst verschickt.
 function createTelegramClient({ fetchJson = safeFetchJson } = {}) {
-  async function callApi(token, method, payload, timeoutMs) {
+  async function callApi(token, method, payload, timeoutMs, maxBytes = MAX_RESPONSE_BYTES) {
     if (!isValidToken(token)) throw telegramError(400, 'Der Bot-Token hat nicht das erwartete Format.', { rejected: true })
     const data = await fetchJson(`https://${TELEGRAM_HOST}/bot${token}/${method}`, {
       method: 'POST',
       body: JSON.stringify(payload),
       allowHosts: [TELEGRAM_HOST],
       timeoutMs,
-      maxBytes: MAX_RESPONSE_BYTES
+      maxBytes
     })
     if (!data || data.ok !== true) throw telegramError(502, 'Telegram hat die Anfrage nicht angenommen.', { rejected: true })
     return data.result
@@ -51,13 +55,22 @@ function createTelegramClient({ fetchJson = safeFetchJson } = {}) {
   return {
     // disable_web_page_preview ist bei Telegram inzwischen veraltet, wird aber weiter verstanden;
     // link_preview_options ist der neue Weg - beide zusammen schaden nicht.
-    sendMessage: ({ token, chatId, text }) =>
+    // replyMarkup (Phase V4b): Knöpfe unter der Nachricht (inline_keyboard) - nur für die Rückfrage beim Verbinden.
+    sendMessage: ({ token, chatId, text, replyMarkup }) =>
       callApi(
         token,
         'sendMessage',
-        { chat_id: chatId, text, disable_web_page_preview: true, link_preview_options: { is_disabled: true } },
+        {
+          chat_id: chatId,
+          text,
+          disable_web_page_preview: true,
+          link_preview_options: { is_disabled: true },
+          ...(replyMarkup ? { reply_markup: replyMarkup } : {})
+        },
         SEND_TIMEOUT_MS
       ),
+    // Phase V4b: bestätigt das Tippen auf einen Knopf (sonst dreht Telegram eine Weile die Ladeanzeige).
+    answerCallbackQuery: ({ token, callbackQueryId }) => callApi(token, 'answerCallbackQuery', { callback_query_id: callbackQueryId }, SEND_TIMEOUT_MS),
     getMe: async ({ token }) => {
       const me = await callApi(token, 'getMe', {}, CHECK_TIMEOUT_MS)
       if (!me || me.is_bot !== true) throw telegramError(502, 'Das ist kein Bot-Token.', { rejected: true })
@@ -65,7 +78,13 @@ function createTelegramClient({ fetchJson = safeFetchJson } = {}) {
     },
     // Phase V4b: offset bestätigt alle älteren Updates (lib/telegramUpdates.js liest sie für Admin und Partner gemeinsam).
     getUpdates: ({ token, offset }) =>
-      callApi(token, 'getUpdates', { limit: UPDATES_LIMIT, timeout: 0, ...(Number.isSafeInteger(offset) ? { offset } : {}) }, CHECK_TIMEOUT_MS)
+      callApi(
+        token,
+        'getUpdates',
+        { limit: UPDATES_LIMIT, timeout: 0, ...(Number.isSafeInteger(offset) ? { offset } : {}) },
+        CHECK_TIMEOUT_MS,
+        UPDATES_MAX_BYTES
+      )
   }
 }
 
@@ -82,7 +101,7 @@ function setTelegramClientForTests(fake) {
     throw telegramError(502, 'Im Test nicht vorgesehen')
   }
   const previous = activeClient
-  activeClient = { sendMessage: notFaked, getMe: notFaked, getUpdates: notFaked, ...fake }
+  activeClient = { sendMessage: notFaked, getMe: notFaked, getUpdates: notFaked, answerCallbackQuery: notFaked, ...fake }
   return () => {
     activeClient = previous
   }
@@ -137,6 +156,7 @@ function extractChats(updates) {
 
 module.exports = {
   NUMERIC_CHAT_ID_RE,
+  UPDATES_LIMIT,
   TELEGRAM_HOST,
   SEND_TIMEOUT_MS,
   CHECK_TIMEOUT_MS,

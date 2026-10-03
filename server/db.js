@@ -788,5 +788,9 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_partner_telegram_codes_partner ON partner_telegram_codes(partner_id);
 `)
+// security-review V4b: chat_hash - HMAC der Chat-ID (lib/codes.js hashCode), damit "/stop" in Telegram alle Verbindungen
+// dieses Chats findet und "Chat finden" im Admin verbundene Partner-Chats auslässt, ohne jeden Geheimtext zu entschlüsseln.
+addColumnIfMissing('partner_telegram', 'chat_hash', 'TEXT')
+db.exec('CREATE INDEX IF NOT EXISTS idx_partner_telegram_chat_hash ON partner_telegram(chat_hash)')
 
 module.exports = db

@@ -30,7 +30,8 @@ export default function PortalBanner({ banner }) {
           height={BANNER_HEIGHT}
           className="portal-banner-photo"
           decoding="async"
-          {...(index === 0 ? { fetchpriority: 'high' } : { loading: 'lazy' })}
+          // Beide Fotos stehen ganz oben - das erste zuerst laden, keins verzögert.
+          {...(index === 0 ? { fetchpriority: 'high' } : {})}
         />
       ))}
     </div>

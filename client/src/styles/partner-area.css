@@ -771,8 +771,11 @@
   font-size: var(--text-xl);
 }
 
-.partner-telegram-head .page-lede {
+.partner-telegram-lede {
   margin: 0;
+  max-width: 36rem;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .telegram-state {

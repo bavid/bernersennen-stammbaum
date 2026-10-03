@@ -1,5 +1,9 @@
+const fs = require('node:fs')
+const path = require('node:path')
 const express = require('express')
 const multer = require('multer')
+const { uploadDir } = require('../../config')
+const { inspectImage } = require('../../lib/imageInspect')
 const { denyDemoWrites } = require('../../middleware/auth')
 const { requireFreeDisk } = require('../../middleware/abuse')
 const {
@@ -38,6 +42,13 @@ const router = express.Router()
 const BANNER_MIME_TYPES = ['image/jpeg', 'image/png']
 const BANNER_EXTS = ['jpg', 'png']
 const TYPE_MESSAGE = 'Bitte als JPG oder PNG hochladen.'
+// security-review V4b: Bannerfotos stehen ganz oben auf einer öffentlichen Seite - riesige Maße (wenige Bytes, aber
+// Gigabytes im Browser) und nicht entfernbare Metadaten (Aufnahmeort) werden abgelehnt.
+const MAX_SIDE = 8000
+const MAX_PIXELS = 40_000_000
+const UNREADABLE_MESSAGE = 'Dieses Foto lässt sich nicht lesen – bitte als JPG oder PNG neu speichern.'
+const TOO_LARGE_MESSAGE = `Das Foto ist zu groß – höchstens ${MAX_SIDE} × ${MAX_SIDE} Pixel.`
+const METADATA_MESSAGE = 'Die Foto-Daten (z. B. der Aufnahmeort) ließen sich nicht entfernen – bitte das Foto neu speichern.'
 
 // Felder: alt (<= 120 Zeichen, in UTF-8 knapp 500 Bytes) - plus das Foto.
 const bannerUpload = createPhotoUpload({ fields: 1, fieldSize: 1024, parts: 2 }, { mimeTypes: BANNER_MIME_TYPES, typeError: TYPE_MESSAGE })
@@ -57,6 +68,15 @@ function sendError(res, next, err) {
   next(err)
 }
 
+// Nach dem Entfernen der Metadaten: lesbar, nicht zu groß, keine Metadaten mehr übrig (die Stripper behalten bei
+// unerwarteter Struktur das Original - hier wird dann abgelehnt statt veröffentlicht).
+function assertPublishable(file) {
+  const info = inspectImage(fs.readFileSync(path.join(uploadDir, file.filename)))
+  if (!info) throw httpError(400, UNREADABLE_MESSAGE)
+  if (info.width > MAX_SIDE || info.height > MAX_SIDE || info.width * info.height > MAX_PIXELS) throw httpError(400, TOO_LARGE_MESSAGE)
+  if (info.metadata) throw httpError(400, METADATA_MESSAGE)
+}
+
 function sendList(res, partnerId, status = 200) {
   res.status(status).json({ banner: listBanner(partnerId).map(ownBanner) })
 }
@@ -74,6 +94,7 @@ function receivePhoto(req, res, next, store) {
       const alt = validateAlt(req.body?.alt)
       if (!hasMatchingSignature(req.file, BANNER_EXTS)) throw httpError(400, TYPE_MESSAGE)
       stripMetadataInPlace(req.file)
+      assertPublishable(req.file)
       store({ fotoUrl: `/uploads/${req.file.filename}`, alt })
     } catch (err) {
       removeUploadedFile(req.file)

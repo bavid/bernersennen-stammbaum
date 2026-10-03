@@ -87,7 +87,8 @@ describe('PortalHero mit Bannerfotos', () => {
     expect(box.getAttribute('tabindex')).toBe('0')
     const imgs = [...box.querySelectorAll('img')]
     expect(imgs.map((img) => img.getAttribute('alt'))).toEqual(['Training', ''])
-    expect(imgs[1].getAttribute('loading')).toBe('lazy')
+    expect(imgs[0].getAttribute('fetchpriority')).toBe('high')
+    expect(imgs[1].getAttribute('loading')).toBeNull()
   })
 
   test('nur erlaubte Adressen - /uploads nur in der Kundensicht', async () => {

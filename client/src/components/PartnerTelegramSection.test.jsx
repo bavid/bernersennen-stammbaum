@@ -127,6 +127,21 @@ describe('PartnerTelegramSection', () => {
     expect(checkTelegram).toHaveBeenCalledTimes(1)
   })
 
+  test('nach Ablauf des Links (gueltigMinuten) hört das Nachfragen auf, mit Hinweis', async () => {
+    vi.useFakeTimers()
+    connectTelegram.mockResolvedValue({ ...LINK, gueltigMinuten: 1 })
+    checkTelegram.mockResolvedValue(notConnected)
+    await render(notConnected)
+    await act(async () => button('Mit Telegram verbinden').click())
+    expect(container.querySelector('dialog').textContent).toContain('„Ja, Hinweise aktivieren“')
+    await act(async () => vi.advanceTimersByTime(60_000))
+    const calls = checkTelegram.mock.calls.length
+    expect(container.querySelector('.telegram-connect-status').textContent).toBe('Der Link ist abgelaufen – bitte schließen und neu verbinden.')
+    expect(button('Verbindung prüfen').disabled).toBe(true)
+    await act(async () => vi.advanceTimersByTime(POLL_INTERVAL_MS * 5))
+    expect(checkTelegram.mock.calls.length).toBe(calls)
+  })
+
   test('verbunden: Schalter speichern sofort, Testnachricht, Trennen nach Bestätigung', async () => {
     updateTelegramHinweise.mockResolvedValue({ ...connected, hinweise: { nachricht: false, freigabe: true } })
     sendTelegramTest.mockResolvedValue({ ok: true })

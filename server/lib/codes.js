@@ -91,12 +91,14 @@ function encryptSecret(plaintext, aad) {
 }
 
 // Werte von vor der AAD-Bindung (ohne AAD geschrieben) bleiben lesbar; lib/telegramConfig.js schreibt sie beim
-// nächsten Speichern mit AAD neu.
-function decryptSecret(stored, aad) {
+// nächsten Speichern mit AAD neu. allowLegacy: false (Phase V4b, Chat-IDs der Partner - die gab es nie ohne AAD): kein
+// Rückfall, nur der Wert mit genau dieser AAD gilt.
+function decryptSecret(stored, aad, { allowLegacy = true } = {}) {
   requireAad(aad)
   try {
     return decryptWithKey(secretKey(), stored, SECRET_LABEL, aad)
   } catch (err) {
+    if (!allowLegacy) throw err
     try {
       return decryptWithKey(secretKey(), stored, SECRET_LABEL)
     } catch {

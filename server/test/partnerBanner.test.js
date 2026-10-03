@@ -21,14 +21,29 @@ function jpegSegment(marker, payload) {
   return Buffer.concat([Buffer.from([0xff, marker]), length, payload])
 }
 
-// Synthetisches JPEG mit APP1-Exif-Segment (wie test/einblicke.test.js).
-const JPEG_WITH_EXIF = Buffer.concat([
-  Buffer.from([0xff, 0xd8]),
-  jpegSegment(0xe1, Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), Buffer.from([0x4d, 0x4d, 0x00, 0x2a, 0, 0, 0, 8, 0xca, 0xfe])])),
-  jpegSegment(0xda, Buffer.from([0x00, 0x01, 0x02])),
-  Buffer.from([0x12, 0x34, 0x56]),
-  Buffer.from([0xff, 0xd9])
-])
+// SOF0-Segment mit Maßen (Höhe, Breite) - ohne lässt sich ein Bannerfoto nicht prüfen (lib/imageInspect.js).
+function sof0(width, height) {
+  const payload = Buffer.alloc(15)
+  payload[0] = 8
+  payload.writeUInt16BE(height, 1)
+  payload.writeUInt16BE(width, 3)
+  payload[5] = 3
+  return jpegSegment(0xc0, payload)
+}
+
+// Synthetisches JPEG mit APP1-Exif-Segment (wie test/einblicke.test.js), dazu SOF0 mit den Maßen.
+function jpegWithExif({ width = 1600, height = 900 } = {}) {
+  return Buffer.concat([
+    Buffer.from([0xff, 0xd8]),
+    jpegSegment(0xe1, Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), Buffer.from([0x4d, 0x4d, 0x00, 0x2a, 0, 0, 0, 8, 0xca, 0xfe])])),
+    sof0(width, height),
+    jpegSegment(0xda, Buffer.from([0x00, 0x01, 0x02])),
+    Buffer.from([0x12, 0x34, 0x56]),
+    Buffer.from([0xff, 0xd9])
+  ])
+}
+
+const JPEG_WITH_EXIF = jpegWithExif()
 
 function pngChunk(type, data) {
   const length = Buffer.alloc(4)
@@ -36,9 +51,16 @@ function pngChunk(type, data) {
   return Buffer.concat([length, Buffer.from(type, 'ascii'), data, Buffer.alloc(4)])
 }
 
+function ihdr(width, height) {
+  const data = Buffer.alloc(13)
+  data.writeUInt32BE(width, 0)
+  data.writeUInt32BE(height, 4)
+  return pngChunk('IHDR', data)
+}
+
 const PNG_WITH_TEXT = Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  pngChunk('IHDR', Buffer.alloc(13)),
+  ihdr(1200, 400),
   pngChunk('tEXt', Buffer.from('Comment\0Aufnahmeort geheim', 'latin1')),
   pngChunk('IDAT', Buffer.from([4, 5, 6])),
   pngChunk('IEND', Buffer.alloc(0))
@@ -126,6 +148,14 @@ test('Bannerfotos und Ansprechperson im Portal-Kopf', async (t) => {
       assert.equal(res.status, 400, filename)
       assert.equal(res.data.error, TYPE_MESSAGE, filename)
     }
+    // security-review V4b: riesige Maße und nicht lesbare Dateien kommen nie auf die öffentliche Seite.
+    const huge = await sendPhoto(BANNER, school.cookie, { foto: jpegWithExif({ width: 30000, height: 30000 }) })
+    assert.equal(huge.status, 400)
+    assert.match(huge.data.error, /höchstens 8000 × 8000 Pixel/)
+    const broken = Buffer.concat([Buffer.from([0xff, 0xd8]), jpegSegment(0xe1, Buffer.from('Exif\0\0GPS', 'latin1')), Buffer.from([0x00, 0x00, 0x00])])
+    const unreadable = await sendPhoto(BANNER, school.cookie, { foto: broken })
+    assert.equal(unreadable.status, 400)
+    assert.match(unreadable.data.error, /lässt sich nicht lesen/)
     assert.equal((await sendPhoto(BANNER, school.cookie, { alt: 'x'.repeat(121) })).status, 400)
     assert.equal((await sendPhoto(BANNER, school.cookie, { alt: 'Foto <b>fett</b>' })).status, 400)
     const missing = await sendPhoto(BANNER, school.cookie, { foto: null, alt: 'ohne Foto' })

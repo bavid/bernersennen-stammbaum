@@ -170,6 +170,17 @@ export default function AdminPartnerForm({ partner, onSaved, onCancel }) {
           />
         </div>
         <div className="field span-2">
+          <label className="field-label" htmlFor="admin-partner-ansprechperson">
+            Ansprechperson (pflegt der Partner selbst)
+          </label>
+          <input
+            id="admin-partner-ansprechperson"
+            value={form.ansprechperson}
+            onChange={(e) => update({ ansprechperson: e.target.value })}
+            maxLength={80}
+          />
+        </div>
+        <div className="field span-2">
           <label className="field-label" htmlFor="admin-partner-portal-titel">
             Portal-Titel
           </label>

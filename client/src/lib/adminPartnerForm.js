@@ -19,6 +19,8 @@ export function initialState(partner) {
     vermittlungUrl: partner?.vermittlung_url || '',
     kontaktEmail: partner?.kontakt_email || '',
     kontaktTelefon: partner?.kontakt_telefon || '',
+    // Phase V4b (security-review): der Admin sieht und korrigiert die Ansprechperson, die der Partner selbst pflegt.
+    ansprechperson: partner?.ansprechperson || '',
     portalTitel: partner?.portal_titel || '',
     portalText: partner?.portal_text || '',
     farbe: partner?.farbe || ''
@@ -39,6 +41,7 @@ export function toPayload(form) {
     vermittlungUrl: form.vermittlungUrl || null,
     kontaktEmail: form.kontaktEmail || null,
     kontaktTelefon: form.kontaktTelefon || null,
+    ansprechperson: form.ansprechperson || null,
     portalTitel: form.portalTitel || null,
     portalText: form.portalText || null,
     farbe: form.farbe || null

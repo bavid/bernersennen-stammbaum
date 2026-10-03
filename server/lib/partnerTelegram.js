@@ -2,11 +2,13 @@
 
 // Phase V4b: Telegram-Hinweise für Partner - die Verbindung eines Partners mit seinem Telegram-Chat (Tabellen
 // partner_telegram und partner_telegram_codes, db.js). Ablauf: der Partner holt sich einen Einmal-Code (createLinkCode,
-// >= 128 bit Zufall, 15 Minuten gültig, gespeichert nur als HMAC), öffnet https://t.me/<bot>?start=<code> und tippt in
-// Telegram auf "Starten". Die Nachricht "/start <code>" liest der gemeinsame Update-Leser (lib/telegramUpdates.js) und
-// reicht sie an consumeLinkUpdate weiter: passt der Code, wird die Chat-ID VERSCHLÜSSELT gespeichert (lib/codes.js
-// encryptSecret, AAD je Partner - ein Geheimtext passt nie zu einem anderen Partner), der Code ist verbraucht.
-// Die Chat-ID verlässt den Server nur Richtung api.telegram.org - nie in einer Antwort, nie im Log.
+// 128 bit Zufall, 15 Minuten gültig, gespeichert nur als HMAC), öffnet https://t.me/<bot>?start=<code> und tippt in
+// Telegram auf "Starten". Der gemeinsame Update-Leser (lib/telegramUpdates.js) reicht "/start <code>" an consumeUpdate
+// weiter - der Bot fragt dann zurück ("Hinweise für … aktivieren?" mit Ja/Nein-Knöpfen). Erst "Ja" verbindet
+// (security-review V4b: niemand bekommt Hinweise, der nicht selbst zugestimmt hat): die Chat-ID wird VERSCHLÜSSELT
+// gespeichert (lib/codes.js encryptSecret, AAD je Partner), dazu ihr HMAC für "/stop", der Code ist verbraucht.
+// "/stop" trennt jeden Partner, der mit diesem Chat verbunden ist. Die Chat-ID verlässt den Server nur Richtung
+// api.telegram.org - nie in einer Antwort, nie im Log.
 
 const crypto = require('node:crypto')
 const db = require('../db')
@@ -19,11 +21,18 @@ const CODE_VALID_MINUTES = 15
 const CODE_RE = /^[A-Za-z0-9_-]{16,64}$/
 // "/start <code>" (auch "/start@botname <code>"), genau ein Wort danach - Telegram schickt den Parameter des Links so.
 const START_RE = /^\/start(?:@[A-Za-z0-9_]{1,64})?\s+(\S{1,64})\s*$/
+const STOP_RE = /^\/stop(?:@[A-Za-z0-9_]{1,64})?\s*$/
+// Antwort auf die Knöpfe der Rückfrage: "ja:<code>" bzw. "nein:<code>" (callback_data, höchstens 64 Byte).
+const CALLBACK_RE = /^(ja|nein):([A-Za-z0-9_-]{16,64})$/
 const GETRENNT = Object.freeze({ blockiert: 'blockiert' })
 const HINWEIS_COLUMNS = Object.freeze({ nachricht: 'hinweis_nachricht', freigabe: 'hinweis_freigabe' })
 const HINWEIS_NAMES = Object.keys(HINWEIS_COLUMNS)
 const APP_NAME = 'Familie auf Pfoten'
 const EXPIRED_REPLY = 'Dieser Link ist abgelaufen oder wurde schon benutzt – bitte im Partner-Bereich einen neuen erzeugen.'
+const DECLINED_REPLY = 'Alles klar – es wurde nichts verbunden.'
+const STOPPED_REPLY = 'Erledigt – hier kommen keine Hinweise mehr. Wieder verbinden geht jederzeit im Partner-Bereich.'
+const YES_LABEL = 'Ja, Hinweise aktivieren'
+const NO_LABEL = 'Nein'
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -32,8 +41,9 @@ function httpError(status, message) {
 }
 
 const chatAad = (partnerId) => `partner_telegram_chat:${partnerId}`
-// Eigene Domäne im HMAC - ein Link-Code ist nie zugleich ein gültiger Gutschein-Hash (lib/codes.js hashCode).
+// Eigene Domänen im HMAC - ein Link-Code ist nie zugleich ein gültiger Gutschein-Hash (lib/codes.js hashCode).
 const codeHashOf = (code) => hashCode(`telegram-link:${code}`)
+const chatHashOf = (chatId) => hashCode(`telegram-chat:${chatId}`)
 
 // --- Abfragen ------------------------------------------------------------------------------------
 
@@ -50,27 +60,38 @@ const openCodeStmt = db.prepare(
 const findCodeStmt = db.prepare("SELECT * FROM partner_telegram_codes WHERE code_hash = ? AND used_at IS NULL AND expires_at > datetime('now')")
 const markUsedStmt = db.prepare("UPDATE partner_telegram_codes SET used_at = datetime('now') WHERE id = ? AND used_at IS NULL")
 const upsertConnectionStmt = db.prepare(
-  `INSERT INTO partner_telegram (partner_id, chat_cipher, hinweis_nachricht, hinweis_freigabe, verbunden_at, getrennt_grund, updated_at)
-   VALUES (@partnerId, @cipher, 1, 1, datetime('now'), NULL, datetime('now'))
-   ON CONFLICT(partner_id) DO UPDATE SET chat_cipher = excluded.chat_cipher, hinweis_nachricht = 1, hinweis_freigabe = 1,
-     verbunden_at = excluded.verbunden_at, getrennt_grund = NULL, updated_at = excluded.updated_at`
+  `INSERT INTO partner_telegram (partner_id, chat_cipher, chat_hash, hinweis_nachricht, hinweis_freigabe, verbunden_at, getrennt_grund, updated_at)
+   VALUES (@partnerId, @cipher, @chatHash, 1, 1, datetime('now'), NULL, datetime('now'))
+   ON CONFLICT(partner_id) DO UPDATE SET chat_cipher = excluded.chat_cipher, chat_hash = excluded.chat_hash, hinweis_nachricht = 1,
+     hinweis_freigabe = 1, verbunden_at = excluded.verbunden_at, getrennt_grund = NULL, updated_at = excluded.updated_at`
 )
 const deleteConnectionStmt = db.prepare('DELETE FROM partner_telegram WHERE partner_id = ?')
+const deleteByChatStmt = db.prepare('DELETE FROM partner_telegram WHERE chat_hash = ?')
+const linkedChatStmt = db.prepare('SELECT 1 FROM partner_telegram WHERE chat_hash = ? AND chat_cipher IS NOT NULL LIMIT 1')
 const markBlockedStmt = db.prepare(
-  "UPDATE partner_telegram SET chat_cipher = NULL, getrennt_grund = ?, updated_at = datetime('now') WHERE partner_id = ? AND chat_cipher IS NOT NULL"
+  "UPDATE partner_telegram SET chat_cipher = NULL, chat_hash = NULL, getrennt_grund = ?, updated_at = datetime('now') WHERE partner_id = ? AND chat_cipher IS NOT NULL"
 )
 
 // --- Status --------------------------------------------------------------------------------------
 
-function isConnected(row) {
-  return Boolean(row?.chat_cipher)
+// Die Chat-ID aus einer Zeile - oder null (nicht verbunden, oder der Geheimtext ist nicht mehr lesbar, z. B. nach einem
+// geänderten CODE_PEPPER: dann zählt der Partner als nicht verbunden und kann neu verbinden). Ohne Rückfall auf Werte
+// ohne AAD - Chat-IDs gab es nie ohne.
+function decryptChat(row) {
+  if (!row?.chat_cipher) return null
+  try {
+    const chatId = decryptSecret(row.chat_cipher, chatAad(row.partner_id), { allowLegacy: false })
+    return NUMERIC_CHAT_ID_RE.test(chatId) ? chatId : null
+  } catch {
+    return null
+  }
 }
 
 // Für den Partner-Bereich: nie die Chat-ID, nur ob verbunden, warum getrennt und die Schalter.
 // eingerichtet: hat der Admin einen Bot-Token hinterlegt (lib/telegramConfig.js)?
 function connectionStatus(partnerId, { eingerichtet }) {
   const row = findRowStmt.get(partnerId)
-  const verbunden = isConnected(row)
+  const verbunden = decryptChat(row) !== null
   return {
     eingerichtet: Boolean(eingerichtet),
     verbunden,
@@ -79,22 +100,20 @@ function connectionStatus(partnerId, { eingerichtet }) {
   }
 }
 
-// Chat-ID für den Versand - oder null, wenn nicht verbunden oder (hinweis angegeben) dieser Schalter aus ist. Ein nicht
-// mehr lesbarer Geheimtext (z. B. nach geändertem CODE_PEPPER) zählt als nicht verbunden.
+// Chat-ID für den Versand - oder null, wenn nicht verbunden oder (hinweis angegeben) dieser Schalter aus ist.
 function chatIdFor(partnerId, { hinweis } = {}) {
   const row = findRowStmt.get(partnerId)
-  if (!isConnected(row)) return null
-  if (hinweis && !row[HINWEIS_COLUMNS[hinweis]]) return null
-  try {
-    const chatId = decryptSecret(row.chat_cipher, chatAad(partnerId))
-    return NUMERIC_CHAT_ID_RE.test(chatId) ? chatId : null
-  } catch {
-    return null
-  }
+  if (hinweis && row && !row[HINWEIS_COLUMNS[hinweis]]) return null
+  return decryptChat(row)
 }
 
 function hasOpenLinkCode(partnerId) {
   return Boolean(openCodeStmt.get(partnerId))
+}
+
+// Ist dieser Chat mit einem Partner verbunden? Für "Chat finden" im Admin (solche Chats erscheinen dort nicht).
+function isLinkedChat(chatId) {
+  return NUMERIC_CHAT_ID_RE.test(String(chatId)) && Boolean(linkedChatStmt.get(chatHashOf(String(chatId))))
 }
 
 // --- Verbinden -----------------------------------------------------------------------------------
@@ -109,32 +128,85 @@ const createLinkCode = db.transaction((partnerId) => {
   return code
 })
 
-const connectWithCode = db.transaction((code, chatId) => {
-  const row = findCodeStmt.get(codeHashOf(code))
-  if (!row || !markUsedStmt.run(row.id).changes) return null
-  const partner = findPartnerStmt.get(row.partner_id)
-  if (!partner || partner.is_demo) return null
-  upsertConnectionStmt.run({ partnerId: partner.id, cipher: encryptSecret(chatId, chatAad(partner.id)) })
-  deleteCodesOfStmt.run(partner.id)
-  return partner
-})
-
-function connectedReply(partner) {
-  return `Verbunden: ${APP_NAME} schickt dir hier Hinweise für ${detailValue(partner.name)}.`
+// Der Partner hinter einem gültigen (offenen, nicht abgelaufenen) Code - kein Demo-Partner - oder null. Verbraucht nichts.
+function partnerForCode(code) {
+  const row = CODE_RE.test(code) ? findCodeStmt.get(codeHashOf(code)) : null
+  const partner = row ? findPartnerStmt.get(row.partner_id) : null
+  return partner && !partner.is_demo ? { row, partner } : null
 }
 
-// Für lib/telegramUpdates.js: ist dieses Update ein "/start <code>" aus einem privaten Chat? Dann gehört es den
-// Partner-Verbindungen (nie in die Chat-Liste des Admins) - consumed: true, und reply ist die Antwort an genau diesen Chat:
-// "Verbunden …" oder der Hinweis auf einen abgelaufenen/benutzten Link. Alles andere: consumed: false.
-function consumeLinkUpdate(update) {
-  const message = update?.message
-  if (!message || typeof message.text !== 'string' || message.chat?.type !== 'private') return { consumed: false }
-  const match = START_RE.exec(message.text)
+// "Ja": Code verbrauchen und verbinden - in EINER Transaktion, ein Code wirkt so höchstens einmal.
+const connectWithCode = db.transaction((code, chatId) => {
+  const found = partnerForCode(code)
+  if (!found || !markUsedStmt.run(found.row.id).changes) return null
+  upsertConnectionStmt.run({ partnerId: found.partner.id, cipher: encryptSecret(chatId, chatAad(found.partner.id)), chatHash: chatHashOf(chatId) })
+  deleteCodesOfStmt.run(found.partner.id)
+  return found.partner
+})
+
+// "Nein": der Code ist verbraucht, nichts wird verbunden.
+function declineCode(code) {
+  const found = partnerForCode(code)
+  if (found) markUsedStmt.run(found.row.id)
+}
+
+const send = (chatId, text, replyMarkup) => ({ method: 'sendMessage', chatId, text, ...(replyMarkup ? { replyMarkup } : {}) })
+
+function askConsent(chatId, code, partner) {
+  const name = detailValue(partner.name)
+  return send(chatId, `Möchtest du hier Hinweise von ${APP_NAME} für „${name}“ bekommen? Zum Beispiel, wenn eine neue Nachricht über „Schreib uns“ da ist.`, {
+    inline_keyboard: [[{ text: YES_LABEL, callback_data: `ja:${code}` }, { text: NO_LABEL, callback_data: `nein:${code}` }]]
+  })
+}
+
+function connectedReply(partner) {
+  return `Verbunden: ${APP_NAME} schickt dir hier Hinweise für ${detailValue(partner.name)}. Mit /stop beendest du das jederzeit.`
+}
+
+function privateChatId(chat, fromId) {
+  if (chat?.type !== 'private') return null
+  const chatId = String(chat.id)
+  if (!NUMERIC_CHAT_ID_RE.test(chatId)) return null
+  // Bei Knöpfen: wer getippt hat, muss genau dieser private Chat sein.
+  return fromId === undefined || String(fromId) === chatId ? chatId : null
+}
+
+function consumeMessage(message) {
+  if (typeof message?.text !== 'string') return { consumed: false }
+  const start = START_RE.exec(message.text)
+  const stop = !start && STOP_RE.test(message.text)
+  if (!start && !stop) return { consumed: false }
+  const chatId = privateChatId(message.chat)
+  if (!chatId) return { consumed: false }
+  if (stop) {
+    deleteByChatStmt.run(chatHashOf(chatId))
+    return { consumed: true, actions: [send(chatId, STOPPED_REPLY)] }
+  }
+  const found = partnerForCode(start[1])
+  return { consumed: true, actions: [found ? askConsent(chatId, start[1], found.partner) : send(chatId, EXPIRED_REPLY)] }
+}
+
+function consumeCallback(query) {
+  const match = typeof query?.data === 'string' ? CALLBACK_RE.exec(query.data) : null
   if (!match) return { consumed: false }
-  const chatId = String(message.chat.id)
-  if (!NUMERIC_CHAT_ID_RE.test(chatId)) return { consumed: true }
-  const partner = CODE_RE.test(match[1]) ? connectWithCode(match[1], chatId) : null
-  return { consumed: true, reply: { chatId, text: partner ? connectedReply(partner) : EXPIRED_REPLY } }
+  const answer = typeof query.id === 'string' && query.id ? [{ method: 'answerCallbackQuery', callbackQueryId: query.id }] : []
+  const chatId = privateChatId(query.message?.chat, query.from?.id)
+  if (!chatId) return { consumed: true, actions: answer }
+  if (match[1] === 'nein') {
+    declineCode(match[2])
+    return { consumed: true, actions: [...answer, send(chatId, DECLINED_REPLY)] }
+  }
+  const partner = connectWithCode(match[2], chatId)
+  return { consumed: true, actions: [...answer, send(chatId, partner ? connectedReply(partner) : EXPIRED_REPLY)] }
+}
+
+// Für lib/telegramUpdates.js: gehört dieses Update den Partner-Verbindungen ("/start <code>", "/stop" oder ein Knopf der
+// Rückfrage, jeweils aus einem privaten Chat)? Dann consumed: true (nie in die Chat-Liste des Admins) und actions: was der
+// Bot darauf schickt ({ method: 'sendMessage', chatId, text, replyMarkup? } bzw. { method: 'answerCallbackQuery', … }).
+function consumeUpdate(update) {
+  if (update?.callback_query) return consumeCallback(update.callback_query)
+  if (update?.message) return consumeMessage(update.message)
+  return { consumed: false }
 }
 
 // --- Einstellungen und Trennen -------------------------------------------------------------------
@@ -146,7 +218,7 @@ function updateHinweise(partnerId, body) {
   if (unknown !== undefined) throw httpError(400, `Unbekannte Einstellung: ${unknown}`)
   const notBoolean = Object.keys(body).find((name) => typeof body[name] !== 'boolean')
   if (notBoolean !== undefined) throw httpError(400, `„${notBoolean}“ muss true oder false sein`)
-  if (!isConnected(findRowStmt.get(partnerId))) throw httpError(409, 'Telegram ist nicht verbunden.')
+  if (decryptChat(findRowStmt.get(partnerId)) === null) throw httpError(409, 'Telegram ist nicht verbunden.')
   const names = Object.keys(body)
   if (names.length) {
     db.prepare(`UPDATE partner_telegram SET ${names.map((name) => `${HINWEIS_COLUMNS[name]} = ?`).join(', ')}, updated_at = datetime('now') WHERE partner_id = ?`).run(
@@ -172,11 +244,14 @@ module.exports = {
   GETRENNT,
   HINWEIS_NAMES,
   EXPIRED_REPLY,
+  DECLINED_REPLY,
+  STOPPED_REPLY,
   connectionStatus,
   chatIdFor,
   hasOpenLinkCode,
+  isLinkedChat,
   createLinkCode,
-  consumeLinkUpdate,
+  consumeUpdate,
   updateHinweise,
   disconnect,
   markBlocked

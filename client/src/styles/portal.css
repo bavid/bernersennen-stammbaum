@@ -51,22 +51,28 @@
 
 .portal-banner {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   justify-self: stretch;
   gap: 3px;
+  min-width: 0;
   margin-inline: calc(-1 * var(--hero-pad));
   aspect-ratio: 3 / 1;
+  overflow: hidden;
   background: color-mix(in srgb, var(--hero-text) 8%, transparent);
 }
 
 .portal-banner-double {
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
 }
 
+/* Die Fotos füllen ihre Zelle (object-fit) - ihre eigenen Maße bestimmen nie die Größe des Banners. */
 .portal-banner-photo {
   display: block;
   width: 100%;
   height: 100%;
   min-width: 0;
+  min-height: 0;
   object-fit: cover;
 }
 
@@ -300,6 +306,7 @@
 
   .portal-banner-double {
     grid-template-columns: none;
+    grid-template-rows: auto;
     grid-auto-flow: column;
     grid-auto-columns: 88%;
     aspect-ratio: auto;

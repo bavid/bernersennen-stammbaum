@@ -64,7 +64,7 @@ export default function PartnerTelegramSection() {
     <section className="card partner-telegram" aria-labelledby={TITLE_ID}>
       <div className="partner-telegram-head">
         <h2 id={TITLE_ID}>Benachrichtigungen</h2>
-        <p className="page-lede">Hinweise aufs Handy per Telegram, wenn über „Schreib uns“ eine Nachricht kommt oder ein Beitrag geprüft wurde.</p>
+        <p className="partner-telegram-lede">Hinweise aufs Handy per Telegram, wenn über „Schreib uns“ eine Nachricht kommt oder ein Beitrag geprüft wurde.</p>
       </div>
       {loadError && (
         <p className="error-banner" role="alert">

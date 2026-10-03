@@ -9,8 +9,10 @@
 // Datenschutz: die Texte enthalten keine personenbezogenen Daten - nie Name, E-Mail, Telefon oder Text einer Nachricht,
 // nur DASS es etwas Neues gibt. Ein Beitragstitel ist eigener Inhalt des Partners und darf mit (entschärft wie in
 // lib/notify.js detailValue: eine Zeile, keine anklickbaren Links oder Erwähnungen).
-// Obergrenze je Partner und Server-Prozess: CAP_PER_WINDOW Hinweise in einer gleitenden Stunde; der nächste wird durch
-// EINE Warnung ersetzt, danach fällt eine Stunde lang alles weg. Die Testnachricht hat ihre eigene Grenze (Route).
+// Obergrenze je Partner, Ereignis und Server-Prozess: CAP_PER_WINDOW Hinweise in einer gleitenden Stunde; der nächste wird
+// durch EINE Warnung ersetzt, danach fällt in diesem Topf eine Stunde lang alles weg. Eigene Töpfe je Ereignis
+// (security-review V4b): eine Flut über das öffentliche Kontaktformular verdrängt nie den Hinweis auf eine Freigabe.
+// Die Testnachricht hat ihre eigene Grenze (Route).
 
 const db = require('../db')
 const { effectiveTelegram } = require('./telegramConfig')
@@ -79,16 +81,17 @@ function currentToken() {
   return effectiveTelegram({ logger: runtime.logger }).token
 }
 
-// 'send', 'warn' (Warnung statt dieses Hinweises, Pause beginnt) oder 'drop' - je Partner.
-function admitToCap(partnerId, now) {
-  const state = caps.get(partnerId) || { sent: [], pausedUntil: null }
+// 'send', 'warn' (Warnung statt dieses Hinweises, Pause beginnt) oder 'drop' - je Partner und Ereignis.
+function admitToCap(partnerId, ereignis, now) {
+  const key = `${partnerId}:${ereignis}`
+  const state = caps.get(key) || { sent: [], pausedUntil: null }
   if (state.pausedUntil !== null && now < state.pausedUntil) return 'drop'
   const recent = state.sent.filter((sentAt) => sentAt > now - CAP_WINDOW_MS)
   if (recent.length < CAP_PER_WINDOW) {
-    caps.set(partnerId, { sent: [...recent, now], pausedUntil: null })
+    caps.set(key, { sent: [...recent, now], pausedUntil: null })
     return 'send'
   }
-  caps.set(partnerId, { sent: recent, pausedUntil: now + CAP_WINDOW_MS })
+  caps.set(key, { sent: recent, pausedUntil: now + CAP_WINDOW_MS })
   return 'warn'
 }
 
@@ -143,7 +146,7 @@ function notifyPartner(partnerId, ereignis, daten = {}) {
     if (!token) return null
     const chatId = chatIdFor(partner.id, { hinweis: ereignis })
     if (!chatId) return null
-    const decision = admitToCap(partner.id, runtime.now())
+    const decision = admitToCap(partner.id, ereignis, runtime.now())
     if (decision === 'drop') return null
     const text = decision === 'warn' ? CAP_WARNING_TEXT : buildPartnerText(ereignis, daten ?? {})
     const delivery = new Promise((resolve) => setImmediate(resolve)).then(() => deliver(partner.id, { token, chatId, text }, MAX_ATTEMPTS))

@@ -172,6 +172,7 @@ describe('AdminPartners – Liste', () => {
         'vermittlungUrl',
         'kontaktEmail',
         'kontaktTelefon',
+        'ansprechperson',
         'portalTitel',
         'portalText',
         'farbe'

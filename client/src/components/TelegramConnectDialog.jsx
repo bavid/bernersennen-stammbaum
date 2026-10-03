@@ -6,15 +6,21 @@ import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
 
 const WAITING = 'Warte auf die Bestätigung in Telegram …'
+const EXPIRED = 'Der Link ist abgelaufen – bitte schließen und neu verbinden.'
+const DEFAULT_VALID_MINUTES = 15
+const MINUTE_MS = 60 * 1000
 
 // Dialog "Mit Telegram verbinden" (Phase V4b): der Einmal-Link als Knopf (Handy) und als QR-Code (Computer), dazu
-// "Verbindung prüfen". Solange der Dialog offen ist, fragt er alle POLL_INTERVAL_MS selbst nach; sobald der Server
-// verbunden meldet, geht onConnected(status). link: { url, gueltigMinuten } aus POST /partner-area/telegram/verbinden.
+// "Verbindung prüfen". Solange der Dialog offen und der Link gültig ist, fragt er alle POLL_INTERVAL_MS selbst nach;
+// sobald der Server verbunden meldet, geht onConnected(status). link: { url, gueltigMinuten } aus
+// POST /partner-area/telegram/verbinden. Nach Ablauf hört das Nachfragen auf.
 export default function TelegramConnectDialog({ link, onConnected, onClose }) {
   const url = isTelegramLink(link?.url) ? link.url : null
+  const validMinutes = Number.isInteger(link?.gueltigMinuten) && link.gueltigMinuten > 0 ? link.gueltigMinuten : DEFAULT_VALID_MINUTES
   const qrImage = useMemo(() => (url ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvgMarkup(url))}` : null), [url])
   const [message, setMessage] = useState(WAITING)
   const [checking, setChecking] = useState(false)
+  const [expired, setExpired] = useState(false)
   const busy = useRef(false)
 
   const check = useCallback(async () => {
@@ -34,10 +40,14 @@ export default function TelegramConnectDialog({ link, onConnected, onClose }) {
   }, [onConnected])
 
   useEffect(() => {
-    if (!url) return undefined
+    if (!url || expired) return undefined
     const timer = setInterval(check, POLL_INTERVAL_MS)
-    return () => clearInterval(timer)
-  }, [url, check])
+    const expiry = setTimeout(() => setExpired(true), validMinutes * MINUTE_MS)
+    return () => {
+      clearInterval(timer)
+      clearTimeout(expiry)
+    }
+  }, [url, expired, check, validMinutes])
 
   return (
     <Modal open title="Mit Telegram verbinden" onClose={onClose}>
@@ -45,7 +55,7 @@ export default function TelegramConnectDialog({ link, onConnected, onClose }) {
         <div className="telegram-connect">
           <ol className="telegram-connect-steps">
             <li>Auf dem Handy „In Telegram öffnen“ antippen – am Computer den QR-Code mit dem Handy scannen.</li>
-            <li>In Telegram auf „Starten“ tippen.</li>
+            <li>In Telegram auf „Starten“ und danach auf „Ja, Hinweise aktivieren“ tippen.</li>
             <li>Fertig – diese Seite merkt es von selbst.</li>
           </ol>
           <div className="telegram-connect-codes">
@@ -55,11 +65,11 @@ export default function TelegramConnectDialog({ link, onConnected, onClose }) {
             </a>
             <img src={qrImage} alt="QR-Code für den Telegram-Link" className="telegram-connect-qr" width={176} height={176} />
           </div>
-          <p className="field-hint">Der Link gilt {link.gueltigMinuten || 15} Minuten und nur einmal.</p>
+          <p className="field-hint">Der Link gilt {validMinutes} Minuten und nur einmal.</p>
           <p className="telegram-connect-status" role="status">
-            {message}
+            {expired ? EXPIRED : message}
           </p>
-          <button type="button" className="btn btn-ghost" onClick={check} disabled={checking}>
+          <button type="button" className="btn btn-ghost" onClick={check} disabled={checking || expired}>
             <Icon name="check" />
             {checking ? 'Prüfe …' : 'Verbindung prüfen'}
           </button>
