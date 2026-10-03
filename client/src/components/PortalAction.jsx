@@ -90,7 +90,7 @@ export default function PortalAction({ partner, family, preview, onRedeemed, onL
         <KeyReveal value={redeemResult.key} freshKey={redeemResult.freshKey} onContinue={() => onRedeemed(redeemResult.me)} />
       ) : (
         <>
-          <RedeemForm onRedeemed={handleRedeemed} />
+          <RedeemForm onRedeemed={handleRedeemed} autoFocus={false} />
           <div className="login-demo">
             <span className="login-demo-divider">oder</span>
             <DemoButtons partner={partner} onRedeemed={onRedeemed} />

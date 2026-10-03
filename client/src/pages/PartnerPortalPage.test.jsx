@@ -159,6 +159,14 @@ describe('PartnerPortalPage – Vorschau-Band für Admins', () => {
 })
 
 describe('PartnerPortalPage – Gutschein einlösen', () => {
+  test('das Code-Feld unten bekommt beim Laden keinen Fokus - die Seite bleibt oben (Audit V7a)', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render()
+
+    expect(container.querySelector('#redeem-code')).not.toBeNull()
+    expect(document.activeElement?.id).not.toBe('redeem-code')
+  })
+
   test('sendet das Formular an api.redeemVoucher und zeigt danach KeyReveal', async () => {
     publicPartner.mockResolvedValue(partner)
     redeemVoucher.mockResolvedValue({

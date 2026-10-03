@@ -1,10 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 
 // Passwort-/Schlüsselfeld mit Anzeigen/Verbergen-Knopf. Wird auf der Login-Seite (Anmelden, Gutschein
 // einlösen, Wiederherstellung) und künftig im Zugang-Bereich der Einstellungen mehrfach gebraucht.
+// autoFocus fokussiert ohne zu scrollen (Audit V7a): am Handy stünde die Login-Seite sonst schon beim Laden unter
+// dem Willkommens-Teil - Tastatur und Screenreader landen trotzdem im Feld.
 export default function PasswordField({ id, label, value, onChange, autoFocus, autoComplete, minLength, error, required = true }) {
   const [visible, setVisible] = useState(false)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus({ preventScroll: true })
+  }, [autoFocus])
   return (
     <div className={`field ${error ? 'has-error' : ''}`}>
       <label className="field-label" htmlFor={id}>
@@ -12,11 +19,11 @@ export default function PasswordField({ id, label, value, onChange, autoFocus, a
       </label>
       <div className="password-input">
         <input
+          ref={inputRef}
           id={id}
           type={visible ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          autoFocus={autoFocus}
           autoComplete={autoComplete}
           minLength={minLength}
           aria-invalid={error ? 'true' : undefined}

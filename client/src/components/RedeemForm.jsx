@@ -27,8 +27,9 @@ function withoutKeys(object, keys) {
 // Partner-Zugang (api.checkVoucher meldet zweck 'partnerzugang', Phase P) richtet stattdessen ein
 // Partner-Profil ein (PartnerSetupFields). onRedeemed bekommt die volle Server-Antwort (inkl.
 // key/fromOthers) – die aufrufende Seite entscheidet, was damit passiert (erst den Schlüssel zeigen,
-// siehe KeyReveal).
-export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, onPartnerModeChange }) {
+// siehe KeyReveal). autoFocus (Audit V7a): auf der Login-Seite holt der Fokus das Code-Feld ins Bild; im Portal steht
+// das Formular ganz unten - dort ohne Fokus, sonst springt die Seite beim Laden ans Ende.
+export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, onPartnerModeChange, autoFocus = true }) {
   const [code, setCode] = useState(() => formatVoucherCode(initialCode))
   const [name, setName] = useState('')
   const [partnerValues, setPartnerValues] = useState(EMPTY_PARTNER_VALUES)
@@ -168,7 +169,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
           onBlur={handleCodeBlur}
           placeholder="XXXX-XXXX-XXXX"
           autoComplete="off"
-          autoFocus
+          autoFocus={autoFocus}
           required
         />
         {checking && <p className="field-hint">Prüfe …</p>}

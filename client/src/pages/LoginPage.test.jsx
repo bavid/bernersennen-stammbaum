@@ -85,6 +85,14 @@ describe('LoginPage – Anmelden mit Schlüssel oder Passwort', () => {
     expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Chronik öffnen')
   })
 
+  test('das Feld hat beim Laden den Fokus - gesetzt ohne Scrollen (Audit V7a: am Handy bleibt der Kopf sichtbar)', async () => {
+    const focus = vi.spyOn(HTMLInputElement.prototype, 'focus')
+    await render()
+    expect(document.activeElement).toBe(container.querySelector('#login-secret'))
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+    focus.mockRestore()
+  })
+
   test('sendet den eingegebenen Wert als "secret" und ruft onLogin mit der Antwort auf', async () => {
     const onLogin = vi.fn()
     const me = { id: 1, name: 'Zuhause am Deich', art: 'zuhause' }
