@@ -28,6 +28,20 @@ export function tabFromParam(value) {
   return SECTION_KEYS.includes(value) ? value : ALL_TAB
 }
 
+// Kundensicht: in welchem Bereich die eigene Karte steht - wie server routes/partnerArea/preview.js SECTION_BY_TYP.
+// Futter und Sonstige haben keinen eigenen Bereich, dort öffnet "Alle".
+const OWN_SECTION_BY_TYP = Object.freeze({
+  hundeschule: 'hundeschulen',
+  hundesalon: 'salon',
+  betreuung: 'salon',
+  tierheim: 'begleiter',
+  vermittlung: 'begleiter'
+})
+
+export function ownSectionTab(typ) {
+  return typeof typ === 'string' && Object.hasOwn(OWN_SECTION_BY_TYP, typ) ? OWN_SECTION_BY_TYP[typ] : ALL_TAB
+}
+
 // Spendenlinks nur mit gültiger Klickzählung (wie SupportBlock).
 export function donationsOf(support) {
   return support.partnerSpenden.filter((item) => isClickUrl(item.clickUrl))

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -126,15 +126,25 @@ afterEach(() => {
   window.localStorage.clear()
 })
 
-async function render(family = schoolArea) {
+let location
+let navigate
+
+function Probe() {
+  location = useLocation()
+  navigate = useNavigate()
+  return null
+}
+
+async function render(family = schoolArea, path = '/kundensicht') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter initialEntries={['/kundensicht']}>
+      <MemoryRouter initialEntries={[path]}>
         <ThemeProvider themeId="standard">
           <CustomerViewPage family={family} />
+          <Probe />
         </ThemeProvider>
       </MemoryRouter>
     )
@@ -194,7 +204,8 @@ describe('CustomerViewPage – Reiter', () => {
   test('der Rahmen zeigt die Beispiel-Kundin und eine rein dekorative Leiste mit "Entdecken" aktiv', async () => {
     await render()
 
-    expect(container.querySelector('.preview-frame-header').textContent).toBe('Zuhause am Deich (Beispiel)')
+    expect(container.querySelector('.preview-frame-customer').textContent).toBe('Zuhause am Deich (Beispiel)')
+    expect(container.querySelector('.preview-frame-label').textContent).toBe('Vorschau')
     const nav = container.querySelector('.preview-frame-nav')
     expect(nav.getAttribute('aria-hidden')).toBe('true')
     expect(nav.querySelectorAll('a, button, [tabindex]')).toHaveLength(0)
@@ -221,9 +232,16 @@ describe('CustomerViewPage – Entdecken (Beispiel-Kunde)', () => {
     await render()
 
     expect(frame().querySelectorAll('a')).toHaveLength(0)
+    expect([...frame().querySelectorAll('[aria-disabled="true"]')].map((el) => el.textContent.trim())).toEqual(
+      expect.arrayContaining(['Zum Portal', 'Website'])
+    )
+    // "Alle" zeigt auch Futter und Unterstützen - dort ebenso nichts anklickbar.
+    await act(async () => frame().querySelector('#discover-tab-alle').click())
+    expect(frame().querySelectorAll('a')).toHaveLength(0)
     const disabled = [...frame().querySelectorAll('[aria-disabled="true"]')]
-    const labels = disabled.map((el) => el.textContent.trim())
-    expect(labels).toEqual(expect.arrayContaining(['Zum Portal', 'Website', 'Über GoFundMe unterstützen (öffnet in neuem Tab)']))
+    expect(disabled.map((el) => el.textContent.trim())).toEqual(
+      expect.arrayContaining(['Zum Portal', 'Website', 'Über GoFundMe unterstützen (öffnet in neuem Tab)'])
+    )
     for (const el of disabled) expect(el.getAttribute('title')).toBe('In der Vorschau deaktiviert')
   })
 
@@ -247,6 +265,75 @@ describe('CustomerViewPage – Entdecken (Beispiel-Kunde)', () => {
     await render()
 
     expect(frame().querySelector('.preview-hint').textContent).toBe('Euer Profil erscheint in der Partnerliste und auf eurem Portal.')
+  })
+})
+
+describe('CustomerViewPage – Entdecken öffnet im eigenen Bereich', () => {
+  function selectedDiscoverTab() {
+    return frame().querySelector('.discover-tabs [aria-selected="true"]').firstChild.textContent
+  }
+
+  test('Hundeschule: Reiter "Hundeschulen" statt "Alle", die eigene Karte markiert vorn', async () => {
+    await render()
+    expect(selectedDiscoverTab()).toBe('Hundeschulen')
+    const first = frame().querySelector('.partner-card')
+    expect(first.classList.contains('is-own-preview')).toBe(true)
+    expect(first.querySelector('h3').textContent).toBe('Hundeschule Wiesengrund')
+  })
+
+  test.each([
+    ['hundesalon', 'Salon & Betreuung'],
+    ['betreuung', 'Salon & Betreuung'],
+    ['tierheim', 'Neue Begleiter'],
+    ['vermittlung', 'Neue Begleiter'],
+    ['futter', 'Alle'],
+    ['sonstige', 'Alle']
+  ])('Typ %s öffnet "%s"', async (typ, label) => {
+    listDogs.mockResolvedValue([])
+    await render({ ...schoolArea, partner: { ...schoolArea.partner, typ } })
+    expect(selectedDiscoverTab()).toBe(label)
+  })
+})
+
+describe('CustomerViewPage – Adresse', () => {
+  test('?ansicht=portal&reiter=termine öffnet das Portal im Reiter Termine', async () => {
+    previewPortal.mockResolvedValue({
+      ...portalResponse,
+      termine: [{ terminId: 1, datum: '2099-05-02', uhrzeit: '10:00', ende: null, titel: 'Welpenspielstunde', ort: null, serie: 'keine' }]
+    })
+    await render(schoolArea, '/kundensicht?ansicht=portal&reiter=termine')
+
+    expect(tab('Euer Portal').getAttribute('aria-pressed')).toBe('true')
+    expect(frame().querySelector('[role="tab"][aria-selected="true"]').firstChild.textContent).toBe('Termine')
+  })
+
+  test('der Wechsel der Vorschau steht in der Adresse, der Portal-Reiter fällt dabei weg - Zurück führt zurück', async () => {
+    await render()
+    await act(async () => tab('Euer Portal').click())
+    expect(location.search).toBe('?ansicht=portal')
+    await act(async () => frame().querySelector('#portal-tab-einblicke').click())
+    expect(location.search).toBe('?ansicht=portal&reiter=einblicke')
+
+    await act(async () => tab('Entdecken (Beispiel-Kunde)').click())
+    expect(location.search).toBe('')
+    await act(async () => navigate(-1))
+    expect(tab('Euer Portal').getAttribute('aria-pressed')).toBe('true')
+    expect(frame().querySelector('[role="tab"][aria-selected="true"]').firstChild.textContent).toBe('Einblicke')
+  })
+
+  test('?ansicht=steckbriefe ohne Tierheim zeigt "Entdecken"', async () => {
+    await render(schoolArea, '/kundensicht?ansicht=steckbriefe')
+    expect(tab('Entdecken (Beispiel-Kunde)').getAttribute('aria-pressed')).toBe('true')
+  })
+})
+
+describe('CustomerViewPage – Rahmen ohne eigenen Scrollbereich', () => {
+  test('der Inhalt steht in einer benannten Region, die nicht mehr in sich scrollt (kein Tab-Stopp dafür)', async () => {
+    await render()
+    const screen = frame()
+    expect(screen.getAttribute('role')).toBe('region')
+    expect(screen.getAttribute('aria-label')).toBe('Entdecken aus Sicht einer Beispiel-Kundin (Vorschau)')
+    expect(screen.hasAttribute('tabindex')).toBe(false)
   })
 })
 

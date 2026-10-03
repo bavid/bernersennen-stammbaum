@@ -46,8 +46,9 @@ function friendlyError(err) {
 // ("In der Nähe von … · ändern"), die Eingabe erscheint erst auf Wunsch.
 // Seit Phase U in Reitern mit Zählern (DiscoverTabs, ?bereich=): "Alle" zeigt je Bereich die ersten drei.
 // Kundensicht (Phase P1, CustomerViewPage): load ersetzt api.discover (gleiche Signatur { plz, radius },
-// z. B. api.partnerArea.previewDiscover), preview schaltet Links ab und zeigt die eigene Karte markiert.
-export default function DiscoverPage({ load, preview = false }) {
+// z. B. api.partnerArea.previewDiscover), preview schaltet Links ab und zeigt die eigene Karte markiert; initialTab
+// öffnet dort gleich den Bereich der eigenen Karte statt "Alle".
+export default function DiscoverPage({ load, preview = false, initialTab }) {
   const [plz, setPlz] = useState(storedPlz)
   const [radius, setRadius] = useState(storedRadius)
   // Phase V1: der Ort der zuletzt gezeigten Inhalte für die Kurzzeile der Ortswahl - zu Beginn die gemerkte PLZ (den
@@ -58,7 +59,7 @@ export default function DiscoverPage({ load, preview = false }) {
   const [error, setError] = useState(null)
   // Nur die Antwort der jüngsten Anfrage zählt - eine langsame ältere überschreibt nie eine neuere.
   const latestRequest = useRef(0)
-  const [tab, selectTab] = useDiscoverTab(preview)
+  const [tab, selectTab] = useDiscoverTab(preview, initialTab)
   // "Alle anzeigen" verschwindet mit dem Wechsel - der Fokus springt darum auf den neuen Reiter.
   const focusTabAfterSwitch = useRef(false)
 

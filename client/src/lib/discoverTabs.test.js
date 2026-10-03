@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { normalizeDiscover } from './discover.js'
-import { ALL_TAB, DISCOVER_TABS, countItems, isSectionEmpty, limitGroups, sectionCounts, tabFromParam, tabLabel } from './discoverTabs.js'
+import { ALL_TAB, DISCOVER_TABS, countItems, isSectionEmpty, limitGroups, ownSectionTab, sectionCounts, tabFromParam, tabLabel } from './discoverTabs.js'
 
 const item = (id, extra = {}) => ({ id, kind: 'partner', ...extra })
 
@@ -18,6 +18,19 @@ describe('tabFromParam', () => {
     expect(tabFromParam(null)).toBe(ALL_TAB)
     expect(tabFromParam('<script>')).toBe(ALL_TAB)
     expect(tabFromParam('constructor')).toBe(ALL_TAB)
+  })
+})
+
+describe('ownSectionTab', () => {
+  test('Kundensicht: der Bereich der eigenen Karte - ohne eigenen Bereich (Futter, Sonstige, unbekannt) "Alle"', () => {
+    expect(ownSectionTab('hundeschule')).toBe('hundeschulen')
+    expect(ownSectionTab('hundesalon')).toBe('salon')
+    expect(ownSectionTab('betreuung')).toBe('salon')
+    expect(ownSectionTab('tierheim')).toBe('begleiter')
+    expect(ownSectionTab('vermittlung')).toBe('begleiter')
+    expect(ownSectionTab('futter')).toBe(ALL_TAB)
+    expect(ownSectionTab('constructor')).toBe(ALL_TAB)
+    expect(ownSectionTab(undefined)).toBe(ALL_TAB)
   })
 })
 

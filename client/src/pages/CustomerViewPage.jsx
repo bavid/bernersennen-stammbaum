@@ -1,14 +1,20 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import PreviewFrame from '../components/PreviewFrame.jsx'
 import SteckbriefPreview from '../components/SteckbriefPreview.jsx'
 import DiscoverPage from './DiscoverPage.jsx'
 import PartnerPortalPage from './PartnerPortalPage.jsx'
+import { ownSectionTab } from '../lib/discoverTabs.js'
+import { PORTAL_TAB_PARAM } from '../lib/portalTabs.js'
 
 const TAB_DISCOVER = 'entdecken'
 const TAB_PORTAL = 'portal'
 const TAB_STECKBRIEFE = 'steckbriefe'
+// Die gewählte Vorschau steht in der Adresse (/kundensicht?ansicht=portal, "Entdecken" ohne Parameter) - samt dem
+// Reiter des Portals (&reiter=termine, usePortalTab). So führen Neuladen, Zurück und ein gemerkter Link wieder dorthin.
+const VIEW_PARAM = 'ansicht'
 
 // "Steckbriefe" nur für Tierheime (art 'tierheim') - nur sie haben Tiere mit Steckbrief.
 function tabsFor(family) {
@@ -55,15 +61,36 @@ function CustomerViewTabs({ tabs, current, onSelect }) {
   )
 }
 
+// Gewählte Vorschau aus der Adresse - unbekannt oder nicht erlaubt (Steckbriefe ohne Tierheim) -> "Entdecken".
+function useCustomerViewTab(tabs) {
+  const { pathname, search } = useLocation()
+  const navigate = useNavigate()
+  const requested = new URLSearchParams(search).get(VIEW_PARAM)
+  const current = tabs.some((item) => item.key === requested) ? requested : TAB_DISCOVER
+
+  function select(key) {
+    if (key === current) return
+    // Der Portal-Reiter gehört nur zur Portal-Vorschau - beim Wechsel fällt er weg.
+    const params = new URLSearchParams(search)
+    params.delete(PORTAL_TAB_PARAM)
+    if (key === TAB_DISCOVER) params.delete(VIEW_PARAM)
+    else params.set(VIEW_PARAM, key)
+    const next = params.toString()
+    navigate({ pathname, search: next ? `?${next}` : '' })
+  }
+
+  return [current, select]
+}
+
 // /kundensicht (Phase P1): Partner und Tierheime sehen live, wie ihr Auftritt bei Kundinnen und Kunden
-// ankommt - auch als Entwurf, pausiert oder gesperrt. "Entdecken" mit den Daten einer Beispiel-Kundin und
-// der eigenen Karte vorn, das eigene Portal und (Tierheime) die Steckbriefe, jeweils im Rahmen einer
-// Kunden-App (PreviewFrame). Alle Links darin sind abgeschaltet (lib/preview.js). Erreichbar über den
-// Umschalter "Bearbeiten | Kundensicht" (ViewModeSwitch).
+// ankommt - auch als Entwurf, pausiert oder gesperrt. "Entdecken" mit den Daten einer Beispiel-Kundin, geöffnet im
+// eigenen Bereich (Hundeschulen, Salon & Betreuung, Neue Begleiter) mit der eigenen Karte markiert vorn, das eigene
+// Portal (mit seinen Reitern) und (Tierheime) die Steckbriefe, jeweils im Rahmen einer Kunden-App (PreviewFrame). Alle
+// Links darin sind abgeschaltet (lib/preview.js). Erreichbar über den Umschalter "Bearbeiten | Kundensicht"
+// (ViewModeSwitch).
 export default function CustomerViewPage({ family }) {
   const tabs = tabsFor(family)
-  const [tab, setTab] = useState(TAB_DISCOVER)
-  const current = tabs.some((item) => item.key === tab) ? tab : TAB_DISCOVER
+  const [current, setTab] = useCustomerViewTab(tabs)
   const loadDiscover = useCallback((params) => api.partnerArea.previewDiscover(params), [])
   const loadPortal = useCallback(() => api.partnerArea.previewPortal(), [])
 
@@ -79,7 +106,7 @@ export default function CustomerViewPage({ family }) {
       <div id={`customer-view-panel-${current}`} className="customer-view-panel">
         {current === TAB_DISCOVER && (
           <PreviewFrame label="Entdecken aus Sicht einer Beispiel-Kundin (Vorschau)">
-            <DiscoverPage load={loadDiscover} preview />
+            <DiscoverPage load={loadDiscover} preview initialTab={ownSectionTab(family?.partner?.typ)} />
           </PreviewFrame>
         )}
         {current === TAB_PORTAL && (

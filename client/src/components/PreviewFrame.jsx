@@ -17,10 +17,12 @@ function customerNav(words) {
   ]
 }
 
-// Rahmen der Kundensicht (Phase P1): deutet die App einer Kundin an - kleiner Kopf mit ihrem Namen,
-// Inhalt, der in sich scrollt, und die untere Leiste eines Haushalts. Am Desktop handybreit und mittig,
-// am Handy volle Breite. Die Leiste ist reine Dekoration: aria-hidden, nichts darin ist fokussierbar. showNav (Audit V7a):
-// das Portal ist eine öffentliche Seite ohne diese Leiste - dort stünde sonst "Entdecken" aktiv unter dem Portal.
+// Rahmen der Kundensicht (Phase P1): deutet die App einer Kundin an - kleiner Kopf mit ihrem Namen, der Inhalt und
+// die untere Leiste eines Haushalts. Seit den Portal-Reitern ohne eigenen Scrollbereich: am Desktop ein handybreiter
+// Rahmen, der mit seinem Inhalt wächst (die Seite scrollt, die Leiste bleibt unten im Bild stehen); am Handy gar kein
+// Rahmen-im-Rahmen, sondern volle Breite mit einer schmalen Zeile "Vorschau" (customer-view.css). Die Leiste ist reine
+// Dekoration: aria-hidden, nichts darin ist fokussierbar. showNav (Audit V7a): das Portal ist eine öffentliche Seite
+// ohne diese Leiste - dort stünde sonst "Entdecken" aktiv unter dem Portal.
 export default function PreviewFrame({ label, children, showNav = true }) {
   const { words } = useTheme()
   return (
@@ -31,9 +33,9 @@ export default function PreviewFrame({ label, children, showNav = true }) {
           <span className="preview-frame-customer">
             {EXAMPLE_CUSTOMER_NAME} <span className="preview-frame-example">(Beispiel)</span>
           </span>
+          <span className="preview-frame-label">Vorschau</span>
         </div>
-        {/* Eigener Scrollbereich - per Tastatur erreichbar, damit er sich auch ohne Maus scrollen lässt. */}
-        <div className="preview-frame-screen" role="region" aria-label={label} tabIndex={0}>
+        <div className="preview-frame-screen" role="region" aria-label={label}>
           {children}
         </div>
         {showNav && (
