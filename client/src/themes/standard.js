@@ -36,6 +36,8 @@ export default {
     groupPassword: 'Familien-Passwort',
     groupSettings: 'Familie einstellen',
     groupsDative: 'Familien',
+    // Familienbande 2: Überschrift der Gruppe im Bereichswechsler
+    groups: 'Familien',
     noGroupConnected: 'Noch keine Familie verbunden.',
     leaveGroup: 'Familie verlassen',
     dissolveGroup: 'Familie auflösen',

@@ -30,8 +30,7 @@
   color: var(--muted);
 }
 
-/* Im Kopf: neben dem Namen der aktiven Familie (Bereichswechsler bzw. brand-sub) */
-.context-switcher-trigger .role-badge,
+/* Im Kopf: neben dem Namen der aktiven Familie (brand-sub eines klassischen Familien-Logins) */
 .brand-sub .role-badge {
   margin-left: var(--space-2);
   font-size: 0.65rem;
@@ -41,12 +40,6 @@
 .brand-sub {
   display: inline-flex;
   align-items: center;
-}
-
-/* Im Menü des Bereichswechslers rechts neben dem Namen der Familie */
-.context-switcher-item .role-badge {
-  flex-shrink: 0;
-  font-size: 0.65rem;
 }
 
 /* Mitglieder-Seite */

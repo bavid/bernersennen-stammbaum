@@ -93,15 +93,16 @@ afterEach(() => {
 })
 
 describe('/mitglieder (Phase R)', () => {
-  test('in einer Familie lädt die Mitglieder-Seite als eigener Chunk; der Kopf zeigt die Rolle neben dem Familiennamen', async () => {
+  test('in einer Familie lädt die Mitglieder-Seite als eigener Chunk; der Kopf zeigt nur den Familiennamen', async () => {
     me.mockResolvedValue(groupAs('mitglied'))
     await render('/mitglieder')
 
     expect((await waitForMainHeading()).textContent).toBe('Mitglieder')
     expect(familyMembers).toHaveBeenCalledTimes(1)
     const trigger = container.querySelector('.context-switcher-trigger')
-    expect(trigger.textContent).toContain('Familie Sonnenhang')
-    expect(trigger.querySelector('.role-badge').textContent).toBe('Mitglied')
+    expect(trigger.textContent).toBe('Familie Sonnenhang')
+    // Familienbande 2: die Rolle steht im Menü des Bereichswechslers, nicht als Chip am Knopf
+    expect(trigger.querySelector('.role-badge')).toBeNull()
     // Die Rudel-Navigation bleibt bei ihren fünf Einträgen - kein sechster für Mitglieder
     expect([...container.querySelectorAll('.app-nav a')].map((a) => a.getAttribute('href'))).not.toContain('/mitglieder')
   })

@@ -35,6 +35,8 @@ export default {
     groupPassword: 'Rudel-Passwort',
     groupSettings: 'Rudel einstellen',
     groupsDative: 'Rudeln',
+    // Familienbande 2: Überschrift der Gruppe im Bereichswechsler
+    groups: 'Rudel',
     noGroupConnected: 'Noch kein Rudel verbunden.',
     leaveGroup: 'Rudel verlassen',
     dissolveGroup: 'Rudel auflösen',

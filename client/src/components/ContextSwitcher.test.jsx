@@ -78,6 +78,14 @@ function items() {
   return [...container.querySelectorAll('[role="menuitem"]')]
 }
 
+// Gruppen des Menüs (Familienbande 2): [Überschrift, [Einträge]] - die Überschrift benennt die Gruppe (aria-labelledby)
+function groups() {
+  return [...container.querySelectorAll('[role="menu"] > [role="group"]')].map((group) => {
+    const heading = document.getElementById(group.getAttribute('aria-labelledby'))
+    return [heading.textContent, [...group.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent)]
+  })
+}
+
 describe('ContextSwitcher', () => {
   test('Der Knopf zeigt den Namen des aktiven Bereichs, das Menü ist zunächst geschlossen', async () => {
     await render()
@@ -86,30 +94,54 @@ describe('ContextSwitcher', () => {
     expect(trigger().getAttribute('aria-expanded')).toBe('false')
   })
 
-  test('Menü listet „Meine Chronik" (mit echtem Haushaltsnamen als Zusatz), die Mitgliedschaften mit Rolle und "Mitglieder & Rollen", markiert den aktiven Bereich', async () => {
+  test('Menü gruppiert: "Mein Zuhause", "Familien" (Rolle als leise zweite Zeile), danach abgesetzt "beitreten oder gründen"', async () => {
     await render()
     act(() => trigger().click())
     expect(trigger().getAttribute('aria-expanded')).toBe('true')
-    const labels = items().map((item) => item.textContent)
-    expect(labels).toEqual([
-      'Meine Chronik · Zuhause am Deich',
+    expect(groups()).toEqual([
+      ['Mein Zuhause', ['Meine ChronikZuhause am Deich']],
+      ['Familien', ['Familie KleinMitglied', 'Rudel NachbarnFamilienleitung']]
+    ])
+    expect(items().map((item) => item.textContent)).toEqual([
+      'Meine ChronikZuhause am Deich',
       'Familie KleinMitglied',
       'Rudel NachbarnFamilienleitung',
-      'Mitglieder & Rollen',
       'Familie beitreten oder gründen …'
     ])
-    expect(items()[1].querySelector('.role-badge').textContent).toBe('Mitglied')
+    expect(items()[1].querySelector('.context-switcher-item-sub').textContent).toBe('Mitglied')
+    // Kein Rollen-Chip mehr im Menü, kein "Mitglieder & Rollen" (steht auf der Familienbande)
+    expect(container.querySelector('[role="menu"] .role-badge')).toBeNull()
+    expect(container.querySelector('[role="menu"]').textContent).not.toContain('Mitglieder & Rollen')
+    // Der Fuß ist durch eine Linie abgesetzt
+    const footer = items()[3]
+    expect(footer.previousElementSibling.getAttribute('role')).toBe('separator')
+    expect(footer.className).toContain('is-footer')
+  })
+
+  test('der aktive Bereich trägt Haken und aria-current', async () => {
+    await render()
+    act(() => trigger().click())
     expect(items()[1].getAttribute('aria-current')).toBe('true')
+    expect(items()[1].querySelector('svg')).not.toBeNull()
     expect(items()[0].getAttribute('aria-current')).toBeNull()
     expect(items()[2].getAttribute('aria-current')).toBeNull()
+    expect(items()[2].querySelector('svg')).toBeNull()
   })
 
-  test('Der Knopf zeigt in einer Familie die eigene Rolle als Chip neben dem Namen (Phase R)', async () => {
+  test('Der Knopf zeigt nur den Namen des Bereichs - ohne Rollen-Chip daneben', async () => {
     await render()
-    expect(trigger().querySelector('.role-badge').textContent).toBe('Mitglied')
+    expect(trigger().textContent).toBe('Familie Klein')
+    expect(trigger().querySelector('.role-badge')).toBeNull()
+    expect(trigger().querySelector('svg')).not.toBeNull()
   })
 
-  test('im Berner-Auftritt heißt die Leitung im Menü „Rudelführer"', async () => {
+  test('Überschriften nur für Gruppen mit Einträgen', async () => {
+    await render({ family: { ...family, id: 1, name: 'Zuhause am Deich', art: 'zuhause', role: 'leitung', memberships: [] } })
+    act(() => trigger().click())
+    expect(groups()).toEqual([['Mein Zuhause', ['Meine ChronikZuhause am Deich']]])
+  })
+
+  test('im Berner-Auftritt heißt die Gruppe „Rudel" und die Leitung „Rudelführer"', async () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
@@ -123,32 +155,17 @@ describe('ContextSwitcher', () => {
       )
     )
     act(() => trigger().click())
-    expect(items()[2].querySelector('.role-badge').textContent).toBe('Rudelführer')
-    expect(items()[3].textContent).toBe('Mitglieder & Rollen')
-  })
-
-  test('"Mitglieder & Rollen" führt zu /mitglieder und schließt das Menü', async () => {
-    await render()
-    act(() => trigger().click())
-    await act(async () => items()[3].click())
-    expect(container.querySelector('[role="menu"]')).toBeNull()
-    expect(document.activeElement).toBe(trigger())
-  })
-
-  test('Ist "Meine Chronik" aktiv, gibt es weder Rollen-Chip am Knopf noch "Mitglieder & Rollen" im Menü', async () => {
-    await render({ family: { ...family, id: 1, name: 'Zuhause am Deich', art: 'zuhause', role: 'leitung' } })
-    expect(trigger().querySelector('.role-badge')).toBeNull()
-    act(() => trigger().click())
-    expect(items().map((item) => item.textContent)).not.toContain('Mitglieder & Rollen')
+    expect(groups()[1][0]).toBe('Rudel')
+    expect(items()[2].querySelector('.context-switcher-item-sub').textContent).toBe('Rudelführer')
+    expect(items()[3].textContent).toBe('Rudel beitreten oder gründen …')
   })
 
   test('Ist der Haushalt selbst der aktive Bereich, zeigen Knopf und Menüpunkt "Meine Chronik" statt des gespeicherten Namens', async () => {
     const homeActive = { ...family, id: 1, name: 'Zuhause am Deich' }
     await render({ family: homeActive })
-    expect(trigger().textContent).toContain('Meine Chronik')
-    expect(trigger().textContent).not.toContain('Zuhause am Deich')
+    expect(trigger().textContent).toBe('Meine Chronik')
     act(() => trigger().click())
-    expect(items()[0].textContent).toBe('Meine Chronik · Zuhause am Deich')
+    expect(items()[0].textContent).toBe('Meine ChronikZuhause am Deich')
     expect(items()[0].getAttribute('aria-current')).toBe('true')
   })
 
@@ -233,7 +250,7 @@ describe('ContextSwitcher', () => {
   test('„Familie beitreten oder gründen …" öffnet den Dialog im Modal', async () => {
     await render()
     act(() => trigger().click())
-    await act(async () => items()[4].click())
+    await act(async () => items()[3].click())
     expect(container.querySelector('[role="menu"]')).toBeNull()
     expect(container.querySelector('.modal').open).toBe(true)
     expect(container.querySelector('.join-family')).not.toBeNull()
@@ -250,13 +267,17 @@ describe('ContextSwitcher', () => {
     besuche: [{ id: 9, name: 'Zuhause Möwenweg' }]
   }
 
-  test('besuchte Zuhause stehen als „Zu Besuch bei …“ im Menü und wechseln per api.view', async () => {
+  test('besuchte Zuhause stehen unter „Zu Besuch“ im Menü und wechseln per api.view', async () => {
     const onChange = vi.fn()
     const me = { ...visitingHome, id: 9, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast' }
     view.mockResolvedValue(me)
     await render({ family: visitingHome, onChange })
     act(() => trigger().click())
-    const visitItem = items().find((item) => item.textContent.includes('Zu Besuch bei Zuhause Möwenweg'))
+    expect(groups()).toEqual([
+      ['Mein Zuhause', ['Meine ChronikZuhause am Deich']],
+      ['Zu Besuch', ['Zuhause Möwenweg']]
+    ])
+    const visitItem = items().find((item) => item.textContent === 'Zuhause Möwenweg')
     expect(visitItem).toBeTruthy()
     await act(async () => visitItem.click())
     expect(view).toHaveBeenCalledWith(9)
@@ -265,10 +286,10 @@ describe('ContextSwitcher', () => {
 
   test('während eines Besuchs zeigt der Knopf „Zu Besuch bei …“ und markiert den Besuch im Menü', async () => {
     await render({ family: { ...visitingHome, id: 9, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast' } })
-    expect(trigger().textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
+    expect(trigger().textContent).toBe('Zu Besuch bei Zuhause Möwenweg')
     act(() => trigger().click())
     const current = items().find((item) => item.getAttribute('aria-current') === 'true')
-    expect(current.textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
+    expect(current.textContent).toBe('Zuhause Möwenweg')
     expect(items().some((item) => item.textContent.includes('beitreten oder gründen'))).toBe(false)
   })
 })

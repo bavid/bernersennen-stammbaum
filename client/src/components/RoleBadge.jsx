@@ -1,9 +1,10 @@
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { roleLabel } from '../lib/roles.js'
 
-// Kleiner Chip mit der Rolle im Wortlaut des Aussehens („Rudelführer“ / „Familienleitung“, …): im
-// Bereichswechsler neben jeder Familie, im Kopf als Zusatz zum Namen der aktiven Familie und auf der
-// Mitglieder-Seite. Ohne bekannte Rolle (ältere Antwort, eigener Bereich) erscheint nichts.
+// Kleiner Chip mit der Rolle im Wortlaut des Aussehens („Rudelführer“ / „Familienleitung“, …): im Kopf
+// eines klassischen Familien-Logins als Zusatz zum Namen, bei Einladungen und auf der Mitglieder-Seite
+// (der Bereichswechsler nennt die Rolle seit Familienbande 2 als leise zweite Zeile). Ohne bekannte Rolle
+// (ältere Antwort, eigener Bereich) erscheint nichts.
 export default function RoleBadge({ rolle, className = '' }) {
   const { words } = useTheme()
   const label = roleLabel(words, rolle)

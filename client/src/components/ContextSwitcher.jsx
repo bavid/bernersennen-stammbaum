@@ -1,31 +1,62 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { HOME_LABEL } from '../lib/areas.js'
+import { roleLabel } from '../lib/roles.js'
+import { visitLabel } from '../lib/visits.js'
 import useOpenArea from '../hooks/useOpenArea.js'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
-import RoleBadge from './RoleBadge.jsx'
 import JoinFamilyDialog from './JoinFamilyDialog.jsx'
 
-// Bereichswechsler im Kopfbereich: nur für Haushalte (family.home.art === 'zuhause'). Zeigt den Namen
-// des aktiven Bereichs, öffnet ein Menü mit "Meine Chronik", den beigetretenen Familien/Rudeln (mit der
-// eigenen Rolle dort, Phase R) und dem Einstieg zum Beitreten/Gründen; in einer Familie zusätzlich den
-// Weg zu "Mitglieder & Rollen" (/mitglieder). family ist das volle "me"-Objekt, onChange bekommt das neue.
-// Phase V2: dazu die Zuhause, die der Haushalt besucht (family.besuche) - "Zu Besuch bei …", nur ansehen.
-function visitLabel(name) {
-  return `Zu Besuch bei ${name}`
+// Ein Eintrag im Menü: Name, darunter optional eine leise zweite Zeile (Name des Haushalts, Rolle in der Familie);
+// der aktive Bereich trägt einen Haken und aria-current.
+function SwitcherItem({ name, sub, current, onSelect, itemRef }) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      ref={itemRef}
+      className="context-switcher-item"
+      aria-current={current ? 'true' : undefined}
+      onClick={onSelect}
+    >
+      <span className="context-switcher-item-text">
+        <span className="context-switcher-item-name">{name}</span>
+        {sub && <span className="context-switcher-item-sub">{sub}</span>}
+      </span>
+      {current && <Icon name="check" />}
+    </button>
+  )
 }
 
+// Gruppe mit kleiner Überschrift - die Überschrift benennt die Gruppe für Screenreader (aria-labelledby) und wird
+// selbst nicht noch einmal vorgelesen.
+function SwitcherGroup({ id, title, children }) {
+  return (
+    <div role="group" aria-labelledby={id} className="context-switcher-group">
+      <div id={id} className="context-switcher-heading" aria-hidden="true">
+        {title}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// Bereichswechsler im Kopfbereich: nur für Haushalte (family.home.art === 'zuhause'). Der Knopf zeigt nur den Namen des
+// aktiven Bereichs (Familienbande 2: ohne Rollen-Chip). Das Menü ist gruppiert - "Mein Zuhause" (Meine Chronik),
+// die beigetretenen Familien bzw. Rudel mit der eigenen Rolle als zweiter Zeile (Phase R) und (Phase V2) die Zuhause,
+// die der Haushalt besucht (family.besuche, nur ansehen); Überschriften nur für Gruppen mit Einträgen. Abgesetzt
+// darunter der Einstieg zum Beitreten/Gründen. "Mitglieder & Rollen" steht im Kopf der Familienbande, nicht hier.
+// family ist das volle "me"-Objekt, onChange bekommt das neue.
 export default function ContextSwitcher({ family, onChange }) {
   const { words } = useTheme()
-  const navigate = useNavigate()
   const openArea = useOpenArea(onChange)
   const [open, setOpen] = useState(false)
   const [joinOpen, setJoinOpen] = useState(false)
   const rootRef = useRef(null)
   const triggerRef = useRef(null)
   const firstItemRef = useRef(null)
+  const headingId = useId()
 
   useEffect(() => {
     if (!open) return undefined
@@ -76,26 +107,17 @@ export default function ContextSwitcher({ family, onChange }) {
   }
 
   async function switchTo(id, name) {
-    if (id === family.id) {
-      setOpen(false)
-      triggerRef.current?.focus()
-      return
-    }
     // Das Menü verschwindet aus dem DOM – ohne expliziten Fokus fiele er sonst auf <body> zurück
     // (schlecht für Tastatur/Screenreader). Der Knopf ist nach dem Wechsel weiter derselbe Node.
-    setOpen(false)
-    triggerRef.current?.focus()
+    closeMenu()
+    if (id === family.id) return
     await openArea(id, name)
   }
 
   const isHomeActive = family.id === family.home.id
-  const isGroupActive = !isHomeActive && family.art === 'rudel'
+  const memberships = family.memberships || []
   const visits = family.besuche || []
-
-  function openMembers() {
-    closeMenu()
-    navigate('/mitglieder')
-  }
+  const homeName = family.home.name && family.home.name !== HOME_LABEL ? family.home.name : null
 
   return (
     <div className="context-switcher" ref={rootRef}>
@@ -112,71 +134,43 @@ export default function ContextSwitcher({ family, onChange }) {
         <span className="context-switcher-name">
           {isHomeActive ? HOME_LABEL : family.zuBesuch ? visitLabel(family.name) : family.name}
         </span>
-        {isGroupActive && <RoleBadge rolle={family.role} />}
         <Icon name="chevronDown" />
       </button>
       {open && (
-        <div className="context-switcher-menu" role="menu" onKeyDown={handleMenuKeyDown}>
-          <button
-            type="button"
-            role="menuitem"
-            ref={firstItemRef}
-            className="context-switcher-item"
-            aria-current={isHomeActive ? 'true' : undefined}
-            onClick={() => switchTo(family.home.id, HOME_LABEL)}
-          >
-            <span>
-              {HOME_LABEL}
-              {family.home.name && family.home.name !== HOME_LABEL && (
-                <span className="context-switcher-item-sub"> · {family.home.name}</span>
-              )}
-            </span>
-            {isHomeActive && <Icon name="check" />}
-          </button>
-          {family.memberships.length > 0 && <div className="context-switcher-sep" role="separator" />}
-          {family.memberships.map((membership) => {
-            const isCurrent = membership.id === family.id
-            return (
-              <button
-                key={membership.id}
-                type="button"
-                role="menuitem"
-                className="context-switcher-item"
-                aria-current={isCurrent ? 'true' : undefined}
-                onClick={() => switchTo(membership.id, membership.name)}
-              >
-                <span>{membership.name}</span>
-                <RoleBadge rolle={membership.rolle} />
-                {isCurrent && <Icon name="check" />}
-              </button>
-            )
-          })}
-          {visits.length > 0 && <div className="context-switcher-sep" role="separator" />}
-          {visits.map((visit) => {
-            const isCurrent = visit.id === family.id
-            return (
-              <button
-                key={`besuch-${visit.id}`}
-                type="button"
-                role="menuitem"
-                className="context-switcher-item"
-                aria-current={isCurrent ? 'true' : undefined}
-                onClick={() => switchTo(visit.id, visit.name)}
-              >
-                <span>{visitLabel(visit.name)}</span>
-                <Icon name="eye" />
-                {isCurrent && <Icon name="check" />}
-              </button>
-            )
-          })}
-          {isGroupActive && (
-            <>
-              <div className="context-switcher-sep" role="separator" />
-              <button type="button" role="menuitem" className="context-switcher-item" onClick={openMembers}>
-                <span>Mitglieder & Rollen</span>
-                <Icon name="users" />
-              </button>
-            </>
+        <div className="context-switcher-menu" role="menu" aria-label="Bereich wechseln" onKeyDown={handleMenuKeyDown}>
+          <SwitcherGroup id={`${headingId}-home`} title="Mein Zuhause">
+            <SwitcherItem
+              itemRef={firstItemRef}
+              name={HOME_LABEL}
+              sub={homeName}
+              current={isHomeActive}
+              onSelect={() => switchTo(family.home.id, HOME_LABEL)}
+            />
+          </SwitcherGroup>
+          {memberships.length > 0 && (
+            <SwitcherGroup id={`${headingId}-groups`} title={words.groups}>
+              {memberships.map((membership) => (
+                <SwitcherItem
+                  key={membership.id}
+                  name={membership.name}
+                  sub={roleLabel(words, membership.rolle)}
+                  current={membership.id === family.id}
+                  onSelect={() => switchTo(membership.id, membership.name)}
+                />
+              ))}
+            </SwitcherGroup>
+          )}
+          {visits.length > 0 && (
+            <SwitcherGroup id={`${headingId}-visits`} title="Zu Besuch">
+              {visits.map((visit) => (
+                <SwitcherItem
+                  key={`besuch-${visit.id}`}
+                  name={visit.name}
+                  current={visit.id === family.id}
+                  onSelect={() => switchTo(visit.id, visit.name)}
+                />
+              ))}
+            </SwitcherGroup>
           )}
           {/* Phase V2: zu Besuch nur wechseln - beitreten/gründen geht aus der eigenen Chronik heraus. */}
           {!family.zuBesuch && (
@@ -185,7 +179,7 @@ export default function ContextSwitcher({ family, onChange }) {
               <button
                 type="button"
                 role="menuitem"
-                className="context-switcher-item"
+                className="context-switcher-item is-footer"
                 onClick={() => {
                   setOpen(false)
                   setJoinOpen(true)
@@ -197,11 +191,7 @@ export default function ContextSwitcher({ family, onChange }) {
           )}
         </div>
       )}
-      <Modal
-        open={joinOpen}
-        title={`${words.group} beitreten oder gründen`}
-        onClose={() => setJoinOpen(false)}
-      >
+      <Modal open={joinOpen} title={`${words.group} beitreten oder gründen`} onClose={() => setJoinOpen(false)}>
         <JoinFamilyDialog onChange={onChange} onClose={() => setJoinOpen(false)} />
       </Modal>
     </div>

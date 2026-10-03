@@ -29,8 +29,8 @@ const PartnerVisitenkartenPage = lazy(() => import('./pages/PartnerVisitenkarten
 // Die Fotocollage (samt Seiten-Layout, Canvas-Export und Druckbogen) ruft kaum jemand auf - ebenfalls
 // erst bei Bedarf.
 const CollagePage = lazy(() => import('./pages/CollagePage.jsx'))
-// Mitglieder & Rollen (Phase R): nur in Familien (art 'rudel'), erreichbar über Stammbaum-Hinweis,
-// Einstellungen und Bereichswechsler - die Rudel-Navigation ist mit fünf Einträgen voll (lib/navItems.js).
+// Mitglieder & Rollen (Phase R): nur in Familien (art 'rudel'), erreichbar über den Link im Kopf der
+// Familienbande und die Einstellungen - die Rudel-Navigation ist mit fünf Einträgen voll (lib/navItems.js).
 const MembersPage = lazy(() => import('./pages/MembersPage.jsx'))
 
 // Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
