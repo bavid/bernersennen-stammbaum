@@ -1,0 +1,345 @@
+// @vitest-environment jsdom
+import { act, useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import { MemoryRouter, useLocation } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+
+const api = vi.hoisted(() => ({
+  setDarstellung: vi.fn(),
+  listDogs: vi.fn(),
+  leaveFamily: vi.fn(),
+  view: vi.fn(),
+  setDogShares: vi.fn(),
+  visits: vi.fn(),
+  endVisit: vi.fn(),
+  removeGuest: vi.fn(),
+  renameFamily: vi.fn(),
+  updateFamily: vi.fn()
+}))
+vi.mock('../api', () => ({ api }))
+const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
+vi.mock('../components/Toast.jsx', () => ({ useToast: () => toast }))
+
+import SettingsPage from './SettingsPage.jsx'
+import { DemoProvider } from '../lib/demo.js'
+import { ThemeProvider } from '../themes/ThemeProvider.jsx'
+
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+// jsdom kennt <dialog> nicht ganz (JoinFamilyDialog öffnet ein Modal).
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function showModal() {
+    this.open = true
+  }
+  HTMLDialogElement.prototype.close = function close() {
+    this.open = false
+  }
+}
+
+const home = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' }
+const memberships = [
+  { id: 3, name: 'Familie Sonnenhang', theme: 'standard', rolle: 'leitung' },
+  { id: 4, name: 'Familie Talgrund', theme: 'standard', rolle: 'gast' }
+]
+const atHome = {
+  ...home,
+  isDemo: false,
+  role: 'leitung',
+  home,
+  memberships,
+  besuche: [],
+  darstellung: { palette: 'terrakotta', modus: 'auto', schrift: 'normal' }
+}
+const inGroup = { ...atHome, id: 3, name: 'Familie Sonnenhang', art: 'rudel' }
+const dogs = [
+  { id: 11, name: 'Nele', family_id: 1, can_edit: 1, shares: [3] },
+  { id: 12, name: 'Flocke', family_id: 1, can_edit: 1, shares: [] }
+]
+
+let container
+let root
+let latest
+let location
+const onInvite = vi.fn()
+
+function Probe() {
+  location = useLocation()
+  return null
+}
+
+let setFamilyFromOutside
+
+// Wie App.jsx: hält "me" und rendert die Seite nur mit Sitzung (ein 401 setzt sie dort auf null).
+function Harness({ initial }) {
+  const [family, setFamily] = useState(initial)
+  latest = family
+  setFamilyFromOutside = setFamily
+  return (
+    <ThemeProvider themeId="standard">
+      <DemoProvider value={family}>
+        {family && <SettingsPage family={family} onFamilyChange={setFamily} onInvite={onInvite} />}
+        <Probe />
+      </DemoProvider>
+    </ThemeProvider>
+  )
+}
+
+async function render(initial, path = '/einstellungen') {
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  root = createRoot(container)
+  await act(async () =>
+    root.render(
+      <MemoryRouter initialEntries={[path]}>
+        <Harness initial={initial} />
+      </MemoryRouter>
+    )
+  )
+}
+
+const tabs = () => [...container.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)
+const selectedTab = () => container.querySelector('[role="tab"][aria-selected="true"]')?.textContent
+const radio = (name, value) => container.querySelector(`input[name="${name}"][value="${value}"]`)
+const buttonText = (text) => [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === text)
+const flush = () => act(async () => {})
+
+beforeEach(() => {
+  api.listDogs.mockResolvedValue(dogs)
+  api.visits.mockResolvedValue({ besuche: [{ id: 9, name: 'Zuhause Möwenweg', seit: '2026-09-01 10:00:00' }], gaeste: [] })
+  api.setDarstellung.mockImplementation(async (patch) => ({ ...atHome.darstellung, ...patch }))
+})
+
+afterEach(() => {
+  if (root) act(() => root.unmount())
+  root = null
+  container?.remove()
+  container = null
+  for (const fn of Object.values(api)) fn.mockReset()
+  toast.mockReset()
+  onInvite.mockReset()
+})
+
+describe('SettingsPage – Bereiche und Adresse (?bereich=)', () => {
+  test('ohne Angabe die Darstellung; drei Reiter für Haushalte', async () => {
+    await render(atHome)
+    expect(tabs()).toEqual(['Darstellung', 'Familien', 'Mein Zuhause'])
+    expect(selectedTab()).toBe('Darstellung')
+    expect(container.querySelector('[role="tabpanel"]').getAttribute('aria-labelledby')).toBe('einstellungen-darstellung')
+    expect(container.querySelector('legend').textContent).toBe('Farbpalette')
+  })
+
+  test('?bereich=familien öffnet die Familien, ein Reiter schreibt die Adresse, Unbekanntes fällt auf die Darstellung', async () => {
+    await render(atHome, '/einstellungen?bereich=familien')
+    expect(selectedTab()).toBe('Familien')
+
+    await act(async () => container.querySelector('#einstellungen-zuhause').click())
+    expect(location.search).toBe('?bereich=zuhause')
+    expect(selectedTab()).toBe('Mein Zuhause')
+    await act(async () => container.querySelector('#einstellungen-darstellung').click())
+    expect(location.search).toBe('')
+
+    act(() => root.unmount())
+    container.remove()
+    await render(atHome, '/einstellungen?bereich=quatsch')
+    expect(selectedTab()).toBe('Darstellung')
+  })
+
+  test('ein klassisches Rudel-Login hat nur die Darstellung, ohne Reiter', async () => {
+    const rudel = { id: 5, name: 'Rudel Talblick', theme: 'berner', art: 'rudel', isDemo: false, role: 'leitung', home: { id: 5, art: 'rudel' }, memberships: [] }
+    await render(rudel, '/einstellungen?bereich=familien')
+    expect(container.querySelector('[role="tablist"]')).toBeNull()
+    expect(container.querySelector('legend').textContent).toBe('Farbpalette')
+  })
+})
+
+describe('SettingsPage – Darstellung', () => {
+  test('fünf Paletten mit Farbmuster; eine Wahl wirkt sofort und wird für das Zuhause gespeichert', async () => {
+    await render(atHome)
+    expect([...container.querySelectorAll('input[name="palette"]')].map((input) => input.value)).toEqual([
+      'terrakotta',
+      'wald',
+      'meer',
+      'lavendel',
+      'schiefer'
+    ])
+    expect(container.querySelector('.palette-swatch[data-palette="wald"]')).not.toBeNull()
+    expect(radio('palette', 'terrakotta').checked).toBe(true)
+
+    await act(async () => radio('palette', 'wald').click())
+    expect(latest.darstellung).toEqual({ palette: 'wald', modus: 'auto', schrift: 'normal' })
+    expect(api.setDarstellung).toHaveBeenCalledWith({ palette: 'wald' })
+    expect(radio('palette', 'wald').checked).toBe(true)
+
+    await act(async () => radio('modus', 'dunkel').click())
+    await act(async () => radio('schrift', 'gross').click())
+    expect(api.setDarstellung).toHaveBeenLastCalledWith({ schrift: 'gross' })
+    expect(latest.darstellung).toEqual({ palette: 'wald', modus: 'dunkel', schrift: 'gross' })
+    expect(container.querySelector('.settings-hint').textContent).toContain('auf jedem Gerät')
+  })
+
+  test('Demo: wirkt nur für diesen Besuch - kein Speichern, kein Fehler', async () => {
+    await render({ ...atHome, isDemo: true })
+    expect(container.querySelector('.settings-hint').textContent).toBe('In der Demo nur für diesen Besuch – gespeichert wird nichts.')
+    await act(async () => radio('palette', 'meer').click())
+    expect(latest.darstellung.palette).toBe('meer')
+    expect(api.setDarstellung).not.toHaveBeenCalled()
+    expect(toast).not.toHaveBeenCalled()
+  })
+
+  test('zwei gescheiterte Wahlen hintereinander: zurück auf den zuletzt bestätigten Wert, der Reihe nach gespeichert', async () => {
+    const order = []
+    api.setDarstellung.mockImplementation(async (patch) => {
+      order.push(patch.palette)
+      throw new Error('Server nicht erreichbar')
+    })
+    await render(atHome)
+    await act(async () => radio('palette', 'wald').click())
+    await act(async () => radio('palette', 'meer').click())
+    await flush()
+    await flush()
+    expect(order).toEqual(['wald', 'meer'])
+    expect(latest.darstellung.palette).toBe('terrakotta')
+  })
+
+  test('ein 401 beim Speichern (App meldet ab) lässt die Seite nicht abstürzen', async () => {
+    api.setDarstellung.mockImplementation(async () => {
+      setFamilyFromOutside(null)
+      throw new Error('Sitzung abgelaufen – bitte neu anmelden')
+    })
+    await render(atHome)
+    await act(async () => radio('palette', 'schiefer').click())
+    await flush()
+    expect(latest).toBeNull()
+    expect(container.querySelector('.settings-page')).toBeNull()
+  })
+
+  test('scheitert das Speichern, geht die Wahl zurück und ein Hinweis erklärt es', async () => {
+    api.setDarstellung.mockRejectedValue(new Error('Server nicht erreichbar'))
+    await render(atHome)
+    await act(async () => radio('palette', 'lavendel').click())
+    await flush()
+    expect(latest.darstellung.palette).toBe('terrakotta')
+    expect(toast).toHaveBeenCalledWith('Server nicht erreichbar')
+  })
+})
+
+describe('SettingsPage – Familien', () => {
+  test('Familien mit Rolle und Zahl der eigenen Tiere dort; Öffnen wechselt den Bereich', async () => {
+    api.view.mockResolvedValue({ ...inGroup })
+    await render(atHome, '/einstellungen?bereich=familien')
+    await flush()
+    const rows = [...container.querySelectorAll('.settings-list')[0].querySelectorAll('.settings-row')]
+    expect(rows.map((row) => row.querySelector('strong').textContent)).toEqual(['Familie Sonnenhang', 'Familie Talgrund'])
+    expect(rows[0].querySelector('.settings-row-sub').textContent).toBe('Familienleitung · zeigt eines eurer Tiere')
+    expect(rows[1].querySelector('.settings-row-sub').textContent).toBe('Gast · zeigt keines eurer Tiere')
+
+    await act(async () => rows[0].querySelector('button').click())
+    expect(api.view).toHaveBeenCalledWith(3)
+    expect(latest.id).toBe(3)
+  })
+
+  test('Verlassen mit zweitem Klick; die einzige Leitung bekommt die Meldung des Servers an der Zeile', async () => {
+    api.leaveFamily.mockRejectedValueOnce(new Error('Übergib zuerst die Leitung oder löse die Familie auf.'))
+    api.leaveFamily.mockResolvedValueOnce({ ...atHome, memberships: [memberships[0]] })
+    await render(atHome, '/einstellungen?bereich=familien')
+    await flush()
+    const leave = (name) => container.querySelector(`button[aria-label="${name} verlassen"]`)
+
+    await act(async () => leave('Familie Sonnenhang').click())
+    expect(api.leaveFamily).not.toHaveBeenCalled()
+    await act(async () => container.querySelector('button[aria-label="Wirklich verlassen?"]').click())
+    await flush()
+    expect(api.leaveFamily).toHaveBeenCalledWith(3)
+    expect(container.querySelector('.settings-row-error').textContent).toBe('Übergib zuerst die Leitung oder löse die Familie auf.')
+
+    await act(async () => leave('Familie Talgrund').click())
+    await act(async () => container.querySelector('button[aria-label="Wirklich verlassen?"]').click())
+    await flush()
+    expect(api.leaveFamily).toHaveBeenLastCalledWith(4)
+    expect(latest.memberships).toEqual([memberships[0]])
+    expect(toast).toHaveBeenCalledWith(expect.stringContaining('„Familie Talgrund“ verlassen'))
+  })
+
+  test('Eure Tiere in Familien: dieselbe Freigabe wie auf der Tierseite; als Gast nichts Neues teilen', async () => {
+    api.setDogShares.mockResolvedValue({ shares: [3] })
+    await render(atHome, '/einstellungen?bereich=familien')
+    await flush()
+    const animalRows = [...container.querySelectorAll('.settings-animal')]
+    expect(animalRows.map((row) => row.querySelector('strong').textContent)).toEqual(['Nele', 'Flocke'])
+    const [sonnenhang, talgrund] = animalRows[1].querySelectorAll('input[type="checkbox"]')
+    expect(sonnenhang.checked).toBe(false)
+    expect(talgrund.disabled).toBe(true)
+
+    await act(async () => sonnenhang.click())
+    await flush()
+    expect(api.setDogShares).toHaveBeenCalledWith(12, [3])
+    // Die Zahl an der Familie zieht mit.
+    expect(container.querySelector('.settings-row-sub').textContent).toBe('Familienleitung · zeigt 2 eurer Tiere')
+  })
+
+  test('befreundete Zuhause: nur die Listen (Besuch beenden), Einladen bleibt im Dialog', async () => {
+    api.endVisit.mockResolvedValue({ ...atHome })
+    await render(atHome, '/einstellungen?bereich=familien')
+    await flush()
+    expect(container.querySelector('.visit-section.is-lists-only')).not.toBeNull()
+    expect(container.textContent).toContain('Zuhause Möwenweg')
+    expect(container.querySelector('.visit-panel')).toBeNull()
+    expect(container.querySelector('#visit-invite-title')).toBeNull()
+    expect(buttonText('Familie beitreten oder gründen')).not.toBeUndefined()
+  })
+
+  test('aus einer Familie heraus: kein Teilen hier, aber der Weg nach „Meine Chronik“', async () => {
+    api.view.mockResolvedValue({ ...atHome })
+    await render(inGroup, '/einstellungen?bereich=familien')
+    await flush()
+    expect(api.listDogs).not.toHaveBeenCalled()
+    expect(container.querySelector('.settings-animal')).toBeNull()
+    await act(async () => buttonText('Zu „Meiner Chronik“ wechseln').click())
+    expect(api.view).toHaveBeenCalledWith(1)
+    expect(latest.id).toBe(1)
+  })
+
+  test('Demo: Verlassen gesperrt mit Hinweis', async () => {
+    await render({ ...atHome, isDemo: true }, '/einstellungen?bereich=familien')
+    await flush()
+    expect(container.querySelector('button[aria-label="Familie Sonnenhang verlassen"]').disabled).toBe(true)
+    expect(container.querySelector('#settings-familien-hint').textContent).toBe('In der Demo nicht möglich.')
+  })
+})
+
+describe('SettingsPage – Mein Zuhause', () => {
+  test('Umbenennen erst auf Klick; der neue Name zieht auch in home mit', async () => {
+    api.renameFamily.mockResolvedValue({ id: 1, name: 'Zuhause an der Förde', theme: 'standard' })
+    await render(atHome, '/einstellungen?bereich=zuhause')
+    expect(container.querySelector('#family-rename')).toBeNull()
+    await act(async () => buttonText('Umbenennen').click())
+    const input = container.querySelector('#family-rename')
+    const setValue = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    act(() => {
+      setValue.call(input, 'Zuhause an der Förde')
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const form = input.closest('form')
+    await act(async () => form.requestSubmit())
+    await act(async () => form.requestSubmit())
+    expect(api.renameFamily).toHaveBeenCalledWith('Zuhause an der Förde')
+    expect(latest.name).toBe('Zuhause an der Förde')
+    expect(latest.home.name).toBe('Zuhause an der Förde')
+    expect(latest.darstellung).toEqual(atHome.darstellung)
+  })
+
+  test('Einladungen öffnen den bekannten Dialog; Schlüssel und Benutzer erst auf Klick', async () => {
+    await render(atHome, '/einstellungen?bereich=zuhause')
+    await act(async () => buttonText('Jemanden einladen').click())
+    expect(onInvite).toHaveBeenCalledTimes(1)
+    const access = buttonText('Schlüssel und Benutzer verwalten')
+    expect(access.getAttribute('aria-expanded')).toBe('false')
+    expect(container.querySelector('#settings-zugang-panel').hidden).toBe(true)
+  })
+
+  test('aus einer Familie heraus nur der Weg nach Hause', async () => {
+    await render(inGroup, '/einstellungen?bereich=zuhause')
+    expect(buttonText('Umbenennen')).toBeUndefined()
+    expect(buttonText('Zu „Meiner Chronik“ wechseln')).not.toBeUndefined()
+  })
+})

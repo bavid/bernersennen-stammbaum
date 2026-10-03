@@ -132,39 +132,47 @@ describe('OverviewPage – Rechte je Rolle in einer Familie (Phase R)', () => {
   })
 })
 
-describe('OverviewPage – Umbenennen des eigenen Zuhauses', () => {
-  test('aktualisiert auch family.home.name, wenn der aktive Bereich das eigene Zuhause ist', async () => {
+describe('OverviewPage – Stift am Namen (Calm-down-Runde)', () => {
+  function mockAll() {
     listDogs.mockResolvedValue([])
     listAllDogs.mockResolvedValue([])
     recentActivity.mockResolvedValue([])
     listNotes.mockResolvedValue([])
     listLinks.mockResolvedValue([])
-    renameFamily.mockResolvedValue({ id: 1, name: 'Zuhause an der Förde', theme: 'standard' })
     listUsers.mockResolvedValue([])
+  }
+
+  test('im eigenen Zuhause führt er zu den Einstellungen (Mein Zuhause) - kein zweiter Dialog', async () => {
+    mockAll()
+    await render(homeFamily)
+    const edit = container.querySelector('.title-edit')
+    expect(edit.tagName).toBe('A')
+    expect(edit.getAttribute('href')).toBe('/einstellungen?bereich=zuhause')
+    expect(edit.getAttribute('aria-label')).toBe('Einstellungen: Mein Zuhause')
+  })
+
+  test('in einer Familie öffnet er weiter den Dialog mit dem Namen der Familie (für die Leitung)', async () => {
+    mockAll()
+    renameFamily.mockResolvedValue({ id: 7, name: 'Familie Talblick', theme: 'standard' })
     const onFamilyChange = vi.fn()
+    const group = { ...homeFamily, id: 7, name: 'Familie Talgrund', art: 'rudel', role: 'leitung', memberships: [{ id: 7, name: 'Familie Talgrund', rolle: 'leitung' }] }
+    await render(group, onFamilyChange)
 
-    await render(homeFamily, onFamilyChange)
-
-    act(() => container.querySelector('.title-edit').click())
-
+    const edit = container.querySelector('.title-edit')
+    expect(edit.tagName).toBe('BUTTON')
+    act(() => edit.click())
     const input = container.querySelector('#family-rename')
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
     act(() => {
-      nativeInputValueSetter.call(input, 'Zuhause an der Förde')
+      nativeInputValueSetter.call(input, 'Familie Talblick')
       input.dispatchEvent(new Event('input', { bubbles: true }))
     })
-
     const form = container.querySelector('.family-settings form')
-    // Erster Submit scharf schalten, zweiter bestätigt (ConfirmButton/RenameFamilyForm-Muster)
+    // Erster Submit scharf schalten, zweiter bestätigt (RenameFamilyForm-Muster)
     await act(async () => form.requestSubmit())
     await act(async () => form.requestSubmit())
 
-    expect(renameFamily).toHaveBeenCalledWith('Zuhause an der Förde')
-    expect(onFamilyChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Zuhause an der Förde',
-        home: expect.objectContaining({ id: 1, name: 'Zuhause an der Förde' })
-      })
-    )
+    expect(renameFamily).toHaveBeenCalledWith('Familie Talblick')
+    expect(onFamilyChange).toHaveBeenCalledWith(expect.objectContaining({ id: 7, name: 'Familie Talblick' }))
   })
 })

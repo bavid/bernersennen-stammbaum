@@ -1,0 +1,321 @@
+/* Farbpaletten (Einstellungen → Darstellung, Calm-down-Runde): alle Farb-Tokens an EINER Stelle, je Palette hell und
+   dunkel. Terrakotta sind die Farben beider Auftritte (Familie auf Pfoten und Berner) und die Vorgabe; Wald, Meer,
+   Lavendel und Schiefer überschreiben Akzent (--rust …), Zweitfarbe (--alpine …), Flächen, Linien und Schrift. Warn- und
+   Fehlerfarben (--tan, --danger, --success) bleiben überall gleich - sie bedeuten etwas.
+   Hell oder dunkel entscheidet data-scheme an <html> (client/src/lib/darstellung.js und public/darstellung-init.js
+   setzen es vor dem ersten Bild: „Automatisch“ folgt dem System, „Hell“/„Dunkel“ der Wahl) - deshalb kein
+   @media (prefers-color-scheme) hier. Die Palette steht in data-palette an <html>; dieselben Regeln gelten für jedes
+   Element mit data-palette (die Farbmuster in den Einstellungen zeigen so die echten Farben).
+   Jede Palette erfüllt WCAG AA für Text auf Papier und Flächen, Akzent als Link und als Knopf (palettes.test.js). */
+
+:root {
+  color-scheme: light;
+}
+
+:root[data-scheme='dunkel'] {
+  color-scheme: dark;
+}
+
+/* --- Terrakotta: warmes Schwarz, Rost, Schneeweiß auf Papier-Creme (Vorgabe) ------------------------------------- */
+
+:root,
+[data-palette='terrakotta'] {
+  --paper: #f6efe4;
+  --paper-deep: #ecdfcc;
+  --surface: #fffcf7;
+  --surface-sunk: #f9f3ea;
+  --ink: #1c1511;
+  --ink-soft: #3a2e25;
+  --text: #2a211a;
+  --muted: #74665a;
+  --line: #e3d5c1;
+  --line-strong: #cdb99f;
+
+  --rust: #a4431d;
+  --rust-deep: #7d3014;
+  --rust-wash: rgba(164, 67, 29, 0.1);
+  --on-rust: #fffaf2;
+  --alpine: #3f4b39;
+  --alpine-wash: rgba(63, 75, 57, 0.1);
+
+  --hero-bg: #1c1511;
+  --hero-text: #f6ecdd;
+  --hero-muted: #bda892;
+}
+
+/* Nur am Wurzelelement: gemeinsame Farben und die von Hell/Dunkel abhängigen Schatten. */
+:root {
+  --tan: #d49a5b;
+  --snow: #fffaf2;
+  --danger: #b3261e;
+  --danger-wash: #fbe9e7;
+  --success: #2f6b3f;
+
+  --shadow-sm: 0 1px 2px rgba(28, 21, 17, 0.07);
+  --shadow-card: 0 1px 2px rgba(28, 21, 17, 0.06), 0 10px 28px -16px rgba(28, 21, 17, 0.28);
+  --shadow-raised: 0 2px 4px rgba(28, 21, 17, 0.06), 0 22px 44px -18px rgba(28, 21, 17, 0.42);
+  /* Folgt dem Akzent der Palette. */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--rust) 28%, transparent);
+}
+
+:root[data-scheme='dunkel'],
+[data-scheme='dunkel'] [data-palette='terrakotta'] {
+  --paper: #14100d;
+  --paper-deep: #1d1713;
+  --surface: #1f1914;
+  --surface-sunk: #191410;
+  --ink: #f5ecdf;
+  --ink-soft: #e2d4c2;
+  --text: #eadfd0;
+  --muted: #ae9e8c;
+  --line: #342a21;
+  --line-strong: #4a3c2f;
+
+  --rust: #e27b4f;
+  --rust-deep: #f09a72;
+  --rust-wash: rgba(226, 123, 79, 0.14);
+  --on-rust: #1a120d;
+  --alpine: #a9bb9c;
+  --alpine-wash: rgba(169, 187, 156, 0.12);
+
+  --hero-bg: #0d0a08;
+  --hero-text: #f6ecdd;
+  --hero-muted: #bda892;
+}
+
+:root[data-scheme='dunkel'] {
+  --tan: #e2b079;
+  --danger: #f2877f;
+  --danger-wash: rgba(242, 135, 127, 0.12);
+  --success: #8fd19e;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -16px rgba(0, 0, 0, 0.8);
+  --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.4), 0 22px 44px -18px rgba(0, 0, 0, 0.9);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--rust) 35%, transparent);
+}
+
+/* --- Wald: Tannengrün, Rinde, helles Moos ------------------------------------------------------------------------- */
+
+[data-palette='wald'] {
+  --paper: #f1f3ec;
+  --paper-deep: #e1e6d8;
+  --surface: #fbfcf8;
+  --surface-sunk: #f4f6ef;
+  --ink: #141b15;
+  --ink-soft: #2d382e;
+  --text: #222b23;
+  --muted: #5b6858;
+  --line: #d8dfcf;
+  --line-strong: #b6c3aa;
+
+  --rust: #2f6a3a;
+  --rust-deep: #214d29;
+  --rust-wash: rgba(47, 106, 58, 0.1);
+  --on-rust: #fbfcf8;
+  --alpine: #7a4a24;
+  --alpine-wash: rgba(122, 74, 36, 0.1);
+
+  --hero-bg: #141b15;
+  --hero-text: #eef2e8;
+  --hero-muted: #a9b7a2;
+}
+
+[data-scheme='dunkel'][data-palette='wald'],
+[data-scheme='dunkel'] [data-palette='wald'] {
+  --paper: #0f140f;
+  --paper-deep: #171d17;
+  --surface: #1a211a;
+  --surface-sunk: #141a14;
+  --ink: #eef3e8;
+  --ink-soft: #d5dece;
+  --text: #e2e9da;
+  --muted: #9dab99;
+  --line: #283228;
+  --line-strong: #3b493b;
+
+  --rust: #86c28d;
+  --rust-deep: #a6d5ab;
+  --rust-wash: rgba(134, 194, 141, 0.14);
+  --on-rust: #0f140f;
+  --alpine: #d6ad83;
+  --alpine-wash: rgba(214, 173, 131, 0.12);
+
+  --hero-bg: #0a0e0a;
+  --hero-text: #eef2e8;
+  --hero-muted: #a9b7a2;
+}
+
+/* --- Meer: Tiefblau, Seegrün, kühles Weiß ------------------------------------------------------------------------- */
+
+[data-palette='meer'] {
+  --paper: #eef2f5;
+  --paper-deep: #dde5eb;
+  --surface: #fafcfd;
+  --surface-sunk: #f2f6f9;
+  --ink: #10181f;
+  --ink-soft: #293743;
+  --text: #1c2731;
+  --muted: #566572;
+  --line: #d3dde4;
+  --line-strong: #b0c0cb;
+
+  --rust: #1d5d8a;
+  --rust-deep: #144466;
+  --rust-wash: rgba(29, 93, 138, 0.1);
+  --on-rust: #fafcfd;
+  --alpine: #2b6a5c;
+  --alpine-wash: rgba(43, 106, 92, 0.1);
+
+  --hero-bg: #10181f;
+  --hero-text: #e9f0f5;
+  --hero-muted: #9db0bd;
+}
+
+[data-scheme='dunkel'][data-palette='meer'],
+[data-scheme='dunkel'] [data-palette='meer'] {
+  --paper: #0c1217;
+  --paper-deep: #131b22;
+  --surface: #162029;
+  --surface-sunk: #111920;
+  --ink: #e9f1f6;
+  --ink-soft: #cfdbe4;
+  --text: #dce6ee;
+  --muted: #93a5b2;
+  --line: #22303b;
+  --line-strong: #344553;
+
+  --rust: #78b6df;
+  --rust-deep: #9ccaea;
+  --rust-wash: rgba(120, 182, 223, 0.14);
+  --on-rust: #0c1217;
+  --alpine: #8ccab9;
+  --alpine-wash: rgba(140, 202, 185, 0.12);
+
+  --hero-bg: #080d11;
+  --hero-text: #e9f0f5;
+  --hero-muted: #9db0bd;
+}
+
+/* --- Lavendel: Flieder, Salbei, zartes Grau-Violett --------------------------------------------------------------- */
+
+[data-palette='lavendel'] {
+  --paper: #f4f1f6;
+  --paper-deep: #e7e1ec;
+  --surface: #fcfbfd;
+  --surface-sunk: #f7f4f9;
+  --ink: #1a1520;
+  --ink-soft: #352d3e;
+  --text: #261f2d;
+  --muted: #665c71;
+  --line: #ddd5e4;
+  --line-strong: #c0b2cc;
+
+  --rust: #6a4894;
+  --rust-deep: #513472;
+  --rust-wash: rgba(106, 72, 148, 0.1);
+  --on-rust: #fcfbfd;
+  --alpine: #4a6656;
+  --alpine-wash: rgba(74, 102, 86, 0.1);
+
+  --hero-bg: #1a1520;
+  --hero-text: #f2edf6;
+  --hero-muted: #b4a8c0;
+}
+
+[data-scheme='dunkel'][data-palette='lavendel'],
+[data-scheme='dunkel'] [data-palette='lavendel'] {
+  --paper: #120f16;
+  --paper-deep: #1a1620;
+  --surface: #1e1925;
+  --surface-sunk: #17131c;
+  --ink: #f2edf7;
+  --ink-soft: #ddd4e7;
+  --text: #e7dff0;
+  --muted: #a99db7;
+  --line: #2e2737;
+  --line-strong: #42384e;
+
+  --rust: #bba0e2;
+  --rust-deep: #d0bbee;
+  --rust-wash: rgba(187, 160, 226, 0.14);
+  --on-rust: #120f16;
+  --alpine: #a6c3b0;
+  --alpine-wash: rgba(166, 195, 176, 0.12);
+
+  --hero-bg: #0b090e;
+  --hero-text: #f2edf6;
+  --hero-muted: #b4a8c0;
+}
+
+/* --- Schiefer: Blaugrau, Petrol, neutrales Hellgrau --------------------------------------------------------------- */
+
+[data-palette='schiefer'] {
+  --paper: #f0f1f3;
+  --paper-deep: #e1e4e8;
+  --surface: #fbfbfc;
+  --surface-sunk: #f4f5f7;
+  --ink: #16191d;
+  --ink-soft: #2f353c;
+  --text: #21262c;
+  --muted: #5c636c;
+  --line: #d7dbe0;
+  --line-strong: #b6bcc4;
+
+  --rust: #3b5269;
+  --rust-deep: #2a3c4e;
+  --rust-wash: rgba(59, 82, 105, 0.1);
+  --on-rust: #fbfbfc;
+  --alpine: #3c625d;
+  --alpine-wash: rgba(60, 98, 93, 0.1);
+
+  --hero-bg: #16191d;
+  --hero-text: #eef0f3;
+  --hero-muted: #a5adb6;
+}
+
+[data-scheme='dunkel'][data-palette='schiefer'],
+[data-scheme='dunkel'] [data-palette='schiefer'] {
+  --paper: #101214;
+  --paper-deep: #181b1f;
+  --surface: #1b1f24;
+  --surface-sunk: #15181c;
+  --ink: #eef1f4;
+  --ink-soft: #d3d9df;
+  --text: #e1e6eb;
+  --muted: #9aa3ad;
+  --line: #2a2f35;
+  --line-strong: #3d444c;
+
+  --rust: #9db7cf;
+  --rust-deep: #bacbdd;
+  --rust-wash: rgba(157, 183, 207, 0.14);
+  --on-rust: #101214;
+  --alpine: #90bcb5;
+  --alpine-wash: rgba(144, 188, 181, 0.12);
+
+  --hero-bg: #0a0b0d;
+  --hero-text: #eef0f3;
+  --hero-muted: #a5adb6;
+}
+
+/* --- Partner-Portal mit eigener Akzentfarbe (portal.css) ----------------------------------------------------------
+   portal.css hellt die Akzentfarbe des Partners im dunklen Auftritt per @media (prefers-color-scheme: dark) auf. Mit
+   „Hell“/„Dunkel“ aus den Einstellungen kann das vom System abweichen - dann gilt hier die Wahl (gleiche Werte wie dort,
+   höhere Spezifität). */
+:root[data-scheme='dunkel'] .partner-portal.has-accent {
+  --accent-base: var(--rust);
+}
+
+:root[data-scheme='dunkel'] .partner-portal.has-accent > * {
+  --rust: color-mix(in srgb, var(--accent-base) 45%, #f5ecdf);
+  --rust-deep: color-mix(in srgb, var(--accent-base) 30%, #f5ecdf);
+  --rust-wash: color-mix(in srgb, var(--accent-base) 30%, transparent);
+  --on-rust: #1a120d;
+}
+
+:root[data-scheme='hell'] .partner-portal.has-accent > * {
+  --rust: inherit;
+  --rust-deep: inherit;
+  --rust-wash: inherit;
+  --on-rust: inherit;
+}

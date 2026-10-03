@@ -215,10 +215,17 @@
   /* Niedrigere Kopfzeile (--header-height, tokens.css): engerer Abstand, und auf sehr schmalen Handys darf
      sie wachsen, falls "Familie auf Pfoten" doch zweizeilig wird - statt über den Rand zu laufen. Die Knöpfe
      rechts ("Schreib dem Admin", Abmelden) bekommen volle 44 px Tippfläche. */
+  /* Calm-down-Runde: mit dem Zahnrad (Einstellungen) stehen rechts drei Knöpfe - sie rücken eng zusammen (jeder hat
+     selbst 44 px), damit "Familie auf Pfoten" bei 375 px einzeilig bleibt. */
   .app-header-inner {
-    gap: var(--space-3);
+    gap: var(--space-1);
     height: auto;
     min-height: var(--header-height);
+  }
+
+  .brand {
+    gap: var(--space-2);
+    margin-right: var(--space-2);
   }
 
   .app-header .icon-btn,

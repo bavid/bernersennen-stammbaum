@@ -16,6 +16,7 @@ const { verifyCurrentCredential, REAUTH_ERROR } = require('../lib/currentCredent
 const { SLUG_MAX_LENGTH } = require('../lib/partners')
 const { findDemoPartnerArea } = require('../lib/partnerAreas')
 const { DEFAULT_DEMO_PARTNER_SLUG } = require('../seed/demo-partner-area')
+const { loadDarstellung, saveDarstellung } = require('../lib/darstellung')
 
 const router = express.Router()
 
@@ -215,6 +216,27 @@ router.put('/family', requireAuth, requireRole('leitung'), (req, res) => {
 // Client das Band zeigt und Schreib-Knöpfe sperrt.
 router.get('/me', requireAuth, (req, res) => {
   res.json(buildMe(req.homeId, req.familyId, req.isDemo, req.userId, { adminView: req.isAdminView }))
+})
+
+// Einstellungen „Darstellung“ (Calm-down-Runde, lib/darstellung.js): Farbpalette, Hell/Dunkel, Schrift der Identität
+// (req.homeId) - auch aus einer Familie heraus gilt und ändert man die eigene Wahl. Demo und Admin-Ansicht schreiben nie
+// (requireAuth, denyAdminViewWrites in app.js; der Client wendet sie dort nur lokal an), Besuchs-Sitzungen sperrt
+// lib/guestAccess.js. Nur Zuhause und klassische Rudel-Logins - Partner- und Tierheim-Bereiche haben keine Einstellungen-Seite.
+const DARSTELLUNG_ARTS = [ART.zuhause, ART.rudel]
+
+router.get('/me/darstellung', requireAuth, (req, res) => {
+  res.json(loadDarstellung(req.homeId))
+})
+
+router.put('/me/darstellung', requireAuth, (req, res, next) => {
+  if (!DARSTELLUNG_ARTS.includes(homeIdentity(req.homeId)?.art)) {
+    return res.status(400).json({ error: 'Die Darstellung gibt es nur für Zuhause und Familien' })
+  }
+  try {
+    res.json(saveDarstellung(req.homeId, req.body))
+  } catch (err) {
+    next(err)
+  }
 })
 
 // Bereich wechseln: eigenes Zuhause oder ein Rudel, dem der Haushalt beigetreten ist.

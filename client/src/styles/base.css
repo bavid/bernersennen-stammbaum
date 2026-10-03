@@ -101,7 +101,7 @@ button {
 
 ::selection {
   background: var(--rust);
-  color: var(--snow);
+  color: var(--on-rust);
 }
 
 .visually-hidden {

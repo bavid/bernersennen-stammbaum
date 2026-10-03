@@ -50,6 +50,9 @@ export const api = {
   // neueste zuerst -> { hinweise: [{ id, titel, text, stufe }] }.
   hinweise: () => request('/hinweise'),
   me: () => request('/me'),
+  // Einstellungen „Darstellung“ (Calm-down-Runde): { palette, modus, schrift } der eigenen Identität - PUT mit einem Teil
+  // davon, Antwort die ganze Darstellung (server/lib/darstellung.js). /me bringt sie ohnehin mit.
+  setDarstellung: (patch) => request('/me/darstellung', json('PUT', patch)),
   login: (secret) => request('/login', json('POST', { secret })),
   loginUser: (username, password) => request('/login', json('POST', { username, password })),
   // as: 'tierheim' (Phase T Task 6) loggt ins Demo-Tierheim statt ins Demo-Zuhause ein, as: 'partner' mit

@@ -1,4 +1,5 @@
 @import './tokens.css';
+@import './palettes.css';
 @import './base.css';
 @import './components.css';
 @import './layout.css';
@@ -21,6 +22,7 @@
 @import './collage.css';
 @import './contact.css';
 @import './settings.css';
+@import './einstellungen.css';
 @import './context-switcher.css';
 @import './besuche.css';
 @import './erlebt-mit.css';

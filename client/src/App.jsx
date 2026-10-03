@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
+import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { readSetting, writeSetting } from './lib/storage.js'
 import { inviteLabel, isPartnerArea, startRoute } from './lib/areas.js'
 import { MAX_NAV_ITEMS, navItemsFor } from './lib/navItems.js'
@@ -199,6 +200,8 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
   // Nur Haushalte bekommen den Bereichswechsler; klassische Rudel-Logins (kein family.home) zeigen nur den Namen.
   const isHouseholdIdentity = family.home?.art === 'zuhause'
   const navItems = navItemsFor(family, theme)
+  // Einstellungen (Calm-down-Runde) in Zuhause und Familien - Partner und Tierheime haben ihren Zugang, zu Besuch keine.
+  const hasSettings = !family.zuBesuch && !isPartnerArea(family)
   return (
     <header className="app-header">
       <div className="app-header-inner">
@@ -248,6 +251,17 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
           >
             <Icon name="message" />
             <span>Schreib dem Admin</span>
+          </Link>
+        )}
+        {hasSettings && (
+          <Link
+            to="/einstellungen"
+            className={`icon-btn app-settings${pathname === '/einstellungen' ? ' active' : ''}`}
+            aria-current={pathname === '/einstellungen' ? 'page' : undefined}
+            aria-label="Einstellungen"
+            title="Einstellungen"
+          >
+            <Icon name="settings" />
           </Link>
         )}
         <button type="button" className="icon-btn app-logout" onClick={onLogout} aria-label="Abmelden" title="Abmelden">
@@ -328,6 +342,22 @@ export default function App() {
   useEffect(() => {
     if (family?.theme) writeSetting('lastThemeId', family.theme)
   }, [family])
+
+  // Darstellung (Einstellungen, lib/darstellung.js): die Wahl der Identität aus /me an <html> - und für das nächste Laden
+  // gemerkt (public/darstellung-init.js), außer in Demo und Admin-Ansicht (dort gilt sie nur für diesen Besuch). Ohne
+  // Sitzung (abgemeldet, Demo oder Admin-Ansicht beendet) wieder die gemerkte Wahl dieses Geräts.
+  const signedOut = family === null
+  const darstellung = family?.darstellung
+  const rememberIt = Boolean(family) && !isReadOnly(family)
+  useEffect(() => {
+    if (signedOut) {
+      applyDarstellung(storedDarstellung())
+      return
+    }
+    if (!darstellung) return
+    applyDarstellung(darstellung)
+    if (rememberIt) rememberDarstellung(darstellung)
+  }, [signedOut, darstellung, rememberIt])
 
   async function handleLogout() {
     try {

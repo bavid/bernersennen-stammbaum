@@ -32,6 +32,8 @@ const CollagePage = lazy(() => import('./pages/CollagePage.jsx'))
 // Mitglieder & Rollen (Phase R): nur in Familien (art 'rudel'), erreichbar über den Link im Kopf der
 // Familienbande und die Einstellungen - die Rudel-Navigation ist mit fünf Einträgen voll (lib/navItems.js).
 const MembersPage = lazy(() => import('./pages/MembersPage.jsx'))
+// Einstellungen (Calm-down-Runde): Darstellung, Familien, Mein Zuhause - in Zuhause und Familien, eigener Chunk.
+const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx'))
 
 // Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
 function RedirectTierUrl() {
@@ -108,6 +110,12 @@ export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
         element={family.art === 'rudel' ? <MembersPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
       />
       <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
+      <Route
+        path="/einstellungen"
+        element={
+          partnerArea ? <ToStart family={family} /> : <SettingsPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />
+        }
+      />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
       <Route path="/collage" element={<CollagePage family={family} />} />
       <Route path="/umgebung" element={<NearbyPage />} />

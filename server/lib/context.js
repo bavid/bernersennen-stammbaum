@@ -7,6 +7,7 @@ const { roleOf } = require('./roles')
 const { isVisiting, visitTargetsOf, countNewGuests } = require('./visits')
 const { countOpenRequests } = require('./erlebtMit')
 const { revokeInvitesOnLeave } = require('./inviteRevocation')
+const { loadDarstellung } = require('./darstellung')
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist - mit der eigenen Rolle dort (Phase R Task 2,
 // für den ContextSwitcher des Clients).
@@ -105,7 +106,9 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
     besuche: visitTargetsOf(homeId),
     erlebtMitOffen: home?.art === ART.zuhause ? countOpenRequests(homeId) : 0,
     neueGaeste: home?.art === ART.zuhause ? countNewGuests(homeId) : 0,
-    auth: currentAuthInfo(homeId, userId)
+    auth: currentAuthInfo(homeId, userId),
+    // Calm-down-Runde: Farbpalette, Hell/Dunkel, Schrift der Identität (lib/darstellung.js) - auch in Familien und zu Besuch.
+    darstellung: loadDarstellung(homeId)
   }
   if (PARTNER_AREA_ARTS.includes(active?.art)) {
     const partner = db

@@ -9,10 +9,14 @@ import TopStrip, { TopStripProvider } from './components/TopStrip.jsx'
 import SkipLink from './components/SkipLink.jsx'
 import { trackScrollbarWidth } from './lib/viewport.js'
 import { installChunkReload } from './lib/chunkReload.js'
+import { applyDarstellung, storedDarstellung } from './lib/darstellung.js'
 import './styles/global.css'
 
 trackScrollbarWidth()
 installChunkReload()
+// Die zuletzt gemerkte Darstellung (public/darstellung-init.js hat sie schon vor dem ersten Bild gesetzt) - hier dazu der
+// Lauscher, der „Automatisch“ einem Wechsel des Systems folgen lässt. /api/me übernimmt danach (App.jsx).
+applyDarstellung(storedDarstellung())
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

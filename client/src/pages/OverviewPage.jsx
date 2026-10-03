@@ -132,7 +132,19 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
           <span className="eyebrow">{words.treeLabel}</span>
           <div className="page-title-row">
             <h1>{family.name}</h1>
-            {!visiting && (
+            {/* Calm-down-Runde: Name, Auftritt und Zugang des eigenen Zuhauses stehen in den Einstellungen ("Mein Zuhause") -
+                der Stift führt dorthin. In einer Familie bleibt der Dialog (Name, Aussehen, Mitglieder, Verlassen). */}
+            {!visiting && isOwnHome(family) && (
+              <Link
+                to="/einstellungen?bereich=zuhause"
+                className="icon-btn title-edit"
+                aria-label="Einstellungen: Mein Zuhause"
+                title="Einstellungen: Mein Zuhause"
+              >
+                <Icon name="edit" />
+              </Link>
+            )}
+            {!visiting && !isOwnHome(family) && (
               <button
                 type="button"
                 className="icon-btn title-edit"

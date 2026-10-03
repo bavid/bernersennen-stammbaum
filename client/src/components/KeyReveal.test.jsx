@@ -47,7 +47,7 @@ describe('KeyReveal', () => {
         'Mit diesem Schlüssel meldet ihr euch an – auf jedem Gerät. Hebt ihn gut auf, er ist auch eure Wiederherstellung.'
       )
       expect(container.textContent).toContain('Wer euch die Karte gegeben hat, kennt diesen Code.')
-      expect(container.textContent).toContain('Familie einstellen')
+      expect(container.textContent).toContain('in den Einstellungen unter „Mein Zuhause“')
     })
   })
 

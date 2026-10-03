@@ -1,0 +1,295 @@
+/* Einstellungen (/einstellungen, SettingsPage, Calm-down-Runde): Reiter oben, darunter ruhige Gruppen mit einer feinen
+   Linie dazwischen - keine Karten in Karten. Farbpaletten als Kacheln mit echten Farbmustern (data-palette, palettes.css),
+   Hell/Dunkel und Schrift als Segmente. Optionsfelder bleiben echte Radios (Tastatur: Pfeile), nur unsichtbar. */
+
+.settings-page {
+  --page-gap: var(--space-5);
+}
+
+.settings-hero {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings-tabs {
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-block {
+  display: grid;
+  gap: var(--space-8);
+  max-width: 52rem;
+}
+
+.settings-group {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.settings-group + .settings-group {
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+.settings-group h2 {
+  font-size: var(--text-xl);
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.settings-hint {
+  margin: 0;
+}
+
+/* --- Auswahl: Kacheln (Paletten) und Segmente -------------------------------------------------------------------- */
+
+.settings-choice {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.settings-choice legend {
+  margin-bottom: var(--space-3);
+  padding: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.settings-choice-options {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.settings-choice-tiles .settings-choice-options {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+}
+
+/* Segmente in einer Zeile, auch am Handy (drei bzw. zwei gleich breite Felder). */
+.settings-choice-segments .settings-choice-options {
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  max-width: 36rem;
+}
+
+.settings-option {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--space-3);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.settings-option:hover {
+  border-color: var(--rust);
+}
+
+.settings-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings-option:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.settings-option.is-checked {
+  border-color: var(--rust);
+  box-shadow: inset 0 0 0 1px var(--rust);
+  background: color-mix(in srgb, var(--rust) 6%, var(--surface));
+}
+
+.settings-option.is-checked .settings-option-label::after {
+  content: ' ✓';
+  color: var(--rust);
+}
+
+.settings-option-label {
+  font-weight: 700;
+}
+
+.settings-option-hint {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.settings-choice-segments .settings-option {
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+/* Farbmuster: Papier der Palette, darauf Akzent, Zweitfarbe und Schrift - in den echten Tokens der Palette. */
+.palette-swatch {
+  display: grid;
+  gap: 6px;
+  margin-bottom: var(--space-2);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+.palette-swatch-bar {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--rust);
+}
+
+.palette-swatch-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.palette-swatch-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.palette-swatch-dot.is-accent {
+  background: var(--rust-deep);
+  box-shadow: none;
+}
+
+.palette-swatch-dot.is-second {
+  background: var(--alpine);
+  box-shadow: none;
+}
+
+.palette-swatch-dot.is-ink {
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.settings-schrift-sample {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.settings-schrift-sample.is-normal {
+  font-size: 1rem;
+}
+
+.settings-schrift-sample.is-gross {
+  font-size: 1.25rem;
+}
+
+/* --- Zeilen: Familien, Tiere, Name -------------------------------------------------------------------------------- */
+
+.settings-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-row-plain {
+  border-top: 1px solid var(--line);
+}
+
+.settings-row-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-row-main strong {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.settings-row-sub {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.settings-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.settings-row-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.settings-animal-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
+
+.settings-animal-checks .check {
+  min-height: 44px;
+}
+
+.settings-switch {
+  max-width: 44rem;
+}
+
+/* Befreundete Zuhause: die Listen aus dem Einladen-Dialog ohne dessen eigenen Abstand nach oben. */
+.settings-group .visit-section.is-lists-only {
+  padding-top: 0;
+  border-top: 0;
+}
+
+@media (max-width: 720px) {
+  .settings-block {
+    gap: var(--space-6);
+  }
+
+  .settings-row-actions {
+    width: 100%;
+  }
+
+  .settings-row-actions > .btn {
+    flex: 1 1 8rem;
+  }
+}
+
+/* --- Kopf: das Zahnrad neben "Schreib dem Admin" ------------------------------------------------------------------ */
+
+.app-settings.active {
+  background: var(--rust-wash);
+  color: var(--rust);
+}

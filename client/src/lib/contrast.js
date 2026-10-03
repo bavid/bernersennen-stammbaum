@@ -4,7 +4,7 @@
 // das hier ersetzt diese Prüfung nicht.
 import { hexToRgb } from './color.js'
 
-// Textfarbe auf der Akzentfläche (--on-rust, hell) - siehe client/src/styles/tokens.css und
+// Textfarbe auf der Akzentfläche (--on-rust, hell) - siehe client/src/styles/palettes.css und
 // server/lib/partners.js ON_RUST. Fest auf den hellen Wert geprüft, unabhängig vom Theme.
 export const ON_RUST = '#fffaf2'
 export const MIN_CONTRAST = 4.5

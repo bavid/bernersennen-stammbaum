@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
 
 const COPIED_MS = 2000
@@ -14,7 +13,6 @@ const COPIED_MS = 2000
 // freshKey (Audit V7a): nach einem persönlichen Code (Weitergabe, Besuch, Übergabe, Familien-Einladung) ist der
 // Schlüssel neu erzeugt (Server: fromOthers false) - dann kennt ihn niemand sonst, statt des Kartenhinweises steht das da.
 export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu Meiner Chronik', showCardHint = true, freshKey = false, note }) {
-  const { words } = useTheme()
   const [copied, setCopied] = useState(false)
   const headingRef = useRef(null)
 
@@ -58,8 +56,8 @@ export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter z
       {freshKey && <p className="field-hint">Diesen Schlüssel haben wir eben neu erzeugt – nur ihr kennt ihn.</p>}
       {showCardHint && !freshKey && (
         <p className="field-hint">
-          Wer euch die Karte gegeben hat, kennt diesen Code. Erneuert den Schlüssel später unter „{words.groupSettings}“, wenn
-          ihr sicher gehen wollt.
+          Wer euch die Karte gegeben hat, kennt diesen Code. Erneuert den Schlüssel später in den Einstellungen unter „Mein
+          Zuhause“, wenn ihr sicher gehen wollt.
         </p>
       )}
       {note && <p className="field-hint">{note}</p>}

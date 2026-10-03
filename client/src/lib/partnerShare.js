@@ -7,7 +7,7 @@ import { portalPath } from './partnerProfile.js'
 
 export const APP_NAME = 'Familie auf Pfoten'
 export const SNIPPET_LABEL = `Uns findet ihr auch auf ${APP_NAME}`
-// Ohne eigene Partnerfarbe der Rost-Ton des Standard-Auftritts (tokens.css --rust) mit heller Schrift.
+// Ohne eigene Partnerfarbe der Rost-Ton des Standard-Auftritts (palettes.css --rust, Terrakotta) mit heller Schrift.
 const DEFAULT_BUTTON_COLOR = '#a4431d'
 const BUTTON_TEXT_COLOR = '#fffaf2'
 // Heller Rand um den Code (Ruhezone, vier Module) - ohne ihn lesen manche Kameras schlecht.

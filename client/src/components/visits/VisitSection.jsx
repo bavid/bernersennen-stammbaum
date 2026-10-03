@@ -9,7 +9,8 @@ import VisitList from './VisitList.jsx'
 // Zuhause besuchen (Phase V2) im Einladen-Dialog des eigenen Zuhauses: einladen, selbst einen Code einlösen und die
 // bestehenden Verbindungen in beide Richtungen ("Zu Besuch bei", "Meine Gäste") mit "beenden".
 // onFamilyChange: neues "me" nach Einlösen/Beenden (Bereichswechsler); onInviteCreated: Code-Liste neu laden.
-export default function VisitSection({ onFamilyChange, onInviteCreated }) {
+// listsOnly (Einstellungen → Familien, Calm-down-Runde): nur die beiden Listen - Einladen und Einlösen bleiben im Dialog.
+export default function VisitSection({ onFamilyChange, onInviteCreated, listsOnly = false }) {
   const isDemo = useIsDemo()
   const toast = useToast()
   const [lists, setLists] = useState(null)
@@ -52,9 +53,9 @@ export default function VisitSection({ onFamilyChange, onInviteCreated }) {
   }
 
   return (
-    <div className="visit-section">
-      <VisitInviteCreator onCreated={onInviteCreated} />
-      <VisitRedeemForm onRedeemed={handleRedeemed} />
+    <div className={listsOnly ? 'visit-section is-lists-only' : 'visit-section'}>
+      {!listsOnly && <VisitInviteCreator onCreated={onInviteCreated} />}
+      {!listsOnly && <VisitRedeemForm onRedeemed={handleRedeemed} />}
       {error && (
         <div className="error-banner" role="alert">
           {error}
