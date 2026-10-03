@@ -112,7 +112,7 @@ async function render(path = '/p/hundeschule-wiesengrund', slug = 'hundeschule-w
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter initialEntries={[path]}>
+      <MemoryRouter initialEntries={Array.isArray(path) ? path : [path]} initialIndex={Array.isArray(path) ? path.length - 1 : 0}>
         <ThemeProvider themeId="standard">
           <PartnerPortalPage slug={slug} family={null} onRedeemed={() => {}} onLogout={() => {}} />
           <Probe />
@@ -226,6 +226,33 @@ describe('Portal-Reiter – Adresse', () => {
     expect(publicPartnerPosts).toHaveBeenCalledWith('hundeschule-wiesengrund', { demo: '1' })
   })
 
+  test('mit den Pfeiltasten durch die Leiste: ein Eintrag im Verlauf für den ganzen Weg', async () => {
+    await render(['/partner', '/p/hundeschule-wiesengrund'])
+    const press = (key) => act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })))
+    tab('Übersicht').focus()
+    await press('ArrowRight')
+    await press('ArrowRight')
+    await press('End')
+    expect(selectedLabel()).toBe('Kontakt')
+    expect(document.activeElement).toBe(tab('Kontakt'))
+    expect(location.search).toBe('?reiter=kontakt')
+
+    // Der erste Schritt legt einen Eintrag an, die weiteren ersetzen ihn: einmal Zurück -> Übersicht, noch einmal -> raus.
+    await act(async () => navigate(-1))
+    expect(location.pathname).toBe('/p/hundeschule-wiesengrund')
+    expect(selectedLabel()).toBe('Übersicht')
+    await act(async () => navigate(-1))
+    expect(location.pathname).toBe('/partner')
+  })
+
+  test('ein ungültiger Wert fällt beim Klick auf "Übersicht" ohne neuen Eintrag weg', async () => {
+    await render(['/partner', '/p/hundeschule-wiesengrund?reiter=quatsch'])
+    await act(async () => tab('Übersicht').click())
+    expect(location.search).toBe('')
+    await act(async () => navigate(-1))
+    expect(location.pathname).toBe('/partner')
+  })
+
   test('derselbe Reiter noch einmal legt keinen neuen Eintrag an', async () => {
     await render('/p/hundeschule-wiesengrund?reiter=termine')
     const before = location.key
@@ -251,6 +278,15 @@ describe('Portal-Reiter – alte Sprungmarken', () => {
   test('eine Sprungmarke auf einen leeren Reiter (#tiere bei einer Hundeschule) zeigt die Übersicht', async () => {
     await render('/p/hundeschule-wiesengrund#tiere')
     expect(selectedLabel()).toBe('Übersicht')
+  })
+
+  test('die Sprungmarke wirkt nur einmal beim Öffnen - nicht wieder nach Reiterwechseln', async () => {
+    await render('/p/hundeschule-wiesengrund#kontakt')
+    expect(scrolledIds()).toEqual(['partner-portal-contact'])
+    await act(async () => tab('Termine').click())
+    await act(async () => navigate(-1))
+    expect(selectedLabel()).toBe('Kontakt')
+    expect(scrolledIds()).toEqual(['partner-portal-contact'])
   })
 
   test('?reiter= gewinnt über die Sprungmarke; der nächste Wechsel lässt die Sprungmarke fallen', async () => {
@@ -280,6 +316,18 @@ describe('Portal-Reiter – Kopf', () => {
     await act(async () => button('Schreib uns', hero).click())
     expect(document.querySelector('dialog[open]').textContent).toContain('Nachricht an Hundeschule Wiesengrund')
     expect(selectedLabel()).toBe('Übersicht')
+  })
+
+  test('Zurück im Browser bei offenem "Schreib uns" im Reiter Kontakt: der Dialog schließt mit dem Reiter', async () => {
+    publicPartner.mockResolvedValue({ ...school, kontaktformular: true })
+    await render(['/p/hundeschule-wiesengrund', '/p/hundeschule-wiesengrund?reiter=kontakt'])
+    await act(async () => button('Schreib uns', visiblePanel()).click())
+    expect(document.querySelector('dialog[open]')).not.toBeNull()
+
+    await act(async () => navigate(-1))
+
+    expect(selectedLabel()).toBe('Übersicht')
+    expect(document.querySelector('dialog[open]')).toBeNull()
   })
 
   test('"Gutschein einlösen" im Kopf öffnet den Reiter Kontakt und setzt den Fokus auf "Gutschein einlösen"', async () => {
@@ -352,6 +400,24 @@ describe('Portal-Reiter – Laden', () => {
 
     await act(async () => resolvePosts(posts))
     expect(selectedLabel()).toBe('Angebote')
+  })
+
+  test('hängt eine Liste, erscheint das Portal nach kurzer Wartezeit ohne sie - kommt sie später, füllt sie nach', async () => {
+    vi.useFakeTimers()
+    try {
+      let resolvePosts
+      publicPartnerPosts.mockReturnValue(new Promise((resolve) => (resolvePosts = resolve)))
+      await render()
+      expect(container.querySelector('[role="tablist"]')).toBeNull()
+
+      await act(async () => vi.advanceTimersByTime(4000))
+      expect(tabLabels()).toEqual(['Übersicht', 'Termine', 'Kontakt'])
+
+      await act(async () => resolvePosts(posts))
+      expect(tabLabels()).toEqual(['Übersicht', 'Angebote', 'Termine', 'Kontakt'])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   test('schlägt eine Liste fehl, bleibt das Portal mit den übrigen Reitern', async () => {

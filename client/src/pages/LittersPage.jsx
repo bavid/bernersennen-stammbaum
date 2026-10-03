@@ -190,6 +190,7 @@ export default function LittersPage({ family }) {
         {!showAllLitters && split.hidden.length > 0 && (
           <button type="button" className="btn btn-ghost litter-more" onClick={() => setShowAllLitters(true)}>
             Mehr anzeigen ({split.hidden.length} {split.hidden.length === 1 ? 'weiterer' : 'weitere'})
+            <span className="visually-hidden"> – {words.littersLabel}</span>
           </button>
         )}
       </div>

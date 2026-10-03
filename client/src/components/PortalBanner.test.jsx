@@ -52,14 +52,14 @@ const partner = {
 
 describe('PortalHero mit Bannerfotos', () => {
   test('ohne Bannerfotos: der bisherige Kopf ohne Banner', async () => {
-    await render(<PortalHero partner={partner} contactId={null} />)
+    await render(<PortalHero partner={partner} onShowTab={() => {}} />)
     expect(container.querySelector('.partner-portal-hero').classList.contains('has-banner')).toBe(false)
     expect(container.querySelector('.portal-banner')).toBeNull()
   })
 
   test('ein Foto: breites Banner mit festen Maßen, Alternativtext, Logo darunter', async () => {
     const banner = [{ fotoUrl: '/public-media/kopf.jpg', alt: 'Welpen auf der Wiese' }]
-    await render(<PortalHero partner={{ ...partner, banner }} contactId={null} />)
+    await render(<PortalHero partner={{ ...partner, banner }} onShowTab={() => {}} />)
     const hero = container.querySelector('.partner-portal-hero')
     expect(hero.classList.contains('has-banner')).toBe(true)
     const box = hero.querySelector('.portal-banner')
@@ -79,7 +79,7 @@ describe('PortalHero mit Bannerfotos', () => {
       { fotoUrl: '/public-media/a.jpg', alt: 'Training' },
       { fotoUrl: '/public-media/b.jpg', alt: null }
     ]
-    await render(<PortalHero partner={{ ...partner, banner }} contactId={null} />)
+    await render(<PortalHero partner={{ ...partner, banner }} onShowTab={() => {}} />)
     const box = container.querySelector('.portal-banner')
     expect(box.classList.contains('portal-banner-double')).toBe(true)
     expect(box.getAttribute('role')).toBe('group')
@@ -96,14 +96,14 @@ describe('PortalHero mit Bannerfotos', () => {
       { fotoUrl: 'https://example.org/fremd.jpg', alt: 'fremd' },
       { fotoUrl: '/uploads/eigen.jpg', alt: 'eigen' }
     ]
-    await render(<PortalHero partner={{ ...partner, banner }} contactId={null} />)
+    await render(<PortalHero partner={{ ...partner, banner }} onShowTab={() => {}} />)
     expect(container.querySelector('.portal-banner')).toBeNull()
     expect(container.querySelector('.has-banner')).toBeNull()
     act(() => root.unmount())
     root = null
     container.remove()
 
-    await render(<PortalHero partner={{ ...partner, banner }} contactId={null} />, { preview: true })
+    await render(<PortalHero partner={{ ...partner, banner }} onShowTab={() => {}} />, { preview: true })
     expect([...container.querySelectorAll('.portal-banner img')].map((img) => img.getAttribute('src'))).toEqual(['/uploads/eigen.jpg'])
   })
 })

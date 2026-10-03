@@ -639,15 +639,21 @@
   margin-top: var(--space-2);
 }
 
+.einblick-actions .btn {
+  min-height: 2.2rem;
+  padding: 0 var(--space-4);
+}
+
 /* Am Handy eine Zeile je Einblick (Foto links, Text und Knöpfe rechts) statt einer großen Karte - mit bis zu 60
-   Einblicken wurde der Reiter sonst endlos (je Foto gut 450 px). */
+   Einblicken wurde der Reiter sonst endlos (je Foto gut 450 px). Beim Bearbeiten wieder untereinander, damit Datum
+   und Text die volle Breite haben. Steht nach der Grundregel der Knöpfe - sonst überstimmte die sie. */
 @media (max-width: 640px) {
-  .einblick-card {
+  .einblick-card:not(.is-editing) {
     flex-direction: row;
     align-items: stretch;
   }
 
-  .einblick-photo {
+  .einblick-card:not(.is-editing) .einblick-photo {
     flex: 0 0 6.5rem;
     aspect-ratio: auto;
     min-height: 6.5rem;
@@ -660,7 +666,6 @@
     left: var(--space-1);
     justify-content: center;
     padding: 0.15rem var(--space-1);
-    font-size: 0.62rem;
     text-align: center;
     white-space: normal;
   }
@@ -671,11 +676,7 @@
   }
 
   .einblick-text {
-    display: -webkit-box;
-    overflow: hidden;
     font-size: var(--text-sm);
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
   }
 
   .einblick-actions {
@@ -688,11 +689,6 @@
     padding: 0 var(--space-3);
     font-size: var(--text-xs);
   }
-}
-
-.einblick-actions .btn {
-  min-height: 2.2rem;
-  padding: 0 var(--space-4);
 }
 
 /* Phase V1: Anpinnen für die Karte in "Entdecken" (EinblickPinButton) - angepinnt kräftig, sonst leise. */

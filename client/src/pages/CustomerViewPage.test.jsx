@@ -321,6 +321,13 @@ describe('CustomerViewPage – Adresse', () => {
     expect(frame().querySelector('[role="tab"][aria-selected="true"]').firstChild.textContent).toBe('Einblicke')
   })
 
+  test('ein Reiterwechsel im Portal behält ?ansicht=portal', async () => {
+    await render(schoolArea, '/kundensicht?ansicht=portal')
+    await act(async () => frame().querySelector('#portal-tab-kontakt').click())
+    expect(location.search).toBe('?ansicht=portal&reiter=kontakt')
+    expect(tab('Euer Portal').getAttribute('aria-pressed')).toBe('true')
+  })
+
   test('?ansicht=steckbriefe ohne Tierheim zeigt "Entdecken"', async () => {
     await render(schoolArea, '/kundensicht?ansicht=steckbriefe')
     expect(tab('Entdecken (Beispiel-Kunde)').getAttribute('aria-pressed')).toBe('true')

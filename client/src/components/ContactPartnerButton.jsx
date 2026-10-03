@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
 import ContactPartnerForm from './ContactPartnerForm.jsx'
 import { PREVIEW_DISABLED_HINT, useIsPreview } from '../lib/preview.js'
 import { DEMO_CONTACT_HINT, contactFormState } from '../lib/contactPartner.js'
+import { usePortalPanelActive } from '../lib/portalPanel.js'
 
 // ?demo=1 geht mit, wenn die Seite selbst so geladen wurde (wie PartnerPortalPage demoParam).
 function demoParam(search) {
@@ -18,6 +19,11 @@ export default function ContactPartnerButton({ partner, bezugSlug, label = 'Schr
   const preview = useIsPreview()
   const { search } = useLocation()
   const [open, setOpen] = useState(false)
+  // Auf dem Portal: verschwindet der Reiter (Zurück im Browser), schließt das Formular mit (lib/portalPanel.js).
+  const panelActive = usePortalPanelActive()
+  useEffect(() => {
+    if (!panelActive) setOpen(false)
+  }, [panelActive])
   const disabledHint = preview ? PREVIEW_DISABLED_HINT : contactFormState(partner) === 'demo' ? DEMO_CONTACT_HINT : null
 
   if (disabledHint) {

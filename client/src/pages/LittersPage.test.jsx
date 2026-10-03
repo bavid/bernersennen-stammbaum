@@ -203,13 +203,13 @@ describe('LittersPage: ältere Würfe hinter "Mehr anzeigen"', () => {
     await renderMany()
     expect(container.querySelectorAll('.litter-card')).toHaveLength(2)
     expect(titles()[0]).toContain('Welpe 10a')
-    const more = button('Mehr anzeigen (2 weitere)')
+    const more = button('Mehr anzeigen (2 weitere) – Nachwuchs')
     expect(more).not.toBeUndefined()
 
     await act(async () => more.click())
 
     expect(container.querySelectorAll('.litter-card')).toHaveLength(4)
-    expect(button('Mehr anzeigen (2 weitere)')).toBeUndefined()
+    expect(button('Mehr anzeigen (2 weitere) – Nachwuchs')).toBeUndefined()
     expect(document.activeElement).toBe(container.querySelectorAll('.litter-card')[2])
     expect(titles()[3]).toContain('Welpe 40a')
   })

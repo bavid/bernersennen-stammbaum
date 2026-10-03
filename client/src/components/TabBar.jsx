@@ -68,7 +68,9 @@ export default function TabBar({ tabs, current, counts, label, idPrefix, panelId
     if (next === null) return
     event.preventDefault()
     const key = tabs[next].key
-    onSelect(key)
+    // Zweites Argument: der Wechsel kam per Tastatur - wer den Reiter im Verlauf führt (Portal), ersetzt dann den Eintrag
+    // statt je Pfeiltaste einen neuen anzulegen.
+    onSelect(key, { keyboard: true })
     buttons.current[key]?.focus()
   }
 

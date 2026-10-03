@@ -13,6 +13,9 @@ const ON_RUST = '#fffaf2'
 const ACCENT_WASH_ALPHA = 0.1
 const PREVIEW_LOAD_ERROR = 'Die Vorschau konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
 const EMPTY = Object.freeze([])
+// So lange warten die Reiter höchstens auf eine Liste - hängt eine Anfrage, erscheint das Portal ohne sie (kommt sie
+// später doch, füllt sie Reiter und Zähler nach).
+const LIST_WAIT_MS = 4000
 
 // Nie einen rohen String ins Inline-Style schreiben: die Akzentfarbe kommt vom Server (partners.farbe,
 // dort schon auf #rrggbb geprüft), hier zur Sicherheit noch einmal validiert. Ungültig -> kein Style,
@@ -56,24 +59,27 @@ function NotFound({ family }) {
 
 // Eine öffentliche Liste des Portals (Tiere in Vermittlung, Happy Ends, Beiträge) - lädt unabhängig vom Partner:
 // schlägt es fehl (z. B. kein Tierheim), bleibt es bei einer leeren Liste, ohne die restliche Portalseite zu
-// blockieren. null, solange sie lädt (die Reiter warten darauf, sonst sprängen Zähler und Reiter nach). Abhängig nur
-// von slug und ?demo= - ein Reiterwechsel (?reiter=) lädt nichts neu. skip: mit eingespeisten Daten (Kundensicht)
-// wird nichts nachgeladen.
+// blockieren. null, solange sie lädt (die Reiter warten darauf, sonst sprängen Zähler und Reiter nach) - höchstens
+// LIST_WAIT_MS lang. Abhängig nur von slug und ?demo= - ein Reiterwechsel (?reiter=) lädt nichts neu. skip: mit
+// eingespeisten Daten (Kundensicht) wird nichts nachgeladen.
 function usePortalList(fetchList, slug, demo, skip) {
   const [items, setItems] = useState(null)
   useEffect(() => {
     if (skip) return undefined
     let cancelled = false
     setItems(null)
+    const waited = setTimeout(() => setItems((current) => current ?? EMPTY), LIST_WAIT_MS)
     fetchList(slug, { demo })
       .then((data) => {
         if (!cancelled) setItems(asList(data))
       })
       .catch(() => {
-        if (!cancelled) setItems(EMPTY)
+        if (!cancelled) setItems((current) => current ?? EMPTY)
       })
+      .finally(() => clearTimeout(waited))
     return () => {
       cancelled = true
+      clearTimeout(waited)
     }
   }, [slug, demo, skip])
   return skip ? EMPTY : items

@@ -3,6 +3,7 @@ import EinblickViewer, { einblickAlt } from './EinblickViewer.jsx'
 import PortalSection from './PortalSection.jsx'
 import { formatDateLong } from '../lib/dates.js'
 import { SECTION_IDS, galleryEinblicke } from '../lib/portalTabs.js'
+import { usePortalPanelActive } from '../lib/portalPanel.js'
 import { useIsPreview } from '../lib/preview.js'
 
 // Feste Maße im Seitenverhältnis 4:3 (CSS aspect-ratio) - der Platz steht schon vor dem Laden fest.
@@ -19,6 +20,12 @@ export default function EinblickeGallery({ einblicke }) {
   const lastTrigger = useRef(null)
   const wasOpen = useRef(false)
   const items = galleryEinblicke(einblicke, { preview })
+  const panelActive = usePortalPanelActive()
+
+  // Wird der Reiter verborgen (Zurück im Browser), schließt die große Ansicht mit.
+  useEffect(() => {
+    if (!panelActive) setOpenIndex(null)
+  }, [panelActive])
 
   // Fokus zurück, sobald der Dialog zu ist (Effekte der Kinder - Modal schließt den <dialog> - laufen zuerst).
   useEffect(() => {

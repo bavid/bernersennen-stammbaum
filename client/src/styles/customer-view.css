@@ -173,11 +173,6 @@
   padding: var(--space-5) var(--space-4) var(--space-8);
 }
 
-/* Sprungziele (Reiter-Leiste, Abschnitte des Portals) nicht unter den klebenden Kopf der App schieben. */
-.preview-frame .portal-tabs-bar,
-.preview-frame .portal-section {
-  scroll-margin-top: calc(var(--header-height) + var(--space-4));
-}
 
 .preview-frame-screen .page {
   gap: var(--space-8);
@@ -233,8 +228,10 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Der versetzte Rahmen ums Foto (dog.css ::after) ragt 18 px nach rechts - ohne eigenes Scrollfenster nicht mehr über
+   den Rand hinaus. */
 .preview-frame-screen .dog-hero-photo {
-  width: min(100%, 22rem);
+  width: min(100% - 18px, 22rem);
   aspect-ratio: 1;
 }
 
@@ -336,8 +333,9 @@
   cursor: not-allowed;
 }
 
-/* Knöpfe und Textlinks sichtbar abgeschaltet; ganze Karten (Tiere) bleiben voll lesbar */
-.is-preview-disabled:not(.shelter-card) {
+/* Knöpfe und Textlinks sichtbar abgeschaltet; ganze Karten (Tiere, auch die kleinen in der Portal-Übersicht) bleiben
+   voll lesbar */
+.is-preview-disabled:not(.shelter-card):not(.portal-overview-animal) {
   opacity: 0.6;
 }
 

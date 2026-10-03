@@ -108,7 +108,7 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
   }
 
   return (
-    <li className={`einblick-card${einblick.ausgeblendet ? ' is-hidden-by-admin' : ''}`}>
+    <li className={`einblick-card${einblick.ausgeblendet ? ' is-hidden-by-admin' : ''}${editing ? ' is-editing' : ''}`}>
       <div className="einblick-photo">
         {isUploadUrl(einblick.fotoUrl) && <img src={einblick.fotoUrl} alt={`Einblick vom ${dateLabel}`} loading="lazy" />}
         {einblick.ausgeblendet && (

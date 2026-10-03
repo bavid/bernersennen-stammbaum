@@ -129,7 +129,7 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
               id="portal-overview-animals"
               title={adoptionSectionTitle(animals)}
               className="portal-overview-animals-block"
-              more={{ label: animals.length === 1 ? 'Zum Tier' : `Alle ${animals.length} Tiere ansehen`, onClick: () => onShowTab('tiere') }}
+              more={{ label: animals.length === 1 ? 'Zum Reiter Tiere' : `Alle ${animals.length} Tiere ansehen`, onClick: () => onShowTab('tiere') }}
             >
               <AnimalStrip animals={animals} />
             </OverviewBlock>
