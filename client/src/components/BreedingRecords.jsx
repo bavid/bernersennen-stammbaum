@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
@@ -12,16 +12,29 @@ import { isEditable } from '../lib/areas.js'
 
 const EMPTY_FORM = { mutterDogId: '', vater: { dogId: '', freitext: '' }, datum: todayIso(), wurfInfo: '', fotos: [] }
 
-function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
+// initialMother: Id einer Hündin, die vorgewählt sein soll (LittersPage ?mutter=) - nur, wenn sie zur Auswahl steht.
+// focusOnOpen: über einen Link geöffnet - dann springt die Seite zum Formular, und der Fokus steht in der ersten Angabe.
+function BreedingForm({ ownDogs, allDogs, initialMother = null, focusOnOpen = false, onCreated, onCancel }) {
   const { theme, words } = useTheme()
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [error, setError] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const formRef = useRef(null)
+  const motherRef = useRef(null)
   // ownDogs (aus listDogs) enthält seit dem Teilen auch hierher geteilte, nicht bearbeitbare Tiere –
   // ein Deckakt lässt sich aber nur mit eigenen Hündinnen eintragen (der Server würde alles andere ablehnen).
   const mothers = ownDogs.filter((d) => d.geschlecht === 'huendin' && (d.tierart || 'hund') === 'hund' && isEditable(d))
+  const [form, setForm] = useState(() => ({
+    ...EMPTY_FORM,
+    mutterDogId: mothers.some((dog) => dog.id === initialMother) ? initialMother : ''
+  }))
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const update = (patch) => setForm((current) => ({ ...current, ...patch }))
+
+  useEffect(() => {
+    if (!focusOnOpen) return
+    formRef.current?.scrollIntoView?.({ block: 'start' })
+    motherRef.current?.focus({ preventScroll: true })
+  }, [focusOnOpen])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -46,7 +59,7 @@ function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
   }
 
   return (
-    <form className="form-stack card breeding-form" onSubmit={handleSubmit}>
+    <form className="form-stack card breeding-form" onSubmit={handleSubmit} ref={formRef}>
       <h3>{words.addMating}</h3>
       {error && <div className="error-banner" role="alert">{error}</div>}
       <div className="field">
@@ -55,6 +68,7 @@ function BreedingForm({ ownDogs, allDogs, onCreated, onCancel }) {
         </label>
         <select
           id="mutter"
+          ref={motherRef}
           value={form.mutterDogId}
           onChange={(e) => update({ mutterDogId: e.target.value ? Number(e.target.value) : '' })}
           required
@@ -140,9 +154,16 @@ export function BreedingEvent({ event, onDelete, onOpenPhoto }) {
 // Das bisherige Zuchtbuch als Abschnitt der Würfe-Seite: für die, die züchten – alle anderen sehen es zugeklappt.
 // canWrite (Phase R): ohne Schreibrecht (Gast in einer Familie) kein "Deckakt eintragen"; Löschen hängt an onDelete.
 // Phase U: im Standard-Auftritt "Verpaarungen" statt "Zuchtbuch" und "Verpaarung" statt "Deckakt".
-export default function BreedingRecords({ events, ownDogs, allDogs, canWrite = true, onCreated, onDelete, onOpenPhoto }) {
+// request (Familienbande 2, LittersPage ?verpaarung=neu&mutter=): { key, mother } - öffnet das Formular (mit der Hündin
+// vorgewählt), springt dorthin und setzt den Fokus hinein; ein neuer key öffnet es erneut.
+export default function BreedingRecords({ events, ownDogs, allDogs, canWrite = true, request = null, onCreated, onDelete, onOpenPhoto }) {
   const { theme, words } = useTheme()
   const [writing, setWriting] = useState(false)
+
+  useEffect(() => {
+    if (request && canWrite) setWriting(true)
+  }, [request, canWrite])
+
   return (
     <section className="breeding-records" aria-labelledby="breeding-records-title">
       <div className="section-head">
@@ -158,8 +179,11 @@ export default function BreedingRecords({ events, ownDogs, allDogs, canWrite = t
       <p className="muted">{theme.texts.breedingIntro}</p>
       {writing && (
         <BreedingForm
+          key={request?.key ?? 0}
           ownDogs={ownDogs}
           allDogs={allDogs}
+          initialMother={request?.mother ?? null}
+          focusOnOpen={Boolean(request)}
           onCreated={(created) => {
             onCreated(created)
             setWriting(false)

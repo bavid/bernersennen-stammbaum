@@ -90,6 +90,32 @@
   padding: 0 var(--space-6);
 }
 
+/* Knopf, der wie ein Link im Fließtext aussieht (z. B. Bereichsnamen in der Zeile unter der Familienbande) */
+.link-button {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--rust);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--rust-deep);
+  text-decoration-color: currentColor;
+}
+
+.link-button:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--focus-ring);
+}
+
 .icon-btn {
   display: inline-grid;
   place-items: center;

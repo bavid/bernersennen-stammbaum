@@ -63,7 +63,10 @@ afterEach(() => {
   document.title = ''
 })
 
-async function render({ themeId = 'standard', dogs = [...parents, ...siblings], events = [], role = 'leitung' } = {}) {
+// Familienbande 2: im Standard-Auftritt steht der Nachwuchs beim Stammbaum (?ansicht=stammbaum), nicht bei den Familien.
+const TREE_PATH = '/?ansicht=stammbaum'
+
+async function render({ themeId = 'standard', dogs = [...parents, ...siblings], events = [], role = 'leitung', path = TREE_PATH } = {}) {
   api.listDogs.mockResolvedValue(dogs)
   if (events instanceof Error) api.listBreedingEvents.mockRejectedValue(events)
   else api.listBreedingEvents.mockResolvedValue(events)
@@ -72,7 +75,7 @@ async function render({ themeId = 'standard', dogs = [...parents, ...siblings], 
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <ThemeProvider themeId={themeId}>
           <OverviewPage family={{ ...family, theme: themeId, role }} onFamilyChange={() => {}} onInvite={() => {}} />
         </ThemeProvider>
@@ -84,11 +87,14 @@ async function render({ themeId = 'standard', dogs = [...parents, ...siblings], 
 
 const section = () => container.querySelector('.offspring-section')
 
-describe('Familienbande – Abschnitt "Nachwuchs" (Phase U, Standard-Auftritt)', () => {
-  test('mit Geschwistern: Abschnitt mit Titel, Eltern, Geschwister-Chips und dem Weg zu /wuerfe', async () => {
+describe('Familienbande – "Nachwuchs" beim Stammbaum (Phase U, Familienbande 2, Standard-Auftritt)', () => {
+  const tree = () => container.querySelector('[data-testid="pedigree-tree"]')
+
+  test('mit Geschwistern: Abschnitt unter dem Baum mit Titel, Eltern, Geschwister-Chips und dem Weg zu /wuerfe', async () => {
     await render()
 
     expect(container.querySelector('.eyebrow').textContent).toBe('Familienbande')
+    expect(tree()).not.toBeNull()
     expect(section().querySelector('h2').textContent).toBe('Nachwuchs')
     expect(section().querySelector('.offspring-item-title').textContent).toBe('Nachwuchs vom 18. April 2021 · von Frieda × Anton')
     // Die Chips zeigen vorn Avatar-Initialen, dahinter den Namen.
@@ -98,32 +104,64 @@ describe('Familienbande – Abschnitt "Nachwuchs" (Phase U, Standard-Auftritt)',
     ])
     const link = section().querySelector('a[href="/wuerfe"]')
     expect(link.textContent).toContain('Nachwuchs ansehen')
+    // Erst der Baum, darunter der Nachwuchs
+    expect(tree().compareDocumentPosition(section()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  test('ohne Geschwister und ohne Verpaarungen: kein Abschnitt - nur eine leise Zeile zur ersten Verpaarung', async () => {
-    await render({ dogs: parents })
+  test('bei den Familien steht kein Nachwuchs - auch mit Geschwistern nicht', async () => {
+    await render({ path: '/' })
+    expect(container.querySelector('.families-view')).not.toBeNull()
+    expect(section()).toBeNull()
+    expect(container.querySelector('.offspring-hint')).toBeNull()
+  })
+
+  test('wer eine Verpaarung eintragen darf, findet den Weg dazu im Abschnitt (öffnet das Formular direkt)', async () => {
+    await render()
+    const add = section().querySelector('a[href="/wuerfe?verpaarung=neu"]')
+    expect(add.textContent).toContain('Verpaarung eintragen')
+
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render({ role: 'gast' })
+    expect(section().querySelector('a[href="/wuerfe?verpaarung=neu"]')).toBeNull()
+  })
+
+  test('Baum ohne Geschwister und ohne Verpaarungen: kein Abschnitt - nur eine leise Zeile zur ersten Verpaarung', async () => {
+    await render({ dogs: [...parents, siblings[0]] })
 
     expect(api.listBreedingEvents).toHaveBeenCalled()
-    // Phase V3: ohne Verpaarung und ohne Eltern zeigt der Standard-Auftritt die Familien, keinen Stammbaum
-    expect(container.querySelector('[data-testid="pedigree-tree"]')).toBeNull()
-    expect(container.querySelector('.families-view')).not.toBeNull()
+    expect(tree()).not.toBeNull()
     expect(section()).toBeNull()
     const hint = container.querySelector('.offspring-hint')
     expect(hint.textContent).toContain('Nachwuchs geplant?')
-    expect(hint.querySelector('a').getAttribute('href')).toBe('/wuerfe')
+    expect(hint.querySelector('a').getAttribute('href')).toBe('/wuerfe?verpaarung=neu')
     expect(hint.querySelector('a').textContent).toContain('Verpaarung eintragen')
   })
 
+  test('ohne Eltern und ohne Verpaarung gibt es keinen Baum - und damit auch keinen Nachwuchs-Hinweis', async () => {
+    await render({ dogs: parents })
+    expect(tree()).toBeNull()
+    expect(container.querySelector('.families-view')).not.toBeNull()
+    expect(container.querySelector('.offspring-hint')).toBeNull()
+  })
+
   test('die leise Zeile nur mit Schreibrecht und eigener Hündin', async () => {
-    await render({ dogs: parents, role: 'gast' })
+    await render({ dogs: [...parents, siblings[0]], role: 'gast' })
     expect(container.querySelector('.offspring-hint')).toBeNull()
 
     act(() => root.unmount())
     root = null
     container.remove()
 
-    const cats = [dog(1, 'Minka', { tierart: 'katze' }), dog(2, 'Kater Karlo', { tierart: 'katze', geschlecht: 'ruede' })]
+    const cats = [
+      dog(1, 'Minka', { tierart: 'katze' }),
+      dog(2, 'Kater Karlo', { tierart: 'katze', geschlecht: 'ruede' }),
+      dog(3, 'Mimi', { tierart: 'katze', mother_dog_id: 1, geburtsdatum: '2021-04-18' })
+    ]
     await render({ dogs: cats })
+    expect(tree()).not.toBeNull()
     expect(container.querySelector('.offspring-hint')).toBeNull()
     expect(section()).toBeNull()
   })
@@ -169,19 +207,20 @@ describe('Familienbande – Abschnitt "Nachwuchs" (Phase U, Standard-Auftritt)',
   })
 
   test('schlägt das Laden der Verpaarungen fehl, bleibt die Seite stehen - nur ohne Abschnitt', async () => {
-    await render({ dogs: parents, events: new Error('Fehler 500') })
+    await render({ dogs: [...parents, siblings[0]], events: new Error('Fehler 500') })
 
     expect(container.querySelector('h1').textContent).toBe('Familie Sonnenhang')
+    expect(tree()).not.toBeNull()
     expect(section()).toBeNull()
   })
 
-  // Phase V3: einzige Ausnahme ist der ausdrückliche Zusatz "Stammbaum öffnen" (erst nach einer Verpaarung).
-  test('kein Wort "Stammbaum", "Würfe" oder "Deckakt" auf der Seite - außer dem Knopf "Stammbaum öffnen"', async () => {
-    await render({ events: [plannedEvent] })
+  // Phase V3: einzige Ausnahme ist der ausdrückliche Zusatz "Stammbaum & Nachwuchs" (erst mit Verpaarung oder Eltern).
+  test('kein Wort "Stammbaum", "Würfe" oder "Deckakt" bei den Familien - außer dem Link "Stammbaum & Nachwuchs"', async () => {
+    await render({ events: [plannedEvent], path: '/' })
 
     const toggle = [...container.querySelectorAll('.hero-actions a')].find((link) => link.textContent.includes('Stammbaum'))
-    expect(toggle.textContent).toBe('Stammbaum öffnen')
-    const rest = container.textContent.replace('Stammbaum öffnen', '')
+    expect(toggle.textContent).toBe('Stammbaum & Nachwuchs')
+    const rest = container.textContent.replace('Stammbaum & Nachwuchs', '')
     expect(rest).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht/)
   })
 })

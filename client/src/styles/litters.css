@@ -326,8 +326,9 @@ a.litter-parent:hover {
   }
 }
 
-/* Abschnitt "Nachwuchs" auf der Familienbande (OffspringSection, Phase U): nur im Standard-Auftritt, der keinen
-   eigenen Reiter dafür hat. Geschwister als Chips, Erwartetes als ruhige Meta-Zeile, der Weg zur ganzen Seite oben. */
+/* Abschnitt "Nachwuchs" unter dem Stammbaum der Familienbande (OffspringSection, Phase U, Familienbande 2): nur im
+   Standard-Auftritt, der keinen eigenen Reiter dafür hat. Geschwister als Chips, Erwartetes als ruhige Meta-Zeile, oben
+   der Weg zur ganzen Seite und - für die, die eintragen dürfen - leise "Verpaarung eintragen". */
 
 .offspring-section {
   display: grid;
@@ -336,6 +337,27 @@ a.litter-parent:hover {
 
 .offspring-section h2 {
   font-size: var(--text-xl);
+}
+
+.offspring-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+}
+
+.offspring-add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2.6rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.offspring-add svg {
+  width: 1em;
+  height: 1em;
 }
 
 .offspring-list,

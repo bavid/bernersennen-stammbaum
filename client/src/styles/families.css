@@ -1,245 +1,226 @@
-/* Familienbande im Standard-Auftritt (Phase V3, components/families): Abschnitte je Familie statt Generationen -
-   ruhige Karten mit Überschrift, die Tiere als Karten im Raster, Beziehungen als kleine Chips darunter (keine Linien).
-   Der Stammbaum mit Generationen (tree.css) bleibt der Zusatz hinter "Stammbaum öffnen". */
+/* Familienbande im Standard-Auftritt (Familienbande 2, components/families): ein ruhiges Raster aller Tiere statt
+   Abschnitten je Familie - darüber ein Filter je Zuhause, darunter (im eigenen Zuhause) eine leise Zeile zu Familien
+   und befreundeten Zuhause. Keine Beziehungs-Chips, keine Rahmen um Gruppen. Der Stammbaum mit Generationen (tree.css)
+   und dem Nachwuchs darunter bleibt der Zusatz hinter "Stammbaum & Nachwuchs". */
 
-.families-view {
-  display: grid;
+/* Kopf: alles an einer linken Kante untereinander - Titel und Einleitung, Kennzahlen, Aktionen (vorher sprang der Block
+   rechts neben den Titel oder darunter, je nachdem, wie lang der Name war). */
+.families-hero {
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-6);
 }
 
-.family-group {
+.families-hero .hero-actions {
+  align-items: center;
+}
+
+/* Die dritte, leiseste Aktion im Kopf ("Stammbaum & Nachwuchs" bzw. "Zurück zu den Familien"): ein Link, kein Knopf -
+   so stehen dort nicht drei gleich laute Knöpfe nebeneinander. */
+.hero-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--rust);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 4px;
+}
+
+.hero-link:hover {
+  color: var(--rust-deep);
+  text-decoration-color: currentColor;
+}
+
+.hero-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.hero-link svg {
+  flex-shrink: 0;
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.families-view {
   display: grid;
   gap: var(--space-5);
 }
 
-.family-group-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-4);
+.families-head {
+  display: grid;
+  gap: var(--space-3);
 }
 
-.family-group-icon {
-  display: inline-grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+.families-title {
+  font-size: var(--text-xl);
+}
+
+/* Filter je Zuhause: Umschalter mit Anzahl, der gewählte dunkel gefüllt */
+.family-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.family-filter-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
-  background: var(--rust-wash);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.family-filter-option:hover {
+  border-color: var(--rust);
   color: var(--rust);
 }
 
-.family-group-icon svg {
-  width: 1.25rem;
-  height: 1.25rem;
+.family-filter-option:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
-.family-group-icon.is-familie,
-.family-group-icon.is-freunde {
-  background: var(--alpine-wash);
-  color: var(--alpine);
+.family-filter-option[aria-pressed='true'] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
 }
 
-.family-group-title {
-  flex: 1 1 12rem;
-  min-width: 0;
-}
-
-.family-group-title h2 {
-  margin: 0;
-  font-size: var(--text-xl);
-  overflow-wrap: anywhere;
-}
-
-.family-group-meta,
-.family-group-note {
-  margin: 0;
-  font-size: var(--text-sm);
+.family-filter-count {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
 
-.family-group-actions {
-  margin-left: auto;
+.family-filter-option[aria-pressed='true'] .family-filter-count {
+  color: color-mix(in srgb, var(--paper) 72%, transparent);
 }
 
-.family-members {
+.families-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
-  gap: var(--space-5) var(--space-4);
+  gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.family-member {
+.families-grid > li {
   display: grid;
-  align-content: start;
-  gap: var(--space-2);
   min-width: 0;
 }
 
-/* Audit V7a: Karte und Beziehungs-Chips je Zeile auf einer Linie - die Karten einer Zeile sind gleich hoch, die Chips
-   darunter beginnen überall auf derselben Höhe (vorher hingen sie je nach Kartenhöhe versetzt). Ohne subgrid bleibt es
-   beim gestapelten Aufbau oben. */
-@supports (grid-template-rows: subgrid) {
-  .family-member {
-    grid-row: span 2;
-    grid-template-rows: subgrid;
-    align-content: stretch;
-  }
-
-  .family-member > .relation-chips {
-    align-self: start;
-  }
-}
-
-/* Im Raster füllt die Karte ihre Spalte (im Stammbaum hat sie eine feste Breite) */
-.family-member .dog-card {
+/* Im Raster füllt die Karte ihre Zelle (im Stammbaum hat sie eine feste Breite); die Herkunft geteilter Tiere ist nur
+   eine leise Zeile. */
+.dog-card.is-grid {
   width: 100%;
+  min-width: 0;
 }
 
-.relation-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-  margin: 0;
-  padding: 0 var(--space-3);
-  list-style: none;
-}
-
-.relation-chip {
-  padding: 2px var(--space-2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--surface-sunk);
-  font-size: var(--text-xs);
+.dog-card.is-grid .dog-card-shared {
+  overflow: hidden;
   font-weight: 600;
-  line-height: 1.5;
-  color: var(--ink-soft);
+  letter-spacing: 0;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.relation-chip.is-mitbewohner {
-  border-color: color-mix(in srgb, var(--alpine) 25%, transparent);
-  background: var(--alpine-wash);
-  color: var(--alpine);
-}
-
-.family-group-shared {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.family-group .chip-list,
-.friend-homes {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* Namen befreundeter Tiere sind keine Links (keine Tierseite) - kein Hover wie bei einem Link-Chip */
-.chip.is-static:hover {
-  border-color: var(--line);
-  color: var(--ink);
-}
-
-.friend-homes {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.friend-home {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.friend-home + .friend-home {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line);
-}
-
-.friend-home-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-3);
-}
-
-.friend-home-head h3 {
-  margin: 0;
-  font-size: var(--text-lg);
-}
-
-.friend-home .muted {
+/* Unter dem Raster: "Ihr zeigt Tiere auch in … · befreundet mit …" */
+.families-links {
   margin: 0;
   font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--muted);
 }
 
-/* Fuß der Familienbande: Nachwuchs (bzw. seine leise Zeile) und der Hinweis auf den Stammbaum als ein Block */
-.overview-foot {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.overview-foot:empty {
-  display: none;
-}
-
-.families-tree-hint {
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
+/* Am Handy macht tree.css aus den Karten schmale Medaillons für den Baum - im Raster bleiben sie ab 360 px zwei (oder
+   mehr) Spalten mit Foto oben und Name, Art, Geschlecht und Jahr darunter, darunter eine Spalte als ruhige Liste. */
 @media (max-width: 720px) {
-  .family-group-actions {
-    width: 100%;
-    margin-left: 0;
+  .families-grid {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--space-3);
   }
 
-  .family-group-actions .btn {
-    width: 100%;
+  .dog-card.is-grid {
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-2);
+    border-radius: var(--radius-lg);
   }
 
-  /* Am Handy macht tree.css aus den Karten schmale Medaillons für den Baum - in der Familien-Ansicht bleiben sie
-     eine ruhige Liste: Foto links, Name, Art und Einträge daneben, die Chips darunter. */
-  .family-members {
+  .dog-card.is-grid .avatar {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .dog-card.is-grid .dog-card-name {
+    font-size: 1.05rem;
+  }
+
+  .dog-card.is-grid .dog-card-breed {
+    -webkit-line-clamp: 1;
+  }
+
+  .dog-card.is-grid .dog-card-meta .sex-label {
+    display: inline;
+  }
+
+  .dog-card.is-grid .dog-card-meta .sex-label + span::before {
+    content: '·';
+    margin-right: var(--space-1);
+  }
+
+  .dog-card.is-grid .dog-card-tag {
+    display: block;
+    max-width: 100%;
+    font-size: 0.68rem;
+  }
+
+  .family-filter-option {
+    padding: 0 var(--space-3);
+  }
+}
+
+@media (max-width: 359px) {
+  .families-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-4);
   }
 
-  .family-member .dog-card {
+  .dog-card.is-grid {
     flex-direction: row;
     gap: var(--space-3);
-    width: 100%;
     padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
     border-radius: 3rem;
     text-align: left;
   }
 
-  .family-member .dog-card .avatar {
+  .dog-card.is-grid .avatar {
     width: 48px !important;
     height: 48px !important;
   }
 
-  .family-member .dog-card-body {
+  .dog-card.is-grid .dog-card-body {
     justify-items: start;
-  }
-
-  .family-member .dog-card-name {
-    font-size: 1.125rem;
-  }
-
-  .family-member .dog-card-meta .sex-label {
-    display: inline;
-  }
-
-  .family-member .dog-card-meta .sex-label + span::before {
-    content: '·';
-    margin-right: var(--space-1);
-  }
-
-  .family-member .dog-card-tag {
-    display: block;
   }
 }

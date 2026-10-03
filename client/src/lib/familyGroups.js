@@ -1,13 +1,13 @@
-// Familienbande im Standard-Auftritt (Phase V3): zuerst Familien statt Generationen. Reine Logik für die Abschnitte
-// (eigener Bereich, die Zuhause der Mitglieder, die Familien des eigenen Zuhauses, befreundete Zuhause), die
-// Beziehungs-Chips an den Karten und die Frage, ob es schon einen Stammbaum gibt.
+// Familienbande im Standard-Auftritt (Phase V3, Familienbande 2): ein Raster aller Tiere statt Generationen. Reine
+// Logik für die Gruppen je Eigentümer (der eigene Bereich, die Zuhause der Mitglieder - der Filter über dem Raster), die
+// Familien und befreundeten Zuhause des eigenen Zuhauses (eine leise Zeile darunter) und die Frage, ob es schon einen
+// Stammbaum gibt.
 import { collectNodes, computeUnions } from './pedigree.js'
-import { displayName } from './timeline.js'
 import { isOwnHome } from './visits.js'
 
-// Bis zu so vielen Namen stehen ausgeschrieben im Chip ("A, B und C"), darüber "A, B und 2 weiteren".
-const MAX_NAMES = 3
-const NAMES_BEFORE_REST = 2
+// Adresse der Familienbande: ?gruppe=eigen bzw. ?gruppe=<Bereichs-Id> wählt eine Gruppe, ohne Angabe stehen alle da.
+export const GROUP_PARAM = 'gruppe'
+export const OWN_GROUP_PARAM = 'eigen'
 
 // Den Stammbaum gibt es erst, wenn eine Verpaarung eingetragen ist (events: GET /api/breeding) oder ein Tier einen
 // bekannten Elternteil hat, der ebenfalls in den Daten steht - dann hätte der Baum mindestens zwei Generationen.
@@ -26,59 +26,40 @@ export function overviewMode({ familiesView, wantsTree, treeAvailable, loaded })
   return loaded ? 'families' : 'pending'
 }
 
-// "Cora", "Cora und Dante", "A, B und C", "A, B und 2 weiteren"
-export function nameList(dogs) {
-  const names = dogs.map(displayName)
-  if (names.length <= 1) return names.join('')
-  if (names.length <= MAX_NAMES) return `${names.slice(0, -1).join(', ')} und ${names[names.length - 1]}`
-  return `${names.slice(0, NAMES_BEFORE_REST).join(', ')} und ${names.length - NAMES_BEFORE_REST} weiteren`
+// Familienbande 2: unbekannte Eltern (Platzhalter "Unbekannt", als Mutter oder Vater eines Tiers eingetragen) gehören
+// nur in den Stammbaum - im Raster stünden sie als namenlose Karten zwischen den Tieren. Ein Tier mit unbekanntem
+// Namen, das niemandes Elternteil ist (z. B. ein Fundtier), bleibt.
+export function familyAnimals(dogs = []) {
+  const parentIds = new Set(dogs.flatMap((dog) => [dog.mother_dog_id, dog.father_dog_id]).filter(Boolean))
+  return dogs.filter((dog) => !(dog.name_unbekannt && parentIds.has(dog.id)))
 }
 
-const isParentOf = (parent) => (node) => node.mother_dog_id === parent.id || node.father_dog_id === parent.id
+// Kurzname im Filter über dem Raster: ohne "(Demo)" am Ende und ohne "Zuhause " vor einem Eigennamen
+// ("Zuhause Lindenhof (Demo)" -> "Lindenhof"); "Zuhause am Deich" bleibt - "am Deich" allein läse sich seltsam.
+const DEMO_SUFFIX = /\s*\(Demo\)$/
+const HOME_PREFIX = /^Zuhause\s+(?=\p{Lu})/u
 
-// Chips an einer Karte: [{ kind, text }] - "Mutter von …"/"Vater von …", "Kind von …", "Geschwister von …" (mindestens
-// ein gemeinsamer Elternteil), "lebt mit …". nodes: alle Tiere, die der Bereich kennt (collectNodes), links: die
-// "lebt zusammen"-Paare (GET /api/dogs/links). Verweise auf Tiere außerhalb von nodes zählen nicht.
-export function relationChips(dog, nodes, links = []) {
-  const byId = new Map(nodes.map((node) => [node.id, node]))
-  const others = nodes.filter((node) => node.id !== dog.id)
-  const parents = [dog.mother_dog_id, dog.father_dog_id].filter(Boolean).map((id) => byId.get(id)).filter(Boolean)
-  const children = others.filter(isParentOf(dog))
-  const siblings = others.filter((node) => !children.includes(node) && parents.some((parent) => isParentOf(parent)(node)))
-  const mates = links
-    .filter((link) => link.dog_a_id === dog.id || link.dog_b_id === dog.id)
-    .map((link) => byId.get(link.dog_a_id === dog.id ? link.dog_b_id : link.dog_a_id))
-    .filter(Boolean)
-
-  // Audit V7a: ein unbekannter Elternteil (Platzhalter "Unbekannt") ergibt keinen Chip - nie "Kind von Unbekannt und
-  // Unbekannt"; Geschwister über ihn bleiben (derselbe Platzhalter ist derselbe Elternteil).
-  const knownParents = parents.filter((parent) => !parent.name_unbekannt)
-
-  const chips = []
-  if (children.length) {
-    chips.push({ kind: 'kinder', text: `${dog.geschlecht === 'huendin' ? 'Mutter' : 'Vater'} von ${nameList(children)}` })
-  }
-  if (knownParents.length) chips.push({ kind: 'eltern', text: `Kind von ${nameList(knownParents)}` })
-  if (siblings.length) chips.push({ kind: 'geschwister', text: `Geschwister von ${nameList(siblings)}` })
-  if (mates.length) chips.push({ kind: 'mitbewohner', text: `lebt mit ${nameList(mates)}` })
-  return chips
+export function shortAreaName(name = '') {
+  const short = name.replace(DEMO_SUFFIX, '').replace(HOME_PREFIX, '').trim()
+  return short || name
 }
 
 // Eigene Tiere erkennt man an fehlendem shared_from (GET /api/dogs setzt es nur bei Tieren anderer Bereiche).
 const isOwn = (dog) => !dog.shared_from
 
 function ownGroup(family, dogs) {
-  if (family.art === 'zuhause') return { key: 'eigen', kind: 'zuhause', title: 'Zuhause', dogs }
-  return { key: 'eigen', kind: family.art === 'rudel' ? 'familie' : 'bereich', title: family.name, dogs }
+  const base = { key: 'eigen', param: OWN_GROUP_PARAM, dogs }
+  if (family.art === 'zuhause') return { ...base, kind: 'zuhause', title: 'Zuhause' }
+  return { ...base, kind: family.art === 'rudel' ? 'familie' : 'bereich', title: family.name }
 }
 
 // Der eigene Bereich zuerst, danach je Eigentümer (in einer Familie: die Zuhause der Mitglieder) die hierher geteilten
-// Tiere, alphabetisch. Leere Gruppen fallen weg.
+// Tiere, alphabetisch. Leere Gruppen fallen weg. param: Wert für ?gruppe= (die Id des Eigentümers).
 function ownerGroups(family, dogs) {
   const others = new Map()
   for (const dog of dogs.filter((entry) => !isOwn(entry))) {
     const key = dog.family_id ?? dog.shared_from
-    const group = others.get(key) || { key: `bereich-${key}`, kind: 'zuhause', title: dog.shared_from, dogs: [] }
+    const group = others.get(key) || { key: `bereich-${key}`, param: String(key), kind: 'zuhause', title: dog.shared_from, dogs: [] }
     others.set(key, { ...group, dogs: [...group.dogs, dog] })
   }
   const sorted = [...others.values()].sort((a, b) => a.title.localeCompare(b.title, 'de'))
@@ -86,27 +67,32 @@ function ownerGroups(family, dogs) {
 }
 
 // Nur im eigenen Zuhause: je Familie, in der der Haushalt Mitglied ist, die eigenen Tiere, die er dort zeigt
-// (dog.shares aus GET /api/dogs). Die Tiere der anderen Mitglieder sieht man, wenn man die Familie öffnet.
+// (dog.shares aus GET /api/dogs) - für die leise Zeile unter dem Raster ("Ihr zeigt Tiere auch in …").
 function membershipGroups(family, dogs) {
   if (!isOwnHome(family)) return []
   return (family.memberships || []).map((membership) => ({
-    key: `familie-${membership.id}`,
-    kind: 'familie',
     id: membership.id,
     title: membership.name,
-    rolle: membership.rolle,
     dogs: dogs.filter((dog) => isOwn(dog) && (dog.shares || []).includes(membership.id))
   }))
 }
 
-// friends: Ergebnis von friendHomes (nur im eigenen Zuhause geladen, sonst leer).
+// dogs: die Tiere des Rasters (familyAnimals). friends: Ergebnis von friendHomes (nur im eigenen Zuhause geladen,
+// sonst leer).
 export function buildFamilyGroups({ family, dogs = [], friends = [] }) {
   return { owners: ownerGroups(family, dogs), memberships: membershipGroups(family, dogs), friends }
 }
 
+// Die per ?gruppe= gewählte Gruppe - null (alle Tiere), wenn nichts gewählt ist oder es die Gruppe nicht (mehr) gibt.
+export function selectedGroup(owners, param) {
+  if (!param) return null
+  return owners.find((group) => group.param === param) || null
+}
+
 // Kennzahl im Kopf der Familienbande (Audit V7a - vorher zählte "Familien" jeden Abschnitt, auch das eigene Zuhause und
 // befreundete Zuhause): im eigenen Zuhause die Familien, in denen es Mitglied ist; in einer Familie die Zuhause, die
-// Tiere hierher teilen. null: nichts Sinnvolles zu zählen (zu Besuch, Familie ohne geteilte Tiere) - dann keine Kennzahl.
+// Tiere hierher teilen (dieselben, nach denen der Filter über dem Raster sortiert). null: nichts Sinnvolles zu zählen
+// (zu Besuch, Familie ohne geteilte Tiere) - dann keine Kennzahl.
 export function familyStat(family, { owners, memberships }) {
   if (family.art === 'rudel') {
     const homes = owners.filter((group) => group.key !== 'eigen').length
@@ -116,21 +102,13 @@ export function familyStat(family, { owners, memberships }) {
   return { value: memberships.length, label: memberships.length === 1 ? 'Familie' : 'Familien' }
 }
 
-// Befreundete Zuhause (Phase V2, GET /api/besuche): beide Richtungen zusammengeführt. canVisit: man ist dort zu
-// Besuch (besuche) und kann es ansehen. tiere: nur, was die "Erlebt mit"-Liste ohnehin zeigt (GET /api/erlebt-mit/tiere:
-// Name und Tierart, kein Foto) - keine neuen Daten.
-export function friendHomes(visits, tiere = []) {
+// Befreundete Zuhause (Phase V2, GET /api/besuche): beide Richtungen zusammengeführt, alphabetisch. canVisit: man ist
+// dort zu Besuch (besuche) und kann hineinwechseln - wer nur bei euch zu Gast ist (gaeste), steht ohne Link da.
+export function friendHomes(visits) {
   const homes = new Map()
   for (const host of visits?.besuche || []) homes.set(host.id, { id: host.id, name: host.name, canVisit: true })
   for (const guest of visits?.gaeste || []) {
     if (!homes.has(guest.id)) homes.set(guest.id, { id: guest.id, name: guest.name, canVisit: false })
   }
-  return [...homes.values()]
-    .map((entry) => ({
-      ...entry,
-      tiere: (tiere || [])
-        .filter((tier) => tier.zuhauseId === entry.id)
-        .map((tier) => ({ id: tier.id, name: tier.name, name_unbekannt: tier.nameUnbekannt, tierart: tier.tierart }))
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  return [...homes.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'))
 }

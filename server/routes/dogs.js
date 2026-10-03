@@ -375,12 +375,30 @@ const findChildren = db.prepare(
    ORDER BY geburtsdatum IS NULL, geburtsdatum, dogs.name`
 )
 
+// Familienbande 2: Geschwister (mindestens ein gemeinsamer Elternteil) für die Tierseite - nur über Elternteile, die der
+// Bereich selbst sieht (visibleParentId, wie der Stammbaum), und wie bei den Kindern nur sichtbare Tiere. Nur, was die
+// Chips brauchen (Name, Art, Foto) - keine Herkunft, kein Abschied.
+const findSiblings = db.prepare(
+  `SELECT id, name, name_unbekannt, rasse, tierart, geschlecht, geburtsdatum, foto_url, family_id
+   FROM dogs
+   WHERE id != @id AND (mother_dog_id = @motherId OR father_dog_id = @fatherId)
+   ORDER BY geburtsdatum IS NULL, geburtsdatum, name`
+)
+
+function visibleSiblings(dog, viewFamilyId) {
+  const motherId = visibleParentId(dog.mother_dog_id, viewFamilyId)
+  const fatherId = visibleParentId(dog.father_dog_id, viewFamilyId)
+  if (!motherId && !fatherId) return []
+  return findSiblings.all({ id: dog.id, motherId, fatherId }).filter((sibling) => canSeeDog(viewFamilyId, sibling))
+}
+
 // Detailansicht eines im Bereich req.familyId sichtbaren Tiers - für GET /:id und die Antwort von
 // POST /:id/uebernehmen (dort aus Sicht der Familie, in der das Tier nun geteilt ist).
 function dogDetail(req, dog) {
   // Ein Gast (Phase V2) sieht das Tier des besuchten Zuhauses wie ein geteiltes: ohne Bearbeiten, Freigaben, Mitlesen.
   const canEdit = dog.family_id === req.familyId && !req.isGuest
   const children = findChildren.all({ id: dog.id }).filter((child) => canSeeDog(req.familyId, child))
+  const siblings = visibleSiblings(dog, req.familyId)
   const housemates = visibleHousemates(dog.id, req.familyId)
   const family = db.prepare('SELECT name FROM families WHERE id = ?').get(dog.family_id)
 
@@ -398,6 +416,7 @@ function dogDetail(req, dog) {
     mother: parentView(dog.mother_dog_id, dog.family_id, req.familyId),
     father: parentView(dog.father_dog_id, dog.family_id, req.familyId),
     children,
+    siblings,
     housemates,
     // Nur für den Besitzer relevant (Einwilligung "Tierheim darf mitlesen") - sonst weggelassen,
     // nicht null, damit die Form für Nicht-Besitzer nicht suggeriert, es gäbe hier etwas zu verwalten.

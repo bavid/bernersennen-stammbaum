@@ -5,7 +5,7 @@ import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { formatDateLong } from '../lib/dates.js'
 import { isEditable } from '../lib/areas.js'
-import { buildLitters } from '../lib/litters.js'
+import { addMatingPath, buildLitters } from '../lib/litters.js'
 import { displayName, shortName } from '../lib/timeline.js'
 
 // So viele Geschwistergruppen zeigt der Abschnitt; alles Weitere steht auf der eigenen Seite (/wuerfe).
@@ -40,34 +40,26 @@ function hasOwnFemaleDog(dogs) {
   return (dogs || []).some((dog) => dog.geschlecht === 'huendin' && (dog.tierart || 'hund') === 'hund' && isEditable(dog))
 }
 
-// Abschnitt "Nachwuchs" auf der Familienbande (Phase U) - für Auftritte, die ihn nicht als eigenen Reiter führen
-// (theme.littersInNav false, OverviewPage). Erscheint nur, wenn es Geschwister (gleiche Eltern, gleicher
-// Geburtstag), erwarteten Nachwuchs oder eingetragene Verpaarungen gibt. dogs: die Tiere der Seite (listDogs).
-// Ohne all das bleibt für Schreibende (canWrite) mit eigener Hündin nur eine leise Zeile als Weg zur ersten
-// Verpaarung - /wuerfe hat im Standard-Auftritt keinen Reiter.
-// events: die Verpaarungen des Bereichs (hooks/useBreedingEvents.js, lädt OverviewPage - die braucht sie auch für
-// "Stammbaum öffnen"); null, solange sie laden.
-// Steht statt des Abschnitts nur die leise Zeile zur ersten Verpaarung da? (OverviewPage legt dann den Hinweis auf den
-// Stammbaum mit in diese Zeile, statt zwei Zeilen mit fast demselben Inhalt untereinander zu zeigen - Audit V7a.)
-export function showsMatingHint({ dogs, events, canWrite = false }) {
-  if (!events || !canWrite || !hasOwnFemaleDog(dogs)) return false
-  const { litters, planned } = buildLitters(dogs || [], events)
-  return !litters.some((litter) => litter.puppies.length > 1) && planned.length === 0 && events.length === 0
-}
-
-// treeHint (Audit V7a): ein kurzer Satz zum Stammbaum, der in der leisen Zeile vor dem Link steht.
-export default function OffspringSection({ dogs, events, canWrite = false, treeHint = null }) {
+// Abschnitt "Nachwuchs" unter dem Stammbaum der Familienbande (Phase U, Familienbande 2: "Stammbaum & Nachwuchs") -
+// für Auftritte, die ihn nicht als eigenen Reiter führen (theme.littersInNav false, OverviewPage). Erscheint nur, wenn
+// es Geschwister (gleiche Eltern, gleicher Geburtstag), erwarteten Nachwuchs oder eingetragene Verpaarungen gibt.
+// dogs: die Tiere der Seite (listDogs). Wer eine Verpaarung eintragen darf (canWrite, eigene Hündin), findet den Weg
+// dazu im Kopf des Abschnitts - ohne all das bleibt dafür nur eine leise Zeile (/wuerfe hat im Standard-Auftritt keinen
+// Reiter). events: die Verpaarungen des Bereichs (hooks/useBreedingEvents.js, lädt OverviewPage - die braucht sie auch
+// für "Stammbaum & Nachwuchs"); null, solange sie laden.
+export default function OffspringSection({ dogs, events, canWrite = false }) {
   const { words } = useTheme()
   const { litters, planned } = useMemo(() => buildLitters(dogs || [], events || []), [dogs, events])
 
   if (!events) return null
+  const mayAddMating = canWrite && hasOwnFemaleDog(dogs)
   const withSiblings = litters.filter((litter) => litter.puppies.length > 1)
   if (withSiblings.length === 0 && planned.length === 0 && events.length === 0) {
-    if (!canWrite || !hasOwnFemaleDog(dogs)) return null
+    if (!mayAddMating) return null
     return (
       <p className="muted offspring-hint">
-        {words.littersLabel} geplant? {treeHint && `${treeHint} `}
-        <Link to="/wuerfe">
+        {words.littersLabel} geplant?{' '}
+        <Link to={addMatingPath()}>
           {words.addMating} <Icon name="arrowRight" />
         </Link>
       </p>
@@ -79,9 +71,16 @@ export default function OffspringSection({ dogs, events, canWrite = false, treeH
     <section className="offspring-section card" aria-labelledby="offspring-title">
       <div className="section-head">
         <h2 id="offspring-title">{words.littersLabel}</h2>
-        <Link to="/wuerfe" className="btn btn-ghost">
-          {words.littersLabel} ansehen <Icon name="arrowRight" />
-        </Link>
+        <div className="offspring-actions">
+          {mayAddMating && (
+            <Link to={addMatingPath()} className="offspring-add">
+              <Icon name="plus" /> {words.addMating}
+            </Link>
+          )}
+          <Link to="/wuerfe" className="btn btn-ghost">
+            {words.littersLabel} ansehen <Icon name="arrowRight" />
+          </Link>
+        </div>
       </div>
       {planned.length > 0 && (
         <ul className="offspring-planned">

@@ -116,6 +116,30 @@
   margin-top: var(--space-2);
 }
 
+/* Familienbande 2: leiser Weg zur Verpaarung unter den Knöpfen (nur Standard-Auftritt, erwachsene eigene Hündin) */
+.dog-hero-more {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.dog-hero-more a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 1.75rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.dog-hero-more a:hover {
+  color: var(--rust);
+}
+
+.dog-hero-more svg {
+  width: 1em;
+  height: 1em;
+}
+
 @media (max-width: 800px) {
   .dog-hero {
     grid-template-columns: 1fr;

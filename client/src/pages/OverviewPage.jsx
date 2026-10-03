@@ -10,10 +10,10 @@ import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
 import FamilySettings from '../components/FamilySettings.jsx'
-import OffspringSection, { showsMatingHint } from '../components/OffspringSection.jsx'
+import OffspringSection from '../components/OffspringSection.jsx'
 import OverviewStats from '../components/OverviewStats.jsx'
 import FamiliesView from '../components/families/FamiliesView.jsx'
-import TreeToggle, { TREE_HINT, TREE_HINT_SHORT, TREE_PARAM, TREE_VALUE } from '../components/families/TreeToggle.jsx'
+import TreeToggle, { TREE_PARAM, TREE_VALUE } from '../components/families/TreeToggle.jsx'
 import useBreedingEvents from '../hooks/useBreedingEvents.js'
 import useFriendHomes from '../hooks/useFriendHomes.js'
 import useOpenArea from '../hooks/useOpenArea.js'
@@ -21,7 +21,8 @@ import { nextTermin } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
 import { isOwnHome, isVisit } from '../lib/visits.js'
 import { useToast } from '../components/Toast.jsx'
-import { buildFamilyGroups, familyStat, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
+import { buildFamilyGroups, familyAnimals, familyStat, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
+import { hasSiblingLitters } from '../lib/litters.js'
 import { displayName } from '../lib/timeline.js'
 
 export default function OverviewPage({ family, onFamilyChange, onInvite }) {
@@ -50,8 +51,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const events = useBreedingEvents(familiesView || !theme.littersInNav)
   const friends = useFriendHomes(familiesView && isOwnHome(family))
   const openArea = useOpenArea(onFamilyChange)
+  // Familienbande 2: "Stammbaum & Nachwuchs" gibt es, sobald es einen Baum oder Geschwister zu zeigen gibt.
   const treeAvailable = useMemo(
-    () => familiesView && hasFamilyTree({ dogs: dogs || [], allDogs, events: events || [] }),
+    () => familiesView && (hasFamilyTree({ dogs: dogs || [], allDogs, events: events || [] }) || hasSiblingLitters(dogs, events)),
     [familiesView, dogs, allDogs, events]
   )
   const mode = overviewMode({
@@ -60,12 +62,13 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
     treeAvailable,
     loaded: dogs !== null && events !== null
   })
-  const groups = useMemo(() => buildFamilyGroups({ family, dogs: dogs || [], friends: friends || [] }), [family, dogs, friends])
+  // Familienbande 2: unbekannte Eltern stehen nur im Stammbaum - Raster, Filter und Kennzahlen zählen sie nicht mit.
+  const gridDogs = useMemo(() => familyAnimals(dogs || []), [dogs])
+  const groups = useMemo(() => buildFamilyGroups({ family, dogs: gridDogs, friends: friends || [] }), [family, gridDogs, friends])
   const showTreeToggle = familiesView && dogs?.length > 0 && (mode === 'tree' || treeAvailable)
-  // Phase V3: ohne Verpaarung und Eltern der leise Hinweis auf den Stammbaum - nur für die, die eine eintragen dürfen.
-  // Audit V7a: steht schon die leise Zeile "Nachwuchs geplant? Verpaarung eintragen →" da, gehört er in diese Zeile.
-  const showTreeHint = mode === 'families' && events !== null && !treeAvailable && canWrite
-  const treeHintInLine = showTreeHint && !theme.littersInNav && showsMatingHint({ dogs, events, canWrite })
+  // Der Stammbaum (mit dem Nachwuchs darunter) ist im Standard-Auftritt eine Ansicht für sich - die Neuigkeiten stehen
+  // bei den Familien. Im Berner-Auftritt (immer der Baum) bleiben sie darüber.
+  const showFeed = !familiesView || mode === 'families'
 
   async function loadDogs() {
     const [own, all, recent, notes, dogLinks] = await Promise.all([
@@ -124,7 +127,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
 
   return (
     <div className="page">
-      <header className="page-hero">
+      <header className={familiesView ? 'page-hero families-hero' : 'page-hero'}>
         <div>
           <span className="eyebrow">{words.treeLabel}</span>
           <div className="page-title-row">
@@ -150,7 +153,12 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
         </div>
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && (
-            <OverviewStats dogs={dogs} allDogs={allDogs} links={links} familyStat={familiesView ? familyStat(family, groups) : undefined} />
+            <OverviewStats
+              dogs={familiesView ? gridDogs : dogs}
+              allDogs={allDogs}
+              links={links}
+              familyStat={familiesView ? familyStat(family, groups) : undefined}
+            />
           )}
           {(canWrite || canInvite || showTreeToggle) && (
             <div className="hero-actions">
@@ -193,26 +201,19 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
         </div>
       )}
 
-      {dogs && dogs.length > 0 && activity && <ActivityFeed entries={activity.entries} termin={activity.termin} />}
+      {dogs && dogs.length > 0 && activity && showFeed && <ActivityFeed entries={activity.entries} termin={activity.termin} />}
 
       {dogs && dogs.length > 0 && mode === 'tree' && (
         <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={canWrite ? openAnimalForm : undefined} />
       )}
 
-      {dogs && dogs.length > 0 && mode === 'families' && (
-        <FamiliesView groups={groups} dogs={dogs} allDogs={allDogs} links={links} onOpenArea={openArea} />
+      {/* Phase U: ohne eigenen Reiter (Standard-Auftritt) steht der Nachwuchs beim Stammbaum - nur, wenn es welchen
+          gibt (Familienbande 2: nicht mehr unter den Familien). */}
+      {dogs && dogs.length > 0 && mode === 'tree' && !theme.littersInNav && (
+        <OffspringSection dogs={dogs} events={events} canWrite={canWrite} />
       )}
 
-      {/* Phase U: ohne eigenen Reiter (Standard-Auftritt) steht der Nachwuchs hier - nur, wenn es welchen gibt.
-          Phase V3: darunter bzw. in dessen leiser Zeile der Hinweis auf den Stammbaum (showTreeHint, treeHintInLine). */}
-      {dogs && dogs.length > 0 && (
-        <div className="overview-foot">
-          {!theme.littersInNav && (
-            <OffspringSection dogs={dogs} events={events} canWrite={canWrite} treeHint={treeHintInLine ? TREE_HINT_SHORT : null} />
-          )}
-          {showTreeHint && !treeHintInLine && <p className="muted families-tree-hint">{TREE_HINT}</p>}
-        </div>
-      )}
+      {dogs && dogs.length > 0 && mode === 'families' && <FamiliesView groups={groups} onOpenArea={openArea} />}
 
       <Modal open={settingsOpen} title={words.groupSettings} onClose={() => setSettingsOpen(false)}>
         <FamilySettings

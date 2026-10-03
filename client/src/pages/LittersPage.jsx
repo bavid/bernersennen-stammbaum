@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -7,9 +7,17 @@ import BreedingRecords from '../components/BreedingRecords.jsx'
 import Icon from '../components/Icon.jsx'
 import LitterCard from '../components/LitterCard.jsx'
 import Lightbox from '../components/Lightbox.jsx'
+import { TREE_PARAM, TREE_VALUE } from '../components/families/TreeToggle.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { formatDateLong } from '../lib/dates.js'
-import { buildLitters, latestEntries, photosByAge } from '../lib/litters.js'
+import {
+  MATING_MOTHER_PARAM,
+  MATING_REQUEST_PARAM,
+  MATING_REQUEST_VALUE,
+  buildLitters,
+  latestEntries,
+  photosByAge
+} from '../lib/litters.js'
 import { hasRole } from '../lib/roles.js'
 import { displayName, shortName } from '../lib/timeline.js'
 
@@ -38,10 +46,16 @@ function PlannedLitter({ planned }) {
 
 // family: der aktive Bereich (AreaRoutes). Deckakte eintragen und löschen ab Mitglied (Phase R) - ein Gast
 // sieht das Zuchtbuch nur. Wörter und Sätze je Auftritt (Phase U): Standard "Nachwuchs"/"Verpaarung", Berner
-// "Würfe"/"Deckakt"; ohne eigenen Reiter (Standard) führt oben ein Link zurück zur Familienbande.
+// "Würfe"/"Deckakt"; ohne eigenen Reiter (Standard) führt oben ein Link zurück zur Familienbande - dorthin, wo der
+// Nachwuchs steht (Familienbande 2: beim Stammbaum; ohne Stammbaum zeigt die Familienbande die Familien).
+// ?verpaarung=neu (Familienbande 2, lib/litters.js addMatingPath - von der Tierseite und vom Nachwuchs beim Stammbaum)
+// öffnet das Formular gleich, &mutter=<id> wählt die Hündin vor.
 export default function LittersPage({ family }) {
   const { theme, words } = useTheme()
   const canWrite = hasRole(family, 'mitglied')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [matingRequest, setMatingRequest] = useState(null)
+  const requestCount = useRef(0)
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
   const [events, setEvents] = useState([])
@@ -50,6 +64,25 @@ export default function LittersPage({ family }) {
   const [photo, setPhoto] = useState(null)
   const navigate = useNavigate()
   const toast = useToast()
+
+  // Den Wunsch aus der Adresse einmal einlösen (wer eintragen darf, bekommt das offene Formular) und danach aus der
+  // Adresse nehmen - Neuladen oder Zurück öffnet es dann nicht noch einmal.
+  useEffect(() => {
+    if (searchParams.get(MATING_REQUEST_PARAM) !== MATING_REQUEST_VALUE) return
+    if (canWrite) {
+      requestCount.current += 1
+      setMatingRequest({ key: requestCount.current, mother: Number(searchParams.get(MATING_MOTHER_PARAM)) || null })
+    }
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        next.delete(MATING_REQUEST_PARAM)
+        next.delete(MATING_MOTHER_PARAM)
+        return next
+      },
+      { replace: true }
+    )
+  }, [searchParams, canWrite, setSearchParams])
 
   useEffect(() => {
     Promise.all([api.listDogs(), api.listAllDogs(), api.listBreedingEvents(), api.listTimeline()])
@@ -99,7 +132,7 @@ export default function LittersPage({ family }) {
   return (
     <div className="page">
       {!theme.littersInNav && (
-        <Link to="/stammbaum" className="back-link">
+        <Link to={{ pathname: '/stammbaum', search: `?${TREE_PARAM}=${TREE_VALUE}` }} className="back-link">
           <Icon name="arrowLeft" /> {words.treeLabel}
         </Link>
       )}
@@ -173,6 +206,7 @@ export default function LittersPage({ family }) {
           ownDogs={dogs}
           allDogs={allDogs}
           canWrite={canWrite}
+          request={matingRequest}
           onCreated={handleCreated}
           onDelete={canWrite ? handleDelete : undefined}
           onOpenPhoto={setPhoto}

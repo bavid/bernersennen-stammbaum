@@ -6,18 +6,16 @@ import Icon from '../Icon.jsx'
 // auskommen): so heißt der Zusatz ausdrücklich, und er erscheint erst nach einer Verpaarung oder mit Eltern.
 export const TREE_PARAM = 'ansicht'
 export const TREE_VALUE = 'stammbaum'
-export const TREE_HINT = 'Sobald ihr eine Verpaarung eintragt, entsteht hier euer Stammbaum.'
-// Kurzfassung in der leisen Zeile "Nachwuchs geplant? … Verpaarung eintragen →" (OffspringSection, Audit V7a).
-export const TREE_HINT_SHORT = 'Mit der ersten Verpaarung entsteht hier euer Stammbaum.'
 
-// Knopf im Kopf der Familienbande: "Stammbaum öffnen" (Familien-Ansicht, Stammbaum vorhanden) bzw. im Baum "Zurück
-// zu den Familien". Beides sind Links (Adresse mit bzw. ohne ?ansicht=stammbaum) - Zurück im Browser funktioniert.
+// Leiser Link im Kopf der Familienbande (Familienbande 2: nach "Tier hinzufügen" und "Jemanden einladen" die dritte,
+// ruhigste Aktion): "Stammbaum & Nachwuchs" (Familien-Ansicht, Stammbaum vorhanden) bzw. im Baum "Zurück zu den
+// Familien". Beides sind Links (Adresse mit bzw. ohne ?ansicht=stammbaum) - Zurück im Browser funktioniert.
 // mode: lib/familyGroups.js overviewMode.
 export default function TreeToggle({ mode, treeAvailable }) {
   const { pathname } = useLocation()
   if (mode === 'tree') {
     return (
-      <Link to={{ pathname }} className="btn btn-ghost btn-lg">
+      <Link to={{ pathname }} className="hero-link">
         <Icon name="arrowLeft" />
         Zurück zu den Familien
       </Link>
@@ -25,9 +23,9 @@ export default function TreeToggle({ mode, treeAvailable }) {
   }
   if (mode !== 'families' || !treeAvailable) return null
   return (
-    <Link to={{ pathname, search: `?${TREE_PARAM}=${TREE_VALUE}` }} className="btn btn-ghost btn-lg">
+    <Link to={{ pathname, search: `?${TREE_PARAM}=${TREE_VALUE}` }} className="hero-link">
       <Icon name="tree" />
-      Stammbaum öffnen
+      Stammbaum &amp; Nachwuchs
     </Link>
   )
 }

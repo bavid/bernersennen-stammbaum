@@ -1,5 +1,14 @@
 import { describe, expect, test } from 'vitest'
-import { ageBucket, buildLitters, latestEntries, nextLitterBirthday, photosByAge } from './litters.js'
+import {
+  addMatingPath,
+  ageBucket,
+  buildLitters,
+  canAddMatingFor,
+  hasSiblingLitters,
+  latestEntries,
+  nextLitterBirthday,
+  photosByAge
+} from './litters.js'
 
 const dog = (id, name, extra = {}) => ({
   id,
@@ -107,5 +116,40 @@ describe('latestEntries', () => {
     ])
     expect(latest.get(3).id).toBe(2)
     expect(latest.get(4).id).toBe(3)
+  })
+})
+
+// Familienbande 2: ohne Hinweis auf der Familienbande führt die Seite einer erwachsenen Hündin zur Verpaarung.
+describe('canAddMatingFor', () => {
+  const today = '2026-10-03'
+  const nele = { id: 1, geschlecht: 'huendin', tierart: 'hund', geburtsdatum: '2019-03-10', bei_uns_bis: null }
+
+  test('eine erwachsene Hündin, die noch bei euch lebt', () => {
+    expect(canAddMatingFor(nele, today)).toBe(true)
+    // ohne tierart (alte Datensätze) gilt "Hund"; ohne Geburtstag lässt sich nichts ausschließen
+    expect(canAddMatingFor({ ...nele, tierart: undefined, geburtsdatum: null }, today)).toBe(true)
+  })
+
+  test('nicht für Junge (unter einem Jahr), Rüden, andere Tierarten oder Tiere, die gegangen sind', () => {
+    expect(canAddMatingFor({ ...nele, geburtsdatum: '2025-11-01' }, today)).toBe(false)
+    expect(canAddMatingFor({ ...nele, geburtsdatum: '2025-10-03' }, today)).toBe(true)
+    expect(canAddMatingFor({ ...nele, geschlecht: 'ruede' }, today)).toBe(false)
+    expect(canAddMatingFor({ ...nele, tierart: 'katze' }, today)).toBe(false)
+    expect(canAddMatingFor({ ...nele, bei_uns_bis: '2024-01-01' }, today)).toBe(false)
+    expect(canAddMatingFor(null, today)).toBe(false)
+  })
+})
+
+describe('hasSiblingLitters und addMatingPath (Familienbande 2)', () => {
+  test('Geschwister gibt es ab zwei Tieren mit gleichen Eltern und gleichem Geburtstag - auch mit Eltern nur als Freitext', () => {
+    const puppy = (id) => dog(id, `Welpe ${id}`, { mother_freitext: 'Lotte', geburtsdatum: '2021-04-18' })
+    expect(hasSiblingLitters([puppy(1), puppy(2)], [])).toBe(true)
+    expect(hasSiblingLitters([puppy(1)], [])).toBe(false)
+    expect(hasSiblingLitters(null, null)).toBe(false)
+  })
+
+  test('der Weg zum offenen Formular, auf Wunsch mit vorgewählter Hündin', () => {
+    expect(addMatingPath()).toBe('/wuerfe?verpaarung=neu')
+    expect(addMatingPath(29)).toBe('/wuerfe?verpaarung=neu&mutter=29')
   })
 })

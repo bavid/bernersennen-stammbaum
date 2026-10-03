@@ -133,6 +133,34 @@ export function nextLitterBirthday(birthDate, today = todayIso()) {
   return { date, age: year - by, daysUntil: daysBetween(today, date) }
 }
 
+// Gibt es Geschwister (mindestens zwei Tiere mit gleichen Eltern und gleichem Geburtstag)? Auch sie öffnen auf der
+// Familienbande "Stammbaum & Nachwuchs" (Familienbande 2).
+export function hasSiblingLitters(dogs, breedingEvents) {
+  return buildLitters(dogs || [], breedingEvents || []).litters.some((litter) => litter.puppies.length > 1)
+}
+
+// /wuerfe?verpaarung=neu öffnet das Formular "Verpaarung eintragen" gleich (LittersPage), &mutter=<id> wählt die Hündin
+// vor - von der Tierseite und vom Nachwuchs beim Stammbaum aus (Familienbande 2).
+export const MATING_REQUEST_PARAM = 'verpaarung'
+export const MATING_REQUEST_VALUE = 'neu'
+export const MATING_MOTHER_PARAM = 'mutter'
+
+export function addMatingPath(motherId = null) {
+  const mother = motherId ? `&${MATING_MOTHER_PARAM}=${motherId}` : ''
+  return `/wuerfe?${MATING_REQUEST_PARAM}=${MATING_REQUEST_VALUE}${mother}`
+}
+
+// Ab diesem Alter (in Monaten) bietet die Seite einer Hündin den leisen Weg "Verpaarung eintragen" an.
+const MATING_MIN_MONTHS = 12
+
+// Familienbande 2: Kann man für dieses Tier eine Verpaarung eintragen? Eine Hündin (wie BreedingRecords und der
+// Server), die noch bei euch lebt und mindestens ein Jahr alt ist - ohne Geburtstag lässt sich das nicht ausschließen.
+// Ob die Rolle schreiben darf und das Tier dem Bereich gehört, prüft die Seite selbst.
+export function canAddMatingFor(dog, today = todayIso()) {
+  if (!dog || dog.geschlecht !== 'huendin' || (dog.tierart || 'hund') !== 'hund' || dog.bei_uns_bis) return false
+  return !dog.geburtsdatum || monthsBetween(dog.geburtsdatum, today) >= MATING_MIN_MONTHS
+}
+
 // Zuletzt geschriebener Eintrag je Tier
 export function latestEntries(entries) {
   const latest = new Map()

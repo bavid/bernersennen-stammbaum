@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
@@ -19,6 +19,12 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 let container
 let root
+let location
+
+function LocationProbe() {
+  location = useLocation()
+  return null
+}
 
 const family = { id: 2, name: 'Familie Sonnenhang', art: 'rudel', role: 'leitung', isDemo: false, home: null, memberships: [] }
 
@@ -47,7 +53,7 @@ afterEach(() => {
   document.title = ''
 })
 
-async function render(themeId) {
+async function render(themeId, path = '/wuerfe', area = family) {
   api.listDogs.mockResolvedValue(dogs)
   api.listAllDogs.mockResolvedValue(dogs)
   api.listBreedingEvents.mockResolvedValue(events)
@@ -57,9 +63,10 @@ async function render(themeId) {
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <ThemeProvider themeId={themeId}>
-          <LittersPage family={family} />
+          <LocationProbe />
+          <LittersPage family={area} />
         </ThemeProvider>
       </MemoryRouter>
     )
@@ -81,10 +88,10 @@ describe('LittersPage im Standard-Auftritt: "Nachwuchs" und "Verpaarung" (Phase 
     expect(container.textContent).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht|züchte|Welpe/)
   })
 
-  test('kein eigener Reiter - oben führt ein Link zurück zur Familienbande', async () => {
+  test('kein eigener Reiter - oben führt ein Link zurück zur Familienbande (dort, wo der Nachwuchs steht: beim Stammbaum)', async () => {
     await render('standard')
     const back = container.querySelector('.back-link')
-    expect(back.getAttribute('href')).toBe('/stammbaum')
+    expect(back.getAttribute('href')).toBe('/stammbaum?ansicht=stammbaum')
     expect(back.textContent.trim()).toBe('Familienbande')
   })
 
@@ -96,6 +103,49 @@ describe('LittersPage im Standard-Auftritt: "Nachwuchs" und "Verpaarung" (Phase 
     expect(form.querySelector('h3').textContent).toBe('Verpaarung eintragen')
     expect(form.querySelector('label[for="breeding-date"]').textContent).toContain('Datum der Verpaarung')
     expect(form.querySelector('#wurf-info').getAttribute('placeholder')).toBe('Anzahl Jungtiere, Besonderheiten, Ultraschall …')
+  })
+})
+
+// Familienbande 2: von der Tierseite bzw. dem Nachwuchs beim Stammbaum aus öffnet ?verpaarung=neu das Formular direkt.
+describe('LittersPage: Verpaarung direkt eintragen', () => {
+  test('?verpaarung=neu&mutter=1 öffnet das Formular mit der Hündin, springt hin und setzt den Fokus hinein', async () => {
+    // jsdom kennt scrollIntoView nicht
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    try {
+      await render('standard', '/wuerfe?verpaarung=neu&mutter=1')
+      const form = container.querySelector('.breeding-form')
+      expect(form).not.toBeNull()
+      expect(form.querySelector('#mutter').value).toBe('1')
+      expect(document.activeElement).toBe(form.querySelector('#mutter'))
+      expect(scrollIntoView).toHaveBeenCalled()
+      expect(button('Verpaarung eintragen')).toBeUndefined()
+      // Eingelöst: die Adresse ist wieder schlicht - Neuladen oder Zurück öffnet das Formular nicht noch einmal
+      expect(location.pathname).toBe('/wuerfe')
+      expect(location.search).toBe('')
+    } finally {
+      delete Element.prototype.scrollIntoView
+    }
+  })
+
+  test('nach "Abbrechen" bleibt das Formular zu', async () => {
+    await render('standard', '/wuerfe?verpaarung=neu')
+    await act(async () => button('Abbrechen').click())
+    expect(container.querySelector('.breeding-form')).toBeNull()
+    expect(button('Verpaarung eintragen')).toBeDefined()
+  })
+
+  test('ohne passende Hündin bleibt die Auswahl leer; ohne Schreibrecht kein Formular', async () => {
+    await render('standard', '/wuerfe?verpaarung=neu&mutter=2')
+    expect(container.querySelector('#mutter').value).toBe('')
+
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render('standard', '/wuerfe?verpaarung=neu&mutter=1', { ...family, role: 'gast' })
+    expect(container.querySelector('.breeding-form')).toBeNull()
+    expect(location.search).toBe('')
   })
 })
 

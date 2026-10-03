@@ -7,8 +7,36 @@ import { yearOf } from '../lib/dates.js'
 
 const SPECIES_BADGE = { katze: '🐈', anderes: '🐾' }
 
-// variant: 'full' (Standard), 'lane' (etwas kleiner, Mitbewohner-Reihe), 'mini' (eingeklappte Generation)
-const DogCard = forwardRef(function DogCard({ dog, livesWithLabel, highlighted, dimmed, onHover, variant = 'full' }, ref) {
+// Zeile unter Name und Geschlecht: Herkunft eines geteilten Tiers, die Familie eines fremden Elternteils, "lebt mit …"
+// oder die Zahl der Einträge. Im Raster der Familienbande (grid, Familienbande 2) nur die Herkunft - und die nur, wo
+// nicht ohnehin nach diesem Zuhause gefiltert ist (showOrigin).
+function CardTag({ dog, variant, livesWithLabel, showOrigin }) {
+  if (dog.shared_from && showOrigin) {
+    // Im Raster bleibt die Zeile einzeilig (gekürzt) - der volle Name steht dann im Tooltip.
+    const title = variant === 'grid' ? `aus ${dog.shared_from}` : undefined
+    return (
+      <span className="dog-card-tag dog-card-shared" title={title}>
+        aus {dog.shared_from}
+      </span>
+    )
+  }
+  if (variant === 'grid') return null
+  if (dog.external) return <span className="dog-card-tag">{dog.familyName}</span>
+  if (livesWithLabel) return <span className="dog-card-tag dog-card-housemate">{livesWithLabel}</span>
+  if (!(dog.timeline_count > 0)) return null
+  return (
+    <span className="dog-card-tag">
+      {dog.timeline_count} {dog.timeline_count === 1 ? 'Eintrag' : 'Einträge'}
+    </span>
+  )
+}
+
+// variant: 'full' (Standard), 'lane' (etwas kleiner, Mitbewohner-Reihe), 'mini' (eingeklappte Generation),
+// 'grid' (Raster der Familienbande, ohne Einträge-Zähler). showOrigin: "aus …" an geteilten Tieren (Standard: ja).
+const DogCard = forwardRef(function DogCard(
+  { dog, livesWithLabel, highlighted, dimmed, onHover, variant = 'full', showOrigin = true },
+  ref
+) {
   const year = yearOf(dog.geburtsdatum)
   const badge = SPECIES_BADGE[dog.tierart]
   const hoverProps = {
@@ -48,6 +76,7 @@ const DogCard = forwardRef(function DogCard({ dog, livesWithLabel, highlighted, 
   const classes = [
     'dog-card',
     variant === 'lane' && 'is-lane',
+    variant === 'grid' && 'is-grid',
     dog.external && 'is-external',
     dog.name_unbekannt && 'is-unknown',
     livesWithLabel && 'is-housemate',
@@ -84,19 +113,7 @@ const DogCard = forwardRef(function DogCard({ dog, livesWithLabel, highlighted, 
           <span className="sex-label">{sexLabel(dog.geschlecht, dog.tierart)}</span>
           {year && <span>{year}</span>}
         </span>
-        {dog.shared_from ? (
-          <span className="dog-card-tag dog-card-shared">aus {dog.shared_from}</span>
-        ) : dog.external ? (
-          <span className="dog-card-tag">{dog.familyName}</span>
-        ) : livesWithLabel ? (
-          <span className="dog-card-tag dog-card-housemate">{livesWithLabel}</span>
-        ) : (
-          dog.timeline_count > 0 && (
-            <span className="dog-card-tag">
-              {dog.timeline_count} {dog.timeline_count === 1 ? 'Eintrag' : 'Einträge'}
-            </span>
-          )
-        )}
+        <CardTag dog={dog} variant={variant} livesWithLabel={livesWithLabel} showOrigin={showOrigin} />
       </span>
     </Link>
   )

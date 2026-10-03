@@ -67,4 +67,27 @@ describe('DogCard – geteiltes Tier aus einem Zuhause', () => {
     expect(badge.querySelector('.visually-hidden').textContent).toBe('aus Zuhause am Deich')
     expect(container.querySelector('.dog-card-shared')).toBeNull()
   })
+
+  // Familienbande 2: das Raster zeigt Foto, Name, Rasse/Art, Geschlecht und Jahr - ohne Einträge-Zähler; die Herkunft
+  // eines geteilten Tiers nur, wo nicht ohnehin nach diesem Zuhause gefiltert ist.
+  test('grid-Variante: ohne Einträge-Zähler, Herkunft nur mit showOrigin', async () => {
+    await render({ dog: dog({ timeline_count: 3, rasse: 'Mischling' }), variant: 'grid' })
+    const card = container.querySelector('.dog-card')
+    expect(card.className).toContain('is-grid')
+    expect(card.querySelector('.dog-card-breed').textContent).toBe('Mischling')
+    expect(card.querySelector('.dog-card-meta').textContent).toBe('Hündin2020')
+    expect(card.querySelector('.dog-card-tag')).toBeNull()
+
+    act(() => root.unmount())
+    container.remove()
+    await render({ dog: dog({ shared_from: 'Zuhause am Deich' }), variant: 'grid' })
+    expect(container.querySelector('.dog-card-shared').textContent).toBe('aus Zuhause am Deich')
+    // Im Raster einzeilig gekürzt - der volle Name steht im Tooltip
+    expect(container.querySelector('.dog-card-shared').getAttribute('title')).toBe('aus Zuhause am Deich')
+
+    act(() => root.unmount())
+    container.remove()
+    await render({ dog: dog({ shared_from: 'Zuhause am Deich' }), variant: 'grid', showOrigin: false })
+    expect(container.querySelector('.dog-card-shared')).toBeNull()
+  })
 })

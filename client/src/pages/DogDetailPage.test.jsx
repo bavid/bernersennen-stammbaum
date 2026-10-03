@@ -265,3 +265,84 @@ describe('DogDetailPage – Wörter je Auftritt', () => {
     expect(container.textContent).toContain('Deckakt mit Balu')
   })
 })
+
+// Familienbande 2: die Beziehungs-Chips sind aus der Familienbande verschwunden - Eltern, Geschwister und Nachwuchs stehen
+// auf der Tierseite; "Verpaarung eintragen" hat ohne Hinweis auf der Familienbande hier einen leisen Weg (Standard).
+describe('DogDetailPage – Familie und Verpaarung (Familienbande 2)', () => {
+  const ownDog = (extra = {}) => ({
+    ...sharedDog(),
+    familyName: 'Familie Sonnenhang',
+    ownerFamilyId: 2,
+    isOwn: true,
+    canEdit: true,
+    father: null,
+    siblings: [{ id: 14, name: 'Kira vom Sonnenhang', name_unbekannt: 0, tierart: 'hund', geschlecht: 'huendin', foto_url: null }],
+    ...extra
+  })
+
+  async function renderDog(dogData, { themeId = 'standard', family = activeFamily } = {}) {
+    getDog.mockResolvedValue(dogData)
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <MemoryRouter initialEntries={['/tier/10']}>
+          <ThemeProvider themeId={themeId}>
+            <Routes>
+              <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={() => {}} />} />
+            </Routes>
+          </ThemeProvider>
+        </MemoryRouter>
+      )
+    )
+  }
+
+  const fact = (label) => [...container.querySelectorAll('.facts > div')].find((div) => div.querySelector('dt')?.textContent === label)
+  const matingLink = () => container.querySelector('a[href="/wuerfe?verpaarung=neu&mutter=10"]')
+
+  test('Standard: Geschwister stehen bei Mutter und Vater, als Links zur Tierseite', async () => {
+    await renderDog(ownDog())
+    const siblings = fact('Geschwister')
+    // Vorn das Avatar (Initiale), dahinter der Name
+    expect([...siblings.querySelectorAll('a')].map((a) => [a.lastChild.textContent, a.getAttribute('href')])).toEqual([['Kira', '/tier/14']])
+  })
+
+  test('ohne Geschwister keine leere Zeile; im Berner-Auftritt bleibt die Seite wie bisher', async () => {
+    await renderDog(ownDog({ siblings: [] }))
+    expect(fact('Geschwister')).toBeUndefined()
+
+    act(() => root.unmount())
+    root = null
+    container.remove()
+    await renderDog(ownDog(), { themeId: 'berner' })
+    expect(fact('Geschwister')).toBeUndefined()
+    expect(matingLink()).toBeNull()
+  })
+
+  test('eine erwachsene eigene Hündin: leiser Link "Verpaarung eintragen" mit ihr als Mutter', async () => {
+    await renderDog(ownDog())
+    expect(matingLink().textContent).toContain('Verpaarung eintragen')
+    expect(matingLink().className).not.toContain('btn')
+  })
+
+  test('kein Link für geteilte Tiere, Rüden, Junge, gegangene Tiere oder einen Gast', async () => {
+    const cases = [
+      [sharedDog(), activeFamily],
+      [ownDog({ geschlecht: 'ruede' }), activeFamily],
+      [ownDog({ geburtsdatum: new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10) }), activeFamily],
+      [ownDog({ bei_uns_bis: '2024-05-01', abschied_grund: 'verstorben' }), activeFamily],
+      [ownDog(), { ...activeFamily, role: 'gast' }]
+    ]
+    for (const [dogData, family] of cases) {
+      await renderDog(dogData, { family })
+      expect(matingLink()).toBeNull()
+      act(() => root.unmount())
+      root = null
+      container.remove()
+    }
+  })
+})

@@ -25,6 +25,7 @@ import useMirrorActions from '../components/erlebtMit/useMirrorActions.js'
 import { buildTimeline, displayName, dogLabel, genitive, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { companionLine } from '../lib/companions.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
+import { addMatingPath, canAddMatingFor } from '../lib/litters.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
 const HIGHLIGHT_MS = 2600
@@ -52,11 +53,33 @@ export function ParentLink({ parent, freitext }) {
   return <span className={freitext ? '' : 'muted'}>{freitext || 'unbekannt'}</span>
 }
 
+// Familienbande 2 (Standard-Auftritt): die Geschwister (GET /api/dogs/:id siblings) - seit die Familienbande keine
+// Beziehungs-Chips mehr zeigt, stehen sie hier neben Eltern und Nachwuchs.
+function SiblingsFact({ siblings }) {
+  if (!siblings?.length) return null
+  return (
+    <div className="facts-wide">
+      <dt>Geschwister</dt>
+      <dd className="chip-list">
+        {siblings.map((sibling) => (
+          <Link key={sibling.id} to={`/tier/${sibling.id}`} className="chip">
+            <Avatar dog={sibling} size={24} />
+            {dogLabel(sibling)}
+          </Link>
+        ))}
+      </dd>
+    </div>
+  )
+}
+
 // canWrite (Phase R): dog.isOwn UND die Rolle darf schreiben - ein Gast in einer Familie sieht deren Tiere
 // ohne Bearbeiten/Erinnerung/Mitbewohner-Knöpfe.
 // Audit V7a: kein eigener "lebt mit …"-Hinweis mehr unter dem Namen - dieselben Tiere stehen gleich darunter unter
 // "Lebt zusammen mit" (Housemates). Die Angaben paarweise: Rasse | Geboren, Farbe (breit), Mutter | Vater.
-function DogHero({ dog, allDogs, canWrite, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
+// familiesView (Familienbande 2, Standard-Auftritt): dazu die Geschwister und - für eine erwachsene eigene Hündin - der
+// leise Weg "Verpaarung eintragen" (die Familienbande zeigt dafür keinen Hinweis mehr, /wuerfe hat keinen Reiter).
+function DogHero({ dog, allDogs, canWrite, familiesView, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
+  const { words } = useTheme()
   const age = dog.geburtsdatum ? ageText(dog.geburtsdatum) : null
   // Für geteilte Tiere im fremden Bereich (!dog.canEdit) ersetzt der Name des besitzenden Bereichs
   // "Bei euch" durch "Im {familyName}" – der Abschieds-/Erinnerungstext bleibt unverändert.
@@ -115,6 +138,7 @@ function DogHero({ dog, allDogs, canWrite, onEdit, onAddEntry, onOpenPhoto, onAd
               <ParentLink parent={dog.father} freitext={dog.father_freitext} />
             </dd>
           </div>
+          {familiesView && <SiblingsFact siblings={dog.siblings} />}
           <Housemates
             dog={dog}
             allDogs={allDogs}
@@ -152,13 +176,20 @@ function DogHero({ dog, allDogs, canWrite, onEdit, onAddEntry, onOpenPhoto, onAd
             </button>
           </div>
         )}
+        {canWrite && familiesView && canAddMatingFor(dog) && (
+          <p className="dog-hero-more">
+            <Link to={addMatingPath(dog.id)}>
+              <Icon name="sprout" /> {words.addMating}
+            </Link>
+          </p>
+        )}
       </div>
     </header>
   )
 }
 
 export default function DogDetailPage({ family, onFamilyChange }) {
-  const { words } = useTheme()
+  const { theme, words } = useTheme()
   const { id } = useParams()
   const navigate = useNavigate()
   const { hash } = useLocation()
@@ -431,6 +462,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         dog={dog}
         allDogs={allDogs}
         canWrite={canWrite}
+        familiesView={Boolean(theme.familiesView)}
         onAddHousemate={handleAddHousemate}
         onCreateHousemate={handleCreateHousemate}
         onRemoveHousemate={handleRemoveHousemate}
