@@ -90,7 +90,7 @@ test('a rehomed animal gets the dashed bar style without a memory label', async 
 test('the accessible label describes since-when and the origin', async () => {
   await render(rows, span, today)
   const neleLink = [...container.querySelectorAll('.companion-link')].find((a) => a.textContent.includes('Nele'))
-  expect(neleLink.getAttribute('aria-label')).toBe('Nele, bei euch seit 20. September 2016, aus dem Tierheim – Tierheim Sonnenhang')
+  expect(neleLink.getAttribute('aria-label')).toBe('Nele, bei euch seit 20. September 2016, aus dem Tierheim Sonnenhang')
 })
 
 test('an origin chip only appears when herkunft_art is set', async () => {

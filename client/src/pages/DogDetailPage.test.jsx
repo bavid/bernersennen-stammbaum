@@ -221,7 +221,7 @@ describe('DogDetailPage – Hero-Zeile für geteilte Tiere', () => {
     await render()
 
     const companion = container.querySelector('.dog-hero-companion')
-    expect(companion.textContent.trim()).toBe('Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim – Tierheim Sonnenhang')
+    expect(companion.textContent.trim()).toBe('Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim Sonnenhang')
   })
 })
 

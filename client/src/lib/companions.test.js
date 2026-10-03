@@ -138,10 +138,15 @@ describe('yearsTogether', () => {
 
 describe('herkunftText', () => {
   test('combines the label and free text', () => {
-    expect(herkunftText(dog(1, 'Nele', { herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }))).toBe(
-      'aus dem Tierheim – Tierheim Sonnenhang'
+    expect(herkunftText(dog(1, 'Nele', { herkunft_art: 'tierheim', herkunft_text: 'Tierschutzverein Deichland' }))).toBe(
+      'aus dem Tierheim – Tierschutzverein Deichland'
     )
     expect(herkunftText(dog(1, 'Nele', { herkunft_art: 'privat', herkunft_text: 'Bauernhof-Wurf' }))).toBe('von privat – Bauernhof-Wurf')
+  })
+
+  test('Audit V7a: kein "aus dem Tierheim – Tierheim Sonnenhang" - der Name trägt das Wort schon', () => {
+    expect(herkunftText(dog(1, 'Nele', { herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }))).toBe('aus dem Tierheim Sonnenhang')
+    expect(herkunftText(dog(1, 'Nele', { herkunft_art: 'tierheim', herkunft_text: 'tierheim am See' }))).toBe('aus dem tierheim am See')
   })
 
   test('shows only the label without free text', () => {
@@ -170,7 +175,7 @@ describe('companionLine', () => {
   test('ongoing: move-in date and herkunft combine with a middot', () => {
     expect(
       companionLine(dog(1, 'Nele', { bei_uns_seit: '2021-06-12', herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }))
-    ).toEqual({ text: 'Bei euch seit 12. Juni 2021 · aus dem Tierheim – Tierheim Sonnenhang', memorial: false })
+    ).toEqual({ text: 'Bei euch seit 12. Juni 2021 · aus dem Tierheim Sonnenhang', memorial: false })
   })
 
   test('ongoing: only the move-in date, no herkunft', () => {
@@ -217,7 +222,7 @@ describe('companionLine', () => {
       companionLine(dog(1, 'Nele', { bei_uns_seit: '2021-06-12', herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }), {
         ownerName: 'Zuhause am Deich'
       })
-    ).toEqual({ text: 'Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim – Tierheim Sonnenhang', memorial: false })
+    ).toEqual({ text: 'Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim Sonnenhang', memorial: false })
   })
 
   test('shared animal, departed for another reason: "Bei euch" becomes "Im {ownerName}" too', () => {

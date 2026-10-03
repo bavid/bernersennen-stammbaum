@@ -244,23 +244,6 @@
   color: var(--rust);
 }
 
-.dog-hero-housemate {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  justify-self: start;
-  padding: var(--space-1) var(--space-3);
-  border: 1.5px dashed var(--tan);
-  border-radius: var(--radius-pill);
-  font-weight: 700;
-  color: #9a6a2f;
-}
-
-.dog-hero-housemate svg {
-  width: 1rem;
-  height: 1rem;
-}
-
 .chip-housemate {
   gap: 0;
   padding: 0;

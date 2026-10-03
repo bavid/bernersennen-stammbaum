@@ -60,7 +60,7 @@ describe('buildTimeline', () => {
       dog: { ...dog, bei_uns_seit: '2015-01-10', herkunft_art: 'tierheim', herkunft_text: 'Tierheim Sonnenhang' }
     })
     expect(items.map((i) => i.titel)).toEqual(['Aiko kommt zur Welt', 'Aiko zieht ein'])
-    expect(items[1].text).toBe('aus dem Tierheim – Tierheim Sonnenhang')
+    expect(items[1].text).toBe('aus dem Tierheim Sonnenhang')
   })
 
   test('an arrival milestone without origin has no text', () => {

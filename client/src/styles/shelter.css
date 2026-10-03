@@ -196,11 +196,17 @@
 .shelter-share-panel {
   display: grid;
   gap: var(--space-3);
-  padding: var(--card-pad);
+  padding: var(--card-pad-compact) var(--card-pad);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-card);
+}
+
+/* Audit V7a: dieselbe Überschrift wie das Kästchen "In Familien zeigen" direkt darüber (dog.css .share-panel h2) -
+   vorher stand "Tierheim" doppelt so groß da. */
+.shelter-share-panel h2 {
+  font-size: var(--text-lg);
 }
 
 .steckbrief-panel {

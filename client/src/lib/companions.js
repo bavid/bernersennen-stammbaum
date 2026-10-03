@@ -76,13 +76,17 @@ export const HERKUNFT_LABELS = {
   anderes: ''
 }
 
-// "aus dem Tierheim – Tierheim Sonnenhang", "von privat – Bauernhof-Wurf", bei "anderes" nur der Freitext,
-// '' wenn nichts eingetragen ist
+// "aus dem Tierheim – Tierschutzverein Deichland", "von privat – Bauernhof-Wurf", bei "anderes" nur der Freitext,
+// '' wenn nichts eingetragen ist. Beginnt der Name schon mit "Tierheim", wird daraus "aus dem Tierheim Sonnenhang"
+// statt "aus dem Tierheim – Tierheim Sonnenhang" (Audit V7a).
+const TIERHEIM_NAME_RE = /^tierheim\s/i
+
 export function herkunftText(dog) {
   const art = dog.herkunft_art
   const text = dog.herkunft_text
   if (!art) return text || ''
   if (art === 'anderes') return text || ''
+  if (art === 'tierheim' && text && TIERHEIM_NAME_RE.test(text)) return `aus dem ${text}`
   const label = HERKUNFT_LABELS[art] || ''
   return text ? `${label} – ${text}` : label
 }

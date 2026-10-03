@@ -22,7 +22,7 @@ import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { hasRole } from '../lib/roles.js'
 import { isOwnHome, isVisit } from '../lib/visits.js'
 import useMirrorActions from '../components/erlebtMit/useMirrorActions.js'
-import { buildTimeline, displayName, dogLabel, genitive, livesWithLabel, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
+import { buildTimeline, displayName, dogLabel, genitive, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { companionLine } from '../lib/companions.js'
 import { ageText, formatDateLong } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
@@ -52,17 +52,11 @@ export function ParentLink({ parent, freitext }) {
   return <span className={freitext ? '' : 'muted'}>{freitext || 'unbekannt'}</span>
 }
 
-// "lebt mit Hermes" – für Tiere ohne eigene Abstammung, die mit jemandem zusammenleben
-function housemateLine(dog) {
-  const hasPedigree = dog.mother_dog_id || dog.father_dog_id || dog.mother_freitext || dog.father_freitext || dog.children.length
-  if (hasPedigree || !dog.housemates.length) return null
-  return livesWithLabel(dog.housemates)
-}
-
 // canWrite (Phase R): dog.isOwn UND die Rolle darf schreiben - ein Gast in einer Familie sieht deren Tiere
 // ohne Bearbeiten/Erinnerung/Mitbewohner-Knöpfe.
+// Audit V7a: kein eigener "lebt mit …"-Hinweis mehr unter dem Namen - dieselben Tiere stehen gleich darunter unter
+// "Lebt zusammen mit" (Housemates). Die Angaben paarweise: Rasse | Geboren, Farbe (breit), Mutter | Vater.
 function DogHero({ dog, allDogs, canWrite, onEdit, onAddEntry, onOpenPhoto, onAddHousemate, onCreateHousemate, onRemoveHousemate }) {
-  const livesWith = housemateLine(dog)
   const age = dog.geburtsdatum ? ageText(dog.geburtsdatum) : null
   // Für geteilte Tiere im fremden Bereich (!dog.canEdit) ersetzt der Name des besitzenden Bereichs
   // "Bei euch" durch "Im {familyName}" – der Abschieds-/Erinnerungstext bleibt unverändert.
@@ -91,14 +85,8 @@ function DogHero({ dog, allDogs, canWrite, onEdit, onAddEntry, onOpenPhoto, onAd
             {companion.memorial && <Icon name="heart" />} {companion.text}
           </p>
         )}
-        {livesWith && (
-          <p className="dog-hero-housemate">
-            <Icon name="heart" /> {livesWith}
-          </p>
-        )}
-
         <dl className="facts">
-          <div className="facts-wide">
+          <div>
             <dt>Rasse</dt>
             <dd>{dog.rasse || <span className="muted">nicht angegeben</span>}</dd>
           </div>
@@ -110,7 +98,7 @@ function DogHero({ dog, allDogs, canWrite, onEdit, onAddEntry, onOpenPhoto, onAd
             </dd>
           </div>
           {dog.farbe_markings && (
-            <div>
+            <div className="facts-wide">
               <dt>Farbe &amp; Abzeichen</dt>
               <dd>{dog.farbe_markings}</dd>
             </div>
