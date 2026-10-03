@@ -115,6 +115,20 @@ describe('AdminPartners – Liste', () => {
     expect(rows[2].textContent).toContain('Pausiert')
   })
 
+  test('Audit V7a: die Erklärung zu "Vertrauenswürdig" steht sichtbar nur einmal über der Liste', async () => {
+    partners.mockResolvedValue([draftPartner, activePartner])
+    await render()
+
+    const visibleHints = [...container.querySelectorAll('.field-hint')].filter((p) => p.textContent.includes('ohne neue Prüfung online'))
+    expect(visibleHints).toHaveLength(1)
+    expect(visibleHints[0].closest('.admin-partner-row')).toBeNull()
+    // je Schalter bleibt die Beschreibung für Screenreader
+    for (const row of container.querySelectorAll('.admin-partner-row')) {
+      const toggle = row.querySelector('input[role="switch"]')
+      expect(row.querySelector(`#${toggle.getAttribute('aria-describedby')}`).textContent).toContain('ohne neue Prüfung online')
+    }
+  })
+
   test('"Portal ansehen" verlinkt /p/:slug in einem neuen Tab', async () => {
     partners.mockResolvedValue([draftPartner])
     await render()

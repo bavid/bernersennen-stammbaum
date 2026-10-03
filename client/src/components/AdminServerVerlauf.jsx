@@ -24,7 +24,7 @@ function VerlaufChart({ series, size = VERLAUF_SIZE }) {
   )
 }
 
-// Verlauf der letzten 30 Tage (stündliche Messungen): Speicher frei, Platte frei, Last.
+// Verlauf der letzten 30 Tage (stündliche Messungen): Arbeitsspeicher frei, Speicherplatz frei, Last.
 export default function AdminServerVerlauf({ status }) {
   const verlauf = status.verlauf ?? []
   const first = verlauf[0]

@@ -118,8 +118,9 @@ export function verlaufSeries(verlauf, schwellen, kerne) {
   const cores = isNumber(kerne) && kerne > 0 ? kerne : 1
   const lastMax = Math.max(cores, ...lastValues.filter(isNumber))
   return [
-    { key: 'speicherFrei', label: 'Speicher frei', values: pick('speicherFrei'), min: 0, max: 100, schwelle: 100 - schwellen.speicher.gelb, format: formatPercent },
-    { key: 'platteFrei', label: 'Platte frei', values: pick('platteFrei'), min: 0, max: 100, schwelle: 100 - schwellen.platte.gelb, format: formatPercent },
+    // Audit V7a: dieselben Wörter wie die Karten darüber (Arbeitsspeicher, Speicherplatz) statt "Speicher"/"Platte"
+    { key: 'speicherFrei', label: 'Arbeitsspeicher frei', values: pick('speicherFrei'), min: 0, max: 100, schwelle: 100 - schwellen.speicher.gelb, format: formatPercent },
+    { key: 'platteFrei', label: 'Speicherplatz frei', values: pick('platteFrei'), min: 0, max: 100, schwelle: 100 - schwellen.platte.gelb, format: formatPercent },
     { key: 'last', label: 'Last (1 Minute)', values: lastValues, min: 0, max: lastMax, schwelle: round(schwellen.last.gelb * cores), format: formatLoad }
   ]
 }

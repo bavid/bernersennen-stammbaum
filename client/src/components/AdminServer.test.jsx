@@ -133,12 +133,12 @@ describe('AdminServer', () => {
     await render()
 
     const charts = [...container.querySelectorAll('.server-verlauf-chart')]
-    expect(charts.map((chart) => chart.querySelector('h4').textContent)).toEqual(['Speicher frei', 'Platte frei', 'Last (1 Minute)'])
+    expect(charts.map((chart) => chart.querySelector('h4').textContent)).toEqual(['Arbeitsspeicher frei', 'Speicherplatz frei', 'Last (1 Minute)'])
     expect(charts[0].querySelector('svg').getAttribute('aria-hidden')).toBe('true')
     expect(charts[0].querySelector('.server-verlauf-line').getAttribute('d')).toMatch(/^M[\d.]+,[\d.]+ L/)
     expect(charts[0].querySelector('.server-verlauf-threshold')).not.toBeNull()
     expect(charts[0].querySelector('.server-verlauf-text').textContent).toBe(
-      'Speicher frei: zuletzt 76 %, niedrigster Wert 74 %, höchster Wert 78 % (3 Messungen).'
+      'Arbeitsspeicher frei: zuletzt 76 %, niedrigster Wert 74 %, höchster Wert 78 % (3 Messungen).'
     )
     expect(charts[2].querySelector('.server-verlauf-text').textContent).toBe(
       'Last (1 Minute): zuletzt 0,1, niedrigster Wert 0,1, höchster Wert 0,4 (3 Messungen).'

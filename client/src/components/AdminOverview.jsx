@@ -49,8 +49,9 @@ function AdminTodo({ todo, onOpenTab }) {
 function StatsGrid({ stats }) {
   const items = [
     ['Offene Nachrichten', stats.openMessages],
-    ['Rudel', stats.families],
-    ['Hunde', stats.dogs],
+    // Audit V7a: "Rudel" zählte alle Bereiche (auch Zuhause, Tierheime, Partner), "Hunde" alle Tiere.
+    ['Bereiche', stats.families],
+    ['Tiere', stats.dogs],
     ['Einträge', stats.entries],
     ['Zettel', stats.notes],
     ['Antworten', stats.replies],
@@ -81,7 +82,9 @@ export default function AdminOverview({ stats, todo, onOpenTab }) {
   return (
     <div className="admin-panel-stack">
       <AdminTodo todo={todo} onOpenTab={onOpenTab} />
-      <AdminStats bereiche={stats.families} />
+      {/* Audit V7a: ohne "Bereiche"-Kachel - die Kennzahlen zählen ohne Demo-Daten, overview.stats.families zählt alles
+          und steht schon im Bestand darunter. */}
+      <AdminStats />
       <StatsGrid stats={stats} />
     </div>
   )

@@ -206,7 +206,9 @@ describe('AdminStats – Mundpropaganda', () => {
     stats.mockResolvedValue(fixture({ mundpropaganda: { ketten: 0, maxTiefe: 0, top: [] } }))
     await render(<AdminStats />)
 
-    expect(container.querySelector('.stat-lead').textContent).toBe('Noch keine Weitergaben')
+    // Audit V7a: derselbe ruhige Leerzustand wie beim Partner-Ranking
+    expect(container.querySelector('.stat-lead')).toBeNull()
+    expect([...container.querySelectorAll('p.muted')].some((p) => p.textContent === 'Noch keine Weitergaben')).toBe(true)
     expect(container.querySelector('.stat-chains')).toBeNull()
   })
 })

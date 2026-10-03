@@ -3,6 +3,7 @@ import AdminFamilyDetails from './AdminFamilyDetails.jsx'
 import Icon from './Icon.jsx'
 import { relativeTime } from '../lib/dates.js'
 import { parseHerkunft } from '../lib/herkunft.js'
+import { plural } from '../lib/adminStats.js'
 
 // Herkunft eines Bereichs als Chip (Phase 5 Task 3, lib/herkunft.js): „über Partner …“, „weitergegeben von …“,
 // „Stapel …“, „Altbestand“ - ohne herkunft der Freitext quelle, ohne beides nichts.
@@ -35,14 +36,15 @@ export function AdminViewLink({ familyId, className = '' }) {
   )
 }
 
-// „Alle Rudel“ am Ende des Admins: jeder Bereich mit Herkunft und Zählern, aufklappbar zu den Details,
-// daneben „Als Admin ansehen“.
+// „Alle Bereiche“ (vorher „Alle Rudel“) im Reiter Familien des Admins: jeder Bereich mit Herkunft und Zählern,
+// aufklappbar zu den Details, daneben „Als Admin ansehen“.
 export default function AdminFamilyList({ families }) {
   const [openId, setOpenId] = useState(null)
 
   return (
     <section className="admin-families" aria-labelledby="admin-families-title">
-      <h2 id="admin-families-title">Alle Rudel</h2>
+      {/* Audit V7a: die Liste zeigt alle Bereiche (Zuhause, Familien, Tierheime, Partner), nicht nur Rudel */}
+      <h2 id="admin-families-title">Alle Bereiche</h2>
       {families.map((family) => {
         const open = openId === family.id
         return (
@@ -58,10 +60,10 @@ export default function AdminFamilyList({ families }) {
                   <HerkunftChip family={family} />
                 </span>
                 <span className="admin-family-counts">
-                  <span className="pill">{family.dogs} Hunde</span>
-                  <span className="pill">{family.entries} Einträge</span>
-                  <span className="pill">{family.notes} Zettel</span>
-                  <span className="pill">{family.replies} Antworten</span>
+                  <span className="pill">{plural(family.dogs, 'Tier', 'Tiere')}</span>
+                  <span className="pill">{plural(family.entries, 'Eintrag', 'Einträge')}</span>
+                  <span className="pill">{plural(family.notes, 'Zettel', 'Zettel')}</span>
+                  <span className="pill">{plural(family.replies, 'Antwort', 'Antworten')}</span>
                 </span>
               </button>
               <AdminViewLink familyId={family.id} className="admin-family-view" />

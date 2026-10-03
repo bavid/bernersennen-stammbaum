@@ -105,14 +105,24 @@ describe('AdminFamilyList – Herkunft als Chip', () => {
   test('Name, Zeitangaben und Zähler-Pills bleiben wie zuvor, zugeklappt', async () => {
     await render(<AdminFamilyList families={[family({ last_activity: '2026-09-02 08:00:00' })]} />)
 
-    expect(container.querySelector('h2').textContent).toBe('Alle Rudel')
+    expect(container.querySelector('h2').textContent).toBe('Alle Bereiche')
     expect(container.querySelector('.admin-family-name').textContent).toBe('Zuhause Birkenweg')
     expect(container.querySelector('.admin-family-head .muted').textContent).toMatch(/^angelegt .* · zuletzt aktiv /)
     expect([...container.querySelectorAll('.admin-family-counts .pill')].map((pill) => pill.textContent)).toEqual([
-      '2 Hunde',
+      '2 Tiere',
       '5 Einträge',
       '1 Zettel',
       '0 Antworten'
+    ])
+  })
+
+  test('Audit V7a: Einzahl bei genau einem ("1 Tier", "1 Eintrag", "1 Antwort" statt "1 Hunde", "1 Einträge")', async () => {
+    await render(<AdminFamilyList families={[family({ dogs: 1, entries: 1, notes: 1, replies: 1 })]} />)
+    expect([...container.querySelectorAll('.admin-family-counts .pill')].map((pill) => pill.textContent)).toEqual([
+      '1 Tier',
+      '1 Eintrag',
+      '1 Zettel',
+      '1 Antwort'
     ])
     expect(container.querySelector('.admin-family-head').getAttribute('aria-expanded')).toBe('false')
     expect(container.querySelector('.admin-details')).toBeNull()

@@ -5,6 +5,7 @@ import Modal from './Modal.jsx'
 import KeyReveal from './KeyReveal.jsx'
 import AdminPartnerForm from './AdminPartnerForm.jsx'
 import AdminPartnerRow from './AdminPartnerRow.jsx'
+import { TRUST_HINT } from './AdminPartnerTrust.jsx'
 import { rowPayload } from '../lib/adminPartnerForm.js'
 
 // Admin-Partnerpflege (Task 7): Liste mit Status-Chips + Aktionen, Formular zum Anlegen/Bearbeiten.
@@ -87,6 +88,13 @@ export default function AdminPartners({ onChange }) {
 
       {!editing && partners === undefined && !error && <p className="muted">Lade …</p>}
       {!editing && partners && partners.length === 0 && <p className="muted">Noch keine Partner angelegt.</p>}
+      {/* Audit V7a: die Erklärung zu "Vertrauenswürdig" einmal über der Liste statt an jedem Partner (dort nur noch für
+          Screenreader, aria-describedby in AdminPartnerTrust). */}
+      {!editing && partners && partners.length > 0 && (
+        <p className="field-hint admin-partners-trust-hint">
+          <strong>Vertrauenswürdig:</strong> {TRUST_HINT}
+        </p>
+      )}
       {!editing && partners && partners.length > 0 && (
         <ul className="admin-partner-list">
           {partners.map((partner) => (

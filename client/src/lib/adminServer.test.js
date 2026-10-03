@@ -85,7 +85,7 @@ describe('adminServer', () => {
     expect(ampelSummary({ speicher: null, platte: null, last: null })).toEqual({ stufe: null, text: 'Keine Messwerte.' })
   })
 
-  test('verlaufSeries: Speicher frei, Platte frei, Last - mit Schwellen als Linie', () => {
+  test('verlaufSeries: Arbeitsspeicher frei, Speicherplatz frei, Last - mit Schwellen als Linie', () => {
     const verlauf = [
       { at: '2026-10-03T08:00:00Z', speicherFrei: 30, platteFrei: 84, last: 0.2 },
       { at: '2026-10-03T09:00:00Z', speicherFrei: null, platteFrei: 83.5, last: 0.4 },
@@ -94,8 +94,8 @@ describe('adminServer', () => {
     const schwellen = { speicher: { gelb: 80, rot: 90 }, platte: { gelb: 70, rot: 85 }, last: { gelb: 0.75, rot: 1 } }
     const series = verlaufSeries(verlauf, schwellen, 2)
     expect(series.map((s) => [s.key, s.label, s.min, s.max, s.schwelle])).toEqual([
-      ['speicherFrei', 'Speicher frei', 0, 100, 20],
-      ['platteFrei', 'Platte frei', 0, 100, 30],
+      ['speicherFrei', 'Arbeitsspeicher frei', 0, 100, 20],
+      ['platteFrei', 'Speicherplatz frei', 0, 100, 30],
       ['last', 'Last (1 Minute)', 0, 2, 1.5]
     ])
     expect(series[0].values).toEqual([30, null, 25])

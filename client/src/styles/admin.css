@@ -153,6 +153,9 @@
 .admin-stats > div {
   display: flex;
   flex-direction: column-reverse;
+  /* Zahlen oben auf einer Linie, auch wenn eine Beschriftung zweizeilig ist (Audit V7a) - column-reverse packt sonst
+     von unten. */
+  justify-content: flex-end;
   padding: var(--space-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -671,6 +674,7 @@
 /* Empfehlungen & Anzeigen, Unterstützen & Spenden (Phase 3 Task 5) - Aufbau wie die Partnerliste */
 
 .admin-section-intro {
+  max-width: var(--measure); /* Audit V7a: lesbare Zeilenlänge statt über die ganze Kartenbreite */
   margin: 0;
   font-size: var(--text-sm);
 }

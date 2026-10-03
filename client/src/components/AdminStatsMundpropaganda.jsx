@@ -8,7 +8,8 @@ export default function AdminStatsMundpropaganda({ mundpropaganda }) {
 
   return (
     <>
-      <p className="stat-lead">{mundpropagandaText(mundpropaganda)}</p>
+      {/* Ohne Weitergaben ein ruhiger Leerzustand wie beim Partner-Ranking daneben (Audit V7a), nicht groß in Serifen. */}
+      <p className={ketten > 0 ? 'stat-lead' : 'muted'}>{mundpropagandaText(mundpropaganda)}</p>
       {ketten > 0 && top.length > 0 && (
         <ol className="stat-chains">
           {top.map((kette) => (

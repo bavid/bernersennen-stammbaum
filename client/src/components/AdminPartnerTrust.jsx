@@ -33,7 +33,8 @@ export default function AdminPartnerTrust({ partner, onChanged }) {
         <input type="checkbox" role="switch" checked={trusted} disabled={busy} onChange={toggle} aria-describedby={hintId} />
         Vertrauenswürdig
       </label>
-      <p className="field-hint" id={hintId}>
+      {/* Sichtbar steht die Erklärung einmal über der Liste (AdminPartners) - hier nur für Screenreader. */}
+      <p className="visually-hidden" id={hintId}>
         {TRUST_HINT}
       </p>
       {error && (
