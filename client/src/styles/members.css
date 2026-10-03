@@ -68,9 +68,22 @@
   font-size: var(--text-xl);
 }
 
-/* Erklärtexte in den Karten mit lesbarer Zeilenlänge (Audit V7a: am Desktop vorher über 150 Zeichen je Zeile) */
-.members-section > p {
+/* Erklärtexte in den Karten mit lesbarer Zeilenlänge (Audit V7a: am Desktop vorher über 150 Zeichen je Zeile) -
+   auch der Text unter „Familie verlassen“ und die Felder darunter. */
+.members-section > p,
+.members-section > .field,
+.members-section .leave-family-section > p {
   max-width: var(--measure);
+}
+
+/* Audit V7a: Knöpfe in den Karten so breit wie ihr Text - wie „Leitung übergeben“ und „Familie auflösen“ unter „Deine
+   Mitgliedschaft“; vorher zog das Raster „Rudel verlassen“, „Schlüssel erneuern“ usw. am Desktop über die ganze Karte.
+   Am Handy bleiben sie breit. */
+@media (min-width: 640px) {
+  .members-section > .btn,
+  .members-section .leave-family-section > .btn {
+    justify-self: start;
+  }
 }
 
 .members-section-head {

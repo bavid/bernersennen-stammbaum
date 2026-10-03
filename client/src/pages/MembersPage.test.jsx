@@ -128,6 +128,9 @@ describe('MembersPage – „Wer sieht was?“ und Liste (für alle Rollen)', ()
     expect(rows[2]).toContain('Öffentlich')
     expect(rows[2]).toContain('Partner-Portale, Steckbriefe und Happy Ends mit Einwilligung')
     expect(container.textContent).toContain('Eine Familie ist nie öffentlich.')
+    // Audit V7a: nur einmal - in "Wer sieht was?", nicht noch einmal in der Einleitung
+    expect(container.textContent.split('nie öffentlich').length - 1).toBe(1)
+    expect(container.querySelector('.page-lede').textContent).not.toContain('nie öffentlich')
     expect(container.querySelectorAll('.visibility-icon svg')).toHaveLength(3)
   })
 

@@ -128,9 +128,8 @@ export default function MembersPage({ family, onFamilyChange }) {
             <h1>Mitglieder</h1>
             <RoleBadge rolle={myRole} className="members-my-role" />
           </div>
-          <p className="page-lede">
-            Wer zu „{family.name}“ gehört – und wer was darf. {words.groupNeverPublic}
-          </p>
+          {/* Audit V7a: "Eine Familie ist nie öffentlich." steht gleich darunter in "Wer sieht was?" - hier nicht doppelt. */}
+          <p className="page-lede">Wer zu „{family.name}“ gehört – und wer was darf.</p>
           <p className="hero-hint">
             <Link to="/stammbaum">← {words.toTree}</Link>
           </p>
