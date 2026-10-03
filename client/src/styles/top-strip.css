@@ -12,28 +12,29 @@
   z-index: 46;
   height: 3px;
   background: var(--env-color);
+  /* Nichts zum Klicken - Fingertipps am oberen Rand gehen an die Zeile darunter. */
+  pointer-events: none;
 }
 
 .env-banner.env-dev {
   --env-color: #74b896;
 }
 
-/* Hängt 9 px unter die Linie - unterhalb der Symbole der Zeile darunter (die stehen mittig) und ohne Klicks abzufangen. */
+/* Hängt knapp 10 px unter die Linie - oberhalb der Symbole der Zeile darunter (die stehen mittig), ohne Klicks abzufangen
+   (pointer-events der Linie). In rem, damit "Größer" mitwächst. */
 .env-banner-label {
   position: absolute;
   top: 0;
   right: var(--space-2);
-  height: 12px;
-  padding: 2px 6px 0;
+  padding: 2px 0.4rem 1px;
   border-radius: 0 0 4px 4px;
   background: var(--env-color);
   color: #2a211a;
-  font-size: 8.5px;
+  font-size: 0.6rem;
   font-weight: 800;
-  line-height: 10px;
+  line-height: 1;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  pointer-events: none;
 }
 
 /* --- Die eine Zeile ------------------------------------------------------------------------------------------------- */
@@ -135,10 +136,11 @@
   cursor: pointer;
 }
 
+/* Mehr nach unten als nach oben: über der Zeile ist der Rand des Bildschirms, dort endet jeder Fingertipp. */
 .top-strip-link::after {
   content: '';
   position: absolute;
-  inset: -13px -6px;
+  inset: -8px -6px -19px;
 }
 
 .top-strip-link:hover {
