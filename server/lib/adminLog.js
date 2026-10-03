@@ -21,7 +21,14 @@ const AKTION = Object.freeze({
   // ziel 'termin:<id>'.
   terminAusgeblendet: 'termin-ausgeblendet',
   terminEingeblendet: 'termin-eingeblendet',
-  terminGeloescht: 'termin-geloescht'
+  terminGeloescht: 'termin-geloescht',
+  // Phase N Task 5: ein globaler Hinweis angelegt, geändert, ein- bzw. ausgeschaltet oder gelöscht
+  // (routes/adminHinweise.js), ziel 'hinweis:<id>' - nie Titel oder Text.
+  hinweisAngelegt: 'hinweis-angelegt',
+  hinweisGeaendert: 'hinweis-geaendert',
+  hinweisEingeschaltet: 'hinweis-eingeschaltet',
+  hinweisAusgeschaltet: 'hinweis-ausgeschaltet',
+  hinweisGeloescht: 'hinweis-geloescht'
 })
 
 const DEFAULT_LIMIT = 50
@@ -46,6 +53,10 @@ function terminZiel(terminId) {
   return `termin:${terminId}`
 }
 
+function hinweisZiel(hinweisId) {
+  return `hinweis:${hinweisId}`
+}
+
 function logAdminAction(aktion, ziel) {
   insertStmt.run(aktion, ziel)
 }
@@ -62,4 +73,16 @@ function recentAdminLog(limit) {
   return recentStmt.all(cleanLimit(limit))
 }
 
-module.exports = { AKTION, DEFAULT_LIMIT, MAX_LIMIT, familyZiel, anfrageZiel, partnerZiel, terminZiel, logAdminAction, cleanLimit, recentAdminLog }
+module.exports = {
+  AKTION,
+  DEFAULT_LIMIT,
+  MAX_LIMIT,
+  familyZiel,
+  anfrageZiel,
+  partnerZiel,
+  terminZiel,
+  hinweisZiel,
+  logAdminAction,
+  cleanLimit,
+  recentAdminLog
+}

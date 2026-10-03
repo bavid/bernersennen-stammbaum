@@ -16,6 +16,7 @@ import AdminSupport from '../components/AdminSupport.jsx'
 import AdminLog from '../components/AdminLog.jsx'
 import AdminAnfragen from '../components/AdminAnfragen.jsx'
 import AdminNotify from '../components/AdminNotify.jsx'
+import AdminHinweise from '../components/AdminHinweise.jsx'
 import useAdminTab from '../hooks/useAdminTab.js'
 import { ADMIN_TABS, adminPanelId, adminTabCounts, openCountText } from '../lib/adminTabs.js'
 
@@ -179,6 +180,8 @@ function Dashboard({ onLogout }) {
             )}
             {panel('familien', <AdminFamilyList families={overview.families} />)}
             {panel('nachrichten', <AdminMessages onCountChange={handleMessageCount} />)}
+            {/* Phase N Task 5: globale Hinweise - das Band oben auf allen Seiten, mit Vorschau. */}
+            {panel('hinweise', <AdminHinweise />)}
             {panel('einstellungen', <AdminNotify />)}
             {/* Phase 5 Task 5b: Protokoll der Admin-Ansicht (geöffnet aus "Familien"). */}
             {panel('protokoll', <AdminLog families={overview.families} />)}

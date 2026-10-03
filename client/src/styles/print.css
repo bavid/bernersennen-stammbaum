@@ -290,9 +290,10 @@
     display: block !important;
   }
 
-  /* App-Oberfläche: Umgebungs- und Demo-Band, Kopf und Navigation der App, Admin-Kopf, Toasts sowie die
+  /* App-Oberfläche: Umgebungs-, Hinweis- und Demo-Band, Kopf und Navigation der App, Admin-Kopf, Toasts sowie die
      Werkzeugleiste und Hinweise der Druckseite selbst kommen nicht aufs Papier. */
   .env-banner,
+  .hinweis-band,
   .demo-banner,
   .app-header,
   .app-nav,

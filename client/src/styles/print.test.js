@@ -44,7 +44,7 @@ describe('print.css', () => {
 
   test('blendet im Druck Kopf, Navigation, Bänder und die Werkzeugleiste aus', () => {
     const hidden = hiddenSelectors(printBlock())
-    for (const selector of ['.app-header', '.app-nav', '.admin-header', '.env-banner', '.demo-banner', '.print-toolbar']) {
+    for (const selector of ['.app-header', '.app-nav', '.admin-header', '.env-banner', '.hinweis-band', '.demo-banner', '.print-toolbar']) {
       expect(hidden).toContain(selector)
     }
   })

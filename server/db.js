@@ -628,6 +628,26 @@ addColumnIfMissing('vouchers', 'zugewiesen_an_anfrage_id', 'INTEGER')
 // geöffnete Anfrage zählt ihre Aufbewahrung ab hier statt ab dem Eingang (lib/anfragen.js PURGE_SQL). NULL = nie bearbeitet.
 addColumnIfMissing('anfragen', 'aktualisiert_at', 'TEXT')
 
+// Phase N Task 5: globale Hinweise - ein Band oben auf allen Seiten (lib/hinweise.js, routes/hinweise.js öffentlich,
+// routes/adminHinweise.js Admin). start/ende: ISO in UTC, immer im Format von toISOString() (Textvergleich in SQLite
+// stimmt so); ende NULL = offen. stufe ohne CHECK (wie anfragen.typ) - geprüft in lib/hinweise.js STUFE_VALUES.
+// is_demo = 1: nur der Beispiel-Hinweis der Vorschau/Testumgebung (scripts/testenv-seed.js), in Produktion nie öffentlich.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS hinweise (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titel TEXT NOT NULL,
+    text TEXT,
+    stufe TEXT NOT NULL DEFAULT 'info',
+    start TEXT NOT NULL,
+    ende TEXT,
+    aktiv INTEGER NOT NULL DEFAULT 1,
+    is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_hinweise_aktiv ON hinweise(aktiv, start);
+`)
+
 // Phase V2: Zuhause besuchen (lib/visits.js). Eine Zeile = das Zuhause gast_family_id darf das Zuhause
 // gastgeber_family_id ansehen und kommentieren. Entsteht über eine Besuchs-Einladung (Gutschein-Stapel mit zweck
 // 'besuch', vouchers.visit_host_family_id = der Gastgeber, 7 Tage gültig, lib/visitInvites.js). ON DELETE CASCADE:

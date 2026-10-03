@@ -47,12 +47,16 @@ describe('AdminLog – Protokoll der Admin-Ansicht', () => {
     expect(describeZiel(null)).toBe('')
     // V-Fehler 3: Schalter "Vertrauenswürdig" eines Partners
     expect(describeZiel('partner:4', families)).toBe('Partner #4')
+    // Phase N Task 5: globale Hinweise
+    expect(describeZiel('hinweis:12', families)).toBe('Hinweis #12')
   })
 
   test('describeAktion: view und der Schalter "Vertrauenswürdig" lesbar, Unbekanntes unverändert', () => {
     expect(describeAktion('view')).toBe('Bereich angesehen')
     expect(describeAktion('partner-vertrauenswuerdig')).toBe('Partner vertrauenswürdig gesetzt')
     expect(describeAktion('partner-nicht-vertrauenswuerdig')).toBe('Partner nicht mehr vertrauenswürdig')
+    expect(describeAktion('hinweis-ausgeschaltet')).toBe('Hinweis ausgeschaltet')
+    expect(describeAktion('hinweis-geloescht')).toBe('Hinweis gelöscht')
     expect(describeAktion('x')).toBe('x')
   })
 

@@ -15,6 +15,7 @@ const { createDemoPack, createDemoHousehold, createImageCopier, replaceDemoPack 
 const { createBatch } = require('../lib/vouchers')
 const { partnerAccessBatchOptions } = require('../lib/partnerAccess')
 const { formatCode } = require('../lib/codes')
+const { replaceDemoHinweise } = require('../lib/hinweise')
 
 const TEST_PACK_NAME = 'Rudel vom Sonnenhang (Test)'
 const TEST_HOUSEHOLD_NAME = 'Zuhause am Deich (Test)'
@@ -141,6 +142,11 @@ try {
   } else {
     console.log(`Einladungs-Gutschein für "${TEST_PACK_NAME}" besteht schon`)
   }
+
+  // Phase N Task 5: ein harmloser Beispiel-Hinweis fürs Band oben - ersetzt nur den bisherigen Beispiel-Hinweis,
+  // echte Hinweise der Vorschau bleiben. Nie in Produktion (siehe oben; replaceDemoHinweise prüft das zusätzlich).
+  replaceDemoHinweise({ appEnv })
+  console.log('Beispiel-Hinweis „Willkommen auf der Vorschau“ angelegt')
 
   console.log(`Umgebung: ${appEnv} – öffentliche Demo über „Demo ansehen" auf der Login-Seite`)
 } catch (err) {

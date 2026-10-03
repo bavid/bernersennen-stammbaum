@@ -229,3 +229,29 @@ test('on the preview both test packs get random passwords', () => {
   for (const password of passwords) assert.ok(password.length >= 8, password)
   fs.rmSync(dir, { recursive: true, force: true })
 })
+
+// Phase N Task 5: der Beispiel-Hinweis (lib/hinweise.js replaceDemoHinweise) - genau einer, auch nach mehreren Läufen;
+// echte Hinweise auf der Vorschau bleiben stehen. In Produktion läuft das Skript gar nicht (Tests oben).
+function hinweiseIn(dir) {
+  const Database = require('better-sqlite3')
+  const db = new Database(path.join(dir, 'data.db'), { readonly: true })
+  const rows = db.prepare('SELECT titel, stufe, aktiv, is_demo FROM hinweise ORDER BY id').all()
+  db.close()
+  return rows.map((row) => [row.titel, row.stufe, row.aktiv, row.is_demo])
+}
+
+test('the preview gets exactly one harmless sample notice; real notices survive a re-run', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-preview-hinweis-'))
+  const env = { DATA_DIR: dir, APP_ENV: 'staging' }
+  assert.equal(run(env).status, 0)
+  const SAMPLE = ['Willkommen auf der Vorschau', 'info', 1, 1]
+  assert.deepEqual(hinweiseIn(dir), [SAMPLE])
+
+  const Database = require('better-sqlite3')
+  const db = new Database(path.join(dir, 'data.db'))
+  db.prepare("INSERT INTO hinweise (titel, stufe, start) VALUES ('Echter Hinweis', 'wichtig', '2026-10-01T08:00:00.000Z')").run()
+  db.close()
+  assert.equal(run(env).status, 0)
+  assert.deepEqual(hinweiseIn(dir), [['Echter Hinweis', 'wichtig', 1, 0], SAMPLE])
+  fs.rmSync(dir, { recursive: true, force: true })
+})

@@ -19,6 +19,8 @@ const adminStatsRoutes = require('./routes/adminStats')
 const adminAnfragenRoutes = require('./routes/adminAnfragen')
 const adminNotifyRoutes = require('./routes/adminNotify')
 const adminTermineRoutes = require('./routes/adminTermine')
+const adminHinweiseRoutes = require('./routes/adminHinweise')
+const hinweiseRoutes = require('./routes/hinweise')
 const vouchersRoutes = require('./routes/vouchers')
 const besucheRoutes = require('./routes/besuche')
 const erlebtMitRoutes = require('./routes/erlebtMit')
@@ -179,6 +181,9 @@ function createApp() {
   app.use('/api/admin', adminAnfragenRoutes)
   app.use('/api/admin', adminNotifyRoutes)
   app.use('/api/admin', adminTermineRoutes)
+  app.use('/api/admin', adminHinweiseRoutes)
+  // Phase N Task 5: die laufenden globalen Hinweise fürs Band oben auf jeder Seite - öffentlich, ohne Login.
+  app.use('/api/hinweise', hinweiseRoutes)
   app.use('/api/public/partners', partnersRoutes)
   // Phase N Task 1: Gutschein- und Partner-Anfragen (routes/anfragen.js) - vor dem allgemeinen /api/public.
   app.use('/api/public/anfragen', anfragenRoutes)

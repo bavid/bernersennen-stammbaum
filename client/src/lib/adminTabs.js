@@ -12,6 +12,8 @@ export const ADMIN_TABS = [
   { key: 'empfehlungen', label: 'Empfehlungen & Spenden' },
   { key: 'familien', label: 'Familien' },
   { key: 'nachrichten', label: 'Nachrichten' },
+  // Phase N Task 5: globale Hinweise (Band oben auf allen Seiten) - neben den Einstellungen, als eigener Reiter.
+  { key: 'hinweise', label: 'Hinweise' },
   { key: 'einstellungen', label: 'Einstellungen' },
   { key: 'protokoll', label: 'Protokoll' }
 ]

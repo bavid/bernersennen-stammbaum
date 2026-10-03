@@ -46,6 +46,9 @@ const json = (method, body) => ({ method, body: JSON.stringify(body) })
 
 export const api = {
   config: () => request('/config'),
+  // Globale Hinweise fürs Band oben (Phase N Task 5, server/routes/hinweise.js): ohne Login, höchstens fünf laufende,
+  // neueste zuerst -> { hinweise: [{ id, titel, text, stufe }] }.
+  hinweise: () => request('/hinweise'),
   me: () => request('/me'),
   login: (secret) => request('/login', json('POST', { secret })),
   loginUser: (username, password) => request('/login', json('POST', { username, password })),
@@ -266,6 +269,14 @@ export const api = {
     // [{ id, titel, typ }] - die Chats, die dem Bot zuletzt geschrieben haben (mit dem gespeicherten Token).
     findTelegramChats: ({ token } = {}) => request('/admin/notify-settings/chat-finden', json('POST', token ? { token } : {})),
     sendNotifyTest: () => request('/admin/notify-test', { method: 'POST' }),
+
+    // Globale Hinweise (Phase N Task 5, server/routes/adminHinweise.js): { hinweise (mit status), max }; anlegen/ändern
+    // mit { titel, text, stufe, start, ende, aktiv } (Zeiten ISO in UTC, beim Ändern fehlende Felder unverändert) ->
+    // der Hinweis; Fehler tragen womöglich details.feld (das betroffene Feld). Löschen -> 204.
+    hinweise: () => request('/admin/hinweise'),
+    createHinweis: (payload) => request('/admin/hinweise', json('POST', payload)),
+    updateHinweis: (id, payload) => request(`/admin/hinweise/${encodeURIComponent(id)}`, json('PUT', payload)),
+    deleteHinweis: (id) => request(`/admin/hinweise/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),

@@ -129,6 +129,16 @@ const PATHS = {
     </>
   ),
   chevronDown: <path d="m6 9 6 6 6-6" />,
+  // Globale Hinweise (Phase N Task 5): Blättern im Band, Stufe "info" und "wartung".
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
+  chevronRight: <path d="m9 18 6-6-6-6" />,
+  info: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 16v-4.5M12 8h.01" />
+    </>
+  ),
+  wrench: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8Z" />,
   collage: (
     <>
       <rect x="3" y="3" width="8" height="10" rx="1.5" />

@@ -11,7 +11,13 @@ const AKTION_LABELS = {
   // Phase V4a: Termine eines Partners (server/routes/adminTermine.js, ziel 'termin:<id>').
   'termin-ausgeblendet': 'Termin ausgeblendet',
   'termin-eingeblendet': 'Termin wieder eingeblendet',
-  'termin-geloescht': 'Termin gelöscht'
+  'termin-geloescht': 'Termin gelöscht',
+  // Phase N Task 5: globale Hinweise (server/routes/adminHinweise.js, ziel 'hinweis:<id>').
+  'hinweis-angelegt': 'Hinweis angelegt',
+  'hinweis-geaendert': 'Hinweis geändert',
+  'hinweis-eingeschaltet': 'Hinweis eingeschaltet',
+  'hinweis-ausgeschaltet': 'Hinweis ausgeschaltet',
+  'hinweis-geloescht': 'Hinweis gelöscht'
 }
 
 // ziel aus dem Protokoll ('family:<id>', server/lib/adminLog.js) lesbar machen. Das Protokoll selbst speichert
@@ -21,6 +27,8 @@ export function describeZiel(ziel, families = []) {
   if (partner) return `Partner #${partner[1]}`
   const termin = /^termin:(\d+)$/.exec(ziel || '')
   if (termin) return `Termin #${termin[1]}`
+  const hinweis = /^hinweis:(\d+)$/.exec(ziel || '')
+  if (hinweis) return `Hinweis #${hinweis[1]}`
   const match = /^family:(\d+)$/.exec(ziel || '')
   if (!match) return ziel || ''
   const id = Number(match[1])

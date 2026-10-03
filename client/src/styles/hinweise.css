@@ -1,0 +1,403 @@
+/* Globale Hinweise (Phase N Task 5): das Band ganz oben auf jeder Seite (HinweisCarousel/HinweisBand) und der Reiter
+   "Hinweise" im Admin. Das Band gehört zum Stapel oben - Umgebungs-Streifen (env-banner), Hinweis, Demo-/Besuchs-Band,
+   dann der Kopf: alle randlos über die volle Breite, je eine feine Linie darunter, keine Schatten, keine Rundungen -
+   unterschieden nur durch die Fläche. Der Inhalt sitzt in derselben Spalte wie der Kopf (--page-max, --page-gutter).
+   Farbe je Stufe über zwei Variablen: --hinweis-accent (Fläche, Linie, Hover) und --hinweis-ink (Symbol, Stufe).
+   Nur Tokens aus tokens.css - hell und dunkel ziehen von selbst mit. */
+
+.hinweis-band {
+  --hinweis-accent: var(--alpine);
+  --hinweis-ink: var(--alpine);
+  --hinweis-tint: 9%;
+  --hinweis-tap: 2.25rem;
+  position: relative;
+  background: color-mix(in srgb, var(--hinweis-accent) var(--hinweis-tint), var(--paper));
+  border-bottom: 1px solid color-mix(in srgb, var(--hinweis-accent) 32%, var(--line));
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+/* Wartung: die Warnfarbe der Seite (wie .warning-banner), deutlich, aber nicht alarmierend. */
+.hinweis-wartung {
+  --hinweis-accent: var(--tan);
+  --hinweis-ink: var(--rust-deep);
+  --hinweis-tint: 26%;
+}
+
+/* Wichtig: der Akzent (Rost). */
+.hinweis-wichtig {
+  --hinweis-accent: var(--rust);
+  --hinweis-ink: var(--rust);
+  --hinweis-tint: 13%;
+}
+
+.hinweis-band-inner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'icon titel actions'
+    '. text text';
+  align-items: center;
+  column-gap: var(--space-3);
+  max-width: var(--page-max);
+  min-height: 2.75rem;
+  margin: 0 auto;
+  padding: var(--space-1) var(--page-gutter);
+}
+
+.hinweis-icon {
+  grid-area: icon;
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--hinweis-accent) 22%, transparent);
+  color: var(--hinweis-ink);
+}
+
+.hinweis-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.hinweis-titel {
+  grid-area: titel;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.hinweis-titel-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.hinweis-stufe {
+  flex-shrink: 0;
+  color: var(--hinweis-ink);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.hinweis-actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.hinweis-pager {
+  display: flex;
+  align-items: center;
+}
+
+.hinweis-count {
+  min-width: 2.5rem;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.hinweis-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: var(--hinweis-tap);
+  height: var(--hinweis-tap);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.hinweis-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--hinweis-accent) 22%, transparent);
+  color: var(--ink);
+}
+
+.hinweis-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.hinweis-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hinweis-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.hinweis-more {
+  padding: 0 var(--space-3) 0 var(--space-2);
+}
+
+.hinweis-more svg {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.hinweis-more svg.is-flipped {
+  transform: rotate(180deg);
+}
+
+/* Zeilenumbrüche des Admins bleiben stehen (reiner Text, nie HTML). */
+.hinweis-text {
+  grid-area: text;
+  max-width: var(--measure);
+  margin: 0 0 var(--space-2);
+  color: var(--ink-soft);
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.hinweis-text[hidden] {
+  display: none;
+}
+
+/* Handy: eine Zeile - Titel mit Auslassungspunkten (aufgeklappt in voller Länge), Aktionen als Symbol-Knöpfe mit
+   mindestens 44 px Tippfläche (in px, weil die Grundschrift hier auf 15 px sinkt). Ohne Text bricht der Titel um -
+   sonst gäbe es keinen Weg, ihn ganz zu lesen. */
+@media (max-width: 720px) {
+  .hinweis-band {
+    --hinweis-tap: 44px;
+  }
+
+  .hinweis-band-inner {
+    column-gap: var(--space-2);
+    padding: 0 var(--space-1) 0 var(--page-gutter);
+  }
+
+  .hinweis-actions {
+    gap: 0;
+  }
+
+  /* Das Symbol ohne eigene Fläche - jeder Pixel Breite gehört hier dem Titel. */
+  .hinweis-icon {
+    width: auto;
+    height: auto;
+    background: none;
+  }
+
+  .hinweis-more {
+    padding: 0;
+  }
+
+  .hinweis-btn-label,
+  .hinweis-stufe {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .hinweis-count {
+    min-width: 2rem;
+  }
+
+  .has-text:not(.is-expanded) .hinweis-titel-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hinweis-text {
+    padding-right: var(--space-3);
+  }
+}
+
+/* --- Admin: Reiter "Hinweise" -------------------------------------------------------------------- */
+
+.admin-hinweise {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}
+
+.admin-hinweise .admin-section-head p {
+  margin: var(--space-1) 0 0;
+  max-width: var(--measure-lede);
+}
+
+.admin-hinweis-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-hinweis {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.admin-hinweis.is-abgelaufen,
+.admin-hinweis.is-aus {
+  background: var(--surface-sunk);
+}
+
+.admin-hinweis.is-editing {
+  padding: var(--space-5);
+  border-color: var(--line-strong);
+}
+
+.admin-hinweis-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.admin-hinweis-titel {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* Status-Chips: aktiv grün, geplant ruhig, abgelaufen und aus zurückgenommen. */
+.admin-hinweis-status.is-aktiv {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+
+.admin-hinweis-status.is-abgelaufen,
+.admin-hinweis-status.is-aus {
+  background: var(--paper-deep);
+  color: var(--muted);
+}
+
+.admin-hinweis-demo {
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+}
+
+/* Stufe als Wort mit Farbpunkt - dieselben Farben wie im Band. */
+.admin-hinweis-stufe {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-hinweis-stufe::before {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--alpine);
+}
+
+.admin-hinweis-stufe.is-wartung::before {
+  background: var(--tan);
+}
+
+.admin-hinweis-stufe.is-wichtig::before {
+  background: var(--rust);
+}
+
+.admin-hinweis-zeitraum {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.admin-hinweis-zeitraum svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.admin-hinweis-text {
+  margin: 0;
+  color: var(--ink-soft);
+  white-space: pre-line;
+}
+
+.admin-hinweis-form h3 {
+  font-size: var(--text-lg);
+}
+
+/* Vorschau: das echte Band in einem Rahmen, der wie der obere Rand einer Seite aussieht. */
+.admin-hinweis-preview {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.admin-hinweis-preview .hinweis-band {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.admin-hinweis-preview .hinweis-band-inner {
+  padding-inline: var(--space-4) var(--space-2);
+}
+
+.admin-hinweis-aktiv {
+  align-self: end;
+}
+
+.admin-hinweis-zeitraum-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-5);
+}
+
+.admin-hinweis-zeitpunkt {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-hinweis-zeitpunkt-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+@media (max-width: 560px) {
+  .admin-hinweis-zeitraum-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-hinweis {
+    padding: var(--space-4);
+  }
+}

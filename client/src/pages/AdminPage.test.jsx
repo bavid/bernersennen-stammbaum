@@ -36,6 +36,7 @@ vi.mock('../components/AdminSupport.jsx', () => ({ default: () => <p data-testid
 vi.mock('../components/AdminFamilyList.jsx', () => ({ default: () => <p data-testid="familien">Familien-Karte</p> }))
 vi.mock('../components/AdminMessages.jsx', () => ({ default: () => <p data-testid="nachrichten">Nachrichten-Karte</p> }))
 vi.mock('../components/AdminNotify.jsx', () => ({ default: () => <p data-testid="telegram">Telegram-Karte</p> }))
+vi.mock('../components/AdminHinweise.jsx', () => ({ default: () => <p data-testid="hinweise">Hinweise-Karte</p> }))
 vi.mock('../components/AdminLog.jsx', () => ({ default: () => <p data-testid="protokoll">Protokoll-Karte</p> }))
 
 import AdminPage from './AdminPage.jsx'
@@ -121,7 +122,7 @@ async function press(key) {
 }
 
 describe('AdminPage – Reiter (Phase U)', () => {
-  test('Kopf mit Titel "Admin", Präsentation und Abmelden; zehn Reiter in einer echten Tabliste', async () => {
+  test('Kopf mit Titel "Admin", Präsentation und Abmelden; elf Reiter in einer echten Tabliste', async () => {
     await render()
 
     expect(container.querySelector('.admin-header h1').textContent).toBe('Admin')
@@ -137,6 +138,7 @@ describe('AdminPage – Reiter (Phase U)', () => {
       'Empfehlungen & Spenden',
       'Familien',
       'Nachrichten',
+      'Hinweise',
       'Einstellungen',
       'Protokoll'
     ])
@@ -211,6 +213,12 @@ describe('AdminPage – Reiter (Phase U)', () => {
 
     await click(tab('Einstellungen'))
     expect(visiblePanel().querySelector('[data-testid="telegram"]')).not.toBeNull()
+  })
+
+  test('Hinweise (Phase N Task 5): eigener Reiter vor den Einstellungen, per ?tab=hinweise erreichbar', async () => {
+    await render('/admin?tab=hinweise')
+    expect(selectedTab().firstChild.textContent).toBe('Hinweise')
+    expect(visiblePanel().querySelector('[data-testid="hinweise"]')).not.toBeNull()
   })
 
   test('Pfeiltasten, Pos1 und Ende wechseln den Reiter und den Fokus', async () => {
