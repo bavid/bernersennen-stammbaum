@@ -142,6 +142,18 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* Audit V7a: Tierheime haben fünf Reiter - am Handy rücken sie enger zusammen, damit auch „Teilen“ ab 360 px im Bild
+   steht, statt hinter dem Rand zu verschwinden (noch schmaler scrollt die Leiste wie gehabt). */
+@media (max-width: 480px) {
+  .partner-profile-tabs {
+    gap: 0;
+  }
+
+  .partner-profile-tabs .tab-bar-tab {
+    padding: 0 calc(var(--space-1) * 1.5);
+  }
+}
+
 .partner-profile-notes {
   display: flex;
   flex-wrap: wrap;
