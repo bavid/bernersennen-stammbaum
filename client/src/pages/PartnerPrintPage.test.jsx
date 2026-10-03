@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 const { printBatch, markPrinted, config } = vi.hoisted(() => ({ printBatch: vi.fn(), markPrinted: vi.fn(), config: vi.fn() }))
 vi.mock('../api', () => ({ api: { config, partnerArea: { printBatch, markPrinted } } }))
 
-import PartnerPrintPage, { PARTNER_PRINT_HINT } from './PartnerPrintPage.jsx'
+import PartnerPrintPage, { DEMO_PRINT_HINT, PARTNER_PRINT_HINT } from './PartnerPrintPage.jsx'
 import { PRINT_BODY_CLASS } from '../components/VoucherPrintView.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -44,7 +44,7 @@ afterEach(() => {
   config.mockReset()
 })
 
-async function render(batchId = '12', { readOnly = false } = {}) {
+async function render(batchId = '12', { readOnly = false, demo = false } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -53,7 +53,7 @@ async function render(batchId = '12', { readOnly = false } = {}) {
       <MemoryRouter initialEntries={[`/partner-drucken/${batchId}`]}>
         <Routes>
           <Route path="/profil" element={<p data-testid="profil">Profil</p>} />
-          <Route path="/partner-drucken/:id" element={<PartnerPrintPage batchId={batchId} readOnly={readOnly} />} />
+          <Route path="/partner-drucken/:id" element={<PartnerPrintPage batchId={batchId} readOnly={readOnly} demo={demo} />} />
         </Routes>
       </MemoryRouter>
     )
@@ -151,7 +151,8 @@ describe('PartnerPrintPage – Druck melden (Audit V7a)', () => {
 
   test('Demo und Admin-Ansicht (readOnly) melden nichts; ohne Codes ebenso nicht', async () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => {})
-    await render('12', { readOnly: true })
+    await render('12', { readOnly: true, demo: true })
+    expect(container.querySelector('.print-head').textContent).toContain(DEMO_PRINT_HINT)
     await act(async () => button('Drucken').click())
     expect(markPrinted).not.toHaveBeenCalled()
     act(() => root.unmount())

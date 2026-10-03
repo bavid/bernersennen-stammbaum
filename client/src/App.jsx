@@ -532,7 +532,7 @@ export default function App() {
     return (
       <ThemeProvider themeId={family.theme}>
         <Suspense fallback={<RouteFallback />}>
-          <PartnerPrintPage batchId={partnerPrintBatchId} readOnly={isReadOnly(family)} />
+          <PartnerPrintPage batchId={partnerPrintBatchId} readOnly={isReadOnly(family)} demo={Boolean(family.isDemo)} />
         </Suspense>
       </ThemeProvider>
     )

@@ -10,14 +10,16 @@ import VoucherPrintView, { usePrintBodyClass, useVoucherPrint } from '../compone
 // nur lesen.
 
 export const PARTNER_PRINT_HINT = 'Jede Karte legt für eure Kundschaft eine eigene Chronik an – und zeigt, dass sie von euch kommt.'
+// Audit V7a: in der Demo sehen die Codes echt aus (die Visitenkarten zeigen "MUSTER") - sagen, dass sie nicht gelten.
+export const DEMO_PRINT_HINT = 'Demo: Beispiel-Codes – sie lassen sich nicht einlösen.'
 const DESIGN_LABEL = 'Kunden-Karte mit eurem Auftritt'
 const BACK = { to: '/profil', label: 'Zurück zum Profil' }
 
 const designLabel = () => DESIGN_LABEL
 
-export default function PartnerPrintPage({ batchId, readOnly = false }) {
+export default function PartnerPrintPage({ batchId, readOnly = false, demo = false }) {
   usePrintBodyClass()
   const state = useVoucherPrint({ load: () => api.partnerArea.printBatch(batchId), key: batchId })
   const markPrinted = readOnly ? null : (ids) => api.partnerArea.markPrinted(batchId, ids)
-  return <VoucherPrintView state={state} back={BACK} designLabel={designLabel} hint={PARTNER_PRINT_HINT} markPrinted={markPrinted} />
+  return <VoucherPrintView state={state} back={BACK} designLabel={designLabel} hint={demo ? `${PARTNER_PRINT_HINT} ${DEMO_PRINT_HINT}` : PARTNER_PRINT_HINT} markPrinted={markPrinted} />
 }
