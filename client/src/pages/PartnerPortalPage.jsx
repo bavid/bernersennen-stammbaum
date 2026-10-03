@@ -150,7 +150,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
 
   return (
     <PreviewProvider value={preview}>
-      <div className="public-page partner-portal" style={accentStyle(partner.farbe)}>
+      <div className={`public-page partner-portal${isValidHexColor(partner.farbe) ? ' has-accent' : ''}`} style={accentStyle(partner.farbe)}>
         {/* Kopf mit "Zurück" nur auf der öffentlichen Seite - in der Kundensicht (preview) führte er aus der Vorschau. */}
         {!preview && <PublicHeader family={family} />}
         {partner.preview && (

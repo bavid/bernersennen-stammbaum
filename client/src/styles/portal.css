@@ -336,3 +336,20 @@
     gap: var(--space-5) var(--space-3);
   }
 }
+
+/* Akzentfarbe des Partners im dunklen Auftritt (Audit V7a). Die Farbe ist auf helle Schrift geprüft und damit immer
+   dunkel (PartnerPortalPage accentStyle setzt sie als --rust am Portal) - als Schrift auf dem dunklen Grund (Links,
+   "Mehr erfahren", Status "Reserviert") lag sie unter 3 : 1. Darunter gilt deshalb eine aufgehellte Fassung mit dunkler
+   Schrift auf Akzentflächen, wie die Theme-Töne in tokens.css (--rust hell, --on-rust dunkel). */
+@media (prefers-color-scheme: dark) {
+  .partner-portal.has-accent {
+    --accent-base: var(--rust);
+  }
+
+  .partner-portal.has-accent > * {
+    --rust: color-mix(in srgb, var(--accent-base) 45%, #f5ecdf);
+    --rust-deep: color-mix(in srgb, var(--accent-base) 30%, #f5ecdf);
+    --rust-wash: color-mix(in srgb, var(--accent-base) 30%, transparent);
+    --on-rust: #1a120d;
+  }
+}

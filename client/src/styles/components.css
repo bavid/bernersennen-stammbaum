@@ -226,7 +226,9 @@ textarea {
   padding: var(--space-1) var(--space-4);
   font-size: var(--text-sm);
   font-weight: 700;
-  color: var(--muted);
+  /* Audit V7a: --muted auf --paper-deep lag hell bei 4,2 : 1 (unter 4,5) - etwas Richtung --ink-soft gemischt reicht
+     für beide Auftritte (hell ~5,4 : 1, dunkel heller statt dunkler). */
+  color: color-mix(in srgb, var(--muted) 65%, var(--ink-soft));
   min-height: 2.1rem;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
