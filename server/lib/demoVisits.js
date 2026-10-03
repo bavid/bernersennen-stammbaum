@@ -40,9 +40,14 @@ function createDemoVisits(db, { copyImage, householdId, householdDogIds, memberH
   const wilma = db.prepare("SELECT id FROM dogs WHERE family_id = ? AND name = 'Wilma'").get(hostId)
   if (!wilma) throw new Error('Demo-Besuch: Wilma fehlt')
 
-  const insertVisit = db.prepare('INSERT INTO besuche (gast_family_id, gastgeber_family_id, created_at) VALUES (?, ?, datetime(\'now\', ?))')
-  insertVisit.run(householdId, hostId, '-40 days')
-  insertVisit.run(hostId, householdId, '-38 days')
+  // Der Möwenweg ist bei „Zuhause am Deich“ noch „Neu zu Besuch“ (bestaetigt_at NULL) - so zeigt die Demo den Hinweis
+  // samt „Passt“/„Gast entfernen“; der Besuch des Deichs am Möwenweg gilt dort als bestätigt.
+  const insertVisit = db.prepare(
+    `INSERT INTO besuche (gast_family_id, gastgeber_family_id, created_at, bestaetigt_at)
+     VALUES (?, ?, datetime('now', ?), CASE WHEN ? THEN datetime('now', ?) END)`
+  )
+  insertVisit.run(householdId, hostId, '-40 days', 1, '-39 days')
+  insertVisit.run(hostId, householdId, '-8 days', 0, null)
 
   const entryIds = {}
   for (const entry of HOST_ENTRIES) {

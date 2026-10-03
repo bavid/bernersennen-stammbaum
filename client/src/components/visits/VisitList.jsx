@@ -14,6 +14,7 @@ export default function VisitList({ id, title, emptyText, items, onEnd, confirmL
           {items.map((item) => (
             <li key={item.id} className="visit-row">
               <span className="visit-row-name">{item.name}</span>
+              {item.neu && <span className="pill pill-visit">neu</span>}
               {item.seit && <span className="visit-row-since muted">seit {formatDateShort(item.seit)}</span>}
               <ConfirmButton
                 label="Beenden"

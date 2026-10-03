@@ -634,6 +634,15 @@ db.exec(`
 // Bewusst ohne REFERENCES (wie families.voucher_id): ein eingelöster Besuchs-Gutschein bleibt als Verlauf stehen,
 // auch wenn der Gastgeber später gelöscht wird (lib/families.js setzt den Verweis dann auf NULL).
 addColumnIfMissing('vouchers', 'visit_host_family_id', 'INTEGER')
+// security-review Phase V2 (M-3): ein neuer Gast soll dem Gastgeber auffallen - bestaetigt_at bleibt NULL, bis der
+// Gastgeber „Passt“ sagt (POST /api/besuche/gaeste/:id/passt); voucher_id: der Code, über den der Gast kam (für die
+// Notiz „über deinen Code ‚…‘“), bewusst ohne REFERENCES. Bestehende Besuche gelten beim Nachrüsten als bestätigt.
+db.transaction(() => {
+  if (addColumnIfMissing('besuche', 'bestaetigt_at', 'TEXT')) {
+    db.exec('UPDATE besuche SET bestaetigt_at = created_at WHERE bestaetigt_at IS NULL')
+  }
+})()
+addColumnIfMissing('besuche', 'voucher_id', 'INTEGER')
 
 // Phase V2: "Erlebt mit" (lib/erlebtMit.js). Ein Eintrag (entry_id) markiert ein Tier eines verbundenen Zuhauses
 // (dog_id, Besuch in einer der Richtungen oder gemeinsame Familie). status: 'offen' (Anfrage an die Besitzer des

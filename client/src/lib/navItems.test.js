@@ -18,6 +18,13 @@ describe('navItemsFor', () => {
     expect(navItemsFor({ art: 'zuhause', erlebtMitOffen: 2, zuBesuch: true })[0].badge).toBeUndefined()
   })
 
+  test('neue Gäste (security-review V2) zählen zum Badge an „Wegbegleiter“', () => {
+    const item = navItemsFor({ art: 'zuhause', erlebtMitOffen: 1, neueGaeste: 1 })[0]
+    expect(item.badge).toBe('2')
+    expect(item.ariaLabel).toBe('Wegbegleiter, 1 offene Anfrage, 1 neuer Gast')
+    expect(navItemsFor({ art: 'zuhause', neueGaeste: 2 })[0].ariaLabel).toBe('Wegbegleiter, 2 neue Gäste')
+  })
+
   test('a partner area gets Profil, Beiträge, Nachrichten (Phase P2) and Zugang', () => {
     expect(navItemsFor({ art: 'partner' }).map(({ to, label }) => ({ to, label }))).toEqual([
       { to: '/profil', label: 'Profil' },

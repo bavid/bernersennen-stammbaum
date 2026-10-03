@@ -139,6 +139,8 @@ export const api = {
   redeemVisit: (code) => request('/besuche/einloesen', json('POST', { code })),
   endVisit: (hostId) => request(`/besuche/bei/${encodeURIComponent(hostId)}`, { method: 'DELETE' }),
   removeGuest: (guestId) => request(`/besuche/gaeste/${encodeURIComponent(guestId)}`, { method: 'DELETE' }),
+  // „Passt“ für einen neuen Gast (security-review V2, M-3) - Antwort: das neue "me" (neueGaeste).
+  acknowledgeGuest: (guestId) => request(`/besuche/gaeste/${encodeURIComponent(guestId)}/passt`, { method: 'POST' }),
 
   // "Erlebt mit" (Phase V2, server/routes/erlebtMit.js): Tiere verbundener Zuhause zum Markieren ([{ id, name,
   // nameUnbekannt, tierart, zuhauseId, zuhause }]), offene Anfragen an das eigene Zuhause und die Entscheidung dazu

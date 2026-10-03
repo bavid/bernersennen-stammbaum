@@ -89,12 +89,25 @@ function withInboxBadge(item, family) {
   }
 }
 
-// Offene "Erlebt mit"-Anfragen an das eigene Zuhause (me.erlebtMitOffen, Phase V2) als Badge an "Wegbegleiter".
+// Hinweise für das eigene Zuhause als Badge an "Wegbegleiter" (dort stehen sie): offene "Erlebt mit"-Anfragen
+// (me.erlebtMitOffen, Phase V2) und neue Gäste, die noch niemand mit „Passt“ bestätigt hat (me.neueGaeste,
+// security-review V2 M-3).
+const countOf = (value) => (Number.isInteger(value) && value > 0 ? value : 0)
+
 function withRequestBadge(item, family) {
-  const offen = Number.isInteger(family?.erlebtMitOffen) ? family.erlebtMitOffen : 0
-  if (item !== NAV_ITEM_COMPANIONS || offen === 0 || family?.zuBesuch) return item
-  const label = offen === 1 ? 'offene Anfrage' : 'offene Anfragen'
-  return { ...item, badge: offen > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : String(offen), ariaLabel: `${item.label}, ${offen} ${label}` }
+  const offen = countOf(family?.erlebtMitOffen)
+  const gaeste = countOf(family?.neueGaeste)
+  const total = offen + gaeste
+  if (item !== NAV_ITEM_COMPANIONS || total === 0 || family?.zuBesuch) return item
+  const parts = [
+    offen > 0 ? `${offen} ${offen === 1 ? 'offene Anfrage' : 'offene Anfragen'}` : null,
+    gaeste > 0 ? `${gaeste} ${gaeste === 1 ? 'neuer Gast' : 'neue Gäste'}` : null
+  ].filter(Boolean)
+  return {
+    ...item,
+    badge: total > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : String(total),
+    ariaLabel: `${item.label}, ${parts.join(', ')}`
+  }
 }
 
 // Beschriftung aus den Theme-Wörtern (labelKey) - labelKey selbst geht nicht mit hinaus.

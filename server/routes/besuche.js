@@ -8,7 +8,7 @@ const { buildMe } = require('../lib/context')
 const { formatCode } = require('../lib/codes')
 const { cleanId } = require('../lib/validate')
 const { ART } = require('../lib/areaArt')
-const { visitsOf, guestsOf, endVisit } = require('../lib/visits')
+const { visitsOf, guestsOf, endVisit, acknowledgeGuest } = require('../lib/visits')
 const { createVisitInvite, redeemVisitInvite, VISIT_INVITE_DAYS } = require('../lib/visitInvites')
 
 // Phase V2: Zuhause besuchen (/api/besuche). Alles bezieht sich auf die Identität der Sitzung (req.homeId) und nur,
@@ -76,6 +76,15 @@ router.delete('/bei/:hostId', requireAuth, (req, res) => {
   const activeId = req.familyId === hostId ? req.homeId : req.familyId
   if (activeId !== req.familyId) refreshSession(req, res, activeId)
   res.json(buildMe(req.homeId, activeId, req.isDemo, req.userId))
+})
+
+// „Passt“ (security-review V2, M-3): den Hinweis „Neu zu Besuch“ für einen Gast quittieren - nur im eigenen Zuhause.
+router.post('/gaeste/:guestId/passt', requireAuth, requireOwnHome, (req, res) => {
+  const guestId = cleanId(req.params.guestId)
+  if (!Number.isInteger(guestId) || !acknowledgeGuest(guestId, req.homeId)) {
+    return res.status(404).json({ error: 'Diesen neuen Gast gibt es nicht' })
+  }
+  res.json(buildMe(req.homeId, req.familyId, req.isDemo, req.userId))
 })
 
 // Einen Gast aus dem eigenen Zuhause entfernen (:guestId ist bei mir zu Gast).

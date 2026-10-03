@@ -460,7 +460,11 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
 
     markRedeemedBy(db, voucher.id, newFamilyId)
     if (isVisitInvite) {
-      db.prepare('INSERT INTO besuche (gast_family_id, gastgeber_family_id) VALUES (?, ?)').run(newFamilyId, voucher.visit_host_family_id)
+      db.prepare('INSERT INTO besuche (gast_family_id, gastgeber_family_id, voucher_id) VALUES (?, ?, ?)').run(
+        newFamilyId,
+        voucher.visit_host_family_id,
+        voucher.id
+      )
     }
 
     if (voucher.dog_id) {

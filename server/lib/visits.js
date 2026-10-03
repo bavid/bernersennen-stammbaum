@@ -34,13 +34,25 @@ const listVisitsStmt = db.prepare(
    ORDER BY h.name COLLATE NOCASE, h.id`
 )
 
-// Wer ist bei homeId zu Gast? (Liste "Meine Gäste" mit "beenden")
+// Wer ist bei homeId zu Gast? (Liste "Meine Gäste" mit "beenden"). neu (security-review V2, M-3): noch nicht mit
+// „Passt“ bestätigt; ueberCode: die eigene Notiz des Codes, über den der Gast kam (nur, wenn homeId ihn angelegt hat).
 const listGuestsStmt = db.prepare(
-  `SELECT g.id, g.name, b.created_at AS seit FROM besuche b
+  `SELECT g.id, g.name, b.created_at AS seit, (b.bestaetigt_at IS NULL) AS neu,
+     (SELECT v.label FROM vouchers v WHERE v.id = b.voucher_id AND v.created_by_family_id = b.gastgeber_family_id) AS ueberCode
+   FROM besuche b
    JOIN families g ON g.id = b.gast_family_id AND g.art = 'zuhause'
    JOIN families h ON h.id = b.gastgeber_family_id
    WHERE b.gastgeber_family_id = ? AND g.is_demo = h.is_demo
    ORDER BY g.name COLLATE NOCASE, g.id`
+)
+const countNewGuestsStmt = db.prepare(
+  `SELECT COUNT(*) AS c FROM besuche b
+   JOIN families g ON g.id = b.gast_family_id AND g.art = 'zuhause'
+   JOIN families h ON h.id = b.gastgeber_family_id
+   WHERE b.gastgeber_family_id = ? AND b.bestaetigt_at IS NULL AND g.is_demo = h.is_demo`
+)
+const acknowledgeGuestStmt = db.prepare(
+  "UPDATE besuche SET bestaetigt_at = datetime('now') WHERE gast_family_id = ? AND gastgeber_family_id = ? AND bestaetigt_at IS NULL"
 )
 
 function visitsOf(homeId) {
@@ -48,7 +60,17 @@ function visitsOf(homeId) {
 }
 
 function guestsOf(homeId) {
-  return listGuestsStmt.all(homeId)
+  return listGuestsStmt.all(homeId).map((guest) => ({ ...guest, neu: Boolean(guest.neu) }))
+}
+
+// Wie viele neue Gäste hat homeId noch nicht bestätigt? (me.neueGaeste, Hinweis auf den Wegbegleitern)
+function countNewGuests(homeId) {
+  return countNewGuestsStmt.get(homeId).c
+}
+
+// „Passt“: der Gastgeber hostId hat den neuen Gast guestId gesehen. true, wenn es einen offenen Hinweis gab.
+function acknowledgeGuest(guestId, hostId) {
+  return acknowledgeGuestStmt.run(guestId, hostId).changes === 1
 }
 
 // Kurzform für /me: nur Id und Name.
@@ -56,12 +78,13 @@ function visitTargetsOf(homeId) {
   return visitsOf(homeId).map(({ id, name }) => ({ id, name }))
 }
 
-const insertVisitStmt = db.prepare('INSERT OR IGNORE INTO besuche (gast_family_id, gastgeber_family_id) VALUES (?, ?)')
+const insertVisitStmt = db.prepare('INSERT OR IGNORE INTO besuche (gast_family_id, gastgeber_family_id, voucher_id) VALUES (?, ?, ?)')
 const deleteVisitStmt = db.prepare('DELETE FROM besuche WHERE gast_family_id = ? AND gastgeber_family_id = ?')
 
-// Gibt true zurück, wenn der Besuch neu entstanden ist (false: gab es schon).
-function addVisit(guestId, hostId) {
-  return insertVisitStmt.run(guestId, hostId).changes === 1
+// Gibt true zurück, wenn der Besuch neu entstanden ist (false: gab es schon). voucherId: der eingelöste Code (optional).
+// Ein neuer Besuch beginnt unbestätigt (bestaetigt_at NULL) - der Gastgeber sieht ihn als „Neu zu Besuch“.
+function addVisit(guestId, hostId, voucherId = null) {
+  return insertVisitStmt.run(guestId, hostId, voucherId).changes === 1
 }
 
 // Gibt true zurück, wenn es den Besuch gab.
@@ -105,6 +128,8 @@ module.exports = {
   isVisiting,
   visitsOf,
   guestsOf,
+  countNewGuests,
+  acknowledgeGuest,
   visitTargetsOf,
   addVisit,
   endVisit,

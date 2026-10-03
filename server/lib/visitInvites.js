@@ -7,7 +7,7 @@
 
 const { normalizeCode, hashCode } = require('./codes')
 const { createBatch, findVoucherByHash, assertVoucherOpen, assertVisitHostOpen, ZWECK } = require('./vouchers')
-const { findHome, isVisiting } = require('./visits')
+const { findHome, isVisiting, addVisit } = require('./visits')
 const { assertOpenCodeSlot } = require('./voucherManage')
 
 const VISIT_INVITE_DAYS = 7
@@ -76,7 +76,7 @@ function redeemVisitInvite(db, { code, guestId }) {
       .run({ guestId, codeHash })
     if (claim.changes !== 1) throw httpError(410, 'Dieser Code wurde inzwischen verändert')
 
-    db.prepare('INSERT INTO besuche (gast_family_id, gastgeber_family_id) VALUES (?, ?)').run(guestId, hostId)
+    addVisit(guestId, hostId, voucher.id)
     const host = findHome(hostId)
     return { host: { id: host.id, name: host.name } }
   })()

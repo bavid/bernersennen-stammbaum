@@ -31,6 +31,8 @@ test('Demo (Phase V2): Besuch Deich <-> Möwenweg, „Erlebt mit“, Fotos bei B
 
   await t.test('„Zuhause am Deich“ besucht den Möwenweg und hat ihn als Gast', async () => {
     assert.equal(login.data.id, household.familyId)
+    // security-review V2 (M-3): der Möwenweg ist am Deich noch „Neu zu Besuch“
+    assert.equal(login.data.neueGaeste, 1)
     assert.deepEqual(login.data.besuche, [{ id: visits.hostId, name: 'Zuhause Möwenweg (Demo)' }])
     const lists = (await get('/api/besuche', demoCookie)).data
     assert.deepEqual(lists.besuche.map((b) => b.name), ['Zuhause Möwenweg (Demo)'])

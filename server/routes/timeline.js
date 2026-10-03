@@ -47,17 +47,29 @@ function toEntry(row, comments = []) {
 // Zeigt nur Kommentare, die im jeweiligen Bereich sichtbar sind (VISIBLE_COMMENT_SQL):
 // der Eintrag-Eigentümer sieht alle, andere Bereiche nur ihre eigenen plus die des Eigentümers.
 // Jeder Kommentar trägt vonMir/ehemalig (Phase R Task 2, lib/authorship.js); author_family_id bleibt innen.
+// security-review Phase V2 (L-4): Kommentare eines Gasts (geschrieben unter seinem Zuhause, family_id = Zuhause des
+// Gasts statt des Eintrags) tragen gastZuhause - den echten Namen dieses Zuhauses, vom Server, nicht frei eingetippt.
+// So kann sich ein Gast nicht mit einem frei gewählten Namen als Gastgeber ausgeben. Erwartet Aliase c und t.
+const GUEST_HOME_JOIN_SQL = `LEFT JOIN families gf ON gf.id = c.family_id AND c.family_id != t.family_id AND gf.art = 'zuhause'`
+
+function toComment(row, ctx) {
+  const { gast_zuhause, ...comment } = row
+  const flagged = withAuthorFlags(comment, ctx)
+  return gast_zuhause ? { ...flagged, gastZuhause: gast_zuhause } : flagged
+}
+
 function commentsByEntry(req, dogId) {
   const ctx = authorContext(req)
   const rows = db
     .prepare(
-      `SELECT c.* FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
+      `SELECT c.*, gf.name AS gast_zuhause FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
+       ${GUEST_HOME_JOIN_SQL}
        WHERE ${entrySql(req)} AND (@dogId IS NULL OR t.dog_id = @dogId) AND ${commentSql(req)}
        ORDER BY c.created_at, c.id`
     )
     .all({ ...viewParams(req), dogId })
   const grouped = new Map()
-  for (const row of rows) grouped.set(row.entry_id, [...(grouped.get(row.entry_id) || []), withAuthorFlags(row, ctx)])
+  for (const row of rows) grouped.set(row.entry_id, [...(grouped.get(row.entry_id) || []), toComment(row, ctx)])
   return grouped
 }
 
@@ -65,9 +77,13 @@ function commentsByEntry(req, dogId) {
 function commentsOf(req, entryId) {
   const ctx = authorContext(req)
   return db
-    .prepare('SELECT * FROM entry_comments WHERE entry_id = ? ORDER BY created_at, id')
+    .prepare(
+      `SELECT c.*, gf.name AS gast_zuhause FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
+       ${GUEST_HOME_JOIN_SQL}
+       WHERE c.entry_id = ? ORDER BY c.created_at, c.id`
+    )
     .all(entryId)
-    .map((row) => withAuthorFlags(row, ctx))
+    .map((row) => toComment(row, ctx))
 }
 
 // herkunft_name (security-review Phase T Finding 14): der öffentlich zumutbare Name der Herkunfts-
@@ -309,8 +325,13 @@ router.post('/:id/comments', requireAuth, canComment, (req, res) => {
   const result = db
     .prepare('INSERT INTO entry_comments (entry_id, family_id, author_family_id, autor_name, text) VALUES (?, ?, ?, ?, ?)')
     .run(entry.id, areaId, req.homeId, autorName, text)
-  const comment = db.prepare('SELECT * FROM entry_comments WHERE id = ?').get(result.lastInsertRowid)
-  res.status(201).json(withAuthorFlags(comment, authorContext(req)))
+  const comment = db
+    .prepare(
+      `SELECT c.*, gf.name AS gast_zuhause FROM entry_comments c JOIN timeline_entries t ON t.id = c.entry_id
+       ${GUEST_HOME_JOIN_SQL} WHERE c.id = ?`
+    )
+    .get(result.lastInsertRowid)
+  res.status(201).json(toComment(comment, authorContext(req)))
 })
 
 // Löschen darf, wessen Bereich den Kommentar geschrieben hat, oder wem der Eintrag gehört (Moderation) -

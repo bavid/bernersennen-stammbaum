@@ -99,6 +99,8 @@ export default function CommentThread({
               <li key={item.id} className="reply">
                 <p className="reply-meta">
                   <strong>{item.autor_name}</strong>
+                  {/* security-review V2 (L-4): ein Gast-Kommentar trägt den echten Namen seines Zuhauses (vom Server) */}
+                  {item.gastZuhause && <span className="reply-guest"> · {item.gastZuhause} (Gast)</span>}
                   {/* ehemalig (Phase R): der Haushalt der Autorin ist heute nicht mehr Mitglied der Familie */}
                   {item.ehemalig && <span className="reply-former">ehemaliges Mitglied</span>} · {relativeTime(item.created_at)}
                 </p>

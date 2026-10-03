@@ -4,7 +4,7 @@ const { countUnread } = require('./partnerMessages')
 // lib/partnerMessages.js) und werden hier weiter exportiert.
 const { ART, PARTNER_AREA_ARTS } = require('./areaArt')
 const { roleOf } = require('./roles')
-const { isVisiting, visitTargetsOf } = require('./visits')
+const { isVisiting, visitTargetsOf, countNewGuests } = require('./visits')
 const { countOpenRequests } = require('./erlebtMit')
 const { revokeInvitesOnLeave } = require('./inviteRevocation')
 
@@ -88,6 +88,7 @@ function currentAuthInfo(homeId, userId) {
 // besuche (Phase V2, lib/visits.js): die Zuhause, die die Identität besucht ([{ id, name }], für "Zu Besuch bei …").
 // zuBesuch: nur gesetzt (true), wenn der aktive Bereich so ein besuchtes Zuhause ist - role ist dann 'gast'.
 // erlebtMitOffen (Phase V2, lib/erlebtMit.js): offene "Erlebt mit"-Anfragen an das eigene Zuhause (Badge im Client).
+// neueGaeste (security-review V2, M-3): Gäste, die das eigene Zuhause noch nicht mit „Passt“ bestätigt hat.
 function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } = {}) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
   const active = family(activeId)
@@ -103,6 +104,7 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
     memberships: membershipsOf(homeId),
     besuche: visitTargetsOf(homeId),
     erlebtMitOffen: home?.art === ART.zuhause ? countOpenRequests(homeId) : 0,
+    neueGaeste: home?.art === ART.zuhause ? countNewGuests(homeId) : 0,
     auth: currentAuthInfo(homeId, userId)
   }
   if (PARTNER_AREA_ARTS.includes(active?.art)) {

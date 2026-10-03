@@ -15,6 +15,7 @@ import { todayIso } from '../lib/dates.js'
 import { isOwnHome, isVisit, visitLabel } from '../lib/visits.js'
 import { withErlebtMitOffen } from '../lib/erlebtMit.js'
 import ErlebtMitRequests from '../components/erlebtMit/ErlebtMitRequests.jsx'
+import NewGuestsNotice from '../components/visits/NewGuestsNotice.jsx'
 import Lightbox from '../components/Lightbox.jsx'
 
 const ANNIVERSARY_WINDOW_DAYS = 30
@@ -131,6 +132,9 @@ export default function CompanionsPage({ family, onFamilyChange }) {
           {error}
         </div>
       )}
+
+      {/* security-review V2 (M-3): neue Gäste bleiben sichtbar, bis „Passt“ oder „Gast entfernen“ - nur wenn /me welche meldet. */}
+      {isOwnHome(family) && family.neueGaeste > 0 && <NewGuestsNotice onFamilyChange={onFamilyChange} />}
 
       {/* Phase V2: nur wenn /me offene "Erlebt mit"-Anfragen meldet - sonst keine zusätzliche Anfrage beim Laden. */}
       {isOwnHome(family) && family.erlebtMitOffen > 0 && (
