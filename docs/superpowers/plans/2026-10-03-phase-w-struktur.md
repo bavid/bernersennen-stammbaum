@@ -1,0 +1,72 @@
+# Phase W – Neue Struktur: Start · Tiere · Familien · Entdecken (Plan, 03.10.)
+
+> **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development. Maßstab: „Susi“, ~40,
+> nutzt Facebook – wenig auf einmal, vertraute Muster, eine Stelle je Funktion, Reiter statt langer Seiten.
+
+**Anlass (Betreiber, 03.10.):** „We need a useful structure and not this overload.“ Heute wechselt das Menü je
+Bereich (Zuhause 5, Familie 4, Berner-Familie 5, Besuch 2 Einträge), Bereichswechsel ist Handarbeit (Dropdown,
+Linkzeile, Besuchsband, „In Meiner Chronik bearbeiten“), und die Familienbande-Seite macht drei Jobs auf einmal
+(Neuigkeiten, Tier-Raster, Familien-Verwaltung). Die Startseite des Zuhauses (Wegbegleiter) zeigt keine Neuigkeiten.
+
+## Zielbild
+
+- **Vier feste Menüpunkte in jedem Kontext:** **Start** (Feed: alles Neue, „Für dich“, Termine) · **Tiere**
+  (Raster, Reiter Zeitleiste/Stammbaum, Berner zusätzlich Würfe) · **Familien** (meine Familien als Gruppenseiten,
+  befreundete Zuhause) · **Entdecken** (inkl. Reiter „Karte“ statt `/umgebung`).
+- **Avatar-/„Menü“:** Einstellungen · Einladen · Fotocollage · Hilfe & Kontakt · Abmelden · Impressum/Datenschutz.
+  Mobil: Start · Tiere · Familien · Entdecken · Menü.
+- **Familie als Gruppenseite** `/familien/:id` mit Reitern **Beiträge · Tiere · Pinnwand · Mitglieder**,
+  ⚙ „Familie verwalten“ → Einstellungen › Familien. Besuch: `/familien/:id` nur lesen (Beiträge · Tiere · Zeitleiste).
+- **Tierprofil** `/tier/:id` mit kompaktem Kopf und Reitern **Chronik · Infos · Verwandte** (Berner: Stammbaum).
+- **Kein manueller Bereichswechsel im Alltag:** `AreaGate` schaltet beim Navigieren automatisch per `/api/view`;
+  Schutz gegen zwei Tabs per Header `X-Bereich` (409 bei Abweichung, nie Rechte-Erweiterung).
+- **Eine Stelle je Funktion** (Tier anlegen nur unter Tiere, Einladen nur im Menü bzw. Familie › Mitglieder,
+  Familienverwaltung nur in Einstellungen; Dropdown, AreaLinks-Zeile und Familien-Modal entfallen).
+
+## Wörter (Auszug)
+
+Wegbegleiter → Reiter „Zeitleiste“ · Familienbande → **Tiere** (Berner: Hunde) · Meine Chronik/Mein Zuhause →
+überall **„Mein Zuhause“** · Mitglieder & Rollen → Reiter „Mitglieder“ · Familie einstellen → „Familie verwalten“ ·
+Schreib dem Admin → „Hilfe & Kontakt“ · In Familien zeigen → „Wer sieht {Name}?“ · Erlebt mit → „Mit dabei“ ·
+Collage → „Fotocollage“ · Eintrag/Erinnerung → **„Beitrag“** (Entscheidung D5).
+
+## Phasen
+
+1. **Ruhige Hülle (Client + X-Bereich-Schutz), M–L:** neue Menü-Sets (`lib/navItems.js`), `AccountMenu` statt
+   Dropdown/Kontakt/Logout im Kopf, `AreaGate`, Routen `/start`, `/tiere`, `/familien`, `/familien/:id`,
+   `LegacyRedirect` für alte Adressen (`/wegbegleiter`, `/stammbaum`, `/familienbande`, `/pinnwand`, `/mitglieder`)
+   mit Erhalt von Query/Hash/State, `StartPage` v1 (Für dich, Jahrestag, Composer, Neuigkeiten des Zuhauses,
+   Familien-Karte), `AnimalsPage` (Reiter Alle/Zeitleiste/Stammbaum), `FamiliesPage`, `GroupPage` v1, gemeinsames
+   `AnimalCreateModal`. Tierheim/Partner unverändert. Tests inkl. Redirect-Tabelle und Tastatur im Menü.
+2. **Seiten mit Reitern, M:** Tierprofil-Reiter, Mitglieder verdichtet, Familienverwaltung nach Einstellungen
+   (Modal entfällt), Einladen getrennt („Zu Besuch einladen“ / „Zuhause verschenken“), Entdecken › Karte,
+   Wörter-Durchgang beider Auftritte, Besuchsband → Chip.
+3. **Ein Start für alles (Server + Client), L, Sicherheits-Review Pflicht:** `server/lib/identityAreas.js`,
+   `GET /api/start` (Feed über Zuhause, Familien und Besuche; private Einträge nur aus dem eigenen Zuhause,
+   Kommentare je Bereich gezählt, Demo-Trennung, kein Bereichs-Parameter), Foto-Freigabe in `uploadAccess`
+   für Haushalts-Sitzungen (nur Tier- und Beitragsfotos der sichtbaren Bereiche), Server-Tests (9 Fälle).
+4. **Alle Tiere an einem Ort, M:** `GET /api/tiere` (gleiche Bereiche/Schutz), Filter „Alle · Mein Zuhause ·
+   Familie …“, Familie › Tiere vorgefiltert.
+5. **Aufräumen, S–M:** alte Komponenten löschen (ContextSwitcher, CompanionsPage, AreaLinks, TreeToggle,
+   OverviewPage-Reste, NearbyPage als eigene Seite), Redirects ≥ 6 Monate behalten, Playwright-„Susi“-Ablauf.
+
+## Entscheidungen (Vorschlag, Betreiber kann umsteuern)
+
+- **D1** Auftritt folgt dem eigenen Zuhause (nicht der aktiven Familie).
+- **D2** Pinnwand des Zuhauses ohne Menüpunkt; Notizen/Termine erscheinen auf Start, Pinnwand bleibt in Familien.
+- **D3** Besuche als „Befreundete Zuhause“ unter Familien.
+- **D4** Beiträge besuchter Zuhause erscheinen im Start-Feed.
+- **D5** Nomen „Beitrag“ statt „Eintrag/Erinnerung“.
+
+## Skizze Start (Desktop)
+
+```
+[Logo] Familie auf Pfoten   Start(2)  Tiere  Familien  Entdecken        (L) Zuhause Lindenhof ˅
+┌ Was erlebt euer Tier? (Nele) (Flocke) (Mia)  [Erzählen …] ┐   ┌ Bald ─────────────────────┐
+┌ Für dich (2) ───────────────────────────────────────────┐   │ Sa 12.10. Geschwistertreffen│
+│ Wilma war mit dabei: „Strandtag“      [Übernehmen][Nein] │   │ In 5 Tagen: Nele wird 5     │
+│ Neu zu Gast: Zuhause Möwenweg            [Passt][Entfernen]│  └─────────────────────────────┘
+┌ (Flocke) Flocke · Familie Sonnenhang · vor 2 Std ───────┐   ┌ Meine Familien ─────────────┐
+│ Erster Schnee!  [Foto][Foto]     3 Kommentare            │   │ Familie Sonnenhang   3 neu  │
+└──────────────────────────────────────────────────────────┘  └─────────────────────────────┘
+```
