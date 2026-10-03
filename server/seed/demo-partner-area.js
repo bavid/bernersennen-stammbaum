@@ -214,8 +214,10 @@ const MESSAGES = [
 // "Kunden-Gutscheine" (GET /api/partner-area/vouchers) - Stapel-Art 'demo' (lib/vouchers.js DEMO_BATCH_KIND):
 // einlösen geht nie, die Karten lassen sich in der Demo trotzdem drucken. eingeloest/widerrufen: so viele der
 // size Codes gelten als verbraucht bzw. zurückgezogen (Beispielzahlen wie bei einem Partner nach ein paar Wochen).
+// gedruckt (Phase V5, optional): so viele der offenen Codes standen schon auf gedruckten Karten (vouchers.gedruckt_at) -
+// die Druckseite des Stapels nennt sie dann.
 const KUNDEN_GUTSCHEINE = [
-  { partnerSlug: 'hundeschule-pfotenglueck', size: 10, eingeloest: 4, widerrufen: 1 },
+  { partnerSlug: 'hundeschule-pfotenglueck', size: 10, eingeloest: 4, widerrufen: 1, gedruckt: 2 },
   { partnerSlug: 'hundesalon-wuschelglueck', size: 8, eingeloest: 2, widerrufen: 0 }
 ]
 

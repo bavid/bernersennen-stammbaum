@@ -14,6 +14,7 @@ const { FREIGABE, validateAblehnungsgrund } = require('./promotions')
 const { VERLAUF_AKTION, recordPromotionEvent } = require('./promotionFreigabe')
 const { validateContactMessage, insertMessage } = require('./partnerMessages')
 const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
+const { markPrinted } = require('./voucherGedruckt')
 const { MAX_ANGEPINNT, PIN_VON } = require('./einblickPins')
 const { MAX_BANNER, validateAlt, addBanner } = require('./partnerBanner')
 const { entdeckenAnzeigen, setReihenfolge, setInEntdecken } = require('./partnerPostOrder')
@@ -112,17 +113,20 @@ function removeDemoVoucherStacks(db) {
 // Ein Weitergabe-Stapel je Eintrag in KUNDEN_GUTSCHEINE, angelegt wie ensureVoucherQuota (Bezeichnung, ausgebender
 // Bereich, partner_id) - nur mit Stapel-Art DEMO_BATCH_KIND, damit sich kein Code je einlösen lässt (lib/vouchers.js
 // assertVoucherOpen). Die ersten Codes gelten als eingelöst (redeemed_at über die letzten Wochen verteilt, Geheimtext
-// weg wie beim echten Einlösen), die nächsten als zurückgezogen. Gibt die Anzahl der Codes je Partner-Slug zurück.
+// weg wie beim echten Einlösen), die nächsten als zurückgezogen, danach (Phase V5) gedruckt offene als gedruckt
+// (lib/voucherGedruckt.js). Gibt die Anzahl der Codes je Partner-Slug zurück.
 function insertDemoVoucherStacks(db, areas) {
   const markRedeemed = db.prepare("UPDATE vouchers SET redeemed_at = datetime('now', ?), code_cipher = NULL WHERE id = ?")
   const markRevoked = db.prepare("UPDATE vouchers SET revoked_at = datetime('now', ?), code_cipher = NULL WHERE id = ?")
   const voucherIds = db.prepare('SELECT id FROM vouchers WHERE batch_id = ? ORDER BY id')
 
   const counts = {}
-  for (const { partnerSlug, size, eingeloest, widerrufen } of KUNDEN_GUTSCHEINE) {
+  for (const { partnerSlug, size, eingeloest, widerrufen, gedruckt = 0 } of KUNDEN_GUTSCHEINE) {
     const area = areas.find((entry) => entry.slug === partnerSlug)
     if (!area) throw new Error(`Demo-Partner "${partnerSlug}" hat keinen Bereich für seine Kunden-Gutscheine`)
-    if (eingeloest + widerrufen > size) throw new Error(`Demo-Kunden-Gutscheine für "${partnerSlug}": mehr eingelöst/zurückgezogen als Codes`)
+    if (eingeloest + widerrufen + gedruckt > size) {
+      throw new Error(`Demo-Kunden-Gutscheine für "${partnerSlug}": mehr eingelöst/zurückgezogen/gedruckt als Codes`)
+    }
     const { name } = db.prepare('SELECT name FROM partners WHERE id = ?').get(area.partnerId)
     const { batchId } = createBatch(db, {
       label: `Weitergabe ${name}`,
@@ -134,6 +138,7 @@ function insertDemoVoucherStacks(db, areas) {
     const ids = voucherIds.all(batchId).map((row) => row.id)
     ids.slice(0, eingeloest).forEach((id, index) => markRedeemed.run(`-${(index + 1) * 5} days`, id))
     ids.slice(eingeloest, eingeloest + widerrufen).forEach((id) => markRevoked.run('-2 days', id))
+    markPrinted(ids.slice(eingeloest + widerrufen, eingeloest + widerrufen + gedruckt))
     counts[partnerSlug] = size
   }
   return counts

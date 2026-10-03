@@ -43,6 +43,13 @@ function NextPrint({ cards, available }) {
 
 function LastPrint({ lastPrint }) {
   const ohne = lastPrint.karten - lastPrint.gutscheine
+  if (lastPrint.gutscheine === 0) {
+    return (
+      <p className="vk-note" role="status">
+        Zuletzt gedruckt: Es war kein Gutschein mehr frei – alle {lastPrint.karten} Karten bekamen die Rückseite mit eurem Portal.
+      </p>
+    )
+  }
   return (
     <p className="vk-note is-ok" role="status">
       <Icon name="check" /> Zuletzt gedruckt: {plural(lastPrint.gutscheine, 'Karte', 'Karten')} mit eigenem Gutschein
@@ -60,7 +67,13 @@ function RealCodes({ druck, cards }) {
         {plural(gutscheine.offen, 'offener Gutschein', 'offene Gutscheine')}, davon {gutscheine.ungedruckt} noch nicht gedruckt.
       </p>
       <label className="check vk-toggle" htmlFor="vk-nur-ungedruckt">
-        <input id="vk-nur-ungedruckt" type="checkbox" checked={nurUngedruckt} onChange={(event) => setNurUngedruckt(event.target.checked)} />
+        <input
+          id="vk-nur-ungedruckt"
+          type="checkbox"
+          checked={nurUngedruckt}
+          onChange={(event) => setNurUngedruckt(event.target.checked)}
+          disabled={druck.busy}
+        />
         <span>Nur noch nicht gedruckte verwenden</span>
       </label>
       {!nurUngedruckt && (
@@ -86,7 +99,13 @@ export default function VisitenkarteGutschein({ checked, onToggle, readOnly, isA
         Kunden-Gutschein
       </h2>
       <label className="check vk-toggle" htmlFor="vk-mit-gutschein">
-        <input id="vk-mit-gutschein" type="checkbox" checked={checked} onChange={(event) => onToggle(event.target.checked)} />
+        <input
+          id="vk-mit-gutschein"
+          type="checkbox"
+          checked={checked}
+          onChange={(event) => onToggle(event.target.checked)}
+          disabled={druck.busy}
+        />
         <span>Mit Kunden-Gutschein auf der Rückseite</span>
       </label>
       <p className="field-hint">

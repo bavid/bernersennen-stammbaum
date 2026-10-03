@@ -59,7 +59,9 @@ test('validateDesign: Kurztext höchstens 120 Zeichen, ohne Steuerzeichen, ohne 
   rejects({ ...VALID, kurztext: 'x'.repeat(121) }, /120/)
   assert.equal(validateDesign({ ...VALID, kurztext: 'Erste\nZeile‮umgedreht\u0007' }).kurztext, 'ErsteZeileumgedreht')
   // Unsichtbare Zeichen (Nullbreite, Richtungsmarken, BOM, Zeilentrenner) kommen nicht auf die Karte.
-  assert.equal(validateDesign({ ...VALID, kurztext: 'Null​breite‏﻿ Marke؜' }).kurztext, 'NullbreiteMarke')
+  assert.equal(validateDesign({ ...VALID, kurztext: 'Null\u200Bbreite\u200F\uFEFF\u2028Marke\u061C\u2060' }).kurztext, 'NullbreiteMarke')
+  // Emoji-Folgen mit Nullbreiten-Verbinder bleiben ganz (Hund + ZWJ + Weste = Assistenzhund).
+  assert.equal(validateDesign({ ...VALID, kurztext: 'Wir \u{1F415}\u200D\u{1F9BA} lieben Hunde' }).kurztext, 'Wir \u{1F415}\u200D\u{1F9BA} lieben Hunde')
   assert.equal(validateDesign({ ...VALID, kurztext: '' }).kurztext, '')
   assert.equal(validateDesign({ ...VALID, kurztext: '   ' }).kurztext, '')
   rejects({ ...VALID, kurztext: 42 }, /Kurztext/)

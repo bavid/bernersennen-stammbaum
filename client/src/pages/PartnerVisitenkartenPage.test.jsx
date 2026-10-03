@@ -250,6 +250,29 @@ describe('PartnerVisitenkartenPage – Kunden-Gutschein', () => {
     expect(container.textContent).toContain('14 Karten mit eigenem Gutschein, 6 mit Portal-Rückseite')
   })
 
+  test('"Nur vorne" holt keine Codes - erst der Druck der Rückseiten bekommt welche', async () => {
+    visitenkarteGutscheine.mockResolvedValue({ codes: codes(10), fehlen: 0, gutscheine: { offen: 12, ungedruckt: 0 } })
+    await render()
+    await toggle('vk-mit-gutschein')
+    await click(button('Nur vorne'))
+    expect(printButton().textContent.trim()).toBe('Drucken')
+    await click(printButton())
+    expect(visitenkarteGutscheine).not.toHaveBeenCalled()
+    expect(window.print).toHaveBeenCalledTimes(1)
+    await click(button('Nur hinten'))
+    await click(printButton())
+    expect(visitenkarteGutscheine).toHaveBeenCalledWith({ anzahl: 10, nurUngedruckt: true })
+  })
+
+  test('kein Code mehr frei (Server liefert keinen): ehrliche Meldung statt "0 Karten mit Gutschein"', async () => {
+    visitenkarteGutscheine.mockResolvedValue({ codes: [], fehlen: 10, gutscheine: { offen: 12, ungedruckt: 0 } })
+    await render()
+    await toggle('vk-mit-gutschein')
+    await click(printButton())
+    expect(container.textContent).toContain('Es war kein Gutschein mehr frei – alle 10 Karten bekamen die Rückseite mit eurem Portal.')
+    expect(container.textContent).not.toContain('0 Karten mit eigenem Gutschein')
+  })
+
   test('alle offenen schon gedruckt: Hinweis mit Weg zum Admin, Druck ohne Codes mit Portal-Rückseite', async () => {
     visitenkarte.mockResolvedValue({ ...STATE, design: { ...DESIGN, mitGutschein: true }, gutscheine: { offen: 12, ungedruckt: 0 } })
     await render()

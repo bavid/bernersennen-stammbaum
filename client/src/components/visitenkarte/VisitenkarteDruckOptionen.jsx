@@ -33,7 +33,7 @@ export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, on
         </span>
         <div className="segmented vk-segmented" role="group" aria-labelledby="vk-boegen-label">
           {SHEET_OPTIONS.map((count) => (
-            <button key={count} type="button" aria-pressed={sheets === count} onClick={() => onSheets(count)}>
+            <button key={count} type="button" aria-pressed={sheets === count} onClick={() => onSheets(count)} disabled={busy}>
               {count}
             </button>
           ))}
@@ -48,7 +48,13 @@ export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, on
         </span>
         <div className="segmented vk-segmented" role="group" aria-labelledby="vk-seiten-label">
           {SEITEN_OPTIONS.map((option) => (
-            <button key={option.value} type="button" aria-pressed={seiten === option.value} onClick={() => onSeiten(option.value)}>
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={seiten === option.value}
+              onClick={() => onSeiten(option.value)}
+              disabled={busy}
+            >
               {option.label}
             </button>
           ))}

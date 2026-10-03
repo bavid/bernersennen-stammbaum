@@ -17,9 +17,10 @@ const FARBE_RE = /^#[0-9a-f]{6}$/i
 const FLAGS = Object.freeze(['zeigeAnsprechperson', 'zeigeWebsite', 'zeigeTelefon', 'zeigeEmail', 'mitGutschein'])
 const KEYS = Object.freeze(['vorlage', 'farbe', 'kurztext', ...FLAGS])
 const ELLIPSIS = '…'
-// Unsichtbare Zeichen, die lib/partners.js stripUnsafeChars nicht kennt (security-review V5): Nullbreiten-Zeichen und
-// Richtungsmarken, arabisches Buchstabenzeichen, BOM, Zeilen-/Absatztrenner - auf gedruckten Karten nur zum Täuschen gut.
-const INVISIBLE_RE = /[\u200B-\u200F\u061C\uFEFF\u2028\u2029]/g
+// Unsichtbare Zeichen, die lib/partners.js stripUnsafeChars nicht kennt (security-review V5): Nullbreiten-Leerzeichen,
+// Wortverbinder, Richtungsmarken, arabisches Buchstabenzeichen, BOM, Zeilen-/Absatztrenner - auf gedruckten Karten nur
+// zum Täuschen gut. Nullbreiten-(Nicht-)Verbinder (U+200C/U+200D) bleiben: Emoji-Folgen und manche Schriften brauchen sie.
+const INVISIBLE_RE = /[\u200B\u200E\u200F\u2060\u061C\uFEFF\u2028\u2029]/g
 // Der erste Satz endet an . ! oder ? mit Leerraum oder Textende danach.
 const FIRST_SENTENCE_RE = /^(.+?[.!?])(\s|$)/s
 

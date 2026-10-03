@@ -88,9 +88,10 @@ export default function VisitenkartenDesigner({ profile, initial, publicUrl }) {
 
   const card = cardModel({ profile, design, publicUrl, origin: window.location.origin, demo: readOnly && !isAdminView })
   const cards = sheets * CARDS_PER_SHEET
-  // Echte Codes nur im eigenen Bereich und nur, wenn welche verfügbar sind - sonst bekommen die Karten die Portal-Rückseite.
-  const withCodes = design.mitGutschein && !readOnly && druck.available > 0
-  const showsMuster = design.mitGutschein && (readOnly || withCodes)
+  // Echte Codes nur im eigenen Bereich, nur wenn welche verfügbar sind (sonst bekommen die Karten die Portal-Rückseite) und
+  // nur, wenn dieser Druck Rückseiten enthält - "Nur vorne" holt keine Codes, die nie aufs Papier kämen.
+  const showsMuster = design.mitGutschein && (readOnly || druck.available > 0)
+  const withCodes = showsMuster && !readOnly && seiten !== SEITEN.vorne
   const muster = showsMuster ? musterCodes(cards) : []
   const printCodes = readOnly ? muster : design.mitGutschein ? druck.printCodes : []
   const dirty = !isSameDesign(design, saved)
@@ -165,7 +166,7 @@ export default function VisitenkartenDesigner({ profile, initial, publicUrl }) {
         <p className="muted">
           So kommt Bogen 1 aufs Papier – Vorderseite und die gespiegelte Rückseite.
           {sheets > 1 && ` Dazu ${sheets - 1} weitere ${sheets - 1 === 1 ? 'Bogen' : 'Bögen'}.`}
-          {withCodes && ' Die echten Codes kommen erst beim Drucken dazu.'}
+          {showsMuster && !readOnly && ' Die echten Codes kommen erst beim Drucken der Rückseiten dazu.'}
         </p>
         <VisitenkartenBoegen sheets={buildSheets({ sheetCount: 1, codes: muster })} total={sheets} card={card} muster />
       </section>

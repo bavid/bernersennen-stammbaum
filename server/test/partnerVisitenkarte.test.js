@@ -226,10 +226,14 @@ test('Partner-Bereich: Visitenkarten-Gestaltung und Gutschein-Codes für den Dru
     assert.equal(res.data.design.vorlage, 'foto')
     assert.equal(res.data.design.mitGutschein, true)
     assert.equal((await saveDesign(VALID_DESIGN, demoCookie)).status, 403)
+    // Der Demo-Stapel bringt zwei schon gedruckte Codes mit (seed) - ein Abruf der Demo vermerkt keine weiteren.
+    const printedDemo = () =>
+      db.prepare('SELECT COUNT(*) AS c FROM vouchers WHERE gedruckt_at IS NOT NULL AND partner_id = ?').get(demoLogin.data.partner.id).c
+    const before = printedDemo()
     const codes = await takeCodes({ anzahl: 3 }, demoCookie)
     assert.equal(codes.status, 403)
     assert.equal('codes' in (codes.data || {}), false)
-    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM vouchers WHERE gedruckt_at IS NOT NULL AND partner_id = ?').get(demoLogin.data.partner.id).c, 0)
+    assert.equal(printedDemo(), before)
 
     const shelterLogin = await post('/api/demo', { as: 'tierheim' })
     assert.equal(shelterLogin.status, 200)

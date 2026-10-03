@@ -23,7 +23,10 @@
   .vk-designer {
     grid-template-columns: minmax(0, 1fr) minmax(21rem, 26rem);
   }
+}
 
+/* Die Vorschau bleibt nur stehen, wenn sie ganz ins Fenster passt. */
+@media (min-width: 68rem) and (min-height: 50rem) {
   .vk-stage-col {
     position: sticky;
     top: 5.5rem;
@@ -205,19 +208,6 @@ p.vk-note {
   gap: var(--space-3);
 }
 
-/* Am Handy untereinander, die Skizze klein links neben dem Text. */
-@media (max-width: 30rem) {
-  .vk-vorlagen {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .vk-vorlage {
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    align-items: center;
-    gap: var(--space-3);
-  }
-}
-
 .vk-vorlage {
   position: relative;
   display: grid;
@@ -250,6 +240,19 @@ p.vk-note {
   position: absolute;
   opacity: 0;
   pointer-events: none;
+}
+
+/* Am Handy untereinander, die Skizze klein links neben dem Text. */
+@media (max-width: 30rem) {
+  .vk-vorlagen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vk-vorlage {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-3);
+  }
 }
 
 .vk-vorlage-text {
@@ -524,7 +527,8 @@ p.vk-note {
 }
 
 .vk-bogen-vorschau .vk-sheets {
-  --vk-mm: min(1.15mm, calc((100cqi - 2rem) / 420));
+  /* Platz: Breite ohne den Abstand zwischen den Bögen und ohne den Innenabstand links und rechts. */
+  --vk-mm: min(1.15mm, calc((100cqi - 2rem - 2 * var(--space-6)) / 420));
 
   display: flex;
   gap: 2rem;

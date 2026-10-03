@@ -34,6 +34,22 @@ test('Demo: Visitenkarten der Demo-Partner', async (t) => {
     for (const { design } of VISITENKARTEN) assert.deepEqual(validateDesign(design), design)
   })
 
+  await t.test('Kunden-Stapel von Pfotenglück: zwei offene Codes stehen schon auf gedruckten Karten', async () => {
+    const counts = db
+      .prepare(
+        `SELECT COUNT(CASE WHEN v.gedruckt_at IS NOT NULL THEN 1 END) AS gedruckt,
+                COUNT(CASE WHEN v.gedruckt_at IS NOT NULL AND v.redeemed_at IS NULL AND v.revoked_at IS NULL THEN 1 END) AS gedrucktOffen
+         FROM vouchers v JOIN partners p ON p.id = v.partner_id WHERE p.slug = ?`
+      )
+      .get(PFOTENGLUECK)
+    assert.deepEqual(counts, { gedruckt: 2, gedrucktOffen: 2 })
+    const partner = await post('/api/demo', { as: 'partner' })
+    const cookie = getCookie(partner.res)
+    const stacks = await call(base, '/api/partner-area/vouchers', { cookie })
+    const print = await call(base, `/api/partner-area/vouchers/${stacks.data.stapel[0].id}/print`, { cookie })
+    assert.equal(print.data.schonGedruckt, 2)
+  })
+
   await t.test('Demo-Sitzungen sehen ihre gespeicherte Gestaltung', async () => {
     const partner = await post('/api/demo', { as: 'partner' })
     const design = await call(base, '/api/partner-area/visitenkarte', { cookie: getCookie(partner.res) })
