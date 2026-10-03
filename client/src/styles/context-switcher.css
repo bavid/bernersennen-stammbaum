@@ -69,6 +69,23 @@
   animation: modal-in var(--duration-fast) var(--ease-out);
 }
 
+/* Am Handy (Audit V7a): das Menü ragte bei 320/375 px über den rechten Rand und ließ die Seite seitlich scrollen. Es beginnt
+   dort an der linken Seitenkante (unter dem Logo, 40 px + Abstand vor dem Namen) und ist höchstens so breit wie die Seite
+   ohne Außenabstand - lange Namen kürzt .context-switcher-item span mit "…". */
+@media (max-width: 720px) {
+  .context-switcher-menu {
+    left: calc(-40px - var(--space-3));
+    min-width: min(14rem, calc(100vw - 2 * var(--page-gutter)));
+    max-width: calc(100vw - 2 * var(--page-gutter));
+    /* Einträge dürfen schmaler werden als ihr Text (sonst ragen sie bei 320 px trotzdem hinaus) */
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .context-switcher-item > span:first-child {
+    min-width: 0;
+  }
+}
+
 .context-switcher-item {
   display: flex;
   align-items: center;
