@@ -37,12 +37,25 @@ export default function TabBar({ tabs, current, counts, label, idPrefix, panelId
   const list = useRef(null)
   const buttons = useRef({})
   // Mit den Zählern werden die Reiter breiter - dann noch einmal nachrücken (nicht bei jedem Rendern, sonst
-  // spränge die Leiste zurück, während jemand sie von Hand verschiebt).
-  const hasCounts = Boolean(counts)
+  // spränge die Leiste zurück, während jemand sie von Hand verschiebt). Audit V7a: am Inhalt der Zähler gemessen -
+  // der Admin reicht von Anfang an ein (leeres) Objekt, die Zahlen kommen erst danach.
+  const countsKey = counts
+    ? Object.entries(counts)
+        .filter(([, value]) => hasCount(value))
+        .map(([key, value]) => `${key}:${value}`)
+        .join(',')
+    : ''
 
   useEffect(() => {
     revealTab(list.current, buttons.current[current])
-  }, [current, hasCounts])
+    // Audit V7a: mit der Webschrift werden die Reiter breiter - beim ersten Laden stand der gewählte Reiter danach halb
+    // (Admin „Server“, „Protokoll“ am Handy) außerhalb der Leiste. Darum nach dem Laden der Schriften noch einmal.
+    let active = true
+    document.fonts?.ready.then(() => active && revealTab(list.current, buttons.current[current]))
+    return () => {
+      active = false
+    }
+  }, [current, countsKey])
 
   function handleKeyDown(event) {
     // Alt+Pfeil ist "Zurück" im Browser, Strg/Cmd-Kombinationen gehören dem System.
