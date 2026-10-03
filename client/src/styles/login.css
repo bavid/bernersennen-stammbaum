@@ -73,6 +73,7 @@
 
 .login-facts li {
   display: grid;
+  align-content: start; /* Audit V7a: einzeilige Unterzeilen nicht nach unten verteilen - alle beginnen auf einer Höhe */
   gap: var(--space-1);
 }
 
@@ -98,7 +99,7 @@
   height: auto;
   border-radius: 0;
   box-shadow: none;
-  background: linear-gradient(180deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #b5541f 66.6%);
+  background: linear-gradient(180deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #a4431d 66.6%);
 }
 
 /* Ohne Dreifarb-Streifen (Standard-Auftritt) trennt eine dezente Linie an derselben Stelle
@@ -417,7 +418,7 @@
     left: 0;
     width: auto;
     height: 8px;
-    background: linear-gradient(90deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #b5541f 66.6%);
+    background: linear-gradient(90deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #a4431d 66.6%);
   }
 
   [data-theme='standard'] .login-hero {

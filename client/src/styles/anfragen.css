@@ -9,6 +9,7 @@
 .request-why {
   display: grid;
   gap: var(--space-2);
+  max-width: var(--measure); /* Audit V7a: lesbare Zeilenlänge */
   padding: var(--space-4) var(--space-5);
   border-left: 3px solid color-mix(in srgb, var(--tan) 70%, transparent);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;

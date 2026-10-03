@@ -68,6 +68,11 @@
   font-size: var(--text-xl);
 }
 
+/* Erklärtexte in den Karten mit lesbarer Zeilenlänge (Audit V7a: am Desktop vorher über 150 Zeichen je Zeile) */
+.members-section > p {
+  max-width: var(--measure);
+}
+
 .members-section-head {
   display: flex;
   flex-wrap: wrap;
