@@ -116,6 +116,25 @@ function isHttpsUrl(url) {
   return /^https:\/\//i.test(url || '')
 }
 
+// Admin-Reiter „Server“ (Phase G Task 6): Stand der App. deploy/remote.sh baut das Image mit APP_COMMIT=<git rev-parse
+// HEAD> (Dockerfile ARG). Es zählt nur ein Commit-SHA (7 bis 64 Hex-Zeichen, auch SHA-256), sonst null - der Admin zeigt
+// dann „unbekannt“.
+const COMMIT_RE = /^[0-9a-f]{7,64}$/
+
+function readAppCommit(value) {
+  const commit = (value || '').trim().toLowerCase()
+  return COMMIT_RE.test(commit) ? commit : null
+}
+
+// Tägliche Datenbank-Sicherung (lib/autoBackup.js): AUTO_BACKUP=true|false. Ohne Angabe an in Prod und Vorschau, aus
+// lokal (dev, also auch in der Testumgebung). Tests starten den Zeitplan ohnehin nie - das macht nur index.js.
+function readAutoBackup(value, env) {
+  const raw = (value || '').trim().toLowerCase()
+  if (['1', 'true', 'on'].includes(raw)) return true
+  if (['0', 'false', 'off'].includes(raw)) return false
+  return env !== 'dev'
+}
+
 const dataDir = process.env.DATA_DIR || __dirname
 
 const appEnv = readAppEnv(process.env.APP_ENV)
@@ -135,6 +154,8 @@ module.exports = {
   readLegal,
   readPublicUrl,
   readTelegram,
+  readAppCommit,
+  readAutoBackup,
   isHttpsUrl,
   cookiePrefix,
   sessionCookie: `${cookiePrefix}session`,
@@ -148,6 +169,12 @@ module.exports = {
   uploadDir: process.env.UPLOAD_DIR || path.join(dataDir, 'uploads'),
   // Partner-Logos (öffentlich, anders als /uploads) - siehe routes/partners.js und lib/partners.js
   partnerMediaDir: process.env.PARTNER_MEDIA_DIR || path.join(dataDir, 'partner-media'),
+  // Admin-Reiter „Server“ (Phase G Task 6): Laufwerk der Daten (fs.statfs) und die täglichen Sicherungen samt
+  // Markierungsdatei last-backup.json (lib/autoBackup.js; deploy/remote.sh backup schreibt sie ebenfalls).
+  dataDir,
+  backupDir: path.join(dataDir, 'backups'),
+  appCommit: readAppCommit(process.env.APP_COMMIT),
+  autoBackup: readAutoBackup(process.env.AUTO_BACKUP, appEnv),
   clientDist: process.env.CLIENT_DIST || path.join(__dirname, '..', 'client', 'dist'),
   cookieSecure: process.env.COOKIE_SECURE === 'true' || httpsPublicUrl,
   trustProxy: readTrustProxy(),

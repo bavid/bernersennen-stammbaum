@@ -1,6 +1,10 @@
 services:
   chronik:
-    build: .
+    # APP_COMMIT (Stand der App fürs Admin) reicht deploy/remote.sh beim Bauen herein - ohne Angabe leer.
+    build:
+      context: .
+      args:
+        APP_COMMIT: ${APP_COMMIT:-}
     # Zwei Instanzen auf einem Server (Familien-Instanz und Vorschau) brauchen eigene Namen,
     # sonst überschreibt die eine das Image bzw. den Container der anderen. Standard = Familien-Instanz.
     image: bernersennen-stammbaum:${IMAGE_TAG:-latest}

@@ -29,6 +29,11 @@ COPY --from=client /app/client/dist /app/client/dist
 RUN mkdir -p /data && chown node:node /data
 USER node
 
+# Stand der App (Commit) für den Admin-Reiter „Server“ - setzt deploy/remote.sh beim Bauen (git rev-parse HEAD). Erst
+# hier, damit ein neuer Commit nur diese letzte Schicht neu baut; ohne Angabe leer, der Admin zeigt dann „unbekannt“.
+ARG APP_COMMIT=""
+ENV APP_COMMIT=$APP_COMMIT
+
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3000/health || exit 1

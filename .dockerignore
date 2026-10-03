@@ -4,6 +4,9 @@
 .env
 .deploy.env
 backups
+# Daten einer Instanz (DB, Fotos, tägliche Sicherungen) gehören nie in den Build-Kontext
+data
+server/backups
 docs
 client/dist
 server/data

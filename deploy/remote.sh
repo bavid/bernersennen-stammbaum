@@ -7,7 +7,7 @@
 #   deploy         neuesten Stand holen (oder REVISION=<sha>), vorher Backup, Image neu bauen, neu starten
 #   status         Container-Status und Health-Check
 #   logs           letzte 200 Log-Zeilen
-#   backup         Snapshot von DB + Fotos nach $APP_DIR/backups/*.tgz
+#   backup         Snapshot von DB + Fotos nach $APP_DIR/backups/*.tgz (+ Markierung fürs Admin)
 #   demo           öffentliche Demo (neu) anlegen – ersetzt nur das Demo-Rudel, echte Rudel bleiben
 #   showcase       NUR Vorschau/Staging: alle Daten löschen und Beispieldaten neu anlegen (vorher Backup)
 #   wipe --yes     ALLE Daten löschen (DB + Fotos)
@@ -202,9 +202,31 @@ wait_healthy() {
 
 start() {
   cd "$APP_DIR"
-  $COMPOSE up -d --build --remove-orphans
+  # APP_COMMIT: Stand der App für den Admin-Reiter „Server“ - landet beim Bauen im Image (Dockerfile ARG). Ohne git leer,
+  # der Admin zeigt dann „unbekannt“.
+  APP_COMMIT="$(git rev-parse HEAD 2>/dev/null || true)" $COMPOSE up -d --build --remove-orphans
   docker image prune -f >/dev/null
   wait_healthy
+}
+
+# Markierung des letzten Backups für den Admin-Reiter „Server“: data/backups/last-backup.json - dieselbe Datei, die die App
+# nach ihrer täglichen Sicherung schreibt (server/lib/autoBackup.js), hier mit kind "deploy" und der Größe des Archivs.
+# Geschrieben vom Container selbst (Nutzer node): root fasst den Ordner der App nie an - dort könnte sonst ein
+# symbolischer Link root auf eine Datei des Servers umlenken. Bewusst ohne lib/autoBackup.js, damit es beim ersten Deploy
+# auch im noch alten Container läuft. Atomar (Zwischendatei, dann rename), Ordner 0700, Datei 0600. Nur Zeit, Größe und
+# Art - kein Pfad. Gibt bei einem Fehler != 0 zurück; backup bricht deshalb nie ab.
+write_backup_marker() {
+  local bytes="${1:-}"
+  [[ "$bytes" =~ ^[0-9]+$ ]] || return 1
+  $COMPOSE exec -T chronik node -e '
+    const fs = require("fs"), path = require("path")
+    const dir = path.join(process.env.DATA_DIR || "/data", "backups")
+    const tmp = path.join(dir, ".last-backup.json.tmp")
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 })
+    const marker = { at: new Date().toISOString(), bytes: Number(process.argv[1]), kind: "deploy" }
+    fs.writeFileSync(tmp, JSON.stringify(marker) + "\n", { mode: 0o600 })
+    fs.renameSync(tmp, path.join(dir, "last-backup.json"))
+  ' "$bytes"
 }
 
 backup() {
@@ -224,6 +246,7 @@ backup() {
   (umask 077 && tar czf "$file" "${tar_args[@]}")
   rm -f data/snapshot.db
   log "Backup: $APP_DIR/$file ($(du -h "$file" | cut -f1))"
+  write_backup_marker "$(stat -c %s "$file")" || warn "Markierung des letzten Backups für den Admin nicht geschrieben"
   # Nur die letzten $BACKUP_KEEP Archive dieser Instanz behalten
   ls -1t backups/chronik-*.tgz 2>/dev/null | tail -n +"$((BACKUP_KEEP + 1))" | xargs -r rm --
 }
@@ -327,7 +350,7 @@ case "$cmd" in
     rm -rf data/data.db data/data.db-wal data/data.db-shm data/uploads data/partner-media
     $COMPOSE start chronik
     wait_healthy
-    log "Alle Daten gelöscht (Backup liegt in backups/)"
+    log "Alle Daten gelöscht (Backup liegt in backups/; die täglichen Datenbank-Sicherungen in data/backups bleiben bis zu 14 Tage)"
     ;;
   *)
     fail "Unbekannter Befehl: $cmd"
