@@ -25,7 +25,7 @@ export default function VisitBanner({ family, onFamilyChange }) {
         Zu Besuch bei <strong>{family.name}</strong> – du kannst ansehen und kommentieren, aber nichts ändern.
       </p>
       <button type="button" className="btn btn-ghost visit-banner-back" onClick={handleBack}>
-        Zurück zu Meine Chronik
+        Zurück zu Meiner Chronik
       </button>
     </div>
   )

@@ -505,12 +505,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
           )}
         </div>
 
-        {!dog.canEdit && visiting && (
-          <div className="notice">
-            <p>Du bist zu Besuch bei „{dog.familyName}“ – ansehen und kommentieren geht, ändern nicht.</p>
-          </div>
-        )}
-
+        {/* Audit V7a: zu Besuch kein eigener Hinweis mehr - dasselbe ("ansehen und kommentieren, aber nichts ändern")
+            steht im Besuchs-Band über jeder Seite. */}
         {!dog.canEdit && !visiting && (
           <div className="notice notice-with-action">
             <p>Lebt im Zuhause „{dog.familyName}“ und wird hier geteilt.</p>

@@ -204,12 +204,13 @@ describe('DogDetailPage – zu Besuch in einem anderen Zuhause (Phase V2)', () =
     besuche: [{ id: 9, name: 'Zuhause Möwenweg' }]
   }
 
-  test('nur ansehen und kommentieren: kein Schreiben, Hinweis zum Besuch, nur eigene Kommentare löschbar', async () => {
+  test('nur ansehen und kommentieren: kein Schreiben, kein zweiter Besuchs-Hinweis (steht im Band), nur eigene Kommentare löschbar', async () => {
     mockLoad({ ...familyDog(), isOwn: false, canEdit: false, ownerFamilyId: 9, familyName: 'Zuhause Möwenweg' })
     await render(visitor)
     expect(container.querySelector('#composer')).toBeNull()
     expect(buttonWith('Bearbeiten')).toBeUndefined()
-    expect(container.textContent).toContain('Du bist zu Besuch bei „Zuhause Möwenweg“')
+    expect(container.textContent).not.toContain('zu Besuch bei')
+    expect(container.querySelector('.notice')).toBeNull()
     expect(container.textContent).not.toContain('wird hier geteilt')
     expect(container.querySelector('.reply-open')).not.toBeNull()
     const replies = [...container.querySelectorAll('.reply')]
