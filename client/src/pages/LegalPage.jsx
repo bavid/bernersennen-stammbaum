@@ -4,6 +4,7 @@ import { api } from '../api'
 import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import PrivacyRequests from '../components/PrivacyRequests.jsx'
+import PrivacyConnections from '../components/PrivacyConnections.jsx'
 
 const NO_LEGAL_HINT = 'Die Betreiberangaben werden vor dem Start ergänzt.'
 
@@ -162,6 +163,9 @@ function Datenschutz({ legal }) {
 
       {/* Phase N: Anfragen (Gutschein, Partner-Zugang) und Telegram-Benachrichtigungen des Betreibers. */}
       <PrivacyRequests />
+
+      {/* Audit V7a: Besuche, "Erlebt mit", Telegram für Partner, Hinweis-Band, Sicherungen. */}
+      <PrivacyConnections />
 
       <h2>Rechte und Kontakt</h2>
       <p>
