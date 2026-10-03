@@ -169,6 +169,18 @@ describe('Familienbande im Standard-Auftritt (Phase V3): zuerst Familien', () =>
     expect(container.querySelector('.families-tree-hint')).toBeNull()
   })
 
+  test('wer nichts eintragen darf (Gast, zu Besuch), liest in der Einleitung kein „oder erzähl, was es gerade erlebt“ (Audit V7a)', async () => {
+    const lede = () => container.querySelector('.page-lede').textContent
+    await render()
+    expect(lede()).toContain('oder erzähl, was es gerade erlebt')
+
+    act(() => root.unmount())
+    container.remove()
+    const group = { ...homeArea, id: 7, name: 'Familie Sonnenhang', art: 'rudel', role: 'gast' }
+    await render({ family: group, dogs: [dog(31, 'Bella', { family_id: 7 })] })
+    expect(lede()).toBe('Damit wir wissen, was die anderen treiben: Klick ein Tier an und schau nach, wie es ihm geht.')
+  })
+
   test('mit Verpaarung: "Stammbaum öffnen" führt zum Baum, "Zurück zu den Familien" wieder zurück', async () => {
     await render({ events: [mating] })
 

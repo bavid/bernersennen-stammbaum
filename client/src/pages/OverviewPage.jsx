@@ -141,7 +141,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
               </button>
             )}
           </div>
-          <p className="page-lede">{theme.texts.overviewLede}</p>
+          <p className="page-lede">{canWrite ? theme.texts.overviewLede : theme.texts.overviewLedeReadOnly}</p>
           {inGroup && (
             <p className="hero-hint">
               <Link to="/mitglieder">Mitglieder & Rollen →</Link>

@@ -83,6 +83,8 @@ export default {
     ],
     overviewLede:
       'Damit wir wissen, was die anderen treiben: Klick ein Tier an und schau nach, wie es ihm geht – oder erzähl, was es gerade erlebt.',
+    // Audit V7a: für alle, die hier nichts eintragen (zu Besuch, Gast in einer Familie) - ohne "oder erzähl …"
+    overviewLedeReadOnly: 'Damit wir wissen, was die anderen treiben: Klick ein Tier an und schau nach, wie es ihm geht.',
     feedEmpty: 'Klick ein Tier an und erzähl, was es so treibt',
     littersLede:
       'Geschwister mit gleichen Eltern und gleichem Geburtstag: was sie gerade treiben und wie sie im gleichen Alter aussahen. Entsteht automatisch aus der Familienbande – eintragen muss man nichts.',

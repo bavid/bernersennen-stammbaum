@@ -82,6 +82,8 @@ export default {
     ],
     overviewLede:
       'Damit wir wissen, was die anderen treiben: Klick einen Hund an und schau nach, wie es ihm geht – oder erzähl, was er gerade erlebt.',
+    // Audit V7a: für alle, die hier nichts eintragen (zu Besuch, Gast im Rudel) - ohne "oder erzähl …"
+    overviewLedeReadOnly: 'Damit wir wissen, was die anderen treiben: Klick einen Hund an und schau nach, wie es ihm geht.',
     feedEmpty: 'Klick einen Hund an und erzähl, was er so treibt',
     littersLede:
       'Jeder Wurf mit allen Geschwistern: was sie gerade treiben und wie sie im gleichen Alter aussahen. Entsteht automatisch aus dem Stammbaum – eintragen muss man nichts.',
