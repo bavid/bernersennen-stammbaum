@@ -7,7 +7,7 @@ function apiError(message, status) {
 
 describe('adminNotify', () => {
   test('ein Schalter je Ereignis in der Reihenfolge des Servers', () => {
-    expect(EVENT_SWITCHES.map((item) => item.key)).toEqual(['gutschein_anfrage', 'partner_anfrage', 'registrierung', 'feedback', 'beitrag'])
+    expect(EVENT_SWITCHES.map((item) => item.key)).toEqual(['gutschein_anfrage', 'partner_anfrage', 'registrierung', 'feedback', 'beitrag', 'server_warnung'])
   })
 
   test('chatLabel: Titel mit Art auf Deutsch', () => {

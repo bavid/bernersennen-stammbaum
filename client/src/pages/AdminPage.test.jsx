@@ -37,6 +37,7 @@ vi.mock('../components/AdminFamilyList.jsx', () => ({ default: () => <p data-tes
 vi.mock('../components/AdminMessages.jsx', () => ({ default: () => <p data-testid="nachrichten">Nachrichten-Karte</p> }))
 vi.mock('../components/AdminNotify.jsx', () => ({ default: () => <p data-testid="telegram">Telegram-Karte</p> }))
 vi.mock('../components/AdminHinweise.jsx', () => ({ default: () => <p data-testid="hinweise">Hinweise-Karte</p> }))
+vi.mock('../components/AdminServer.jsx', () => ({ default: () => <p data-testid="server">Server-Karte</p> }))
 vi.mock('../components/AdminLog.jsx', () => ({ default: () => <p data-testid="protokoll">Protokoll-Karte</p> }))
 
 import AdminPage from './AdminPage.jsx'
@@ -122,7 +123,7 @@ async function press(key) {
 }
 
 describe('AdminPage – Reiter (Phase U)', () => {
-  test('Kopf mit Titel "Admin", Präsentation und Abmelden; elf Reiter in einer echten Tabliste', async () => {
+  test('Kopf mit Titel "Admin", Präsentation und Abmelden; zwölf Reiter in einer echten Tabliste', async () => {
     await render()
 
     expect(container.querySelector('.admin-header h1').textContent).toBe('Admin')
@@ -140,6 +141,7 @@ describe('AdminPage – Reiter (Phase U)', () => {
       'Nachrichten',
       'Hinweise',
       'Einstellungen',
+      'Server',
       'Protokoll'
     ])
     expect(selectedTab().textContent.startsWith('Übersicht')).toBe(true)
@@ -219,6 +221,12 @@ describe('AdminPage – Reiter (Phase U)', () => {
     await render('/admin?tab=hinweise')
     expect(selectedTab().firstChild.textContent).toBe('Hinweise')
     expect(visiblePanel().querySelector('[data-testid="hinweise"]')).not.toBeNull()
+  })
+
+  test('Server (Phase G Task 6): eigener Reiter nach den Einstellungen, per ?tab=server erreichbar', async () => {
+    await render('/admin?tab=server')
+    expect(selectedTab().firstChild.textContent).toBe('Server')
+    expect(visiblePanel().querySelector('[data-testid="server"]')).not.toBeNull()
   })
 
   test('Pfeiltasten, Pos1 und Ende wechseln den Reiter und den Fokus', async () => {

@@ -7,7 +7,9 @@ export const EVENT_SWITCHES = Object.freeze([
   { key: 'partner_anfrage', label: 'Partner-Anfrage' },
   { key: 'registrierung', label: 'Neue Registrierung' },
   { key: 'feedback', label: 'Feedback' },
-  { key: 'beitrag', label: 'Eingereichter Beitrag' }
+  { key: 'beitrag', label: 'Eingereichter Beitrag' },
+  // Phase G Task 6: Warnungen des Reiters „Server“ (Speicher, Platte, Last).
+  { key: 'server_warnung', label: 'Server-Warnungen' }
 ])
 export const DETAILS_KEY = 'details'
 

@@ -15,6 +15,8 @@ export const ADMIN_TABS = [
   // Phase N Task 5: globale Hinweise (Band oben auf allen Seiten) - neben den Einstellungen, als eigener Reiter.
   { key: 'hinweise', label: 'Hinweise' },
   { key: 'einstellungen', label: 'Einstellungen' },
+  // Phase G Task 6: Speicher, Platte, Last und Verlauf des Servers (AdminServer).
+  { key: 'server', label: 'Server' },
   { key: 'protokoll', label: 'Protokoll' }
 ]
 

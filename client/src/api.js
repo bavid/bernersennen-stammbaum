@@ -238,6 +238,8 @@ export const api = {
     // Statistik der Karte „Übersicht“ (Phase 5, server/routes/adminStats.js): Einlösungen je Stapel/Partner/
     // Zweck, Mundpropaganda-Ketten, Klicks der letzten 30 Tage und Partner-Status - alles ohne Demo-Daten.
     stats: () => request('/admin/stats'),
+    // Reiter „Server“ (Phase G Task 6, server/routes/adminServer.js): Speicher, Platte, Last, Größen, Stand, Verlauf.
+    server: () => request('/admin/server'),
     // Admin-Ansicht (Phase 5 Task 5b, server/routes/admin.js POST /view/:familyId): öffnet einen Bereich als
     // Nur-Lesen-Sitzung (setzt das normale Sitzungs-Cookie) und antwortet wie /me, mit adminView: true.
     viewFamily: (id) => request(`/admin/view/${encodeURIComponent(id)}`, { method: 'POST' }),

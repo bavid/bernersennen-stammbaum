@@ -19,7 +19,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 // Offensichtlich erfundener Token im erwarteten Format (Zahl, Doppelpunkt, mindestens 30 Zeichen) - nie ein echter.
 const FAKE_TOKEN = '123456:TEST-TOKEN-xxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
-const EINSTELLUNGEN = { gutschein_anfrage: true, partner_anfrage: true, registrierung: true, feedback: true, beitrag: false, details: false }
+const EINSTELLUNGEN = { gutschein_anfrage: true, partner_anfrage: true, registrierung: true, feedback: true, beitrag: false, server_warnung: true, details: false }
 const leer = { eingerichtet: false, quelle: null, tokenHinweis: null, chatId: null, einstellungen: EINSTELLUNGEN }
 const mitToken = { ...leer, tokenHinweis: '…xxxx' }
 const eingerichtet = { ...mitToken, eingerichtet: true, quelle: 'admin', chatId: '424242' }
@@ -209,10 +209,11 @@ describe('AdminNotify – Testnachricht, Schalter, Entfernen', () => {
       'Neue Registrierung',
       'Feedback',
       'Eingereichter Beitrag',
+      'Server-Warnungen',
       'Details mitsenden (Name, E-Mail, Bereich)'
     ])
-    expect(switches.map((input) => input.checked)).toEqual([true, true, true, true, false, false])
-    const details = switches[5]
+    expect(switches.map((input) => input.checked)).toEqual([true, true, true, true, false, true, false])
+    const details = switches[6]
     expect(document.getElementById(details.getAttribute('aria-describedby')).textContent).toContain('an Telegram – einen externen Dienst')
 
     await act(async () => switches[4].click())

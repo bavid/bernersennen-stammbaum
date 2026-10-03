@@ -77,7 +77,7 @@ test('Admin: Telegram einrichten, Schalter setzen, Chat finden und Testnachricht
       quelle: null,
       tokenHinweis: null,
       chatId: null,
-      einstellungen: { gutschein_anfrage: true, partner_anfrage: true, registrierung: true, feedback: true, beitrag: false, details: false }
+      einstellungen: { gutschein_anfrage: true, partner_anfrage: true, registrierung: true, feedback: true, beitrag: false, server_warnung: true, details: false }
     })
   })
 

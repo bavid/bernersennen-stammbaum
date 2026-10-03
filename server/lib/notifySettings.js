@@ -14,6 +14,8 @@ const SCHALTER_DEFAULTS = Object.freeze({
   registrierung: true,
   feedback: true,
   beitrag: false,
+  // Phase G Task 6: Warnungen des Admin-Reiters „Server“ (lib/serverWarnings.js) - Speicher, Platte, Last.
+  server_warnung: true,
   details: false
 })
 const SCHALTER_NAMES = Object.keys(SCHALTER_DEFAULTS)
@@ -34,7 +36,7 @@ function settingKey(name) {
 const readStmt = db.prepare(`SELECT key, value FROM settings WHERE key IN (${SCHALTER_NAMES.map(() => '?').join(', ')})`)
 const upsertStmt = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
 
-// { gutschein_anfrage, partner_anfrage, registrierung, feedback, beitrag, details } - immer alle, als Booleans.
+// { gutschein_anfrage, partner_anfrage, registrierung, feedback, beitrag, server_warnung, details } - immer alle, als Booleans.
 function readNotifySettings() {
   const stored = new Map(readStmt.all(...SCHALTER_NAMES.map(settingKey)).map((row) => [row.key, row.value]))
   return Object.fromEntries(

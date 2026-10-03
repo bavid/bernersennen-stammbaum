@@ -60,7 +60,7 @@ test('readTelegram: beide Werte nötig und im erwarteten Format, sonst aus', () 
   assert.deepEqual(config.telegram, { botToken: FAKE_TOKEN, chatId: FAKE_CHAT_ID })
 })
 
-test('Einstellungen: Standard (vier an, Beitrag und Details aus), Teil-Update nur mit Booleans', () => {
+test('Einstellungen: Standard (vier an und Server-Warnungen an, Beitrag und Details aus), Teil-Update nur mit Booleans', () => {
   const { readNotifySettings, updateNotifySettings } = require('../lib/notifySettings')
   const db = require('../db')
   assert.deepEqual(readNotifySettings(), {
@@ -69,6 +69,7 @@ test('Einstellungen: Standard (vier an, Beitrag und Details aus), Teil-Update nu
     registrierung: true,
     feedback: true,
     beitrag: false,
+    server_warnung: true,
     details: false
   })
 

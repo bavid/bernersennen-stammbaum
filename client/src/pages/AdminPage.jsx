@@ -17,6 +17,7 @@ import AdminLog from '../components/AdminLog.jsx'
 import AdminAnfragen from '../components/AdminAnfragen.jsx'
 import AdminNotify from '../components/AdminNotify.jsx'
 import AdminHinweise from '../components/AdminHinweise.jsx'
+import AdminServer from '../components/AdminServer.jsx'
 import useAdminTab from '../hooks/useAdminTab.js'
 import { ADMIN_TABS, adminPanelId, adminTabCounts, openCountText } from '../lib/adminTabs.js'
 
@@ -183,6 +184,8 @@ function Dashboard({ onLogout }) {
             {/* Phase N Task 5: globale Hinweise - das Band oben auf allen Seiten, mit Vorschau. */}
             {panel('hinweise', <AdminHinweise />)}
             {panel('einstellungen', <AdminNotify />)}
+            {/* Phase G Task 6: Speicher, Platte, Last und Verlauf des Servers. */}
+            {panel('server', <AdminServer active={tab === 'server'} />)}
             {/* Phase 5 Task 5b: Protokoll der Admin-Ansicht (geöffnet aus "Familien"). */}
             {panel('protokoll', <AdminLog families={overview.families} />)}
           </>
