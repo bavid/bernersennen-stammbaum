@@ -12,7 +12,7 @@ import { useToast } from '../components/Toast.jsx'
 import { companionRows, nextAnniversary, yearSpan, yearsTogether } from '../lib/companions.js'
 import { displayName } from '../lib/timeline.js'
 import { todayIso } from '../lib/dates.js'
-import { isOwnHome, isVisit, visitLabel } from '../lib/visits.js'
+import { isOwnHome, isVisit } from '../lib/visits.js'
 import { withErlebtMitOffen } from '../lib/erlebtMit.js'
 import ErlebtMitRequests from '../components/erlebtMit/ErlebtMitRequests.jsx'
 import NewGuestsNotice from '../components/visits/NewGuestsNotice.jsx'
@@ -20,13 +20,13 @@ import Lightbox from '../components/Lightbox.jsx'
 
 const ANNIVERSARY_WINDOW_DAYS = 30
 
-// "In 5 Tagen: Nele ist 5 Jahre bei euch" / "Heute: Nele ist 5 Jahre bei euch!"
-function anniversaryText(anniversary) {
+// "In 5 Tagen: Nele ist 5 Jahre bei euch" / "Heute: Nele ist 5 Jahre bei euch!" - zu Besuch "hier" (where).
+function anniversaryText(anniversary, where) {
   const name = displayName(anniversary.dog)
   const years = `${anniversary.years} ${anniversary.years === 1 ? 'Jahr' : 'Jahre'}`
-  if (anniversary.daysUntil === 0) return `Heute: ${name} ist ${years} bei euch!`
+  if (anniversary.daysUntil === 0) return `Heute: ${name} ist ${years} ${where}!`
   const days = `${anniversary.daysUntil} ${anniversary.daysUntil === 1 ? 'Tag' : 'Tagen'}`
-  return `In ${days}: ${name} ist ${years} bei euch`
+  return `In ${days}: ${name} ist ${years} ${where}`
 }
 
 // „Meine Chronik“ – alle Wegbegleiter des eigenen Zuhauses über eine gemeinsame Zeitachse.
@@ -54,6 +54,7 @@ export default function CompanionsPage({ family, onFamilyChange }) {
 
   const rows = useMemo(() => companionRows(dogs || [], today), [dogs, today])
   const loadingDogs = dogs === null && !error
+  const where = visiting ? 'hier' : 'bei euch'
   const span = useMemo(() => yearSpan(rows, today), [rows, today])
   const anniversary = useMemo(() => nextAnniversary(dogs || [], today), [dogs, today])
   const livingCount = useMemo(() => rows.filter((row) => row.ongoing).length, [rows])
@@ -82,12 +83,14 @@ export default function CompanionsPage({ family, onFamilyChange }) {
     <div className="page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">{visiting ? visitLabel(family.name) : 'Meine Chronik'}</span>
+          {/* Audit V7a: zu Besuch nur der Name - "Zu Besuch bei …" sagen schon das Band und der Bereichswechsler; und
+              die Tiere leben dort "hier", nicht "bei euch". */}
+          <span className="eyebrow">{visiting ? family.name : 'Meine Chronik'}</span>
           <h1>Wegbegleiter</h1>
           <p className="page-lede">
             {span
-              ? `Alle ${words.animals}, die bei euch gelebt haben und leben – seit ${span.from}.`
-              : `Alle ${words.animals}, die bei euch gelebt haben und leben.`}
+              ? `Alle ${words.animals}, die ${where} gelebt haben und leben – seit ${span.from}.`
+              : `Alle ${words.animals}, die ${where} gelebt haben und leben.`}
           </p>
           {/* Audit V7a: "Tierheime & Hundeschulen in der Nähe" steht im Fuß jeder Seite - hier nicht noch einmal. */}
           {!visiting && (
@@ -106,7 +109,7 @@ export default function CompanionsPage({ family, onFamilyChange }) {
                 <dd>{loadingDogs ? '–' : rows.length}</dd>
               </div>
               <div>
-                <dt>leben bei euch</dt>
+                <dt>leben {where}</dt>
                 <dd>{loadingDogs ? '–' : livingCount}</dd>
               </div>
               <div>
@@ -145,7 +148,7 @@ export default function CompanionsPage({ family, onFamilyChange }) {
 
       {anniversary && anniversary.daysUntil <= ANNIVERSARY_WINDOW_DAYS && (
         <div className="companions-anniversary">
-          <p>{anniversaryText(anniversary)}</p>
+          <p>{anniversaryText(anniversary, where)}</p>
         </div>
       )}
 
@@ -155,7 +158,9 @@ export default function CompanionsPage({ family, onFamilyChange }) {
           <h3>Noch keine Wegbegleiter</h3>
           {/* Audit V7a: nicht noch einmal "Noch keine Wegbegleiter …", und einheitlich "ihr" - ohne Tiere der erste Schritt */}
           <p>
-            {dogs.length === 0
+            {visiting
+              ? `Hier sind noch keine ${words.animals} mit Einzugs- oder Geburtsdatum eingetragen.`
+              : dogs.length === 0
               ? 'Legt euer erstes Tier an – mit Einzugs- oder Geburtsdatum erscheint es hier auf der Zeitleiste.'
               : `Hier erscheinen eure ${words.animals}, sobald ein Einzugs- oder Geburtsdatum eingetragen ist – ` +
                 'tragt bei ihnen ein, seit wann sie bei euch sind.'}
@@ -163,7 +168,7 @@ export default function CompanionsPage({ family, onFamilyChange }) {
         </div>
       )}
 
-      {dogs && rows.length > 0 && <CompanionTimeline rows={rows} span={span} today={today} />}
+      {dogs && rows.length > 0 && <CompanionTimeline rows={rows} span={span} today={today} where={where} />}
 
       <Modal open={Boolean(animalForm)} title="Neues Tier anlegen" onClose={closeAnimalForm}>
         {animalForm &&

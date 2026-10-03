@@ -144,10 +144,24 @@ test('zeigt die Zeitleiste, sobald Tiere mit Datum vorhanden sind', async () => 
 // Phase V2: Besuch und "Erlebt mit"
 const home = { id: 1, name: 'Zuhause am See', art: 'zuhause' }
 
-test('zu Besuch: Eyebrow „Zu Besuch bei …“, kein „Tier hinzufügen“', async () => {
-  await render([], 'standard', { id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home })
-  expect(container.textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
+test('zu Besuch: Eyebrow mit dem Namen (Audit V7a: "Zu Besuch bei …" sagen schon Band und Wechsler), "hier" statt "bei euch", kein „Tier hinzufügen“', async () => {
+  await render([dog(1, 'Wilma', { bei_uns_seit: '2020-06-01' })], 'standard', { id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home })
+  expect(container.querySelector('.eyebrow').textContent).toBe('Zuhause Möwenweg')
+  expect(container.querySelector('.page-lede').textContent).toBe('Alle Tiere, die hier gelebt haben und leben – seit 2020.')
+  expect([...container.querySelectorAll('.stats dt')].map((dt) => dt.textContent)).toContain('leben hier')
+  expect(container.textContent).not.toContain('bei euch gelebt')
+  expect(container.querySelector('.companion-link').getAttribute('aria-label')).toBe('Wilma, hier seit 1. Juni 2020')
   expect(container.textContent).not.toContain('Tier hinzufügen')
+})
+
+test('zu Besuch ohne Tiere mit Datum: kein "Legt euer erstes Tier an"', async () => {
+  await render([], 'standard', { id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home })
+  expect(container.querySelector('.empty-state p').textContent).toBe('Hier sind noch keine Tiere mit Einzugs- oder Geburtsdatum eingetragen.')
+})
+
+test('zu Besuch sagt auch der Jahrestag-Hinweis „hier“ statt „bei euch“', async () => {
+  await render([dog(1, 'Nele', { bei_uns_seit: '2021-10-05' })], 'standard', { id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home })
+  expect(container.querySelector('.companions-anniversary').textContent).toBe('In 7 Tagen: Nele ist 5 Jahre hier')
 })
 
 test('offene „Erlebt mit“-Anfragen erscheinen im eigenen Zuhause, nur wenn /me welche meldet', async () => {

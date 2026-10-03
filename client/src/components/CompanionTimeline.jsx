@@ -32,12 +32,12 @@ const HERKUNFT_CHIP_LABELS = {
   anderes: 'anderes'
 }
 
-// "Nele, bei euch seit 12. Juni 2021, aus dem Tierheim" / "…, bei euch von … bis …"
-function rowAriaLabel(row) {
+// "Nele, bei euch seit 12. Juni 2021, aus dem Tierheim" / "…, bei euch von … bis …" - zu Besuch "hier" (where).
+function rowAriaLabel(row, where) {
   const name = displayName(row.dog)
   const when = row.ongoing
-    ? `bei euch seit ${formatDateLong(row.start)}`
-    : `bei euch von ${formatDateLong(row.start)} bis ${formatDateLong(row.end)}`
+    ? `${where} seit ${formatDateLong(row.start)}`
+    : `${where} von ${formatDateLong(row.start)} bis ${formatDateLong(row.end)}`
   const herkunft = herkunftText(row.dog)
   return herkunft ? `${name}, ${when}, ${herkunft}` : `${name}, ${when}`
 }
@@ -48,7 +48,7 @@ function barModifierClass(row) {
   return 'is-departed-other'
 }
 
-function CompanionRow({ row, span }) {
+function CompanionRow({ row, span, where }) {
   const startPct = position(row.start, span) * 100
   const endPct = position(row.end, span) * 100
   const width = Math.max(endPct - startPct, 0.6)
@@ -57,7 +57,7 @@ function CompanionRow({ row, span }) {
 
   return (
     <li className="companion-row">
-      <Link to={`/tier/${row.dog.id}`} className="companion-link" aria-label={rowAriaLabel(row)}>
+      <Link to={`/tier/${row.dog.id}`} className="companion-link" aria-label={rowAriaLabel(row, where)}>
         <span className="companion-identity">
           <Avatar dog={row.dog} size={36} />
           <span className="companion-identity-text">
@@ -82,8 +82,8 @@ function CompanionRow({ row, span }) {
 }
 
 // Waagrechte Zeitleiste: eine Jahresachse oben, darunter je Tier eine Zeile mit einem Balken
-// zwischen Einzug (bzw. Geburt) und Abschied (bzw. heute).
-export default function CompanionTimeline({ rows, span, today }) {
+// zwischen Einzug (bzw. Geburt) und Abschied (bzw. heute). where (Audit V7a): "bei euch", zu Besuch "hier".
+export default function CompanionTimeline({ rows, span, today, where = 'bei euch' }) {
   const years = axisYears(span)
   const lastIndex = years.length - 1
   const todayPct = position(today, span) * 100
@@ -106,7 +106,7 @@ export default function CompanionTimeline({ rows, span, today }) {
           </span>
         </li>
         {rows.map((row) => (
-          <CompanionRow key={row.dog.id} row={row} span={span} />
+          <CompanionRow key={row.dog.id} row={row} span={span} where={where} />
         ))}
       </ol>
       {years.map((year, index) => (
