@@ -317,6 +317,8 @@ describe('CustomerViewPage – Steckbriefe (Tierheim)', () => {
 
     expect(previewAnimal).toHaveBeenLastCalledWith('12')
     expect(frame().querySelector('h1').textContent).toBe('Pepper')
+    // Audit V7a: der Steckbrief ist eine öffentliche Seite - ohne die App-Leiste mit "Entdecken" aktiv.
+    expect(container.querySelector('.preview-frame-nav')).toBeNull()
     expect(container.textContent).not.toContain('Dieser Steckbrief ist noch nicht veröffentlicht')
   })
 

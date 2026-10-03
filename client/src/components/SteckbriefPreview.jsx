@@ -82,7 +82,8 @@ export default function SteckbriefPreview() {
           <p className="field-hint">Dieser Steckbrief ist noch nicht veröffentlicht – Kundinnen und Kunden sehen ihn erst danach.</p>
         )}
       </div>
-      <PreviewFrame label={`Steckbrief von ${selected?.name || 'eurem Tier'} (Vorschau)`}>
+      {/* Audit V7a: der Steckbrief ist eine öffentliche Seite wie das Portal - ohne die App-Leiste. */}
+      <PreviewFrame label={`Steckbrief von ${selected?.name || 'eurem Tier'} (Vorschau)`} showNav={false}>
         <SteckbriefPage key={dogId} load={loadAnimal} preview />
       </PreviewFrame>
     </div>
