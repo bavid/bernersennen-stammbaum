@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const { profile, updateProfile, uploadLogo, publish, einblicke, posts, vouchers, config } = vi.hoisted(() => ({
@@ -81,16 +81,23 @@ function apiError(message, status, details = {}) {
 }
 
 // adminView: die Nur-Lesen-Sitzung des Admins (Phase 5 Task 5b) - derselbe Provider wie die Demo, mit me-Objekt.
-async function render({ data = baseProfile, family = partnerFamily, isDemo = false, adminView = false } = {}) {
+// Zeigt die aktuelle Adresse (Audit V7a: der Reiter steht in ?reiter=…).
+function LocationProbe() {
+  const location = useLocation()
+  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>
+}
+
+async function render({ data = baseProfile, family = partnerFamily, isDemo = false, adminView = false, path = '/profil' } = {}) {
   profile.mockResolvedValue(data)
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <DemoProvider value={adminView ? { isDemo, adminView } : isDemo}>
           <PartnerProfilePage family={family} />
+          <LocationProbe />
         </DemoProvider>
       </MemoryRouter>
     )
@@ -406,6 +413,32 @@ describe('PartnerProfilePage – Reiter "Beiträge" (Tierheim)', () => {
     const tabs = [...container.querySelectorAll('.partner-profile-tabs button')].map((btn) => btn.textContent)
     expect(tabs).toEqual(['Angaben', 'Einblicke', 'Teilen'])
     expect(document.getElementById('partner-profile-panel-beitraege')).toBeNull()
+  })
+})
+
+// Audit V7a: der Reiter steht in der Adresse - "Zurück zum Profil" und "Bearbeiten" aus der Kundensicht landen dort wieder.
+describe('PartnerProfilePage – Reiter in der Adresse', () => {
+  const location = () => container.querySelector('[data-testid="location"]').textContent
+
+  test('?reiter=teilen öffnet "Teilen"; ein Reiter-Wechsel schreibt ihn in die Adresse, "Angaben" ohne Zusatz', async () => {
+    config.mockResolvedValue({ publicUrl: null })
+    vouchers.mockResolvedValue({ stapel: [] })
+    einblicke.mockResolvedValue([])
+    await render({ path: '/profil?reiter=teilen' })
+    expect(button('Teilen').getAttribute('aria-selected')).toBe('true')
+    expect(document.getElementById('partner-profile-panel-teilen').hidden).toBe(false)
+    expect(vouchers).toHaveBeenCalledTimes(1)
+
+    await act(async () => button('Einblicke').click())
+    expect(location()).toBe('/profil?reiter=einblicke')
+    expect(button('Einblicke').getAttribute('aria-selected')).toBe('true')
+    await act(async () => button('Angaben').click())
+    expect(location()).toBe('/profil')
+  })
+
+  test('ein unbekannter oder fremder Reiter fällt auf "Angaben" zurück (Partner haben keinen Reiter "Kalender")', async () => {
+    await render({ path: '/profil?reiter=kalender' })
+    expect(button('Angaben').getAttribute('aria-selected')).toBe('true')
   })
 })
 

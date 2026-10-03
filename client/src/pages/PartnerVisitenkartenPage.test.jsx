@@ -116,7 +116,7 @@ describe('PartnerVisitenkartenPage – gestalten', () => {
     expect(stage().querySelector('.vk-back-portal .vk-back-url').textContent).toBe('beispiel-chronik.de/p/hundeschule-pfotenglueck')
     expect(qrSvgPath).toHaveBeenCalledWith(`${PUBLIC_URL}/p/hundeschule-pfotenglueck`)
     expect(container.querySelectorAll('.vk-bogen-vorschau .vk-sheet')).toHaveLength(2)
-    expect(container.querySelector('a[href="/profil"]')).not.toBe(null)
+    expect(container.querySelector('a[href="/profil?reiter=teilen"]')).not.toBe(null)
     expect(container.textContent).toContain(PRINT_HINT)
     // Die Rückseiten laufen gespiegelt - das passt zum Wenden über die lange Kante.
     expect(PRINT_HINT).toBe('Rückseiten: Duplex über die lange Kante – bei manuellem Druck das Blatt seitlich umdrehen.')

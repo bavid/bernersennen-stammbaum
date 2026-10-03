@@ -54,6 +54,13 @@ describe('ViewModeSwitch', () => {
     expect(link('Bearbeiten').getAttribute('href')).toBe('/zugang')
   })
 
+  // Audit V7a: samt Suche - so kommt man aus der Kundensicht in denselben Profil-Reiter zurück.
+  test('merkt sich auch den Profil-Reiter (?reiter=…)', () => {
+    renderSwitch(30, '/profil?reiter=einblicke')
+    act(() => link('Kundensicht').click())
+    expect(link('Bearbeiten').getAttribute('href')).toBe('/profil?reiter=einblicke')
+  })
+
   test('nach einem Bereichswechsel gilt wieder die Vorgabe /profil', () => {
     renderSwitch(30, '/zugang')
     act(() => link('Kundensicht').click())

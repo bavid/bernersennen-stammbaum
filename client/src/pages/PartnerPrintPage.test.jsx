@@ -100,7 +100,7 @@ describe('PartnerPrintPage – Karten im Partner-Motiv', () => {
 
     expect(container.querySelector('.print-head').textContent).toContain(PARTNER_PRINT_HINT)
     const back = [...container.querySelectorAll('a')].find((a) => a.textContent.includes('Zurück zum Profil'))
-    expect(back.getAttribute('href')).toBe('/profil')
+    expect(back.getAttribute('href')).toBe('/profil?reiter=teilen')
     expect(container.textContent).not.toContain('CSV herunterladen')
     expect(container.querySelector('[role="toolbar"]')).not.toBeNull()
   })
@@ -185,7 +185,7 @@ describe('PartnerPrintPage – Fehler und Sicherheit', () => {
 
     expect(container.querySelector('[role="alert"]').textContent).toBe('Diesen Stapel gibt es nicht')
     expect(container.querySelector('.voucher-card')).toBeNull()
-    expect([...container.querySelectorAll('a')].some((a) => a.getAttribute('href') === '/profil')).toBe(true)
+    expect([...container.querySelectorAll('a')].some((a) => a.getAttribute('href') === '/profil?reiter=teilen')).toBe(true)
   })
 
   test('setzt die Druck-Klasse am <body>, solange die Seite offen ist; Codes landen weder im localStorage noch in der Konsole', async () => {

@@ -1,5 +1,6 @@
 import { api } from '../api'
 import VoucherPrintView, { usePrintBodyClass, useVoucherPrint } from '../components/VoucherPrintView.jsx'
+import { profileTabRoute } from '../lib/partnerProfile.js'
 
 // Druckseite eines Kunden-Gutschein-Stapels für den Partner (Phase 5 Task 4): /partner-drucken/:id, als eigener
 // Chunk aus App.jsx - nur mit Sitzung in einem Partner- oder Tierheim-Bereich (App.jsx prüft das, ohne geht es
@@ -13,7 +14,8 @@ export const PARTNER_PRINT_HINT = 'Jede Karte legt für eure Kundschaft eine eig
 // Audit V7a: in der Demo sehen die Codes echt aus (die Visitenkarten zeigen "MUSTER") - sagen, dass sie nicht gelten.
 export const DEMO_PRINT_HINT = 'Demo: Beispiel-Codes – sie lassen sich nicht einlösen.'
 const DESIGN_LABEL = 'Kunden-Karte mit eurem Auftritt'
-const BACK = { to: '/profil', label: 'Zurück zum Profil' }
+// Audit V7a: zurück in den Reiter "Teilen" mit den Kunden-Gutscheinen, aus dem man kommt.
+const BACK = { to: profileTabRoute('teilen'), label: 'Zurück zum Profil' }
 
 const designLabel = () => DESIGN_LABEL
 

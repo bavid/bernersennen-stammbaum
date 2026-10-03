@@ -11,6 +11,15 @@ export const MAX_TITEL_LENGTH = 120
 export const MAX_ANSPRECHPERSON_LENGTH = 80
 
 export const LOCKED_HINT = 'Euer Profil ist gesperrt – bitte meldet euch beim Betreiber.'
+
+// Audit V7a: der gewählte Reiter auf /profil steht in der Adresse (?reiter=teilen, PartnerProfilePage) - so führen "Zurück
+// zum Profil" (Visitenkarten, Druckseite) und "Bearbeiten" aus der Kundensicht (ViewModeSwitch merkt sich Pfad samt Suche)
+// zum selben Reiter zurück.
+export const PROFILE_TAB_PARAM = 'reiter'
+
+export function profileTabRoute(key) {
+  return `/profil?${PROFILE_TAB_PARAM}=${encodeURIComponent(key)}`
+}
 // Der Demo-Hinweis liegt seit Phase 5 Task 5b zentral in lib/demo.js (neben dem der Admin-Ansicht).
 export { DEMO_HINT } from './demo.js'
 

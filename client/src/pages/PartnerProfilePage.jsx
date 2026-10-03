@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import PartnerStatusCard from '../components/PartnerStatusCard.jsx'
@@ -15,6 +15,7 @@ import TabBar from '../components/TabBar.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { navItemsFor } from '../lib/navItems.js'
+import { PROFILE_TAB_PARAM as TAB_PARAM } from '../lib/partnerProfile.js'
 
 const ACCESS_ROUTE = '/zugang'
 
@@ -60,10 +61,12 @@ export default function PartnerProfilePage({ family }) {
   const toast = useToast()
   const [profile, setProfile] = useState(null)
   const [loadError, setLoadError] = useState(null)
-  const [tab, setTab] = useState('angaben')
-  const [openedTabs, setOpenedTabs] = useState(['angaben'])
+  const [searchParams, setSearchParams] = useSearchParams()
   const showAccessLink = !navItemsFor(family).some((item) => item.to === ACCESS_ROUTE)
   const tabs = tabsFor(family)
+  const requested = searchParams.get(TAB_PARAM)
+  const tab = tabs.some((item) => item.key === requested) ? requested : TAB_ANGABEN.key
+  const [openedTabs, setOpenedTabs] = useState(() => [tab])
   const name = profile?.name || family.partner?.name || family.name
   const typ = profile?.typ || family.partner?.typ
 
@@ -100,8 +103,9 @@ export default function PartnerProfilePage({ family }) {
     setProfile((current) => ({ ...current, banner }))
   }
 
+  // Reiter-Wechsel ersetzt den Eintrag im Verlauf (kein "Zurück" durch alle Reiter).
   function selectTab(key) {
-    setTab(key)
+    setSearchParams(key === TAB_ANGABEN.key ? {} : { [TAB_PARAM]: key }, { replace: true })
     setOpenedTabs((current) => (current.includes(key) ? current : [...current, key]))
   }
 
