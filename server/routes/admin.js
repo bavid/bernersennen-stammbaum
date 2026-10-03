@@ -10,7 +10,7 @@ const { setSessionCookie } = require('../middleware/auth')
 const { AKTION, familyZiel, partnerZiel, logAdminAction, recentAdminLog } = require('../lib/adminLog')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
-const { createBatch, voucherStatus, validateBatchInput, validateZweck, ZWECK } = require('../lib/vouchers')
+const { createBatch, voucherStatus, isPersonalVoucher, validateBatchInput, validateZweck, ZWECK } = require('../lib/vouchers')
 const { formatCode, decryptCode, generateCode, hashCode } = require('../lib/codes')
 const { validatePartner, SHELTER_TYP_VALUES } = require('../lib/partners')
 const { handlePartnerLogoUpload } = require('../lib/partnerLogo')
@@ -300,17 +300,31 @@ router.get('/voucher-batches/:id', requireAdmin, (req, res) => {
   const rows = db
     .prepare(
       `SELECT v.id, v.code_cipher, v.code_hint, v.redeemed_at, v.revoked_at, v.expires_at, v.zugewiesen_an_anfrage_id,
+         v.issued_by_family_id, v.created_by_family_id, v.visit_host_family_id, v.dog_id,
          f.name AS redeemed_by_name
        FROM vouchers v LEFT JOIN families f ON f.id = v.redeemed_by_family_id
        WHERE v.batch_id = ? ORDER BY v.id`
     )
     .all(id)
 
+  // security-review Phase V2 (L-5): persönliche Codes (Einladungen, Weitergabe- und Übergabe-Gutscheine der Bereiche,
+  // lib/vouchers.js isPersonalVoucher) zeigt auch der Admin nur als Hinweis - im Klartext kennt sie allein, wer sie
+  // ausgegeben hat. Ein beschädigter Geheimtext bricht die Liste nicht ab.
+  const plainCode = (row) => {
+    if (isPersonalVoucher(row) || !row.code_cipher) return null
+    try {
+      return formatCode(decryptCode(row.code_cipher))
+    } catch {
+      return null
+    }
+  }
+
   const vouchers = rows.map((row) => {
     const status = voucherStatus(row)
     return {
       id: row.id,
-      code: status === 'offen' ? formatCode(decryptCode(row.code_cipher)) : null,
+      code: status === 'offen' ? plainCode(row) : null,
+      ...(isPersonalVoucher(row) ? { persoenlich: true } : {}),
       hint: row.code_hint,
       status,
       redeemed_at: row.redeemed_at,

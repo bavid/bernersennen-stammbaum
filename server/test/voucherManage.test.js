@@ -97,6 +97,8 @@ test('Phase V2b: eigene Einladungen verwalten - höchstens 5 offen, Beschriftung
     assert.ok((await mine(home.cookie, true)).data.every((voucher) => voucher.neueChronik === true))
   })
 
+  // Start-Codes einer Familie gehören der Familie (security-review V2, Punkt 10); selbst angelegte Familien-
+  // Einladungen gehören ihrem Ersteller und zählen für dessen Obergrenze.
   await t.test('Familien-Einladungen zählen mit; Beschriftung je Ersteller; nach dem Verlassen zählen sie nicht mehr', async () => {
     const leader = await createHousehold(base, 'Zuhause Leitung Codes')
     const deputy = await createHousehold(base, 'Zuhause Stellvertretung Codes')
@@ -110,25 +112,28 @@ test('Phase V2b: eigene Einladungen verwalten - höchstens 5 offen, Beschriftung
     const deputyInRudel = getCookie((await post('/api/view', { familyId: rudel.data.id }, deputy.cookie)).res)
     const leaderInRudel = getCookie((await post('/api/view', { familyId: rudel.data.id }, leader.cookie)).res)
 
-    const invites = (await mine(deputyInRudel)).data
-    assert.equal(invites.length, config.voucherQuota)
-    assert.ok(invites.every((voucher) => voucher.joins && voucher.eigen))
-    await put(`/api/vouchers/${invites[0].id}/label`, { label: 'Für die Nachbarn' }, deputyInRudel)
-    const leaderView = (await mine(leaderInRudel)).data.find((voucher) => voucher.id === invites[0].id)
+    const starters = (await mine(deputyInRudel)).data
+    assert.equal(starters.length, config.voucherQuota)
+    assert.ok(starters.every((voucher) => voucher.joins && voucher.eigen === false))
+    assert.equal((await put(`/api/vouchers/${starters[0].id}/label`, { label: 'x' }, deputyInRudel)).status, 404)
+    assert.equal((await get('/api/vouchers/grenze', deputy.cookie)).data.offen, 0)
+
+    const own = (await post('/api/vouchers', {}, deputyInRudel)).data
+    assert.equal(own.eigen, true)
+    await put(`/api/vouchers/${own.id}/label`, { label: 'Für die Nachbarn' }, deputyInRudel)
+    const leaderView = (await mine(leaderInRudel)).data.find((voucher) => voucher.id === own.id)
     assert.equal(leaderView.eigen, false)
     assert.equal(leaderView.label, null)
-    assert.equal((await get('/api/vouchers/grenze', deputy.cookie)).data.offen, config.voucherQuota)
 
-    // Mit 3 Familien-Einladungen und 2 Besuchs-Einladungen ist die Stellvertretung voll - auch in der Familie.
-    await post('/api/besuche/einladungen', {}, deputy.cookie)
-    await post('/api/besuche/einladungen', {}, deputy.cookie)
+    // Eine eigene Familien-Einladung und vier Besuchs-Einladungen: die Stellvertretung ist voll - auch in der Familie.
+    for (let i = 0; i < 4; i += 1) assert.equal((await post('/api/besuche/einladungen', {}, deputy.cookie)).status, 201)
     assert.equal((await post('/api/vouchers', {}, deputyInRudel)).status, 409)
-    // Die Leitung darf die Einladung der Stellvertretung löschen (Moderation), ein Mitglied könnte das nicht
-    assert.equal((await del(`/api/vouchers/${invites[1].id}`, leaderInRudel)).status, 204)
+    // Die Leitung darf die Einladung der Stellvertretung löschen (Moderation)
+    assert.equal((await del(`/api/vouchers/${own.id}`, leaderInRudel)).status, 204)
     assert.equal((await post('/api/vouchers', {}, deputyInRudel)).status, 201)
 
     db.prepare('DELETE FROM family_members WHERE member_family_id = ? AND group_family_id = ?').run(deputy.data.id, rudel.data.id)
-    assert.equal((await get('/api/vouchers/grenze', deputy.cookie)).data.offen, 2)
+    assert.equal((await get('/api/vouchers/grenze', deputy.cookie)).data.offen, 4)
   })
 
   await t.test('Partner-Bereiche haben keine Obergrenze; die Demo zeigt ihre Schein-Zahlen und schreibt nichts', async () => {

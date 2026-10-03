@@ -304,6 +304,15 @@ function validateZweck(value) {
   return value
 }
 
+// security-review Phase V2 (M-1, L-5): ein "persönlicher" Code hat einen bekannten Herausgeber - eine Person, ein
+// Bereich oder ein Tierheim kennt ihn im Klartext (Weitergabe-Gutscheine, Familien- und Besuchs-Einladungen,
+// Übergabe-Gutscheine). Er wird beim Einlösen nie der Schlüssel des neuen Zuhauses, und der Admin sieht von ihm nur
+// den Hinweis. Nur die vom Admin angelegten Karten und Partner-Stapel (ohne ausgebenden Bereich) bleiben "Karte =
+// Schlüssel". Erwartet die Spalten issued_by_family_id, created_by_family_id, visit_host_family_id, dog_id.
+function isPersonalVoucher(row) {
+  return Boolean(row.issued_by_family_id || row.created_by_family_id || row.visit_host_family_id || row.dog_id)
+}
+
 function voucherStatus(row) {
   if (row.revoked_at) return 'widerrufen'
   if (row.redeemed_at) return 'eingelöst'
@@ -437,12 +446,11 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
 
     claimOpenVoucher(db, codeHash)
 
-    // Eine Besuchs-Einladung kennt der Gastgeber im Klartext - sie wird deshalb NICHT der Schlüssel des neuen
-    // Zuhauses (sonst könnte sich der Gastgeber damit dort anmelden); das Zuhause bekommt einen frischen. Dasselbe
-    // gilt für jeden Code, den eine Person oder ein Bereich selbst angelegt hat (Phase V2b, created_by_family_id:
-    // Weitergabe-Gutscheine, Familien-Einladungen) - nur gedruckte Karten des Admins/Partners bleiben "Karte =
-    // Schlüssel" (security-review Phase V2, MEDIUM-1).
-    const key = isVisitInvite || voucher.created_by_family_id ? generateCode() : normalized
+    // Einen persönlichen Code (isPersonalVoucher: Besuchs-Einladung, Weitergabe-Gutschein, Familien-Einladung,
+    // Übergabe-Gutschein eines Tierheims) kennt sein Herausgeber im Klartext - er wird deshalb NICHT der Schlüssel des
+    // neuen Zuhauses (sonst könnte sich der Herausgeber damit dort anmelden); das Zuhause bekommt einen frischen. Nur
+    // die Karten des Admins (auch Partner-Stapel) bleiben "Karte = Schlüssel" (security-review Phase V2, M-1).
+    const key = isPersonalVoucher(voucher) ? generateCode() : normalized
     const newFamilyId = db
       .prepare(
         `INSERT INTO families (name, password_hash, art, theme, legacy_password, access_key_hash, voucher_id, partner_id)
@@ -600,6 +608,7 @@ module.exports = {
   isDemoVoucher,
   DEMO_BATCH_KIND,
   voucherStatus,
+  isPersonalVoucher,
   VOUCHER_COUNTS_SQL,
   redeemVoucher,
   claimVoucher,

@@ -2,6 +2,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { dogLabel } = require('./labels')
 const { ensureLeitung } = require('./ensureLeitung')
+const { revokeInvitesOnLeave } = require('./inviteRevocation')
 
 function photoUrlsOf(db, familyId) {
   const dogPhotos = db.prepare('SELECT foto_url FROM dogs WHERE family_id = ? AND foto_url IS NOT NULL').all(familyId)
@@ -68,6 +69,12 @@ function deleteFamily(db, familyId) {
       .prepare("SELECT group_family_id FROM family_members WHERE member_family_id = ? AND rolle = 'leitung'")
       .pluck()
       .all(familyId)
+    // security-review Phase V2 (M-2): wie beim Verlassen - die Einladungs-Codes, die der Haushalt kannte, gelten nicht weiter.
+    for (const { group_family_id: groupId, rolle } of db
+      .prepare('SELECT group_family_id, rolle FROM family_members WHERE member_family_id = ?')
+      .all(familyId)) {
+      revokeInvitesOnLeave(db, { homeId: familyId, groupId, role: rolle })
+    }
     db.prepare('DELETE FROM family_members WHERE member_family_id = ? OR group_family_id = ?').run(familyId, familyId)
     for (const groupId of ledFamilies) ensureLeitung(db, groupId)
 

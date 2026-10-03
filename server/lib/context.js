@@ -6,6 +6,7 @@ const { ART, PARTNER_AREA_ARTS } = require('./areaArt')
 const { roleOf } = require('./roles')
 const { isVisiting, visitTargetsOf } = require('./visits')
 const { countOpenRequests } = require('./erlebtMit')
+const { revokeInvitesOnLeave } = require('./inviteRevocation')
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist - mit der eigenen Rolle dort (Phase R Task 2,
 // für den ContextSwitcher des Clients).
@@ -28,7 +29,9 @@ function isMember(homeId, groupId) {
 // routes/auth.js, Entfernen durch die Leitung in routes/members.js): ein Absturz dazwischen darf keine
 // verwaisten dog_shares hinterlassen, die auf eine tote Mitgliedschaft zeigen. Die Tiere selbst bleiben in
 // ihrem Zuhause. Gibt die Anzahl entfernter Mitgliedschaften zurück (0 = war kein Mitglied).
+// security-review Phase V2 (M-2): dazu die Einladungs-Codes, die der Haushalt kannte (lib/inviteRevocation.js).
 const removeMembership = db.transaction((homeId, groupId) => {
+  const membership = db.prepare('SELECT rolle FROM family_members WHERE member_family_id = ? AND group_family_id = ?').get(homeId, groupId)
   const result = db
     .prepare('DELETE FROM family_members WHERE member_family_id = ? AND group_family_id = ?')
     .run(homeId, groupId)
@@ -37,6 +40,7 @@ const removeMembership = db.transaction((homeId, groupId) => {
       groupId,
       homeId
     )
+    revokeInvitesOnLeave(db, { homeId, groupId, role: membership?.rolle })
   }
   return result.changes
 })

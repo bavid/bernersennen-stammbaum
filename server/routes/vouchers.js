@@ -130,8 +130,9 @@ router.post('/claim', requireAuth, codeLimiter, (req, res, next) => {
 // gehören nicht in diese Liste. rolle (Phase R Task 2): welche Rolle eine Einladung beim Einlösen vergibt.
 // Phase V2b (lib/voucherManage.js): ohne Parameter alles noch nicht Eingelöste (offen, abgelaufen, zurückgezogen),
 // mit ?archiv=1 die eingelösten (neueChronik: dabei entstand eine neue Chronik). Vom Ersteller gelöschte Codes
-// fehlen. label/eigen: die Beschriftung sieht nur, wer den Code angelegt hat (in der Admin-Ansicht niemand). Das
-// Auffüllen gehört dem, der es auslöst, und hält dessen Obergrenze offener Codes ein.
+// fehlen. label/eigen: die Beschriftung sieht nur, wer den Code angelegt hat (in der Admin-Ansicht niemand). Die
+// Start-Codes einer Familie gehören der Familie selbst - sie zählen für niemandes Obergrenze (security-review Phase
+// V2, Punkt 10); im eigenen Zuhause gehören sie dem Zuhause und zählen für dessen Obergrenze.
 router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
   const archiv = req.query.archiv === '1'
   if (req.isDemo) return res.json(archiv ? DEMO_VOUCHER_ARCHIVE : DEMO_VOUCHERS)
@@ -139,7 +140,11 @@ router.get('/mine', requireAuth, requireRole('stellvertretung'), (req, res) => {
   const area = db.prepare('SELECT id, name, art FROM families WHERE id = ?').get(req.familyId)
   // Admin-Ansicht (Phase 5 Task 5b): nur lesen - das Kontingent füllt erst der Bereich selbst wieder auf.
   if (!req.isAdminView) {
-    ensureVoucherQuota(db, area, { createdByFamilyId: req.homeId, maxNew: openSlotsFor(db, req.homeId) })
+    const isFamily = area.art === ART.rudel
+    ensureVoucherQuota(db, area, {
+      createdByFamilyId: isFamily ? area.id : req.homeId,
+      maxNew: isFamily ? Infinity : openSlotsFor(db, req.homeId)
+    })
   }
   res.json(listVouchers(db, { areaId: area.id, viewerId: req.isAdminView ? null : req.homeId, archiv }))
 })

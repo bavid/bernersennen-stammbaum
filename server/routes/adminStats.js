@@ -32,8 +32,12 @@ const findBatchStmt = db.prepare(`
   LEFT JOIN partners p ON p.id = b.partner_id
   WHERE b.id = ?`)
 
+// security-review Phase V2 (L-5): persönliche Codes (lib/vouchers.js isPersonalVoucher) druckt der Admin nie.
 const printRowsStmt = db.prepare(
-  'SELECT id, code_cipher, redeemed_at, revoked_at, expires_at FROM vouchers WHERE batch_id = ? ORDER BY id'
+  `SELECT id, code_cipher, redeemed_at, revoked_at, expires_at FROM vouchers
+   WHERE batch_id = ? AND issued_by_family_id IS NULL AND created_by_family_id IS NULL AND visit_host_family_id IS NULL
+     AND dog_id IS NULL
+   ORDER BY id`
 )
 
 const csvRowsStmt = db.prepare(`

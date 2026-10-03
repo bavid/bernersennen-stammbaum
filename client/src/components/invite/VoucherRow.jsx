@@ -51,6 +51,8 @@ export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, on
         </label>
       )}
       {voucher.code && <VoucherShareActions code={voucher.code} />}
+      {/* Ein beschädigter Code (Server: codeFehler) lässt sich nicht weitergeben - nur zurückziehen. */}
+      {voucher.codeFehler && <p className="field-error voucher-row-broken">Code nicht lesbar – bitte zurückziehen.</p>}
       {deletable && (
         <ConfirmButton
           className="voucher-row-delete"

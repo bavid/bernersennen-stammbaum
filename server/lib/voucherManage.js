@@ -61,12 +61,26 @@ function limitInfo(db, homeId) {
 }
 
 // Eine Zeile für die Liste "Meine Codes". label nur für den Ersteller (viewerId), eigen: viewerId hat ihn angelegt.
+// Ein beschädigter Geheimtext darf nicht die ganze Liste mit 500 abbrechen (security-review Phase V2, INFO): der Code
+// erscheint dann ohne Klartext, mit codeFehler - der Client bittet darum, ihn zurückzuziehen.
+function readableCode(row) {
+  if (!row.code_cipher) return { code: null, codeFehler: true }
+  try {
+    return { code: formatCode(decryptCode(row.code_cipher)), codeFehler: false }
+  } catch {
+    console.warn(`[vouchers] Gutschein ${row.id}: Geheimtext nicht lesbar`)
+    return { code: null, codeFehler: true }
+  }
+}
+
 function toListItem(row, viewerId) {
   const status = voucherStatus(row)
   const eigen = viewerId !== null && row.created_by_family_id === viewerId
+  const { code, codeFehler } = status === 'offen' ? readableCode(row) : { code: null, codeFehler: false }
   return {
     id: row.id,
-    code: status === 'offen' ? formatCode(decryptCode(row.code_cipher)) : null,
+    code,
+    ...(codeFehler ? { codeFehler: true } : {}),
     hint: row.code_hint,
     status,
     joins: Boolean(row.join_family_id),
@@ -87,7 +101,17 @@ const LIST_COLUMNS_SQL = `v.id, v.code_cipher, v.code_hint, v.redeemed_at, v.rev
 
 // Codes des Bereichs areaId (ohne Übergabe-Gutscheine und ohne gelöschte): archiv false -> alles noch nicht
 // Eingelöste (offen, abgelaufen, zurückgezogen), archiv true -> die eingelösten. viewerId: siehe toListItem.
+// Abgelaufene Codes brauchen ihren Geheimtext nicht mehr (security-review Phase V2, INFO) - beim Lesen weg damit.
+function clearExpiredCiphers(db, areaId) {
+  db.prepare(
+    `UPDATE vouchers SET code_cipher = NULL
+     WHERE issued_by_family_id = ? AND code_cipher IS NOT NULL AND redeemed_at IS NULL AND revoked_at IS NULL
+       AND expires_at IS NOT NULL AND expires_at <= datetime('now')`
+  ).run(areaId)
+}
+
 function listVouchers(db, { areaId, viewerId, archiv = false }) {
+  clearExpiredCiphers(db, areaId)
   return db
     .prepare(
       `SELECT ${LIST_COLUMNS_SQL} FROM vouchers v

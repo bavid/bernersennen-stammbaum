@@ -385,3 +385,17 @@ describe('InviteDialog – eigene Einladungen verwalten (Phase V2b)', () => {
     expect(container.querySelector('.voucher-row-delete').disabled).toBe(true)
   })
 })
+
+describe('InviteDialog – beschädigter Code (security-review V2)', () => {
+  test('zeigt „Code nicht lesbar – bitte zurückziehen“ und bietet das Zurückziehen an', async () => {
+    const ownHome = { ...zuhause, home: { id: 1, name: 'Zuhause am Deich', art: 'zuhause' } }
+    myVouchers.mockImplementation(({ archiv } = {}) =>
+      Promise.resolve(archiv ? [] : [{ ...openVoucher, id: 31, code: null, codeFehler: true, joins: false, eigen: true }])
+    )
+    await render(ownHome)
+    const row = container.querySelector('.voucher-list > .voucher-row')
+    expect(row.textContent).toContain('Code nicht lesbar – bitte zurückziehen.')
+    expect(row.querySelector('.voucher-row-actions')).toBeNull()
+    expect(row.querySelector('.voucher-row-delete')).not.toBeNull()
+  })
+})
