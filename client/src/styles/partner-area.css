@@ -20,7 +20,8 @@
   min-height: 2.1rem;
   padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-pill);
-  color: var(--muted);
+  /* Audit V7a: wie .segmented button (components.css) - --muted auf --paper-deep lag bei 4,2 : 1. */
+  color: color-mix(in srgb, var(--muted) 65%, var(--ink-soft));
   font-size: var(--text-sm);
   font-weight: 700;
   text-decoration: none;
