@@ -153,9 +153,12 @@ export default function CompanionsPage({ family, onFamilyChange }) {
         <div className="empty-state">
           <ThemeMark size={72} />
           <h3>Noch keine Wegbegleiter</h3>
+          {/* Audit V7a: nicht noch einmal "Noch keine Wegbegleiter …", und einheitlich "ihr" - ohne Tiere der erste Schritt */}
           <p>
-            Noch keine Wegbegleiter mit Einzugs- oder Geburtsdatum. Trag bei deinen Tieren ein, seit wann sie bei euch
-            sind.
+            {dogs.length === 0
+              ? 'Legt euer erstes Tier an – mit Einzugs- oder Geburtsdatum erscheint es hier auf der Zeitleiste.'
+              : `Hier erscheinen eure ${words.animals}, sobald ein Einzugs- oder Geburtsdatum eingetragen ist – ` +
+                'tragt bei ihnen ein, seit wann sie bei euch sind.'}
           </p>
         </div>
       )}

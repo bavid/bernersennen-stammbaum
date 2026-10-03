@@ -120,8 +120,19 @@ test('Leerzustand ohne Tiere mit Einzugs- oder Geburtsdatum', async () => {
   await render([dog(1, 'Ohne Datum')])
   const empty = container.querySelector('.empty-state')
   expect(empty).toBeTruthy()
-  expect(empty.textContent).toContain('Noch keine Wegbegleiter mit Einzugs- oder Geburtsdatum')
+  expect(empty.querySelector('h3').textContent).toBe('Noch keine Wegbegleiter')
+  // Audit V7a: der Text wiederholt die Überschrift nicht
+  expect(empty.querySelector('p').textContent).toBe(
+    'Hier erscheinen eure Tiere, sobald ein Einzugs- oder Geburtsdatum eingetragen ist – tragt bei ihnen ein, seit wann sie bei euch sind.'
+  )
   expect(container.querySelector('.companion-timeline')).toBeNull()
+})
+
+test('ganz ohne Tiere: der erste Schritt statt des Hinweises aufs Datum', async () => {
+  await render([])
+  expect(container.querySelector('.empty-state p').textContent).toBe(
+    'Legt euer erstes Tier an – mit Einzugs- oder Geburtsdatum erscheint es hier auf der Zeitleiste.'
+  )
 })
 
 test('zeigt die Zeitleiste, sobald Tiere mit Datum vorhanden sind', async () => {

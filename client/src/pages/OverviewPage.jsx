@@ -154,7 +154,8 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
           )}
           {(canWrite || canInvite || showTreeToggle) && (
             <div className="hero-actions">
-              {canWrite && (
+              {/* Audit V7a: ohne Tiere steht "Erstes Tier anlegen" im Leerzustand - nicht zusätzlich hier oben. */}
+              {canWrite && dogs?.length !== 0 && (
                 <button type="button" className="btn btn-primary btn-lg" onClick={() => openAnimalForm()}>
                   <Icon name="plus" />
                   Tier hinzufügen

@@ -31,8 +31,9 @@ function DogPicker({ dogs, selectedIds, onToggle }) {
   )
 }
 
-// Schritt 1 der Collage: Tiere wählen, Fotos pro Seite, optional eine Übersichtsseite.
-export default function CollageSetup({ dogs, draft, onCreate, busy }) {
+// Schritt 1 der Collage: Tiere wählen, Fotos pro Seite, optional eine Übersichtsseite. loaded: die Tiere sind geladen -
+// ohne Tiere steht dann ein Hinweis statt einer leeren Auswahl mit "Alle"/"Keine" (Audit V7a).
+export default function CollageSetup({ dogs, draft, onCreate, busy, loaded = true }) {
   const { words } = useTheme()
   const [selectedIds, setSelectedIds] = useState(draft?.selectedIds || [])
   const [perPage, setPerPage] = useState(draft?.perPage || DEFAULT_PER_PAGE)
@@ -45,12 +46,20 @@ export default function CollageSetup({ dogs, draft, onCreate, busy }) {
     <div className="card form-stack collage-setup">
       <div className="collage-setup-head">
         <h2>1. {words.animals} auswählen</h2>
-        <span className="segmented segmented-sm">
-          <button type="button" onClick={() => setSelectedIds(dogs.map((d) => d.id))}>Alle</button>
-          <button type="button" onClick={() => setSelectedIds([])}>Keine</button>
-        </span>
+        {dogs.length > 0 && (
+          <span className="segmented segmented-sm">
+            <button type="button" onClick={() => setSelectedIds(dogs.map((d) => d.id))}>Alle</button>
+            <button type="button" onClick={() => setSelectedIds([])}>Keine</button>
+          </span>
+        )}
       </div>
-      <DogPicker dogs={dogs} selectedIds={selectedIds} onToggle={toggle} />
+      {loaded && dogs.length === 0 ? (
+        <p className="muted">
+          Noch keine {words.animals} – legt zuerst eure {words.animals} an, dann wird hier eine Collage daraus.
+        </p>
+      ) : (
+        <DogPicker dogs={dogs} selectedIds={selectedIds} onToggle={toggle} />
+      )}
 
       <h2>2. Aufteilung</h2>
       <div className="collage-options">

@@ -57,6 +57,13 @@ describe.each(['standard', 'berner'])('CollagePage im Theme %s', (themeId) => {
     )
   })
 
+  test('Audit V7a: ohne Tiere ein Hinweis statt einer leeren Auswahl mit "Alle"/"Keine"', async () => {
+    await render(themeId, { id: `leer-${themeId}`, name: 'Beispiel' })
+    expect(container.querySelector('.collage-setup .muted').textContent).toContain(`Noch keine ${theme.words.animals}`)
+    expect(container.querySelector('.collage-setup .segmented')).toBeNull()
+    expect(container.querySelector('.collage-dogs')).toBeNull()
+  })
+
   test('Einleitungstext nennt Tiere/Hunde aus dem Theme-Wortschatz', async () => {
     await render(themeId, { id: `lede-${themeId}`, name: 'Beispiel' })
     expect(container.querySelector('.page-lede').textContent).toContain(`Mehrere ${theme.words.animals}, mehrere Seiten`)

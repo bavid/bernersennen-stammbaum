@@ -107,25 +107,26 @@ describe('OverviewPage – Rechte je Rolle in einer Familie (Phase R)', () => {
     expect(container.querySelector('a[href="/mitglieder"]').textContent).toContain('Mitglieder & Rollen')
   })
 
-  test('Mitglied: "Tier hinzufügen", aber kein "Jemanden einladen"', async () => {
+  // Audit V7a: ohne Tiere nur EIN Knopf zum Anlegen - "Erstes Tier anlegen" im Leerzustand, nicht noch "Tier hinzufügen" oben.
+  test('Mitglied: "Erstes Tier anlegen" (einmal), aber kein "Jemanden einladen"', async () => {
     mockEmpty()
     await render(groupAs('mitglied'))
-    expect(buttonWith('Tier hinzufügen')).not.toBeUndefined()
     expect(buttonWith('Erstes Tier anlegen')).not.toBeUndefined()
+    expect(buttonWith('Tier hinzufügen')).toBeUndefined()
     expect(buttonWith('Jemanden einladen')).toBeUndefined()
   })
 
   test('Stellvertretung: beides', async () => {
     mockEmpty()
     await render(groupAs('stellvertretung'))
-    expect(buttonWith('Tier hinzufügen')).not.toBeUndefined()
+    expect(buttonWith('Erstes Tier anlegen')).not.toBeUndefined()
     expect(buttonWith('Jemanden einladen')).not.toBeUndefined()
   })
 
   test('das eigene Zuhause hat beides und keinen Mitglieder-Link', async () => {
     mockEmpty()
     await render(homeFamily)
-    expect(buttonWith('Tier hinzufügen')).not.toBeUndefined()
+    expect(buttonWith('Erstes Tier anlegen')).not.toBeUndefined()
     expect(buttonWith('Jemanden einladen')).not.toBeUndefined()
     expect(container.querySelector('a[href="/mitglieder"]')).toBeNull()
   })

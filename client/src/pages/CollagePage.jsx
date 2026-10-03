@@ -77,7 +77,8 @@ export default function CollagePage({ family }) {
       focusStage()
     }
   }
-  const [dogs, setDogs] = useState([])
+  // null, solange die Tiere laden - danach erst darf die Auswahl "noch keine Tiere" sagen (Audit V7a)
+  const [dogs, setDogs] = useState(null)
   const [mode, setMode] = useState(() => (draft?.pages?.length ? 'edit' : 'setup'))
   const [busy, setBusy] = useState(false)
   const [printImages, setPrintImages] = useState(null)
@@ -95,7 +96,7 @@ export default function CollagePage({ family }) {
     setBusy(true)
     setError(null)
     try {
-      const ordered = dogs.filter((dog) => options.selectedIds.includes(dog.id))
+      const ordered = (dogs || []).filter((dog) => options.selectedIds.includes(dog.id))
       if (!ordered.length) return
       const dogsData = await Promise.all(
         ordered.map(async (dog) => {
@@ -160,7 +161,7 @@ export default function CollagePage({ family }) {
 
       {error && <div className="error-banner" role="alert">{error}</div>}
 
-      {mode === 'setup' && <CollageSetup dogs={dogs} draft={draft} onCreate={handleCreate} busy={busy} />}
+      {mode === 'setup' && <CollageSetup dogs={dogs || []} loaded={dogs !== null} draft={draft} onCreate={handleCreate} busy={busy} />}
 
       {mode === 'edit' && page && (
         <>

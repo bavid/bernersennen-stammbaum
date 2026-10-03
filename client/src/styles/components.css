@@ -322,7 +322,9 @@ textarea {
   border-radius: var(--radius-lg);
 }
 
-.empty-state svg {
+/* Nur das große Symbol oben (direktes Kind) - nicht die Symbole in Knöpfen des Leerzustands (Audit V7a: das "+" in
+   "Erstes Tier anlegen" war sonst 72 px groß). */
+.empty-state > svg {
   width: 4.5rem;
   height: 4.5rem;
 }
