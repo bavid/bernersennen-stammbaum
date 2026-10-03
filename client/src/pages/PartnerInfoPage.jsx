@@ -30,7 +30,12 @@ const BENEFITS = [
   { icon: 'megaphone', title: 'Beiträge als Anzeige', text: 'Kurse, Aktionen und Termine erscheinen gekennzeichnet in „Entdecken“, nach kurzer Freigabe.' },
   // Phase V4a: der Kalender der Partner.
   { icon: 'calendar', title: 'Kalender', text: 'Kurse und offene Stunden – einmalig oder als Serie – stehen sofort auf eurem Portal und als nächster Termin in „Entdecken“.' },
-  { icon: 'printer', title: 'Kunden-Gutscheine', text: 'Karten mit eurem Auftritt: Jede legt für eure Kundschaft eine eigene Chronik an – und zeigt, dass sie von euch kommt.' }
+  // Audit V7a: die Visitenkarten (Phase V5) gehören dazu - vorher stand nur "Kunden-Gutscheine" da.
+  {
+    icon: 'printer',
+    title: 'Visitenkarten & Gutscheine',
+    text: 'Visitenkarten mit QR-Code zu eurem Portal zum Selberdrucken – auf Wunsch mit Gutschein, der eurer Kundschaft eine eigene Chronik anlegt.'
+  }
 ]
 
 const STEPS = [

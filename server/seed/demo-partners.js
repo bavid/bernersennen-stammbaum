@@ -26,7 +26,7 @@ const DEMO_PARTNERS = [
     plz: '20095',
     farbe: '#1f5f8b',
     portalText:
-      'Wir bieten Welpenkurse und Hundetraining für Familien aus der Region an – vom ersten „Sitz" bis zum entspannten Spaziergang im Alltag.',
+      'Wir bieten Welpenkurse und Hundetraining für Familien aus der Region an – vom ersten „Sitz“ bis zum entspannten Spaziergang im Alltag.',
     website: 'https://example.org/pfotenglueck',
     ansprechperson: 'Anna Berg'
   },

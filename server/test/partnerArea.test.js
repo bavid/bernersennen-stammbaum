@@ -120,7 +120,11 @@ test('Partner-Bereich: Profil pflegen, veröffentlichen, pausieren, Logo', async
     const withoutPlz = await createPartnerArea()
     const bare = (await get('/api/partner-area/profile', withoutPlz.cookie)).data
     assert.deepEqual(bare.vollstaendig.fehlt, ['Postleitzahl', 'Portal-Text (mind. 40 Zeichen)'])
-    assert.ok(bare.vollstaendig.empfohlen.includes('Kontakt (E-Mail, Telefon oder Kontaktformular)'))
+    // Audit V7a: "Schreib uns" (Standard: an) zählt als Kontaktweg; erst ohne jeden Kontakt steht die Empfehlung da.
+    assert.ok(!bare.vollstaendig.empfohlen.some((label) => label.startsWith('Kontakt')), '"Schreib uns" zählt als Kontakt')
+    const noForm = await put('/api/partner-area/profile', { kontaktformularAktiv: false }, withoutPlz.cookie)
+    assert.equal(noForm.status, 200)
+    assert.ok(noForm.data.vollstaendig.empfohlen.includes('Kontakt (E-Mail, Telefon oder Kontaktformular)'))
   })
 
   await t.test('PUT /profile: erlaubte Felder werden gespeichert, fehlende bleiben, Slug bleibt', async () => {

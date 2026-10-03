@@ -55,7 +55,10 @@ function completeness(partner, { einblickCount } = {}) {
 
   const empfohlen = []
   if (!partner.logo_file) empfohlen.push(LABEL.logo)
-  if (!partner.kontakt_email && !partner.kontakt_telefon && !partner.kontakt_formular_url) empfohlen.push(LABEL.kontakt)
+  // Audit V7a: auch das eigene Formular "Schreib uns" (Postfach) ist ein Kontaktweg - sonst stand "Kontakt" als Empfehlung da,
+  // obwohl das Portal einen Kontakt-Abschnitt mit "Schreib uns" zeigt.
+  const hasContact = partner.kontakt_email || partner.kontakt_telefon || partner.kontakt_formular_url || partner.kontaktformular_aktiv
+  if (!hasContact) empfohlen.push(LABEL.kontakt)
   if (einblickCount === 0) empfohlen.push(LABEL.einblick)
 
   return { ok: fehlt.length === 0, fehlt, empfohlen }
