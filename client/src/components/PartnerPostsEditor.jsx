@@ -137,7 +137,7 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
         </div>
       )}
       {posts === undefined && !loadError && <p className="muted">Lade …</p>}
-      {!editing && <PartnerCardOrder refreshKey={version} />}
+      {!editing && <PartnerCardOrder refreshKey={version} hideWhenEmpty={posts?.length === 0} />}
       {!editing && posts?.length === 0 && (
         <p className="empty-state partner-posts-empty">Noch keine Beiträge – kündigt Kurse, Aktionen oder Termine an.</p>
       )}

@@ -83,8 +83,9 @@ function OrderItem({ item, index, count, max, busy, readOnly, onMove, onToggle }
 // Freigabe. Nach dem Verschieben bleibt der Fokus auf dem Pfeil der verschobenen Anzeige; eine Live-Region sagt die
 // neue Stelle an. Während einer Anfrage werden weitere Klicks übergangen statt die Knöpfe zu sperren - ein gesperrtes
 // Element verlöre sonst den Tastatur-Fokus. refreshKey: Beiträge geändert -> neu laden. In der Demo sichtbar, aber
-// gesperrt.
-export default function PartnerCardOrder({ refreshKey }) {
+// gesperrt. hideWhenEmpty (Audit V7a): ganz ohne Beiträge stünde die leere Karte über dem Leerzustand der Liste - zwei
+// leere Kästen; dann bleibt sie weg (vom Team verknüpfte Anzeigen zeigt sie trotzdem).
+export default function PartnerCardOrder({ refreshKey, hideWhenEmpty = false }) {
   const readOnly = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const [data, setData] = useState(undefined)
@@ -150,6 +151,7 @@ export default function PartnerCardOrder({ refreshKey }) {
   if (data === undefined && !error) return null
   if (data && !data.bereich) return null
   const anzeigen = data?.anzeigen || []
+  if (hideWhenEmpty && data && anzeigen.length === 0) return null
 
   return (
     <section className="partner-card-order card" aria-labelledby="partner-card-order-title">

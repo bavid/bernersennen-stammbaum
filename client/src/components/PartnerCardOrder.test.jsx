@@ -45,14 +45,14 @@ const list = {
   ]
 }
 
-async function render({ demo = false } = {}) {
+async function render({ demo = false, hideWhenEmpty = false } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
       <DemoProvider value={demo}>
-        <PartnerCardOrder />
+        <PartnerCardOrder hideWhenEmpty={hideWhenEmpty} />
       </DemoProvider>
     )
   )
@@ -128,5 +128,19 @@ describe('PartnerCardOrder', () => {
     cardAnzeigen.mockResolvedValue({ bereich: 'hundeschule', max: 3, anzeigen: [] })
     await render()
     expect(container.textContent).toContain('Sobald ein Beitrag freigegeben ist')
+  })
+
+  // Audit V7a: ganz ohne Beiträge keine leere Karte über dem Leerzustand der Liste - Team-Anzeigen zeigt sie trotzdem.
+  test('hideWhenEmpty: leer nichts, mit Anzeigen (z. B. vom Team) die Liste', async () => {
+    cardAnzeigen.mockResolvedValue({ bereich: 'hundeschule', max: 3, anzeigen: [] })
+    await render({ hideWhenEmpty: true })
+    expect(container.querySelector('.partner-card-order')).toBeNull()
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    cardAnzeigen.mockResolvedValue({ ...list, anzeigen: [list.anzeigen[2]] })
+    await render({ hideWhenEmpty: true })
+    expect(titles()).toEqual(['Welpenkurs im Frühjahr'])
   })
 })
