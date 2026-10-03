@@ -430,21 +430,43 @@
 }
 
 .partner-card-meta {
+  --meta-sep: 1.1em;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1) var(--space-2);
+  gap: var(--space-1) 0;
   margin-top: var(--space-1);
+  /* Audit V7a: bricht die Zeile um, stünde der Trenner sonst am Zeilenende ("Hundeschule ·") bzw. am Zeilenanfang.
+     Jede Angabe trägt ihren Punkt VORN und rückt um seine Breite nach links - am Anfang einer Zeile liegt er damit
+     außerhalb und wird abgeschnitten, zwischen zwei Angaben steht er genau in der Lücke. */
+  overflow: hidden;
   color: var(--muted);
   font-size: var(--text-sm);
 }
 
-/* Punkte zwischen den Angaben (nicht nach dem Partner-Merkmal) - am Ende der Angabe, damit ein Umbruch nie
-   mit einem Punkt beginnt. */
-.partner-card-meta > span:not(.partner-mark):not(:last-child)::after {
+.partner-card-meta > * {
+  margin-right: var(--meta-sep);
+}
+
+.partner-card-meta > span:not(.partner-mark) {
+  margin-left: calc(-1 * var(--meta-sep));
+}
+
+.partner-card-meta > span:not(.partner-mark)::before {
   content: '·';
-  margin-left: var(--space-2);
+  display: inline-block;
+  width: var(--meta-sep);
   color: var(--line-strong);
+  text-align: center;
+}
+
+/* Kein Punkt zwischen Partner-Merkmal und Art - dort genügt der Abstand. */
+.partner-card-meta > .partner-mark + span {
+  margin-left: 0;
+}
+
+.partner-card-meta > .partner-mark + span::before {
+  content: none;
 }
 
 .partner-card-distance {

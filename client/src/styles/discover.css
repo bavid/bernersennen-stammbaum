@@ -11,6 +11,16 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* Audit V7a: Einleitung, Orts-Zeile und Reiter gehören zusammen - vorher stand zwischen ihnen je der volle Seitenabstand
+   (gut 70 px). Jetzt: Linie unter dem Kopf, etwas Luft, die Orts-Zeile, eng darunter die Reiter. */
+.discover-page > .page-hero {
+  margin-bottom: calc(var(--space-5) - var(--page-gap));
+}
+
+.discover-page > .location-picker-box {
+  margin-bottom: calc(var(--space-3) - var(--page-gap));
+}
+
 /* Innen liegender Fokusring auch gegen die Fokusregel der Seite weiter unten (a/button:focus-visible). */
 .discover-page .tab-bar-tab:focus-visible {
   outline-offset: -3px;
@@ -380,6 +390,11 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* Ein Foto allein: so breit wie zwei der kleinen (Audit V7a). */
+.partner-discover-einblicke.is-single {
+  grid-template-columns: minmax(0, 12.5rem);
 }
 
 .partner-discover-einblicke figure {

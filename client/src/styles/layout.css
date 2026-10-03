@@ -369,10 +369,13 @@
 }
 
 .page {
+  /* Abstand der Abschnitte einer Seite - als Variable, damit eng zusammengehörige Teile ihn gezielt verkleinern können
+     (z. B. Ort und Reiter in "Entdecken", discover.css). */
+  --page-gap: clamp(var(--space-8), 4vw, var(--space-12));
   display: grid;
   /* minmax(0, …): breite Inhalte (Stammbaum) scrollen in sich, statt die Seite zu verbreitern */
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(var(--space-8), 4vw, var(--space-12));
+  gap: var(--page-gap);
 }
 
 .page-loading {

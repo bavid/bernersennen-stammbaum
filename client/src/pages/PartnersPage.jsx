@@ -84,7 +84,7 @@ export default function PartnersPage({ family = null }) {
       <div className="partners-hero">
         <span className="eyebrow">Partner</span>
         <h1>Unsere Partner</h1>
-        <p className="page-lede">Tierheime, Vermittlungsstellen und Hundeschulen, die mit uns zusammenarbeiten.</p>
+        <p className="page-lede">Tierheime, Vermittlungsstellen, Hundeschulen, Salons und Betreuung, die mit uns zusammenarbeiten.</p>
       </div>
 
       <LocationPicker

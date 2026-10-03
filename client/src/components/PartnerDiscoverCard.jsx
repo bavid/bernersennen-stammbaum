@@ -116,10 +116,11 @@ function NextTermin({ termin }) {
 }
 
 // Einblicke als drei kleine Fotos mit Datum - nur öffentliche Fotos, in der Kundensicht auch die eigenen über /uploads.
+// Ein einzelnes Foto steht größer da (is-single, Audit V7a) - allein in Briefmarken-Größe wirkte es verloren.
 function EinblickStrip({ partner, einblicke }) {
   if (einblicke.length === 0) return null
   return (
-    <ul className="partner-discover-einblicke" aria-label={`Einblicke bei ${partner.name}`}>
+    <ul className={`partner-discover-einblicke${einblicke.length === 1 ? ' is-single' : ''}`} aria-label={`Einblicke bei ${partner.name}`}>
       {einblicke.map((einblick) => (
         <li key={einblick.id}>
           <figure>
