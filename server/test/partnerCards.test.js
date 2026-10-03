@@ -12,7 +12,8 @@ const ADMIN_TEST_PASSWORD = 'admin-test-partner-cards-1'
 const dataDir = useTempDataDir('partner-cards', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 
 const PORTAL_TEXT = 'Kleine Gruppen, viel Geduld und jede Menge Leckerli – so arbeiten wir mit euren Hunden.'
-const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x00, 0x00, 0xff, 0xd9])
+// Lesbares JPEG mit Maßen - Einblicke prüfen das vor dem Veröffentlichen (lib/photoUpload.js assertPublishablePhoto).
+const { TINY_JPEG: JPEG } = require('./imageFixtures')
 const HAMBURG = { lat: 53.5511, lon: 9.9937 }
 
 test('Partner-Karten in Entdecken: Anzeigen, Reihenfolge, Einblicke und Anpinnen', async (t) => {

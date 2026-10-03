@@ -35,8 +35,8 @@ const EXPECTED_TEXTS = {
   [SONNENHANG]: ['Tag der offenen Tür im Tierheim', 'Neue Kuschelecke im Katzenhaus']
 }
 
-// Kleinstes gültiges JPEG (wie test/einblicke.test.js) - für den echten Einblick per Upload.
-const TINY_JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xda, 0x00, 0x05, 0x00, 0x01, 0x02, 0x12, 0x34, 0xff, 0xd9])
+// Kleinstes lesbares JPEG (test/imageFixtures.js) - für den echten Einblick per Upload.
+const { TINY_JPEG } = require('./imageFixtures')
 
 function localToday() {
   const now = new Date()

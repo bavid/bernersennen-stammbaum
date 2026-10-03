@@ -4,6 +4,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { hashPassword } = require('../lib/adminAuth')
 const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = require('./helpers')
+const { jpegSegment, sof0 } = require('./imageFixtures')
 
 // Phase P Task 3b: Einblicke - Fotos mit Datum auf dem Portal eines Partners (/api/partner-area/einblicke,
 // öffentliches Portal, teaserFoto, /public-media, Admin-Ausblenden, Demo-Aufräumen). t.test() bleibt auf
@@ -14,25 +15,32 @@ const dataDir = useTempDataDir('einblicke', { LOGIN_RATE_LIMIT: '300', CODE_RATE
 const PORTAL_TEXT = 'Wir zeigen euch hier, wie es bei uns im Training, im Park und auf dem Übungsplatz zugeht.'
 const CONSENT_MESSAGE = 'Bitte bestätigt die Einwilligung der Halterinnen und Halter.'
 
-function jpegSegment(marker, payload) {
-  const length = Buffer.alloc(2)
-  length.writeUInt16BE(payload.length + 2, 0)
-  return Buffer.concat([Buffer.from([0xff, marker]), length, payload])
+// Synthetisches JPEG mit APP1-Exif-Segment (wie test/uploadAccess.test.js), dazu SOF0 mit den Maßen (Audit V7a: Einblicke
+// prüfen Maße und übrige Metadaten wie die Bannerfotos, lib/photoUpload.js assertPublishablePhoto).
+function jpegWithExif({ width = 1600, height = 900 } = {}) {
+  return Buffer.concat([
+    Buffer.from([0xff, 0xd8]),
+    jpegSegment(0xe1, Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), Buffer.from([0x4d, 0x4d, 0x00, 0x2a, 0, 0, 0, 8, 0xca, 0xfe])])),
+    sof0(width, height),
+    jpegSegment(0xda, Buffer.from([0x00, 0x01, 0x02])),
+    Buffer.from([0x12, 0x34, 0x56]),
+    Buffer.from([0xff, 0xd9])
+  ])
 }
 
-// Synthetisches JPEG mit APP1-Exif-Segment (wie test/uploadAccess.test.js).
-const JPEG_WITH_EXIF = Buffer.concat([
-  Buffer.from([0xff, 0xd8]),
-  jpegSegment(0xe1, Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), Buffer.from([0x4d, 0x4d, 0x00, 0x2a, 0, 0, 0, 8, 0xca, 0xfe])])),
-  jpegSegment(0xda, Buffer.from([0x00, 0x01, 0x02])),
-  Buffer.from([0x12, 0x34, 0x56]),
-  Buffer.from([0xff, 0xd9])
-])
+const JPEG_WITH_EXIF = jpegWithExif()
 
 function pngChunk(type, data) {
   const length = Buffer.alloc(4)
   length.writeUInt32BE(data.length, 0)
   return Buffer.concat([length, Buffer.from(type, 'ascii'), data, Buffer.alloc(4)])
+}
+
+function ihdr(width, height) {
+  const data = Buffer.alloc(13)
+  data.writeUInt32BE(width, 0)
+  data.writeUInt32BE(height, 4)
+  return pngChunk('IHDR', data)
 }
 
 // WebP (RIFF....WEBP) und GIF - gültige Signaturen, aber für Einblicke nicht erlaubt (keine Metadaten-Entfernung).
@@ -42,7 +50,7 @@ const TYPE_MESSAGE = 'Bitte als JPG oder PNG hochladen.'
 
 const PNG_WITH_TEXT = Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  pngChunk('IHDR', Buffer.alloc(13)),
+  ihdr(1200, 800),
   pngChunk('tEXt', Buffer.from('Comment\0Aufnahmeort geheim', 'latin1')),
   pngChunk('IDAT', Buffer.from([4, 5, 6])),
   pngChunk('IEND', Buffer.alloc(0))
@@ -224,6 +232,36 @@ test('Einblicke: Partner zeigen Fotos mit Datum auf ihrem Portal', async (t) => 
     form.append('file', new Blob([GIF_BYTES], { type: 'image/gif' }), 'tier.gif')
     const general = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Cookie: cookie }, body: form })
     assert.equal(general.status, 201)
+  })
+
+  await t.test('Audit V7a: wie Bannerfotos - riesige Maße, unlesbare Dateien und nicht entfernbare Metadaten -> 400 ohne Datei', async () => {
+    const { cookie } = await createPartnerArea()
+    const before = uploadFiles()
+    const huge = await postEinblick(cookie, { foto: jpegWithExif({ width: 30000, height: 30000 }) })
+    assert.equal(huge.status, 400)
+    assert.match(huge.data.error, /höchstens 8000 × 8000 Pixel/)
+    const tooManyPixels = await postEinblick(cookie, { foto: jpegWithExif({ width: 8000, height: 6000 }) })
+    assert.equal(tooManyPixels.status, 400, 'mehr als 40 Megapixel')
+    // Ohne SOF-Segment (keine Maße) bzw. mit kaputtem Segment: nicht lesbar.
+    const noSize = Buffer.concat([Buffer.from([0xff, 0xd8]), jpegSegment(0xda, Buffer.from([0x00, 0x01, 0x02])), Buffer.from([0xff, 0xd9])])
+    const broken = Buffer.concat([Buffer.from([0xff, 0xd8]), jpegSegment(0xe1, Buffer.from('Exif\0\0GPS', 'latin1')), Buffer.from([0x00, 0x00, 0x00])])
+    for (const foto of [noSize, broken]) {
+      const res = await postEinblick(cookie, { foto })
+      assert.equal(res.status, 400)
+      assert.match(res.data.error, /lässt sich nicht lesen/)
+    }
+    // Ohne Scan (EOI direkt nach SOF) behält der Entferner das Original samt Exif ("fail open") - die Prüfung lehnt ab.
+    const exifKept = Buffer.concat([
+      Buffer.from([0xff, 0xd8]),
+      jpegSegment(0xe1, Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), Buffer.from([0x4d, 0x4d, 0x00, 0x2a])])),
+      sof0(800, 600),
+      Buffer.from([0xff, 0xd9])
+    ])
+    const leftover = await postEinblick(cookie, { foto: exifKept })
+    assert.equal(leftover.status, 400)
+    assert.match(leftover.data.error, /ließen sich nicht entfernen/)
+    assert.deepEqual(uploadFiles(), before, 'jede Ablehnung räumt die Datei weg')
+    assert.deepEqual((await get('/api/partner-area/einblicke', cookie)).data, [])
   })
 
   await t.test('höchstens 60 Einblicke: der 61. -> 409, keine Datei', async () => {

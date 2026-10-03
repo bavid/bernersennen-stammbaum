@@ -7,6 +7,7 @@ const {
   createPhotoUpload,
   stripMetadataInPlace,
   hasMatchingSignature,
+  assertPublishablePhoto,
   removeUploadedFile,
   removeUploadByUrl,
   MAX_FILE_BYTES
@@ -85,6 +86,8 @@ router.post('/', denyDemoWrites, uploadLimiter, requireFreeDisk, rejectWhenFull,
       const { datum, text } = validateNewEinblick(req.body)
       if (!hasMatchingSignature(req.file, EINBLICK_EXTS)) throw httpError(400, TYPE_MESSAGE)
       stripMetadataInPlace(req.file)
+      // Audit V7a: dieselbe Prüfung wie bei den Bannerfotos - lesbar, nicht zu groß, keine Metadaten übrig.
+      assertPublishablePhoto(req.file)
       const einblick = insertEinblick({ partner: req.partner, fotoUrl: `/uploads/${req.file.filename}`, datum, text })
       res.status(201).json(ownEinblick(einblick))
     } catch (err) {

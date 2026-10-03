@@ -10,7 +10,8 @@ const ADMIN_TEST_PASSWORD = 'admin-test-partner-preview-1'
 const dataDir = useTempDataDir('partner-preview', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 
 const PORTAL_TEXT = 'So sieht es bei uns aus: kleine Gruppen, viel Geduld und jede Menge Leckerli für alle.'
-const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x00, 0x00, 0xff, 0xd9])
+// Lesbares JPEG mit Maßen - Einblicke prüfen das vor dem Veröffentlichen (lib/photoUpload.js assertPublishablePhoto).
+const { TINY_JPEG: JPEG } = require('./imageFixtures')
 
 test('Kundensicht: Vorschau-Daten für Portal, Entdecken und Steckbrief', async (t) => {
   process.env.ADMIN_PASSWORD_HASH = await hashPassword(ADMIN_TEST_PASSWORD)

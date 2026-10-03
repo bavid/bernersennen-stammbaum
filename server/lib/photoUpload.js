@@ -11,6 +11,7 @@ const multer = require('multer')
 const rateLimit = require('express-rate-limit')
 const { uploadDir, uploadRateLimit } = require('../config')
 const { detectImageExt } = require('./partners')
+const { inspectImage } = require('./imageInspect')
 const { stripJpegMetadata } = require('./stripJpegMetadata')
 const { stripPngMetadata } = require('./stripPngMetadata')
 
@@ -109,6 +110,32 @@ function hasMatchingSignature(file, allowedExts = Object.values(EXTENSION_BY_MIM
   }
 }
 
+// security-review V4b (Bannerfotos), seit Audit V7a auch für Einblicke: öffentliche Fotos stehen auf dem Portal - riesige
+// Maße (wenige Bytes, aber Gigabytes im Browser) und nicht entfernbare Metadaten (Aufnahmeort) werden abgelehnt. Aufruf
+// NACH stripMetadataInPlace: die Stripper behalten bei unerwarteter Struktur das Original ("fail open") - was dann noch
+// Metadaten trägt oder sich nicht lesen lässt, wird hier abgelehnt statt veröffentlicht (lib/imageInspect.js).
+const MAX_PUBLIC_SIDE = 8000
+const MAX_PUBLIC_PIXELS = 40_000_000
+const UNREADABLE_MESSAGE = 'Dieses Foto lässt sich nicht lesen – bitte als JPG oder PNG neu speichern.'
+const TOO_LARGE_MESSAGE = `Das Foto ist zu groß – höchstens ${MAX_PUBLIC_SIDE} × ${MAX_PUBLIC_SIDE} Pixel.`
+const METADATA_MESSAGE = 'Die Foto-Daten (z. B. der Aufnahmeort) ließen sich nicht entfernen – bitte das Foto neu speichern.'
+
+function badPhoto(message) {
+  const err = new Error(message)
+  err.status = 400
+  return err
+}
+
+// Wirft einen 400-Fehler (err.status), wenn das gespeicherte Foto nicht veröffentlicht werden darf.
+function assertPublishablePhoto(file) {
+  const info = inspectImage(fs.readFileSync(filePathOf(file)))
+  if (!info) throw badPhoto(UNREADABLE_MESSAGE)
+  if (info.width > MAX_PUBLIC_SIDE || info.height > MAX_PUBLIC_SIDE || info.width * info.height > MAX_PUBLIC_PIXELS) {
+    throw badPhoto(TOO_LARGE_MESSAGE)
+  }
+  if (info.metadata) throw badPhoto(METADATA_MESSAGE)
+}
+
 function removeUploadedFile(file) {
   if (file?.filename) fs.rmSync(filePathOf(file), { force: true })
 }
@@ -125,6 +152,7 @@ module.exports = {
   createPhotoUpload,
   stripMetadataInPlace,
   hasMatchingSignature,
+  assertPublishablePhoto,
   removeUploadedFile,
   removeUploadByUrl
 }
