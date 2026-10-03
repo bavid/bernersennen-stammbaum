@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  splitLitters,
   addMatingPath,
   ageBucket,
   buildLitters,
@@ -151,5 +152,27 @@ describe('hasSiblingLitters und addMatingPath (Familienbande 2)', () => {
   test('der Weg zum offenen Formular, auf Wunsch mit vorgewählter Hündin', () => {
     expect(addMatingPath()).toBe('/wuerfe?verpaarung=neu')
     expect(addMatingPath(29)).toBe('/wuerfe?verpaarung=neu&mutter=29')
+  })
+})
+
+describe('splitLitters (Nachwuchs-Seite kürzer)', () => {
+  const litter = (key, birthDate) => ({ key, birthDate, puppies: [] })
+  const litters = [litter('a', '2025-03-21'), litter('b', '2023-02-14'), litter('c', '2020-11-03'), litter('d', '2020-04-09'), litter('e', '2017-06-18')]
+
+  test('die zwei neuesten sofort, die älteren erst mit "Mehr anzeigen" - Reihenfolge bleibt', () => {
+    const { visible, hidden } = splitLitters(litters, { today: '2026-08-01' })
+    expect(visible.map((item) => item.key)).toEqual(['a', 'b'])
+    expect(hidden.map((item) => item.key)).toEqual(['c', 'd', 'e'])
+  })
+
+  test('ein älterer Wurf mit baldigem Geburtstag bleibt sichtbar ("Treffen planen")', () => {
+    const { visible, hidden } = splitLitters(litters, { today: '2026-10-20' })
+    expect(visible.map((item) => item.key)).toEqual(['a', 'b', 'c'])
+    expect(hidden.map((item) => item.key)).toEqual(['d', 'e'])
+  })
+
+  test('wenige Würfe: nichts verborgen', () => {
+    expect(splitLitters(litters.slice(0, 2), { today: '2026-08-01' }).hidden).toEqual([])
+    expect(splitLitters([], { today: '2026-08-01' })).toEqual({ visible: [], hidden: [] })
   })
 })

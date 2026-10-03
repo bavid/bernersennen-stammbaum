@@ -427,6 +427,23 @@
   gap: var(--space-2);
 }
 
+/* Am Handy steht „Als Admin ansehen“ unter dem Kopf statt daneben - sonst blieben dem Kopf gut 170 px und die vier
+   Zähler stapelten sich einzeln untereinander (jeder Bereich fast eine halbe Bildschirmhöhe). */
+@media (max-width: 560px) {
+  .admin-family-row {
+    flex-wrap: wrap;
+    padding-right: 0;
+  }
+
+  .admin-family-row .admin-family-head {
+    flex-basis: 100%;
+  }
+
+  .admin-family-view {
+    margin: 0 var(--space-5) var(--space-4);
+  }
+}
+
 .admin-details {
   display: grid;
   gap: var(--space-6);

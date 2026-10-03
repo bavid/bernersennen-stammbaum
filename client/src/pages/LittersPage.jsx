@@ -16,7 +16,8 @@ import {
   MATING_REQUEST_VALUE,
   buildLitters,
   latestEntries,
-  photosByAge
+  photosByAge,
+  splitLitters
 } from '../lib/litters.js'
 import { hasRole } from '../lib/roles.js'
 import { displayName, shortName } from '../lib/timeline.js'
@@ -100,6 +101,17 @@ export default function LittersPage({ family }) {
   const withSiblings = litters.filter((litter) => litter.puppies.length > 1)
   const singles = litters.filter((litter) => litter.puppies.length === 1)
   const latest = useMemo(() => latestEntries(entries), [entries])
+  // Zuerst die neuesten Würfe (und ältere mit baldigem Geburtstag), der Rest auf "Mehr anzeigen" - danach rückt der
+  // Fokus auf die erste nachgeladene Karte.
+  const [showAllLitters, setShowAllLitters] = useState(false)
+  const firstRevealed = useRef(null)
+  const split = splitLitters(withSiblings)
+  const shownLitters = showAllLitters ? withSiblings : split.visible
+  const firstHiddenKey = split.hidden[0]?.key
+
+  useEffect(() => {
+    if (showAllLitters) firstRevealed.current?.focus()
+  }, [showAllLitters])
 
   // Wurf-Geburtstag: Zettel für die Pinnwand vorbereiten
   function planMeeting(litter, birthday) {
@@ -164,7 +176,7 @@ export default function LittersPage({ family }) {
       )}
 
       <div className="litter-list">
-        {withSiblings.map((litter) => (
+        {shownLitters.map((litter) => (
           <LitterCard
             key={litter.key}
             litter={litter}
@@ -172,8 +184,14 @@ export default function LittersPage({ family }) {
             stages={photosByAge(litter, entries)}
             onPlanMeeting={planMeeting}
             onOpenPhoto={setPhoto}
+            cardRef={showAllLitters && litter.key === firstHiddenKey ? firstRevealed : undefined}
           />
         ))}
+        {!showAllLitters && split.hidden.length > 0 && (
+          <button type="button" className="btn btn-ghost litter-more" onClick={() => setShowAllLitters(true)}>
+            Mehr anzeigen ({split.hidden.length} {split.hidden.length === 1 ? 'weiterer' : 'weitere'})
+          </button>
+        )}
       </div>
 
       {singles.length > 0 && (

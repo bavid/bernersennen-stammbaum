@@ -163,3 +163,59 @@ describe('LittersPage im Berner-Auftritt: unverändert', () => {
     expect(container.querySelector('.back-link')).toBeNull()
   })
 })
+
+// Lange-Seiten-Durchgang: fünf Wurf-Karten mit Fotoreihen füllten am Handy fast acht Bildschirme - zuerst die neuesten.
+describe('LittersPage: ältere Würfe hinter "Mehr anzeigen"', () => {
+  // Geburtstage gut ein halbes Jahr entfernt - so kündigt keine Karte einen baldigen Geburtstag an.
+  const bornYearsAgo = (years) => {
+    const date = new Date(Date.now() + 180 * 86400000)
+    date.setUTCFullYear(date.getUTCFullYear() - years)
+    return date.toISOString().slice(0, 10)
+  }
+  const pair = (id, years) => [
+    dog(id, `Welpe ${id}a`, { mother_dog_id: 1, father_dog_id: 2, geburtsdatum: bornYearsAgo(years) }),
+    dog(id + 1, `Welpe ${id}b`, { geschlecht: 'ruede', mother_dog_id: 1, father_dog_id: 2, geburtsdatum: bornYearsAgo(years) })
+  ]
+  const manyDogs = [dog(1, 'Frieda', { geburtsdatum: '2010-01-01' }), dog(2, 'Anton', { geschlecht: 'ruede', geburtsdatum: '2010-01-01' }), ...pair(10, 1), ...pair(20, 3), ...pair(30, 5), ...pair(40, 7)]
+
+  async function renderMany() {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    api.listDogs.mockResolvedValue(manyDogs)
+    api.listAllDogs.mockResolvedValue(manyDogs)
+    api.listBreedingEvents.mockResolvedValue([])
+    api.listTimeline.mockResolvedValue([])
+    await act(async () =>
+      root.render(
+        <MemoryRouter initialEntries={['/wuerfe']}>
+          <ThemeProvider themeId="standard">
+            <LittersPage family={family} />
+          </ThemeProvider>
+        </MemoryRouter>
+      )
+    )
+  }
+
+  const titles = () => [...container.querySelectorAll('.litter-card')].map((card) => card.querySelector('.litter-siblings').textContent)
+
+  test('zwei neueste sofort, "Mehr anzeigen (2 weitere)" zeigt den Rest und setzt den Fokus auf die erste neue Karte', async () => {
+    await renderMany()
+    expect(container.querySelectorAll('.litter-card')).toHaveLength(2)
+    expect(titles()[0]).toContain('Welpe 10a')
+    const more = button('Mehr anzeigen (2 weitere)')
+    expect(more).not.toBeUndefined()
+
+    await act(async () => more.click())
+
+    expect(container.querySelectorAll('.litter-card')).toHaveLength(4)
+    expect(button('Mehr anzeigen (2 weitere)')).toBeUndefined()
+    expect(document.activeElement).toBe(container.querySelectorAll('.litter-card')[2])
+    expect(titles()[3]).toContain('Welpe 40a')
+  })
+
+  test('bis zu zwei Würfe: kein "Mehr anzeigen"', async () => {
+    await render('standard')
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.startsWith('Mehr anzeigen'))).toBe(false)
+  })
+})

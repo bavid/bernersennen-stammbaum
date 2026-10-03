@@ -3,10 +3,8 @@ import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { ageText, formatDateLong, relativeTime } from '../lib/dates.js'
-import { YOUNG_STAGE_KEY, nextLitterBirthday } from '../lib/litters.js'
+import { LITTER_BIRTHDAY_SOON_DAYS, YOUNG_STAGE_KEY, nextLitterBirthday } from '../lib/litters.js'
 import { displayName } from '../lib/timeline.js'
-
-const BIRTHDAY_SOON_DAYS = 30
 
 function Parent({ parent, role }) {
   if (!parent) return <span className="litter-parent is-unknown">{role} unbekannt</span>
@@ -57,15 +55,16 @@ function Sibling({ dog, latest }) {
 
 // Ein Wurf: Eltern, Geschwister mit ihrem Neuesten, Fotos im gleichen Alter, Deckakt und Geburtstag - die Wörter
 // je Auftritt (Phase U: Standard "Nachwuchs"/"Verpaarung"/"Ganz klein", Berner "Wurf"/"Deckakt"/"Als Welpen").
-export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOpenPhoto }) {
+// cardRef: "Mehr anzeigen" auf der Nachwuchs-Seite setzt den Fokus auf die erste nachgeladene Karte (tabIndex -1).
+export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOpenPhoto, cardRef }) {
   const { words } = useTheme()
   const birthday = nextLitterBirthday(litter.birthDate)
-  const soon = birthday && birthday.daysUntil <= BIRTHDAY_SOON_DAYS
+  const soon = birthday && birthday.daysUntil <= LITTER_BIRTHDAY_SOON_DAYS
   const title = litter.birthDate ? `${words.litter} vom ${formatDateLong(litter.birthDate)}` : `${words.litter} (Geburtstag unbekannt)`
   const count = litter.puppies.length
 
   return (
-    <article className="litter-card" aria-label={title}>
+    <article ref={cardRef} className="litter-card" aria-label={title} tabIndex={cardRef ? -1 : undefined}>
       <header className="litter-head">
         <div>
           <h2 className="litter-title">{title}</h2>

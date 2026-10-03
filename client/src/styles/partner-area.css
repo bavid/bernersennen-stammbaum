@@ -639,6 +639,57 @@
   margin-top: var(--space-2);
 }
 
+/* Am Handy eine Zeile je Einblick (Foto links, Text und Knöpfe rechts) statt einer großen Karte - mit bis zu 60
+   Einblicken wurde der Reiter sonst endlos (je Foto gut 450 px). */
+@media (max-width: 640px) {
+  .einblick-card {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .einblick-photo {
+    flex: 0 0 6.5rem;
+    aspect-ratio: auto;
+    min-height: 6.5rem;
+  }
+
+  .einblick-hidden-badge {
+    top: auto;
+    right: var(--space-1);
+    bottom: var(--space-1);
+    left: var(--space-1);
+    justify-content: center;
+    padding: 0.15rem var(--space-1);
+    font-size: 0.62rem;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .einblick-body {
+    min-width: 0;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .einblick-text {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--text-sm);
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  .einblick-actions {
+    gap: var(--space-1) var(--space-2);
+    margin-top: var(--space-1);
+  }
+
+  .einblick-actions .btn {
+    min-height: 2.25rem;
+    padding: 0 var(--space-3);
+    font-size: var(--text-xs);
+  }
+}
+
 .einblick-actions .btn {
   min-height: 2.2rem;
   padding: 0 var(--space-4);

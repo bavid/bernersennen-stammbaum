@@ -133,6 +133,29 @@ export function nextLitterBirthday(birthDate, today = todayIso()) {
   return { date, age: year - by, daysUntil: daysBetween(today, date) }
 }
 
+// So viele Tage vorher kündigt eine Wurf-Karte den Geburtstag an ("Treffen planen", LitterCard).
+export const LITTER_BIRTHDAY_SOON_DAYS = 30
+// Die Nachwuchs-Seite zeigt zuerst die neuesten Würfe - fünf Karten mit Fotoreihen füllten am Handy fast acht Bildschirme.
+export const LITTERS_SHOWN = 2
+
+export function isLitterBirthdaySoon(birthDate, today = todayIso()) {
+  const birthday = nextLitterBirthday(birthDate, today)
+  return Boolean(birthday) && birthday.daysUntil <= LITTER_BIRTHDAY_SOON_DAYS
+}
+
+// Welche Wurf-Karten gleich zu sehen sind: die ersten `shown` (neueste zuerst, wie buildLitters sortiert) und jeder
+// ältere Wurf, dessen Geburtstag bald ist - sonst verschwände "Treffen planen" hinter "Mehr anzeigen". Die Reihenfolge
+// bleibt; hidden ist, was erst "Mehr anzeigen" zeigt.
+export function splitLitters(litters, { shown = LITTERS_SHOWN, today = todayIso() } = {}) {
+  const visible = []
+  const hidden = []
+  litters.forEach((litter, index) => {
+    if (index < shown || isLitterBirthdaySoon(litter.birthDate, today)) visible.push(litter)
+    else hidden.push(litter)
+  })
+  return { visible, hidden }
+}
+
 // Gibt es Geschwister (mindestens zwei Tiere mit gleichen Eltern und gleichem Geburtstag)? Auch sie öffnen auf der
 // Familienbande "Stammbaum & Nachwuchs" (Familienbande 2).
 export function hasSiblingLitters(dogs, breedingEvents) {
