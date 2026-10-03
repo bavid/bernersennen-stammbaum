@@ -581,7 +581,7 @@ describe('AdminPartners – Bannerfotos (Audit V7a)', () => {
     await act(async () => remove.click())
     expect(mocks.deletePartnerBanner).not.toHaveBeenCalled()
     await act(async () => items()[0].querySelector('button').click())
-    expect(mocks.deletePartnerBanner).toHaveBeenCalledWith(2, 1)
+    expect(mocks.deletePartnerBanner).toHaveBeenCalledWith(2, 1, bannerList[0].fotoUrl)
     expect(items()).toHaveLength(1)
     expect(items()[0].textContent).toContain('ohne Alternativtext')
   })
@@ -599,6 +599,23 @@ describe('AdminPartners – Bannerfotos (Audit V7a)', () => {
     await act(async () => button().click())
     expect(container.querySelector('.admin-partner-banner [role="alert"]').textContent).toBe('Dieses Bannerfoto gibt es nicht')
     expect(container.querySelectorAll('.admin-banner-foto')).toHaveLength(1)
+  })
+
+  test('hat sich das Foto inzwischen geändert (409), kommt die aktuelle Liste samt Meldung', async () => {
+    partners.mockResolvedValue([activePartner])
+    einblicke.mockResolvedValue([])
+    mocks.partnerBanner.mockResolvedValueOnce({ banner: bannerList }).mockResolvedValueOnce({ banner: [{ ...bannerList[1], position: 1 }] })
+    mocks.deletePartnerBanner.mockRejectedValue(Object.assign(new Error('Das Foto an dieser Stelle hat sich inzwischen geändert'), { status: 409 }))
+    await render()
+
+    await act(async () => buttonByText('Fotos').click())
+    const button = () => container.querySelector('.admin-banner-foto button')
+    await act(async () => button().click())
+    await act(async () => button().click())
+    expect(container.querySelector('.admin-partner-banner [role="alert"]').textContent).toContain('hat sich inzwischen geändert')
+    expect(mocks.partnerBanner).toHaveBeenCalledTimes(2)
+    expect(container.querySelectorAll('.admin-banner-foto')).toHaveLength(1)
+    expect(container.querySelector('.admin-banner-foto').textContent).toContain('ohne Alternativtext')
   })
 
   test('ein Partner ohne Bannerfotos: "Keine Bannerfotos."', async () => {

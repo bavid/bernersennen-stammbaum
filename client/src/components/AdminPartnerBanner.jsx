@@ -29,14 +29,19 @@ export default function AdminPartnerBanner({ partnerId }) {
     }
   }, [partnerId])
 
-  async function remove(position) {
+  // Mit dem gesehenen Foto: hat der Partner es inzwischen ersetzt (409), kommt die aktuelle Liste und die Meldung.
+  async function remove(foto) {
     setError(null)
     setBusy(true)
     try {
-      const data = await api.admin.deletePartnerBanner(partnerId, position)
+      const data = await api.admin.deletePartnerBanner(partnerId, foto.position, foto.fotoUrl)
       setBanner(Array.isArray(data?.banner) ? data.banner : [])
     } catch (err) {
       setError(err.message)
+      if (err.status === 409) {
+        const data = await api.admin.partnerBanner(partnerId).catch(() => null)
+        if (Array.isArray(data?.banner)) setBanner(data.banner)
+      }
     } finally {
       setBusy(false)
     }
@@ -66,7 +71,7 @@ export default function AdminPartnerBanner({ partnerId }) {
                 <span className="admin-einblick-text">{foto.alt || <span className="muted">ohne Alternativtext</span>}</span>
               </span>
               <ConfirmButton
-                onConfirm={() => remove(foto.position)}
+                onConfirm={() => remove(foto)}
                 label="Entfernen"
                 confirmLabel="Wirklich entfernen?"
                 ariaLabel={`Bannerfoto ${foto.position} entfernen`}

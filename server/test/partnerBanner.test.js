@@ -294,7 +294,12 @@ test('Bannerfotos und Ansprechperson im Portal-Kopf', async (t) => {
     assert.equal(fs.existsSync(fileOf(one.fotoUrl)), true)
 
     const logBefore = db.prepare("SELECT COUNT(*) AS c FROM admin_log WHERE aktion = 'bannerfoto-entfernt'").get().c
-    const removed = await del(`${adminBanner}/1`, adminCookie)
+    // Mit dem gesehenen Foto (?foto=): passt es nicht mehr zur Stelle, 409 und nichts gelöscht.
+    const stale = await del(`${adminBanner}/1?foto=${path.basename(two.fotoUrl)}`, adminCookie)
+    assert.equal(stale.status, 409)
+    assert.match(stale.data.error, /hat sich inzwischen geändert/)
+    assert.equal(fs.existsSync(fileOf(one.fotoUrl)), true)
+    const removed = await del(`${adminBanner}/1?foto=${path.basename(one.fotoUrl)}`, adminCookie)
     assert.equal(removed.status, 200)
     assert.deepEqual(removed.data.banner, [{ ...two, position: 1 }], 'das zweite rückt nach')
     assert.equal(fs.existsSync(fileOf(one.fotoUrl)), false, 'Datei entfernt')

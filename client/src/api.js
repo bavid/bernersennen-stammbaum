@@ -301,8 +301,12 @@ export const api = {
     termine: (partnerId) => request(`/admin/termine?${new URLSearchParams({ partnerId: String(partnerId) }).toString()}`),
     // Audit V7a: Bannerfotos eines Partners ({ banner }) und einzelne entfernen (server/routes/adminBanner.js).
     partnerBanner: (partnerId) => request(`/admin/partners/${encodeURIComponent(partnerId)}/banner`),
-    deletePartnerBanner: (partnerId, position) =>
-      request(`/admin/partners/${encodeURIComponent(partnerId)}/banner/${encodeURIComponent(position)}`, { method: 'DELETE' }),
+    // fotoUrl: das gesehene Foto - hat es sich inzwischen geändert, antwortet der Server 409 statt ein anderes zu löschen.
+    deletePartnerBanner: (partnerId, position, fotoUrl) =>
+      request(
+        `/admin/partners/${encodeURIComponent(partnerId)}/banner/${encodeURIComponent(position)}?${new URLSearchParams({ foto: String(fotoUrl || '').split('/').pop() }).toString()}`,
+        { method: 'DELETE' }
+      ),
     setTerminAusgeblendet: (id, ausgeblendet) => request(`/admin/termine/${id}/ausblenden`, json('POST', { ausgeblendet })),
     deleteTermin: (id) => request(`/admin/termine/${id}`, { method: 'DELETE' }),
     uploadPartnerLogo: (id, file) => {

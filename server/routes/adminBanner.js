@@ -1,3 +1,4 @@
+const path = require('node:path')
 const express = require('express')
 const db = require('../db')
 const config = require('../config')
@@ -15,6 +16,7 @@ const { NOT_FOUND_MESSAGE, parsePosition, ownBanner, listBanner, deleteBanner } 
 const router = express.Router()
 
 const PARTNER_NOT_FOUND = 'Diesen Partner gibt es nicht'
+const CHANGED_MESSAGE = 'Das Foto an dieser Stelle hat sich inzwischen geändert – bitte die Liste neu laden.'
 const partnerExistsStmt = db.prepare('SELECT 1 FROM partners WHERE id = ?')
 
 router.use((req, res, next) => {
@@ -37,10 +39,15 @@ router.get('/partners/:id/banner', requireAdmin, (req, res) => {
   sendList(res, partnerId)
 })
 
+// ?foto=<Dateiname> (optional): das Foto, das der Admin gesehen hat. Hat der Partner es inzwischen ersetzt oder ist ein
+// anderes nachgerückt, entfernt die Position sonst ein anderes Foto - dann 409 statt Löschen.
 router.delete('/partners/:id/banner/:position', requireAdmin, (req, res) => {
   const partnerId = findPartnerId(req)
   if (!partnerId) return res.status(404).json({ error: PARTNER_NOT_FOUND })
   const position = parsePosition(req.params.position)
+  const expected = typeof req.query.foto === 'string' ? req.query.foto : null
+  const current = position ? listBanner(partnerId).find((row) => row.position === position) : null
+  if (expected && current && path.basename(current.foto_url) !== expected) return res.status(409).json({ error: CHANGED_MESSAGE })
   const removedUrl = position ? deleteBanner(partnerId, position) : null
   if (!removedUrl) return res.status(404).json({ error: NOT_FOUND_MESSAGE })
   removeUploadByUrl(removedUrl)
