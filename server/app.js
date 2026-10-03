@@ -19,6 +19,7 @@ const adminStatsRoutes = require('./routes/adminStats')
 const adminAnfragenRoutes = require('./routes/adminAnfragen')
 const adminNotifyRoutes = require('./routes/adminNotify')
 const adminTermineRoutes = require('./routes/adminTermine')
+const adminBannerRoutes = require('./routes/adminBanner')
 const adminHinweiseRoutes = require('./routes/adminHinweise')
 const adminServerRoutes = require('./routes/adminServer')
 const hinweiseRoutes = require('./routes/hinweise')
@@ -182,6 +183,8 @@ function createApp() {
   app.use('/api/admin', adminAnfragenRoutes)
   app.use('/api/admin', adminNotifyRoutes)
   app.use('/api/admin', adminTermineRoutes)
+  // Audit V7a: einzelne Bannerfotos eines Partners entfernen.
+  app.use('/api/admin', adminBannerRoutes)
   app.use('/api/admin', adminHinweiseRoutes)
   // Phase G Task 6: Admin-Reiter „Server“ (Speicher, Platte, Last, Verlauf) - nur lesend, no-store.
   app.use('/api/admin', adminServerRoutes)

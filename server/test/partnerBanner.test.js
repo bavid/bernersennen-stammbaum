@@ -276,4 +276,36 @@ test('Bannerfotos und Ansprechperson im Portal-Kopf', async (t) => {
     assert.equal((await del(`${BANNER}/1`, viewCookie)).status, 403)
     assert.deepEqual(uploadedFiles(), before)
   })
+
+  await t.test('Audit V7a: der Admin sieht die Bannerfotos eines Partners und entfernt einzelne - protokolliert, Datei weg', async () => {
+    const salon = await createPartnerArea({ name: 'Hundesalon Uferweg', slug: 'hundesalon-uferweg', typ: 'hundesalon' })
+    const one = (await sendPhoto(BANNER, salon.cookie, { alt: 'Erstes Foto' })).data.banner[0]
+    const two = (await sendPhoto(BANNER, salon.cookie, { alt: 'Zweites Foto' })).data.banner[1]
+    const adminBanner = `/api/admin/partners/${salon.partner.id}/banner`
+
+    assert.equal((await get(adminBanner)).status, 401, 'ohne Admin-Sitzung')
+    assert.equal((await get(adminBanner, salon.cookie)).status, 401, 'der Partner selbst ist kein Admin')
+    const list = await get(adminBanner, adminCookie)
+    assert.equal(list.status, 200)
+    assert.deepEqual(list.data.banner, [one, two])
+    assert.equal((await get('/api/admin/partners/999999/banner', adminCookie)).status, 404)
+    assert.equal((await del('/api/admin/partners/abc/banner/1', adminCookie)).status, 404)
+    assert.equal((await del(`${adminBanner}/1`, salon.cookie)).status, 401)
+    assert.equal(fs.existsSync(fileOf(one.fotoUrl)), true)
+
+    const logBefore = db.prepare("SELECT COUNT(*) AS c FROM admin_log WHERE aktion = 'bannerfoto-entfernt'").get().c
+    const removed = await del(`${adminBanner}/1`, adminCookie)
+    assert.equal(removed.status, 200)
+    assert.deepEqual(removed.data.banner, [{ ...two, position: 1 }], 'das zweite rückt nach')
+    assert.equal(fs.existsSync(fileOf(one.fotoUrl)), false, 'Datei entfernt')
+    const log = db.prepare("SELECT aktion, ziel FROM admin_log WHERE aktion = 'bannerfoto-entfernt' ORDER BY id DESC LIMIT 1").get()
+    assert.deepEqual(log, { aktion: 'bannerfoto-entfernt', ziel: `partner:${salon.partner.id}` })
+    assert.equal(db.prepare("SELECT COUNT(*) AS c FROM admin_log WHERE aktion = 'bannerfoto-entfernt'").get().c, logBefore + 1)
+
+    // Partner und Portal sehen den neuen Stand; unbekannte Stellen 404 ohne Protokoll-Eintrag.
+    assert.deepEqual((await get(BANNER, salon.cookie)).data.banner, [{ ...two, position: 1 }])
+    assert.deepEqual((await get(`/api/public/partners/${salon.partner.slug}`)).data.banner.map((b) => b.alt), ['Zweites Foto'])
+    for (const position of ['2', '3', 'x']) assert.equal((await del(`${adminBanner}/${position}`, adminCookie)).status, 404)
+    assert.equal(db.prepare("SELECT COUNT(*) AS c FROM admin_log WHERE aktion = 'bannerfoto-entfernt'").get().c, logBefore + 1)
+  })
 })

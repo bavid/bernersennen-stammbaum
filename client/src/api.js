@@ -299,6 +299,10 @@ export const api = {
     setEinblickAngepinnt: (id, angepinnt) => request(`/admin/einblicke/${id}/anpinnen`, json('POST', { angepinnt })),
     // Phase V4a: Termine eines Partners (auch ausgeblendete), ausblenden/einblenden und löschen - beides im Protokoll.
     termine: (partnerId) => request(`/admin/termine?${new URLSearchParams({ partnerId: String(partnerId) }).toString()}`),
+    // Audit V7a: Bannerfotos eines Partners ({ banner }) und einzelne entfernen (server/routes/adminBanner.js).
+    partnerBanner: (partnerId) => request(`/admin/partners/${encodeURIComponent(partnerId)}/banner`),
+    deletePartnerBanner: (partnerId, position) =>
+      request(`/admin/partners/${encodeURIComponent(partnerId)}/banner/${encodeURIComponent(position)}`, { method: 'DELETE' }),
     setTerminAusgeblendet: (id, ausgeblendet) => request(`/admin/termine/${id}/ausblenden`, json('POST', { ausgeblendet })),
     deleteTermin: (id) => request(`/admin/termine/${id}`, { method: 'DELETE' }),
     uploadPartnerLogo: (id, file) => {

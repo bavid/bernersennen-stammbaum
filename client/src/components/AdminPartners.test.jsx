@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   partners: vi.fn(),
@@ -13,7 +13,9 @@ const mocks = vi.hoisted(() => ({
   renewPartnerAreaKey: vi.fn(),
   einblicke: vi.fn(),
   setEinblickAusgeblendet: vi.fn(),
-  setEinblickAngepinnt: vi.fn()
+  setEinblickAngepinnt: vi.fn(),
+  partnerBanner: vi.fn(),
+  deletePartnerBanner: vi.fn()
 }))
 const { partners, createPartner, updatePartner, deletePartner, uploadPartnerLogo, createPartnerArea, renewPartnerAreaKey, einblicke, setEinblickAusgeblendet } =
   mocks
@@ -474,17 +476,20 @@ describe('AdminPartners – Sperren', () => {
 })
 
 describe('AdminPartners – Einblicke', () => {
+  // Audit V7a: das Panel heißt "Fotos" und zeigt über den Einblicken die Bannerfotos.
+  beforeEach(() => mocks.partnerBanner.mockResolvedValue({ banner: [] }))
+
   const einblickList = [
     { id: 7, fotoUrl: '/uploads/11111111-2222-3333-4444-555555555555.jpg', datum: '2026-09-01', text: 'Welpenkurs im Park', ausgeblendet: false },
     { id: 8, fotoUrl: '/uploads/66666666-7777-8888-9999-000000000000.png', datum: '2026-08-15', text: null, ausgeblendet: true }
   ]
 
-  test('"Einblicke" klappt die Liste mit Vorschaubild, Datum und Text auf', async () => {
+  test('"Fotos" klappt die Einblicke mit Vorschaubild, Datum und Text auf', async () => {
     partners.mockResolvedValue([activePartner])
     einblicke.mockResolvedValue(einblickList)
     await render()
 
-    const toggle = buttonByText('Einblicke')
+    const toggle = buttonByText('Fotos')
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     await act(async () => toggle.click())
 
@@ -505,7 +510,7 @@ describe('AdminPartners – Einblicke', () => {
     setEinblickAusgeblendet.mockResolvedValue({ ...einblickList[0], ausgeblendet: true })
     await render()
 
-    await act(async () => buttonByText('Einblicke').click())
+    await act(async () => buttonByText('Fotos').click())
     const toggle = container.querySelector('.admin-einblick input[role="switch"]')
     expect(toggle.checked).toBe(false)
     await act(async () => toggle.click())
@@ -522,7 +527,7 @@ describe('AdminPartners – Einblicke', () => {
     mocks.setEinblickAngepinnt.mockResolvedValue({ ...einblickList[0], angepinntVon: 'admin' })
     await render()
 
-    await act(async () => buttonByText('Einblicke').click())
+    await act(async () => buttonByText('Fotos').click())
     const [first, hidden] = [...container.querySelectorAll('.admin-einblick')]
     expect(first.textContent).toContain('vom Partner angepinnt')
     const pin = first.querySelector('.admin-einblick-pin input[role="switch"]')
@@ -542,9 +547,67 @@ describe('AdminPartners – Einblicke', () => {
     setEinblickAusgeblendet.mockRejectedValue(new Error('Diesen Einblick gibt es nicht'))
     await render()
 
-    await act(async () => buttonByText('Einblicke').click())
+    await act(async () => buttonByText('Fotos').click())
     await act(async () => container.querySelector('.admin-einblick input[role="switch"]').click())
 
     expect(container.querySelector('.admin-partner-einblicke [role="alert"]').textContent).toBe('Diesen Einblick gibt es nicht')
+  })
+})
+
+describe('AdminPartners – Bannerfotos (Audit V7a)', () => {
+  const bannerList = [
+    { position: 1, fotoUrl: '/uploads/aaaaaaaa-1111-2222-3333-444444444444.jpg', alt: 'Welpen auf der Wiese' },
+    { position: 2, fotoUrl: '/uploads/bbbbbbbb-1111-2222-3333-444444444444.png', alt: null }
+  ]
+
+  test('"Fotos" zeigt die Bannerfotos; "Entfernen" fragt nach und entfernt ein einzelnes Foto', async () => {
+    partners.mockResolvedValue([activePartner])
+    einblicke.mockResolvedValue([])
+    mocks.partnerBanner.mockResolvedValue({ banner: bannerList })
+    mocks.deletePartnerBanner.mockResolvedValue({ banner: [{ ...bannerList[1], position: 1 }] })
+    await render()
+
+    await act(async () => buttonByText('Fotos').click())
+    expect(mocks.partnerBanner).toHaveBeenCalledWith(2)
+    const items = () => [...container.querySelectorAll('.admin-banner-foto')]
+    expect(items()).toHaveLength(2)
+    expect(items()[0].querySelector('img').getAttribute('src')).toBe(bannerList[0].fotoUrl)
+    expect(items()[0].textContent).toContain('Foto 1')
+    expect(items()[0].textContent).toContain('Welpen auf der Wiese')
+    expect(items()[1].textContent).toContain('ohne Alternativtext')
+
+    const remove = items()[0].querySelector('button')
+    expect(remove.getAttribute('aria-label')).toBe('Bannerfoto 1 entfernen')
+    await act(async () => remove.click())
+    expect(mocks.deletePartnerBanner).not.toHaveBeenCalled()
+    await act(async () => items()[0].querySelector('button').click())
+    expect(mocks.deletePartnerBanner).toHaveBeenCalledWith(2, 1)
+    expect(items()).toHaveLength(1)
+    expect(items()[0].textContent).toContain('ohne Alternativtext')
+  })
+
+  test('ohne Bannerfotos ein ruhiger Hinweis, ein Fehler beim Entfernen erscheint als Alert', async () => {
+    partners.mockResolvedValue([activePartner])
+    einblicke.mockResolvedValue([])
+    mocks.partnerBanner.mockResolvedValue({ banner: [bannerList[0]] })
+    mocks.deletePartnerBanner.mockRejectedValue(new Error('Dieses Bannerfoto gibt es nicht'))
+    await render()
+
+    await act(async () => buttonByText('Fotos').click())
+    const button = () => container.querySelector('.admin-banner-foto button')
+    await act(async () => button().click())
+    await act(async () => button().click())
+    expect(container.querySelector('.admin-partner-banner [role="alert"]').textContent).toBe('Dieses Bannerfoto gibt es nicht')
+    expect(container.querySelectorAll('.admin-banner-foto')).toHaveLength(1)
+  })
+
+  test('ein Partner ohne Bannerfotos: "Keine Bannerfotos."', async () => {
+    partners.mockResolvedValue([activePartner])
+    einblicke.mockResolvedValue([])
+    mocks.partnerBanner.mockResolvedValue({ banner: [] })
+    await render()
+
+    await act(async () => buttonByText('Fotos').click())
+    expect(container.querySelector('.admin-partner-banner').textContent).toContain('Keine Bannerfotos.')
   })
 })

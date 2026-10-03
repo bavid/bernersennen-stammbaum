@@ -22,6 +22,8 @@ const AKTION = Object.freeze({
   terminAusgeblendet: 'termin-ausgeblendet',
   terminEingeblendet: 'termin-eingeblendet',
   terminGeloescht: 'termin-geloescht',
+  // Audit V7a: ein Bannerfoto eines Partners entfernt (routes/adminBanner.js), ziel 'partner:<id>'.
+  bannerfotoEntfernt: 'bannerfoto-entfernt',
   // Phase N Task 5: ein globaler Hinweis angelegt, geändert, ein- bzw. ausgeschaltet oder gelöscht
   // (routes/adminHinweise.js), ziel 'hinweis:<id>' - nie Titel oder Text.
   hinweisAngelegt: 'hinweis-angelegt',

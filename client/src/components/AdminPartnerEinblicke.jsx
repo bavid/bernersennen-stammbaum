@@ -47,6 +47,8 @@ export default function AdminPartnerEinblicke({ partnerId, id }) {
 
   return (
     <div className="admin-partner-einblicke" id={id}>
+      {/* Audit V7a: steht im Panel "Fotos" unter den Bannerfotos (AdminPartnerRow). */}
+      <h4 className="admin-partner-photos-title">Einblicke</h4>
       {error && (
         <div className="error-banner" role="alert">
           {error}

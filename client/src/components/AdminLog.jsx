@@ -12,6 +12,8 @@ const AKTION_LABELS = {
   'termin-ausgeblendet': 'Termin ausgeblendet',
   'termin-eingeblendet': 'Termin wieder eingeblendet',
   'termin-geloescht': 'Termin gelöscht',
+  // Audit V7a: ein Bannerfoto eines Partners entfernt (server/routes/adminBanner.js, ziel 'partner:<id>').
+  'bannerfoto-entfernt': 'Bannerfoto entfernt',
   // Phase N Task 5: globale Hinweise (server/routes/adminHinweise.js, ziel 'hinweis:<id>').
   'hinweis-angelegt': 'Hinweis angelegt',
   'hinweis-geaendert': 'Hinweis geändert',
