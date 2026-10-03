@@ -65,6 +65,14 @@
   }
 }
 
+/* Audit V7a: unter 360 px passen beide Knöpfe nur mit der Ersatzschrift nebeneinander - nach dem Laden der Webschrift
+   brachen sie um und schoben die Seite 39 px nach unten (Layout-Shift 0,15). Hier gleich untereinander. */
+@media (max-width: 359px) {
+  .demo-banner > .btn {
+    flex-basis: 100%;
+  }
+}
+
 /* Admin-Ansicht (Phase 5 Task 5b): dasselbe Band, aber in Tinte statt Rost - unverkennbar kein Demo-Hinweis. */
 .admin-view-banner {
   background: var(--ink);
