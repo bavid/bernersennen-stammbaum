@@ -138,7 +138,9 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
               <p className="muted">{copy.lede}</p>
             </div>
 
-            {mode !== 'recover' && (
+            {/* Audit V7a: nicht, solange der Schlüssel steht - der erscheint nur einmal, ein Klick auf „Anmelden“ hätte
+                ihn ungesichert weggeräumt (angemeldet ist man da schon). */}
+            {mode !== 'recover' && !showingKeyReveal && (
               <div className="segmented login-switch" role="group" aria-label="Modus">
                 <button type="button" aria-pressed={mode === 'login'} onClick={() => switchMode('login')}>
                   Anmelden

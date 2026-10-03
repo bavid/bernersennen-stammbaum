@@ -267,6 +267,12 @@ describe('LoginPage – Hinweis unter dem Schlüssel (Audit V7a)', () => {
     expect(container.textContent).not.toContain('Wer euch die Karte gegeben hat')
     expect(container.textContent).toContain('nur ihr kennt ihn')
   })
+
+  test('solange der Schlüssel steht, kein Umschalter „Anmelden | Gutschein einlösen“ - er erscheint nur einmal', async () => {
+    await redeemWith(false)
+    expect(container.querySelector('.key-reveal-value')).not.toBeNull()
+    expect(container.querySelector('.login-switch')).toBeNull()
+  })
 })
 
 describe('LoginPage – Wiederherstellung', () => {
