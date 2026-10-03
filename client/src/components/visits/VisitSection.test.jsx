@@ -63,6 +63,8 @@ describe('VisitSection (Phase V2)', () => {
     await render()
     expect(container.textContent).toContain('Jemanden in mein Zuhause einladen')
     expect(container.textContent).toContain('Ein anderes Zuhause besuchen')
+    // Audit V7a: "Erlebt mit" wird einmal erklärt (beim Einlösen), nicht in beiden Absätzen
+    expect(container.textContent.split('„Erlebt mit“').length - 1).toBe(1)
     expect(container.querySelector('#visit-list-besuche').parentElement.textContent).toContain('Zuhause Möwenweg')
     expect(container.querySelector('#visit-list-gaeste').parentElement.textContent).toContain('Zuhause Heidekamp')
   })

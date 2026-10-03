@@ -30,10 +30,12 @@
   color: var(--ink-soft);
 }
 
+/* Audit V7a: derselbe Abstand wie zwischen den übrigen Teilen des Einladen-Dialogs (.invite) - vorher klebte
+   „Ein anderes Zuhause besuchen“ am Knopf darüber. */
 .visit-section {
   display: grid;
-  gap: var(--space-5);
-  padding-top: var(--space-5);
+  gap: var(--space-6);
+  padding-top: var(--space-6);
   border-top: 1px solid var(--line);
 }
 
