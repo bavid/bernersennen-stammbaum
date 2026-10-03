@@ -58,6 +58,14 @@
   gap: var(--space-4);
 }
 
+/* Phase V4b: "Deine Nachricht geht an Anna Berg von …" - eine ruhige Zeile über dem Formular. */
+.contact-partner-intro {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .contact-partner-success {
   display: flex;
   align-items: flex-start;

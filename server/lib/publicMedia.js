@@ -85,6 +85,15 @@ const einblickPhotoStmt = db.prepare(`
   WHERE e.foto_url = @url AND e.ausgeblendet = 0 AND ${PUBLIC_PARTNER_SQL}
 `)
 
+// Bannerfotos (Phase V4b, lib/partnerBanner.js): das Foto im Kopf des Portals eines öffentlich sichtbaren Partners -
+// derselbe PUBLIC_PARTNER_SQL wie bei den Einblicken. Pausiert, Entwurf oder gesperrt -> 404. idx_partner_banner_foto
+// (db.js) trägt die Suche.
+const bannerPhotoStmt = db.prepare(`
+  SELECT 1 FROM partner_banner b
+  JOIN partners p ON p.id = b.partner_id
+  WHERE b.foto_url = @url AND ${PUBLIC_PARTNER_SQL}
+`)
+
 function canServePublicMedia(filename) {
   if (!FILENAME_RE.test(filename)) return false
 
@@ -95,6 +104,7 @@ function canServePublicMedia(filename) {
   if (storyConsentDogPhotoStmt.get(params)) return true
   if (storyConsentEntryPhotoStmt.get(params)) return true
   if (einblickPhotoStmt.get(params)) return true
+  if (bannerPhotoStmt.get(params)) return true
   return false
 }
 

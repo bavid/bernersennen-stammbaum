@@ -6,6 +6,7 @@
 // Züchter-Schutz) - hier kommt nur dazu, WELCHE Felder ein Partner selbst ändern darf.
 
 const { validatePartner } = require('./partners')
+const { ownBanner } = require('./partnerBanner')
 
 const MIN_PORTAL_TEXT_LENGTH = 40
 
@@ -33,6 +34,8 @@ const PROFILE_COLUMNS = Object.freeze({
   kontaktTelefon: ['kontakt_telefon'],
   kontaktFormularUrl: ['kontakt_formular_url'],
   kontaktformularAktiv: ['kontaktformular_aktiv'],
+  // Phase V4b: Name der Ansprechperson auf dem Portal.
+  ansprechperson: ['ansprechperson'],
   plz: ['plz', 'ort', 'lat', 'lon']
 })
 
@@ -59,7 +62,8 @@ function completeness(partner, { einblickCount } = {}) {
 }
 
 // Das eigene Profil in camelCase (wie die Eingabe von PUT /profile), dazu Status, Sperre und Vollständigkeit.
-function profileResponse(partner, { einblickCount } = {}) {
+// banner: die Zeilen aus lib/partnerBanner.js listBanner (Phase V4b) - fehlt die Angabe, ist die Liste leer.
+function profileResponse(partner, { einblickCount, banner = [] } = {}) {
   return {
     id: partner.id,
     slug: partner.slug,
@@ -82,7 +86,9 @@ function profileResponse(partner, { einblickCount } = {}) {
     portalTitel: partner.portal_titel,
     portalText: partner.portal_text,
     farbe: partner.farbe,
+    ansprechperson: partner.ansprechperson ?? null,
     logoUrl: partner.logo_file ? `/partner-media/${partner.logo_file}` : null,
+    banner: banner.map(ownBanner),
     vollstaendig: completeness(partner, { einblickCount })
   }
 }

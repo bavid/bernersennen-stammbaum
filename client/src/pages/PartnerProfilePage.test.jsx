@@ -237,6 +237,26 @@ describe('PartnerProfilePage – Angaben', () => {
     expect(button('Speichern').disabled).toBe(true)
   })
 
+  test('Phase V4b: die Ansprechperson steht im Kontakt-Teil und speichert wie jedes Feld', async () => {
+    updateProfile.mockResolvedValue({ ...baseProfile, ansprechperson: 'Greta Lindner' })
+    await render()
+
+    const input = container.querySelector('#profile-ansprechperson')
+    expect(input.getAttribute('maxlength')).toBe('80')
+    expect(input.closest('fieldset').querySelector('legend').textContent).toBe('Kontakt')
+    expect(document.getElementById('profile-ansprechperson-hint').textContent).toContain('neben ‚Schreib uns‘')
+    await act(async () => setInputValue(input, ' Greta Lindner '))
+    await act(async () => container.querySelector('.partner-profile-form').requestSubmit())
+    expect(updateProfile).toHaveBeenCalledWith({ ansprechperson: 'Greta Lindner' })
+  })
+
+  test('Phase V4b: die Bannerfotos stehen als eigener Abschnitt über dem Formular', async () => {
+    await render({ data: { ...baseProfile, banner: [{ position: 1, fotoUrl: '/uploads/kopf.jpg', alt: 'Wiese' }] } })
+    const panel = container.querySelector('#partner-profile-panel-angaben')
+    expect(panel.firstElementChild.classList.contains('partner-banner-editor')).toBe(true)
+    expect(panel.querySelector('.partner-banner-thumb').getAttribute('src')).toBe('/uploads/kopf.jpg')
+  })
+
   test('der Portal-Text zählt mit und nennt die 40 Zeichen fürs Veröffentlichen', async () => {
     await render()
 

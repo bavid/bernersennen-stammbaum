@@ -22,6 +22,19 @@ export function hasPortalContact(partner) {
   return hasForm || hasFormUrl || hasDetails
 }
 
+// Phase V4b: die Ansprechperson (reiner Text, höchstens 80 Zeichen) - neutral "Ansprechperson: Anna Berg".
+function ContactPerson({ name }) {
+  if (typeof name !== 'string' || !name.trim()) return null
+  return (
+    <p className="partner-portal-contact-person">
+      <Icon name="users" />
+      <span>
+        Ansprechperson: <strong>{name.trim()}</strong>
+      </span>
+    </p>
+  )
+}
+
 // Kontakt-Abschnitt des Portals (/p/:slug): oben die Wege, Kontakt aufzunehmen - "Schreib uns" (Phase P2,
 // Nachricht ins Postfach des Partners, nur wenn der Server kontaktformular meldet) und das eigene
 // Kontaktformular des Partners (extern) -, darunter Website, E-Mail und Telefon - nur, was hinterlegt ist.
@@ -35,6 +48,7 @@ export default function PortalContact({ partner }) {
   return (
     <PortalSection id={PORTAL_CONTACT_ID} title="Kontakt">
       <div className="card partner-portal-contact">
+        <ContactPerson name={partner.ansprechperson} />
         {(hasForm || hasFormUrl) && (
           <div className="partner-portal-contact-actions">
             {hasForm && <ContactPartnerButton partner={partner} />}

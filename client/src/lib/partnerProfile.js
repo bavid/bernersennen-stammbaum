@@ -7,6 +7,8 @@ export const MIN_PORTAL_TEXT_LENGTH = 40
 export const MAX_PORTAL_TEXT_LENGTH = 2000
 export const MAX_NAME_LENGTH = 120
 export const MAX_TITEL_LENGTH = 120
+// Phase V4b: Name der Ansprechperson auf dem Portal (server lib/partners.js MAX_ANSPRECHPERSON_LENGTH).
+export const MAX_ANSPRECHPERSON_LENGTH = 80
 
 export const LOCKED_HINT = 'Euer Profil ist gesperrt – bitte meldet euch beim Betreiber.'
 // Der Demo-Hinweis liegt seit Phase 5 Task 5b zentral in lib/demo.js (neben dem der Admin-Ansicht).
@@ -41,6 +43,7 @@ const TEXT_FIELDS = [
   'kontaktEmail',
   'kontaktTelefon',
   'kontaktFormularUrl',
+  'ansprechperson',
   'plz'
 ]
 
@@ -80,6 +83,7 @@ const PROFILE_ERROR_FIELDS = [
   [/^Die E-Mail-Adresse /, 'kontaktEmail'],
   [/^Die Telefonnummer /, 'kontaktTelefon'],
   [/^Kontaktformular-Link:/, 'kontaktFormularUrl'],
+  [/^Die Ansprechperson /, 'ansprechperson'],
   [/^Diese Postleitzahl /, 'plz']
 ]
 

@@ -44,6 +44,14 @@ describe('changedProfileFields', () => {
     expect(changedProfileFields(form, profile)).toEqual({ portalTitel: 'Willkommen!', kontaktformularAktiv: false })
   })
 
+  test('Phase V4b: die Ansprechperson gehört zu den Profilfeldern', () => {
+    expect(profileForm(profile).ansprechperson).toBe('')
+    const form = { ...profileForm(profile), ansprechperson: ' Anna Berg ' }
+    expect(changedProfileFields(form, profile)).toEqual({ ansprechperson: 'Anna Berg' })
+    const withPerson = { ...profile, ansprechperson: 'Anna Berg' }
+    expect(changedProfileFields({ ...profileForm(withPerson), ansprechperson: '' }, withPerson)).toEqual({ ansprechperson: null })
+  })
+
   test('ein geleertes Feld geht als null (löscht es auf dem Server)', () => {
     const form = { ...profileForm(profile), website: '   ' }
     expect(changedProfileFields(form, profile)).toEqual({ website: null })
@@ -63,6 +71,8 @@ describe('profileErrorField – Server-Meldung zum Feld', () => {
     ['Die E-Mail-Adresse ist ungültig', 'kontaktEmail'],
     ['Die Telefonnummer ist ungültig', 'kontaktTelefon'],
     ['Kontaktformular-Link: ungültige Adresse', 'kontaktFormularUrl'],
+    ['Die Ansprechperson darf höchstens 80 Zeichen haben', 'ansprechperson'],
+    ['Die Ansprechperson darf nur reinen Text enthalten (kein HTML)', 'ansprechperson'],
     ['Diese Postleitzahl kennen wir nicht', 'plz']
   ])('%s -> %s', (message, field) => {
     expect(profileErrorField(message)).toBe(field)

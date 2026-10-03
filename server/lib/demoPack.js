@@ -403,6 +403,17 @@ function removeDemoEinblicke(db, previousPartnerIds) {
   return fotoUrls
 }
 
+// Phase V4b: wie removeDemoEinblicke für die Bannerfotos (partner_banner) - die Demo-Bannerfotos (is_demo = 1) und
+// jedes Bannerfoto eines alten Demo-Partners. Gibt die Foto-Adressen zurück; die Dateien entfernt replaceDemoPack erst
+// nach der Transaktion.
+function removeDemoBanner(db, previousPartnerIds) {
+  const placeholders = previousPartnerIds.map(() => '?').join(', ')
+  const where = previousPartnerIds.length ? `is_demo = 1 OR partner_id IN (${placeholders})` : 'is_demo = 1'
+  const fotoUrls = db.prepare(`SELECT foto_url FROM partner_banner WHERE ${where}`).all(...previousPartnerIds).map((row) => row.foto_url)
+  db.prepare(`DELETE FROM partner_banner WHERE ${where}`).run(...previousPartnerIds)
+  return fotoUrls
+}
+
 // Nur Fotos, die nach dem Aufräumen kein Einblick mehr nutzt (Verteidigungslinie - Einblick-Fotos werden
 // sonst nirgends geteilt).
 function unusedEinblickPhotos(db, fotoUrls) {
@@ -521,6 +532,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     if (name !== undefined) packOptions.name = name
     const rudelResult = createDemoPack(db, packOptions)
     const removedEinblickPhotos = removeDemoEinblicke(db, previousPartnerIds)
+    const removedBannerPhotos = removeDemoBanner(db, previousPartnerIds)
 
     // families.partner_id / vouchers.partner_id / voucher_batches.partner_id sind reine INTEGER-Spalten
     // ohne REFERENCES (siehe db.js) - das Löschen unten scheitert also nie an einem Fremdschlüssel.
@@ -592,6 +604,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       discover: discoverResult,
       partnerContent,
       removedEinblickPhotos,
+      removedBannerPhotos,
       visits: visitsResult
     }
   })
@@ -606,10 +619,13 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     for (const file of newPromotionImages) fs.rmSync(path.join(mediaDir, file), { force: true })
     throw err
   }
-  const { created, household, members, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos, visits } = built
+  const { created, household, members, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos, removedBannerPhotos, visits } =
+    built
 
   for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
   removeUploads(uploadDir, unusedEinblickPhotos(db, removedEinblickPhotos))
+  // Bannerfotos sind immer eigene Kopien (copyImage.copyOwn) - nichts anderes nutzt sie.
+  removeUploads(uploadDir, removedBannerPhotos)
 
   // Die alten Demo-Familien sind jetzt vollständig durch neue ersetzt (auch das Tierheim, is_demo=1,
   // art='tierheim', gehört dazu und steckt schon in previous) - dog_transfers-Zeilen, die noch auf eine
@@ -633,6 +649,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     partnerIds,
     partnerAreas: partnerAreas.areas,
     einblicke: partnerAreas.einblicke,
+    banner: partnerAreas.banner,
     promotionIds: discover.promotionIds,
     partnerPostIds: partnerContent.postIds,
     messages: partnerContent.messages,

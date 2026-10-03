@@ -14,7 +14,9 @@ const DEMO_PARTNERS = [
       'Wir kümmern uns um Hunde, Katzen und andere Tiere, die ein neues Zuhause suchen. Bei uns bekommt jedes Tier Zeit, Pflege und ganz viel Zuwendung, bis es bei seiner neuen Familie ankommt.\n\n' +
       'Schau gerne vorbei, wirf einen Blick auf unsere Tiere in Vermittlung oder unterstütze unsere Arbeit mit einer Spende.',
     spendenUrl: 'https://example.org/tierheim-sonnenhang/spenden',
-    vermittlungUrl: 'https://example.org/tierheim-sonnenhang/tiere'
+    vermittlungUrl: 'https://example.org/tierheim-sonnenhang/tiere',
+    // Phase V4b: Ansprechperson auf dem Portal und im Kontaktformular (fiktiv).
+    ansprechperson: 'Tom Weiden'
   },
   {
     slug: 'hundeschule-pfotenglueck',
@@ -25,7 +27,8 @@ const DEMO_PARTNERS = [
     farbe: '#1f5f8b',
     portalText:
       'Wir bieten Welpenkurse und Hundetraining für Familien aus der Region an – vom ersten „Sitz" bis zum entspannten Spaziergang im Alltag.',
-    website: 'https://example.org/pfotenglueck'
+    website: 'https://example.org/pfotenglueck',
+    ansprechperson: 'Anna Berg'
   },
   {
     // Phase P1 Task 4: ein Hundesalon mit eigenem Demo-Partner-Bereich und Einblicken (seed/demo-partner-area.js).
@@ -44,6 +47,7 @@ const DEMO_PARTNERS = [
       'Salon ganz entspannt wird.',
     kontaktEmail: 'salon@example.org',
     website: 'https://example.org/wuschelglueck',
+    ansprechperson: 'Jule Sommer',
     // V-Fehler 3: vertrauenswürdig - Änderungen an freigegebenen Beiträgen gehen ohne neue Prüfung online.
     vertrauenswuerdig: true
   },

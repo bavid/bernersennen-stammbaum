@@ -29,6 +29,11 @@ function withoutKeys(object, keys) {
   return Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key)))
 }
 
+function contactIntro(partner) {
+  const person = typeof partner.ansprechperson === 'string' ? partner.ansprechperson.trim() : ''
+  return person ? `Deine Nachricht geht an ${person} von ${partner.name}.` : null
+}
+
 function nachrichtHint(length) {
   const minimum = length < MIN_NACHRICHT_LENGTH ? ` · mindestens ${MIN_NACHRICHT_LENGTH}` : ''
   return `${length} / ${MAX_NACHRICHT_LENGTH} Zeichen${minimum}`
@@ -48,6 +53,7 @@ export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
   const [sending, setSending] = useState(false)
   const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
   const bind = (key, { hint } = {}) => fieldProps(IDS[key], { error: fieldErrors[key], hint })
+  const intro = contactIntro(partner)
 
   function update(patch) {
     setForm((current) => ({ ...current, ...patch }))
@@ -87,6 +93,8 @@ export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
 
   return (
     <form ref={formRef} className="contact-partner-form form-stack" onSubmit={handleSubmit} noValidate>
+      {/* Phase V4b: an wen die Nachricht geht - nur mit Ansprechperson (den Partner nennt schon der Titel des Dialogs). */}
+      {intro && <p className="contact-partner-intro">{intro}</p>}
       {sent && (
         <p className="contact-partner-success" role="status">
           <Icon name="check" />

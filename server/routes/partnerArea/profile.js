@@ -4,6 +4,8 @@ const { denyDemoWrites } = require('../../middleware/auth')
 const { profileResponse, validateProfileUpdate, completeness } = require('../../lib/partnerProfile')
 const { handlePartnerLogoUpload } = require('../../lib/partnerLogo')
 const { countVisibleEinblicke } = require('../../lib/einblicke')
+const { listBanner } = require('../../lib/partnerBanner')
+const bannerRoutes = require('./banner')
 
 // Phase P Task 3a: das eigene Profil im Partner-Bereich - lesen, ändern, Logo, veröffentlichen/pausieren.
 // Läuft hinter middleware/partnerArea.js requirePartnerArea (req.partner ist gesetzt).
@@ -16,8 +18,11 @@ const findPartner = db.prepare('SELECT * FROM partners WHERE id = ?')
 
 // Die Empfehlung "mindestens ein Einblick" zählt nur sichtbare (nicht vom Admin ausgeblendete) Einblicke.
 function sendProfile(res, partnerId) {
-  res.json(profileResponse(findPartner.get(partnerId), { einblickCount: countVisibleEinblicke(partnerId) }))
+  res.json(profileResponse(findPartner.get(partnerId), { einblickCount: countVisibleEinblicke(partnerId), banner: listBanner(partnerId) }))
 }
+
+// Phase V4b: Bannerfotos für den Kopf des Portals (routes/partnerArea/banner.js).
+router.use('/banner', bannerRoutes)
 
 router.get('/', (req, res) => {
   sendProfile(res, req.partner.id)

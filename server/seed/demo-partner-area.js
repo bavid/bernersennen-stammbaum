@@ -49,6 +49,17 @@ const EINBLICKE = [
   { partnerSlug: 'tierheim-sonnenhang', datum: '2026-08-08', text: 'Neue Kuschelecke im Katzenhaus', foto: 'katzenhaus.jpg' }
 ]
 
+// BANNER (Phase V4b, lib/partnerBanner.js): Bannerfotos für den Kopf des Portals, in dieser Reihenfolge (Position 1, 2) -
+// höchstens zwei je Partner, alt läuft durch dieselbe Prüfung wie im Partner-Bereich. Jedes Foto bekommt beim Anlegen
+// eine eigene Kopie (öffentlich über /public-media wie die Einblicke). Pfotenglück zeigt zwei, Wuschelglück und das
+// Tierheim je eins - der Tierschutzverein keins (so zeigt die Demo alle drei Köpfe).
+const BANNER = [
+  { partnerSlug: 'hundeschule-pfotenglueck', foto: 'welpenkurs.jpg', alt: 'Welpen toben über die Trainingswiese' },
+  { partnerSlug: 'hundeschule-pfotenglueck', foto: 'see.jpg', alt: 'Berner Sennenhund beim Wassertraining am See' },
+  { partnerSlug: 'hundesalon-wuschelglueck', foto: 'salon-sommerschnitt.jpg', alt: 'Frisch geschnittenes Sommerfell im Salon' },
+  { partnerSlug: 'tierheim-sonnenhang', foto: 'tierheim-alltag.jpg', alt: 'Golden Retriever schaut neugierig durchs Tor' }
+]
+
 // POSTS (Phase P2 Task 9): Beiträge der Demo-Partner - Felder wie bei POST /api/partner-area/posts, geprüft
 // mit derselben Prüfung (lib/partnerPosts.js validatePartnerPost: Bereich passend zum Partner-Typ, immer
 // "Anzeige", Züchter-Schutz, Link). freigabe: 'freigegeben', 'eingereicht' oder (V-Fehler 3) 'abgelehnt' - dann
@@ -268,4 +279,4 @@ const TERMINE = [
   }
 ]
 
-module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE }
+module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, BANNER, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE }

@@ -4,6 +4,7 @@ import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import PartnerStatusCard from '../components/PartnerStatusCard.jsx'
 import PartnerProfileForm from '../components/PartnerProfileForm.jsx'
+import PartnerBannerEditor from '../components/PartnerBannerEditor.jsx'
 import EinblickeEditor from '../components/EinblickeEditor.jsx'
 import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
 import PartnerTermineEditor from '../components/PartnerTermineEditor.jsx'
@@ -93,6 +94,11 @@ export default function PartnerProfilePage({ family }) {
     refreshProfile()
   }
 
+  // Phase V4b: jede Änderung an den Bannerfotos antwortet mit der ganzen Liste.
+  function handleBannerChange(banner) {
+    setProfile((current) => ({ ...current, banner }))
+  }
+
   function selectTab(key) {
     setTab(key)
     setOpenedTabs((current) => (current.includes(key) ? current : [...current, key]))
@@ -134,7 +140,8 @@ export default function PartnerProfilePage({ family }) {
               className="partner-profile-tabs"
               onSelect={selectTab}
             />
-            <Panel id="angaben" tab={tab}>
+            <Panel id="angaben" tab={tab} className="partner-profile-angaben">
+              <PartnerBannerEditor banner={profile.banner} onChange={handleBannerChange} />
               <PartnerProfileForm profile={profile} onSaved={setProfile} onLogoUploaded={handleLogoUploaded} />
             </Panel>
             <Panel id="einblicke" tab={tab}>

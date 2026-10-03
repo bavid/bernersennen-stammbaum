@@ -72,11 +72,13 @@ test('Demo-Partner-Bereiche: Einblicke, Wuschelglück, Demo als Partner, Ersetze
       .prepare('SELECT f.id, f.art, f.is_demo FROM families f JOIN partners p ON p.id = f.partner_id WHERE p.slug = ? ORDER BY f.id')
       .all(slug)
 
-  // Jede Datei im Upload-Ordner muss an einem Tier, Eintrag, Wurf oder Einblick hängen - und umgekehrt.
+  // Jede Datei im Upload-Ordner muss an einem Tier, Eintrag, Wurf, Einblick oder Bannerfoto hängen - und umgekehrt.
   function referencedUploadFiles() {
     const urls = [
       ...db.prepare('SELECT foto_url AS url FROM dogs WHERE foto_url IS NOT NULL').all().map((row) => row.url),
       ...db.prepare('SELECT foto_url AS url FROM partner_einblicke').all().map((row) => row.url),
+      // Phase V4b: Bannerfotos der Partner (partner_banner) - ebenfalls eigene Dateien im Upload-Ordner.
+      ...db.prepare('SELECT foto_url AS url FROM partner_banner').all().map((row) => row.url),
       ...db
         .prepare('SELECT foto_urls FROM timeline_entries UNION ALL SELECT foto_urls FROM breeding_events')
         .all()

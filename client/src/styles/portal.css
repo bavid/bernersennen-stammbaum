@@ -24,10 +24,11 @@
 /* Kopf: dunkle Fläche wie der Login - Logo, Meta-Zeile, Name, Unterzeile, Text und die Aktionen */
 
 .partner-portal-hero {
+  --hero-pad: clamp(var(--space-6), 5vw, var(--space-12));
   display: grid;
   gap: var(--space-6);
   justify-items: start;
-  padding: clamp(var(--space-6), 5vw, var(--space-12));
+  padding: var(--hero-pad);
   border-radius: var(--radius-lg);
   background-color: var(--hero-bg);
   background-image: radial-gradient(ellipse 70% 60% at 90% 0%, color-mix(in srgb, var(--rust) 45%, transparent), transparent 70%);
@@ -38,6 +39,48 @@
 .partner-portal-hero .partner-logo {
   max-height: 4rem;
   max-width: 10rem;
+}
+
+/* Phase V4b: Bannerfotos oben im Kopf (PortalBanner) - randlos bis an die Kanten der Kopf-Fläche. Das Seitenverhältnis
+   steht fest (3:1 am Desktop, 16:9 am Handy), der Platz ist vor dem Laden reserviert. Zwei Fotos stehen am Desktop
+   60/40 nebeneinander, am Handy wischt man waagerecht zum zweiten (das nächste lugt am Rand hervor). */
+.partner-portal-hero.has-banner {
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.portal-banner {
+  display: grid;
+  justify-self: stretch;
+  gap: 3px;
+  margin-inline: calc(-1 * var(--hero-pad));
+  aspect-ratio: 3 / 1;
+  background: color-mix(in srgb, var(--hero-text) 8%, transparent);
+}
+
+.portal-banner-double {
+  grid-template-columns: 3fr 2fr;
+}
+
+.portal-banner-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  object-fit: cover;
+}
+
+.portal-banner:focus-visible {
+  outline: 3px solid var(--tan);
+  outline-offset: -3px;
+}
+
+/* Das Logo ragt wie bei einem Profil über die Unterkante des Banners - auf heller Fläche, leicht abgesetzt. */
+.partner-portal-hero.has-banner .partner-logo {
+  position: relative;
+  margin-top: calc(-1 * var(--space-6));
+  translate: 0 -50%;
+  box-shadow: var(--shadow-raised);
 }
 
 .partner-portal-hero-text {
@@ -176,6 +219,23 @@
   margin-bottom: 0;
 }
 
+/* Phase V4b: "Ansprechperson: …" über den Wegen, Kontakt aufzunehmen. */
+.partner-portal-contact-person {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.partner-portal-contact-person svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  color: var(--rust);
+}
+
 /* Gutschein einlösen (PortalAction) */
 
 .partner-portal-action {
@@ -232,6 +292,31 @@
 @media (max-width: 720px) {
   .partner-portal-text {
     font-size: var(--text-base);
+  }
+
+  .portal-banner {
+    aspect-ratio: 16 / 9;
+  }
+
+  .portal-banner-double {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 88%;
+    aspect-ratio: auto;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .portal-banner-double::-webkit-scrollbar {
+    display: none;
+  }
+
+  .portal-banner-double .portal-banner-photo {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    scroll-snap-align: start;
   }
 
   .partner-portal-action {

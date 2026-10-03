@@ -337,6 +337,13 @@ export const api = {
       return request('/partner-area/profile/logo', { method: 'POST', body: formData })
     },
     publish: (aktiv) => request('/partner-area/profile/publish', json('POST', { aktiv })),
+    // Phase V4b: 1-2 Bannerfotos für den Kopf des Portals (server/routes/partnerArea/banner.js) - jede Antwort ist die
+    // eigene Liste { banner: [{ position, fotoUrl, alt }] }. formData: foto (nur JPG/PNG), alt (optional).
+    addBanner: (formData) => request('/partner-area/profile/banner', { method: 'POST', body: formData }),
+    replaceBanner: (position, formData) =>
+      request(`/partner-area/profile/banner/${encodeURIComponent(position)}/foto`, { method: 'PUT', body: formData }),
+    updateBannerAlt: (position, alt) => request(`/partner-area/profile/banner/${encodeURIComponent(position)}`, json('PUT', { alt })),
+    deleteBanner: (position) => request(`/partner-area/profile/banner/${encodeURIComponent(position)}`, { method: 'DELETE' }),
     einblicke: () => request('/partner-area/einblicke'),
     // formData: foto, datum (JJJJ-MM-TT), text, einwilligung ('true') - siehe EinblickForm.
     createEinblick: (formData) => request('/partner-area/einblicke', { method: 'POST', body: formData }),

@@ -8,6 +8,7 @@
 const db = require('../db')
 const { publicPartner } = require('./partners')
 const { listVisibleEinblicke, publicEinblick } = require('./einblicke')
+const { listBanner, publicBanner } = require('./partnerBanner')
 const { findDemoPartnerArea } = require('./partnerAreas')
 const { contactFormFlags } = require('./partnerMessages')
 const { publicTermine } = require('./partnerTermine')
@@ -32,7 +33,11 @@ function buildPortal(partner, { preview = false } = {}) {
     // Phase P2 Task 9: "Schreib uns" - true genau dann, wenn das Kontaktformular eine Nachricht annähme; ein
     // Demo-Partner zusätzlich kontaktformularDemo (lib/partnerMessages.js contactFormFlags).
     ...contactFormFlags(partner, { preview }),
+    // Phase V4b: Ansprechperson neben "Schreib uns" und im Kontaktformular - reiner Text, optional.
+    ansprechperson: partner.ansprechperson ?? null,
     farbe: partner.farbe,
+    // Phase V4b: 1-2 Bannerfotos für den Kopf (öffentlich über /public-media, in der Kundensicht über /uploads).
+    banner: listBanner(partner.id).map((row) => publicBanner(row, { preview })),
     // Phase T Task 6: der Client zeigt für Demo-Partner mit einem tatsächlich bestehenden Demo-Tierheim
     // zusätzlich "Demo als Tierheim ansehen" (PartnerPortalPage.jsx) - ohne extra Anfrage.
     ...(partner.is_demo && findShelterFamily.get(partner.id) ? { shelterDemo: true } : {}),

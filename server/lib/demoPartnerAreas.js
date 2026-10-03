@@ -15,10 +15,11 @@ const { VERLAUF_AKTION, recordPromotionEvent } = require('./promotionFreigabe')
 const { validateContactMessage, insertMessage } = require('./partnerMessages')
 const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
 const { MAX_ANGEPINNT, PIN_VON } = require('./einblickPins')
+const { MAX_BANNER, validateAlt, addBanner } = require('./partnerBanner')
 const { entdeckenAnzeigen, setReihenfolge, setInEntdecken } = require('./partnerPostOrder')
 const { validateTermin, insertTermin, addAbsage } = require('./partnerTermine')
 const { addDays, weekdayOf, nthWeekdayOf, expandTermin, maxSerieBis, berlinNow } = require('./terminSerien')
-const { PARTNER_AREA_SLUGS, EINBLICKE, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE } = require('../seed/demo-partner-area')
+const { PARTNER_AREA_SLUGS, EINBLICKE, BANNER, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE } = require('../seed/demo-partner-area')
 
 // Nur Demo-Partner (is_demo = 1): ein Seed-Eintrag darf nie an einem echten Partner landen.
 function findDemoPartner(db, slug, purpose) {
@@ -136,12 +137,34 @@ function insertDemoVoucherStacks(db, areas) {
   return counts
 }
 
+// Phase V4b: die Bannerfotos der Demo-Partner (seed/demo-partner-area.js BANNER) - erst alle prüfen (Partner, Anzahl,
+// Alternativtext wie im Partner-Bereich), dann der Reihe nach je eine eigene Kopie anlegen (lib/partnerBanner.js
+// addBanner: Position 1, 2 in Seed-Reihenfolge). Läuft wie die Einblicke NACH insertDemoPartners und removeDemoBanner
+// (lib/demoPack.js). Gibt die Anzahl je Partner-Slug zurück.
+function insertDemoBanner(db, copyImage) {
+  const prepared = BANNER.map(({ partnerSlug, foto, alt }) => {
+    const partner = findDemoPartner(db, partnerSlug, `das Demo-Bannerfoto "${foto}"`)
+    try {
+      return { partner, foto, alt: validateAlt(alt) }
+    } catch (err) {
+      throw new Error(`Demo-Bannerfoto für "${partnerSlug}" ist ungültig: ${err.message}`)
+    }
+  })
+  const counts = {}
+  for (const { partner } of prepared) counts[partner.slug] = (counts[partner.slug] || 0) + 1
+  const overLimit = Object.keys(counts).find((slug) => counts[slug] > MAX_BANNER)
+  if (overLimit) throw new Error(`Demo-Partner "${overLimit}" hätte mehr als ${MAX_BANNER} Bannerfotos`)
+  for (const { partner, foto, alt } of prepared) addBanner({ partner, fotoUrl: copyImage.copyOwn(foto), alt })
+  return counts
+}
+
 function createDemoPartnerAreas(db, { copyImage }) {
   const areas = insertDemoPartnerAreas(db)
   const einblicke = insertDemoEinblicke(db, copyImage)
+  const banner = insertDemoBanner(db, copyImage)
   removeDemoVoucherStacks(db)
   const kundenGutscheine = insertDemoVoucherStacks(db, areas)
-  return { areas, einblicke, kundenGutscheine }
+  return { areas, einblicke, banner, kundenGutscheine }
 }
 
 // --- Phase P2 Task 9: Beiträge und Posteingänge der Demo-Partner -----------------------------------------

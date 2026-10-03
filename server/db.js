@@ -339,7 +339,8 @@ const PARTNERS_COLUMNS_SQL = `
     gesperrt INTEGER NOT NULL DEFAULT 0,
     kontakt_formular_url TEXT,
     kontaktformular_aktiv INTEGER NOT NULL DEFAULT 1,
-    vertrauenswuerdig INTEGER NOT NULL DEFAULT 0
+    vertrauenswuerdig INTEGER NOT NULL DEFAULT 0,
+    ansprechperson TEXT
 `
 const PARTNERS_INDEXES_SQL = 'CREATE INDEX IF NOT EXISTS idx_partners_status ON partners(status);'
 
@@ -510,6 +511,9 @@ addColumnIfMissing('partners', 'kontaktformular_aktiv', 'INTEGER NOT NULL DEFAUL
 // V-Fehler 3: vertrauenswürdige Partner - Änderungen an schon freigegebenen Beiträgen gehen ohne erneute Freigabe
 // online (lib/promotionFreigabe.js partnerEditOutcome). Setzt nur der Admin (PUT /api/admin/partners/:id).
 addColumnIfMissing('partners', 'vertrauenswuerdig', 'INTEGER NOT NULL DEFAULT 0')
+// Phase V4b: Name der Ansprechperson (optional, reiner Text, höchstens 80 Zeichen - lib/partners.js validatePartner),
+// gezeigt auf dem Portal neben „Schreib uns“ und im Kontaktformular. Pflegt der Partner selbst (lib/partnerProfile.js).
+addColumnIfMissing('partners', 'ansprechperson', 'TEXT')
 
 // Den CHECK auf partners.typ kann SQLite per ALTER nicht ändern - einmalig neu aufbauen, solange das
 // gespeicherte Schema 'hundesalon' noch nicht kennt (rebuildTableIfOutdated oben). Kein anderer Tisch hat
@@ -718,6 +722,25 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (termin_id, datum)
   );
+`)
+
+// Phase V4b: 1-2 Bannerfotos für den Kopf des Portals (lib/partnerBanner.js, routes/partnerArea/banner.js). position
+// 1 oder 2 (lückenlos - Löschen rückt nach), foto_url ein /uploads/-Pfad wie bei den Einblicken (dieselbe Upload-Strecke:
+// nur JPG/PNG, Metadaten entfernt). Öffentlich über /public-media nur, solange der Partner sichtbar ist
+// (lib/publicMedia.js), der eigene Bereich sieht sie über /uploads (lib/uploadAccess.js). alt: optionaler Alternativtext.
+// Bewusst ohne REFERENCES auf partners(id) - wie partner_einblicke. idx_partner_banner_foto: Datei-Freigabe je Dateiname.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS partner_banner (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partner_id INTEGER NOT NULL,
+    position INTEGER NOT NULL CHECK (position IN (1, 2)),
+    foto_url TEXT NOT NULL,
+    alt TEXT,
+    is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (partner_id, position)
+  );
+  CREATE INDEX IF NOT EXISTS idx_partner_banner_foto ON partner_banner(foto_url);
 `)
 
 module.exports = db

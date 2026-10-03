@@ -1,6 +1,9 @@
 import Icon from './Icon.jsx'
+import PortalBanner from './PortalBanner.jsx'
 import { ExternalLink } from './PreviewLink.jsx'
 import { isExternalUrl } from '../lib/format.js'
+import { portalBannerItems } from '../lib/partnerBanner.js'
+import { useIsPreview } from '../lib/preview.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 
 // portal_text ist reiner Text (nie HTML) - Absätze trennt eine Leerzeile.
@@ -24,14 +27,19 @@ function jumpTo(targetId) {
 // Kopf des Portals wie eine ruhige Landingpage: Logo, Art und Ort als Meta-Zeile, der Name als Überschrift,
 // darunter der Portal-Titel als Unterzeile und der Willkommenstext. Hauptaktion "Kontakt" (nur, wenn es
 // einen Kontakt-Abschnitt gibt: contactId), daneben Spenden und Vermittlung bei Tierheimen.
+// Phase V4b: mit Bannerfotos stehen sie oben im Kopf (PortalBanner), das Logo ragt wie bei einem Profil über deren
+// Unterkante (.has-banner).
 export default function PortalHero({ partner, contactId }) {
+  const preview = useIsPreview()
   const typeLabel = TYPE_LABELS[partner.typ] || partner.typ
   const meta = [typeLabel, partner.ort].filter(Boolean).join(' · ')
   const hasSpenden = isExternalUrl(partner.spenden_url)
   const hasVermittlung = isExternalUrl(partner.vermittlung_url)
+  const hasBanner = portalBannerItems(partner.banner, { preview }).length > 0
 
   return (
-    <div className="partner-portal-hero">
+    <div className={`partner-portal-hero${hasBanner ? ' has-banner' : ''}`}>
+      {hasBanner && <PortalBanner banner={partner.banner} />}
       {partner.logoUrl && <img src={partner.logoUrl} alt={`Logo von ${partner.name}`} className="partner-logo" />}
       <div className="partner-portal-hero-text">
         {meta && <p className="partner-portal-meta">{meta}</p>}

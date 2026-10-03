@@ -11,6 +11,8 @@ const MAX_TITEL_LENGTH = 120
 const MAX_URL_LENGTH = 300
 const MAX_EMAIL_LENGTH = 120
 const MAX_PORTAL_TEXT_LENGTH = 2000
+// Phase V4b: Name der Ansprechperson auf dem Portal ("Ansprechperson: …").
+const MAX_ANSPRECHPERSON_LENGTH = 80
 
 // Muss zum CHECK in db.js (PARTNERS_COLUMNS_SQL) passen. hundesalon/betreuung: Phase P Task 1.
 const TYP_VALUES = ['tierheim', 'vermittlung', 'hundeschule', 'hundesalon', 'betreuung', 'futter', 'sonstige']
@@ -255,6 +257,16 @@ function validateFlag(value, existingValue, defaultValue, label) {
   return value ? 1 : 0
 }
 
+// Phase V4b: Ansprechperson - optional, reiner Text (kein HTML), höchstens MAX_ANSPRECHPERSON_LENGTH Zeichen. Ein
+// fehlendes Feld (undefined) behält den bisherigen Wert wie bei validateFlag: der Admin-Client kennt das Feld nicht und
+// darf es beim Bearbeiten nicht stillschweigend löschen. null oder '' löschen es ausdrücklich.
+function validateAnsprechperson(value, existingValue) {
+  if (value === undefined) return existingValue ?? null
+  const name = cleanOptionalText(value, MAX_ANSPRECHPERSON_LENGTH, 'Die Ansprechperson')
+  if (name && /[<>]/.test(name)) throw httpError(400, 'Die Ansprechperson darf nur reinen Text enthalten (kein HTML)')
+  return name
+}
+
 // Wie validateUrl, aber ein fehlendes Feld (undefined) behält den bisherigen Wert - aus demselben Grund
 // wie bei validateFlag. null oder '' löschen den Link ausdrücklich.
 function validateKontaktFormularUrl(value, existingValue) {
@@ -293,8 +305,9 @@ function validatePartner(input = {}, { existingSlug, existingStatus, existing } 
   const portalTitel = cleanOptionalText(input.portalTitel, MAX_TITEL_LENGTH, 'Der Portal-Titel')
   const portalText = validatePortalText(input.portalText)
   const farbe = validateFarbe(input.farbe)
+  const ansprechperson = validateAnsprechperson(input.ansprechperson, existing?.ansprechperson)
 
-  assertNoBreeder({ name, portal_titel: portalTitel, portal_text: portalText })
+  assertNoBreeder({ name, portal_titel: portalTitel, portal_text: portalText, ansprechperson })
 
   return {
     slug,
@@ -317,7 +330,8 @@ function validatePartner(input = {}, { existingSlug, existingStatus, existing } 
     portal_text: portalText,
     farbe,
     gesperrt,
-    vertrauenswuerdig
+    vertrauenswuerdig,
+    ansprechperson
   }
 }
 
@@ -382,6 +396,7 @@ module.exports = {
   STATUS_VALUES,
   SHELTER_TYP_VALUES,
   SLUG_MAX_LENGTH,
+  MAX_ANSPRECHPERSON_LENGTH,
   MAX_LOGO_BYTES,
   LOGO_MIME_TYPES,
   LOGO_FILENAME_RE,

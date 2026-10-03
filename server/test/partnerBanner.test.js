@@ -1,0 +1,249 @@
+const fs = require('node:fs')
+const path = require('node:path')
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const { hashPassword } = require('../lib/adminAuth')
+const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = require('./helpers')
+
+// Phase V4b: Ansprechperson und 1-2 Bannerfotos im Kopf des Portals (/api/partner-area/profile/banner, lib/partnerBanner.js)
+// - Upload-Prüfung wie bei den Einblicken, Ersetzen, Alternativtext, Entfernen mit Nachrücken, Portal- und
+// Kundensicht-Ausgabe, /public-media nur für sichtbare Partner, Demo- und Admin-Ansicht nur lesend. t.test() bleibt auf
+// einer Ebene. Namen sind erfunden.
+const ADMIN_TEST_PASSWORD = 'admin-test-partner-banner-1'
+const dataDir = useTempDataDir('partner-banner', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
+
+const PORTAL_TEXT = 'Kleine Gruppen, viel Geduld und jede Menge Leckerli – so arbeiten wir mit euren Hunden.'
+const TYPE_MESSAGE = 'Bitte als JPG oder PNG hochladen.'
+
+function jpegSegment(marker, payload) {
+  const length = Buffer.alloc(2)
+  length.writeUInt16BE(payload.length + 2, 0)
+  return Buffer.concat([Buffer.from([0xff, marker]), length, payload])
+}
+
+// Synthetisches JPEG mit APP1-Exif-Segment (wie test/einblicke.test.js).
+const JPEG_WITH_EXIF = Buffer.concat([
+  Buffer.from([0xff, 0xd8]),
+  jpegSegment(0xe1, Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), Buffer.from([0x4d, 0x4d, 0x00, 0x2a, 0, 0, 0, 8, 0xca, 0xfe])])),
+  jpegSegment(0xda, Buffer.from([0x00, 0x01, 0x02])),
+  Buffer.from([0x12, 0x34, 0x56]),
+  Buffer.from([0xff, 0xd9])
+])
+
+function pngChunk(type, data) {
+  const length = Buffer.alloc(4)
+  length.writeUInt32BE(data.length, 0)
+  return Buffer.concat([length, Buffer.from(type, 'ascii'), data, Buffer.alloc(4)])
+}
+
+const PNG_WITH_TEXT = Buffer.concat([
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  pngChunk('IHDR', Buffer.alloc(13)),
+  pngChunk('tEXt', Buffer.from('Comment\0Aufnahmeort geheim', 'latin1')),
+  pngChunk('IDAT', Buffer.from([4, 5, 6])),
+  pngChunk('IEND', Buffer.alloc(0))
+])
+const WEBP_BYTES = Buffer.concat([Buffer.from('RIFF', 'ascii'), Buffer.from([20, 0, 0, 0]), Buffer.from('WEBPVP8 ', 'ascii'), Buffer.alloc(12)])
+const GIF_BYTES = Buffer.concat([Buffer.from('GIF89a', 'ascii'), Buffer.from([1, 0, 1, 0, 0, 0, 0, 0x3b])])
+
+test('Bannerfotos und Ansprechperson im Portal-Kopf', async (t) => {
+  process.env.ADMIN_PASSWORD_HASH = await hashPassword(ADMIN_TEST_PASSWORD)
+  const { server, base } = await startApp()
+  t.after(() => cleanup(dataDir, server))
+  const db = require('../db')
+  const { uploadDir } = require('../config')
+
+  const adminLogin = await call(base, '/api/admin/login', { method: 'POST', body: { username: 'admin', password: ADMIN_TEST_PASSWORD } })
+  const adminCookie = getCookie(adminLogin.res)
+  const get = (urlPath, cookie) => call(base, urlPath, { cookie })
+  const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
+  const put = (urlPath, body, cookie) => call(base, urlPath, { method: 'PUT', body, cookie })
+  const del = (urlPath, cookie) => call(base, urlPath, { method: 'DELETE', cookie })
+  const uploadedFiles = () => fs.readdirSync(uploadDir).sort()
+  const fileOf = (url) => path.join(uploadDir, path.basename(url))
+
+  async function sendPhoto(urlPath, cookie, { method = 'POST', foto = JPEG_WITH_EXIF, mime = 'image/jpeg', filename = 'banner.jpg', alt } = {}) {
+    const form = new FormData()
+    if (alt !== undefined) form.append('alt', alt)
+    if (foto) form.append('foto', new Blob([foto], { type: mime }), filename)
+    const res = await fetch(`${base}${urlPath}`, { method, headers: { Cookie: cookie }, body: form })
+    const text = await res.text()
+    return { status: res.status, data: text ? JSON.parse(text) : null }
+  }
+
+  async function createPartnerArea(overrides = {}) {
+    const input = { name: 'Hundeschule Lindenhof', slug: 'hundeschule-lindenhof', typ: 'hundeschule', plz: '10115', portalText: PORTAL_TEXT, status: 'aktiv', ...overrides }
+    const partner = await post('/api/admin/partners', input, adminCookie)
+    assert.equal(partner.status, 201)
+    const area = await post(`/api/admin/partners/${partner.data.id}/area`, undefined, adminCookie)
+    assert.equal(area.status, 201)
+    const login = await post('/api/login', { secret: area.data.key })
+    return { partner: partner.data, familyId: area.data.familyId, cookie: getCookie(login.res) }
+  }
+
+  const school = await createPartnerArea()
+  const BANNER = '/api/partner-area/profile/banner'
+
+  let first
+  let second
+  await t.test('Upload: JPG an Position 1 (EXIF entfernt), PNG an Position 2, ein drittes -> 409 ohne Datei', async () => {
+    const res = await sendPhoto(BANNER, school.cookie, { alt: '  Training auf der Wiese ' })
+    assert.equal(res.status, 201)
+    assert.equal(res.data.banner.length, 1)
+    first = res.data.banner[0]
+    assert.equal(first.position, 1)
+    assert.equal(first.alt, 'Training auf der Wiese')
+    assert.match(first.fotoUrl, /^\/uploads\/[0-9a-f-]{36}\.jpg$/)
+    assert.ok(!fs.readFileSync(fileOf(first.fotoUrl)).includes(Buffer.from('Exif\0\0', 'latin1')), 'EXIF entfernt')
+
+    const png = await sendPhoto(BANNER, school.cookie, { foto: PNG_WITH_TEXT, mime: 'image/png', filename: 'b.png' })
+    assert.equal(png.status, 201)
+    second = png.data.banner[1]
+    assert.deepEqual({ position: second.position, alt: second.alt }, { position: 2, alt: null })
+    assert.ok(!fs.readFileSync(fileOf(second.fotoUrl)).includes(Buffer.from('Aufnahmeort geheim', 'latin1')), 'PNG-Text entfernt')
+
+    const before = uploadedFiles()
+    const full = await sendPhoto(BANNER, school.cookie)
+    assert.equal(full.status, 409)
+    assert.match(full.data.error, /Höchstens 2 Bannerfotos/)
+    assert.deepEqual(uploadedFiles(), before, 'keine Datei hinterlassen')
+
+    const profile = await get('/api/partner-area/profile', school.cookie)
+    assert.deepEqual(profile.data.banner, [first, second])
+  })
+
+  await t.test('Upload-Prüfung: nur JPG/PNG (Content-Type und Magic Bytes), Alternativtext <= 120, reiner Text', async () => {
+    await del(`${BANNER}/2`, school.cookie)
+    const before = uploadedFiles()
+    for (const [foto, mime, filename] of [
+      [WEBP_BYTES, 'image/webp', 'a.webp'],
+      [GIF_BYTES, 'image/gif', 'a.gif'],
+      [GIF_BYTES, 'image/jpeg', 'getarnt.jpg'],
+      [JPEG_WITH_EXIF, 'image/png', 'falsch.png'],
+      [Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'), 'image/png', 'x.png']
+    ]) {
+      const res = await sendPhoto(BANNER, school.cookie, { foto, mime, filename })
+      assert.equal(res.status, 400, filename)
+      assert.equal(res.data.error, TYPE_MESSAGE, filename)
+    }
+    assert.equal((await sendPhoto(BANNER, school.cookie, { alt: 'x'.repeat(121) })).status, 400)
+    assert.equal((await sendPhoto(BANNER, school.cookie, { alt: 'Foto <b>fett</b>' })).status, 400)
+    const missing = await sendPhoto(BANNER, school.cookie, { foto: null, alt: 'ohne Foto' })
+    assert.equal(missing.status, 400)
+    assert.deepEqual(uploadedFiles(), before, 'jede Ablehnung räumt die Datei weg')
+    const res = await sendPhoto(BANNER, school.cookie, { foto: PNG_WITH_TEXT, mime: 'image/png', filename: 'b.png', alt: 'Zweites Foto' })
+    assert.equal(res.status, 201)
+    second = res.data.banner[1]
+  })
+
+  await t.test('Ersetzen: neues Foto an derselben Stelle, alte Datei weg; Alternativtext ändern; unbekannte Stellen 404', async () => {
+    const res = await sendPhoto(`${BANNER}/1/foto`, school.cookie, { method: 'PUT', alt: 'Neues Kopfbild' })
+    assert.equal(res.status, 200)
+    const replaced = res.data.banner[0]
+    assert.equal(replaced.position, 1)
+    assert.equal(replaced.alt, 'Neues Kopfbild')
+    assert.notEqual(replaced.fotoUrl, first.fotoUrl)
+    assert.equal(fs.existsSync(fileOf(first.fotoUrl)), false, 'altes Foto entfernt')
+    assert.equal(res.data.banner[1].fotoUrl, second.fotoUrl, 'das zweite bleibt')
+    first = replaced
+
+    const alt = await put(`${BANNER}/2`, { alt: 'Gruppe am Deich' }, school.cookie)
+    assert.equal(alt.status, 200)
+    assert.equal(alt.data.banner[1].alt, 'Gruppe am Deich')
+    assert.equal((await put(`${BANNER}/2`, { alt: '' }, school.cookie)).data.banner[1].alt, null, 'leer löscht')
+    assert.equal((await put(`${BANNER}/2`, { alt: 'ok', position: 1 }, school.cookie)).status, 400)
+    assert.equal((await put(`${BANNER}/2`, {}, school.cookie)).status, 400)
+    assert.equal((await put(`${BANNER}/3`, { alt: 'x' }, school.cookie)).status, 404)
+    assert.equal((await put(`${BANNER}/abc`, { alt: 'x' }, school.cookie)).status, 404)
+    const before = uploadedFiles()
+    assert.equal((await sendPhoto(`${BANNER}/3/foto`, school.cookie, { method: 'PUT' })).status, 404)
+    assert.deepEqual(uploadedFiles(), before)
+    await put(`${BANNER}/2`, { alt: 'Gruppe am Deich' }, school.cookie)
+  })
+
+  await t.test('Ansprechperson: im Profil pflegen (<= 80 Zeichen, reiner Text), der Admin überschreibt sie nicht', async () => {
+    const res = await put('/api/partner-area/profile', { ansprechperson: '  Greta Lindner ' }, school.cookie)
+    assert.equal(res.status, 200)
+    assert.equal(res.data.ansprechperson, 'Greta Lindner')
+    assert.equal((await put('/api/partner-area/profile', { ansprechperson: 'x'.repeat(81) }, school.cookie)).status, 400)
+    const html = await put('/api/partner-area/profile', { ansprechperson: '<i>Greta</i>' }, school.cookie)
+    assert.equal(html.status, 400)
+    assert.match(html.data.error, /^Die Ansprechperson /)
+    const breeder = await put('/api/partner-area/profile', { ansprechperson: 'Greta, Züchterin' }, school.cookie)
+    assert.equal(breeder.status, 400)
+
+    // Der Admin-Client kennt das Feld nicht - ein Bearbeiten ohne ansprechperson lässt sie stehen.
+    const edit = await put(`/api/admin/partners/${school.partner.id}`, { name: 'Hundeschule Lindenhof', typ: 'hundeschule', plz: '10115', portalText: PORTAL_TEXT }, adminCookie)
+    assert.equal(edit.status, 200)
+    assert.equal(edit.data.ansprechperson, 'Greta Lindner')
+  })
+
+  await t.test('Portal: Ansprechperson und Bannerfotos über /public-media; die Dateien gibt es nur, solange der Partner sichtbar ist', async () => {
+    const portal = await get(`/api/public/partners/${school.partner.slug}`)
+    assert.equal(portal.status, 200)
+    assert.equal(portal.data.ansprechperson, 'Greta Lindner')
+    assert.deepEqual(portal.data.banner, [
+      { fotoUrl: `/public-media/${path.basename(first.fotoUrl)}`, alt: 'Neues Kopfbild' },
+      { fotoUrl: `/public-media/${path.basename(second.fotoUrl)}`, alt: 'Gruppe am Deich' }
+    ])
+    const media = await fetch(`${base}${portal.data.banner[0].fotoUrl}`)
+    assert.equal(media.status, 200)
+    assert.equal(media.headers.get('x-robots-tag'), 'noindex')
+    assert.equal((await fetch(`${base}/uploads/${path.basename(first.fotoUrl)}`)).status, 401, 'über /uploads nur mit Sitzung')
+
+    db.prepare("UPDATE partners SET status = 'pausiert' WHERE id = ?").run(school.partner.id)
+    assert.equal((await fetch(`${base}${portal.data.banner[0].fotoUrl}`)).status, 404, 'pausiert -> nicht mehr öffentlich')
+    db.prepare('UPDATE partners SET status = ?, gesperrt = 1 WHERE id = ?').run('aktiv', school.partner.id)
+    assert.equal((await fetch(`${base}${portal.data.banner[0].fotoUrl}`)).status, 404, 'gesperrt -> nicht mehr öffentlich')
+    db.prepare('UPDATE partners SET gesperrt = 0 WHERE id = ?').run(school.partner.id)
+  })
+
+  await t.test('Kundensicht: Bannerfotos über /uploads, nur für den eigenen Bereich sichtbar', async () => {
+    db.prepare("UPDATE partners SET status = 'entwurf' WHERE id = ?").run(school.partner.id)
+    const preview = await get('/api/partner-area/preview/portal', school.cookie)
+    assert.equal(preview.status, 200)
+    assert.equal(preview.data.ansprechperson, 'Greta Lindner')
+    assert.deepEqual(preview.data.banner.map((banner) => banner.fotoUrl), [first.fotoUrl, second.fotoUrl])
+    const own = await fetch(`${base}${first.fotoUrl}`, { headers: { Cookie: school.cookie } })
+    assert.equal(own.status, 200)
+
+    const household = await createHousehold(base, 'Zuhause Fremdblick')
+    const foreign = await fetch(`${base}${first.fotoUrl}`, { headers: { Cookie: household.cookie } })
+    assert.equal(foreign.status, 404, 'ein fremder Bereich sieht das Foto nicht')
+    db.prepare("UPDATE partners SET status = 'aktiv' WHERE id = ?").run(school.partner.id)
+  })
+
+  await t.test('Entfernen: das zweite rückt nach, Datei weg; ein fremder Partner kommt an nichts heran', async () => {
+    const other = await createPartnerArea({ name: 'Hundesalon Kiesel', slug: 'hundesalon-kiesel', typ: 'hundesalon' })
+    assert.equal((await del(`${BANNER}/1`, other.cookie)).status, 404, 'der andere Partner hat keine Bannerfotos')
+    assert.deepEqual((await get(BANNER, other.cookie)).data, { banner: [] })
+
+    const res = await del(`${BANNER}/1`, school.cookie)
+    assert.equal(res.status, 200)
+    assert.deepEqual(res.data.banner, [{ position: 1, fotoUrl: second.fotoUrl, alt: 'Gruppe am Deich' }])
+    assert.equal(fs.existsSync(fileOf(first.fotoUrl)), false)
+    assert.equal((await del(`${BANNER}/2`, school.cookie)).status, 404)
+    const portal = await get(`/api/public/partners/${school.partner.slug}`)
+    assert.equal(portal.data.banner.length, 1)
+  })
+
+  await t.test('Demo und Admin-Ansicht: lesen ja, jeder Schreibversuch 403 - ohne Datei auf der Platte', async () => {
+    const demo = await createPartnerArea({ name: 'Hundeschule Demo-Wiese', slug: 'hundeschule-demo-wiese' })
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(demo.familyId)
+    db.prepare('UPDATE partners SET is_demo = 1 WHERE id = ?').run(demo.partner.id)
+    const before = uploadedFiles()
+    assert.equal((await get(BANNER, demo.cookie)).status, 200)
+    assert.equal((await sendPhoto(BANNER, demo.cookie)).status, 403)
+    assert.equal((await put(`${BANNER}/1`, { alt: 'x' }, demo.cookie)).status, 403)
+    assert.equal((await del(`${BANNER}/1`, demo.cookie)).status, 403)
+    assert.equal((await put('/api/partner-area/profile', { ansprechperson: 'Demo' }, demo.cookie)).status, 403)
+
+    const view = await post(`/api/admin/view/${school.familyId}`, undefined, adminCookie)
+    assert.equal(view.status, 200)
+    const viewCookie = getCookie(view.res)
+    assert.equal((await get(BANNER, viewCookie)).status, 200)
+    assert.equal((await sendPhoto(BANNER, viewCookie)).status, 403)
+    assert.equal((await del(`${BANNER}/1`, viewCookie)).status, 403)
+    assert.deepEqual(uploadedFiles(), before)
+  })
+})

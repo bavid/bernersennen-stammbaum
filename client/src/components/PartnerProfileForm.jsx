@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import {
+  MAX_ANSPRECHPERSON_LENGTH,
   MAX_NAME_LENGTH,
   MAX_PORTAL_TEXT_LENGTH,
   MAX_TITEL_LENGTH,
@@ -142,6 +143,16 @@ export default function PartnerProfileForm({ profile, onSaved, onLogoUploaded })
       <fieldset className="partner-fieldset">
         <legend>Kontakt</legend>
         <div className="form-grid">
+          <ProfileInput
+            name="ansprechperson"
+            label="Ansprechperson (freiwillig)"
+            maxLength={MAX_ANSPRECHPERSON_LENGTH}
+            autoComplete="name"
+            placeholder="z. B. Anna Berg"
+            hint="Steht auf eurem Portal neben ‚Schreib uns‘ und im Kontaktformular."
+            className="span-2"
+            {...fieldState}
+          />
           <ProfileInput name="kontaktEmail" label="E-Mail" type="email" autoComplete="email" {...fieldState} />
           <ProfileInput name="kontaktTelefon" label="Telefon" type="tel" autoComplete="tel" {...fieldState} />
           <ProfileInput

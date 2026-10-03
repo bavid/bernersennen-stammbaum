@@ -44,6 +44,13 @@ const einblickPhotoStmt = db.prepare(
    WHERE e.foto_url = @url AND f.id = @familyId AND f.art IN (${PARTNER_AREA_ARTS.map((art) => `'${art}'`).join(', ')})`
 )
 
+// Bannerfoto (Phase V4b, lib/partnerBanner.js) des Partners, dessen Bereich gerade aktiv ist - auch als Entwurf, für
+// das eigene Profil und die Kundensicht. Wie beim Einblick nur ansehen, nicht anhängen.
+const bannerPhotoStmt = db.prepare(
+  `SELECT 1 FROM partner_banner b JOIN families f ON f.partner_id = b.partner_id
+   WHERE b.foto_url = @url AND f.id = @familyId AND f.art IN (${PARTNER_AREA_ARTS.map((art) => `'${art}'`).join(', ')})`
+)
+
 // Phase V2: was ein Gast (Besuchs-Sitzung, aktiver Bereich = das besuchte Zuhause) sieht - nur die Tierfotos des
 // Gastgebers und Fotos in dessen nicht-privaten Einträgen. Kein frisch hochgeladenes (uploads-Zeile), kein
 // Zuchtbuch- und kein Einblick-Foto: ein privater Eintrag des Gastgebers bleibt samt Fotos privat.
@@ -75,7 +82,8 @@ function canSeeUpload({ familyId, homeId, isGuest = false }, filename) {
   if (!FILENAME_RE.test(filename)) return false
   const params = uploadParams({ familyId, homeId }, filename)
   if (isGuest) return Boolean(guestDogPhotoStmt.get(params) || guestEntryPhotoStmt.get(params))
-  return isAttachableUpload(params) || Boolean(einblickPhotoStmt.get(params)) || (Number.isInteger(homeId) && isMirroredPhoto(homeId, params.pattern))
+  if (isAttachableUpload(params) || einblickPhotoStmt.get(params) || bannerPhotoStmt.get(params)) return true
+  return Number.isInteger(homeId) && isMirroredPhoto(homeId, params.pattern)
 }
 
 // Für Schreibzugriffe: darf { familyId, homeId } die Foto-URL "url" an einen Hund/Eintrag/Wurf
