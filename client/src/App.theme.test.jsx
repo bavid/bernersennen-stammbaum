@@ -55,6 +55,24 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
     expect(stripe === null).toBe(!theme.tricolor)
   })
 
+  test('Footer verweist auf „Tierheime & Hundeschulen in der Nähe“ – nur nicht auf /umgebung selbst (Audit V7a)', async () => {
+    const footerFor = async (path) => {
+      await render(
+        <MemoryRouter initialEntries={[path]}>
+          <ThemeProvider themeId={themeId}>
+            <AppFooter onInvite={() => {}} />
+          </ThemeProvider>
+        </MemoryRouter>
+      )
+      const links = [...container.querySelectorAll('.app-footer a')].map((a) => a.getAttribute('href'))
+      act(() => container.remove())
+      container = null
+      return links
+    }
+    expect(await footerFor('/wegbegleiter')).toContain('/umgebung')
+    expect(await footerFor('/umgebung')).not.toContain('/umgebung')
+  })
+
   test('DemoBanner-Button nutzt den Theme-Wortlaut für „eigene Familie/eigenes Rudel anlegen"', async () => {
     await render(
       <ThemeProvider themeId={themeId}>

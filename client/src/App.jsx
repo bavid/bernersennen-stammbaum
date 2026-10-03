@@ -263,6 +263,7 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
 // für die Gutscheine ohnehin 403, der Knopf bleibt für sie deshalb weg.
 export function AppFooter({ family, onInvite }) {
   const { theme } = useTheme()
+  const { pathname } = useLocation()
   // Phase V2: zu Besuch in einem anderen Zuhause lädt man nicht ein (der Server sperrt das ohnehin).
   const canInvite = !family?.zuBesuch && (family?.art !== 'rudel' || hasRole(family, 'stellvertretung'))
   return (
@@ -274,7 +275,8 @@ export function AppFooter({ family, onInvite }) {
           {inviteLabel(family)}
         </button>
       )}
-      {!family?.zuBesuch && (
+      {/* Audit V7a: auf /umgebung selbst kein Verweis auf dieselbe Seite */}
+      {!family?.zuBesuch && pathname !== '/umgebung' && (
         <Link to="/umgebung" className="footer-link">
           Tierheime & Hundeschulen in der Nähe →
         </Link>
