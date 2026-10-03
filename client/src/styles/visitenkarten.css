@@ -614,6 +614,12 @@ p.vk-note {
   margin: 0;
 }
 
+/* "gedruckt" an einem Code im Dialog "Kunden-Gutschein weitergeben" (invite/VoucherRow.jsx) */
+.pill-gedruckt {
+  background: var(--alpine-wash);
+  color: var(--alpine);
+}
+
 /* --- Druck ------------------------------------------------------------------------------------------ */
 
 .vk-print {

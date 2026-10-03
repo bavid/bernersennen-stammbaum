@@ -10,16 +10,17 @@ import VisitenkarteGutschein from './VisitenkarteGutschein.jsx'
 import VisitenkarteInhalt from './VisitenkarteInhalt.jsx'
 import VisitenkarteVorlagen from './VisitenkarteVorlagen.jsx'
 import VisitenkartenBoegen, { SEITEN, VisitenkartenDruck } from './VisitenkartenBogen.jsx'
+import useVisitenkartenDruck from '../../hooks/useVisitenkartenDruck.js'
 import { useIsAdminView, useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { needsPublicUrl } from '../../lib/voucherPrint.js'
 import { CARDS_PER_SHEET, buildSheets, cardModel, designPayload, isSameDesign, musterCodes } from '../../lib/visitenkarte.js'
 
 // Der Designer (Phase V5): links bzw. oben die Vorschau (Vorder- und Rückseite in echten Proportionen), daneben Gestaltung,
 // Kunden-Gutschein und Drucken, darunter der erste A4-Bogen als Druckvorschau. Gedruckt wird die Druckfassung aus
-// VisitenkartenDruck (direkt in <body>). Die Gutschein-Codes leben nur im State und im DOM der Karten - keine URL, kein
-// localStorage, keine Konsole. Demo und Admin-Ansicht: alles ausprobieren und Muster drucken, nichts speichern.
-
-const BLOCKED_HINT = 'Erst die Gutscheine holen – dann drucken.'
+// VisitenkartenDruck (direkt in <body>). Echte Gutschein-Codes holt erst "Drucken" (hooks/useVisitenkartenDruck.js) und
+// nur für diesen einen Druck - Vorschau und Druckbogen zeigen bis dahin Muster-Codes. Die Codes leben nur im State und
+// im DOM der Druckfassung: keine URL, kein localStorage, keine Konsole. Demo und Admin-Ansicht: alles ausprobieren und
+// Muster drucken, nichts speichern.
 
 function PublicUrlWarning({ baseUrl }) {
   return (
@@ -79,35 +80,34 @@ export default function VisitenkartenDesigner({ profile, initial, publicUrl }) {
   const readOnlyHint = useReadOnlyHint()
   const [design, setDesign] = useState(initial.design)
   const [saved, setSaved] = useState(initial.gespeichert ? initial.design : null)
-  const [gutscheine, setGutscheine] = useState(initial.gutscheine)
   const [sheets, setSheets] = useState(1)
   const [seiten, setSeiten] = useState(SEITEN.beide)
-  const [codes, setCodes] = useState([])
-  const [nurUngedruckt, setNurUngedruckt] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const [codeError, setCodeError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
+  const druck = useVisitenkartenDruck(initial.gutscheine)
 
   const card = cardModel({ profile, design, publicUrl, origin: window.location.origin, demo: readOnly && !isAdminView })
   const cards = sheets * CARDS_PER_SHEET
-  const printCodes = !design.mitGutschein ? [] : readOnly ? musterCodes(cards) : codes
-  const sheetList = buildSheets({ sheetCount: sheets, codes: printCodes })
-  const previewMuster = design.mitGutschein && (readOnly || codes.length === 0)
-  const previewCode = design.mitGutschein ? printCodes[0] ?? musterCodes(1)[0] : null
-  const blockedHint = design.mitGutschein && !readOnly && codes.length === 0 && gutscheine.offen > 0 ? BLOCKED_HINT : null
+  // Echte Codes nur im eigenen Bereich und nur, wenn welche verfügbar sind - sonst bekommen die Karten die Portal-Rückseite.
+  const withCodes = design.mitGutschein && !readOnly && druck.available > 0
+  const showsMuster = design.mitGutschein && (readOnly || withCodes)
+  const muster = showsMuster ? musterCodes(cards) : []
+  const printCodes = readOnly ? muster : design.mitGutschein ? druck.printCodes : []
   const dirty = !isSameDesign(design, saved)
 
   const update = (patch) => setDesign((current) => ({ ...current, ...patch }))
 
+  // Nur übernehmen, was gespeichert wurde: wer während des Speicherns weiter ändert, behält seine Änderungen (und sieht
+  // "Noch nicht gespeichert").
   async function save() {
+    const payload = designPayload(design)
     setSaveError(null)
     setSaving(true)
     try {
-      const result = await api.partnerArea.saveVisitenkarte(designPayload(design))
+      const result = await api.partnerArea.saveVisitenkarte(payload)
       setSaved(result.design)
-      setDesign(result.design)
-      setGutscheine(result.gutscheine)
+      setDesign((current) => (isSameDesign(current, payload) ? result.design : current))
+      druck.setGutscheine(result.gutscheine)
       toast('Gestaltung gespeichert.')
     } catch (err) {
       setSaveError(err.message)
@@ -116,25 +116,11 @@ export default function VisitenkartenDesigner({ profile, initial, publicUrl }) {
     }
   }
 
-  async function holen() {
-    setCodeError(null)
-    setBusy(true)
-    try {
-      const result = await api.partnerArea.visitenkarteGutscheine({ anzahl: Math.max(1, cards - codes.length), nurUngedruckt })
-      setCodes((current) => [...new Set([...current, ...result.codes])])
-      setGutscheine(result.gutscheine)
-    } catch (err) {
-      setCodeError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <>
       <div className="vk-designer">
         <div className="vk-stage-col">
-          <Stage card={card} code={previewCode} muster={previewMuster} />
+          <Stage card={card} code={showsMuster ? muster[0] : null} muster={showsMuster} />
         </div>
         <div className="vk-controls">
           <section className="vk-panel" aria-labelledby="vk-gestaltung-title">
@@ -156,21 +142,17 @@ export default function VisitenkartenDesigner({ profile, initial, publicUrl }) {
             onToggle={(mitGutschein) => update({ mitGutschein })}
             readOnly={readOnly}
             isAdminView={isAdminView}
-            gutscheine={gutscheine}
+            druck={druck}
             cards={cards}
-            codes={codes}
-            nurUngedruckt={nurUngedruckt}
-            onNurUngedruckt={setNurUngedruckt}
-            busy={busy}
-            error={codeError}
-            onHolen={holen}
           />
           <VisitenkarteDruckOptionen
             sheets={sheets}
             onSheets={setSheets}
             seiten={seiten}
             onSeiten={setSeiten}
-            blockedHint={blockedHint}
+            onPrint={() => druck.print({ withCodes, cards })}
+            busy={druck.busy}
+            gutscheinAnzahl={withCodes ? Math.min(cards, druck.available) : 0}
             publicUrlWarning={needsPublicUrl(publicUrl) ? <PublicUrlWarning baseUrl={card.baseUrl} /> : null}
           />
         </div>
@@ -183,12 +165,13 @@ export default function VisitenkartenDesigner({ profile, initial, publicUrl }) {
         <p className="muted">
           So kommt Bogen 1 aufs Papier – Vorderseite und die gespiegelte Rückseite.
           {sheets > 1 && ` Dazu ${sheets - 1} weitere ${sheets - 1 === 1 ? 'Bogen' : 'Bögen'}.`}
+          {withCodes && ' Die echten Codes kommen erst beim Drucken dazu.'}
         </p>
-        <VisitenkartenBoegen sheets={sheetList.slice(0, 1)} total={sheetList.length} card={card} muster={readOnly} />
+        <VisitenkartenBoegen sheets={buildSheets({ sheetCount: 1, codes: muster })} total={sheets} card={card} muster />
       </section>
 
       <VisitenkartenDruck>
-        <VisitenkartenBoegen sheets={sheetList} card={card} seiten={seiten} muster={readOnly} />
+        <VisitenkartenBoegen sheets={buildSheets({ sheetCount: sheets, codes: printCodes })} card={card} seiten={seiten} muster={readOnly} />
       </VisitenkartenDruck>
     </>
   )

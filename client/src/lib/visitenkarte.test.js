@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   CARDS_PER_SHEET,
+  COLUMNS,
   DARK_TEXT,
   GRID_MM,
   LIGHT_TEXT,
@@ -198,6 +199,16 @@ describe('Druckbogen', () => {
       { index: 12, code: codes[12] }
     ])
     expect(buildSheets({ sheetCount: 1 })[0].backs.every((back) => back.code === null)).toBe(true)
+  })
+
+  test('Rückseiten passen zum Wenden über die lange Kante: links und rechts tauschen, die Reihen bleiben', () => {
+    const [sheet] = buildSheets({ sheetCount: 1 })
+    sheet.backs.forEach((back, position) => {
+      const row = Math.floor(position / COLUMNS)
+      const column = position % COLUMNS
+      // Über die lange Kante gewendet liegt die Rückseite an (Reihe, gespiegelte Spalte) hinter der Vorderseite.
+      expect(back.index).toBe(sheet.fronts[row * COLUMNS + (COLUMNS - 1 - column)])
+    })
   })
 
   test('cropMarks: Schnittmarken außerhalb des Rasters an jeder Kartenkante, Raster mittig auf A4', () => {

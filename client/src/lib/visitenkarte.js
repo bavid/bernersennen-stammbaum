@@ -20,7 +20,7 @@ export const DARK_TEXT = '#1c1511'
 const PAPER = '#ffffff'
 
 // Raster der Karten mittig auf dem Blatt (oben und unten 11 mm, links und rechts 20 mm) - so liegen die Rückseiten beim
-// beidseitigen Druck über jede Kante gewendet hinter ihren Vorderseiten.
+// beidseitigen Druck (Wenden über die lange Kante, mirrorRows) genau hinter ihren Vorderseiten.
 export const GRID_MM = Object.freeze({
   left: (SHEET_MM.width - COLUMNS * CARD_MM.width) / 2,
   top: (SHEET_MM.height - ROWS * CARD_MM.height) / 2,
@@ -157,7 +157,9 @@ export function clampSheets(value) {
   return Math.min(MAX_SHEETS, Math.max(MIN_SHEETS, number))
 }
 
-// Spiegelt die Spaltenreihenfolge jeder Reihe (für die Rückseiten: im Bogen läuft jede Reihe von rechts nach links).
+// Spiegelt die Spaltenreihenfolge jeder Reihe (für die Rückseiten: im Bogen läuft jede Reihe von rechts nach links). Das
+// entspricht dem Wenden über die lange Kante (Duplex "lange Kante", von Hand: das Blatt seitlich umdrehen) - links und
+// rechts tauschen, oben und unten bleiben.
 export function mirrorRows(items, columns = COLUMNS) {
   const rows = []
   for (let start = 0; start < items.length; start += columns) rows.push(items.slice(start, start + columns).reverse())

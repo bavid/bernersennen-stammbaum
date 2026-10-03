@@ -33,6 +33,8 @@ export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, on
           </span>
         )}
         {voucher.rolle && !canChooseRole && <RoleBadge rolle={voucher.rolle} />}
+        {/* Phase V5: steht schon auf gedruckten Karten (Visitenkarten oder Druckseite eines Stapels). */}
+        {voucher.gedruckt && voucher.status === 'offen' && <span className="pill pill-gedruckt">gedruckt</span>}
       </div>
       {voucher.eigen && onLabelChange && (
         <div className="voucher-row-label">

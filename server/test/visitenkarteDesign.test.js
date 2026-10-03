@@ -58,6 +58,8 @@ test('validateDesign: Kurztext höchstens 120 Zeichen, ohne Steuerzeichen, ohne 
   assert.equal(validateDesign({ ...VALID, kurztext: 'x'.repeat(120) }).kurztext.length, 120)
   rejects({ ...VALID, kurztext: 'x'.repeat(121) }, /120/)
   assert.equal(validateDesign({ ...VALID, kurztext: 'Erste\nZeile‮umgedreht\u0007' }).kurztext, 'ErsteZeileumgedreht')
+  // Unsichtbare Zeichen (Nullbreite, Richtungsmarken, BOM, Zeilentrenner) kommen nicht auf die Karte.
+  assert.equal(validateDesign({ ...VALID, kurztext: 'Null​breite‏﻿ Marke؜' }).kurztext, 'NullbreiteMarke')
   assert.equal(validateDesign({ ...VALID, kurztext: '' }).kurztext, '')
   assert.equal(validateDesign({ ...VALID, kurztext: '   ' }).kurztext, '')
   rejects({ ...VALID, kurztext: 42 }, /Kurztext/)

@@ -65,6 +65,8 @@ function canModerateCodes(family) {
 // Status, „Zurückziehen“, „Neuen Code erstellen“ (höchstens 5 offen) und dem Archiv der eingelösten. Der alte Weg
 // über Adresse+Passwort bleibt als letzter Abschnitt, aber nur für klassische Rudel mit gemeinsamem Passwort.
 // onFamilyChange (Phase V2, optional): neues "me" nach dem Einlösen oder Beenden eines Besuchs (Bereichswechsler).
+export const PRINTED_HINT = '„gedruckt“: Der Code steht schon auf gedruckten Karten – bitte nicht noch einmal weitergeben.'
+
 export default function InviteDialog({ family, onFamilyChange }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
@@ -110,6 +112,8 @@ export default function InviteDialog({ family, onFamilyChange }) {
             ))}
           </ul>
         )}
+        {/* Phase V5: gedruckte Codes stehen schon auf Karten - die Liste nennt ungedruckte zuerst (Server). */}
+        {vouchers?.some((voucher) => voucher.gedruckt && voucher.status === 'offen') && <p className="field-hint">{PRINTED_HINT}</p>}
         <VoucherArchive
           entries={list.archive}
           open={archiveOpen}

@@ -23,7 +23,8 @@ export default function VisitenkarteFarbe({ value, eigeneFarbe, onChange }) {
   const contrast = textColorOn(value)
   const invalid = normalizeHex(text) === null
 
-  // Wechselt die Farbe von außen (Farbfeld, Farbwähler, Laden), zieht das Textfeld nach.
+  // Wechselt die Farbe von außen (Farbfeld, Farbwähler, Laden), zieht das Textfeld nach - ebenso beim Verlassen des
+  // Feldes, damit kein ungültiger Rest stehen bleibt, der nicht gilt.
   useEffect(() => setText(value), [value])
 
   function handleText(event) {
@@ -53,6 +54,7 @@ export default function VisitenkarteFarbe({ value, eigeneFarbe, onChange }) {
             type="text"
             value={text}
             onChange={handleText}
+            onBlur={() => setText(value)}
             maxLength={7}
             spellCheck={false}
             autoComplete="off"

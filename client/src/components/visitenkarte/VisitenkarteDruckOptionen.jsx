@@ -2,11 +2,12 @@ import Icon from '../Icon.jsx'
 import { CARDS_PER_SHEET, MAX_SHEETS, MIN_SHEETS } from '../../lib/visitenkarte.js'
 import { SEITEN } from './VisitenkartenBogen.jsx'
 
-// Drucken (Phase V5): wie viele A4-Bögen (je 10 Karten), welche Seiten und der Druck-Knopf (window.print() - gedruckt
-// wird die Druckfassung aus VisitenkartenBogen.jsx). Dazu die Hinweise für den beidseitigen Druck. blockedHint: warum
-// gerade nicht gedruckt werden kann (z. B. "Erst die Gutscheine holen").
+// Drucken (Phase V5): wie viele A4-Bögen (je 10 Karten), welche Seiten und der Druck-Knopf (onPrint - mit Kunden-Gutschein
+// holt er erst die Codes, dann druckt der Browser die Druckfassung aus VisitenkartenBogen.jsx). gutscheinAnzahl: wie
+// viele Karten dieses Drucks einen eigenen Gutschein bekommen (0 = keine). Dazu die Hinweise für den beidseitigen Druck:
+// die Rückseiten laufen je Reihe gespiegelt (lib/visitenkarte.js mirrorRows) - das passt zum Wenden über die lange Kante.
 
-export const PRINT_HINT = 'Rückseiten: Blatt umdrehen über die kurze Kante.'
+export const PRINT_HINT = 'Rückseiten: Duplex über die lange Kante – bei manuellem Druck das Blatt seitlich umdrehen.'
 const SHEET_OPTIONS = Array.from({ length: MAX_SHEETS - MIN_SHEETS + 1 }, (_, index) => MIN_SHEETS + index)
 const SEITEN_OPTIONS = [
   { value: SEITEN.beide, label: 'Beide Seiten' },
@@ -14,7 +15,13 @@ const SEITEN_OPTIONS = [
   { value: SEITEN.hinten, label: 'Nur hinten' }
 ]
 
-export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, onSeiten, blockedHint, publicUrlWarning }) {
+function printLabel(busy, gutscheinAnzahl) {
+  if (busy) return 'Hole Gutscheine …'
+  if (gutscheinAnzahl === 0) return 'Drucken'
+  return `Drucken – mit ${gutscheinAnzahl} ${gutscheinAnzahl === 1 ? 'Gutschein' : 'Gutscheinen'}`
+}
+
+export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, onSeiten, onPrint, busy, gutscheinAnzahl, publicUrlWarning }) {
   return (
     <section className="vk-panel" aria-labelledby="vk-druck-title">
       <h2 id="vk-druck-title" className="vk-panel-title">
@@ -46,17 +53,15 @@ export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, on
             </button>
           ))}
         </div>
-        <p className="field-hint">„Nur vorne“ und „Nur hinten“ für Drucker ohne Duplex: erst alle Vorderseiten, dann den Stapel umdrehen.</p>
+        <p className="field-hint">
+          „Nur vorne“ und „Nur hinten“ für Drucker ohne Duplex: erst alle Vorderseiten drucken, den Stapel seitlich (über die
+          lange Kante) umdrehen, dann die Rückseiten.
+        </p>
       </div>
       {publicUrlWarning}
-      <button type="button" className="btn btn-primary btn-lg vk-print-button" onClick={() => window.print()} disabled={Boolean(blockedHint)}>
-        <Icon name="printer" /> Drucken
+      <button type="button" className="btn btn-primary btn-lg vk-print-button" onClick={onPrint} disabled={busy}>
+        <Icon name="printer" /> {printLabel(busy, gutscheinAnzahl)}
       </button>
-      {blockedHint && (
-        <p className="field-hint" role="note">
-          {blockedHint}
-        </p>
-      )}
       <ul className="vk-druck-hints">
         <li>
           <strong>{PRINT_HINT}</strong> Bei „Beide Seiten“ folgt jedem Vorderseiten-Bogen sein Rückseiten-Bogen; die Rückseiten

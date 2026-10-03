@@ -17,6 +17,9 @@ const FARBE_RE = /^#[0-9a-f]{6}$/i
 const FLAGS = Object.freeze(['zeigeAnsprechperson', 'zeigeWebsite', 'zeigeTelefon', 'zeigeEmail', 'mitGutschein'])
 const KEYS = Object.freeze(['vorlage', 'farbe', 'kurztext', ...FLAGS])
 const ELLIPSIS = '…'
+// Unsichtbare Zeichen, die lib/partners.js stripUnsafeChars nicht kennt (security-review V5): Nullbreiten-Zeichen und
+// Richtungsmarken, arabisches Buchstabenzeichen, BOM, Zeilen-/Absatztrenner - auf gedruckten Karten nur zum Täuschen gut.
+const INVISIBLE_RE = /[\u200B-\u200F\u061C\uFEFF\u2028\u2029]/g
 // Der erste Satz endet an . ! oder ? mit Leerraum oder Textende danach.
 const FIRST_SENTENCE_RE = /^(.+?[.!?])(\s|$)/s
 
@@ -72,7 +75,7 @@ function validateFarbe(value) {
 
 function validateKurztext(value) {
   if (typeof value !== 'string') throw httpError(400, 'Der Kurztext muss ein Text sein')
-  const text = stripUnsafeChars(value).trim()
+  const text = stripUnsafeChars(value).replace(INVISIBLE_RE, '').trim()
   if (text.length > MAX_KURZTEXT_LENGTH) throw httpError(400, `Der Kurztext darf höchstens ${MAX_KURZTEXT_LENGTH} Zeichen haben`)
   assertNoBreeder({ kurztext: text })
   return text

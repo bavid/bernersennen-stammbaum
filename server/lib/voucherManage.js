@@ -13,6 +13,8 @@
 const { formatCode, decryptCode } = require('./codes')
 const { createBatch, voucherStatus, inviteRoleOf, issuingPartnerId } = require('./vouchers')
 const { ART } = require('./areaArt')
+// Phase V5: legt vouchers.gedruckt_at an - die Liste zeigt, welche Codes schon auf gedruckten Karten stehen.
+require('./voucherGedruckt')
 
 const MAX_OPEN_CODES = 5
 const MAX_LABEL_LENGTH = 60
@@ -91,16 +93,20 @@ function toListItem(row, viewerId) {
     created_at: row.created_at,
     eigen,
     label: eigen ? row.label : null,
+    // Phase V5: steht schon auf gedruckten Karten (Visitenkarten oder Druckseite eines Stapels) - nicht noch einmal
+    // weitergeben.
+    gedruckt: Boolean(row.gedruckt_at),
     ...(row.redeemed_at ? { neueChronik: Boolean(row.neue_chronik) } : {})
   }
 }
 
 const LIST_COLUMNS_SQL = `v.id, v.code_cipher, v.code_hint, v.redeemed_at, v.revoked_at, v.expires_at, v.join_family_id, v.join_rolle,
-  v.created_at, v.visit_host_family_id, v.created_by_family_id, v.label,
+  v.created_at, v.visit_host_family_id, v.created_by_family_id, v.label, v.gedruckt_at,
   EXISTS (SELECT 1 FROM families nf WHERE nf.voucher_id = v.id) AS neue_chronik`
 
 // Codes des Bereichs areaId (ohne Übergabe-Gutscheine und ohne gelöschte): archiv false -> alles noch nicht
 // Eingelöste (offen, abgelaufen, zurückgezogen), archiv true -> die eingelösten. viewerId: siehe toListItem.
+// Phase V5: ungedruckte Codes zuerst - die gibt man am besten weiter.
 // Abgelaufene Codes brauchen ihren Geheimtext nicht mehr (security-review Phase V2, INFO) - beim Lesen weg damit.
 function clearExpiredCiphers(db, areaId) {
   db.prepare(
@@ -117,7 +123,7 @@ function listVouchers(db, { areaId, viewerId, archiv = false }) {
       `SELECT ${LIST_COLUMNS_SQL} FROM vouchers v
        WHERE v.issued_by_family_id = @areaId AND v.dog_id IS NULL AND v.ausgeblendet_at IS NULL
          AND ${archiv ? 'v.redeemed_at IS NOT NULL' : 'v.redeemed_at IS NULL'}
-       ORDER BY v.created_at DESC, v.id DESC`
+       ORDER BY ${archiv ? '' : 'v.gedruckt_at IS NOT NULL, '}v.created_at DESC, v.id DESC`
     )
     .all({ areaId })
     .map((row) => toListItem(row, viewerId))

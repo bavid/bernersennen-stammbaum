@@ -18,7 +18,7 @@ vi.mock('../lib/qr.js', () => ({ qrSvgPath }))
 import PartnerVisitenkartenPage from './PartnerVisitenkartenPage.jsx'
 import { DemoProvider, ADMIN_VIEW_HINT, DEMO_HINT } from '../lib/demo.js'
 import { VK_PRINT_BODY_CLASS } from '../components/visitenkarte/VisitenkartenBogen.jsx'
-import { EMPTY_STACK_HINT } from '../components/visitenkarte/VisitenkarteGutschein.jsx'
+import { ALL_PRINTED_HINT, EMPTY_STACK_HINT } from '../components/visitenkarte/VisitenkarteGutschein.jsx'
 import { PRINT_HINT } from '../components/visitenkarte/VisitenkarteDruckOptionen.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -118,6 +118,8 @@ describe('PartnerVisitenkartenPage – gestalten', () => {
     expect(container.querySelectorAll('.vk-bogen-vorschau .vk-sheet')).toHaveLength(2)
     expect(container.querySelector('a[href="/profil"]')).not.toBe(null)
     expect(container.textContent).toContain(PRINT_HINT)
+    // Die Rückseiten laufen gespiegelt - das passt zum Wenden über die lange Kante.
+    expect(PRINT_HINT).toBe('Rückseiten: Duplex über die lange Kante – bei manuellem Druck das Blatt seitlich umdrehen.')
     expect(document.body.classList.contains(VK_PRINT_BODY_CLASS)).toBe(true)
   })
 
@@ -167,6 +169,31 @@ describe('PartnerVisitenkartenPage – gestalten', () => {
     expect(button('Gestaltung speichern').disabled).toBe(true)
   })
 
+  test('Änderungen während des Speicherns bleiben erhalten und gelten als noch nicht gespeichert', async () => {
+    let resolveSave
+    saveVisitenkarte.mockImplementation((design) => new Promise((resolve) => (resolveSave = () => resolve({ ...STATE, design, gespeichert: true }))))
+    await render()
+    await click(button('Gestaltung speichern'))
+    await changeInput(container.querySelector('#vk-kurztext'), 'Während des Speicherns geändert')
+    await act(async () => resolveSave())
+    expect(container.querySelector('#vk-kurztext').value).toBe('Während des Speicherns geändert')
+    expect(container.querySelector('.vk-save-row').textContent).toContain('Noch nicht gespeichert')
+    expect(button('Gestaltung speichern').disabled).toBe(false)
+  })
+
+  test('Hex-Feld: ein ungültiger Rest springt beim Verlassen auf die geltende Farbe zurück', async () => {
+    await render()
+    const hex = container.querySelector('#vk-farbe-hex')
+    await changeInput(hex, '#a443')
+    expect(hex.getAttribute('aria-invalid')).toBe('true')
+    await act(async () => {
+      hex.focus()
+      hex.blur()
+    })
+    expect(hex.value).toBe('#1f5f8b')
+    expect(hex.getAttribute('aria-invalid')).toBe(null)
+  })
+
   test('Bögen 1-5: die Druckfassung in <body> hat je Bogen Vorder- und Rückseite; nur Rückseiten auf Wunsch', async () => {
     await render()
     await click([...container.querySelectorAll('.vk-segmented button')].find((btn) => btn.textContent === '3'))
@@ -181,39 +208,58 @@ describe('PartnerVisitenkartenPage – gestalten', () => {
 })
 
 describe('PartnerVisitenkartenPage – Kunden-Gutschein', () => {
-  test('Drucken erst nach dem Holen; geholte Codes stehen gespiegelt auf den Rückseiten', async () => {
+  test('Codes erst beim Drucken - genau so viele wie Karten, gespiegelt in der Druckfassung, nach dem Druck wieder weg', async () => {
     visitenkarteGutscheine.mockResolvedValue({ codes: codes(10), fehlen: 0, gutscheine: { offen: 12, ungedruckt: 0 } })
     await render()
     await toggle('vk-mit-gutschein')
     expect(container.textContent).toContain('12 offene Gutscheine, davon 8 noch nicht gedruckt.')
-    expect(printButton().disabled).toBe(true)
-    expect(container.textContent).toContain('Erst die Gutscheine holen')
-    // Vor dem Holen zeigt die Vorschau einen Muster-Code.
+    expect(container.textContent).toContain('Beim Drucken bekommt jede Karte einen eigenen Code')
+    // Vorschau und Druckbogen zeigen bis dahin Muster-Codes, die Druckfassung noch keine echten.
     expect(stage().querySelector('.vk-back-gutschein').dataset.muster).toBe('true')
+    expect(container.querySelector('.vk-bogen-vorschau .vk-back-gutschein').dataset.muster).toBe('true')
+    expect(printView().querySelectorAll('.vk-back-gutschein')).toHaveLength(0)
+    expect(printButton().textContent).toContain('Drucken – mit 8 Gutscheinen')
+    expect(visitenkarteGutscheine).not.toHaveBeenCalled()
 
-    await click(button('Gutscheine für 10 Karten holen'))
+    await click(printButton())
     expect(visitenkarteGutscheine).toHaveBeenCalledWith({ anzahl: 10, nurUngedruckt: true })
-    expect(container.textContent).toContain('10 Gutscheine für diesen Druck geholt')
-    expect(printButton().disabled).toBe(false)
+    expect(window.print).toHaveBeenCalledTimes(1)
     const backCodes = [...printView().querySelectorAll('.vk-sheet-hinten .vk-code')].map((el) => el.getAttribute('aria-label').slice(-14))
     expect(backCodes).toEqual([1, 0, 3, 2, 5, 4, 7, 6, 9, 8].map((index) => codes(10)[index]))
+    expect(printView().querySelector('[data-muster]')).toBe(null)
     expect(qrSvgPath).toHaveBeenCalledWith(`${PUBLIC_URL}/v#${codes(10)[0]}`)
-    expect(stage().querySelector('.vk-back-gutschein').dataset.muster).toBeUndefined()
+    expect(container.textContent).toContain('Zuletzt gedruckt: 10 Karten mit eigenem Gutschein')
+
+    // Nach dem Druckdialog verschwinden die Codes - ein neuer Druck bekommt neue.
+    await act(async () => window.dispatchEvent(new Event('afterprint')))
+    expect(printView().querySelectorAll('.vk-back-gutschein')).toHaveLength(0)
   })
 
-  test('mehr Bögen: fehlende Codes nachholen, ohne "nur ungedruckte" auf Wunsch auch gedruckte', async () => {
-    visitenkarteGutscheine
-      .mockResolvedValueOnce({ codes: codes(10), fehlen: 0, gutscheine: { offen: 12, ungedruckt: 2 } })
-      .mockResolvedValueOnce({ codes: codes(4, 'N'), fehlen: 6, gutscheine: { offen: 12, ungedruckt: 0 } })
+  test('mehr Bögen und "nur ungedruckte" aus: holt genau die Karten des Drucks, warnt vor schon gedruckten', async () => {
+    visitenkarteGutscheine.mockResolvedValue({ codes: codes(14), fehlen: 6, gutscheine: { offen: 12, ungedruckt: 0 } })
     await render()
     await toggle('vk-mit-gutschein')
-    await click(button('Gutscheine für 10 Karten holen'))
     await click([...container.querySelectorAll('.vk-segmented button')].find((btn) => btn.textContent === '2'))
+    expect(container.textContent).toContain('Für 12 Karten reichen sie nicht')
     await toggle('vk-nur-ungedruckt')
-    await click(button('Weitere Gutscheine für 10 Karten holen'))
-    expect(visitenkarteGutscheine).toHaveBeenLastCalledWith({ anzahl: 10, nurUngedruckt: false })
+    expect(container.textContent).toContain('Schon gedruckte Codes können auf verteilten Karten stehen')
+    await click(printButton())
+    expect(visitenkarteGutscheine).toHaveBeenCalledWith({ anzahl: 20, nurUngedruckt: false })
     expect(printView().querySelectorAll('.vk-back-gutschein')).toHaveLength(14)
     expect(printView().querySelectorAll('.vk-back-portal')).toHaveLength(6)
+    expect(container.textContent).toContain('14 Karten mit eigenem Gutschein, 6 mit Portal-Rückseite')
+  })
+
+  test('alle offenen schon gedruckt: Hinweis mit Weg zum Admin, Druck ohne Codes mit Portal-Rückseite', async () => {
+    visitenkarte.mockResolvedValue({ ...STATE, design: { ...DESIGN, mitGutschein: true }, gutscheine: { offen: 12, ungedruckt: 0 } })
+    await render()
+    expect(container.textContent).toContain(ALL_PRINTED_HINT)
+    expect(container.querySelector('a[href="/admin-schreiben"]')).not.toBe(null)
+    expect(stage().querySelector('.vk-back-portal')).not.toBe(null)
+    expect(printButton().textContent.trim()).toBe('Drucken')
+    await click(printButton())
+    expect(visitenkarteGutscheine).not.toHaveBeenCalled()
+    expect(window.print).toHaveBeenCalledTimes(1)
   })
 
   test('leerer Stapel: Hinweis mit Weg zum Admin, gedruckt wird mit Portal-Rückseite', async () => {
@@ -222,16 +268,19 @@ describe('PartnerVisitenkartenPage – Kunden-Gutschein', () => {
     await toggle('vk-mit-gutschein')
     expect(container.textContent).toContain(EMPTY_STACK_HINT)
     expect(container.querySelector('a[href="/admin-schreiben"]')).not.toBe(null)
-    expect(printButton().disabled).toBe(false)
-    expect(button('Gutscheine für')).toBeUndefined()
+    expect(stage().querySelector('.vk-back-gutschein')).toBe(null)
+    await click(printButton())
+    expect(visitenkarteGutscheine).not.toHaveBeenCalled()
+    expect(window.print).toHaveBeenCalledTimes(1)
   })
 
-  test('Fehler beim Holen: Meldung, keine Codes', async () => {
+  test('Fehler beim Holen: Meldung, kein Druck, keine Codes', async () => {
     visitenkarteGutscheine.mockRejectedValue(new Error('Zu viele Abrufe von Gutscheinen in kurzer Zeit'))
     await render()
     await toggle('vk-mit-gutschein')
-    await click(button('Gutscheine für 10 Karten holen'))
+    await click(printButton())
     expect(container.querySelector('[role="alert"]').textContent).toContain('Zu viele Abrufe')
+    expect(window.print).not.toHaveBeenCalled()
     expect(printView().querySelectorAll('.vk-back-gutschein')).toHaveLength(0)
   })
 })
@@ -249,6 +298,8 @@ describe('PartnerVisitenkartenPage – Demo und Admin-Ansicht', () => {
     expect(muster).toHaveLength(10)
     expect(muster.every((back) => back.dataset.muster === 'true')).toBe(true)
     expect(muster[0].querySelector('.vk-code').textContent.startsWith('DEMO')).toBe(true)
+    await click(printButton())
+    expect(window.print).toHaveBeenCalledTimes(1)
     expect(visitenkarteGutscheine).not.toHaveBeenCalled()
     // Ohne Gutschein trägt die Rückseite den Portal-QR - in der Demo mit ?demo=1, damit er sich öffnen lässt.
     await toggle('vk-mit-gutschein')

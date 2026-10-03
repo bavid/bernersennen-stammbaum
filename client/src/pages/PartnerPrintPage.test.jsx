@@ -63,6 +63,17 @@ function button(label) {
 }
 
 describe('PartnerPrintPage – Karten im Partner-Motiv', () => {
+  test('Phase V5: schon gedruckte Codes nennt der Kopf - so geht keiner doppelt raus', async () => {
+    printBatch.mockResolvedValue({ batch: partnerBatch, codes: codes(12), schonGedruckt: 5, nichtDruckbar: 0 })
+    await render('12')
+    expect(container.querySelector('.print-head').textContent).toContain('5 der Codes wurden schon einmal gedruckt')
+  })
+
+  test('Phase V5: ohne schon gedruckte Codes kein Hinweis', async () => {
+    await render('12')
+    expect(container.querySelector('.print-head').textContent).not.toContain('schon einmal gedruckt')
+  })
+
   test('lädt die Druckdaten des Stapels und zeigt jede Karte im Partner-Motiv mit Logo und "überreicht von"', async () => {
     await render('12')
 

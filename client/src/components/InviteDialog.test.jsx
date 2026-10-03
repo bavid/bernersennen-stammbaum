@@ -19,7 +19,7 @@ vi.mock('../api', () => ({ api: { myVouchers, setVoucherRole, voucherLimit, crea
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
 vi.mock('./Toast.jsx', () => ({ useToast: () => toast }))
 
-import InviteDialog from './InviteDialog.jsx'
+import InviteDialog, { PRINTED_HINT } from './InviteDialog.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
 import { DemoProvider } from '../lib/demo.js'
 
@@ -108,6 +108,24 @@ describe('InviteDialog – eigene Gutscheine', () => {
     expect(rows[0].textContent).toContain('ABCD-1234-HJKM')
     expect(rows[0].querySelector('.pill').textContent).toBe('Offen')
     expect(rows[1].textContent).toContain('Eingelöst am 02.01.2026')
+  })
+
+  test('Phase V5: gedruckte Codes tragen die Marke "gedruckt", dazu der Hinweis - ungedruckte ohne', async () => {
+    const printed = { ...openVoucher, id: 7, code: 'WXYZ-5678-KLMN', hint: 'KLMN', gedruckt: true }
+    myVouchers.mockResolvedValue([{ ...openVoucher, gedruckt: false }, printed])
+    await render(partnerArea)
+
+    const rows = [...container.querySelectorAll('.voucher-row')]
+    expect(rows[0].querySelector('.pill-gedruckt')).toBeNull()
+    expect(rows[1].querySelector('.pill-gedruckt').textContent).toBe('gedruckt')
+    expect(container.textContent).toContain(PRINTED_HINT)
+  })
+
+  test('Phase V5: ohne gedruckte Codes kein Hinweis', async () => {
+    myVouchers.mockResolvedValue([openVoucher, { ...redeemedVoucher, gedruckt: true }])
+    await render(partnerArea)
+    expect(container.querySelector('.pill-gedruckt')).toBeNull()
+    expect(container.textContent).not.toContain(PRINTED_HINT)
   })
 
   test('kopiert den Link ohne Bindestriche ins Ziel /v#CODE (Zwischenablage gemockt)', async () => {

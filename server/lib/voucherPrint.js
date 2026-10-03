@@ -42,9 +42,16 @@ function printableCode(row) {
   }
 }
 
+// { codes, ids, schonGedruckt, nichtDruckbar }: die druckbaren Codes, ihre Gutschein-Ids (zum Vermerken als gedruckt,
+// lib/voucherGedruckt.js - Phase V5) und wie viele davon schon einmal gedruckt wurden (rows mit gedruckt_at).
 function printableCodes(rows) {
-  const codes = rows.map(printableCode).filter(Boolean)
-  return { codes, nichtDruckbar: rows.length - codes.length }
+  const printable = rows.map((row) => ({ row, code: printableCode(row) })).filter((entry) => entry.code)
+  return {
+    codes: printable.map((entry) => entry.code),
+    ids: printable.map((entry) => entry.row.id),
+    schonGedruckt: printable.filter((entry) => entry.row.gedruckt_at).length,
+    nichtDruckbar: rows.length - printable.length
+  }
 }
 
 function csvCell(value) {

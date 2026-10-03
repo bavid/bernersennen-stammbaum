@@ -99,7 +99,7 @@ function PrintToolbar({ back, duplex, onDuplex, actions }) {
   )
 }
 
-function PrintHead({ batch, codeCount, sheetCount, nichtDruckbar, designLabel, hint }) {
+function PrintHead({ batch, codeCount, sheetCount, nichtDruckbar, schonGedruckt = 0, designLabel, hint }) {
   return (
     <header className="print-head">
       <span className="eyebrow">Gutschein-Karten</span>
@@ -117,6 +117,13 @@ function PrintHead({ batch, codeCount, sheetCount, nichtDruckbar, designLabel, h
           {pluralize(nichtDruckbar, 'Gutschein', 'Gutscheine')} ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)
         </p>
       )}
+      {/* Phase V5: der Server vermerkt jeden Druck (gedruckt_at) - schon gedruckte Codes nicht doppelt ausgeben. */}
+      {schonGedruckt > 0 && (
+        <p className="field-hint" role="note">
+          {schonGedruckt === codeCount ? 'Alle Codes' : `${schonGedruckt} der Codes`} wurden schon einmal gedruckt – Karten mit
+          diesen Codes nicht doppelt ausgeben.
+        </p>
+      )}
     </header>
   )
 }
@@ -132,6 +139,7 @@ function PrintContent({ print, publicUrl, duplex, designLabel, hint }) {
         codeCount={print.codes.length}
         sheetCount={sheets.length}
         nichtDruckbar={print.nichtDruckbar}
+        schonGedruckt={print.schonGedruckt}
         designLabel={designLabel}
         hint={hint}
       />

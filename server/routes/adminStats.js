@@ -4,6 +4,7 @@ const config = require('../config')
 const { requireAdmin } = require('../middleware/admin')
 const { cleanId } = require('../lib/validate')
 const { printBatch, printableCodes, voucherCsv } = require('../lib/voucherPrint')
+const { markPrinted } = require('../lib/voucherGedruckt')
 const { collectStats } = require('../lib/adminStats')
 const { noStore, endWithoutEtag, sendJsonWithoutEtag: sendJson, CSV_TYPE } = require('../lib/noStoreResponse')
 
@@ -34,7 +35,7 @@ const findBatchStmt = db.prepare(`
 
 // security-review Phase V2 (L-5): persönliche Codes (lib/vouchers.js isPersonalVoucher) druckt der Admin nie.
 const printRowsStmt = db.prepare(
-  `SELECT id, code_cipher, redeemed_at, revoked_at, expires_at FROM vouchers
+  `SELECT id, code_cipher, redeemed_at, revoked_at, expires_at, gedruckt_at FROM vouchers
    WHERE batch_id = ? AND issued_by_family_id IS NULL AND created_by_family_id IS NULL AND visit_host_family_id IS NULL
      AND dog_id IS NULL
    ORDER BY id`
@@ -54,13 +55,16 @@ function findBatch(param) {
 
 // Klartext-Codes für die Druckseite (Client Task 2): nur offene Gutscheine mit Geheimtext
 // (lib/voucherPrint.js printableCodes). Das Protokoll vermerkt nur Stapel-Id und Anzahl - nie einen Code.
+// Phase V5: die Codes gelten danach als gedruckt (lib/voucherGedruckt.js), schonGedruckt sagt, wie viele davon schon
+// einmal auf Karten standen - so landet kein Code unbemerkt zweimal bei der Kundschaft.
 router.get('/voucher-batches/:id/print', requireAdmin, (req, res) => {
   const batch = findBatch(req.params.id)
   if (!batch) return sendJson(res, 404, { error: BATCH_NOT_FOUND })
 
-  const { codes, nichtDruckbar } = printableCodes(printRowsStmt.all(batch.id))
+  const { codes, ids, schonGedruckt, nichtDruckbar } = printableCodes(printRowsStmt.all(batch.id))
+  markPrinted(ids)
   console.info(`[admin] Druckdaten für Stapel ${batch.id}: ${codes.length} Codes, ${nichtDruckbar} nicht druckbar`)
-  sendJson(res, 200, { batch: printBatch(batch), codes, nichtDruckbar })
+  sendJson(res, 200, { batch: printBatch(batch), codes, schonGedruckt, nichtDruckbar })
 })
 
 // CSV ohne Codes (lib/voucherPrint.js voucherCsv): Semikolon, UTF-8 mit BOM (Excel), als Anhang.
