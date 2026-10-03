@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { api } from '../../api'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { formatDateLong } from '../../lib/dates.js'
-import { requestQuestion } from '../../lib/erlebtMit.js'
+import { requestGroups, requestQuestion } from '../../lib/erlebtMit.js'
+import ConfirmButton from '../ConfirmButton.jsx'
 import { genitive } from '../../lib/timeline.js'
 import EntryPhotos from '../EntryPhotos.jsx'
 import { useToast } from '../Toast.jsx'
@@ -42,11 +43,40 @@ export default function ErlebtMitRequests({ onCountChange, onOpenPhoto }) {
     }
   }
 
+  // „Alle von {Zuhause} ablehnen“ (security-review V2, L-3) - gegen eine Flut von Anfragen eines Zuhauses.
+  async function rejectAllFrom(group) {
+    setBusyId(`zuhause-${group.zuhauseId}`)
+    try {
+      const result = await api.rejectAllErlebtMitFrom(group.zuhauseId)
+      setRequests((list) => list.filter((r) => r.zuhauseId !== group.zuhauseId))
+      onCountChange?.(result.offen)
+      toast(`${result.abgelehnt} Anfragen von „${group.zuhause}“ abgelehnt`)
+    } catch (err) {
+      toast(err.message)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   if (requests.length === 0) return null
+  const groups = requestGroups(requests)
 
   return (
     <section className="erlebt-mit-requests" aria-labelledby="erlebt-mit-requests-title">
       <h2 id="erlebt-mit-requests-title">Erlebt mit – Anfragen</h2>
+      {groups.length > 0 && (
+        <div className="erlebt-mit-request-groups">
+          {groups.map((group) => (
+            <ConfirmButton
+              key={group.zuhauseId}
+              label={`Alle ${group.count} von „${group.zuhause}“ ablehnen`}
+              confirmLabel="Wirklich alle ablehnen?"
+              disabled={isDemo || busyId === `zuhause-${group.zuhauseId}`}
+              onConfirm={() => rejectAllFrom(group)}
+            />
+          ))}
+        </div>
+      )}
       <ul className="erlebt-mit-request-list">
         {requests.map((request) => (
           <li key={request.requestId} className="erlebt-mit-request">

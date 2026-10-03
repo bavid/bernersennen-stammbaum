@@ -9,6 +9,7 @@ const api = vi.hoisted(() => ({
   erlebtMitOffen: vi.fn(),
   confirmErlebtMit: vi.fn(),
   rejectErlebtMit: vi.fn(),
+  rejectAllErlebtMitFrom: vi.fn(),
   upload: vi.fn()
 }))
 vi.mock('../../api', () => ({ api }))
@@ -205,6 +206,21 @@ describe('Anfragen „Wilma war dabei – übernehmen?“ (Phase V2)', () => {
     await render(<ErlebtMitRequests />)
     await act(async () => [...container.querySelectorAll('button')].find((b) => b.textContent === 'Ablehnen').click())
     expect(api.rejectErlebtMit).toHaveBeenCalledWith(3)
+  })
+
+  test('„Alle von … ablehnen“ erscheint bei mehreren Anfragen eines Zuhauses (security-review V2)', async () => {
+    const second = { ...request, requestId: 4, titel: 'Noch eine' }
+    api.erlebtMitOffen.mockResolvedValue([{ ...request, zuhauseId: 8 }, { ...second, zuhauseId: 8 }])
+    api.rejectAllErlebtMitFrom.mockResolvedValue({ abgelehnt: 2, offen: 0 })
+    const onCountChange = vi.fn()
+    await render(<ErlebtMitRequests onCountChange={onCountChange} />)
+    const all = () => [...container.querySelectorAll('.erlebt-mit-request-groups button')][0]
+    expect(all().textContent).toContain('Alle 2 von „Zuhause am Deich“ ablehnen')
+    act(() => all().click())
+    await act(async () => all().click())
+    expect(api.rejectAllErlebtMitFrom).toHaveBeenCalledWith(8)
+    expect(onCountChange).toHaveBeenCalledWith(0)
+    expect(container.querySelector('.erlebt-mit-requests')).toBeNull()
   })
 
   test('Demo: Knöpfe gesperrt; ohne Anfragen nichts', async () => {

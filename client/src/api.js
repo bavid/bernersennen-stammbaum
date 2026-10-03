@@ -150,6 +150,8 @@ export const api = {
   erlebtMitOffen: () => request('/erlebt-mit/offen'),
   confirmErlebtMit: (id) => request(`/erlebt-mit/${encodeURIComponent(id)}/bestaetigen`, { method: 'POST' }),
   rejectErlebtMit: (id) => request(`/erlebt-mit/${encodeURIComponent(id)}/ablehnen`, { method: 'POST' }),
+  // „Alle von {Zuhause} ablehnen“ (security-review V2) -> { abgelehnt, offen }
+  rejectAllErlebtMitFrom: (zuhauseId) => request(`/erlebt-mit/ablehnen-von/${encodeURIComponent(zuhauseId)}`, { method: 'POST' }),
   joinFamily: (password) => request('/families/join', json('POST', { password })),
   createGroup: (payload) => request('/families/group', json('POST', payload)),
   leaveFamily: (id) => request(`/memberships/${id}`, { method: 'DELETE' }),

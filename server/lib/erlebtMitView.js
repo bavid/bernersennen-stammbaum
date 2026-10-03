@@ -53,7 +53,8 @@ function applyTags(entryId, dogIds, privat, { contentChanged = false } = {}) {
 
 // Hat sich am Inhalt etwas geändert, das die markierte Seite in ihrer Chronik sieht?
 function entryContentChanged(existing, values) {
-  return ['titel', 'text', 'datum', 'foto_urls'].some((key) => (existing[key] ?? null) !== (values[key] ?? null))
+  // autor_name (security-review V2, L-2): auch ein anderer Name unter dem Eintrag braucht eine neue Zustimmung.
+  return ['titel', 'text', 'datum', 'foto_urls', 'autor_name'].some((key) => (existing[key] ?? null) !== (values[key] ?? null))
 }
 
 // Ergänzt Einträge des eigenen Zuhauses um erlebt_mit ([{ id, dogId, name, zuhause, status }]) - nur in der Ansicht
@@ -61,7 +62,7 @@ function entryContentChanged(existing, values) {
 function withTags(req, entries) {
   if (!isOwnHomeView(req)) return entries
   const own = entries.filter((entry) => entry.family_id === req.familyId).map((entry) => entry.id)
-  const tags = tagsForEntries(own)
+  const tags = tagsForEntries(own, req.homeId)
   return entries.map((entry) => (entry.family_id === req.familyId ? { ...entry, erlebt_mit: tags.get(entry.id) || [] } : entry))
 }
 

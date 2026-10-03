@@ -171,3 +171,16 @@
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+
+/* security-review V2 (L-3): „Alle von {Zuhause} ablehnen“ über der Liste */
+.erlebt-mit-request-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.erlebt-mit-request-groups .btn {
+  min-height: 2.1rem;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+}

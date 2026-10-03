@@ -12,6 +12,10 @@ const db = require('../db')
 const { CONNECTED_HOMES_SQL } = require('./visits')
 
 const MAX_TAGS = 10
+// security-review V2 (L-3): höchstens so viele offene Anfragen eines Zuhauses an ein anderes - sonst ließe sich dessen
+// Anfragen-Liste fluten; die Liste selbst zeigt höchstens OPEN_LIST_LIMIT.
+const MAX_OPEN_PER_HOME = 20
+const OPEN_LIST_LIMIT = 100
 const STATUS = { offen: 'offen', bestaetigt: 'bestaetigt', abgelehnt: 'abgelehnt' }
 
 const NOT_TAGGABLE_MESSAGE = 'Dieses Tier kannst du nicht markieren – nur Tiere von Zuhausen, mit denen ihr verbunden seid.'
@@ -74,6 +78,31 @@ function assertTaggable(homeId, dogIds, { privat }) {
 // Gleicht die Markierungen eines Eintrags an dogIds an (innerhalb der Speicher-Transaktion aufrufen, NACH
 // assertTaggable): neue werden angefragt ('offen'), weggenommene verschwinden - eine abgelehnte Markierung bleibt
 // stehen (ausgeblendet), damit dasselbe Tier nicht mit jedem Speichern erneut angefragt wird.
+// Offene Anfragen des Zuhauses authorId (Einträge mit family_id = authorId) an das Zuhause targetId.
+const countOpenBetweenStmt = db.prepare(
+  `SELECT COUNT(*) AS c FROM erlebt_mit em
+   JOIN timeline_entries t ON t.id = em.entry_id JOIN dogs w ON w.id = em.dog_id
+   WHERE em.status = 'offen' AND t.family_id = ? AND w.family_id = ?`
+)
+const findTargetStmt = db.prepare('SELECT d.family_id AS homeId, f.name FROM dogs d JOIN families f ON f.id = d.family_id WHERE d.id = ?')
+const findEntryFamilyStmt = db.prepare('SELECT family_id FROM timeline_entries WHERE id = ?').pluck()
+
+// 409, wenn neue Anfragen die Grenze MAX_OPEN_PER_HOME je Ziel-Zuhause überschreiten würden (security-review V2, L-3).
+function assertOpenRequestLimit(authorId, newDogIds) {
+  const perTarget = new Map()
+  for (const dogId of newDogIds) {
+    const target = findTargetStmt.get(dogId)
+    if (!target) continue
+    const entry = perTarget.get(target.homeId) || { name: target.name, count: 0 }
+    perTarget.set(target.homeId, { ...entry, count: entry.count + 1 })
+  }
+  for (const [targetId, { name, count }] of perTarget) {
+    if (countOpenBetweenStmt.get(authorId, targetId).c + count > MAX_OPEN_PER_HOME) {
+      throw httpError(409, `Ihr habt schon ${MAX_OPEN_PER_HOME} offene „Erlebt mit“-Anfragen an „${name}“ – wartet, bis sie entschieden sind.`)
+    }
+  }
+}
+
 function syncTags(entryId, dogIds) {
   const wanted = new Set(dogIds)
   const existing = listEntryTagsStmt.all(entryId)
@@ -81,7 +110,9 @@ function syncTags(entryId, dogIds) {
   for (const row of existing) {
     if (!wanted.has(row.dog_id) && row.status !== STATUS.abgelehnt) deleteTagStmt.run(row.id)
   }
-  for (const dogId of wanted) if (!existingDogs.has(dogId)) insertTagStmt.run(entryId, dogId)
+  const added = [...wanted].filter((dogId) => !existingDogs.has(dogId))
+  assertOpenRequestLimit(findEntryFamilyStmt.get(entryId), added)
+  for (const dogId of added) insertTagStmt.run(entryId, dogId)
 }
 
 function clearTags(entryId) {
@@ -95,23 +126,28 @@ function reopenConfirmedTags(entryId) {
   reopenConfirmedStmt.run(entryId)
 }
 
-// Markierungen für die Ansicht der Autorin (ihr eigenes Zuhause): je Eintrag [{ id, dogId, name, zuhause, status }],
-// ohne abgelehnte. entryIds: Einträge, die dem aktiven Bereich gehören.
-function tagsForEntries(entryIds) {
+// Markierungen für die Ansicht der Autorin (ihr eigenes Zuhause homeId): je Eintrag [{ id, dogId, name, zuhause,
+// status }], ohne abgelehnte. entryIds: Einträge, die dem aktiven Bereich gehören. Ist das Zuhause des Tiers nicht
+// mehr verbunden (security-review V2, L-1), bleibt nur { id, status, getrennt: true } - ohne den heutigen Namen des
+// Tiers oder seines Zuhauses.
+const tagsForEntriesStmt = db.prepare(
+  `SELECT em.id, em.entry_id, em.dog_id AS dogId, d.name, d.name_unbekannt, f.name AS zuhause, em.status,
+     (d.family_id IN ${CONNECTED_HOMES_SQL}) AS verbunden
+   FROM erlebt_mit em JOIN dogs d ON d.id = em.dog_id JOIN families f ON f.id = d.family_id
+   WHERE em.entry_id IN (SELECT value FROM json_each(@ids)) AND em.status != 'abgelehnt'
+   ORDER BY d.name COLLATE NOCASE, em.id`
+)
+
+function toTag({ entry_id, name_unbekannt, verbunden, ...tag }) {
+  if (!verbunden) return { id: tag.id, status: tag.status, getrennt: true }
+  return { ...tag, nameUnbekannt: Boolean(name_unbekannt) }
+}
+
+function tagsForEntries(entryIds, homeId) {
   if (entryIds.length === 0) return new Map()
-  const placeholders = entryIds.map(() => '?').join(', ')
-  const rows = db
-    .prepare(
-      `SELECT em.id, em.entry_id, em.dog_id AS dogId, d.name, d.name_unbekannt, f.name AS zuhause, em.status
-       FROM erlebt_mit em JOIN dogs d ON d.id = em.dog_id JOIN families f ON f.id = d.family_id
-       WHERE em.entry_id IN (${placeholders}) AND em.status != 'abgelehnt'
-       ORDER BY d.name COLLATE NOCASE, em.id`
-    )
-    .all(...entryIds)
+  const rows = tagsForEntriesStmt.all({ ids: JSON.stringify(entryIds), homeId })
   const byEntry = new Map()
-  for (const { entry_id, name_unbekannt, ...tag } of rows) {
-    byEntry.set(entry_id, [...(byEntry.get(entry_id) || []), { ...tag, nameUnbekannt: Boolean(name_unbekannt) }])
-  }
+  for (const row of rows) byEntry.set(row.entry_id, [...(byEntry.get(row.entry_id) || []), toTag(row)])
   return byEntry
 }
 
@@ -132,7 +168,13 @@ const ownerViewFrom = `FROM erlebt_mit em
 const openRequestsStmt = db.prepare(
   `SELECT em.id AS requestId, em.created_at AS angefragtAm, ${ENTRY_COLUMNS_SQL} ${ownerViewFrom}
    WHERE em.status = 'offen' AND ${OWNER_VIEW_SQL}
-   ORDER BY em.created_at DESC, em.id DESC`
+   ORDER BY em.created_at DESC, em.id DESC
+   LIMIT ${OPEN_LIST_LIMIT}`
+)
+// „Alle von {Zuhause} ablehnen“ (security-review V2, L-3): alle offenen, für homeId sichtbaren Anfragen aus fromId.
+const rejectAllFromStmt = db.prepare(
+  `UPDATE erlebt_mit SET status = 'abgelehnt', entschieden_at = datetime('now')
+   WHERE id IN (SELECT em.id ${ownerViewFrom} WHERE em.status = 'offen' AND t.family_id = @fromId AND ${OWNER_VIEW_SQL})`
 )
 const countOpenStmt = db.prepare(`SELECT COUNT(*) AS c ${ownerViewFrom} WHERE em.status = 'offen' AND ${OWNER_VIEW_SQL}`)
 const mirroredStmt = db.prepare(
@@ -174,6 +216,11 @@ function decideRequest(homeId, id, status) {
   return { id, status }
 }
 
+// Gibt die Anzahl abgelehnter Anfragen zurück (0, wenn es keine gab).
+function rejectAllFrom(homeId, fromId) {
+  return Number.isInteger(fromId) ? rejectAllFromStmt.run({ homeId, fromId }).changes : 0
+}
+
 // Fotos eines markierten Eintrags sieht das Zuhause homeId, solange die Markierung offen oder bestätigt ist (für die
 // Anfrage bzw. die gespiegelte Chronik) - nicht anhängbar (lib/uploadAccess.js nur canSeeUpload). Alias t.
 const mirroredPhotoStmt = db.prepare(
@@ -199,5 +246,8 @@ module.exports = {
   countOpenRequests,
   mirroredEntries,
   decideRequest,
-  isMirroredPhoto
+  rejectAllFrom,
+  isMirroredPhoto,
+  MAX_OPEN_PER_HOME,
+  OPEN_LIST_LIMIT
 }

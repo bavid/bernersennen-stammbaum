@@ -5,7 +5,7 @@ const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { cleanId } = require('../lib/validate')
 const { ART } = require('../lib/areaArt')
-const { STATUS, taggableDogs, openRequests, decideRequest, countOpenRequests } = require('../lib/erlebtMit')
+const { STATUS, taggableDogs, openRequests, decideRequest, countOpenRequests, rejectAllFrom } = require('../lib/erlebtMit')
 
 // Phase V2: "Erlebt mit" (/api/erlebt-mit) - alles für die Identität der Sitzung (req.homeId) als Zuhause und nur aus
 // dem eigenen Zuhause heraus (nicht in einer Familie, nicht zu Besuch: die Besuchs-Sitzung sperrt
@@ -48,5 +48,12 @@ function decide(status) {
 
 router.post('/:id/bestaetigen', decide(STATUS.bestaetigt))
 router.post('/:id/ablehnen', decide(STATUS.abgelehnt))
+
+// „Alle von {Zuhause} ablehnen“ (security-review V2, L-3) - { abgelehnt, offen }; 404, wenn es keine gab.
+router.post('/ablehnen-von/:zuhauseId', (req, res) => {
+  const abgelehnt = rejectAllFrom(req.homeId, cleanId(req.params.zuhauseId))
+  if (!abgelehnt) return res.status(404).json({ error: 'Von diesem Zuhause gibt es keine offenen Anfragen' })
+  res.json({ abgelehnt, offen: countOpenRequests(req.homeId) })
+})
 
 module.exports = router

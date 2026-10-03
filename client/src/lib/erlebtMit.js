@@ -7,8 +7,10 @@ function animalName(name, nameUnbekannt) {
   return nameUnbekannt || !name ? UNKNOWN_NAME : name
 }
 
-// Chip am eigenen Eintrag: "erlebt mit Wilma" (noch nicht bestätigt: "erlebt mit Wilma (angefragt)").
+// Chip am eigenen Eintrag: "erlebt mit Wilma" (noch nicht bestätigt: "erlebt mit Wilma (angefragt)"). Ist das andere
+// Zuhause nicht mehr verbunden (getrennt, security-review V2), nennt der Server den Namen nicht mehr.
 export function tagLabel(tag) {
+  if (tag.getrennt) return 'erlebt mit einem früher verbundenen Tier'
   const base = `erlebt mit ${animalName(tag.name, tag.nameUnbekannt)}`
   return tag.status === 'offen' ? `${base} (angefragt)` : base
 }
@@ -34,7 +36,18 @@ export function withErlebtMitOffen(family, offen) {
   return { ...family, erlebtMitOffen: offen }
 }
 
-// Tier-Ids der (nicht abgelehnten) Markierungen eines Eintrags - Vorbelegung im Formular.
+// Tier-Ids der (nicht abgelehnten) Markierungen eines Eintrags - Vorbelegung im Formular; getrennte fallen weg
+// (sie ließen sich ohnehin nicht mehr markieren).
 export function taggedDogIds(entry) {
-  return (entry?.erlebt_mit || []).map((tag) => tag.dogId)
+  return (entry?.erlebt_mit || []).filter((tag) => !tag.getrennt).map((tag) => tag.dogId)
+}
+
+// Anfragen je Zuhause (für „Alle von {Zuhause} ablehnen“): [{ zuhauseId, zuhause, count }] mit mindestens zwei.
+export function requestGroups(requests) {
+  const groups = new Map()
+  for (const request of requests) {
+    const group = groups.get(request.zuhauseId) || { zuhauseId: request.zuhauseId, zuhause: request.zuhause, count: 0 }
+    groups.set(request.zuhauseId, { ...group, count: group.count + 1 })
+  }
+  return [...groups.values()].filter((group) => group.count > 1)
 }

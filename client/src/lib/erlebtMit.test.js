@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { canVisitOrigin, mirrorLabel, requestQuestion, tagLabel, taggedDogIds, withErlebtMitOffen } from './erlebtMit.js'
+import { canVisitOrigin, mirrorLabel, requestGroups, requestQuestion, tagLabel, taggedDogIds, withErlebtMitOffen } from './erlebtMit.js'
 
 describe('lib/erlebtMit (Phase V2)', () => {
   test('tagLabel: bestätigt und angefragt', () => {
@@ -26,8 +26,21 @@ describe('lib/erlebtMit (Phase V2)', () => {
     expect(withErlebtMitOffen(family, 2)).toBe(family)
   })
 
-  test('taggedDogIds', () => {
-    expect(taggedDogIds({ erlebt_mit: [{ dogId: 3 }, { dogId: 5 }] })).toEqual([3, 5])
+  test('taggedDogIds - ohne getrennte', () => {
+    expect(taggedDogIds({ erlebt_mit: [{ dogId: 3 }, { dogId: 5 }, { id: 9, getrennt: true }] })).toEqual([3, 5])
     expect(taggedDogIds(undefined)).toEqual([])
+  })
+
+  test('getrennte Markierung ohne Namen (security-review V2)', () => {
+    expect(tagLabel({ id: 9, status: 'bestaetigt', getrennt: true })).toBe('erlebt mit einem früher verbundenen Tier')
+  })
+
+  test('requestGroups: nur Zuhause mit mindestens zwei Anfragen', () => {
+    const requests = [
+      { requestId: 1, zuhauseId: 4, zuhause: 'Zuhause A' },
+      { requestId: 2, zuhauseId: 4, zuhause: 'Zuhause A' },
+      { requestId: 3, zuhauseId: 7, zuhause: 'Zuhause B' }
+    ]
+    expect(requestGroups(requests)).toEqual([{ zuhauseId: 4, zuhause: 'Zuhause A', count: 2 }])
   })
 })
