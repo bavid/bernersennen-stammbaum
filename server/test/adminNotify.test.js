@@ -138,9 +138,17 @@ test('Admin: Telegram einrichten, Schalter setzen, Chat finden und Testnachricht
   })
 
   await t.test('Chat finden: mit gespeichertem oder mitgeschicktem Token, speichert nichts', async () => {
+    // Phase V4b: der gespeicherte Bot läuft über den gemeinsamen Update-Leser (lib/telegramUpdates.js) - mit eigener Uhr,
+    // damit die Drossel (ein getUpdates je 3 s) den Test nicht ausbremst.
+    const { setTelegramUpdatesRuntimeForTests } = require('../lib/telegramUpdates')
+    let clock = 1_000_000
+    const restoreUpdates = setTelegramUpdatesRuntimeForTests({ now: () => clock, logger })
+    t.after(restoreUpdates)
     const tokensAsked = []
-    telegram.getUpdates = async ({ token }) => {
+    const offsets = []
+    telegram.getUpdates = async ({ token, offset }) => {
       tokensAsked.push(token)
+      offsets.push(offset)
       return [
         { update_id: 1, message: { chat: { id: 4242, type: 'private', first_name: 'Greta', username: 'greta_b' } } },
         { update_id: 2, my_chat_member: { chat: { id: -100555, type: 'group', title: 'Team Pfoten' } } }
@@ -158,8 +166,18 @@ test('Admin: Telegram einrichten, Schalter setzen, Chat finden und Testnachricht
     assert.equal((await admin('/api/admin/notify-settings/chat-finden', { method: 'POST', body: { token: 'x' } })).status, 400)
     assert.equal(db.prepare("SELECT 1 FROM settings WHERE key = 'telegram_chat_id'").get(), undefined, 'nichts gespeichert')
 
-    telegram.getUpdates = async () => []
-    assert.deepEqual((await admin('/api/admin/notify-settings/chat-finden', { method: 'POST' })).data, [])
+    // Der gemeinsame Leser bestätigt per offset - gesehene Chats bleiben trotzdem in der Liste (24 Stunden).
+    clock += 5000
+    telegram.getUpdates = async ({ offset }) => {
+      offsets.push(offset)
+      return []
+    }
+    const again = await admin('/api/admin/notify-settings/chat-finden', { method: 'POST' })
+    assert.deepEqual(again.data.map((chat) => chat.id), ['-100555', '4242'])
+    assert.deepEqual(offsets, [undefined, undefined, 3], 'beim zweiten Mal ab update_id 3, der andere Token ohne offset')
+    clock += 25 * 60 * 60 * 1000
+    assert.deepEqual((await admin('/api/admin/notify-settings/chat-finden', { method: 'POST' })).data, [], 'nach 24 Stunden vergessen')
+    clock += 5000
     telegram.getUpdates = async () => {
       throw rejected(409)
     }

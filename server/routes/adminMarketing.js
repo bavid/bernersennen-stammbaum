@@ -28,6 +28,7 @@ const {
   promotionVerlauf,
   listDecidedPromotions
 } = require('../lib/promotionFreigabe')
+const { notifyPartner, PARTNER_EREIGNIS } = require('../lib/partnerNotify')
 
 // Phase 3 Task 1: Admin-Pflege für den Reiter "Entdecken" - Empfehlungen/Anzeigen (promotions),
 // GoFundMe-Link/Text (settings) und Transparenzberichte (donation_reports). Eingehängt unter /api/admin
@@ -58,6 +59,13 @@ const findPromotionStmt = db.prepare(
 
 function findPromotion(id) {
   return id ? findPromotionStmt.get(id) : null
+}
+
+// Phase V4b: Telegram-Hinweis an den Partner, über dessen Beitrag entschieden wurde (lib/partnerNotify.js) - nur für
+// Beiträge aus einem Partner-Bereich; der Text nennt nur den Titel (eigener Inhalt des Partners), nie den Grund.
+function notifyDecision(row, freigegeben) {
+  if (!row?.erstellt_von_partner || !Number.isInteger(row.partner_id)) return
+  notifyPartner(row.partner_id, PARTNER_EREIGNIS.freigabe, { titel: row.titel, freigegeben })
 }
 
 // bildUrl zusätzlich zu den Spalten - wie logoUrl bei Partnern (lib/partners.js publicPartner) - und
@@ -133,7 +141,9 @@ router.put('/promotions/:id', requireAdmin, (req, res, next) => {
       )
       if (existing.freigabe !== FREIGABE.freigegeben) recordPromotionEvent(id, VERLAUF_AKTION.freigegeben)
     })()
-    res.json(promotionRow(findPromotion(id)))
+    const updated = findPromotion(id)
+    if (existing.freigabe !== FREIGABE.freigegeben) notifyDecision(updated, true)
+    res.json(promotionRow(updated))
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)
@@ -157,7 +167,9 @@ router.delete('/promotions/:id', requireAdmin, (req, res) => {
 // Antwort { freigegeben, uebersprungen, ids } - ids sind die tatsächlich freigegebenen.
 router.post('/promotions/freigeben', requireAdmin, (req, res, next) => {
   try {
-    res.json(approveMany(validateSammelIds(req.body?.ids)))
+    const result = approveMany(validateSammelIds(req.body?.ids))
+    for (const id of result.ids) notifyDecision(findPromotion(id), true)
+    res.json(result)
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)
@@ -166,8 +178,12 @@ router.post('/promotions/freigeben', requireAdmin, (req, res, next) => {
 
 router.post('/promotions/:id/freigeben', requireAdmin, (req, res) => {
   const id = cleanId(req.params.id)
-  if (!id || !approvePromotion(id)) return res.status(404).json({ error: NOT_FOUND })
-  res.json(promotionRow(findPromotion(id)))
+  const before = findPromotion(id)
+  if (!before || !approvePromotion(id)) return res.status(404).json({ error: NOT_FOUND })
+  const approved = findPromotion(id)
+  // Nur, wenn die Freigabe sich dadurch ändert - ein zweites "Freigeben" meldet nichts.
+  if (before.freigabe !== FREIGABE.freigegeben) notifyDecision(approved, true)
+  res.json(promotionRow(approved))
 })
 
 router.post('/promotions/:id/ablehnen', requireAdmin, (req, res, next) => {
@@ -175,7 +191,9 @@ router.post('/promotions/:id/ablehnen', requireAdmin, (req, res, next) => {
     const id = cleanId(req.params.id)
     if (!findPromotion(id)) return res.status(404).json({ error: NOT_FOUND })
     if (!rejectPromotion(id, ablehnungsgrundFrom(req.body))) return res.status(404).json({ error: NOT_FOUND })
-    res.json(promotionRow(findPromotion(id)))
+    const rejected = findPromotion(id)
+    notifyDecision(rejected, false)
+    res.json(promotionRow(rejected))
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)

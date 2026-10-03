@@ -1,0 +1,74 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { api } from '../api'
+import { qrSvgMarkup } from '../lib/partnerShare.js'
+import { POLL_INTERVAL_MS, isTelegramLink, telegramStatus } from '../lib/partnerTelegram.js'
+import Icon from './Icon.jsx'
+import Modal from './Modal.jsx'
+
+const WAITING = 'Warte auf die Bestätigung in Telegram …'
+
+// Dialog "Mit Telegram verbinden" (Phase V4b): der Einmal-Link als Knopf (Handy) und als QR-Code (Computer), dazu
+// "Verbindung prüfen". Solange der Dialog offen ist, fragt er alle POLL_INTERVAL_MS selbst nach; sobald der Server
+// verbunden meldet, geht onConnected(status). link: { url, gueltigMinuten } aus POST /partner-area/telegram/verbinden.
+export default function TelegramConnectDialog({ link, onConnected, onClose }) {
+  const url = isTelegramLink(link?.url) ? link.url : null
+  const qrImage = useMemo(() => (url ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvgMarkup(url))}` : null), [url])
+  const [message, setMessage] = useState(WAITING)
+  const [checking, setChecking] = useState(false)
+  const busy = useRef(false)
+
+  const check = useCallback(async () => {
+    if (busy.current) return
+    busy.current = true
+    setChecking(true)
+    try {
+      const status = telegramStatus(await api.partnerArea.checkTelegram())
+      if (status.verbunden) onConnected(status)
+      else setMessage(WAITING)
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      busy.current = false
+      setChecking(false)
+    }
+  }, [onConnected])
+
+  useEffect(() => {
+    if (!url) return undefined
+    const timer = setInterval(check, POLL_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [url, check])
+
+  return (
+    <Modal open title="Mit Telegram verbinden" onClose={onClose}>
+      {url ? (
+        <div className="telegram-connect">
+          <ol className="telegram-connect-steps">
+            <li>Auf dem Handy „In Telegram öffnen“ antippen – am Computer den QR-Code mit dem Handy scannen.</li>
+            <li>In Telegram auf „Starten“ tippen.</li>
+            <li>Fertig – diese Seite merkt es von selbst.</li>
+          </ol>
+          <div className="telegram-connect-codes">
+            <a className="btn btn-primary" href={url} target="_blank" rel="noopener noreferrer">
+              <Icon name="send" />
+              In Telegram öffnen
+            </a>
+            <img src={qrImage} alt="QR-Code für den Telegram-Link" className="telegram-connect-qr" width={176} height={176} />
+          </div>
+          <p className="field-hint">Der Link gilt {link.gueltigMinuten || 15} Minuten und nur einmal.</p>
+          <p className="telegram-connect-status" role="status">
+            {message}
+          </p>
+          <button type="button" className="btn btn-ghost" onClick={check} disabled={checking}>
+            <Icon name="check" />
+            {checking ? 'Prüfe …' : 'Verbindung prüfen'}
+          </button>
+        </div>
+      ) : (
+        <p className="error-banner" role="alert">
+          Der Link ließ sich nicht erzeugen – bitte noch einmal versuchen.
+        </p>
+      )}
+    </Modal>
+  )
+}

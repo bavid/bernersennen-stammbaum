@@ -255,6 +255,9 @@ module.exports = {
   CAP_WARNING_TEXT,
   CAP_ANFRAGEN_WARNING_TEXT,
   buildText,
+  // Phase V4b: dieselbe Entschärfung und dieselben Logzeilen für die Hinweise an Partner (lib/partnerNotify.js).
+  detailValue,
+  failureReason,
   notify,
   sendTestMessage,
   setNotifyRuntimeForTests,

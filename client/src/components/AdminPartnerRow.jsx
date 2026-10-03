@@ -35,6 +35,8 @@ export default function AdminPartnerRow({ partner, onEdit, onToggleStatus, onDel
           </span>
         )}
         <span className="muted">{TYPE_LABELS[partner.typ] || partner.typ}</span>
+        {/* Phase V4b: ob der Partner Telegram-Hinweise verbunden hat - nie die Chat-ID. */}
+        <span className="muted admin-partner-telegram">Telegram verbunden: {partner.telegram_verbunden ? 'ja' : 'nein'}</span>
       </span>
       <span className="admin-partner-row-actions">
         <button type="button" className="btn btn-ghost" onClick={() => onEdit(partner)}>

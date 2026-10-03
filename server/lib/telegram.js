@@ -63,7 +63,9 @@ function createTelegramClient({ fetchJson = safeFetchJson } = {}) {
       if (!me || me.is_bot !== true) throw telegramError(502, 'Das ist kein Bot-Token.', { rejected: true })
       return me
     },
-    getUpdates: ({ token }) => callApi(token, 'getUpdates', { limit: UPDATES_LIMIT, timeout: 0 }, CHECK_TIMEOUT_MS)
+    // Phase V4b: offset bestätigt alle älteren Updates (lib/telegramUpdates.js liest sie für Admin und Partner gemeinsam).
+    getUpdates: ({ token, offset }) =>
+      callApi(token, 'getUpdates', { limit: UPDATES_LIMIT, timeout: 0, ...(Number.isSafeInteger(offset) ? { offset } : {}) }, CHECK_TIMEOUT_MS)
   }
 }
 
@@ -134,6 +136,7 @@ function extractChats(updates) {
 }
 
 module.exports = {
+  NUMERIC_CHAT_ID_RE,
   TELEGRAM_HOST,
   SEND_TIMEOUT_MS,
   CHECK_TIMEOUT_MS,

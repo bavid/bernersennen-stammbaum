@@ -176,7 +176,7 @@ export default function PartnerProfilePage({ family }) {
         {showAccessLink && (
           <Link to={ACCESS_ROUTE} className="btn btn-ghost">
             <Icon name="lock" />
-            Zugang & Schlüssel verwalten
+            Zugang & Benachrichtigungen
           </Link>
         )}
       </aside>

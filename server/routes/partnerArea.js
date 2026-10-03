@@ -7,6 +7,7 @@ const postsRoutes = require('./partnerArea/posts')
 const messagesRoutes = require('./partnerArea/messages')
 const vouchersRoutes = require('./partnerArea/vouchers')
 const termineRoutes = require('./partnerArea/termine')
+const telegramRoutes = require('./partnerArea/telegram')
 
 // Phase P Task 3 (docs/superpowers/plans/2026-09-29-phase-p-partnerbereich.md): alle Endpunkte des
 // Partner-Bereichs unter /api/partner-area. Jede Anfrage braucht eine Sitzung in einem Partner-Bereich
@@ -25,5 +26,7 @@ router.use('/messages', messagesRoutes)
 router.use('/vouchers', vouchersRoutes)
 // Phase V4a: der Kalender (Termine, Serien und Absagen).
 router.use('/termine', termineRoutes)
+// Phase V4b: Telegram-Hinweise (Verbinden, Schalter, Testnachricht, Trennen).
+router.use('/telegram', telegramRoutes)
 
 module.exports = router

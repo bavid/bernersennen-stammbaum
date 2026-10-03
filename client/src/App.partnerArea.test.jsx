@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile, previewDiscover, previewPortal, termine } = vi.hoisted(() => ({
+const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, profile, previewDiscover, previewPortal, termine, telegram } = vi.hoisted(() => ({
   me: vi.fn(),
   profile: vi.fn(),
   // Phase V4a: der Kalender (/kalender) lädt seine Termine.
@@ -12,6 +12,8 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   // Kundensicht (/kundensicht): "Entdecken" lädt beim Anzeigen die Vorschau - hier reicht eine leere Antwort.
   previewDiscover: vi.fn(() => Promise.resolve({})),
   previewPortal: vi.fn(() => Promise.resolve({})),
+  // Phase V4b: /zugang lädt den Stand der Telegram-Hinweise.
+  telegram: vi.fn(() => Promise.resolve({ eingerichtet: false, verbunden: false, getrennt: null, hinweise: {} })),
   myVouchers: vi.fn(),
   logout: vi.fn(),
   listUsers: vi.fn(),
@@ -21,7 +23,7 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   redeemVoucher: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile, previewDiscover, previewPortal, termine } },
+  api: { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVoucher, myVouchers, partnerArea: { profile, previewDiscover, previewPortal, termine, telegram } },
   setUnauthorizedHandler: () => {}
 }))
 

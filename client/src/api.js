@@ -402,6 +402,15 @@ export const api = {
     markMessageRead: (id) => request(`/partner-area/messages/${encodeURIComponent(id)}/read`, { method: 'POST' }),
     deleteMessage: (id) => request(`/partner-area/messages/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
+    // Telegram-Hinweise (Phase V4b, server/routes/partnerArea/telegram.js): Antwort immer { eingerichtet, verbunden,
+    // getrennt, hinweise } - nie die Chat-ID. Verbinden liefert { url, gueltigMinuten } (Einmal-Link zu t.me).
+    telegram: () => request('/partner-area/telegram'),
+    connectTelegram: () => request('/partner-area/telegram/verbinden', { method: 'POST' }),
+    checkTelegram: () => request('/partner-area/telegram/pruefen', { method: 'POST' }),
+    updateTelegramHinweise: (hinweise) => request('/partner-area/telegram/hinweise', json('PUT', hinweise)),
+    sendTelegramTest: () => request('/partner-area/telegram/test', { method: 'POST' }),
+    disconnectTelegram: () => request('/partner-area/telegram', { method: 'DELETE' }),
+
     // Kunden-Gutscheine (Phase 5 Task 4, server/routes/partnerArea/vouchers.js): { stapel } ohne Codes; die
     // Druckdaten eines eigenen Stapels (offene Codes im Klartext, Server: no-store) nur für PartnerPrintPage.
     vouchers: () => request('/partner-area/vouchers'),

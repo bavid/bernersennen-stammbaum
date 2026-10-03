@@ -7,6 +7,7 @@ const { readNotifySettings, updateNotifySettings } = require('../lib/notifySetti
 const { telegramStatus, effectiveTelegram, validateTelegramInput, validateOptionalToken, saveTelegram } = require('../lib/telegramConfig')
 const { telegramClient, isRejectedByTelegram, extractChats } = require('../lib/telegram')
 const { sendTestMessage } = require('../lib/notify')
+const { pollUpdates, recentChats } = require('../lib/telegramUpdates')
 
 // Phase N Task 2: Telegram-Benachrichtigungen im Admin - Zugangsdaten (Bot-Token verschlüsselt, Chat-ID), Schalter
 // je Ereignis und eine Testnachricht (lib/telegramConfig.js, lib/notifySettings.js, lib/notify.js). Eingehängt unter
@@ -85,19 +86,22 @@ router.put('/notify-settings/telegram', noStore, requireAdmin, async (req, res, 
 })
 
 // POST /api/admin/notify-settings/chat-finden { token? } -> [{ id, titel, typ }]: die Chats, die dem Bot zuletzt
-// geschrieben haben (getUpdates) - der Admin schreibt seinem Bot "/start" und wählt dann seinen Chat. Mit dem
-// mitgeschickten Token, sonst dem wirksamen (Admin oder Umgebung). Speichert nichts.
+// geschrieben haben - der Admin schreibt seinem Bot "/start" und wählt dann seinen Chat. Phase V4b: für den wirksamen
+// Bot (Admin oder Umgebung) über den gemeinsamen Update-Leser (lib/telegramUpdates.js) - er teilt sich die Updates mit
+// den Partner-Verbindungen, die gesehenen Chats bleiben 24 Stunden in der Liste. Ein mitgeschickter ANDERER Token (noch
+// nicht gespeichert) fragt diesen Bot direkt, ohne offset. Speichert keine Chat-ID.
 router.post('/notify-settings/chat-finden', noStore, requireAdmin, async (req, res, next) => {
   try {
-    const token = validateOptionalToken(req.body?.token) || effectiveTelegram().token
+    const effective = effectiveTelegram().token
+    const token = validateOptionalToken(req.body?.token) || effective
     if (!token) throw httpError(409, 'Zuerst den Bot-Token speichern.')
-    let updates
     try {
-      updates = await telegramClient().getUpdates({ token })
+      if (token !== effective) return res.json(extractChats(await telegramClient().getUpdates({ token })))
+      await pollUpdates({ token })
     } catch (err) {
       throw telegramFailure(err)
     }
-    res.json(extractChats(updates))
+    res.json(recentChats(token))
   } catch (err) {
     sendError(res, next, err)
   }

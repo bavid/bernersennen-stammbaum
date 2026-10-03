@@ -763,4 +763,30 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_partner_banner_foto ON partner_banner(foto_url);
 `)
 
+// Phase V4b: Telegram-Hinweise für Partner (lib/partnerTelegram.js, routes/partnerArea/telegram.js). partner_telegram: eine
+// Zeile je Partner - chat_cipher die Chat-ID, verschlüsselt (lib/codes.js encryptSecret, AAD je Partner), NULL = nicht
+// verbunden; hinweis_*: Schalter je Ereignis; getrennt_grund 'blockiert', wenn Telegram 403 meldet (Bot blockiert).
+// partner_telegram_codes: Einmal-Codes für den Link https://t.me/<bot>?start=<code> - nur der HMAC (lib/codes.js
+// hashCode), 15 Minuten gültig, einmal einlösbar. Bewusst ohne REFERENCES auf partners(id) - wie partner_einblicke.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS partner_telegram (
+    partner_id INTEGER PRIMARY KEY,
+    chat_cipher TEXT,
+    hinweis_nachricht INTEGER NOT NULL DEFAULT 1,
+    hinweis_freigabe INTEGER NOT NULL DEFAULT 1,
+    verbunden_at TEXT,
+    getrennt_grund TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS partner_telegram_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partner_id INTEGER NOT NULL,
+    code_hash TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_partner_telegram_codes_partner ON partner_telegram_codes(partner_id);
+`)
+
 module.exports = db

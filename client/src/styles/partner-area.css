@@ -752,3 +752,124 @@
 .partner-stack-print {
   justify-self: start;
 }
+
+/* Phase V4b: "Benachrichtigungen" auf /zugang (PartnerTelegramSection) und der Verbinden-Dialog */
+
+.partner-telegram {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  max-width: 44rem;
+}
+
+.partner-telegram-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.partner-telegram-head h2 {
+  font-size: var(--text-xl);
+}
+
+.partner-telegram-head .page-lede {
+  margin: 0;
+}
+
+.telegram-state {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.telegram-state svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.telegram-state.is-connected {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.telegram-state.is-blocked {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.telegram-connected,
+.telegram-disconnected {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+
+.telegram-hinweise {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.telegram-hinweise legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.telegram-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.telegram-connect {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+
+.telegram-connect-steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+  line-height: 1.5;
+}
+
+.telegram-connect-codes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.telegram-connect-qr {
+  width: 11rem;
+  height: 11rem;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+
+.telegram-connect-status {
+  margin: 0;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* Am Handy hilft der QR-Code nicht (man scannt nicht den eigenen Bildschirm) - der Knopf reicht. */
+@media (max-width: 560px) {
+  .telegram-connect-qr {
+    display: none;
+  }
+}

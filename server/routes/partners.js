@@ -15,6 +15,7 @@ const { promotionCard } = require('./discover')
 const { rejectHoneypot } = require('../middleware/abuse')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { contactFormStatus, validateContactMessage, insertMessage } = require('../lib/partnerMessages')
+const { notifyPartner, PARTNER_EREIGNIS } = require('../lib/partnerNotify')
 
 const router = express.Router()
 
@@ -149,6 +150,8 @@ router.post('/:slug/contact', contactLimiter, rejectHoneypot, (req, res, next) =
     const partner = found.partner
 
     insertMessage(partner, validateContactMessage(req.body, partner))
+    // Phase V4b: Telegram-Hinweis an den Partner - ohne Name, Kontaktdaten oder Text, asynchron (lib/partnerNotify.js).
+    notifyPartner(partner.id, PARTNER_EREIGNIS.nachricht)
     res.status(201).json({ ok: true })
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })

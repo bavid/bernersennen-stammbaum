@@ -108,3 +108,15 @@ describe('AdminPartnerRow – Schalter „Vertrauenswürdig“ (V-Fehler 3)', ()
     expect(trustSwitch().disabled).toBe(false)
   })
 })
+
+describe('AdminPartnerRow – Telegram (Phase V4b)', () => {
+  test('zeigt nur, ob der Partner Telegram verbunden hat', async () => {
+    await render({ ...partner, telegram_verbunden: 1 })
+    expect(container.querySelector('.admin-partner-telegram').textContent).toBe('Telegram verbunden: ja')
+    act(() => root.unmount())
+    root = null
+    container.remove()
+    await render({ ...partner, telegram_verbunden: null })
+    expect(container.querySelector('.admin-partner-telegram').textContent).toBe('Telegram verbunden: nein')
+  })
+})
