@@ -124,3 +124,16 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+/* "Zum Inhalt springen" (SkipLink, Audit V7a): erst bei Tastatur-Fokus sichtbar, oben links über allem. */
+.skip-link {
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 1000;
+  transform: translateY(calc(-100% - var(--space-6)));
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}

@@ -17,6 +17,9 @@ export const MAX_TEXT_LENGTH = 1000
 export const REFRESH_MS = 5 * 60 * 1000
 
 export const DISMISSED_KEY = 'chronik.hinweiseAusgeblendet'
+// Die letzte Antwort von GET /api/hinweise (Audit V7a): beim nächsten Laden der Seite steht das Band sofort da, statt
+// erst nach der Anfrage alles nach unten zu schieben. Nur diese Browser-Sitzung, nur öffentliche Hinweise.
+export const CACHE_KEY = 'chronik.hinweiseZuletzt'
 // Mehr weggeklickte Ids merken wir uns nicht - die ältesten fallen heraus (öffentlich sind höchstens fünf).
 export const MAX_DISMISSED = 50
 
@@ -162,4 +165,40 @@ export function addDismissed(ids, id) {
 
 export function visibleHinweise(list, dismissed) {
   return (list || []).filter((hinweis) => !dismissed.includes(hinweis.id))
+}
+
+// --- Zuletzt geladen (nur diese Browser-Sitzung) ---------------------------------------------------
+
+const STUFE_VALUES = Object.values(STUFE)
+
+// Nur, was das Band wirklich zeigt - und nur in der erwarteten Form (der Speicher ist für die Seite fremde Eingabe).
+function isCachedHinweis(item) {
+  return (
+    Boolean(item) &&
+    Number.isInteger(item.id) &&
+    typeof item.titel === 'string' &&
+    item.titel.length <= MAX_TITEL_LENGTH &&
+    (item.text === null || item.text === undefined || (typeof item.text === 'string' && item.text.length <= MAX_TEXT_LENGTH)) &&
+    STUFE_VALUES.includes(item.stufe)
+  )
+}
+
+// null: nichts gemerkt (oder unbrauchbar) - dann wartet das Band wie bisher auf die Antwort.
+export function readCachedHinweise() {
+  try {
+    const parsed = JSON.parse(globalThis.sessionStorage.getItem(CACHE_KEY) || 'null')
+    if (!Array.isArray(parsed)) return null
+    return parsed.filter(isCachedHinweis).map(({ id, titel, text, stufe }) => ({ id, titel, text: text ?? null, stufe }))
+  } catch {
+    return null
+  }
+}
+
+export function writeCachedHinweise(list) {
+  try {
+    const clean = (list || []).filter(isCachedHinweis).map(({ id, titel, text, stufe }) => ({ id, titel, text: text ?? null, stufe }))
+    globalThis.sessionStorage.setItem(CACHE_KEY, JSON.stringify(clean))
+  } catch {
+    // Merken ist optional (siehe readDismissed).
+  }
 }

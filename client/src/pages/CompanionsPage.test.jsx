@@ -85,6 +85,26 @@ test('zeigt Kennzahlen für Tiere gesamt, aktuell lebende Tiere und Jahre gemein
   expect(stats).toEqual(['2', '1', '18'])
 })
 
+test('Audit V7a: beim Laden stehen die Kennzahlen schon mit Platzhaltern da (kein Nachrutschen), ohne Tiere danach nicht', async () => {
+  let resolve
+  listDogs.mockReturnValue(new Promise((done) => (resolve = done)))
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  await act(async () =>
+    createRoot(container).render(
+      <MemoryRouter>
+        <ThemeProvider themeId="standard">
+          <CompanionsPage family={{ id: 1, name: 'Zuhause am See' }} />
+        </ThemeProvider>
+      </MemoryRouter>
+    )
+  )
+  expect([...container.querySelectorAll('.stats dd')].map((el) => el.textContent)).toEqual(['–', '–', '–'])
+  expect(container.querySelector('.stats').getAttribute('aria-busy')).toBe('true')
+  await act(async () => resolve([]))
+  expect(container.querySelector('.stats')).toBeNull()
+})
+
 test('zeigt den Jahrestag-Hinweis, wenn er innerhalb von 30 Tagen liegt', async () => {
   await render([dog(1, 'Nele', { bei_uns_seit: '2021-10-05' })])
   const hint = container.querySelector('.companions-anniversary')

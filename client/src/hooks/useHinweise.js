@@ -1,17 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { api } from '../api'
-import { REFRESH_MS, addDismissed, readDismissed, visibleHinweise, writeDismissed } from '../lib/hinweise.js'
+import {
+  REFRESH_MS,
+  addDismissed,
+  readCachedHinweise,
+  readDismissed,
+  visibleHinweise,
+  writeCachedHinweise,
+  writeDismissed
+} from '../lib/hinweise.js'
 
 // Die laufenden globalen Hinweise fürs Band (HinweisBand, GET /api/hinweise): einmal beim Laden der Seite, danach bei
-// einem Seitenwechsel höchstens alle REFRESH_MS. null, solange nichts geladen ist - das Band erscheint erst danach
-// (kein Springen beim Laden). Scheitert die Anfrage, bleibt es beim Bisherigen (anfangs: kein Band) - das Band ist ein
-// Zusatz, kein Fehler soll die Seite stören.
+// einem Seitenwechsel höchstens alle REFRESH_MS. null, solange nichts geladen ist - das Band erscheint erst danach.
+// Audit V7a: die letzte Antwort dieser Browser-Sitzung (readCachedHinweise) gilt schon beim ersten Rendern - so steht
+// das Band beim Neuladen oder nächsten Aufruf sofort da, statt die Seite nach der Anfrage nach unten zu schieben.
+// Scheitert die Anfrage, bleibt es beim Bisherigen (anfangs: kein Band) - das Band ist ein Zusatz, kein Fehler soll die
+// Seite stören.
 // Weggeklickte Ids merkt sich sessionStorage (lib/hinweise.js) - in dieser Browser-Sitzung bleiben sie weg, ein neuer
 // Hinweis (neue Id) erscheint trotzdem. -> { hinweise: sichtbare | null, dismiss(id) }
 export default function useHinweise() {
   const { pathname } = useLocation()
-  const [hinweise, setHinweise] = useState(null)
+  const [hinweise, setHinweise] = useState(readCachedHinweise)
   const [dismissed, setDismissed] = useState(readDismissed)
   const lastFetch = useRef(null)
   const mounted = useRef(true)
@@ -32,7 +42,9 @@ export default function useHinweise() {
     api
       .hinweise()
       .then((result) => {
-        if (mounted.current) setHinweise(Array.isArray(result?.hinweise) ? result.hinweise : [])
+        const list = Array.isArray(result?.hinweise) ? result.hinweise : []
+        writeCachedHinweise(list)
+        if (mounted.current) setHinweise(list)
       })
       .catch(() => {
         if (mounted.current) setHinweise((current) => current ?? [])

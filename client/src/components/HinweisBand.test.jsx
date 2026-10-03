@@ -8,7 +8,7 @@ const { hinweise } = vi.hoisted(() => ({ hinweise: vi.fn() }))
 vi.mock('../api', () => ({ api: { hinweise } }))
 
 import HinweisBand from './HinweisBand.jsx'
-import { DISMISSED_KEY, REFRESH_MS } from '../lib/hinweise.js'
+import { CACHE_KEY, DISMISSED_KEY, REFRESH_MS } from '../lib/hinweise.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -131,4 +131,50 @@ test('die erste Antwort kommt auch an, wenn die App gleich nach dem Laden weiter
   await act(async () => navigate('/stammbaum'))
   await act(async () => resolve({ hinweise: [WARTUNG] }))
   expect(titel()).toBe('Wartung heute Abend')
+})
+
+test('Audit V7a: die letzte Antwort der Sitzung steht beim nächsten Laden sofort da (kein Nachrutschen der Seite)', async () => {
+  hinweise.mockResolvedValue({ hinweise: [WARTUNG] })
+  await render()
+  expect(JSON.parse(window.sessionStorage.getItem(CACHE_KEY))).toEqual([WARTUNG])
+
+  act(() => root.unmount())
+  root = null
+  let resolve
+  hinweise.mockReturnValue(new Promise((done) => (resolve = done)))
+  await render()
+  expect(titel()).toBe('Wartung heute Abend')
+  // Die frische Antwort gewinnt: der Hinweis ist inzwischen weg
+  await act(async () => resolve({ hinweise: [] }))
+  expect(container.innerHTML).toBe('')
+  expect(JSON.parse(window.sessionStorage.getItem(CACHE_KEY))).toEqual([])
+})
+
+test('Audit V7a: ein unbrauchbarer Speicherinhalt wird ignoriert', async () => {
+  window.sessionStorage.setItem(CACHE_KEY, JSON.stringify([{ id: 'x', titel: 3 }, { id: 9, titel: 'Ok', stufe: 'unbekannt' }]))
+  let resolve
+  hinweise.mockReturnValue(new Promise((done) => (resolve = done)))
+  await render()
+  expect(container.innerHTML).toBe('')
+  await act(async () => resolve({ hinweise: [NEU] }))
+  expect(titel()).toBe('Neu: Kalender')
+})
+
+test('Audit V7a: nach dem letzten weggeklickten Hinweis landet der Fokus auf dem Hauptinhalt, nicht im Nichts', async () => {
+  vi.useFakeTimers()
+  const main = document.createElement('main')
+  document.body.appendChild(main)
+  try {
+    hinweise.mockResolvedValue({ hinweise: [WARTUNG] })
+    await render()
+    const close = container.querySelector('[aria-label="Hinweis ausblenden"]')
+    close.focus()
+    await act(async () => close.click())
+    await act(async () => vi.runAllTimers())
+    expect(document.activeElement).toBe(main)
+    expect(main.getAttribute('tabindex')).toBe('-1')
+  } finally {
+    main.remove()
+    vi.useRealTimers()
+  }
 })

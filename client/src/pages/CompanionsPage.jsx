@@ -53,6 +53,7 @@ export default function CompanionsPage({ family, onFamilyChange }) {
   }, [])
 
   const rows = useMemo(() => companionRows(dogs || [], today), [dogs, today])
+  const loadingDogs = dogs === null && !error
   const span = useMemo(() => yearSpan(rows, today), [rows, today])
   const anniversary = useMemo(() => nextAnniversary(dogs || [], today), [dogs, today])
   const livingCount = useMemo(() => rows.filter((row) => row.ongoing).length, [rows])
@@ -100,19 +101,21 @@ export default function CompanionsPage({ family, onFamilyChange }) {
           )}
         </div>
         <div className="page-hero-side">
-          {rows.length > 0 && (
-            <dl className="stats">
+          {/* Audit V7a: schon beim Laden mit Platzhaltern - sonst schoben die Kennzahlen nach der Antwort Knopf und Seite
+              nach unten. Ohne Tiere fallen sie danach weg. */}
+          {(loadingDogs || rows.length > 0) && (
+            <dl className="stats" aria-busy={loadingDogs || undefined}>
               <div>
                 <dt>{words.animals} gesamt</dt>
-                <dd>{rows.length}</dd>
+                <dd>{loadingDogs ? '–' : rows.length}</dd>
               </div>
               <div>
                 <dt>leben bei euch</dt>
-                <dd>{livingCount}</dd>
+                <dd>{loadingDogs ? '–' : livingCount}</dd>
               </div>
               <div>
                 <dt>{years === 1 ? 'Jahr' : 'Jahre'} gemeinsam</dt>
-                <dd>{years}</dd>
+                <dd>{loadingDogs ? '–' : years}</dd>
               </div>
             </dl>
           )}

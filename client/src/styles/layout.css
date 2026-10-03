@@ -314,6 +314,9 @@
   flex: 1;
   width: 100%;
   max-width: var(--page-max);
+  /* Audit V7a: mindestens eine Bildschirmhöhe - der Fuß steht so schon beim Laden unterhalb und wird nicht sichtbar
+     nach unten geschoben, sobald die Inhalte da sind (Layout-Verschiebung). */
+  min-height: 100dvh;
   margin: 0 auto;
   padding: var(--page-pad-top) var(--page-gutter) var(--space-16);
 }
