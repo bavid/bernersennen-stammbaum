@@ -468,6 +468,9 @@ describe('PartnerProfilePage – Kunden-Gutscheine im Reiter "Teilen"', () => {
     expect(teaser.querySelector('h2').textContent).toBe('Visitenkarten')
     expect(teaser.querySelector('a').getAttribute('href')).toBe('/visitenkarten')
     expect(teaser.querySelector('a').textContent).toContain('Visitenkarten gestalten')
+    // Einladungskarten: der zweite Weg öffnet die Kartenart direkt.
+    const einladung = teaser.querySelector('a[href="/visitenkarten?art=einladung"]')
+    expect(einladung.textContent).toContain('Einladungskarten gestalten')
     // Audit V7a: genau ein Weg zu den Visitenkarten im Reiter - kein zweiter Knopf bei den Kunden-Gutscheinen.
     expect(document.getElementById('partner-profile-panel-teilen').querySelectorAll('a[href="/visitenkarten"]')).toHaveLength(1)
   })

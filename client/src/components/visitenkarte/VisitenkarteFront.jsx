@@ -3,7 +3,8 @@ import Icon from '../Icon.jsx'
 // Vorderseite einer Visitenkarte (Phase V5, 85 × 55 mm) in einer der drei Vorlagen - card kommt aus lib/visitenkarte.js
 // cardModel (Foto ohne Bannerfoto ist dort schon Klassisch). Maße und Schrift in styles/visitenkarten.css (alles in
 // --mm, damit Vorschau und Druck dieselben Proportionen haben). Feste Druckfarben, kein Theme: Papier kennt keinen
-// Dunkelmodus. Die Vorderseite trägt keinen QR-Code - der steht auf der Rückseite (Portal oder Gutschein).
+// Dunkelmodus. Die Vorderseite trägt keinen QR-Code - der steht auf der Rückseite (Portal oder Gutschein). Einladungskarten
+// (lib/einladungskarte.js einladungCardModel) bringen card.widmung mit - die persönliche Zeile über dem Namen.
 
 const VORLAGE_LABELS = { klassisch: 'Klassisch', foto: 'Foto', schlicht: 'Schlicht' }
 const MONOGRAM_LETTERS = 2
@@ -35,6 +36,11 @@ export function Kontakte({ kontakte, className = '' }) {
   )
 }
 
+function Widmung({ card }) {
+  if (!card.widmung) return null
+  return <p className="vk-widmung">{card.widmung}</p>
+}
+
 function Logo({ card }) {
   if (card.logoUrl) return <img className="vk-logo" src={card.logoUrl} alt="" />
   return (
@@ -51,6 +57,7 @@ function KlassischFront({ card }) {
         <Logo card={card} />
       </div>
       <div className="vk-klassisch-text">
+        <Widmung card={card} />
         <p className="vk-name">{card.name}</p>
         {card.kurztext && <p className="vk-kurztext">{card.kurztext}</p>}
         <div className="vk-foot">
@@ -75,6 +82,7 @@ function FotoFront({ card }) {
       )}
       <div className="vk-foto-text">
         <span className="vk-foto-bar" aria-hidden="true" />
+        <Widmung card={card} />
         <p className="vk-name">{card.name}</p>
         {card.kurztext && <p className="vk-kurztext">{card.kurztext}</p>}
         {card.ansprechperson && <p className="vk-person">{card.ansprechperson}</p>}
@@ -88,6 +96,7 @@ function SchlichtFront({ card }) {
   return (
     <>
       <header className="vk-band">
+        <Widmung card={card} />
         <p className="vk-name">{card.name}</p>
       </header>
       <div className="vk-schlicht-body">
@@ -107,7 +116,7 @@ export default function VisitenkarteFront({ card }) {
   const Front = FRONTS[card.vorlage] || KlassischFront
   return (
     <article
-      className={`vk-card vk-front vk-${card.vorlage}`}
+      className={`vk-card vk-front vk-${card.vorlage}${card.widmung ? ' has-widmung' : ''}`}
       data-vorlage={card.vorlage}
       style={cardStyle(card)}
       aria-label={`Vorderseite (${VORLAGE_LABELS[card.vorlage] || card.vorlage})`}

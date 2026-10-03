@@ -21,6 +21,51 @@ function printLabel(busy, gutscheinAnzahl) {
   return `Drucken – mit ${gutscheinAnzahl} ${gutscheinAnzahl === 1 ? 'Gutschein' : 'Gutscheinen'}`
 }
 
+// Welche Seiten - geteilt mit den Einladungskarten (EinladungDruckOptionen.jsx).
+export function SeitenField({ seiten, onSeiten, busy }) {
+  return (
+    <div className="field">
+      <span className="vk-label" id="vk-seiten-label">
+        Seiten
+      </span>
+      <div className="segmented vk-segmented" role="group" aria-labelledby="vk-seiten-label">
+        {SEITEN_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={seiten === option.value}
+            onClick={() => onSeiten(option.value)}
+            disabled={busy}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <p className="field-hint">Ohne Duplex: erst „Nur vorne“, den Stapel seitlich umdrehen, dann „Nur hinten“.</p>
+    </div>
+  )
+}
+
+// Hinweise für den beidseitigen Druck - geteilt mit den Einladungskarten. Zum Aufklappen, damit die Seite kurz bleibt;
+// der wichtigste Satz (PRINT_HINT) steht schon in der Zusammenfassung.
+export function DruckHints() {
+  return (
+    <details className="vk-druck-tipps">
+      <summary>
+        <strong>{PRINT_HINT}</strong> <span className="vk-druck-tipps-mehr">Mehr Tipps</span>
+      </summary>
+      <ul className="vk-druck-hints">
+        <li>
+          Bei „Beide Seiten“ folgt jedem Vorderseiten-Bogen sein Rückseiten-Bogen; die Rückseiten laufen gespiegelt, damit jede
+          hinter ihrer Karte liegt.
+        </li>
+        <li>Im Druckdialog „Tatsächliche Größe“ bzw. 100 % wählen – sonst stimmen Kartenmaß und Schnittmarken nicht.</li>
+        <li>Festes Papier (ab 250 g/m²) wirkt wie eine echte Visitenkarte. Geschnitten wird an den Marken.</li>
+      </ul>
+    </details>
+  )
+}
+
 export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, onSeiten, onPrint, busy, gutscheinAnzahl, publicUrlWarning }) {
   return (
     <section className="vk-panel" aria-labelledby="vk-druck-title">
@@ -42,40 +87,12 @@ export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, on
           {sheets * CARDS_PER_SHEET} Karten · je Bogen {CARDS_PER_SHEET} Karten (2 × 5) mit Schnittmarken
         </p>
       </div>
-      <div className="field">
-        <span className="vk-label" id="vk-seiten-label">
-          Seiten
-        </span>
-        <div className="segmented vk-segmented" role="group" aria-labelledby="vk-seiten-label">
-          {SEITEN_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={seiten === option.value}
-              onClick={() => onSeiten(option.value)}
-              disabled={busy}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        <p className="field-hint">
-          „Nur vorne“ und „Nur hinten“ für Drucker ohne Duplex: erst alle Vorderseiten drucken, den Stapel seitlich (über die
-          lange Kante) umdrehen, dann die Rückseiten.
-        </p>
-      </div>
+      <SeitenField seiten={seiten} onSeiten={onSeiten} busy={busy} />
       {publicUrlWarning}
       <button type="button" className="btn btn-primary btn-lg vk-print-button" onClick={onPrint} disabled={busy}>
         <Icon name="printer" /> {printLabel(busy, gutscheinAnzahl)}
       </button>
-      <ul className="vk-druck-hints">
-        <li>
-          <strong>{PRINT_HINT}</strong> Bei „Beide Seiten“ folgt jedem Vorderseiten-Bogen sein Rückseiten-Bogen; die Rückseiten
-          laufen gespiegelt, damit jede hinter ihrer Karte liegt.
-        </li>
-        <li>Im Druckdialog „Tatsächliche Größe“ bzw. 100 % wählen – sonst stimmen Kartenmaß und Schnittmarken nicht.</li>
-        <li>Festes Papier (ab 250 g/m²) wirkt wie eine echte Visitenkarte. Geschnitten wird an den Marken.</li>
-      </ul>
+      <DruckHints />
     </section>
   )
 }

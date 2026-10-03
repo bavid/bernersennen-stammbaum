@@ -282,6 +282,11 @@ export const api = {
     updateHinweis: (id, payload) => request(`/admin/hinweise/${encodeURIComponent(id)}`, json('PUT', payload)),
     deleteHinweis: (id) => request(`/admin/hinweise/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
+    // Einladungskarte – Rückseite (server/routes/adminEinladungskarte.js): { rueckseite, vorgaben } mit je { titel, text,
+    // schritte, adresse }; Speichern ersetzt die ganze Rückseite, Fehler tragen womöglich details.feld.
+    einladungskarte: () => request('/admin/einladungskarte'),
+    saveEinladungskarte: (rueckseite) => request('/admin/einladungskarte', json('PUT', rueckseite)),
+
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),
     createPartner: (payload) => request('/admin/partners', json('POST', payload)),
@@ -430,11 +435,13 @@ export const api = {
     // Audit V7a: der Druck wird ausdrücklich gemeldet (GET oben liest nur) - ids aus der Antwort von printBatch.
     markPrinted: (id, ids) => request(`/partner-area/vouchers/${encodeURIComponent(id)}/print/gedruckt`, json('POST', { ids })),
 
-    // Visitenkarten (Phase V5, server/routes/partnerArea/visitenkarte.js): { design, gespeichert, vorschlag, gutscheine:
-    // { offen, ungedruckt }, maxJeAbruf } - Speichern antwortet genauso. Die Gutschein-Codes für den Druck ({ codes, fehlen,
-    // gutscheine }, Server: no-store, als gedruckt vermerkt) stehen nur im Body der Antwort, nie in einer URL.
+    // Visitenkarten (Phase V5, server/routes/partnerArea/visitenkarte.js): { design, gespeichert, einladung: { design,
+    // gespeichert }, rueckseite, vorschlag, gutscheine: { offen, ungedruckt }, maxJeAbruf } - Speichern (Visitenkarte bzw.
+    // Vorderseite der Einladungskarte) antwortet genauso. Die Gutschein-Codes für den Druck ({ codes, fehlen, gutscheine },
+    // Server: no-store, als gedruckt vermerkt) stehen nur im Body der Antwort, nie in einer URL.
     visitenkarte: () => request('/partner-area/visitenkarte'),
     saveVisitenkarte: (design) => request('/partner-area/visitenkarte', json('PUT', design)),
+    saveEinladungskarte: (design) => request('/partner-area/visitenkarte/einladung', json('PUT', design)),
     visitenkarteGutscheine: ({ anzahl, nurUngedruckt }) =>
       request('/partner-area/visitenkarte/gutscheine', json('POST', { anzahl, nurUngedruckt }))
   },

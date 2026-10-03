@@ -10,13 +10,14 @@ import { VK_PRINT_BODY_CLASS } from '../components/visitenkarte/VisitenkartenBog
 const stylesDir = dirname(fileURLToPath(import.meta.url))
 const css = readFileSync(join(stylesDir, 'visitenkarten.css'), 'utf8')
 const cardCss = readFileSync(join(stylesDir, 'visitenkarte-karte.css'), 'utf8')
+const einladungCss = readFileSync(join(stylesDir, 'einladungskarte.css'), 'utf8')
 const globalCss = readFileSync(join(stylesDir, 'global.css'), 'utf8')
 const printBlock = css.slice(css.indexOf('@media print'))
 
 describe('visitenkarten.css', () => {
   test('ist samt Karten-Datei nach print.css in global.css eingebunden', () => {
     const imports = [...globalCss.matchAll(/@import '\.\/([^']+)';/g)].map((match) => match[1])
-    for (const file of ['visitenkarten.css', 'visitenkarte-karte.css']) {
+    for (const file of ['visitenkarten.css', 'visitenkarte-karte.css', 'einladungskarte.css']) {
       expect(imports).toContain(file)
       expect(imports.indexOf(file)).toBeGreaterThan(imports.indexOf('print.css'))
     }
@@ -31,6 +32,9 @@ describe('visitenkarten.css', () => {
   test('A4 über die benannte Seite "voucher", 1 mm je Einheit, ein Bogen je Blatt, Farben exakt', () => {
     expect(css).not.toMatch(/@page\s*\{/)
     expect(cardCss).not.toMatch(/@page|@media print/)
+    // Einladungskarten: kein eigenes @page, die Rückseite in festen Farben der Plattform statt der Partnerfarbe.
+    expect(einladungCss).not.toMatch(/@page|@media print/)
+    expect(einladungCss.slice(einladungCss.indexOf('.vk-back-einladung {'))).not.toMatch(/--vk-farbe/)
     expect(printBlock).toMatch(/\.vk-print \.vk-sheet\s*\{[^}]*--vk-mm:\s*1mm;[^}]*page:\s*voucher;[^}]*height:\s*296mm;[^}]*break-after:\s*page;/)
     expect(printBlock).toMatch(/print-color-adjust:\s*exact;/)
     expect(cardCss).toMatch(/\.vk-card\s*\{[^}]*width:\s*calc\(85 \* var\(--u\)\);[^}]*height:\s*calc\(55 \* var\(--u\)\);/)

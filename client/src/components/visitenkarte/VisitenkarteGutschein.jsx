@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Icon from '../Icon.jsx'
+import { ART } from '../../lib/einladungskarte.js'
 
 // "Mit Kunden-Gutschein" (Phase V5): jede gedruckte Karte bekommt auf der Rückseite einen eigenen offenen Code aus dem
 // eigenen Kunden-Stapel. Die Codes holt erst "Drucken" (hooks/useVisitenkartenDruck.js) - in genau der Zahl der Karten,
@@ -10,19 +11,20 @@ import Icon from '../Icon.jsx'
 export const EMPTY_STACK_HINT = 'Keine offenen Gutscheine – beim Admin neue anfragen'
 export const ALL_PRINTED_HINT = 'Alle offenen Gutscheine stehen schon auf gedruckten Karten – beim Admin neue anfragen'
 export const REQUEST_ROUTE = '/admin-schreiben'
-const DEMO_NOTE = 'Muster: In der Demo stehen auf den Karten Beispiel-Codes („DEMO-…“) – sie lassen sich nicht einlösen.'
-const ADMIN_VIEW_NOTE = 'In der Admin-Ansicht stehen auf den Karten Beispiel-Codes („DEMO-…“) – echte Codes holt nur der Partner selbst.'
+export const DEMO_NOTE = 'Muster: In der Demo stehen auf den Karten Beispiel-Codes („DEMO-…“) – sie lassen sich nicht einlösen.'
+export const ADMIN_VIEW_NOTE = 'In der Admin-Ansicht stehen auf den Karten Beispiel-Codes („DEMO-…“) – echte Codes holt nur der Partner selbst.'
 const PORTAL_FALLBACK = 'bis dahin bekommen die Karten die Rückseite mit eurem Portal.'
 
-function plural(count, singular, pluralForm) {
+export function plural(count, singular, pluralForm) {
   return `${count} ${count === 1 ? singular : pluralForm}`
 }
 
-function RequestNote({ title }) {
+// folge: was ohne Codes passiert (Einladungskarten: ohne Code gibt es keine Karte).
+export function RequestNote({ title, folge = PORTAL_FALLBACK }) {
   return (
     <div className="vk-note" role="note">
       <p>
-        <strong>{title}</strong> – {PORTAL_FALLBACK}
+        <strong>{title}</strong> – {folge}
       </p>
       <Link to={REQUEST_ROUTE} className="btn btn-ghost">
         <Icon name="message" /> Beim Admin anfragen
@@ -58,11 +60,11 @@ function LastPrint({ lastPrint }) {
   )
 }
 
-function RealCodes({ druck, cards }) {
-  const { gutscheine, available, nurUngedruckt, setNurUngedruckt, lastPrint } = druck
-  if (gutscheine.offen === 0 && !lastPrint) return <RequestNote title={EMPTY_STACK_HINT} />
+// Zahlen des eigenen Stapels und "nur ungedruckte" - geteilt mit den Einladungskarten (EinladungCodes.jsx).
+export function StapelStand({ druck }) {
+  const { gutscheine, nurUngedruckt, setNurUngedruckt } = druck
   return (
-    <div className="vk-gutschein-body">
+    <>
       <p className="vk-counts">
         {plural(gutscheine.offen, 'offener Gutschein', 'offene Gutscheine')}, davon {gutscheine.ungedruckt} noch nicht gedruckt.
       </p>
@@ -81,6 +83,18 @@ function RealCodes({ druck, cards }) {
           Schon gedruckte Codes können auf verteilten Karten stehen – nur nehmen, wenn diese Karten nie ausgegeben wurden.
         </p>
       )}
+    </>
+  )
+}
+
+function RealCodes({ druck, cards }) {
+  const { gutscheine, available } = druck
+  // Der letzte Druck zählt hier nur, wenn es Visitenkarten waren (die Einladungskarten melden ihren selbst).
+  const lastPrint = druck.lastPrint?.art === ART.einladung ? null : druck.lastPrint
+  if (gutscheine.offen === 0 && !lastPrint) return <RequestNote title={EMPTY_STACK_HINT} />
+  return (
+    <div className="vk-gutschein-body">
+      <StapelStand druck={druck} />
       {available === 0 ? (
         <RequestNote title={gutscheine.offen === 0 ? EMPTY_STACK_HINT : ALL_PRINTED_HINT} />
       ) : (

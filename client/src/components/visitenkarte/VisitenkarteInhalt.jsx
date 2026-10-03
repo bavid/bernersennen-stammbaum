@@ -1,8 +1,32 @@
 import { CONTACT_FIELDS, MAX_KURZTEXT_LENGTH, availableContacts } from '../../lib/visitenkarte.js'
+import { MAX_WIDMUNG_LENGTH } from '../../lib/einladungskarte.js'
 
 // Inhalt der Karte (Phase V5): Kurztext (höchstens 120 Zeichen, Vorschlag aus dem Portal) und welche Angaben aus dem
 // Profil auf der Karte stehen - Ansprechperson und Website/Telefon/E-Mail lassen sich nur schalten, wenn sie im Profil
-// eingetragen sind. Name, Logo und Kontaktdaten selbst pflegt der Partner im Profil.
+// eingetragen sind. Name, Logo und Kontaktdaten selbst pflegt der Partner im Profil. mitWidmung (Einladungskarte): dazu
+// die persönliche Zeile über dem Namen (höchstens 80 Zeichen, leer = keine).
+
+function Widmung({ value, onChange }) {
+  return (
+    <div className="field">
+      <label className="vk-label" htmlFor="vk-widmung">
+        Persönliche Zeile <span className="muted">(optional)</span>
+      </label>
+      <input
+        id="vk-widmung"
+        type="text"
+        value={value}
+        maxLength={MAX_WIDMUNG_LENGTH}
+        placeholder="z. B. Für unsere Welpenkurs-Familien"
+        onChange={(event) => onChange({ widmung: event.target.value })}
+        aria-describedby="vk-widmung-hint"
+      />
+      <p id="vk-widmung-hint" className="field-hint">
+        {value.length}/{MAX_WIDMUNG_LENGTH} Zeichen · steht über eurem Namen
+      </p>
+    </div>
+  )
+}
 
 function Toggle({ id, checked, onChange, children }) {
   return (
@@ -13,7 +37,7 @@ function Toggle({ id, checked, onChange, children }) {
   )
 }
 
-export default function VisitenkarteInhalt({ design, profile, vorschlag, onChange }) {
+export default function VisitenkarteInhalt({ design, profile, vorschlag, onChange, mitWidmung = false }) {
   const contacts = availableContacts(profile)
   const kurztextLength = design.kurztext.length
   const hasPerson = Boolean(profile.ansprechperson?.trim())
@@ -21,6 +45,7 @@ export default function VisitenkarteInhalt({ design, profile, vorschlag, onChang
   return (
     <fieldset className="vk-fieldset">
       <legend className="field-label">Inhalt</legend>
+      {mitWidmung && <Widmung value={design.widmung} onChange={onChange} />}
       <div className="field">
         <label className="vk-label" htmlFor="vk-kurztext">
           Kurztext

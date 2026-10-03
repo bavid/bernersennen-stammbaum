@@ -74,6 +74,19 @@ describe('PartnerVoucherStacks – Liste', () => {
     expect(rows[1].textContent).toContain('Keine offenen Karten mehr in diesem Stapel.')
   })
 
+  test('"Als Einladungskarten drucken" öffnet die Einladungskarten - nur, solange ein Stapel offene Codes hat', async () => {
+    vouchers.mockResolvedValue({ stapel: stacks })
+    await render()
+    const link = [...container.querySelectorAll('a')].find((el) => el.textContent.includes('Als Einladungskarten drucken'))
+    expect(link.getAttribute('href')).toBe('/visitenkarten?art=einladung')
+    root.unmount()
+    root = null
+    container.remove()
+    vouchers.mockResolvedValue({ stapel: [{ ...stacks[1] }] })
+    await render()
+    expect(container.textContent).not.toContain('Als Einladungskarten drucken')
+  })
+
   // Audit V7a: den Weg zu den Visitenkarten zeigt die Karte "Visitenkarten" direkt darüber (VisitenkartenTeaser) -
   // hier kein zweiter Knopf mit fast gleichem Text.
   test('kein eigener Visitenkarten-Knopf - auch ohne Stapel', async () => {

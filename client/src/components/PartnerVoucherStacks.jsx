@@ -5,13 +5,16 @@ import Icon from './Icon.jsx'
 import StackedBar from './StackedBar.jsx'
 import { SEGMENTE, formatNumber } from '../lib/adminStats.js'
 import { formatDateShort } from '../lib/dates.js'
+import { EINLADUNGSKARTEN_ROUTE } from './visitenkarte/VisitenkartenTeaser.jsx'
 
 // Reiter "Kunden-Gutscheine" im Partner-Profil (Phase 5 Task 4): die Stapel, die der Betreiber für den Partner
 // angelegt hat, und die Weitergabe-Gutscheine des Bereichs (GET /api/partner-area/vouchers) - je Stapel
 // Bezeichnung, Quelle, Verteilungsbalken (wie in der Admin-Übersicht) und die drei Zahlen. "Karten drucken" führt
 // zur Druckseite (PartnerPrintPage), solange noch offene Karten da sind. Keine Codes hier - die gibt es nur dort.
 // Die Visitenkarten (Phase V5, je Karte ein Code) erreicht man über die Karte "Visitenkarten" direkt darüber
-// (VisitenkartenTeaser) - Audit V7a: ein zweiter Knopf mit fast gleichem Text hier fiel weg.
+// (VisitenkartenTeaser) - Audit V7a: ein zweiter Knopf mit fast gleichem Text hier fiel weg. Sind noch offene Codes da,
+// führt "Als Einladungskarten drucken" direkt zu den Einladungskarten (vorne ihr, hinten Familie auf Pfoten mit je
+// einem dieser Codes).
 
 export const STACKS_HINT = 'Jede Karte legt für eure Kundschaft eine eigene Chronik an – und zeigt, dass sie von euch kommt.'
 export const EMPTY_HINT = 'Noch keine Kunden-Gutscheine. Über „Kunden-Gutschein weitergeben“ unten entstehen eure ersten Karten – oder der Betreiber legt euch einen Stapel an.'
@@ -100,6 +103,14 @@ export default function PartnerVoucherStacks() {
           <Icon name="printer" />
           <p>{EMPTY_HINT}</p>
         </div>
+      )}
+      {stacks && stacks.some((row) => row.offen > 0) && (
+        <p className="partner-stacks-einladung">
+          <Link to={EINLADUNGSKARTEN_ROUTE} className="btn btn-ghost">
+            <Icon name="printer" /> Als Einladungskarten drucken
+          </Link>
+          <span className="field-hint">Je Karte ein eigener Code – vorne ihr, hinten Familie auf Pfoten.</span>
+        </p>
       )}
       {stacks && stacks.length > 0 && (
         <ul className="partner-stack-list">

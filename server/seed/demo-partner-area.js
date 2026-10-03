@@ -313,4 +313,35 @@ const VISITENKARTEN = [
   }
 ]
 
-module.exports = { PARTNER_AREA_SLUGS, DEFAULT_DEMO_PARTNER_SLUG, EINBLICKE, BANNER, POSTS, KARTEN, MESSAGES, KUNDEN_GUTSCHEINE, TERMINE, VISITENKARTEN }
+// EINLADUNGSKARTEN: gespeicherte Vorderseiten der Einladungskarten - Felder wie PUT /api/partner-area/visitenkarte/einladung,
+// geprüft mit derselben Prüfung (lib/einladungskarteDesign.js validateEinladungDesign). Die Rückseite gestaltet Familie auf
+// Pfoten (Admin-Einstellung, ohne Eintrag die Vorgaben) - in der Demo mit Muster-Codes "DEMO-…".
+const EINLADUNGSKARTEN = [
+  {
+    partnerSlug: 'hundeschule-pfotenglueck',
+    design: {
+      vorlage: 'klassisch',
+      farbe: '#1f5f8b',
+      kurztext: 'Welpenkurse und Hundetraining für Familien aus der Region',
+      widmung: 'Für unsere Welpenkurs-Familien',
+      zeigeAnsprechperson: true,
+      zeigeWebsite: true,
+      zeigeTelefon: false,
+      zeigeEmail: true
+    }
+  }
+]
+
+module.exports = {
+  PARTNER_AREA_SLUGS,
+  DEFAULT_DEMO_PARTNER_SLUG,
+  EINBLICKE,
+  BANNER,
+  POSTS,
+  KARTEN,
+  MESSAGES,
+  KUNDEN_GUTSCHEINE,
+  TERMINE,
+  VISITENKARTEN,
+  EINLADUNGSKARTEN
+}

@@ -655,6 +655,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     messages: partnerContent.messages,
     termine: partnerContent.termine,
     visitenkarten: partnerContent.visitenkarten,
+    einladungskarten: partnerContent.einladungskarten,
     visits
   }
 }

@@ -1,0 +1,421 @@
+/* Einladungskarten (components/visitenkarte/EinladungBack, KartenArtSwitch, EinladungDruckOptionen; AdminEinladungskarte).
+   Die Karte rechnet wie die Visitenkarte in --u (visitenkarte-karte.css). Die Rückseite gestaltet Familie auf Pfoten: feste
+   Farben der Plattform (Rost, Tinte, Papier aus tokens.css, hell) statt der Partnerfarbe - Papier kennt keinen Dunkelmodus.
+   Bedienelemente rund um die Karten nutzen die Theme-Tokens. */
+
+/* --- Wahl der Kartenart ------------------------------------------------------------------------------- */
+
+/* Rückt näher an den Seitenkopf (halber Abschnittsabstand der Seite, layout.css .page) - die Wahl gehört zum Designer. */
+.vk-art {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-top: calc(var(--page-gap, 0px) * -0.5);
+}
+
+.vk-art-options {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.vk-art-option {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  padding: 0.55rem 1.1rem;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 4px);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.vk-art-option strong {
+  font-size: var(--text-base);
+}
+
+.vk-art-hint {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.vk-art-option:hover {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+.vk-art-option[aria-pressed='true'] {
+  background: var(--surface);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 -3px 0 var(--rust);
+}
+
+.vk-art-option[aria-pressed='true'] strong {
+  color: var(--rust-deep);
+}
+
+.vk-art-option:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 30rem) {
+  .vk-art-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
+/* Unter der Rückseite in der Vorschau: wer sie gestaltet. */
+.vk-stage-note {
+  display: block;
+  margin-top: var(--space-1);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* --- Tipps zum Druck (beide Kartenarten, VisitenkarteDruckOptionen DruckHints): zum Aufklappen ------------------ */
+
+.vk-druck-tipps {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.vk-druck-tipps summary {
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.vk-druck-tipps summary strong {
+  color: var(--text);
+}
+
+.vk-druck-tipps-mehr {
+  color: var(--rust);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.vk-druck-tipps[open] .vk-druck-tipps-mehr {
+  display: none;
+}
+
+.vk-druck-tipps summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.vk-druck-tipps .vk-druck-hints {
+  margin-top: var(--space-2);
+}
+
+/* --- Anzahl der Karten -------------------------------------------------------------------------------- */
+
+.vk-anzahl {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.vk-anzahl input {
+  width: 5.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.vk-anzahl-step {
+  min-width: 44px;
+  padding-inline: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+/* --- Einstiege ---------------------------------------------------------------------------------------- */
+
+.vk-teaser-actions {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: stretch;
+}
+
+.partner-stacks-einladung {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-4);
+}
+
+/* --- Vorderseite: die persönliche Zeile ----------------------------------------------------------------- */
+
+.vk-widmung {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: calc(2.45 * var(--u));
+  font-style: italic;
+  line-height: 1.2;
+  color: var(--vk-akzent-text);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.vk-front.has-widmung .vk-kurztext {
+  -webkit-line-clamp: 2;
+}
+
+.vk-klassisch.has-widmung .vk-klassisch-text {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.1 * var(--u));
+}
+
+.vk-klassisch.has-widmung .vk-foot {
+  margin-top: auto;
+}
+
+.vk-foto .vk-widmung {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 calc(0.2 * var(--u)) calc(0.9 * var(--u)) rgba(0, 0, 0, 0.35);
+}
+
+.vk-schlicht.has-widmung .vk-band {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: calc(0.5 * var(--u));
+}
+
+.vk-schlicht .vk-widmung {
+  font-size: calc(2.3 * var(--u));
+  color: var(--vk-on);
+  -webkit-line-clamp: 1;
+}
+
+.vk-schlicht.has-widmung .vk-name {
+  -webkit-line-clamp: 1;
+}
+
+/* Leerer Platz auf einem angebrochenen Bogen (vorne wie hinten) - so liegen die Rückseiten weiter hinter ihren Karten. */
+.vk-slot-leer {
+  display: block;
+}
+
+/* --- Rückseite: Familie auf Pfoten ---------------------------------------------------------------------- */
+
+.vk-back-einladung {
+  --vk-pf-rost: #a4431d;
+  --vk-pf-rost-tief: #7d3014;
+  --vk-pf-papier: #fffaf2;
+  --vk-pf-linie: #e3d5c1;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(24 * var(--u));
+  gap: calc(3.4 * var(--u));
+  align-items: center;
+  padding: calc(5 * var(--u)) calc(4.4 * var(--u)) calc(3.8 * var(--u)) calc(5 * var(--u));
+  background: var(--vk-pf-papier);
+}
+
+.vk-einladung-band {
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(2.2 * var(--u));
+  background: var(--vk-pf-rost);
+}
+
+.vk-einladung-body {
+  display: grid;
+  gap: calc(0.95 * var(--u));
+  min-width: 0;
+}
+
+.vk-back-einladung .vk-back-brand {
+  color: var(--vk-pf-rost-tief);
+}
+
+.vk-einladung-titel {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: calc(3.5 * var(--u));
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--vk-ink);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.vk-einladung-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: calc(1.95 * var(--u));
+  line-height: 1.35;
+  color: var(--vk-muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.vk-einladung-so {
+  display: grid;
+  gap: calc(0.5 * var(--u));
+  margin-top: calc(0.3 * var(--u));
+}
+
+.vk-einladung-so-titel {
+  font-size: calc(1.7 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vk-pf-rost);
+}
+
+.vk-einladung-schritte {
+  display: grid;
+  gap: calc(0.45 * var(--u));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: schritt;
+  font-size: calc(1.85 * var(--u));
+  line-height: 1.25;
+}
+
+.vk-einladung-schritte li {
+  display: flex;
+  align-items: baseline;
+  gap: calc(1 * var(--u));
+  min-width: 0;
+  counter-increment: schritt;
+}
+
+.vk-einladung-schritte li::before {
+  content: counter(schritt);
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: calc(2.5 * var(--u));
+  height: calc(2.5 * var(--u));
+  border-radius: 50%;
+  background: var(--vk-pf-rost);
+  color: #fff;
+  font-size: calc(1.45 * var(--u));
+  font-weight: 800;
+  line-height: 1;
+  transform: translateY(calc(0.35 * var(--u)));
+}
+
+.vk-einladung-code-col {
+  display: grid;
+  gap: calc(1 * var(--u));
+  justify-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.vk-back-einladung .vk-qr-box {
+  box-sizing: border-box;
+  width: 100%;
+  padding: calc(1.3 * var(--u));
+  border: calc(0.3 * var(--u)) solid var(--vk-pf-linie);
+}
+
+.vk-back-einladung .vk-code {
+  gap: calc(0.8 * var(--u));
+  margin-top: 0;
+  padding: calc(0.5 * var(--u)) calc(0.9 * var(--u));
+  background: #fff;
+  font-size: calc(2.35 * var(--u));
+  letter-spacing: 0.03em;
+}
+
+.vk-einladung-adresse {
+  max-width: 100%;
+  font-size: calc(1.85 * var(--u));
+  font-weight: 800;
+  color: var(--vk-ink);
+  overflow-wrap: anywhere;
+}
+
+/* --- Admin: Einstellung mit Vorschau -------------------------------------------------------------------- */
+
+.admin-einladung-layout {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+  margin-top: var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .admin-einladung-schritte {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-einladung-schritte legend,
+  .admin-einladung-schritte > .field-error {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 64rem) {
+  .admin-einladung-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  }
+
+  .admin-einladung-preview {
+    position: sticky;
+    top: 7rem;
+  }
+}
+
+.admin-einladung-schritte {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-einladung-schritte legend {
+  margin-bottom: var(--space-2);
+}
+
+.admin-einladung-preview {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  margin: 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--paper-deep);
+}
+
+.admin-einladung-preview .vk-card {
+  --vk-mm: min(1.5mm, calc(100cqi / 85));
+
+  border-radius: calc(0.8 * var(--u));
+  box-shadow:
+    0 1px 1px rgba(28, 21, 17, 0.08),
+    0 16px 32px -16px rgba(28, 21, 17, 0.5);
+}
+
+.admin-einladung-preview figcaption {
+  text-align: center;
+}

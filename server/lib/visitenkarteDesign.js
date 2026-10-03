@@ -21,6 +21,10 @@ const ELLIPSIS = '…'
 // Wortverbinder, Richtungsmarken, arabisches Buchstabenzeichen, BOM, Zeilen-/Absatztrenner - auf gedruckten Karten nur
 // zum Täuschen gut. Nullbreiten-(Nicht-)Verbinder (U+200C/U+200D) bleiben: Emoji-Folgen und manche Schriften brauchen sie.
 const INVISIBLE_RE = /[\u200B\u200E\u200F\u2060\u061C\uFEFF\u2028\u2029]/g
+// Für die Zucht-Prüfung (security-review Einladungskarten): eine Kopie ohne alles, was gedruckt unsichtbar bleibt - auch
+// Silbentrennzeichen, Nullbreiten-(Nicht-)Verbinder, Variantenwähler und Tag-Zeichen -, NFKC-normalisiert (Vollbreiten-
+// Doppelgänger). Gespeichert wird weiter der Text ohne INVISIBLE_RE; Emoji-Folgen behalten ihre Verbinder.
+const HIDDEN_FOR_GUARD_RE = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\u{E0000}-\u{E007F}]/gu
 // Der erste Satz endet an . ! oder ? mit Leerraum oder Textende danach.
 const FIRST_SENTENCE_RE = /^(.+?[.!?])(\s|$)/s
 
@@ -74,12 +78,18 @@ function validateFarbe(value) {
   return value.toLowerCase()
 }
 
-function validateKurztext(value) {
-  if (typeof value !== 'string') throw httpError(400, 'Der Kurztext muss ein Text sein')
+// Ein Text für die Karte (Kurztext, bei Einladungskarten auch die persönliche Zeile, lib/einladungskarteDesign.js):
+// ohne Steuer-, Bidi- und unsichtbare Zeichen, höchstens max Zeichen, keine Zucht-Angebote.
+function cleanCardText(value, { label, max }) {
+  if (typeof value !== 'string') throw httpError(400, `${label} muss ein Text sein`)
   const text = stripUnsafeChars(value).replace(INVISIBLE_RE, '').trim()
-  if (text.length > MAX_KURZTEXT_LENGTH) throw httpError(400, `Der Kurztext darf höchstens ${MAX_KURZTEXT_LENGTH} Zeichen haben`)
-  assertNoBreeder({ kurztext: text })
+  if (text.length > max) throw httpError(400, `${label} darf höchstens ${max} Zeichen haben`)
+  assertNoBreeder({ text: text.normalize('NFKC').replace(HIDDEN_FOR_GUARD_RE, '') })
   return text
+}
+
+function validateKurztext(value) {
+  return cleanCardText(value, { label: 'Der Kurztext', max: MAX_KURZTEXT_LENGTH })
 }
 
 function validateFlag(value, key) {
@@ -119,8 +129,15 @@ module.exports = {
   VORLAGEN,
   MAX_KURZTEXT_LENGTH,
   DEFAULT_FARBE,
+  httpError,
   defaultDesign,
   defaultKurztext,
   validateDesign,
-  storedDesign
+  storedDesign,
+  // Bausteine für die Einladungskarten (lib/einladungskarteDesign.js) - dieselben Regeln für dieselben Felder.
+  cleanCardText,
+  validateVorlage,
+  validateFarbe,
+  validateKurztext,
+  validateFlag
 }

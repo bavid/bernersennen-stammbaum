@@ -11,7 +11,8 @@ import { codeGroups, voucherTarget } from '../../lib/visitenkarte.js'
 const APP_NAME = 'Familie auf Pfoten'
 const MARK_SIZE = 14
 
-function Brand() {
+// Auch auf der Rückseite der Einladungskarte (EinladungBack.jsx).
+export function Brand() {
   return (
     <p className="vk-back-brand">
       <PawMark size={MARK_SIZE} className="vk-back-mark" />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import { ART } from '../lib/einladungskarte.js'
 
 // Drucken mit Kunden-Gutscheinen (Phase V5, VisitenkartenDesigner): die Codes holt erst der Klick auf "Drucken" - in
 // genau der Zahl, die gerade gedruckt wird (api.partnerArea.visitenkarteGutscheine, der Server vermerkt sie dabei als
@@ -7,6 +8,9 @@ import { api } from '../api'
 // oder die Seite verlässt. Die Codes leben nur für diesen einen Druck im State (und im DOM der Druckfassung) und
 // verschwinden nach dem Druckdialog (afterprint) - ein neuer Druck bekommt neue Codes, nie dieselben zweimal.
 // available: wie viele Codes ein Druck gerade bekommen kann (ungedruckte bzw. mit nurUngedruckt false alle offenen).
+// Einladungskarten (EinladungskartenDesigner) nutzen denselben Abruf: art merkt sich, welche Kartenart zuletzt gedruckt
+// wurde (lastPrint.art), und nurMitCodes druckt gar nicht, wenn kein Code mehr frei war - ohne Code gibt es keine
+// Einladungskarte.
 export default function useVisitenkartenDruck(initialGutscheine) {
   const [gutscheine, setGutscheine] = useState(initialGutscheine)
   const [nurUngedruckt, setNurUngedruckt] = useState(true)
@@ -27,7 +31,7 @@ export default function useVisitenkartenDruck(initialGutscheine) {
   const available = nurUngedruckt ? gutscheine.ungedruckt : gutscheine.offen
 
   // withCodes: mit Gutscheinen (eigener Bereich, Schalter an, etwas verfügbar); cards: Karten dieses Drucks.
-  async function print({ withCodes, cards }) {
+  async function print({ withCodes, cards, art = ART.visitenkarte, nurMitCodes = false }) {
     if (!withCodes) {
       window.print()
       return
@@ -37,8 +41,9 @@ export default function useVisitenkartenDruck(initialGutscheine) {
     try {
       const result = await api.partnerArea.visitenkarteGutscheine({ anzahl: cards, nurUngedruckt })
       setGutscheine(result.gutscheine)
+      setLastPrint({ art, gutscheine: result.codes.length, karten: cards })
+      if (nurMitCodes && result.codes.length === 0) return
       setPrintCodes(result.codes)
-      setLastPrint({ gutscheine: result.codes.length, karten: cards })
       setPending(true)
     } catch (err) {
       setError(err.message)
