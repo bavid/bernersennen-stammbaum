@@ -10,6 +10,7 @@ const { generateCode, hashCode, formatCode } = require('../lib/codes')
 const { verifyCurrentCredential, REAUTH_ERROR } = require('../lib/currentCredential')
 const { deleteFamily, removeUploads } = require('../lib/families')
 const { revokeOpenInvites, inviteRoleOf } = require('../lib/vouchers')
+const { revokeInvitesOnLeave } = require('../lib/inviteRevocation')
 
 // Phase R Task 2: Mitglieder einer Familie verwalten (/api/family/members). Alles nur, wenn der aktive
 // Bereich eine Familie (art 'rudel') ist - im eigenen Zuhause, Tierheim oder Partner-Bereich gibt es keine
@@ -99,6 +100,15 @@ router.get('/', (req, res) => {
 // Rolle eines Mitglieds ändern. Die Leitung selbst kann sich nur herabstufen, wenn eine zweite Leitung da
 // ist - die letzte Leitung bleibt (409). Dieselbe Regel für den gemeinsamen Schlüssel, der die einzige
 // Leitungs-Mitgliedschaft herabstufen wollte: erst jemand anderen zur Leitung machen.
+// Audit V7a (wie security-review V2 M-2 beim Austritt): fällt jemand unter die Stellvertretung, sieht er die Codes nicht
+// mehr - kannte sie aber bisher im Klartext. Darum dieselben Codes zurückziehen wie beim Verlassen der Familie.
+const changeRole = db.transaction((targetId, groupId, previousRole, rolle) => {
+  setRole.run(rolle, targetId, groupId)
+  if (rank(previousRole) >= rank(STELLVERTRETUNG) && rank(rolle) < rank(STELLVERTRETUNG)) {
+    revokeInvitesOnLeave(db, { homeId: targetId, groupId, role: previousRole })
+  }
+})
+
 router.put('/:homeId', requireRole(LEITUNG), (req, res) => {
   const targetId = idParam(req.params.homeId)
   const { rolle } = req.body || {}
@@ -110,7 +120,7 @@ router.put('/:homeId', requireRole(LEITUNG), (req, res) => {
     return res.status(409).json({ error: LAST_LEITUNG_MESSAGE })
   }
 
-  setRole.run(rolle, targetId, req.familyId)
+  changeRole(targetId, req.familyId, membership.rolle, rolle)
   res.json(membersPayload(req))
 })
 

@@ -7,6 +7,8 @@
 //   werden alle offenen Einladungen zurückgezogen, die die Familie selbst ausgegeben hat. Die Start-Codes legt
 //   GET /api/vouchers/mine danach wie gewohnt neu an (zurückgezogene zählen nicht zum Kontingent).
 // Vom Admin für die Familie gedruckte Karten (issued_by_family_id NULL) bleiben - die kannte das Mitglied nie im Klartext.
+// Audit V7a: dasselbe beim Herabstufen unter die Stellvertretung (routes/members.js PUT /:homeId) - role ist dann die
+// bisherige Rolle.
 // Ohne Abhängigkeiten außer der übergebenen db (lib/context.js und lib/families.js nutzen es beide).
 
 const SEES_ALL_CODES = new Set(['stellvertretung', 'leitung'])

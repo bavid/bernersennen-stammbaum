@@ -93,6 +93,39 @@ test('security-review V2 (Runde 2): Codes', async (t) => {
     assert.equal(after.length, before - 1)
   })
 
+  await t.test('M-2 (Audit V7a): wer von der Stellvertretung zum Mitglied herabgestuft wird, nimmt alle Einladungen mit', async () => {
+    const leader = await createHousehold(base, 'Zuhause Leitung Herabstufung')
+    const deputy = await createHousehold(base, 'Zuhause Stellvertretung Herabstufung')
+    const rudel = await createFamily(base, 'Familie Herabstufung', 'familie-herabstufung-pw-1')
+    db.prepare(`INSERT INTO family_members (member_family_id, group_family_id, rolle) VALUES (?, ?, 'leitung'), (?, ?, 'stellvertretung')`).run(
+      leader.data.id,
+      rudel.data.id,
+      deputy.data.id,
+      rudel.data.id
+    )
+    const leaderIn = getCookie((await post('/api/view', { familyId: rudel.data.id }, leader.cookie)).res)
+    const deputyIn = getCookie((await post('/api/view', { familyId: rudel.data.id }, deputy.cookie)).res)
+    const put = (urlPath, body, cookie) => call(base, urlPath, { method: 'PUT', body, cookie })
+
+    const starters = (await get('/api/vouchers/mine', deputyIn)).data.map((voucher) => voucher.id)
+    const deputyOwn = (await post('/api/vouchers', {}, deputyIn)).data.id
+    const adminCard = (await post('/api/admin/voucher-batches', { label: 'Familie Herabstufung Karte', size: 1, joinFamilyId: rudel.data.id }, admin)).data
+    const adminCardId = db.prepare('SELECT id FROM vouchers WHERE batch_id = ?').get(adminCard.batch.id).id
+
+    // Rollenwechsel innerhalb von "sieht alle Codes" (Stellvertretung -> Leitung) zieht nichts zurück
+    assert.equal((await put(`/api/family/members/${deputy.data.id}`, { rolle: 'leitung' }, leaderIn)).status, 200)
+    assert.equal((await put(`/api/family/members/${deputy.data.id}`, { rolle: 'stellvertretung' }, leaderIn)).status, 200)
+    for (const id of [...starters, deputyOwn]) assert.ok(openOf(rudel.data.id).includes(id), `Code ${id} bleibt offen`)
+
+    // Herabstufen zum Mitglied: alle offenen Codes der Familie sind zurückgezogen, die Admin-Karte bleibt
+    assert.equal((await put(`/api/family/members/${deputy.data.id}`, { rolle: 'mitglied' }, leaderIn)).status, 200)
+    const open = openOf(rudel.data.id)
+    for (const id of [...starters, deputyOwn]) assert.ok(!open.includes(id), `Code ${id} zurückgezogen`)
+    assert.ok(open.includes(adminCardId))
+    const refilled = (await get('/api/vouchers/mine', leaderIn)).data.filter((voucher) => voucher.status === 'offen')
+    assert.equal(refilled.length, config.voucherQuota, 'die Start-Codes entstehen neu')
+  })
+
   await t.test('L-5: der Admin sieht persönliche Codes nur als Hinweis und druckt sie nicht', async () => {
     const home = await createHousehold(base, 'Zuhause Admin-Sicht')
     const own = (await get('/api/vouchers/mine', home.cookie)).data[0]
