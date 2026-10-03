@@ -262,6 +262,8 @@ describe('CustomerViewPage – Euer Portal', () => {
     expect(frame().querySelector('.einblick-tile img').getAttribute('src')).toBe('/uploads/33333333-3333-3333-3333-333333333333.jpg')
     expect(frame().querySelectorAll('a')).toHaveLength(0)
     expect(frame().querySelector('form')).toBeNull()
+    // Audit V7a: das Portal ist eine öffentliche Seite - ohne die App-Leiste mit "Entdecken" aktiv.
+    expect(container.querySelector('.preview-frame-nav')).toBeNull()
   })
 })
 

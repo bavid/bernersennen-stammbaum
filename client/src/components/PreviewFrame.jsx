@@ -19,8 +19,9 @@ function customerNav(words) {
 
 // Rahmen der Kundensicht (Phase P1): deutet die App einer Kundin an - kleiner Kopf mit ihrem Namen,
 // Inhalt, der in sich scrollt, und die untere Leiste eines Haushalts. Am Desktop handybreit und mittig,
-// am Handy volle Breite. Die Leiste ist reine Dekoration: aria-hidden, nichts darin ist fokussierbar.
-export default function PreviewFrame({ label, children }) {
+// am Handy volle Breite. Die Leiste ist reine Dekoration: aria-hidden, nichts darin ist fokussierbar. showNav (Audit V7a):
+// das Portal ist eine öffentliche Seite ohne diese Leiste - dort stünde sonst "Entdecken" aktiv unter dem Portal.
+export default function PreviewFrame({ label, children, showNav = true }) {
   const { words } = useTheme()
   return (
     <div className="preview-frame">
@@ -35,14 +36,16 @@ export default function PreviewFrame({ label, children }) {
         <div className="preview-frame-screen" role="region" aria-label={label} tabIndex={0}>
           {children}
         </div>
-        <div className="preview-frame-nav" aria-hidden="true">
-          {customerNav(words).map((item) => (
-            <span key={item.label} className={item.active ? 'is-active' : undefined}>
-              <Icon name={item.icon} />
-              {item.label}
-            </span>
-          ))}
-        </div>
+        {showNav && (
+          <div className="preview-frame-nav" aria-hidden="true">
+            {customerNav(words).map((item) => (
+              <span key={item.label} className={item.active ? 'is-active' : undefined}>
+                <Icon name={item.icon} />
+                {item.label}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

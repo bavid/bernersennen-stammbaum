@@ -83,7 +83,7 @@ export default function CustomerViewPage({ family }) {
           </PreviewFrame>
         )}
         {current === TAB_PORTAL && (
-          <PreviewFrame label="Euer Portal (Vorschau)">
+          <PreviewFrame label="Euer Portal (Vorschau)" showNav={false}>
             <PartnerPortalPage load={loadPortal} preview />
           </PreviewFrame>
         )}
