@@ -104,7 +104,9 @@ describe('Familienbande – Abschnitt "Nachwuchs" (Phase U, Standard-Auftritt)',
     await render({ dogs: parents })
 
     expect(api.listBreedingEvents).toHaveBeenCalled()
-    expect(container.querySelector('[data-testid="pedigree-tree"]')).not.toBeNull()
+    // Phase V3: ohne Verpaarung und ohne Eltern zeigt der Standard-Auftritt die Familien, keinen Stammbaum
+    expect(container.querySelector('[data-testid="pedigree-tree"]')).toBeNull()
+    expect(container.querySelector('.families-view')).not.toBeNull()
     expect(section()).toBeNull()
     const hint = container.querySelector('.offspring-hint')
     expect(hint.textContent).toContain('Nachwuchs geplant?')
@@ -173,10 +175,14 @@ describe('Familienbande – Abschnitt "Nachwuchs" (Phase U, Standard-Auftritt)',
     expect(section()).toBeNull()
   })
 
-  test('kein Wort "Stammbaum", "Würfe" oder "Deckakt" auf der Seite', async () => {
+  // Phase V3: einzige Ausnahme ist der ausdrückliche Zusatz "Stammbaum öffnen" (erst nach einer Verpaarung).
+  test('kein Wort "Stammbaum", "Würfe" oder "Deckakt" auf der Seite - außer dem Knopf "Stammbaum öffnen"', async () => {
     await render({ events: [plannedEvent] })
 
-    expect(container.textContent).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht/)
+    const toggle = [...container.querySelectorAll('.hero-actions a')].find((link) => link.textContent.includes('Stammbaum'))
+    expect(toggle.textContent).toBe('Stammbaum öffnen')
+    const rest = container.textContent.replace('Stammbaum öffnen', '')
+    expect(rest).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht/)
   })
 })
 

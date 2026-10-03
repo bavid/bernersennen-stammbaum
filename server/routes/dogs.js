@@ -12,6 +12,7 @@ const { requireRole, hasRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { slugify } = require('../lib/partners')
 const { createBatch, revokeOpenHandoverVouchers } = require('../lib/vouchers')
 const { takeOverDog } = require('../lib/transfers')
+const { rudelSharesOf, rudelSharesByOwnDog } = require('../lib/dogShares')
 const { formatCode } = require('../lib/codes')
 const { VERMITTLUNG_STATUS, PUBLISHABLE_STATUS, statusInSql } = require('../lib/vermittlung')
 
@@ -61,13 +62,8 @@ const insertDog = db.prepare(
      @bei_uns_seit, @bei_uns_bis, @abschied_grund, @herkunft_art, @herkunft_text, @vermittlung_status)`
 )
 const insertLink = db.prepare('INSERT OR IGNORE INTO dog_links (family_id, dog_a_id, dog_b_id) VALUES (?, ?, ?)')
-// Nur Rudel-Freigaben (Teilen aus "Meine Chronik", siehe PUT /:id/shares) - die Tierheim-Freigabe
-// (dog_shares mit einer Tierheim-Familie, "Tierheim darf mitlesen", siehe PUT /:id/shelter-share) ist
-// eine eigene Einwilligung und gehört nicht in diese Liste (security-review Phase T Finding 2).
-const listShares = db.prepare(
-  `SELECT ds.family_id FROM dog_shares ds JOIN families f ON f.id = ds.family_id
-   WHERE ds.dog_id = ? AND f.art = 'rudel' ORDER BY ds.family_id`
-)
+// Nur Rudel-Freigaben (Teilen aus "Meine Chronik", siehe PUT /:id/shares) - nie die Tierheim-Freigabe: die Regel
+// steht an einer Stelle in lib/dogShares.js (rudelSharesOf je Tier, rudelSharesByOwnDog für GET /).
 const findDescendant = db.prepare(`
   WITH RECURSIVE descendants(id) AS (
     SELECT id FROM dogs WHERE mother_dog_id = :root OR father_dog_id = :root
@@ -238,8 +234,16 @@ function guestParams(req) {
   return { familyId: req.familyId, gast: req.isGuest ? 1 : 0 }
 }
 
+// Phase V3: die Familien-Freigaben (dieselbe Liste "shares" wie GET /:id) aller EIGENEN Tiere des Bereichs in einer
+// Abfrage - die Familienbande zeigt damit im eigenen Zuhause je Familie die Tiere, die man dort zeigt. Fremde Tiere
+// (geteilte, besuchte) bekommen in GET / immer eine leere Liste.
+function sharesByOwnDog(req) {
+  return req.isGuest ? new Map() : rudelSharesByOwnDog(req.familyId)
+}
+
 router.get('/', requireAuth, (req, res) => {
   const mayTakeOver = canTakeOverInArea(req)
+  const shares = sharesByOwnDog(req)
   const entrySql = req.isGuest ? GUEST_ENTRY_SQL : VISIBLE_ENTRY_SQL
   const dogs = db
     .prepare(
@@ -258,10 +262,11 @@ router.get('/', requireAuth, (req, res) => {
     .all(guestParams(req))
     .map((dog) =>
       dog.can_edit
-        ? { ...dog, kannUebernehmen: mayTakeOver }
+        ? { ...dog, kannUebernehmen: mayTakeOver, shares: shares.get(dog.id) || [] }
         : {
             ...dog,
             kannUebernehmen: false,
+            shares: [],
             mother_dog_id: visibleParentId(dog.mother_dog_id, req.familyId),
             father_dog_id: visibleParentId(dog.father_dog_id, req.familyId)
           }
@@ -389,7 +394,7 @@ function dogDetail(req, dog) {
     ownerFamilyId: dog.family_id,
     isOwn: canEdit,
     canEdit,
-    shares: canEdit ? listShares.all(dog.id).map((row) => row.family_id) : [],
+    shares: canEdit ? rudelSharesOf(dog.id) : [],
     mother: parentView(dog.mother_dog_id, dog.family_id, req.familyId),
     father: parentView(dog.father_dog_id, dog.family_id, req.familyId),
     children,
@@ -701,14 +706,14 @@ router.put('/:id/shares', requireAuth, canWrite, (req, res) => {
   if (!allowed) {
     return res.status(400).json({ error: 'Nur Familien, in denen ihr Mitglied seid' })
   }
-  const current = new Set(listShares.all(dog.id).map((row) => row.family_id))
+  const current = new Set(rudelSharesOf(dog.id))
   const added = uniqueIds.filter((id) => !current.has(id))
   if (!added.every((id) => hasRole(req.familyId, id, 'mitglied'))) {
     return res.status(403).json({ error: FORBIDDEN_MESSAGE })
   }
 
   replaceShares(dog.id, uniqueIds)
-  res.json({ shares: listShares.all(dog.id).map((row) => row.family_id).sort((a, b) => a - b) })
+  res.json({ shares: rudelSharesOf(dog.id) })
 })
 
 // Einwilligung "Tierheim darf mitlesen" (Phase T Task 3): nur für den Besitzer-Haushalt, und nur wenn

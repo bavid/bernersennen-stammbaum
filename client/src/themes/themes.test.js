@@ -49,6 +49,15 @@ describe('themes', () => {
     expect(berner.littersInNav).toBe(true)
   })
 
+  // Phase V3: der Standard-Auftritt zeigt auf der Familienbande zuerst Familien (Stammbaum erst nach einer Verpaarung),
+  // der Berner-Auftritt bleibt beim Stammbaum. Der Demo-Hinweis der Anmeldung folgt dem.
+  test('families first: standard shows families, berner keeps the tree; demo hint per theme', () => {
+    expect(getTheme('standard').familiesView).toBe(true)
+    expect(getTheme('berner').familiesView).toBe(false)
+    expect(getTheme('standard').texts.loginDemoHint).toBe('Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren, Familien und Erinnerungen.')
+    expect(getTheme('berner').texts.loginDemoHint).toBe('Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.')
+  })
+
   test('no word or text of the standard theme uses breeding vocabulary', () => {
     const { words, texts } = getTheme('standard')
     const all = [...Object.values(words), ...Object.values(texts).flat(2)]

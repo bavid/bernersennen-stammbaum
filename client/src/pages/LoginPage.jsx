@@ -178,7 +178,8 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
                 <button type="button" className="btn btn-ghost btn-block" onClick={handleDemo} disabled={demoLoading}>
                   {demoLoading ? 'Lädt …' : 'Demo ansehen'}
                 </button>
-                <p className="field-hint">Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.</p>
+                {/* Phase V3: je Auftritt (Standard: Familien statt Generationen) */}
+                <p className="field-hint">{theme.texts.loginDemoHint}</p>
               </div>
             )}
 

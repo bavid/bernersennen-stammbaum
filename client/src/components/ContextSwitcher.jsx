@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { startRoute, HOME_LABEL } from '../lib/areas.js'
+import { HOME_LABEL } from '../lib/areas.js'
+import useOpenArea from '../hooks/useOpenArea.js'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
 import RoleBadge from './RoleBadge.jsx'
 import JoinFamilyDialog from './JoinFamilyDialog.jsx'
-import { useToast } from './Toast.jsx'
 
 // Bereichswechsler im Kopfbereich: nur für Haushalte (family.home.art === 'zuhause'). Zeigt den Namen
 // des aktiven Bereichs, öffnet ein Menü mit "Meine Chronik", den beigetretenen Familien/Rudeln (mit der
@@ -20,8 +19,8 @@ function visitLabel(name) {
 
 export default function ContextSwitcher({ family, onChange }) {
   const { words } = useTheme()
-  const toast = useToast()
   const navigate = useNavigate()
+  const openArea = useOpenArea(onChange)
   const [open, setOpen] = useState(false)
   const [joinOpen, setJoinOpen] = useState(false)
   const rootRef = useRef(null)
@@ -86,14 +85,7 @@ export default function ContextSwitcher({ family, onChange }) {
     // (schlecht für Tastatur/Screenreader). Der Knopf ist nach dem Wechsel weiter derselbe Node.
     setOpen(false)
     triggerRef.current?.focus()
-    try {
-      const me = await api.view(id)
-      onChange(me)
-      navigate(startRoute(me))
-      toast(`Du bist jetzt in „${name}“`)
-    } catch (err) {
-      toast(err.message)
-    }
+    await openArea(id, name)
   }
 
   const isHomeActive = family.id === family.home.id

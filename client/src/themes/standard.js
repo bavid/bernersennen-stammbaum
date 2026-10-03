@@ -10,6 +10,9 @@ export default {
   footer: 'Familie auf Pfoten · Eine tierisch nette Familie',
   // Phase U: "Nachwuchs" steht nicht in der unteren Leiste, sondern als Abschnitt auf der Familienbande
   littersInNav: false,
+  // Phase V3: die Familienbande zeigt zuerst Familien (Zuhause, Familien, befreundete Zuhause) - der Stammbaum mit
+  // Generationen ist ein Zusatz, sobald eine Verpaarung oder Eltern eingetragen sind ("Stammbaum öffnen").
+  familiesView: true,
   tricolor: false,
   favicon: '/favicon.svg',
   words: {
@@ -88,6 +91,7 @@ export default {
     littersSingles: 'Diese Tiere haben bisher keine Geschwister in der Familienbande.',
     plannedDue: 'Der Nachwuchs müsste jetzt da sein – Zeit für neue Karten in der Familienbande!',
     breedingIntro: 'Für die, die Nachwuchs planen: Eine Verpaarung erscheint oben als erwarteter Nachwuchs und später bei den Jungtieren.',
-    matingNotesPlaceholder: 'Anzahl Jungtiere, Besonderheiten, Ultraschall …'
+    matingNotesPlaceholder: 'Anzahl Jungtiere, Besonderheiten, Ultraschall …',
+    loginDemoHint: 'Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren, Familien und Erinnerungen.'
   }
 }

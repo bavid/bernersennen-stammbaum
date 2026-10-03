@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import PedigreeTree from '../components/PedigreeTree.jsx'
@@ -11,35 +11,18 @@ import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
 import FamilySettings from '../components/FamilySettings.jsx'
 import OffspringSection from '../components/OffspringSection.jsx'
+import OverviewStats from '../components/OverviewStats.jsx'
+import FamiliesView from '../components/families/FamiliesView.jsx'
+import TreeToggle, { TREE_HINT, TREE_PARAM, TREE_VALUE } from '../components/families/TreeToggle.jsx'
+import useBreedingEvents from '../hooks/useBreedingEvents.js'
+import useFriendHomes from '../hooks/useFriendHomes.js'
+import useOpenArea from '../hooks/useOpenArea.js'
 import { nextTermin } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
-import { isVisit } from '../lib/visits.js'
+import { isOwnHome, isVisit } from '../lib/visits.js'
 import { useToast } from '../components/Toast.jsx'
-import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
+import { buildFamilyGroups, countFamilyGroups, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
 import { displayName } from '../lib/timeline.js'
-
-function Stats({ dogs, allDogs, links }) {
-  const generations = useMemo(() => layoutPedigree(collectNodes(dogs, allDogs), links).length, [dogs, allDogs, links])
-  const entries = dogs.reduce((sum, dog) => sum + (dog.timeline_count || 0), 0)
-  const dogCount = dogs.filter((dog) => (dog.tierart || 'hund') === 'hund').length
-  const others = dogs.length - dogCount
-  const items = [
-    { value: dogCount, label: dogCount === 1 ? 'Hund' : 'Hunde' },
-    ...(others ? [{ value: others, label: others === 1 ? 'weiteres Tier' : 'weitere Tiere' }] : []),
-    { value: generations, label: generations === 1 ? 'Generation' : 'Generationen' },
-    { value: entries, label: entries === 1 ? 'Erinnerung' : 'Erinnerungen' }
-  ]
-  return (
-    <dl className="stats">
-      {items.map((item) => (
-        <div key={item.label}>
-          <dt>{item.label}</dt>
-          <dd>{item.value}</dd>
-        </div>
-      ))}
-    </dl>
-  )
-}
 
 export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const { theme, words } = useTheme()
@@ -61,6 +44,24 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   // Phase V2: zu Besuch (Rolle gast) weder einladen noch Einstellungen - nur ansehen.
   const visiting = isVisit(family)
   const canInvite = !visiting && (!inGroup || hasRole(family, 'stellvertretung'))
+  // Phase V3: Familien zuerst, Stammbaum als Zusatz (theme.familiesView) - der Berner-Auftritt zeigt den Baum direkt.
+  const familiesView = Boolean(theme.familiesView)
+  const [searchParams] = useSearchParams()
+  const events = useBreedingEvents(familiesView || !theme.littersInNav)
+  const friends = useFriendHomes(familiesView && isOwnHome(family))
+  const openArea = useOpenArea(onFamilyChange)
+  const treeAvailable = useMemo(
+    () => familiesView && hasFamilyTree({ dogs: dogs || [], allDogs, events: events || [] }),
+    [familiesView, dogs, allDogs, events]
+  )
+  const mode = overviewMode({
+    familiesView,
+    wantsTree: searchParams.get(TREE_PARAM) === TREE_VALUE,
+    treeAvailable,
+    loaded: dogs !== null && events !== null
+  })
+  const groups = useMemo(() => buildFamilyGroups({ family, dogs: dogs || [], friends: friends || [] }), [family, dogs, friends])
+  const showTreeToggle = familiesView && dogs?.length > 0 && (mode === 'tree' || treeAvailable)
 
   async function loadDogs() {
     const [own, all, recent, notes, dogLinks] = await Promise.all([
@@ -149,8 +150,10 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
           )}
         </div>
         <div className="page-hero-side">
-          {dogs && dogs.length > 0 && <Stats dogs={dogs} allDogs={allDogs} links={links} />}
-          {(canWrite || canInvite) && (
+          {dogs && dogs.length > 0 && (
+            <OverviewStats dogs={dogs} allDogs={allDogs} links={links} familyCount={familiesView ? countFamilyGroups(groups) : undefined} />
+          )}
+          {(canWrite || canInvite || showTreeToggle) && (
             <div className="hero-actions">
               {canWrite && (
                 <button type="button" className="btn btn-primary btn-lg" onClick={() => openAnimalForm()}>
@@ -164,6 +167,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
                   Jemanden einladen
                 </button>
               )}
+              {showTreeToggle && <TreeToggle mode={mode} treeAvailable={treeAvailable} />}
             </div>
           )}
         </div>
@@ -191,12 +195,25 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
 
       {dogs && dogs.length > 0 && activity && <ActivityFeed entries={activity.entries} termin={activity.termin} />}
 
-      {dogs && dogs.length > 0 && (
+      {dogs && dogs.length > 0 && mode === 'tree' && (
         <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={canWrite ? openAnimalForm : undefined} />
       )}
 
-      {/* Phase U: ohne eigenen Reiter (Standard-Auftritt) steht der Nachwuchs hier - nur, wenn es welchen gibt. */}
-      {dogs && dogs.length > 0 && !theme.littersInNav && <OffspringSection dogs={dogs} canWrite={canWrite} />}
+      {dogs && dogs.length > 0 && mode === 'families' && (
+        <FamiliesView groups={groups} dogs={dogs} allDogs={allDogs} links={links} onOpenArea={openArea} />
+      )}
+
+      {/* Phase U: ohne eigenen Reiter (Standard-Auftritt) steht der Nachwuchs hier - nur, wenn es welchen gibt.
+          Phase V3: darunter, ohne Verpaarung und Eltern, der leise Hinweis auf den Stammbaum - nur für die, die eine
+          Verpaarung eintragen dürfen. Beides in einem Block, damit die zwei leisen Zeilen zusammen stehen. */}
+      {dogs && dogs.length > 0 && (
+        <div className="overview-foot">
+          {!theme.littersInNav && <OffspringSection dogs={dogs} events={events} canWrite={canWrite} />}
+          {mode === 'families' && events !== null && !treeAvailable && canWrite && (
+            <p className="muted families-tree-hint">{TREE_HINT}</p>
+          )}
+        </div>
+      )}
 
       <Modal open={settingsOpen} title={words.groupSettings} onClose={() => setSettingsOpen(false)}>
         <FamilySettings

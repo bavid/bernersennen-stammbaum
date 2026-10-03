@@ -76,10 +76,18 @@ describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
     expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Chronik öffnen')
   })
 
-  test('Der Demo-Hinweis ist für beide Themes gleich und nennt keine feste Familie mehr', async () => {
+  // Phase V3: der Standard-Auftritt spricht von Familien statt Generationen (die Familienbande zeigt zuerst Familien),
+  // der Berner-Auftritt behält seinen Satz. Keine feste Familie im Text.
+  test('Der Demo-Hinweis kommt aus den Theme-Texten und nennt keine feste Familie', async () => {
     await render(themeId)
-    expect(container.querySelector('.login-demo .field-hint').textContent).toBe(
-      'Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.'
-    )
+    expect(container.querySelector('.login-demo .field-hint').textContent).toBe(theme.texts.loginDemoHint)
+    expect(theme.texts.loginDemoHint).toMatch(/^Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren/)
   })
+})
+
+test('Standard-Auftritt (so startet die Anmeldung immer): Demo mit Familien und Erinnerungen statt Generationen', async () => {
+  await render('standard')
+  const hint = container.querySelector('.login-demo .field-hint').textContent
+  expect(hint).toBe('Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren, Familien und Erinnerungen.')
+  expect(hint).not.toMatch(/Generation/)
 })

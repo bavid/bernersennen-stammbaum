@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../api'
 import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
@@ -11,27 +10,6 @@ import { displayName, shortName } from '../lib/timeline.js'
 
 // So viele Geschwistergruppen zeigt der Abschnitt; alles Weitere steht auf der eigenen Seite (/wuerfe).
 const MAX_LITTERS = 3
-
-// Lädt die eingetragenen Verpaarungen des Bereichs (dieselben Daten wie LittersPage). null: lädt noch; schlägt
-// es fehl, gilt die Liste als leer - der Abschnitt bleibt dann einfach weg, die Seite darüber läuft weiter.
-function useBreedingEvents() {
-  const [events, setEvents] = useState(null)
-  useEffect(() => {
-    let cancelled = false
-    Promise.resolve()
-      .then(() => api.listBreedingEvents())
-      .then((list) => {
-        if (!cancelled) setEvents(Array.isArray(list) ? list : [])
-      })
-      .catch(() => {
-        if (!cancelled) setEvents([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-  return events
-}
 
 function LitterSummary({ litter, words }) {
   const parents = [litter.mother?.name, litter.father?.name].filter(Boolean).join(' × ')
@@ -67,12 +45,13 @@ function hasOwnFemaleDog(dogs) {
 // Geburtstag), erwarteten Nachwuchs oder eingetragene Verpaarungen gibt. dogs: die Tiere der Seite (listDogs).
 // Ohne all das bleibt für Schreibende (canWrite) mit eigener Hündin nur eine leise Zeile als Weg zur ersten
 // Verpaarung - /wuerfe hat im Standard-Auftritt keinen Reiter.
-export default function OffspringSection({ dogs, canWrite = false }) {
+// events: die Verpaarungen des Bereichs (hooks/useBreedingEvents.js, lädt OverviewPage - die braucht sie auch für
+// "Stammbaum öffnen"); null, solange sie laden.
+export default function OffspringSection({ dogs, events, canWrite = false }) {
   const { words } = useTheme()
-  const events = useBreedingEvents()
   const { litters, planned } = useMemo(() => buildLitters(dogs || [], events || []), [dogs, events])
 
-  if (events === null) return null
+  if (!events) return null
   const withSiblings = litters.filter((litter) => litter.puppies.length > 1)
   if (withSiblings.length === 0 && planned.length === 0 && events.length === 0) {
     if (!canWrite || !hasOwnFemaleDog(dogs)) return null

@@ -10,6 +10,8 @@ export default {
   footer: 'Familienchronik · damit wir wissen, wie es den anderen geht',
   // Phase U: "Würfe" bleibt ein eigener Reiter in der unteren Leiste
   littersInNav: true,
+  // Phase V3: die Familienbande ist hier direkt der Stammbaum (wie bisher)
+  familiesView: false,
   tricolor: true,
   favicon: '/favicon-berner.svg',
   words: {
@@ -88,6 +90,7 @@ export default {
     littersSingles: 'Von diesen Würfen steht bisher nur ein Tier im Stammbaum.',
     plannedDue: 'Die Welpen müssten jetzt da sein – Zeit für neue Karten im Stammbaum!',
     breedingIntro: 'Für die, die züchten: Ein Deckakt erscheint oben als erwarteter Wurf und später bei seinen Welpen.',
-    matingNotesPlaceholder: 'Anzahl Welpen, Besonderheiten, Ultraschall …'
+    matingNotesPlaceholder: 'Anzahl Welpen, Besonderheiten, Ultraschall …',
+    loginDemoHint: 'Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.'
   }
 }
