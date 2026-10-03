@@ -21,7 +21,7 @@ describe('vermittlungStatusLabel', () => {
 
   test('labels the other statuses, "pausiert" with the on-hold note', () => {
     expect(vermittlungStatusLabel('reserviert')).toBe('Reserviert')
-    expect(vermittlungStatusLabel('pausiert')).toBe('Pausiert (on hold)')
+    expect(vermittlungStatusLabel('pausiert')).toBe('Pausiert')
     expect(vermittlungStatusLabel('vermittelt')).toBe('Vermittelt')
   })
 

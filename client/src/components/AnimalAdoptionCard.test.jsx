@@ -83,10 +83,10 @@ describe('AnimalAdoptionCard', () => {
 })
 
 describe('AnimalAdoptionCard – pausiert (Phase P)', () => {
-  test('ein pausiertes Tier trägt den Chip "Pausiert (on hold)"', async () => {
+  test('ein pausiertes Tier trägt den Chip "Pausiert"', async () => {
     await render({ vermittlung_status: 'pausiert' })
     const statusChip = container.querySelector('.status-chip')
-    expect(statusChip.textContent).toBe('Pausiert (on hold)')
+    expect(statusChip.textContent).toBe('Pausiert')
     expect(statusChip.classList.contains('status-chip-pausiert')).toBe(true)
   })
 })

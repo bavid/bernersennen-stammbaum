@@ -95,7 +95,7 @@ function PublicChronicle({ entries }) {
   )
 }
 
-// Vermittlungsstatus unter dem Namen (Phase P): "Verfügbar"/"Reserviert"/"Pausiert (on hold)" - ein
+// Vermittlungsstatus unter dem Namen (Phase P): "Verfügbar"/"Reserviert"/"Pausiert" - ein
 // pausiertes Tier bleibt öffentlich, bekommt aber den Hinweis, dass es gerade nicht vermittelbar ist.
 // Ohne Status (ältere Antwort) erscheint nichts.
 function VermittlungStatus({ status }) {

@@ -6,7 +6,7 @@ import { STECKBRIEF_PUBLISHABLE_STATUS, vermittlungStatusLabel } from '../lib/ve
 
 const COPIED_MS = 2000
 
-// „Verfügbar“, „Reserviert“ oder „Pausiert (on hold)“ - aus den gemeinsamen Beschriftungen.
+// „Verfügbar“, „Reserviert“ oder „Pausiert“ - aus den gemeinsamen Beschriftungen.
 const PUBLISHABLE_STATUS_TEXT = (() => {
   const quoted = STECKBRIEF_PUBLISHABLE_STATUS.map((status) => `„${vermittlungStatusLabel(status)}“`)
   return `${quoted.slice(0, -1).join(', ')} oder ${quoted[quoted.length - 1]}`

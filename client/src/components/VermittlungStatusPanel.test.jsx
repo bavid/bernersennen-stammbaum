@@ -155,14 +155,14 @@ describe('VermittlungStatusPanel', () => {
 })
 
 describe('VermittlungStatusPanel – Status "pausiert" (Phase P)', () => {
-  test('bietet alle Status mit den gemeinsamen Beschriftungen an, inklusive "Pausiert (on hold)"', async () => {
+  test('bietet alle Status mit den gemeinsamen Beschriftungen an, inklusive "Pausiert"', async () => {
     await render()
     const options = [...select().querySelectorAll('option')].map((o) => [o.value, o.textContent])
     expect(options).toEqual([
       ['', '– kein Status –'],
       ['in_vermittlung', 'Verfügbar'],
       ['reserviert', 'Reserviert'],
-      ['pausiert', 'Pausiert (on hold)'],
+      ['pausiert', 'Pausiert'],
       ['vermittelt', 'Vermittelt']
     ])
   })

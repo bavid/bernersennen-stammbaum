@@ -260,11 +260,11 @@ describe('SteckbriefPage – Vermittlungsstatus (Phase P)', () => {
     expect(container.textContent).not.toContain('Gerade nicht vermittelbar')
   })
 
-  test('ein pausiertes Tier zeigt "Pausiert (on hold)" und den Hinweis, bald wieder vorbeizuschauen', async () => {
+  test('ein pausiertes Tier zeigt "Pausiert" und den Hinweis, bald wieder vorbeizuschauen', async () => {
     publicAnimal.mockResolvedValue({ ...animal, vermittlung_status: 'pausiert' })
     await render()
 
-    expect(container.querySelector('.status-chip').textContent).toBe('Pausiert (on hold)')
+    expect(container.querySelector('.status-chip').textContent).toBe('Pausiert')
     expect(container.textContent).toContain('Gerade nicht vermittelbar – schaut bald wieder vorbei.')
   })
 

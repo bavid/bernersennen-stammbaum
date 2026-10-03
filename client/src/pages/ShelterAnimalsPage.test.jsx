@@ -225,7 +225,7 @@ describe('ShelterAnimalsPage – Status "pausiert" (Phase P)', () => {
     expect(container.textContent).not.toContain('Pepper')
   })
 
-  test('die Karten zeigen "Verfügbar" und "Pausiert (on hold)" als Status', async () => {
+  test('die Karten zeigen "Verfügbar" und "Pausiert" als Status', async () => {
     listDogs.mockResolvedValue([
       dog({ id: 1, name: 'Pepper', vermittlung_status: 'in_vermittlung' }),
       dog({ id: 2, name: 'Oskar', vermittlung_status: 'pausiert' })
@@ -235,6 +235,6 @@ describe('ShelterAnimalsPage – Status "pausiert" (Phase P)', () => {
     act(() => chip('Alle').click())
 
     const statusChips = [...container.querySelectorAll('.status-chip')].map((el) => el.textContent)
-    expect(statusChips).toEqual(['Verfügbar', 'Pausiert (on hold)'])
+    expect(statusChips).toEqual(['Verfügbar', 'Pausiert'])
   })
 })

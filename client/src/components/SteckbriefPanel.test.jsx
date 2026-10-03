@@ -61,7 +61,7 @@ describe('SteckbriefPanel – nicht veröffentlicht', () => {
     const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Steckbrief veröffentlichen')
     expect(button.disabled).toBe(true)
     expect(container.textContent).toContain('Veröffentlichen geht nur mit Status')
-    expect(container.textContent).toContain('„Verfügbar“, „Reserviert“ oder „Pausiert (on hold)“')
+    expect(container.textContent).toContain('„Verfügbar“, „Reserviert“ oder „Pausiert“')
   })
 
   test('ein pausiertes Tier lässt sich veröffentlichen (Phase P)', async () => {

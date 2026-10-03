@@ -6,11 +6,12 @@
 export const VERMITTLUNG_STATUS_VALUES = ['in_vermittlung', 'reserviert', 'pausiert', 'vermittelt']
 
 // "pausiert" (on hold): vorübergehend nicht vermittelbar - der Steckbrief bleibt öffentlich, das Tier
-// erscheint aber nicht in "Entdecken". short: kürzere Beschriftung für die Filter-Chips.
+// erscheint aber nicht in "Entdecken". short (optional): kürzere Beschriftung für die Filter-Chips.
 const STATUS_LABELS = {
   in_vermittlung: { label: 'Verfügbar' },
   reserviert: { label: 'Reserviert' },
-  pausiert: { label: 'Pausiert (on hold)', short: 'Pausiert' },
+  // Audit V7a: ohne "(on hold)" - Fachwort auf Englisch; was es heißt, sagt PAUSED_HINT bzw. das Status-Panel.
+  pausiert: { label: 'Pausiert' },
   vermittelt: { label: 'Vermittelt' }
 }
 

@@ -104,7 +104,7 @@ const TIMELINE = [
     datum: '2018-12-24',
     autor: 'Familie Nissen',
     titel: 'Lieblingsplatz Sofa',
-    text: 'Heiligabend: Balu hat das Sofa für sich reserviert - und keiner hat sich getraut, ihn zu stören.',
+    text: 'Heiligabend: Balu hat das Sofa für sich reserviert – und keiner hat sich getraut, ihn zu stören.',
     fotos: ['balu.jpg']
   },
   {
@@ -112,7 +112,7 @@ const TIMELINE = [
     datum: '2019-11-02',
     autor: 'Familie Nissen',
     titel: 'Erinnerungen an Balu',
-    text: 'Heute mussten wir Abschied nehmen. Über elf Jahre hat er uns begleitet - wir vermissen ihn sehr.',
+    text: 'Heute mussten wir Abschied nehmen. Über elf Jahre hat er uns begleitet – wir vermissen ihn sehr.',
     privat: true
   },
   {
@@ -128,7 +128,7 @@ const TIMELINE = [
     datum: '2026-08-20',
     autor: 'Familie Nissen',
     titel: 'Neuer Lieblingsplatz',
-    text: 'Mira hat das Fensterbrett im Wohnzimmer für sich entdeckt - Sonnenplatz reserviert.',
+    text: 'Mira hat das Fensterbrett im Wohnzimmer für sich entdeckt – Sonnenplatz reserviert.',
     hoursAgo: 40
   },
   // Zwei frühe Einträge aus Neles Zeit im Tierheim Sonnenhang (Phase T Task 6): lib/demoPack.js
@@ -167,7 +167,7 @@ const TIMELINE = [
     datum: '2026-09-05',
     autor: 'Familie Nissen',
     titel: 'Tierarzt-Termin',
-    text: 'Jährliche Kontrolle - alles bestens, nur eine Zahnsteinentfernung steht noch an.',
+    text: 'Jährliche Kontrolle – alles bestens, nur eine Zahnsteinentfernung steht noch an.',
     privat: true,
     hoursAgo: 16
   },
@@ -184,7 +184,7 @@ const TIMELINE = [
     datum: '2026-09-20',
     autor: 'Familie Nissen',
     titel: 'Neues Gehege',
-    text: 'Ein größeres Freigehege für den Garten ist fertig - Flocke testet es ausgiebig.',
+    text: 'Ein größeres Freigehege für den Garten ist fertig – Flocke testet es ausgiebig.',
     hoursAgo: 8
   }
 ]

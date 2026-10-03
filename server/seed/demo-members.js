@@ -29,7 +29,7 @@ const MEMBERS = [
         eintrag: {
           datum: '2026-01-12',
           titel: 'Wilma im ersten Schnee',
-          text: 'Kaum lag der erste Schnee, war Wilma nicht mehr zu halten - eine halbe Stunde Flocken fangen, dann selig im Flur.',
+          text: 'Kaum lag der erste Schnee, war Wilma nicht mehr zu halten – eine halbe Stunde Flocken fangen, dann selig im Flur.',
           hoursAgo: 60
         },
         teilen: true
@@ -58,7 +58,7 @@ const MEMBERS = [
         eintrag: {
           datum: '2026-07-20',
           titel: 'Pepper lernt schwimmen',
-          text: 'Erst nur bis zum Bauch, dann ein Stock zu weit draußen - und plötzlich schwimmt er. Die Enten waren wenig begeistert.',
+          text: 'Erst nur bis zum Bauch, dann ein Stock zu weit draußen – und plötzlich schwimmt er. Die Enten waren wenig begeistert.',
           hoursAgo: 30
         },
         teilen: true

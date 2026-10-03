@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import Icon from '../Icon.jsx'
 import Avatar from '../Avatar.jsx'
-import { dogLabel } from '../../lib/timeline.js'
+import { dogLabel, speciesLabel } from '../../lib/timeline.js'
 
 const PER_PAGE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const DEFAULT_PER_PAGE = 6
@@ -18,7 +18,8 @@ function DogPicker({ dogs, selectedIds, onToggle }) {
             <Avatar dog={dog} size={44} />
             <span>
               <strong>{dogLabel(dog)}</strong>
-              <small>{dog.rasse || 'Rasse unbekannt'}</small>
+              {/* Audit V7a: ohne Rasse die Tierart ("Katze") statt mehrfach "Rasse unbekannt" */}
+              <small>{dog.rasse || speciesLabel(dog.tierart || 'hund')}</small>
             </span>
             <span className="collage-dog-check" aria-hidden="true">
               <Icon name="check" />

@@ -27,7 +27,7 @@ const HOST_ENTRIES = [
     datum: '2026-09-27',
     autor: 'Familie Jansen',
     titel: 'Wilma staunt über Flocke',
-    text: 'Beim Gegenbesuch am Deich hat Wilma zum ersten Mal ein Kaninchen aus der Nähe gesehen - ganz vorsichtig, mit wedelndem Schwanz.',
+    text: 'Beim Gegenbesuch am Deich hat Wilma zum ersten Mal ein Kaninchen aus der Nähe gesehen – ganz vorsichtig, mit wedelndem Schwanz.',
     hoursAgo: 20,
     erlebtMit: { tier: 'flocke', status: 'offen' }
   }
@@ -41,7 +41,7 @@ const HOME_ENTRIES = [
     datum: '2026-09-12',
     autor: 'Familie Nissen',
     titel: 'Besuch vom Möwenweg',
-    text: 'Wilma war zu Besuch - Mira hat sie den ganzen Nachmittag vom Fensterbrett aus beobachtet. Zum Schluss gab es ein vorsichtiges Nasenstupsen.',
+    text: 'Wilma war zu Besuch – Mira hat sie den ganzen Nachmittag vom Fensterbrett aus beobachtet. Zum Schluss gab es ein vorsichtiges Nasenstupsen.',
     hoursAgo: 30,
     erlebtMit: { tier: 'wilma', status: 'bestaetigt' }
   }
