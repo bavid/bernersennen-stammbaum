@@ -233,6 +233,8 @@ export const api = {
     // Druckdaten eines Stapels (Phase 5, server/routes/adminStats.js): offene Codes im Klartext, nur für
     // die Druckseite (AdminPrintPage) - der Server antwortet mit no-store, der Client hält sie nur im State.
     printBatch: (id) => request(`/admin/voucher-batches/${encodeURIComponent(id)}/print`),
+    // Audit V7a: der Druck wird ausdrücklich gemeldet (GET oben liest nur) - ids aus der Antwort von printBatch.
+    markPrinted: (id, ids) => request(`/admin/voucher-batches/${encodeURIComponent(id)}/print/gedruckt`, json('POST', { ids })),
     // CSV-Export ohne Codes - als Link mit download, kein fetch nötig (die Sitzung geht als Cookie mit).
     voucherCsvUrl: (id) => `/api/admin/voucher-batches/${encodeURIComponent(id)}/export.csv`,
     // Statistik der Karte „Übersicht“ (Phase 5, server/routes/adminStats.js): Einlösungen je Stapel/Partner/
@@ -417,6 +419,8 @@ export const api = {
     // Druckdaten eines eigenen Stapels (offene Codes im Klartext, Server: no-store) nur für PartnerPrintPage.
     vouchers: () => request('/partner-area/vouchers'),
     printBatch: (id) => request(`/partner-area/vouchers/${encodeURIComponent(id)}/print`),
+    // Audit V7a: der Druck wird ausdrücklich gemeldet (GET oben liest nur) - ids aus der Antwort von printBatch.
+    markPrinted: (id, ids) => request(`/partner-area/vouchers/${encodeURIComponent(id)}/print/gedruckt`, json('POST', { ids })),
 
     // Visitenkarten (Phase V5, server/routes/partnerArea/visitenkarte.js): { design, gespeichert, vorschlag, gutscheine:
     // { offen, ungedruckt }, maxJeAbruf } - Speichern antwortet genauso. Die Gutschein-Codes für den Druck ({ codes, fehlen,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import Icon from './Icon.jsx'
@@ -75,8 +75,43 @@ function PublicUrlWarning({ baseUrl }) {
   )
 }
 
+// Audit V7a: der Druck wird ausdrücklich gemeldet - markPrinted(ids) (POST …/print/gedruckt) mit den Gutschein-Ids der
+// Karten, einmal je geladenem Stapel: beim Knopf "Drucken" und ebenso, wenn der Druckdialog des Browsers anders geöffnet wird
+// (beforeprint, z. B. Strg+P). Das Laden der Druckdaten (GET) ändert nichts. Ohne markPrinted (Demo, Admin-Ansicht) oder
+// ohne Codes wird nichts gemeldet. Schlägt die Meldung fehl, sagt das ein Hinweis in der Werkzeugleiste (nicht im Druck).
+function usePrintedReport(print, markPrinted) {
+  const reported = useRef(false)
+  const [reportError, setReportError] = useState(null)
+
+  useEffect(() => {
+    reported.current = false
+    setReportError(null)
+  }, [print])
+
+  const report = useCallback(() => {
+    const ids = Array.isArray(print?.ids) ? print.ids : []
+    if (!markPrinted || reported.current || ids.length === 0) return
+    reported.current = true
+    setReportError(null)
+    Promise.resolve()
+      .then(() => markPrinted(ids))
+      .catch((err) => {
+        reported.current = false
+        setReportError(err?.message || 'Unbekannter Fehler')
+      })
+  }, [print, markPrinted])
+
+  useEffect(() => {
+    window.addEventListener('beforeprint', report)
+    return () => window.removeEventListener('beforeprint', report)
+  }, [report])
+
+  return { report, reportError }
+}
+
 // back: { to, label } - wohin "zurück" führt. actions: weitere Knöpfe/Links (z. B. der CSV-Export des Admins).
-function PrintToolbar({ back, duplex, onDuplex, actions }) {
+// onPrint: vor dem Druckdialog (meldet den Druck), reportError: Hinweis, wenn das Melden fehlschlug.
+function PrintToolbar({ back, duplex, onDuplex, actions, onPrint, reportError }) {
   return (
     <div className="print-toolbar" role="toolbar" aria-label="Druckoptionen">
       <Link to={back.to} className="btn btn-ghost">
@@ -92,9 +127,21 @@ function PrintToolbar({ back, duplex, onDuplex, actions }) {
         </button>
       </div>
       {actions}
-      <button type="button" className="btn btn-primary" onClick={() => window.print()}>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => {
+          onPrint()
+          window.print()
+        }}
+      >
         <Icon name="printer" /> Drucken
       </button>
+      {reportError && (
+        <p className="field-error print-toolbar-error" role="alert">
+          Der Druck ließ sich nicht vermerken ({reportError}) – Karten mit diesen Codes nicht doppelt ausgeben.
+        </p>
+      )}
     </div>
   )
 }
@@ -117,7 +164,7 @@ function PrintHead({ batch, codeCount, sheetCount, nichtDruckbar, schonGedruckt 
           {pluralize(nichtDruckbar, 'Gutschein', 'Gutscheine')} ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)
         </p>
       )}
-      {/* Phase V5: der Server vermerkt jeden Druck (gedruckt_at) - schon gedruckte Codes nicht doppelt ausgeben. */}
+      {/* Phase V5: jeder gemeldete Druck wird vermerkt (gedruckt_at) - schon gedruckte Codes nicht doppelt ausgeben. */}
       {schonGedruckt > 0 && (
         <p className="field-hint" role="note">
           {schonGedruckt === codeCount ? 'Alle Codes' : `${schonGedruckt} der Codes`} wurden schon einmal gedruckt – Karten mit
@@ -154,10 +201,12 @@ function PrintContent({ print, publicUrl, duplex, designLabel, hint }) {
 }
 
 // state: Rückgabe von useVoucherPrint. designLabel: Beschriftung je Motiv (lib/voucherPrint.js DESIGN) für den
-// Kopf. hint: optionaler Satz unter dem Titel (Partner-Druckseite).
-export default function VoucherPrintView({ state, back, actions = null, designLabel, hint = null }) {
+// Kopf. hint: optionaler Satz unter dem Titel (Partner-Druckseite). markPrinted: (ids) => Promise, meldet den Druck
+// (Audit V7a) - null in schreibgeschützten Sitzungen.
+export default function VoucherPrintView({ state, back, actions = null, designLabel, hint = null, markPrinted = null }) {
   const [duplex, setDuplex] = useState(false)
   const { print, publicUrl, error } = state
+  const { report, reportError } = usePrintedReport(print, markPrinted)
 
   if (!print && !error) {
     return (
@@ -173,7 +222,7 @@ export default function VoucherPrintView({ state, back, actions = null, designLa
 
   return (
     <div className="print-page">
-      <PrintToolbar back={back} duplex={duplex} onDuplex={setDuplex} actions={actions} />
+      <PrintToolbar back={back} duplex={duplex} onDuplex={setDuplex} actions={actions} onPrint={report} reportError={reportError} />
       <main className="print-main">
         {error ? (
           <div className="error-banner" role="alert">

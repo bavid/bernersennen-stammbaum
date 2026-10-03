@@ -4,8 +4,8 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { printBatch, config } = vi.hoisted(() => ({ printBatch: vi.fn(), config: vi.fn() }))
-vi.mock('../api', () => ({ api: { config, partnerArea: { printBatch } } }))
+const { printBatch, markPrinted, config } = vi.hoisted(() => ({ printBatch: vi.fn(), markPrinted: vi.fn(), config: vi.fn() }))
+vi.mock('../api', () => ({ api: { config, partnerArea: { printBatch, markPrinted } } }))
 
 import PartnerPrintPage, { PARTNER_PRINT_HINT } from './PartnerPrintPage.jsx'
 import { PRINT_BODY_CLASS } from '../components/VoucherPrintView.jsx'
@@ -14,6 +14,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 const PUBLIC_URL = 'https://beispiel-chronik.de'
 const codes = (count) => Array.from({ length: count }, (_, i) => `P${String(i).padStart(3, '0')}-EFGH-JKLM`)
+const ids = (count) => Array.from({ length: count }, (_, i) => 500 + i)
 const partnerBatch = {
   id: 12,
   label: 'Weitergabe Hundeschule Wiesengrund',
@@ -27,7 +28,8 @@ let root
 
 beforeEach(() => {
   config.mockResolvedValue({ appEnv: 'prod', publicUrl: PUBLIC_URL })
-  printBatch.mockResolvedValue({ batch: partnerBatch, codes: codes(12), nichtDruckbar: 1 })
+  printBatch.mockResolvedValue({ batch: partnerBatch, codes: codes(12), ids: ids(12), nichtDruckbar: 1 })
+  markPrinted.mockResolvedValue({ gedruckt: 12 })
 })
 
 afterEach(() => {
@@ -38,10 +40,11 @@ afterEach(() => {
   container?.remove()
   container = null
   printBatch.mockReset()
+  markPrinted.mockReset()
   config.mockReset()
 })
 
-async function render(batchId = '12') {
+async function render(batchId = '12', { readOnly = false } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -50,7 +53,7 @@ async function render(batchId = '12') {
       <MemoryRouter initialEntries={[`/partner-drucken/${batchId}`]}>
         <Routes>
           <Route path="/profil" element={<p data-testid="profil">Profil</p>} />
-          <Route path="/partner-drucken/:id" element={<PartnerPrintPage batchId={batchId} />} />
+          <Route path="/partner-drucken/:id" element={<PartnerPrintPage batchId={batchId} readOnly={readOnly} />} />
         </Routes>
       </MemoryRouter>
     )
@@ -121,6 +124,56 @@ describe('PartnerPrintPage – Karten im Partner-Motiv', () => {
     await render()
 
     expect(container.querySelector('.voucher-qr path').getAttribute('d')).toBe(qrSvgPath(`${PUBLIC_URL}/v#ABCD-EFGH-JKLM`).path)
+  })
+})
+
+describe('PartnerPrintPage – Druck melden (Audit V7a)', () => {
+  test('Laden meldet nichts; "Drucken" meldet die Ids der Karten genau einmal, auch mit dem Druckdialog (beforeprint)', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => window.dispatchEvent(new Event('beforeprint')))
+    await render()
+    expect(markPrinted).not.toHaveBeenCalled()
+
+    await act(async () => button('Drucken').click())
+    expect(print).toHaveBeenCalledTimes(1)
+    expect(markPrinted).toHaveBeenCalledTimes(1)
+    expect(markPrinted).toHaveBeenCalledWith('12', ids(12))
+
+    await act(async () => button('Drucken').click())
+    expect(markPrinted).toHaveBeenCalledTimes(1)
+    print.mockRestore()
+  })
+
+  test('Strg+P (nur beforeprint, ohne den Knopf) meldet ebenso', async () => {
+    await render()
+    await act(async () => window.dispatchEvent(new Event('beforeprint')))
+    expect(markPrinted).toHaveBeenCalledWith('12', ids(12))
+  })
+
+  test('Demo und Admin-Ansicht (readOnly) melden nichts; ohne Codes ebenso nicht', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {})
+    await render('12', { readOnly: true })
+    await act(async () => button('Drucken').click())
+    expect(markPrinted).not.toHaveBeenCalled()
+    act(() => root.unmount())
+    root = null
+
+    printBatch.mockResolvedValue({ batch: partnerBatch, codes: [], ids: [], nichtDruckbar: 3 })
+    await render()
+    await act(async () => window.dispatchEvent(new Event('beforeprint')))
+    expect(markPrinted).not.toHaveBeenCalled()
+    print.mockRestore()
+  })
+
+  test('schlägt die Meldung fehl, sagt das ein Hinweis in der Werkzeugleiste - der nächste Druck versucht es erneut', async () => {
+    markPrinted.mockRejectedValueOnce(new Error('Netzwerkfehler'))
+    await render()
+    await act(async () => window.dispatchEvent(new Event('beforeprint')))
+    const alert = container.querySelector('.print-toolbar [role="alert"]')
+    expect(alert.textContent).toContain('Der Druck ließ sich nicht vermerken (Netzwerkfehler)')
+
+    await act(async () => window.dispatchEvent(new Event('beforeprint')))
+    expect(markPrinted).toHaveBeenCalledTimes(2)
+    expect(container.querySelector('.print-toolbar [role="alert"]')).toBeNull()
   })
 })
 

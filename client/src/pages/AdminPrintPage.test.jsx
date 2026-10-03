@@ -4,11 +4,11 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { me, printBatch, config } = vi.hoisted(() => ({ me: vi.fn(), printBatch: vi.fn(), config: vi.fn() }))
+const { me, printBatch, markPrinted, config } = vi.hoisted(() => ({ me: vi.fn(), printBatch: vi.fn(), markPrinted: vi.fn(), config: vi.fn() }))
 vi.mock('../api', () => ({
   api: {
     config,
-    admin: { me, printBatch, voucherCsvUrl: (id) => `/api/admin/voucher-batches/${id}/export.csv` }
+    admin: { me, printBatch, markPrinted, voucherCsvUrl: (id) => `/api/admin/voucher-batches/${id}/export.csv` }
   }
 }))
 
@@ -26,7 +26,8 @@ let root
 beforeEach(() => {
   me.mockResolvedValue({ username: 'admin' })
   config.mockResolvedValue({ appEnv: 'prod', publicUrl: PUBLIC_URL })
-  printBatch.mockResolvedValue({ batch: customerBatch, codes: codes(23), nichtDruckbar: 0 })
+  printBatch.mockResolvedValue({ batch: customerBatch, codes: codes(23), ids: codes(23).map((_, i) => 100 + i), nichtDruckbar: 0 })
+  markPrinted.mockResolvedValue({ gedruckt: 23 })
 })
 
 afterEach(() => {
@@ -38,6 +39,7 @@ afterEach(() => {
   container = null
   me.mockReset()
   printBatch.mockReset()
+  markPrinted.mockReset()
   config.mockReset()
 })
 
@@ -182,8 +184,11 @@ describe('AdminPrintPage – Werkzeugleiste und Warnung', () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => {})
     await render()
 
+    expect(markPrinted).not.toHaveBeenCalled()
     await act(async () => button('Drucken').click())
     expect(print).toHaveBeenCalledTimes(1)
+    // Audit V7a: erst "Drucken" meldet den Druck (das Laden der Druckdaten liest nur).
+    expect(markPrinted).toHaveBeenCalledWith('7', codes(23).map((_, i) => 100 + i))
     print.mockRestore()
 
     const csv = [...container.querySelectorAll('a')].find((a) => a.textContent.includes('CSV herunterladen'))

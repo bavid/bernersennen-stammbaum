@@ -21,6 +21,12 @@
   background: var(--surface);
 }
 
+/* Audit V7a: schlug die Meldung "gedruckt" fehl, steht der Hinweis als eigene Zeile unter den Knöpfen. */
+.print-toolbar-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 .print-toolbar-spacer {
   flex: 1 1 auto;
 }

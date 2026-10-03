@@ -4,7 +4,7 @@ const config = require('../config')
 const { requireAdmin } = require('../middleware/admin')
 const { cleanId } = require('../lib/validate')
 const { printBatch, printableCodes, voucherCsv } = require('../lib/voucherPrint')
-const { markPrinted } = require('../lib/voucherGedruckt')
+const { validatePrintedIds, markPrintedAmong } = require('../lib/voucherGedruckt')
 const { collectStats } = require('../lib/adminStats')
 const { noStore, endWithoutEtag, sendJsonWithoutEtag: sendJson, CSV_TYPE } = require('../lib/noStoreResponse')
 
@@ -54,17 +54,31 @@ function findBatch(param) {
 }
 
 // Klartext-Codes für die Druckseite (Client Task 2): nur offene Gutscheine mit Geheimtext
-// (lib/voucherPrint.js printableCodes). Das Protokoll vermerkt nur Stapel-Id und Anzahl - nie einen Code.
-// Phase V5: die Codes gelten danach als gedruckt (lib/voucherGedruckt.js), schonGedruckt sagt, wie viele davon schon
-// einmal auf Karten standen - so landet kein Code unbemerkt zweimal bei der Kundschaft.
+// (lib/voucherPrint.js printableCodes), dazu ids (die Gutschein-Ids zu codes). Das Protokoll vermerkt nur Stapel-Id und
+// Anzahl - nie einen Code. Phase V5: schonGedruckt sagt, wie viele davon schon einmal auf Karten standen - so landet kein
+// Code unbemerkt zweimal bei der Kundschaft. Rein lesend (Audit V7a): vermerkt wird erst mit POST …/print/gedruckt.
 router.get('/voucher-batches/:id/print', requireAdmin, (req, res) => {
   const batch = findBatch(req.params.id)
   if (!batch) return sendJson(res, 404, { error: BATCH_NOT_FOUND })
 
   const { codes, ids, schonGedruckt, nichtDruckbar } = printableCodes(printRowsStmt.all(batch.id))
-  markPrinted(ids)
   console.info(`[admin] Druckdaten für Stapel ${batch.id}: ${codes.length} Codes, ${nichtDruckbar} nicht druckbar`)
-  sendJson(res, 200, { batch: printBatch(batch), codes, schonGedruckt, nichtDruckbar })
+  sendJson(res, 200, { batch: printBatch(batch), codes, ids, schonGedruckt, nichtDruckbar })
+})
+
+// Die Druckseite meldet den Druck { ids } (lib/voucherGedruckt.js, nur druckbare dieses Stapels) - Antwort { gedruckt }.
+router.post('/voucher-batches/:id/print/gedruckt', requireAdmin, (req, res, next) => {
+  try {
+    const batch = findBatch(req.params.id)
+    if (!batch) return sendJson(res, 404, { error: BATCH_NOT_FOUND })
+    const ids = validatePrintedIds(req.body)
+    const gedruckt = markPrintedAmong(printableCodes(printRowsStmt.all(batch.id)).ids, ids)
+    console.info(`[admin] Stapel ${batch.id}: ${gedruckt} Codes als gedruckt vermerkt`)
+    sendJson(res, 200, { gedruckt })
+  } catch (err) {
+    if (err.status) return sendJson(res, err.status, { error: err.message })
+    next(err)
+  }
 })
 
 // CSV ohne Codes (lib/voucherPrint.js voucherCsv): Semikolon, UTF-8 mit BOM (Excel), als Anhang.

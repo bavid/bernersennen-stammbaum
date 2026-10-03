@@ -45,5 +45,8 @@ export default function AdminPrintPage({ batchId }) {
     </a>
   )
 
-  return <VoucherPrintView state={state} back={BACK} actions={csvLink} designLabel={designLabel} />
+  // Audit V7a: "Drucken" meldet den Druck - erst dann gelten die Codes als gedruckt.
+  const markPrinted = (ids) => api.admin.markPrinted(batchId, ids)
+
+  return <VoucherPrintView state={state} back={BACK} actions={csvLink} designLabel={designLabel} markPrinted={markPrinted} />
 }
