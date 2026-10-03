@@ -234,8 +234,12 @@
   aspect-ratio: 1240 / 1754;
   overflow: hidden;
   border-radius: 4px;
-  background: #f6efe4;
-  color: #1c1511;
+  /* Farben aus dem gewählten Hintergrund (CollagePageView setzt die --cpage-*-Variablen, Muster als
+     gekachelte data:-URL) - Standard ist das bisherige Papier-Creme. Export: lib/collage/backgrounds.js */
+  background-color: var(--cpage-paper, #f6efe4);
+  background-repeat: repeat;
+  background-position: 0 0;
+  color: var(--cpage-ink, #1c1511);
   container-type: inline-size;
   user-select: none;
 }
@@ -245,7 +249,8 @@
   left: 0;
   right: 0;
   height: 0.92%;
-  background: linear-gradient(90deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #b5541f 66.6%);
+  /* dieselben Farben wie der Export (render.js TRICOLOR) */
+  background: linear-gradient(90deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #a4431d 66.6%);
 }
 
 .cpage-tricolor-top {
@@ -256,15 +261,15 @@
   bottom: 0;
 }
 
-/* Standard-Auftritt ohne Dreifarb-Streifen: ein schlichter Strich an derselben Stelle.
-   Fest verdrahtet wie die übrigen .cpage-Papierfarben: der Canvas-Export in lib/collage/render.js
-   zeichnet immer COLORS.rust ('#a4431d'), unabhängig vom Farbschema – Vorschau und Export müssen übereinstimmen. */
+/* Standard-Auftritt ohne Dreifarb-Streifen: ein schlichter Strich an derselben Stelle, in der Akzentfarbe des
+   Hintergrunds (--cpage-accent, Standard '#a4431d') - unabhängig vom Farbschema der App, denn der Canvas-Export
+   in lib/collage/render.js zeichnet denselben Wert: Vorschau und Export müssen übereinstimmen. */
 .cpage-rule {
   position: absolute;
   left: 0;
   right: 0;
   height: 0.17%;
-  background: #a4431d;
+  background: var(--cpage-accent, #a4431d);
 }
 
 .cpage-rule-top {
@@ -295,14 +300,14 @@
   top: 13.2%;
   font-size: 2.42cqw;
   font-weight: 500;
-  color: #74665a;
+  color: var(--cpage-muted, #74665a);
 }
 
 .cframe {
   position: absolute;
   overflow: hidden;
   border-radius: 1.13cqw;
-  background: #ecdfcc;
+  background: var(--cpage-frame, #ecdfcc);
 }
 
 .cframe img {
@@ -323,12 +328,13 @@
 }
 
 .cframe.is-selected {
-  outline: 3px solid var(--rust);
+  outline: 3px solid var(--cpage-accent, #a4431d);
   outline-offset: 2px;
 }
 
+/* Fokus in der Schriftfarbe der Seite - auf hellen und dunklen Hintergründen gut sichtbar */
 .cframe:focus-visible {
-  outline: 3px solid var(--tan);
+  outline: 3px dashed var(--cpage-ink, #1c1511);
   outline-offset: 2px;
   box-shadow: none;
 }
@@ -364,7 +370,7 @@
   font-size: 2.4cqw;
   font-weight: 700;
   text-align: center;
-  color: #74665a;
+  color: var(--cpage-muted, #74665a);
 }
 
 .cpage-footer {
@@ -389,7 +395,7 @@
   font-family: var(--font-body);
   font-size: 1.62cqw;
   font-weight: 600;
-  color: #74665a;
+  color: var(--cpage-muted, #74665a);
 }
 
 /* Bearbeitungsspalte */

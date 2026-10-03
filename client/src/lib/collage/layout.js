@@ -19,12 +19,10 @@ function rowPattern(count) {
   return rows
 }
 
-// Rahmen für count Fotos: [{ x, y, width, height, captionY }] in Seiteneinheiten.
-export function computeFrames(count, { area = PHOTO_AREA, gap = GAP, withCaptions = false } = {}) {
-  if (count <= 0) return []
-  const rows = rowPattern(count)
+// Rahmen für Reihen mit cols[i] Spalten und Höhen-Gewichten: [{ x, y, width, height, captionY, captionHeight }]
+// in Seiteneinheiten. Gemeinsame Grundlage für "Automatisch", die Raster und "Groß + klein" (layouts.js).
+export function framesForRows(rows, weights, { area = PHOTO_AREA, gap = GAP, withCaptions = false } = {}) {
   const caption = withCaptions ? CAPTION_HEIGHT : 0
-  const weights = rows.map((cols, i) => (i === 0 && cols === 1 && rows.length > 1 ? HERO_WEIGHT : 1))
   const weightSum = weights.reduce((a, b) => a + b, 0)
   const freeHeight = area.height - gap * (rows.length - 1) - caption * rows.length
 
@@ -34,11 +32,19 @@ export function computeFrames(count, { area = PHOTO_AREA, gap = GAP, withCaption
     const height = (freeHeight * weights[rowIndex]) / weightSum
     const width = (area.width - gap * (cols - 1)) / cols
     for (let col = 0; col < cols; col += 1) {
-      frames.push({ x: area.x + col * (width + gap), y, width, height, captionY: y + height })
+      frames.push({ x: area.x + col * (width + gap), y, width, height, captionY: y + height, captionHeight: caption })
     }
     y += height + caption + gap
   })
   return frames
+}
+
+// Rahmen für count Fotos ("Automatisch"): ungerade Mengen beginnen mit einem großen Hauptbild.
+export function computeFrames(count, { area = PHOTO_AREA, gap = GAP, withCaptions = false } = {}) {
+  if (count <= 0) return []
+  const rows = rowPattern(count)
+  const weights = rows.map((cols, i) => (i === 0 && cols === 1 && rows.length > 1 ? HERO_WEIGHT : 1))
+  return framesForRows(rows, weights, { area, gap, withCaptions })
 }
 
 // Wie object-fit: cover, aber mit Fokuspunkt (0..1) und Zoom (>= 1). Liefert das Zeichenrechteck.

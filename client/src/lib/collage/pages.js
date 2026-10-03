@@ -1,11 +1,22 @@
 import { dogLabel, displayName, shortName } from '../timeline.js'
 import { formatDateLong, formatDateShort } from '../dates.js'
 
+// Obergrenzen - gelten im Editor und beim Laden eines gespeicherten Entwurfs (sanitize.js)
+export const LIMITS = Object.freeze({ pages: 200, photosPerPage: 60, library: 2000, title: 160, caption: 120 })
+
 let nextId = 0
 export const newId = (prefix) => `${prefix}-${Date.now().toString(36)}-${(nextId += 1)}`
 
-export function newPhoto(url, caption = '') {
-  return { id: newId('photo'), url, caption, focusX: 0.5, focusY: 0.5, zoom: 1 }
+// date: ISO-Datum des Chronik-Eintrags ('' = ohne) - der Zeitstrahl zeigt es über dem Foto.
+export function newPhoto(url, caption = '', date = '') {
+  return { id: newId('photo'), url, caption, focusX: 0.5, focusY: 0.5, zoom: 1, date }
+}
+
+// Gestaltung neuer Seiten: Vorlage "Automatisch", Papier-Creme, keine Sticker (wie vor Phase V6).
+export const PAGE_DESIGN_DEFAULTS = Object.freeze({ layout: 'auto', background: 'creme' })
+
+export function newPage(fields) {
+  return { id: newId('page'), title: '', subtitle: '', footer: '', photos: [], ...PAGE_DESIGN_DEFAULTS, stickers: [], ...fields }
 }
 
 function parentsLine(dog) {
@@ -16,10 +27,11 @@ function parentsLine(dog) {
 
 // Alle Fotos eines Hundes: Porträt zuerst, dann Chronik-Fotos mit Titel und Datum als Unterschrift.
 export function photosOfDog(dog, entries) {
-  const photos = dog.foto_url ? [{ url: dog.foto_url, caption: '' }] : []
+  const photos = dog.foto_url ? [{ url: dog.foto_url, caption: '', date: '' }] : []
   for (const entry of entries) {
     for (const url of entry.foto_urls || []) {
-      photos.push({ url, caption: `${entry.titel} · ${formatDateShort(entry.datum)}` })
+      const caption = `${entry.titel} · ${formatDateShort(entry.datum)}`.slice(0, LIMITS.caption)
+      photos.push({ url, caption, date: entry.datum || '' })
     }
   }
   const seen = new Set()
@@ -39,13 +51,13 @@ export function buildPages(dogsData, { perPage = 6, overview = false, familyName
   if (overview) {
     const portraits = dogsData.filter(({ dog }) => dog.foto_url)
     if (portraits.length) {
-      pages.push({
-        id: newId('page'),
-        title: familyName || fallbackTitle,
-        subtitle: portraits.map(({ dog }) => displayName(dog)).join(' · '),
-        footer: '',
-        photos: portraits.map(({ dog }) => newPhoto(dog.foto_url, dogLabel(dog)))
-      })
+      pages.push(
+        newPage({
+          title: familyName || fallbackTitle,
+          subtitle: portraits.map(({ dog }) => displayName(dog)).join(' · '),
+          photos: portraits.map(({ dog }) => newPhoto(dog.foto_url, dogLabel(dog)))
+        })
+      )
     }
   }
 
@@ -58,13 +70,14 @@ export function buildPages(dogsData, { perPage = 6, overview = false, familyName
         !dog.name_unbekannt && dog.name !== shortName(dog.name) ? dog.name : null,
         dog.geburtsdatum ? `geboren am ${formatDateLong(dog.geburtsdatum)}` : null
       ]
-      pages.push({
-        id: newId('page'),
-        title: groups.length > 1 ? `${displayName(dog)} · ${index + 1}/${groups.length}` : displayName(dog),
-        subtitle: subtitle.filter(Boolean).join(' · '),
-        footer: parentsLine(dog),
-        photos: group.map((photo) => newPhoto(photo.url, photo.caption))
-      })
+      pages.push(
+        newPage({
+          title: groups.length > 1 ? `${displayName(dog)} · ${index + 1}/${groups.length}` : displayName(dog),
+          subtitle: subtitle.filter(Boolean).join(' · '),
+          footer: parentsLine(dog),
+          photos: group.map((photo) => newPhoto(photo.url, photo.caption, photo.date))
+        })
+      )
     })
   }
   return pages

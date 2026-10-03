@@ -59,7 +59,10 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   neuesten Eintrag und Chronik-Fotos im gleichen Alter („Als Welpen“, „Mit einem Jahr“ …). Vor dem
   Wurf-Geburtstag gibt es einen Hinweis samt „Treffen planen“ (fertiger Pinnwand-Zettel). Wer züchtet,
   trägt Deckakte ein: Sie erscheinen als erwarteter Wurf mit Countdown und später beim Wurf.
-- **Collage**: A4-Collage aus Porträt, Chronik-Fotos und Eltern, Download als PNG.
+- **Collage**: A4-Collage aus Porträt, Chronik-Fotos und Eltern, Download als PNG oder Druck/PDF. Je Seite eine
+  Vorlage (Automatisch, Raster 2×2 und 3×3, Groß + klein, Polaroid, Zeitstrahl mit Datum), ein Hintergrund (Muster
+  Pfoten/Herzen/Papier oder helle und dunkle Farben) und bis zu 30 Sticker zum Verschieben, Drehen und Skalieren –
+  mit Maus, Touch oder Tastatur. Der Entwurf bleibt nur im Browser.
 - **Schreib dem Admin**: Feedback und Problemmeldungen gehen nur an den Admin – die anderen im
   Rudel sehen sie nicht. Der Name ist freiwillig, ohne Namen kommt die Nachricht anonym an.
 - **Gutscheine statt offener Anmeldung**: Neu dabei ist man nur mit einem Einmal-Gutschein (Code
@@ -132,7 +135,10 @@ Stack: Node.js/Express + SQLite (better-sqlite3), React + Vite, Caddy für HTTPS
 Dienste. Schriften werden selbst gehostet (keine Google-Fonts-Aufrufe).
 
 **Quellen**: Postleitzahlen von [GeoNames](https://www.geonames.org/) (CC BY 4.0); Umkreissuche über
-© [OpenStreetMap](https://www.openstreetmap.org/copyright)-Mitwirkende (ODbL).
+© [OpenStreetMap](https://www.openstreetmap.org/copyright)-Mitwirkende (ODbL); Collage-Sticker aus
+[Fluent Emoji](https://github.com/microsoft/fluentui-emoji) von Microsoft (MIT-Lizenz, © Microsoft Corporation),
+lokal mitgeliefert in `client/public/stickers/` samt `LICENSE.txt` und `QUELLEN.md` – zur Laufzeit keine Aufrufe
+fremder Server.
 
 ## Lokal starten
 

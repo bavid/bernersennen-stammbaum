@@ -1,84 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { CAPTION_HEIGHT, MARGIN, PAGE, computeFrames, dragFocus } from '../../lib/collage/layout.js'
-import { hasCaptions, titleFontSize } from '../../lib/collage/render.js'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import { MARGIN, PAGE } from '../../lib/collage/layout.js'
+import { pageGeometry } from '../../lib/collage/layouts.js'
+import { backgroundTileUrl, getBackground } from '../../lib/collage/backgrounds.js'
+import { titleFontSize } from '../../lib/collage/render.js'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
+import { EmptySlot, FrameCaption, PhotoFrame, PolaroidCard, TimelineLine, TimelineMark, frameStyle, pct } from './CollageFrames.jsx'
+import StickerLayer from './StickerLayer.jsx'
 
-const pct = (value, total) => `${(value / total) * 100}%`
-
-function frameStyle(frame) {
+// Farben des Hintergrunds als CSS-Variablen (collage.css/collage-design.css), Muster als gekachelte data:-URL -
+// dieselben Werte und dieselbe Kachelgröße wie im Export.
+function pageStyle(bg) {
+  const tileUrl = backgroundTileUrl(bg)
   return {
-    left: pct(frame.x, PAGE.width),
-    top: pct(frame.y, PAGE.height),
-    width: pct(frame.width, PAGE.width),
-    height: pct(frame.height, PAGE.height)
+    '--cpage-paper': bg.paper,
+    '--cpage-ink': bg.ink,
+    '--cpage-muted': bg.muted,
+    '--cpage-frame': bg.frame,
+    '--cpage-accent': bg.accent,
+    ...(tileUrl ? { backgroundImage: `url("${tileUrl}")`, backgroundSize: `${(bg.tile.size / PAGE.width) * 100}% auto` } : {})
   }
 }
 
-function captionStyle(frame) {
-  return {
-    left: pct(frame.x, PAGE.width),
-    top: pct(frame.captionY, PAGE.height),
-    width: pct(frame.width, PAGE.width),
-    height: pct(CAPTION_HEIGHT, PAGE.height)
-  }
-}
-
-// Bild wie im Export: cover + Fokuspunkt + Zoom um den Fokuspunkt (mathematisch identisch)
-function imageStyle(photo) {
-  const origin = `${photo.focusX * 100}% ${photo.focusY * 100}%`
-  return { objectPosition: origin, transformOrigin: origin, transform: `scale(${photo.zoom})` }
-}
-
-function Frame({ photo, frame, interactive, selected, onSelect, onChange }) {
-  const drag = useRef(null)
-
-  function handlePointerDown(event) {
-    if (!interactive) return
-    onSelect(photo.id)
-    const img = event.currentTarget.querySelector('img')
-    if (!img?.naturalWidth) return
-    event.currentTarget.setPointerCapture(event.pointerId)
-    const rect = event.currentTarget.getBoundingClientRect()
-    drag.current = {
-      startX: event.clientX,
-      startY: event.clientY,
-      photo,
-      image: { width: img.naturalWidth, height: img.naturalHeight },
-      frame: { x: 0, y: 0, width: rect.width, height: rect.height }
-    }
-  }
-
-  function handlePointerMove(event) {
-    const state = drag.current
-    if (!state) return
-    const focus = dragFocus(state.photo, state.image, state.frame, event.clientX - state.startX, event.clientY - state.startY)
-    onChange(photo.id, focus)
-  }
-
-  function endDrag() {
-    drag.current = null
-  }
-
-  return (
-    <div
-      className={`cframe ${selected ? 'is-selected' : ''} ${interactive ? 'is-interactive' : ''}`}
-      style={frameStyle(frame)}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-      role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      aria-label={interactive ? `Foto ${photo.caption || ''} auswählen` : undefined}
-      onKeyDown={(event) => interactive && (event.key === 'Enter' || event.key === ' ') && onSelect(photo.id)}
-    >
-      <img src={photo.url} alt="" draggable={false} style={imageStyle(photo)} />
-      {selected && <span className="cframe-hint">Ziehen zum Verschieben</span>}
-    </div>
-  )
-}
-
-// Eine Collage-Seite. interactive=false für Vorschaubilder in der Seitenleiste.
 // Neu messen, sobald die Schriften geladen sind (vorher misst der Browser mit der Ersatzschrift)
 function useFontsReady() {
   const [ready, setReady] = useState(() => document.fonts?.status === 'loaded')
@@ -88,16 +30,66 @@ function useFontsReady() {
   return ready
 }
 
-export default function CollagePageView({ page, interactive = false, selectedPhotoId, onSelectPhoto, onPhotoChange }) {
+function Edge({ tricolor, position }) {
+  return tricolor ? <div className={`cpage-tricolor cpage-tricolor-${position}`} /> : <div className={`cpage-rule cpage-rule-${position}`} />
+}
+
+function Photos({ page, geometry, interactive, selection, onSelect, onPhotoChange }) {
+  return page.photos.map((photo, i) => {
+    const frame = geometry.frames[i]
+    const props = {
+      photo,
+      interactive,
+      selected: selection?.kind === 'photo' && selection.id === photo.id,
+      onSelect: (id) => onSelect({ kind: 'photo', id }),
+      onChange: onPhotoChange
+    }
+    if (frame.polaroid) return <PolaroidCard key={photo.id} frame={frame} {...props} />
+    const caption = photo.caption.trim()
+    return (
+      <Fragment key={photo.id}>
+        <PhotoFrame style={frameStyle(frame)} {...props} />
+        {frame.captionHeight > 0 && caption && <FrameCaption frame={frame} text={caption} />}
+        {frame.timeline && <TimelineMark frame={frame} photo={photo} lineX={geometry.line.x} />}
+      </Fragment>
+    )
+  })
+}
+
+// Eine Collage-Seite. interactive=false für Vorschaubilder in der Seitenleiste.
+// selection: { kind: 'photo' | 'sticker', id } oder null; onSelect(selection) wählt aus (null = nichts).
+// label: Name der bearbeitbaren Seite (Vorleser) - sie bekommt den Fokus nach Entf/Escape an einem Sticker.
+export default function CollagePageView({
+  page,
+  interactive = false,
+  label = 'Collage-Seite',
+  selection = null,
+  onSelect = () => {},
+  onPhotoChange,
+  onStickerChange,
+  onStickerRemove
+}) {
   const { theme } = useTheme()
-  const withCaptions = hasCaptions(page)
-  const frames = computeFrames(page.photos.length, { withCaptions })
+  const bg = getBackground(page.background)
+  const geometry = pageGeometry(page)
   const fontsReady = useFontsReady()
   const titleSize = useMemo(() => titleFontSize(page.title), [page.title, fontsReady])
+  const showSlots = interactive && geometry.slots.length > 0
+
+  function handlePointerDown(event) {
+    if (interactive && !event.target.closest('.cframe, .cpolaroid, .csticker')) onSelect(null)
+  }
 
   return (
-    <div className={`cpage ${interactive ? 'is-interactive' : ''}`}>
-      {theme.tricolor ? <div className="cpage-tricolor cpage-tricolor-top" /> : <div className="cpage-rule cpage-rule-top" />}
+    <div
+      className={`cpage ${interactive ? 'is-interactive' : ''}`}
+      style={pageStyle(bg)}
+      tabIndex={interactive ? -1 : undefined}
+      role={interactive ? 'group' : undefined}
+      aria-label={interactive ? label : undefined}
+      onPointerDown={handlePointerDown}
+    >
+      <Edge tricolor={theme.tricolor} position="top" />
       <div
         className="cpage-title"
         style={{
@@ -115,34 +107,25 @@ export default function CollagePageView({ page, interactive = false, selectedPho
         {page.subtitle}
       </div>
 
-      {page.photos.map((photo, i) => (
-        <Frame
-          key={photo.id}
-          photo={photo}
-          frame={frames[i]}
-          interactive={interactive}
-          selected={selectedPhotoId === photo.id}
-          onSelect={onSelectPhoto}
-          onChange={onPhotoChange}
-        />
-      ))}
-      {withCaptions &&
-        page.photos.map((photo, i) => (
-          <div key={`${photo.id}-caption`} className="cpage-caption" style={captionStyle(frames[i])}>
-            {photo.caption}
-          </div>
-        ))}
-      {page.photos.length === 0 && <div className="cpage-empty">Noch keine Fotos auf dieser Seite</div>}
+      {geometry.line && <TimelineLine line={geometry.line} />}
+      <Photos page={page} geometry={geometry} interactive={interactive} selection={selection} onSelect={onSelect} onPhotoChange={onPhotoChange} />
+      {showSlots && geometry.slots.map((slot, i) => <EmptySlot key={`slot-${i}`} slot={slot} />)}
+      {page.photos.length === 0 && !showSlots && <div className="cpage-empty">Noch keine Fotos auf dieser Seite</div>}
 
       <div className="cpage-footer" style={{ left: pct(MARGIN, PAGE.width), right: pct(MARGIN, PAGE.width) }}>
         <span>{page.footer}</span>
         <span className="cpage-brand">{theme.appName}</span>
       </div>
-      {theme.tricolor ? (
-        <div className="cpage-tricolor cpage-tricolor-bottom" />
-      ) : (
-        <div className="cpage-rule cpage-rule-bottom" />
-      )}
+      <Edge tricolor={theme.tricolor} position="bottom" />
+
+      <StickerLayer
+        stickers={page.stickers}
+        interactive={interactive}
+        selectedId={selection?.kind === 'sticker' ? selection.id : null}
+        onSelect={(id) => onSelect(id ? { kind: 'sticker', id } : null)}
+        onChange={(sticker) => onStickerChange(sticker.id, sticker)}
+        onRemove={(id) => onStickerRemove(id)}
+      />
     </div>
   )
 }

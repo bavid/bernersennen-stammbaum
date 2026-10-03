@@ -72,8 +72,8 @@ describe('buildPages', () => {
   test('uses entry titles and dates as captions, portrait first, no duplicates', () => {
     const photos = photosOfDog(dog(1, 'Hermes'), [entry('Am See', '2026-06-01', ['/uploads/a.jpg', '/uploads/1.jpg'])])
     expect(photos).toEqual([
-      { url: '/uploads/1.jpg', caption: '' },
-      { url: '/uploads/a.jpg', caption: 'Am See · 01.06.2026' }
+      { url: '/uploads/1.jpg', caption: '', date: '' },
+      { url: '/uploads/a.jpg', caption: 'Am See · 01.06.2026', date: '2026-06-01' }
     ])
   })
 
