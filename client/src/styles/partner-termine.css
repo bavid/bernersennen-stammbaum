@@ -191,14 +191,96 @@
   font-size: var(--text-xs);
 }
 
+/* Audit V7a: eine Serie steht einmal - "Nächster Termin" unter der Regel, die einzelnen Tage zum Aufklappen. */
+.termin-row-next {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.termin-serie-tage {
+  grid-column: 2 / -1;
+}
+
+.termin-serie-tage summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  cursor: pointer;
+  color: var(--rust-deep);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.termin-serie-tage[open] summary {
+  margin-bottom: var(--space-2);
+}
+
+.termin-serie-monat + .termin-serie-monat,
+.termin-einzeln-monat + .termin-einzeln-monat {
+  margin-top: var(--space-4);
+}
+
+.termin-group-label {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.termin-tage {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.termin-tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+}
+
+.termin-tag-datum {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.termin-tag.is-cancelled .termin-tag-text {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
 @media (max-width: 760px) {
   .termin-row {
     grid-template-columns: 3.25rem minmax(0, 1fr);
   }
 
+  /* Audit V7a: die Knöpfe nutzen am Handy die ganze Zeilenbreite - so passen sie in eine Zeile. */
   .termin-row-actions {
-    grid-column: 2 / -1;
+    grid-column: 1 / -1;
     justify-content: flex-start;
+  }
+
+  .termin-serie-tage {
+    grid-column: 1 / -1;
   }
 }
 

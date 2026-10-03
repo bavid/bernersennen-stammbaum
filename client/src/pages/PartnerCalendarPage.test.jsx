@@ -109,36 +109,59 @@ const click = (element) => act(async () => element.click())
 const submit = () => act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
 
 describe('PartnerCalendarPage – Übersicht', () => {
-  test('Termine nach Monat, abgesagte mit "fällt aus", Zähler und Hinweis ohne Freigabe', async () => {
+  // Audit V7a: jede Serie steht einmal (ihre Tage aufklappbar), Einzeltermine nach Monat darunter.
+  test('Serien in einer Zeile mit nächstem Termin und Absagen, Einzeltermine nach Monat, Zähler und Hinweis', async () => {
     await render()
     expect(container.querySelector('h1').textContent).toBe('Kalender')
-    expect([...container.querySelectorAll('.termin-month-title')].map((h) => h.textContent)).toEqual(['Oktober 2026', 'November 2026'])
-    expect(rows()).toHaveLength(4)
-    const cancelled = rows()[1]
-    expect(cancelled.classList.contains('is-cancelled')).toBe(true)
-    expect(cancelled.querySelector('.termin-badge-cancelled').textContent).toBe('fällt aus')
-    expect(cancelled.querySelector('.termin-date .visually-hidden').textContent).toBe('Samstag, 17. Oktober')
-    expect(rows()[0].querySelector('.termin-row-meta').textContent).toBe('Trainingsplatz · Jeden Samstag')
-    expect(rows()[0].querySelector('.termin-row-time').textContent).toBe('10:00–11:00 Uhr')
+    expect([...container.querySelectorAll('.termin-month-title')].map((h) => h.textContent)).toEqual(['Serien', 'Einzeltermine'])
+    expect(rows()).toHaveLength(2)
+    const [serie, einzeln] = rows()
+    expect(serie.querySelector('.termin-row-title').textContent).toBe('Welpenspielstunde')
+    expect(serie.querySelector('.termin-row-meta').textContent).toBe('Trainingsplatz · Jeden Samstag')
+    expect(serie.querySelector('.termin-row-time').textContent).toBe('10:00–11:00 Uhr')
+    expect(serie.querySelector('.termin-row-next').textContent).toBe('Nächster Termin: Sa, 10.10. · 1 Tag fällt aus')
+    expect(serie.querySelector('.termin-date .visually-hidden').textContent).toBe('Samstag, 10. Oktober')
+    // Die Tage der Serie: aufklappbar, der abgesagte durchgestrichen mit "fällt aus".
+    expect(serie.querySelector('details summary').textContent).toBe('Einzelne Tage absagen (3)')
+    const tage = [...serie.querySelectorAll('.termin-tag')]
+    expect(tage.map((tag) => tag.querySelector('.termin-tag-text').textContent)).toEqual(['Sa, 10.10.', 'Sa, 17.10.', 'Sa, 24.10.'])
+    expect(tage[1].classList.contains('is-cancelled')).toBe(true)
+    expect(tage[1].querySelector('.termin-badge-cancelled').textContent).toBe('fällt aus')
+    expect(container.querySelector('.termin-group-label').textContent).toBe('Oktober 2026')
+
+    expect(einzeln.querySelector('.termin-row-title').textContent).toBe('Erste-Hilfe-Kurs')
+    expect(einzeln.querySelector('.termin-date .visually-hidden').textContent).toBe('Dienstag, 3. November')
+    expect([...einzeln.querySelectorAll('button')].map((btn) => btn.textContent.trim())).toEqual(['Absagen', 'Bearbeiten', 'Löschen'])
+    expect(einzeln.querySelector('button').getAttribute('aria-label')).toBe('Diesen Termin absagen: Erste-Hilfe-Kurs am Di, 3.11.')
     expect(container.querySelector('.partner-termine-count').textContent).toBe('3 von 50')
     expect(container.querySelector('.partner-termine-hint').textContent).toMatch(/ohne Prüfung/)
     expect(container.querySelector('.termin-past summary').textContent).toBe('Vergangene Termine (1)')
   })
 
+  test('ohne Serien keine Überschrift "Serien"; fallen alle Tage aus, zählt der erste als nächster', async () => {
+    await render({ data: listData({ vorkommen: [vorkommen(kurs, '2026-11-03')] }) })
+    expect([...container.querySelectorAll('.termin-month-title')].map((h) => h.textContent)).toEqual(['Einzeltermine'])
+    act(() => root.unmount())
+    root = null
+    await render({ data: listData({ vorkommen: [vorkommen(welpen, '2026-10-10', { abgesagt: true }), vorkommen(welpen, '2026-10-17', { abgesagt: true })] }) })
+    expect(rows()[0].querySelector('.termin-row-next').textContent).toBe('Nächster Termin: Sa, 10.10. · 2 Tage fallen aus')
+  })
+
   test('einen Tag absagen und wieder stattfinden lassen - die Antwort ersetzt die Liste', async () => {
     await render()
-    const absage = rows()[0].querySelector('button')
+    const absage = container.querySelector('.termin-tag button')
+    expect(absage.textContent).toBe('Absagen')
     expect(absage.getAttribute('aria-label')).toBe('Diesen Termin absagen: Welpenspielstunde am Sa, 10.10.')
     absagenTermin.mockResolvedValue(listData({ vorkommen: [vorkommen(welpen, '2026-10-10', { abgesagt: true })] }))
     await click(absage)
     expect(absagenTermin).toHaveBeenCalledWith(1, '2026-10-10')
-    expect(rows()).toHaveLength(1)
-    expect(rows()[0].classList.contains('is-cancelled')).toBe(true)
+    expect(container.querySelectorAll('.termin-tag')).toHaveLength(1)
+    expect(container.querySelector('.termin-tag').classList.contains('is-cancelled')).toBe(true)
 
     wiederTermin.mockResolvedValue(listData())
     await click(button('Wieder stattfinden lassen'))
     expect(wiederTermin).toHaveBeenCalledWith(1, '2026-10-10')
-    expect(rows()).toHaveLength(4)
+    expect(container.querySelectorAll('.termin-tag')).toHaveLength(3)
   })
 
   test('eine Serie löschen braucht eine Bestätigung', async () => {
@@ -210,7 +233,7 @@ describe('PartnerCalendarPage – Formular', () => {
 
   test('Serie bearbeiten: Hinweis, Werte übernommen, PUT mit der ganzen Serie', async () => {
     await render()
-    await click(rows()[0].querySelectorAll('button')[1])
+    await click(rows()[0].querySelector('[aria-label="Serie bearbeiten: Welpenspielstunde"]'))
     expect(container.querySelector('form h3').textContent).toBe('Bearbeiten – Welpenspielstunde')
     expect(container.querySelector('form').textContent).toContain('Änderungen gelten für die ganze Serie')
     expect(container.querySelector('#termin-serie-bis').value).toBe('2026-10-24')

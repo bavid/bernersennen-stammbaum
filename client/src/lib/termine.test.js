@@ -11,6 +11,7 @@ import {
   serieOptions,
   serieSkipsMonths,
   splitByHorizon,
+  splitSerien,
   terminClientErrors,
   terminErrorField,
   toTerminPayload
@@ -71,6 +72,35 @@ describe('Termine anzeigen', () => {
       ['2026-11', 'November 2026', 1],
       ['2027-01', 'Januar 2027', 1]
     ])
+  })
+
+  // Audit V7a: im Partner-Bereich steht jede Serie einmal (mit ihren Tagen zum Aufklappen), Einzeltermine nach Monat.
+  test('splitSerien: Serien je Termin in Reihenfolge des ersten Vorkommens, dazu die Einzeltermine', () => {
+    const items = [
+      { terminId: 1, serie: 'woechentlich', datum: '2026-10-10' },
+      { terminId: 2, serie: 'keine', datum: '2026-10-12' },
+      { terminId: 3, serie: 'monatlich_tag', datum: '2026-10-14' },
+      { terminId: 1, serie: 'woechentlich', datum: '2026-10-17', abgesagt: true },
+      { terminId: 1, serie: 'woechentlich', datum: '2026-10-24' },
+      { terminId: 3, serie: 'monatlich_tag', datum: '2026-11-14' }
+    ]
+    const { serien, einzeln } = splitSerien(items)
+    expect(serien.map(({ terminId, items: list }) => [terminId, list.map((item) => item.datum)])).toEqual([
+      [1, ['2026-10-10', '2026-10-17', '2026-10-24']],
+      [3, ['2026-10-14', '2026-11-14']]
+    ])
+    expect(serien[0].naechster.datum).toBe('2026-10-10')
+    expect(serien[0].abgesagt).toBe(1)
+    expect(einzeln.map((item) => item.terminId)).toEqual([2])
+    // Fällt der nächste Tag aus, ist der nächste stattfindende der "nächste Termin"; fallen alle aus, der erste.
+    const cancelledFirst = splitSerien([
+      { terminId: 1, serie: 'woechentlich', datum: '2026-10-10', abgesagt: true },
+      { terminId: 1, serie: 'woechentlich', datum: '2026-10-17' }
+    ]).serien[0]
+    expect(cancelledFirst.naechster.datum).toBe('2026-10-17')
+    const allCancelled = splitSerien([{ terminId: 1, serie: 'woechentlich', datum: '2026-10-10', abgesagt: true }]).serien[0]
+    expect(allCancelled.naechster.datum).toBe('2026-10-10')
+    expect(splitSerien([])).toEqual({ serien: [], einzeln: [] })
   })
 
   test('addMonths klemmt auf das Monatsende', () => {

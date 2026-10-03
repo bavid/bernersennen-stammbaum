@@ -133,6 +133,29 @@ export function groupByMonth(items) {
   return groups
 }
 
+// Audit V7a: die Übersicht im Partner-Bereich zeigt jede Serie einmal - { serien: [{ terminId, items, naechster, abgesagt }],
+// einzeln } aus den Vorkommen (Reihenfolge der Liste). naechster: das erste stattfindende Vorkommen (fallen alle aus, das
+// erste), abgesagt: wie viele Tage der Serie ausfallen. einzeln: die Vorkommen einmaliger Termine.
+export function splitSerien(items) {
+  const byTermin = new Map()
+  const einzeln = []
+  for (const item of items) {
+    if (item.serie === SERIE.keine) {
+      einzeln.push(item)
+      continue
+    }
+    if (!byTermin.has(item.terminId)) byTermin.set(item.terminId, [])
+    byTermin.get(item.terminId).push(item)
+  }
+  const serien = [...byTermin].map(([terminId, list]) => ({
+    terminId,
+    items: list,
+    naechster: list.find((item) => !item.abgesagt) || list[0],
+    abgesagt: list.filter((item) => item.abgesagt).length
+  }))
+  return { serien, einzeln }
+}
+
 // Was in die nächsten months Monate fällt (einschließlich des Tages genau months Monate später) - und der Rest.
 export function splitByHorizon(items, today, months) {
   const horizon = addMonths(today, months)
