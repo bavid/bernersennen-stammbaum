@@ -79,6 +79,21 @@
   min-width: 0;
 }
 
+/* Audit V7a: Karte und Beziehungs-Chips je Zeile auf einer Linie - die Karten einer Zeile sind gleich hoch, die Chips
+   darunter beginnen überall auf derselben Höhe (vorher hingen sie je nach Kartenhöhe versetzt). Ohne subgrid bleibt es
+   beim gestapelten Aufbau oben. */
+@supports (grid-template-rows: subgrid) {
+  .family-member {
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    align-content: stretch;
+  }
+
+  .family-member > .relation-chips {
+    align-self: start;
+  }
+}
+
 /* Im Raster füllt die Karte ihre Spalte (im Stammbaum hat sie eine feste Breite) */
 .family-member .dog-card {
   width: 100%;
@@ -220,7 +235,8 @@
   }
 
   .family-member .dog-card-meta .sex-label + span::before {
-    content: '· ';
+    content: '·';
+    margin-right: var(--space-1);
   }
 
   .family-member .dog-card-tag {

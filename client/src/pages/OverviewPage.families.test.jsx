@@ -139,16 +139,27 @@ describe('Familienbande im Standard-Auftritt (Phase V3): zuerst Familien', () =>
     expect(freunde.querySelector('img')).toBeNull()
   })
 
-  test('Kennzahl "Familien" statt "Generationen": ein Abschnitt je Familie und befreundetem Zuhause', async () => {
+  test('Kennzahl "Familie" statt "Generationen": nur die Familien des Zuhauses, nicht Zuhause und Freunde (Audit V7a)', async () => {
     await render()
-    expect(stat('Familien').querySelector('dd').textContent).toBe('3')
+    expect(stat('Familien')).toBeUndefined()
+    expect(stat('Familie').querySelector('dd').textContent).toBe('1')
     expect(stat('Generationen')).toBeUndefined()
     expect(container.querySelector('.page-hero').textContent).not.toMatch(/Generation/)
   })
 
-  test('ohne Verpaarung und Eltern: kein "Stammbaum öffnen", dafür der leise Hinweis', async () => {
+  test('ohne Verpaarung und Eltern: kein "Stammbaum öffnen", dafür der leise Hinweis - in EINER Zeile mit "Nachwuchs geplant?"', async () => {
     await render()
     expect(heroLink('Stammbaum')).toBeUndefined()
+    // Audit V7a: vorher zwei Zeilen fast gleichen Inhalts untereinander
+    expect(container.querySelector('.families-tree-hint')).toBeNull()
+    const hint = container.querySelector('.offspring-hint')
+    expect(hint.textContent).toContain('Nachwuchs geplant? Mit der ersten Verpaarung entsteht hier euer Stammbaum.')
+    expect(hint.querySelector('a').getAttribute('href')).toBe('/wuerfe')
+  })
+
+  test('ohne eigene Hündin (keine leise Zeile zur Verpaarung) steht der Stammbaum-Hinweis allein', async () => {
+    await render({ dogs: [dog(31, 'Kater Karlo', { tierart: 'katze', geschlecht: 'ruede' })] })
+    expect(container.querySelector('.offspring-hint')).toBeNull()
     expect(container.querySelector('.families-tree-hint').textContent).toBe('Sobald ihr eine Verpaarung eintragt, entsteht hier euer Stammbaum.')
   })
 

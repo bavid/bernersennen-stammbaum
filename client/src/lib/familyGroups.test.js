@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   buildFamilyGroups,
-  countFamilyGroups,
+  familyStat,
   friendHomes,
   hasFamilyTree,
   nameList,
@@ -90,6 +90,17 @@ describe('relationChips – kleine Beziehungs-Chips statt Linien', () => {
     expect(texts(mira)).toEqual(['lebt mit Cora'])
   })
 
+  test('unbekannte Eltern stehen nicht im Chip - nur die bekannten (Audit V7a: nie "Kind von Unbekannt und Unbekannt")', () => {
+    const unknownMother = dog(6, 'Unbekannt', { name_unbekannt: 1 })
+    const unknownFather = dog(7, 'Unbekannt', { geschlecht: 'ruede', name_unbekannt: 1 })
+    const luna = dog(8, 'Luna', { mother_dog_id: 6, father_dog_id: 7 })
+    const ida = dog(9, 'Ida', { mother_dog_id: 1, father_dog_id: 7 })
+    const all = [bella, unknownMother, unknownFather, luna, ida]
+    // Geschwister bleiben: derselbe (unbekannte) Vater ist trotzdem derselbe
+    expect(relationChips(luna, all, []).map((chip) => chip.text)).toEqual(['Geschwister von Ida'])
+    expect(relationChips(ida, all, []).map((chip) => chip.text)).toEqual(['Kind von Bella', 'Geschwister von Luna'])
+  })
+
   test('ohne bekannte Beziehungen: keine Chips; Verweise ins Leere zählen nicht', () => {
     expect(relationChips(dog(8, 'Flocke', { mother_dog_id: 99 }), nodes, [{ dog_a_id: 8, dog_b_id: 98 }])).toEqual([])
   })
@@ -151,11 +162,25 @@ describe('buildFamilyGroups – Abschnitte der Familienbande', () => {
     expect(groups.owners.map((g) => [g.kind, g.title])).toEqual([['bereich', 'Tierheim Kleeblatt']])
   })
 
-  test('countFamilyGroups zählt jeden Abschnitt und jedes befreundete Zuhause', () => {
+  // Audit V7a: vorher zählte "Familien" jeden Abschnitt - das eigene Zuhause und befreundete Zuhause mit.
+  test('familyStat im eigenen Zuhause: nur die Familien, in denen es Mitglied ist - nicht Zuhause oder Freunde', () => {
     const friends = [{ id: 4, name: 'Zuhause Möwenweg', canVisit: true, tiere: [] }]
-    const groups = buildFamilyGroups({ family: home, dogs: [nele, mira, balu], friends })
-    expect(countFamilyGroups(groups)).toBe(4)
-    expect(countFamilyGroups(buildFamilyGroups({ family: home, dogs: [] }))).toBe(2)
+    expect(familyStat(home, buildFamilyGroups({ family: home, dogs: [nele, mira, balu], friends }))).toEqual({ value: 2, label: 'Familien' })
+    const oneFamily = { ...home, memberships: [home.memberships[0]] }
+    expect(familyStat(oneFamily, buildFamilyGroups({ family: oneFamily, dogs: [] }))).toEqual({ value: 1, label: 'Familie' })
+  })
+
+  test('familyStat in einer Familie: die Zuhause, die Tiere hierher teilen; zu Besuch nichts', () => {
+    const family = { id: 7, name: 'Familie Sonnenhang', art: 'rudel', home: home.home, memberships: home.memberships }
+    const dogs = [
+      dog(1, 'Bella', { family_id: 7 }),
+      dog(11, 'Nele', { family_id: 1, shared_from: 'Zuhause am Deich' }),
+      dog(21, 'Wilma', { family_id: 4, shared_from: 'Zuhause Möwenweg' })
+    ]
+    expect(familyStat(family, buildFamilyGroups({ family, dogs }))).toEqual({ value: 2, label: 'Zuhause' })
+    expect(familyStat(family, buildFamilyGroups({ family, dogs: [dogs[0]] }))).toBeNull()
+    const visit = { ...home, id: 4, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast' }
+    expect(familyStat(visit, buildFamilyGroups({ family: visit, dogs: [dog(21, 'Wilma', { family_id: 4 })] }))).toBeNull()
   })
 })
 

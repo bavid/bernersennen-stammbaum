@@ -89,15 +89,11 @@ export default function CompanionsPage({ family, onFamilyChange }) {
               ? `Alle ${words.animals}, die bei euch gelebt haben und leben – seit ${span.from}.`
               : `Alle ${words.animals}, die bei euch gelebt haben und leben.`}
           </p>
+          {/* Audit V7a: "Tierheime & Hundeschulen in der Nähe" steht im Fuß jeder Seite - hier nicht noch einmal. */}
           {!visiting && (
-            <div className="hero-hints">
-              <p className="hero-hint">
-                {words.TheGroup} pflegst du {words.inTreeArticle} <Link to="/stammbaum">{words.treeLabel}</Link>.
-              </p>
-              <p className="hero-hint">
-                <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
-              </p>
-            </div>
+            <p className="hero-hint">
+              {words.TheGroup} pflegst du {words.inTreeArticle} <Link to="/stammbaum">{words.treeLabel}</Link>.
+            </p>
           )}
         </div>
         <div className="page-hero-side">

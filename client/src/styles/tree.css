@@ -240,8 +240,11 @@
   color: var(--muted);
 }
 
+/* Audit V7a: Punkt mit gleichem Abstand nach beiden Seiten ("Rüde · 2006" statt "Rüde  ·2006" - das Leerzeichen am Ende
+   des ::before fiel weg, davor stand der Flex-Abstand). */
 .dog-card-meta .sex-label + span::before {
-  content: '· ';
+  content: '·';
+  margin-right: var(--space-2);
 }
 
 /* Bis zu zwei Zeilen, genug Zeilenhöhe für Unterlängen (g, p, y) */

@@ -10,10 +10,10 @@ import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
 import FamilySettings from '../components/FamilySettings.jsx'
-import OffspringSection from '../components/OffspringSection.jsx'
+import OffspringSection, { showsMatingHint } from '../components/OffspringSection.jsx'
 import OverviewStats from '../components/OverviewStats.jsx'
 import FamiliesView from '../components/families/FamiliesView.jsx'
-import TreeToggle, { TREE_HINT, TREE_PARAM, TREE_VALUE } from '../components/families/TreeToggle.jsx'
+import TreeToggle, { TREE_HINT, TREE_HINT_SHORT, TREE_PARAM, TREE_VALUE } from '../components/families/TreeToggle.jsx'
 import useBreedingEvents from '../hooks/useBreedingEvents.js'
 import useFriendHomes from '../hooks/useFriendHomes.js'
 import useOpenArea from '../hooks/useOpenArea.js'
@@ -21,7 +21,7 @@ import { nextTermin } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
 import { isOwnHome, isVisit } from '../lib/visits.js'
 import { useToast } from '../components/Toast.jsx'
-import { buildFamilyGroups, countFamilyGroups, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
+import { buildFamilyGroups, familyStat, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
 import { displayName } from '../lib/timeline.js'
 
 export default function OverviewPage({ family, onFamilyChange, onInvite }) {
@@ -62,6 +62,10 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   })
   const groups = useMemo(() => buildFamilyGroups({ family, dogs: dogs || [], friends: friends || [] }), [family, dogs, friends])
   const showTreeToggle = familiesView && dogs?.length > 0 && (mode === 'tree' || treeAvailable)
+  // Phase V3: ohne Verpaarung und Eltern der leise Hinweis auf den Stammbaum - nur für die, die eine eintragen dürfen.
+  // Audit V7a: steht schon die leise Zeile "Nachwuchs geplant? Verpaarung eintragen →" da, gehört er in diese Zeile.
+  const showTreeHint = mode === 'families' && events !== null && !treeAvailable && canWrite
+  const treeHintInLine = showTreeHint && !theme.littersInNav && showsMatingHint({ dogs, events, canWrite })
 
   async function loadDogs() {
     const [own, all, recent, notes, dogLinks] = await Promise.all([
@@ -143,15 +147,10 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
               <Link to="/mitglieder">Mitglieder & Rollen →</Link>
             </p>
           )}
-          {!visiting && (
-            <p className="hero-hint">
-              <Link to="/umgebung">Tierheime & Hundeschulen in der Nähe →</Link>
-            </p>
-          )}
         </div>
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && (
-            <OverviewStats dogs={dogs} allDogs={allDogs} links={links} familyCount={familiesView ? countFamilyGroups(groups) : undefined} />
+            <OverviewStats dogs={dogs} allDogs={allDogs} links={links} familyStat={familiesView ? familyStat(family, groups) : undefined} />
           )}
           {(canWrite || canInvite || showTreeToggle) && (
             <div className="hero-actions">
@@ -204,14 +203,13 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
       )}
 
       {/* Phase U: ohne eigenen Reiter (Standard-Auftritt) steht der Nachwuchs hier - nur, wenn es welchen gibt.
-          Phase V3: darunter, ohne Verpaarung und Eltern, der leise Hinweis auf den Stammbaum - nur für die, die eine
-          Verpaarung eintragen dürfen. Beides in einem Block, damit die zwei leisen Zeilen zusammen stehen. */}
+          Phase V3: darunter bzw. in dessen leiser Zeile der Hinweis auf den Stammbaum (showTreeHint, treeHintInLine). */}
       {dogs && dogs.length > 0 && (
         <div className="overview-foot">
-          {!theme.littersInNav && <OffspringSection dogs={dogs} events={events} canWrite={canWrite} />}
-          {mode === 'families' && events !== null && !treeAvailable && canWrite && (
-            <p className="muted families-tree-hint">{TREE_HINT}</p>
+          {!theme.littersInNav && (
+            <OffspringSection dogs={dogs} events={events} canWrite={canWrite} treeHint={treeHintInLine ? TREE_HINT_SHORT : null} />
           )}
+          {showTreeHint && !treeHintInLine && <p className="muted families-tree-hint">{TREE_HINT}</p>}
         </div>
       )}
 

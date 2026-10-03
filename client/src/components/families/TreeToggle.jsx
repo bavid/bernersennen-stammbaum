@@ -7,6 +7,8 @@ import Icon from '../Icon.jsx'
 export const TREE_PARAM = 'ansicht'
 export const TREE_VALUE = 'stammbaum'
 export const TREE_HINT = 'Sobald ihr eine Verpaarung eintragt, entsteht hier euer Stammbaum.'
+// Kurzfassung in der leisen Zeile "Nachwuchs geplant? … Verpaarung eintragen →" (OffspringSection, Audit V7a).
+export const TREE_HINT_SHORT = 'Mit der ersten Verpaarung entsteht hier euer Stammbaum.'
 
 // Knopf im Kopf der Familienbande: "Stammbaum öffnen" (Familien-Ansicht, Stammbaum vorhanden) bzw. im Baum "Zurück
 // zu den Familien". Beides sind Links (Adresse mit bzw. ohne ?ansicht=stammbaum) - Zurück im Browser funktioniert.

@@ -86,12 +86,13 @@ describe('Route /umgebung – "In der Nähe" innerhalb der angemeldeten App', ()
     expect(link.getAttribute('href')).toBe('/umgebung')
   })
 
-  test('die Wegbegleiter-Seite verlinkt ebenfalls auf /umgebung', async () => {
+  test('auf den Wegbegleitern steht der Link auf /umgebung genau einmal - im Fuß (Audit V7a: nicht doppelt im Kopf)', async () => {
     me.mockResolvedValue(loggedInHome)
     listDogs.mockResolvedValue([])
     await render('/wegbegleiter')
 
-    const link = [...container.querySelectorAll('a')].find((a) => a.getAttribute('href') === '/umgebung')
-    expect(link).not.toBeUndefined()
+    const links = [...container.querySelectorAll('a')].filter((a) => a.getAttribute('href') === '/umgebung')
+    expect(links).toHaveLength(1)
+    expect(links[0].closest('.app-footer')).not.toBeNull()
   })
 })

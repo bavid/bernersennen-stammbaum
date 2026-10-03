@@ -50,11 +50,15 @@ export function relationChips(dog, nodes, links = []) {
     .map((link) => byId.get(link.dog_a_id === dog.id ? link.dog_b_id : link.dog_a_id))
     .filter(Boolean)
 
+  // Audit V7a: ein unbekannter Elternteil (Platzhalter "Unbekannt") ergibt keinen Chip - nie "Kind von Unbekannt und
+  // Unbekannt"; Geschwister über ihn bleiben (derselbe Platzhalter ist derselbe Elternteil).
+  const knownParents = parents.filter((parent) => !parent.name_unbekannt)
+
   const chips = []
   if (children.length) {
     chips.push({ kind: 'kinder', text: `${dog.geschlecht === 'huendin' ? 'Mutter' : 'Vater'} von ${nameList(children)}` })
   }
-  if (parents.length) chips.push({ kind: 'eltern', text: `Kind von ${nameList(parents)}` })
+  if (knownParents.length) chips.push({ kind: 'eltern', text: `Kind von ${nameList(knownParents)}` })
   if (siblings.length) chips.push({ kind: 'geschwister', text: `Geschwister von ${nameList(siblings)}` })
   if (mates.length) chips.push({ kind: 'mitbewohner', text: `lebt mit ${nameList(mates)}` })
   return chips
@@ -100,9 +104,16 @@ export function buildFamilyGroups({ family, dogs = [], friends = [] }) {
   return { owners: ownerGroups(family, dogs), memberships: membershipGroups(family, dogs), friends }
 }
 
-// Kennzahl "Familien" im Kopf der Seite: jeder Abschnitt und jedes befreundete Zuhause.
-export function countFamilyGroups({ owners, memberships, friends }) {
-  return owners.length + memberships.length + friends.length
+// Kennzahl im Kopf der Familienbande (Audit V7a - vorher zählte "Familien" jeden Abschnitt, auch das eigene Zuhause und
+// befreundete Zuhause): im eigenen Zuhause die Familien, in denen es Mitglied ist; in einer Familie die Zuhause, die
+// Tiere hierher teilen. null: nichts Sinnvolles zu zählen (zu Besuch, Familie ohne geteilte Tiere) - dann keine Kennzahl.
+export function familyStat(family, { owners, memberships }) {
+  if (family.art === 'rudel') {
+    const homes = owners.filter((group) => group.key !== 'eigen').length
+    return homes > 0 ? { value: homes, label: 'Zuhause' } : null
+  }
+  if (!isOwnHome(family)) return null
+  return { value: memberships.length, label: memberships.length === 1 ? 'Familie' : 'Familien' }
 }
 
 // Befreundete Zuhause (Phase V2, GET /api/besuche): beide Richtungen zusammengeführt. canVisit: man ist dort zu

@@ -47,7 +47,16 @@ function hasOwnFemaleDog(dogs) {
 // Verpaarung - /wuerfe hat im Standard-Auftritt keinen Reiter.
 // events: die Verpaarungen des Bereichs (hooks/useBreedingEvents.js, lädt OverviewPage - die braucht sie auch für
 // "Stammbaum öffnen"); null, solange sie laden.
-export default function OffspringSection({ dogs, events, canWrite = false }) {
+// Steht statt des Abschnitts nur die leise Zeile zur ersten Verpaarung da? (OverviewPage legt dann den Hinweis auf den
+// Stammbaum mit in diese Zeile, statt zwei Zeilen mit fast demselben Inhalt untereinander zu zeigen - Audit V7a.)
+export function showsMatingHint({ dogs, events, canWrite = false }) {
+  if (!events || !canWrite || !hasOwnFemaleDog(dogs)) return false
+  const { litters, planned } = buildLitters(dogs || [], events)
+  return !litters.some((litter) => litter.puppies.length > 1) && planned.length === 0 && events.length === 0
+}
+
+// treeHint (Audit V7a): ein kurzer Satz zum Stammbaum, der in der leisen Zeile vor dem Link steht.
+export default function OffspringSection({ dogs, events, canWrite = false, treeHint = null }) {
   const { words } = useTheme()
   const { litters, planned } = useMemo(() => buildLitters(dogs || [], events || []), [dogs, events])
 
@@ -57,7 +66,7 @@ export default function OffspringSection({ dogs, events, canWrite = false }) {
     if (!canWrite || !hasOwnFemaleDog(dogs)) return null
     return (
       <p className="muted offspring-hint">
-        {words.littersLabel} geplant?{' '}
+        {words.littersLabel} geplant? {treeHint && `${treeHint} `}
         <Link to="/wuerfe">
           {words.addMating} <Icon name="arrowRight" />
         </Link>
