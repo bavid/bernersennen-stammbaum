@@ -40,8 +40,9 @@ function PastTermine({ termine, demoHintId, onDelete }) {
 // Der Kalender eines Partners (Phase V4a) - auf /kalender (Partner) bzw. als Reiter "Kalender" im Profil (Tierheim):
 // oben Hinweis und Zähler "x von 50", dann das Formular (Anlegen/Bearbeiten) oder die Übersicht der nächsten zwölf
 // Monate nach Monat (TerminOverview). Jede Änderung antwortet mit der ganzen Liste vom Server - die ersetzt den Stand
-// hier. In der Demo ist alles sichtbar, aber gesperrt.
-export default function PartnerTermineEditor() {
+// hier. In der Demo ist alles sichtbar, aber gesperrt. showTitle (Audit V7a): auf /kalender steht direkt darüber die
+// Seitenüberschrift "Kalender" - dort bleibt "Eure Termine" nur für Screenreader; im Profil-Reiter der Tierheime sichtbar.
+export default function PartnerTermineEditor({ showTitle = true }) {
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
@@ -107,7 +108,9 @@ export default function PartnerTermineEditor() {
     <section className="partner-termine" aria-labelledby="partner-termine-title">
       <div className="partner-termine-head">
         <div>
-          <h2 id="partner-termine-title">Eure Termine</h2>
+          <h2 id="partner-termine-title" className={showTitle ? undefined : 'visually-hidden'}>
+            Eure Termine
+          </h2>
           <p className="partner-termine-hint">{TERMINE_HINT}</p>
         </div>
         {data && (

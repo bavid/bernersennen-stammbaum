@@ -5,13 +5,13 @@ import Icon from './Icon.jsx'
 import StackedBar from './StackedBar.jsx'
 import { SEGMENTE, formatNumber } from '../lib/adminStats.js'
 import { formatDateShort } from '../lib/dates.js'
-import { VISITENKARTEN_ROUTE } from './visitenkarte/VisitenkartenTeaser.jsx'
 
 // Reiter "Kunden-Gutscheine" im Partner-Profil (Phase 5 Task 4): die Stapel, die der Betreiber für den Partner
 // angelegt hat, und die Weitergabe-Gutscheine des Bereichs (GET /api/partner-area/vouchers) - je Stapel
 // Bezeichnung, Quelle, Verteilungsbalken (wie in der Admin-Übersicht) und die drei Zahlen. "Karten drucken" führt
 // zur Druckseite (PartnerPrintPage), solange noch offene Karten da sind. Keine Codes hier - die gibt es nur dort.
-// Phase V5: "Als Visitenkarten drucken" führt zum Designer (/visitenkarten) - dort bekommt jede Karte einen Code.
+// Die Visitenkarten (Phase V5, je Karte ein Code) erreicht man über die Karte "Visitenkarten" direkt darüber
+// (VisitenkartenTeaser) - Audit V7a: ein zweiter Knopf mit fast gleichem Text hier fiel weg.
 
 export const STACKS_HINT = 'Jede Karte legt für eure Kundschaft eine eigene Chronik an – und zeigt, dass sie von euch kommt.'
 export const EMPTY_HINT = 'Noch keine Kunden-Gutscheine. Über „Kunden-Gutschein weitergeben“ unten entstehen eure ersten Karten – oder der Betreiber legt euch einen Stapel an.'
@@ -89,14 +89,6 @@ export default function PartnerVoucherStacks() {
         </div>
         {stacks && stacks.length > 0 && <span className="muted einblicke-count">{pluralize(stacks.length, 'Stapel', 'Stapel')}</span>}
       </div>
-      {/* Phase V5: die Gutscheine auch auf eigene Visitenkarten drucken - je Karte ein Code. */}
-      <p className="partner-stacks-visitenkarten">
-        <Link to={VISITENKARTEN_ROUTE} className="btn btn-ghost">
-          <Icon name="printer" /> Als Visitenkarten drucken
-        </Link>
-        <span className="field-hint">Eure Karte mit QR-Code zum Portal – und auf jeder Karte ein eigener Gutschein.</span>
-      </p>
-
       {error && (
         <div className="error-banner" role="alert">
           {error}

@@ -21,13 +21,13 @@ afterEach(() => {
   window.localStorage.clear()
 })
 
-async function render(family = { art: 'partner' }) {
+async function render(family = { art: 'partner' }, path = '/') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <main>
           <PartnerDemoGuide family={family} />
           <div className="page">
@@ -44,6 +44,17 @@ describe('PartnerDemoGuide', () => {
   test('Wege je Bereichsart: Partner -> Beiträge, Tierheim -> Tiere', () => {
     expect(demoGuideLinks({ art: 'partner' }).map((link) => link.to)).toEqual(['/profil', '/kundensicht', '/beitraege'])
     expect(demoGuideLinks({ art: 'tierheim' }).map((link) => link.to)).toEqual(['/profil', '/kundensicht', '/tiere'])
+  })
+
+  // Audit V7a: der Weg zur aktuellen Seite ist markiert (aria-current) - kein Ziel, das man schon sieht.
+  test('die aktuelle Seite trägt aria-current, die anderen nicht', async () => {
+    await render({ art: 'partner' }, '/kundensicht')
+    const current = [...container.querySelectorAll('.demo-guide-links a')].map((a) => [a.getAttribute('href'), a.getAttribute('aria-current')])
+    expect(current).toEqual([
+      ['/profil', null],
+      ['/kundensicht', 'page'],
+      ['/beitraege', null]
+    ])
   })
 
   test('schließen speichert den Merker in localStorage', async () => {

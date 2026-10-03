@@ -283,7 +283,8 @@ function UsersSection({ confirmField, confirmValue, hasConfirm }) {
 // (nicht während man in einem beigetretenen Rudel unterwegs ist) und nie in der Demo. Eine gemeinsame
 // Bestätigung (aktuelles Passwort/Schlüssel, je nach family.auth.kind) gilt für alle drei sensiblen
 // Aktionen hier - der Server verlangt sie bei jeder einzeln (siehe api.js).
-export default function AccessSettings({ family, onFamilyChange }) {
+// title (Audit V7a): auf /zugang heißt die Seite selbst schon "Zugang" - dort steht über den Feldern "Schlüssel und Benutzer".
+export default function AccessSettings({ family, onFamilyChange, title = 'Zugang' }) {
   const copy = authCopyFor(family)
   const [confirmValue, setConfirmValue] = useState('')
 
@@ -296,7 +297,7 @@ export default function AccessSettings({ family, onFamilyChange }) {
 
   return (
     <section className="settings-section access-settings">
-      <h3>Zugang</h3>
+      <h3>{title}</h3>
       <div className="field">
         <label className="field-label" htmlFor="access-confirm">
           {copy.label}

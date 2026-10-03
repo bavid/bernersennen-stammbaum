@@ -37,6 +37,7 @@ test('Phase V4b: "Benachrichtigungen" steht auf /zugang - auch in der Demo, dort
     )
   )
   expect(container.querySelector('h1').textContent).toBe('Zugang')
+  expect(container.textContent).toContain('Schlüssel und Benutzer: In der Demo nicht möglich.')
   const section = container.querySelector('.partner-telegram')
   expect(section.querySelector('h2').textContent).toBe('Benachrichtigungen')
   expect(section.querySelector('button').disabled).toBe(true)

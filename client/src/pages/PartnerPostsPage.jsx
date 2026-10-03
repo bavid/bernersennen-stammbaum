@@ -12,11 +12,12 @@ export default function PartnerPostsPage({ family }) {
         <div>
           <span className="eyebrow">{name}</span>
           <h1>Beiträge</h1>
-          <p className="page-lede">Kurse, Aktionen und Termine – als gekennzeichnete Anzeige für Menschen in eurer Nähe.</p>
+          <p className="page-lede">Kurse, Aktionen und Angebote – für „Entdecken“ und euer Portal.</p>
         </div>
       </header>
 
-      <PartnerPostsEditor typ={family.partner?.typ} vertrauenswuerdig={Boolean(family.partner?.vertrauenswuerdig)} />
+      {/* Audit V7a: die Überschrift "Eure Beiträge" stünde direkt unter "Beiträge" - hier nur für Screenreader. */}
+      <PartnerPostsEditor typ={family.partner?.typ} vertrauenswuerdig={Boolean(family.partner?.vertrauenswuerdig)} showTitle={false} />
     </div>
   )
 }

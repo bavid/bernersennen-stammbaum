@@ -76,8 +76,9 @@ export default function EinblickeEditor({ onChanged }) {
       )}
       {einblicke === undefined && !loadError && <p className="muted">Lade …</p>}
       {einblicke?.length === 0 && <p className="empty-state">Noch keine Einblicke – zeigt eurer Kundschaft, was bei euch los ist.</p>}
+      {/* Audit V7a: das Formular direkt darüber zeigt denselben Satz schon - hier nur für aria-describedby der Knöpfe. */}
       {isDemo && count > 0 && (
-        <p id={DEMO_HINT_ID} className="field-hint">
+        <p id={DEMO_HINT_ID} className="visually-hidden">
           {readOnlyHint}
         </p>
       )}

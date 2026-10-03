@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
@@ -20,7 +20,10 @@ export function demoGuideLinks(family) {
 // Kleiner Rundgang oben im Inhalt einer Partner- oder Tierheim-Demo (App.jsx, nur Demo-Sitzungen): was man hier
 // sieht und wohin es geht. Einmal geschlossen, bleibt er zu - auch in späteren Demo-Sitzungen.
 // Kein <h2>: der Hinweis steht vor der <h1> der Seite und soll deren Gliederung nicht vorwegnehmen.
+// Audit V7a: der Weg zur Seite, auf der man gerade ist, trägt aria-current und steht leiser da - "Kundensicht" auf der
+// Kundensicht (der Umschalter "Bearbeiten | Kundensicht" darüber zeigt sie schon) ist dann kein Ziel mehr.
 export default function PartnerDemoGuide({ family }) {
+  const { pathname } = useLocation()
   const [closed, setClosed] = useState(() => readSetting(DEMO_GUIDE_SETTING, false) === true)
   const ref = useRef(null)
 
@@ -48,7 +51,7 @@ export default function PartnerDemoGuide({ family }) {
       </div>
       <nav className="demo-guide-links" aria-label="Rundgang durch die Demo">
         {demoGuideLinks(family).map((link) => (
-          <Link key={link.to} to={link.to} className="btn btn-ghost">
+          <Link key={link.to} to={link.to} className="btn btn-ghost" aria-current={pathname === link.to ? 'page' : undefined}>
             <Icon name={link.icon} />
             {link.label}
           </Link>

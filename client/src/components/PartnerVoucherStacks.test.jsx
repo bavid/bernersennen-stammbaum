@@ -74,13 +74,14 @@ describe('PartnerVoucherStacks – Liste', () => {
     expect(rows[1].textContent).toContain('Keine offenen Karten mehr in diesem Stapel.')
   })
 
-  test('Phase V5: "Als Visitenkarten drucken" führt zum Designer - auch ohne Stapel', async () => {
+  // Audit V7a: den Weg zu den Visitenkarten zeigt die Karte "Visitenkarten" direkt darüber (VisitenkartenTeaser) -
+  // hier kein zweiter Knopf mit fast gleichem Text.
+  test('kein eigener Visitenkarten-Knopf - auch ohne Stapel', async () => {
     vouchers.mockResolvedValue({ stapel: [] })
     await render()
 
-    const link = container.querySelector('.partner-stacks-visitenkarten a')
-    expect(link.getAttribute('href')).toBe('/visitenkarten')
-    expect(link.textContent).toContain('Als Visitenkarten drucken')
+    expect(container.querySelector('a[href="/visitenkarten"]')).toBeNull()
+    expect(container.textContent).not.toContain('Als Visitenkarten drucken')
   })
 
   test('keine Codes in der Liste - nur, was der Server liefert', async () => {

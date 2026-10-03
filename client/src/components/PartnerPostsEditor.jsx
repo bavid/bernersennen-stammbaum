@@ -16,7 +16,9 @@ const NO_BEREICH_HINT = 'Für euren Partner-Typ gibt es noch keinen Bereich in �
 // "Eure Karte in Entdecken" (Reihenfolge, PartnerCardOrder) - die Liste, neueste zuerst (wie der Server sie liefert). typ: Partner-Typ (me.partner.typ) für die erlaubten Bereiche.
 // vertrauenswuerdig (V-Fehler 3, me.partner.vertrauenswuerdig): Änderungen an freigegebenen Beiträgen gehen sofort
 // online - das sagt ein Hinweis oben und das Formular. In der Demo ist alles sichtbar, aber gesperrt.
-export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false }) {
+// showTitle (Audit V7a): auf /beitraege steht direkt darüber die Seitenüberschrift "Beiträge" - dort bleibt "Eure Beiträge"
+// nur für Screenreader (benennt den Abschnitt), sichtbar stünde es doppelt. Im Profil-Reiter der Tierheime sichtbar.
+export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, showTitle = true }) {
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
@@ -77,7 +79,9 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false }) {
     <section className="partner-posts" aria-labelledby="partner-posts-title">
       <div className="partner-posts-head">
         <div>
-          <h2 id="partner-posts-title">Eure Beiträge</h2>
+          <h2 id="partner-posts-title" className={showTitle ? undefined : 'visually-hidden'}>
+            Eure Beiträge
+          </h2>
           <p className="partner-posts-hint">{vertrauenswuerdig ? POSTS_HINT_TRUSTED : POSTS_HINT}</p>
           {vertrauenswuerdig && (
             <p className="partner-posts-trusted">

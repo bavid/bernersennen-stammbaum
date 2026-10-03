@@ -610,14 +610,6 @@ p.vk-note {
   transform: rotate(-4deg);
 }
 
-.partner-stacks-visitenkarten {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-4);
-  margin: 0;
-}
-
 /* "gedruckt" an einem Code im Dialog "Kunden-Gutschein weitergeben" (invite/VoucherRow.jsx) */
 .pill-gedruckt {
   background: var(--alpine-wash);

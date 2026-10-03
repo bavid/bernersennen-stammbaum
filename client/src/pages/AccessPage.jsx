@@ -21,10 +21,13 @@ export default function AccessPage({ family, onFamilyChange }) {
       </header>
 
       {isDemo ? (
-        <p className="muted">{readOnlyHint}</p>
+        // Audit V7a: nicht nur "In der Demo nicht möglich." ohne Bezug - was hier sonst stünde.
+        <p className="muted">
+          <strong>Schlüssel und Benutzer:</strong> {readOnlyHint}
+        </p>
       ) : (
         <div className="card access-page-card">
-          <AccessSettings family={family} onFamilyChange={onFamilyChange} />
+          <AccessSettings family={family} onFamilyChange={onFamilyChange} title="Schlüssel und Benutzer" />
         </div>
       )}
 

@@ -16,7 +16,8 @@ export default function PartnerCalendarPage({ family }) {
         </div>
       </header>
 
-      <PartnerTermineEditor />
+      {/* Audit V7a: die Überschrift "Eure Termine" stünde direkt unter "Kalender" - hier nur für Screenreader. */}
+      <PartnerTermineEditor showTitle={false} />
     </div>
   )
 }

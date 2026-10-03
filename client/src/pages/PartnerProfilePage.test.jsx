@@ -433,6 +433,8 @@ describe('PartnerProfilePage – Kunden-Gutscheine im Reiter "Teilen"', () => {
     expect(teaser.querySelector('h2').textContent).toBe('Visitenkarten')
     expect(teaser.querySelector('a').getAttribute('href')).toBe('/visitenkarten')
     expect(teaser.querySelector('a').textContent).toContain('Visitenkarten gestalten')
+    // Audit V7a: genau ein Weg zu den Visitenkarten im Reiter - kein zweiter Knopf bei den Kunden-Gutscheinen.
+    expect(document.getElementById('partner-profile-panel-teilen').querySelectorAll('a[href="/visitenkarten"]')).toHaveLength(1)
   })
 
   test('auch ein Tierheim und die Demo sehen den Reiter', async () => {
