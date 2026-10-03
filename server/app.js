@@ -22,6 +22,7 @@ const adminTermineRoutes = require('./routes/adminTermine')
 const adminBannerRoutes = require('./routes/adminBanner')
 const adminHinweiseRoutes = require('./routes/adminHinweise')
 const adminServerRoutes = require('./routes/adminServer')
+const adminEinladungskarteRoutes = require('./routes/adminEinladungskarte')
 const hinweiseRoutes = require('./routes/hinweise')
 const vouchersRoutes = require('./routes/vouchers')
 const besucheRoutes = require('./routes/besuche')
@@ -188,6 +189,8 @@ function createApp() {
   app.use('/api/admin', adminHinweiseRoutes)
   // Phase G Task 6: Admin-Reiter „Server“ (Speicher, Platte, Last, Verlauf) - nur lesend, no-store.
   app.use('/api/admin', adminServerRoutes)
+  // Einladungskarten: die Rückseite, die Familie auf Pfoten für alle Partner gestaltet (Reiter „Einstellungen“).
+  app.use('/api/admin', adminEinladungskarteRoutes)
   // Phase N Task 5: die laufenden globalen Hinweise fürs Band oben auf jeder Seite - öffentlich, ohne Login.
   app.use('/api/hinweise', hinweiseRoutes)
   app.use('/api/public/partners', partnersRoutes)

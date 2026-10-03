@@ -19,8 +19,12 @@ const AKTION_LABELS = {
   'hinweis-geaendert': 'Hinweis geändert',
   'hinweis-eingeschaltet': 'Hinweis eingeschaltet',
   'hinweis-ausgeschaltet': 'Hinweis ausgeschaltet',
-  'hinweis-geloescht': 'Hinweis gelöscht'
+  'hinweis-geloescht': 'Hinweis gelöscht',
+  // Einladungskarten: die Rückseite geändert (server/routes/adminEinladungskarte.js, ziel 'einstellung:einladungskarte').
+  'einladungskarte-geaendert': 'Einstellung geändert'
 }
+
+const EINSTELLUNG_LABELS = { einladungskarte: 'Einladungskarte – Rückseite' }
 
 // ziel aus dem Protokoll ('family:<id>', server/lib/adminLog.js) lesbar machen. Das Protokoll selbst speichert
 // keine Namen - der Name kommt, falls bekannt, aus der Übersicht (families), sonst bleibt es bei der Nummer.
@@ -31,6 +35,8 @@ export function describeZiel(ziel, families = []) {
   if (termin) return `Termin #${termin[1]}`
   const hinweis = /^hinweis:(\d+)$/.exec(ziel || '')
   if (hinweis) return `Hinweis #${hinweis[1]}`
+  const einstellung = /^einstellung:([a-z-]+)$/.exec(ziel || '')
+  if (einstellung) return EINSTELLUNG_LABELS[einstellung[1]] || `Einstellung ${einstellung[1]}`
   const match = /^family:(\d+)$/.exec(ziel || '')
   if (!match) return ziel || ''
   const id = Number(match[1])

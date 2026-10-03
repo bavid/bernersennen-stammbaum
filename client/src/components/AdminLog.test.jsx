@@ -49,6 +49,8 @@ describe('AdminLog – Protokoll der Admin-Ansicht', () => {
     expect(describeZiel('partner:4', families)).toBe('Partner #4')
     // Phase N Task 5: globale Hinweise
     expect(describeZiel('hinweis:12', families)).toBe('Hinweis #12')
+    // Einladungskarten: die Admin-Einstellung der Rückseite
+    expect(describeZiel('einstellung:einladungskarte', families)).toBe('Einladungskarte – Rückseite')
   })
 
   test('describeAktion: view und der Schalter "Vertrauenswürdig" lesbar, Unbekanntes unverändert', () => {
@@ -57,6 +59,7 @@ describe('AdminLog – Protokoll der Admin-Ansicht', () => {
     expect(describeAktion('partner-nicht-vertrauenswuerdig')).toBe('Partner nicht mehr vertrauenswürdig')
     expect(describeAktion('hinweis-ausgeschaltet')).toBe('Hinweis ausgeschaltet')
     expect(describeAktion('hinweis-geloescht')).toBe('Hinweis gelöscht')
+    expect(describeAktion('einladungskarte-geaendert')).toBe('Einstellung geändert')
     expect(describeAktion('x')).toBe('x')
   })
 

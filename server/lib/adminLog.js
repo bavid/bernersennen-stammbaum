@@ -30,7 +30,10 @@ const AKTION = Object.freeze({
   hinweisGeaendert: 'hinweis-geaendert',
   hinweisEingeschaltet: 'hinweis-eingeschaltet',
   hinweisAusgeschaltet: 'hinweis-ausgeschaltet',
-  hinweisGeloescht: 'hinweis-geloescht'
+  hinweisGeloescht: 'hinweis-geloescht',
+  // Einladungskarten: die Admin-Einstellung "Einladungskarte – Rückseite" geändert (routes/adminEinladungskarte.js),
+  // ziel 'einstellung:einladungskarte' - nie die Texte selbst.
+  einladungskarteGeaendert: 'einladungskarte-geaendert'
 })
 
 const DEFAULT_LIMIT = 50

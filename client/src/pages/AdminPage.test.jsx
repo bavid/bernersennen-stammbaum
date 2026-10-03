@@ -36,6 +36,7 @@ vi.mock('../components/AdminSupport.jsx', () => ({ default: () => <p data-testid
 vi.mock('../components/AdminFamilyList.jsx', () => ({ default: () => <p data-testid="familien">Familien-Karte</p> }))
 vi.mock('../components/AdminMessages.jsx', () => ({ default: () => <p data-testid="nachrichten">Nachrichten-Karte</p> }))
 vi.mock('../components/AdminNotify.jsx', () => ({ default: () => <p data-testid="telegram">Telegram-Karte</p> }))
+vi.mock('../components/AdminEinladungskarte.jsx', () => ({ default: () => <p data-testid="einladungskarte">Einladungskarte-Karte</p> }))
 vi.mock('../components/AdminHinweise.jsx', () => ({ default: () => <p data-testid="hinweise">Hinweise-Karte</p> }))
 vi.mock('../components/AdminServer.jsx', () => ({ default: () => <p data-testid="server">Server-Karte</p> }))
 vi.mock('../components/AdminLog.jsx', () => ({ default: () => <p data-testid="protokoll">Protokoll-Karte</p> }))
@@ -215,6 +216,8 @@ describe('AdminPage – Reiter (Phase U)', () => {
 
     await click(tab('Einstellungen'))
     expect(visiblePanel().querySelector('[data-testid="telegram"]')).not.toBeNull()
+    // Einladungskarten: die Rückseite, die Familie auf Pfoten gestaltet, steht ebenfalls unter "Einstellungen".
+    expect(visiblePanel().querySelector('[data-testid="einladungskarte"]')).not.toBeNull()
   })
 
   test('Hinweise (Phase N Task 5): eigener Reiter vor den Einstellungen, per ?tab=hinweise erreichbar', async () => {

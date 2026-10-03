@@ -16,6 +16,7 @@ import AdminSupport from '../components/AdminSupport.jsx'
 import AdminLog from '../components/AdminLog.jsx'
 import AdminAnfragen from '../components/AdminAnfragen.jsx'
 import AdminNotify from '../components/AdminNotify.jsx'
+import AdminEinladungskarte from '../components/AdminEinladungskarte.jsx'
 import AdminHinweise from '../components/AdminHinweise.jsx'
 import AdminServer from '../components/AdminServer.jsx'
 import useAdminTab from '../hooks/useAdminTab.js'
@@ -183,7 +184,14 @@ function Dashboard({ onLogout }) {
             {panel('nachrichten', <AdminMessages onCountChange={handleMessageCount} />)}
             {/* Phase N Task 5: globale Hinweise - das Band oben auf allen Seiten, mit Vorschau. */}
             {panel('hinweise', <AdminHinweise />)}
-            {panel('einstellungen', <AdminNotify />)}
+            {/* Einladungskarten: die Rückseite, die Familie auf Pfoten auf jede Karte der Partner druckt. */}
+            {panel(
+              'einstellungen',
+              <div className="admin-panel-stack">
+                <AdminNotify />
+                <AdminEinladungskarte />
+              </div>
+            )}
             {/* Phase G Task 6: Speicher, Platte, Last und Verlauf des Servers. */}
             {panel('server', <AdminServer active={tab === 'server'} />)}
             {/* Phase 5 Task 5b: Protokoll der Admin-Ansicht (geöffnet aus "Familien"). */}
