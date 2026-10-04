@@ -21,6 +21,7 @@ import { isVisit } from '../lib/visits.js'
 import { animalsRoute } from '../lib/areas.js'
 import { CHRONICLE_TAB, DOG_TAB_PARAM, dogTabs, safeFromPath, visibleInNames } from '../lib/dogProfile.js'
 import { displayName } from '../lib/timeline.js'
+import { withShareChange } from '../lib/animalCounts.js'
 
 export { ParentLink } from '../components/dog/DogRelatives.jsx'
 
@@ -58,6 +59,7 @@ function rightsFor(family, dog) {
 // ?neu=1 (z. B. "Erzählen" von außerhalb): einmal je Tier das Erzählen öffnen und den Parameter wieder entfernen.
 function useNewEntryParam(dog, canWrite, onOpen) {
   const [searchParams, setSearchParams] = useSearchParams()
+  const { state } = useLocation()
   const handled = useRef(null)
   const wanted = searchParams.get(NEW_ENTRY_PARAM) === '1'
   useEffect(() => {
@@ -71,9 +73,10 @@ function useNewEntryParam(dog, canWrite, onOpen) {
         next.delete(DOG_TAB_PARAM)
         return next
       },
-      { replace: true }
+      // location.state (z. B. "from" für den Zurück-Link) bleibt erhalten
+      { replace: true, state }
     )
-  }, [dog, wanted, canWrite, onOpen, setSearchParams])
+  }, [dog, wanted, canWrite, onOpen, setSearchParams, state])
 }
 
 // Nach einem Reiterwechsel aus dem Kopf (Erzählen, ⋯): zum Ziel scrollen; ein Ziel mit tabIndex bekommt den Fokus.
@@ -171,6 +174,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
 
   async function handleDeleteDog() {
     await api.deleteDog(dog.id)
+    // Ein geteiltes eigenes Tier fehlt danach auch in den Zahlen der Familien (me.memberships).
+    if (ownHomeAnimal) onFamilyChange?.((current) => withShareChange(current, dog, dog.shares, []))
     toast(`${dog.name} wurde entfernt`)
     navigate(animalsRoute(family))
   }
@@ -216,7 +221,14 @@ export default function DogDetailPage({ family, onFamilyChange }) {
             onOpenPhoto={setPhoto}
           />
         )}
-        {current === 'infos' && <DogInfos {...shared} canTakeOver={canTakeOver} onFamilyChange={onFamilyChange} />}
+        {current === 'infos' && (
+          <DogInfos
+            {...shared}
+            canTakeOver={canTakeOver}
+            onFamilyChange={onFamilyChange}
+            embedRelatives={!tabs.some((tab) => tab.key === 'verwandte')}
+          />
+        )}
         {current === 'verwandte' && <DogRelatives {...shared} />}
         {current === 'vermittlung' && <ShelterPlacement dog={dog} setDog={setDog} />}
       </div>

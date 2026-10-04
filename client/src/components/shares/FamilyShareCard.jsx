@@ -23,7 +23,8 @@ export default function FamilyShareCard({ membership, animals, matrix, readOnly,
               <ShareSwitch
                 label={dog.name_unbekannt ? 'Ohne Namen' : displayName(dog)}
                 checked={checked}
-                disabled={readOnly || matrix.isSaving(dog.id) || guestOnly}
+                disabled={readOnly || guestOnly}
+                busy={matrix.isSaving(dog.id)}
                 hint={guestOnly ? GUEST_SHARE_HINT : null}
                 describedBy={describedBy}
                 onChange={(next) => matrix.toggle(dog.id, membership.id, next)}

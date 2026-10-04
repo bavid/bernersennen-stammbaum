@@ -26,9 +26,19 @@ export function countsFromDogs(dogs, homeId) {
   return { tiere: animals.length, eigeneTiere: animals.filter((dog) => dog.family_id === homeId).length }
 }
 
-// Nach einer Änderung der Freigaben (Einstellungen): die neue Zahl der eigenen Tiere, die Gesamtzahl zieht mit.
-export function withOwnShared(counts, ownShared) {
-  if (!counts) return null
-  if (!Number.isInteger(ownShared)) return counts
-  return { tiere: counts.tiere - counts.eigeneTiere + ownShared, eigeneTiere: ownShared }
+// Nach einer Änderung der Freigaben eines eigenen Tiers (Tierseite, Einstellungen, Löschen): die Zahlen in me.memberships
+// gleich mitziehen, damit Familien-Liste, Start und Einstellungen nicht bis zum nächsten /me falsch zählen. Ein Platzhalter
+// eines unbekannten Elternteils (ohne Namen, mit Nachwuchs) zählt wie auf dem Server nicht mit.
+export function withShareChange(family, dog, before = [], after = []) {
+  if (!family?.memberships || (dog?.name_unbekannt && dog.children?.length)) return family
+  const was = new Set(before)
+  const now = new Set(after)
+  let changed = false
+  const memberships = family.memberships.map((membership) => {
+    const delta = (now.has(membership.id) ? 1 : 0) - (was.has(membership.id) ? 1 : 0)
+    if (delta === 0 || !Number.isInteger(membership.tiere)) return membership
+    changed = true
+    return { ...membership, tiere: membership.tiere + delta, eigeneTiere: Math.max(0, (membership.eigeneTiere || 0) + delta) }
+  })
+  return changed ? { ...family, memberships } : family
 }

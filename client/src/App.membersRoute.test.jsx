@@ -189,4 +189,18 @@ describe('Menü „Einladen“ aus einer Familie heraus', () => {
     expect(dialog.querySelector('#modal-title').textContent).toBe('Einladen')
     expect([...dialog.querySelectorAll('.invite-choice-title')].map((el) => el.textContent)).toEqual(['Zu Besuch einladen', 'Zuhause verschenken'])
   })
+
+  test('scheitert der Wechsel nach Hause, öffnet kein leerer Dialog (code-review W2)', async () => {
+    me.mockResolvedValue(groupAs('mitglied'))
+    view.mockRejectedValue(new Error('Das hat nicht geklappt'))
+    await render('/familien/3')
+
+    act(() => container.querySelector('.account-menu-trigger').click())
+    const invite = [...container.querySelectorAll('.account-menu-panel [role="menuitem"]')].find((item) => item.textContent === 'Einladen')
+    await act(async () => invite.click())
+    await waitFor(() => container.querySelector('[role="alert"]'))
+
+    expect(view).toHaveBeenCalledTimes(1)
+    expect(container.querySelector('dialog[open]')).toBeNull()
+  })
 })

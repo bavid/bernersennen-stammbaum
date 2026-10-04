@@ -384,12 +384,28 @@ export default function App() {
 
   // Phase W, Schritt 2: „Einladen“ im Konto-Menü lädt aus dem eigenen Zuhause ein (Zu Besuch einladen, Zuhause
   // verschenken). Aus einer Familie oder einem Besuch heraus geht es dafür erst nach Start - dort wechselt das AreaGate
-  // genau einmal nach Hause; der Dialog wartet so lange (inviteReady).
-  function openInvite() {
-    if (isHouseholdIdentity(family) && !isOwnHome(family)) navigate(START_ROUTE)
-    setInviteOpen(true)
-  }
+  // genau einmal nach Hause, erst dann öffnet der Dialog (invitePending). Scheitert der Wechsel, bleibt es beim Hinweis des
+  // Gates; wer weitergeht, nimmt den Wunsch nicht mit.
   const inviteReady = !isHouseholdIdentity(family) || isOwnHome(family)
+  // invitePending: die Adresse, von der aus "Einladen" gewählt wurde (React-Router navigiert als Transition - bis /start
+  // erscheint, steht dort noch die alte Adresse).
+  const [invitePending, setInvitePending] = useState(null)
+  function openInvite() {
+    if (inviteReady) {
+      setInviteOpen(true)
+      return
+    }
+    setInvitePending(pathname)
+    navigate(START_ROUTE)
+  }
+  useEffect(() => {
+    if (invitePending === null) return
+    if (pathname !== START_ROUTE && pathname !== invitePending) setInvitePending(null)
+    else if (pathname === START_ROUTE && inviteReady) {
+      setInvitePending(null)
+      setInviteOpen(true)
+    }
+  }, [invitePending, inviteReady, pathname])
 
   async function handleLogout() {
     try {
@@ -654,7 +670,7 @@ export default function App() {
           </main>
           <AppFooter family={family} onInvite={openInvite} />
           <Modal open={inviteOpen} title={inviteLabel(family)} onClose={() => setInviteOpen(false)}>
-            {inviteOpen && (inviteReady ? <InviteDialog family={family} /> : <RouteFallback />)}
+            {inviteOpen && inviteReady && <InviteDialog family={family} />}
           </Modal>
         </div>
       </DemoProvider>

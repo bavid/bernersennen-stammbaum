@@ -10,18 +10,18 @@ const db = require('../db')
 
 const VISIBLE_SQL = '(SELECT id FROM dogs WHERE family_id = @areaId UNION SELECT dog_id FROM dog_shares WHERE family_id = @areaId)'
 
-const animalCountStmt = db.prepare(
-  `SELECT COUNT(*) AS n FROM dogs d
-   WHERE d.id IN ${VISIBLE_SQL}
-     AND NOT (d.name_unbekannt = 1 AND EXISTS (
-       SELECT 1 FROM dogs c WHERE (c.mother_dog_id = d.id OR c.father_dog_id = d.id) AND c.id IN ${VISIBLE_SQL}
-     ))`
-)
+// Ein Platzhalter eines unbekannten Elternteils: ohne Namen und Elternteil eines im Bereich sichtbaren Tiers.
+const NOT_PLACEHOLDER_SQL = `NOT (d.name_unbekannt = 1 AND EXISTS (
+  SELECT 1 FROM dogs c WHERE (c.mother_dog_id = d.id OR c.father_dog_id = d.id) AND c.id IN ${VISIBLE_SQL}
+))`
 
-// Eigene Tiere des Haushalts homeId, die er in die Familie groupId teilt.
+const animalCountStmt = db.prepare(`SELECT COUNT(*) AS n FROM dogs d WHERE d.id IN ${VISIBLE_SQL} AND ${NOT_PLACEHOLDER_SQL}`)
+
+// Eigene Tiere des Haushalts homeId, die er in die Familie @areaId teilt - ohne Platzhalter, wie animalCount (sonst
+// stünde "1 Tier · davon 2 von euch" da).
 const ownSharedStmt = db.prepare(
   `SELECT COUNT(*) AS n FROM dog_shares s JOIN dogs d ON d.id = s.dog_id
-   WHERE s.family_id = @groupId AND d.family_id = @homeId`
+   WHERE s.family_id = @areaId AND d.family_id = @homeId AND ${NOT_PLACEHOLDER_SQL}`
 )
 
 function animalCount(areaId) {
@@ -29,7 +29,7 @@ function animalCount(areaId) {
 }
 
 function ownSharedCount(homeId, groupId) {
-  return ownSharedStmt.get({ homeId, groupId }).n
+  return ownSharedStmt.get({ homeId, areaId: groupId }).n
 }
 
 // me.memberships bzw. me.besuche mit den Zahlen: tiere je Familie samt eigeneTiere, je besuchtem Zuhause nur tiere.

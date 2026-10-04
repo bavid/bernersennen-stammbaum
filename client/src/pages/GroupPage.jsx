@@ -42,9 +42,9 @@ function tabsFor(visiting, words) {
 }
 
 // Kleine Zeile unter dem Namen (Phase W, Schritt 2: überall dieselbe Zählung, lib/animalCounts.js): "21 Tiere · davon 4
-// von euch" - aus me (GET /api/me zählt je Familie bzw. besuchtem Zuhause), sonst aus den geladenen Tieren.
+// von euch" - aus den geladenen Tieren (nach Anlegen oder Löschen sofort richtig), bis dahin aus me (GET /api/me).
 function groupMeta(family, dogs, words) {
-  return animalCountText(areaCounts(family, family.id) ?? countsFromDogs(dogs, family.home?.id), words)
+  return animalCountText(countsFromDogs(dogs, family.home?.id) ?? areaCounts(family, family.id), words)
 }
 
 // /familien/:id (Phase W) - eine Familie als Gruppenseite, hinter dem AreaGate (der Bereich ist hier immer aktiv): Kopf

@@ -1,4 +1,5 @@
 import { companionLine, herkunftText } from '../../lib/companions.js'
+import { withShareChange } from '../../lib/animalCounts.js'
 import { ageText, formatDateLong } from '../../lib/dates.js'
 import { displayName, sexLabel, speciesLabel } from '../../lib/timeline.js'
 import Icon from '../Icon.jsx'
@@ -61,15 +62,22 @@ function DogFacts({ dog }) {
 // eigenen Reiter "Verwandte").
 // Die key-Werte setzen den Zustand der Panels bei einem anderen Tier zurück - und müssen unter diesen Geschwistern
 // eindeutig sein (V-Fehler 1: zweimal key={dog.id} ließ React Kopien im DOM zurück).
-export default function DogInfos({ dog, setDog, family, allDogs, canWrite, canTakeOver, reload, onFamilyChange }) {
+// embedRelatives: Eltern und Mitbewohner hier zeigen (eigene Tiere eines Tierheims - sie haben keinen Reiter "Verwandte").
+export default function DogInfos({ dog, setDog, family, allDogs, canWrite, canTakeOver, reload, onFamilyChange, embedRelatives = false }) {
   const ownHomeAnimal = dog.canEdit && family.art === 'zuhause'
-  const shelter = family.art === 'tierheim'
+
+  // Neue Freigaben: im Tier und in den Zahlen von me (Familien-Liste, Start) - funktional, falls zwei Antworten kurz
+  // nacheinander kommen.
+  function handleSharesChange(shares) {
+    onFamilyChange?.((current) => withShareChange(current, dog, dog.shares, shares))
+    setDog((current) => ({ ...current, shares }))
+  }
   return (
     <div className="dog-infos">
       <h2 className="visually-hidden">Infos zu {displayName(dog)}</h2>
       <DogFacts dog={dog} />
       {dog.beschreibung && <p className="dog-info-description">{dog.beschreibung}</p>}
-      {shelter && <DogRelatives dog={dog} setDog={setDog} family={family} allDogs={allDogs} canWrite={canWrite} reload={reload} embedded />}
+      {embedRelatives && <DogRelatives dog={dog} setDog={setDog} family={family} allDogs={allDogs} canWrite={canWrite} reload={reload} embedded />}
       {canTakeOver && (
         <div id={TAKE_OVER_ID} tabIndex={-1} className="dog-infos-anchor">
           <TakeOverPanel key={`take-over-${dog.id}`} dog={dog} onTakenOver={reload} />
@@ -81,7 +89,7 @@ export default function DogInfos({ dog, setDog, family, allDogs, canWrite, canTa
           dog={dog}
           family={family}
           onFamilyChange={onFamilyChange}
-          onSharesChange={(shares) => setDog((current) => ({ ...current, shares }))}
+          onSharesChange={handleSharesChange}
         />
       )}
       {ownHomeAnimal && dog.shelterShare && (

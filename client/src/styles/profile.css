@@ -179,7 +179,8 @@
   overflow-wrap: anywhere;
 }
 
-.dog-infos-anchor:focus {
+.dog-infos-anchor:focus,
+.dog-chronicle h2:focus {
   outline: none;
 }
 

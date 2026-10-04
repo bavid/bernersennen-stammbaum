@@ -34,7 +34,7 @@ export default function TopStrip() {
   )
 }
 
-// Ein Sitzungs-Hinweis (DemoBanner, VisitBanner, AdminViewBanner) in der Leiste oben. Ohne Leiste (einzelne
+// Ein Sitzungs-Hinweis (DemoBanner, AdminViewBanner) in der Leiste oben. Ohne Leiste (einzelne
 // Komponenten-Tests, App-Tests ohne main.jsx) steht er einfach an Ort und Stelle.
 export function TopStripSlot({ children }) {
   const strip = useContext(TopStripContext)

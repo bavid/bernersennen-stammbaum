@@ -60,10 +60,14 @@ export function treeRoute(family) {
   return `${base}${base.includes('?') ? '&' : '?'}ansicht=stammbaum`
 }
 
-// Zurück-Link aus location.state.from (z. B. vom Start-Feed): nur ein Pfad dieser App - nie "//host" oder eine Adresse.
+// Zurück-Link aus location.state.from (z. B. vom Start-Feed): nur ein Pfad dieser App - nie "//host", eine Adresse oder
+// Steuerzeichen (security-review W2: aus "/<Tab>/host" machte der Browser "//host").
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
+
 export function safeFromPath(value) {
   if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
-  return value
+  return CONTROL_CHARS.test(value) ? null : value
 }
 
 // Die Chronik zeigt zuerst nur die jüngsten RECENT_ITEMS Einträge (Phase W, Schritt 2: höchstens etwa drei Bildschirme je
@@ -71,8 +75,9 @@ export function safeFromPath(value) {
 // alles. items in Anzeige-Reihenfolge (newestFirst: die jüngsten vorn). hidden: wie viele verborgen sind.
 export const RECENT_ITEMS = 4
 
+// Ein einzelner verborgener Punkt lohnt keinen Knopf - erst ab zweien wird gekürzt.
 export function recentItems(items, { newestFirst = false, showAll = false, keepKey = null, limit = RECENT_ITEMS } = {}) {
-  if (showAll || items.length <= limit) return { shown: items, hidden: 0 }
+  if (showAll || items.length <= limit + 1) return { shown: items, hidden: 0 }
   const shown = newestFirst ? items.slice(0, limit) : items.slice(items.length - limit)
   if (keepKey && !shown.some((item) => item.key === keepKey) && items.some((item) => item.key === keepKey)) {
     return { shown: items, hidden: 0 }

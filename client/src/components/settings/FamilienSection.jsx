@@ -4,7 +4,8 @@ import { api } from '../../api'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { familySettingsRoute, isEditable } from '../../lib/areas.js'
-import { animalCountText, areaCounts, withOwnShared } from '../../lib/animalCounts.js'
+import { animalCountText, areaCounts, withShareChange } from '../../lib/animalCounts.js'
+import { familyAnimals } from '../../lib/familyGroups.js'
 import { roleLabel } from '../../lib/roles.js'
 import { isOwnHome } from '../../lib/visits.js'
 import useOpenArea from '../../hooks/useOpenArea.js'
@@ -44,8 +45,9 @@ function MembershipRow({ membership, counts, onOpen }) {
 }
 
 // Die eigenen Tiere mit ihren Familien-Freigaben (GET /api/dogs liefert sie im eigenen Zuhause mit) - nur aus
-// „Mein Zuhause“ heraus; sonst null. updateShares hält die Liste nach einer gespeicherten Freigabe aktuell (Zahlen).
-function useOwnAnimals(ownHome, homeId) {
+// „Mein Zuhause“ heraus; sonst null. Ohne Platzhalter unbekannter Eltern (wie das Raster und die Zählung des Servers).
+// updateShares hält die Liste und die Zahlen in me (onFamilyChange, funktional) nach einer gespeicherten Freigabe aktuell.
+function useOwnAnimals(ownHome, homeId, onFamilyChange) {
   const [dogs, setDogs] = useState(null)
   const [error, setError] = useState(null)
 
@@ -54,7 +56,7 @@ function useOwnAnimals(ownHome, homeId) {
     let active = true
     api
       .listDogs()
-      .then((list) => active && setDogs(list.filter((dog) => isEditable(dog) && dog.family_id === homeId)))
+      .then((list) => active && setDogs(familyAnimals(list).filter((dog) => isEditable(dog) && dog.family_id === homeId)))
       .catch((err) => active && setError(err.message))
     return () => {
       active = false
@@ -62,13 +64,15 @@ function useOwnAnimals(ownHome, homeId) {
   }, [ownHome, homeId])
 
   function updateShares(dogId, shares) {
-    setDogs((list) => list.map((dog) => (dog.id === dogId ? { ...dog, shares } : dog)))
+    const dog = dogs?.find((entry) => entry.id === dogId)
+    if (dog) onFamilyChange((current) => withShareChange(current, dog, dog.shares, shares))
+    setDogs((list) => list.map((entry) => (entry.id === dogId ? { ...entry, shares } : entry)))
   }
 
   return { dogs, error, updateShares }
 }
 
-function MembershipsGroup({ family, memberships, ownShared, onOpen, onJoin }) {
+function MembershipsGroup({ family, memberships, onOpen, onJoin }) {
   const { words } = useTheme()
   return (
     <section className="settings-group" aria-labelledby="settings-familien-title">
@@ -81,7 +85,7 @@ function MembershipsGroup({ family, memberships, ownShared, onOpen, onJoin }) {
             <MembershipRow
               key={membership.id}
               membership={membership}
-              counts={withOwnShared(areaCounts(family, membership.id), ownShared(membership.id))}
+              counts={areaCounts(family, membership.id)}
               onOpen={onOpen}
             />
           ))}
@@ -165,19 +169,14 @@ export default function FamilienSection({ family, onFamilyChange }) {
   const openArea = useOpenArea(family)
   const ownHome = isOwnHome(family)
   const memberships = family.memberships || []
-  const animals = useOwnAnimals(ownHome, family.id)
+  const animals = useOwnAnimals(ownHome, family.id, onFamilyChange)
   const [joinOpen, setJoinOpen] = useState(false)
-
-  // Eigene Tiere, die gerade in der Familie zu sehen sind - nach einer Änderung der Schalter sofort neu gezählt.
-  const ownShared = (membershipId) =>
-    animals.dogs ? animals.dogs.filter((dog) => (dog.shares || []).includes(membershipId)).length : null
 
   return (
     <div className="settings-block">
       <MembershipsGroup
         family={family}
         memberships={memberships}
-        ownShared={ownShared}
         onOpen={(item) => openArea(item.id)}
         onJoin={() => setJoinOpen(true)}
       />

@@ -139,10 +139,16 @@ describe('GroupPage (Phase W)', () => {
     expect(search()).toBe('')
   })
 
-  // Phase W, Schritt 2: dieselbe Zählung wie Familien-Liste und Einstellungen - aus me, wenn der Server sie kennt.
-  test('Zählung im Kopf aus me: "21 Tiere · davon 4 von euch"', async () => {
+  // Phase W, Schritt 2: dieselbe Zählung wie Familien-Liste und Einstellungen - bis die Tiere geladen sind aus me, danach
+  // aus den geladenen Tieren (nach Anlegen oder Löschen sofort richtig, code-review W2).
+  test('Zählung im Kopf: erst aus me ("21 Tiere · davon 4 von euch"), dann aus den geladenen Tieren', async () => {
+    let resolveDogs
+    api.listDogs.mockReturnValue(new Promise((resolve) => (resolveDogs = resolve)))
     await render({ ...inGroup, memberships: [{ id: 5, name: 'Familie Sonnenhang', rolle: 'mitglied', tiere: 21, eigeneTiere: 4 }] })
     expect(container.querySelector('.group-meta').textContent).toBe('21 Tiere · davon 4 von euch')
+
+    await act(async () => resolveDogs([dog(10, 'Nele', { shared_from: 'Zuhause Lindenhof', family_id: 1 }), dog(12, 'Hausi', { can_edit: 1 })]))
+    expect(container.querySelector('.group-meta').textContent).toBe('2 Tiere · davon 1 von euch')
   })
 
   test('Pinnwand ohne eigenen Seitenkopf', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { animalCountText, areaCounts, countsFromDogs, withOwnShared } from './animalCounts.js'
+import { animalCountText, areaCounts, countsFromDogs, withShareChange } from './animalCounts.js'
 import { getTheme } from '../themes/index.js'
 
 const words = getTheme('standard').words
@@ -20,7 +20,7 @@ describe('animalCountText (Phase W, Schritt 2: eine Zählung überall)', () => {
   })
 })
 
-describe('areaCounts / countsFromDogs / withOwnShared', () => {
+describe('areaCounts / countsFromDogs', () => {
   const me = {
     id: 1,
     memberships: [{ id: 3, name: 'Familie Sonnenhang', tiere: 21, eigeneTiere: 4 }],
@@ -44,10 +44,28 @@ describe('areaCounts / countsFromDogs / withOwnShared', () => {
     expect(countsFromDogs(dogs, 1)).toEqual({ tiere: 3, eigeneTiere: 2 })
     expect(countsFromDogs(null, 1)).toBeNull()
   })
+})
 
-  test('nach einer Änderung der Freigaben zählt die neue Zahl der eigenen Tiere mit', () => {
-    expect(withOwnShared({ tiere: 21, eigeneTiere: 4 }, 5)).toEqual({ tiere: 22, eigeneTiere: 5 })
-    expect(withOwnShared({ tiere: 21, eigeneTiere: 4 }, null)).toEqual({ tiere: 21, eigeneTiere: 4 })
-    expect(withOwnShared(null, 3)).toBeNull()
+describe('withShareChange (Zahlen in me nach einer Freigabe)', () => {
+  const family = {
+    id: 1,
+    memberships: [
+      { id: 3, name: 'Familie Sonnenhang', tiere: 21, eigeneTiere: 4 },
+      { id: 5, name: 'Familie Möwenweg', tiere: 6, eigeneTiere: 0 }
+    ]
+  }
+
+  test('neu geteilt zählt dort mit, nicht mehr geteilt nicht mehr - die anderen Familien bleiben, wie sie sind', () => {
+    const next = withShareChange(family, { id: 10 }, [3], [5])
+    expect(next.memberships).toEqual([
+      { id: 3, name: 'Familie Sonnenhang', tiere: 20, eigeneTiere: 3 },
+      { id: 5, name: 'Familie Möwenweg', tiere: 7, eigeneTiere: 1 }
+    ])
+    expect(family.memberships[0].tiere).toBe(21)
+  })
+
+  test('ohne Änderung oder für einen Platzhalter (unbekannter Elternteil) dasselbe Objekt', () => {
+    expect(withShareChange(family, { id: 10 }, [3], [3])).toBe(family)
+    expect(withShareChange(family, { id: 2, name_unbekannt: 1, children: [{ id: 10 }] }, [], [3])).toBe(family)
   })
 })

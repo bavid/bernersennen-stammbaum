@@ -42,7 +42,8 @@ export default function SharePanel({ dog, family, onFamilyChange, onSharesChange
                   <ShareSwitch
                     label={membership.name}
                     checked={checked}
-                    disabled={isDemo || matrix.isSaving(dog.id) || guestOnly}
+                    disabled={isDemo || guestOnly}
+                    busy={matrix.isSaving(dog.id)}
                     hint={guestOnly ? GUEST_SHARE_HINT : null}
                     describedBy={isDemo ? `${NOTE_ID} ${DEMO_HINT_ID}` : NOTE_ID}
                     onChange={(next) => matrix.toggle(dog.id, membership.id, next)}

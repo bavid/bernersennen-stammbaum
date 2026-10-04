@@ -10,15 +10,14 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 // und führt zum Einlösen auf /v - dort steht auch "Noch keinen Gutschein? Gutschein anfragen", LoginVoucherRequest).
 // Partner- und Tierheim-Demos (partnerArea): ein Gutschein für ein Zuhause hilft einem Partner nicht - dort
 // "Partner-Zugang anfragen" (RequestPartnerForm im Modal; Anfragen nimmt der Server auch aus Demo-Sitzungen an).
-// compact (zugleich zu Besuch, VisitBanner daneben): am Handy nur „Demo“, ohne Link - die Zeile bleibt eine Zeile.
-export default function DemoBanner({ onLeave, partnerArea = false, compact = false }) {
+export default function DemoBanner({ onLeave, partnerArea = false }) {
   const { words } = useTheme()
   const [requestOpen, setRequestOpen] = useState(false)
 
   return (
     <>
       <TopStripSlot>
-        <div className={`demo-banner${compact ? ' is-compact' : ''}`} role="status">
+        <div className="demo-banner" role="status">
           <Icon name="eye" />
           <span className="top-strip-text">
             <strong className="top-strip-tag">Demo</strong>

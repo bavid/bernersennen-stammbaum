@@ -4,13 +4,14 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { getDog, listTimeline, listBreedingEvents, listAllDogs } = vi.hoisted(() => ({
+const { getDog, listTimeline, listBreedingEvents, listAllDogs, setDogShares } = vi.hoisted(() => ({
+  setDogShares: vi.fn(),
   getDog: vi.fn(),
   listTimeline: vi.fn(),
   listBreedingEvents: vi.fn(),
   listAllDogs: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { getDog, listTimeline, listBreedingEvents, listAllDogs, erlebtMitTiere: () => Promise.resolve([]) } }))
+vi.mock('../api', () => ({ api: { getDog, listTimeline, listBreedingEvents, listAllDogs, setDogShares, erlebtMitTiere: () => Promise.resolve([]) } }))
 
 import DogDetailPage from './DogDetailPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -78,8 +79,8 @@ function LocationProbe() {
   return null
 }
 
-async function render(url = '/tier/10', { family = home, state, entries = [entry] } = {}) {
-  getDog.mockResolvedValue(nele())
+async function render(url = '/tier/10', { family = home, state, entries = [entry], dog = nele(), onFamilyChange = () => {} } = {}) {
+  getDog.mockResolvedValue(dog)
   listTimeline.mockResolvedValue(entries)
   listBreedingEvents.mockResolvedValue([])
   listAllDogs.mockResolvedValue([])
@@ -95,7 +96,7 @@ async function render(url = '/tier/10', { family = home, state, entries = [entry
               path="/tier/:id"
               element={
                 <>
-                  <DogDetailPage family={family} onFamilyChange={() => {}} />
+                  <DogDetailPage family={family} onFamilyChange={onFamilyChange} />
                   <LocationProbe />
                 </>
               }
@@ -126,7 +127,7 @@ afterEach(() => {
   }
   container?.remove()
   container = null
-  for (const mock of [getDog, listTimeline, listBreedingEvents, listAllDogs]) mock.mockReset()
+  for (const mock of [getDog, listTimeline, listBreedingEvents, listAllDogs, setDogShares]) mock.mockReset()
 })
 
 describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
@@ -153,17 +154,49 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(container.querySelector('#share-panel-title').textContent).toBe('Wer sieht Nele?')
   })
 
+  test('eine neue Freigabe zieht die Zahlen in me mit (Familien-Liste, Start - code-review W2)', async () => {
+    const counted = { ...home, memberships: home.memberships.map((m) => ({ ...m, tiere: m.id === 2 ? 21 : 6, eigeneTiere: m.id === 2 ? 4 : 0 })) }
+    const onFamilyChange = vi.fn()
+    setDogShares.mockResolvedValue({ shares: [2, 5] })
+    await render('/tier/10?reiter=infos', { family: counted, onFamilyChange })
+    const moewenweg = [...container.querySelectorAll('.share-switch')].find((el) => el.textContent.includes('Familie Möwenweg')).querySelector('input')
+    await act(async () => moewenweg.click())
+
+    expect(setDogShares).toHaveBeenCalledWith(10, [2, 5])
+    const update = onFamilyChange.mock.calls.at(-1)[0]
+    expect(update(counted).memberships.map(({ tiere, eigeneTiere }) => [tiere, eigeneTiere])).toEqual([
+      [21, 4],
+      [7, 1]
+    ])
+    expect(container.querySelector('.dog-head-visible').textContent).toBe('Sichtbar in: Familie Sonnenhang, Familie Möwenweg')
+  })
+
   test('#entry-N erzwingt die Chronik, auch mit ?reiter=infos', async () => {
     await render('/tier/10?reiter=infos#entry-5')
     expect(selectedTab()).toBe('Chronik')
     expect(container.querySelector('#entry-5')).not.toBeNull()
   })
 
-  test('?neu=1 öffnet gleich das Erzählen und nimmt den Parameter wieder aus der Adresse', async () => {
-    await render('/tier/10?neu=1')
+  test('?neu=1 öffnet gleich das Erzählen und nimmt den Parameter wieder aus der Adresse - location.state bleibt', async () => {
+    await render('/tier/10?neu=1', { state: { from: '/start' } })
     expect(container.querySelector('#composer.is-open')).not.toBeNull()
     expect(container.querySelector('.composer-title').textContent).toBe(`${words.newEntry} zu Nele`)
     expect(location.search).toBe('')
+    expect(location.state).toEqual({ from: '/start' })
+    expect(container.querySelector('.back-link').getAttribute('href')).toBe('/start')
+  })
+
+  test('?neu=1 ohne Schreibrecht: kein Erzählen, der Parameter verschwindet trotzdem', async () => {
+    await render('/tier/10?neu=1', { family: { ...home, art: 'rudel', id: 2, role: 'gast', memberships: [] } })
+    expect(container.querySelector('#composer')).toBeNull()
+    expect(location.search).toBe('')
+  })
+
+  test('ein Reiter nimmt #entry-N aus der Adresse - danach gilt der gewählte Reiter', async () => {
+    await render('/tier/10#entry-5')
+    await act(async () => tab('Infos').click())
+    expect(location.hash).toBe('')
+    expect(selectedTab()).toBe('Infos')
   })
 
   test('"Erinnerung festhalten" im Kopf springt aus den Infos in die Chronik und öffnet das Erzählen', async () => {
@@ -216,6 +249,8 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(container.querySelectorAll('.timeline-item')).toHaveLength(4)
     await act(async () => button(`Frühere ${words.entries} anzeigen (3)`).click())
     expect(container.querySelectorAll('.timeline-item')).toHaveLength(7)
+    // Der Knopf ist weg - der Fokus steht auf der Überschrift der Chronik (code-review W2)
+    expect(document.activeElement).toBe(container.querySelector('#chronicle-title'))
 
     act(() => root.unmount())
     root = null
@@ -238,12 +273,32 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(container.querySelector('.back-link').textContent.trim()).toBe('Tiere')
   })
 
+  test('eine Id aus der Adresse, die keine Zahl ist, fragt den Server gar nicht erst (security-review W2)', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <MemoryRouter initialEntries={['/tier/..%2F..%2Fvouchers%2Fmine']}>
+          <ThemeProvider themeId="standard">
+            <Routes>
+              <Route path="/tier/:id" element={<DogDetailPage family={home} onFamilyChange={() => {}} />} />
+            </Routes>
+          </ThemeProvider>
+        </MemoryRouter>
+      )
+    )
+    expect(getDog).not.toHaveBeenCalled()
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Dieses Tier gibt es hier nicht.')
+  })
+
   test('zu Besuch: nichts schreiben, kein "Sichtbar in", ⋯ nur "Link kopieren"', async () => {
     const visit = { ...home, id: 9, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast', memberships: [] }
-    getDog.mockResolvedValue(nele({ isOwn: false, canEdit: false, ownerFamilyId: 9, familyName: 'Zuhause Möwenweg' }))
-    await render('/tier/10', { family: visit })
-    getDog.mockResolvedValue(nele({ isOwn: false, canEdit: false, ownerFamilyId: 9, familyName: 'Zuhause Möwenweg' }))
+    await render('/tier/10', { family: visit, dog: nele({ isOwn: false, canEdit: false, ownerFamilyId: 9, familyName: 'Zuhause Möwenweg' }) })
     expect(button(words.tellAction)).toBeUndefined()
     expect(container.querySelector('.dog-head-visible')).toBeNull()
+    expect(container.querySelector('.visit-chip').textContent).toBe('Zu Besuch · Zurück zu Mein Zuhause')
+    await act(async () => container.querySelector('.dog-more-trigger').click())
+    expect([...container.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent)).toEqual(['Link kopieren'])
   })
 })

@@ -70,9 +70,9 @@
   display: none;
 }
 
-/* Sitzungs-Hinweise: Demo, Admin-Ansicht (.demo-banner), Besuch (.visit-banner) */
-.demo-banner,
-.visit-banner {
+/* Sitzungs-Hinweise: Demo, Admin-Ansicht (.demo-banner) - der Besuch steht seit Phase W (Schritt 2) als Chip im Kopf
+   der Besuchsseiten (profile.css .visit-chip). */
+.demo-banner {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -81,22 +81,13 @@
   white-space: nowrap;
 }
 
-.demo-banner > svg,
-.visit-banner > svg {
+.demo-banner > svg {
   flex-shrink: 0;
   width: 1rem;
   height: 1rem;
   color: var(--rust);
 }
 
-.visit-banner > svg {
-  color: var(--alpine);
-}
-
-/* Neben dem Besuch bleibt die Demo kurz und schrumpft nicht - abgekürzt wird der Name des besuchten Zuhauses. */
-.demo-banner.is-compact {
-  flex-shrink: 0;
-}
 
 .admin-view-banner > svg {
   color: var(--ink);
@@ -167,14 +158,5 @@
 
   .top-strip-long {
     display: none;
-  }
-
-  /* Demo und Besuch zugleich: von der Demo bleibt am Handy nur das Wort. */
-  .demo-banner.is-compact .top-strip-link {
-    display: none;
-  }
-
-  .visit-banner {
-    flex: 1 1 auto;
   }
 }

@@ -77,6 +77,8 @@ describe('safeFromPath', () => {
     expect(safeFromPath('//evil.example')).toBeNull()
     expect(safeFromPath('https://evil.example')).toBeNull()
     expect(safeFromPath('/\\evil')).toBeNull()
+    expect(safeFromPath('/\t/evil.example')).toBeNull()
+    expect(safeFromPath('/start\n')).toBeNull()
     expect(safeFromPath(undefined)).toBeNull()
     expect(safeFromPath(42)).toBeNull()
   })
@@ -94,6 +96,8 @@ describe('recentItems', () => {
 
   test('wenige Einträge, "alle anzeigen" oder ein Ziel im verborgenen Teil: alles', () => {
     expect(recentItems(items.slice(0, 4)).hidden).toBe(0)
+    // nur ein einzelner verborgener Punkt: lieber alles zeigen
+    expect(recentItems(items.slice(0, 5)).hidden).toBe(0)
     expect(keys(recentItems(items, { showAll: true }))).toHaveLength(6)
     expect(keys(recentItems(items, { keepKey: 'a' }))).toHaveLength(6)
     expect(keys(recentItems(items, { keepKey: 'e' }))).toEqual(['c', 'd', 'e', 'f'])

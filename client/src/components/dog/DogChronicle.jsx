@@ -95,10 +95,22 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
   const recent = recentItems(items, { newestFirst, showAll, keepKey: highlightKey })
   // Ein Ziel im verborgenen Teil (#entry-N, ein alter Beitrag gerade gespeichert) klappt die Chronik dauerhaft auf.
   useEffect(() => {
-    if (highlightKey && recent.hidden === 0 && !showAll && items.length > RECENT_ITEMS) setShowAll(true)
+    if (highlightKey && recent.hidden === 0 && !showAll && items.length > RECENT_ITEMS + 1) setShowAll(true)
   }, [highlightKey, recent.hidden, showAll, items.length])
+  // Der Knopf verschwindet mit dem Aufklappen - der Fokus geht an die Überschrift der Chronik, nicht auf <body>.
+  const titleRef = useRef(null)
+  const focusTitle = useRef(false)
+  useEffect(() => {
+    if (!showAll || !focusTitle.current) return
+    focusTitle.current = false
+    titleRef.current?.focus()
+  }, [showAll])
+  function expand() {
+    focusTitle.current = true
+    setShowAll(true)
+  }
   const earlier = recent.hidden > 0 && (
-    <button type="button" className="btn btn-ghost dog-chronicle-more" onClick={() => setShowAll(true)}>
+    <button type="button" className="btn btn-ghost dog-chronicle-more" onClick={expand}>
       {newestFirst ? `Ältere ${words.entries} anzeigen` : `Frühere ${words.entries} anzeigen`} ({recent.hidden})
     </button>
   )
@@ -153,7 +165,9 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
   return (
     <section className="chronicle dog-chronicle" aria-labelledby="chronicle-title">
       <div className="chronicle-head">
-        <h2 id="chronicle-title">{dog.name_unbekannt ? 'Geschichte' : `${genitive(firstName)} Geschichte`}</h2>
+        <h2 id="chronicle-title" ref={titleRef} tabIndex={-1}>
+          {dog.name_unbekannt ? 'Geschichte' : `${genitive(firstName)} Geschichte`}
+        </h2>
         {items.length > 1 && (
           <button type="button" className="btn btn-ghost" onClick={toggleOrder}>
             <Icon name="sort" />

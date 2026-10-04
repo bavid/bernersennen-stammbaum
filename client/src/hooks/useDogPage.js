@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
+import { parseAreaId } from '../lib/areas.js'
+
+// Die Id aus der Adresse muss eine ganze Zahl sein (security-review W2) - sonst ginge z. B. "/tier/..%2F.." als Pfad an
+// eine andere API-Adresse.
+const NOT_FOUND = 'Dieses Tier gibt es hier nicht.'
 
 // Daten der Tierseite (Phase W, Schritt 2 aus DogDetailPage herausgelöst): das Tier, seine Einträge, die Verpaarungen
 // (für die Meilensteine der Chronik) und alle Tiere des Bereichs (Mitbewohner, Eltern im Bearbeiten-Dialog). Wechselt
 // die Id, beginnt alles von vorn; eine verspätete Antwort des vorherigen Tiers überschreibt nichts (isCurrent).
 // load() lädt neu (nach Übernehmen, Bearbeiten, einem neuen Mitbewohner).
-export default function useDogPage(id) {
+export default function useDogPage(rawId) {
+  const id = parseAreaId(rawId)
   const [dog, setDog] = useState(null)
   const [entries, setEntries] = useState([])
   const [breedingEvents, setBreedingEvents] = useState([])
@@ -14,6 +20,7 @@ export default function useDogPage(id) {
 
   const load = useCallback(
     async (isCurrent = () => true) => {
+      if (!id) throw new Error(NOT_FOUND)
       const [dogData, timelineData, breedingData, allDogsData] = await Promise.all([
         api.getDog(id),
         api.listTimeline(id),

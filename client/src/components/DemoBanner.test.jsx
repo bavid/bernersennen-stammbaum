@@ -63,10 +63,6 @@ describe('DemoBanner – eine schmale Zeile (Calm-down-Runde)', () => {
     expect(onLeave).toHaveBeenCalledTimes(1)
   })
 
-  test('compact (zugleich zu Besuch): Klasse für die Handy-Fassung ohne Link', async () => {
-    await render({ compact: true })
-    expect(container.querySelector('.demo-banner').classList.contains('is-compact')).toBe(true)
-  })
 })
 
 describe('DemoBanner – Partner-Zugang anfragen (Phase N)', () => {

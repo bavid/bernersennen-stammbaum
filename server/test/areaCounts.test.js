@@ -37,6 +37,10 @@ test('GET /api/me: Tiere je Familie und je besuchtem Zuhause', async (t) => {
   share.run(nele, rudel.data.id)
   share.run(mira, rudel.data.id)
   addVisit(home.data.id, host.data.id)
+  // Ein Platzhalter des Haushalts (unbekannte Mutter von Nele), mit geteilt: zählt weder bei tiere noch bei eigeneTiere.
+  const ownPlaceholder = dog(home.data.id, 'Unbekannt', { unknown: true })
+  db.prepare('UPDATE dogs SET mother_dog_id = ? WHERE id = ?').run(ownPlaceholder, nele)
+  share.run(ownPlaceholder, rudel.data.id)
 
   const me = await call(base, '/api/me', { cookie: home.cookie })
   assert.equal(me.status, 200)

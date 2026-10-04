@@ -165,6 +165,9 @@ describe('DogDetailPage – Tierheim: Status', () => {
 
     expect(container.querySelector('#vermittlung-status')).toBeNull()
     expect([...container.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual(['Chronik', 'Infos', 'Verwandte'])
+    // Eltern und Mitbewohner stehen dann nur im Reiter "Verwandte", nicht noch einmal in den Infos (code-review W2)
+    await act(async () => [...container.querySelectorAll('[role="tab"]')].find((tab) => tab.textContent === 'Infos').click())
+    expect(container.querySelector('.dog-relatives')).toBeNull()
   })
 
   test('eigene Tiere des Tierheims: Reiter Chronik · Vermittlung · Infos, Eltern und Mitbewohner unter Infos', async () => {

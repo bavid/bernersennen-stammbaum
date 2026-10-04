@@ -172,7 +172,9 @@ describe('SharePanel', () => {
     expect(onFamilyChange).toHaveBeenCalledWith(me)
   })
 
-  test('während das Speichern läuft, sind die Checkboxen gesperrt (verhindert überholende Antworten)', async () => {
+  // code-review W2: gesperrt (disabled) verlöre der fokussierte Schalter den Fokus - er bleibt bedienbar, nimmt aber keine
+  // zweite Änderung an, solange die erste unterwegs ist (verhindert überholende Antworten).
+  test('während das Speichern läuft, nehmen die Schalter keine zweite Änderung an - und behalten den Fokus', async () => {
     let resolveSave
     setDogShares.mockReturnValue(
       new Promise((resolve) => {
@@ -181,12 +183,19 @@ describe('SharePanel', () => {
     )
     await render()
 
+    act(() => checkboxFor('Rudel Nachbarn').focus())
     act(() => checkboxFor('Rudel Nachbarn').click())
-    expect(checkboxFor('Rudel Nachbarn').disabled).toBe(true)
-    expect(checkboxFor('Familie Klein').disabled).toBe(true)
+    expect(checkboxFor('Rudel Nachbarn').disabled).toBe(false)
+    expect(checkboxFor('Rudel Nachbarn').getAttribute('aria-busy')).toBe('true')
+    expect(document.activeElement).toBe(checkboxFor('Rudel Nachbarn'))
+
+    act(() => checkboxFor('Familie Klein').click())
+    expect(setDogShares).toHaveBeenCalledTimes(1)
+    expect(checkboxFor('Familie Klein').checked).toBe(true)
 
     await act(async () => resolveSave({ shares: [3, 5] }))
-    expect(checkboxFor('Rudel Nachbarn').disabled).toBe(false)
+    expect(checkboxFor('Rudel Nachbarn').getAttribute('aria-busy')).toBeNull()
+    expect(checkboxFor('Rudel Nachbarn').checked).toBe(true)
   })
 })
 
