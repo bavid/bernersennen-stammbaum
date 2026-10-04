@@ -42,7 +42,7 @@ export default function EinblickPinButton({ einblick, canPin, readOnly, demoHint
     <>
       <button
         type="button"
-        className={`btn btn-ghost einblick-pin${pinned ? ' is-pinned' : ''}`}
+        className={`btn btn-ghost btn-compact einblick-pin${pinned ? ' is-pinned' : ''}`}
         aria-pressed={pinned}
         disabled={disabled}
         aria-describedby={readOnly ? demoHintId : undefined}

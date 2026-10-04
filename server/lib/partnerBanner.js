@@ -24,15 +24,15 @@ function httpError(status, message) {
 
 // --- Prüfung -------------------------------------------------------------------------------------
 
-// Alternativtext: optional, reiner Text in einer Zeile (Steuer- und Bidi-Zeichen raus), kein HTML, höchstens
-// MAX_ALT_LENGTH Zeichen. undefined/null/'' -> null.
+// Alternativtext (im Profil "Kurze Beschreibung"): optional, reiner Text in einer Zeile (Steuer- und Bidi-Zeichen
+// raus), kein HTML, höchstens MAX_ALT_LENGTH Zeichen. undefined/null/'' -> null.
 function validateAlt(value) {
   if (value === undefined || value === null || value === '') return null
-  if (typeof value !== 'string') throw httpError(400, 'Der Alternativtext muss reiner Text sein.')
+  if (typeof value !== 'string') throw httpError(400, 'Die Beschreibung muss reiner Text sein.')
   const alt = stripUnsafeChars(value).trim()
   if (!alt) return null
-  if (alt.length > MAX_ALT_LENGTH) throw httpError(400, `Der Alternativtext darf höchstens ${MAX_ALT_LENGTH} Zeichen haben.`)
-  if (/[<>]/.test(alt)) throw httpError(400, 'Der Alternativtext darf nur reinen Text enthalten (kein HTML).')
+  if (alt.length > MAX_ALT_LENGTH) throw httpError(400, `Die Beschreibung darf höchstens ${MAX_ALT_LENGTH} Zeichen haben.`)
+  if (/[<>]/.test(alt)) throw httpError(400, 'Die Beschreibung darf nur reinen Text enthalten (kein HTML).')
   return alt
 }
 
@@ -46,7 +46,7 @@ function validateBannerUpdate(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw httpError(400, 'Ungültige Angaben')
   const unknown = Object.keys(body).find((key) => key !== 'alt')
   if (unknown !== undefined) throw httpError(400, `Dieses Feld lässt sich hier nicht ändern: ${unknown}`)
-  if (!Object.hasOwn(body, 'alt')) throw httpError(400, 'Bitte den Alternativtext mitschicken.')
+  if (!Object.hasOwn(body, 'alt')) throw httpError(400, 'Bitte die Beschreibung mitschicken.')
   return validateAlt(body.alt)
 }
 

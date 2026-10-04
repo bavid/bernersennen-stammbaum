@@ -81,7 +81,7 @@ function EinblickEditForm({ einblick, onSaved, onCancel }) {
 
 // Ein Einblick im Raster: Foto, Datum, Text, dazu "Vom Team ausgeblendet" (Audit V7a: dieselben Worte wie im Kalender), wenn der Admin ihn
 // verborgen hat (dann erscheint er nicht auf dem Portal). Bearbeiten klappt Datum/Text inline auf,
-// Löschen fragt einmal nach (ConfirmButton). In der Demo sind beide gesperrt. Phase V1: dazu "Anpinnen" für die Karte in
+// Löschen fragt einmal nach (ConfirmButton) und steht abgesetzt am Ende der Zeile. In der Demo sind beide gesperrt. Phase V1: dazu "Anpinnen" für die Karte in
 // "Entdecken" (EinblickPinButton) - canPin false, sobald drei angepinnt sind.
 export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintId, canPin = true }) {
   const isDemo = useIsDemo()
@@ -131,7 +131,7 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
             <div className="einblick-actions">
               <button
                 type="button"
-                className="btn btn-ghost"
+                className="btn btn-ghost btn-compact"
                 disabled={isDemo || deleting}
                 aria-describedby={isDemo ? demoHintId : undefined}
                 onClick={() => setEditing(true)}
@@ -139,14 +139,15 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
                 <Icon name="edit" />
                 Bearbeiten
               </button>
+              <EinblickPinButton einblick={einblick} canPin={canPin} readOnly={isDemo} demoHintId={demoHintId} onUpdated={onUpdated} />
               <ConfirmButton
                 disabled={isDemo || deleting}
                 describedBy={isDemo ? demoHintId : undefined}
                 onConfirm={handleDelete}
                 label="Löschen"
                 confirmLabel="Wirklich löschen?"
+                className="btn-compact btn-quiet btn-end"
               />
-              <EinblickPinButton einblick={einblick} canPin={canPin} readOnly={isDemo} demoHintId={demoHintId} onUpdated={onUpdated} />
             </div>
             {error && (
               <p className="field-error" role="alert">

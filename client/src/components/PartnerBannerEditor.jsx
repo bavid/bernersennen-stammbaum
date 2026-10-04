@@ -57,12 +57,17 @@ export default function PartnerBannerEditor({ banner, onChange }) {
       {items.length > 0 && (
         <ul className="partner-banner-list">
           {items.map((item) => (
-            <PartnerBannerSlot key={`${item.position}-${item.fotoUrl}`} item={item} onChange={onChange} />
+            <PartnerBannerSlot
+              key={`${item.position}-${item.fotoUrl}`}
+              item={item}
+              label={item.position === 1 ? 'Foto 1 · groß' : 'Foto 2'}
+              onChange={onChange}
+            />
           ))}
         </ul>
       )}
       {!isFull && (
-        <label className={`btn btn-ghost admin-upload-btn${locked ? ' is-disabled' : ''}`}>
+        <label className={`btn btn-ghost btn-compact admin-upload-btn${locked ? ' is-disabled' : ''}`}>
           <Icon name={busy ? 'clock' : 'plus'} />
           {busy ? 'Lädt …' : items.length ? 'Zweites Bannerfoto hinzufügen' : 'Bannerfoto hinzufügen'}
           <input

@@ -101,14 +101,21 @@ describe('PartnerBannerEditor', () => {
     expect(container.textContent).not.toContain('hinzufügen')
   })
 
-  test('Alternativtext: speichern per Knopf oder Enter, nur wenn geändert', async () => {
+  test('Kurze Beschreibung: schlichtes Feld ohne Erklärsatz, speichern per Knopf oder Enter, nur wenn geändert', async () => {
     updateBannerAlt.mockResolvedValue({ banner: [{ ...first, alt: 'Welpen am Deich' }] })
     await render({ banner: [first] })
     const input = container.querySelector('#partner-banner-alt-1')
     expect(input.value).toBe('Training')
-    expect(buttonByText('Text speichern').disabled).toBe(true)
+    expect(container.querySelector('label[for="partner-banner-alt-1"]').textContent).toBe('Kurze Beschreibung (optional)')
+    expect(input.getAttribute('placeholder')).toBe('z. B. Welpen spielen im Garten')
+    expect(container.textContent).not.toMatch(/Alternativtext|Wer ist zu sehen|Für Menschen, die das Bild nicht sehen/)
+    // Der Zweck steht nur für Screenreader dabei.
+    const note = document.getElementById(input.getAttribute('aria-describedby'))
+    expect(note.classList.contains('visually-hidden')).toBe(true)
+    expect(buttonByText('Speichern').disabled).toBe(true)
+    expect(buttonByText('Speichern').getAttribute('aria-label')).toBe('Beschreibung von Foto 1 speichern')
     await act(async () => setValue(input, ' Welpen am Deich '))
-    expect(buttonByText('Text speichern').disabled).toBe(false)
+    expect(buttonByText('Speichern').disabled).toBe(false)
     await act(async () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
     expect(updateBannerAlt).toHaveBeenCalledWith(1, 'Welpen am Deich')
     expect(onChange).toHaveBeenCalledWith([{ ...first, alt: 'Welpen am Deich' }])
@@ -124,7 +131,13 @@ describe('PartnerBannerEditor', () => {
     expect(replaceBanner.mock.calls[0][1].get('alt')).toBe('Training')
     expect(onChange).toHaveBeenLastCalledWith([{ ...first, fotoUrl: '/uploads/neu.jpg' }])
 
+    // Kompakte Knöpfe; Entfernen klar als Löschen (Warnfarbe, Mülleimer) und abgesetzt am Ende der Zeile.
+    const actions = container.querySelector('.partner-banner-slot-actions')
+    expect(actions.querySelector('label.admin-upload-btn').classList.contains('btn-compact')).toBe(true)
     const remove = container.querySelector('.partner-banner-slot .btn-danger')
+    expect([...remove.classList]).toEqual(expect.arrayContaining(['btn-compact', 'btn-quiet', 'btn-end']))
+    expect(remove.querySelector('svg')).not.toBeNull()
+    expect(actions.lastElementChild).toBe(remove)
     await act(async () => remove.click())
     expect(deleteBanner).not.toHaveBeenCalled()
     await act(async () => remove.click())

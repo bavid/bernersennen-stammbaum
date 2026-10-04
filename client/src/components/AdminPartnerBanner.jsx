@@ -68,7 +68,7 @@ export default function AdminPartnerBanner({ partnerId }) {
               )}
               <span className="admin-einblick-body">
                 <span className="admin-partner-banner-position">Foto {foto.position}</span>
-                <span className="admin-einblick-text">{foto.alt || <span className="muted">ohne Alternativtext</span>}</span>
+                <span className="admin-einblick-text">{foto.alt || <span className="muted">ohne Beschreibung</span>}</span>
               </span>
               <ConfirmButton
                 onConfirm={() => remove(foto)}

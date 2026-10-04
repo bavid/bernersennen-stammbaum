@@ -574,7 +574,7 @@ describe('AdminPartners – Bannerfotos (Audit V7a)', () => {
     expect(items()[0].querySelector('img').getAttribute('src')).toBe(bannerList[0].fotoUrl)
     expect(items()[0].textContent).toContain('Foto 1')
     expect(items()[0].textContent).toContain('Welpen auf der Wiese')
-    expect(items()[1].textContent).toContain('ohne Alternativtext')
+    expect(items()[1].textContent).toContain('ohne Beschreibung')
 
     const remove = items()[0].querySelector('button')
     expect(remove.getAttribute('aria-label')).toBe('Bannerfoto 1 entfernen')
@@ -583,7 +583,7 @@ describe('AdminPartners – Bannerfotos (Audit V7a)', () => {
     await act(async () => items()[0].querySelector('button').click())
     expect(mocks.deletePartnerBanner).toHaveBeenCalledWith(2, 1, bannerList[0].fotoUrl)
     expect(items()).toHaveLength(1)
-    expect(items()[0].textContent).toContain('ohne Alternativtext')
+    expect(items()[0].textContent).toContain('ohne Beschreibung')
   })
 
   test('ohne Bannerfotos ein ruhiger Hinweis, ein Fehler beim Entfernen erscheint als Alert', async () => {
@@ -615,7 +615,7 @@ describe('AdminPartners – Bannerfotos (Audit V7a)', () => {
     expect(container.querySelector('.admin-partner-banner [role="alert"]').textContent).toContain('hat sich inzwischen geändert')
     expect(mocks.partnerBanner).toHaveBeenCalledTimes(2)
     expect(container.querySelectorAll('.admin-banner-foto')).toHaveLength(1)
-    expect(container.querySelector('.admin-banner-foto').textContent).toContain('ohne Alternativtext')
+    expect(container.querySelector('.admin-banner-foto').textContent).toContain('ohne Beschreibung')
   })
 
   test('ein Partner ohne Bannerfotos: "Keine Bannerfotos."', async () => {

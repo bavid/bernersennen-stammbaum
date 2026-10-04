@@ -98,7 +98,7 @@ export default function EinblickForm({ isFull, onCreated }) {
         <div className="field einblick-photo-field">
           <span className="field-label">Foto</span>
           {previewUrl && <img src={previewUrl} alt="Vorschau des gewählten Fotos" className="einblick-preview" />}
-          <label className={`btn btn-ghost admin-upload-btn${locked ? ' is-disabled' : ''}`}>
+          <label className={`btn btn-ghost btn-compact admin-upload-btn${locked ? ' is-disabled' : ''}`}>
             <Icon name="camera" />
             {file ? 'Anderes Foto wählen' : 'Foto wählen'}
             <input

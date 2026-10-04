@@ -50,7 +50,7 @@ export default function AdminImageUpload({
           {error}
         </p>
       )}
-      <label className={`btn btn-ghost admin-upload-btn${disabled ? ' is-disabled' : ''}`}>
+      <label className={`btn btn-ghost btn-compact admin-upload-btn${disabled ? ' is-disabled' : ''}`}>
         <Icon name="camera" />
         {busy ? 'Lädt …' : buttonLabel}
         {/* Visuell versteckt statt hidden (wie PhotoPicker.jsx .photo-add input): mit hidden verschwindet

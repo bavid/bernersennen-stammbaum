@@ -80,6 +80,32 @@
   color: var(--snow);
 }
 
+/* Kompakte Knöpfe für Foto-Editoren (Bannerfotos, Logo, Einblicke): dieselbe Tipp-Höhe von 44 px, aber weniger
+   Innenabstand - die Knöpfe treten hinter Foto und Text zurück. */
+.btn-compact {
+  min-height: 2.75rem;
+  padding: 0 var(--space-3);
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+/* Entfernen/Löschen als Text in Warnfarbe mit Mülleimer (ConfirmButton) - klar destruktiv, aber ohne Rahmen. Scharf
+   geschaltet (is-armed) wie jeder Löschen-Knopf gefüllt. */
+.btn-danger.btn-quiet {
+  border-color: transparent;
+}
+
+.btn-danger.btn-quiet:hover:not(:disabled):not(.is-armed) {
+  background: var(--danger-wash);
+  border-color: transparent;
+  color: var(--danger);
+}
+
+/* In einer Aktionszeile (flex): rückt ans Ende, abgesetzt von Speichern und Ersetzen. */
+.btn-end {
+  margin-inline-start: auto;
+}
+
 .btn-block {
   width: 100%;
 }
