@@ -17,7 +17,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 2.1rem;
+  /* Trefferfläche 44 px wie .segmented button (components.css). */
+  min-height: 2.75rem;
   padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-pill);
   /* Audit V7a: wie .segmented button (components.css) - --muted auf --paper-deep lag bei 4,2 : 1. */
@@ -57,9 +58,9 @@
     width: 100%;
   }
 
+  /* Schmaler Rand und kleinere Schrift, aber weiter 44 px hoch - am Handy tippt man. */
   .view-mode-switch a {
     flex: 1;
-    min-height: 1.9rem;
     padding: 0 var(--space-3);
     font-size: var(--text-xs);
   }
@@ -112,10 +113,11 @@
   color: var(--muted);
 }
 
+/* 44-px-Knopf (.icon-btn) mit dem Symbol an derselben Stelle wie vorher (Mitte 30 px vom Rand). */
 .demo-guide-close {
   position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
+  top: var(--space-2);
+  right: var(--space-2);
 }
 
 @media (max-width: 720px) {

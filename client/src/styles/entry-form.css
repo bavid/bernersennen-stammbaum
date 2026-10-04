@@ -154,11 +154,6 @@
   gap: var(--space-1);
 }
 
-.foto-feld-tools .icon-btn {
-  width: 44px;
-  height: 44px;
-}
-
 .foto-feld-tools .icon-btn:last-child {
   margin-left: var(--space-1);
 }

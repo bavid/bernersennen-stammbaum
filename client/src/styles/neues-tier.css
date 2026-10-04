@@ -178,13 +178,9 @@
   font-size: var(--text-sm);
 }
 
-/* Geschlecht: vorbelegt, aber sichtbar - Knöpfe in voller Fingergröße */
+/* Geschlecht: sichtbar neben dem Namen - die Knöpfe haben wie jedes .segmented volle Fingergröße (components.css) */
 .quick-animal-sex .segmented {
   justify-self: start;
-}
-
-.quick-animal-form .segmented button {
-  min-height: 44px;
 }
 
 /* Inhalt von „Mehr Angaben“ */

@@ -516,10 +516,6 @@ p.vk-note {
   border-radius: var(--radius-md);
 }
 
-.vk-segmented button {
-  min-width: 2.6rem;
-}
-
 .vk-segmented button:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);

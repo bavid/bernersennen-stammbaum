@@ -511,8 +511,8 @@
   flex-wrap: wrap;
 }
 
+/* Kleinere Schrift und weniger Rand - die Trefferfläche bleibt 44 px hoch (.segmented button, components.css). */
 .segmented-sm button {
-  min-height: 1.75rem;
   padding: 0 var(--space-3);
   font-size: var(--text-xs);
 }

@@ -97,11 +97,6 @@
   font-size: var(--text-lg);
 }
 
-.hinweis-popover-head .icon-btn {
-  width: 44px;
-  height: 44px;
-}
-
 .hinweis-panel-root {
   display: grid;
   gap: var(--space-2);
