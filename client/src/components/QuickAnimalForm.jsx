@@ -5,20 +5,22 @@ import PortraitFeld from './animals/PortraitFeld.jsx'
 import TierartWahl from './animals/TierartWahl.jsx'
 import TierMehrAngaben from './animals/TierMehrAngaben.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
-import { choiceTierart, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload } from '../lib/newAnimal.js'
+import { choiceTierart, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload, sexChoices } from '../lib/newAnimal.js'
 import { livesWithLabel } from '../lib/timeline.js'
 import '../styles/neues-tier.css'
 
 const NAME_PLACEHOLDER = { hund: 'z. B. Benno', katze: 'z. B. Minka', anderes: 'z. B. Hoppel' }
 
-// „Neues Tier“ - nur Tierart (große Chips) und Name sind nötig, dazu auf Wunsch ein rundes Porträt; Geschlecht, Rasse,
-// Geburtstag, „bei uns seit“, Beschreibung, Eltern und „Lebt mit“ stehen zugeklappt unter „Mehr Angaben“ (lib/newAnimal.js).
+// „Neues Tier“ - nur Tierart (große Chips) und Name sind nötig, dazu auf Wunsch ein rundes Porträt und das (vorbelegte,
+// sichtbare) Geschlecht; Rasse, Geburtstag, „bei uns seit“, Beschreibung, Eltern und „Lebt mit“ stehen zugeklappt unter
+// „Mehr Angaben“ (lib/newAnimal.js).
 // livesWith (Stammbaum, Tierseite) macht „lebt mit“ fest; shelter (Tierheim, „Tier aufnehmen“) startet „in Vermittlung“.
 // onCreated bekommt das angelegte Tier (hooks/useAnimalCreate.js: weiter zur Tierseite). Fehler stehen am Feld.
 export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null, shelter = false, onCreated, onCancel }) {
   const nameId = useId()
   const kindId = useId()
   const nameErrorId = useId()
+  const sexId = useId()
   const [form, setForm] = useState(emptyAnimal)
   const [errors, setErrors] = useState({})
   const [moreOpen, setMoreOpen] = useState(false)
@@ -28,9 +30,11 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
   const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
   const tierart = choiceTierart(form.art)
 
+  // Ein geänderter Wert nimmt nur seinen eigenen Fehler weg.
   const update = (patch) => {
     setForm((current) => ({ ...current, ...patch }))
-    setErrors({})
+    const cleared = 'art' in patch ? 'art' : 'name' in patch || 'nameUnbekannt' in patch ? 'name' : null
+    if (cleared) setErrors((current) => (current[cleared] ? { ...current, [cleared]: undefined } : current))
   }
 
   // Eltern einer anderen Tierart passen nicht mehr (der Server lehnt sie ab).
@@ -44,7 +48,7 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
     setError(null)
     const found = newAnimalErrors(form)
     setErrors(found)
-    if (Object.keys(found).length) {
+    if (Object.values(found).some(Boolean)) {
       focusFirstError()
       return
     }
@@ -90,6 +94,7 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
             maxLength={80}
             disabled={form.nameUnbekannt}
             autoFocus
+            data-autofocus=""
             aria-invalid={errors.name ? true : undefined}
             aria-describedby={errors.name ? nameErrorId : undefined}
           />
@@ -102,6 +107,18 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
               {errors.name}
             </p>
           )}
+        </div>
+      </div>
+      <div className="field quick-animal-sex">
+        <span className="field-label" id={sexId}>
+          Geschlecht
+        </span>
+        <div className="segmented" role="group" aria-labelledby={sexId}>
+          {sexChoices(form.art).map((choice) => (
+            <button key={choice.value} type="button" aria-pressed={form.geschlecht === choice.value} onClick={() => update({ geschlecht: choice.value })}>
+              {choice.label}
+            </button>
+          ))}
         </div>
       </div>
       {livesWith && <p className="quick-animal-fixed-housemate">{livesWithLabel([livesWith])}</p>}

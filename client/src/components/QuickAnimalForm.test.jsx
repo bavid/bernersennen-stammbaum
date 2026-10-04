@@ -123,13 +123,34 @@ describe('Neues Tier – Foto und „Mehr Angaben“', () => {
     expect(api.createDog).toHaveBeenCalledWith(expect.objectContaining({ fotoUrl: '/uploads/p.jpg' }))
   })
 
-  test('„Mehr Angaben“: Geschlecht (vorbelegt, in der Zusammenfassung), Rasse, Geburtstag, bei uns seit, Beschreibung', async () => {
+  test('Geschlecht steht sichtbar neben dem Namen (vorbelegt) - in den Wörtern der Tierart', async () => {
+    await render()
+    const sexButtons = () => [...container.querySelectorAll('.quick-animal-sex button')]
+    expect(sexButtons().map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([
+      ['weiblich', 'true'],
+      ['männlich', 'false']
+    ])
+    choose('Katze')
+    expect(sexButtons().map((b) => b.textContent)).toEqual(['Katze', 'Kater'])
+    choose('Hund')
+    expect(sexButtons().map((b) => b.textContent)).toEqual(['Hündin', 'Rüde'])
+  })
+
+  test('ein Fehler verschwindet nur mit seinem eigenen Feld', async () => {
+    await render()
+    await submit()
+    act(() => setValue(field('name'), 'Benno'))
+    expect(container.textContent).toContain('Bitte wähle eine Tierart.')
+    expect(container.textContent).not.toContain('Bitte gib einen Namen an')
+  })
+
+  test('„Mehr Angaben“: Rasse, Geburtstag, bei uns seit, Beschreibung - und das gewählte Geschlecht', async () => {
     api.createDog.mockResolvedValue({ id: 4, name: 'Benno' })
     await render()
     choose('Hund')
-    expect(container.querySelector('.mehr-angaben-summary').textContent).toBe('Hündin · Rasse, Geburtstag, Eltern …')
+    expect(container.querySelector('.mehr-angaben-summary').textContent).toBe('Rasse, Geburtstag, Eltern …')
+    act(() => [...container.querySelectorAll('.quick-animal-sex button')].find((b) => b.textContent === 'Rüde').click())
     openMore()
-    act(() => [...container.querySelectorAll('.tier-mehr .segmented button')].find((b) => b.textContent === 'Rüde').click())
     act(() => setValue(field('rasse'), 'Hovawart'))
     act(() => setValue(field('geburtsdatum'), '2024-03-01'))
     act(() => setValue(field('beiUnsSeit'), '2024-05-01'))

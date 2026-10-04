@@ -19,7 +19,7 @@ import HinweisGlocke from './components/hinweise/HinweisGlocke.jsx'
 import HinweiseProvider from './components/hinweise/HinweiseProvider.jsx'
 import { clearRecent } from './lib/search.js'
 import { clearFamilyAuswahl } from './lib/bilderrahmen.js'
-import { clearDrafts } from './lib/entryForm.js'
+import useClearDraftsOnSignOut from './hooks/useClearDraftsOnSignOut.js'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
 import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
@@ -384,6 +384,9 @@ export default function App() {
     if (rememberIt) rememberDarstellung(darstellung)
   }, [signedOut, darstellung, rememberIt])
 
+  // Entwürfe neuer Erinnerungen: weg, sobald die Sitzung endet (hooks/useClearDraftsOnSignOut.js).
+  useClearDraftsOnSignOut(signedOut)
+
   // Phase W, Schritt 2: „Einladen“ im Konto-Menü lädt aus dem eigenen Zuhause ein (Zu Besuch einladen, Zuhause
   // verschenken). Aus einer Familie oder einem Besuch heraus geht es dafür erst nach Start - dort wechselt das AreaGate
   // genau einmal nach Hause, erst dann öffnet der Dialog (invitePending). Scheitert der Wechsel, bleibt es beim Hinweis des
@@ -414,8 +417,6 @@ export default function App() {
     clearRecent(family)
     // Bilderrahmen: die je Familie gemerkte Auswahl (Tier-Ids) bleibt nicht über das Abmelden hinaus stehen.
     clearFamilyAuswahl()
-    // Entwürfe neuer Erinnerungen (lib/entryForm.js) bleiben nicht über das Abmelden hinaus liegen.
-    clearDrafts()
     try {
       await api.logout()
     } finally {

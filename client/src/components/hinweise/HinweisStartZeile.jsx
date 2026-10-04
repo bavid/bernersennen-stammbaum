@@ -8,7 +8,14 @@ export default function HinweisStartZeile() {
   const glocke = useGlocke()
   if (!glocke?.enabled || glocke.total === 0) return null
   return (
-    <button type="button" className="start-hinweise" aria-haspopup="dialog" aria-expanded={glocke.open} onClick={glocke.openPanel}>
+    <button
+      type="button"
+      className="start-hinweise"
+      data-hinweise-opener=""
+      aria-haspopup="dialog"
+      aria-expanded={glocke.open}
+      onClick={(event) => (glocke.open ? glocke.closePanel() : glocke.openPanel(event))}
+    >
       <Icon name="bell" />
       <span className="start-hinweise-text">{startLineText(glocke.total)}</span>
       <span className="start-hinweise-action">ansehen</span>

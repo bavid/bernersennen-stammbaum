@@ -30,11 +30,14 @@ export default function PortraitFeld({ value, onChange, onBusyChange, onError })
           <input id={inputId} className="visually-hidden" type="file" accept="image/*" onChange={handleFiles} disabled={busy} />
         </label>
       )}
+      <span className="visually-hidden" aria-live="polite">
+        {busy ? 'Foto wird hochgeladen' : ''}
+      </span>
       <div className="portrait-feld-text">
         <span className="portrait-feld-label">
           Foto <span className="muted">(optional)</span>
         </span>
-        {busy && <span className="field-hint" aria-live="polite">Lädt …</span>}
+        {busy && <span className="field-hint">Lädt …</span>}
         {!busy && photo && !isDemo && (
           <button type="button" className="link-button" onClick={() => onChange([])}>
             Foto entfernen

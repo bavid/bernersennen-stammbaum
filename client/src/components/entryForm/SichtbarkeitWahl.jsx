@@ -21,7 +21,7 @@ export default function SichtbarkeitWahl({ privat, onChange, shareNames }) {
               value={option.privat ? 'privat' : 'geteilt'}
               checked={option.privat === privat}
               onChange={() => onChange(option.privat)}
-              aria-describedby={hintId}
+              aria-describedby={option.privat === privat ? hintId : undefined}
             />
             <span>{option.label}</span>
           </label>

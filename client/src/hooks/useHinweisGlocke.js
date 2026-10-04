@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
-import { useToast } from '../components/Toast.jsx'
+import useHinweisAktionen from './useHinweisAktionen.js'
 import { isReadOnly } from '../lib/demo.js'
-import { genitive } from '../lib/timeline.js'
 import { isOwnHome } from '../lib/visits.js'
 import { REFRESH_MS, hinweisZahlen, withHinweisZahlen } from '../lib/glocke.js'
 
@@ -12,21 +11,21 @@ import { REFRESH_MS, hinweisZahlen, withHinweisZahlen } from '../lib/glocke.js'
 // (GET /api/hinweise/gruesse bringt alle drei Zahlen mit) - nur bei sichtbarem Tab und nur im eigenen Zuhause (die
 // Endpunkte gibt es nur dort; in einer Familie oder zu Besuch zeigt die Glocke nur die Zahl aus /me).
 // Demo und Admin-Ansicht lesen nur: „gesehen“ gilt dort nur für diese Sitzung (seenLocally), Aktionen sind gesperrt.
+// Die Aktionen (Ja/Nein, Passt/Entfernen) und ihre Rückmeldung im Fenster: hooks/useHinweisAktionen.js.
 export default function useHinweisGlocke({ family, onFamilyChange }) {
-  const toast = useToast()
   const atHome = isOwnHome(family)
   const readOnly = isReadOnly(family)
   const [lists, setLists] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [busy, setBusy] = useState(null)
   const seenLocally = useRef(false)
-  // /me kam gerade erst - die erste eigene Nachfrage frühestens nach REFRESH_MS.
-  const lastRefresh = useRef(Date.now())
+  const lastRefresh = useRef(0)
   const mounted = useRef(true)
 
+  // /me kam gerade erst - die erste eigene Nachfrage frühestens nach REFRESH_MS.
   useEffect(() => {
     mounted.current = true
+    lastRefresh.current = Date.now()
     return () => {
       mounted.current = false
     }
@@ -42,6 +41,8 @@ export default function useHinweisGlocke({ family, onFamilyChange }) {
       }),
     [onFamilyChange, readOnly]
   )
+
+  const aktionen = useHinweisAktionen({ setLists, patchZahlen, mounted })
 
   const markSeen = useCallback(async () => {
     if (readOnly) {
@@ -87,10 +88,12 @@ export default function useHinweisGlocke({ family, onFamilyChange }) {
   }, [atHome, refresh])
 
   // Beim Öffnen: alle drei Listen, danach gelten die Grüße als gesehen (sie stehen in dieser Liste trotzdem noch als neu).
+  const { resetFeedback } = aktionen
   const loadLists = useCallback(async () => {
     if (!atHome) return
     setLoading(true)
     setError(null)
+    resetFeedback()
     lastRefresh.current = Date.now()
     try {
       const [anfragen, besuche, gruss] = await Promise.all([api.erlebtMitOffen(), api.visits(), api.hinweisGruesse()])
@@ -103,67 +106,7 @@ export default function useHinweisGlocke({ family, onFamilyChange }) {
     } finally {
       if (mounted.current) setLoading(false)
     }
-  }, [atHome, markSeen, patchZahlen])
+  }, [atHome, markSeen, patchZahlen, resetFeedback])
 
-  // Eine Aktion: busy sperrt die Knöpfe dieses Hinweises, ein Fehler kommt als Hinweis unten (Toast).
-  const run = useCallback(
-    async (key, action) => {
-      setBusy(key)
-      try {
-        await action()
-      } catch (err) {
-        toast(err.message)
-      } finally {
-        if (mounted.current) setBusy(null)
-      }
-    },
-    [toast]
-  )
-
-  const dropRequests = (keep) => setLists((current) => (current ? { ...current, anfragen: current.anfragen.filter(keep) } : current))
-  const dropGuest = (guest) => setLists((current) => (current ? { ...current, gaeste: current.gaeste.filter((g) => g.id !== guest.id) } : current))
-
-  const decide = (request, confirm) =>
-    run(`anfrage-${request.requestId}`, async () => {
-      const result = confirm ? await api.confirmErlebtMit(request.requestId) : await api.rejectErlebtMit(request.requestId)
-      dropRequests((r) => r.requestId !== request.requestId)
-      patchZahlen({ anfragen: result.offen })
-      toast(confirm ? `Steht jetzt auch in ${genitive(request.dogName)} Chronik` : 'Markierung entfernt')
-    })
-
-  // „Alle von {Zuhause} ablehnen“ (security-review V2, L-3) - gegen eine Flut von Anfragen eines Zuhauses.
-  const rejectAllFrom = (group) =>
-    run(`zuhause-${group.zuhauseId}`, async () => {
-      const result = await api.rejectAllErlebtMitFrom(group.zuhauseId)
-      dropRequests((r) => r.zuhauseId !== group.zuhauseId)
-      patchZahlen({ anfragen: result.offen })
-      toast(`${result.abgelehnt} Anfragen von „${group.zuhause}“ abgelehnt`)
-    })
-
-  // Neuer Gast (security-review V2, M-3): bleibt, bis „Passt“ oder „Entfernen“.
-  const acknowledgeGuest = (guest) =>
-    run(`gast-${guest.id}`, async () => {
-      const me = await api.acknowledgeGuest(guest.id)
-      dropGuest(guest)
-      patchZahlen({ gaeste: hinweisZahlen(me).gaeste })
-    })
-
-  const removeGuest = (guest) =>
-    run(`gast-${guest.id}`, async () => {
-      await api.removeGuest(guest.id)
-      dropGuest(guest)
-      patchZahlen((zahlen) => ({ gaeste: Math.max(0, zahlen.gaeste - 1) }))
-      toast(`„${guest.name}“ ist nicht mehr bei euch zu Gast`)
-    })
-
-  return {
-    atHome,
-    readOnly,
-    lists,
-    loading,
-    error,
-    busy,
-    loadLists,
-    actions: { confirm: (r) => decide(r, true), reject: (r) => decide(r, false), rejectAllFrom, acknowledgeGuest, removeGuest }
-  }
+  return { atHome, readOnly, lists, loading, error, loadLists, ...aktionen }
 }

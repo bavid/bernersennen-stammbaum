@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { api } from '../api'
 import { downscaleImage } from '../lib/images.js'
 
@@ -10,32 +10,29 @@ const NOT_AN_IMAGE = 'Das ist kein Foto – bitte wähle ein Bild.'
 export default function usePhotoUpload({ onUploaded, onError, onBusyChange }) {
   const [busy, setBusy] = useState(false)
 
-  const upload = useCallback(
-    async (fileList) => {
-      const all = Array.from(fileList || [])
-      const files = all.filter((file) => file.type?.startsWith('image/'))
-      if (all.length > 0 && files.length === 0) onError?.(NOT_AN_IMAGE)
-      if (files.length === 0) return
-      setBusy(true)
-      onBusyChange?.(true)
-      onError?.(null)
-      const urls = []
-      try {
-        for (const file of files) {
-          const prepared = await downscaleImage(file)
-          const { url } = await api.upload(prepared)
-          urls.push(url)
-        }
-      } catch (err) {
-        onError?.(err.message)
-      } finally {
-        if (urls.length > 0) onUploaded(urls)
-        setBusy(false)
-        onBusyChange?.(false)
+  async function upload(fileList) {
+    const all = Array.from(fileList || [])
+    const files = all.filter((file) => file.type?.startsWith('image/'))
+    if (all.length > 0 && files.length === 0) onError?.(NOT_AN_IMAGE)
+    if (files.length === 0) return
+    setBusy(true)
+    onBusyChange?.(true)
+    onError?.(null)
+    const urls = []
+    try {
+      for (const file of files) {
+        const prepared = await downscaleImage(file)
+        const { url } = await api.upload(prepared)
+        urls.push(url)
       }
-    },
-    [onBusyChange, onError, onUploaded]
-  )
+    } catch (err) {
+      onError?.(err.message)
+    } finally {
+      if (urls.length > 0) onUploaded(urls)
+      setBusy(false)
+      onBusyChange?.(false)
+    }
+  }
 
   return { busy, upload }
 }

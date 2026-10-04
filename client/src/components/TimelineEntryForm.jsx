@@ -71,9 +71,15 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
   const entwurf = useEntryDraft(draftId, draftValues(form))
   const suggestion = titleSuggestion(form.text, form.datum, words.entry)
 
+  // Ein geänderter Wert nimmt nur seinen eigenen Fehler weg (Text, Überschrift und Fotos teilen sich „Was ist passiert?“).
   const update = (patch) => {
     setForm((current) => ({ ...current, ...patch }))
-    setErrors((current) => (Object.keys(current).length ? {} : current))
+    const cleared = ['text', 'titel', 'fotos'].some((key) => key in patch) ? 'content' : 'datum' in patch ? 'datum' : null
+    if (cleared) setErrors((current) => (current[cleared] ? { ...current, [cleared]: undefined } : current))
+  }
+  const changeName = (value) => {
+    setAutorName(value)
+    setErrors((current) => (current.name ? { ...current, name: undefined } : current))
   }
 
   function discardDraft() {
@@ -87,12 +93,13 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
     setError(null)
     const found = validate(form, autorName)
     setErrors(found)
-    if (Object.keys(found).length) {
+    if (Object.values(found).some(Boolean)) {
       if (found.name && nameKnown) setMoreOpen(true)
       focusFirstError()
       return
     }
     setSaving(true)
+    entwurf.hold()
     try {
       writeSetting('autorName', autorName.trim())
       const tags = canTag ? { erlebtMit: form.privat ? [] : form.erlebtMit } : {}
@@ -109,6 +116,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
       })
       entwurf.clear()
     } catch (err) {
+      entwurf.release()
       setError(err.message)
       setSaving(false)
       focusFirstError()
@@ -126,9 +134,14 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
     }
   }
 
-  const nameField = <NameField value={autorName} onChange={setAutorName} error={errors.name} errorId={errorIds.name} />
+  const nameField = <NameField value={autorName} onChange={changeName} error={errors.name} errorId={errorIds.name} />
   const hasMore = nameKnown || canTag || isShelter
-  const summary = [nameKnown && autorName.trim() && `von ${autorName.trim()}`, canTag && 'Mit dabei', isShelter && 'Kategorie, Steckbrief']
+  const tagged = canTag && !form.privat ? form.erlebtMit.length : 0
+  const summary = [
+    nameKnown && autorName.trim() && `von ${autorName.trim()}`,
+    canTag && (tagged ? `Mit dabei (${tagged})` : 'Mit dabei'),
+    isShelter && 'Kategorie, Steckbrief'
+  ]
     .filter(Boolean)
     .join(' · ')
 
@@ -143,9 +156,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
         <p className="entry-draft-notice">
           <Icon name="edit" />
           <span>Euer Entwurf ist noch da.</span>
-          <button type="button" className="link-button" onClick={discardDraft}>
-            Verwerfen
-          </button>
+          <ConfirmButton label="Verwerfen" confirmLabel="Wirklich verwerfen?" icon="close" className="btn-compact" onConfirm={discardDraft} />
         </p>
       )}
       <FotoFeld value={form.fotos} onChange={(fotos) => update({ fotos })} onBusyChange={setUploading} onError={setError} />

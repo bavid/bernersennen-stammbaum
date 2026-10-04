@@ -161,6 +161,11 @@
   font-size: var(--text-xs);
 }
 
+.portrait-feld-text .link-button {
+  min-height: 44px;
+  padding: 0 var(--space-2);
+}
+
 .portrait-feld-label {
   color: var(--ink-soft);
   font-weight: 700;
@@ -169,6 +174,15 @@
 .quick-animal-unknown {
   justify-self: start;
   font-size: var(--text-sm);
+}
+
+/* Geschlecht: vorbelegt, aber sichtbar - Knöpfe in voller Fingergröße */
+.quick-animal-sex .segmented {
+  justify-self: start;
+}
+
+.quick-animal-form .segmented button {
+  min-height: 44px;
 }
 
 /* Inhalt von „Mehr Angaben“ */

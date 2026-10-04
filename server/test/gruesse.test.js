@@ -83,6 +83,36 @@ test('Hinweis-Glocke: neue Grüße zu eigenen Erinnerungen, gelesen, Zahlen in /
     assert.equal((await get('/api/hinweise/gruesse')).status, 401)
   })
 
+  await t.test('höchstens MAX_GRUESSE in der Zahl; nach einem Umzug des Tiers zählen nur neuere Grüße', async () => {
+    const { MAX_GRUESSE, countNewGreetings } = require('../lib/gruesse')
+    const insert = db.prepare(
+      `INSERT INTO entry_comments (entry_id, family_id, author_family_id, autor_name, text, created_at)
+       VALUES (?, ?, ?, 'Lotte', 'Viele', datetime('now', ?))`
+    )
+    for (let i = 0; i < MAX_GRUESSE + 5; i += 1) insert.run(entry.id, guest.data.id, guest.data.id, `-${i + 1} minutes`)
+    db.prepare('DELETE FROM home_hinweise_gesehen WHERE family_id = ?').run(hostId)
+    assert.equal(countNewGreetings(hostId), MAX_GRUESSE)
+    assert.equal((await get('/api/hinweise/gruesse', host.cookie)).data.gruesse.length, MAX_GRUESSE)
+
+    // Umzug vor einer halben Minute: alles davor (die vielen Grüße von vor Minuten) war ein Gruß an das frühere Zuhause -
+    // es bleibt nur „Wie schön!“ vom Anfang dieses Tests.
+    db.prepare(
+      "INSERT INTO dog_transfers (dog_id, from_family_id, to_family_id, voucher_id, transferred_at) VALUES (?, ?, ?, NULL, datetime('now', '-30 seconds'))"
+    ).run(dog.id, stranger.data.id, hostId)
+    assert.equal(countNewGreetings(hostId), 1)
+    const after = (await get('/api/hinweise/gruesse', host.cookie)).data.gruesse
+    assert.deepEqual(after.map((g) => g.von), ['Zuhause Möwenweg'])
+    db.prepare('DELETE FROM dog_transfers WHERE dog_id = ?').run(dog.id)
+  })
+
+  await t.test('Admin-Ansicht: lesen ja, „gesehen“ nicht (nur lesend)', async () => {
+    const config = require('../config')
+    const { signSession } = require('../middleware/auth')
+    const viewCookie = `${config.sessionCookie}=${signSession(hostId, hostId, { adminView: true })}`
+    assert.equal((await get('/api/hinweise/gruesse', viewCookie)).status, 200)
+    assert.equal((await post('/api/hinweise/gelesen', {}, viewCookie)).status, 403)
+  })
+
   await t.test('die Demo liest nur; das öffentliche Band GET /api/hinweise bleibt ohne Login', async () => {
     const demo = await createHousehold(base, 'Zuhause Demo Glocke')
     db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(demo.data.id)

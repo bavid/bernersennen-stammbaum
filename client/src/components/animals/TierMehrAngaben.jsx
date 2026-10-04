@@ -1,31 +1,19 @@
 import { useId } from 'react'
 import ParentPicker from '../ParentPicker.jsx'
-import { dogLabel, sexLabel } from '../../lib/timeline.js'
+import { dogLabel } from '../../lib/timeline.js'
 import { isEditable } from '../../lib/areas.js'
 import { choiceTierart } from '../../lib/newAnimal.js'
 
 const BREED_PLACEHOLDER = { hund: 'z. B. Berner Sennenhund oder Mischling', katze: 'z. B. Europäisch Kurzhaar' }
 
-// Inhalt von „Mehr Angaben“ beim Anlegen eines Tiers (QuickAnimalForm): Geschlecht, Rasse (Hund, Katze), Geburtstag, „bei
-// uns seit“, Beschreibung, Eltern und - ohne festen Mitbewohner - „Lebt mit“. form/onChange: Werte des Formulars.
+// Inhalt von „Mehr Angaben“ beim Anlegen eines Tiers (QuickAnimalForm): Rasse (Hund, Katze), Geburtstag, „bei uns seit“,
+// Beschreibung, Eltern und - ohne festen Mitbewohner - „Lebt mit“. form/onChange: Werte des Formulars.
 export default function TierMehrAngaben({ form, onChange, allDogs, ownFamilyId, livesWith }) {
   const ids = { rasse: useId(), geburt: useId(), seit: useId(), text: useId(), mitbewohner: useId() }
   const tierart = choiceTierart(form.art)
   const editableDogs = allDogs.filter(isEditable)
   return (
     <div className="tier-mehr">
-      <div className="field">
-        <span className="field-label" id={`${ids.rasse}-sex`}>
-          Geschlecht
-        </span>
-        <div className="segmented" role="group" aria-labelledby={`${ids.rasse}-sex`}>
-          {['huendin', 'ruede'].map((geschlecht) => (
-            <button key={geschlecht} type="button" aria-pressed={form.geschlecht === geschlecht} onClick={() => onChange({ geschlecht })}>
-              {sexLabel(geschlecht, tierart)}
-            </button>
-          ))}
-        </div>
-      </div>
       {tierart !== 'anderes' && (
         <div className="field">
           <label className="field-label" htmlFor={ids.rasse}>

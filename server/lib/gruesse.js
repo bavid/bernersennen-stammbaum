@@ -23,13 +23,17 @@ db.exec(`
 `)
 
 // Grüße an das Zuhause @homeId im Zeitfenster. Der Name ist der, den der Eintrag ohnehin zeigt: bei einem Gast der echte
-// Name seines Zuhauses (wie routes/timeline.js GUEST_HOME_JOIN_SQL), sonst der beim Grüßen angegebene Name.
+// Name seines Zuhauses (wie routes/timeline.js GUEST_HOME_JOIN_SQL), sonst der beim Grüßen angegebene Name. Zieht ein Tier
+// samt Chronik um (lib/transfers.js, dog_transfers), zählen erst Grüße nach dem Umzug - die alten Kommentare des
+// bisherigen Zuhauses sind für das neue keine neuen Grüße.
 const GREETINGS_FROM_SQL = `FROM entry_comments c
   JOIN timeline_entries t ON t.id = c.entry_id
   LEFT JOIN families gf ON gf.id = c.family_id AND c.family_id != t.family_id AND gf.art = 'zuhause'
   LEFT JOIN home_hinweise_gesehen g ON g.family_id = @homeId
   WHERE t.family_id = @homeId AND c.author_family_id IS NOT NULL AND c.author_family_id != @homeId
-    AND c.created_at >= datetime('now', '-${GRUESSE_TAGE} days')`
+    AND c.created_at >= datetime('now', '-${GRUESSE_TAGE} days')
+    AND c.created_at > COALESCE(
+      (SELECT MAX(x.transferred_at) FROM dog_transfers x WHERE x.dog_id = t.dog_id AND x.to_family_id = t.family_id), '')`
 const NEW_SQL = '(g.gesehen_at IS NULL OR c.created_at > g.gesehen_at)'
 
 const listStmt = db.prepare(
@@ -50,8 +54,9 @@ function greetingsFor(homeId) {
   return listStmt.all({ homeId }).map((row) => ({ ...row, neu: Boolean(row.neu) }))
 }
 
+// Höchstens so viele, wie die Liste zeigt - die Zahl an der Glocke verspricht nichts, was die Liste nicht hat.
 function countNewGreetings(homeId) {
-  return countStmt.get({ homeId }).c
+  return Math.min(countStmt.get({ homeId }).c, MAX_GRUESSE)
 }
 
 // „Gesehen“: alles bis jetzt ist nicht mehr neu.

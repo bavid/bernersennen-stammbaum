@@ -131,7 +131,7 @@
   display: grid;
   justify-items: center;
   gap: var(--space-1);
-  width: 132px;
+  width: 150px;
 }
 
 .foto-feld-item .polaroid {
@@ -142,14 +142,23 @@
   margin: 0;
 }
 
+.foto-feld-item .polaroid {
+  max-width: 132px;
+}
+
+/* Knöpfe in voller Fingergröße (44 px); „Entfernen“ etwas abgesetzt von den beiden zum Umstellen */
 .foto-feld-tools {
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .foto-feld-tools .icon-btn {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 44px;
+  height: 44px;
+}
+
+.foto-feld-tools .icon-btn:last-child {
+  margin-left: var(--space-1);
 }
 
 .foto-feld-tools .icon-btn:disabled {

@@ -97,6 +97,36 @@
   font-size: var(--text-lg);
 }
 
+.hinweis-popover-head .icon-btn {
+  width: 44px;
+  height: 44px;
+}
+
+.hinweis-panel-root {
+  display: grid;
+  gap: var(--space-2);
+  outline: none;
+}
+
+.hinweis-feedback {
+  margin: 0;
+  padding: 0 var(--space-2);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.hinweis-feedback:empty {
+  padding: 0;
+}
+
+.hinweis-error {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+
 .hinweis-popover-body {
   padding: var(--space-2) var(--space-3) var(--space-3);
   overflow-y: auto;
@@ -218,10 +248,6 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-top: var(--space-2);
-}
-
-.hinweis-actions .btn {
-  min-height: 40px;
 }
 
 .hinweis-reject-all {

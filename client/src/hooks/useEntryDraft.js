@@ -10,8 +10,9 @@ function persist(key, values) {
 
 // Entwurf einer neuen Erinnerung (lib/entryForm.js, sessionStorage): wer das Formular aus Versehen schließt, findet beim
 // nächsten Öffnen für dasselbe Tier alles wieder (lesen: lib/entryForm.js readDraft). key null (z. B. beim Bearbeiten):
-// kein Entwurf. values: die Felder des Formulars - gespeichert kurz nach jeder Änderung und beim Schließen. clear(): nach
-// dem Festhalten (danach wird nichts mehr gespeichert), discard(): „Verwerfen“.
+// kein Entwurf. values: die Felder des Formulars - gespeichert kurz nach jeder Änderung und beim Schließen. hold(): vor dem
+// Absenden (schließt das Formular dabei, entsteht kein Geister-Entwurf), release(): Absenden gescheitert - weiter
+// speichern, clear(): festgehalten (Entwurf weg), discard(): „Verwerfen“.
 export default function useEntryDraft(key, values) {
   const latest = useRef(values)
   const done = useRef(false)
@@ -34,6 +35,14 @@ export default function useEntryDraft(key, values) {
     [key]
   )
 
+  const hold = useCallback(() => {
+    done.current = true
+  }, [])
+
+  const release = useCallback(() => {
+    done.current = false
+  }, [])
+
   const clear = useCallback(() => {
     done.current = true
     if (key) removeDraft(key)
@@ -43,5 +52,5 @@ export default function useEntryDraft(key, values) {
     if (key) removeDraft(key)
   }, [key])
 
-  return { clear, discard }
+  return { hold, release, clear, discard }
 }

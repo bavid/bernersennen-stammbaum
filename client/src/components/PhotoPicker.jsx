@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import usePhotoUpload from '../hooks/usePhotoUpload.js'
 import { useIsAdminView, useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import Icon from './Icon.jsx'
@@ -10,8 +10,13 @@ export default function PhotoPicker({ value, onChange, multiple = true, label = 
   const isDemo = useIsDemo()
   const isAdminView = useIsAdminView()
   const readOnlyHint = useReadOnlyHint('Im Demo-Modus deaktiviert')
+  // Die Liste, wie sie gerade ist (ein Upload dauert - Entfernen währenddessen bleibt bestehen).
+  const latest = useRef(value)
+  useEffect(() => {
+    latest.current = value
+  })
   const { busy, upload } = usePhotoUpload({
-    onUploaded: (uploaded) => onChange(multiple ? [...value, ...uploaded] : uploaded.slice(-1)),
+    onUploaded: (uploaded) => onChange(multiple ? [...latest.current, ...uploaded] : uploaded.slice(-1)),
     onError,
     onBusyChange
   })

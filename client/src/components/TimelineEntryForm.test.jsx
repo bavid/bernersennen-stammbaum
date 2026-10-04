@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from 'react'
+import { act, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
@@ -7,6 +7,7 @@ const api = vi.hoisted(() => ({ upload: vi.fn(), erlebtMitTiere: vi.fn() }))
 vi.mock('../api', () => ({ api }))
 
 import TimelineEntryForm from './TimelineEntryForm.jsx'
+import useClearDraftsOnSignOut from '../hooks/useClearDraftsOnSignOut.js'
 import { DemoProvider } from '../lib/demo.js'
 import { todayIso } from '../lib/dates.js'
 
@@ -100,6 +101,18 @@ describe('Erinnerung festhalten – Fotos zuerst', () => {
     expect(container.querySelector('.error-banner').textContent).toBe('Datei ist zu groß')
   })
 
+  test('während ein Foto noch hochlädt, entfernt: es bleibt entfernt', async () => {
+    let finish
+    api.upload.mockResolvedValueOnce({ url: '/uploads/a.jpg' }).mockReturnValueOnce(new Promise((resolve) => (finish = resolve)))
+    const onSubmit = vi.fn().mockResolvedValue()
+    await render({ onSubmit })
+    await addPhotos('a.jpg')
+    await addPhotos('b.jpg')
+    await act(async () => container.querySelector('[aria-label="Foto 1 entfernen"]').click())
+    await act(async () => finish({ url: '/uploads/b.jpg' }))
+    expect([...container.querySelectorAll('.foto-feld-item img')].map((img) => img.getAttribute('src'))).toEqual(['/uploads/b.jpg'])
+  })
+
   test('ein Nicht-Foto wird freundlich abgelehnt', async () => {
     await render()
     const input = container.querySelector('.foto-feld input[type="file"]')
@@ -175,6 +188,8 @@ describe('Erinnerung festhalten – Text, Überschrift, Datum', () => {
     expect(field('autorName').getAttribute('aria-invalid')).toBe('true')
     expect(container.textContent).toContain('Bitte gib deinen Namen an.')
     act(() => setValue(field('autorName'), 'Mara'))
+    // Nur der eigene Fehler verschwindet
+    expect(field('autorName').getAttribute('aria-invalid')).toBeNull()
     await submit()
     expect(onSubmit.mock.calls[0][0].autorName).toBe('Mara')
     expect(JSON.parse(window.localStorage.getItem('chronik.autorName'))).toBe('Mara')
@@ -261,6 +276,8 @@ describe('Erinnerung festhalten – Entwurf', () => {
     expect(radio('Nur wir (privat)').checked).toBe(true)
     expect(container.querySelector('.entry-draft-notice').textContent).toContain('Euer Entwurf ist noch da.')
     act(() => button('Verwerfen').click())
+    expect(field('text').value).toBe('Halb erzählt')
+    act(() => button('Wirklich verwerfen?').click())
     expect(field('text').value).toBe('')
     expect(container.querySelector('.entry-draft-notice')).toBeNull()
     unmount()
@@ -280,6 +297,23 @@ describe('Erinnerung festhalten – Entwurf', () => {
     unmount()
     await render({ draftKey: 'tier-8' })
     expect(container.querySelector('.entry-draft-notice')).toBeNull()
+  })
+
+  test('endet die Sitzung, ist auch der Entwurf des offenen Formulars weg (es speichert beim Schließen noch einmal)', async () => {
+    let signOut
+    function Shell() {
+      const [signedOut, setSignedOut] = useState(false)
+      signOut = () => setSignedOut(true)
+      useClearDraftsOnSignOut(signedOut)
+      return signedOut ? null : <TimelineEntryForm draftKey="tier-7" onCancel={() => {}} />
+    }
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () => root.render(<Shell />))
+    act(() => setValue(field('text'), 'Persönlich'))
+    await act(async () => signOut())
+    expect(window.sessionStorage.length).toBe(0)
   })
 
   test('beim Bearbeiten gibt es keinen Entwurf', async () => {

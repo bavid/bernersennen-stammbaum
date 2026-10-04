@@ -31,8 +31,8 @@ function FotoKnoepfe({ index, count, onMove, onRemove }) {
 
 // Fotos zuerst (Erinnerung festhalten): eine große, freundliche Fläche „Fotos hinzufügen“ zum Tippen oder Hineinziehen, die
 // Fotos danach als Polaroids - mit Knöpfen zum Umstellen (das erste ist das Bild im Feed) und Entfernen. Lädt sofort hoch
-// (hooks/usePhotoUpload.js). Schreibgeschützt (Demo, Admin-Ansicht): kein Upload. describedBy: id eines Fehlers.
-export default function FotoFeld({ value, onChange, onBusyChange, onError, describedBy }) {
+// (hooks/usePhotoUpload.js). Schreibgeschützt (Demo, Admin-Ansicht): kein Upload.
+export default function FotoFeld({ value, onChange, onBusyChange, onError }) {
   const inputId = useId()
   const hintId = useId()
   const isDemo = useIsDemo()
@@ -40,7 +40,12 @@ export default function FotoFeld({ value, onChange, onBusyChange, onError, descr
   const [dragging, setDragging] = useState(false)
   const [focusTarget, setFocusTarget] = useState(null)
   const listRef = useRef(null)
-  const { busy, upload } = usePhotoUpload({ onUploaded: (urls) => onChange([...value, ...urls]), onError, onBusyChange })
+  // Die Liste, wie sie gerade ist - ein Upload dauert; wer währenddessen ein Foto entfernt oder umstellt, behält das.
+  const latest = useRef(value)
+  useEffect(() => {
+    latest.current = value
+  })
+  const { busy, upload } = usePhotoUpload({ onUploaded: (urls) => onChange([...latest.current, ...urls]), onError, onBusyChange })
 
   // Nach dem Umstellen bleibt der Fokus beim selben Foto (React verschiebt das Element - der Fokus ginge sonst verloren).
   useEffect(() => {
@@ -117,7 +122,7 @@ export default function FotoFeld({ value, onChange, onBusyChange, onError, descr
             multiple
             onChange={handleFiles}
             disabled={busy}
-            aria-describedby={[empty ? hintId : null, describedBy].filter(Boolean).join(' ') || undefined}
+            aria-describedby={empty ? hintId : undefined}
           />
         </label>
       )}

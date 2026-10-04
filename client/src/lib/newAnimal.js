@@ -3,7 +3,8 @@ import { sexLabel } from './timeline.js'
 // „Neues Tier“ (components/QuickAnimalForm.jsx): nötig sind nur Tierart und Name, alles andere steht unter „Mehr
 // Angaben“. Der Server kennt die Tierarten hund, katze und anderes (server/routes/dogs.js) - Kaninchen, Vogel und Pferd
 // sind „anderes“ mit der Art als Rasse, wie bisher „Welches Tier?“. Keine neuen Pflichtfelder: das Geschlecht braucht der
-// Server weiter, es steht vorbelegt in „Mehr Angaben“ (und in deren Zusammenfassung).
+// Server weiter - es steht vorbelegt, aber sichtbar neben dem Namen (still gespeichert würde jedes männliche Tier sonst
+// „weiblich“).
 
 export const TIERART_CHOICES = Object.freeze([
   { key: 'hund', label: 'Hund', tierart: 'hund' },
@@ -76,9 +77,13 @@ export function newAnimalPayload(form, { livesWith = null, shelter = false } = {
   }
 }
 
-// Leise Zeile neben „Mehr Angaben“: was darin steht - zuerst das vorbelegte Geschlecht.
+// Leise Zeile neben „Mehr Angaben“: was darin steht.
 export function moreSummary(form) {
-  const tierart = choiceTierart(form.art)
-  const rest = tierart === 'anderes' ? 'Geburtstag, Eltern …' : 'Rasse, Geburtstag, Eltern …'
-  return `${sexLabel(form.geschlecht, tierart)} · ${rest}`
+  return choiceTierart(form.art) === 'anderes' ? 'Geburtstag, Eltern …' : 'Rasse, Geburtstag, Eltern …'
+}
+
+// Die beiden Möglichkeiten des Geschlechts mit den Wörtern der Tierart (Hündin/Rüde, Katze/Kater, weiblich/männlich).
+export function sexChoices(art) {
+  const tierart = choiceTierart(art)
+  return ['huendin', 'ruede'].map((value) => ({ value, label: sexLabel(value, tierart) }))
 }

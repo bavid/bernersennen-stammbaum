@@ -16,8 +16,6 @@ const api = vi.hoisted(() => ({
   removeGuest: vi.fn()
 }))
 vi.mock('../../api', () => ({ api }))
-const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
-vi.mock('../Toast.jsx', () => ({ useToast: () => toast }))
 
 import HinweiseProvider from './HinweiseProvider.jsx'
 import HinweisGlocke from './HinweisGlocke.jsx'
@@ -39,7 +37,6 @@ afterEach(() => {
   container = null
   vi.useRealTimers()
   Object.values(api).forEach((fn) => fn.mockReset())
-  toast.mockReset()
 })
 
 const home = { id: 1, name: 'Zuhause am Deich', art: 'zuhause', home: { id: 1, art: 'zuhause' }, erlebtMitOffen: 1, neueGaeste: 1, neueGruesse: 1 }
@@ -129,15 +126,77 @@ describe('Hinweis-Glocke', () => {
     api.rejectErlebtMit.mockResolvedValue({ id: 6, status: 'abgelehnt', offen: 0 })
     await render({ ...home, erlebtMitOffen: 2, neueGaeste: 0, neueGruesse: 0 })
     await openBell()
-    await act(async () => button('Ja').click())
+    const ja = button('Ja')
+    ja.focus()
+    await act(async () => ja.click())
     expect(api.confirmErlebtMit).toHaveBeenCalledWith(5)
-    expect(toast).toHaveBeenCalledWith('Steht jetzt auch in Wilmas Chronik')
+    // Rückmeldung im Fenster (ein Toast läge am Handy unter dem Blatt); der Fokus bleibt im Fenster
+    expect(container.querySelector('.hinweis-feedback').textContent).toBe('Steht jetzt auch in Wilmas Chronik')
+    expect(container.querySelector('.hinweis-popover').contains(document.activeElement)).toBe(true)
+    expect(document.activeElement.textContent).toBe('Ja')
     expect(latest.erlebtMitOffen).toBe(1)
     await act(async () => button('Nein').click())
     expect(api.rejectErlebtMit).toHaveBeenCalledWith(6)
     expect(latest.erlebtMitOffen).toBe(0)
     expect(container.textContent).toContain('Alles erledigt – nichts Neues.')
     expect(container.querySelector('.start-hinweise')).toBeNull()
+  })
+
+  test('ein Fehler steht im Fenster; die anderen Hinweise bleiben bedienbar', async () => {
+    mockLists({ anfragen: [anfrage], gaeste: [gast], gruesse: [] })
+    api.confirmErlebtMit.mockRejectedValue(new Error('Diese Anfrage gibt es nicht'))
+    await render({ ...home, neueGruesse: 0 })
+    await openBell()
+    await act(async () => button('Ja').click())
+    expect(container.querySelector('.hinweis-feedback-error').textContent).toBe('Diese Anfrage gibt es nicht')
+    expect(container.querySelector('.hinweis-feedback-error').getAttribute('role')).toBe('alert')
+    expect(button('Ja').disabled).toBe(false)
+    expect(button('Passt').disabled).toBe(false)
+  })
+
+  test('zwei Aktionen zugleich: beide Hinweise bleiben gesperrt, bis ihre eigene Antwort da ist', async () => {
+    mockLists({ anfragen: [anfrage], gaeste: [gast], gruesse: [] })
+    let finishConfirm
+    api.confirmErlebtMit.mockReturnValue(new Promise((resolve) => (finishConfirm = resolve)))
+    let finishGuest
+    api.acknowledgeGuest.mockReturnValue(new Promise((resolve) => (finishGuest = resolve)))
+    await render({ ...home, neueGruesse: 0 })
+    await openBell()
+    await act(async () => button('Ja').click())
+    await act(async () => button('Passt').click())
+    expect(button('Ja').disabled).toBe(true)
+    expect(button('Passt').disabled).toBe(true)
+    await act(async () => finishGuest({ ...home, neueGaeste: 0 }))
+    expect(button('Ja').disabled).toBe(true)
+    await act(async () => finishConfirm({ id: 5, status: 'bestaetigt', offen: 0 }))
+    expect(container.textContent).toContain('Alles erledigt – nichts Neues.')
+    expect(container.querySelector('.hinweis-popover').contains(document.activeElement)).toBe(true)
+  })
+
+  test('am Handy: Blatt von unten (Modal) - die Rückmeldung steht im Blatt', async () => {
+    const original = window.matchMedia
+    window.matchMedia = (query) => ({ matches: query === '(max-width: 720px)', media: query, addEventListener() {}, removeEventListener() {} })
+    if (!HTMLDialogElement.prototype.showModal) {
+      HTMLDialogElement.prototype.showModal = function showModal() {
+        this.open = true
+      }
+      HTMLDialogElement.prototype.close = function close() {
+        this.open = false
+      }
+    }
+    try {
+      mockLists({ anfragen: [], gaeste: [gast], gruesse: [] })
+      api.acknowledgeGuest.mockResolvedValue({ ...home, neueGaeste: 0 })
+      await render({ ...home, erlebtMitOffen: 0, neueGruesse: 0 })
+      await openBell()
+      const dialog = container.querySelector('dialog.modal-hinweise')
+      expect(dialog.open).toBe(true)
+      expect(container.querySelector('.hinweis-popover')).toBeNull()
+      await act(async () => button('Passt').click())
+      expect(dialog.querySelector('.hinweis-feedback').textContent).toBe('„Zuhause Heidekamp“ ist bei euch willkommen')
+    } finally {
+      window.matchMedia = original
+    }
   })
 
   test('zwei Anfragen aus einem Zuhause: „Alle 2 von … ablehnen“ (zweistufig)', async () => {
@@ -175,19 +234,32 @@ describe('Hinweis-Glocke', () => {
     expect(document.activeElement).toBe(bell())
 
     const line = container.querySelector('.start-hinweise')
-    line.focus()
     await act(async () => line.click())
     expect(panel()).not.toBeNull()
-    await act(async () => panel().querySelector('[aria-label="Schließen"]').click())
+    // Escape auch, wenn der Fokus gerade nicht im Fenster liegt
+    document.body.focus()
+    await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
+    expect(panel()).toBeNull()
     expect(document.activeElement).toBe(line)
+
+    // Die Zeile schließt ein offenes Fenster wieder (kein Zu-und-wieder-Auf über „Klick daneben“)
+    await act(async () => line.click())
+    await act(async () => line.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })))
+    expect(panel()).not.toBeNull()
+    await act(async () => line.click())
+    expect(panel()).toBeNull()
   })
 
   test('ein Gruß führt zur Erinnerung und schließt das Fenster', async () => {
     mockLists({ anfragen: [], gaeste: [], gruesse: [gruss] })
     await render({ ...home, erlebtMitOffen: 0, neueGaeste: 0 })
     await openBell()
-    await act(async () => container.querySelector('.hinweis-link').click())
+    const link = container.querySelector('.hinweis-link')
+    link.focus()
+    await act(async () => link.click())
     expect(panel()).toBeNull()
+    // Der Link führt weg - der Fokus springt nicht zurück an die Glocke
+    expect(document.activeElement).not.toBe(bell())
   })
 
   test('nichts Neues: ruhiger Leerzustand, keine Zeile auf Start', async () => {
@@ -225,7 +297,10 @@ describe('Hinweis-Glocke', () => {
     expect(status.textContent).toBe('')
     await act(async () => setFamilyFromTest((current) => ({ ...current, erlebtMitOffen: 2 })))
     expect(status.textContent).toBe('4 neue Hinweise')
+    // Sinkt die Zahl, wird die Ansage geleert - so ist ein erneuter Anstieg wieder eine neue Ansage
     await act(async () => setFamilyFromTest((current) => ({ ...current, erlebtMitOffen: 1 })))
+    expect(status.textContent).toBe('')
+    await act(async () => setFamilyFromTest((current) => ({ ...current, erlebtMitOffen: 2 })))
     expect(status.textContent).toBe('4 neue Hinweise')
   })
 

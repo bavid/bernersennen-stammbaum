@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { TIERART_CHOICES, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload, choiceTierart } from './newAnimal.js'
+import { TIERART_CHOICES, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload, choiceTierart, sexChoices } from './newAnimal.js'
 
 describe('Neues Tier: Tierart als große Wahl', () => {
   test('Hund, Katze, Kaninchen, Vogel, Pferd, Anderes', () => {
@@ -65,9 +65,11 @@ describe('Neues Tier: was an den Server geht (bestehende API, keine neuen Pflich
     expect(newAnimalPayload({ ...form, nameUnbekannt: true }).name).toBe('')
   })
 
-  test('Zusammenfassung von „Mehr Angaben“ nennt das Geschlecht, das sonst still gilt', () => {
-    expect(moreSummary({ ...emptyAnimal(), art: 'hund' })).toBe('Hündin · Rasse, Geburtstag, Eltern …')
-    expect(moreSummary({ ...emptyAnimal(), art: 'katze', geschlecht: 'ruede' })).toBe('Kater · Rasse, Geburtstag, Eltern …')
-    expect(moreSummary({ ...emptyAnimal(), art: 'vogel' })).toBe('weiblich · Geburtstag, Eltern …')
+  test('Zusammenfassung von „Mehr Angaben“; das Geschlecht in den Wörtern der Tierart', () => {
+    expect(moreSummary({ ...emptyAnimal(), art: 'hund' })).toBe('Rasse, Geburtstag, Eltern …')
+    expect(moreSummary({ ...emptyAnimal(), art: 'vogel' })).toBe('Geburtstag, Eltern …')
+    expect(sexChoices('hund').map((c) => c.label)).toEqual(['Hündin', 'Rüde'])
+    expect(sexChoices('katze').map((c) => c.label)).toEqual(['Katze', 'Kater'])
+    expect(sexChoices('pferd').map((c) => c.label)).toEqual(['weiblich', 'männlich'])
   })
 })
