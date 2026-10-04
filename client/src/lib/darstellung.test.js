@@ -12,6 +12,7 @@ import {
   SCHRIFTEN,
   STANDARD,
   applyDarstellung,
+  flushRememberedDarstellung,
   normalizeDarstellung,
   rememberDarstellung,
   resolveScheme,
@@ -55,14 +56,23 @@ function clearRoot() {
 // Was applyDarstellung zusätzlich zu Farbwelt/Modus/Schrift setzt (Mini-Designer) - die Vorgabe.
 const DESIGN_DEFAULTS = { grund: 'papier', schriftart: 'klassisch', handschrift: 'an', ecken: 'weich' }
 
+let themeMeta
+
 beforeEach(() => {
   window.localStorage.clear()
   clearRoot()
+  flushRememberedDarstellung()
+  window.localStorage.clear()
+  themeMeta = document.createElement('meta')
+  themeMeta.setAttribute('name', 'theme-color')
+  themeMeta.setAttribute('content', '#000000')
+  document.head.appendChild(themeMeta)
 })
 
 afterEach(() => {
   delete window.matchMedia
   vi.restoreAllMocks()
+  themeMeta.remove()
 })
 
 describe('lib/darstellung', () => {
@@ -99,6 +109,9 @@ describe('lib/darstellung', () => {
     expect(normalizeDarstellung({ palette: 'terrakotta' }).palette).toBe('familienalbum')
     expect(normalizeDarstellung({ akzent: '#C8553A' }).akzent).toBe('#c8553a')
     for (const akzent of ['rot', '#abc', '#12345g', 'url(x)', 7, null]) expect(normalizeDarstellung({ akzent }).akzent).toBe('')
+    // Review B+ (L4): nur Zeichenketten sind alte Namen
+    expect(normalizeDarstellung({ palette: { toString: () => 'terrakotta' } }).palette).toBe('familienalbum')
+    expect(normalizeDarstellung({ palette: ['wald'] }).palette).toBe('familienalbum')
     expect(normalizeDarstellung({ schriftart: 'lesbar', handschrift: 'aus', ecken: 'eckig', modus: 'weiss' })).toEqual({
       ...STANDARD,
       schriftart: 'lesbar',
@@ -163,11 +176,47 @@ describe('lib/darstellung', () => {
     expect(root.dataset.grund).toBe('papier')
   })
 
+  test('die Farbe der Browser-Leiste (theme-color) folgt dem Papier der Farbwelt und dem Modus - auch einem Systemwechsel', () => {
+    const system = mockSystem(false)
+    applyDarstellung({ palette: 'familienalbum', modus: 'auto' })
+    expect(themeMeta.getAttribute('content')).toBe('#fbf5ec')
+    system.change(true)
+    expect(themeMeta.getAttribute('content')).toBe('#1e1712')
+    applyDarstellung({ palette: 'wald', modus: 'hell' })
+    expect(themeMeta.getAttribute('content')).toBe('#f1f3ec')
+    applyDarstellung({ palette: 'wald', modus: 'weiss' })
+    expect(themeMeta.getAttribute('content')).toBe('#ffffff')
+  })
+
+  test('merken: sofort, aber beim schnellen Wechsel (Farbfeld ziehen) erst, wenn es ruht', () => {
+    vi.useFakeTimers()
+    try {
+      rememberDarstellung({ palette: 'wald' })
+      expect(storedDarstellung().palette).toBe('wald')
+      rememberDarstellung({ palette: 'meer' })
+      rememberDarstellung({ palette: 'lavendel' })
+      expect(storedDarstellung().palette).toBe('wald')
+      vi.advanceTimersByTime(1000)
+      expect(storedDarstellung().palette).toBe('lavendel')
+      // pagehide (flushRememberedDarstellung) schreibt eine noch wartende Wahl sofort
+      vi.advanceTimersByTime(1000)
+      rememberDarstellung({ palette: 'schiefer' })
+      rememberDarstellung({ palette: 'wald' })
+      flushRememberedDarstellung()
+      expect(storedDarstellung().palette).toBe('wald')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   test('merken und wieder lesen - ein kaputter oder gesperrter Speicher führt zur Vorgabe', () => {
     rememberDarstellung({ palette: 'wald', modus: 'dunkel', schrift: 'normal' })
+    flushRememberedDarstellung()
     expect(storedDarstellung()).toEqual({ ...STANDARD, palette: 'wald', modus: 'dunkel' })
-    // Für public/darstellung-init.js liegen die gerechneten Akzentfarben mit im Speicher.
+    // Für public/darstellung-init.js liegen die gerechneten Akzentfarben und das Papier mit im Speicher.
     rememberDarstellung({ akzent: '#c8553a' })
+    flushRememberedDarstellung()
+    expect(JSON.parse(window.localStorage.getItem('chronik.darstellung')).papier).toEqual({ hell: '#fbf5ec', dunkel: '#1e1712' })
     expect(JSON.parse(window.localStorage.getItem('chronik.darstellung')).farben).toEqual(akzentFarben('#c8553a', 'familienalbum'))
     window.localStorage.setItem('chronik.darstellung', '{kaputt')
     expect(storedDarstellung()).toEqual(STANDARD)
@@ -195,7 +244,9 @@ describe('public/darstellung-init.js – vor dem ersten Bild', () => {
   test('der Mini-Designer: Weiß, Schriftart, Handschrift, Ecken und die gemerkten Akzentfarben', () => {
     mockSystem(false)
     rememberDarstellung({ palette: 'terrakotta', modus: 'weiss', schriftart: 'lesbar', handschrift: 'aus', ecken: 'eckig', akzent: '#3f6e8c' })
+    flushRememberedDarstellung()
     run()
+    expect(themeMeta.getAttribute('content')).toBe('#ffffff')
     expect({ ...root.dataset }).toEqual({
       palette: 'familienalbum',
       modus: 'weiss',
@@ -210,6 +261,17 @@ describe('public/darstellung-init.js – vor dem ersten Bild', () => {
     const farben = akzentFarben('#3f6e8c', 'familienalbum')
     expect(root.style.getPropertyValue('--akzent-hell')).toBe(farben.hell.farbe)
     expect(root.style.getPropertyValue('--akzent-dunkel-tief')).toBe(farben.dunkel.tief)
+  })
+
+  test('theme-color aus dem gemerkten Papier nach Hell/Dunkel - nur als #rrggbb', () => {
+    mockSystem(true)
+    window.localStorage.setItem('chronik.darstellung', JSON.stringify({ modus: 'auto', papier: { hell: '#f1f3ec', dunkel: '#0f140f' } }))
+    run()
+    expect(themeMeta.getAttribute('content')).toBe('#0f140f')
+    themeMeta.setAttribute('content', '#000000')
+    window.localStorage.setItem('chronik.darstellung', JSON.stringify({ modus: 'hell', papier: { hell: 'red;}', dunkel: '#0f140f' } }))
+    run()
+    expect(themeMeta.getAttribute('content')).toBe('#000000')
   })
 
   test('gemerkte Farben, die keine #rrggbb sind, setzen nichts', () => {

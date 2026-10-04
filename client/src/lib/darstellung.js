@@ -1,5 +1,6 @@
 import { readSetting, writeSetting } from './storage.js'
 import { akzentFarben } from './akzent.js'
+import { PALETTE_FLAECHEN } from './paletteFlaechen.js'
 
 // Einstellungen „Darstellung“ - seit B+ Familienalbum der Mini-Designer: Farbwelt, Hintergrund (Papier/Weiß/Dunkel/
 // Automatisch), Schriftgröße, eigene Akzentfarbe, Schriftart, Handschrift-Akzente und Ecken. Dieselben Listen wie
@@ -83,6 +84,9 @@ const AKZENT_VARS = {
 
 const STORAGE_KEY = 'darstellung'
 const DARK_QUERY = '(prefers-color-scheme: dark)'
+// Beim Ziehen des Farbfelds kommt viele Male je Sekunde eine neue Wahl - gemerkt wird sofort und dann erst, wenn es ruht.
+const REMEMBER_DELAY_MS = 400
+const WHITE_PAPER = '#ffffff'
 
 function cleanAkzent(value) {
   const hex = typeof value === 'string' ? value.toLowerCase() : ''
@@ -92,7 +96,9 @@ function cleanAkzent(value) {
 // Jedes Feld einzeln geprüft - Unbekanntes (alte Werte, kaputter Speicher) fällt auf die Vorgabe zurück.
 export function normalizeDarstellung(value) {
   const source = value && typeof value === 'object' ? value : {}
-  const palette = Object.hasOwn(LEGACY_PALETTEN, source.palette) ? LEGACY_PALETTEN[source.palette] : source.palette
+  // Nur Zeichenketten sind alte Namen (ein Objekt mit eigenem toString rutschte sonst als Schlüssel durch).
+  const legacy = typeof source.palette === 'string' && Object.hasOwn(LEGACY_PALETTEN, source.palette)
+  const palette = legacy ? LEGACY_PALETTEN[source.palette] : source.palette
   const picked = Object.fromEntries(
     Object.entries(ALLOWED).map(([key, allowed]) => {
       const candidate = key === 'palette' ? palette : source[key]
@@ -121,7 +127,17 @@ export function resolveScheme(modus, prefersDark = systemPrefersDark()) {
 let systemQuery = null
 let systemListener = null
 
-function followSystem(root, enabled) {
+// Das Papier je Modus - für die Farbe der Browser-Leiste (<meta name="theme-color">, Handy).
+function papierOf(darstellung) {
+  const flaechen = PALETTE_FLAECHEN[darstellung.palette] || PALETTE_FLAECHEN.familienalbum
+  return { hell: darstellung.modus === 'weiss' ? WHITE_PAPER : flaechen.hell.paper, dunkel: flaechen.dunkel.paper }
+}
+
+function setThemeColor(color) {
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
+}
+
+function followSystem(root, enabled, papier) {
   if (systemQuery && systemListener) systemQuery.removeEventListener?.('change', systemListener)
   systemQuery = null
   systemListener = null
@@ -133,7 +149,9 @@ function followSystem(root, enabled) {
   }
   if (!systemQuery?.addEventListener) return
   systemListener = (event) => {
-    root.dataset.scheme = event.matches ? 'dunkel' : 'hell'
+    const scheme = event.matches ? 'dunkel' : 'hell'
+    root.dataset.scheme = scheme
+    setThemeColor(papier[scheme])
   }
   systemQuery.addEventListener('change', systemListener)
 }
@@ -154,18 +172,46 @@ export function applyDarstellung(value, root = document.documentElement) {
   const darstellung = normalizeDarstellung(value)
   for (const key of DATA_FIELDS) root.dataset[key] = darstellung[key]
   root.dataset.grund = darstellung.modus === 'weiss' ? 'weiss' : 'papier'
-  root.dataset.scheme = resolveScheme(darstellung.modus)
+  const scheme = resolveScheme(darstellung.modus)
+  const papier = papierOf(darstellung)
+  root.dataset.scheme = scheme
+  setThemeColor(papier[scheme])
   applyAkzent(root, darstellung)
-  followSystem(root, darstellung.modus === 'auto')
+  followSystem(root, darstellung.modus === 'auto', papier)
   return darstellung
 }
 
+let rememberTimer = null
+let pendingRemember = null
+let lastRememberAt = -Infinity
+
+function writeRemembered() {
+  clearTimeout(rememberTimer)
+  rememberTimer = null
+  if (pendingRemember) writeSetting(STORAGE_KEY, pendingRemember)
+  pendingRemember = null
+  lastRememberAt = Date.now()
+}
+
+// Eine noch wartende Wahl sofort merken (beim Verlassen der Seite - pagehide).
+export function flushRememberedDarstellung() {
+  if (pendingRemember) writeRemembered()
+}
+
 // Für das nächste Laden auf diesem Gerät merken (public/darstellung-init.js liest denselben Schlüssel) - mit den
-// gerechneten Akzentfarben, die das Skript ohne Module nicht selbst rechnen kann.
+// gerechneten Akzentfarben und dem Papier je Modus, die das Skript ohne Module nicht selbst rechnen kann. Sofort, solange
+// es nicht gerade sehr schnell hintereinander geht (Farbfeld) - dann die letzte, sobald es REMEMBER_DELAY_MS ruht.
 export function rememberDarstellung(value) {
   const darstellung = normalizeDarstellung(value)
   const farben = akzentFarben(darstellung.akzent, darstellung.palette)
-  writeSetting(STORAGE_KEY, farben ? { ...darstellung, farben } : darstellung)
+  pendingRemember = { ...darstellung, papier: papierOf(darstellung), ...(farben ? { farben } : {}) }
+  if (Date.now() - lastRememberAt >= REMEMBER_DELAY_MS) {
+    writeRemembered()
+    return
+  }
+  clearTimeout(rememberTimer)
+  rememberTimer = setTimeout(writeRemembered, REMEMBER_DELAY_MS)
+  window.addEventListener('pagehide', flushRememberedDarstellung, { once: true })
 }
 
 export function storedDarstellung() {

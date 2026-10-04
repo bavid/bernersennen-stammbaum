@@ -24,6 +24,7 @@ vi.mock('./api', () => ({
   setUnauthorizedHandler: () => {}
 }))
 
+import { flushRememberedDarstellung } from './lib/darstellung.js'
 import App from './App.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -103,13 +104,16 @@ describe('App – Einstellungen (Calm-down-Runde)', () => {
     await render('/start')
     const { dataset } = document.documentElement
     expect([dataset.palette, dataset.modus, dataset.schrift, dataset.scheme]).toEqual(['wald', 'dunkel', 'gross', 'dunkel'])
-    // Gemerkt wird die geprüfte, vollständige Fassung (Mini-Designer: mit den Vorgaben der neuen Felder).
+    // Gemerkt wird die geprüfte, vollständige Fassung (Mini-Designer: mit den Vorgaben der neuen Felder und dem Papier je
+    // Modus für die Farbe der Browser-Leiste) - beim schnellen Wechsel erst, wenn es ruht.
+    flushRememberedDarstellung()
     expect(JSON.parse(window.localStorage.getItem('chronik.darstellung'))).toEqual({
       ...atHome.darstellung,
       akzent: '',
       schriftart: 'klassisch',
       handschrift: 'an',
-      ecken: 'weich'
+      ecken: 'weich',
+      papier: { hell: '#f1f3ec', dunkel: '#0f140f' }
     })
   })
 
@@ -125,6 +129,7 @@ describe('App – Einstellungen (Calm-down-Runde)', () => {
     me.mockResolvedValue({ ...atHome, adminView: true, darstellung: { palette: 'lavendel', modus: 'dunkel', schrift: 'gross' } })
     await render('/start')
     expect(document.documentElement.dataset.palette).toBe('lavendel')
+    flushRememberedDarstellung()
     expect(JSON.parse(window.localStorage.getItem('chronik.darstellung')).palette).toBe('schiefer')
 
     const logoutItem = menuItem('Abmelden')

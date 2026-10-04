@@ -156,8 +156,7 @@
 .animal-circle-note {
   margin-top: -2px;
   color: var(--muted);
-  font-size: 0.72rem;
-  white-space: nowrap;
+  font-size: var(--text-xs);
   font-weight: 600;
   line-height: 1.1;
 }

@@ -9,9 +9,10 @@ import { yearsAgoLabel } from '../../lib/seasons.js'
 
 // Lädt die Erinnerungen vom heutigen Tag früherer Jahre (GET /api/timeline/jahrestag) - [] ohne welche oder bei einem
 // Fehler: die Karte ist ein schöner Zusatz, kein Grund für eine Fehlermeldung.
-function useOnThisDay(today) {
+function useOnThisDay(today, enabled) {
   const [entries, setEntries] = useState([])
   useEffect(() => {
+    if (!enabled) return undefined
     let cancelled = false
     Promise.resolve()
       .then(() => api.onThisDay(today))
@@ -24,16 +25,16 @@ function useOnThisDay(today) {
     return () => {
       cancelled = true
     }
-  }, [today])
-  return entries
+  }, [today, enabled])
+  return enabled ? entries : []
 }
 
 // „Heute vor einem Jahr“ auf Start (B+ Familienalbum): die schönste Erinnerung vom selben Tag eines früheren Jahres (mit
 // Foto zuerst, der Server sortiert) als Polaroid mit Titel in Handschrift und „Wieder ansehen“. Ohne solche Erinnerung
-// steht hier nichts.
-export default function OnThisDayCard({ today = todayIso() }) {
+// steht hier nichts. enabled false (zu Besuch - die Karte gehört ins eigene Zuhause): keine Anfrage.
+export default function OnThisDayCard({ today = todayIso(), enabled = true }) {
   const { pathname, search } = useLocation()
-  const [entry] = useOnThisDay(today)
+  const [entry] = useOnThisDay(today, enabled)
   const label = entry ? yearsAgoLabel(entry.datum, today) : null
   if (!entry || !label) return null
   const photo = entry.foto_urls?.[0] || entry.dog_foto_url

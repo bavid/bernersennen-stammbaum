@@ -16,6 +16,7 @@ import AccountMenu from './components/AccountMenu.jsx'
 import AccountSheet, { MenuSlotButton } from './components/AccountSheet.jsx'
 import SearchButton from './components/search/SearchButton.jsx'
 import { clearRecent } from './lib/search.js'
+import { clearFamilyAuswahl } from './lib/bilderrahmen.js'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
 import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
@@ -406,6 +407,8 @@ export default function App() {
   async function handleLogout() {
     // Suche: der Verlauf dieses Geräts bleibt nicht über das Abmelden hinaus stehen (lib/search.js clearRecent).
     clearRecent(family)
+    // Bilderrahmen: die je Familie gemerkte Auswahl (Tier-Ids) bleibt nicht über das Abmelden hinaus stehen.
+    clearFamilyAuswahl()
     try {
       await api.logout()
     } finally {

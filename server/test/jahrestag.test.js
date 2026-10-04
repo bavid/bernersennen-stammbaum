@@ -1,6 +1,6 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { useTempDataDir, startApp, cleanup, call, createHousehold } = require('./helpers')
+const { useTempDataDir, startApp, cleanup, call, createFamily, createHousehold, getCookie } = require('./helpers')
 
 const dataDir = useTempDataDir('jahrestag', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 
@@ -35,6 +35,10 @@ test('Heute vor … Jahren: gleicher Tag, frühere Jahre, nur was der Bereich se
     for (const tag of ['', '04.10.2026', '2026-13-01', 'x']) {
       assert.equal((await get(`/api/timeline/jahrestag?tag=${encodeURIComponent(tag)}`, home.cookie)).status, 400, tag)
     }
+    // Review B+ (L2): ein mehrfach angegebener oder als Liste geschickter Tag ist kein Tag
+    assert.equal((await get('/api/timeline/jahrestag?tag=2026-10-04&tag=2026-10-05', home.cookie)).status, 400)
+    assert.equal((await get('/api/timeline/jahrestag?tag[]=2026-10-04', home.cookie)).status, 400)
+    assert.equal((await get('/api/timeline/jahrestag', home.cookie)).status, 400)
   })
 
   await t.test('eigenes Zuhause: gleicher Tag in früheren Jahren (auch eigene private), geteilte nicht-private, neueste zuerst', async () => {
@@ -73,5 +77,45 @@ test('Heute vor … Jahren: gleicher Tag, frühere Jahre, nur was der Bereich se
     const res = await get('/api/timeline/jahrestag?tag=2026-03-01', home.cookie)
     assert.equal(res.status, 200)
     assert.deepEqual(res.data, [])
+  })
+
+  // Review B+ (L2): Grüße je Bereich gezählt, Besuch gesperrt, klassische Familie und Demo lesen.
+  await t.test('Grüße zählen je Bereich wie in /recent: der Eigentümer alle, andere ihre eigenen und die des Eigentümers', async () => {
+    const third = await createHousehold(base, 'Zuhause Heidekamp')
+    db.prepare('INSERT INTO dog_shares (dog_id, family_id) VALUES (?, ?)').run(benno.id, third.data.id)
+    const strand = (await get('/api/timeline/jahrestag?tag=2026-06-01', other.cookie)).data.find((item) => item.titel === 'Benno am Strand')
+    const greet = (cookie, text) => post(`/api/timeline/${strand.id}/comments`, { autorName: 'Test', text }, cookie)
+    assert.equal((await greet(other.cookie, 'vom Eigentümer')).status, 201)
+    assert.equal((await greet(home.cookie, 'vom Lindenhof')).status, 201)
+    assert.equal((await greet(third.cookie, 'vom Heidekamp')).status, 201)
+    const countIn = async (cookie) =>
+      (await get('/api/timeline/jahrestag?tag=2026-06-01', cookie)).data.find((item) => item.id === strand.id).comment_count
+    assert.equal(await countIn(other.cookie), 3)
+    assert.equal(await countIn(home.cookie), 2)
+    assert.equal(await countIn(third.cookie), 2)
+  })
+
+  await t.test('zu Besuch (Besuchs-Sitzung) gesperrt - die Karte gehört ins eigene Zuhause', async () => {
+    const invite = await post('/api/besuche/einladungen', {}, other.cookie)
+    assert.equal((await post('/api/besuche/einloesen', { code: invite.data.code }, home.cookie)).status, 201)
+    const visit = await post('/api/view', { familyId: other.data.id }, home.cookie)
+    assert.equal(visit.data.zuBesuch, true)
+    assert.equal((await get('/api/timeline/jahrestag?tag=2026-06-01', getCookie(visit.res))).status, 403)
+  })
+
+  await t.test('klassischer Familien-Login liest seine Erinnerungen; die Demo liest auch', async () => {
+    const rudel = await createFamily(base, 'Rudel Talblick', 'talblick-passwort')
+    const luna = (await post('/api/dogs', { name: 'Luna', geschlecht: 'huendin' }, rudel.cookie)).data
+    await entry(rudel.cookie, luna.id, '2024-10-04', 'Luna an der Aare')
+    const res = await get('/api/timeline/jahrestag?tag=2026-10-04', rudel.cookie)
+    assert.equal(res.status, 200)
+    assert.deepEqual(res.data.map((item) => item.titel), ['Luna an der Aare'])
+
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(rudel.data.id)
+    const demo = await call(base, '/api/demo', { method: 'POST', body: { as: 'rudel' } })
+    assert.equal(demo.status, 200)
+    const demoRes = await get('/api/timeline/jahrestag?tag=2026-10-04', getCookie(demo.res))
+    assert.equal(demoRes.status, 200)
+    assert.deepEqual(demoRes.data.map((item) => item.titel), ['Luna an der Aare'])
   })
 })

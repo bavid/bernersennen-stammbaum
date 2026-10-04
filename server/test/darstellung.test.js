@@ -86,6 +86,10 @@ test('Darstellung: je Identität gespeichert, nur Werte aus der Liste, Demo schr
       { handschrift: true },
       { ecken: 'rund' },
       { modus: 'grau' },
+      // Review B+ (L4): nur Zeichenketten sind alte Namen - ein Objekt mit eigenem toString darf nicht durchrutschen
+      { palette: { toString: 'terrakotta' } },
+      { palette: ['wald'] },
+      { palette: ['terrakotta'] },
       { palette: 'meer', extra: 1 },
       JSON.parse('{"__proto__": {"palette": "wald"}}'),
       {},

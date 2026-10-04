@@ -36,6 +36,18 @@ export const FADE_MS = 1200
 // localStorage-Schlüssel (lib/storage.js, mit try/catch): Anzeige und Auswahl der Diashow, Abweichungen auf dem Gerät.
 export const SESSION_OPTIONEN_KEY = 'bilderrahmen.optionen'
 export const SESSION_AUSWAHL_KEY = 'bilderrahmen.auswahl'
+// Die Auswahl je Familie (pages/BilderrahmenPage.jsx areaKey): `${SESSION_AUSWAHL_KEY}.<Id>`.
+const FAMILY_AUSWAHL_PREFIX = `chronik.${SESSION_AUSWAHL_KEY}.`
+
+// Beim Abmelden: die gemerkte Auswahl der Familien gehört zu dieser Sitzung, nicht zum Gerät (Tier-Ids einer Familie).
+export function clearFamilyAuswahl(storage = window.localStorage) {
+  try {
+    const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index))
+    for (const key of keys) if (key?.startsWith(FAMILY_AUSWAHL_PREFIX)) storage.removeItem(key)
+  } catch {
+    // ohne Speicher gibt es nichts zu entfernen
+  }
+}
 export const DEVICE_OPTIONEN_KEY = 'rahmen.optionen'
 
 const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']

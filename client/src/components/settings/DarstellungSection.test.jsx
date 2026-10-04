@@ -75,7 +75,7 @@ describe('Mini-Designer (Einstellungen → Darstellung)', () => {
     expect(container.querySelector('.designer-preview').getAttribute('aria-hidden')).toBe('true')
     expect(container.querySelectorAll('.designer-accent-swatch')).toHaveLength(6)
     expect(radio('akzent', '').checked).toBe(true)
-    expect(resetButton().disabled).toBe(true)
+    expect(resetButton().getAttribute('aria-disabled')).toBe('true')
   })
 
   test('Schrift, Handschrift, Ecken und Weiß: je eine Änderung, sofort angewandt und gespeichert', async () => {
@@ -108,12 +108,16 @@ describe('Mini-Designer (Einstellungen → Darstellung)', () => {
     expect(container.querySelector('.designer-adjusted').textContent).toMatch(/^Angepasst für gute Lesbarkeit/)
   })
 
-  test('das Farbfeld: sofort sichtbar, gespeichert erst, wenn es ruht - einmal, mit der letzten Farbe', async () => {
+  test('das Farbfeld: höchstens einmal je Bild gezeigt, gespeichert erst, wenn es ruht - einmal, mit der letzten Farbe', async () => {
     vi.useFakeTimers()
     await render()
     act(() => setColor('#336699'))
     act(() => setColor('#2f5f8f'))
+    // Noch im selben Bild: gesammelt, nicht zweimal an <html>
+    expect(latest.darstellung.akzent).toBe('')
+    await act(async () => vi.advanceTimersByTime(20))
     expect(latest.darstellung.akzent).toBe('#2f5f8f')
+    expect(container.querySelector('.designer-accent-custom').textContent).toContain('aktuell #2f5f8f')
     expect(api.setDarstellung).not.toHaveBeenCalled()
     await act(async () => vi.advanceTimersByTime(LIVE_SAVE_DELAY_MS))
     await flush()
@@ -130,13 +134,69 @@ describe('Mini-Designer (Einstellungen → Darstellung)', () => {
     expect(api.setDarstellung).toHaveBeenCalledWith({ akzent: '#7a3b6e' })
   })
 
-  test('Zurücksetzen: alles auf das Familienalbum, in einer Änderung', async () => {
+  test('Zurücksetzen: alles auf das Familienalbum, in einer Änderung - der Fokus bleibt auf dem Knopf', async () => {
     await render({ ...me, darstellung: { ...STANDARD, palette: 'meer', akzent: '#3f6e8c', ecken: 'eckig', schrift: 'gross' } })
-    expect(resetButton().disabled).toBe(false)
+    expect(resetButton().getAttribute('aria-disabled')).toBe('false')
+    resetButton().focus()
     await act(async () => resetButton().click())
     expect(latest.darstellung).toEqual(STANDARD)
     expect(api.setDarstellung).toHaveBeenLastCalledWith(STANDARD)
-    expect(resetButton().disabled).toBe(true)
+    expect(resetButton().getAttribute('aria-disabled')).toBe('true')
+    expect(document.activeElement).toBe(resetButton())
+    // Noch einmal: nichts mehr zu tun
+    await act(async () => resetButton().click())
+    expect(api.setDarstellung).toHaveBeenCalledTimes(1)
+  })
+
+  // Review B+: Fehler, Reihenfolge, Ansage, Demo beim Verlassen.
+  test('scheitert das Speichern: zurück auf den zuletzt bestätigten Wert, mit Hinweis; sonst „Gespeichert.“ für Screenreader', async () => {
+    await render()
+    await act(async () => radio('ecken', 'eckig').click())
+    await flush()
+    expect(container.querySelector('[aria-live="polite"]').textContent).toBe('Gespeichert.')
+
+    api.setDarstellung.mockRejectedValueOnce(new Error('Server nicht erreichbar'))
+    await act(async () => radio('schriftart', 'modern').click())
+    await flush()
+    expect(latest.darstellung.schriftart).toBe('klassisch')
+    expect(latest.darstellung.ecken).toBe('eckig')
+    expect(toast).toHaveBeenCalledWith('Server nicht erreichbar')
+    expect(container.querySelector('[aria-live="polite"]').textContent).toBe('')
+  })
+
+  test('der Reihe nach: eine langsame erste Änderung kommt vor der zweiten beim Server an', async () => {
+    const order = []
+    let release
+    api.setDarstellung.mockImplementationOnce(
+      (patch) =>
+        new Promise((resolve) => {
+          release = () => {
+            order.push(patch)
+            resolve({})
+          }
+        })
+    )
+    api.setDarstellung.mockImplementation(async (patch) => {
+      order.push(patch)
+      return {}
+    })
+    await render()
+    await act(async () => radio('palette', 'wald').click())
+    await act(async () => radio('palette', 'meer').click())
+    expect(order).toEqual([])
+    await act(async () => release())
+    await flush()
+    expect(order).toEqual([{ palette: 'wald' }, { palette: 'meer' }])
+  })
+
+  test('Demo: eine noch ruhende Farbe beim Verlassen der Seite geht nicht an den Server', async () => {
+    vi.useFakeTimers()
+    await render({ ...me, isDemo: true })
+    act(() => setColor('#7a3b6e'))
+    act(() => root.unmount())
+    root = null
+    await flush()
+    expect(api.setDarstellung).not.toHaveBeenCalled()
   })
 
   test('Demo: alles wirkt, nichts wird gespeichert', async () => {

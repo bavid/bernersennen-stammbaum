@@ -55,13 +55,26 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `)
-// Mini-Designer (B+ Familienalbum): neue Spalten an bestehende Tabellen anhängen.
-const existingColumns = new Set(db.prepare('PRAGMA table_info(home_darstellung)').all().map((column) => column.name))
-for (const column of ['akzent', 'schriftart', 'handschrift', 'ecken']) {
-  if (!existingColumns.has(column)) {
-    db.exec(`ALTER TABLE home_darstellung ADD COLUMN ${column} TEXT NOT NULL DEFAULT '${STANDARD[column]}'`)
+// Mini-Designer (B+ Familienalbum): neue Spalten an bestehende Tabellen anhängen. Name und Vorgabe stammen nur aus den
+// Konstanten oben (zur Sicherheit noch einmal geprüft); in einer Transaktion und mit erneutem Blick auf die Spalten - und
+// legt ein zweiter Prozess die Spalte gleichzeitig an, ist „duplicate column“ kein Fehler.
+const NEW_COLUMNS = ['akzent', 'schriftart', 'handschrift', 'ecken']
+const SAFE_IDENTIFIER = /^[a-z]+$/
+const SAFE_DEFAULT = /^[a-z#0-9]*$/
+
+const addMissingColumns = db.transaction(() => {
+  const existing = new Set(db.prepare('PRAGMA table_info(home_darstellung)').all().map((column) => column.name))
+  for (const column of NEW_COLUMNS) {
+    if (existing.has(column)) continue
+    if (!SAFE_IDENTIFIER.test(column) || !SAFE_DEFAULT.test(STANDARD[column])) throw new Error(`Ungültige Spalte ${column}`)
+    try {
+      db.exec(`ALTER TABLE home_darstellung ADD COLUMN ${column} TEXT NOT NULL DEFAULT '${STANDARD[column]}'`)
+    } catch (err) {
+      if (!/duplicate column/i.test(err.message)) throw err
+    }
   }
-}
+})
+addMissingColumns.immediate()
 
 const findStmt = db.prepare(`SELECT ${KEYS.join(', ')} FROM home_darstellung WHERE family_id = ?`)
 const upsertStmt = db.prepare(`
@@ -76,10 +89,12 @@ function httpError(status, message) {
   return err
 }
 
-// Alte Namen auf die neuen, Farben klein - vor der Prüfung.
+// Alte Namen auf die neuen, Farben klein - vor der Prüfung. Nur Zeichenketten: ein Objekt (z. B. mit eigenem toString)
+// würde als Schlüssel umgewandelt und rutschte sonst durch oder würfe.
 function canonical(key, value) {
+  if (typeof value !== 'string') return value
   if (key === 'palette' && Object.hasOwn(LEGACY_PALETTEN, value)) return LEGACY_PALETTEN[value]
-  if (key === 'akzent' && typeof value === 'string') return value.toLowerCase()
+  if (key === 'akzent') return value.toLowerCase()
   return value
 }
 

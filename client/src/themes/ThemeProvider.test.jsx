@@ -8,18 +8,20 @@ import { THEME } from './index.js'
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 let container
+let root
 
 afterEach(() => {
-  if (container) {
-    act(() => container.remove())
-    container = null
-  }
+  if (root) act(() => root.unmount())
+  root = null
+  container?.remove()
+  container = null
 })
 
 async function render(ui) {
   container = document.createElement('div')
   document.body.appendChild(container)
-  await act(async () => createRoot(container).render(ui))
+  root = createRoot(container)
+  await act(async () => root.render(ui))
 }
 
 let captured = null
@@ -37,8 +39,9 @@ test('useTheme gives the one theme and its words, with and without the provider'
   )
   expect(captured.theme).toBe(THEME)
   expect(container.querySelector('span').textContent).toBe('same')
-  act(() => container.remove())
-  container = null
+  act(() => root.unmount())
+  container.remove()
+  root = null
 
   await render(<Reader />)
   expect(captured.theme).toBe(THEME)

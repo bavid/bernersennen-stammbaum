@@ -295,6 +295,24 @@ describe('StartPage – Look B+ Familienalbum', () => {
     expect(card.querySelector('a').getAttribute('href')).toBe('/tier/10#entry-3')
   })
 
+  test('Heute vor einem Jahr: zu Besuch keine Anfrage; verlässt man Start, bevor die Antwort da ist, passiert nichts', async () => {
+    await render({ ...atHome, zuBesuch: true })
+    expect(api.onThisDay).not.toHaveBeenCalled()
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    let answer
+    api.onThisDay.mockReturnValue(new Promise((resolve) => (answer = resolve)))
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await render()
+    act(() => root.unmount())
+    root = null
+    await act(async () => answer([entry(3, { datum: '2025-09-28' })]))
+    expect(errors).not.toHaveBeenCalled()
+    errors.mockRestore()
+  })
+
   test('Kapitel: nach dem Tag der Erinnerung sortiert, je Jahreszeit ein Kapitel - auch wenn sie anders festgehalten wurden', async () => {
     // /recent liefert nach created_at: die Sommer-Erinnerung zuletzt geschrieben, dazwischen eine aus dem Herbst
     api.recentActivity.mockResolvedValue([

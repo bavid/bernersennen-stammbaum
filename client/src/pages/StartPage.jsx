@@ -76,7 +76,7 @@ export default function StartPage({ family, onFamilyChange }) {
         <div className="start-main">
           {canWrite && dogs && <StartComposer family={family} dogs={dogs} onCreated={addEntry} />}
           <ForYou family={family} onFamilyChange={onFamilyChange} onOpenPhoto={setPhoto} />
-          <OnThisDayCard />
+          <OnThisDayCard enabled={!family.zuBesuch} />
           <StartSoon termin={termin} anniversary={anniversary} notesCount={atHome ? notes.length : 0} />
           <StartNews entries={entries} loading={entries === null && !error} />
         </div>

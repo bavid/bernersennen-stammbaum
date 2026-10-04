@@ -37,6 +37,10 @@
   root.setAttribute('data-scheme', dark ? 'dunkel' : 'hell')
 
   var hex = /^#[0-9a-f]{6}$/
+  // Farbe der Browser-Leiste: das gemerkte Papier des Modus (lib/darstellung.js papierOf) - nur als #rrggbb.
+  var papier = saved.papier && saved.papier[dark ? 'dunkel' : 'hell']
+  var meta = document.querySelector('meta[name="theme-color"]')
+  if (meta && hex.test(papier)) meta.setAttribute('content', papier)
   var farben = saved.farben
   var parts = ['farbe', 'tief', 'auf']
   var suffix = { farbe: '', tief: '-tief', auf: '-auf' }

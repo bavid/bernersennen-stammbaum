@@ -118,7 +118,9 @@ function PinboardRoute({ family, onFamilyChange }) {
 // B+ Familienalbum) - das Gate wechselt dorthin, der Server zeigt genau, was der Bereich sieht.
 function BilderrahmenRoute({ family, onFamilyChange }) {
   const [searchParams] = useSearchParams()
-  const inArea = parseAreaId(searchParams.get('in'))
+  const requested = parseAreaId(searchParams.get('in'))
+  // ?in=<das eigene Zuhause> ist kein Wechsel - wie ohne Angabe (gemerkte Auswahl des Zuhauses, private auf Wunsch).
+  const inArea = requested === (family.home?.id ?? family.id) ? null : requested
   return (
     <AreaGate family={family} need={inArea || 'home'} onFamilyChange={onFamilyChange}>
       <BilderrahmenPage areaKey={inArea} />
