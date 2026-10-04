@@ -36,7 +36,7 @@ const family = {
   home: { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' },
   memberships: [
     { id: 3, name: 'Familie Klein', theme: 'standard', rolle: 'mitglied' },
-    { id: 5, name: 'Rudel Nachbarn', theme: 'berner', rolle: 'leitung' }
+    { id: 5, name: 'Rudel Nachbarn', rolle: 'leitung' }
   ]
 }
 
@@ -139,25 +139,6 @@ describe('ContextSwitcher', () => {
     await render({ family: { ...family, id: 1, name: 'Zuhause am Deich', art: 'zuhause', role: 'leitung', memberships: [] } })
     act(() => trigger().click())
     expect(groups()).toEqual([['Mein Zuhause', ['Mein ZuhauseZuhause am Deich']]])
-  })
-
-  test('im Berner-Auftritt heißt die Gruppe „Rudel" und die Leitung „Rudelführer"', async () => {
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
-    await act(async () =>
-      root.render(
-        <MemoryRouter>
-          <ThemeProvider themeId="berner">
-            <ContextSwitcher family={family} onChange={() => {}} />
-          </ThemeProvider>
-        </MemoryRouter>
-      )
-    )
-    act(() => trigger().click())
-    expect(groups()[1][0]).toBe('Rudel')
-    expect(items()[2].querySelector('.context-switcher-item-sub').textContent).toBe('Rudelführer')
-    expect(items()[3].textContent).toBe('Rudel beitreten oder gründen …')
   })
 
   test('Ist der Haushalt selbst der aktive Bereich, zeigen Knopf und Menüpunkt "Mein Zuhause" statt des gespeicherten Namens', async () => {

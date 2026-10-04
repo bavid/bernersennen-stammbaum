@@ -19,10 +19,7 @@ export { hasCaptions }
 // Zeichnet eine Collage-Seite auf ein Canvas – exakt die Geometrie der Vorschau.
 export const EXPORT_SCALE = 2 // 2480 × 3508 px ≈ A4 bei 300 dpi
 
-// Fest, unabhängig vom Hintergrund: der Berner-Dreifarb-Streifen
-const TRICOLOR = { ink: '#1c1511', snow: '#fffaf2', rust: '#a4431d' }
 const TITLE_SIZE = 96
-const TRICOLOR_HEIGHT = 16
 const RULE_HEIGHT = 3
 const PHOTO_RADIUS = 14
 
@@ -46,15 +43,6 @@ function loadImage(url) {
   return imageCache.get(url)
 }
 
-function drawTricolor(ctx, y) {
-  const stripe = PAGE.width / 3
-  ;[TRICOLOR.ink, TRICOLOR.snow, TRICOLOR.rust].forEach((color, i) => {
-    ctx.fillStyle = color
-    ctx.fillRect(i * stripe, y, stripe + 1, TRICOLOR_HEIGHT)
-  })
-}
-
-// Standard-Auftritt ohne Dreifarb-Streifen: ein schlichter Strich in der Akzentfarbe des Hintergrunds (.cpage-rule)
 function drawRule(ctx, y, bg) {
   ctx.fillStyle = bg.accent
   ctx.fillRect(0, y, PAGE.width, RULE_HEIGHT)
@@ -129,9 +117,8 @@ function drawFooter(ctx, page, theme, bg) {
   ctx.textAlign = 'left'
 }
 
-function drawEdge(ctx, theme, bg, edge) {
-  if (theme.tricolor) drawTricolor(ctx, edge === 'top' ? 0 : PAGE.height - TRICOLOR_HEIGHT)
-  else drawRule(ctx, edge === 'top' ? 0 : PAGE.height - RULE_HEIGHT, bg)
+function drawEdge(ctx, bg, edge) {
+  drawRule(ctx, edge === 'top' ? 0 : PAGE.height - RULE_HEIGHT, bg)
 }
 
 function drawFrames(ctx, page, geometry, images, bg, scale) {
@@ -166,11 +153,11 @@ export async function renderPage(page, theme = getTheme('standard'), scale = EXP
   ctx.scale(scale, scale)
 
   drawBackground(ctx, bg, tile)
-  drawEdge(ctx, theme, bg, 'top')
+  drawEdge(ctx, bg, 'top')
   drawHeader(ctx, page, bg)
   drawFrames(ctx, page, pageGeometry(page), images, bg, scale)
   drawFooter(ctx, page, theme, bg)
-  drawEdge(ctx, theme, bg, 'bottom')
+  drawEdge(ctx, bg, 'bottom')
   drawStickers(ctx, stickers, stickerImages)
   return canvas
 }

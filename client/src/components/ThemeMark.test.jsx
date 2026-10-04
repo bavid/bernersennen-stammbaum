@@ -35,16 +35,6 @@ test('renders the paw mark inside the standard theme', async () => {
   expect(svg.getAttribute('data-mark')).toBe('paw')
 })
 
-test('renders the berner mark inside the berner theme', async () => {
-  await render(
-    <ThemeProvider themeId="berner">
-      <ThemeMark />
-    </ThemeProvider>
-  )
-  const svg = container.querySelector('svg')
-  expect(svg.getAttribute('data-mark')).toBe('berner')
-})
-
 test('renders the paw mark outside any provider', async () => {
   await render(<ThemeMark />)
   const svg = container.querySelector('svg')

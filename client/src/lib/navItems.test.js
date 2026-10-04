@@ -22,9 +22,9 @@ describe('navItemsFor', () => {
     expect(navItemsFor({ art: 'rudel' }).find((item) => item.label === 'Pinnwand').to).toBe('/pinnwand')
   })
 
-  test('Berner-Auftritt: dieselben Ziele mit den Wörtern des Auftritts (Hunde, Rudel)', () => {
-    expect(labels({ ...household, theme: 'berner' })).toEqual(['Start', 'Hunde', 'Rudel', 'Entdecken'])
-    expect(labels({ art: 'rudel', theme: 'berner' })).toEqual(['Start', 'Hunde', 'Pinnwand', 'Entdecken'])
+  test('ein alter Berner-Wert in family.theme ändert die Wörter nicht mehr (B+ Familienalbum)', () => {
+    expect(labels({ ...household, theme: 'berner' })).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken'])
+    expect(labels({ art: 'rudel', theme: 'berner' })).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])
   })
 
   test('offene „Mit dabei“-Anfragen und neue Gäste: Badge an „Start“ - in jedem Kontext', () => {
@@ -58,27 +58,18 @@ describe('navItemsFor', () => {
 
   test('a shelter keeps Tiere, Pinnwand, Collage, adds Profil and Nachrichten - Beiträge live in the Profil tab', () => {
     expect(labels({ art: 'tierheim' })).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
-    expect(labels({ art: 'tierheim', theme: 'berner' })).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
     expect(navItemsFor({ art: 'tierheim' }).find((item) => item.label === 'Profil').to).toBe('/profil')
     expect(navItemsFor({ art: 'tierheim' }).find((item) => item.label === 'Nachrichten').to).toBe('/nachrichten')
   })
 
-  test('an explicit theme (the one on screen, e.g. a preview) wins over the stored one', () => {
-    const rudel = { art: 'rudel', theme: 'standard' }
-    expect(navItemsFor(rudel, getTheme('berner')).map((item) => item.label)).toEqual(['Start', 'Hunde', 'Pinnwand', 'Entdecken'])
-    expect(navItemsFor({ ...rudel, theme: 'berner' }, getTheme('standard')).map((item) => item.label)).toEqual([
-      'Start',
-      'Tiere',
-      'Pinnwand',
-      'Entdecken'
-    ])
+  test('the words come from the theme; no labelKey is left in the items', () => {
+    const rudel = { art: 'rudel' }
+    expect(navItemsFor(rudel, getTheme()).map((item) => item.label)).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])
     expect(navItemsFor(rudel).every((item) => !('labelKey' in item))).toBe(true)
   })
 
   test.each(['zuhause', 'rudel', 'tierheim', 'partner'])('%s never exceeds the mobile bottom bar (at most 5 items)', (art) => {
-    for (const theme of ['standard', 'berner']) {
-      expect(navItemsFor({ art, theme }).length).toBeLessThanOrEqual(MAX_NAV_ITEMS)
-    }
+    expect(navItemsFor({ art }).length).toBeLessThanOrEqual(MAX_NAV_ITEMS)
     expect(MAX_NAV_ITEMS).toBe(5)
   })
 

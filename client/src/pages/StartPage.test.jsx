@@ -149,12 +149,6 @@ describe('StartPage (Phase W)', () => {
     expect(container.querySelector('.feed-card a').getAttribute('href')).toBe('/tier/10#entry-99')
   })
 
-  test('Berner: "Was erlebt euer Hund?"', async () => {
-    api.listDogs.mockResolvedValue([dog(10, 'Nele')])
-    await render(atHome, 'berner')
-    expect(container.querySelector('.start-composer h2').textContent).toBe('Was erlebt euer Hund?')
-  })
-
   test('Bald: Jahrestag innerhalb von 30 Tagen, Termin und der Weg zu den Notizen', async () => {
     api.listDogs.mockResolvedValue([dog(10, 'Nele', { bei_uns_seit: '2021-10-05' })])
     api.listNotes.mockResolvedValue([{ id: 1, text: 'Geschwistertreffen', termin_datum: '2026-10-12', termin_zeit: null, replies: [] }])

@@ -36,19 +36,17 @@ export default function OverviewPage({ family, onInvite }) {
   // Phase V2: zu Besuch (Rolle gast) weder einladen noch Einstellungen - nur ansehen.
   const visiting = isVisit(family)
   const canInvite = !visiting && (!inGroup || hasRole(family, 'stellvertretung'))
-  // Phase V3: Familien zuerst, Stammbaum als Zusatz (theme.familiesView) - der Berner-Auftritt zeigt den Baum direkt.
-  const familiesView = Boolean(theme.familiesView)
+  // Phase V3: Familien zuerst, Stammbaum als Zusatz.
   const [searchParams] = useSearchParams()
-  const events = useBreedingEvents(familiesView || !theme.littersInNav)
-  const friends = useFriendHomes(familiesView && isOwnHome(family))
+  const events = useBreedingEvents()
+  const friends = useFriendHomes(isOwnHome(family))
   const openArea = useOpenArea(family)
   // Familienbande 2: "Stammbaum & Nachwuchs" gibt es, sobald es einen Baum oder Geschwister zu zeigen gibt.
   const treeAvailable = useMemo(
-    () => familiesView && (hasFamilyTree({ dogs: dogs || [], allDogs, events: events || [] }) || hasSiblingLitters(dogs, events)),
-    [familiesView, dogs, allDogs, events]
+    () => hasFamilyTree({ dogs: dogs || [], allDogs, events: events || [] }) || hasSiblingLitters(dogs, events),
+    [dogs, allDogs, events]
   )
   const mode = overviewMode({
-    familiesView,
     wantsTree: searchParams.get(TREE_PARAM) === TREE_VALUE,
     treeAvailable,
     loaded: dogs !== null && events !== null
@@ -56,10 +54,9 @@ export default function OverviewPage({ family, onInvite }) {
   // Familienbande 2: unbekannte Eltern stehen nur im Stammbaum - Raster, Filter und Kennzahlen zählen sie nicht mit.
   const gridDogs = useMemo(() => familyAnimals(dogs || []), [dogs])
   const groups = useMemo(() => buildFamilyGroups({ family, dogs: gridDogs, friends: friends || [] }), [family, gridDogs, friends])
-  const showTreeToggle = familiesView && dogs?.length > 0 && (mode === 'tree' || treeAvailable)
-  // Der Stammbaum (mit dem Nachwuchs darunter) ist im Standard-Auftritt eine Ansicht für sich - die Neuigkeiten stehen
-  // bei den Familien. Im Berner-Auftritt (immer der Baum) bleiben sie darüber.
-  const showFeed = !familiesView || mode === 'families'
+  const showTreeToggle = dogs?.length > 0 && (mode === 'tree' || treeAvailable)
+  // Der Stammbaum (mit dem Nachwuchs darunter) ist eine Ansicht für sich - die Neuigkeiten stehen bei den Familien.
+  const showFeed = mode === 'families'
 
   async function loadDogs() {
     const [own, all, recent, notes, dogLinks] = await Promise.all([
@@ -83,10 +80,10 @@ export default function OverviewPage({ family, onInvite }) {
 
   return (
     <div className="page">
-      <header className={familiesView ? 'page-hero families-hero' : 'page-hero'}>
+      <header className="page-hero families-hero">
         <div>
           <span className="eyebrow">{words.treeLabel}</span>
-          {/* Phase W, Schritt 2: kein Stift mehr - Name und Aussehen stehen in den Einstellungen bzw. im Profil. */}
+          {/* Phase W, Schritt 2: kein Stift mehr - der Name steht in den Einstellungen bzw. im Profil. */}
           <h1>{family.name}</h1>
           <p className="page-lede">{canWrite ? theme.texts.overviewLede : theme.texts.overviewLedeReadOnly}</p>
           {inGroup && (
@@ -97,12 +94,7 @@ export default function OverviewPage({ family, onInvite }) {
         </div>
         <div className="page-hero-side">
           {dogs && dogs.length > 0 && (
-            <OverviewStats
-              dogs={familiesView ? gridDogs : dogs}
-              allDogs={allDogs}
-              links={links}
-              familyStat={familiesView ? familyStat(family, groups) : undefined}
-            />
+            <OverviewStats dogs={gridDogs} familyStat={familyStat(family, groups)} />
           )}
           {(canWrite || canInvite || showTreeToggle) && (
             <div className="hero-actions">
@@ -151,9 +143,9 @@ export default function OverviewPage({ family, onInvite }) {
         <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={canWrite ? openAnimalForm : undefined} />
       )}
 
-      {/* Phase U: ohne eigenen Reiter (Standard-Auftritt) steht der Nachwuchs beim Stammbaum - nur, wenn es welchen
-          gibt (Familienbande 2: nicht mehr unter den Familien). */}
-      {dogs && dogs.length > 0 && mode === 'tree' && !theme.littersInNav && (
+      {/* Phase U: der Nachwuchs steht beim Stammbaum - nur, wenn es welchen gibt (Familienbande 2: nicht mehr unter den
+          Familien). */}
+      {dogs && dogs.length > 0 && mode === 'tree' && (
         <OffspringSection dogs={dogs} events={events} canWrite={canWrite} />
       )}
 

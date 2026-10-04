@@ -244,24 +244,7 @@
   user-select: none;
 }
 
-.cpage-tricolor {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 0.92%;
-  /* dieselben Farben wie der Export (render.js TRICOLOR) */
-  background: linear-gradient(90deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #a4431d 66.6%);
-}
-
-.cpage-tricolor-top {
-  top: 0;
-}
-
-.cpage-tricolor-bottom {
-  bottom: 0;
-}
-
-/* Standard-Auftritt ohne Dreifarb-Streifen: ein schlichter Strich an derselben Stelle, in der Akzentfarbe des
+/* Rand oben und unten: ein schlichter Strich an derselben Stelle, in der Akzentfarbe des
    Hintergrunds (--cpage-accent, Standard '#a4431d') - unabhängig vom Farbschema der App, denn der Canvas-Export
    in lib/collage/render.js zeichnet denselben Wert: Vorschau und Export müssen übereinstimmen. */
 .cpage-rule {

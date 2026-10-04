@@ -154,13 +154,6 @@ describe('AnimalsPage (Phase W)', () => {
     expect(selected()).toBe('Alle')
   })
 
-  test('Berner: "Hunde" mit Stammbaum und Würfen', async () => {
-    api.listDogs.mockResolvedValue([dog(10, 'Nele')])
-    await render({ themeId: 'berner' })
-    expect(container.querySelector('h1').textContent).toBe('Hunde')
-    expect(tabLabels()).toEqual(['Alle', 'Zeitleiste', 'Stammbaum', 'Würfe'])
-  })
-
   test('ohne Tiere: der erste Schritt im Leerzustand, oben kein zweiter Knopf; öffnet "Neues Tier anlegen"', async () => {
     await render()
     expect(container.querySelector('.hero-actions')).toBeNull()

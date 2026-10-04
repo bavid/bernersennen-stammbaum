@@ -1,8 +1,6 @@
-import { useTheme } from '../themes/ThemeProvider.jsx'
+import PawMark from './PawMark.jsx'
 
-// Das Logo des aktuellen Auftritts (Pfote oder Berner-Wappen)
+// Das Logo: die Pfote im Medaillon (seit B+ Familienalbum ein Auftritt für alle).
 export default function ThemeMark(props) {
-  const { theme } = useTheme()
-  const Mark = theme.Mark
-  return <Mark {...props} />
+  return <PawMark {...props} />
 }

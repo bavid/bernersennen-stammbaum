@@ -2,8 +2,7 @@ import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { MAX_ZOOM, MIN_ZOOM } from '../lib/zoom.js'
 
-// Ansicht des Stammbaums: zoomen, einpassen, Vorfahren kompakt, Vollbild. Name je Auftritt (Phase U: Standard
-// "Familienbande", Berner "Stammbaum").
+// Ansicht des Stammbaums: zoomen, einpassen, Vorfahren kompakt, Vollbild. Name aus den Wörtern (Phase U: "Familienbande").
 export default function PedigreeToolbar({
   zoom,
   expanded,

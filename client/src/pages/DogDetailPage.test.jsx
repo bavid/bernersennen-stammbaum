@@ -226,7 +226,7 @@ describe('DogDetailPage – Kopf und Infos für geteilte Tiere', () => {
   })
 })
 
-// Phase U: im Standard-Auftritt "Familienbande" und "Verpaarung", im Berner-Auftritt weiter "Stammbaum" und "Deckakt".
+// Phase U: "Familienbande" und "Verpaarung" statt "Stammbaum" und "Deckakt".
 describe('DogDetailPage – Wörter je Auftritt', () => {
   const breeding = [{ id: 1, mutter_dog_id: 10, mutter_name: 'Nele', vater_dog_id: null, vater_freitext: 'Balu', datum: '2022-01-10', foto_urls: [] }]
 
@@ -259,12 +259,6 @@ describe('DogDetailPage – Wörter je Auftritt', () => {
     expect(container.textContent).not.toMatch(/Stammbaum|Deckakt/)
   })
 
-  test('Berner: Zurück-Link "Hunde" (Phase W), Meilenstein "Deckakt mit Balu"', async () => {
-    await renderThemed('berner')
-
-    expect(container.querySelector('.back-link').textContent.trim()).toBe('Hunde')
-    expect(container.textContent).toContain('Deckakt mit Balu')
-  })
 })
 
 // Familienbande 2: die Beziehungs-Chips sind aus der Familienbande verschwunden - Eltern, Geschwister und Nachwuchs stehen
@@ -312,17 +306,17 @@ describe('DogDetailPage – Familie und Verpaarung (Familienbande 2)', () => {
     expect([...siblings.querySelectorAll('a')].map((a) => [a.lastChild.textContent, a.getAttribute('href')])).toEqual([['Kira', '/tier/14']])
   })
 
-  test('ohne Geschwister keine leere Zeile; der Berner-Auftritt nennt den Reiter "Stammbaum" und sagt "Deckakt eintragen"', async () => {
+  test('ohne Geschwister keine leere Zeile; der Reiter heißt "Verwandte", der Weg "Verpaarung eintragen"', async () => {
     await renderDog(ownDog({ siblings: [] }))
     expect(fact('Geschwister')).toBeUndefined()
 
     act(() => root.unmount())
     root = null
     container.remove()
-    await renderDog(ownDog(), { themeId: 'berner' })
-    expect([...container.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual(['Chronik', 'Infos', 'Stammbaum'])
+    await renderDog(ownDog())
+    expect([...container.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual(['Chronik', 'Infos', 'Verwandte'])
     expect(fact('Geschwister')).not.toBeUndefined()
-    expect(matingLink().textContent).toContain('Deckakt eintragen')
+    expect(matingLink().textContent).toContain('Verpaarung eintragen')
   })
 
   test('"Im Stammbaum ansehen" führt zum Stammbaum der Familie - nur, wenn es Verwandte gibt', async () => {

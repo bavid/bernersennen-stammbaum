@@ -149,21 +149,6 @@ describe('LittersPage: Verpaarung direkt eintragen', () => {
   })
 })
 
-describe('LittersPage im Berner-Auftritt: unverändert', () => {
-  test('"Würfe", "Wurf vom …", "Deckakt" und "Zuchtbuch" - ohne Zurück-Link (eigener Reiter)', async () => {
-    await render('berner')
-
-    expect(container.querySelector('.eyebrow').textContent).toBe('Würfe')
-    expect(container.querySelector('.litter-title').textContent).toBe('Wurf vom 18. April 2021')
-    expect(container.querySelector('.litter-breeding').textContent).toContain('Deckakt am 14. Februar 2021')
-    expect(container.querySelector('.planned-litter').textContent).toMatch(/Deckakt .* · Welpen in etwa \d+ Tagen/)
-    expect(container.querySelector('#breeding-records-title').textContent).toBe('Zuchtbuch')
-    expect(button('Deckakt eintragen')).toBeDefined()
-    expect(container.querySelector('.page-lede').textContent).toContain('Entsteht automatisch aus dem Stammbaum')
-    expect(container.querySelector('.back-link')).toBeNull()
-  })
-})
-
 // Lange-Seiten-Durchgang: fünf Wurf-Karten mit Fotoreihen füllten am Handy fast acht Bildschirme - zuerst die neuesten.
 describe('LittersPage: ältere Würfe hinter "Mehr anzeigen"', () => {
   // Geburtstage gut ein halbes Jahr entfernt - so kündigt keine Karte einen baldigen Geburtstag an.

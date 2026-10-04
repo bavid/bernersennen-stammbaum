@@ -24,10 +24,9 @@ describe('legacyTarget', () => {
     ['tree', inGroup, '?ansicht=stammbaum&gruppe=3', '', '/familien/5?reiter=tiere&ansicht=stammbaum&gruppe=3'],
     ['tree', visiting, '?gruppe=eigen', '', '/familien/9?reiter=tiere&gruppe=eigen'],
     ['tree', inGroup, '?reiter=pinnwand', '', '/familien/5?reiter=tiere'],
-    // Berner: die alte Seite war immer der Stammbaum (code-review W1, M2)
-    ['tree', { ...atHome, theme: 'berner' }, '', '', '/tiere?ansicht=stammbaum'],
-    ['tree', { ...inGroup, theme: 'berner' }, '?gruppe=3', '', '/familien/5?reiter=tiere&ansicht=stammbaum&gruppe=3'],
-    ['tree', { ...classic, theme: 'berner' }, '?ansicht=zeitleiste', '', '/tiere?ansicht=zeitleiste'],
+    // B+ Familienalbum: ein alter Berner-Wert in family.theme ändert nichts mehr - auch dort zuerst "Alle".
+    ['tree', { ...atHome, theme: 'berner' }, '', '', '/tiere'],
+    ['tree', { ...inGroup, theme: 'berner' }, '?gruppe=3', '', '/familien/5?reiter=tiere&gruppe=3'],
     ['pinnwand', inGroup, '', '', '/familien/5?reiter=pinnwand'],
     ['pinnwand', inGroup, '?x=1', '#note-3', '/familien/5?reiter=pinnwand&x=1#note-3'],
     ['mitglieder', inGroup, '', '', '/familien/5?reiter=mitglieder'],

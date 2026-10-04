@@ -90,8 +90,8 @@ function litterItems(children = []) {
   }))
 }
 
-// matingLabel: "Deckakt" (Berner) bzw. "Verpaarung" (Standard, Theme-Wort mating - Phase U).
-function breedingItems(dog, breedingEvents = [], matingLabel = 'Deckakt') {
+// matingLabel: "Verpaarung" (Theme-Wort mating - Phase U).
+function breedingItems(dog, breedingEvents = [], matingLabel = 'Verpaarung') {
   return breedingEvents
     .filter((event) => event.mutter_dog_id === dog.id || event.vater_dog_id === dog.id)
     .map((event) => {

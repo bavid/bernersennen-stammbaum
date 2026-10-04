@@ -2,7 +2,6 @@
 // (components/LegacyRedirect.jsx). Query und Hash bleiben erhalten (z. B. ?ansicht=stammbaum, ?gruppe=…, #entry-3), nur
 // der Reiter des neuen Orts kommt dazu bzw. ersetzt einen alten. Die Tabelle steht in legacyRoutes.test.js.
 import { FAMILIES_ROUTE, areaContext } from './areas.js'
-import { getTheme } from '../themes/index.js'
 
 const ANIMALS_ROUTE = '/tiere'
 const ANIMALS_VIEW_PARAM = 'ansicht'
@@ -27,14 +26,10 @@ const TARGETS = {
       ? withParams(`${FAMILIES_ROUTE}/${family.id}`, search, { [GROUP_TAB_PARAM]: 'zeitleiste' }, hash)
       : withParams(ANIMALS_ROUTE, search, { [ANIMALS_VIEW_PARAM]: 'zeitleiste' }, hash),
   // Stammbaum/Familienbande -> Tiere (Zuhause, klassisch) bzw. Reiter "Tiere" der Gruppenseite; ?ansicht/?gruppe bleiben.
-  // Im Berner-Auftritt war die alte Seite immer der Stammbaum (theme.familiesView false) - dorthin führt sie weiter.
-  tree: (family, context, search, hash) => {
-    const treeFirst = !getTheme(family.theme).familiesView && !new URLSearchParams(search).has(ANIMALS_VIEW_PARAM)
-    const view = treeFirst ? { [ANIMALS_VIEW_PARAM]: 'stammbaum' } : {}
-    return inGroupPage(context)
-      ? withParams(`${FAMILIES_ROUTE}/${family.id}`, search, { [GROUP_TAB_PARAM]: 'tiere', ...view }, hash)
-      : withParams(ANIMALS_ROUTE, search, view, hash)
-  },
+  tree: (family, context, search, hash) =>
+    inGroupPage(context)
+      ? withParams(`${FAMILIES_ROUTE}/${family.id}`, search, { [GROUP_TAB_PARAM]: 'tiere' }, hash)
+      : withParams(ANIMALS_ROUTE, search, {}, hash),
   // Pinnwand einer Familie -> deren Reiter; die Pinnwand des Zuhauses und des klassischen Logins bleibt eine Seite.
   pinnwand: (family, context, search, hash) =>
     context === 'group' ? withParams(`${FAMILIES_ROUTE}/${family.id}`, search, { [GROUP_TAB_PARAM]: 'pinnwand' }, hash) : null,

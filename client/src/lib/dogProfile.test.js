@@ -4,17 +4,16 @@ import { dogHeadLine, dogTabs, hasRelatives, recentItems, safeFromPath, treeRout
 const TODAY = '2026-10-04'
 
 describe('dogTabs', () => {
-  test('Haushalt und Familie: Chronik · Infos · Verwandte (Berner: Stammbaum)', () => {
-    expect(dogTabs({ familiesView: true }).map((tab) => [tab.key, tab.label])).toEqual([
+  test('Haushalt und Familie: Chronik · Infos · Verwandte', () => {
+    expect(dogTabs().map((tab) => [tab.key, tab.label])).toEqual([
       ['chronik', 'Chronik'],
       ['infos', 'Infos'],
       ['verwandte', 'Verwandte']
     ])
-    expect(dogTabs({ familiesView: false }).map((tab) => tab.label)).toEqual(['Chronik', 'Infos', 'Stammbaum'])
   })
 
   test('eigene Tiere eines Tierheims: Chronik · Vermittlung · Infos', () => {
-    expect(dogTabs({ shelter: true, familiesView: true }).map((tab) => tab.key)).toEqual(['chronik', 'vermittlung', 'infos'])
+    expect(dogTabs({ shelter: true }).map((tab) => tab.key)).toEqual(['chronik', 'vermittlung', 'infos'])
   })
 })
 

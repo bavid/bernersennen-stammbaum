@@ -7,9 +7,9 @@ import { ageText, formatDateLong, todayIso } from './dates.js'
 export const DOG_TAB_PARAM = 'reiter'
 export const CHRONICLE_TAB = 'chronik'
 
-// Haushalte und Familien: Chronik · Infos · Verwandte (der Berner-Auftritt sagt wie bisher "Stammbaum", theme.familiesView
-// false). Eigene Tiere eines Tierheims behalten ihre Reiter: Chronik · Vermittlung · Infos.
-export function dogTabs({ shelter = false, familiesView = true } = {}) {
+// Haushalte und Familien: Chronik · Infos · Verwandte. Eigene Tiere eines Tierheims behalten ihre Reiter:
+// Chronik · Vermittlung · Infos.
+export function dogTabs({ shelter = false } = {}) {
   if (shelter) {
     return [
       { key: CHRONICLE_TAB, label: 'Chronik' },
@@ -20,7 +20,7 @@ export function dogTabs({ shelter = false, familiesView = true } = {}) {
   return [
     { key: CHRONICLE_TAB, label: 'Chronik' },
     { key: 'infos', label: 'Infos' },
-    { key: 'verwandte', label: familiesView ? 'Verwandte' : 'Stammbaum' }
+    { key: 'verwandte', label: 'Verwandte' }
   ]
 }
 

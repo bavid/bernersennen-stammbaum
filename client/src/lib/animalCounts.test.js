@@ -3,15 +3,13 @@ import { animalCountText, areaCounts, countsFromDogs, withShareChange } from './
 import { getTheme } from '../themes/index.js'
 
 const words = getTheme('standard').words
-const berner = getTheme('berner').words
 
 describe('animalCountText (Phase W, Schritt 2: eine Zählung überall)', () => {
-  test('"21 Tiere · davon 4 von euch"; ohne eigene nur die Zahl; Einzahl; Berner sagt Hunde', () => {
+  test('"21 Tiere · davon 4 von euch"; ohne eigene nur die Zahl; Einzahl', () => {
     expect(animalCountText({ tiere: 21, eigeneTiere: 4 }, words)).toBe('21 Tiere · davon 4 von euch')
     expect(animalCountText({ tiere: 7, eigeneTiere: 0 }, words)).toBe('7 Tiere')
     expect(animalCountText({ tiere: 7 }, words)).toBe('7 Tiere')
     expect(animalCountText({ tiere: 1, eigeneTiere: 1 }, words)).toBe('1 Tier · davon 1 von euch')
-    expect(animalCountText({ tiere: 21, eigeneTiere: 4 }, berner)).toBe('21 Hunde · davon 4 von euch')
   })
 
   test('ohne Zahl (älterer Server) nichts', () => {

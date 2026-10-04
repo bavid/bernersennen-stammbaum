@@ -14,7 +14,7 @@ import InviteList from '../components/members/InviteList.jsx'
 // Reiter "Mitglieder" der Gruppenseite (embedded) bzw. beim klassischen Familien-Login die Seite /mitglieder (Phase R,
 // Phase W Schritt 2 verdichtet): "Wer dazugehört" (Liste mit Rollen - die Leitung ändert Rollen und entfernt Mitglieder),
 // die offenen Einladungen mit "Mitglied einladen" (ab Stellvertretung) und zum Aufklappen "Wer sieht was?". Leitung
-// übergeben, Schlüssel, Verlassen, Auflösen, Name und Aussehen stehen in Einstellungen › Familien › [Familie]
+// übergeben, Schlüssel, Verlassen, Auflösen und der Name stehen in Einstellungen › Familien › [Familie]
 // (components/settings/FamilyManage.jsx). In der Demo ist alles sichtbar, Schreiben gesperrt.
 export default function MembersPage({ family, onFamilyChange, embedded = false }) {
   const { words } = useTheme()

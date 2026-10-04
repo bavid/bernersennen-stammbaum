@@ -32,7 +32,7 @@ async function render(themeId) {
   return container
 }
 
-describe.each(['standard', 'berner'])('RenameFamilyForm im Theme %s', (themeId) => {
+describe.each(['standard'])('RenameFamilyForm im Theme %s', (themeId) => {
   const theme = getTheme(themeId)
 
   test('Warnung und Feldbeschriftung nutzen den Theme-Wortschatz', async () => {

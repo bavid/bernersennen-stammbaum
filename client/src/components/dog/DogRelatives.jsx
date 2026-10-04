@@ -80,7 +80,7 @@ function useHousemateActions(dog, setDog, reload) {
   }
 }
 
-// Reiter "Verwandte" (Berner: "Stammbaum") der Tierseite (Phase W, Schritt 2): Mutter, Vater, Geschwister, Nachwuchs und
+// Reiter "Verwandte" der Tierseite (Phase W, Schritt 2): Mutter, Vater, Geschwister, Nachwuchs und
 // "Lebt zusammen mit" (Mitbewohner ohne gemeinsame Abstammung), dazu die leisen Wege "Verpaarung eintragen" (erwachsene
 // eigene Hündin) und "Im Stammbaum ansehen". Im Tierheim steht derselbe Block im Reiter "Infos" (embedded, ohne Wege).
 export default function DogRelatives({ dog, setDog, family, allDogs, canWrite, reload, embedded = false }) {

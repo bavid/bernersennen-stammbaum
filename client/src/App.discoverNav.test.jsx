@@ -105,14 +105,9 @@ describe('Reiter "Entdecken" in der Hauptnavigation', () => {
     expect(container.querySelector('.app-nav .app-nav-menu').textContent).toBe('Menü')
   })
 
-  test('klassischer Familien-Login (Standard): Start, Tiere, Pinnwand, Entdecken', async () => {
+  test('klassischer Familien-Login: Start, Tiere, Pinnwand, Entdecken', async () => {
     await render(group, '/entdecken')
     expect(navLabels()).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])
-  })
-
-  test('klassischer Familien-Login (Berner): Start, Hunde, Pinnwand, Entdecken - Würfe stehen als Reiter bei den Hunden', async () => {
-    await render({ ...group, theme: 'berner' }, '/entdecken')
-    expect(navLabels()).toEqual(['Start', 'Hunde', 'Pinnwand', 'Entdecken'])
   })
 
   test('Tierheim: Tiere, Pinnwand, Collage, (Phase P) Profil und (P2) Nachrichten - kein Entdecken', async () => {

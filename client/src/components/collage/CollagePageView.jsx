@@ -30,8 +30,8 @@ function useFontsReady() {
   return ready
 }
 
-function Edge({ tricolor, position }) {
-  return tricolor ? <div className={`cpage-tricolor cpage-tricolor-${position}`} /> : <div className={`cpage-rule cpage-rule-${position}`} />
+function Edge({ position }) {
+  return <div className={`cpage-rule cpage-rule-${position}`} />
 }
 
 function Photos({ page, geometry, interactive, selection, onSelect, onPhotoChange }) {
@@ -89,7 +89,7 @@ export default function CollagePageView({
       aria-label={interactive ? label : undefined}
       onPointerDown={handlePointerDown}
     >
-      <Edge tricolor={theme.tricolor} position="top" />
+      <Edge position="top" />
       <div
         className="cpage-title"
         style={{
@@ -116,7 +116,7 @@ export default function CollagePageView({
         <span>{page.footer}</span>
         <span className="cpage-brand">{theme.appName}</span>
       </div>
-      <Edge tricolor={theme.tricolor} position="bottom" />
+      <Edge position="bottom" />
 
       <StickerLayer
         stickers={page.stickers}

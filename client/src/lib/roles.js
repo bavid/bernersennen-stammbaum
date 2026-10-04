@@ -4,7 +4,7 @@
 // - mitglied: dazu eigene Tiere teilen, Einträge schreiben, Tiere der Familie pflegen, Würfe, Pinnwand;
 // - stellvertretung: dazu einladen, Kommentare anderer löschen, Tiere der Familie löschen, fremde
 //   Tiere aus der Familie nehmen;
-// - leitung: dazu Rollen ändern, Mitglieder entfernen, Name/Aussehen/Schlüssel, Leitung übergeben,
+// - leitung: dazu Rollen ändern, Mitglieder entfernen, Name/Schlüssel, Leitung übergeben,
 //   Familie auflösen, Tiere der Familie in die eigene Chronik übernehmen.
 export const ROLES = ['gast', 'mitglied', 'stellvertretung', 'leitung']
 
@@ -32,7 +32,7 @@ export function hasRole(me, min) {
   return rank(roleOf(me)) >= rank(min)
 }
 
-// Beschriftung je Aussehen (themes/*.js words): Berner „Rudelführer“, Standard „Familienleitung“ usw.
+// Beschriftung aus den Wörtern des Auftritts (themes/standard.js words): „Familienleitung“ usw.
 const ROLE_WORD_KEYS = {
   gast: 'roleGast',
   mitglied: 'roleMitglied',

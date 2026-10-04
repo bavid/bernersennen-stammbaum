@@ -137,7 +137,7 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
     ['Zuhause am Deich', 1, 'standard']
   ]
   const TEST_FAMILIES = [
-    ['Rudel vom Sonnenhang (Test)', 0, 'berner'],
+    ['Rudel vom Sonnenhang (Test)', 0, 'standard'],
     ['Zuhause am Deich (Test)', 0, 'standard']
   ]
   const byName = (a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)

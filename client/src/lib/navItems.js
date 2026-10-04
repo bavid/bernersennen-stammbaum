@@ -26,8 +26,7 @@ const NAV_ITEM_PINBOARD = { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' }
 
 // Phase W (Ruhige Hülle): vier feste Punkte in jedem Kontext eines Haushalts - Start (Neuigkeiten, "Für dich"), Tiere
 // (Raster mit Reitern Zeitleiste/Stammbaum), Familien (Gruppenseiten, befreundete Zuhause) und Entdecken. "Tiere" und
-// "Familien" heißen je Auftritt anders (Theme-Wörter animals/groups - Berner "Hunde"/"Rudel"); labelKey statt label,
-// navItemsFor setzt das Wort ein. Am Handy kommt "Menü" als fünfter Platz dazu (App.jsx, hasMenuSlot).
+// "Familien" kommen aus den Wörtern des Auftritts (animals/groups); labelKey statt label, navItemsFor setzt das Wort ein. Am Handy kommt "Menü" als fünfter Platz dazu (App.jsx, hasMenuSlot).
 // Phase V2/W: Start trägt das Badge für offene "Mit dabei"-Anfragen und neue Gäste (withRequestBadge).
 const NAV_ITEM_START = { to: '/start', icon: 'home', label: 'Start' }
 const NAV_ITEM_ANIMALS = { to: '/tiere', icon: 'paw', labelKey: 'animals' }

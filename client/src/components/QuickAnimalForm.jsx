@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { api } from '../api'
-import { useTheme } from '../themes/ThemeProvider.jsx'
 import { SPECIES, SPECIES_FIELDS } from './DogForm.jsx'
 import Icon from './Icon.jsx'
 import { dogLabel, livesWithLabel, sexLabel, speciesLabel } from '../lib/timeline.js'
@@ -8,12 +7,6 @@ import { isEditable } from '../lib/areas.js'
 
 const ANDERES_KIND_LABEL = 'Welches Tier?'
 const ANDERES_KIND_PLACEHOLDER = 'z. B. Kaninchen'
-
-// Berner-Rudel legen praktisch immer Hunde an – das Rudel-Theme spart den Klick. Im tierneutralen
-// Standard-Auftritt ist nichts vorbelegt, da hier jede Tierart gleich wahrscheinlich ist.
-function initialTierart(themeId) {
-  return themeId === 'berner' ? 'hund' : ''
-}
 
 function buildValues({ tierart, name, nameUnbekannt, rasse, geschlecht, beiUnsSeit, housemateId, livesWith }) {
   return {
@@ -35,8 +28,8 @@ function buildValues({ tierart, name, nameUnbekannt, rasse, geschlecht, beiUnsSe
 // shelter: aus ShelterAnimalsPage ("Tier aufnehmen") aufgerufen – das neue Tier startet mit dem
 // Vermittlungsstatus "in Vermittlung" (nur im Tierheim-Bereich erlaubt, siehe server/routes/dogs.js).
 export default function QuickAnimalForm({ allDogs, livesWith = null, shelter = false, onCreated, onCancel, onMore }) {
-  const { theme } = useTheme()
-  const [tierart, setTierart] = useState(() => initialTierart(theme.id))
+  // Keine Tierart vorbelegt - jede ist gleich wahrscheinlich.
+  const [tierart, setTierart] = useState('')
   const [tierartError, setTierartError] = useState(false)
   const [name, setName] = useState('')
   const [nameUnbekannt, setNameUnbekannt] = useState(false)

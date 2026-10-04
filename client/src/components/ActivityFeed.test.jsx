@@ -35,7 +35,7 @@ async function render(themeId, props) {
   return container
 }
 
-describe.each(['standard', 'berner'])('ActivityFeed im Theme %s', (themeId) => {
+describe.each(['standard'])('ActivityFeed im Theme %s', (themeId) => {
   const theme = getTheme(themeId)
 
   test('leerer Zustand nutzt die Theme-Überschrift und den Theme-Text', async () => {

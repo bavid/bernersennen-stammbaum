@@ -92,12 +92,9 @@ async function render(family, { isDemo = false, themeId = 'standard' } = {}) {
   return container
 }
 
-// Phase U: der Hinweis nennt den Baum wie der Auftritt - Berner-Text bleibt wortgleich.
-describe('InviteDialog – Adresse und Passwort: Name des Baums je Auftritt', () => {
-  test.each([
-    ['standard', 'Dann sieht sie eure Familienbande und kann mitschreiben.'],
-    ['berner', 'Dann sieht sie euren Stammbaum und kann mitschreiben.']
-  ])('%s', async (themeId, sentence) => {
+// Phase U: der Hinweis nennt den Baum mit dem Wort des Auftritts.
+describe('InviteDialog – Adresse und Passwort: Name des Baums', () => {
+  test.each([['standard', 'Dann sieht sie eure Familienbande und kann mitschreiben.']])('%s', async (themeId, sentence) => {
     myVouchers.mockResolvedValue([])
     await render(rudel, { themeId })
     expect(container.querySelector('.invite-legacy').textContent.replace(/\s+/g, ' ')).toContain(sentence)

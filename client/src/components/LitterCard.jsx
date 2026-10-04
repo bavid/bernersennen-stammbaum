@@ -54,8 +54,8 @@ function Sibling({ dog, latest }) {
   )
 }
 
-// Ein Wurf: Eltern, Geschwister mit ihrem Neuesten, Fotos im gleichen Alter, Deckakt und Geburtstag - die Wörter
-// je Auftritt (Phase U: Standard "Nachwuchs"/"Verpaarung"/"Ganz klein", Berner "Wurf"/"Deckakt"/"Als Welpen").
+// Ein Wurf: Eltern, Geschwister mit ihrem Neuesten, Fotos im gleichen Alter, Verpaarung und Geburtstag - die Wörter
+// aus dem Auftritt (Phase U: "Nachwuchs"/"Verpaarung"/"Ganz klein").
 // cardRef: "Mehr anzeigen" auf der Nachwuchs-Seite setzt den Fokus auf die erste nachgeladene Karte (tabIndex -1).
 export default function LitterCard({ litter, latest, stages, onPlanMeeting, onOpenPhoto, cardRef }) {
   const { words } = useTheme()

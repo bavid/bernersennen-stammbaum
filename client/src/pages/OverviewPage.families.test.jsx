@@ -417,33 +417,3 @@ describe('Familienbande zu Besuch', () => {
   })
 })
 
-describe('Berner-Auftritt (Phase V3): unverändert der Stammbaum', () => {
-  test('Baum direkt, kein Umschalter, Kennzahlen Hunde und Generationen, keine Anfragen für die Familien-Ansicht', async () => {
-    await render({ themeId: 'berner', events: [mating] })
-
-    expect(tree()).not.toBeNull()
-    expect(container.querySelector('.families-view')).toBeNull()
-    expect(heroLink('Stammbaum')).toBeUndefined()
-    expect(heroLink('Zurück zu den Familien')).toBeUndefined()
-    expect(stat('Generationen') || stat('Generation')).not.toBeUndefined()
-    expect(stat('Hunde')).not.toBeUndefined()
-    expect(stat('Tiere')).toBeUndefined()
-    expect(stat('Familien')).toBeUndefined()
-    expect(container.querySelector('.offspring-section')).toBeNull()
-    expect(api.listBreedingEvents).not.toHaveBeenCalled()
-    expect(api.visits).not.toHaveBeenCalled()
-    expect(container.querySelector('.page-hero').className).toBe('page-hero')
-    // Kopf wie bisher: die beiden großen Knöpfe
-    expect([...container.querySelector('.hero-actions').children].map((el) => el.className)).toEqual([
-      'btn btn-primary btn-lg',
-      'btn btn-ghost btn-lg'
-    ])
-  })
-
-  test('auch ein Stammbaum-Link bleibt beim Baum; "Neu im Rudel" steht weiter darüber', async () => {
-    api.recentActivity.mockResolvedValue([{ id: 1, dog_id: 11, dog_name: 'Nele', titel: 'Am Deich', datum: '2026-09-01', created_at: '2026-09-01 10:00:00', autor_name: 'Zuhause am Deich' }])
-    await render({ themeId: 'berner', path: '/familienbande?ansicht=stammbaum' })
-    expect(tree()).not.toBeNull()
-    expect(container.querySelector('.feed-title').textContent).toBe('Neu im Rudel')
-  })
-})

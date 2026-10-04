@@ -4,7 +4,6 @@ import { api, setUnauthorizedHandler } from './api'
 import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
 import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
-import { readSetting, writeSetting } from './lib/storage.js'
 import { HOME_LABEL, START_ROUTE, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
 import { isOwnHome } from './lib/visits.js'
 import { MAX_NAV_ITEMS, hasMenuSlot, navItemsFor } from './lib/navItems.js'
@@ -185,7 +184,7 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
   )
 }
 
-// Phase W: "Tiere" bleibt markiert auf den Tierseiten und beim Nachwuchs (/wuerfe, im Berner-Auftritt ein Reiter von Tiere).
+// Phase W: "Tiere" bleibt markiert auf den Tierseiten und beim Nachwuchs (/wuerfe).
 function isAnimalsPath(pathname) {
   return pathname.startsWith('/tier/') || pathname === '/wuerfe'
 }
@@ -281,7 +280,6 @@ export function AppFooter({ family, onInvite }) {
   const partnerArea = isPartnerArea(family)
   return (
     <footer className="app-footer">
-      {theme.tricolor && <div className="tricolor" aria-hidden="true" />}
       <p>{theme.footer}</p>
       {partnerArea && (
         <button type="button" className="footer-link" onClick={onInvite}>
@@ -359,12 +357,6 @@ export default function App() {
       .then(settleInitial)
       .catch(() => settleInitial(null))
   }, [])
-
-  // Merkt sich das Aussehen der zuletzt angemeldeten Familie, damit der Splash-Screen beim nächsten
-  // Laden (bevor /api/me geantwortet hat) nicht kurz den falschen Auftritt zeigt.
-  useEffect(() => {
-    if (family?.theme) writeSetting('lastThemeId', family.theme)
-  }, [family])
 
   // Darstellung (Einstellungen, lib/darstellung.js): die Wahl der Identität aus /me an <html> - und für das nächste Laden
   // gemerkt (public/darstellung-init.js), außer in Demo und Admin-Ansicht (dort gilt sie nur für diesen Besuch). Ohne
@@ -475,7 +467,7 @@ export default function App() {
     const printBatchId = pathname.match(ADMIN_PRINT_RE)?.[1]
     const isPresent = ADMIN_PRESENT_RE.test(pathname)
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           {printBatchId ? <AdminPrintPage batchId={printBatchId} /> : isPresent ? <AdminPresentPage /> : <AdminPage />}
         </Suspense>
@@ -487,7 +479,7 @@ export default function App() {
   // ersetzt sie durch die Demo-Sitzung (handleDemoStart), wie /admin-ansicht/:id.
   if (pathname === DEMO_START_PATH) {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           <DemoStartPage search={search} onEntered={handleDemoStart} />
         </Suspense>
@@ -500,7 +492,7 @@ export default function App() {
   const adminViewId = pathname.match(ADMIN_VIEW_RE)?.[1]
   if (adminViewId) {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           <AdminViewStartPage familyId={adminViewId} onEntered={handleEnterAdminView} />
         </Suspense>
@@ -512,7 +504,7 @@ export default function App() {
   // die Seite holt ihre Fotos allein mit dem Token des Rahmen-Links (pages/RahmenPage.jsx).
   if (pathname.replace(/\/+$/, '').toLowerCase() === RAHMEN_PATH) {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           <RahmenPage />
         </Suspense>
@@ -522,7 +514,7 @@ export default function App() {
 
   if (family === undefined) {
     return (
-      <ThemeProvider themeId={readSetting('lastThemeId', 'standard')}>
+      <ThemeProvider>
         <div className="splash" aria-busy="true">
           <ThemeMark size={72} />
         </div>
@@ -534,7 +526,7 @@ export default function App() {
   // der Code bleibt dabei in voucherCode "im Speicher" und geht in die Login-Seite, sobald family null ist.
   if (pathname === '/v') {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         {family ? (
           <div className="login voucher-session">
             <section className="login-panel">
@@ -561,7 +553,7 @@ export default function App() {
 
   if (partnerSlug && !family) {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <PartnerPortalPage slug={partnerSlug} />
       </ThemeProvider>
     )
@@ -573,7 +565,7 @@ export default function App() {
 
   if (animalSlug) {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <SteckbriefPage slug={animalSlug} family={family} />
       </ThemeProvider>
     )
@@ -581,7 +573,7 @@ export default function App() {
 
   if (pathname === '/partner') {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <PartnersPage family={family} />
       </ThemeProvider>
     )
@@ -591,7 +583,7 @@ export default function App() {
   // handleVoucherLogin an (Familie setzen, zur Startroute des Demo-Partner-Bereichs - /profil).
   if (pathname === PARTNER_INFO_PATH) {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           <PartnerInfoPage onDemo={handleVoucherLogin} family={family} />
         </Suspense>
@@ -603,7 +595,7 @@ export default function App() {
   // früher Zweig statt einer Route im angemeldeten Bereich, damit sie auch ohne Sitzung erreichbar sind.
   if (pathname === '/impressum' || pathname === '/datenschutz') {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <LegalPage variant={pathname === '/impressum' ? 'impressum' : 'datenschutz'} family={family} />
       </ThemeProvider>
     )
@@ -611,7 +603,7 @@ export default function App() {
 
   if (!family) {
     return (
-      <ThemeProvider themeId="standard">
+      <ThemeProvider>
         <LoginPage onLogin={setFamily} />
       </ThemeProvider>
     )
@@ -622,7 +614,7 @@ export default function App() {
   const partnerPrintBatchId = pathname.match(PARTNER_PRINT_RE)?.[1]
   if (partnerPrintBatchId && isPartnerArea(family)) {
     return (
-      <ThemeProvider themeId={family.theme}>
+      <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           <PartnerPrintPage batchId={partnerPrintBatchId} readOnly={isReadOnly(family)} demo={Boolean(family.isDemo)} />
         </Suspense>
@@ -635,7 +627,7 @@ export default function App() {
   const onPortal = Boolean(partnerSlug)
 
   return (
-    <ThemeProvider themeId={family.theme}>
+    <ThemeProvider>
       {/* Schreibschutz für Demo UND Admin-Ansicht (lib/demo.js readOnlyModeOf liest isDemo/adminView aus me). */}
       <DemoProvider value={family}>
         <div className="app-shell">

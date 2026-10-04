@@ -610,8 +610,7 @@
 .group-panel,
 .group-posts,
 .pinboard-embedded,
-.members-embedded,
-.litters-embedded {
+.members-embedded {
   display: grid;
   gap: var(--space-5);
   min-width: 0;

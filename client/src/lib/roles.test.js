@@ -61,10 +61,8 @@ describe('hasRole', () => {
 })
 
 describe('roleLabel', () => {
-  test('berner and standard name the roles differently, both cover every role', () => {
-    const berner = getTheme('berner').words
+  test('every role has a label from the words of the theme', () => {
     const standard = getTheme('standard').words
-    expect(ROLES.map((rolle) => roleLabel(berner, rolle))).toEqual(['Gast', 'Mitglied', 'Stellvertretung', 'Rudelführer'])
     expect(ROLES.map((rolle) => roleLabel(standard, rolle))).toEqual(['Gast', 'Mitglied', 'Stellvertretung', 'Familienleitung'])
   })
 

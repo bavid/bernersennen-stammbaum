@@ -225,24 +225,3 @@ describe('Familienbande – "Nachwuchs" beim Stammbaum (Phase U, Familienbande 2
   })
 })
 
-describe('Stammbaum im Berner-Auftritt – unverändert', () => {
-  test('Eyebrow "Stammbaum", kein Abschnitt (Würfe haben dort einen eigenen Reiter), keine Anfrage danach', async () => {
-    await render({ themeId: 'berner', events: [plannedEvent] })
-
-    expect(container.querySelector('.eyebrow').textContent).toBe('Stammbaum')
-    expect(section()).toBeNull()
-    expect(api.listBreedingEvents).not.toHaveBeenCalled()
-  })
-
-  test('leer: "Euer Stammbaum ist noch leer" bzw. im Standard "Eure Familienbande ist noch leer"', async () => {
-    await render({ themeId: 'berner', dogs: [] })
-    expect(container.querySelector('.empty-state h3').textContent).toBe('Euer Stammbaum ist noch leer')
-
-    act(() => root.unmount())
-    root = null
-    container.remove()
-
-    await render({ dogs: [] })
-    expect(container.querySelector('.empty-state h3').textContent).toBe('Eure Familienbande ist noch leer')
-  })
-})

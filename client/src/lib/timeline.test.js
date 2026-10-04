@@ -42,7 +42,7 @@ describe('buildTimeline', () => {
     const items = buildTimeline({ dog, children, breedingEvents })
     expect(items.map((i) => i.titel)).toEqual([
       'Aiko kommt zur Welt',
-      'Deckakt mit Bella',
+      'Verpaarung mit Bella',
       'Nachwuchs: Cora, Dante'
     ])
   })

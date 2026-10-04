@@ -8,7 +8,7 @@ import { HOME_LABEL, areaContext } from '../lib/areas.js'
 import { hasRole } from '../lib/roles.js'
 
 // /tiere (Phase W) für das eigene Zuhause und klassische Familien-Logins - die eine Stelle für Tiere: Reiter Alle,
-// Zeitleiste, Stammbaum (Berner: Würfe) und genau ein Knopf "Tier hinzufügen". Keine Neuigkeiten, kein Einladen, keine
+// Zeitleiste, Stammbaum und genau ein Knopf "Tier hinzufügen". Keine Neuigkeiten, kein Einladen, keine
 // Kennzahlen: die stehen auf Start bzw. im Menü. Tierheime haben ihre eigene Seite (ShelterAnimalsPage).
 export default function AnimalsPage({ family }) {
   const { words } = useTheme()

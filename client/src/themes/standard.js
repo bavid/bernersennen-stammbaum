@@ -1,20 +1,12 @@
 import PawMark from '../components/PawMark.jsx'
 
-// „Familie auf Pfoten" – tierneutraler Standard-Auftritt
+// „Familie auf Pfoten" – der eine Auftritt für alle (B+ Familienalbum, 04.10.: der Berner-Auftritt ist entfernt). Die Wörter
+// stehen weiter an EINER Stelle (useTheme().words), damit ein späterer Wechsel nur sie ändert.
 export default {
   id: 'standard',
   Mark: PawMark,
-  label: 'Familie auf Pfoten',
-  description: 'Pfoten-Logo, für alle Tierarten',
   appName: 'Familie auf Pfoten',
   footer: 'Familie auf Pfoten · Eine tierisch nette Familie',
-  // Phase U: "Nachwuchs" steht nicht in der unteren Leiste, sondern als Abschnitt auf der Familienbande
-  littersInNav: false,
-  // Phase V3: die Familienbande zeigt zuerst Familien (Zuhause, Familien, befreundete Zuhause) - der Stammbaum mit
-  // Generationen ist ein Zusatz, sobald eine Verpaarung oder Eltern eingetragen sind ("Stammbaum öffnen").
-  familiesView: true,
-  tricolor: false,
-  favicon: '/favicon.svg',
   words: {
     group: 'Familie',
     theGroup: 'die Familie',
@@ -54,7 +46,7 @@ export default {
     animal: 'Tier',
     animals: 'Tiere',
     thisAnimalDat: 'diesem Tier',
-    // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - im Standard-Auftritt "Familienbande" und "Nachwuchs"
+    // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - hier "Familienbande" und "Nachwuchs"
     treeLabel: 'Familienbande',
     toTree: 'Zu den Tieren',
     inTree: 'in der Familienbande',

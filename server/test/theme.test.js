@@ -9,7 +9,9 @@ const { useTempDataDir, startApp, cleanup, call, createFamily, getCookie } = req
 
 const dataDir = useTempDataDir('theme')
 
-test('Familien haben einen Auftritt (theme: standard|berner)', async (t) => {
+// B+ Familienalbum (04.10.): ein Auftritt für alle. Die Spalte families.theme bleibt für ältere Datenbanken stehen, wird
+// aber nicht mehr geändert - ein mitgeschicktes theme (alte Clients) nimmt PUT /api/family an und ignoriert es.
+test('Familien: ein Auftritt für alle - theme bleibt standard, Änderungen werden ignoriert', async (t) => {
   const { server, base } = await startApp()
   t.after(() => cleanup(dataDir, server))
   const db = require('../db')
@@ -27,24 +29,23 @@ test('Familien haben einen Auftritt (theme: standard|berner)', async (t) => {
     assert.equal(login.data.theme, 'standard')
   })
 
-  await t.test('PUT /api/family kann das Aussehen ändern', async () => {
+  await t.test('PUT /api/family ändert nur den Namen - ein theme wird angenommen und ignoriert', async () => {
     const family = await createFamily(base, 'Familie Theme', 'geheimnis2')
     const putFamily = (cookie, body) => call(base, '/api/family', { method: 'PUT', cookie, body })
 
     const res = await putFamily(family.cookie, { theme: 'berner' })
     assert.equal(res.status, 200)
-    assert.deepEqual(res.data, { id: family.data.id, name: 'Familie Theme', theme: 'berner' })
+    assert.deepEqual(res.data, { id: family.data.id, name: 'Familie Theme' })
+    assert.equal(db.prepare('SELECT theme FROM families WHERE id = ?').get(family.data.id).theme, 'standard')
+    assert.equal((await call(base, '/api/me', { cookie: family.cookie })).data.theme, 'standard')
 
-    const me = await call(base, '/api/me', { cookie: family.cookie })
-    assert.equal(me.data.theme, 'berner')
-
-    assert.equal((await putFamily(family.cookie, { theme: 'pink' })).status, 400)
+    assert.equal((await putFamily(family.cookie, { theme: 'pink' })).status, 200)
     assert.equal((await putFamily(family.cookie, {})).status, 400)
 
-    const renamed = await putFamily(family.cookie, { name: 'Neuer Name' })
+    const renamed = await putFamily(family.cookie, { name: 'Neuer Name', theme: 'berner' })
     assert.equal(renamed.status, 200)
-    assert.equal(renamed.data.name, 'Neuer Name')
-    assert.equal(renamed.data.theme, 'berner')
+    assert.deepEqual(renamed.data, { id: family.data.id, name: 'Neuer Name' })
+    assert.equal(db.prepare('SELECT theme FROM families WHERE id = ?').get(family.data.id).theme, 'standard')
   })
 
   await t.test('Demo-Login meldet den Auftritt, PUT bleibt gesperrt', async () => {
@@ -56,33 +57,30 @@ test('Familien haben einen Auftritt (theme: standard|berner)', async (t) => {
     assert.equal(demoLogin.data.theme, 'standard')
 
     const demoCookie = getCookie(demoLogin.res)
-    const put = await call(base, '/api/family', { method: 'PUT', cookie: demoCookie, body: { theme: 'berner' } })
+    const put = await call(base, '/api/family', { method: 'PUT', cookie: demoCookie, body: { name: 'Umbenannt' } })
     assert.equal(put.status, 403)
   })
 
-  await t.test('demoPack-Helfer: Standard ist berner, ein Auftritt kann aber übergeben werden', () => {
+  await t.test('demoPack-Helfer: ohne Angabe standard, ein Name kann übergeben werden', () => {
     const { createDemoPack, createImageCopier, replaceDemoPack } = require('../lib/demoPack')
 
     const defaultPack = createDemoPack(db, {
       password: 'pw-default-1', isDemo: false, copyImage: createImageCopier(uploadDir), name: 'Rudel Default Theme'
     })
-    assert.equal(db.prepare('SELECT theme FROM families WHERE id = ?').get(defaultPack.familyId).theme, 'berner')
+    assert.equal(db.prepare('SELECT theme FROM families WHERE id = ?').get(defaultPack.familyId).theme, 'standard')
 
-    const standardPack = createDemoPack(db, {
-      password: 'pw-standard-1', isDemo: false, copyImage: createImageCopier(uploadDir), name: 'Rudel Standard Theme', theme: 'standard'
-    })
-    assert.equal(db.prepare('SELECT theme FROM families WHERE id = ?').get(standardPack.familyId).theme, 'standard')
-
-    const replaced = replaceDemoPack(db, uploadDir, { theme: 'standard' })
+    const replaced = replaceDemoPack(db, uploadDir)
     assert.equal(db.prepare('SELECT theme FROM families WHERE id = ?').get(replaced.created.familyId).theme, 'standard')
 
-    const named = replaceDemoPack(db, uploadDir, { theme: 'standard', name: 'Familie Sonnenhang' })
+    const named = replaceDemoPack(db, uploadDir, { name: 'Familie Sonnenhang' })
     const namedFamily = db.prepare('SELECT name, theme FROM families WHERE id = ?').get(named.created.familyId)
     assert.deepEqual(namedFamily, { name: 'Familie Sonnenhang', theme: 'standard' })
   })
 })
 
-test('Migration: bestehende Rudel behalten berner, neue Zeilen bekommen standard', () => {
+// Die alte Migration bleibt unverändert (db.js an der Dateigrenze): Bestandsrudel tragen weiter 'berner' in der Spalte -
+// der Client zeigt trotzdem den einen Auftritt (client/src/themes/index.js getTheme).
+test('Migration: bestehende Rudel behalten den alten Wert berner, neue Zeilen bekommen standard', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-theme-migration-'))
   const dbFile = path.join(dir, 'old.db')
 

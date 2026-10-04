@@ -214,18 +214,6 @@ describe('SharePanel – Texte über den Theme-Wortschatz', () => {
     return container
   }
 
-  test('Berner-Theme: „Wer sieht …?“, Leerzustand und Knopf sprechen von "Rudel(n)" statt "Familie(n)"', async () => {
-    await renderThemed('berner', { family: { ...family, memberships: [] } })
-    expect(container.querySelector('#share-panel-title').textContent).toBe('Wer sieht Pepper?')
-    const { entries } = getTheme('berner').words
-    expect(container.querySelector('.share-note')).toBeNull()
-    expect(container.querySelector('.share-panel-empty').textContent).toContain('Noch kein Rudel verbunden.')
-    const button = [...container.querySelectorAll('.share-panel-empty button')].find(
-      (btn) => btn.textContent === 'Rudel beitreten oder gründen'
-    )
-    expect(button).not.toBeUndefined()
-  })
-
   test('Standard-Theme: „Wer sieht …?“, Leerzustand und Knopf sprechen von "Familie(n)"', async () => {
     await renderThemed('standard', { family: { ...family, memberships: [] } })
     expect(container.querySelector('#share-panel-title').textContent).toBe('Wer sieht Pepper?')
@@ -235,20 +223,20 @@ describe('SharePanel – Texte über den Theme-Wortschatz', () => {
 })
 
 describe('SharePanel – derselbe Satz wie in den Einstellungen (ShareNote)', () => {
-  test('Standard und Berner', async () => {
+  test('Standard', async () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
     await act(async () =>
       root.render(
-        <ThemeProvider themeId="berner">
+        <ThemeProvider>
           <Wrapper />
         </ThemeProvider>
       )
     )
-    const { entries } = getTheme('berner').words
+    const { entries } = getTheme().words
     expect(container.querySelector('.share-note').textContent).toBe(
-      `Ausgewählte Hunde und ihre nicht privaten ${entries} sieht das ganze Rudel. Private ${entries} bleiben immer bei euch.`
+      `Ausgewählte Tiere und ihre nicht privaten ${entries} sieht die ganze Familie. Private ${entries} bleiben immer bei euch.`
     )
     expect(checkboxFor('Familie Klein').getAttribute('aria-describedby')).toBe('share-panel-note')
   })

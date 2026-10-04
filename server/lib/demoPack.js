@@ -480,8 +480,8 @@ function createDemoHousehold(db, { password, isDemo, copyImage, groupFamilyId, s
 
 // isDemo: öffentliche, schreibgeschützte Demo (Login über "Demo ansehen" ohne Passwort)
 // name: abweichender Rudel-Name, z. B. für ein beschreibbares Test-Rudel neben der Demo
-// theme: Auftritt der Familie – ohne Angabe der Berner-Look (bestehende Rudel, siehe db.js)
-function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, theme = 'berner' }) {
+// theme: Wert der alten Spalte families.theme - seit B+ Familienalbum (04.10.) ein Auftritt für alle, also 'standard'
+function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, theme = 'standard' }) {
   return db.transaction(() => {
     const familyId = db
       .prepare('INSERT INTO families (name, password_hash, is_demo, theme) VALUES (?, ?, ?, ?)')
@@ -501,8 +501,8 @@ function createDemoPack(db, { password, isDemo, copyImage, name = FAMILY_NAME, t
 // bleibt die alte Demo unangetastet erreichbar; die alten Ids werden vorher eingesammelt, damit das
 // Löschen die gerade frisch angelegten (höheren) Ids nicht treffen kann.
 // Das Passwort ist zufällig – in die Demo kommt man über "Demo ansehen".
-// name/theme: abweichender Name/Auftritt der öffentlichen Demo (z. B. themenpassend) - gilt nur fürs
-// Rudel; das Zuhause bleibt immer "Zuhause am Deich" im Standard-Auftritt.
+// name/theme: abweichender Name (und alter Auftritts-Wert) der öffentlichen Demo - gilt nur fürs Rudel; das Zuhause
+// bleibt immer "Zuhause am Deich".
 //
 // Die Demo-Partner (is_demo = 1, siehe seed/demo-partners.js) laufen ANDERS als Rudel/Zuhause: ihr
 // Slug ist UNIQUE, darum müssen die alten erst weg, bevor die neuen (mit denselben Slugs) entstehen -

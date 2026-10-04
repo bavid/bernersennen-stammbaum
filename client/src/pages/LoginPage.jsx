@@ -124,7 +124,6 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
             ))}
           </ul>
         </div>
-        {theme.tricolor && <div className="tricolor tricolor-vertical" />}
       </section>
 
       <section className="login-panel">

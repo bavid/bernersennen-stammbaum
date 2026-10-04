@@ -35,16 +35,10 @@ function render(themeId) {
   )
 }
 
-describe('PedigreeToolbar – Name des Baums je Auftritt (Phase U)', () => {
+describe('PedigreeToolbar – Name des Baums (Phase U)', () => {
   test('Standard: "Ansicht der Familienbande", "Ganze Familienbande zeigen"', () => {
     render('standard')
     expect(container.querySelector('[role="toolbar"]').getAttribute('aria-label')).toBe('Ansicht der Familienbande')
     expect(container.querySelector('button[aria-label="Einpassen"]').getAttribute('title')).toBe('Ganze Familienbande zeigen')
-  })
-
-  test('Berner: unverändert "Stammbaum-Ansicht", "Ganzen Stammbaum zeigen"', () => {
-    render('berner')
-    expect(container.querySelector('[role="toolbar"]').getAttribute('aria-label')).toBe('Stammbaum-Ansicht')
-    expect(container.querySelector('button[aria-label="Einpassen"]').getAttribute('title')).toBe('Ganzen Stammbaum zeigen')
   })
 })

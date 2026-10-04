@@ -151,15 +151,6 @@ describe('MembersPage – „Wer sieht was?“ und Liste (für alle Rollen)', ()
     expect(container.querySelector('.stats').textContent).toContain('3')
   })
 
-  test('im Berner-Auftritt heißen die Rollen Rudelführer/…, die Karte "Rudel", der Hinweis "Ein Rudel ist nie öffentlich."', async () => {
-    familyMembers.mockResolvedValue(payloadAs('gast'))
-    await renderPage(familyAs('gast'), { themeId: 'berner' })
-
-    expect(memberRows()[0].querySelector('.role-badge').textContent).toBe('Gast')
-    expect(container.textContent).toContain('Ein Rudel ist nie öffentlich.')
-    expect([...container.querySelectorAll('.visibility-row strong')][1].textContent).toContain('Rudel')
-  })
-
   test('ein Fehler beim Laden erscheint als Alert', async () => {
     familyMembers.mockRejectedValue(new Error('Nur in einer Familie möglich'))
     await renderPage(familyAs('mitglied'))

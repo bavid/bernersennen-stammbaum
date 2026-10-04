@@ -94,12 +94,12 @@ describe('renderPage', () => {
     expect(fills()[0]).toBe(bg.paper)
     expect(fills()).toContain(bg.ink)
     expect(fills()).toContain(bg.muted)
-    // Standard-Auftritt: der Strich oben/unten in der Akzentfarbe des Hintergrunds
+    // Der Strich oben/unten in der Akzentfarbe des Hintergrunds
     expect(fills()).toContain(bg.accent)
   })
 
   test('Polaroid und Zeitstrahl werden gezeichnet, ohne Muster keine Kacheln', async () => {
-    await renderPage(page({ layout: 'polaroid', photos: [photo('a', { caption: 'Am See' })] }), getTheme('berner'))
+    await renderPage(page({ layout: 'polaroid', photos: [photo('a', { caption: 'Am See' })] }), getTheme())
     expect(images().filter((url) => url.startsWith('data:'))).toHaveLength(0)
     expect(ctx.calls.some(([key, text]) => key === 'fillText' && text === 'Am See')).toBe(true)
     expect(ctx.calls.some(([key]) => key === 'rotate')).toBe(true)

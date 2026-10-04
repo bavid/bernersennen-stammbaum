@@ -300,7 +300,7 @@ describe('FamilyManage – was welche Rolle hier sieht (Phase W, Schritt 2)', ()
 
       expect(container.querySelector('.back-link').getAttribute('href')).toBe('/einstellungen?bereich=familien')
       expect(container.querySelector('.family-manage-title').textContent).toContain('Familie Sonnenhang')
-      expect(container.textContent).toContain('Name und Aussehen der Familie ändert nur die Familienleitung.')
+      expect(container.textContent).toContain('Den Namen der Familie ändert nur die Familienleitung.')
       for (const title of ['Name', 'Aussehen', 'Leitung übergeben', 'Familie auflösen', 'Schlüssel der Familie erneuern']) {
         expect(heading(title), title).toBeUndefined()
       }
@@ -312,22 +312,19 @@ describe('FamilyManage – was welche Rolle hier sieht (Phase W, Schritt 2)', ()
     }
   })
 
-  test('Leitung: Name, Aussehen (erst auf Klick), Leitung übergeben, Schlüssel, Mitgliedschaft und Auflösen', async () => {
+  test('Leitung: Name, Leitung übergeben, Schlüssel, Mitgliedschaft und Auflösen - kein Aussehen mehr (B+ Familienalbum)', async () => {
     familyMembers.mockResolvedValue(payloadAs('leitung'))
     await renderPage(familyAs('leitung'))
 
     expect([...container.querySelectorAll('h2')].map((h) => h.textContent)).toEqual([
       'Familie Sonnenhang Familienleitung',
       'Name',
-      'Aussehen',
       'Leitung übergeben',
       'Schlüssel der Familie erneuern',
       'Deine Mitgliedschaft',
       'Familie auflösen'
     ])
-    expect(container.querySelector('#family-look-panel').hidden).toBe(true)
-    await act(async () => buttonWith('Ändern').click())
-    expect(container.querySelector('#family-look-panel').hidden).toBe(false)
+    expect(container.querySelector('#family-look-panel')).toBeNull()
   })
 
   test('die einzige Leitung sieht statt "Familie verlassen" den Hinweis mit "Leitung übergeben" und "Familie auflösen"', async () => {

@@ -1,4 +1,4 @@
-// Familienbande im Standard-Auftritt (Phase V3, Familienbande 2): ein Raster aller Tiere statt Generationen. Reine
+// Familienbande (Phase V3, Familienbande 2): ein Raster aller Tiere statt Generationen. Reine
 // Logik für die Gruppen je Eigentümer (der eigene Bereich, die Zuhause der Mitglieder - der Filter über dem Raster), die
 // Familien und befreundeten Zuhause des eigenen Zuhauses (eine leise Zeile darunter) und die Frage, ob es schon einen
 // Stammbaum gibt.
@@ -16,11 +16,10 @@ export function hasFamilyTree({ dogs = [], allDogs = [], events = [] } = {}) {
   return computeUnions(collectNodes(dogs, allDogs)).length > 0
 }
 
-// 'tree' | 'families' | 'pending'. familiesView: Auftritt mit Familien-Ansicht (theme.familiesView); wantsTree:
-// ?ansicht=stammbaum; loaded: Tiere und Verpaarungen sind geladen. Ein Stammbaum-Link wartet auf sie ('pending'),
-// statt kurz die Familien aufblitzen zu lassen; gibt es danach keinen Stammbaum, zeigt er die Familien.
-export function overviewMode({ familiesView, wantsTree, treeAvailable, loaded }) {
-  if (!familiesView) return 'tree'
+// 'tree' | 'families' | 'pending'. wantsTree: ?ansicht=stammbaum; loaded: Tiere und Verpaarungen sind geladen. Ein
+// Stammbaum-Link wartet auf sie ('pending'), statt kurz die Familien aufblitzen zu lassen; gibt es danach keinen
+// Stammbaum, zeigt er die Familien.
+export function overviewMode({ wantsTree, treeAvailable, loaded }) {
   if (!wantsTree) return 'families'
   if (treeAvailable) return 'tree'
   return loaded ? 'families' : 'pending'

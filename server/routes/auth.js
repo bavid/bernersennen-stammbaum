@@ -6,7 +6,6 @@ const config = require('../config')
 const { requireAuth, requireSession, setSessionCookie, clearSessionCookie, refreshSession } = require('../middleware/auth')
 const { codeLimiter, authLimiter } = require('../middleware/abuse')
 const { cleanId } = require('../lib/validate')
-const { isTheme } = require('../lib/themes')
 const { ART, canEnter, buildMe, removeMembership } = require('../lib/context')
 const { isVisiting } = require('../lib/visits')
 const { requireRole, isLastLeitung } = require('../lib/roles')
@@ -187,29 +186,23 @@ router.post('/logout', (req, res) => {
   res.status(204).end()
 })
 
-// Name und/oder Aussehen der Familie ändern – betrifft alle, die das gemeinsame Passwort nutzen.
-// In einer Familie nur für die Leitung (Phase R Task 1, lib/roles.js).
+// Den Namen der Familie ändern – betrifft alle, die das gemeinsame Passwort nutzen. In einer Familie nur für die Leitung
+// (Phase R Task 1, lib/roles.js). B+ Familienalbum (04.10.): ein Auftritt für alle - ein mitgeschicktes "theme" (alte
+// Clients) wird angenommen und ignoriert; die Spalte families.theme bleibt nur für ältere Datenbanken stehen.
 router.put('/family', requireAuth, requireRole('leitung'), (req, res) => {
   const { name, theme } = req.body || {}
   if (name === undefined && theme === undefined) {
     return res.status(400).json({ error: 'Nichts zu ändern' })
   }
-  const updates = {}
   if (name !== undefined) {
     const trimmedName = typeof name === 'string' ? name.trim() : ''
     if (!trimmedName) return res.status(400).json({ error: 'Der Name darf nicht leer sein' })
     if (trimmedName.length > MAX_NAME_LENGTH) {
       return res.status(400).json({ error: `Der Name darf höchstens ${MAX_NAME_LENGTH} Zeichen haben` })
     }
-    updates.name = trimmedName
+    db.prepare('UPDATE families SET name = ? WHERE id = ?').run(trimmedName, req.familyId)
   }
-  if (theme !== undefined) {
-    if (!isTheme(theme)) return res.status(400).json({ error: 'Dieses Aussehen gibt es nicht' })
-    updates.theme = theme
-  }
-  if (updates.name) db.prepare('UPDATE families SET name = ? WHERE id = ?').run(updates.name, req.familyId)
-  if (updates.theme) db.prepare('UPDATE families SET theme = ? WHERE id = ?').run(updates.theme, req.familyId)
-  res.json(db.prepare('SELECT id, name, theme FROM families WHERE id = ?').get(req.familyId))
+  res.json(db.prepare('SELECT id, name FROM families WHERE id = ?').get(req.familyId))
 })
 
 // adminView (Phase 5 Task 5b): eine vom Admin geöffnete Nur-Lesen-Sitzung meldet sich als solche, damit der

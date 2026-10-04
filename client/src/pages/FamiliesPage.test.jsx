@@ -126,10 +126,4 @@ describe('FamiliesPage (Phase W)', () => {
     expect(container.querySelector('dialog[open]')).toBeNull()
   })
 
-  test('Berner: Rudel statt Familien', async () => {
-    await render(atHome, () => {}, 'berner')
-    expect(container.querySelector('h1').textContent).toBe('Rudel')
-    expect(button('Rudel beitreten')).not.toBeUndefined()
-    expect(button('Neues Rudel gründen')).not.toBeUndefined()
-  })
 })

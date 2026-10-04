@@ -42,7 +42,7 @@ async function render(themeId) {
 // bleibt trotzdem theme-fähig (liest theme.texts) – dieser Test deckt genau das ab, unabhängig davon,
 // welches Theme der Aufrufer übergibt. Anmelden/Einlösen/Wiederherstellung selbst nutzen feste, nicht
 // theme-abhängige Texte ("Rudel"/Familien-Wortschatz kommt hier nicht mehr vor).
-describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
+describe.each(['standard'])('Login-Hero im Theme %s', (themeId) => {
   const theme = getTheme(themeId)
 
   test('Kicker und zweizeilige Headline kommen aus den Theme-Texten', async () => {
@@ -63,12 +63,6 @@ describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
     expect(facts).toEqual(theme.texts.loginFacts)
   })
 
-  test('Der senkrechte Dreifarb-Streifen erscheint nur, wenn das Theme einen hat', async () => {
-    await render(themeId)
-    const stripe = container.querySelector('.login-hero .tricolor-vertical')
-    expect(stripe === null).toBe(!theme.tricolor)
-  })
-
   test('Anmelden-Modus, Feldbeschriftung und Absenden-Knopf sind fest (nicht vom Theme abhängig)', async () => {
     await render(themeId)
     expect(container.querySelector('.login-card-head h1').textContent).toBe('Anmelden')
@@ -76,8 +70,8 @@ describe.each(['standard', 'berner'])('Login-Hero im Theme %s', (themeId) => {
     expect(container.querySelector('.form-stack button[type="submit"]').textContent).toBe('Chronik öffnen')
   })
 
-  // Phase V3: der Standard-Auftritt spricht von Familien statt Generationen (die Familienbande zeigt zuerst Familien),
-  // der Berner-Auftritt behält seinen Satz. Keine feste Familie im Text.
+  // Phase V3: der Auftritt spricht von Familien statt Generationen (die Familienbande zeigt zuerst Familien). Keine feste
+  // Familie im Text.
   test('Der Demo-Hinweis kommt aus den Theme-Texten und nennt keine feste Familie', async () => {
     await render(themeId)
     expect(container.querySelector('.login-demo .field-hint').textContent).toBe(theme.texts.loginDemoHint)

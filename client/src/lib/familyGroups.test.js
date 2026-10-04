@@ -45,19 +45,15 @@ describe('hasFamilyTree – der Stammbaum ist ein Zusatz', () => {
 })
 
 describe('overviewMode – welche Ansicht die Familienbande zeigt', () => {
-  test('ohne Familien-Ansicht (Berner): immer der Stammbaum', () => {
-    expect(overviewMode({ familiesView: false, wantsTree: false, treeAvailable: false, loaded: false })).toBe('tree')
-  })
-
-  test('Standard: zuerst Familien; der Stammbaum nur auf Wunsch und wenn es ihn gibt', () => {
-    const base = { familiesView: true, loaded: true }
+  test('zuerst Familien; der Stammbaum nur auf Wunsch und wenn es ihn gibt', () => {
+    const base = { loaded: true }
     expect(overviewMode({ ...base, wantsTree: false, treeAvailable: true })).toBe('families')
     expect(overviewMode({ ...base, wantsTree: true, treeAvailable: true })).toBe('tree')
     expect(overviewMode({ ...base, wantsTree: true, treeAvailable: false })).toBe('families')
   })
 
   test('ein Stammbaum-Link wartet auf die Verpaarungen, statt kurz die Familien zu zeigen', () => {
-    expect(overviewMode({ familiesView: true, wantsTree: true, treeAvailable: false, loaded: false })).toBe('pending')
+    expect(overviewMode({ wantsTree: true, treeAvailable: false, loaded: false })).toBe('pending')
   })
 })
 

@@ -46,7 +46,7 @@ async function render(themeId, family) {
   return container
 }
 
-describe.each(['standard', 'berner'])('CollagePage im Theme %s', (themeId) => {
+describe.each(['standard'])('CollagePage im Theme %s', (themeId) => {
   const theme = getTheme(themeId)
 
   test('Setup-Ansicht nutzt den Theme-Wortschatz für Auswahl-Überschrift und Erstellen-Button', async () => {

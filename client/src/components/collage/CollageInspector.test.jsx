@@ -57,7 +57,7 @@ async function render({ themeId = 'standard', tab = 'seite', page = basePage, pa
 const click = (el) => act(() => el.click())
 const buttonByText = (text) => [...container.querySelectorAll('button')].find((b) => b.textContent.trim() === text)
 
-describe.each(['standard', 'berner'])('CollageInspector im Theme %s', (themeId) => {
+describe.each(['standard'])('CollageInspector im Theme %s', (themeId) => {
   const theme = getTheme(themeId)
 
   test('Leerer Foto-Ablage-Hinweis nennt Tiere/Hunde aus dem Theme-Wortschatz', async () => {

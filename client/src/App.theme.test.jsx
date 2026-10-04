@@ -28,7 +28,7 @@ async function render(ui) {
   return container
 }
 
-describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
+describe.each(['standard'])('App-Rahmen im Theme %s', (themeId) => {
   const theme = getTheme(themeId)
 
   test('Header zeigt den App-Namen des Themes als Markenname', async () => {
@@ -42,7 +42,7 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
     expect(container.querySelector('.brand-name').textContent).toBe(theme.appName)
   })
 
-  test('Footer zeigt den Footer-Text des Themes, Streifen nur wenn das Theme einen hat', async () => {
+  test('Footer zeigt den Footer-Text des Themes, ohne Dreifarb-Streifen', async () => {
     await render(
       <MemoryRouter>
         <ThemeProvider themeId={themeId}>
@@ -51,8 +51,7 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
       </MemoryRouter>
     )
     expect(container.querySelector('.app-footer p').textContent).toBe(theme.footer)
-    const stripe = container.querySelector('.app-footer .tricolor')
-    expect(stripe === null).toBe(!theme.tricolor)
+    expect(container.querySelector('.app-footer .tricolor')).toBeNull()
   })
 
   // Phase W: der Fuß eines Haushalts hat nur noch Impressum und Datenschutz; Tierheime und Partner behalten "In der Nähe"

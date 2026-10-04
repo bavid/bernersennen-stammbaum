@@ -45,14 +45,12 @@ function PlannedLitter({ planned }) {
   )
 }
 
-// family: der aktive Bereich (AreaRoutes). Deckakte eintragen und löschen ab Mitglied (Phase R) - ein Gast
-// sieht das Zuchtbuch nur. Wörter und Sätze je Auftritt (Phase U): Standard "Nachwuchs"/"Verpaarung", Berner
-// "Würfe"/"Deckakt"; ohne eigenen Reiter (Standard) führt oben ein Link zurück zur Familienbande - dorthin, wo der
-// Nachwuchs steht (Familienbande 2: beim Stammbaum; ohne Stammbaum zeigt die Familienbande die Familien).
+// family: der aktive Bereich (AreaRoutes). Verpaarungen eintragen und löschen ab Mitglied (Phase R) - ein Gast
+// sieht sie nur. Wörter "Nachwuchs"/"Verpaarung" (Phase U); oben führt ein Link zurück zur Familienbande - dorthin, wo
+// der Nachwuchs steht (Familienbande 2: beim Stammbaum; ohne Stammbaum zeigt die Familienbande die Familien).
 // ?verpaarung=neu (Familienbande 2, lib/litters.js addMatingPath - von der Tierseite und vom Nachwuchs beim Stammbaum)
 // öffnet das Formular gleich, &mutter=<id> wählt die Hündin vor.
-// embedded (Phase W): als Reiter "Würfe" der Tiere-Seite - ohne eigenen Seitenkopf und ohne Rückweg.
-export default function LittersPage({ family, embedded = false }) {
+export default function LittersPage({ family }) {
   const { theme, words } = useTheme()
   const canWrite = hasRole(family, 'mitglied')
   const [searchParams, setSearchParams] = useSearchParams()
@@ -143,23 +141,17 @@ export default function LittersPage({ family, embedded = false }) {
   }
 
   return (
-    <div className={embedded ? 'litters-embedded' : 'page'}>
-      {!embedded && !theme.littersInNav && (
-        <Link to={{ pathname: '/stammbaum', search: `?${TREE_PARAM}=${TREE_VALUE}` }} className="back-link">
-          <Icon name="arrowLeft" /> {words.treeLabel}
-        </Link>
-      )}
-      {embedded ? (
-        <p className="muted">{theme.texts.littersLede}</p>
-      ) : (
-        <header className="page-hero">
-          <div>
-            <span className="eyebrow">{words.littersLabel}</span>
-            <h1>Geschwister auf einen Blick</h1>
-            <p className="page-lede">{theme.texts.littersLede}</p>
-          </div>
-        </header>
-      )}
+    <div className="page">
+      <Link to={{ pathname: '/stammbaum', search: `?${TREE_PARAM}=${TREE_VALUE}` }} className="back-link">
+        <Icon name="arrowLeft" /> {words.treeLabel}
+      </Link>
+      <header className="page-hero">
+        <div>
+          <span className="eyebrow">{words.littersLabel}</span>
+          <h1>Geschwister auf einen Blick</h1>
+          <p className="page-lede">{theme.texts.littersLede}</p>
+        </div>
+      </header>
 
       {error && <div className="error-banner" role="alert">{error}</div>}
 

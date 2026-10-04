@@ -3,14 +3,13 @@ import { useIsDemo } from '../../lib/demo.js'
 import { isOwnHome } from '../../lib/visits.js'
 import { useToast } from '../Toast.jsx'
 import Icon from '../Icon.jsx'
-import ThemePicker from '../ThemePicker.jsx'
 import HomeSwitchNotice from './HomeSwitchNotice.jsx'
 import RahmenGeraete from './RahmenGeraete.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
 import VisitSection from '../visits/VisitSection.jsx'
 
-// Einstellungen → Mein Zuhause: Name (RenameFamilyForm, erst auf Klick - das Formular holt sich den Fokus), Auftritt
-// (ThemePicker: Logo und Wörter), Schlüssel und Benutzer (AccessSettings) und die Einladungen (der bekannte Dialog aus dem
+// Einstellungen → Mein Zuhause: Name (RenameFamilyForm, erst auf Klick - das Formular holt sich den Fokus), Schlüssel und
+// Benutzer (AccessSettings) und die Einladungen (der bekannte Dialog aus dem
 // Fuß, onInvite). Das alles betrifft das eigene Zuhause und geht nur, solange es aktiv ist (der Server ändert immer den
 // aktiven Bereich) - aus einer Familie heraus steht stattdessen der Weg dorthin.
 export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
@@ -22,32 +21,22 @@ export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
     return (
       <div className="settings-block">
         <HomeSwitchNotice family={family} onFamilyChange={onFamilyChange}>
-          Name, Auftritt, Schlüssel und Einladungen eures Zuhauses stellt ihr in „Mein Zuhause“ ein.
+          Name, Schlüssel und Einladungen eures Zuhauses stellt ihr in „Mein Zuhause“ ein.
         </HomeSwitchNotice>
       </div>
     )
   }
 
-  // RenameFamilyForm/ThemePicker liefern nur die geänderten Felder - mit family zusammenführen (isDemo, home …
+  // RenameFamilyForm liefert nur die geänderten Felder - mit family zusammenführen (isDemo, home …
   // blieben sonst weg). Der Bereichswechsler zeigt den Namen des Zuhauses als Zusatz: home zieht mit.
   function handleRenamed(renamed) {
     onFamilyChange({ ...family, ...renamed, home: { ...family.home, name: renamed.name } })
     toast(`Euer Zuhause heißt jetzt „${renamed.name}“`)
   }
 
-  function handleThemeSaved(updated) {
-    onFamilyChange({ ...family, ...updated })
-    toast('Neuer Auftritt gespeichert')
-  }
-
   return (
     <div className="settings-block">
       <NameGroup family={family} readOnly={readOnly} onRenamed={handleRenamed} />
-      <section className="settings-group" aria-labelledby="settings-auftritt-title">
-        <h2 id="settings-auftritt-title">Auftritt</h2>
-        <p className="muted">Logo und Wörter – ob ihr von „{words.group}“ sprecht. Die Farben wählt ihr unter „Darstellung“.</p>
-        <ThemePicker family={family} onSaved={handleThemeSaved} headingId="settings-auftritt-title" />
-      </section>
       <AccessGroup family={family} readOnly={readOnly} onFamilyChange={onFamilyChange} />
       <section className="settings-group" aria-labelledby="settings-einladen-title">
         <h2 id="settings-einladen-title">Einladungen</h2>

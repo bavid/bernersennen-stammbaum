@@ -20,7 +20,7 @@ export default function MembersHero({ family, myRole, stats, demoHint }) {
         <p className="page-lede">Wer zu „{family.name}“ gehört – und wer was darf.</p>
         <p className="hero-hint members-hero-links">
           <Link to={animalsRoute(family)}>← Zu den {words.animals}</Link>
-          {/* Phase W, Schritt 2: Name, Aussehen, Leitung, Schlüssel und Auflösen stehen in den Einstellungen. */}
+          {/* Phase W, Schritt 2: Name, Leitung, Schlüssel und Auflösen stehen in den Einstellungen. */}
           <Link to={`${SETTINGS_ROUTE}?bereich=familien`}>{words.groupSettings}</Link>
         </p>
         {/* Phase U: der Demo-Hinweis gehört zum Kopf - nicht als eigene Zeile zwischen Kopf und erster Karte. */}

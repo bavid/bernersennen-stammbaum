@@ -309,16 +309,6 @@
   gap: var(--space-4);
 }
 
-/* Dreifarb-Streifen des Berner-Auftritts: überall dieselben Töne wie im Collage-Export (lib/collage/render.js TRICOLOR,
-   collage.css .cpage-tricolor) - Audit V7a, vorher war das Rost hier heller (#b5541f). */
-.tricolor {
-  width: 5.5rem;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(90deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #a4431d 66.6%);
-  box-shadow: 0 0 0 1px var(--line);
-}
-
 .page {
   /* Abstand der Abschnitte einer Seite - als Variable, damit eng zusammengehörige Teile ihn gezielt verkleinern können
      (z. B. Ort und Reiter in "Entdecken", discover.css). */

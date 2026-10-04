@@ -97,10 +97,9 @@ function usePendingTarget(current) {
 }
 
 // /tier/:id (Phase W, Schritt 2): ein Tierprofil wie eine Profilseite - kompakter Kopf (DogHead) und Reiter in der Adresse
-// (?reiter=): Chronik (Standard; #entry-N erzwingt sie), Infos, Verwandte (Berner: Stammbaum); eigene Tiere eines Tierheims
+// (?reiter=): Chronik (Standard; #entry-N erzwingt sie), Infos, Verwandte; eigene Tiere eines Tierheims
 // Chronik · Vermittlung · Infos. ?neu=1 öffnet gleich das Erzählen.
 export default function DogDetailPage({ family, onFamilyChange }) {
-  const { theme } = useTheme()
   const { id } = useParams()
   const navigate = useNavigate()
   const { hash } = useLocation()
@@ -110,7 +109,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   const [composerOpen, setComposerOpen] = useState(false)
   const [editingDog, setEditingDog] = useState(false)
   const [photo, setPhoto] = useState(null)
-  const tabs = dogTabs({ shelter: family.art === 'tierheim' && Boolean(dog?.canEdit), familiesView: Boolean(theme.familiesView) })
+  const tabs = dogTabs({ shelter: family.art === 'tierheim' && Boolean(dog?.canEdit) })
   const [selected, select] = useTabParam(DOG_TAB_PARAM, tabs)
   const current = hash.startsWith('#entry-') ? CHRONICLE_TAB : selected
   const setPending = usePendingTarget(current)

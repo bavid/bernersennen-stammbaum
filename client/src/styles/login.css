@@ -90,21 +90,8 @@
   line-height: 1.4;
 }
 
-.tricolor-vertical {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 10px;
-  height: auto;
-  border-radius: 0;
-  box-shadow: none;
-  background: linear-gradient(180deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #a4431d 66.6%);
-}
-
-/* Ohne Dreifarb-Streifen (Standard-Auftritt) trennt eine dezente Linie an derselben Stelle
-   den dunklen Hero vom hellen Anmelde-Panel, damit der Übergang nicht kantenlos wirkt. */
-[data-theme='standard'] .login-hero {
+/* Eine dezente Linie trennt den Hero vom Anmelde-Panel, damit der Übergang nicht kantenlos wirkt. */
+.login-hero {
   border-right: 1px solid rgba(246, 236, 221, 0.14);
 }
 
@@ -413,15 +400,7 @@
     display: none;
   }
 
-  .tricolor-vertical {
-    top: auto;
-    left: 0;
-    width: auto;
-    height: 8px;
-    background: linear-gradient(90deg, #1c1511 0 33.3%, #fffaf2 33.3% 66.6%, #a4431d 66.6%);
-  }
-
-  [data-theme='standard'] .login-hero {
+  .login-hero {
     border-right: none;
     border-bottom: 1px solid rgba(246, 236, 221, 0.14);
   }

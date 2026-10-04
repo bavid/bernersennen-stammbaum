@@ -1,87 +1,55 @@
 import { describe, expect, test } from 'vitest'
-import { THEME_IDS, getTheme } from './index.js'
+import { THEME, getTheme } from './index.js'
 
+// B+ Familienalbum (04.10.): ein Auftritt für alle - der Berner-Auftritt ist entfernt.
 describe('themes', () => {
-  test('standard and berner are available, unknown ids fall back to standard', () => {
-    expect(THEME_IDS).toEqual(['standard', 'berner'])
-    expect(getTheme('berner').id).toBe('berner')
-    expect(getTheme('pink').id).toBe('standard')
-    expect(getTheme(undefined).id).toBe('standard')
+  test('there is one theme; every id (also the old berner) gives the standard theme', () => {
+    expect(THEME.id).toBe('standard')
+    expect(getTheme('berner')).toBe(THEME)
+    expect(getTheme('pink')).toBe(THEME)
+    expect(getTheme(undefined)).toBe(THEME)
+    expect(THEME.appName).toBe('Familie auf Pfoten')
   })
 
-  test('both themes define the same words and texts, none empty', () => {
-    const standard = getTheme('standard')
-    const berner = getTheme('berner')
-    expect(Object.keys(berner.words).sort()).toEqual(Object.keys(standard.words).sort())
-    expect(Object.keys(berner.texts).sort()).toEqual(Object.keys(standard.texts).sort())
-    for (const theme of [standard, berner]) {
-      for (const [key, value] of Object.entries(theme.words)) expect(value, key).toMatch(/\S/)
-    }
+  test('no word or text is empty', () => {
+    for (const [key, value] of Object.entries(THEME.words)) expect(value, key).toMatch(/\S/)
+    for (const [key, value] of Object.entries(THEME.texts)) expect(String(value), key).toMatch(/\S/)
   })
 
-  test('berner keeps the wording families know today', () => {
-    const { words, appName } = getTheme('berner')
-    expect(appName).toBe('Familienchronik')
-    expect(words.newsTitle).toBe('Neu im Rudel')
-    expect(words.inGroup).toBe('im Rudel')
-    expect(getTheme('standard').words.newsTitle).toBe('Neu in der Familie')
+  test('group and role words: Familie, Familienleitung - the rest of the roles are shared words', () => {
+    const { words } = THEME
+    expect(words.newsTitle).toBe('Neu in der Familie')
+    expect(words.roleLeitung).toBe('Familienleitung')
+    expect([words.roleGast, words.roleMitglied, words.roleStellvertretung]).toEqual(['Gast', 'Mitglied', 'Stellvertretung'])
+    expect(words.groupNeverPublic).toBe('Eine Familie ist nie öffentlich.')
+    expect(words.groupSettings).toBe('Familie verwalten')
+    expect(words.wholeGroup).toBe('die ganze Familie')
   })
 
-  test('role words (Phase R): berner says Rudelführer, standard Familienleitung, the rest is shared', () => {
-    expect(getTheme('berner').words.roleLeitung).toBe('Rudelführer')
-    expect(getTheme('standard').words.roleLeitung).toBe('Familienleitung')
-    for (const id of THEME_IDS) {
-      const { words } = getTheme(id)
-      expect([words.roleGast, words.roleMitglied, words.roleStellvertretung]).toEqual(['Gast', 'Mitglied', 'Stellvertretung'])
-    }
-    expect(getTheme('berner').words.dissolveGroup).toBe('Rudel auflösen')
-    expect(getTheme('standard').words.groupNeverPublic).toBe('Eine Familie ist nie öffentlich.')
+  // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - hier "Familienbande", "Nachwuchs" und "Verpaarung".
+  test('tree and litters words: Familienbande, Nachwuchs, Verpaarung; animals are Tiere', () => {
+    const { words, texts } = THEME
+    expect([words.treeLabel, words.littersLabel, words.mating]).toEqual(['Familienbande', 'Nachwuchs', 'Verpaarung'])
+    expect([words.animal, words.animals]).toEqual(['Tier', 'Tiere'])
+    expect(words.toTree).toBe('Zu den Tieren')
+    expect(texts.loginDemoHint).toBe('Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren, Familien und Erinnerungen.')
   })
 
-  // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - der Standard-Auftritt sagt "Familienbande" und "Nachwuchs".
-  test('tree and litters words: standard Familienbande/Nachwuchs/Verpaarung, berner keeps Stammbaum/Würfe/Deckakt', () => {
-    const standard = getTheme('standard')
-    const berner = getTheme('berner')
-    expect([standard.words.treeLabel, standard.words.littersLabel, standard.words.mating]).toEqual(['Familienbande', 'Nachwuchs', 'Verpaarung'])
-    expect([berner.words.treeLabel, berner.words.littersLabel, berner.words.mating]).toEqual(['Stammbaum', 'Würfe', 'Deckakt'])
-    expect(berner.words.breedingBook).toBe('Zuchtbuch')
-    expect(standard.littersInNav).toBe(false)
-    expect(berner.littersInNav).toBe(true)
+  // Phase W, Schritt 2 (Richtung „Familienalbum“): Chronik-Einträge heißen „Erinnerung“, Kommentare „Grüße“.
+  test('entry and greeting nouns (Phase W, Schritt 2)', () => {
+    const { words } = THEME
+    expect([words.entry, words.entries, words.entriesDat, words.newEntry]).toEqual(['Erinnerung', 'Erinnerungen', 'Erinnerungen', 'Neue Erinnerung'])
+    expect([words.tellAction, words.tellActionShort]).toEqual(['Erinnerung festhalten', 'Festhalten'])
+    expect([words.greeting, words.greetings, words.greetingAction, words.greetingsEmpty]).toEqual(['Gruß', 'Grüße', 'Gruß schreiben', 'Noch keine Grüße'])
   })
 
-  // Phase V3: der Standard-Auftritt zeigt auf der Familienbande zuerst Familien (Stammbaum erst nach einer Verpaarung),
-  // der Berner-Auftritt bleibt beim Stammbaum. Der Demo-Hinweis der Anmeldung folgt dem.
-  test('families first: standard shows families, berner keeps the tree; demo hint per theme', () => {
-    expect(getTheme('standard').familiesView).toBe(true)
-    expect(getTheme('berner').familiesView).toBe(false)
-    expect(getTheme('standard').texts.loginDemoHint).toBe('Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren, Familien und Erinnerungen.')
-    expect(getTheme('berner').texts.loginDemoHint).toBe('Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.')
-  })
-
-  // Phase W, Schritt 2 (Betreiber, Richtung „Familienalbum“): Chronik-Einträge heißen „Erinnerung“, Kommentare „Grüße“ -
-  // in beiden Auftritten gleich, an einer Stelle; dazu „Familie verwalten“ und „Zu den Tieren“.
-  test('entry and greeting nouns (Phase W, Schritt 2) are the same in both themes', () => {
-    for (const id of THEME_IDS) {
-      const { words } = getTheme(id)
-      expect([words.entry, words.entries, words.entriesDat, words.newEntry]).toEqual(['Erinnerung', 'Erinnerungen', 'Erinnerungen', 'Neue Erinnerung'])
-      expect([words.tellAction, words.tellActionShort]).toEqual(['Erinnerung festhalten', 'Festhalten'])
-      expect([words.greeting, words.greetings, words.greetingAction, words.greetingsEmpty]).toEqual(['Gruß', 'Grüße', 'Gruß schreiben', 'Noch keine Grüße'])
-    }
-    expect(getTheme('standard').words.groupSettings).toBe('Familie verwalten')
-    expect(getTheme('berner').words.groupSettings).toBe('Rudel verwalten')
-    expect(getTheme('standard').words.toTree).toBe('Zu den Tieren')
-    expect(getTheme('berner').words.toTree).toBe('Zum Stammbaum')
-    expect(getTheme('standard').words.wholeGroup).toBe('die ganze Familie')
-    expect(getTheme('berner').words.wholeGroup).toBe('das ganze Rudel')
-  })
-
-  test('no word or text of the standard theme uses breeding vocabulary', () => {
-    const { words, texts } = getTheme('standard')
+  test('no word or text uses breeding vocabulary', () => {
+    const { words, texts } = THEME
     const all = [...Object.values(words), ...Object.values(texts).flat(2)]
-    for (const value of all) expect(value).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht|züchte|Welpe/)
+    for (const value of all) expect(value).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht|züchte|Welpe|Rudel|Hunde\b/)
   })
 
-  test('each theme defines a Mark component', () => {
-    for (const id of THEME_IDS) expect(typeof getTheme(id).Mark).toBe('function')
+  test('the theme defines a Mark component', () => {
+    expect(typeof THEME.Mark).toBe('function')
   })
 })

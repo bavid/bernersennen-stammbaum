@@ -35,8 +35,8 @@ const HandOverSection = forwardRef(function HandOverSection({ members, selfId, s
       <h2 id="handover-title">Leitung übergeben</h2>
       <p className="muted">
         Wer die Leitung bekommt, ist danach {words.roleLeitung}
-        {selfDemoted ? ` – du selbst bist dann ${words.roleStellvertretung}.` : '.'} Nur die Leitung ändert Rollen, Name und
-        Aussehen und kann {words.theGroup} auflösen.
+        {selfDemoted ? ` – du selbst bist dann ${words.roleStellvertretung}.` : '.'} Nur die Leitung ändert Rollen und den
+        Namen und kann {words.theGroup} auflösen.
       </p>
       {candidates.length === 0 ? (
         <p className="field-hint">Noch kein anderes Mitglied da, an das du übergeben könntest.</p>

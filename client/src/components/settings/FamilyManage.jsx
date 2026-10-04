@@ -2,7 +2,6 @@ import { startTransition, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../../api'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
-import { getTheme } from '../../themes/index.js'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { SETTINGS_ROUTE, startRoute } from '../../lib/areas.js'
 import useFamilyMembers from '../../hooks/useFamilyMembers.js'
@@ -10,38 +9,11 @@ import { useToast } from '../Toast.jsx'
 import Icon from '../Icon.jsx'
 import Modal from '../Modal.jsx'
 import RoleBadge from '../RoleBadge.jsx'
-import ThemePicker from '../ThemePicker.jsx'
 import HandOverSection from '../members/HandOverSection.jsx'
 import FamilyKeySection from '../members/FamilyKeySection.jsx'
 import OwnMembershipSection from '../members/OwnMembershipSection.jsx'
 import DissolveFamilyDialog from '../members/DissolveFamilyDialog.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
-
-// Aussehen (ThemePicker) erst auf Klick - die Vorschau wechselt sonst schon beim Öffnen der Seite.
-function LookGroup({ family, onSaved }) {
-  const { words } = useTheme()
-  const [open, setOpen] = useState(false)
-  return (
-    <section className="settings-group" aria-labelledby="family-look-title">
-      <h2 id="family-look-title">Aussehen</h2>
-      <div className="settings-row settings-row-plain">
-        <div className="settings-row-main">
-          <strong>{getTheme(family.theme).label}</strong>
-          <span className="settings-row-sub">Logo und Wörter für alle in {words.yourGroupDat}.</span>
-        </div>
-        <div className="settings-row-actions">
-          <button type="button" className="btn btn-ghost" aria-expanded={open} aria-controls="family-look-panel" onClick={() => setOpen(!open)}>
-            <Icon name="edit" />
-            {open ? 'Schließen' : 'Ändern'}
-          </button>
-        </div>
-      </div>
-      <div id="family-look-panel" hidden={!open}>
-        {open && <ThemePicker family={family} onSaved={onSaved} headingId="family-look-title" />}
-      </div>
-    </section>
-  )
-}
 
 function DissolveGroup({ disabled, onOpen }) {
   const { words } = useTheme()
@@ -61,7 +33,7 @@ function DissolveGroup({ disabled, onOpen }) {
 }
 
 // Einstellungen › Familien › [Familie] (Phase W, Schritt 2 - ersetzt den Dialog "Familie einstellen" und die Leitungs-Teile
-// des Reiters "Mitglieder"): Name und Aussehen (Leitung), beim klassischen Login Schlüssel und Benutzer, Leitung übergeben,
+// des Reiters "Mitglieder"): der Name (Leitung), beim klassischen Login Schlüssel und Benutzer, Leitung übergeben,
 // den Schlüssel der Familie erneuern, die eigene Mitgliedschaft (Verlassen) und Auflösen. Die Seite läuft im Bereich der
 // Familie (AreaGate über ?familie=, lib/areas.js settingsArea) - die Endpunkte wirken auf den aktiven Bereich, die Rollen
 // prüft der Server. classic: Anmeldung mit dem gemeinsamen Schlüssel (die Familie ist selbst die Identität).
@@ -76,17 +48,12 @@ export default function FamilyManage({ family, onFamilyChange, classic = false }
   const [dissolveOpen, setDissolveOpen] = useState(false)
   const handOverRef = useRef(null)
 
-  // RenameFamilyForm/ThemePicker liefern nur die geänderten Felder - mit family zusammenführen; der Name steht auch in
+  // RenameFamilyForm liefert nur die geänderten Felder - mit family zusammenführen; der Name steht auch in
   // me.memberships (Familien-Liste, Einstellungen).
   function handleRenamed(renamed) {
     const memberships = (family.memberships || []).map((m) => (m.id === family.id ? { ...m, name: renamed.name } : m))
     onFamilyChange({ ...family, ...renamed, memberships })
     toast(`${words.TheGroup} heißt jetzt „${renamed.name}“`)
-  }
-
-  function handleThemeSaved(updated) {
-    onFamilyChange({ ...family, ...updated })
-    toast('Neues Aussehen gespeichert')
   }
 
   const handleHandOver = (member) => members.run(() => api.handOverLeitung(member.familyId), `„${member.name}“ hat jetzt die Leitung.`)
@@ -134,15 +101,12 @@ export default function FamilyManage({ family, onFamilyChange, classic = false }
       )}
 
       {isLeitung ? (
-        <>
-          <NameGroup family={family} readOnly={isDemo} onRenamed={handleRenamed} sub={`So heißt ${words.theGroup} für alle Mitglieder.`} />
-          <LookGroup family={family} onSaved={handleThemeSaved} />
-        </>
+        <NameGroup family={family} readOnly={isDemo} onRenamed={handleRenamed} sub={`So heißt ${words.theGroup} für alle Mitglieder.`} />
       ) : (
         <section className="settings-group" aria-labelledby="family-readonly-title">
-          <h2 id="family-readonly-title">Name und Aussehen</h2>
+          <h2 id="family-readonly-title">{words.groupName}</h2>
           <p className="muted settings-readonly-hint">
-            Name und Aussehen {words.ofGroup} ändert nur die {words.roleLeitung}. Wer das ist, steht im Reiter „Mitglieder“.
+            Den Namen {words.ofGroup} ändert nur die {words.roleLeitung}. Wer das ist, steht im Reiter „Mitglieder“.
           </p>
         </section>
       )}

@@ -1,38 +1,14 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { getTheme } from './index.js'
+import { THEME } from './index.js'
 
-const ThemeContext = createContext(null)
-const noop = () => {}
+// Seit B+ Familienalbum (04.10.) gibt es einen Auftritt für alle: Logo, Name und Wörter (themes/standard.js) hängen nicht
+// mehr an der Familie. Der Dateiname bleibt, weil viele Komponenten useTheme von hier holen.
+const VALUE = Object.freeze({ theme: THEME, words: THEME.words })
 
-// Setzt das Aussehen der Familie: data-theme am <html>, Fenstertitel und Favicon.
-// setPreviewId zeigt ein anderes Theme vorübergehend (Auswahl in den Einstellungen), ohne zu speichern.
-export function ThemeProvider({ themeId, children }) {
-  const [previewId, setPreviewId] = useState(null)
-  const [lastThemeId, setLastThemeId] = useState(themeId)
-
-  // Ein neuer gespeicherter Wert verwirft eine laufende Vorschau sofort, noch während des Renderns –
-  // kein separater Effect-Durchlauf, der kurz das alte Vorschau-Theme zeigen würde.
-  if (themeId !== lastThemeId) {
-    setLastThemeId(themeId)
-    if (previewId !== null) setPreviewId(null)
-  }
-
-  const theme = getTheme(previewId || themeId)
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme.id
-    document.title = theme.appName
-    const icon = document.querySelector('link[rel="icon"]')
-    if (icon) icon.setAttribute('href', theme.favicon)
-  }, [theme])
-
-  const value = useMemo(() => ({ theme, words: theme.words, setPreviewId }), [theme])
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+// Hülle ohne eigene Wirkung - Fenstertitel und Favicon stehen fest in index.html.
+export function ThemeProvider({ children }) {
+  return children
 }
 
 export function useTheme() {
-  const value = useContext(ThemeContext)
-  if (value) return value
-  const theme = getTheme('standard')
-  return { theme, words: theme.words, setPreviewId: noop }
+  return VALUE
 }

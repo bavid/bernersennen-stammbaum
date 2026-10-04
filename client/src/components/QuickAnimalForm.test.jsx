@@ -23,13 +23,13 @@ function setInputValue(input, value) {
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
-async function render(props = {}, themeId = 'standard') {
+async function render(props = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <ThemeProvider themeId={themeId}>
+      <ThemeProvider>
         <QuickAnimalForm allDogs={[]} onCreated={() => {}} onCancel={() => {}} {...props} />
       </ThemeProvider>
     )
@@ -64,8 +64,8 @@ function actionButton(text) {
 }
 
 describe('QuickAnimalForm', () => {
-  test('Standard-Theme: keine Tierart vorausgewählt, Absenden ohne Auswahl zeigt einen Feldfehler', async () => {
-    await render({}, 'standard')
+  test('keine Tierart vorausgewählt, Absenden ohne Auswahl zeigt einen Feldfehler', async () => {
+    await render({})
     expect(segmented('Tierart').querySelectorAll('button[aria-pressed="true"]').length).toBe(0)
 
     setInputValue(container.querySelector('#quick-animal-name'), 'Minka')
@@ -75,16 +75,12 @@ describe('QuickAnimalForm', () => {
     expect(createDog).not.toHaveBeenCalled()
   })
 
-  test('Berner-Theme: Hund ist vorausgewählt', async () => {
-    await render({}, 'berner')
-    expect(segmentedButton('Tierart', 'Hund').getAttribute('aria-pressed')).toBe('true')
-  })
-
   test('mit livesWith: "lebt mit" ist fest, das Tier wird beim Anlegen direkt verlinkt', async () => {
     const onCreated = vi.fn()
     const livesWith = { id: 5, name: 'Nele' }
     createDog.mockResolvedValue({ id: 9, name: 'Hoppel' })
-    await render({ livesWith, onCreated }, 'berner')
+    await render({ livesWith, onCreated })
+    act(() => segmentedButton('Tierart', 'Hund').click())
 
     expect(container.querySelector('select[aria-label="Lebt mit"]')).toBeNull()
     expect(container.querySelector('.quick-animal-fixed-housemate').textContent).toBe('lebt mit Nele')
@@ -98,7 +94,7 @@ describe('QuickAnimalForm', () => {
 
   test('"Mehr Angaben …" reicht die bisherigen Werte weiter, ohne ein Tier anzulegen', async () => {
     const onMore = vi.fn()
-    await render({ onMore }, 'berner')
+    await render({ onMore })
 
     setInputValue(container.querySelector('#quick-animal-name'), 'Nele')
     act(() => segmentedButton('Tierart', 'Katze').click())
@@ -119,13 +115,13 @@ describe('QuickAnimalForm', () => {
   })
 
   test('ohne onMore-Prop erscheint kein "Mehr Angaben …"-Knopf (z. B. auf der Tierseite)', async () => {
-    await render({}, 'berner')
+    await render({})
     expect(actionButton('Mehr Angaben …')).toBeUndefined()
   })
 
   test('"anderes": zeigt "Welches Tier?" und legt den Wert als rasse an', async () => {
     createDog.mockResolvedValue({ id: 1, name: 'Hoppel' })
-    await render({}, 'berner')
+    await render({})
 
     act(() => segmentedButton('Tierart', 'Anderes Tier').click())
     setInputValue(container.querySelector('#quick-animal-kind'), 'Kaninchen')
@@ -139,7 +135,8 @@ describe('QuickAnimalForm', () => {
 
   test('shelter=true legt das Tier mit vermittlungStatus "in_vermittlung" an', async () => {
     createDog.mockResolvedValue({ id: 3, name: 'Pepper' })
-    await render({ shelter: true }, 'berner')
+    await render({ shelter: true })
+    act(() => segmentedButton('Tierart', 'Hund').click())
 
     setInputValue(container.querySelector('#quick-animal-name'), 'Pepper')
     await act(async () => container.querySelector('form').requestSubmit())
@@ -149,7 +146,8 @@ describe('QuickAnimalForm', () => {
 
   test('ohne shelter-Prop wird kein vermittlungStatus mitgeschickt', async () => {
     createDog.mockResolvedValue({ id: 4, name: 'Momo' })
-    await render({}, 'berner')
+    await render({})
+    act(() => segmentedButton('Tierart', 'Hund').click())
 
     setInputValue(container.querySelector('#quick-animal-name'), 'Momo')
     await act(async () => container.querySelector('form').requestSubmit())
@@ -159,7 +157,8 @@ describe('QuickAnimalForm', () => {
 
   test('"Name unbekannt" legt ohne Namen an', async () => {
     createDog.mockResolvedValue({ id: 2, name: 'Unbekannt' })
-    await render({}, 'berner')
+    await render({})
+    act(() => segmentedButton('Tierart', 'Hund').click())
 
     act(() => container.querySelector('.check input').click())
     expect(container.querySelector('#quick-animal-name').disabled).toBe(true)

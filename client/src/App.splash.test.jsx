@@ -45,15 +45,10 @@ async function render() {
 }
 
 describe('Splash-Screen vor der /api/me-Antwort', () => {
-  test('nutzt standard, wenn noch kein Aussehen gemerkt wurde', async () => {
-    await render()
-    expect(document.documentElement.dataset.theme).toBe('standard')
-  })
-
-  test('nutzt das zuletzt gemerkte Aussehen der Familie', async () => {
+  test('zeigt das Pfoten-Logo - auch wenn ein alter Auftritt gemerkt ist (B+ Familienalbum: einer für alle)', async () => {
     writeSetting('lastThemeId', 'berner')
     await render()
-    expect(document.documentElement.dataset.theme).toBe('berner')
-    expect(document.title).toBe('Familienchronik')
+    expect(container.querySelector('.splash svg').getAttribute('data-mark')).toBe('paw')
+    expect(document.documentElement.dataset.theme).toBeUndefined()
   })
 })

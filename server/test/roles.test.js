@@ -282,7 +282,7 @@ test('Rollen in Familien: Leitung, Stellvertretung, Mitglied, Gast', async (t) =
     assertForbidden(await put(`/api/dogs/${ownDog.id}/shares`, { familyIds: [rudelId] }, member.homeCookie), 'erneut teilen als Gast')
   })
 
-  await t.test('Stellvertretung: darf einladen, aber Name, Aussehen, Schlüssel und Benutzer nicht', async () => {
+  await t.test('Stellvertretung: darf einladen, aber Name, Schlüssel und Benutzer nicht', async () => {
     const deputy = await joinAs('stellvertretung')
     assert.equal(deputy.view.role, 'stellvertretung')
 
@@ -298,7 +298,7 @@ test('Rollen in Familien: Leitung, Stellvertretung, Mitglied, Gast', async (t) =
     assertForbidden(await del('/api/users/1', deputy.cookie), 'DELETE /users/:id')
   })
 
-  await t.test('Leitung per Mitgliedschaft: darf schreiben, einladen und Name/Aussehen ändern', async () => {
+  await t.test('Leitung per Mitgliedschaft: darf schreiben, einladen und den Namen ändern (ein altes theme wird ignoriert)', async () => {
     const lead = await joinAs('leitung')
     assert.equal(lead.view.role, 'leitung')
 
