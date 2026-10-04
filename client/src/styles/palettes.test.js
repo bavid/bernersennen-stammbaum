@@ -128,4 +128,22 @@ describe('palettes.css – fünf Farbwelten, hell und dunkel', () => {
       expect(block.tokens['--on-rust']).toBe(`var(--akzent-${scheme}-auf)`)
     }
   })
+
+  // Review B+ (WCAG 1.4.11): der Fokus ist deckend in der Akzentfarbe - mindestens 3 : 1 gegen Papier und Flächen.
+  test('Fokus: deckender Ring/Umriss in der Akzentfarbe, in jeder Farbwelt hell und dunkel mindestens 3 : 1', () => {
+    const root = merge((selector) => selector === ':root')
+    expect(root['--focus-color']).toBe('var(--rust)')
+    expect(root['--focus-ring']).toBe('0 0 0 2px var(--surface), 0 0 0 4px var(--focus-color)')
+    expect(css).not.toMatch(/--focus-ring:[^;]*(color-mix|transparent|rgba)/)
+    const base = readFileSync(join(stylesDir, 'base.css'), 'utf8')
+    expect(base).toMatch(/:focus-visible \{\s*outline: 2px solid var\(--focus-color\);/)
+    for (const { id } of PALETTEN) {
+      for (const mode of ['hell', 'dunkel']) {
+        const t = tokensFor(id, mode)
+        for (const bg of ['--paper', '--surface', '--surface-sunk', '--paper-deep']) {
+          expect(contrastRatio(t['--rust'], t[bg]), `${id} ${mode} ${bg}`).toBeGreaterThanOrEqual(3)
+        }
+      }
+    }
+  })
 })

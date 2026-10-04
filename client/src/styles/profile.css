@@ -40,7 +40,7 @@
 
 .dog-head-photo button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--rust), var(--focus-ring);
+  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--rust), 0 0 0 8px var(--paper), 0 0 0 10px var(--focus-color);
 }
 
 .dog-head-photo img {

@@ -7,12 +7,22 @@ import { isValidHexColor } from './color.js'
 const AA = 4.5
 const album = PALETTE_FLAECHEN.familienalbum
 
-// Jede Fläche der Farbwelt, auf der die Akzentfarbe als Link steht, und die Schrift auf dem Knopf.
+// a (Deckkraft) von fg über bg - wie color-mix(in srgb, fg a, transparent) auf bg.
+function over(fg, alpha, bg) {
+  const rgb = (hex) => hex.match(/[0-9a-f]{2}/gi).map((part) => parseInt(part, 16))
+  const [f, b] = [rgb(fg), rgb(bg)]
+  return `#${f.map((channel, i) => Math.round(channel * alpha + b[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('')}`
+}
+
+// Jede Fläche der Farbwelt, auf der die Akzentfarbe als Link steht, ihr eigener Hauch (--rust-wash: aktiver Reiter,
+// Kennzeichen; hell 10 %, dunkel 14 %) und die Schrift auf dem Knopf.
 function passes(result, flaechen) {
-  const backgrounds = [flaechen.paper, flaechen.surface, flaechen.sunk, flaechen.deep, flaechen.hero, '#ffffff']
-  const onLight = flaechen.scheme === 'hell'
+  const light = flaechen.scheme === 'hell'
+  const plain = [flaechen.paper, flaechen.surface, flaechen.sunk, flaechen.deep, flaechen.hero, ...(light ? ['#ffffff'] : [])]
+  const alpha = light ? 0.1 : 0.14
+  const washes = [flaechen.paper, flaechen.surface].map((bg) => over(result.farbe, alpha, bg))
   return (
-    backgrounds.filter((bg) => onLight || bg !== '#ffffff').every((bg) => contrastRatio(result.farbe, bg) >= AA) &&
+    [...plain, ...washes].every((bg) => contrastRatio(result.farbe, bg) >= AA) &&
     contrastRatio(result.auf, result.farbe) >= AA &&
     contrastRatio(result.auf, result.tief) >= AA
   )
@@ -47,12 +57,15 @@ describe('accentFor – eigene Akzentfarbe mit automatischer Lesbarkeit', () => 
     expect(contrastRatio(dark.tief, album.dunkel.paper)).toBeGreaterThan(contrastRatio(dark.farbe, album.dunkel.paper))
   })
 
-  test('Extremfälle: Weiß, Schwarz und Grau landen immer bei einer lesbaren Farbe', () => {
-    for (const hex of ['#ffffff', '#000000', '#808080', '#ff0000', '#00ff00']) {
-      for (const scheme of ['hell', 'dunkel']) {
-        const result = accentFor(hex, album[scheme])
-        expect(isValidHexColor(result.farbe), `${hex} ${scheme}`).toBe(true)
-        expect(passes(result, album[scheme]), `${hex} ${scheme}`).toBe(true)
+  test('Extremfälle in jeder Farbwelt: Weiß, Schwarz, Grau und grelle Farben landen immer bei einer lesbaren Farbe', () => {
+    const inputs = ['#ffffff', '#000000', '#808080', '#ff0000', '#00ff00', '#ffff00', '#0000ff', '#f2c94c', ...AKZENT_VORSCHLAEGE.map((o) => o.farbe)]
+    for (const [palette, flaechen] of Object.entries(PALETTE_FLAECHEN)) {
+      for (const hex of inputs) {
+        for (const scheme of ['hell', 'dunkel']) {
+          const result = accentFor(hex, flaechen[scheme])
+          expect(isValidHexColor(result.farbe), `${palette} ${hex} ${scheme}`).toBe(true)
+          expect(passes(result, flaechen[scheme]), `${palette} ${hex} ${scheme}`).toBe(true)
+        }
       }
     }
   })

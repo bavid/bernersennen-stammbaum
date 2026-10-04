@@ -416,7 +416,7 @@ p.vk-note {
 }
 
 .vk-swatch:has(input:focus-visible) .vk-swatch-dot {
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--rust), var(--focus-ring);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--rust), 0 0 0 6px var(--surface), 0 0 0 8px var(--focus-color);
 }
 
 .vk-swatch-label {

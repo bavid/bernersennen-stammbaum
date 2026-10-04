@@ -79,7 +79,7 @@
 }
 
 .entry-photo:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--rust) 55%, transparent);
+  outline: 2px solid var(--focus-color);
   outline-offset: 3px;
 }
 
@@ -196,8 +196,17 @@
   outline: none;
 }
 
+/* Fokus als weitere Lage um den Ring (der Ring selbst bleibt - bei verstorbenen der graue). */
 .animal-circle:focus-visible .animal-circle-photo {
-  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--rust), 0 0 0 9px color-mix(in srgb, var(--rust) 30%, transparent);
+  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--rust), 0 0 0 7px var(--paper), 0 0 0 9px var(--focus-color);
+}
+
+.animal-circle.is-memorial:focus-visible .animal-circle-photo {
+  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--line-strong), 0 0 0 7px var(--paper), 0 0 0 9px var(--focus-color);
+}
+
+.animal-circle:focus-visible .animal-circle-plus {
+  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--focus-color);
 }
 
 /* Handy: fünf Kreise passen nebeneinander, mehr wischt man waagerecht. */

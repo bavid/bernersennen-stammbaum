@@ -66,8 +66,11 @@
   --shadow-raised: 0 4px 10px rgba(110, 70, 40, 0.08), 0 18px 40px -12px rgba(110, 70, 40, 0.28);
   --polaroid-paper: #ffffff;
   --polaroid-shadow: 0 2px 8px rgba(60, 40, 20, 0.18);
-  /* Folgt dem Akzent der Farbwelt. */
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--rust) 32%, transparent);
+  /* Fokus (WCAG 1.4.11): deckend in der Akzentfarbe - die hat in jeder Farbwelt (auch eigen, lib/akzent.js) mindestens
+     4,5 : 1 gegen Papier und Flächen. --focus-ring ist der Ring als Schatten (2 px Fläche, 2 px Akzent) für Elemente mit
+     eigenem :focus-visible; alles andere bekommt den Umriss aus base.css. */
+  --focus-color: var(--rust);
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--focus-color);
 }
 
 :root[data-scheme='dunkel'],
@@ -110,7 +113,6 @@
   --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.4), 0 22px 44px -18px rgba(0, 0, 0, 0.85);
   --polaroid-paper: #f1e8dc;
   --polaroid-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--rust) 40%, transparent);
 }
 
 /* --- Waldspaziergang (wald): Tannengrün, Rinde, helles Moos ------------------------------------------------------- */
