@@ -115,7 +115,7 @@ export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
       <AccessGroup family={family} readOnly={readOnly} onFamilyChange={onFamilyChange} />
       <section className="settings-group" aria-labelledby="settings-einladen-title">
         <h2 id="settings-einladen-title">Einladungen</h2>
-        <p className="muted">Gutscheine für Freunde und Familie, Besuchs-Einladungen und eure offenen Codes.</p>
+        <p className="muted">Einladungscodes für Freunde und Familie, Besuchs-Einladungen und eure offenen Codes.</p>
         <div className="settings-actions">
           <button type="button" className="btn btn-ghost" onClick={onInvite}>
             <Icon name="send" />

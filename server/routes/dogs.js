@@ -647,7 +647,7 @@ router.post('/:id/handover', authLimiter, requireAuth, canWrite, (req, res) => {
 
   const identity = db.prepare('SELECT art, partner_id FROM families WHERE id = ?').get(req.familyId)
   if (!identity || identity.art !== ART.tierheim) {
-    return res.status(400).json({ error: 'Übergabe-Gutscheine gibt es nur im Tierheim-Bereich' })
+    return res.status(400).json({ error: 'Übergabe-Codes gibt es nur im Tierheim-Bereich' })
   }
   // Phase P Task 1: ein pausiertes Tier ist gerade nicht vermittelbar - eine Übergabe würde es sonst
   // stillschweigend auf "reserviert" setzen. Erst den Status zurück auf "in Vermittlung" stellen.
@@ -677,7 +677,7 @@ router.delete('/:id/handover', requireAuth, canWrite, (req, res) => {
 
   const identity = db.prepare('SELECT art FROM families WHERE id = ?').get(req.familyId)
   if (!identity || identity.art !== ART.tierheim) {
-    return res.status(400).json({ error: 'Übergabe-Gutscheine gibt es nur im Tierheim-Bereich' })
+    return res.status(400).json({ error: 'Übergabe-Codes gibt es nur im Tierheim-Bereich' })
   }
 
   cancelHandover(dog)

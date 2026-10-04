@@ -57,7 +57,7 @@ test('Benachrichtigungen: jedes Ereignis genau einmal, Demo und Fehler nie', asy
   await t.test('Gutschein-Anfrage: eine Nachricht; Duplikat und ungültige Anfrage keine', async () => {
     const first = await newMessages(() => post('/api/public/anfragen', { typ: 'gutschein', name: 'Wilma Beispiel', email: 'wilma@example.org' }))
     assert.equal(first.result.status, 201)
-    assert.deepEqual(first.texts, ['🐾 Neue Gutschein-Anfrage – im Admin unter „Anfragen“ ansehen.'])
+    assert.deepEqual(first.texts, ['🐾 Neue Anfrage nach einem Einladungscode – im Admin unter „Anfragen“ ansehen.'])
     assert.equal(sent.at(-1).chatId, '-100999')
 
     const duplicate = await newMessages(() => post('/api/public/anfragen', { typ: 'gutschein', email: 'wilma@example.org' }))
@@ -82,7 +82,7 @@ test('Benachrichtigungen: jedes Ereignis genau einmal, Demo und Fehler nie', asy
     const { result, texts } = await newMessages(() => createHousehold(base, 'Zuhause Flocke'))
     household = result
     assert.equal(result.status, 201)
-    assert.deepEqual(texts, ['🐾 Neue Registrierung – mit einem Gutschein ist ein neuer Bereich entstanden.'])
+    assert.deepEqual(texts, ['🐾 Neue Registrierung – mit einem Einladungscode ist ein neuer Bereich entstanden.'])
 
     await put('/api/admin/notify-settings', { details: true }, adminCookie)
     const detailed = await newMessages(() => createHousehold(base, 'Zuhause Pepper'))
@@ -175,7 +175,7 @@ test('Benachrichtigungen: jedes Ereignis genau einmal, Demo und Fehler nie', asy
     // Eine Anfrage aus der Demo ist eine echte Anfrage eines Besuchers (kein Demo-Inhalt) - sie meldet sich wie jede andere.
     const anfrage = await newMessages(() => post('/api/public/anfragen', { typ: 'gutschein', email: 'demo@example.org' }, demo.cookie))
     assert.equal(anfrage.result.status, 201)
-    assert.deepEqual(anfrage.texts, ['🐾 Neue Gutschein-Anfrage – im Admin unter „Anfragen“ ansehen.'])
+    assert.deepEqual(anfrage.texts, ['🐾 Neue Anfrage nach einem Einladungscode – im Admin unter „Anfragen“ ansehen.'])
 
     const partnerArea = db.prepare("SELECT id, partner_id FROM families WHERE art = 'partner'").get()
     db.prepare('UPDATE partners SET is_demo = 1 WHERE id = ?').run(partnerArea.partner_id)

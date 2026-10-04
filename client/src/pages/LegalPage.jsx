@@ -62,13 +62,13 @@ function Datenschutz({ legal }) {
         Gespeichert werden die Inhalte, die ihr selbst anlegt: Tiere, Chronik-Einträge, Fotos, Kommentare und
         Pinnwand-Zettel. Benutzername und E-Mail-Adresse sind optional und nur für den eigenen Login gedacht;
         bei optionalen Benutzer-Logins merken wir uns außerdem den Zeitpunkt der letzten Anmeldung. Ist ein
-        Zuhause über einen Partner-Gutschein entstanden, speichern wir, über welchen Partner das war.
+        Zuhause über einen Einladungscode eines Partners entstanden, speichern wir, über welchen Partner das war.
       </p>
       <p>
         Zugangsschlüssel werden nicht im Klartext, sondern nur als Hash gespeichert – wir können sie nicht
-        wiederherstellen oder erneut anzeigen. Gutschein-Codes werden ebenfalls als Hash gespeichert und
+        wiederherstellen oder erneut anzeigen. Einladungscodes werden ebenfalls als Hash gespeichert und
         zusätzlich verschlüsselt (AES-GCM) abgelegt, solange sie noch offen sind: so lässt sich ein Code im
-        Admin-Bereich erneut anzeigen. Sobald ein Gutschein eingelöst oder zurückgezogen wird, löschen wir die
+        Admin-Bereich erneut anzeigen. Sobald ein Einladungscode eingelöst oder zurückgezogen wird, löschen wir die
         verschlüsselte Fassung – ab dann bleibt nur noch der Hash.
       </p>
 
@@ -120,7 +120,7 @@ function Datenschutz({ legal }) {
         Suchmaschinen ausgeschlossen (noindex).
       </p>
       <p>
-        Zieht ein Tier über einen Übergabe-Gutschein in ein neues Zuhause um, wandert seine ganze bisherige Chronik
+        Zieht ein Tier über einen Übergabe-Code in ein neues Zuhause um, wandert seine ganze bisherige Chronik
         mit um; das abgebende Tierheim bleibt als Herkunft sichtbar. Das neue Zuhause kann dem abgebenden Tierheim
         freiwillig erlauben, weiterhin mitzulesen – diese Einwilligung lässt sich jederzeit widerrufen und umfasst
         immer nur die nicht-privaten Einträge.

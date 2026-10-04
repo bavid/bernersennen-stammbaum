@@ -62,7 +62,7 @@ export default function VoucherShareActions({ code }) {
         <input
           readOnly
           className="voucher-link-fallback"
-          aria-label="Gutschein-Link zum Markieren und Kopieren"
+          aria-label="Einladungslink zum Markieren und Kopieren"
           value={voucherLink(code)}
           onFocus={(e) => e.target.select()}
         />

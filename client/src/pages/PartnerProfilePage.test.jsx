@@ -317,7 +317,7 @@ describe('PartnerProfilePage – Angaben', () => {
   test('der Hinweis auf Kunden-Gutscheine steht unten', async () => {
     await render()
     expect(container.querySelector('.partner-profile-notes').textContent).toContain(
-      'Privat eine eigene Chronik führen? Dafür gibt es Kunden-Gutscheine.'
+      'Privat eine eigene Chronik führen? Dafür gibt es Einladungscodes.'
     )
   })
 })
@@ -464,7 +464,7 @@ describe('PartnerProfilePage – Kunden-Gutscheine im Reiter "Teilen"', () => {
     expect(vouchers).toHaveBeenCalledTimes(1)
     expect(button('Teilen').getAttribute('aria-selected')).toBe('true')
     expect(document.getElementById('partner-profile-panel-teilen').hidden).toBe(false)
-    expect(container.querySelector('#partner-vouchers-title').textContent).toBe('Kunden-Gutscheine')
+    expect(container.querySelector('#partner-vouchers-title').textContent).toBe('Einladungscodes für Kunden')
     expect(container.textContent).toContain('Jede Karte legt für eure Kundschaft eine eigene Chronik an')
     const print = container.querySelector('a.partner-stack-print')
     expect(print.getAttribute('href')).toBe('/partner-drucken/12')
@@ -487,6 +487,6 @@ describe('PartnerProfilePage – Kunden-Gutscheine im Reiter "Teilen"', () => {
 
     await act(async () => button('Teilen').click())
     expect(vouchers).toHaveBeenCalledTimes(1)
-    expect(container.querySelector('.empty-state').textContent).toContain('Noch keine Kunden-Gutscheine')
+    expect(container.querySelector('.empty-state').textContent).toContain('Noch keine Einladungscodes für Kunden')
   })
 })

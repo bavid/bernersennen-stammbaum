@@ -19,7 +19,7 @@ const { TYP, NOT_FOUND_MESSAGE, httpError } = require('./anfragen')
 const ASSIGNABLE_BATCH_KINDS = ['admin']
 const ZWECK_FOR_TYP = Object.freeze({ [TYP.gutschein]: ZWECK.chronik, [TYP.partner]: ZWECK.partnerzugang })
 const ZWECK_MISMATCH_MESSAGE = Object.freeze({
-  [TYP.gutschein]: 'Für eine Gutschein-Anfrage bitte einen Stapel mit Kunden-Gutscheinen wählen.',
+  [TYP.gutschein]: 'Für eine Anfrage nach einem Einladungscode bitte einen Stapel mit Einladungscodes für Kunden wählen.',
   [TYP.partner]: 'Für eine Partner-Anfrage bitte einen Stapel mit Partner-Zugängen wählen.'
 })
 
@@ -66,7 +66,7 @@ function assertNotYetAssigned(anfrage) {
   if (!anfrage.voucher_id) return
   const previous = findAssignedVoucherStmt.get(anfrage.voucher_id)
   if (previous && !REASSIGNABLE_STATUS.includes(voucherStatus(previous))) {
-    throw httpError(409, 'Dieser Anfrage wurde schon ein Gutschein zugewiesen.')
+    throw httpError(409, 'Dieser Anfrage wurde schon ein Einladungscode zugewiesen.')
   }
 }
 
@@ -83,7 +83,7 @@ function assignVoucherToAnfrage(anfrageIdInput, batchIdInput) {
 
     const batch = findAssignableBatch(batchIdInput, anfrage)
     const voucher = findFreeVoucherStmt.get({ batchId: batch.id })
-    if (!voucher) throw httpError(409, 'In diesem Stapel ist kein freier Gutschein mehr.')
+    if (!voucher) throw httpError(409, 'In diesem Stapel ist kein freier Einladungscode mehr.')
 
     const code = formatCode(decryptCode(voucher.code_cipher))
     const marked = markVoucherStmt.run(anfrage.id, voucher.id).changes === 1

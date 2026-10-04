@@ -40,7 +40,7 @@ function partnerLimiter(windowMs, limit, message) {
 
 // Codes: 20 Abrufe je Stunde (ein Abruf deckt bis zu fünf Bögen) - genug für Nachschub und Neudrucke, zu wenig, um den
 // Stapel nebenbei leerzuziehen. Speichern: 60 je 10 Minuten.
-const codesLimiter = partnerLimiter(ONE_HOUR, 20, 'Zu viele Abrufe von Gutscheinen in kurzer Zeit – bitte später noch einmal versuchen.')
+const codesLimiter = partnerLimiter(ONE_HOUR, 20, 'Zu viele Abrufe von Einladungscodes in kurzer Zeit – bitte später noch einmal versuchen.')
 const saveLimiter = partnerLimiter(TEN_MINUTES, 60, 'Zu viele Änderungen in kurzer Zeit – bitte kurz warten.')
 
 router.use(noStore)

@@ -38,14 +38,14 @@ export const PRESENT_TILES = Object.freeze([
   {
     key: 'tierheim',
     label: 'Als Tierheim ansehen',
-    description: 'Tiere in Vermittlung, Steckbriefe, Übergabe-Gutscheine und Happy Ends.',
+    description: 'Tiere in Vermittlung, Steckbriefe, Übergabe-Codes und Happy Ends.',
     icon: 'paw',
     as: DEMO_AS.tierheim
   },
   {
     key: 'hundeschule',
     label: 'Als Hundeschule ansehen',
-    description: 'Partner-Profil mit Einblicken, Beiträgen, Postfach und Kunden-Gutscheinen.',
+    description: 'Partner-Profil mit Einblicken, Beiträgen, Postfach und Einladungscodes.',
     icon: 'globe',
     as: DEMO_AS.partner,
     slug: DEMO_PARTNER_SLUGS.hundeschule

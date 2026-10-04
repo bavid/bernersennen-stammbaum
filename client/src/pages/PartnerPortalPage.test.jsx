@@ -236,16 +236,16 @@ describe('PartnerPortalPage – angemeldete Besucher', () => {
 
     const backButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Zurück zu eurer Chronik')
     expect(backButton).not.toBeUndefined()
-    const logoutButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')
+    const logoutButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')
     expect(logoutButton).not.toBeUndefined()
   })
 
-  test('"Abmelden und Gutschein einlösen" ruft onLogout auf', async () => {
+  test('"Abmelden und Einladungscode einlösen" ruft onLogout auf', async () => {
     publicPartner.mockResolvedValue(partner)
     const onLogout = vi.fn()
     await render({ family: loggedInHome, onLogout })
 
-    const logoutButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')
+    const logoutButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')
     act(() => logoutButton.click())
     expect(onLogout).toHaveBeenCalled()
   })

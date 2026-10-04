@@ -155,7 +155,7 @@ describe('LegalPage – /datenschutz', () => {
     config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
     await render('datenschutz')
 
-    expect(container.textContent).toMatch(/Übergabe-Gutschein/)
+    expect(container.textContent).toMatch(/Übergabe-Code/)
     expect(container.textContent).toMatch(/Herkunft sichtbar/)
     expect(container.textContent).toMatch(/freiwillig/)
     expect(container.textContent).toMatch(/jederzeit widerrufen/)
@@ -228,7 +228,7 @@ describe('LegalPage – /datenschutz, Anfragen und Benachrichtigungen', () => {
     expect(headings()).toContain('Anfragen')
     expect(text()).toMatch(/eure E-Mail-Adresse \(Pflicht, damit wir antworten können\), freiwillig ein Name und eine Nachricht/)
     expect(text()).toMatch(/Name der Hundeschule, des Tierheims oder Geschäfts, die Art des Angebots und, freiwillig, die Postleitzahl/)
-    expect(text()).toMatch(/nur, um euch einen Gutschein oder einen Partner-Zugang zu schicken/)
+    expect(text()).toMatch(/nur, um euch einen Einladungscode oder einen Partner-Zugang zu schicken/)
     expect(text()).toMatch(/per DNS, ob es die Domain der E-Mail-Adresse gibt/)
     expect(text()).toMatch(/Erledigte und abgelehnte Anfragen löschen wir 180 Tage nach dem Abschluss automatisch/)
     expect(text()).toMatch(/offene spätestens 365 Tage nach dem Eingang bzw\. der letzten Bearbeitung/)

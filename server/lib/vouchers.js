@@ -33,8 +33,8 @@ const ADMIN_ZWECK_VALUES = [ZWECK.chronik, ZWECK.partnerzugang]
 // so einem Stapel gilt in /check als unbekannt und lässt sich nie einlösen (assertVoucherOpen) - er ist nur
 // da, damit die Mitglieder-Seite der Demo eine offene Einladung mit Rolle zeigen kann.
 const DEMO_BATCH_KIND = 'demo'
-const PARTNER_ACCESS_NO_CHRONIK_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang – er legt keine Chronik an'
-const PARTNER_ACCESS_CLAIM_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang – bitte über „Gutschein einlösen“ einrichten.'
+const PARTNER_ACCESS_NO_CHRONIK_MESSAGE = 'Dieser Code ist ein Partner-Zugang – er legt keine Chronik an'
+const PARTNER_ACCESS_CLAIM_MESSAGE = 'Dieser Code ist ein Partner-Zugang – bitte über „Einladungscode einlösen“ einrichten.'
 
 // Feste Schein-Liste für GET /vouchers/mine in der Demo: sieht aus wie echte Gutscheine, lässt sich
 // aber nicht einlösen. Jeder Klartext-Code enthält ein "U" - das kommt im Crockford-Alphabet nicht vor
@@ -85,7 +85,7 @@ function cleanBooleanFlag(value, label) {
   return value
 }
 
-const HANDOVER_GONE_MESSAGE = 'Dieser Übergabe-Gutschein gilt nicht mehr'
+const HANDOVER_GONE_MESSAGE = 'Dieser Übergabe-Code gilt nicht mehr'
 
 // security-review Phase T Finding 3: ein Übergabe-Gutschein (vouchers.dog_id gesetzt) darf sich nur
 // einlösen lassen, solange die Übergabe, für die er ausgestellt wurde, noch genauso ansteht: das Tier
@@ -372,10 +372,10 @@ function isDemoVoucher(voucher) {
 
 // 404/410 für unbekannte (auch Demo-), zurückgezogene, schon eingelöste oder abgelaufene Gutscheine.
 function assertVoucherOpen(voucher) {
-  if (!voucher || isDemoVoucher(voucher)) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
-  if (voucher.revoked_at) throw httpError(410, 'Dieser Gutschein wurde zurückgezogen')
-  if (voucher.redeemed_at) throw httpError(410, 'Dieser Gutschein wurde schon eingelöst')
-  if (voucher.expires_at && voucher.expires_at <= isoNow()) throw httpError(410, 'Dieser Gutschein ist abgelaufen')
+  if (!voucher || isDemoVoucher(voucher)) throw httpError(404, 'Diesen Einladungscode kennen wir nicht')
+  if (voucher.revoked_at) throw httpError(410, 'Dieser Einladungscode wurde zurückgezogen')
+  if (voucher.redeemed_at) throw httpError(410, 'Dieser Einladungscode wurde schon eingelöst')
+  if (voucher.expires_at && voucher.expires_at <= isoNow()) throw httpError(410, 'Dieser Einladungscode ist abgelaufen')
 }
 
 // Verbraucht den Gutschein atomar (UPDATE ... WHERE redeemed_at IS NULL) - nur innerhalb der
@@ -391,7 +391,7 @@ function claimOpenVoucher(db, codeHash) {
     .run(codeHash)
   // Nur als Verteidigungslinie gegen eine gleichzeitige zweite Anfrage zwischen der Prüfung und
   // dieser UPDATE - der Normalfall (kein Wettlauf) hat claim.changes immer schon 1.
-  if (claim.changes !== 1) throw httpError(410, 'Dieser Gutschein wurde inzwischen verändert')
+  if (claim.changes !== 1) throw httpError(410, 'Dieser Code wurde inzwischen verändert')
 }
 
 function markRedeemedBy(db, voucherId, familyId) {
@@ -424,7 +424,7 @@ function insertAreaUser(db, familyId, { username, password, cleanEmail }) {
 // routes/dogs.js PUT /:id/shelter-share).
 function redeemVoucher(db, { code, name, username, password, email, shelterMayRead }) {
   const normalized = normalizeCode(code)
-  if (!normalized) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+  if (!normalized) throw httpError(404, 'Diesen Einladungscode kennen wir nicht')
 
   const { trimmedName, hasUsername, cleanEmail } = validateRedeemInput({ name, username, password, email })
   const cleanShelterMayRead = cleanBooleanFlag(shelterMayRead, 'shelterMayRead')
@@ -514,7 +514,7 @@ function redeemVoucher(db, { code, name, username, password, email, shelterMayRe
 // (kein verbrannter Weitergabe-/Partner-Gutschein durch einen falschen claim-Versuch).
 function claimVoucher(db, { code, familyId, shelterMayRead }) {
   const normalized = normalizeCode(code)
-  if (!normalized) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+  if (!normalized) throw httpError(404, 'Diesen Einladungscode kennen wir nicht')
   const cleanShelterMayRead = cleanBooleanFlag(shelterMayRead, 'shelterMayRead')
   const codeHash = hashCode(normalized)
 
@@ -530,7 +530,7 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
     if (voucherRow.zweck === ZWECK.partnerzugang) throw httpError(400, PARTNER_ACCESS_CLAIM_MESSAGE)
     // Phase V2: eine Besuchs-Einladung hat ihren eigenen Weg (POST /api/besuche/einloesen) und bleibt hier unberührt.
     if (voucherRow.zweck === ZWECK.besuch) throw httpError(400, VISIT_CLAIM_MESSAGE)
-    if (!voucherRow.dog_id) throw httpError(400, 'Das ist kein Übergabe-Gutschein – zum Einlösen bitte abmelden.')
+    if (!voucherRow.dog_id) throw httpError(400, 'Das ist kein Übergabe-Code – zum Einlösen bitte abmelden.')
     assertHandoverStillRedeemable(db, voucherRow)
 
     const claim = db
@@ -540,7 +540,7 @@ function claimVoucher(db, { code, familyId, shelterMayRead }) {
            AND (expires_at IS NULL OR expires_at > datetime('now'))`
       )
       .run({ familyId, codeHash })
-    if (claim.changes !== 1) throw httpError(410, 'Dieser Gutschein wurde inzwischen verändert')
+    if (claim.changes !== 1) throw httpError(410, 'Dieser Code wurde inzwischen verändert')
 
     const voucher = voucherRow
     const dog = db.prepare('SELECT family_id FROM dogs WHERE id = ?').get(voucher.dog_id)

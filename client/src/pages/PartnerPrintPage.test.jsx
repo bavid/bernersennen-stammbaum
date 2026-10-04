@@ -92,7 +92,7 @@ describe('PartnerPrintPage – Karten im Partner-Motiv', () => {
     expect([...container.querySelectorAll('.voucher-card-code')].map((el) => el.textContent)).toEqual(codes(12))
     expect(container.textContent).toContain('12 Karten · 2 Bögen')
     expect(container.textContent).toContain('Kunden-Karte mit eurem Auftritt')
-    expect(container.textContent).toContain('1 Gutschein ohne druckbaren Code')
+    expect(container.textContent).toContain('1 Code ohne druckbaren Code')
   })
 
   test('der Hinweis zur Kundschaft steht im Kopf, "Zurück zum Profil" führt zu /profil, kein CSV-Export', async () => {

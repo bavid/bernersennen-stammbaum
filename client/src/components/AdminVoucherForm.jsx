@@ -11,7 +11,7 @@ const DEFAULT_SIZE = 10
 export const ZWECK_CHRONIK = 'chronik'
 export const ZWECK_PARTNERZUGANG = 'partnerzugang'
 const ZWECK_OPTIONS = [
-  { value: ZWECK_CHRONIK, label: 'Kunden-Gutscheine' },
+  { value: ZWECK_CHRONIK, label: 'Einladungscodes' },
   { value: ZWECK_PARTNERZUGANG, label: 'Partner-Zugang' }
 ]
 

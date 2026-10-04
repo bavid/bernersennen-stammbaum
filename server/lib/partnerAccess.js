@@ -142,7 +142,7 @@ function insertNewPartner(db, clean) {
 // Stapels schlägt typ. Gibt { familyId, code } zurück wie redeemVoucher.
 function redeemPartnerAccess(db, { code, name, typ, plz, username, password, email }) {
   const normalized = normalizeCode(code)
-  if (!normalized) throw httpError(404, 'Diesen Gutschein kennen wir nicht')
+  if (!normalized) throw httpError(404, 'Diesen Einladungscode kennen wir nicht')
   const login = validateLoginInput({ username, password, email })
   const codeHash = hashCode(normalized)
 

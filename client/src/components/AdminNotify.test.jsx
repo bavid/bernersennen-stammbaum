@@ -204,7 +204,7 @@ describe('AdminNotify – Testnachricht, Schalter, Entfernen', () => {
 
     const switches = [...container.querySelectorAll('.admin-notify-switches input[role="switch"]')]
     expect(switches.map((input) => input.closest('label').textContent)).toEqual([
-      'Gutschein-Anfrage',
+      'Anfrage nach einem Einladungscode',
       'Partner-Anfrage',
       'Neue Registrierung',
       'Feedback',

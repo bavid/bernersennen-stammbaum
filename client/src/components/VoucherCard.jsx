@@ -26,7 +26,7 @@ function QrCode({ url, host }) {
       viewBox={`0 0 ${size} ${size}`}
       shapeRendering="crispEdges"
       role="img"
-      aria-label={`QR-Code für Gutschein, öffnet ${host}${VOUCHER_PATH}`}
+      aria-label={`QR-Code für den Einladungscode, öffnet ${host}${VOUCHER_PATH}`}
     >
       <path d={path} fill="#000" />
     </svg>
@@ -78,7 +78,7 @@ export default function VoucherCard({ code, batch, baseUrl }) {
         <QrCode url={voucherUrl(baseUrl, code)} host={host} />
       </div>
       <footer className="voucher-card-foot">
-        <span className="voucher-card-code" aria-label="Gutschein-Code">
+        <span className="voucher-card-code" aria-label="Einladungscode">
           {code}
         </span>
         <span className="voucher-card-hint">
@@ -108,7 +108,7 @@ export function VoucherCardBack({ batch, baseUrl }) {
         <li>
           QR-Code scannen oder <strong>{host}{VOUCHER_PATH}</strong> im Browser öffnen
         </li>
-        <li>Gutschein-Code eingeben</li>
+        <li>Einladungscode eingeben</li>
         <li>{lastStep}</li>
       </ol>
       <p className="voucher-card-privacy">

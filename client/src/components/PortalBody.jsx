@@ -46,8 +46,8 @@ function RedeemSection({ partner, family, preview, onRedeemed, onLogout }) {
   return (
     <PortalSection
       id={SECTION_IDS.gutschein}
-      title="Gutschein einlösen"
-      lede={family || preview ? null : `Du hast von ${partner.name} einen Gutschein bekommen? Hier legst du deine eigene Chronik an – kostenlos.`}
+      title="Einladungscode einlösen"
+      lede={family || preview ? null : `Du hast von ${partner.name} einen Einladungscode bekommen? Hier legst du deine eigene Chronik an – kostenlos.`}
       className="partner-portal-redeem"
     >
       <PortalAction partner={partner} family={family} preview={preview} onRedeemed={onRedeemed} onLogout={onLogout} />

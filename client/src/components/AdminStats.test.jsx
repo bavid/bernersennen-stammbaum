@@ -97,7 +97,7 @@ describe('AdminStats – Kennzahlen', () => {
     expect(tiles()).toEqual([
       ['Bereiche', '8'],
       ['Partner aktiv', '3'],
-      ['Eingelöste Gutscheine', '1.236'],
+      ['Eingelöste Einladungscodes', '1.236'],
       ['Klicks 7 Tage', '28']
     ])
   })
@@ -106,7 +106,7 @@ describe('AdminStats – Kennzahlen', () => {
     stats.mockResolvedValue(fixture())
     await render(<AdminStats />)
 
-    expect(tiles().map(([label]) => label)).toEqual(['Partner aktiv', 'Eingelöste Gutscheine', 'Klicks 7 Tage'])
+    expect(tiles().map(([label]) => label)).toEqual(['Partner aktiv', 'Eingelöste Einladungscodes', 'Klicks 7 Tage'])
   })
 
   test('zeigt „Lade …“, bis die Antwort da ist', async () => {
@@ -139,7 +139,7 @@ describe('AdminStats – Gutschein-Stapel und Partner-Ranking', () => {
 
     const [first, second] = container.querySelectorAll('.stat-stapel-row')
     expect(first.querySelector('th').textContent).toBe('Frühjahrsaktion · 12 Codes')
-    expect(first.querySelector('.admin-voucher-zweck-badge').textContent).toBe('Kunden-Gutscheine')
+    expect(first.querySelector('.admin-voucher-zweck-badge').textContent).toBe('Einladungscodes')
     const segments = [...first.querySelectorAll('.stat-bar-segment')]
     expect(segments.map((s) => s.className)).toEqual(['stat-bar-segment is-eingeloest', 'stat-bar-segment is-offen', 'stat-bar-segment is-widerrufen'])
     expect(segments.map((s) => s.style.width)).toEqual(['60%', '30%', '10%'])

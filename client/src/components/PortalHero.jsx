@@ -13,9 +13,10 @@ import { TYPE_LABELS } from '../lib/partnerTypes.js'
 // Kopf des Portals wie eine ruhige Landingpage: Bannerfotos (Phase V4b), Logo, Art und Ort als Meta-Zeile, der Name
 // als Überschrift, darunter der Portal-Titel als kurze Unterzeile - der Willkommenstext steht seit den Reitern in der
 // Übersicht (PortalOverview), damit die Reiter am Handy schon im ersten Bild stehen. Die Hauptaktionen als Knöpfe:
-// "Schreib uns" (öffnet das Formular direkt; ohne Formular "Kontakt" zum Reiter), "Gutschein einlösen" (Reiter
-// "Kontakt", Abschnitt Gutschein), bei Tierheimen Spenden und - nur ohne eigene Tiere in Vermittlung, sonst steht sie
-// im Reiter "Tiere" - die externe Vermittlungsseite. onShowTab(key, abschnitt) wechselt den Reiter (PortalBody).
+// "Schreib uns" (öffnet das Formular direkt; ohne Formular "Kontakt" zum Reiter), bei Tierheimen Spenden und - nur ohne
+// eigene Tiere in Vermittlung, sonst steht sie im Reiter "Tiere" - die externe Vermittlungsseite. Feedback-Runde:
+// "Einladungscode einlösen" (Reiter "Kontakt", Abschnitt zum Einlösen) nur noch als leiser Link dahinter - "Schreib uns"
+// bleibt die Hauptaktion. onShowTab(key, abschnitt) wechselt den Reiter (PortalBody).
 export default function PortalHero({ partner, hasAnimals = false, onShowTab }) {
   const preview = useIsPreview()
   const typeLabel = TYPE_LABELS[partner.typ] || partner.typ
@@ -25,7 +26,6 @@ export default function PortalHero({ partner, hasAnimals = false, onShowTab }) {
   const hasSpenden = isExternalUrl(partner.spenden_url)
   const hasVermittlung = !hasAnimals && isExternalUrl(partner.vermittlung_url)
   const hasBanner = portalBannerItems(partner.banner, { preview }).length > 0
-  const redeemClass = hasForm || hasContactTab ? 'btn btn-ghost' : 'btn btn-primary'
 
   return (
     <div className={`partner-portal-hero${hasBanner ? ' has-banner' : ''}`}>
@@ -44,9 +44,6 @@ export default function PortalHero({ partner, hasAnimals = false, onShowTab }) {
             Kontakt
           </button>
         )}
-        <button type="button" className={redeemClass} onClick={() => onShowTab(CONTACT_TAB, SECTION_IDS.gutschein)}>
-          Gutschein einlösen
-        </button>
         {hasSpenden && (
           <ExternalLink href={partner.spenden_url} className="btn btn-ghost">
             <Icon name="heart" /> Spenden an {partner.name}
@@ -57,6 +54,9 @@ export default function PortalHero({ partner, hasAnimals = false, onShowTab }) {
             Tiere in Vermittlung
           </ExternalLink>
         )}
+        <button type="button" className="link-button partner-portal-redeem-link" onClick={() => onShowTab(CONTACT_TAB, SECTION_IDS.gutschein)}>
+          Einladungscode einlösen
+        </button>
       </div>
     </div>
   )

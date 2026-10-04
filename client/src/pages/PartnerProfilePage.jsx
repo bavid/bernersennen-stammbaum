@@ -179,7 +179,7 @@ export default function PartnerProfilePage({ family }) {
       )}
 
       <aside className="partner-profile-notes">
-        <p>Privat eine eigene Chronik führen? Dafür gibt es Kunden-Gutscheine.</p>
+        <p>Privat eine eigene Chronik führen? Dafür gibt es Einladungscodes.</p>
         {showAccessLink && (
           <Link to={ACCESS_ROUTE} className="btn btn-ghost">
             <Icon name="lock" />

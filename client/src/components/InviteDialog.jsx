@@ -37,16 +37,16 @@ function CopyField({ label, value }) {
 }
 
 const PARTNER_EXPLANATION =
-  'Gebt diesen Gutschein an eure Kundschaft weiter – damit legen sie ihre eigene Chronik bei Familie auf Pfoten an.'
+  'Gebt diesen Einladungscode an eure Kundschaft weiter – damit legen sie ihre eigene Chronik bei Familie auf Pfoten an.'
 
 // Rudel: Mitgliedschaft inklusive; Partner/Tierheime (Phase P): Kunden-Gutscheine für die Kundschaft, nie
 // ein Beitritt (der Server rechnet sie dem Partner zu, siehe server/lib/vouchers.js ensureVoucherQuota).
 function explanationFor(family) {
   if (isPartnerArea(family)) return PARTNER_EXPLANATION
   if (family.art === 'rudel') {
-    return `Wer den Gutschein einlöst, bekommt eine eigene Chronik und ist gleich Mitglied in „${family.name}“.`
+    return `Wer den Einladungscode einlöst, bekommt eine eigene Chronik und ist gleich Mitglied in „${family.name}“.`
   }
-  return 'Wer den Gutschein einlöst, bekommt eine eigene Chronik.'
+  return 'Wer den Einladungscode einlöst, bekommt eine eigene Chronik.'
 }
 
 // Phase V2b: neue Codes anlegen im eigenen Zuhause und in einer Familie ab Stellvertretung (Partner geben
@@ -72,7 +72,7 @@ export default function InviteDialog({ family, onFamilyChange }) {
   const isDemo = useIsDemo()
   // In der Demo sind die Gutscheine Beispiele; in der Admin-Ansicht sind es die echten des Bereichs - nur vergeben
   // (Rolle ändern, Code weitergeben) geht dort nicht.
-  const readOnlyHint = useReadOnlyHint('Beispiel – in der Demo werden keine Gutscheine vergeben.')
+  const readOnlyHint = useReadOnlyHint('Beispiel – in der Demo werden keine Einladungscodes vergeben.')
   const canCreate = canCreateCodes(family)
   const list = useVoucherList({ withLimit: canCreate })
   const [archiveOpen, setArchiveOpen] = useState(false)
@@ -85,7 +85,7 @@ export default function InviteDialog({ family, onFamilyChange }) {
   return (
     <div className="invite">
       <section className="invite-vouchers">
-        <h3>Gutscheine</h3>
+        <h3>Einladungscodes</h3>
         <p className="muted">{explanationFor(family)}</p>
         {isDemo && <p className="field-hint">{readOnlyHint}</p>}
         {error && (
@@ -95,7 +95,7 @@ export default function InviteDialog({ family, onFamilyChange }) {
         )}
         {canCreate && <VoucherCreateBar limit={list.limit} busy={list.creating} disabled={isDemo} onCreate={list.create} />}
         {vouchers === undefined && !error && <p className="muted">Lade …</p>}
-        {vouchers && vouchers.length === 0 && <p className="muted">Gerade keine Gutscheine übrig.</p>}
+        {vouchers && vouchers.length === 0 && <p className="muted">Gerade keine Einladungscodes übrig.</p>}
         {vouchers && vouchers.length > 0 && (
           <ul className="voucher-list">
             {vouchers.map((voucher) => (

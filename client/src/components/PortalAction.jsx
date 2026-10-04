@@ -66,7 +66,7 @@ export default function PortalAction({ partner, family, preview, onRedeemed, onL
     return (
       <div className="card partner-portal-action preview-placeholder">
         <Icon name="lock" />
-        <p>Hier lösen eure Kundinnen und Kunden ihren Gutschein ein – in der Vorschau ausgeblendet.</p>
+        <p>Hier lösen eure Kundinnen und Kunden ihren Einladungscode ein – in der Vorschau ausgeblendet.</p>
       </div>
     )
   }
@@ -81,9 +81,9 @@ export default function PortalAction({ partner, family, preview, onRedeemed, onL
           <button type="button" className="btn btn-primary btn-block" onClick={() => navigate(startRoute(family))}>
             Zurück zu eurer Chronik
           </button>
-          <p className="field-hint">Um einen Gutschein einzulösen, meldet euch zuerst ab.</p>
+          <p className="field-hint">Um einen Einladungscode einzulösen, meldet euch zuerst ab.</p>
           <button type="button" className="btn btn-ghost btn-block" onClick={onLogout}>
-            Abmelden und Gutschein einlösen
+            Abmelden und Einladungscode einlösen
           </button>
         </>
       ) : redeemResult ? (

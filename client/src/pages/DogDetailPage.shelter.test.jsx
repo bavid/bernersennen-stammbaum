@@ -196,7 +196,7 @@ describe('DogDetailPage – Tierheim: Übergabe', () => {
     await act(async () => trigger.click())
 
     expect(createHandover).not.toHaveBeenCalled()
-    expect(container.textContent).toContain('Es wird ein Übergabe-Gutschein erzeugt')
+    expect(container.textContent).toContain('Es wird ein Übergabe-Code erzeugt')
   })
 
   test('erst der Knopf "Übergabe-Gutschein erzeugen" im Dialog ruft api.createHandover auf und zeigt den Code', async () => {
@@ -209,7 +209,7 @@ describe('DogDetailPage – Tierheim: Übergabe', () => {
 
     const trigger = [...container.querySelectorAll('button')].find((btn) => btn.textContent.includes('Übergabe vorbereiten'))
     await act(async () => trigger.click())
-    const confirm = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Übergabe-Gutschein erzeugen')
+    const confirm = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Übergabe-Code erzeugen')
     await act(async () => confirm.click())
 
     expect(createHandover).toHaveBeenCalledWith(20)

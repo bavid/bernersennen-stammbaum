@@ -56,7 +56,7 @@ describe('RequestVoucherForm – Aufbau', () => {
   test('erklärt oben, warum es Gutscheine gibt (Wortlaut vom Betreiber)', async () => {
     await render()
     const why = container.querySelector('.request-why')
-    expect(why.querySelector('h3').textContent).toBe('Warum per Gutschein?')
+    expect(why.querySelector('h3').textContent).toBe('Warum per Einladungscode?')
     expect(why.querySelector('p').textContent.replace(/\s+/g, ' ').trim()).toBe(
       'Familie auf Pfoten ist ein kleines, privat betriebenes Projekt: ohne Tracking, ohne Datenhandel und mit einem bewusst ' +
         'kleinen eigenen Server. Damit alles schnell und zuverlässig bleibt, nehmen wir neue Familien nach und nach auf. ' +

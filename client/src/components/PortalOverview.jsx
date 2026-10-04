@@ -174,7 +174,7 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
               id="portal-overview-contact"
               title="Kontakt"
               className="card portal-overview-contact"
-              more={{ label: 'Alle Kontaktwege & Gutschein', onClick: () => onShowTab(CONTACT_TAB) }}
+              more={{ label: 'Alle Kontaktwege & Einladungscode', onClick: () => onShowTab(CONTACT_TAB) }}
             >
               <ContactPerson name={partner.ansprechperson} />
               <ContactDetails partner={partner} />

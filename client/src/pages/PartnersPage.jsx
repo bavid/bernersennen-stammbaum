@@ -132,7 +132,7 @@ export default function PartnersPage({ family = null }) {
       <aside className="partners-cta card" aria-labelledby="partners-cta-title">
         <div>
           <h2 id="partners-cta-title">Ihr seid Hundeschule, Tierheim, Hundesalon oder Betreuung?</h2>
-          <p className="muted">Ein eigenes Profil bei uns ist kostenlos – mit Portal, Einblicken und Kunden-Gutscheinen.</p>
+          <p className="muted">Ein eigenes Profil bei uns ist kostenlos – mit Portal, Einblicken und Einladungscodes.</p>
         </div>
         <Link to="/partner-werden" className="btn btn-primary">
           Partner werden <Icon name="arrowRight" />

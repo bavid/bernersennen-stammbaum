@@ -24,7 +24,7 @@ export function isPartnerArea(family) {
 // Beschriftung für "Gutscheine weitergeben" (Fuß der App, Dialog-Titel): Partner und Tierheime geben
 // Kunden-Gutscheine an ihre Kundschaft weiter, Haushalte und Rudel laden jemanden ein.
 export function inviteLabel(family) {
-  return isPartnerArea(family) ? 'Kunden-Gutschein weitergeben' : 'Jemanden einladen'
+  return isPartnerArea(family) ? 'Einladungscode weitergeben' : 'Jemanden einladen'
 }
 
 // Fester Anzeigename für den privaten Bereich eines Haushalts im Bereichswechsler, unabhängig vom

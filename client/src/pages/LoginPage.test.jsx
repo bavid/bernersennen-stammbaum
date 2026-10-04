@@ -155,9 +155,9 @@ describe('LoginPage – 409 (offener Gutschein) beim Anmelden', () => {
     await act(async () => setInputValue(container.querySelector('#login-secret'), 'abcd1234hjkm'))
     await act(async () => container.querySelector('.form-stack').requestSubmit())
 
-    expect(segmentButton('Gutschein einlösen').getAttribute('aria-pressed')).toBe('true')
+    expect(segmentButton('Einladungscode einlösen').getAttribute('aria-pressed')).toBe('true')
     expect(container.querySelector('#redeem-code').value).toBe('ABCD-1234-HJKM')
-    expect(container.textContent).toContain('Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.')
+    expect(container.textContent).toContain('Das ist ein Einladungscode – löst ihn ein, um eure Chronik anzulegen.')
   })
 })
 
@@ -165,14 +165,14 @@ describe('LoginPage – initialMode/initialCode (für die Route /v)', () => {
   test('startet direkt im Einlöse-Modus mit vorausgefülltem, formatiertem Code', async () => {
     await render({ initialMode: 'redeem', initialCode: 'abcd1234hjkm' })
 
-    expect(segmentButton('Gutschein einlösen').getAttribute('aria-pressed')).toBe('true')
+    expect(segmentButton('Einladungscode einlösen').getAttribute('aria-pressed')).toBe('true')
     expect(container.querySelector('#redeem-code').value).toBe('ABCD-1234-HJKM')
   })
 })
 
 describe('LoginPage – Gutschein einlösen', () => {
   async function goToRedeem() {
-    act(() => segmentButton('Gutschein einlösen').click())
+    act(() => segmentButton('Einladungscode einlösen').click())
   }
 
   test('sendet die Felder inkl. Honeypot "website" an api.redeemVoucher', async () => {
@@ -249,7 +249,7 @@ describe('LoginPage – Hinweis unter dem Schlüssel (Audit V7a)', () => {
       fromOthers
     })
     await render()
-    act(() => segmentButton('Gutschein einlösen').click())
+    act(() => segmentButton('Einladungscode einlösen').click())
     await act(async () => {
       setInputValue(container.querySelector('#redeem-code'), 'abcd1234hjkm')
       setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
@@ -394,7 +394,7 @@ describe('LoginPage – zwei Einstiege', () => {
     expect(container.querySelector('.login-card-head .muted').textContent).toBe('Löst euren Partner-Zugang ein und richtet euer Partner-Profil ein.')
     expect(labels()).toEqual(['Partner-Zugang'])
 
-    await act(async () => segmentButton('Gutschein einlösen').click())
+    await act(async () => segmentButton('Einladungscode einlösen').click())
 
     expect(container.querySelector('.login-card-head .muted').textContent).toBe('Löst euren Partner-Zugang ein und richtet euer Partner-Profil ein.')
     expect(labels()).toEqual(['Partner-Zugang'])
@@ -402,14 +402,14 @@ describe('LoginPage – zwei Einstiege', () => {
 
   test('ist "Gutschein einlösen" schon offen, holt der Hinweis im Partner-Einstieg nur den Fokus ins Code-Feld', async () => {
     await render()
-    await act(async () => segmentButton('Gutschein einlösen').click())
+    await act(async () => segmentButton('Einladungscode einlösen').click())
     document.activeElement.blur()
     expect(document.activeElement.id).not.toBe('redeem-code')
 
     await act(async () => container.querySelector('.login-partner .login-link-btn').click())
 
     expect(document.activeElement.id).toBe('redeem-code')
-    expect(container.querySelector('.login-card-head h1').textContent).toBe('Gutschein einlösen')
+    expect(container.querySelector('.login-card-head h1').textContent).toBe('Einladungscode einlösen')
   })
 
   test('beide Einstiege sind benannte Abschnitte', async () => {
@@ -427,12 +427,12 @@ describe('LoginPage – zwei Einstiege', () => {
     expect(redeemLink.closest('p').textContent).toContain('Partner-Zugang')
     await act(async () => redeemLink.click())
 
-    expect(container.querySelector('.login-card-head h1').textContent).toBe('Gutschein einlösen')
-    expect(segmentButton('Gutschein einlösen').getAttribute('aria-pressed')).toBe('true')
+    expect(container.querySelector('.login-card-head h1').textContent).toBe('Einladungscode einlösen')
+    expect(segmentButton('Einladungscode einlösen').getAttribute('aria-pressed')).toBe('true')
   })
 })
 
-// Phase N: "Noch keinen Gutschein?" im Einstieg für Tierhalter und "Partner-Zugang anfragen" im Partner-Einstieg.
+// Phase N: "Noch keinen Einladungscode?" im Einstieg für Tierhalter und "Partner-Zugang anfragen" im Partner-Einstieg.
 describe('LoginPage – Gutschein und Partner-Zugang anfragen', () => {
   const requestCard = () => container.querySelector('.login-entries > .login-entry .login-request')
 
@@ -445,25 +445,25 @@ describe('LoginPage – Gutschein und Partner-Zugang anfragen', () => {
     expect(card.querySelector('button.btn-ghost')).toBeNull()
   })
 
-  test('"Noch keinen Gutschein?" steht zugeklappt im Einstieg für Tierhalter - ein Klick öffnet das Formular', async () => {
+  test('"Noch keinen Einladungscode?" steht zugeklappt im Einstieg für Tierhalter - ein Klick öffnet das Formular', async () => {
     await render()
 
     const card = requestCard()
-    expect(card.querySelector('h2').textContent).toBe('Noch keinen Gutschein?')
-    expect(card.textContent).toContain('Schreib uns – wir schicken dir einen Gutschein per E-Mail.')
+    expect(card.querySelector('h2').textContent).toBe('Noch keinen Einladungscode?')
+    expect(card.textContent).toContain('Schreib uns – wir schicken dir einen Einladungscode per E-Mail.')
     expect(card.querySelector('form')).toBeNull()
 
-    await act(async () => linkButton('Gutschein anfragen').click())
+    await act(async () => linkButton('Einladungscode anfragen').click())
 
     expect(card.querySelector('form')).not.toBeNull()
-    expect(card.querySelector('.request-why h3').textContent).toBe('Warum per Gutschein?')
+    expect(card.querySelector('.request-why h3').textContent).toBe('Warum per Einladungscode?')
     expect(document.activeElement).toBe(container.querySelector('#login-request-name'))
   })
 
   test('Anfrage abschicken: Dank statt Formular, die Anmeldung bleibt unberührt', async () => {
     sendAnfrage.mockResolvedValue({ ok: true })
     await render()
-    await act(async () => linkButton('Gutschein anfragen').click())
+    await act(async () => linkButton('Einladungscode anfragen').click())
 
     setInputValue(container.querySelector('#login-request-email'), 'wilma@example.org')
     await act(async () => requestCard().querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))

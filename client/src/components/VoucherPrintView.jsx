@@ -155,7 +155,7 @@ function PrintToolbar({ back, duplex, onDuplex, actions, onPrint, reportError, p
 function PrintHead({ batch, codeCount, sheetCount, nichtDruckbar, schonGedruckt = 0, designLabel, hint }) {
   return (
     <header className="print-head">
-      <span className="eyebrow">Gutschein-Karten</span>
+      <span className="eyebrow">Karten mit Einladungscode</span>
       <h1>{batch.label}</h1>
       <p className="print-head-meta muted">
         <span className="pill">{designLabel(cardDesign(batch))}</span>
@@ -167,7 +167,7 @@ function PrintHead({ batch, codeCount, sheetCount, nichtDruckbar, schonGedruckt 
       {hint && <p className="muted">{hint}</p>}
       {nichtDruckbar > 0 && (
         <p className="field-hint" role="note">
-          {pluralize(nichtDruckbar, 'Gutschein', 'Gutscheine')} ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)
+          {pluralize(nichtDruckbar, 'Code', 'Codes')} ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)
         </p>
       )}
       {/* Phase V5: jeder gemeldete Druck wird vermerkt (gedruckt_at) - schon gedruckte Codes nicht doppelt ausgeben. */}
@@ -204,7 +204,7 @@ function PrintContent({ print, publicUrl, duplex, designLabel, hint, partner, ad
           <Icon name="clock" /> {ADDRESS_PENDING_TEXT}
         </p>
       ) : sheets.length === 0 ? (
-        <p className="muted">Keine offenen Gutscheine in diesem Stapel – nichts zu drucken.</p>
+        <p className="muted">Keine offenen Codes in diesem Stapel – nichts zu drucken.</p>
       ) : (
         <VoucherSheets sheets={sheets} batch={print.batch} baseUrl={baseUrl} duplex={duplex} />
       )}

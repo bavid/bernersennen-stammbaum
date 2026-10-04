@@ -99,7 +99,7 @@ export default function AdminAnfrageRow({ anfrage, onAssign, onStatus, onNotiz, 
   return (
     <li className={`admin-anfrage is-${anfrage.status}`}>
       <div className="admin-anfrage-head">
-        <span className={`pill admin-anfrage-typ ${partner ? 'is-access' : ''}`.trim()}>{partner ? 'Partner-Zugang' : 'Gutschein'}</span>
+        <span className={`pill admin-anfrage-typ ${partner ? 'is-access' : ''}`.trim()}>{partner ? 'Partner-Zugang' : 'Einladungscode'}</span>
         <Title anfrage={anfrage} />
         <a href={mailtoHref(anfrage.email)} className="admin-anfrage-email">
           {anfrage.email}
@@ -115,7 +115,7 @@ export default function AdminAnfrageRow({ anfrage, onAssign, onStatus, onNotiz, 
       {anfrage.gutschein && (
         <p className="admin-anfrage-gutschein">
           <Icon name="check" />
-          Gutschein <span className="voucher-code">…{anfrage.gutschein.hint}</span> zugewiesen ·{' '}
+          Einladungscode <span className="voucher-code">…{anfrage.gutschein.hint}</span> zugewiesen ·{' '}
           {VOUCHER_STATUS_LABEL[anfrage.gutschein.status] || anfrage.gutschein.status}
         </p>
       )}
@@ -130,7 +130,7 @@ export default function AdminAnfrageRow({ anfrage, onAssign, onStatus, onNotiz, 
         {canAssign(anfrage) && (
           <button type="button" className="btn btn-ink" onClick={onAssign}>
             <Icon name="mail" />
-            {partner ? 'Partner-Zugang zuweisen' : 'Gutschein zuweisen'}
+            {partner ? 'Partner-Zugang zuweisen' : 'Einladungscode zuweisen'}
           </button>
         )}
         <StatusActions anfrage={anfrage} onStatus={onStatus} />

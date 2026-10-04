@@ -64,7 +64,7 @@ function cleanPlainText(value, { maxLength, label, allowNewline = false }) {
 }
 
 function validateTyp(value) {
-  if (!TYP_VALUES.includes(value)) throw httpError(400, 'Bitte wählt, ob ihr einen Gutschein oder einen Partner-Zugang anfragt.')
+  if (!TYP_VALUES.includes(value)) throw httpError(400, 'Bitte wählt, ob ihr einen Einladungscode oder einen Partner-Zugang anfragt.')
   return value
 }
 

@@ -9,7 +9,7 @@ const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = 
 const ADMIN_TEST_PASSWORD = 'admin-test-partnerzugang-1'
 const dataDir = useTempDataDir('partner-access', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 const KEY_RE = /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/
-const CLAIM_MESSAGE = 'Dieser Gutschein ist ein Partner-Zugang – bitte über „Gutschein einlösen“ einrichten.'
+const CLAIM_MESSAGE = 'Dieser Code ist ein Partner-Zugang – bitte über „Einladungscode einlösen“ einrichten.'
 const BLOCKED_PARTNER_MESSAGE = 'Dieser Partner-Zugang kann gerade nicht eingelöst werden – bitte meldet euch beim Betreiber.'
 
 test('Partner-Zugang per Gutschein: Admin-Stapel, Prüfen, Einlösen, Abgrenzung', async (t) => {

@@ -55,7 +55,7 @@ describe('PartnerInfoPage – Inhalt', () => {
     expect(container.querySelector('h1').textContent).toBe('Euer Auftritt bei Familie auf Pfoten')
     expect(container.textContent).toContain('Für Hundeschulen, Tierheime, Hundesalons und Betreuung')
     const benefits = [...container.querySelectorAll('.partner-info-benefit h3')].map((el) => el.textContent)
-    expect(benefits).toEqual(['Profil & Einblicke', 'Kundensicht', 'Schreib uns mit Postfach', 'Beiträge als Anzeige', 'Kalender', 'Visitenkarten & Gutscheine'])
+    expect(benefits).toEqual(['Profil & Einblicke', 'Kundensicht', 'Schreib uns mit Postfach', 'Beiträge als Anzeige', 'Kalender', 'Visitenkarten & Einladungscodes'])
     const steps = [...container.querySelectorAll('.partner-info-steps h3')].map((el) => el.textContent)
     expect(steps).toEqual(['Partner-Zugang erhalten', 'Profil einrichten', 'Veröffentlichen'])
     expect(container.textContent).toContain('So funktioniert’s')

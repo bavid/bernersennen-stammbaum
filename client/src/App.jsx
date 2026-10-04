@@ -156,7 +156,7 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
           </div>
         )}
         <p>
-          Mit diesem Gutschein zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
+          Mit diesem Übergabe-Code zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
         </p>
         <label className="check">
           <input type="checkbox" checked={shelterMayRead} onChange={(e) => setShelterMayRead(e.target.checked)} />
@@ -178,7 +178,7 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
         <p className="field-hint">Wechselt oben zu „Meine Chronik“, um das Tier zu übernehmen.</p>
       )}
       <button type="button" className="btn btn-primary btn-block" onClick={onLogout}>
-        Abmelden und Gutschein einlösen
+        Abmelden und Einladungscode einlösen
       </button>
     </div>
   )

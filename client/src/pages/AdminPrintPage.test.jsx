@@ -165,7 +165,7 @@ describe('AdminPrintPage – Bögen', () => {
   test('meldet Gutscheine ohne druckbaren Code und einen leeren Stapel', async () => {
     printBatch.mockResolvedValue({ batch: customerBatch, codes: codes(2), nichtDruckbar: 3 })
     await render()
-    expect(container.textContent).toContain('3 Gutscheine ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)')
+    expect(container.textContent).toContain('3 Codes ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)')
 
     act(() => root.unmount())
     root = null
@@ -173,8 +173,8 @@ describe('AdminPrintPage – Bögen', () => {
 
     printBatch.mockResolvedValue({ batch: customerBatch, codes: [], nichtDruckbar: 1 })
     await render()
-    expect(container.textContent).toContain('1 Gutschein ohne druckbaren Code')
-    expect(container.textContent).toContain('Keine offenen Gutscheine in diesem Stapel')
+    expect(container.textContent).toContain('1 Code ohne druckbaren Code')
+    expect(container.textContent).toContain('Keine offenen Codes in diesem Stapel')
     expect(container.querySelectorAll('.voucher-sheet')).toHaveLength(0)
   })
 })

@@ -115,9 +115,9 @@ describe('VoucherCard – QR-Code und Barrierefreiheit', () => {
     const svg = container.querySelector('.voucher-qr')
 
     expect(svg.getAttribute('role')).toBe('img')
-    expect(svg.getAttribute('aria-label')).toMatch(/^QR-Code für Gutschein/)
+    expect(svg.getAttribute('aria-label')).toMatch(/^QR-Code für den Einladungscode/)
     expect(svg.getAttribute('aria-label')).not.toContain(CODE)
-    expect(container.querySelector('.voucher-card-code').getAttribute('aria-label')).toBe('Gutschein-Code')
+    expect(container.querySelector('.voucher-card-code').getAttribute('aria-label')).toBe('Einladungscode')
     // Deko-Elemente bleiben für Screenreader unsichtbar.
     expect(container.querySelector('[data-mark="paw"]').getAttribute('aria-hidden')).toBe('true')
   })

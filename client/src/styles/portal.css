@@ -153,6 +153,26 @@
   white-space: normal;
 }
 
+/* Feedback-Runde: "Einladungscode einlösen" als leiser Link hinter den Knöpfen - "Schreib uns" bleibt die Hauptaktion. */
+.partner-portal-hero .partner-portal-redeem-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--hero-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.partner-portal-hero .partner-portal-redeem-link:hover {
+  color: var(--tan);
+}
+
+.partner-portal-hero .partner-portal-redeem-link:focus-visible {
+  outline: 3px solid var(--tan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .partner-portal-hero .btn-ghost {
   border-color: rgba(246, 236, 221, 0.35);
   color: var(--hero-text);

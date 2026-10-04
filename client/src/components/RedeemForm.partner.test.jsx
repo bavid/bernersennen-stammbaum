@@ -100,7 +100,7 @@ describe('RedeemForm – Partner-Zugang erkennen', () => {
 
   test('verweist Privatleute auf Kunden-Gutscheine', async () => {
     await render(UNBOUND)
-    expect(container.textContent).toContain('Privat eine eigene Chronik führen? Dafür gibt es Kunden-Gutscheine.')
+    expect(container.textContent).toContain('Privat eine eigene Chronik führen? Dafür gibt es Einladungscodes.')
   })
 
   test('ungebunden: Name, Typ-Auswahl mit allen Partner-Typen und PLZ', async () => {
@@ -135,7 +135,7 @@ describe('RedeemForm – Partner-Zugang erkennen', () => {
   })
 
   test('ein Hinweistext für Kunden-Gutscheine (nach 409 beim Anmelden) entfällt beim Partner-Zugang', async () => {
-    await render(UNBOUND, { hint: 'Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.' })
+    await render(UNBOUND, { hint: 'Das ist ein Einladungscode – löst ihn ein, um eure Chronik anzulegen.' })
     expect(container.textContent).not.toContain('um eure Chronik anzulegen')
   })
 })

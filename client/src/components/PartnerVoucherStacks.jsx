@@ -17,7 +17,7 @@ import { EINLADUNGSKARTEN_ROUTE } from './visitenkarte/VisitenkartenTeaser.jsx'
 // einem dieser Codes).
 
 export const STACKS_HINT = 'Jede Karte legt für eure Kundschaft eine eigene Chronik an – und zeigt, dass sie von euch kommt.'
-export const EMPTY_HINT = 'Noch keine Kunden-Gutscheine. Über „Kunden-Gutschein weitergeben“ unten entstehen eure ersten Karten – oder der Betreiber legt euch einen Stapel an.'
+export const EMPTY_HINT = 'Noch keine Einladungscodes für Kunden. Über „Einladungscode weitergeben“ unten entstehen eure ersten Karten – oder der Betreiber legt euch einen Stapel an.'
 
 const QUELLE_LABELS = { admin: 'vom Betreiber', weitergabe: 'weitergegeben' }
 
@@ -87,7 +87,7 @@ export default function PartnerVoucherStacks() {
     <section className="partner-voucher-stacks" aria-labelledby="partner-vouchers-title">
       <div className="einblicke-head">
         <div>
-          <h2 id="partner-vouchers-title">Kunden-Gutscheine</h2>
+          <h2 id="partner-vouchers-title">Einladungscodes für Kunden</h2>
           <p className="muted">{STACKS_HINT}</p>
         </div>
         {stacks && stacks.length > 0 && <span className="muted einblicke-count">{pluralize(stacks.length, 'Stapel', 'Stapel')}</span>}

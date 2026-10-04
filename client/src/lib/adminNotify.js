@@ -3,7 +3,7 @@
 
 // Je Ereignis ein Schalter (Reihenfolge wie im Server), dazu "Details mitsenden".
 export const EVENT_SWITCHES = Object.freeze([
-  { key: 'gutschein_anfrage', label: 'Gutschein-Anfrage' },
+  { key: 'gutschein_anfrage', label: 'Anfrage nach einem Einladungscode' },
   { key: 'partner_anfrage', label: 'Partner-Anfrage' },
   { key: 'registrierung', label: 'Neue Registrierung' },
   { key: 'feedback', label: 'Feedback' },

@@ -127,7 +127,7 @@ describe('AdminAnfragen – Liste und Filter', () => {
     expect(onCountChange).toHaveBeenLastCalledWith(2)
 
     const [first, second] = rows()
-    expect(first.querySelector('.admin-anfrage-typ').textContent).toBe('Gutschein')
+    expect(first.querySelector('.admin-anfrage-typ').textContent).toBe('Einladungscode')
     expect(first.querySelector('strong').textContent).toBe('Wilma')
     expect(first.querySelector('a.admin-anfrage-email').getAttribute('href')).toBe('mailto:wilma@example.org')
     expect(first.querySelector('time').getAttribute('datetime')).toBe('2026-09-29 08:00:00')
@@ -151,8 +151,8 @@ describe('AdminAnfragen – Liste und Filter', () => {
     expect(chips().map((btn) => btn.textContent)).toEqual(['Offen (2)', 'Erledigt (1)', 'Abgelehnt'])
     const [row] = rows()
     expect(row.querySelector('em').textContent).toBe('ohne Namen')
-    expect(row.querySelector('.admin-anfrage-gutschein').textContent).toBe('Gutschein …JKLM zugewiesen · Offen')
-    expect(rowButton(row, 'Gutschein zuweisen')).toBeUndefined()
+    expect(row.querySelector('.admin-anfrage-gutschein').textContent).toBe('Einladungscode …JKLM zugewiesen · Offen')
+    expect(rowButton(row, 'Einladungscode zuweisen')).toBeUndefined()
     expect(rowButton(row, 'Wieder öffnen')).not.toBeUndefined()
 
     await act(async () => chip('Abgelehnt').click())
@@ -255,7 +255,7 @@ describe('AdminAnfragen – Gutschein zuweisen', () => {
     Object.assign(navigator, { clipboard: { writeText } })
   })
 
-  async function openAssign(index = 0, label = 'Gutschein zuweisen') {
+  async function openAssign(index = 0, label = 'Einladungscode zuweisen') {
     await act(async () => rowButton(rows()[index], label).click())
   }
 
@@ -264,7 +264,7 @@ describe('AdminAnfragen – Gutschein zuweisen', () => {
     await openAssign()
 
     expect(dialog().open).toBe(true)
-    expect(dialog().querySelector('#modal-title').textContent).toBe('Gutschein zuweisen')
+    expect(dialog().querySelector('#modal-title').textContent).toBe('Einladungscode zuweisen')
     const options = [...dialog().querySelectorAll('#admin-anfrage-batch option')].map((option) => [option.value, option.textContent])
     expect(options).toEqual([['10', 'Karten Herbst · frei: 3']])
   })
@@ -309,17 +309,17 @@ describe('AdminAnfragen – Gutschein zuweisen', () => {
     expect(rowButton(dialog(), 'Kopiert')).not.toBeUndefined()
 
     const link = `${window.location.origin}/v#${CODE}`
-    expect(dialog().querySelector('#admin-anfrage-mail-subject').value).toBe('Dein Gutschein für Familie auf Pfoten')
+    expect(dialog().querySelector('#admin-anfrage-mail-subject').value).toBe('Dein Einladungscode für Familie auf Pfoten')
     const body = dialog().querySelector('#admin-anfrage-mail-body').value
     expect(body).toContain('Hallo Wilma,')
-    expect(body).toContain(`hier ist dein Gutschein für Familie auf Pfoten: ${CODE}`)
+    expect(body).toContain(`hier ist dein Einladungscode für Familie auf Pfoten: ${CODE}`)
     expect(body).toContain(`Einlösen unter ${link}`)
 
     await act(async () => rowButton(dialog(), 'Text kopieren').click())
     expect(writeText).toHaveBeenLastCalledWith(body)
 
     const mailto = [...dialog().querySelectorAll('a')].find((a) => a.textContent.includes('Im E-Mail-Programm öffnen')).getAttribute('href')
-    expect(mailto.startsWith('mailto:wilma@example.org?subject=Dein%20Gutschein%20f%C3%BCr%20Familie%20auf%20Pfoten&body=')).toBe(true)
+    expect(mailto.startsWith('mailto:wilma@example.org?subject=Dein%20Einladungscode%20f%C3%BCr%20Familie%20auf%20Pfoten&body=')).toBe(true)
     expect(decodeURIComponent(mailto.split('&body=')[1])).toBe(body)
 
     await act(async () => rowButton(dialog(), 'Fertig').click())
@@ -341,12 +341,12 @@ describe('AdminAnfragen – Gutschein zuweisen', () => {
   })
 
   test('ein Fehler der Zuweisung (409) steht im Dialog, die Auswahl bleibt', async () => {
-    assignAnfrageGutschein.mockRejectedValue(Object.assign(new Error('In diesem Stapel ist kein freier Gutschein mehr.'), { status: 409 }))
+    assignAnfrageGutschein.mockRejectedValue(Object.assign(new Error('In diesem Stapel ist kein freier Einladungscode mehr.'), { status: 409 }))
     await render()
     await openAssign()
     await act(async () => dialog().querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
 
-    expect(dialog().querySelector('[role="alert"]').textContent).toBe('In diesem Stapel ist kein freier Gutschein mehr.')
+    expect(dialog().querySelector('[role="alert"]').textContent).toBe('In diesem Stapel ist kein freier Einladungscode mehr.')
     expect(dialog().querySelector('#admin-anfrage-batch')).not.toBeNull()
   })
 })

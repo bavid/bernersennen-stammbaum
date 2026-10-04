@@ -49,7 +49,7 @@ describe('PartnerVoucherStacks – Liste', () => {
     await render()
 
     expect(vouchers).toHaveBeenCalledTimes(1)
-    expect(container.querySelector('#partner-vouchers-title').textContent).toBe('Kunden-Gutscheine')
+    expect(container.querySelector('#partner-vouchers-title').textContent).toBe('Einladungscodes für Kunden')
     expect(container.textContent).toContain(STACKS_HINT)
     expect(container.textContent).toContain('2 Stapel')
 

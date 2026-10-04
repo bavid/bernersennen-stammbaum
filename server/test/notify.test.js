@@ -95,7 +95,7 @@ test('buildText: ohne Details keine personenbezogenen Daten, mit Details das Nö
   const anfrage = { name: 'Wilma Beispiel', email: 'wilma@example.org', firma: 'Hundeschule Pfotenweg', partnerTyp: 'hundeschule' }
 
   const plain = buildText(EREIGNIS.gutscheinAnfrage, anfrage, { details: false })
-  assert.equal(plain, '🐾 Neue Gutschein-Anfrage – im Admin unter „Anfragen“ ansehen.')
+  assert.equal(plain, '🐾 Neue Anfrage nach einem Einladungscode – im Admin unter „Anfragen“ ansehen.')
   const withDetails = buildText(EREIGNIS.gutscheinAnfrage, anfrage, { details: true })
   assert.ok(withDetails.startsWith(plain))
   assert.match(withDetails, /Name: Wilma Beispiel/)
@@ -174,7 +174,7 @@ test('notify: verschickt asynchron, genau einmal, nur wenn eingeschaltet, einger
     assert.deepEqual(calls[0], {
       token: config.telegram.botToken,
       chatId: config.telegram.chatId,
-      text: '🐾 Neue Gutschein-Anfrage – im Admin unter „Anfragen“ ansehen.'
+      text: '🐾 Neue Anfrage nach einem Einladungscode – im Admin unter „Anfragen“ ansehen.'
     })
     assert.equal(await pending, true)
 

@@ -59,11 +59,11 @@ export default function HandoverDialog({ dog, onCreated }) {
           </div>
         )}
         <p>
-          Es wird ein Übergabe-Gutschein erzeugt, {name} wird als reserviert markiert; ein früherer Übergabe-Code wird
+          Es wird ein Übergabe-Code erzeugt, {name} wird als reserviert markiert; ein früherer Übergabe-Code wird
           ungültig.
         </p>
         <button type="button" className="btn btn-primary btn-block" disabled={creating || isDemo} onClick={handleCreate}>
-          {creating ? 'Erzeuge …' : 'Übergabe-Gutschein erzeugen'}
+          {creating ? 'Erzeuge …' : 'Übergabe-Code erzeugen'}
         </button>
         {isDemo && <p className="field-hint">{readOnlyHint}</p>}
       </div>

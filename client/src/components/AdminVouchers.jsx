@@ -152,7 +152,7 @@ export default function AdminVouchers({ joinableFamilies = [], partners = [], ac
 
   return (
     <section className="admin-vouchers card" aria-labelledby="admin-vouchers-title">
-      <h2 id="admin-vouchers-title">Gutscheine</h2>
+      <h2 id="admin-vouchers-title">Einladungscodes</h2>
 
       <AdminVoucherForm
         joinableFamilies={joinableFamilies}

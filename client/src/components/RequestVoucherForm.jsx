@@ -31,7 +31,7 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
   return (
     <form ref={formRef} className="request-form form-stack" onSubmit={handleSubmit} noValidate>
       <div className="request-why">
-        <h3>Warum per Gutschein?</h3>
+        <h3>Warum per Einladungscode?</h3>
         <p>
           {theme.appName} ist ein kleines, privat betriebenes Projekt: ohne Tracking, ohne Datenhandel und mit einem bewusst
           kleinen eigenen Server. Damit alles schnell und zuverlässig bleibt, nehmen wir neue Familien nach und nach auf.
@@ -94,7 +94,7 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
 
       <button type="submit" className="btn btn-primary btn-block" disabled={sending}>
         <Icon name="send" />
-        {sending ? 'Sende …' : 'Gutschein anfragen'}
+        {sending ? 'Sende …' : 'Einladungscode anfragen'}
       </button>
     </form>
   )

@@ -294,11 +294,11 @@ describe('Partner-Zugang auf /v einlösen', () => {
 })
 
 describe('Partner-Bereich – Kunden-Gutscheine weitergeben', () => {
-  test('der Fuß bietet "Kunden-Gutschein weitergeben" statt "Jemanden einladen"', async () => {
+  test('der Fuß bietet "Einladungscode weitergeben" statt "Jemanden einladen"', async () => {
     await render('/profil')
 
     const footerButton = container.querySelector('.app-footer button.footer-link')
-    expect(footerButton.textContent).toBe('Kunden-Gutschein weitergeben')
+    expect(footerButton.textContent).toBe('Einladungscode weitergeben')
     expect(container.textContent).not.toContain('Jemanden einladen')
   })
 
@@ -310,8 +310,8 @@ describe('Partner-Bereich – Kunden-Gutscheine weitergeben', () => {
 
     const dialog = container.querySelector('dialog.modal')
     expect(dialog.open).toBe(true)
-    expect(dialog.querySelector('#modal-title').textContent).toBe('Kunden-Gutschein weitergeben')
-    expect(dialog.textContent).toContain('Gebt diesen Gutschein an eure Kundschaft weiter')
+    expect(dialog.querySelector('#modal-title').textContent).toBe('Einladungscode weitergeben')
+    expect(dialog.textContent).toContain('Gebt diesen Einladungscode an eure Kundschaft weiter')
     expect(dialog.textContent).not.toContain('Mitglied')
   })
 })
@@ -322,7 +322,7 @@ describe('Redeem-Seite – Kopfzeile', () => {
     await render('/v#abcd1234hjkm', null)
 
     expect(container.querySelector('.login-entry-label').textContent.trim()).toBe('Für Tierhalter')
-    expect(container.querySelector('.login-card-head .muted').textContent).toBe('Löst euren Gutschein ein und legt eure Chronik an.')
+    expect(container.querySelector('.login-card-head .muted').textContent).toBe('Löst euren Einladungscode ein und legt eure Chronik an.')
   })
 })
 

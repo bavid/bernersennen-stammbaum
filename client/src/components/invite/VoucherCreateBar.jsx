@@ -14,7 +14,7 @@ export default function VoucherCreateBar({ limit, onCreate, busy, disabled }) {
         <p className="field-hint" role="status">
           {full
             ? `Du hast ${limit.offen} von ${limit.max} offenen Codes. Ein neuer geht erst, wenn einer eingelöst, zurückgezogen oder abgelaufen ist.`
-            : `${limit.offen} von ${limit.max} offenen Codes – Familien-Einladungen, Besuche und Gutscheine zusammen.`}
+            : `${limit.offen} von ${limit.max} offenen Codes – Familien-Einladungen, Besuche und Einladungscodes zusammen.`}
         </p>
       )}
     </div>

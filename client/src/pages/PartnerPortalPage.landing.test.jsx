@@ -127,7 +127,7 @@ describe('PartnerPortalPage – Landingpage (Phase U, seit den Portal-Reitern)',
       'Angebote & Aktuelles',
       'Einblicke',
       'Kontakt',
-      'Gutschein einlösen'
+      'Einladungscode einlösen'
     ])
   })
 
@@ -150,7 +150,9 @@ describe('PartnerPortalPage – Landingpage (Phase U, seit den Portal-Reitern)',
     publicPartner.mockResolvedValue({ ...partner, website: null })
     await render()
     expect(heroButton('Kontakt')).toBeUndefined()
-    expect(heroButton('Gutschein einlösen').className).toContain('btn-primary')
+    // Feedback-Runde: auch ohne Kontaktweg nur ein leiser Link, kein Hauptknopf.
+    expect(heroButton('Einladungscode einlösen').className).toContain('link-button')
+    expect(heroButton('Einladungscode einlösen').className).not.toContain('btn-primary')
     expect(sectionTitles()).not.toContain('Kontakt')
     expect(tabLabels()).toContain('Kontakt')
   })
@@ -163,7 +165,7 @@ describe('PartnerPortalPage – Landingpage (Phase U, seit den Portal-Reitern)',
     const links = [...strip.querySelectorAll('a')].map((a) => [a.textContent, a.getAttribute('href')])
     expect(links).toEqual([
       ['Mehr erfahren', '/'],
-      ['Gutschein anfragen', '/#gutschein-anfragen']
+      ['Einladungscode anfragen', '/#gutschein-anfragen']
     ])
   })
 
@@ -181,6 +183,6 @@ describe('PartnerPortalPage – Landingpage (Phase U, seit den Portal-Reitern)',
     await render({ slug: undefined, load, preview: true })
     const strip = container.querySelector('.portal-brand-strip')
     expect(strip.querySelectorAll('a')).toHaveLength(0)
-    expect([...strip.querySelectorAll('[aria-disabled="true"]')].map((el) => el.textContent)).toEqual(['Mehr erfahren', 'Gutschein anfragen'])
+    expect([...strip.querySelectorAll('[aria-disabled="true"]')].map((el) => el.textContent)).toEqual(['Mehr erfahren', 'Einladungscode anfragen'])
   })
 })

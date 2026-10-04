@@ -343,8 +343,8 @@ router.get('/voucher-batches/:id', requireAdmin, (req, res) => {
 router.post('/vouchers/:id/revoke', requireAdmin, (req, res) => {
   const id = cleanId(req.params.id)
   const voucher = id ? db.prepare('SELECT redeemed_at, revoked_at, expires_at FROM vouchers WHERE id = ?').get(id) : null
-  if (!voucher) return res.status(404).json({ error: 'Diesen Gutschein gibt es nicht' })
-  if (voucher.redeemed_at) return res.status(409).json({ error: 'Dieser Gutschein wurde schon eingelöst' })
+  if (!voucher) return res.status(404).json({ error: 'Diesen Code gibt es nicht' })
+  if (voucher.redeemed_at) return res.status(409).json({ error: 'Dieser Code wurde schon eingelöst' })
 
   if (!voucher.revoked_at) {
     db.prepare("UPDATE vouchers SET revoked_at = datetime('now'), code_cipher = NULL WHERE id = ?").run(id)
@@ -518,7 +518,7 @@ router.delete('/partners/:id', requireAdmin, (req, res) => {
   }
   const hasVoucherBatches = db.prepare('SELECT 1 FROM voucher_batches WHERE partner_id = ? LIMIT 1').get(id)
   if (hasVoucherBatches) {
-    return res.status(409).json({ error: 'Für diesen Partner gibt es schon Gutschein-Stapel – er lässt sich nicht mehr löschen' })
+    return res.status(409).json({ error: 'Für diesen Partner gibt es schon Code-Stapel – er lässt sich nicht mehr löschen' })
   }
   if (partner.logo_file) {
     fs.rmSync(path.join(config.partnerMediaDir, partner.logo_file), { force: true })

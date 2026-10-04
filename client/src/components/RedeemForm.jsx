@@ -12,11 +12,11 @@ const NAME_MAX_LENGTH = 80
 const EMPTY_PARTNER_VALUES = { name: '', typ: '', plz: '' }
 
 const STATUS_TEXT = {
-  offen: 'Gutschein gültig',
-  eingelöst: 'Dieser Gutschein wurde schon eingelöst.',
-  abgelaufen: 'Dieser Gutschein ist abgelaufen.',
-  widerrufen: 'Dieser Gutschein wurde zurückgezogen.',
-  unbekannt: 'Diesen Gutschein kennen wir nicht.'
+  offen: 'Einladungscode gültig',
+  eingelöst: 'Dieser Einladungscode wurde schon eingelöst.',
+  abgelaufen: 'Dieser Einladungscode ist abgelaufen.',
+  widerrufen: 'Dieser Einladungscode wurde zurückgezogen.',
+  unbekannt: 'Diesen Einladungscode kennen wir nicht.'
 }
 
 function withoutKeys(object, keys) {
@@ -159,7 +159,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
       )}
       <div className={`field ${knownInvalid ? 'has-error' : ''}`}>
         <label className="field-label" htmlFor="redeem-code">
-          Gutscheincode
+          Einladungscode
         </label>
         <input
           id="redeem-code"
@@ -192,7 +192,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
           {handover && (
             <div className="handover-notice" role="status">
               <p>
-                Mit diesem Gutschein zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
+                Mit diesem Übergabe-Code zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
               </p>
               <label className="check">
                 <input type="checkbox" checked={shelterMayRead} onChange={(e) => setShelterMayRead(e.target.checked)} />
@@ -221,7 +221,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
         {loading ? 'Lege an …' : submitLabel}
       </button>
       {partnerAccess && (
-        <p className="field-hint partner-setup-hint">Privat eine eigene Chronik führen? Dafür gibt es Kunden-Gutscheine.</p>
+        <p className="field-hint partner-setup-hint">Privat eine eigene Chronik führen? Dafür gibt es Einladungscodes.</p>
       )}
     </form>
   )

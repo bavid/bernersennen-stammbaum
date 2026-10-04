@@ -38,8 +38,8 @@ describe('isPartnerArea', () => {
 
 describe('inviteLabel', () => {
   test('partner and shelter areas pass on customer vouchers', () => {
-    expect(inviteLabel({ art: 'partner' })).toBe('Kunden-Gutschein weitergeben')
-    expect(inviteLabel({ art: 'tierheim' })).toBe('Kunden-Gutschein weitergeben')
+    expect(inviteLabel({ art: 'partner' })).toBe('Einladungscode weitergeben')
+    expect(inviteLabel({ art: 'tierheim' })).toBe('Einladungscode weitergeben')
   })
 
   test('households and packs invite someone', () => {

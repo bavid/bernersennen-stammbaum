@@ -24,7 +24,7 @@ export default function LoginPartnerEntry({ onLogin, onRedeem }) {
           <Icon name="globe" /> Für Hundeschulen, Tierheime &amp; Co.
         </p>
         <h2 id="login-partner-title">Euer Partner-Bereich</h2>
-        <p className="muted">Eigenes Profil, Beiträge in „Entdecken“, Postfach und Kunden-Gutscheine – kostenlos.</p>
+        <p className="muted">Eigenes Profil, Beiträge in „Entdecken“, Postfach und Einladungscodes für eure Kundschaft – kostenlos.</p>
       </div>
       {error && (
         <div className="error-banner" role="alert">
@@ -50,9 +50,9 @@ export default function LoginPartnerEntry({ onLogin, onRedeem }) {
         </Link>
       </div>
       <p className="field-hint">
-        Partner-Zugang bekommen? Den löst ihr wie einen Gutschein ein:{' '}
+        Partner-Zugang bekommen? Den löst ihr wie einen Einladungscode ein:{' '}
         <button type="button" className="login-link-btn" onClick={onRedeem}>
-          Gutschein einlösen
+          Einladungscode einlösen
         </button>
       </p>
       {/* Phase N: das Anfrage-Formular steht auf der Infoseite unter #anfragen (PartnerInfoPage). */}

@@ -346,7 +346,7 @@ test('Übergabe-Gutschein: Tier zieht mit Chronik ins neue Zuhause', async (t) =
     const { codes } = createBatch(db, { label: 'Normal für Claim', kind: 'admin', size: 1 })
     const wrongKind = await post('/api/vouchers/claim', { code: codes[0] }, existingHome.cookie)
     assert.equal(wrongKind.status, 400)
-    assert.match(wrongKind.data.error, /kein Übergabe-Gutschein/)
+    assert.match(wrongKind.data.error, /kein Übergabe-Code/)
 
     // claim aus einem beigetretenen Rudel heraus (aktiver Bereich != eigene Identität) -> 400
     const rudel = await createFamily(base, 'Rudel für Claim', 'rudel-claim-pw-1')

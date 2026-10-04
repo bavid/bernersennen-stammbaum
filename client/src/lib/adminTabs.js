@@ -7,7 +7,7 @@ export const ADMIN_TABS = [
   { key: OVERVIEW_TAB, label: 'Übersicht' },
   { key: 'anfragen', label: 'Anfragen' },
   { key: 'freigaben', label: 'Freigaben' },
-  { key: 'gutscheine', label: 'Gutscheine' },
+  { key: 'gutscheine', label: 'Einladungscodes' },
   { key: 'partner', label: 'Partner' },
   { key: 'empfehlungen', label: 'Empfehlungen & Spenden' },
   { key: 'familien', label: 'Familien' },

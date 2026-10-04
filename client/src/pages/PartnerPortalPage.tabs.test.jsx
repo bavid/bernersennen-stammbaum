@@ -307,7 +307,7 @@ describe('Portal-Reiter – Kopf', () => {
     expect(hero.querySelector('h1').textContent).toBe('Hundeschule Wiesengrund')
     expect(hero.querySelector('.partner-portal-tagline').textContent).toBe('Gemeinsam lernen')
     expect(hero.querySelector('.partner-portal-text')).toBeNull()
-    expect([...hero.querySelectorAll('button')].map((btn) => btn.textContent.trim())).toEqual(['Kontakt', 'Gutschein einlösen'])
+    expect([...hero.querySelectorAll('button')].map((btn) => btn.textContent.trim())).toEqual(['Kontakt', 'Einladungscode einlösen'])
   })
 
   test('mit Kontaktformular öffnet "Schreib uns" im Kopf das Formular direkt', async () => {
@@ -334,7 +334,7 @@ describe('Portal-Reiter – Kopf', () => {
 
   test('"Gutschein einlösen" im Kopf öffnet den Reiter Kontakt und setzt den Fokus auf "Gutschein einlösen"', async () => {
     await render()
-    await act(async () => button('Gutschein einlösen', container.querySelector('.partner-portal-hero')).click())
+    await act(async () => button('Einladungscode einlösen', container.querySelector('.partner-portal-hero')).click())
     expect(selectedLabel()).toBe('Kontakt')
     expect(location.search).toBe('?reiter=kontakt')
     expect(scrolledIds()).toContain('partner-portal-gutschein')

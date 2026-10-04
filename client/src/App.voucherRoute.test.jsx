@@ -95,7 +95,7 @@ describe('Route /v – Gutschein aus einem Link einlösen', () => {
     me.mockRejectedValue(new Error('401'))
     await render('/v#abcd1234hjkm')
 
-    expect(container.querySelector('[aria-label="Modus"] button[aria-pressed="true"]').textContent).toBe('Gutschein einlösen')
+    expect(container.querySelector('[aria-label="Modus"] button[aria-pressed="true"]').textContent).toBe('Einladungscode einlösen')
     expect(container.querySelector('#redeem-code').value).toBe('ABCD-1234-HJKM')
   })
 
@@ -128,16 +128,16 @@ describe('Route /v – Gutschein aus einem Link einlösen', () => {
 
     expect(container.textContent).toContain('Zuhause am Deich')
     expect(container.querySelector('#redeem-code')).toBeNull()
-    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')
     expect(button).not.toBeUndefined()
   })
 
-  test('"Abmelden und Gutschein einlösen" meldet ab und zeigt danach das Formular, der Code bleibt erhalten', async () => {
+  test('"Abmelden und Einladungscode einlösen" meldet ab und zeigt danach das Formular, der Code bleibt erhalten', async () => {
     me.mockResolvedValue(loggedInHome)
     logout.mockResolvedValue(null)
     await render('/v#abcd1234hjkm')
 
-    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')
     await act(async () => button.click())
 
     expect(logout).toHaveBeenCalled()
@@ -168,7 +168,7 @@ describe('Route /v – nach dem Anmelden landet man in der Chronik, nicht auf de
     const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu Meiner Chronik')
     await act(async () => continueButton.click())
 
-    expect(container.textContent).not.toContain('Abmelden und Gutschein einlösen')
+    expect(container.textContent).not.toContain('Abmelden und Einladungscode einlösen')
     expect(container.querySelector('h1')?.textContent).toBe('Wegbegleiter')
   })
 
@@ -193,7 +193,7 @@ describe('Route /v – nach dem Anmelden landet man in der Chronik, nicht auf de
     await act(async () => container.querySelector('.form-stack').requestSubmit())
 
     expect(login).toHaveBeenCalledWith('ABCD-1234-HJKM')
-    expect(container.textContent).not.toContain('Abmelden und Gutschein einlösen')
+    expect(container.textContent).not.toContain('Abmelden und Einladungscode einlösen')
     expect(container.querySelector('h1')?.textContent).toBe('Wegbegleiter')
   })
 })
@@ -209,16 +209,16 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     memberships: []
   }
 
-  test('zeigt den Umzugs-Hinweis und "In Meine Chronik übernehmen" statt "Abmelden und Gutschein einlösen"', async () => {
+  test('zeigt den Umzugs-Hinweis und "In Meine Chronik übernehmen" statt "Abmelden und Einladungscode einlösen"', async () => {
     me.mockResolvedValue(qualifyingHome)
     checkVoucher.mockResolvedValue({ status: 'offen', handover: { animalName: 'Pepper', shelterName: 'Tierheim Sonnenhang' } })
     await render('/v#abcd1234hjkm')
 
     expect(checkVoucher).toHaveBeenCalledWith('ABCD-1234-HJKM')
-    expect(container.textContent).toContain('Mit diesem Gutschein zieht Pepper aus Tierheim Sonnenhang zu euch – mit der ganzen Chronik.')
+    expect(container.textContent).toContain('Mit diesem Übergabe-Code zieht Pepper aus Tierheim Sonnenhang zu euch – mit der ganzen Chronik.')
     const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In Meine Chronik übernehmen')
     expect(claimButton).not.toBeUndefined()
-    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(false)
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')).toBe(false)
   })
 
   test('Klick auf "In Meine Chronik übernehmen" ruft api.claimVoucher auf und verlässt die Gutschein-Karte', async () => {
@@ -259,7 +259,7 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     expect(claimVoucher).toHaveBeenCalledWith({ code: 'ABCD-1234-HJKM', shelterMayRead: true })
   })
 
-  test('aus einem beigetretenen Rudel heraus (nicht das eigene Zuhause selbst) bleibt es bei "Abmelden und Gutschein einlösen", plus ein Hinweis zurückzuwechseln (final-review Phase T Finding 10)', async () => {
+  test('aus einem beigetretenen Rudel heraus (nicht das eigene Zuhause selbst) bleibt es bei "Abmelden und Einladungscode einlösen", plus ein Hinweis zurückzuwechseln (final-review Phase T Finding 10)', async () => {
     const visitingGroup = {
       id: 9,
       name: 'Familie Sonnenhang',
@@ -273,17 +273,17 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     await render('/v#abcd1234hjkm')
 
     expect(checkVoucher).not.toHaveBeenCalled()
-    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(true)
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')).toBe(true)
     expect(container.textContent).toContain('Wechselt oben zu „Meine Chronik“, um das Tier zu übernehmen.')
   })
 
-  test('ein gewöhnlicher (Nicht-Übergabe) Gutschein-Code lässt es bei "Abmelden und Gutschein einlösen"', async () => {
+  test('ein gewöhnlicher (Nicht-Übergabe) Gutschein-Code lässt es bei "Abmelden und Einladungscode einlösen"', async () => {
     me.mockResolvedValue(qualifyingHome)
     checkVoucher.mockResolvedValue({ status: 'offen' })
     await render('/v#abcd1234hjkm')
 
     expect(checkVoucher).toHaveBeenCalledWith('ABCD-1234-HJKM')
-    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(true)
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')).toBe(true)
   })
 
   test('eine echte Zuhause-Sitzung ohne Rudel-Umweg bekommt den Rudel-Hinweis nicht', async () => {
@@ -299,6 +299,6 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     await render('/v#abcd1234hjkm')
 
     expect(checkVoucher).not.toHaveBeenCalled()
-    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')).toBe(true)
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')).toBe(true)
   })
 })

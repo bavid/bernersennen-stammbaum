@@ -24,14 +24,14 @@ export default function LoginVoucherRequest() {
 
   return (
     <section ref={sectionRef} id={VOUCHER_REQUEST_ANCHOR} className="login-request" aria-labelledby="login-request-title">
-      <h2 id="login-request-title">Noch keinen Gutschein?</h2>
-      <p className="muted">Schreib uns – wir schicken dir einen Gutschein per E-Mail.</p>
+      <h2 id="login-request-title">Noch keinen Einladungscode?</h2>
+      <p className="muted">Schreib uns – wir schicken dir einen Einladungscode per E-Mail.</p>
       {open ? (
         <RequestVoucherForm idPrefix="login-request" autoFocus />
       ) : (
         <button type="button" className="btn btn-ghost btn-block" onClick={() => setOpen(true)}>
           <Icon name="mail" />
-          Gutschein anfragen
+          Einladungscode anfragen
         </button>
       )}
     </section>

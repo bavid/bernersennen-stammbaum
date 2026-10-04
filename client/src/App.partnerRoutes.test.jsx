@@ -152,13 +152,13 @@ describe('Route /p/:slug – Gutschein direkt aus dem Partner-Portal einlösen',
     expect(button).not.toBeUndefined()
   })
 
-  test('"Abmelden und Gutschein einlösen" auf dem Portal meldet ab und zeigt danach das Formular', async () => {
+  test('"Abmelden und Einladungscode einlösen" auf dem Portal meldet ab und zeigt danach das Formular', async () => {
     me.mockResolvedValue(loggedInHome)
     logout.mockResolvedValue(null)
     publicPartner.mockResolvedValue(partner)
     await render('/p/tierheim-sonnenhang')
 
-    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Gutschein einlösen')
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')
     await act(async () => button.click())
 
     expect(logout).toHaveBeenCalled()

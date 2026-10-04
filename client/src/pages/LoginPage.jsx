@@ -12,7 +12,7 @@ import RecoverForm from '../components/RecoverForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
 import { isPartnerArea } from '../lib/areas.js'
 
-const REDEEM_HINT = 'Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.'
+const REDEEM_HINT = 'Das ist ein Einladungscode – löst ihn ein, um eure Chronik anzulegen.'
 
 // Nach einem Partner-Zugang (Phase P) öffnet der Schlüssel den Partner-Bereich, nicht "Meine Chronik" -
 // und erneuert wird er dort unter "Zugang", nicht in den Familien-Einstellungen am Stammbaum.
@@ -31,12 +31,12 @@ function keyRevealProps(me) {
 const MODE_COPY = {
   login: { title: 'Anmelden', lede: 'Mit eurem Schlüssel oder Passwort geht’s weiter.' },
   redeem: {
-    title: 'Gutschein einlösen',
-    lede: 'Löst euren Gutschein ein und legt eure Chronik an.'
+    title: 'Einladungscode einlösen',
+    lede: 'Löst euren Einladungscode ein und legt eure Chronik an.'
   },
   // Einlöse-Modus mit einem Partner-Zugang (RedeemForm meldet es über onPartnerModeChange, Phase P).
   partnerRedeem: {
-    title: 'Gutschein einlösen',
+    title: 'Partner-Zugang einlösen',
     lede: 'Löst euren Partner-Zugang ein und richtet euer Partner-Profil ein.'
   },
   recover: {
@@ -146,7 +146,7 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
                   Anmelden
                 </button>
                 <button type="button" aria-pressed={mode === 'redeem'} onClick={() => switchMode('redeem')}>
-                  Gutschein einlösen
+                  Einladungscode einlösen
                 </button>
               </div>
             )}

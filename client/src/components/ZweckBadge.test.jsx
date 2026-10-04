@@ -27,5 +27,5 @@ test('Besuchs-Einladungen (Phase V2) heißen nicht „Kunden-Gutscheine“', asy
 })
 
 test('Chronik-Stapel bleiben Kunden-Gutscheine', async () => {
-  expect(await badge({ zweck: 'chronik' })).toBe('Kunden-Gutscheine')
+  expect(await badge({ zweck: 'chronik' })).toBe('Einladungscodes')
 })

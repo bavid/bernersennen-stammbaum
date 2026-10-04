@@ -158,9 +158,9 @@ describe('Admin: vorformulierte E-Mail', () => {
 
   test('Gutschein: Du-Anrede, Code und Einlöse-Link', () => {
     const mail = assignmentMail({ anfrage: { typ: 'gutschein', name: 'Wilma' }, code: 'ABCD-EFGH-JKLM', link, appName: 'Familie auf Pfoten' })
-    expect(mail.subject).toBe('Dein Gutschein für Familie auf Pfoten')
+    expect(mail.subject).toBe('Dein Einladungscode für Familie auf Pfoten')
     expect(mail.body).toContain('Hallo Wilma,')
-    expect(mail.body).toContain('hier ist dein Gutschein für Familie auf Pfoten: ABCD-EFGH-JKLM')
+    expect(mail.body).toContain('hier ist dein Einladungscode für Familie auf Pfoten: ABCD-EFGH-JKLM')
     expect(mail.body).toContain(`Einlösen unter ${link}`)
   })
 

@@ -8,8 +8,8 @@ const SELECT_ID = 'admin-anfrage-batch'
 function NoBatch({ partner }) {
   return (
     <p className="muted">
-      Kein passender Stapel mit freien Codes. Lege unter „Gutscheine“ einen Stapel mit{' '}
-      {partner ? 'Partner-Zugängen' : 'Kunden-Gutscheinen'} an.
+      Kein passender Stapel mit freien Codes. Lege unter „Einladungscodes“ einen Stapel mit{' '}
+      {partner ? 'Partner-Zugängen' : 'Einladungscodes für Kunden'} an.
     </p>
   )
 }
@@ -64,7 +64,7 @@ export default function AdminAnfrageAssign({ anfrage, onAssigned, onClose }) {
   return (
     <form className="admin-anfrage-assign form-stack" onSubmit={handleSubmit}>
       <p>
-        Für <strong>{anfrage.email}</strong>: ein freier {partner ? 'Partner-Zugang' : 'Kunden-Gutschein'} aus einem deiner
+        Für <strong>{anfrage.email}</strong>: ein freier {partner ? 'Partner-Zugang' : 'Einladungscode'} aus einem deiner
         Stapel. Danach ist die Anfrage erledigt.
       </p>
       {error && (

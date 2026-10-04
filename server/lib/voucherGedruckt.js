@@ -26,7 +26,7 @@ const markPrinted = db.transaction((ids) => {
 // (printableIds: lib/voucherPrint.js printableCodes(...).ids dieses Stapels) - fremde, eingelöste oder widerrufene zählen
 // nicht. Ergebnis: wie viele vermerkt wurden. Ungültige Angaben -> 400 (err.status).
 const MAX_PRINTED_IDS = 1000
-const INVALID_IDS_MESSAGE = 'Bitte die Ids der gedruckten Gutscheine als Liste mitschicken.'
+const INVALID_IDS_MESSAGE = 'Bitte die Ids der gedruckten Codes als Liste mitschicken.'
 
 function validatePrintedIds(body) {
   const ids = body?.ids

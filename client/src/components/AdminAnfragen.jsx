@@ -153,7 +153,7 @@ export default function AdminAnfragen({ onCountChange }) {
 
       <Modal
         open={assigning !== null}
-        title={assigning?.typ === ANFRAGE_TYP.partner ? 'Partner-Zugang zuweisen' : 'Gutschein zuweisen'}
+        title={assigning?.typ === ANFRAGE_TYP.partner ? 'Partner-Zugang zuweisen' : 'Einladungscode zuweisen'}
         onClose={() => setAssigning(null)}
       >
         {assigning && <AdminAnfrageAssign anfrage={assigning} onAssigned={refresh} onClose={() => setAssigning(null)} />}

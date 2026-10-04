@@ -38,7 +38,7 @@ export default function AdminStats({ bereiche }) {
         <h2 id="admin-overview-title">Kennzahlen</h2>
       </div>
       <p className="admin-section-intro muted">
-        Zahlen ohne Demo-Daten: Einlösungen der Gutscheine, Weitergaben, Klicks der letzten 30 Tage und der Stand der
+        Zahlen ohne Demo-Daten: Einlösungen der Einladungscodes, Weitergaben, Klicks der letzten 30 Tage und der Stand der
         Partner.
       </p>
 
@@ -61,18 +61,18 @@ function StatsBody({ stats, bereiche }) {
       <dl className="admin-stats admin-stats-kennzahlen">
         {Number.isFinite(bereiche) && <StatTile label="Bereiche" value={bereiche} />}
         <StatTile label="Partner aktiv" value={partner?.status?.aktiv} />
-        <StatTile label="Eingelöste Gutscheine" value={eingeloesteGesamt(einloesungen?.zweck)} />
+        <StatTile label="Eingelöste Einladungscodes" value={eingeloesteGesamt(einloesungen?.zweck)} />
         <StatTile label="Klicks 7 Tage" value={klicksLetzteTage(klicks?.tage)} />
       </dl>
 
       <div className="admin-overview-grid">
-        <StatsBlock id="stapel" title="Gutschein-Stapel" wide hint="Eingelöst, offen und zurückgezogen je Stapel des Admins.">
+        <StatsBlock id="stapel" title="Code-Stapel" wide hint="Eingelöst, offen und zurückgezogen je Stapel des Admins.">
           <AdminStatsStapel stapel={einloesungen?.stapel} />
         </StatsBlock>
         <StatsBlock id="partner-ranking" title="Partner-Ranking" hint="Neue Bereiche, die über einen Partner entstanden.">
           <AdminStatsPartnerRanking partner={einloesungen?.partner} />
         </StatsBlock>
-        <StatsBlock id="mundpropaganda" title="Mundpropaganda" hint="Weitergegebene Gutscheine, aus denen neue Bereiche wurden.">
+        <StatsBlock id="mundpropaganda" title="Mundpropaganda" hint="Weitergegebene Einladungscodes, aus denen neue Bereiche wurden.">
           <AdminStatsMundpropaganda mundpropaganda={mundpropaganda} />
         </StatsBlock>
         <StatsBlock id="klicks" title="Klicks" wide hint="Letzte 30 Tage, darunter die meistgeklickten Ziele.">

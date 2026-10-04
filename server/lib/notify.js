@@ -63,12 +63,12 @@ function httpError(status, message) {
 // --- Texte ---------------------------------------------------------------------------------------
 
 const HEADLINES = Object.freeze({
-  [EREIGNIS.gutscheinAnfrage]: () => `${PAW} Neue Gutschein-Anfrage – im Admin unter „Anfragen“ ansehen.`,
+  [EREIGNIS.gutscheinAnfrage]: () => `${PAW} Neue Anfrage nach einem Einladungscode – im Admin unter „Anfragen“ ansehen.`,
   [EREIGNIS.partnerAnfrage]: () => `${PAW} Neue Anfrage für einen Partner-Zugang – im Admin unter „Anfragen“ ansehen.`,
   [EREIGNIS.registrierung]: (daten) =>
     daten.art === 'partner'
       ? `${PAW} Ein Partner-Zugang wurde eingelöst – ein neuer Partner richtet sich ein.`
-      : `${PAW} Neue Registrierung – mit einem Gutschein ist ein neuer Bereich entstanden.`,
+      : `${PAW} Neue Registrierung – mit einem Einladungscode ist ein neuer Bereich entstanden.`,
   [EREIGNIS.feedback]: (daten) =>
     daten.typ === 'problem'
       ? `${PAW} Neue Problemmeldung über „Schreib dem Admin“ – im Admin unter den Nachrichten ansehen.`

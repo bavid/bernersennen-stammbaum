@@ -66,7 +66,7 @@ describe('RedeemForm – Code-Feld', () => {
     await act(async () => codeInput().dispatchEvent(new Event('focusout', { bubbles: true })))
 
     expect(checkVoucher).toHaveBeenCalledWith('ABCD-1234-HJKM')
-    expect(container.textContent).toContain('Gutschein gültig')
+    expect(container.textContent).toContain('Einladungscode gültig')
   })
 
   test('zeigt bei einem bereits eingelösten Gutschein einen erklärenden Text und sperrt den Absenden-Knopf', async () => {
@@ -100,7 +100,7 @@ describe('RedeemForm – Übergabe-Gutschein (Phase T Task 5)', () => {
     await act(async () => checkAndBlur())
 
     expect(container.textContent).toContain(
-      'Mit diesem Gutschein zieht Pepper aus Tierheim Sonnenhang zu euch – mit der ganzen Chronik.'
+      'Mit diesem Übergabe-Code zieht Pepper aus Tierheim Sonnenhang zu euch – mit der ganzen Chronik.'
     )
     const label = [...container.querySelectorAll('label')].find((l) => l.textContent.includes('darf weiter mitlesen'))
     expect(label).not.toBeUndefined()
@@ -209,18 +209,18 @@ describe('RedeemForm – Absenden', () => {
 
   test('ein Fehler vom Server erscheint als Alert, onRedeemed bleibt aus', async () => {
     const onRedeemed = vi.fn()
-    redeemVoucher.mockRejectedValue(new Error('Dieser Gutschein wurde schon eingelöst'))
+    redeemVoucher.mockRejectedValue(new Error('Dieser Einladungscode wurde schon eingelöst'))
     await render({ onRedeemed })
     await act(async () => fillBase())
     await act(async () => container.querySelector('form').requestSubmit())
 
-    expect(container.querySelector('[role="alert"]').textContent).toBe('Dieser Gutschein wurde schon eingelöst')
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Dieser Einladungscode wurde schon eingelöst')
     expect(onRedeemed).not.toHaveBeenCalled()
   })
 
   test('zeigt einen übergebenen Hinweistext (z. B. nach 409 beim Anmelden) und kündigt ihn per role="status" an', async () => {
-    await render({ hint: 'Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.' })
-    expect(container.textContent).toContain('Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.')
-    expect(container.querySelector('[role="status"]').textContent).toBe('Das ist ein Gutschein – löst ihn ein, um eure Chronik anzulegen.')
+    await render({ hint: 'Das ist ein Einladungscode – löst ihn ein, um eure Chronik anzulegen.' })
+    expect(container.textContent).toContain('Das ist ein Einladungscode – löst ihn ein, um eure Chronik anzulegen.')
+    expect(container.querySelector('[role="status"]').textContent).toBe('Das ist ein Einladungscode – löst ihn ein, um eure Chronik anzulegen.')
   })
 })

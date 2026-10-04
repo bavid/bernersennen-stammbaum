@@ -33,8 +33,8 @@ const BENEFITS = [
   // Audit V7a: die Visitenkarten (Phase V5) gehören dazu - vorher stand nur "Kunden-Gutscheine" da.
   {
     icon: 'printer',
-    title: 'Visitenkarten & Gutscheine',
-    text: 'Visitenkarten mit QR-Code zu eurem Portal zum Selberdrucken – auf Wunsch mit Gutschein, der eurer Kundschaft eine eigene Chronik anlegt.'
+    title: 'Visitenkarten & Einladungscodes',
+    text: 'Visitenkarten mit QR-Code zu eurem Portal zum Selberdrucken – auf Wunsch mit Einladungscode, mit dem eure Kundschaft eine eigene Chronik anlegt.'
   }
 ]
 
@@ -149,7 +149,7 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
       <section className="partner-info-section partner-info-showcase card" aria-labelledby="partner-info-demo-title">
         <div>
           <h2 id="partner-info-demo-title">So sieht euer Partner-Bereich aus</h2>
-          <p className="muted">Drei Demo-Partner zeigen Profil, Kundensicht, Beiträge, Postfach und Kunden-Gutscheine – einfach reinklicken.</p>
+          <p className="muted">Drei Demo-Partner zeigen Profil, Kundensicht, Beiträge, Postfach und Einladungscodes – einfach reinklicken.</p>
         </div>
         <DemoButtons onDemo={onDemo} />
       </section>

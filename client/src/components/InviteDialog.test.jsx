@@ -204,7 +204,7 @@ describe('InviteDialog – eigene Gutscheine', () => {
   test('zeigt in der Demo einen Hinweis, dass keine echten Gutscheine vergeben werden', async () => {
     myVouchers.mockResolvedValue([openVoucher])
     await render(rudel, { isDemo: true })
-    expect(container.textContent).toContain('Beispiel – in der Demo werden keine Gutscheine vergeben.')
+    expect(container.textContent).toContain('Beispiel – in der Demo werden keine Einladungscodes vergeben.')
   })
 
   test('der alte Weg (Adresse + Passwort) erscheint nur für ein Rudel, nicht für ein Zuhause', async () => {
@@ -298,7 +298,7 @@ describe('InviteDialog – Einladungen mit Rolle (Phase R)', () => {
 })
 
 describe('InviteDialog – Partner und Tierheime geben Kunden-Gutscheine weiter (Phase P)', () => {
-  const PARTNER_TEXT = 'Gebt diesen Gutschein an eure Kundschaft weiter – damit legen sie ihre eigene Chronik bei Familie auf Pfoten an.'
+  const PARTNER_TEXT = 'Gebt diesen Einladungscode an eure Kundschaft weiter – damit legen sie ihre eigene Chronik bei Familie auf Pfoten an.'
 
   test.each([
     ['Partner-Bereich', partnerArea],

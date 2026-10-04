@@ -31,7 +31,7 @@ async function render({ isDemo = false, ...props } = {}) {
 }
 
 function confirmButton() {
-  return [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Übergabe-Gutschein erzeugen')
+  return [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Übergabe-Code erzeugen')
 }
 
 afterEach(() => {
@@ -52,7 +52,7 @@ describe('HandoverDialog – vor dem Erzeugen', () => {
     await render()
 
     expect(createHandover).not.toHaveBeenCalled()
-    expect(container.textContent).toContain('Es wird ein Übergabe-Gutschein erzeugt')
+    expect(container.textContent).toContain('Es wird ein Übergabe-Code erzeugt')
     expect(container.textContent).toContain('Pepper wird als reserviert markiert')
     expect(container.textContent).toContain('ein früherer Übergabe-Code wird ungültig')
     expect(confirmButton()).not.toBeUndefined()

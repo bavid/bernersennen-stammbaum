@@ -340,7 +340,7 @@ describe('AdminVouchers – Zweck', () => {
   test('Kunden-Gutscheine sind vorausgewählt; Partner-Zugang tauscht Rudel/Partner gegen Typ und Bindung', async () => {
     await render({ accessPartners })
 
-    expect(zweckButton('Kunden-Gutscheine').getAttribute('aria-pressed')).toBe('true')
+    expect(zweckButton('Einladungscodes').getAttribute('aria-pressed')).toBe('true')
     expect(container.querySelector('#admin-voucher-join')).not.toBeNull()
     expect(container.querySelector('#admin-voucher-typ')).toBeNull()
 
@@ -410,6 +410,6 @@ describe('AdminVouchers – Zweck', () => {
     await render()
 
     const badges = [...container.querySelectorAll('.admin-voucher-zweck-badge')].map((badge) => badge.textContent)
-    expect(badges).toEqual(['Partner-Zugang · Hundesalon', 'Kunden-Gutscheine'])
+    expect(badges).toEqual(['Partner-Zugang · Hundesalon', 'Einladungscodes'])
   })
 })

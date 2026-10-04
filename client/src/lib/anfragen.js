@@ -167,11 +167,11 @@ export function assignmentMail({ anfrage, code, link, appName }) {
     }
   }
   return {
-    subject: `Dein Gutschein für ${appName}`,
+    subject: `Dein Einladungscode für ${appName}`,
     body: [
       greeting(anfrage),
       '',
-      `hier ist dein Gutschein für ${appName}: ${code}`,
+      `hier ist dein Einladungscode für ${appName}: ${code}`,
       '',
       `Einlösen unter ${link} – dort legst du deine eigene Chronik an.`,
       '',

@@ -135,7 +135,7 @@ describe('AdminPage – Reiter (Phase U)', () => {
       'Übersicht',
       'Anfragen',
       'Freigaben',
-      'Gutscheine',
+      'Einladungscodes',
       'Partner',
       'Empfehlungen & Spenden',
       'Familien',
@@ -157,7 +157,7 @@ describe('AdminPage – Reiter (Phase U)', () => {
     expect(count('Anfragen')).toBe('2')
     expect(count('Freigaben')).toBe('1')
     expect(count('Nachrichten')).toBe('3')
-    expect(count('Gutscheine')).toBeUndefined()
+    expect(count('Einladungscodes')).toBeUndefined()
     expect(tab('Anfragen').querySelector('.tab-bar-count').getAttribute('aria-hidden')).toBe('true')
     expect(tab('Anfragen').textContent).toBe('Anfragen2 (2 offen)')
   })
@@ -176,7 +176,7 @@ describe('AdminPage – Reiter (Phase U)', () => {
 
   test('?tab=gutscheine wählt den Reiter aus der Adresse, ein unbekannter Wert landet bei Übersicht', async () => {
     await render('/admin?tab=gutscheine')
-    expect(selectedTab().firstChild.textContent).toBe('Gutscheine')
+    expect(selectedTab().firstChild.textContent).toBe('Einladungscodes')
     expect(visiblePanel().querySelector('[data-testid="gutscheine"]')).not.toBeNull()
 
     act(() => root.unmount())
@@ -203,7 +203,7 @@ describe('AdminPage – Reiter (Phase U)', () => {
     expect(container.querySelector('[data-testid="freigaben"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="gutscheine"]')).toBeNull()
 
-    await click(tab('Gutscheine'))
+    await click(tab('Einladungscodes'))
     await click(tab('Familien'))
     expect(container.querySelector('[data-testid="gutscheine"]')).not.toBeNull()
     expect(document.getElementById('admin-panel-gutscheine').hidden).toBe(true)

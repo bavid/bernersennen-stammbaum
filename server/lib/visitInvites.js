@@ -13,7 +13,7 @@ const { assertOpenCodeSlot } = require('./voucherManage')
 const VISIT_INVITE_DAYS = 7
 const DAY_MS = 24 * 60 * 60 * 1000
 
-const NOT_A_VISIT_MESSAGE = 'Das ist keine Besuchs-Einladung. Gutscheine für eine eigene Chronik löst du nach dem Abmelden ein.'
+const NOT_A_VISIT_MESSAGE = 'Das ist keine Besuchs-Einladung. Einladungscodes für eine eigene Chronik löst du nach dem Abmelden ein.'
 const OWN_INVITE_MESSAGE = 'Das ist deine eigene Einladung – gib sie an die Person weiter, die dich besuchen soll.'
 const ALREADY_VISITING_MESSAGE = 'Ihr seid schon verbunden – du findest das Zuhause oben im Bereichswechsler.'
 
