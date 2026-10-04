@@ -1,13 +1,16 @@
 import Icon from '../Icon.jsx'
+import { ADDRESS_PENDING_TEXT } from '../../lib/voucherPrint.js'
 
 // Teile, die Visitenkarten- und Einladungskarten-Designer teilen (VisitenkartenDesigner, EinladungskartenDesigner): der
-// Hinweis auf eine fehlende öffentliche Adresse, die Zeile "Gestaltung speichern" und die Vorschau-Bühne mit Vorder- und
-// Rückseite in echten Proportionen.
+// Hinweis, solange die Plattform keine öffentliche Adresse hat, die Zeile "Gestaltung speichern" und die Vorschau-Bühne
+// mit Vorder- und Rückseite in echten Proportionen.
 
-export function PublicUrlWarning({ baseUrl }) {
+// Feedback-Runde: ein freundlicher Satz statt einer technischen Adresse (lib/voucherPrint.js printAddressPending) - nur
+// in Produktion ohne Domain, nie in Vorschau, Demo oder Admin-Ansicht.
+export function AddressPendingNote() {
   return (
-    <p className="vk-note is-warning" role="note">
-      <Icon name="alert" /> Die QR-Codes zeigen auf {baseUrl} – keine öffentliche Adresse. Bitte vor dem Druck beim Betreiber melden.
+    <p className="vk-note" role="status">
+      <Icon name="clock" /> {ADDRESS_PENDING_TEXT}
     </p>
   )
 }

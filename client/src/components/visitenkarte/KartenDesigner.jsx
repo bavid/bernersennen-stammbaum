@@ -18,7 +18,7 @@ function einladungOf(initial) {
   return initial.einladung || { design: einladungPayload({ ...initial.design, widmung: '' }), gespeichert: false }
 }
 
-export default function KartenDesigner({ art, onArt, profile, initial, publicUrl }) {
+export default function KartenDesigner({ art, onArt, profile, initial, publicUrl, appEnv }) {
   const druck = useVisitenkartenDruck(initial.gutscheine)
   const onSaved = (result) => druck.setGutscheine(result.gutscheine)
   const visitenkarte = useKartenEntwurf({
@@ -41,7 +41,7 @@ export default function KartenDesigner({ art, onArt, profile, initial, publicUrl
     onSaved
   })
 
-  const shared = { profile, vorschlag: initial.vorschlag, publicUrl, druck }
+  const shared = { profile, vorschlag: initial.vorschlag, publicUrl, appEnv, druck }
   return (
     <>
       <KartenArtSwitch art={art} onChange={onArt} disabled={druck.busy} />

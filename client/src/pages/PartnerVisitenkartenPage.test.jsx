@@ -348,3 +348,34 @@ describe('PartnerVisitenkartenPage – Demo und Admin-Ansicht', () => {
     expect(stage()).toBe(null)
   })
 })
+
+describe('PartnerVisitenkartenPage – ohne öffentliche Adresse (Feedback-Runde)', () => {
+  const PENDING = 'Drucken ist bald möglich – wir richten gerade die Adresse der Plattform ein.'
+
+  test('Produktion ohne Domain: ein freundlicher Satz ohne Adresse, Drucken gesperrt, keine Druckfassung', async () => {
+    config.mockResolvedValue({ appEnv: 'production', publicUrl: null })
+    await render()
+    expect(container.textContent).toContain(PENDING)
+    expect(container.textContent).not.toMatch(/keine öffentliche Adresse|beim Betreiber melden/)
+    expect(printButton().disabled).toBe(true)
+    expect(printView()).toBe(null)
+  })
+
+  test('Vorschau und Testsystem ohne Domain, Demo und Admin-Ansicht in Produktion: kein Hinweis, Drucken möglich', async () => {
+    for (const [appEnv, readOnly] of [
+      ['staging', null],
+      ['dev', null],
+      ['production', { isDemo: true }],
+      ['production', { adminView: true }]
+    ]) {
+      config.mockResolvedValue({ appEnv, publicUrl: null })
+      await render({ readOnly })
+      expect(container.textContent).not.toContain(PENDING)
+      expect(container.textContent).not.toContain('keine öffentliche Adresse')
+      expect(printButton().disabled).toBe(false)
+      act(() => root.unmount())
+      root = null
+      container.remove()
+    }
+  })
+})

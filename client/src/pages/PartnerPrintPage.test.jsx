@@ -178,6 +178,40 @@ describe('PartnerPrintPage – Druck melden (Audit V7a)', () => {
   })
 })
 
+describe('PartnerPrintPage – ohne öffentliche Adresse (Feedback-Runde)', () => {
+  const PENDING = 'Drucken ist bald möglich – wir richten gerade die Adresse der Plattform ein.'
+
+  test('Produktion ohne Domain: ein freundlicher Satz ohne Adresse, Drucken gesperrt, keine Karten mit echten Codes', async () => {
+    config.mockResolvedValue({ appEnv: 'production', publicUrl: 'http://10.0.0.5:3010' })
+    await render()
+    expect(container.textContent).toContain(PENDING)
+    expect(container.textContent).not.toMatch(/10\.0\.0\.5|PUBLIC_URL|localhost|öffentliche Domain/)
+    expect(container.querySelector('.warning-banner')).toBeNull()
+    expect(button('Drucken').disabled).toBe(true)
+    expect(container.querySelector('.voucher-card')).toBeNull()
+    await act(async () => window.dispatchEvent(new Event('beforeprint')))
+    expect(markPrinted).not.toHaveBeenCalled()
+  })
+
+  test('Vorschau, Testsystem und Demo: kein Hinweis, Drucken wie gewohnt - nie die technische Warnung', async () => {
+    for (const [appEnv, options] of [
+      ['staging', {}],
+      ['dev', {}],
+      ['production', { readOnly: true, demo: true }]
+    ]) {
+      config.mockResolvedValue({ appEnv, publicUrl: null })
+      await render('12', options)
+      expect(container.textContent).not.toContain(PENDING)
+      expect(container.querySelector('.warning-banner')).toBeNull()
+      expect(button('Drucken').disabled).toBe(false)
+      expect(container.querySelector('.voucher-card')).not.toBeNull()
+      act(() => root.unmount())
+      root = null
+      container.remove()
+    }
+  })
+})
+
 describe('PartnerPrintPage – Fehler und Sicherheit', () => {
   test('ein fremder oder unbekannter Stapel (404) erscheint als Alert, ohne Karten', async () => {
     printBatch.mockRejectedValue(new Error('Diesen Stapel gibt es nicht'))

@@ -8,7 +8,8 @@ import { profileTabRoute } from '../lib/partnerProfile.js'
 // no-store, nur eigene Stapel) und leben nur im State und im DOM der Karten. Motiv: immer die Partner-Karte mit
 // Logo, Farbstreifen und "überreicht von" (server/lib/voucherPrint.js printBatch mit dem eigenen Partner).
 // Audit V7a: "Drucken" meldet den Druck (api.partnerArea.markPrinted) - nicht in Demo und Admin-Ansicht (readOnly), die
-// nur lesen.
+// nur lesen. Feedback-Runde: nie eine technische Adresse - fehlt in Produktion die öffentliche Adresse, ein freundlicher
+// Satz statt der Karten (components/VoucherPrintView.jsx partner).
 
 export const PARTNER_PRINT_HINT = 'Jede Karte legt für eure Kundschaft eine eigene Chronik an – und zeigt, dass sie von euch kommt.'
 // Audit V7a: in der Demo sehen die Codes echt aus (die Visitenkarten zeigen "MUSTER") - sagen, dass sie nicht gelten.
@@ -23,5 +24,15 @@ export default function PartnerPrintPage({ batchId, readOnly = false, demo = fal
   usePrintBodyClass()
   const state = useVoucherPrint({ load: () => api.partnerArea.printBatch(batchId), key: batchId })
   const markPrinted = readOnly ? null : (ids) => api.partnerArea.markPrinted(batchId, ids)
-  return <VoucherPrintView state={state} back={BACK} designLabel={designLabel} hint={demo ? `${PARTNER_PRINT_HINT} ${DEMO_PRINT_HINT}` : PARTNER_PRINT_HINT} markPrinted={markPrinted} />
+  return (
+    <VoucherPrintView
+      state={state}
+      back={BACK}
+      designLabel={designLabel}
+      hint={demo ? `${PARTNER_PRINT_HINT} ${DEMO_PRINT_HINT}` : PARTNER_PRINT_HINT}
+      markPrinted={markPrinted}
+      partner
+      readOnly={readOnly}
+    />
+  )
 }

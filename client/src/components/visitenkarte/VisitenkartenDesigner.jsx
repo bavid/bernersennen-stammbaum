@@ -7,9 +7,9 @@ import VisitenkarteGutschein from './VisitenkarteGutschein.jsx'
 import VisitenkarteInhalt from './VisitenkarteInhalt.jsx'
 import VisitenkarteVorlagen from './VisitenkarteVorlagen.jsx'
 import VisitenkartenBoegen, { SEITEN, VisitenkartenDruck } from './VisitenkartenBogen.jsx'
-import { PublicUrlWarning, SaveRow, Stage } from './VisitenkartenTeile.jsx'
+import { AddressPendingNote, SaveRow, Stage } from './VisitenkartenTeile.jsx'
 import { useIsAdminView, useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
-import { needsPublicUrl } from '../../lib/voucherPrint.js'
+import { printAddressPending } from '../../lib/voucherPrint.js'
 import { CARDS_PER_SHEET, buildSheets, cardModel, musterCodes } from '../../lib/visitenkarte.js'
 
 // Der Visitenkarten-Designer (Phase V5): links bzw. oben die Vorschau (Vorder- und Rückseite in echten Proportionen),
@@ -19,8 +19,10 @@ import { CARDS_PER_SHEET, buildSheets, cardModel, musterCodes } from '../../lib/
 // Muster-Codes. Die Codes leben nur im State und im DOM der Druckfassung: keine URL, kein localStorage, keine Konsole.
 // Demo und Admin-Ansicht: alles ausprobieren und Muster drucken, nichts speichern. Gestaltung und Speichern kommen als
 // entwurf (hooks/useKartenEntwurf.js) aus KartenDesigner.jsx - so übersteht sie einen Wechsel zur Einladungskarte.
-export default function VisitenkartenDesigner({ profile, vorschlag, publicUrl, entwurf, druck }) {
+export default function VisitenkartenDesigner({ profile, vorschlag, publicUrl, appEnv, entwurf, druck }) {
   const readOnly = useIsDemo()
+  // Feedback-Runde: ohne öffentliche Adresse (nur Produktion) wartet der Druck - auch die Druckfassung entsteht nicht.
+  const addressPending = printAddressPending({ appEnv, publicUrl, readOnly })
   const isAdminView = useIsAdminView()
   const readOnlyHint = useReadOnlyHint()
   const [sheets, setSheets] = useState(1)
@@ -76,7 +78,7 @@ export default function VisitenkartenDesigner({ profile, vorschlag, publicUrl, e
             onPrint={() => druck.print({ withCodes, cards })}
             busy={druck.busy}
             gutscheinAnzahl={withCodes ? Math.min(cards, druck.available) : 0}
-            publicUrlWarning={needsPublicUrl(publicUrl) ? <PublicUrlWarning baseUrl={card.baseUrl} /> : null}
+            addressNote={addressPending ? <AddressPendingNote /> : null}
           />
         </div>
       </div>
@@ -93,9 +95,11 @@ export default function VisitenkartenDesigner({ profile, vorschlag, publicUrl, e
         <VisitenkartenBoegen sheets={buildSheets({ sheetCount: 1, codes: muster })} total={sheets} card={card} muster />
       </section>
 
-      <VisitenkartenDruck>
-        <VisitenkartenBoegen sheets={buildSheets({ sheetCount: sheets, codes: printCodes })} card={card} seiten={seiten} muster={readOnly} />
-      </VisitenkartenDruck>
+      {!addressPending && (
+        <VisitenkartenDruck>
+          <VisitenkartenBoegen sheets={buildSheets({ sheetCount: sheets, codes: printCodes })} card={card} seiten={seiten} muster={readOnly} />
+        </VisitenkartenDruck>
+      )}
     </>
   )
 }

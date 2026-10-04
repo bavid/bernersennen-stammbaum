@@ -7,9 +7,9 @@ import VisitenkarteFront from './VisitenkarteFront.jsx'
 import VisitenkarteInhalt from './VisitenkarteInhalt.jsx'
 import VisitenkarteVorlagen from './VisitenkarteVorlagen.jsx'
 import VisitenkartenBoegen, { SEITEN, VisitenkartenDruck } from './VisitenkartenBogen.jsx'
-import { PublicUrlWarning, SaveRow, Stage } from './VisitenkartenTeile.jsx'
+import { AddressPendingNote, SaveRow, Stage } from './VisitenkartenTeile.jsx'
 import { useIsAdminView, useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
-import { needsPublicUrl } from '../../lib/voucherPrint.js'
+import { printAddressPending } from '../../lib/voucherPrint.js'
 import { CARDS_PER_SHEET, musterCodes } from '../../lib/visitenkarte.js'
 import { ART, DEFAULT_KARTEN, buildKartenSheets, einladungCardModel, rueckseiteModel, sheetCountFor } from '../../lib/einladungskarte.js'
 
@@ -31,8 +31,10 @@ function printSheetsFor({ readOnly, count, printable, printCodes, muster, seiten
   return { sheets: buildKartenSheets({ count: printable, codes: [] }), seiten: SEITEN.vorne }
 }
 
-export default function EinladungskartenDesigner({ profile, vorschlag, publicUrl, rueckseite, entwurf, druck }) {
+export default function EinladungskartenDesigner({ profile, vorschlag, publicUrl, appEnv, rueckseite, entwurf, druck }) {
   const readOnly = useIsDemo()
+  // Feedback-Runde: ohne öffentliche Adresse (nur Produktion) wartet der Druck - auch die Druckfassung entsteht nicht.
+  const addressPending = printAddressPending({ appEnv, publicUrl, readOnly })
   const isAdminView = useIsAdminView()
   const readOnlyHint = useReadOnlyHint()
   const [count, setCount] = useState(DEFAULT_KARTEN)
@@ -81,7 +83,7 @@ export default function EinladungskartenDesigner({ profile, vorschlag, publicUrl
             onPrint={() => druck.print({ withCodes, cards: printable, art: ART.einladung, nurMitCodes: true })}
             busy={druck.busy}
             printable={printable}
-            publicUrlWarning={needsPublicUrl(publicUrl) ? <PublicUrlWarning baseUrl={card.baseUrl} /> : null}
+            addressNote={addressPending ? <AddressPendingNote /> : null}
           />
         </div>
       </div>
@@ -102,9 +104,11 @@ export default function EinladungskartenDesigner({ profile, vorschlag, publicUrl
         />
       </section>
 
-      <VisitenkartenDruck>
-        <VisitenkartenBoegen sheets={druckfassung.sheets} card={card} seiten={druckfassung.seiten} renderBack={renderBack(readOnly)} />
-      </VisitenkartenDruck>
+      {!addressPending && (
+        <VisitenkartenDruck>
+          <VisitenkartenBoegen sheets={druckfassung.sheets} card={card} seiten={druckfassung.seiten} renderBack={renderBack(readOnly)} />
+        </VisitenkartenDruck>
+      )}
     </>
   )
 }

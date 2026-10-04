@@ -73,7 +73,8 @@ function printLabel(busy, printable) {
   return `Drucken – ${printable} ${printable === 1 ? 'Einladungskarte' : 'Einladungskarten'}`
 }
 
-export default function EinladungDruckOptionen({ count, onCount, seiten, onSeiten, onPrint, busy, printable, publicUrlWarning }) {
+// addressNote: der Hinweis, solange die Plattform keine öffentliche Adresse hat - dann ist Drucken gesperrt.
+export default function EinladungDruckOptionen({ count, onCount, seiten, onSeiten, onPrint, busy, printable, addressNote = null }) {
   return (
     <section className="vk-panel" aria-labelledby="vk-druck-title">
       <h2 id="vk-druck-title" className="vk-panel-title">
@@ -81,8 +82,13 @@ export default function EinladungDruckOptionen({ count, onCount, seiten, onSeite
       </h2>
       <AnzahlField count={count} onCount={onCount} busy={busy} />
       <SeitenField seiten={seiten} onSeiten={onSeiten} busy={busy} />
-      {publicUrlWarning}
-      <button type="button" className="btn btn-primary btn-lg vk-print-button" onClick={onPrint} disabled={busy || printable === 0}>
+      {addressNote}
+      <button
+        type="button"
+        className="btn btn-primary btn-lg vk-print-button"
+        onClick={onPrint}
+        disabled={busy || printable === 0 || Boolean(addressNote)}
+      >
         <Icon name="printer" /> {printLabel(busy, printable)}
       </button>
       <DruckHints />

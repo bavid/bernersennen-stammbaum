@@ -55,6 +55,16 @@ export function needsPublicUrl(publicUrl) {
   return !publicUrl || isLocalAddress(publicUrl)
 }
 
+// Feedback-Runde: Partner sehen nie eine technische Adresse (die Warnung mit Adresse bleibt der Druckseite des Admins).
+// Nur in Produktion ohne öffentliche Domain (PUBLIC_URL fehlt oder ist localhost/eine IP) wartet der Druck echter Karten
+// mit diesem einen Satz; Vorschau und Testsystem (appEnv staging/dev), Demo und Admin-Ansicht (readOnly) drucken wie
+// gewohnt bzw. Muster.
+export const ADDRESS_PENDING_TEXT = 'Drucken ist bald möglich – wir richten gerade die Adresse der Plattform ein.'
+
+export function printAddressPending({ appEnv, publicUrl, readOnly = false }) {
+  return appEnv === 'production' && !readOnly && needsPublicUrl(publicUrl)
+}
+
 // Motiv eines Stapels (server/lib/voucherPrint.js printBatch): partnerzugang schlägt alles, sonst
 // entscheidet der Partner. Ältere Stapel ohne zweck sind Kunden-Gutscheine.
 export function cardDesign(batch) {

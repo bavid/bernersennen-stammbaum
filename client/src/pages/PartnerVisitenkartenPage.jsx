@@ -20,7 +20,7 @@ const TITLES = { [ART.visitenkarte]: 'Visitenkarten gestalten', [ART.einladung]:
 const LEADS = { [ART.visitenkarte]: VISITENKARTEN_LEAD, [ART.einladung]: EINLADUNGSKARTEN_LEAD }
 
 export default function PartnerVisitenkartenPage() {
-  const { profile, state, publicUrl, configReady, error } = useVisitenkarte()
+  const { profile, state, publicUrl, appEnv, configReady, error } = useVisitenkarte()
   const [params, setParams] = useSearchParams()
   const art = artFromParam(params.get(ART_PARAM))
   const ready = profile && state && configReady
@@ -57,7 +57,7 @@ export default function PartnerVisitenkartenPage() {
           Lade …
         </p>
       )}
-      {!error && ready && <KartenDesigner art={art} onArt={selectArt} profile={profile} initial={state} publicUrl={publicUrl} />}
+      {!error && ready && <KartenDesigner art={art} onArt={selectArt} profile={profile} initial={state} publicUrl={publicUrl} appEnv={appEnv} />}
     </div>
   )
 }

@@ -66,7 +66,8 @@ export function DruckHints() {
   )
 }
 
-export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, onSeiten, onPrint, busy, gutscheinAnzahl, publicUrlWarning }) {
+// addressNote: der Hinweis, solange die Plattform keine öffentliche Adresse hat - dann ist Drucken gesperrt.
+export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, onSeiten, onPrint, busy, gutscheinAnzahl, addressNote = null }) {
   return (
     <section className="vk-panel" aria-labelledby="vk-druck-title">
       <h2 id="vk-druck-title" className="vk-panel-title">
@@ -88,8 +89,8 @@ export default function VisitenkarteDruckOptionen({ sheets, onSheets, seiten, on
         </p>
       </div>
       <SeitenField seiten={seiten} onSeiten={onSeiten} busy={busy} />
-      {publicUrlWarning}
-      <button type="button" className="btn btn-primary btn-lg vk-print-button" onClick={onPrint} disabled={busy}>
+      {addressNote}
+      <button type="button" className="btn btn-primary btn-lg vk-print-button" onClick={onPrint} disabled={busy || Boolean(addressNote)}>
         <Icon name="printer" /> {printLabel(busy, gutscheinAnzahl)}
       </button>
       <DruckHints />
