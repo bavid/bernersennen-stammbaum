@@ -30,10 +30,10 @@ const atHome = {
   home,
   role: 'leitung',
   memberships: [
-    { id: 5, name: 'Familie Sonnenhang', rolle: 'leitung' },
-    { id: 6, name: 'Familie am Deich', rolle: 'gast' }
+    { id: 5, name: 'Familie Sonnenhang', rolle: 'leitung', tiere: 21, eigeneTiere: 4 },
+    { id: 6, name: 'Familie am Deich', rolle: 'gast', tiere: 3, eigeneTiere: 0 }
   ],
-  besuche: [{ id: 9, name: 'Zuhause Möwenweg' }]
+  besuche: [{ id: 9, name: 'Zuhause Möwenweg', tiere: 7 }]
 }
 
 afterEach(() => {
@@ -63,14 +63,30 @@ const button = (label) => [...container.querySelectorAll('button')].find((el) =>
 const rows = (id) => [...container.querySelectorAll(`[aria-labelledby="${id}"] a`)]
 
 describe('FamiliesPage (Phase W)', () => {
-  test('Meine Familien mit Rolle, befreundete Zuhause - jede Zeile führt zur Gruppenseite', async () => {
+  test('Meine Familien mit Rolle und derselben Zählung wie überall, befreundete Zuhause - jede Zeile führt zur Gruppenseite', async () => {
     await render()
     expect(container.querySelector('h1').textContent).toBe('Familien')
     expect(rows('families-mine-title').map((a) => [a.getAttribute('href'), a.textContent])).toEqual([
-      ['/familien/5', 'Familie SonnenhangFamilienleitung'],
-      ['/familien/6', 'Familie am DeichGast']
+      ['/familien/5', 'Familie SonnenhangFamilienleitung · 21 Tiere · davon 4 von euch'],
+      ['/familien/6', 'Familie am DeichGast · 3 Tiere']
     ])
-    expect(rows('families-friends-title').map((a) => a.getAttribute('href'))).toEqual(['/familien/9'])
+    expect(rows('families-friends-title').map((a) => [a.getAttribute('href'), a.textContent])).toEqual([
+      ['/familien/9', 'Zuhause MöwenwegZu Besuch · 7 Tiere']
+    ])
+  })
+
+  // Betreiber: „Wenn ich auf Familien drücke, will ich Familien sehen und nicht EINLADEN / GRÜNDEN / BEITRETEN“.
+  test('erst die Familien, die drei Wege dazu ganz unten als leise Text-Links - keine großen Knöpfe im Kopf', async () => {
+    await render()
+    expect(container.querySelector('.page-hero .btn')).toBeNull()
+    const actions = container.querySelector('.families-page-actions')
+    expect([...actions.querySelectorAll('button')].map((b) => [b.textContent, b.className])).toEqual([
+      ['Familie beitreten', 'link-button'],
+      ['Neue Familie gründen', 'link-button'],
+      ['Code von Freunden eingeben', 'link-button']
+    ])
+    const grid = container.querySelector('.families-page-grid')
+    expect(grid.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   test('leer: freundliche Sätze statt Listen', async () => {

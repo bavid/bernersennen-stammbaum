@@ -8,6 +8,7 @@ const { isVisiting, visitTargetsOf, countNewGuests } = require('./visits')
 const { countOpenRequests } = require('./erlebtMit')
 const { revokeInvitesOnLeave } = require('./inviteRevocation')
 const { loadDarstellung } = require('./darstellung')
+const { withMembershipCounts, withVisitCounts } = require('./areaCounts')
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist - mit der eigenen Rolle dort (Phase R Task 2,
 // für den ContextSwitcher des Clients).
@@ -102,8 +103,10 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
     ...(zuBesuch ? { zuBesuch: true } : {}),
     role: roleOf(homeId, activeId),
     home,
-    memberships: membershipsOf(homeId),
-    besuche: visitTargetsOf(homeId),
+    // Phase W, Schritt 2: je Familie bzw. besuchtem Zuhause die Zahl der Tiere (lib/areaCounts.js) - eine Zählung für alle
+    // Stellen des Clients.
+    memberships: withMembershipCounts(homeId, membershipsOf(homeId)),
+    besuche: withVisitCounts(visitTargetsOf(homeId)),
     erlebtMitOffen: home?.art === ART.zuhause ? countOpenRequests(homeId) : 0,
     neueGaeste: home?.art === ART.zuhause ? countNewGuests(homeId) : 0,
     auth: currentAuthInfo(homeId, userId),

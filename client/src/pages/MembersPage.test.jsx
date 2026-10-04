@@ -219,11 +219,11 @@ describe('MembersPage – was welche Rolle sieht', () => {
     for (const title of LEITUNG_TOOLS) expect(heading(title), title).toBeUndefined()
   })
 
-  test('Reihenfolge: Wer dazugehört, Offene Einladungen, „Wer sieht was?“ zum Aufklappen', async () => {
+  test('Reihenfolge: Mitglieder dieser Familie, Offene Einladungen, „Wer sieht was?“ zum Aufklappen', async () => {
     familyMembers.mockResolvedValue(payloadAs('leitung'))
     await renderPage(familyAs('leitung'))
 
-    expect([...container.querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['Wer dazugehört', 'Offene Einladungen', 'Wer sieht was?'])
+    expect([...container.querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['Mitglieder dieser Familie', 'Offene Einladungen', 'Wer sieht was?'])
     expect(container.querySelector('details.visibility-card').open).toBe(false)
   })
 

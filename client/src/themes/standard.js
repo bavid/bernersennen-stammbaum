@@ -41,6 +41,9 @@ export default {
     noGroupConnected: 'Noch keine Familie verbunden.',
     leaveGroup: 'Familie verlassen',
     dissolveGroup: 'Familie auflösen',
+    // Phase W, Schritt 2: „… sieht die ganze Familie“ (Freigaben) und „Mitglieder dieser Familie“
+    wholeGroup: 'die ganze Familie',
+    ofThisGroup: 'dieser Familie',
     groupNeverPublic: 'Eine Familie ist nie öffentlich.',
     // Rollen in einer Familie (lib/roles.js roleLabel), aufsteigend nach Rang
     roleGast: 'Gast',

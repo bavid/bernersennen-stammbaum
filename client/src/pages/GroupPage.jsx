@@ -12,7 +12,7 @@ import PinboardPage from './PinboardPage.jsx'
 import useAreaAnimals from '../hooks/useAreaAnimals.js'
 import useAnimalCreate from '../hooks/useAnimalCreate.js'
 import useTabParam from '../hooks/useTabParam.js'
-import { familyAnimals } from '../lib/familyGroups.js'
+import { animalCountText, areaCounts, countsFromDogs } from '../lib/animalCounts.js'
 import { hasRole } from '../lib/roles.js'
 import { familySettingsRoute } from '../lib/areas.js'
 import { isVisit } from '../lib/visits.js'
@@ -40,14 +40,10 @@ function tabsFor(visiting, words) {
   ]
 }
 
-// Kleine Zeile unter dem Namen: wie viele Tiere hier zu sehen sind und aus wie vielen Zuhause sie kommen.
-function groupMeta(dogs, words) {
-  if (!dogs) return null
-  const animals = familyAnimals(dogs)
-  const homes = new Set(animals.filter((dog) => dog.shared_from).map((dog) => dog.family_id ?? dog.shared_from))
-  const parts = [`${animals.length} ${animals.length === 1 ? words.animal : words.animals}`]
-  if (homes.size > 0) parts.push(`aus ${homes.size} Zuhause`)
-  return parts.join(' · ')
+// Kleine Zeile unter dem Namen (Phase W, Schritt 2: überall dieselbe Zählung, lib/animalCounts.js): "21 Tiere · davon 4
+// von euch" - aus me (GET /api/me zählt je Familie bzw. besuchtem Zuhause), sonst aus den geladenen Tieren.
+function groupMeta(family, dogs, words) {
+  return animalCountText(areaCounts(family, family.id) ?? countsFromDogs(dogs, family.home?.id), words)
 }
 
 // /familien/:id (Phase W) - eine Familie als Gruppenseite, hinter dem AreaGate (der Bereich ist hier immer aktiv): Kopf
@@ -61,7 +57,7 @@ export default function GroupPage({ family, onFamilyChange }) {
   const animals = useAreaAnimals()
   const creator = useAnimalCreate()
   const canWrite = !visiting && hasRole(family, 'mitglied')
-  const meta = groupMeta(animals.dogs, words)
+  const meta = groupMeta(family, animals.dogs, words)
 
   return (
     <div className="page group-page">

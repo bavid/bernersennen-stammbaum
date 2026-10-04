@@ -41,8 +41,8 @@ if (!HTMLDialogElement.prototype.showModal) {
 
 const home = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' }
 const memberships = [
-  { id: 3, name: 'Familie Sonnenhang', theme: 'standard', rolle: 'leitung' },
-  { id: 4, name: 'Familie Talgrund', theme: 'standard', rolle: 'gast' }
+  { id: 3, name: 'Familie Sonnenhang', theme: 'standard', rolle: 'leitung', tiere: 21, eigeneTiere: 1 },
+  { id: 4, name: 'Familie Talgrund', theme: 'standard', rolle: 'gast', tiere: 6, eigeneTiere: 0 }
 ]
 const atHome = {
   ...home,
@@ -233,13 +233,13 @@ describe('SettingsPage – Darstellung', () => {
 
 describe('SettingsPage – Familien', () => {
   // Phase W: "Öffnen" führt zur Gruppenseite - den Wechsel macht dort das AreaGate.
-  test('Familien mit Rolle und Zahl der eigenen Tiere dort; Öffnen führt zur Gruppenseite', async () => {
+  test('Familien mit Rolle und derselben Zählung wie überall ("21 Tiere · davon 1 von euch"); Öffnen führt zur Gruppenseite', async () => {
     await render(atHome, '/einstellungen?bereich=familien')
     await flush()
     const rows = [...container.querySelectorAll('.settings-list')[0].querySelectorAll('.settings-row')]
     expect(rows.map((row) => row.querySelector('strong').textContent)).toEqual(['Familie Sonnenhang', 'Familie Talgrund'])
-    expect(rows[0].querySelector('.settings-row-sub').textContent).toBe('Familienleitung · zeigt eines eurer Tiere')
-    expect(rows[1].querySelector('.settings-row-sub').textContent).toBe('Gast · zeigt keines eurer Tiere')
+    expect(rows[0].querySelector('.settings-row-sub').textContent).toBe('Familienleitung · 21 Tiere · davon 1 von euch')
+    expect(rows[1].querySelector('.settings-row-sub').textContent).toBe('Gast · 6 Tiere')
 
     await act(async () => rows[0].querySelector('button').click())
     expect(location.pathname).toBe('/familien/3')
@@ -262,7 +262,7 @@ describe('SettingsPage – Familien', () => {
     await flush()
     expect(container.querySelector('.family-manage-title').textContent).toContain('Familie Sonnenhang')
     expect(container.querySelector('.family-manage .back-link').getAttribute('href')).toBe('/einstellungen?bereich=familien')
-    expect(container.querySelector('.settings-animal')).toBeNull()
+    expect(container.querySelector('.share-card')).toBeNull()
 
     await act(async () => [...container.querySelectorAll('[role="tab"]')].find((tab) => tab.textContent === 'Mein Zuhause').click())
     expect(location.search).toBe('?bereich=zuhause')
@@ -275,21 +275,28 @@ describe('SettingsPage – Familien', () => {
     expect(container.querySelector('a[aria-label="Familie Sonnenhang verwalten"]')).not.toBeNull()
   })
 
-  test('Eure Tiere in Familien: dieselbe Freigabe wie auf der Tierseite; als Gast nichts Neues teilen', async () => {
+  // Phase W, Schritt 2 (Betreiber: die Kästchen je Tier verstand niemand): je Familie eine Karte mit einem Schalter je Tier.
+  test('Eure Tiere in Familien: je Familie „In … zeigt ihr:“ mit Schaltern je Tier und dem Satz der Tierseite; als Gast nichts Neues', async () => {
     api.setDogShares.mockResolvedValue({ shares: [3] })
     await render(atHome, '/einstellungen?bereich=familien')
     await flush()
-    const animalRows = [...container.querySelectorAll('.settings-animal')]
-    expect(animalRows.map((row) => row.querySelector('strong').textContent)).toEqual(['Nele', 'Flocke'])
-    const [sonnenhang, talgrund] = animalRows[1].querySelectorAll('input[type="checkbox"]')
-    expect(sonnenhang.checked).toBe(false)
-    expect(talgrund.disabled).toBe(true)
+    const cards = [...container.querySelectorAll('.share-card')]
+    expect(cards.map((card) => card.querySelector('h3').textContent)).toEqual(['In Familie Sonnenhang zeigt ihr:', 'In Familie Talgrund zeigt ihr:'])
+    const switchFor = (card, name) =>
+      [...card.querySelectorAll('.share-switch')].find((label) => label.querySelector('.share-switch-label').textContent === name).querySelector('input')
+    expect(switchFor(cards[0], 'Nele').checked).toBe(true)
+    expect(switchFor(cards[0], 'Flocke').checked).toBe(false)
+    expect(switchFor(cards[0], 'Flocke').getAttribute('role')).toBe('switch')
+    expect(switchFor(cards[1], 'Flocke').disabled).toBe(true)
+    expect(container.querySelector('.share-note').textContent).toBe(
+      'Ausgewählte Tiere und ihre nicht privaten Erinnerungen sieht die ganze Familie. Private Erinnerungen bleiben immer bei euch.'
+    )
 
-    await act(async () => sonnenhang.click())
+    await act(async () => switchFor(cards[0], 'Flocke').click())
     await flush()
     expect(api.setDogShares).toHaveBeenCalledWith(12, [3])
     // Die Zahl an der Familie zieht mit.
-    expect(container.querySelector('.settings-row-sub').textContent).toBe('Familienleitung · zeigt 2 eurer Tiere')
+    expect(container.querySelector('.settings-row-sub').textContent).toBe('Familienleitung · 22 Tiere · davon 2 von euch')
   })
 
   test('Familien: beitreten oder gründen; die befreundeten Zuhause stehen jetzt unter „Mein Zuhause“', async () => {
@@ -304,7 +311,7 @@ describe('SettingsPage – Familien', () => {
     await render(inGroup, '/einstellungen?bereich=familien')
     await flush()
     expect(api.listDogs).not.toHaveBeenCalled()
-    expect(container.querySelector('.settings-animal')).toBeNull()
+    expect(container.querySelector('.share-card')).toBeNull()
     await act(async () => buttonText('Zu „Meiner Chronik“ wechseln').click())
     expect(api.view).toHaveBeenCalledWith(1)
     expect(latest.id).toBe(1)
@@ -313,7 +320,7 @@ describe('SettingsPage – Familien', () => {
   test('Demo: Freigaben gesperrt mit Hinweis', async () => {
     await render({ ...atHome, isDemo: true }, '/einstellungen?bereich=familien')
     await flush()
-    expect(container.querySelector('.settings-animal input[type="checkbox"]').disabled).toBe(true)
+    expect(container.querySelector('.share-card input[role="switch"]').disabled).toBe(true)
     expect(container.textContent).toContain('In der Demo nicht möglich.')
   })
 })

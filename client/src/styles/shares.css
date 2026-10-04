@@ -1,0 +1,121 @@
+/* Phase W, Schritt 2: Freigaben als Schalter (components/shares/*) - "Wer sieht {Name}?" auf der Tierseite und je Familie
+   eine Karte in Einstellungen › Familien; dazu die gemeinsame Zählung ("21 Tiere · davon 4 von euch") und die leisen
+   Wege unten auf der Seite "Familien". Nur die Tokens des bestehenden Auftritts. */
+
+.share-switches {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.share-switch {
+  position: relative;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.share-switch.is-disabled {
+  cursor: not-allowed;
+}
+
+/* Das echte Kontrollkästchen bleibt bedienbar (Tastatur, Screenreader), sichtbar ist nur der Schalter. */
+.share-switch input {
+  position: absolute;
+  width: 2.75rem;
+  height: 1.6rem;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.share-switch-track {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 1.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--line-strong);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.share-switch-thumb {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.share-switch input:checked + .share-switch-track {
+  background: var(--rust);
+}
+
+.share-switch input:checked + .share-switch-track .share-switch-thumb {
+  transform: translateX(1.15rem);
+}
+
+.share-switch input:focus-visible + .share-switch-track {
+  box-shadow: var(--focus-ring);
+}
+
+.share-switch input:disabled + .share-switch-track {
+  opacity: 0.5;
+}
+
+.share-switch-label {
+  font-weight: 700;
+}
+
+.share-switch-hint {
+  flex-basis: 100%;
+  padding-left: calc(2.75rem + var(--space-3));
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.share-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-4);
+}
+
+.share-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.share-card-title {
+  font-size: var(--text-base);
+}
+
+.share-note {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.start-family-count {
+  grid-row: 3;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.families-page-actions {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}

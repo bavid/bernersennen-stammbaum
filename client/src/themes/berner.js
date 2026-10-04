@@ -40,6 +40,9 @@ export default {
     noGroupConnected: 'Noch kein Rudel verbunden.',
     leaveGroup: 'Rudel verlassen',
     dissolveGroup: 'Rudel auflösen',
+    // Phase W, Schritt 2: „… sieht die ganze Familie“ (Freigaben) und „Mitglieder dieser Familie“
+    wholeGroup: 'das ganze Rudel',
+    ofThisGroup: 'dieses Rudels',
     groupNeverPublic: 'Ein Rudel ist nie öffentlich.',
     // Rollen in einem Rudel (lib/roles.js roleLabel), aufsteigend nach Rang
     roleGast: 'Gast',

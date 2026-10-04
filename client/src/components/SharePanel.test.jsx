@@ -73,15 +73,23 @@ afterEach(() => {
 })
 
 function checkboxFor(name) {
-  const label = [...container.querySelectorAll('.share-panel-list .check')].find((el) => el.textContent === name)
+  const label = [...container.querySelectorAll('.share-panel-list .share-switch')].find((el) => el.querySelector('.share-switch-label').textContent === name)
   return label?.querySelector('input')
 }
 
 describe('SharePanel', () => {
-  test('zeigt eine Checkbox je Mitgliedschaft, angehakt entsprechend dog.shares', async () => {
+  test('zeigt einen Schalter je Mitgliedschaft (role="switch"), an entsprechend dog.shares', async () => {
     await render()
     expect(checkboxFor('Familie Klein').checked).toBe(true)
+    expect(checkboxFor('Familie Klein').getAttribute('role')).toBe('switch')
     expect(checkboxFor('Rudel Nachbarn').checked).toBe(false)
+  })
+
+  test('ein Gast teilt nichts Neues - eine bestehende Freigabe lässt sich lösen', async () => {
+    await render({ family: { ...family, memberships: [{ id: 3, name: 'Familie Klein', rolle: 'gast' }, { id: 5, name: 'Rudel Nachbarn', rolle: 'gast' }] } })
+    expect(checkboxFor('Familie Klein').disabled).toBe(false)
+    expect(checkboxFor('Rudel Nachbarn').disabled).toBe(true)
+    expect(container.textContent).toContain('Als Gast teilt ihr hier keine Tiere')
   })
 
   test('Anhaken ruft api.setDogShares mit der vollständigen neuen Liste auf', async () => {
@@ -201,9 +209,7 @@ describe('SharePanel – Texte über den Theme-Wortschatz', () => {
     await renderThemed('berner', { family: { ...family, memberships: [] } })
     expect(container.querySelector('#share-panel-title').textContent).toBe('Wer sieht Pepper?')
     const { entries } = getTheme('berner').words
-    expect(container.querySelector('.share-panel > p').textContent).toBe(
-      `Angehakte Rudel sehen Pepper und alle ${entries}, die nicht privat sind. Private ${entries} bleiben immer bei euch.`
-    )
+    expect(container.querySelector('.share-note')).toBeNull()
     expect(container.querySelector('.share-panel-empty').textContent).toContain('Noch kein Rudel verbunden.')
     const button = [...container.querySelectorAll('.share-panel-empty button')].find(
       (btn) => btn.textContent === 'Rudel beitreten oder gründen'
@@ -214,7 +220,27 @@ describe('SharePanel – Texte über den Theme-Wortschatz', () => {
   test('Standard-Theme: „Wer sieht …?“, Leerzustand und Knopf sprechen von "Familie(n)"', async () => {
     await renderThemed('standard', { family: { ...family, memberships: [] } })
     expect(container.querySelector('#share-panel-title').textContent).toBe('Wer sieht Pepper?')
-    expect(container.querySelector('.share-panel > p').textContent).toContain('Angehakte Familien sehen Pepper')
+    expect(container.querySelector('.share-panel-empty')).not.toBeNull()
     expect(container.querySelector('.share-panel-empty').textContent).toContain('Noch keine Familie verbunden.')
+  })
+})
+
+describe('SharePanel – derselbe Satz wie in den Einstellungen (ShareNote)', () => {
+  test('Standard und Berner', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () =>
+      root.render(
+        <ThemeProvider themeId="berner">
+          <Wrapper />
+        </ThemeProvider>
+      )
+    )
+    const { entries } = getTheme('berner').words
+    expect(container.querySelector('.share-note').textContent).toBe(
+      `Ausgewählte Hunde und ihre nicht privaten ${entries} sieht das ganze Rudel. Private ${entries} bleiben immer bei euch.`
+    )
+    expect(checkboxFor('Familie Klein').getAttribute('aria-describedby')).toBe('share-panel-note')
   })
 })

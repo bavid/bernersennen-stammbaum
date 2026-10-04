@@ -115,7 +115,7 @@ describe('GroupPage (Phase W)', () => {
     await render()
     expect(container.querySelector('.eyebrow').textContent).toBe('Familie')
     expect(container.querySelector('h1').textContent).toBe('Familie Sonnenhang')
-    expect(container.querySelector('.group-meta').textContent).toBe('3 Tiere · aus 2 Zuhause')
+    expect(container.querySelector('.group-meta').textContent).toBe('3 Tiere · davon 1 von euch')
     expect(groupTabs().map((tab) => tab.textContent)).toEqual([words.entries, 'Tiere', 'Pinnwand', 'Mitglieder'])
     expect(selected()).toBe(words.entries)
   })
@@ -137,6 +137,12 @@ describe('GroupPage (Phase W)', () => {
     expect(search()).toBe('?reiter=pinnwand')
     act(() => groupTabs()[0].click())
     expect(search()).toBe('')
+  })
+
+  // Phase W, Schritt 2: dieselbe Zählung wie Familien-Liste und Einstellungen - aus me, wenn der Server sie kennt.
+  test('Zählung im Kopf aus me: "21 Tiere · davon 4 von euch"', async () => {
+    await render({ ...inGroup, memberships: [{ id: 5, name: 'Familie Sonnenhang', rolle: 'mitglied', tiere: 21, eigeneTiere: 4 }] })
+    expect(container.querySelector('.group-meta').textContent).toBe('21 Tiere · davon 4 von euch')
   })
 
   test('Pinnwand ohne eigenen Seitenkopf', async () => {

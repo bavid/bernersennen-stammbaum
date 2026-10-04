@@ -57,7 +57,8 @@ export default function MembersPage({ family, onFamilyChange, embedded = false }
       )}
 
       <section className="card members-section" aria-labelledby="members-title">
-        <h2 id="members-title">Wer dazugehört</h2>
+        {/* Phase W, Schritt 2: eindeutig, dass hier die Mitglieder dieser Familie stehen (nicht eure anderen Familien). */}
+        <h2 id="members-title">Mitglieder {words.ofThisGroup}</h2>
         {data === undefined && !error && <p className="muted">Lade …</p>}
         {data && mitglieder.length === 0 && <p className="muted">Noch niemand ist beigetreten.</p>}
         {mitglieder.length > 0 && (

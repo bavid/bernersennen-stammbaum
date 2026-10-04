@@ -1,29 +1,29 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../api'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
-import { Link } from 'react-router-dom'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { familySettingsRoute, isEditable } from '../../lib/areas.js'
+import { animalCountText, areaCounts, withOwnShared } from '../../lib/animalCounts.js'
 import { roleLabel } from '../../lib/roles.js'
 import { isOwnHome } from '../../lib/visits.js'
 import useOpenArea from '../../hooks/useOpenArea.js'
-import useDogShares from '../../hooks/useDogShares.js'
+import useShareMatrix from '../../hooks/useShareMatrix.js'
 import Icon from '../Icon.jsx'
 import Modal from '../Modal.jsx'
 import JoinFamilyDialog from '../JoinFamilyDialog.jsx'
+import FamilyShareCard from '../shares/FamilyShareCard.jsx'
+import ShareNote from '../shares/ShareNote.jsx'
 import HomeSwitchNotice from './HomeSwitchNotice.jsx'
 
-function animalsText(count) {
-  if (count === 0) return 'zeigt keines eurer Tiere'
-  return count === 1 ? 'zeigt eines eurer Tiere' : `zeigt ${count} eurer Tiere`
-}
+const SHARE_NOTE_ID = 'settings-share-note'
 
-// Eine Familie, in der der Haushalt Mitglied ist: Name, eigene Rolle, wie viele eigene Tiere dort zu sehen sind (nur aus
-// „Mein Zuhause“ heraus bekannt), Öffnen (Gruppenseite) und Verwalten (Phase W, Schritt 2: Einstellungen › Familien ›
-// [Familie] - dort stehen auch Verlassen, Leitung übergeben und Auflösen).
-function MembershipRow({ membership, shownCount, onOpen }) {
+// Eine Familie, in der der Haushalt Mitglied ist: Name, eigene Rolle und die Zahl der Tiere dort ("21 Tiere · davon 4 von
+// euch", lib/animalCounts.js - dieselbe Zählung wie überall), Öffnen (Gruppenseite) und Verwalten (Einstellungen › Familien
+// › [Familie] - dort stehen auch Verlassen, Leitung übergeben und Auflösen).
+function MembershipRow({ membership, counts, onOpen }) {
   const { words } = useTheme()
-  const details = [roleLabel(words, membership.rolle), shownCount === null ? null : animalsText(shownCount)].filter(Boolean)
+  const details = [roleLabel(words, membership.rolle), animalCountText(counts, words)].filter(Boolean)
   return (
     <li className="settings-row">
       <div className="settings-row-main">
@@ -43,38 +43,8 @@ function MembershipRow({ membership, shownCount, onOpen }) {
   )
 }
 
-// Ein eigenes Tier mit je einem Häkchen pro Familie ("Wer sieht {Name}?", PUT /api/dogs/:id/shares über useDogShares).
-// Als Gast teilt man nichts Neues (der Server sagt sonst 403) - eine bestehende Freigabe lässt sich trotzdem lösen.
-function AnimalSharesRow({ dog, memberships, readOnly, onSaved }) {
-  const { shares, saving, toggleShare } = useDogShares(dog, (next) => onSaved(dog.id, next))
-  return (
-    <li className="settings-row settings-animal">
-      <div className="settings-row-main">
-        <strong>{dog.name || 'Ohne Namen'}</strong>
-      </div>
-      <div className="settings-animal-checks" role="group" aria-label={`${dog.name || 'Tier'} zeigen in`}>
-        {memberships.map((membership) => {
-          const checked = shares.includes(membership.id)
-          const guestOnly = membership.rolle === 'gast' && !checked
-          return (
-            <label key={membership.id} className="check" title={guestOnly ? 'Als Gast teilt ihr hier keine Tiere' : undefined}>
-              <input
-                type="checkbox"
-                checked={checked}
-                disabled={readOnly || saving || guestOnly}
-                onChange={(event) => toggleShare(membership.id, event.target.checked)}
-              />
-              {membership.name}
-            </label>
-          )
-        })}
-      </div>
-    </li>
-  )
-}
-
 // Die eigenen Tiere mit ihren Familien-Freigaben (GET /api/dogs liefert sie im eigenen Zuhause mit) - nur aus
-// „Mein Zuhause“ heraus; sonst null. updateShares hält die Liste nach einer gespeicherten Freigabe aktuell.
+// „Mein Zuhause“ heraus; sonst null. updateShares hält die Liste nach einer gespeicherten Freigabe aktuell (Zahlen).
 function useOwnAnimals(ownHome, homeId) {
   const [dogs, setDogs] = useState(null)
   const [error, setError] = useState(null)
@@ -98,17 +68,22 @@ function useOwnAnimals(ownHome, homeId) {
   return { dogs, error, updateShares }
 }
 
-function MembershipsGroup({ memberships, shownCount, onOpen, onJoin }) {
+function MembershipsGroup({ family, memberships, ownShared, onOpen, onJoin }) {
   const { words } = useTheme()
   return (
     <section className="settings-group" aria-labelledby="settings-familien-title">
-      <h2 id="settings-familien-title">{words.groups}, in denen ihr Mitglied seid</h2>
+      <h2 id="settings-familien-title">Eure {words.groups}</h2>
       {memberships.length === 0 ? (
         <p className="muted">{words.noGroupConnected}</p>
       ) : (
         <ul className="settings-list">
           {memberships.map((membership) => (
-            <MembershipRow key={membership.id} membership={membership} shownCount={shownCount(membership.id)} onOpen={onOpen} />
+            <MembershipRow
+              key={membership.id}
+              membership={membership}
+              counts={withOwnShared(areaCounts(family, membership.id), ownShared(membership.id))}
+              onOpen={onOpen}
+            />
           ))}
         </ul>
       )}
@@ -119,6 +94,29 @@ function MembershipsGroup({ memberships, shownCount, onOpen, onJoin }) {
         </button>
       </div>
     </section>
+  )
+}
+
+// Je Familie eine Karte "In Familie Sonnenhang zeigt ihr:" mit einem Schalter je eigenem Tier (Phase W, Schritt 2 - vorher
+// eine Zeile je Tier mit Kästchen je Familie, die niemand verstand), darunter derselbe Satz wie auf der Tierseite.
+function ShareCards({ dogs, memberships, readOnly, onSaved }) {
+  const matrix = useShareMatrix(dogs, onSaved)
+  return (
+    <>
+      <div className="share-cards">
+        {memberships.map((membership) => (
+          <FamilyShareCard
+            key={membership.id}
+            membership={membership}
+            animals={dogs}
+            matrix={matrix}
+            readOnly={readOnly}
+            describedBy={SHARE_NOTE_ID}
+          />
+        ))}
+      </div>
+      <ShareNote id={SHARE_NOTE_ID} />
+    </>
   )
 }
 
@@ -144,14 +142,7 @@ function AnimalsGroup({ family, ownHome, animals, memberships, readOnly, onFamil
           </div>
         )}
         {dogs && dogs.length === 0 && <p className="muted">Ihr habt noch keine eigenen Tiere eingetragen.</p>}
-        {dogs && dogs.length > 0 && (
-          <ul className="settings-list">
-            {dogs.map((dog) => (
-              <AnimalSharesRow key={dog.id} dog={dog} memberships={memberships} readOnly={readOnly} onSaved={updateShares} />
-            ))}
-          </ul>
-        )}
-        <p className="field-hint">Gezeigt werden das Tier und alle {words.entries}, die nicht privat sind.</p>
+        {dogs && dogs.length > 0 && <ShareCards dogs={dogs} memberships={memberships} readOnly={readOnly} onSaved={updateShares} />}
         {readOnly && <p className="field-hint">{readOnlyHint}</p>}
       </>
     )
@@ -177,12 +168,19 @@ export default function FamilienSection({ family, onFamilyChange }) {
   const animals = useOwnAnimals(ownHome, family.id)
   const [joinOpen, setJoinOpen] = useState(false)
 
-  const shownCount = (membershipId) =>
+  // Eigene Tiere, die gerade in der Familie zu sehen sind - nach einer Änderung der Schalter sofort neu gezählt.
+  const ownShared = (membershipId) =>
     animals.dogs ? animals.dogs.filter((dog) => (dog.shares || []).includes(membershipId)).length : null
 
   return (
     <div className="settings-block">
-      <MembershipsGroup memberships={memberships} shownCount={shownCount} onOpen={(item) => openArea(item.id)} onJoin={() => setJoinOpen(true)} />
+      <MembershipsGroup
+        family={family}
+        memberships={memberships}
+        ownShared={ownShared}
+        onOpen={(item) => openArea(item.id)}
+        onJoin={() => setJoinOpen(true)}
+      />
       <AnimalsGroup
         family={family}
         ownHome={ownHome}

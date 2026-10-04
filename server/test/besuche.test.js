@@ -87,7 +87,7 @@ test('Phase V2: Zuhause besuchen - Einladung, Einlösen, nur lesen und kommentie
     const res = await post('/api/besuche/einloesen', { code: invite.code }, guest.cookie)
     assert.equal(res.status, 201)
     assert.deepEqual(res.data.gastgeber, { id: hostId, name: 'Zuhause am Hafen' })
-    assert.deepEqual(res.data.me.besuche, [{ id: hostId, name: 'Zuhause am Hafen' }])
+    assert.deepEqual(res.data.me.besuche.map(({ id, name }) => ({ id, name })), [{ id: hostId, name: 'Zuhause am Hafen' }])
 
     const again = await post('/api/besuche/einloesen', { code: invite.code }, other.cookie)
     assert.equal(again.status, 410)
@@ -236,7 +236,7 @@ test('Phase V2: Zuhause besuchen - Einladung, Einlösen, nur lesen und kommentie
     const res = await post('/api/besuche/einladungen', {}, host.cookie)
     const redeem = await post('/api/vouchers/redeem', { code: res.data.code, name: 'Zuhause Neu am Hafen' })
     assert.equal(redeem.status, 201)
-    assert.deepEqual(redeem.data.besuche, [{ id: hostId, name: 'Zuhause am Hafen' }])
+    assert.deepEqual(redeem.data.besuche.map(({ id, name }) => ({ id, name })), [{ id: hostId, name: 'Zuhause am Hafen' }])
     assert.notEqual(redeem.data.key, res.data.code, 'der Gastgeber kennt den Code - er ist nicht der neue Schlüssel')
     const loginWithCode = await post('/api/login', { secret: res.data.code })
     assert.notEqual(loginWithCode.status, 200)

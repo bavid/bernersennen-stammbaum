@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
@@ -7,6 +7,7 @@ import JoinFamilyDialog from '../components/JoinFamilyDialog.jsx'
 import VisitRedeemForm from '../components/visits/VisitRedeemForm.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { HOME_LABEL, groupRoute } from '../lib/areas.js'
+import { animalCountText, areaCounts } from '../lib/animalCounts.js'
 import { roleLabel } from '../lib/roles.js'
 
 const VISIT_DIALOG = 'besuch'
@@ -43,10 +44,32 @@ function AreaSection({ id, title, empty, children }) {
   )
 }
 
-// /familien (Phase W): die Familien des Haushalts (me.memberships, je mit der eigenen Rolle) und die befreundeten Zuhause,
-// die er besucht (me.besuche, Entscheidung D3) - jede Zeile führt zur Gruppenseite /familien/:id, das AreaGate wechselt
-// dort selbst. Darüber die drei Wege dazu: beitreten, gründen, Code von Freunden eingeben. Läuft im eigenen Zuhause
-// (AreaGate), denn Einlösen geht nur von dort.
+// Die drei Wege dazu - ganz unten, leise als Text-Links (Betreiber: „Wenn ich auf Familien drücke, will ich Familien sehen“).
+function FamilyActions({ onOpen }) {
+  const { words } = useTheme()
+  const actions = [
+    { key: 'join', label: `${words.group} beitreten` },
+    { key: 'create', label: `${words.newGroup} gründen` },
+    { key: VISIT_DIALOG, label: 'Code von Freunden eingeben' }
+  ]
+  return (
+    <p className="families-page-actions">
+      {actions.map((action, index) => (
+        <Fragment key={action.key}>
+          {index > 0 && <span aria-hidden="true"> · </span>}
+          <button type="button" className="link-button" onClick={() => onOpen(action.key)}>
+            {action.label}
+          </button>
+        </Fragment>
+      ))}
+    </p>
+  )
+}
+
+// /familien (Phase W): zuerst die Familien des Haushalts (me.memberships, je mit der eigenen Rolle und der Zahl der Tiere -
+// lib/animalCounts.js, überall dieselbe) und die befreundeten Zuhause, die er besucht (me.besuche, Entscheidung D3) - jede
+// Zeile führt zur Gruppenseite /familien/:id, das AreaGate wechselt dort selbst. Darunter leise die drei Wege dazu:
+// beitreten, gründen, Code von Freunden eingeben. Läuft im eigenen Zuhause (AreaGate), denn Einlösen geht nur von dort.
 export default function FamiliesPage({ family, onFamilyChange }) {
   const { words } = useTheme()
   const toast = useToast()
@@ -54,6 +77,7 @@ export default function FamiliesPage({ family, onFamilyChange }) {
   const memberships = family.memberships || []
   const visits = family.besuche || []
   const close = () => setDialog(null)
+  const subOf = (...parts) => parts.filter(Boolean).join(' · ')
 
   function handleVisitRedeemed({ gastgeber, me }) {
     onFamilyChange(me)
@@ -69,23 +93,17 @@ export default function FamiliesPage({ family, onFamilyChange }) {
           <h1>{words.groups}</h1>
           <p className="page-lede">Eure {words.groups} und die Zuhause, bei denen ihr zu Besuch sein dürft.</p>
         </div>
-        <div className="hero-actions">
-          <button type="button" className="btn btn-primary" onClick={() => setDialog('join')}>
-            {words.group} beitreten
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => setDialog('create')}>
-            {words.newGroup} gründen
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => setDialog(VISIT_DIALOG)}>
-            Code von Freunden eingeben
-          </button>
-        </div>
       </header>
 
       <div className="families-page-grid">
         <AreaSection id="families-mine-title" title={`Meine ${words.groups}`} empty={words.noGroupConnected}>
           {memberships.map((membership) => (
-            <AreaRow key={membership.id} to={groupRoute(membership.id)} name={membership.name} sub={roleLabel(words, membership.rolle)} />
+            <AreaRow
+              key={membership.id}
+              to={groupRoute(membership.id)}
+              name={membership.name}
+              sub={subOf(roleLabel(words, membership.rolle), animalCountText(areaCounts(family, membership.id), words))}
+            />
           ))}
         </AreaSection>
         <AreaSection
@@ -94,10 +112,17 @@ export default function FamiliesPage({ family, onFamilyChange }) {
           empty={`Noch bei niemandem zu Besuch. Mit einem Code von Freunden seht ihr deren Tiere und ${words.entries}.`}
         >
           {visits.map((visit) => (
-            <AreaRow key={visit.id} to={groupRoute(visit.id)} name={visit.name} sub="Zu Besuch – ansehen und kommentieren" />
+            <AreaRow
+              key={visit.id}
+              to={groupRoute(visit.id)}
+              name={visit.name}
+              sub={subOf('Zu Besuch', animalCountText(areaCounts(family, visit.id), words))}
+            />
           ))}
         </AreaSection>
       </div>
+
+      <FamilyActions onOpen={setDialog} />
 
       <Modal open={dialog === 'join' || dialog === 'create'} title={`${words.group} beitreten oder gründen`} onClose={close}>
         {(dialog === 'join' || dialog === 'create') && (

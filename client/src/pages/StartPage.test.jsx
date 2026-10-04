@@ -201,6 +201,11 @@ describe('StartPage (Phase W)', () => {
     expect(link.textContent).toBe('Familie SonnenhangMitglied')
   })
 
+  test('Meine Familien: dieselbe Zählung wie überall (Phase W, Schritt 2)', async () => {
+    await render({ ...atHome, memberships: [{ id: 5, name: 'Familie Sonnenhang', rolle: 'mitglied', tiere: 21, eigeneTiere: 4 }] })
+    expect(container.querySelector('.start-family-count').textContent).toBe(`21 ${words.animals} · davon 4 von euch`)
+  })
+
   test('klassischer Login: Neuigkeiten der Familie, kein Rand mit Familien, keine Notizen-Abkürzung', async () => {
     api.listNotes.mockResolvedValue([{ id: 1, text: 'Hallo', termin_datum: null, replies: [] }])
     await render(classic)
