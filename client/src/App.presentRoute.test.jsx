@@ -112,7 +112,9 @@ describe('Route /admin/praesentation', () => {
     await render('/admin/praesentation')
 
     expect(container.querySelector('.present-page h1').textContent).toBe('Familie auf Pfoten zeigen')
-    expect(container.querySelectorAll('a.present-tile')).toHaveLength(6)
+    // Sechs Demo-Kacheln (/demo-start) und drei öffentliche Portale (/p/<slug>).
+    expect(container.querySelectorAll('a.present-tile')).toHaveLength(9)
+    expect(container.querySelectorAll('a.present-tile[href^="/p/"]')).toHaveLength(3)
     expect(container.querySelector('#present-partner')).not.toBeNull()
     expect(container.querySelector('.admin-header')).toBeNull()
     expect(container.querySelector('.app-header')).toBeNull()

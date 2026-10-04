@@ -1,5 +1,14 @@
 import { describe, expect, test } from 'vitest'
-import { DEMO_START_PATH, PRESENT_TILES, demoStartUrl, parseDemoStart, portalPreviewUrl } from './present.js'
+import { portalTabs } from './portalTabs.js'
+import {
+  DEMO_START_PATH,
+  PRESENT_PORTAL_TILES,
+  PRESENT_TILES,
+  demoStartUrl,
+  parseDemoStart,
+  portalPreviewUrl,
+  portalTileUrl
+} from './present.js'
 
 describe('present – Kacheln und /demo-start-Adressen', () => {
   test('sechs Kacheln: Familie, Rudel, Tierheim, Hundeschule, Hundesalon, Kundensicht', () => {
@@ -65,5 +74,52 @@ describe('present – portalPreviewUrl', () => {
     expect(portalPreviewUrl({ slug: 'hundeschule-pfotenglueck', is_demo: 1 })).toBe('/p/hundeschule-pfotenglueck?demo=1')
     expect(portalPreviewUrl(null)).toBeNull()
     expect(portalPreviewUrl({})).toBeNull()
+  })
+})
+
+describe('present – Kacheln für die öffentlichen Portale', () => {
+  test('drei Portale der Demo-Partner (seed/demo-partners.js): Tierheim, Hundeschule, Hundesalon', () => {
+    expect(PRESENT_PORTAL_TILES.map((tile) => [tile.label, tile.slug])).toEqual([
+      ['Portal Tierheim', 'tierheim-sonnenhang'],
+      ['Portal Hundeschule', 'hundeschule-pfotenglueck'],
+      ['Portal Hundesalon', 'hundesalon-wuschelglueck']
+    ])
+    for (const tile of PRESENT_PORTAL_TILES) {
+      expect(tile.description.length, tile.key).toBeGreaterThan(20)
+      expect(tile.icon, tile.key).toBeTruthy()
+    }
+  })
+
+  test('portalTileUrl: /p/<slug> mit ?demo=1, den Reiter nur, wo die Kachel einen zeigt', () => {
+    expect(portalTileUrl({ slug: 'tierheim-sonnenhang', reiter: 'tiere' })).toBe('/p/tierheim-sonnenhang?demo=1&reiter=tiere')
+    expect(portalTileUrl({ slug: 'hundesalon-wuschelglueck' })).toBe('/p/hundesalon-wuschelglueck?demo=1')
+    expect(PRESENT_PORTAL_TILES.map((tile) => portalTileUrl(tile))).toEqual([
+      '/p/tierheim-sonnenhang?demo=1&reiter=tiere',
+      '/p/hundeschule-pfotenglueck?demo=1&reiter=termine',
+      '/p/hundesalon-wuschelglueck?demo=1'
+    ])
+  })
+
+  test('direkt aufs Portal, nicht über /demo-start - und nur demo und reiter in der Adresse, keine Codes oder Tokens', () => {
+    for (const tile of PRESENT_PORTAL_TILES) {
+      const url = new URL(portalTileUrl(tile), 'https://example.org')
+      expect(url.pathname).toBe(`/p/${tile.slug}`)
+      expect(url.searchParams.get('demo')).toBe('1')
+      expect([...url.searchParams.keys()].filter((key) => key !== 'demo' && key !== 'reiter'), tile.key).toEqual([])
+      expect(url.hash).toBe('')
+    }
+  })
+
+  test('jeder Reiter einer Kachel ist ein echter Portal-Reiter (lib/portalTabs.js)', () => {
+    const keys = portalTabs({
+      posts: [{ id: 1 }],
+      termine: [{ datum: '2026-10-10', titel: 'Welpenspielstunde', terminId: 1 }],
+      einblicke: [{ fotoUrl: '/public-media/einblick.jpg' }],
+      animals: [{ id: 1 }],
+      happyEnds: []
+    }).map((tab) => tab.key)
+    for (const tile of PRESENT_PORTAL_TILES) {
+      if (tile.reiter) expect(keys, tile.key).toContain(tile.reiter)
+    }
   })
 })

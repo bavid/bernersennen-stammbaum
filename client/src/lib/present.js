@@ -1,9 +1,11 @@
-import { DEMO_PARTNER_SLUGS } from './demoPartners.js'
+import { DEMO_PARTNER_SLUGS, DEMO_PORTAL_SLUGS } from './demoPartners.js'
+import { PORTAL_TAB_PARAM } from './portalTabs.js'
 
 // Präsentationsmodus (Phase 5 Task 5, AdminPresentPage) und sein Einstieg /demo-start (DemoStartPage): reine
-// Hilfen ohne DOM. Jede Kachel öffnet /demo-start?as=…&slug=…&ziel=… in einem neuen Tab; die Seite dort ruft
+// Hilfen ohne DOM. Jede Demo-Kachel öffnet /demo-start?as=…&slug=…&ziel=… in einem neuen Tab; die Seite dort ruft
 // POST /api/demo (server/routes/auth.js, as: tierheim | partner | rudel, ohne as das Demo-Zuhause) und wechselt
-// zur Startroute des Bereichs - oder zum Ziel (ziel=kundensicht -> /kundensicht).
+// zur Startroute des Bereichs - oder zum Ziel (ziel=kundensicht -> /kundensicht). Die Portal-Kacheln öffnen das
+// öffentliche Portal eines Demo-Partners dagegen direkt (/p/<slug>?demo=1, ohne Anmeldung, portalTileUrl).
 
 export const DEMO_START_PATH = '/demo-start'
 
@@ -67,6 +69,34 @@ export const PRESENT_TILES = Object.freeze([
   }
 ])
 
+// "Öffentliche Portale": so sehen Besucher die Demo-Partner, ohne Anmeldung. reiter springt zu einem Portal-Reiter
+// (lib/portalTabs.js) - fehlt er dort, zeigt das Portal die Übersicht. Reihenfolge wie bei den Demo-Kacheln.
+export const PRESENT_PORTAL_TILES = Object.freeze([
+  {
+    key: 'portal-tierheim',
+    label: 'Portal Tierheim',
+    description: 'Öffnet bei den Tieren in Vermittlung samt Happy Ends – so sehen Besucher das Tierheim.',
+    icon: 'paw',
+    slug: DEMO_PORTAL_SLUGS.tierheim,
+    reiter: 'tiere'
+  },
+  {
+    key: 'portal-hundeschule',
+    label: 'Portal Hundeschule',
+    description: 'Öffnet bei den Terminen – Welpenspielstunde, Social Walk und Kurse, öffentlich im Kalender.',
+    icon: 'calendar',
+    slug: DEMO_PORTAL_SLUGS.hundeschule,
+    reiter: 'termine'
+  },
+  {
+    key: 'portal-hundesalon',
+    label: 'Portal Hundesalon',
+    description: 'Die Übersicht mit Angeboten, Einblicken und Kontakt – in der eigenen Farbe des Salons.',
+    icon: 'globe',
+    slug: DEMO_PORTAL_SLUGS.hundesalon
+  }
+])
+
 // /demo-start?as=…&slug=…&ziel=… für eine Kachel.
 export function demoStartUrl({ as, slug, ziel }) {
   const params = new URLSearchParams({ as })
@@ -94,6 +124,17 @@ export function parseDemoStart(search) {
 // sind außerhalb von dev/staging nur mit ?demo=1 sichtbar (demoAllowed) - der Admin ist keine Demo-Sitzung.
 export function portalPreviewUrl(partner) {
   if (!partner?.slug) return null
-  const path = `/p/${encodeURIComponent(partner.slug)}`
+  const path = portalPath(partner.slug)
   return partner.is_demo ? `${path}?demo=1` : path
+}
+
+// /p/<slug>?demo=1[&reiter=…] für eine Portal-Kachel - nur demo und reiter, keine Codes oder Sitzungsdaten.
+export function portalTileUrl({ slug, reiter }) {
+  const params = new URLSearchParams({ demo: '1' })
+  if (reiter) params.set(PORTAL_TAB_PARAM, reiter)
+  return `${portalPath(slug)}?${params.toString()}`
+}
+
+function portalPath(slug) {
+  return `/p/${encodeURIComponent(slug)}`
 }

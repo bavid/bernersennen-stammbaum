@@ -363,6 +363,18 @@ describe('PartnerPortalPage – Vermittlungs-Sektion "Fellnasen/Tiere suchen ein
     await render({ path: '/p/tierheim-sonnenhang?demo=1' })
     expect(publicPartnerAnimals).toHaveBeenCalledWith('tierheim-sonnenhang', { demo: '1' })
   })
+
+  test('auch die Portal-Daten selbst (api.publicPartner) bekommen demo=1 mit - sonst 404t ein Demo-Portal in Produktion', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render({ path: '/p/tierheim-sonnenhang?demo=1&reiter=tiere' })
+    expect(publicPartner).toHaveBeenCalledWith('tierheim-sonnenhang', { demo: '1' })
+  })
+
+  test('ohne ?demo=1 geht api.publicPartner ohne demo', async () => {
+    publicPartner.mockResolvedValue(partner)
+    await render()
+    expect(publicPartner).toHaveBeenCalledWith('tierheim-sonnenhang', { demo: undefined })
+  })
 })
 
 describe('PartnerPortalPage – Sektion "Happy Ends" (Task 6)', () => {

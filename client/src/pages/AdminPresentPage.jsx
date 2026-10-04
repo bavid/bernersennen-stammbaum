@@ -4,21 +4,22 @@ import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import { STATUS_LABELS } from '../lib/adminPartnerForm.js'
-import { PRESENT_TILES, demoStartUrl, portalPreviewUrl } from '../lib/present.js'
+import { PRESENT_PORTAL_TILES, PRESENT_TILES, demoStartUrl, portalPreviewUrl, portalTileUrl } from '../lib/present.js'
 
 // Präsentationsmodus (Phase 5 Task 5): /admin/praesentation, als eigener Chunk aus App.jsx - eine ruhige Seite
 // in großer Schrift ohne die Admin-Karten, für Vorführungen am Laptop oder Tablet. Nur mit Admin-Sitzung, sonst
-// zurück zu /admin (dort steht der Login). Jede Kachel ist ein echter Link (Tastatur, Fokus) und öffnet
-// /demo-start?… (DemoStartPage) in einem NEUEN Tab: die Demo ersetzt dort das Sitzungs-Cookie des Browsers,
-// dieser Tab bleibt beim Admin (das Admin-Cookie ist ein anderes). Die Portal-Vorschau öffnet /p/<slug> ebenso in
+// zurück zu /admin (dort steht der Login). Jede Kachel ist ein echter Link (Tastatur, Fokus) und öffnet in einem
+// NEUEN Tab: die Demo-Kacheln /demo-start?… (DemoStartPage) - die Demo ersetzt dort das Sitzungs-Cookie des
+// Browsers, dieser Tab bleibt beim Admin (das Admin-Cookie ist ein anderes) -, die Kacheln "Öffentliche Portale"
+// direkt /p/<slug>?demo=1 eines Demo-Partners, ohne Anmeldung. Die Portal-Vorschau öffnet /p/<slug> ebenso in
 // einem neuen Tab - mit dem Admin-Cookie zeigt der Server auch Entwürfe (lib/present.js portalPreviewUrl).
 
 const NEW_TAB = { target: '_blank', rel: 'noopener noreferrer' }
 
-function PresentTile({ tile }) {
+function PresentTile({ tile, href }) {
   return (
     <li>
-      <a className="present-tile" href={demoStartUrl(tile)} {...NEW_TAB} data-key={tile.key}>
+      <a className="present-tile" href={href} {...NEW_TAB} data-key={tile.key}>
         <Icon name={tile.icon} />
         <span className="present-tile-title">{tile.label}</span>
         <span className="present-tile-sub">{tile.description}</span>
@@ -27,6 +28,21 @@ function PresentTile({ tile }) {
         </span>
       </a>
     </li>
+  )
+}
+
+function TileSection({ id, title, tiles, hrefOf }) {
+  return (
+    <section aria-labelledby={id}>
+      <h2 id={id} className="present-section-title">
+        {title}
+      </h2>
+      <ul className="present-tiles">
+        {tiles.map((tile) => (
+          <PresentTile key={tile.key} tile={tile} href={hrefOf(tile)} />
+        ))}
+      </ul>
+    </section>
   )
 }
 
@@ -123,16 +139,8 @@ export default function AdminPresentPage() {
         </Link>
       </header>
 
-      <section aria-labelledby="present-tiles-title">
-        <h2 id="present-tiles-title" className="present-section-title">
-          Demo ansehen
-        </h2>
-        <ul className="present-tiles">
-          {PRESENT_TILES.map((tile) => (
-            <PresentTile key={tile.key} tile={tile} />
-          ))}
-        </ul>
-      </section>
+      <TileSection id="present-tiles-title" title="Demo ansehen" tiles={PRESENT_TILES} hrefOf={demoStartUrl} />
+      <TileSection id="present-portals-title" title="Öffentliche Portale" tiles={PRESENT_PORTAL_TILES} hrefOf={portalTileUrl} />
 
       <PortalPreview partners={partners} error={partnersError} />
     </div>

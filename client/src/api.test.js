@@ -63,6 +63,26 @@ describe('api.publicPartners – PLZ nicht in der URL (Proxy-Zugriffslog, Findin
   })
 })
 
+describe('api.publicPartner – Portal-Daten eines Partners', () => {
+  test('ohne demo: GET auf /public/partners/:slug ohne Query', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.publicPartner('tierheim-sonnenhang')
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/public/partners/tierheim-sonnenhang')
+  })
+
+  test('mit demo: demo bleibt Query-Parameter wie bei den Listen des Portals', async () => {
+    const fetchMock = stubFetch({})
+
+    await api.publicPartner('tierheim-sonnenhang', { demo: '1' })
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/public/partners/tierheim-sonnenhang?demo=1')
+  })
+})
+
 describe('api.publicPartnerAnimals – Vermittlungs-Tiere eines Partners (Phase T Task 5)', () => {
   test('ohne demo: einfacher GET ohne Query-String', async () => {
     const fetchMock = stubFetch([])

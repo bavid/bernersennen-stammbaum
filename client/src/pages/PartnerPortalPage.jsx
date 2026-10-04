@@ -110,7 +110,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
   useEffect(() => {
     let cancelled = false
     setPartner(undefined)
-    const request = injected ? Promise.resolve().then(() => load()) : api.publicPartner(slug)
+    const request = injected ? Promise.resolve().then(() => load()) : api.publicPartner(slug, { demo })
     request
       .then((data) => {
         if (cancelled) return
@@ -126,7 +126,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
     return () => {
       cancelled = true
     }
-  }, [slug, load])
+  }, [slug, load, demo])
 
   if (partner === undefined || (partner && !listsReady)) {
     return preview ? (

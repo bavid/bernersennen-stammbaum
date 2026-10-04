@@ -85,7 +85,7 @@ describe('AdminPresentPage – Kacheln', () => {
   test('sechs Kacheln als echte Links auf /demo-start mit passendem as/slug/ziel, jede in neuem Tab', async () => {
     await render()
 
-    const tiles = [...container.querySelectorAll('a.present-tile')]
+    const tiles = [...container.querySelectorAll('[aria-labelledby="present-tiles-title"] a.present-tile')]
     expect(tiles.map((tile) => [tile.querySelector('.present-tile-title').textContent, tile.getAttribute('href')])).toEqual([
       ['Als Familie ansehen', '/demo-start?as=zuhause'],
       ['Als Rudel ansehen', '/demo-start?as=rudel'],
@@ -98,6 +98,48 @@ describe('AdminPresentPage – Kacheln', () => {
       expect(tile.getAttribute('target')).toBe('_blank')
       expect(tile.getAttribute('rel')).toBe('noopener noreferrer')
       expect(tile.querySelector('.present-tile-sub').textContent.length).toBeGreaterThan(20)
+    }
+  })
+
+  test('Öffentliche Portale: drei Kacheln direkt auf /p/<slug>?demo=1 (ohne /demo-start), jede in neuem Tab', async () => {
+    await render()
+
+    const section = container.querySelector('[aria-labelledby="present-portals-title"]')
+    expect(section.querySelector('h2').textContent).toBe('Öffentliche Portale')
+    const tiles = [...section.querySelectorAll('a.present-tile')]
+    expect(tiles.map((tile) => [tile.querySelector('.present-tile-title').textContent, tile.getAttribute('href')])).toEqual([
+      ['Portal Tierheim', '/p/tierheim-sonnenhang?demo=1&reiter=tiere'],
+      ['Portal Hundeschule', '/p/hundeschule-pfotenglueck?demo=1&reiter=termine'],
+      ['Portal Hundesalon', '/p/hundesalon-wuschelglueck?demo=1']
+    ])
+    for (const tile of tiles) {
+      expect(tile.getAttribute('target')).toBe('_blank')
+      expect(tile.getAttribute('rel')).toBe('noopener noreferrer')
+      expect(tile.querySelector('.present-tile-sub').textContent.length).toBeGreaterThan(20)
+      expect(tile.textContent).toContain('Öffnet in neuem Tab')
+    }
+  })
+
+  test('Reihenfolge: Demo ansehen, Öffentliche Portale, Portal-Vorschau', async () => {
+    await render()
+
+    expect([...container.querySelectorAll('.present-page h2')].map((h2) => h2.textContent)).toEqual([
+      'Demo ansehen',
+      'Öffentliche Portale',
+      'Portal-Vorschau'
+    ])
+  })
+
+  test('keine Codes, Tokens oder Sitzungsdaten in den Adressen - nur die bekannten Parameter', async () => {
+    await render()
+
+    const allowed = ['as', 'slug', 'ziel', 'demo', 'reiter']
+    const hrefs = [...container.querySelectorAll('a[href]')].map((a) => a.getAttribute('href'))
+    expect(hrefs.length).toBeGreaterThan(9)
+    for (const href of hrefs) {
+      const url = new URL(href, 'https://example.org')
+      expect([...url.searchParams.keys()].filter((key) => !allowed.includes(key)), href).toEqual([])
+      expect(url.hash, href).toBe('')
     }
   })
 })

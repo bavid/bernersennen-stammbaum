@@ -5,3 +5,10 @@ export const DEMO_PARTNER_SLUGS = Object.freeze({
   hundeschule: 'hundeschule-pfotenglueck',
   hundesalon: 'hundesalon-wuschelglueck'
 })
+
+// Die öffentlichen Portale (/p/<slug>) der Demo-Partner für die Portal-Kacheln des Präsentationsmodus (lib/present.js):
+// die beiden oben und das Demo-Tierheim (seed/demo-partners.js, seed/demo-shelter.js hängt an diesem Partner).
+export const DEMO_PORTAL_SLUGS = Object.freeze({
+  tierheim: 'tierheim-sonnenhang',
+  ...DEMO_PARTNER_SLUGS
+})

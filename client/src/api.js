@@ -74,7 +74,11 @@ export const api = {
     const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
     return request(`/public/partners${qs}`)
   },
-  publicPartner: (slug) => request(`/public/partners/${encodeURIComponent(slug)}`),
+  // Portal-Daten. demo wie bei den Listen darunter: ohne ?demo=1 404t ein Demo-Partner außerhalb von dev/staging.
+  publicPartner: (slug, { demo } = {}) => {
+    const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
+    return request(`/public/partners/${encodeURIComponent(slug)}${qs}`)
+  },
   // Karten-Daten für die Vermittlungs-Sektion auf dem Portal (Phase T Task 5). demo wie publicPartners:
   // Query-Parameter '1', nur wenn das Portal selbst mit ?demo=1 geladen wurde (siehe PartnerPortalPage).
   publicPartnerAnimals: (slug, { demo } = {}) => {
