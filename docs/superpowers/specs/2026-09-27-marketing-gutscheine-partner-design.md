@@ -861,6 +861,28 @@ bewusste Ausnahme vom Grundsatz „Eine Familie ist nie öffentlich“: nur mit 
 
 ---
 
+## Phase B — Netzwerk für Tierheime und Partner (B2B, Idee 04.10.)
+
+**Idee:** Tierheime, Hundeschulen, Salons und Sponsoren helfen sich über die Plattform gegenseitig. Neuer Reiter
+„Netzwerk“ im Partner- bzw. Tierheim-Bereich, nur für geprüfte Organisationen sichtbar (nie für Privatpersonen).
+
+- **Kontakte:** Organisationen vernetzen sich per Anfrage und Bestätigung. Sie können sich gegenseitig empfehlen,
+  z. B. „Empfohlen von Tierheim Sonnenhang“ auf dem Portal der Hundeschule oder Rabatt für Adoptionsfamilien.
+- **Börse:** Biete und Suche mit Kategorien: Futter, Ausstattung, Pflegestellen, Fahrten, Helfer. Jeder Eintrag
+  hat Laufzeit, Ort/Entfernung und „Anfragen“ über das vorhandene Postfach. Keine Preise, keine Zahlungen.
+- **Gemeinsam vermitteln:** Tiere für Partner-Tierheime freigeben, Notfallplätze melden, Steckbriefe teilen
+  (mit Zustimmung, Tierheim bleibt verantwortlich).
+- **Sponsoren:** Unternehmen als eigene Partner-Art. Patenschaften für Tiere oder Tierheime. Gesponserte
+  Gutschein-Stapel für Adoptionsfamilien („Geschenkt von Futterhof Deichland“). Sponsor-Logo im Portal. Anzeigen
+  mit Spendenanteil.
+- **Schutz:** Freischaltung durch den Admin, Melden und Sperren, Rate-Limits, Demo-Netzwerk auf der Vorschau.
+- **Offene Fragen:**
+  - Sollen Sponsoren selbst Gutscheine kaufen können? Dann wäre eine Zahlung nötig.
+  - Wie weit reicht das Netzwerk: Region nach PLZ oder bundesweit?
+- **Entwurf:** die Leinwand „Familie auf Pfoten – Struktur-Mocks“, Artboard „B2B · Netzwerk“.
+
+---
+
 ## Phase G — Eigene Domain und Go-Live (Zusatz 29.09.)
 
 **Idee:** Wenn Vorschau und Phasen stehen, zieht alles unter eine eigene Domain. Erst danach werden Karten
