@@ -26,7 +26,7 @@ import { DemoProvider } from '../lib/demo.js'
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 const rudel = { id: 3, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel', isDemo: false }
-const zuhause = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false }
+const zuhause = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: { id: 1, name: 'Zuhause am Deich', art: 'zuhause' } }
 const partnerArea = { id: 30, name: 'Hundeschule Wiesengrund', theme: 'standard', art: 'partner', isDemo: false }
 const shelterArea = { id: 5, name: 'Tierheim Sonnenhang', theme: 'standard', art: 'tierheim', isDemo: false }
 
@@ -67,6 +67,12 @@ afterEach(() => {
   toast.mockReset()
   vi.restoreAllMocks()
 })
+
+// Phase W, Schritt 2: im eigenen Zuhause erst einen der beiden Wege wählen.
+async function choose(title) {
+  const option = [...container.querySelectorAll('.invite-choice-option')].find((button) => button.textContent.includes(title))
+  await act(async () => option.click())
+}
 
 async function render(family, { isDemo = false, themeId = 'standard' } = {}) {
   if (!voucherLimit.getMockImplementation()) voucherLimit.mockResolvedValue({ offen: 1, max: 5, frei: 4 })
@@ -188,17 +194,18 @@ describe('InviteDialog – eigene Gutscheine', () => {
     expect([...container.querySelectorAll('.voucher-row button')].some((btn) => btn.textContent.includes('Teilen'))).toBe(false)
   })
 
-  test('Erklärtext im Rudel nennt die Mitgliedschaft', async () => {
+  test('Erklärtext in der Familie nennt das eigene Zuhause und die Mitgliedschaft', async () => {
     myVouchers.mockResolvedValue([])
     await render(rudel)
-    expect(container.textContent).toContain('ist gleich Mitglied in „Familie Sonnenhang“')
+    expect(container.textContent).toContain('bekommt ein eigenes Zuhause und ist gleich Mitglied in „Familie Sonnenhang“')
   })
 
-  test('Erklärtext im Zuhause nennt nur die eigene Chronik', async () => {
+  test('im Zuhause: Zuhause verschenken nennt nur das eigene Zuhause', async () => {
     myVouchers.mockResolvedValue([])
     await render(zuhause)
+    await choose('Zuhause verschenken')
     expect(container.textContent).not.toContain('Mitglied')
-    expect(container.textContent).toContain('bekommt eine eigene Chronik.')
+    expect(container.textContent).toContain('bekommt ein eigenes Zuhause für seine Tiere.')
   })
 
   test('zeigt in der Demo einen Hinweis, dass keine echten Gutscheine vergeben werden', async () => {
@@ -298,7 +305,7 @@ describe('InviteDialog – Einladungen mit Rolle (Phase R)', () => {
 })
 
 describe('InviteDialog – Partner und Tierheime geben Kunden-Gutscheine weiter (Phase P)', () => {
-  const PARTNER_TEXT = 'Gebt diesen Einladungscode an eure Kundschaft weiter – damit legen sie ihre eigene Chronik bei Familie auf Pfoten an.'
+  const PARTNER_TEXT = 'Gebt diesen Einladungscode an eure Kundschaft weiter – damit legen sie ihr eigenes Zuhause bei Familie auf Pfoten an.'
 
   test.each([
     ['Partner-Bereich', partnerArea],
@@ -332,6 +339,7 @@ describe('InviteDialog – eigene Einladungen verwalten (Phase V2b)', () => {
     mockLists([own, foreign])
     setVoucherLabel.mockResolvedValue({ id: 11, label: 'Tante Ilse' })
     await render(ownHome)
+    await choose('Zuhause verschenken')
     const rows = [...container.querySelectorAll('.voucher-list > .voucher-row')]
     expect(rows[1].querySelector('.voucher-label-edit')).toBeNull()
     await act(async () => rows[0].querySelector('.voucher-label-edit').click())
@@ -350,6 +358,7 @@ describe('InviteDialog – eigene Einladungen verwalten (Phase V2b)', () => {
     mockLists([own])
     deleteVoucher.mockResolvedValue(null)
     await render(ownHome)
+    await choose('Zuhause verschenken')
     const deleteButton = () => container.querySelector('.voucher-row-delete')
     act(() => deleteButton().click())
     expect(deleteButton().textContent).toContain('Wirklich zurückziehen und löschen?')
@@ -362,6 +371,7 @@ describe('InviteDialog – eigene Einladungen verwalten (Phase V2b)', () => {
     mockLists([own])
     createVoucher.mockResolvedValue({ ...own, id: 13, code: 'JKMN-1234-HJKM' })
     await render(ownHome)
+    await choose('Zuhause verschenken')
     expect(container.textContent).toContain('1 von 5 offenen Codes')
     await act(async () => buttonIn(container, 'Neuen Code erstellen').click())
     expect(createVoucher).toHaveBeenCalled()
@@ -373,6 +383,7 @@ describe('InviteDialog – eigene Einladungen verwalten (Phase V2b)', () => {
     voucherLimit.mockResolvedValue({ offen: 5, max: 5, frei: 0 })
     mockLists([own])
     await render(ownHome)
+    await choose('Zuhause verschenken')
     expect(buttonIn(container, 'Neuen Code erstellen').disabled).toBe(true)
     expect(container.textContent).toContain('Ein neuer geht erst, wenn einer eingelöst, zurückgezogen oder abgelaufen ist.')
   })
@@ -380,10 +391,12 @@ describe('InviteDialog – eigene Einladungen verwalten (Phase V2b)', () => {
   test('Archiv: „Eingelöste anzeigen“ mit der Zahl der mitgebrachten Leute', async () => {
     mockLists([own], archived)
     await render(ownHome)
+    await choose('Zuhause verschenken')
     expect(container.textContent).toContain('Du hast schon 2 Leute zu Familie auf Pfoten gebracht.')
     expect(container.querySelector('.voucher-list-archive')).toBeNull()
-    await act(async () => buttonIn(container, 'Eingelöste anzeigen (3)').click())
-    expect(container.querySelectorAll('.voucher-list-archive .voucher-row')).toHaveLength(3)
+    // Der eingelöste Besuchs-Code gehört zu "Zu Besuch einladen", nicht hierher.
+    await act(async () => buttonIn(container, 'Eingelöste anzeigen (2)').click())
+    expect(container.querySelectorAll('.voucher-list-archive .voucher-row')).toHaveLength(2)
     expect(container.querySelector('.voucher-list-archive').textContent).toContain('Tante Ilse')
   })
 
@@ -398,6 +411,7 @@ describe('InviteDialog – eigene Einladungen verwalten (Phase V2b)', () => {
   test('Demo: Notiz nur lesbar, Knöpfe gesperrt', async () => {
     mockLists([{ ...own, label: 'Nachbarin vom Deich' }])
     await render(ownHome, { isDemo: true })
+    await choose('Zuhause verschenken')
     expect(container.querySelector('.voucher-label').textContent).toBe('Nachbarin vom Deich')
     expect(buttonIn(container, 'Neuen Code erstellen').disabled).toBe(true)
     expect(container.querySelector('.voucher-row-delete').disabled).toBe(true)
@@ -411,9 +425,49 @@ describe('InviteDialog – beschädigter Code (security-review V2)', () => {
       Promise.resolve(archiv ? [] : [{ ...openVoucher, id: 31, code: null, codeFehler: true, joins: false, eigen: true }])
     )
     await render(ownHome)
+    await choose('Zuhause verschenken')
     const row = container.querySelector('.voucher-list > .voucher-row')
     expect(row.textContent).toContain('Code nicht lesbar – bitte zurückziehen.')
     expect(row.querySelector('.voucher-row-actions')).toBeNull()
     expect(row.querySelector('.voucher-row-delete')).not.toBeNull()
+  })
+})
+
+// Phase W, Schritt 2: Einladen im eigenen Zuhause - zwei klare Wege statt eines langen Dialogs.
+describe('InviteDialog – im eigenen Zuhause: Zu Besuch einladen oder Zuhause verschenken', () => {
+  const gift = { ...openVoucher, id: 41, joins: false, eigen: true, label: null }
+  const visitCode = { ...openVoucher, id: 42, code: 'JKMN-PQRS-TUVW', hint: 'TUVW', joins: false, besuch: true, eigen: true, label: null, expires_at: '2026-10-10 12:00:00' }
+
+  test('erst die Wahl zwischen zwei Wegen - ohne Codes, ohne Einlösen, ohne Listen von Besuchen', async () => {
+    myVouchers.mockResolvedValue([gift, visitCode])
+    await render(zuhause)
+    const options = [...container.querySelectorAll('.invite-choice-option')]
+    expect(options.map((button) => button.querySelector('.invite-choice-title').textContent)).toEqual(['Zu Besuch einladen', 'Zuhause verschenken'])
+    expect(container.querySelector('.voucher-row')).toBeNull()
+    expect(container.querySelector('#visit-redeem-code')).toBeNull()
+    expect(container.querySelector('.visit-lists')).toBeNull()
+  })
+
+  test('Zuhause verschenken: nur die Einladungscodes (ohne Besuchs-Codes); „Andere Möglichkeit“ führt zurück, der Fokus folgt', async () => {
+    myVouchers.mockResolvedValue([gift, visitCode])
+    await render(zuhause)
+    await choose('Zuhause verschenken')
+    expect(document.activeElement).toBe(container.querySelector('#invite-gift-title'))
+    expect([...container.querySelectorAll('.voucher-row .voucher-code')].map((el) => el.textContent)).toEqual(['ABCD-1234-HJKM'])
+    expect(container.querySelector('.voucher-create')).not.toBeNull()
+
+    await act(async () => container.querySelector('.invite-back').click())
+    expect(container.querySelectorAll('.invite-choice-option')).toHaveLength(2)
+    expect(document.activeElement.textContent).toContain('Zuhause verschenken')
+  })
+
+  test('Zu Besuch einladen: Besuchs-Code erstellen (7 Tage) und die offenen Besuchs-Codes', async () => {
+    myVouchers.mockResolvedValue([gift, visitCode])
+    await render(zuhause)
+    await choose('Zu Besuch einladen')
+    expect(document.activeElement).toBe(container.querySelector('#visit-invite-title'))
+    expect(container.textContent).toContain('Der Code gilt 7 Tage und nur einmal')
+    expect([...container.querySelectorAll('.voucher-row .voucher-code')].map((el) => el.textContent)).toEqual(['JKMN-PQRS-TUVW'])
+    expect(container.querySelector('.voucher-create')).toBeNull()
   })
 })

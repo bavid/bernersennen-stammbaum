@@ -101,10 +101,13 @@ describe('inviteLabel', () => {
     expect(inviteLabel({ art: 'tierheim' })).toBe('Einladungscode weitergeben')
   })
 
-  test('households and packs invite someone', () => {
-    expect(inviteLabel({ art: 'zuhause' })).toBe('Jemanden einladen')
-    expect(inviteLabel({ art: 'rudel' })).toBe('Jemanden einladen')
-    expect(inviteLabel(undefined)).toBe('Jemanden einladen')
+  // Phase W, Schritt 2: ein Haushalt lädt aus seinem Zuhause ein ("Einladen": Besuch oder Zuhause verschenken), der
+  // klassische Login einer Familie lädt Mitglieder ein.
+  test('households invite from their home, a classic family login invites members', () => {
+    expect(inviteLabel({ art: 'zuhause' })).toBe('Einladen')
+    expect(inviteLabel({ art: 'rudel', home: { id: 1, art: 'zuhause' } })).toBe('Einladen')
+    expect(inviteLabel({ art: 'rudel', home: { id: 3, art: 'rudel' } })).toBe('Mitglied einladen')
+    expect(inviteLabel(undefined)).toBe('Einladen')
   })
 })
 

@@ -108,3 +108,63 @@
   font-size: var(--text-lg);
   color: var(--alpine);
 }
+
+/* Phase W, Schritt 2: Einladen aus dem eigenen Zuhause - zwei klare Wege (invite/HomeInvite.jsx) */
+.invite-choice {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.invite-choice-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+
+.invite-choice-option:hover {
+  border-color: var(--rust);
+  background: var(--rust-wash);
+}
+
+.invite-choice-option:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.invite-choice-option svg {
+  grid-row: span 2;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--rust);
+}
+
+.invite-choice-title {
+  font-weight: 800;
+}
+
+.invite-choice-text {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.invite-back {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.invite-home h3:focus,
+.invite-visit h3:focus {
+  outline: none;
+}

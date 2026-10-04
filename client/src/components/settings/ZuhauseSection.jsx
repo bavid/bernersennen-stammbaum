@@ -6,6 +6,7 @@ import Icon from '../Icon.jsx'
 import ThemePicker from '../ThemePicker.jsx'
 import HomeSwitchNotice from './HomeSwitchNotice.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
+import VisitSection from '../visits/VisitSection.jsx'
 
 // Einstellungen → Mein Zuhause: Name (RenameFamilyForm, erst auf Klick - das Formular holt sich den Fokus), Auftritt
 // (ThemePicker: Logo und Wörter), Schlüssel und Benutzer (AccessSettings) und die Einladungen (der bekannte Dialog aus dem
@@ -20,7 +21,7 @@ export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
     return (
       <div className="settings-block">
         <HomeSwitchNotice family={family} onFamilyChange={onFamilyChange}>
-          Name, Auftritt, Schlüssel und Einladungen eures Zuhauses stellt ihr in „Meiner Chronik“ ein.
+          Name, Auftritt, Schlüssel und Einladungen eures Zuhauses stellt ihr in „Mein Zuhause“ ein.
         </HomeSwitchNotice>
       </div>
     )
@@ -49,13 +50,19 @@ export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
       <AccessGroup family={family} readOnly={readOnly} onFamilyChange={onFamilyChange} />
       <section className="settings-group" aria-labelledby="settings-einladen-title">
         <h2 id="settings-einladen-title">Einladungen</h2>
-        <p className="muted">Einladungscodes für Freunde und Familie, Besuchs-Einladungen und eure offenen Codes.</p>
+        <p className="muted">Freunde zu Besuch einladen oder ein Zuhause verschenken – dort stehen auch eure offenen Codes.</p>
         <div className="settings-actions">
           <button type="button" className="btn btn-ghost" onClick={onInvite}>
             <Icon name="send" />
-            Jemanden einladen
+            Einladen
           </button>
         </div>
+      </section>
+      {/* Phase W, Schritt 2: Besuche und Gäste gehören zum eigenen Zuhause (vorher unter "Familien"). */}
+      <section className="settings-group" aria-labelledby="settings-besuche-title">
+        <h2 id="settings-besuche-title">Befreundete Zuhause</h2>
+        <p className="muted">Wen ihr besucht und wer bei euch zu Gast ist. Einen Code von Freunden gebt ihr unter „{words.groups}“ ein.</p>
+        <VisitSection onFamilyChange={onFamilyChange} />
       </section>
     </div>
   )

@@ -4,8 +4,11 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { me, familyMembers, listDogs, listAllDogs, recentActivity, listNotes, listLinks } = vi.hoisted(() => ({
+const { me, view, myVouchers, voucherLimit, familyMembers, listDogs, listAllDogs, recentActivity, listNotes, listLinks } = vi.hoisted(() => ({
   me: vi.fn(),
+  view: vi.fn(),
+  myVouchers: vi.fn(),
+  voucherLimit: vi.fn(),
   familyMembers: vi.fn(),
   listDogs: vi.fn(),
   listAllDogs: vi.fn(),
@@ -15,13 +18,23 @@ const { me, familyMembers, listDogs, listAllDogs, recentActivity, listNotes, lis
 }))
 
 vi.mock('./api', () => ({
-  api: { me, logout: vi.fn(), familyMembers, listDogs, listAllDogs, recentActivity, listNotes, listLinks },
+  api: { me, view, myVouchers, voucherLimit, logout: vi.fn(), familyMembers, listDogs, listAllDogs, recentActivity, listNotes, listLinks },
   setUnauthorizedHandler: () => {}
 }))
 
 import App from './App.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+// jsdom kennt showModal/close am <dialog> nicht - der Einladen-Dialog ruft beides auf.
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function showModal() {
+    this.open = true
+  }
+  HTMLDialogElement.prototype.close = function close() {
+    this.open = false
+  }
+}
 
 let container
 let root
@@ -98,7 +111,7 @@ afterEach(() => {
   container = null
   delete document.documentElement.dataset.theme
   document.title = ''
-  for (const mock of [me, familyMembers, listDogs, listAllDogs, recentActivity, listNotes, listLinks]) mock.mockReset()
+  for (const mock of [me, view, myVouchers, voucherLimit, familyMembers, listDogs, listAllDogs, recentActivity, listNotes, listLinks]) mock.mockReset()
 })
 
 // Phase W: für Haushalte sind die Mitglieder ein Reiter der Gruppenseite; nur der klassische Login hat die eigene Seite.
@@ -135,20 +148,12 @@ describe('/mitglieder (Phase R, Phase W)', () => {
   })
 })
 
-describe('Menü: "Einladen" je Rolle (Phase R, Phase W)', () => {
-  test('Gast und Mitglied sehen es in einer Familie nicht', async () => {
-    for (const role of ['gast', 'mitglied']) {
-      me.mockResolvedValue(groupAs(role))
-      await render('/familien/3')
-      expect(menuItems()).not.toContain('Einladen')
-      act(() => root.unmount())
-      root = null
-      container.remove()
-    }
-  })
-
-  test('Stellvertretung und Leitung sehen es, ebenso das eigene Zuhause', async () => {
+// Phase W, Schritt 2: "Einladen" im Menü lädt aus dem eigenen Zuhause ein - jede Rolle in einer Familie sieht es.
+describe('Menü: "Einladen" (Phase R, Phase W)', () => {
+  test('jede Rolle in einer Familie und das eigene Zuhause sehen es', async () => {
     for (const [family, path] of [
+      [groupAs('gast'), '/familien/3'],
+      [groupAs('mitglied'), '/familien/3'],
       [groupAs('stellvertretung'), '/familien/3'],
       [groupAs('leitung'), '/familien/3'],
       [atHome, '/start']
@@ -160,5 +165,28 @@ describe('Menü: "Einladen" je Rolle (Phase R, Phase W)', () => {
       root = null
       container.remove()
     }
+  })
+})
+
+// Phase W, Schritt 2: "Einladen" im Konto-Menü lädt aus dem eigenen Zuhause ein - aus einer Familie heraus erst nach Start
+// (ein Wechsel über das Gate), dann die zwei Wege.
+describe('Menü „Einladen“ aus einer Familie heraus', () => {
+  test('wechselt einmal nach Hause und zeigt „Zu Besuch einladen“ / „Zuhause verschenken“', async () => {
+    me.mockResolvedValue(groupAs('mitglied'))
+    view.mockResolvedValue(atHome)
+    myVouchers.mockResolvedValue([])
+    voucherLimit.mockResolvedValue({ offen: 0, max: 5, frei: 5 })
+    await render('/familien/3')
+
+    act(() => container.querySelector('.account-menu-trigger').click())
+    const invite = [...container.querySelectorAll('.account-menu-panel [role="menuitem"]')].find((item) => item.textContent === 'Einladen')
+    await act(async () => invite.click())
+    await waitFor(() => container.querySelector('.invite-choice-option'))
+
+    expect(view).toHaveBeenCalledTimes(1)
+    expect(view).toHaveBeenCalledWith(1)
+    const dialog = container.querySelector('dialog[open]')
+    expect(dialog.querySelector('#modal-title').textContent).toBe('Einladen')
+    expect([...dialog.querySelectorAll('.invite-choice-title')].map((el) => el.textContent)).toEqual(['Zu Besuch einladen', 'Zuhause verschenken'])
   })
 })

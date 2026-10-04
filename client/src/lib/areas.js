@@ -53,10 +53,12 @@ export function isPartnerArea(family) {
   return PARTNER_AREA_ARTS.includes(family?.art)
 }
 
-// Beschriftung für "Gutscheine weitergeben" (Fuß der App, Dialog-Titel): Partner und Tierheime geben
-// Kunden-Gutscheine an ihre Kundschaft weiter, Haushalte und Rudel laden jemanden ein.
+// Titel des Einladen-Dialogs (App.jsx): Partner und Tierheime geben Kunden-Gutscheine an ihre Kundschaft weiter; ein
+// Haushalt lädt aus seinem Zuhause ein (Phase W, Schritt 2: Besuch oder Zuhause verschenken - auch aus einer Familie
+// heraus); der klassische Login einer Familie lädt Mitglieder ein.
 export function inviteLabel(family) {
-  return isPartnerArea(family) ? 'Einladungscode weitergeben' : 'Jemanden einladen'
+  if (isPartnerArea(family)) return 'Einladungscode weitergeben'
+  return family && family.art === 'rudel' && !isHouseholdIdentity(family) ? 'Mitglied einladen' : 'Einladen'
 }
 
 // Fester Anzeigename für den privaten Bereich eines Haushalts (Konto-Menü, Seitenköpfe, Besuchsband), unabhängig vom

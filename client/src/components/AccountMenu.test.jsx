@@ -84,10 +84,10 @@ describe('AccountMenu (Phase W)', () => {
     expect(items().map((item) => item.getAttribute('href'))).toEqual(['/einstellungen', null, '/collage', '/admin-schreiben', null, '/impressum', '/datenschutz'])
   })
 
-  test('zu Besuch kein Einladen; klassischer Login mit Mitglieder; Demo zeigt alles (Schreiben sperrt der Server)', async () => {
+  test('zu Besuch Einladen aus dem eigenen Zuhause (Phase W, Schritt 2); klassischer Login mit Mitglieder; Demo zeigt alles', async () => {
     await render(<AccountMenu family={visiting} onInvite={() => {}} onLogout={() => {}} />)
     act(() => trigger().click())
-    expect(labels()).not.toContain('Einladen')
+    expect(labels()).toContain('Einladen')
     expect(trigger().textContent).toContain('Zuhause Lindenhof')
     act(() => root.unmount())
     container.remove()

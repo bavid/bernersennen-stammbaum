@@ -11,7 +11,6 @@ import useDogShares from '../../hooks/useDogShares.js'
 import Icon from '../Icon.jsx'
 import Modal from '../Modal.jsx'
 import JoinFamilyDialog from '../JoinFamilyDialog.jsx'
-import VisitSection from '../visits/VisitSection.jsx'
 import HomeSwitchNotice from './HomeSwitchNotice.jsx'
 
 function animalsText(count) {
@@ -166,8 +165,8 @@ function AnimalsGroup({ family, ownHome, animals, memberships, readOnly, onFamil
 }
 
 // Einstellungen → Familien: die Familien, in denen man Mitglied ist (Öffnen, Verwalten), welche eigenen Tiere wo zu sehen
-// sind (dieselbe Freigabe wie "Wer sieht {Name}?" auf der Tierseite), Beitreten/Gründen (JoinFamilyDialog) und die
-// befreundeten Zuhause (VisitSection, nur die Listen: Besuch beenden, Gast entfernen). Tiere teilen geht nur aus
+// sind (dieselbe Freigabe wie "Wer sieht {Name}?" auf der Tierseite) und Beitreten/Gründen (JoinFamilyDialog); die
+// befreundeten Zuhause stehen seit Phase W (Schritt 2) unter "Mein Zuhause". Tiere teilen geht nur aus
 // „Mein Zuhause“ heraus (der Server erlaubt es nur dort) - in einer Familie steht stattdessen der Weg dorthin.
 export default function FamilienSection({ family, onFamilyChange }) {
   const { words } = useTheme()
@@ -192,13 +191,6 @@ export default function FamilienSection({ family, onFamilyChange }) {
         readOnly={readOnly}
         onFamilyChange={onFamilyChange}
       />
-      {!family.zuBesuch && (
-        <section className="settings-group" aria-labelledby="settings-besuche-title">
-          <h2 id="settings-besuche-title">Befreundete Zuhause</h2>
-          <p className="muted">Wen ihr besucht und wer bei euch zu Gast ist. Neue Besuche verabredet ihr über „Jemanden einladen“.</p>
-          <VisitSection listsOnly onFamilyChange={onFamilyChange} />
-        </section>
-      )}
       <Modal open={joinOpen} title={`${words.group} beitreten oder gründen`} onClose={() => setJoinOpen(false)}>
         <JoinFamilyDialog onChange={onFamilyChange} onClose={() => setJoinOpen(false)} />
       </Modal>

@@ -15,7 +15,9 @@ const api = vi.hoisted(() => ({
   removeGuest: vi.fn(),
   renameFamily: vi.fn(),
   updateFamily: vi.fn(),
-  familyMembers: vi.fn()
+  familyMembers: vi.fn(),
+  // Mein Zuhause zeigt auch die Rahmen-Links des digitalen Bilderrahmens (eigener Abschnitt)
+  rahmenGeraete: vi.fn()
 }))
 vi.mock('../api', () => ({ api }))
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
@@ -105,6 +107,7 @@ const buttonText = (text) => [...container.querySelectorAll('button')].find((btn
 const flush = () => act(async () => {})
 
 beforeEach(() => {
+  api.rahmenGeraete.mockResolvedValue({ geraete: [], max: 5 })
   api.listDogs.mockResolvedValue(dogs)
   api.visits.mockResolvedValue({ besuche: [{ id: 9, name: 'Zuhause Möwenweg', seit: '2026-09-01 10:00:00' }], gaeste: [] })
   api.setDarstellung.mockImplementation(async (patch) => ({ ...atHome.darstellung, ...patch }))
@@ -289,14 +292,10 @@ describe('SettingsPage – Familien', () => {
     expect(container.querySelector('.settings-row-sub').textContent).toBe('Familienleitung · zeigt 2 eurer Tiere')
   })
 
-  test('befreundete Zuhause: nur die Listen (Besuch beenden), Einladen bleibt im Dialog', async () => {
-    api.endVisit.mockResolvedValue({ ...atHome })
+  test('Familien: beitreten oder gründen; die befreundeten Zuhause stehen jetzt unter „Mein Zuhause“', async () => {
     await render(atHome, '/einstellungen?bereich=familien')
     await flush()
-    expect(container.querySelector('.visit-section.is-lists-only')).not.toBeNull()
-    expect(container.textContent).toContain('Zuhause Möwenweg')
-    expect(container.querySelector('.visit-panel')).toBeNull()
-    expect(container.querySelector('#visit-invite-title')).toBeNull()
+    expect(container.querySelector('.visit-section')).toBeNull()
     expect(buttonText('Familie beitreten oder gründen')).not.toBeUndefined()
   })
 
@@ -340,9 +339,19 @@ describe('SettingsPage – Mein Zuhause', () => {
     expect(latest.darstellung).toEqual(atHome.darstellung)
   })
 
-  test('Einladungen öffnen den bekannten Dialog; Schlüssel und Benutzer erst auf Klick', async () => {
+  test('befreundete Zuhause (Phase W, Schritt 2): nur die Listen - Einladen im Dialog, Einlösen unter „Familien“', async () => {
     await render(atHome, '/einstellungen?bereich=zuhause')
-    await act(async () => buttonText('Jemanden einladen').click())
+    await flush()
+    expect(container.querySelector('#settings-besuche-title').textContent).toBe('Befreundete Zuhause')
+    expect(container.querySelector('.visit-section.is-lists-only')).not.toBeNull()
+    expect(container.textContent).toContain('Zuhause Möwenweg')
+    expect(container.querySelector('#visit-invite-title')).toBeNull()
+    expect(container.querySelector('#visit-redeem-code')).toBeNull()
+  })
+
+  test('Einladungen öffnen den Einladen-Dialog; Schlüssel und Benutzer erst auf Klick', async () => {
+    await render(atHome, '/einstellungen?bereich=zuhause')
+    await act(async () => buttonText('Einladen').click())
     expect(onInvite).toHaveBeenCalledTimes(1)
     const access = buttonText('Schlüssel und Benutzer verwalten')
     expect(access.getAttribute('aria-expanded')).toBe('false')

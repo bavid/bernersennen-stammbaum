@@ -2,7 +2,7 @@
 // Blatt hinter "Menü"). Alles, was nicht zu einem Bereich gehört, an einer Stelle: Einstellungen, Einladen, Fotocollage,
 // Hilfe & Kontakt, Abmelden, dazu klein Impressum und Datenschutz. Einstellungen und Fotocollage gehören dem eigenen
 // Zuhause - von einer Familie oder einem Besuch aus wechselt das AreaGate beim Öffnen von selbst dorthin.
-import { areaContext } from './areas.js'
+import { areaContext, isHouseholdIdentity } from './areas.js'
 import { hasRole } from './roles.js'
 import { shortAreaName } from './familyGroups.js'
 
@@ -11,10 +11,12 @@ export const LEGAL_LINKS = [
   { key: 'datenschutz', label: 'Datenschutz', to: '/datenschutz' }
 ]
 
-// Einladen: nicht zu Besuch (der Server sperrt es dort), in einer Familie erst ab Stellvertretung (Phase R) - wie bisher
-// der Knopf im Fuß der App.
+// Einladen (Phase W, Schritt 2): für einen Haushalt immer das Einladen des eigenen Zuhauses (Besuch, Zuhause verschenken) -
+// aus einer Familie oder einem Besuch heraus wechselt App.jsx dafür nach Hause. Beim klassischen Familien-Login lädt man
+// Mitglieder ein, erst ab Stellvertretung (Phase R; der Server prüft es ebenso).
 export function canInvite(family) {
-  if (!family || family.zuBesuch) return false
+  if (!family) return false
+  if (isHouseholdIdentity(family)) return true
   return family.art !== 'rudel' || hasRole(family, 'stellvertretung')
 }
 

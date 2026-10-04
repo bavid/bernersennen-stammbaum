@@ -5,7 +5,8 @@ import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
 import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { readSetting, writeSetting } from './lib/storage.js'
-import { HOME_LABEL, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
+import { HOME_LABEL, START_ROUTE, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
+import { isOwnHome } from './lib/visits.js'
 import { MAX_NAV_ITEMS, hasMenuSlot, navItemsFor } from './lib/navItems.js'
 import { formatVoucherCode } from './lib/voucherCode.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
@@ -377,6 +378,15 @@ export default function App() {
     if (rememberIt) rememberDarstellung(darstellung)
   }, [signedOut, darstellung, rememberIt])
 
+  // Phase W, Schritt 2: „Einladen“ im Konto-Menü lädt aus dem eigenen Zuhause ein (Zu Besuch einladen, Zuhause
+  // verschenken). Aus einer Familie oder einem Besuch heraus geht es dafür erst nach Start - dort wechselt das AreaGate
+  // genau einmal nach Hause; der Dialog wartet so lange (inviteReady).
+  function openInvite() {
+    if (isHouseholdIdentity(family) && !isOwnHome(family)) navigate(START_ROUTE)
+    setInviteOpen(true)
+  }
+  const inviteReady = !isHouseholdIdentity(family) || isOwnHome(family)
+
   async function handleLogout() {
     try {
       await api.logout()
@@ -605,7 +615,7 @@ export default function App() {
           )}
           {/* Phase V2: zu Besuch in einem anderen Zuhause - nur ansehen und kommentieren, mit Weg zurück. */}
           {family.zuBesuch && <VisitBanner family={family} />}
-          <AppHeader family={family} onLogout={handleLogout} onInvite={() => setInviteOpen(true)} />
+          <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
           {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}
           {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
@@ -618,12 +628,12 @@ export default function App() {
             {/* Phase U: Rundgang durch eine Partner- oder Tierheim-Demo (schließbar, bleibt dann zu). */}
             {family.isDemo && !family.adminView && isPartnerArea(family) && <PartnerDemoGuide family={family} />}
             <Suspense fallback={<RouteFallback />}>
-              <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={() => setInviteOpen(true)} />
+              <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={openInvite} />
             </Suspense>
           </main>
-          <AppFooter family={family} onInvite={() => setInviteOpen(true)} />
+          <AppFooter family={family} onInvite={openInvite} />
           <Modal open={inviteOpen} title={inviteLabel(family)} onClose={() => setInviteOpen(false)}>
-            <InviteDialog family={family} onFamilyChange={setFamily} />
+            {inviteOpen && (inviteReady ? <InviteDialog family={family} /> : <RouteFallback />)}
           </Modal>
         </div>
       </DemoProvider>

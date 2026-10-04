@@ -10,13 +10,17 @@ describe('accountMenuItems (Phase W)', () => {
     expect(keys(atHome)).toEqual(['einstellungen', 'einladen', 'collage', 'hilfe', 'abmelden'])
   })
 
-  test('in einer Familie: Einladen erst ab Stellvertretung', () => {
-    expect(keys({ ...atHome, id: 5, art: 'rudel', role: 'mitglied' })).toEqual(['einstellungen', 'collage', 'hilfe', 'abmelden'])
-    expect(keys({ ...atHome, id: 5, art: 'rudel', role: 'stellvertretung' })).toContain('einladen')
+  // Phase W, Schritt 2: "Einladen" im Menü ist immer das Einladen des eigenen Zuhauses (App.jsx wechselt dafür nach Hause) -
+  // Mitglieder einer Familie lädt man im Reiter "Mitglieder" ein.
+  test('in einer Familie und zu Besuch: Einladen für jeden Haushalt (das eigene Zuhause lädt ein)', () => {
+    expect(keys({ ...atHome, id: 5, art: 'rudel', role: 'mitglied' })).toEqual(['einstellungen', 'einladen', 'collage', 'hilfe', 'abmelden'])
+    expect(keys({ ...atHome, id: 9, zuBesuch: true, role: 'gast' })).toEqual(['einstellungen', 'einladen', 'collage', 'hilfe', 'abmelden'])
   })
 
-  test('zu Besuch: kein Einladen', () => {
-    expect(keys({ ...atHome, id: 9, zuBesuch: true, role: 'gast' })).toEqual(['einstellungen', 'collage', 'hilfe', 'abmelden'])
+  test('klassischer Familien-Login: Einladen erst ab Stellvertretung', () => {
+    const classic = { id: 2, name: 'Rudel vom Heidekamp', art: 'rudel', role: 'mitglied', home: { id: 2, name: 'Rudel vom Heidekamp', art: 'rudel' } }
+    expect(keys(classic)).not.toContain('einladen')
+    expect(keys({ ...classic, role: 'stellvertretung' })).toContain('einladen')
   })
 
   test('klassischer Familien-Login: zusätzlich Mitglieder', () => {
