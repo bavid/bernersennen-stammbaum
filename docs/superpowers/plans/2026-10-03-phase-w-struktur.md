@@ -49,6 +49,10 @@ Collage → „Fotocollage“ · Eintrag → **„Erinnerung“**, Kommentare �
    Familie …“, Familie › Tiere vorgefiltert.
 5. **Aufräumen, S–M:** alte Komponenten löschen (ContextSwitcher, CompanionsPage, AreaLinks, TreeToggle,
    OverviewPage-Reste, NearbyPage als eigene Seite), Redirects ≥ 6 Monate behalten, Playwright-„Susi“-Ablauf.
+   *Stand 04.10.:* entfernt sind ContextSwitcher, HomeSwitchNotice, AreaLinks (samt Freundes-Zeile, `useFriendHomes`,
+   `familyStat`), die Zweige für Zuhause/Familie/Besuch in OverviewPage (nur noch Tierheim) und das Anlegen in DogForm (nur
+   noch Bearbeiten). TreeToggle (Stammbaum des Tierheims) und NearbyPage (`/umgebung` für Tierheime und Partner) werden
+   noch gebraucht; Redirects bleiben.
 
 ## Entscheidungen (Vorschlag, Betreiber kann umsteuern)
 

@@ -6,16 +6,11 @@ const entriesItem = (dogs, words) => {
   return { value: entries, label: entries === 1 ? words.entry : words.entries }
 }
 
-// Kennzahlen im Kopf der Familienbande (Familienbande 2): höchstens drei Zahlen - alle Tiere (auch Katzen und andere),
-// Zuhause bzw. Familien (familyStat aus lib/familyGroups.js: { value, label }, null = keine solche Kennzahl) und
+// Kennzahlen im Kopf der Familienbande eines Tierheims (OverviewPage): alle Tiere (auch Katzen und andere) und
 // Erinnerungen. dogs sind die Tiere des Rasters (ohne unbekannte Eltern).
-export default function OverviewStats({ dogs, familyStat }) {
+export default function OverviewStats({ dogs }) {
   const { words } = useTheme()
-  const items = [
-    { value: dogs.length, label: dogs.length === 1 ? words.animal : words.animals },
-    ...(familyStat ? [familyStat] : []),
-    entriesItem(dogs, words)
-  ]
+  const items = [{ value: dogs.length, label: dogs.length === 1 ? words.animal : words.animals }, entriesItem(dogs, words)]
   return (
     <dl className="stats">
       {items.map((item) => (

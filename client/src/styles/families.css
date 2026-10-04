@@ -147,14 +147,6 @@
   white-space: nowrap;
 }
 
-/* Unter dem Raster: "Ihr zeigt Tiere auch in … · befreundet mit …" */
-.families-links {
-  margin: 0;
-  font-size: var(--text-sm);
-  line-height: 1.6;
-  color: var(--muted);
-}
-
 /* Am Handy macht tree.css aus den Karten schmale Medaillons für den Baum - im Raster bleiben sie ab 360 px zwei (oder
    mehr) Spalten mit Foto oben und Name, Art, Geschlecht und Jahr darunter, darunter eine Spalte als ruhige Liste. */
 @media (max-width: 720px) {
@@ -223,4 +215,15 @@
   .dog-card.is-grid .dog-card-body {
     justify-items: start;
   }
+}
+
+/* Beitreten/Gründen-Dialog (JoinFamilyDialog: Familien, Einstellungen › Familien, Teilen) */
+
+.join-family {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.join-family-switch {
+  justify-self: start;
 }

@@ -24,14 +24,15 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 let container
 let root
 
+// OverviewPage steht seit Phase W nur noch im Tierheim (AreaRoutes ShelterRoutes); role prüft nur, ob canWrite durchgreift.
 const family = {
-  id: 2,
-  name: 'Familie Sonnenhang',
+  id: 30,
+  name: 'Tierheim Kleeblatt',
   theme: 'standard',
-  art: 'rudel',
+  art: 'tierheim',
   role: 'leitung',
   isDemo: false,
-  home: null,
+  home: { id: 30, name: 'Tierheim Kleeblatt', theme: 'standard', art: 'tierheim' },
   memberships: []
 }
 
@@ -209,7 +210,7 @@ describe('Familienbande – "Nachwuchs" beim Stammbaum (Phase U, Familienbande 2
   test('schlägt das Laden der Verpaarungen fehl, bleibt die Seite stehen - nur ohne Abschnitt', async () => {
     await render({ dogs: [...parents, siblings[0]], events: new Error('Fehler 500') })
 
-    expect(container.querySelector('h1').textContent).toBe('Familie Sonnenhang')
+    expect(container.querySelector('h1').textContent).toBe('Tierheim Kleeblatt')
     expect(tree()).not.toBeNull()
     expect(section()).toBeNull()
   })

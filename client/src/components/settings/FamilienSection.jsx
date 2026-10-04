@@ -7,7 +7,6 @@ import { familySettingsRoute, isEditable } from '../../lib/areas.js'
 import { animalCountText, areaCounts, withShareChange } from '../../lib/animalCounts.js'
 import { familyAnimals } from '../../lib/familyGroups.js'
 import { roleLabel } from '../../lib/roles.js'
-import { isOwnHome } from '../../lib/visits.js'
 import useOpenArea from '../../hooks/useOpenArea.js'
 import useShareMatrix from '../../hooks/useShareMatrix.js'
 import Icon from '../Icon.jsx'
@@ -15,7 +14,6 @@ import Modal from '../Modal.jsx'
 import JoinFamilyDialog from '../JoinFamilyDialog.jsx'
 import FamilyShareCard from '../shares/FamilyShareCard.jsx'
 import ShareNote from '../shares/ShareNote.jsx'
-import HomeSwitchNotice from './HomeSwitchNotice.jsx'
 
 const SHARE_NOTE_ID = 'settings-share-note'
 
@@ -44,15 +42,15 @@ function MembershipRow({ membership, counts, onOpen }) {
   )
 }
 
-// Die eigenen Tiere mit ihren Familien-Freigaben (GET /api/dogs liefert sie im eigenen Zuhause mit) - nur aus
-// „Mein Zuhause“ heraus; sonst null. Ohne Platzhalter unbekannter Eltern (wie das Raster und die Zählung des Servers).
-// updateShares hält die Liste und die Zahlen in me (onFamilyChange, funktional) nach einer gespeicherten Freigabe aktuell.
-function useOwnAnimals(ownHome, homeId, onFamilyChange) {
+// Die eigenen Tiere mit ihren Familien-Freigaben (GET /api/dogs liefert sie im eigenen Zuhause mit - die Einstellungen
+// spielen immer dort, AreaRoutes SettingsRoute). Ohne Platzhalter unbekannter Eltern (wie das Raster und die Zählung des
+// Servers). updateShares hält die Liste und die Zahlen in me (onFamilyChange, funktional) nach einer gespeicherten Freigabe
+// aktuell.
+function useOwnAnimals(homeId, onFamilyChange) {
   const [dogs, setDogs] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!ownHome) return undefined
     let active = true
     api
       .listDogs()
@@ -61,7 +59,7 @@ function useOwnAnimals(ownHome, homeId, onFamilyChange) {
     return () => {
       active = false
     }
-  }, [ownHome, homeId])
+  }, [homeId])
 
   function updateShares(dogId, shares) {
     const dog = dogs?.find((entry) => entry.id === dogId)
@@ -124,18 +122,12 @@ function ShareCards({ dogs, memberships, readOnly, onSaved }) {
   )
 }
 
-function AnimalsGroup({ family, ownHome, animals, memberships, readOnly, onFamilyChange }) {
+function AnimalsGroup({ animals, memberships, readOnly }) {
   const { words } = useTheme()
   const readOnlyHint = useReadOnlyHint()
   const { dogs, error, updateShares } = animals
   let content
-  if (!ownHome) {
-    content = (
-      <HomeSwitchNotice family={family} onFamilyChange={onFamilyChange}>
-        Welche eurer Tiere ihr wo zeigt, stellt ihr in „Mein Zuhause“ ein.
-      </HomeSwitchNotice>
-    )
-  } else if (memberships.length === 0) {
+  if (memberships.length === 0) {
     content = <p className="muted">Sobald ihr in einer {words.group} seid, wählt ihr hier, welche Tiere dort zu sehen sind.</p>
   } else {
     content = (
@@ -161,15 +153,14 @@ function AnimalsGroup({ family, ownHome, animals, memberships, readOnly, onFamil
 
 // Einstellungen → Familien: die Familien, in denen man Mitglied ist (Öffnen, Verwalten), welche eigenen Tiere wo zu sehen
 // sind (dieselbe Freigabe wie "Wer sieht {Name}?" auf der Tierseite) und Beitreten/Gründen (JoinFamilyDialog); die
-// befreundeten Zuhause stehen seit Phase W (Schritt 2) unter "Mein Zuhause". Tiere teilen geht nur aus
-// „Mein Zuhause“ heraus (der Server erlaubt es nur dort) - in einer Familie steht stattdessen der Weg dorthin.
+// befreundeten Zuhause stehen seit Phase W (Schritt 2) unter "Mein Zuhause". Tiere teilen geht nur aus „Mein Zuhause“
+// heraus (der Server erlaubt es nur dort) - dorthin wechselt das AreaGate der Route (AreaRoutes SettingsRoute) vorher.
 export default function FamilienSection({ family, onFamilyChange }) {
   const { words } = useTheme()
   const readOnly = useIsDemo()
   const openArea = useOpenArea(family)
-  const ownHome = isOwnHome(family)
   const memberships = family.memberships || []
-  const animals = useOwnAnimals(ownHome, family.id, onFamilyChange)
+  const animals = useOwnAnimals(family.id, onFamilyChange)
   const [joinOpen, setJoinOpen] = useState(false)
 
   return (
@@ -180,14 +171,7 @@ export default function FamilienSection({ family, onFamilyChange }) {
         onOpen={(item) => openArea(item.id)}
         onJoin={() => setJoinOpen(true)}
       />
-      <AnimalsGroup
-        family={family}
-        ownHome={ownHome}
-        animals={animals}
-        memberships={memberships}
-        readOnly={readOnly}
-        onFamilyChange={onFamilyChange}
-      />
+      <AnimalsGroup animals={animals} memberships={memberships} readOnly={readOnly} />
       <Modal open={joinOpen} title={`${words.group} beitreten oder gründen`} onClose={() => setJoinOpen(false)}>
         <JoinFamilyDialog onChange={onFamilyChange} onClose={() => setJoinOpen(false)} />
       </Modal>

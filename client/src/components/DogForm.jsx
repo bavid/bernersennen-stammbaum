@@ -3,9 +3,7 @@ import ParentPicker from './ParentPicker.jsx'
 import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
-import { useTheme } from '../themes/ThemeProvider.jsx'
-import { SEX_CHOICES, UNKNOWN_SEX, dogLabel, speciesLabel, speciesNoun } from '../lib/timeline.js'
-import { isEditable } from '../lib/areas.js'
+import { SEX_CHOICES, UNKNOWN_SEX, speciesLabel, speciesNoun } from '../lib/timeline.js'
 
 const HERKUNFT_OPTIONS = [
   { value: '', label: '–' },
@@ -26,14 +24,14 @@ const ABSCHIED_OPTIONS = [
 ]
 
 // Ist irgendetwas aus "Bei uns" bereits gesetzt? Dann startet der Abschnitt aufgeklappt statt eingeklappt.
-function hasCompanionInfo(dog, initialValues) {
-  return Boolean(dog?.bei_uns_seit || dog?.bei_uns_bis || dog?.herkunft_art || dog?.herkunft_text || initialValues?.beiUnsSeit)
+function hasCompanionInfo(dog) {
+  return Boolean(dog.bei_uns_seit || dog.bei_uns_bis || dog.herkunft_art || dog.herkunft_text)
 }
 
-export const SPECIES = ['hund', 'katze', 'anderes']
+const SPECIES = ['hund', 'katze', 'anderes']
 
 // Beschriftungen, die sich nach der Tierart richten
-export const SPECIES_FIELDS = {
+const SPECIES_FIELDS = {
   hund: { nameLabel: 'Name (mit Zwinger)', namePlaceholder: 'z. B. Aiko vom Sonnenhang', kindLabel: 'Rasse', kindPlaceholder: 'z. B. Berner Sennenhund oder Berner × Hovawart' },
   katze: { nameLabel: 'Name', namePlaceholder: 'z. B. Minka', kindLabel: 'Rasse', kindPlaceholder: 'z. B. Europäisch Kurzhaar' },
   anderes: { nameLabel: 'Name', namePlaceholder: 'z. B. Hoppel', kindLabel: 'Welches Tier?', kindPlaceholder: 'z. B. Kaninchen, Wellensittich, Pferd' }
@@ -50,28 +48,26 @@ const BREED_SUGGESTIONS = [
   'Mischling'
 ]
 
-// initialValues füllt nur beim Neuanlegen vor (z. B. aus QuickAnimalForm, "Mehr Angaben …") – beim
-// Bearbeiten (dog gesetzt) gewinnen immer die vorhandenen Werte des Tiers.
-function initialState(dog, initialValues = {}) {
+// Die Werte des Tiers als Formular.
+function initialState(dog) {
   return {
-    name: dog?.name_unbekannt ? '' : dog?.name || initialValues.name || '',
-    nameUnbekannt: Boolean(dog ? dog.name_unbekannt : initialValues.nameUnbekannt),
-    rasse: dog?.rasse || initialValues.rasse || '',
-    tierart: dog?.tierart || initialValues.tierart || 'hund',
-    housemateId: dog ? '' : initialValues.housemateId || '',
-    geschlecht: dog?.geschlecht || initialValues.geschlecht || UNKNOWN_SEX,
-    geburtsdatum: dog?.geburtsdatum || '',
-    farbeMarkings: dog?.farbe_markings || '',
-    beschreibung: dog?.beschreibung || '',
-    fotos: dog?.foto_url ? [dog.foto_url] : [],
-    mother: { dogId: dog?.mother_dog_id || '', freitext: dog?.mother_freitext || '' },
-    father: { dogId: dog?.father_dog_id || '', freitext: dog?.father_freitext || '' },
-    beiUnsSeit: dog?.bei_uns_seit || initialValues.beiUnsSeit || '',
-    herkunftArt: dog?.herkunft_art || '',
-    herkunftText: dog?.herkunft_text || '',
-    nichtMehrBeiUns: Boolean(dog?.bei_uns_bis),
-    beiUnsBis: dog?.bei_uns_bis || '',
-    abschiedGrund: dog?.abschied_grund || ''
+    name: dog.name_unbekannt ? '' : dog.name || '',
+    nameUnbekannt: Boolean(dog.name_unbekannt),
+    rasse: dog.rasse || '',
+    tierart: dog.tierart || 'hund',
+    geschlecht: dog.geschlecht || UNKNOWN_SEX,
+    geburtsdatum: dog.geburtsdatum || '',
+    farbeMarkings: dog.farbe_markings || '',
+    beschreibung: dog.beschreibung || '',
+    fotos: dog.foto_url ? [dog.foto_url] : [],
+    mother: { dogId: dog.mother_dog_id || '', freitext: dog.mother_freitext || '' },
+    father: { dogId: dog.father_dog_id || '', freitext: dog.father_freitext || '' },
+    beiUnsSeit: dog.bei_uns_seit || '',
+    herkunftArt: dog.herkunft_art || '',
+    herkunftText: dog.herkunft_text || '',
+    nichtMehrBeiUns: Boolean(dog.bei_uns_bis),
+    beiUnsBis: dog.bei_uns_bis || '',
+    abschiedGrund: dog.abschied_grund || ''
   }
 }
 
@@ -81,7 +77,6 @@ function toPayload(form) {
     nameUnbekannt: form.nameUnbekannt,
     rasse: form.rasse || null,
     tierart: form.tierart,
-    housemateId: form.housemateId || null,
     geschlecht: form.geschlecht,
     geburtsdatum: form.geburtsdatum || null,
     farbeMarkings: form.farbeMarkings || null,
@@ -100,15 +95,14 @@ function toPayload(form) {
   }
 }
 
-// Anlegen und Bearbeiten eines Tiers (meist Hund). onSubmit bekommt das API-Payload.
-// initialValues füllt beim Neuanlegen vor – etwa wenn QuickAnimalForm über "Mehr Angaben …" hierher wechselt.
-export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSubmit, onDelete, onCancel }) {
-  const { words } = useTheme()
-  const [form, setForm] = useState(() => initialState(dog, initialValues))
+// Ein Tier bearbeiten (Tierseite, „Bearbeiten“) - angelegt wird ein Tier mit „Neues Tier“ (QuickAnimalForm). onSubmit
+// bekommt das API-Payload für PUT /api/dogs/:id.
+export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete, onCancel }) {
+  const [form, setForm] = useState(() => initialState(dog))
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [companionOpen, setCompanionOpen] = useState(() => hasCompanionInfo(dog, initialValues))
+  const [companionOpen, setCompanionOpen] = useState(() => hasCompanionInfo(dog))
 
   const update = (patch) => setForm((current) => ({ ...current, ...patch }))
   const fields = SPECIES_FIELDS[form.tierart] || SPECIES_FIELDS.hund
@@ -204,7 +198,6 @@ export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSu
           maxLength={80}
           required={!form.nameUnbekannt}
           disabled={form.nameUnbekannt}
-          autoFocus={!dog}
         />
       </div>
 
@@ -263,23 +256,6 @@ export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSu
         />
       </div>
 
-      {!dog && (
-        <div className="field span-2">
-          <label className="field-label" htmlFor="dog-housemate">
-            Lebt zusammen mit <span className="muted">(optional, für Tiere ohne gemeinsame Abstammung)</span>
-          </label>
-          <select id="dog-housemate" value={form.housemateId} onChange={(e) => update({ housemateId: e.target.value ? Number(e.target.value) : '' })}>
-            <option value="">– niemandem –</option>
-            {allDogs.filter(isEditable).map((other) => (
-              <option key={other.id} value={other.id}>
-                {dogLabel(other)}
-              </option>
-            ))}
-          </select>
-          <span className="field-hint">Ohne Verwandtschaft – {words.inTree} erscheint eine eigene Linie „lebt zusammen“.</span>
-        </div>
-      )}
-
       <ParentPicker
         label="Mutter"
         sex="huendin"
@@ -287,7 +263,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSu
         dogs={allDogs}
         value={form.mother}
         onChange={(mother) => update({ mother })}
-        excludeId={dog?.id}
+        excludeId={dog.id}
         ownFamilyId={ownFamilyId}
       />
       <ParentPicker
@@ -297,7 +273,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSu
         dogs={allDogs}
         value={form.father}
         onChange={(father) => update({ father })}
-        excludeId={dog?.id}
+        excludeId={dog.id}
         ownFamilyId={ownFamilyId}
       />
 
@@ -424,7 +400,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSu
           Abbrechen
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
-          {saving ? 'Speichere …' : dog ? 'Änderungen speichern' : 'Tier anlegen'}
+          {saving ? 'Speichere …' : 'Änderungen speichern'}
         </button>
       </div>
     </form>

@@ -1,9 +1,7 @@
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { useIsDemo } from '../../lib/demo.js'
-import { isOwnHome } from '../../lib/visits.js'
 import { useToast } from '../Toast.jsx'
 import Icon from '../Icon.jsx'
-import HomeSwitchNotice from './HomeSwitchNotice.jsx'
 import RahmenGeraete from './RahmenGeraete.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
 import VisitSection from '../visits/VisitSection.jsx'
@@ -11,21 +9,11 @@ import VisitSection from '../visits/VisitSection.jsx'
 // Einstellungen → Mein Zuhause: Name (RenameFamilyForm, erst auf Klick - das Formular holt sich den Fokus), Schlüssel und
 // Benutzer (AccessSettings) und die Einladungen (der bekannte Dialog aus dem
 // Fuß, onInvite). Das alles betrifft das eigene Zuhause und geht nur, solange es aktiv ist (der Server ändert immer den
-// aktiven Bereich) - aus einer Familie heraus steht stattdessen der Weg dorthin.
+// aktiven Bereich) - dorthin wechselt das AreaGate der Route (AreaRoutes SettingsRoute) vorher.
 export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
   const { words } = useTheme()
   const readOnly = useIsDemo()
   const toast = useToast()
-
-  if (!isOwnHome(family)) {
-    return (
-      <div className="settings-block">
-        <HomeSwitchNotice family={family} onFamilyChange={onFamilyChange}>
-          Name, Schlüssel und Einladungen eures Zuhauses stellt ihr in „Mein Zuhause“ ein.
-        </HomeSwitchNotice>
-      </div>
-    )
-  }
 
   // RenameFamilyForm liefert nur die geänderten Felder - mit family zusammenführen (isDemo, home …
   // blieben sonst weg). Der Bereichswechsler zeigt den Namen des Zuhauses als Zusatz: home zieht mit.

@@ -15,8 +15,7 @@ function targetIndex(key, index, count) {
 // eine Liste mit role="menuitem"-Einträgen unter rootRef. Beim Öffnen bekommt der erste Eintrag (firstItemRef) den Fokus;
 // Pfeile, Pos1 und Ende wandern; Escape schließt und gibt den Fokus an den Knopf zurück; Tab schließt nur und lässt den
 // Fokus wie gewohnt weiterziehen; ein Klick außerhalb schließt. Pfeil runter/hoch auf dem Knopf öffnet das Menü.
-// Für das Konto-Menü (AccountMenu) und „Weitere Aktionen“ der Tierseite (components/dog/DogMoreMenu); der nicht mehr
-// eingebundene Bereichswechsler (ContextSwitcher) nutzt es bis Schritt 5.
+// Für das Konto-Menü (AccountMenu) und „Weitere Aktionen“ der Tierseite (components/dog/DogMoreMenu).
 export default function useMenu() {
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)

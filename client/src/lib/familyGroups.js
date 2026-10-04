@@ -1,9 +1,7 @@
-// Familienbande (Phase V3, Familienbande 2): ein Raster aller Tiere statt Generationen. Reine
-// Logik für die Gruppen je Eigentümer (der eigene Bereich, die Zuhause der Mitglieder - der Filter über dem Raster), die
-// Familien und befreundeten Zuhause des eigenen Zuhauses (eine leise Zeile darunter) und die Frage, ob es schon einen
-// Stammbaum gibt.
+// Familienbande (Phase V3, Familienbande 2): ein Raster aller Tiere statt Generationen. Reine Logik für die Gruppen je
+// Eigentümer (der eigene Bereich, die Zuhause der Mitglieder - der Filter über dem Raster) und die Frage, ob es schon
+// einen Stammbaum gibt.
 import { collectNodes, computeUnions } from './pedigree.js'
-import { isOwnHome } from './visits.js'
 
 // Adresse der Familienbande: ?gruppe=eigen bzw. ?gruppe=<Bereichs-Id> wählt eine Gruppe, ohne Angabe stehen alle da.
 export const GROUP_PARAM = 'gruppe'
@@ -65,49 +63,13 @@ function ownerGroups(family, dogs) {
   return [ownGroup(family, dogs.filter(isOwn)), ...sorted].filter((group) => group.dogs.length > 0)
 }
 
-// Nur im eigenen Zuhause: je Familie, in der der Haushalt Mitglied ist, die eigenen Tiere, die er dort zeigt
-// (dog.shares aus GET /api/dogs) - für die leise Zeile unter dem Raster ("Ihr zeigt Tiere auch in …").
-function membershipGroups(family, dogs) {
-  if (!isOwnHome(family)) return []
-  return (family.memberships || []).map((membership) => ({
-    id: membership.id,
-    title: membership.name,
-    dogs: dogs.filter((dog) => isOwn(dog) && (dog.shares || []).includes(membership.id))
-  }))
-}
-
-// dogs: die Tiere des Rasters (familyAnimals). friends: Ergebnis von friendHomes (nur im eigenen Zuhause geladen,
-// sonst leer).
-export function buildFamilyGroups({ family, dogs = [], friends = [] }) {
-  return { owners: ownerGroups(family, dogs), memberships: membershipGroups(family, dogs), friends }
+// dogs: die Tiere des Rasters (familyAnimals) - je Eigentümer eine Gruppe (der Filter über dem Raster).
+export function buildFamilyGroups({ family, dogs = [] }) {
+  return { owners: ownerGroups(family, dogs) }
 }
 
 // Die per ?gruppe= gewählte Gruppe - null (alle Tiere), wenn nichts gewählt ist oder es die Gruppe nicht (mehr) gibt.
 export function selectedGroup(owners, param) {
   if (!param) return null
   return owners.find((group) => group.param === param) || null
-}
-
-// Kennzahl im Kopf der Familienbande (Audit V7a - vorher zählte "Familien" jeden Abschnitt, auch das eigene Zuhause und
-// befreundete Zuhause): im eigenen Zuhause die Familien, in denen es Mitglied ist; in einer Familie die Zuhause, die
-// Tiere hierher teilen (dieselben, nach denen der Filter über dem Raster sortiert). null: nichts Sinnvolles zu zählen
-// (zu Besuch, Familie ohne geteilte Tiere) - dann keine Kennzahl.
-export function familyStat(family, { owners, memberships }) {
-  if (family.art === 'rudel') {
-    const homes = owners.filter((group) => group.key !== 'eigen').length
-    return homes > 0 ? { value: homes, label: 'Zuhause' } : null
-  }
-  if (!isOwnHome(family)) return null
-  return { value: memberships.length, label: memberships.length === 1 ? 'Familie' : 'Familien' }
-}
-
-// Befreundete Zuhause (Phase V2, GET /api/besuche): beide Richtungen zusammengeführt, alphabetisch. canVisit: man ist
-// dort zu Besuch (besuche) und kann hineinwechseln - wer nur bei euch zu Gast ist (gaeste), steht ohne Link da.
-export function friendHomes(visits) {
-  const homes = new Map()
-  for (const host of visits?.besuche || []) homes.set(host.id, { id: host.id, name: host.name, canVisit: true })
-  for (const guest of visits?.gaeste || []) {
-    if (!homes.has(guest.id)) homes.set(guest.id, { id: guest.id, name: guest.name, canVisit: false })
-  }
-  return [...homes.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'))
 }

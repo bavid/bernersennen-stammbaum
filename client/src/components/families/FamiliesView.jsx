@@ -1,7 +1,6 @@
 import { useId } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DogCard from '../DogCard.jsx'
-import AreaLinks from './AreaLinks.jsx'
 import FamilyFilter from './FamilyFilter.jsx'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { GROUP_PARAM, selectedGroup } from '../../lib/familyGroups.js'
@@ -9,10 +8,10 @@ import { GROUP_PARAM, selectedGroup } from '../../lib/familyGroups.js'
 // Familienbande im Standard-Auftritt (Familienbande 2): ein ruhiges Raster aller Tiere statt Abschnitten je Familie -
 // ohne Beziehungs-Chips (Eltern, Geschwister und Nachwuchs stehen auf der Tierseite und im Stammbaum). Darüber, sobald
 // Tiere aus mehr als einem Bereich kommen, ein Filter je Eigentümer; die Wahl steht in der Adresse (?gruppe=…), Zurück
-// im Browser hebt sie wieder auf. Darunter (nur im eigenen Zuhause) die leise Zeile zu Familien und befreundeten
-// Zuhause. groups: lib/familyGroups.js buildFamilyGroups; onOpenArea(id, name): hooks/useOpenArea.js (optional).
-// hideTitle (Phase W): im Reiter "Alle" sagt der Reiter schon, was hier steht - die Überschrift bleibt nur für Screenreader.
-export default function FamiliesView({ groups, onOpenArea, hideTitle = false }) {
+// im Browser hebt sie wieder auf. Familien und befreundete Zuhause stehen seit Phase W unter "Familien". groups:
+// lib/familyGroups.js buildFamilyGroups. hideTitle (Phase W): im Reiter "Alle" sagt der Reiter schon, was hier steht - die
+// Überschrift bleibt nur für Screenreader.
+export default function FamiliesView({ groups, hideTitle = false }) {
   const { words } = useTheme()
   const [searchParams, setSearchParams] = useSearchParams()
   const gridId = useId()
@@ -51,8 +50,6 @@ export default function FamiliesView({ groups, onOpenArea, hideTitle = false }) 
           </li>
         ))}
       </ul>
-      {/* Phase W: auf Tiere und der Gruppenseite ohne die Zeile (Familien stehen unter "Familien") - nur mit onOpenArea. */}
-      {onOpenArea && <AreaLinks memberships={groups.memberships} friends={groups.friends} onOpenArea={onOpenArea} />}
     </section>
   )
 }

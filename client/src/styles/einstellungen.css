@@ -263,10 +263,6 @@
   min-height: 44px;
 }
 
-.settings-switch {
-  max-width: 44rem;
-}
-
 /* Befreundete Zuhause: die Listen aus dem Einladen-Dialog ohne dessen eigenen Abstand nach oben. */
 .settings-group .visit-section.is-lists-only {
   padding-top: 0;
