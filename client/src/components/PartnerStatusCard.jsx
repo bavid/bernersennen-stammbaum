@@ -101,7 +101,7 @@ export default function PartnerStatusCard({ profile, onProfileChange }) {
         <StatusText profile={profile} fehlt={fehlt} isPublic={isPublic} />
         {nextStep && <p className="partner-status-next">Empfohlen: {nextStep}</p>}
         {isDemo && !profile.gesperrt && (
-          <p id={DEMO_HINT_ID} className="partner-status-demo">
+          <p id={DEMO_HINT_ID} className="visually-hidden">
             {readOnlyHint}
           </p>
         )}

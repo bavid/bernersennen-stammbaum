@@ -211,13 +211,40 @@
 }
 
 .partner-status-next,
-.partner-status-demo,
+
 .partner-status-text {
   color: var(--muted);
 }
 
 .partner-status-error {
   flex-basis: 100%;
+}
+
+/* Handy: Status und Knopf in einer Zeile, der Satz darunter */
+@media (max-width: 720px) {
+  .partner-status-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'badge action' 'main main';
+    row-gap: var(--space-1);
+  }
+
+  .partner-status-card > .partner-status-badge {
+    grid-area: badge;
+    justify-self: start;
+  }
+
+  .partner-status-card > .partner-status-main {
+    grid-area: main;
+  }
+
+  .partner-status-card > .btn {
+    grid-area: action;
+  }
+
+  .partner-status-card > .partner-status-error {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Knopf in der Leiste: kompakt, Tippfläche bleibt 44 px hoch */
