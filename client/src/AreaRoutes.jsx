@@ -114,6 +114,18 @@ function PinboardRoute({ family, onFamilyChange }) {
   )
 }
 
+// /bilderrahmen - die Diashow im eigenen Zuhause; mit ?in=<Familie> die Fotos einer Familie (Gruppenseite „Bilderrahmen“,
+// B+ Familienalbum) - das Gate wechselt dorthin, der Server zeigt genau, was der Bereich sieht.
+function BilderrahmenRoute({ family, onFamilyChange }) {
+  const [searchParams] = useSearchParams()
+  const inArea = parseAreaId(searchParams.get('in'))
+  return (
+    <AreaGate family={family} need={inArea || 'home'} onFamilyChange={onFamilyChange}>
+      <BilderrahmenPage areaKey={inArea} />
+    </AreaGate>
+  )
+}
+
 // Partner-Bereich (Phase P, family.art 'partner' - Hundeschule, Hundesalon, Betreuung, …): keine Tiere,
 // keine Chronik, kein Rudel - nur Profil, Beiträge und Nachrichten (P2), Kalender (V4a), Visitenkarten (V5), Zugang und die Kundensicht, dazu
 // die allgemeinen Seiten aus Kopf und Fuß (Schreib dem Admin, In der Nähe). Alles andere (Stammbaum,
@@ -228,7 +240,7 @@ function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/einstellungen" element={<SettingsRoute family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
       <Route path="/collage" element={atHome(<CollagePage family={family} />)} />
-      <Route path="/bilderrahmen" element={atHome(<BilderrahmenPage />)} />
+      <Route path="/bilderrahmen" element={<BilderrahmenRoute family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/umgebung" element={<NearbyRedirect />} />
       <Route path="/entdecken" element={atHome(<DiscoverPage />)} />
       <Route path="*" element={<ToStart family={family} />} />

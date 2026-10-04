@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import Icon from '../Icon.jsx'
 import ConfirmButton from '../ConfirmButton.jsx'
+import RahmenGeraetForm from './RahmenGeraetForm.jsx'
 import { relativeTime } from '../../lib/dates.js'
 import { ZEITRAEUME } from '../../lib/bilderrahmen.js'
-
-const MAX_NAME_LENGTH = 40
 
 // Gewählte Tiere mit Namen - solange die noch nicht geladen sind (oder ein Tier nicht mehr da ist) „2 Tiere“, nie
 // fälschlich „Alle Tiere“.
@@ -28,27 +27,15 @@ function seen(geraet) {
   return geraet.zuletztAktiv ? `zuletzt aktiv ${relativeTime(geraet.zuletztAktiv)}` : 'noch nicht verbunden'
 }
 
-// Ein Rahmen-Link in der Liste: Name, zuletzt aktiv, Auswahl - umbenennen und beenden (sofort ungültig, zweistufig).
-export default function RahmenGeraetRow({ geraet, tiere, readOnly, onRename, onRevoke }) {
-  const [renaming, setRenaming] = useState(false)
-  const [name, setName] = useState(geraet.name)
+// Ein Rahmen-Link in der Liste: Name, zuletzt aktiv, Auswahl - ändern (Name, Tiere, Zeitraum, Anzeige; der Link bleibt
+// derselbe, das Gerät holt die neue Auswahl beim nächsten Laden) und beenden (sofort ungültig, zweistufig).
+export default function RahmenGeraetRow({ geraet, tiere, readOnly, onUpdate, onRevoke }) {
+  const [editing, setEditing] = useState(false)
   const [error, setError] = useState(null)
 
-  function startRename() {
-    setName(geraet.name)
-    setError(null)
-    setRenaming(true)
-  }
-
-  async function submit(event) {
-    event.preventDefault()
-    setError(null)
-    try {
-      await onRename(name.trim())
-      setRenaming(false)
-    } catch (err) {
-      setError(err.message)
-    }
+  async function save(payload) {
+    await onUpdate(payload)
+    setEditing(false)
   }
 
   async function revoke() {
@@ -62,26 +49,8 @@ export default function RahmenGeraetRow({ geraet, tiere, readOnly, onRename, onR
 
   return (
     <li className="settings-row rahmen-row">
-      {renaming ? (
-        <form className="rahmen-rename" onSubmit={submit}>
-          <label className="visually-hidden" htmlFor={`rahmen-name-${geraet.id}`}>
-            Neuer Name für „{geraet.name}“
-          </label>
-          <input
-            id={`rahmen-name-${geraet.id}`}
-            value={name}
-            maxLength={MAX_NAME_LENGTH}
-            required
-            autoFocus
-            onChange={(event) => setName(event.target.value)}
-          />
-          <button type="submit" className="btn btn-primary" disabled={!name.trim()}>
-            Speichern
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => setRenaming(false)}>
-            Abbrechen
-          </button>
-        </form>
+      {editing ? (
+        <RahmenGeraetForm tiere={tiere} geraet={geraet} onSubmit={save} onCancel={() => setEditing(false)} />
       ) : (
         <>
           <div className="settings-row-main">
@@ -91,9 +60,17 @@ export default function RahmenGeraetRow({ geraet, tiere, readOnly, onRename, onR
           </div>
           {!readOnly && (
             <div className="settings-row-actions">
-              <button type="button" className="btn btn-ghost" onClick={startRename} aria-label={`„${geraet.name}“ umbenennen`}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setError(null)
+                  setEditing(true)
+                }}
+                aria-label={`„${geraet.name}“ ändern`}
+              >
                 <Icon name="edit" />
-                Umbenennen
+                Ändern
               </button>
               <ConfirmButton
                 label="Beenden"

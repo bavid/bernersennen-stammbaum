@@ -6,15 +6,22 @@ import { DEFAULT_OPTIONEN } from '../../lib/bilderrahmen.js'
 
 const MAX_NAME_LENGTH = 40
 
-// Einen Bilderrahmen für ein anderes Gerät einrichten: Name („Wohnzimmer Oma“), welche eigenen Tiere und welcher
-// Zeitraum, Anzeige - und ausdrücklich, ob auch private Erinnerungen dabei sein dürfen (Vorgabe: nein). tiere: die
-// eigenen Tiere des Zuhauses ({ id, name, inErinnerung }). onSubmit({ name, auswahl }) wirft bei Fehlern (Meldung hier).
-export default function RahmenGeraetForm({ tiere, onSubmit, onCancel }) {
+// Die Anzeige-Einstellungen (Wechsel, Uhr, …) eines vorhandenen Rahmens - unbekannte fallen auf die Vorgabe.
+function optionenOf(auswahl = {}) {
+  return Object.fromEntries(Object.entries(DEFAULT_OPTIONEN).map(([key, value]) => [key, auswahl[key] ?? value]))
+}
+
+// Einen Bilderrahmen für ein anderes Gerät einrichten oder ändern: Name („Wohnzimmer Oma“), welche eigenen Tiere und
+// welcher Zeitraum, Anzeige - und ausdrücklich, ob auch private Erinnerungen dabei sein dürfen (Vorgabe: nein). tiere: die
+// eigenen Tiere des Zuhauses ({ id, name, inErinnerung }). geraet (B+ Familienalbum): ein vorhandener Rahmen-Link - dann
+// mit seinen Werten vorbelegt und „Speichern“ statt „Link erstellen“ (der Link bleibt derselbe). onSubmit({ name, auswahl })
+// wirft bei Fehlern (Meldung hier).
+export default function RahmenGeraetForm({ tiere, geraet = null, onSubmit, onCancel }) {
   const id = useId()
-  const [name, setName] = useState('')
-  const [auswahl, setAuswahl] = useState({ tiere: [], zeitraum: 'alle' })
-  const [optionen, setOptionen] = useState({ ...DEFAULT_OPTIONEN })
-  const [privat, setPrivat] = useState(false)
+  const [name, setName] = useState(geraet?.name ?? '')
+  const [auswahl, setAuswahl] = useState({ tiere: geraet?.auswahl.tiere ?? [], zeitraum: geraet?.auswahl.zeitraum ?? 'alle' })
+  const [optionen, setOptionen] = useState(() => optionenOf(geraet?.auswahl))
+  const [privat, setPrivat] = useState(Boolean(geraet?.auswahl.privat))
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
 
@@ -24,6 +31,7 @@ export default function RahmenGeraetForm({ tiere, onSubmit, onCancel }) {
     setSaving(true)
     try {
       await onSubmit({ name: name.trim(), auswahl: { ...auswahl, ...optionen, privat } })
+      if (geraet) setSaving(false)
     } catch (err) {
       setError(err.message)
       setSaving(false)
@@ -32,7 +40,7 @@ export default function RahmenGeraetForm({ tiere, onSubmit, onCancel }) {
 
   return (
     <form className="rahmen-form" onSubmit={handleSubmit} aria-labelledby={`${id}-title`}>
-      <h3 id={`${id}-title`}>Neuer Bilderrahmen</h3>
+      <h3 id={`${id}-title`}>{geraet ? `„${geraet.name}“ ändern` : 'Neuer Bilderrahmen'}</h3>
       {error && (
         <p className="field-error" role="alert">
           {error}
@@ -67,7 +75,7 @@ export default function RahmenGeraetForm({ tiere, onSubmit, onCancel }) {
       <div className="settings-actions">
         <button type="submit" className="btn btn-primary" disabled={saving || !name.trim()}>
           <Icon name="frame" />
-          {saving ? 'Wird eingerichtet …' : 'Link erstellen'}
+          {geraet ? (saving ? 'Wird gespeichert …' : 'Speichern') : saving ? 'Wird eingerichtet …' : 'Link erstellen'}
         </button>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
           Abbrechen

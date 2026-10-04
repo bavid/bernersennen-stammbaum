@@ -18,19 +18,26 @@ import {
 const EMPTY = []
 
 // ?tier=<id> (aus dem Tierprofil „Als Bilderrahmen zeigen“): nur dieses Tier, ohne die gemerkte Auswahl zu ändern.
-function initialAuswahl(searchParams) {
+// Die Auswahl merkt sich das Gerät je Bereich: im eigenen Zuhause wie bisher, für eine Familie unter eigenem Schlüssel
+// (ihre Tiere sind andere).
+const auswahlKey = (areaKey) => (areaKey ? `${SESSION_AUSWAHL_KEY}.${areaKey}` : SESSION_AUSWAHL_KEY)
+
+function initialAuswahl(searchParams, storageKey) {
   const tier = Number(searchParams.get('tier'))
   if (Number.isInteger(tier) && tier > 0) return { tiere: [tier], zeitraum: 'alle', privat: false }
-  return cleanAuswahl(readSetting(SESSION_AUSWAHL_KEY, null))
+  return cleanAuswahl(readSetting(storageKey, null))
 }
 
 // /bilderrahmen (im eigenen Zuhause, AreaGate "home"): die Fotos eurer Tiere als Diashow - Tier- und Erinnerungsfotos, die
 // dieses Zuhause sieht (GET /api/bilderrahmen/fotos), alle 30 Minuten neu geholt. Auswahl und Anzeige merkt sich das Gerät.
 // „Beenden“ führt dorthin zurück, wo man herkam (sonst nach Start).
-export default function BilderrahmenPage() {
+// areaKey (B+ Familienalbum): die Id einer Familie, wenn die Diashow aus deren Gruppenseite kommt (/bilderrahmen?in=…) -
+// dann ohne „private Erinnerungen“ (die zeigt der Server ohnehin nur im eigenen Zuhause).
+export default function BilderrahmenPage({ areaKey = null }) {
+  const storageKey = auswahlKey(areaKey)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [auswahl, setAuswahl] = useState(() => initialAuswahl(searchParams))
+  const [auswahl, setAuswahl] = useState(() => initialAuswahl(searchParams, storageKey))
   const [optionen, setOptionen] = useState(() => readOptionen(SESSION_OPTIONEN_KEY))
   const loader = useCallback(() => api.bilderrahmenFotos(auswahl), [auswahl])
   const { data, error, loading, reload } = usePeriodicLoad(loader, {
@@ -41,7 +48,7 @@ export default function BilderrahmenPage() {
   function changeAuswahl(next) {
     const clean = cleanAuswahl(next)
     setAuswahl(clean)
-    writeSetting(SESSION_AUSWAHL_KEY, clean)
+    writeSetting(storageKey, clean)
   }
 
   function changeOptionen(next) {
@@ -73,7 +80,7 @@ export default function BilderrahmenPage() {
   }
 
   // Private Erinnerungen nur auf Wunsch (der Server zeigt sie ohnehin nur im eigenen Zuhause).
-  const auswahlUi = <FrameAuswahl tiere={tiere} auswahl={auswahl} onChange={changeAuswahl} showPrivat />
+  const auswahlUi = <FrameAuswahl tiere={tiere} auswahl={auswahl} onChange={changeAuswahl} showPrivat={!areaKey} />
 
   if (fotos.length === 0) {
     const filtered = auswahl.tiere.length > 0 || auswahl.zeitraum !== 'alle'

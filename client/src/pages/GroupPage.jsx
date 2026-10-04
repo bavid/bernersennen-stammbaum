@@ -73,6 +73,11 @@ export default function GroupPage({ family, onFamilyChange }) {
         {!visiting && (
           <div className="hero-actions">
             {/* Phase W, Schritt 2: "Familie verwalten" ist Einstellungen › Familien › [Familie] - kein Dialog mehr. */}
+            {/* B+ Familienalbum: die Fotos der Familie als Diashow (pages/BilderrahmenPage.jsx, Gate über ?in=). */}
+            <Link to={`/bilderrahmen?in=${family.id}`} className="btn btn-ghost">
+              <Icon name="frame" />
+              Bilderrahmen
+            </Link>
             <Link to={familySettingsRoute(family.id)} className="btn btn-ghost">
               <Icon name="settings" />
               {words.groupSettings}

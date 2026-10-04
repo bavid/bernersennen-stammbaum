@@ -2,9 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
 
 // Rahmen-Links des eigenen Zuhauses (Einstellungen › Mein Zuhause): laden, anlegen ({ geraet, token } - das Token gibt es
-// nur in dieser einen Antwort), umbenennen und widerrufen. update nimmt auch eine neue Auswahl (der Server kann es) - die
-// Oberfläche bietet bisher nur das Umbenennen; für eine andere Auswahl beendet man den Rahmen und richtet ihn neu ein. Fehler beim Laden stehen in error, Fehler
-// beim Ändern werfen die Aktionen (das Formular zeigt sie).
+// nur in dieser einen Antwort), ändern (Name und Auswahl - der Link bleibt derselbe) und widerrufen. Fehler beim Laden
+// stehen in error, Fehler beim Ändern werfen die Aktionen (das Formular zeigt sie).
 export default function useRahmenGeraete() {
   const [state, setState] = useState({ geraete: null, max: 5, error: null })
 

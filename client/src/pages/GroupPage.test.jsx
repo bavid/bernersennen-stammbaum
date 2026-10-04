@@ -116,6 +116,8 @@ describe('GroupPage (Phase W)', () => {
     expect(container.querySelector('.eyebrow').textContent).toBe('Familie')
     expect(container.querySelector('h1').textContent).toBe('Familie Sonnenhang')
     expect(container.querySelector('.group-meta').textContent).toBe('3 Tiere · davon 1 von euch')
+    // B+ Familienalbum: die Fotos der Familie als Diashow
+    expect(container.querySelector('a[href="/bilderrahmen?in=5"]').textContent).toBe('Bilderrahmen')
     expect(groupTabs().map((tab) => tab.textContent)).toEqual([words.entries, 'Tiere', 'Pinnwand', 'Mitglieder'])
     expect(selected()).toBe(words.entries)
   })

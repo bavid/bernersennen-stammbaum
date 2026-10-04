@@ -45,7 +45,8 @@ export default function RahmenGeraete() {
   const { geraete, max, error, create, update, revoke } = useRahmenGeraete()
   const [formOpen, setFormOpen] = useState(false)
   const [reveal, setReveal] = useState(null)
-  const [tiere, tiereError] = useOwnAnimals(formOpen || Boolean(geraete?.some((g) => g.auswahl.tiere.length)))
+  // Die Tiere braucht das Formular (neu oder „Ändern“ eines Rahmens) und die Zeile mit gewählten Tieren.
+  const [tiere, tiereError] = useOwnAnimals(formOpen || Boolean(geraete?.length))
   const toast = useToast()
   const full = Boolean(geraete) && geraete.length >= max
 
@@ -81,7 +82,7 @@ export default function RahmenGeraete() {
               geraet={geraet}
               tiere={tiere}
               readOnly={readOnly}
-              onRename={(name) => update(geraet.id, { name })}
+              onUpdate={(payload) => update(geraet.id, payload)}
               onRevoke={() => handleRevoke(geraet)}
             />
           ))}

@@ -20,7 +20,7 @@ function Probe() {
   return null
 }
 
-async function render(url = '/bilderrahmen') {
+async function render(url = '/bilderrahmen', areaKey = null) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -28,7 +28,7 @@ async function render(url = '/bilderrahmen') {
     root.render(
       <MemoryRouter initialEntries={[url]}>
         <Routes>
-          <Route path="/bilderrahmen" element={<BilderrahmenPage />} />
+          <Route path="/bilderrahmen" element={<BilderrahmenPage areaKey={areaKey} />} />
           <Route path="*" element={null} />
         </Routes>
         <Probe />
@@ -80,5 +80,14 @@ describe('BilderrahmenPage – Diashow im eigenen Zuhause', () => {
     await render()
     expect(container.querySelector('h1').textContent).toBe('Noch keine Fotos')
     expect(container.querySelector('a[href="/start"]')).not.toBeNull()
+  })
+
+  // B+ Familienalbum: die Diashow einer Familie (Gruppenseite „Bilderrahmen“, /bilderrahmen?in=<Id>).
+  test('aus einer Familie: eigene gemerkte Auswahl je Familie, nicht die des Zuhauses', async () => {
+    window.localStorage.setItem('chronik.bilderrahmen.auswahl', JSON.stringify({ tiere: [11], zeitraum: 'jahr' }))
+    window.localStorage.setItem('chronik.bilderrahmen.auswahl.5', JSON.stringify({ tiere: [], zeitraum: 'monat' }))
+    bilderrahmenFotos.mockResolvedValue(FOTOS)
+    await render('/bilderrahmen?in=5', 5)
+    expect(bilderrahmenFotos).toHaveBeenCalledWith({ tiere: [], zeitraum: 'monat', privat: false })
   })
 })

@@ -118,14 +118,22 @@ describe('Einstellungen › Bilderrahmen auf einem anderen Gerät', () => {
     expect(api.createRahmenGeraet.mock.calls[0][0].auswahl.privat).toBe(true)
   })
 
-  test('beenden (zweistufig) und umbenennen', async () => {
+  test('beenden (zweistufig) und ändern - Name und Auswahl, vorbelegt mit den Werten des Rahmens', async () => {
     api.revokeRahmenGeraet.mockResolvedValue(null)
-    api.updateRahmenGeraet.mockResolvedValue({ geraet: { ...OMA, name: 'Oma Wohnzimmer' } })
+    api.updateRahmenGeraet.mockImplementation(async (id, payload) => ({ geraet: { ...OMA, ...payload } }))
     await render()
-    act(() => buttonByText('Umbenennen').click())
-    type(container.querySelector('#rahmen-name-1'), 'Oma Wohnzimmer')
-    await act(async () => container.querySelector('.rahmen-rename').requestSubmit())
-    expect(api.updateRahmenGeraet).toHaveBeenCalledWith(1, { name: 'Oma Wohnzimmer' })
+    act(() => buttonByText('Ändern').click())
+    const form = container.querySelector('.rahmen-row .rahmen-form')
+    expect(form.querySelector('h3').textContent).toBe(`„${OMA.name}“ ändern`)
+    const nameInput = form.querySelector('input:not([type])')
+    expect(nameInput.value).toBe(OMA.name)
+    type(nameInput, 'Oma Wohnzimmer')
+    await act(async () => form.requestSubmit())
+    expect(api.updateRahmenGeraet).toHaveBeenCalledWith(1, {
+      name: 'Oma Wohnzimmer',
+      auswahl: expect.objectContaining({ tiere: OMA.auswahl.tiere, zeitraum: OMA.auswahl.zeitraum, privat: Boolean(OMA.auswahl.privat) })
+    })
+    expect(container.querySelector('.rahmen-row .rahmen-form')).toBeNull()
     expect(container.querySelector('.rahmen-row strong').textContent).toBe('Oma Wohnzimmer')
 
     const end = container.querySelector('button[aria-label="Bilderrahmen „Oma Wohnzimmer“ beenden"]')
@@ -141,7 +149,7 @@ describe('Einstellungen › Bilderrahmen auf einem anderen Gerät', () => {
     await render({ demo: true })
     expect(buttonByText('Bilderrahmen einrichten').disabled).toBe(true)
     expect(container.textContent).toContain('In der Demo nicht möglich.')
-    expect(buttonByText('Umbenennen')).toBeUndefined()
+    expect(buttonByText('Ändern')).toBeUndefined()
     act(() => root.unmount())
     container.remove()
 
