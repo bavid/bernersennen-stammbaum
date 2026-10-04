@@ -20,6 +20,7 @@ import TimelineEntryForm from '../components/TimelineEntryForm.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { hasRole } from '../lib/roles.js'
+import { animalsRoute } from '../lib/areas.js'
 import { isOwnHome, isVisit } from '../lib/visits.js'
 import useMirrorActions from '../components/erlebtMit/useMirrorActions.js'
 import { buildTimeline, displayName, dogLabel, genitive, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
@@ -278,8 +279,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     return (
       <div className="page">
         <div className="error-banner" role="alert">{error}</div>
-        <Link to="/stammbaum" className="back-link">
-          <Icon name="arrowLeft" /> {words.toTree}
+        <Link to={animalsRoute(family)} className="back-link">
+          <Icon name="arrowLeft" /> {words.animals}
         </Link>
       </div>
     )
@@ -427,10 +428,10 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   async function handleDeleteDog() {
     await api.deleteDog(dog.id)
     toast(`${dog.name} wurde entfernt`)
-    navigate('/stammbaum')
+    navigate(animalsRoute(family))
   }
 
-  // Ein hierher geteiltes Tier des eigenen Haushalts bearbeiten: zurück zu "Meine Chronik" wechseln
+  // Ein hierher geteiltes Tier des eigenen Haushalts bearbeiten: zurück zu "Mein Zuhause" wechseln
   // und zur selben Tierseite navigieren. Kein manuelles load() nötig – App.jsx hängt den Seiteninhalt
   // an family.id auf (key), der Bereichswechsel remountet diese Seite also von selbst und lädt neu
   // (canEdit wechselt serverseitig mit dem aktiven Bereich).
@@ -454,8 +455,9 @@ export default function DogDetailPage({ family, onFamilyChange }) {
 
   return (
     <div className="page">
-      <Link to="/stammbaum" className="back-link">
-        <Icon name="arrowLeft" /> {words.treeLabel}
+      {/* Phase W: zurück zu den Tieren - im Zuhause /tiere, in einer Familie oder zu Besuch deren Reiter "Tiere". */}
+      <Link to={animalsRoute(family)} className="back-link">
+        <Icon name="arrowLeft" /> {words.animals}
       </Link>
 
       <DogHero
@@ -544,7 +546,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
             <p>Lebt im Zuhause „{dog.familyName}“ und wird hier geteilt.</p>
             {dog.ownerFamilyId === family.home?.id && (
               <button type="button" className="btn btn-ghost" onClick={handleSwitchToHome}>
-                In Meiner Chronik bearbeiten
+                In „Mein Zuhause“ bearbeiten
               </button>
             )}
           </div>

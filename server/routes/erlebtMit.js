@@ -16,7 +16,7 @@ const findArt = db.prepare('SELECT art FROM families WHERE id = ?')
 
 function requireOwnHome(req, res, next) {
   if (req.familyId !== req.homeId || findArt.get(req.homeId)?.art !== ART.zuhause) {
-    return res.status(400).json({ error: 'Nur aus „Meine Chronik“ heraus möglich' })
+    return res.status(400).json({ error: 'Nur aus „Mein Zuhause“ heraus möglich' })
   }
   next()
 }

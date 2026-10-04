@@ -109,7 +109,7 @@ router.post('/claim', requireAuth, codeLimiter, (req, res, next) => {
     }
     const identity = db.prepare('SELECT art FROM families WHERE id = ?').get(req.homeId)
     if (!identity || identity.art !== ART.zuhause) {
-      return res.status(400).json({ error: 'Nur aus „Meine Chronik“ heraus möglich' })
+      return res.status(400).json({ error: 'Nur aus „Mein Zuhause“ heraus möglich' })
     }
 
     const { code, shelterMayRead } = req.body || {}

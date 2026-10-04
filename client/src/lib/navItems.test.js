@@ -1,28 +1,49 @@
 import { describe, expect, test } from 'vitest'
-import { MAX_NAV_ITEMS, navItemsFor, unreadCount, withUnread } from './navItems.js'
+import { MAX_NAV_ITEMS, hasMenuSlot, navItemsFor, unreadCount, withUnread } from './navItems.js'
 import { getTheme } from '../themes/index.js'
 
 const labels = (family) => navItemsFor(family).map((item) => item.label)
 
 describe('navItemsFor', () => {
-  test('zu Besuch in einem anderen Zuhause (Phase V2): nur Wegbegleiter und Familienbande', () => {
-    expect(labels({ art: 'zuhause', zuBesuch: true })).toEqual(['Wegbegleiter', 'Familienbande'])
+  const household = { art: 'zuhause', home: { id: 1, art: 'zuhause' }, id: 1 }
+
+  // Phase W: Haushalte - im eigenen Zuhause, in einer Familie und zu Besuch - haben überall dieselben vier Punkte.
+  test('Haushalte: Start, Tiere, Familien, Entdecken - im Zuhause, in einer Familie und zu Besuch', () => {
+    expect(labels(household)).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken'])
+    expect(labels({ ...household, id: 5, art: 'rudel' })).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken'])
+    expect(labels({ ...household, id: 9, zuBesuch: true })).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken'])
+    expect(labels({ art: 'zuhause' })).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken'])
+    expect(navItemsFor(household).map((item) => item.to)).toEqual(['/start', '/tiere', '/familien', '/entdecken'])
   })
 
-  test('offene „Erlebt mit“-Anfragen (Phase V2): Badge an „Wegbegleiter“, nicht zu Besuch', () => {
-    const item = navItemsFor({ art: 'zuhause', erlebtMitOffen: 2 }).find((entry) => entry.to === '/wegbegleiter')
-    expect(item.badge).toBe('2')
-    expect(item.ariaLabel).toBe('Wegbegleiter, 2 offene Anfragen')
-    expect(navItemsFor({ art: 'zuhause', erlebtMitOffen: 1 })[0].ariaLabel).toBe('Wegbegleiter, 1 offene Anfrage')
-    expect(navItemsFor({ art: 'zuhause', erlebtMitOffen: 0 })[0].badge).toBeUndefined()
-    expect(navItemsFor({ art: 'zuhause', erlebtMitOffen: 2, zuBesuch: true })[0].badge).toBeUndefined()
+  test('klassischer Login mit dem Familien-Schlüssel: Start, Tiere, Pinnwand, Entdecken', () => {
+    expect(labels({ id: 2, art: 'rudel', home: { id: 2, art: 'rudel' } })).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])
+    expect(labels({ art: 'rudel' })).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])
+    expect(navItemsFor({ art: 'rudel' }).find((item) => item.label === 'Pinnwand').to).toBe('/pinnwand')
   })
 
-  test('neue Gäste (security-review V2) zählen zum Badge an „Wegbegleiter“', () => {
-    const item = navItemsFor({ art: 'zuhause', erlebtMitOffen: 1, neueGaeste: 1 })[0]
+  test('Berner-Auftritt: dieselben Ziele mit den Wörtern des Auftritts (Hunde, Rudel)', () => {
+    expect(labels({ ...household, theme: 'berner' })).toEqual(['Start', 'Hunde', 'Rudel', 'Entdecken'])
+    expect(labels({ art: 'rudel', theme: 'berner' })).toEqual(['Start', 'Hunde', 'Pinnwand', 'Entdecken'])
+  })
+
+  test('offene „Mit dabei“-Anfragen und neue Gäste: Badge an „Start“ - in jedem Kontext', () => {
+    const item = navItemsFor({ ...household, erlebtMitOffen: 2 })[0]
+    expect(item.to).toBe('/start')
     expect(item.badge).toBe('2')
-    expect(item.ariaLabel).toBe('Wegbegleiter, 1 offene Anfrage, 1 neuer Gast')
-    expect(navItemsFor({ art: 'zuhause', neueGaeste: 2 })[0].ariaLabel).toBe('Wegbegleiter, 2 neue Gäste')
+    expect(item.ariaLabel).toBe('Start, 2 offene Anfragen')
+    expect(navItemsFor({ ...household, erlebtMitOffen: 1 })[0].ariaLabel).toBe('Start, 1 offene Anfrage')
+    expect(navItemsFor({ ...household, erlebtMitOffen: 0 })[0].badge).toBeUndefined()
+    expect(navItemsFor({ ...household, id: 9, zuBesuch: true, erlebtMitOffen: 2 })[0].badge).toBe('2')
+    expect(navItemsFor({ ...household, id: 5, art: 'rudel', neueGaeste: 1 })[0].badge).toBe('1')
+  })
+
+  test('neue Gäste (security-review V2) zählen zum Badge an „Start“', () => {
+    const item = navItemsFor({ ...household, erlebtMitOffen: 1, neueGaeste: 1 })[0]
+    expect(item.badge).toBe('2')
+    expect(item.ariaLabel).toBe('Start, 1 offene Anfrage, 1 neuer Gast')
+    expect(navItemsFor({ ...household, neueGaeste: 2 })[0].ariaLabel).toBe('Start, 2 neue Gäste')
+    expect(navItemsFor({ ...household, neueGaeste: 120 })[0].badge).toBe('99+')
   })
 
   test('a partner area gets Profil, Beiträge, Kalender (Phase V4a), Nachrichten (Phase P2) and Zugang', () => {
@@ -37,31 +58,19 @@ describe('navItemsFor', () => {
 
   test('a shelter keeps Tiere, Pinnwand, Collage, adds Profil and Nachrichten - Beiträge live in the Profil tab', () => {
     expect(labels({ art: 'tierheim' })).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
+    expect(labels({ art: 'tierheim', theme: 'berner' })).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
     expect(navItemsFor({ art: 'tierheim' }).find((item) => item.label === 'Profil').to).toBe('/profil')
     expect(navItemsFor({ art: 'tierheim' }).find((item) => item.label === 'Nachrichten').to).toBe('/nachrichten')
   })
 
-  test('households and packs keep their items (no Profil) - standard theme: Familienbande, no Nachwuchs tab (Phase U)', () => {
-    expect(labels({ art: 'zuhause' })).toEqual(['Wegbegleiter', 'Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
-    expect(labels({ art: 'rudel' })).toEqual(['Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
-    expect(labels({ art: 'rudel', theme: 'standard' })).toEqual(['Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
-    expect(navItemsFor({ art: 'rudel' }).some((item) => item.to === '/wuerfe')).toBe(false)
-  })
-
-  test('berner theme keeps Stammbaum and Würfe in the bar, unchanged', () => {
-    expect(labels({ art: 'zuhause', theme: 'berner' })).toEqual(['Wegbegleiter', 'Stammbaum', 'Pinnwand', 'Entdecken', 'Collage'])
-    expect(labels({ art: 'rudel', theme: 'berner' })).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
-    expect(navItemsFor({ art: 'rudel', theme: 'berner' }).find((item) => item.label === 'Würfe').to).toBe('/wuerfe')
-  })
-
   test('an explicit theme (the one on screen, e.g. a preview) wins over the stored one', () => {
     const rudel = { art: 'rudel', theme: 'standard' }
-    expect(navItemsFor(rudel, getTheme('berner')).map((item) => item.label)).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
+    expect(navItemsFor(rudel, getTheme('berner')).map((item) => item.label)).toEqual(['Start', 'Hunde', 'Pinnwand', 'Entdecken'])
     expect(navItemsFor({ ...rudel, theme: 'berner' }, getTheme('standard')).map((item) => item.label)).toEqual([
-      'Familienbande',
+      'Start',
+      'Tiere',
       'Pinnwand',
-      'Entdecken',
-      'Collage'
+      'Entdecken'
     ])
     expect(navItemsFor(rudel).every((item) => !('labelKey' in item))).toBe(true)
   })
@@ -71,6 +80,14 @@ describe('navItemsFor', () => {
       expect(navItemsFor({ art, theme }).length).toBeLessThanOrEqual(MAX_NAV_ITEMS)
     }
     expect(MAX_NAV_ITEMS).toBe(5)
+  })
+
+  test('Haushalte lassen am Handy Platz für den fünften Punkt „Menü“', () => {
+    expect(navItemsFor(household).length + 1).toBeLessThanOrEqual(MAX_NAV_ITEMS)
+    expect(hasMenuSlot(household)).toBe(true)
+    expect(hasMenuSlot({ art: 'rudel' })).toBe(true)
+    expect(hasMenuSlot({ art: 'tierheim' })).toBe(false)
+    expect(hasMenuSlot({ art: 'partner' })).toBe(false)
   })
 })
 

@@ -51,7 +51,8 @@ function PlannedLitter({ planned }) {
 // Nachwuchs steht (Familienbande 2: beim Stammbaum; ohne Stammbaum zeigt die Familienbande die Familien).
 // ?verpaarung=neu (Familienbande 2, lib/litters.js addMatingPath - von der Tierseite und vom Nachwuchs beim Stammbaum)
 // öffnet das Formular gleich, &mutter=<id> wählt die Hündin vor.
-export default function LittersPage({ family }) {
+// embedded (Phase W): als Reiter "Würfe" der Tiere-Seite - ohne eigenen Seitenkopf und ohne Rückweg.
+export default function LittersPage({ family, embedded = false }) {
   const { theme, words } = useTheme()
   const canWrite = hasRole(family, 'mitglied')
   const [searchParams, setSearchParams] = useSearchParams()
@@ -142,19 +143,23 @@ export default function LittersPage({ family }) {
   }
 
   return (
-    <div className="page">
-      {!theme.littersInNav && (
+    <div className={embedded ? 'litters-embedded' : 'page'}>
+      {!embedded && !theme.littersInNav && (
         <Link to={{ pathname: '/stammbaum', search: `?${TREE_PARAM}=${TREE_VALUE}` }} className="back-link">
           <Icon name="arrowLeft" /> {words.treeLabel}
         </Link>
       )}
-      <header className="page-hero">
-        <div>
-          <span className="eyebrow">{words.littersLabel}</span>
-          <h1>Geschwister auf einen Blick</h1>
-          <p className="page-lede">{theme.texts.littersLede}</p>
-        </div>
-      </header>
+      {embedded ? (
+        <p className="muted">{theme.texts.littersLede}</p>
+      ) : (
+        <header className="page-hero">
+          <div>
+            <span className="eyebrow">{words.littersLabel}</span>
+            <h1>Geschwister auf einen Blick</h1>
+            <p className="page-lede">{theme.texts.littersLede}</p>
+          </div>
+        </header>
+      )}
 
       {error && <div className="error-banner" role="alert">{error}</div>}
 

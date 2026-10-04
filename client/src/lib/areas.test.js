@@ -1,13 +1,55 @@
 import { describe, expect, test } from 'vitest'
-import { HOME_LABEL, inviteLabel, isEditable, isPartnerArea, parseAreaId, startRoute } from './areas.js'
+import {
+  HOME_LABEL,
+  animalsRoute,
+  areaContext,
+  groupRoute,
+  inviteLabel,
+  isEditable,
+  isHouseholdIdentity,
+  isPartnerArea,
+  parseAreaId,
+  startRoute
+} from './areas.js'
 
-describe('startRoute', () => {
-  test('a household area starts at Wegbegleiter', () => {
-    expect(startRoute({ art: 'zuhause' })).toBe('/wegbegleiter')
+const home = { id: 1, name: 'Zuhause am Deich', art: 'zuhause' }
+const atHome = { ...home, home }
+const inGroup = { id: 5, name: 'Familie Sonnenhang', art: 'rudel', home }
+const visiting = { id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home }
+const classic = { id: 2, name: 'Rudel vom Heidekamp', art: 'rudel', home: { id: 2, art: 'rudel' } }
+
+describe('areaContext (Phase W)', () => {
+  test.each([
+    ['eigenes Zuhause', atHome, 'home'],
+    ['Haushalt in einer Familie', inGroup, 'group'],
+    ['zu Besuch', visiting, 'visit'],
+    ['klassischer Familien-Login', classic, 'classic'],
+    ['Tierheim', { id: 7, art: 'tierheim', home: { id: 7, art: 'tierheim' } }, 'tierheim'],
+    ['Partner', { id: 8, art: 'partner' }, 'partner'],
+    ['ohne home: Zuhause', { art: 'zuhause' }, 'home'],
+    ['ohne home: Rudel', { art: 'rudel' }, 'classic']
+  ])('%s', (label, family, context) => {
+    expect(areaContext(family)).toBe(context)
   })
 
-  test('a group/pack area starts at Stammbaum', () => {
-    expect(startRoute({ art: 'rudel' })).toBe('/stammbaum')
+  test('isHouseholdIdentity folgt der Identität, nicht dem aktiven Bereich', () => {
+    expect([atHome, inGroup, visiting].every(isHouseholdIdentity)).toBe(true)
+    expect(isHouseholdIdentity(classic)).toBe(false)
+    expect(isHouseholdIdentity(undefined)).toBe(false)
+  })
+})
+
+describe('startRoute', () => {
+  test('das eigene Zuhause und klassische Logins starten auf /start', () => {
+    expect(startRoute(atHome)).toBe('/start')
+    expect(startRoute({ art: 'zuhause' })).toBe('/start')
+    expect(startRoute(classic)).toBe('/start')
+    expect(startRoute({ art: 'rudel' })).toBe('/start')
+  })
+
+  test('in einer Familie oder zu Besuch: deren Gruppenseite', () => {
+    expect(startRoute(inGroup)).toBe('/familien/5')
+    expect(startRoute(visiting)).toBe('/familien/9')
   })
 
   test('a shelter area starts at Tiere', () => {
@@ -18,8 +60,23 @@ describe('startRoute', () => {
     expect(startRoute({ art: 'partner' })).toBe('/profil')
   })
 
-  test('without a family (e.g. classic pack login without art) falls back to Stammbaum', () => {
-    expect(startRoute(undefined)).toBe('/stammbaum')
+  test('without a family falls back to /start', () => {
+    expect(startRoute(undefined)).toBe('/start')
+  })
+})
+
+describe('groupRoute und animalsRoute', () => {
+  test('Gruppenseite mit und ohne Reiter', () => {
+    expect(groupRoute(5)).toBe('/familien/5')
+    expect(groupRoute(5, 'pinnwand')).toBe('/familien/5?reiter=pinnwand')
+  })
+
+  test('zurück zu den Tieren: /tiere oder der Reiter der Gruppenseite', () => {
+    expect(animalsRoute(atHome)).toBe('/tiere')
+    expect(animalsRoute(classic)).toBe('/tiere')
+    expect(animalsRoute({ art: 'tierheim' })).toBe('/tiere')
+    expect(animalsRoute(inGroup)).toBe('/familien/5?reiter=tiere')
+    expect(animalsRoute(visiting)).toBe('/familien/9?reiter=tiere')
   })
 })
 
@@ -51,7 +108,7 @@ describe('inviteLabel', () => {
 
 describe('HOME_LABEL', () => {
   test('is the fixed display name for the own household area', () => {
-    expect(HOME_LABEL).toBe('Meine Chronik')
+    expect(HOME_LABEL).toBe('Mein Zuhause')
   })
 })
 

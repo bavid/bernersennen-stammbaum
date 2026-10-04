@@ -135,7 +135,7 @@ describe('FamilySettings – "Familie verlassen"', () => {
     expect(heading()).toBeUndefined()
   })
 
-  test('Nicht-Leitung in einer Familie (Phase R): statt Name/Aussehen ein Hinweis, "Zugang" verweist auf „Meine Chronik“, Link zu Mitglieder & Rollen', async () => {
+  test('Nicht-Leitung in einer Familie (Phase R): statt Name/Aussehen ein Hinweis, "Zugang" verweist auf „Mein Zuhause“, Link zu Mitglieder & Rollen', async () => {
     await renderWith({ ...groupActive, role: 'mitglied' })
 
     const headings = [...container.querySelectorAll('.settings-section h3')].map((h) => h.textContent)
@@ -143,7 +143,7 @@ describe('FamilySettings – "Familie verlassen"', () => {
     expect(container.querySelector('#family-rename')).toBeNull()
     expect(container.querySelector('.theme-picker')).toBeNull()
     expect(container.textContent).toContain('Name und Aussehen der Familie ändert nur die Familienleitung.')
-    expect(container.textContent).toContain('Benutzer verwaltest du in „Meine Chronik“.')
+    expect(container.textContent).toContain('Benutzer verwaltest du in „Mein Zuhause“.')
     expect(container.textContent).not.toContain('Den Schlüssel der Familie erneuerst du')
     const link = container.querySelector('a[href="/mitglieder"]')
     expect(link.textContent).toContain('Mitglieder & Rollen')
@@ -162,12 +162,12 @@ describe('FamilySettings – "Familie verlassen"', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  test('ein klassischer Rudel-Login (Identität = Familie) gilt als Leitung: Name, Aussehen und der eigene Zugang bleiben, kein Hinweis auf „Meine Chronik“', async () => {
+  test('ein klassischer Rudel-Login (Identität = Familie) gilt als Leitung: Name, Aussehen und der eigene Zugang bleiben, kein Hinweis auf „Mein Zuhause“', async () => {
     await renderWith({ ...groupActive, home: { id: 3, name: 'Familie Sonnenhang', art: 'rudel' } })
     const headings = [...container.querySelectorAll('.settings-section h3')].map((h) => h.textContent)
     expect(headings).toEqual(['Name', 'Aussehen', 'Zugang', 'Mitglieder'])
     expect(container.querySelector('#access-confirm')).not.toBeNull()
-    expect(container.textContent).not.toContain('Benutzer verwaltest du in „Meine Chronik“.')
+    expect(container.textContent).not.toContain('Benutzer verwaltest du in „Mein Zuhause“.')
   })
 
   test('zweistufiges Verlassen ruft api.leaveFamily, dann onFamilyChange mit dem zurückgegebenen "me" und schließt', async () => {

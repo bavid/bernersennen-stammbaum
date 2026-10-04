@@ -10,8 +10,9 @@ import { GROUP_PARAM, selectedGroup } from '../../lib/familyGroups.js'
 // ohne Beziehungs-Chips (Eltern, Geschwister und Nachwuchs stehen auf der Tierseite und im Stammbaum). Darüber, sobald
 // Tiere aus mehr als einem Bereich kommen, ein Filter je Eigentümer; die Wahl steht in der Adresse (?gruppe=…), Zurück
 // im Browser hebt sie wieder auf. Darunter (nur im eigenen Zuhause) die leise Zeile zu Familien und befreundeten
-// Zuhause. groups: lib/familyGroups.js buildFamilyGroups; onOpenArea(id, name): hooks/useOpenArea.js.
-export default function FamiliesView({ groups, onOpenArea }) {
+// Zuhause. groups: lib/familyGroups.js buildFamilyGroups; onOpenArea(id, name): hooks/useOpenArea.js (optional).
+// hideTitle (Phase W): im Reiter "Alle" sagt der Reiter schon, was hier steht - die Überschrift bleibt nur für Screenreader.
+export default function FamiliesView({ groups, onOpenArea, hideTitle = false }) {
   const { words } = useTheme()
   const [searchParams, setSearchParams] = useSearchParams()
   const gridId = useId()
@@ -34,7 +35,7 @@ export default function FamiliesView({ groups, onOpenArea }) {
   return (
     <section className="families-view" aria-labelledby="families-title">
       <div className="families-head">
-        <h2 id="families-title" className="families-title">
+        <h2 id="families-title" className={hideTitle ? 'families-title visually-hidden' : 'families-title'}>
           {words.animals}
         </h2>
         {groups.owners.length > 1 && (
@@ -50,7 +51,8 @@ export default function FamiliesView({ groups, onOpenArea }) {
           </li>
         ))}
       </ul>
-      <AreaLinks memberships={groups.memberships} friends={groups.friends} onOpenArea={onOpenArea} />
+      {/* Phase W: auf Tiere und der Gruppenseite ohne die Zeile (Familien stehen unter "Familien") - nur mit onOpenArea. */}
+      {onOpenArea && <AreaLinks memberships={groups.memberships} friends={groups.friends} onOpenArea={onOpenArea} />}
     </section>
   )
 }

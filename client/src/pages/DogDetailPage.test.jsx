@@ -250,18 +250,18 @@ describe('DogDetailPage – Wörter je Auftritt', () => {
     )
   }
 
-  test('Standard: Zurück-Link "Familienbande", Meilenstein "Verpaarung mit Balu", kein "Stammbaum"/"Deckakt"', async () => {
+  test('Standard: Zurück-Link "Tiere" (Phase W), Meilenstein "Verpaarung mit Balu", kein "Stammbaum"/"Deckakt"', async () => {
     await renderThemed('standard')
 
-    expect(container.querySelector('.back-link').textContent.trim()).toBe('Familienbande')
+    expect(container.querySelector('.back-link').textContent.trim()).toBe('Tiere')
     expect(container.textContent).toContain('Verpaarung mit Balu')
     expect(container.textContent).not.toMatch(/Stammbaum|Deckakt/)
   })
 
-  test('Berner: Zurück-Link "Stammbaum", Meilenstein "Deckakt mit Balu"', async () => {
+  test('Berner: Zurück-Link "Hunde" (Phase W), Meilenstein "Deckakt mit Balu"', async () => {
     await renderThemed('berner')
 
-    expect(container.querySelector('.back-link').textContent.trim()).toBe('Stammbaum')
+    expect(container.querySelector('.back-link').textContent.trim()).toBe('Hunde')
     expect(container.textContent).toContain('Deckakt mit Balu')
   })
 })

@@ -52,7 +52,7 @@ export default function FamilySettings({ family, onRenamed, onChange, onFamilyCh
       {inGroup && isHousehold && (
         <section className="settings-section">
           <h3>Zugang</h3>
-          <p className="muted">Benutzer verwaltest du in „Meine Chronik“.</p>
+          <p className="muted">Benutzer verwaltest du in „Mein Zuhause“.</p>
           {isLeitung && (
             <p className="muted">
               Den Schlüssel {words.ofGroup} erneuerst du auf der Mitglieder-Seite.

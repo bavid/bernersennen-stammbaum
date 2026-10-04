@@ -1,6 +1,8 @@
 // Schlanke Inline-Icons (Stil angelehnt an Lucide, 24er Raster).
 const PATHS = {
   plus: <path d="M12 5v14M5 12h14" />,
+  // Phase W: "Menü" als fünfter Platz der unteren Leiste am Handy.
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
   minus: <path d="M5 12h14" />,
   layers: (
     <>

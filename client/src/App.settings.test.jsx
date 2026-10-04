@@ -63,7 +63,12 @@ async function waitForMainHeading(text) {
   return container.querySelector('main h1')
 }
 
-const gear = () => container.querySelector('.app-header a[href="/einstellungen"]')
+// Phase W: Einstellungen stehen im Konto-Menü (AccountMenu) statt als Zahnrad im Kopf.
+function openMenu() {
+  act(() => container.querySelector('.account-menu-trigger').click())
+  return [...container.querySelectorAll('.account-menu-panel [role="menuitem"]')]
+}
+const menuItem = (label) => openMenu().find((item) => item.textContent === label)
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -79,18 +84,19 @@ afterEach(() => {
 })
 
 describe('App – Einstellungen (Calm-down-Runde)', () => {
-  test('das Zahnrad im Kopf führt zu /einstellungen', async () => {
+  test('„Einstellungen“ im Konto-Menü führt zu /einstellungen', async () => {
     me.mockResolvedValue(atHome)
-    await render('/einstellungen')
-    expect(gear().getAttribute('aria-label')).toBe('Einstellungen')
-    expect(gear().classList.contains('active')).toBe(true)
-    expect(gear().getAttribute('aria-current')).toBe('page')
+    await render('/start')
+    const link = menuItem('Einstellungen')
+    expect(link.getAttribute('href')).toBe('/einstellungen')
+    await act(async () => link.click())
     expect((await waitForMainHeading('Einstellungen')).textContent).toBe('Einstellungen')
+    expect(container.querySelector('.account-menu-panel')).toBeNull()
   })
 
   test('die Darstellung aus /me gilt sofort an <html> und ist für das nächste Laden gemerkt', async () => {
     me.mockResolvedValue(atHome)
-    await render('/wegbegleiter')
+    await render('/start')
     const { dataset } = document.documentElement
     expect([dataset.palette, dataset.modus, dataset.schrift, dataset.scheme]).toEqual(['wald', 'dunkel', 'gross', 'dunkel'])
     expect(JSON.parse(window.localStorage.getItem('chronik.darstellung'))).toEqual(atHome.darstellung)
@@ -98,7 +104,7 @@ describe('App – Einstellungen (Calm-down-Runde)', () => {
 
   test('Demo: angewendet, aber nicht gemerkt', async () => {
     me.mockResolvedValue({ ...atHome, isDemo: true, darstellung: { palette: 'meer', modus: 'hell', schrift: 'normal' } })
-    await render('/wegbegleiter')
+    await render('/start')
     expect(document.documentElement.dataset.palette).toBe('meer')
     expect(window.localStorage.getItem('chronik.darstellung')).toBeNull()
   })
@@ -106,25 +112,26 @@ describe('App – Einstellungen (Calm-down-Runde)', () => {
   test('Admin-Ansicht: angewendet, aber nicht gemerkt; nach dem Abmelden wieder die Wahl dieses Geräts', async () => {
     window.localStorage.setItem('chronik.darstellung', JSON.stringify({ palette: 'schiefer', modus: 'hell', schrift: 'normal' }))
     me.mockResolvedValue({ ...atHome, adminView: true, darstellung: { palette: 'lavendel', modus: 'dunkel', schrift: 'gross' } })
-    await render('/wegbegleiter')
+    await render('/start')
     expect(document.documentElement.dataset.palette).toBe('lavendel')
     expect(JSON.parse(window.localStorage.getItem('chronik.darstellung')).palette).toBe('schiefer')
 
-    await act(async () => container.querySelector('.app-logout').click())
+    const logoutItem = menuItem('Abmelden')
+    await act(async () => logoutItem.click())
     expect(document.documentElement.dataset.palette).toBe('schiefer')
     expect(document.documentElement.dataset.schrift).toBe('normal')
   })
 
-  test('kein Zahnrad zu Besuch und in Partner-Bereichen; dort führt /einstellungen zur Startseite', async () => {
+  test('zu Besuch steht „Einstellungen“ im Menü (das Gate wechselt nach Hause); Partner-Bereiche haben kein Konto-Menü', async () => {
     me.mockResolvedValue({ ...atHome, id: 9, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast' })
-    await render('/wegbegleiter')
-    expect(gear()).toBeNull()
+    await render('/familien/9')
+    expect(menuItem('Einstellungen').getAttribute('href')).toBe('/einstellungen')
     act(() => root.unmount())
     container.remove()
 
     me.mockResolvedValue({ id: 20, name: 'Hundeschule Ufer', theme: 'standard', art: 'partner', isDemo: false, role: 'leitung', home: { id: 20, art: 'partner' }, memberships: [] })
     await render('/einstellungen')
-    expect(gear()).toBeNull()
+    expect(container.querySelector('.account-menu')).toBeNull()
     expect(container.querySelector('main h1')?.textContent).not.toBe('Einstellungen')
   })
 })

@@ -43,7 +43,7 @@ describe('VisitBanner und VisitClaimCard (Phase V2)', () => {
     await render(<VisitBanner family={{ id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home }} onFamilyChange={onFamilyChange} />)
     expect(container.textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
     expect(container.textContent).toContain('ansehen und kommentieren')
-    expect(container.querySelector('button').textContent).toBe('Zurück zu Meiner Chronik')
+    expect(container.querySelector('button').textContent).toBe('Zurück zu Mein Zuhause')
     await act(async () => container.querySelector('button').click())
     expect(api.view).toHaveBeenCalledWith(1)
     expect(onFamilyChange).toHaveBeenCalledWith(me)

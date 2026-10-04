@@ -91,7 +91,8 @@ async function renderPage(family, { onFamilyChange = () => {} } = {}) {
           <DemoProvider value={false}>
             <Routes>
               <Route path="/mitglieder" element={<MembersPage family={family} onFamilyChange={onFamilyChange} />} />
-              <Route path="/wegbegleiter" element={<h1>Wegbegleiter</h1>} />
+              {/* Phase W: die Startseite des eigenen Zuhauses */}
+              <Route path="/start" element={<h1>Start</h1>} />
               <Route path="/tier/:id" element={<h1>Tierseite</h1>} />
             </Routes>
           </DemoProvider>
@@ -222,7 +223,7 @@ describe('MembersPage – Familie auflösen', () => {
     await act(async () => form.requestSubmit())
     expect(dissolveFamily).toHaveBeenCalledWith('Familie Sonnenhang')
     expect(onFamilyChange).toHaveBeenCalledWith(me)
-    expect(container.querySelector('h1').textContent).toBe('Wegbegleiter')
+    expect(container.querySelector('h1').textContent).toBe('Start')
   })
 
   test('409 "eigene Tiere": zeigt den Hinweis und die Tiere der Familie als Links „In meine Chronik übernehmen“', async () => {
@@ -323,6 +324,6 @@ describe('MembersPage – Familie verlassen (kein letzter Leiter)', () => {
     await act(async () => button().click())
     expect(leaveFamily).toHaveBeenCalledWith(3)
     expect(onFamilyChange).toHaveBeenCalledWith(me)
-    expect(container.querySelector('h1').textContent).toBe('Wegbegleiter')
+    expect(container.querySelector('h1').textContent).toBe('Start')
   })
 })

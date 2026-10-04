@@ -1,16 +1,48 @@
 // Bereiche eines Haushalts: das eigene "Zuhause" (art: 'zuhause') und die Familien/Rudel, denen es beitritt.
 
-// Startseite je aktivem Bereich: Zuhause -> Wegbegleiter, Tierheim -> Tiere, Partner-Bereich (Phase P)
-// -> Profil, Familie/Rudel -> Stammbaum. Gilt auch für klassische Rudel-Logins (kein home.art ===
-// 'zuhause'), die landen wie bisher am Stammbaum.
-const START_ROUTES = {
-  zuhause: '/wegbegleiter',
+// Phase W (Ruhige Hülle): Startseite je Kontext - das eigene Zuhause und klassische Familien-Logins (gemeinsamer
+// Schlüssel, kein Zuhause dahinter) starten auf /start (Neuigkeiten), ein Haushalt in einer Familie oder zu Besuch auf
+// deren Gruppenseite /familien/:id, Tierheime auf ihren Tieren, Partner-Bereiche (Phase P) im Profil.
+export const START_ROUTE = '/start'
+export const FAMILIES_ROUTE = '/familien'
+
+const PARTNER_START_ROUTES = {
   tierheim: '/tiere',
   partner: '/profil'
 }
 
+// Haushalt als Identität (me.home.art 'zuhause') - im eigenen Zuhause, in einer Familie oder zu Besuch. Ohne home
+// (z. B. in Tests) zählt der Bereich selbst.
+export function isHouseholdIdentity(family) {
+  return family?.home ? family.home.art === 'zuhause' : family?.art === 'zuhause'
+}
+
+// Wo steht die Sitzung? 'home' (eigenes Zuhause), 'group' (Haushalt in einer seiner Familien), 'visit' (zu Besuch in
+// einem befreundeten Zuhause), 'classic' (Login mit dem Schlüssel einer Familie), 'tierheim' bzw. 'partner'.
+export function areaContext(family) {
+  if (PARTNER_START_ROUTES[family?.art]) return family.art
+  if (!isHouseholdIdentity(family)) return 'classic'
+  if (family.zuBesuch) return 'visit'
+  return family.home && family.home.id !== family.id ? 'group' : 'home'
+}
+
+// Gruppenseite einer Familie bzw. eines befreundeten Zuhauses, optional mit Reiter (?reiter=…).
+export function groupRoute(id, reiter) {
+  return reiter ? `${FAMILIES_ROUTE}/${id}?reiter=${encodeURIComponent(reiter)}` : `${FAMILIES_ROUTE}/${id}`
+}
+
 export function startRoute(family) {
-  return START_ROUTES[family?.art] || '/stammbaum'
+  const context = areaContext(family)
+  if (PARTNER_START_ROUTES[context]) return PARTNER_START_ROUTES[context]
+  if (context === 'group' || context === 'visit') return groupRoute(family.id)
+  return START_ROUTE
+}
+
+// Wohin "zurück zu den Tieren" führt (z. B. von einer Tierseite): Tierheime und das eigene Zuhause zu /tiere, eine
+// Familie oder ein Besuch zum Reiter "Tiere" ihrer Gruppenseite - dort, wo man das Tier gesehen hat.
+export function animalsRoute(family) {
+  const context = areaContext(family)
+  return context === 'group' || context === 'visit' ? groupRoute(family.id, 'tiere') : '/tiere'
 }
 
 // Bereiche, die zu einem Partner gehören (server/lib/context.js PARTNER_AREA_ARTS): Tierheime bzw.
@@ -27,9 +59,10 @@ export function inviteLabel(family) {
   return isPartnerArea(family) ? 'Einladungscode weitergeben' : 'Jemanden einladen'
 }
 
-// Fester Anzeigename für den privaten Bereich eines Haushalts im Bereichswechsler, unabhängig vom
-// gespeicherten Namen (den ein Haushalt z. B. in Tests oder künftig beim Umbenennen tragen kann).
-export const HOME_LABEL = 'Meine Chronik'
+// Fester Anzeigename für den privaten Bereich eines Haushalts (Konto-Menü, Seitenköpfe, Besuchsband), unabhängig vom
+// gespeicherten Namen (den ein Haushalt z. B. in Tests oder künftig beim Umbenennen tragen kann). Phase W: überall
+// „Mein Zuhause“ statt „Meine Chronik“.
+export const HOME_LABEL = 'Mein Zuhause'
 
 // Ist ein Tier im aktiven Bereich bearbeitbar? Die Listen-Endpunkte liefern can_edit (1/0) für jedes
 // Tier – eigene und hierher geteilte gemischt. can_edit fehlt in manchen Listen (z. B. der eigenen

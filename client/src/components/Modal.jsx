@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import Icon from './Icon.jsx'
 
-// Natives <dialog>: Fokusfalle, ESC und Backdrop gibt es vom Browser gratis.
-export default function Modal({ open, title, onClose, children }) {
+// Natives <dialog>: Fokusfalle, ESC und Backdrop gibt es vom Browser gratis. className (Phase W): zusätzliche Klasse,
+// z. B. "modal-sheet" für das Menü-Blatt von unten am Handy.
+export default function Modal({ open, title, onClose, children, className = '' }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export default function Modal({ open, title, onClose, children }) {
   return (
     <dialog
       ref={ref}
-      className="modal"
+      className={`modal ${className}`.trim()}
       aria-labelledby="modal-title"
       onCancel={(event) => {
         event.preventDefault()

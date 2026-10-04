@@ -138,7 +138,7 @@ describe('Route /p/:slug – Gutschein direkt aus dem Partner-Portal einlösen',
     const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu Meiner Chronik')
     await act(async () => continueButton.click())
 
-    expect(container.querySelector('h1')?.textContent).toBe('Wegbegleiter')
+    expect(container.querySelector('h1')?.textContent).toBe('Start – Mein Zuhause')
   })
 
   test('mit bestehender Sitzung: zeigt das Portal weiter, mit "Zurück zu eurer Chronik" statt dem Formular', async () => {

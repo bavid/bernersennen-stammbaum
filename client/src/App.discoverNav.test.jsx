@@ -98,20 +98,21 @@ function navLabels() {
 }
 
 describe('Reiter "Entdecken" in der Hauptnavigation', () => {
-  // Phase U: im Standard-Auftritt heißt der Stammbaum "Familienbande", der Nachwuchs hat keinen eigenen Reiter.
-  test('Zuhause (Standard): Wegbegleiter, Familienbande, Pinnwand, Entdecken, Collage', async () => {
+  // Phase W: Haushalte haben überall Start, Tiere, Familien, Entdecken; klassische Familien-Logins statt Familien die Pinnwand.
+  test('Zuhause (Standard): Start, Tiere, Familien, Entdecken - dazu am Handy "Menü"', async () => {
     await render(home, '/entdecken')
-    expect(navLabels()).toEqual(['Wegbegleiter', 'Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
+    expect(navLabels()).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken'])
+    expect(container.querySelector('.app-nav .app-nav-menu').textContent).toBe('Menü')
   })
 
-  test('Rudel (Standard): Familienbande, Pinnwand, Entdecken, Collage - kein Reiter "Nachwuchs"', async () => {
+  test('klassischer Familien-Login (Standard): Start, Tiere, Pinnwand, Entdecken', async () => {
     await render(group, '/entdecken')
-    expect(navLabels()).toEqual(['Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
+    expect(navLabels()).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])
   })
 
-  test('Rudel (Berner): Stammbaum, Pinnwand, Würfe, Entdecken, Collage - unverändert', async () => {
+  test('klassischer Familien-Login (Berner): Start, Hunde, Pinnwand, Entdecken - Würfe stehen als Reiter bei den Hunden', async () => {
     await render({ ...group, theme: 'berner' }, '/entdecken')
-    expect(navLabels()).toEqual(['Stammbaum', 'Pinnwand', 'Würfe', 'Entdecken', 'Collage'])
+    expect(navLabels()).toEqual(['Start', 'Hunde', 'Pinnwand', 'Entdecken'])
   })
 
   test('Tierheim: Tiere, Pinnwand, Collage, (Phase P) Profil und (P2) Nachrichten - kein Entdecken', async () => {
@@ -119,16 +120,17 @@ describe('Reiter "Entdecken" in der Hauptnavigation', () => {
     expect(navLabels()).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
   })
 
-  // Mit vier Einträgen (Partner-Bereich) nicht - siehe App.partnerArea.test.jsx.
-  test('mit fünf Einträgen (Zuhause, seit Phase P2 auch Tierheim) bekommt die Leiste die kompakte Variante', async () => {
+  // Mit fünf Einträgen (Tierheim) bekommt die Leiste die kompakte Variante - Haushalte mit vier (+ "Menü") nicht.
+  test('mit fünf Einträgen (Tierheim) bekommt die Leiste die kompakte Variante, Haushalte nicht', async () => {
     await render(home, '/entdecken')
-    expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(true)
+    expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(false)
 
     act(() => root.unmount())
     root = null
     container.remove()
     await render(shelter, '/tiere')
     expect(container.querySelector('.app-nav').classList.contains('app-nav-dense')).toBe(true)
+    expect(container.querySelector('.app-nav-menu')).toBeNull()
   })
 
   test('"Entdecken" verlinkt auf /entdecken, ist dort aktiv und zeigt die Seite', async () => {

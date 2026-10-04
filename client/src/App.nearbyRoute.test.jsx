@@ -76,23 +76,19 @@ describe('Route /umgebung – "In der Nähe" innerhalb der angemeldeten App', ()
     expect([...container.querySelectorAll('.app-nav a')].some((a) => a.textContent.includes('Nähe'))).toBe(false)
   })
 
-  test('der Fuß verlinkt "Tierheime & Hundeschulen in der Nähe" auf /umgebung', async () => {
+  // Phase W: im Fuß eines Haushalts nur noch Impressum und Datenschutz - "In der Nähe" erreicht man über Entdecken.
+  test('der Fuß eines Haushalts verlinkt /umgebung nicht mehr, Tierheime und Partner behalten den Link', async () => {
     me.mockResolvedValue(loggedInHome)
     listDogs.mockResolvedValue([])
-    await render('/wegbegleiter')
+    await render('/start')
+    expect([...container.querySelectorAll('a')].some((a) => a.getAttribute('href') === '/umgebung')).toBe(false)
+    act(() => root.unmount())
+    root = null
+    container.remove()
 
-    const link = [...container.querySelectorAll('.app-footer a')].find((a) => a.textContent.includes('Nähe'))
-    expect(link).not.toBeUndefined()
-    expect(link.getAttribute('href')).toBe('/umgebung')
-  })
-
-  test('auf den Wegbegleitern steht der Link auf /umgebung genau einmal - im Fuß (Audit V7a: nicht doppelt im Kopf)', async () => {
-    me.mockResolvedValue(loggedInHome)
-    listDogs.mockResolvedValue([])
-    await render('/wegbegleiter')
-
-    const links = [...container.querySelectorAll('a')].filter((a) => a.getAttribute('href') === '/umgebung')
-    expect(links).toHaveLength(1)
-    expect(links[0].closest('.app-footer')).not.toBeNull()
+    me.mockResolvedValue({ id: 30, name: 'Hundeschule Wiesengrund', theme: 'standard', art: 'partner', isDemo: false, home: null, memberships: [], partner: { id: 4 } })
+    await render('/umgebung')
+    expect(container.querySelector('h1')?.textContent).toBe('Tierheime & Hundeschulen')
+    expect([...container.querySelectorAll('.app-footer a')].some((a) => a.getAttribute('href') === '/umgebung')).toBe(false)
   })
 })

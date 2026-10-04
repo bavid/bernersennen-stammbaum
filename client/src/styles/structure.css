@@ -1,0 +1,769 @@
+/* Phase W (Ruhige Hülle): Konto-Menü oben rechts und "Menü" als fünfter Platz am Handy, Start (Erzählen, Für dich, Bald,
+   Neuigkeiten), Tiere mit Reitern, Familien-Liste und Gruppenseite. Nur die Tokens des bestehenden Auftritts - das Aussehen
+   (A/B/C) wählt der Betreiber später. */
+
+/* Listen ohne Aufzählungszeichen (role="list" hält sie für Screenreader als Liste) */
+.account-sheet-list,
+.start-soon-list,
+.start-families-list,
+.feed-cards,
+.families-page-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Konto-Menü (AccountMenu) */
+
+.account-menu {
+  position: relative;
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+}
+
+.account-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+
+.account-menu-trigger:hover,
+.account-menu-trigger[aria-expanded='true'] {
+  border-color: var(--line-strong);
+  background: var(--paper-deep);
+}
+
+.account-menu-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.account-menu-trigger > svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--muted);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.account-menu-trigger[aria-expanded='true'] > svg {
+  transform: rotate(180deg);
+}
+
+.account-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--rust-wash);
+  color: var(--rust);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.account-menu-name {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 50;
+  display: grid;
+  gap: 2px;
+  min-width: 15rem;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  animation: modal-in var(--duration-fast) var(--ease-out);
+}
+
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-menu-item svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--muted);
+}
+
+.account-menu-item:hover,
+.account-menu-item:focus-visible,
+.account-menu-legal-link:hover,
+.account-menu-legal-link:focus-visible {
+  outline: none;
+  background: var(--rust-wash);
+  color: var(--ink);
+}
+
+/* Abmelden steht abgesetzt am Ende der Einträge */
+.account-menu-item.is-separated {
+  margin-top: var(--space-1);
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.account-menu-legal {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-1) 0;
+}
+
+.account-menu-legal-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* "Menü" in der unteren Leiste (MenuSlotButton) - nur am Handy */
+.app-nav-menu {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .account-menu {
+    display: none;
+  }
+
+  .app-nav-menu {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-1);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .app-nav-menu svg {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .app-nav-menu[aria-expanded='true'] {
+    color: var(--rust);
+    background: var(--rust-wash);
+  }
+}
+
+/* Menü als Blatt von unten (AccountSheet im Modal, das am Handy ohnehin unten andockt und volle Breite hat) */
+@media (min-width: 561px) {
+  .modal-sheet {
+    width: min(26rem, calc(100vw - 2rem));
+  }
+}
+
+.account-sheet-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.account-sheet-list {
+  display: grid;
+  gap: 2px;
+}
+
+.account-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+}
+
+.account-sheet-item svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--muted);
+}
+
+.account-sheet-item:hover,
+.account-sheet-item:focus-visible {
+  outline: none;
+  background: var(--rust-wash);
+  color: var(--ink);
+}
+
+.account-sheet-legal {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-sm);
+}
+
+.account-sheet-legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+}
+
+/* Start */
+
+.start-page {
+  --page-gap: var(--space-5);
+}
+
+.start-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  align-items: start;
+  gap: var(--space-6);
+}
+
+.start-main,
+.start-side {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.start-side {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-4));
+}
+
+@media (max-width: 900px) {
+  .start-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .start-side {
+    position: static;
+  }
+}
+
+.start-foryou {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.start-card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--card-pad-compact);
+}
+
+.start-card-title,
+.start-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.start-section-title {
+  font-size: var(--text-xl);
+}
+
+.start-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--rust);
+  color: var(--on-rust);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 800;
+}
+
+.start-soon-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.start-soon-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.start-soon-list svg {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.15rem;
+  color: var(--rust);
+}
+
+.start-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: fit-content;
+  min-height: 44px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.start-card-link svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.start-families-list {
+  display: grid;
+}
+
+.start-family-link,
+.families-page-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.start-families-list li:last-child .start-family-link,
+.families-page-list li:last-child .families-page-row {
+  border-bottom: 0;
+}
+
+.start-family-link:hover,
+.families-page-row:hover {
+  color: var(--rust);
+}
+
+.start-family-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+}
+
+.start-family-name {
+  min-width: 0;
+  font-weight: 700;
+}
+
+.start-family-role {
+  grid-row: 2;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.start-family-link svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.start-family-link svg,
+.families-page-row svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+}
+
+/* "Was erlebt euer Tier?" (StartComposer) */
+.start-composer {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.start-composer.is-open {
+  padding: var(--card-pad);
+}
+
+.start-composer-title {
+  font-size: var(--text-lg);
+}
+
+.start-composer-animals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.start-composer-animal {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+
+.start-composer-animal .avatar {
+  box-shadow: none;
+}
+
+.start-composer-animal:hover {
+  border-color: var(--rust);
+}
+
+.start-composer-animal[aria-pressed='true'] {
+  border-color: var(--rust);
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.start-composer-animal:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Neuigkeiten als Karten (FeedItem) */
+.start-news {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.feed-cards {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.start-more {
+  justify-self: start;
+}
+
+.feed-card-link {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.feed-card-link:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-raised);
+}
+
+.feed-card-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.feed-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.feed-card-who {
+  display: grid;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.feed-card-dog {
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.feed-card-meta,
+.feed-card-comments {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.feed-card-title {
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.feed-card-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.feed-card-photos {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  max-width: 30rem;
+}
+
+.feed-card-photos img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--paper-deep);
+}
+
+.feed-card-more {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: rgba(20, 14, 10, 0.7);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  line-height: 1.6rem;
+}
+
+/* Tiere (AnimalsTabs) und Gruppenseite */
+
+.animals-page,
+.group-page,
+.families-page {
+  --page-gap: var(--space-5);
+}
+
+.animals-hero,
+.group-hero {
+  align-items: center;
+}
+
+.animals-tabs,
+.animals-panel,
+.group-panel,
+.group-posts,
+.pinboard-embedded,
+.members-embedded,
+.litters-embedded {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.animals-tab-bar,
+.group-tab-bar {
+  border-bottom: 1px solid var(--line);
+}
+
+/* Unter-Reiter der Tiere in der Gruppenseite: eine Stufe leiser als die Reiter der Seite */
+.group-panel .animals-tab-bar {
+  border-bottom: 0;
+}
+
+.group-panel .animals-tab-bar .tab-bar-tab {
+  min-height: 2.2rem;
+  font-size: var(--text-xs);
+}
+
+.group-meta,
+.companions-span {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* Familien-Liste */
+.families-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: start;
+  gap: var(--space-5);
+}
+
+.families-page-section {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--card-pad-compact);
+}
+
+.families-page-row-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.families-page-row-name {
+  font-weight: 700;
+}
+
+.families-page-row-sub {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* Gruppenseite: Pinnwand-Zettel erst auf Wunsch, Mitglieder mit zugeklappten Teilen */
+.note-composer-open {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 56px;
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-composer-open svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--rust);
+}
+
+.note-composer-open:hover {
+  border-color: var(--rust);
+}
+
+.note-composer-open:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.visibility-card.is-collapsible > summary,
+.members-tools-summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.visibility-card.is-collapsible > summary::-webkit-details-marker,
+.members-tools-summary::-webkit-details-marker {
+  display: none;
+}
+
+.visibility-card.is-collapsible > summary::after,
+.members-tools-summary::after {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-left: auto;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.visibility-card.is-collapsible[open] > summary::after,
+.members-tools[open] > .members-tools-summary::after {
+  transform: rotate(-135deg);
+}
+
+.visibility-card.is-collapsible > summary:focus-visible,
+.members-tools-summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+.visibility-card.is-collapsible {
+  /* Kein Raster: der zugeklappte Inhalt hielte sonst eine leere Zeile samt Abstand frei */
+  display: block;
+  padding-block: var(--space-3);
+}
+
+.visibility-card.is-collapsible h2 {
+  margin: 0;
+}
+
+.visibility-card.is-collapsible[open] {
+  padding-bottom: var(--card-pad);
+}
+
+.visibility-card.is-collapsible[open] > summary {
+  margin-bottom: var(--space-3);
+}
+
+.members-tools {
+  padding: var(--space-2) var(--card-pad-compact);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+}
+
+.members-tools-summary {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.members-tools-body {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-3) 0 var(--space-3);
+}
+
+.start-composer-select {
+  max-width: 22rem;
+}

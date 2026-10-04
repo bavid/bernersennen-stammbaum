@@ -70,7 +70,7 @@ function homeIdentity(homeId) {
 function requireHomeIdentity(req, res) {
   const identity = homeIdentity(req.homeId)
   if (!identity || identity.art !== ART.zuhause) {
-    res.status(400).json({ error: 'Nur aus „Meine Chronik“ heraus möglich' })
+    res.status(400).json({ error: 'Nur aus „Mein Zuhause“ heraus möglich' })
     return false
   }
   return true

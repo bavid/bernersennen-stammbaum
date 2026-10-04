@@ -254,18 +254,21 @@ describe('Profil und Zugang gibt es nur für Partner-Bereiche', () => {
     memberships: []
   }
 
-  test('ein Zuhause lädt weiterhin mit "Jemanden einladen" ein', async () => {
+  // Phase W: ein Zuhause lädt über das Konto-Menü ein - der Fuß hat nur noch Impressum und Datenschutz.
+  test('ein Zuhause lädt über das Menü ein, nicht über den Fuß', async () => {
     listDogs.mockResolvedValue([])
-    await render('/wegbegleiter', home)
+    await render('/start', home)
 
-    expect(container.querySelector('.app-footer .footer-link').textContent).toBe('Jemanden einladen')
+    expect(container.querySelector('.app-footer button.footer-link')).toBeNull()
+    act(() => container.querySelector('.account-menu-trigger').click())
+    expect([...container.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent)).toContain('Einladen')
   })
 
   test.each(['/profil', '/zugang', '/visitenkarten'])('ein Zuhause wird von %s auf seine Start-Route umgeleitet', async (path) => {
     listDogs.mockResolvedValue([])
     await render(path, home)
 
-    expect(container.querySelector('h1').textContent).toBe('Wegbegleiter')
+    expect(container.querySelector('h1').textContent).toBe('Start – Mein Zuhause')
   })
 })
 
@@ -403,6 +406,6 @@ describe('Umschalter "Bearbeiten | Kundensicht" (Phase P1)', () => {
       memberships: []
     })
 
-    expect(container.querySelector('h1').textContent).toBe('Wegbegleiter')
+    expect(container.querySelector('h1').textContent).toBe('Start – Mein Zuhause')
   })
 })

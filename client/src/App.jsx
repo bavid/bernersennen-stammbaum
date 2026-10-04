@@ -5,15 +5,15 @@ import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
 import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { readSetting, writeSetting } from './lib/storage.js'
-import { inviteLabel, isPartnerArea, startRoute } from './lib/areas.js'
-import { MAX_NAV_ITEMS, navItemsFor } from './lib/navItems.js'
-import { hasRole } from './lib/roles.js'
+import { HOME_LABEL, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
+import { MAX_NAV_ITEMS, hasMenuSlot, navItemsFor } from './lib/navItems.js'
 import { formatVoucherCode } from './lib/voucherCode.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
-import ContextSwitcher from './components/ContextSwitcher.jsx'
+import AccountMenu from './components/AccountMenu.jsx'
+import AccountSheet, { MenuSlotButton } from './components/AccountSheet.jsx'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
 import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
@@ -105,7 +105,7 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
   // deshalb schon hier aus, statt erst den Fehler vom Server abzuwarten.
   const isHouseholdIdentity = family.home?.art === 'zuhause'
   const canClaim = !isReadOnly(family) && family.art === 'zuhause' && Boolean(family.home) && family.id === family.home.id
-  // Ein Haushalt, der gerade ein Rudel ansieht (ContextSwitcher), kann von hier aus nicht übernehmen -
+  // Ein Haushalt, der gerade ein Rudel ansieht (Gruppenseite), kann von hier aus nicht übernehmen -
   // canClaim ist dann false, ohne dass wir wüssten, ob der Code überhaupt einen offenen Übergabe-
   // Gutschein trägt. "Abmelden und neu einlösen" wäre hier die falsche Empfehlung (verschenkt die
   // Übernahme in die bestehende Chronik) - stattdessen der Hinweis, zuerst zurückzuwechseln.
@@ -175,7 +175,7 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
         Du bist angemeldet als <strong>{family.name}</strong>.
       </p>
       {viewingGroupAsHousehold && (
-        <p className="field-hint">Wechselt oben zu „Meine Chronik“, um das Tier zu übernehmen.</p>
+        <p className="field-hint">Wechselt zuerst zu „{HOME_LABEL}“ (über „Start“), um das Tier zu übernehmen.</p>
       )}
       <button type="button" className="btn btn-primary btn-block" onClick={onLogout}>
         Abmelden und Einladungscode einlösen
@@ -184,31 +184,51 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
   )
 }
 
-// Seiten, die zum Stammbaum bzw. zur Familienbande gehören, ohne selbst ein Reiter zu sein: der Alias
-// /familienbande und (Phase U) im Standard-Auftritt der Nachwuchs (/wuerfe, dort kein eigener Reiter).
-function belongsToTree(pathname, theme) {
-  return pathname === '/familienbande' || (pathname === '/wuerfe' && !theme.littersInNav)
+// Phase W: "Tiere" bleibt markiert auf den Tierseiten und beim Nachwuchs (/wuerfe, im Berner-Auftritt ein Reiter von Tiere).
+function isAnimalsPath(pathname) {
+  return pathname.startsWith('/tier/') || pathname === '/wuerfe'
 }
 
-export function AppHeader({ family, onLogout, onFamilyChange }) {
+// Kopf rechts für Tierheime und Partner (unverändert): "Schreib dem Admin" und Abmelden.
+function PartnerHeaderActions({ onLogout }) {
+  const { pathname } = useLocation()
+  return (
+    <>
+      <Link
+        to="/admin-schreiben"
+        state={{ from: pathname }}
+        className={`app-contact ${pathname === '/admin-schreiben' ? 'active' : ''}`}
+        title="Schreib dem Admin"
+      >
+        <Icon name="message" />
+        <span>Schreib dem Admin</span>
+      </Link>
+      <button type="button" className="icon-btn app-logout" onClick={onLogout} aria-label="Abmelden" title="Abmelden">
+        <Icon name="logout" />
+      </button>
+    </>
+  )
+}
+
+// Phase W (Ruhige Hülle): Haushalte und Familien bekommen vier feste Punkte (lib/navItems.js) und rechts das Konto-Menü
+// (AccountMenu: Einstellungen, Einladen, Fotocollage, Hilfe & Kontakt, Abmelden) - am Handy als fünfter Platz "Menü" in
+// der unteren Leiste. Kein Bereichswechsler mehr: das AreaGate der Routen wechselt beim Navigieren. Tierheime und
+// Partner behalten ihren Kopf. onInvite: den Einladen-Dialog öffnen (App).
+export function AppHeader({ family, onLogout, onInvite = () => {} }) {
   const { pathname } = useLocation()
   const { theme } = useTheme()
-  // Tierseiten gehören zum Stammbaum bzw. (im Tierheim) zu "Tiere"
-  const isActive = (item, active) =>
-    active ||
-    ((item.to === '/stammbaum' || item.to === '/tiere') && pathname.startsWith('/tier/')) ||
-    (item.to === '/stammbaum' && belongsToTree(pathname, theme))
-  // Nur Haushalte bekommen den Bereichswechsler; klassische Rudel-Logins (kein family.home) zeigen nur den Namen.
-  const isHouseholdIdentity = family.home?.art === 'zuhause'
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const isActive = (item, active) => active || (item.to === '/tiere' && isAnimalsPath(pathname))
   const navItems = navItemsFor(family, theme)
-  // Einstellungen (Calm-down-Runde) in Zuhause und Familien - Partner und Tierheime haben ihren Zugang, zu Besuch keine.
-  const hasSettings = !family.zuBesuch && !isPartnerArea(family)
+  const withMenu = hasMenuSlot(family)
+  // Klassische Familien-Logins (kein Zuhause dahinter) und Partner zeigen ihren Namen unter dem Logo.
+  const showName = !isHouseholdIdentity(family)
   return (
     <header className="app-header">
       <div className="app-header-inner">
         <div className="brand">
           {/* Eigenes, aus der Tab-Reihenfolge ausgeblendetes Icon-Link: der Name daneben ist das
-              eigentliche, für Tastatur und Screenreader erreichbare Ziel zum Stammbaum/Wegbegleiter. */}
+              eigentliche, für Tastatur und Screenreader erreichbare Ziel zur Startseite. */}
           <Link to={startRoute(family)} className="brand-mark" tabIndex={-1} aria-hidden="true">
             <ThemeMark size={34} />
           </Link>
@@ -216,9 +236,7 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
             <Link to={startRoute(family)} className="brand-name">
               {theme.appName}
             </Link>
-            {isHouseholdIdentity ? (
-              <ContextSwitcher family={family} onChange={onFamilyChange} />
-            ) : (
+            {showName && (
               <span className="brand-sub">
                 {family.name}
                 {/* Rolle (Phase R) als Zusatz zum Namen der Familie - "Rudel vom Sonnenhang · Rudelführer" */}
@@ -228,7 +246,7 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
           </span>
         </div>
         <nav className={`app-nav${navItems.length >= MAX_NAV_ITEMS ? ' app-nav-dense' : ''}`} aria-label="Hauptnavigation">
-          {/* badge/ariaLabel (Phase P2): ungelesene Nachrichten an "Nachrichten" (lib/navItems.js). */}
+          {/* badge/ariaLabel: ungelesene Nachrichten an "Nachrichten" (Phase P2), offene Anfragen an "Start" (Phase W). */}
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -241,57 +259,35 @@ export function AppHeader({ family, onLogout, onFamilyChange }) {
               <NavBadge badge={item.badge} />
             </NavLink>
           ))}
+          {withMenu && <MenuSlotButton open={sheetOpen} onOpen={() => setSheetOpen(true)} />}
         </nav>
-        {/* Phase V2: zu Besuch schreibt man dem Admin aus der eigenen Chronik (die Nachricht gehört dorthin). */}
-        {!family.zuBesuch && (
-          <Link
-            to="/admin-schreiben"
-            state={{ from: pathname }}
-            className={`app-contact ${pathname === '/admin-schreiben' ? 'active' : ''}`}
-            title="Schreib dem Admin"
-          >
-            <Icon name="message" />
-            <span>Schreib dem Admin</span>
-          </Link>
-        )}
-        {hasSettings && (
-          <Link
-            to="/einstellungen"
-            className={`icon-btn app-settings${pathname === '/einstellungen' ? ' active' : ''}`}
-            aria-current={pathname === '/einstellungen' ? 'page' : undefined}
-            aria-label="Einstellungen"
-            title="Einstellungen"
-          >
-            <Icon name="settings" />
-          </Link>
-        )}
-        <button type="button" className="icon-btn app-logout" onClick={onLogout} aria-label="Abmelden" title="Abmelden">
-          <Icon name="logout" />
-        </button>
+        {withMenu ? <AccountMenu family={family} onInvite={onInvite} onLogout={onLogout} /> : <PartnerHeaderActions onLogout={onLogout} />}
       </div>
+      {withMenu && (
+        <AccountSheet family={family} open={sheetOpen} onClose={() => setSheetOpen(false)} onInvite={onInvite} onLogout={onLogout} />
+      )}
     </header>
   )
 }
 
-// family ist optional (z. B. im Theme-Test) - ohne gilt die Beschriftung für Haushalte/Rudel.
-// In einer Familie (Phase R) laden nur Stellvertretung und Leitung ein - der Server gibt Gast und Mitglied
-// für die Gutscheine ohnehin 403, der Knopf bleibt für sie deshalb weg.
+// family ist optional (z. B. im Theme-Test). Phase W: im Fuß nur noch der Satz des Auftritts und Impressum/Datenschutz -
+// Einladen steht im Konto-Menü, "In der Nähe" bei Entdecken. Tierheime und Partner behalten ihren Fuß mit dem Weitergeben
+// von Einladungscodes (inviteLabel) und dem Weg zu "Tierheime & Hundeschulen in der Nähe".
 export function AppFooter({ family, onInvite }) {
   const { theme } = useTheme()
   const { pathname } = useLocation()
-  // Phase V2: zu Besuch in einem anderen Zuhause lädt man nicht ein (der Server sperrt das ohnehin).
-  const canInvite = !family?.zuBesuch && (family?.art !== 'rudel' || hasRole(family, 'stellvertretung'))
+  const partnerArea = isPartnerArea(family)
   return (
     <footer className="app-footer">
       {theme.tricolor && <div className="tricolor" aria-hidden="true" />}
       <p>{theme.footer}</p>
-      {canInvite && (
+      {partnerArea && (
         <button type="button" className="footer-link" onClick={onInvite}>
           {inviteLabel(family)}
         </button>
       )}
       {/* Audit V7a: auf /umgebung selbst kein Verweis auf dieselbe Seite */}
-      {!family?.zuBesuch && pathname !== '/umgebung' && (
+      {partnerArea && pathname !== '/umgebung' && (
         <Link to="/umgebung" className="footer-link">
           Tierheime & Hundeschulen in der Nähe →
         </Link>
@@ -611,13 +607,13 @@ export default function App() {
           )}
           {/* Phase V2: zu Besuch in einem anderen Zuhause - nur ansehen und kommentieren, mit Weg zurück. */}
           {family.zuBesuch && <VisitBanner family={family} onFamilyChange={setFamily} />}
-          <AppHeader family={family} onLogout={handleLogout} onFamilyChange={setFamily} />
+          <AppHeader family={family} onLogout={handleLogout} onInvite={() => setInviteOpen(true)} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
           {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}
           {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
-              bliebe beim Wechsel des Bereichs (ContextSwitcher navigiert zur Start-Route, die dem
-              aktuellen Pfad entsprechen kann, z. B. Stammbaum -> Stammbaum) die alte Seiteninstanz
-              samt Daten des vorherigen Bereichs stehen. Der key erzwingt ein sauberes Neu-Mounten. */}
+              bliebe beim Wechsel des Bereichs (AreaGate wechselt auf derselben Adresse, z. B. /start aus einer
+              Familie heraus) die alte Seiteninstanz samt Daten des vorherigen Bereichs stehen. Der key erzwingt
+              ein sauberes Neu-Mounten. */}
           <main className="app-main" key={family.id}>
             {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
                 Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}

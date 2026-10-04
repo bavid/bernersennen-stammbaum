@@ -2,8 +2,9 @@ import { useTheme } from '../../themes/ThemeProvider.jsx'
 import Icon from '../Icon.jsx'
 
 // „Wer sieht was?“ auf der Mitglieder-Seite: die drei Kreise Privat / Familie / Öffentlich, damit klar
-// ist, dass eine Familie nie öffentlich ist und Mitglieder je nach Rolle unterschiedlich viel dürfen.
-export default function VisibilityCard() {
+// ist, dass eine Familie nie öffentlich ist und Mitglieder je nach Rolle unterschiedlich viel dürfen. collapsed (Phase W,
+// Reiter "Mitglieder" der Gruppenseite): zum Aufklappen, die Überschrift bleibt sichtbar.
+export default function VisibilityCard({ collapsed = false }) {
   const { words } = useTheme()
   const rows = [
     {
@@ -25,24 +26,37 @@ export default function VisibilityCard() {
       text: `${words.groupNeverPublic} Öffentlich wird nur, was ihr auf einem Steckbrief oder bei einem Partner ausdrücklich freigebt.`
     }
   ]
+  const list = (
+    <ul className="visibility-rows">
+      {rows.map((row) => (
+        <li key={row.title} className="visibility-row">
+          <span className="visibility-icon" aria-hidden="true">
+            <Icon name={row.icon} />
+          </span>
+          <div>
+            <strong>
+              {row.title} <span className="visibility-who">· {row.who}</span>
+            </strong>
+            <p>{row.text}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+  if (collapsed) {
+    return (
+      <details className="card visibility-card is-collapsible">
+        <summary>
+          <h2 id="visibility-title">Wer sieht was?</h2>
+        </summary>
+        {list}
+      </details>
+    )
+  }
   return (
     <section className="card visibility-card" aria-labelledby="visibility-title">
       <h2 id="visibility-title">Wer sieht was?</h2>
-      <ul className="visibility-rows">
-        {rows.map((row) => (
-          <li key={row.title} className="visibility-row">
-            <span className="visibility-icon" aria-hidden="true">
-              <Icon name={row.icon} />
-            </span>
-            <div>
-              <strong>
-                {row.title} <span className="visibility-who">· {row.who}</span>
-              </strong>
-              <p>{row.text}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {list}
     </section>
   )
 }

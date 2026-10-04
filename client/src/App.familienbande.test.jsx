@@ -72,46 +72,60 @@ async function render(family, path) {
 
 const activeNav = () => [...container.querySelectorAll('.app-nav a.active')].map((a) => a.textContent)
 const navTargets = () => [...container.querySelectorAll('.app-nav a')].map((a) => a.getAttribute('href'))
+const tabLabels = () => [...container.querySelectorAll('.animals-tab-bar [role="tab"]')].map((tab) => tab.textContent)
+const selectedTab = () => container.querySelector('.animals-tab-bar [aria-selected="true"]')?.textContent
 
-describe('Familienbande und Nachwuchs in der App (Phase U)', () => {
-  test('/familienbande zeigt dieselbe Seite wie /stammbaum, der Reiter "Familienbande" ist aktiv', async () => {
+const nele = { id: 10, name: 'Nele', geschlecht: 'huendin', mother_dog_id: 11, father_dog_id: null, can_edit: 1 }
+const mutter = { id: 11, name: 'Mia', geschlecht: 'huendin', can_edit: 1 }
+
+// Phase W: Familienbande/Stammbaum heißen jetzt "Tiere" (Berner: "Hunde") - alte Adressen leiten dorthin weiter.
+describe('Tiere in der App (Phase W, vorher Familienbande)', () => {
+  test('/familienbande leitet zu Tiere, der Punkt "Tiere" ist aktiv', async () => {
     await render(group, '/familienbande')
 
-    expect(container.querySelector('.page-hero h1').textContent).toBe('Familie Sonnenhang')
-    expect(container.querySelector('.page-hero .eyebrow').textContent).toBe('Familienbande')
-    expect(activeNav()).toEqual(['Familienbande'])
+    expect(container.querySelector('.page-hero h1').textContent).toBe('Tiere')
+    expect(container.querySelector('.page-hero .eyebrow').textContent).toBe('Familie Sonnenhang')
+    expect(activeNav()).toEqual(['Tiere'])
+    expect(tabLabels()).toEqual(['Alle', 'Zeitleiste'])
   })
 
-  test('/stammbaum bleibt erreichbar (Links, Lesezeichen)', async () => {
-    await render(group, '/stammbaum')
-    expect(container.querySelector('.page-hero .eyebrow').textContent).toBe('Familienbande')
-    expect(activeNav()).toEqual(['Familienbande'])
+  test('/stammbaum?ansicht=stammbaum öffnet den Reiter "Stammbaum", sobald es einen gibt', async () => {
+    api.listDogs.mockResolvedValue([nele, mutter])
+    api.listAllDogs.mockResolvedValue([nele, mutter])
+    await render(group, '/stammbaum?ansicht=stammbaum')
+    expect(selectedTab()).toBe('Stammbaum')
+    expect(container.querySelector('[data-testid="pedigree-tree"]')).not.toBeNull()
   })
 
-  test('Standard: /wuerfe bleibt erreichbar, ohne eigenen Reiter - "Familienbande" ist dort aktiv', async () => {
+  test('Standard: /wuerfe bleibt erreichbar, ohne eigenen Reiter - "Tiere" ist dort aktiv', async () => {
     await render(group, '/wuerfe')
 
     expect(container.querySelector('.page-hero .eyebrow').textContent).toBe('Nachwuchs')
     expect(navTargets()).not.toContain('/wuerfe')
-    expect(activeNav()).toEqual(['Familienbande'])
+    expect(activeNav()).toEqual(['Tiere'])
   })
 
-  test('Berner: "Würfe" ist ein eigener, aktiver Reiter', async () => {
+  test('Berner: "Hunde" mit dem Reiter "Würfe"; /wuerfe markiert "Hunde"', async () => {
+    await render({ ...group, theme: 'berner' }, '/tiere')
+    expect(container.querySelector('.page-hero h1').textContent).toBe('Hunde')
+    expect(tabLabels()).toEqual(['Alle', 'Zeitleiste', 'Würfe'])
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
     await render({ ...group, theme: 'berner' }, '/wuerfe')
-
     expect(container.querySelector('.page-hero .eyebrow').textContent).toBe('Würfe')
-    expect(activeNav()).toEqual(['Würfe'])
+    expect(activeNav()).toEqual(['Hunde'])
   })
 
-  test('Berner: /familienbande zeigt denselben Stammbaum, "Stammbaum" ist aktiv', async () => {
+  test('Berner: mit Hunden steht der Stammbaum als Reiter da', async () => {
+    api.listDogs.mockResolvedValue([mutter])
     await render({ ...group, theme: 'berner' }, '/familienbande')
-
-    expect(container.querySelector('.page-hero .eyebrow').textContent).toBe('Stammbaum')
-    expect(activeNav()).toEqual(['Stammbaum'])
+    expect(tabLabels()).toEqual(['Alle', 'Zeitleiste', 'Stammbaum', 'Würfe'])
   })
 
   test('Standard: die Kopfzeile nennt nirgends "Stammbaum" oder "Würfe"', async () => {
-    await render(group, '/stammbaum')
+    await render(group, '/tiere')
     expect(container.querySelector('.app-header').textContent).not.toMatch(/Stammbaum|Würfe/)
   })
 })

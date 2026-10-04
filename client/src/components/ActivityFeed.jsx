@@ -11,13 +11,16 @@ function toDog(entry) {
 
 const MAX_TILES = 4
 
-// "Was treiben die anderen?" – nächstes Treffen und die zuletzt geschriebenen Einträge.
-export default function ActivityFeed({ entries: allEntries, termin }) {
+// "Was treiben die anderen?" – nächstes Treffen und die zuletzt geschriebenen Beiträge. limit: höchstens so viele Kacheln
+// (Phase W: die Gruppenseite zeigt bis zu 20, sonst vier); terminTo: wohin das Treffen führt (die Pinnwand des Bereichs);
+// title: Überschrift (Standard "Neu in der Familie" bzw. "Neu im Rudel" - zu Besuch in einem Zuhause passt das nicht).
+export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_TILES, terminTo = '/pinnwand', title }) {
   const { theme, words } = useTheme()
-  const entries = allEntries.slice(0, termin ? MAX_TILES - 1 : MAX_TILES)
+  const heading = title || words.newsTitle
+  const entries = allEntries.slice(0, termin ? limit - 1 : limit)
   if (!entries.length && !termin) {
     return (
-      <section className="feed feed-empty" aria-label={words.newsTitle}>
+      <section className="feed feed-empty" aria-label={heading}>
         <Icon name="sprout" />
         <p>
           <strong>Noch keine Neuigkeiten.</strong> {theme.texts.feedEmpty} – die anderen sehen es dann hier.
@@ -29,11 +32,11 @@ export default function ActivityFeed({ entries: allEntries, termin }) {
   return (
     <section className="feed" aria-labelledby="feed-title">
       <h2 id="feed-title" className="feed-title">
-        {words.newsTitle}
+        {heading}
       </h2>
       <div className="feed-items">
         {termin && (
-          <Link to="/pinnwand" className="feed-item feed-termin">
+          <Link to={terminTo} className="feed-item feed-termin">
             <span className="feed-termin-icon">
               <Icon name="calendar" />
             </span>

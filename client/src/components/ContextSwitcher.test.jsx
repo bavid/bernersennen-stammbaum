@@ -99,11 +99,11 @@ describe('ContextSwitcher', () => {
     act(() => trigger().click())
     expect(trigger().getAttribute('aria-expanded')).toBe('true')
     expect(groups()).toEqual([
-      ['Mein Zuhause', ['Meine ChronikZuhause am Deich']],
+      ['Mein Zuhause', ['Mein ZuhauseZuhause am Deich']],
       ['Familien', ['Familie KleinMitglied', 'Rudel NachbarnFamilienleitung']]
     ])
     expect(items().map((item) => item.textContent)).toEqual([
-      'Meine ChronikZuhause am Deich',
+      'Mein ZuhauseZuhause am Deich',
       'Familie KleinMitglied',
       'Rudel NachbarnFamilienleitung',
       'Familie beitreten oder gründen …'
@@ -138,7 +138,7 @@ describe('ContextSwitcher', () => {
   test('Überschriften nur für Gruppen mit Einträgen', async () => {
     await render({ family: { ...family, id: 1, name: 'Zuhause am Deich', art: 'zuhause', role: 'leitung', memberships: [] } })
     act(() => trigger().click())
-    expect(groups()).toEqual([['Mein Zuhause', ['Meine ChronikZuhause am Deich']]])
+    expect(groups()).toEqual([['Mein Zuhause', ['Mein ZuhauseZuhause am Deich']]])
   })
 
   test('im Berner-Auftritt heißt die Gruppe „Rudel" und die Leitung „Rudelführer"', async () => {
@@ -160,12 +160,12 @@ describe('ContextSwitcher', () => {
     expect(items()[3].textContent).toBe('Rudel beitreten oder gründen …')
   })
 
-  test('Ist der Haushalt selbst der aktive Bereich, zeigen Knopf und Menüpunkt "Meine Chronik" statt des gespeicherten Namens', async () => {
+  test('Ist der Haushalt selbst der aktive Bereich, zeigen Knopf und Menüpunkt "Mein Zuhause" statt des gespeicherten Namens', async () => {
     const homeActive = { ...family, id: 1, name: 'Zuhause am Deich' }
     await render({ family: homeActive })
-    expect(trigger().textContent).toBe('Meine Chronik')
+    expect(trigger().textContent).toBe('Mein Zuhause')
     act(() => trigger().click())
-    expect(items()[0].textContent).toBe('Meine ChronikZuhause am Deich')
+    expect(items()[0].textContent).toBe('Mein ZuhauseZuhause am Deich')
     expect(items()[0].getAttribute('aria-current')).toBe('true')
   })
 
@@ -180,7 +180,7 @@ describe('ContextSwitcher', () => {
     expect(onChange).toHaveBeenCalledWith(me)
   })
 
-  test('Auswahl von "Meine Chronik" wechselt per api.view auf den Haushalt', async () => {
+  test('Auswahl von "Mein Zuhause" wechselt per api.view auf den Haushalt', async () => {
     const onChange = vi.fn()
     const me = { ...family, id: 1, name: 'Zuhause am Deich' }
     view.mockResolvedValue(me)
@@ -274,7 +274,7 @@ describe('ContextSwitcher', () => {
     await render({ family: visitingHome, onChange })
     act(() => trigger().click())
     expect(groups()).toEqual([
-      ['Mein Zuhause', ['Meine ChronikZuhause am Deich']],
+      ['Mein Zuhause', ['Mein ZuhauseZuhause am Deich']],
       ['Zu Besuch', ['Zuhause Möwenweg']]
     ])
     const visitItem = items().find((item) => item.textContent === 'Zuhause Möwenweg')

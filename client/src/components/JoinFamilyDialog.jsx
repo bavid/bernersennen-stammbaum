@@ -8,15 +8,16 @@ const MIN_PASSWORD_LENGTH = 6
 const MAX_NAME_LENGTH = 80
 const DEMO_HINT_ID = 'join-family-demo-hint'
 
-// Aus "Meine Chronik" heraus: einer bestehenden Familie/einem Rudel mit dessen Passwort beitreten,
-// oder eine neue gründen. Der aktive Bereich bleibt dabei "Meine Chronik" (der Server wechselt nicht
+// Aus "Mein Zuhause" heraus: einer bestehenden Familie/einem Rudel mit dessen Passwort beitreten,
+// oder eine neue gründen. Der aktive Bereich bleibt dabei "Mein Zuhause" (der Server wechselt nicht
 // automatisch), onChange bekommt trotzdem das volle "me"-Objekt (jetzt mit der neuen Mitgliedschaft).
-export default function JoinFamilyDialog({ onChange, onClose }) {
+// initialTab (Phase W): 'join' (Standard) oder 'create' - die Familien-Seite öffnet den Dialog direkt im passenden Modus.
+export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join' }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
-  const [tab, setTab] = useState('join')
+  const [tab, setTab] = useState(initialTab === 'create' ? 'create' : 'join')
   const [joinPassword, setJoinPassword] = useState('')
   const [groupName, setGroupName] = useState('')
   const [groupPassword, setGroupPassword] = useState('')

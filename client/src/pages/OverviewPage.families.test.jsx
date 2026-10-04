@@ -183,7 +183,8 @@ describe('Familienbande im Standard-Auftritt (Familienbande 2): ein Raster statt
 
     expect(api.view).toHaveBeenCalledWith(7)
     expect(onFamilyChange).toHaveBeenCalledWith(me)
-    expect(location.pathname).toBe('/stammbaum')
+    // Phase W: die Startseite einer Familie ist ihre Gruppenseite
+    expect(location.pathname).toBe('/familien/7')
   })
 
   test('schlägt der Wechsel fehl, bleibt man auf der Seite', async () => {
@@ -203,7 +204,7 @@ describe('Familienbande im Standard-Auftritt (Familienbande 2): ein Raster statt
     await click(areaButton('Zuhause Möwenweg'))
     expect(api.view).toHaveBeenCalledWith(4)
     expect(onFamilyChange).toHaveBeenCalledWith(me)
-    expect(location.pathname).toBe('/wegbegleiter')
+    expect(location.pathname).toBe('/familien/4')
   })
 
   test('Zuhause, die nur bei euch zu Gast sind, stehen ohne Link da; Familien ohne geteilte Tiere als "Mitglied in"', async () => {

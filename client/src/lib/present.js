@@ -24,7 +24,7 @@ export const PRESENT_TILES = Object.freeze([
   {
     key: 'zuhause',
     label: 'Als Familie ansehen',
-    description: '„Meine Chronik“ eines Zuhauses – Wegbegleiter, Familienbande, Pinnwand und Entdecken.',
+    description: '„Mein Zuhause“ – Start mit Neuigkeiten, Tiere, Familien und Entdecken.',
     icon: 'home',
     as: DEMO_AS.zuhause
   },

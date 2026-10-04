@@ -61,14 +61,23 @@ async function render(path) {
   return container
 }
 
-// Die Mitglieder-Seite ist ein eigener Chunk (React.lazy in AreaRoutes.jsx) - kurz warten, bis <main> sie zeigt.
-async function waitForMainHeading() {
-  for (let i = 0; i < 40 && !container.querySelector('main h1'); i += 1) {
+// Die Mitglieder-Seite ist ein eigener Chunk (React.lazy) - kurz warten, bis <main> zeigt, was der Test erwartet.
+async function waitFor(check) {
+  for (let i = 0; i < 40 && !check(); i += 1) {
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 10))
     })
   }
+}
+
+async function waitForMainHeading() {
+  await waitFor(() => container.querySelector('main h1'))
   return container.querySelector('main h1')
+}
+
+const menuItems = () => {
+  act(() => container.querySelector('.account-menu-trigger').click())
+  return [...container.querySelectorAll('.account-menu-panel [role="menuitem"]')].map((item) => item.textContent)
 }
 
 beforeEach(() => {
@@ -92,59 +101,61 @@ afterEach(() => {
   for (const mock of [me, familyMembers, listDogs, listAllDogs, recentActivity, listNotes, listLinks]) mock.mockReset()
 })
 
-describe('/mitglieder (Phase R)', () => {
-  test('in einer Familie lädt die Mitglieder-Seite als eigener Chunk; der Kopf zeigt nur den Familiennamen', async () => {
+// Phase W: für Haushalte sind die Mitglieder ein Reiter der Gruppenseite; nur der klassische Login hat die eigene Seite.
+describe('/mitglieder (Phase R, Phase W)', () => {
+  test('in einer Familie: alte Adresse -> Gruppenseite, Reiter "Mitglieder" (eigener Chunk)', async () => {
     me.mockResolvedValue(groupAs('mitglied'))
     await render('/mitglieder')
+    await waitFor(() => familyMembers.mock.calls.length > 0 && container.querySelector('.members-embedded'))
 
-    expect((await waitForMainHeading()).textContent).toBe('Mitglieder')
+    expect(container.querySelector('main h1').textContent).toBe('Familie Sonnenhang')
+    expect(container.querySelector('.group-tab-bar [aria-selected="true"]').textContent).toBe('Mitglieder')
     expect(familyMembers).toHaveBeenCalledTimes(1)
-    const trigger = container.querySelector('.context-switcher-trigger')
-    expect(trigger.textContent).toBe('Familie Sonnenhang')
-    // Familienbande 2: die Rolle steht im Menü des Bereichswechslers, nicht als Chip am Knopf
-    expect(trigger.querySelector('.role-badge')).toBeNull()
-    // Die Rudel-Navigation bleibt bei ihren fünf Einträgen - kein sechster für Mitglieder
     expect([...container.querySelectorAll('.app-nav a')].map((a) => a.getAttribute('href'))).not.toContain('/mitglieder')
   })
 
-  test('im eigenen Zuhause leitet /mitglieder auf die Start-Route um, der Kopf hat keinen Rollen-Chip', async () => {
+  test('im eigenen Zuhause führt /mitglieder zur Familien-Liste', async () => {
     me.mockResolvedValue(atHome)
     await render('/mitglieder')
 
-    expect((await waitForMainHeading()).textContent).toBe('Wegbegleiter')
+    expect((await waitForMainHeading()).textContent).toBe('Familien')
     expect(familyMembers).not.toHaveBeenCalled()
-    expect(container.querySelector('.context-switcher-trigger .role-badge')).toBeNull()
   })
 
-  test('ein klassischer Rudel-Login (kein Zuhause) zeigt den Namen mit Rollen-Chip statt des Bereichswechslers', async () => {
-    me.mockResolvedValue({ ...groupAs('leitung'), home: { id: 3, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel' }, memberships: [] })
-    await render('/stammbaum')
+  test('ein klassischer Rudel-Login (kein Zuhause) zeigt den Namen mit Rollen-Chip und die Seite "Mitglieder" im Menü', async () => {
+    const classic = { ...groupAs('leitung'), home: { id: 3, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel' }, memberships: [] }
+    me.mockResolvedValue(classic)
+    await render('/mitglieder')
 
+    expect((await waitForMainHeading()).textContent).toBe('Mitglieder')
     const sub = container.querySelector('.brand-sub')
     expect(sub.textContent).toContain('Familie Sonnenhang')
     expect(sub.querySelector('.role-badge').textContent).toBe('Familienleitung')
+    expect(menuItems()).toContain('Mitglieder')
   })
 })
 
-describe('Fuß: "Jemanden einladen" je Rolle (Phase R)', () => {
-  const inviteLink = () => [...container.querySelectorAll('.app-footer .footer-link')].find((el) => el.textContent === 'Jemanden einladen')
-
-  test('Gast und Mitglied sehen den Knopf in einer Familie nicht', async () => {
+describe('Menü: "Einladen" je Rolle (Phase R, Phase W)', () => {
+  test('Gast und Mitglied sehen es in einer Familie nicht', async () => {
     for (const role of ['gast', 'mitglied']) {
       me.mockResolvedValue(groupAs(role))
-      await render('/stammbaum')
-      expect(inviteLink()).toBeUndefined()
+      await render('/familien/3')
+      expect(menuItems()).not.toContain('Einladen')
       act(() => root.unmount())
       root = null
       container.remove()
     }
   })
 
-  test('Stellvertretung und Leitung sehen ihn, ebenso das eigene Zuhause', async () => {
-    for (const family of [groupAs('stellvertretung'), groupAs('leitung'), atHome]) {
+  test('Stellvertretung und Leitung sehen es, ebenso das eigene Zuhause', async () => {
+    for (const [family, path] of [
+      [groupAs('stellvertretung'), '/familien/3'],
+      [groupAs('leitung'), '/familien/3'],
+      [atHome, '/start']
+    ]) {
       me.mockResolvedValue(family)
-      await render('/stammbaum')
-      expect(inviteLink()).not.toBeUndefined()
+      await render(path)
+      expect(menuItems()).toContain('Einladen')
       act(() => root.unmount())
       root = null
       container.remove()

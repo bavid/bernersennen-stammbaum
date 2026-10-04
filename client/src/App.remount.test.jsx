@@ -30,11 +30,11 @@ const groupA = { id: 2, name: 'Familie Sonnenhang', theme: 'standard' }
 const groupB = { id: 3, name: 'Familie Nachbarn', theme: 'standard' }
 const home = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause' }
 
-const meInGroupA = { ...groupA, art: 'rudel', isDemo: false, home, memberships: [groupA, groupB] }
-const meInGroupB = { ...groupB, art: 'rudel', isDemo: false, home, memberships: [groupA, groupB] }
-const meAtHome = { ...home, isDemo: false, home, memberships: [groupA, groupB] }
+const meInGroupA = { ...groupA, art: 'rudel', isDemo: false, role: 'mitglied', home, memberships: [groupA, groupB] }
+const meInGroupB = { ...groupB, art: 'rudel', isDemo: false, role: 'mitglied', home, memberships: [groupA, groupB] }
+const meAtHome = { ...home, isDemo: false, role: 'leitung', home, memberships: [groupA, groupB] }
 
-async function render(initialEntry = '/stammbaum') {
+async function render(initialEntry = '/start') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -76,46 +76,92 @@ afterEach(() => {
   listLinks.mockReset()
 })
 
-function trigger() {
-  return container.querySelector('.context-switcher-trigger')
-}
+const mainHeading = () => container.querySelector('main h1')?.textContent
 
-function items() {
-  return [...container.querySelectorAll('[role="menuitem"]')]
-}
-
-describe('Bereichswechsel während man auf /stammbaum bleibt (gleiche Route vorher/nachher)', () => {
-  test('lädt die Stammbaum-Daten des neuen Bereichs neu, statt die alten stehen zu lassen', async () => {
+// Phase W: kein Bereichswechsler mehr - das AreaGate einer Route wechselt selbst (api.view), <main key={family.id}> mountet
+// die Seite im neuen Bereich neu und lädt ihre Daten neu.
+describe('AreaGate in der App: Wechsel beim Navigieren', () => {
+  test('die Gruppenseite einer anderen Familie wechselt dorthin und lädt deren Tiere', async () => {
     me.mockResolvedValue(meInGroupA)
     view.mockResolvedValue(meInGroupB)
-    await render('/stammbaum')
+    await render('/familien/3')
 
-    expect(container.querySelector('h1').textContent).toBe('Familie Sonnenhang')
+    expect(view).toHaveBeenCalledTimes(1)
+    expect(view).toHaveBeenCalledWith(3)
+    expect(mainHeading()).toBe('Familie Nachbarn')
+    expect(listDogs).toHaveBeenCalledTimes(1)
+  })
+
+  test('"Start" aus einer Familie heraus wechselt ins eigene Zuhause und lädt dort neu', async () => {
+    me.mockResolvedValue(meInGroupA)
+    view.mockResolvedValue(meAtHome)
+    await render('/familien/2')
+    expect(mainHeading()).toBe('Familie Sonnenhang')
     expect(listDogs).toHaveBeenCalledTimes(1)
 
-    act(() => trigger().click())
-    const target = items().find((item) => item.textContent === 'Familie Nachbarn')
-    await act(async () => target.click())
+    const start = [...container.querySelectorAll('.app-nav a')].find((a) => a.textContent === 'Start')
+    await act(async () => start.click())
 
-    // Selbe Route (/stammbaum -> /stammbaum) – trotzdem müssen die Daten des neuen Bereichs neu geladen werden
+    expect(view).toHaveBeenCalledWith(1)
+    expect(mainHeading()).toBe('Start – Mein Zuhause')
     expect(listDogs).toHaveBeenCalledTimes(2)
-    expect(container.querySelector('h1').textContent).toBe('Familie Nachbarn')
+  })
+
+  test('scheitert der Wechsel, geht es zur Familien-Liste - ohne zweiten Versuch', async () => {
+    me.mockResolvedValue(meAtHome)
+    view.mockRejectedValue(new Error('Diesen Bereich gibt es nicht'))
+    await render('/familien/77')
+
+    expect(view).toHaveBeenCalledTimes(1)
+    expect(mainHeading()).toBe('Familien')
   })
 })
 
-describe('/wegbegleiter nur für Haushalte', () => {
-  test('ein aktives Rudel wird von /wegbegleiter zur eigenen Start-Route (Stammbaum) umgeleitet', async () => {
+describe('/wegbegleiter (alte Adresse)', () => {
+  test('aus einer Familie heraus: Reiter "Zeitleiste" der Tiere im eigenen Zuhause', async () => {
     me.mockResolvedValue(meInGroupA)
+    view.mockResolvedValue(meAtHome)
     await render('/wegbegleiter')
 
-    expect(container.querySelector('h1').textContent).toBe('Familie Sonnenhang')
-    expect(container.querySelector('.companions-hint')).toBeNull()
+    expect(view).toHaveBeenCalledWith(1)
+    expect(mainHeading()).toBe('Tiere')
+    expect(container.querySelector('.animals-tab-bar [aria-selected="true"]').textContent).toBe('Zeitleiste')
   })
 
-  test('das eigene Zuhause darf /wegbegleiter weiter aufrufen', async () => {
+  test('im eigenen Zuhause ohne Wechsel', async () => {
     me.mockResolvedValue(meAtHome)
     await render('/wegbegleiter')
 
-    expect(container.querySelector('h1').textContent).toBe('Wegbegleiter')
+    expect(view).not.toHaveBeenCalled()
+    expect(mainHeading()).toBe('Tiere')
+  })
+})
+
+describe('Besuch und eigene Adresse (Phase W)', () => {
+  const visiting = { id: 9, name: 'Zuhause Möwenweg', theme: 'standard', art: 'zuhause', zuBesuch: true, role: 'gast', isDemo: false, home, memberships: [] }
+
+  test('zu Besuch führt jede andere Adresse über das Gate nach Hause', async () => {
+    me.mockResolvedValue(visiting)
+    view.mockResolvedValue(meAtHome)
+    await render('/start')
+
+    expect(view).toHaveBeenCalledWith(1)
+    expect(mainHeading()).toBe('Start – Mein Zuhause')
+  })
+
+  test('zu Besuch bleibt die Gruppenseite des besuchten Zuhauses ohne Wechsel', async () => {
+    me.mockResolvedValue(visiting)
+    await render('/familien/9')
+
+    expect(view).not.toHaveBeenCalled()
+    expect(mainHeading()).toBe('Zuhause Möwenweg')
+  })
+
+  test('/familien/<eigenes Zuhause> führt zur Familien-Liste', async () => {
+    me.mockResolvedValue(meAtHome)
+    await render('/familien/1')
+
+    expect(view).not.toHaveBeenCalled()
+    expect(mainHeading()).toBe('Familien')
   })
 })

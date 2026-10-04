@@ -1,9 +1,14 @@
 import { lazy } from 'react'
-import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
-import { isPartnerArea, startRoute } from './lib/areas.js'
+import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from 'react-router-dom'
+import { FAMILIES_ROUTE, areaContext, parseAreaId, startRoute } from './lib/areas.js'
+import AreaGate from './components/AreaGate.jsx'
+import LegacyRedirect from './components/LegacyRedirect.jsx'
+import StartPage from './pages/StartPage.jsx'
+import AnimalsPage from './pages/AnimalsPage.jsx'
+import FamiliesPage from './pages/FamiliesPage.jsx'
+import GroupPage from './pages/GroupPage.jsx'
 import OverviewPage from './pages/OverviewPage.jsx'
 import DogDetailPage from './pages/DogDetailPage.jsx'
-import CompanionsPage from './pages/CompanionsPage.jsx'
 import ShelterAnimalsPage from './pages/ShelterAnimalsPage.jsx'
 import LittersPage from './pages/LittersPage.jsx'
 import PinboardPage from './pages/PinboardPage.jsx'
@@ -29,10 +34,10 @@ const PartnerVisitenkartenPage = lazy(() => import('./pages/PartnerVisitenkarten
 // Die Fotocollage (samt Seiten-Layout, Canvas-Export und Druckbogen) ruft kaum jemand auf - ebenfalls
 // erst bei Bedarf.
 const CollagePage = lazy(() => import('./pages/CollagePage.jsx'))
-// Mitglieder & Rollen (Phase R): nur in Familien (art 'rudel'), erreichbar über den Link im Kopf der
-// Familienbande und die Einstellungen - die Rudel-Navigation ist mit fünf Einträgen voll (lib/navItems.js).
+// Mitglieder & Rollen (Phase R): beim klassischen Familien-Login eine eigene Seite (im Konto-Menü), für Haushalte ein
+// Reiter der Gruppenseite.
 const MembersPage = lazy(() => import('./pages/MembersPage.jsx'))
-// Einstellungen (Calm-down-Runde): Darstellung, Familien, Mein Zuhause - in Zuhause und Familien, eigener Chunk.
+// Einstellungen (Calm-down-Runde): Darstellung, Familien, Mein Zuhause - eigener Chunk.
 const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx'))
 
 // Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
@@ -44,6 +49,30 @@ function RedirectTierUrl() {
 
 function ToStart({ family }) {
   return <Navigate to={startRoute(family)} replace />
+}
+
+// /familien/:id - die Gruppenseite im Bereich :id (das Gate wechselt bei Bedarf); das eigene Zuhause hat keine.
+function GroupRoute({ family, onFamilyChange }) {
+  const { id } = useParams()
+  if (parseAreaId(id) === (family.home?.id ?? family.id)) return <Navigate to={FAMILIES_ROUTE} replace />
+  return (
+    <AreaGate family={family} need={id} onFamilyChange={onFamilyChange}>
+      <GroupPage family={family} onFamilyChange={onFamilyChange} />
+    </AreaGate>
+  )
+}
+
+// /tier/:id - mit ?in=<Bereich> im genannten Bereich (z. B. aus einem bereichsübergreifenden Feed), sonst im aktiven.
+function TierRoute({ family, onFamilyChange }) {
+  const [searchParams] = useSearchParams()
+  const inArea = parseAreaId(searchParams.get('in'))
+  const page = <DogDetailPage family={family} onFamilyChange={onFamilyChange} />
+  if (!inArea) return page
+  return (
+    <AreaGate family={family} need={inArea} onFamilyChange={onFamilyChange}>
+      {page}
+    </AreaGate>
+  )
 }
 
 // Partner-Bereich (Phase P, family.art 'partner' - Hundeschule, Hundesalon, Betreuung, …): keine Tiere,
@@ -67,78 +96,116 @@ function PartnerAreaRoutes({ family, onFamilyChange }) {
   )
 }
 
-// Zu Besuch in einem anderen Zuhause (Phase V2, family.zuBesuch): nur ansehen - Wegbegleiter, Stammbaum und die
-// Tierseiten (dort darf man kommentieren). Alles andere (Pinnwand, Collage, Entdecken, Würfe, Schreib dem Admin,
-// In der Nähe, ...) führt zurück zu den Wegbegleitern - der Server sperrt es für Gäste ohnehin (Kopf und Fuß
-// blenden die Links dazu während eines Besuchs aus).
-function VisitRoutes({ family, onFamilyChange }) {
+// Tierheime (Phase T/P, unverändert durch Phase W): "Unsere Tiere" als Start, Pinnwand, Collage, Profil und Nachrichten.
+function ShelterRoutes({ family, onFamilyChange }) {
   return (
     <Routes>
-      <Route path="/wegbegleiter" element={<CompanionsPage family={family} />} />
+      <Route path="/tiere" element={<ShelterAnimalsPage family={family} />} />
       <Route path="/stammbaum" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/familienbande" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/hund/:id" element={<RedirectTierUrl />} />
+      <Route path="/pinnwand" element={<PinboardPage family={family} />} />
+      <Route path="/wuerfe" element={<LittersPage family={family} />} />
+      <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
+      <Route path="/admin-schreiben" element={<ContactAdminPage />} />
+      <Route path="/collage" element={<CollagePage family={family} />} />
+      <Route path="/umgebung" element={<NearbyPage />} />
+      {/* Profil/Zugang/Kundensicht (Phase P) auch für Tierheime - die sind ebenfalls Partner-Bereiche. */}
+      <Route path="/profil" element={<PartnerProfilePage family={family} />} />
+      <Route path="/zugang" element={<AccessPage family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/kundensicht" element={<CustomerViewPage family={family} />} />
+      {/* Phase P2/V4a/V5: Beiträge und Kalender stehen als Reiter im Profil, die Seiten bleiben erreichbar. */}
+      <Route path="/beitraege" element={<PartnerPostsPage family={family} />} />
+      <Route path="/kalender" element={<PartnerCalendarPage family={family} />} />
+      <Route path="/visitenkarten" element={<PartnerVisitenkartenPage />} />
+      <Route path="/nachrichten" element={<PartnerInboxPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="*" element={<ToStart family={family} />} />
     </Routes>
   )
 }
 
-// Routen des angemeldeten Bereichs (App.jsx, unter <main key={family.id}>) je Bereichsart: Zuhause,
-// Rudel und Tierheim teilen sich eine Tabelle mit Weichen je art, der Partner-Bereich hat eine eigene.
-export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
-  if (family.art === 'partner') return <PartnerAreaRoutes family={family} onFamilyChange={onFamilyChange} />
-  if (family.zuBesuch) return <VisitRoutes family={family} onFamilyChange={onFamilyChange} />
-
-  const partnerArea = isPartnerArea(family)
+// Zu Besuch in einem anderen Zuhause (Phase V2, family.zuBesuch): nur dessen Gruppenseite (nur lesen) und die Tierseiten
+// (dort darf man kommentieren). Phase W: jede andere Adresse wechselt über das Gate zurück ins eigene Zuhause - danach
+// zeigt die Tabelle des Haushalts dieselbe Adresse. Alte Adressen (Wegbegleiter, Stammbaum) führen auf die Gruppenseite.
+function VisitRoutes({ family, onFamilyChange }) {
   return (
     <Routes>
-      <Route path="/stammbaum" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
-      {/* Phase U: /familienbande ist derselbe Stammbaum unter dem Namen des Standard-Auftritts (Links bleiben /stammbaum). */}
-      <Route path="/familienbande" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
-      <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/familien/:id" element={<GroupRoute family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/tier/:id" element={<TierRoute family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/hund/:id" element={<RedirectTierUrl />} />
+      <Route path="/wegbegleiter" element={<LegacyRedirect family={family} kind="wegbegleiter" />} />
+      <Route path="/stammbaum" element={<LegacyRedirect family={family} kind="tree" />} />
+      <Route path="/familienbande" element={<LegacyRedirect family={family} kind="tree" />} />
+      <Route path="*" element={<AreaGate family={family} need="home" onFamilyChange={onFamilyChange} />} />
+    </Routes>
+  )
+}
+
+// Phase W (Ruhige Hülle): Haushalte (im eigenen Zuhause oder in einer ihrer Familien) und klassische Familien-Logins.
+// Start, Tiere, Familien, Entdecken, Einstellungen und Fotocollage spielen im eigenen Zuhause (Gate "home"; beim
+// klassischen Login ist das die Familie selbst), die Gruppenseite im Bereich aus der Adresse. Alte Adressen leiten
+// weiter (LegacyRedirect, lib/legacyRoutes.js).
+function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
+  const context = areaContext(family)
+  const household = context !== 'classic'
+  const atHome = (element) => (
+    <AreaGate family={family} need="home" onFamilyChange={onFamilyChange}>
+      {element}
+    </AreaGate>
+  )
+  return (
+    <Routes>
+      <Route path="/start" element={atHome(<StartPage family={family} onFamilyChange={onFamilyChange} />)} />
+      <Route path="/tiere" element={atHome(<AnimalsPage family={family} />)} />
       <Route
-        path="/wegbegleiter"
-        element={family.art === 'zuhause' ? <CompanionsPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
+        path="/familien"
+        element={household ? atHome(<FamiliesPage family={family} onFamilyChange={onFamilyChange} />) : <ToStart family={family} />}
       />
-      <Route path="/tiere" element={family.art === 'tierheim' ? <ShelterAnimalsPage family={family} /> : <ToStart family={family} />} />
-      <Route path="/pinnwand" element={<PinboardPage family={family} />} />
-      <Route path="/wuerfe" element={<LittersPage family={family} />} />
+      <Route
+        path="/familien/:id"
+        element={household ? <GroupRoute family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
+      />
+      <Route path="/tier/:id" element={<TierRoute family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/hund/:id" element={<RedirectTierUrl />} />
+      <Route path="/wegbegleiter" element={<LegacyRedirect family={family} kind="wegbegleiter" />} />
+      <Route path="/stammbaum" element={<LegacyRedirect family={family} kind="tree" />} />
+      <Route path="/familienbande" element={<LegacyRedirect family={family} kind="tree" />} />
+      {/* Entscheidung D2: die Pinnwand des Zuhauses hat keinen Menüpunkt (Start verlinkt sie), die einer Familie ist ein
+          Reiter der Gruppenseite; beim klassischen Login bleibt sie in der Navigation. */}
+      <Route
+        path="/pinnwand"
+        element={context === 'group' ? <LegacyRedirect family={family} kind="pinnwand" /> : <PinboardPage family={family} />}
+      />
       <Route
         path="/mitglieder"
-        element={family.art === 'rudel' ? <MembersPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
+        element={
+          context === 'classic' ? (
+            <MembersPage family={family} onFamilyChange={onFamilyChange} />
+          ) : (
+            <LegacyRedirect family={family} kind="mitglieder" />
+          )
+        }
       />
+      <Route path="/wuerfe" element={<LittersPage family={family} />} />
       <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
       <Route
         path="/einstellungen"
-        element={
-          partnerArea ? <ToStart family={family} /> : <SettingsPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />
-        }
+        element={atHome(<SettingsPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />)}
       />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
-      <Route path="/collage" element={<CollagePage family={family} />} />
+      <Route path="/collage" element={atHome(<CollagePage family={family} />)} />
       <Route path="/umgebung" element={<NearbyPage />} />
-      <Route path="/entdecken" element={family.art === 'tierheim' ? <ToStart family={family} /> : <DiscoverPage />} />
-      {/* Profil/Zugang/Kundensicht (Phase P) auch für Tierheime - die sind ebenfalls Partner-Bereiche. */}
-      <Route path="/profil" element={partnerArea ? <PartnerProfilePage family={family} /> : <ToStart family={family} />} />
-      <Route
-        path="/zugang"
-        element={partnerArea ? <AccessPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
-      />
-      <Route path="/kundensicht" element={partnerArea ? <CustomerViewPage family={family} /> : <ToStart family={family} />} />
-      {/* Phase P2: Tierheime haben "Nachrichten" in der Navigation, die Beiträge als Reiter im Profil - die
-          eigene Seite /beitraege bleibt trotzdem erreichbar (z. B. über einen gemerkten Link). */}
-      <Route path="/beitraege" element={partnerArea ? <PartnerPostsPage family={family} /> : <ToStart family={family} />} />
-      {/* Phase V4a: bei Tierheimen steht der Kalender als Reiter im Profil - /kalender bleibt trotzdem erreichbar. */}
-      <Route path="/kalender" element={partnerArea ? <PartnerCalendarPage family={family} /> : <ToStart family={family} />} />
-      {/* Phase V5: Visitenkarten auch für Tierheime (Link im Profil-Reiter "Teilen"). */}
-      <Route path="/visitenkarten" element={partnerArea ? <PartnerVisitenkartenPage /> : <ToStart family={family} />} />
-      <Route
-        path="/nachrichten"
-        element={partnerArea ? <PartnerInboxPage family={family} onFamilyChange={onFamilyChange} /> : <ToStart family={family} />}
-      />
+      <Route path="/entdecken" element={atHome(<DiscoverPage />)} />
       <Route path="*" element={<ToStart family={family} />} />
     </Routes>
   )
+}
+
+// Routen des angemeldeten Bereichs (App.jsx, unter <main key={family.id}>) je Bereichsart.
+export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
+  if (family.art === 'partner') return <PartnerAreaRoutes family={family} onFamilyChange={onFamilyChange} />
+  if (family.art === 'tierheim') return <ShelterRoutes family={family} onFamilyChange={onFamilyChange} />
+  if (family.zuBesuch) return <VisitRoutes family={family} onFamilyChange={onFamilyChange} />
+  return <HouseholdRoutes family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />
 }

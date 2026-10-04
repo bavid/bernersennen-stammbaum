@@ -1,22 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { startRoute } from '../lib/areas.js'
 import { ROLES, inviteRoleOptions, isLastLeitung, rank, roleLabel, roleOf } from '../lib/roles.js'
 import { useToast } from '../components/Toast.jsx'
-import Icon from '../components/Icon.jsx'
 import Modal from '../components/Modal.jsx'
-import RoleBadge from '../components/RoleBadge.jsx'
+import MembersHero from '../components/members/MembersHero.jsx'
 import InviteDialog from '../components/InviteDialog.jsx'
 import VisibilityCard from '../components/members/VisibilityCard.jsx'
 import MemberList from '../components/members/MemberList.jsx'
-import HandOverSection from '../components/members/HandOverSection.jsx'
+import LeitungTools from '../components/members/LeitungTools.jsx'
 import InviteList from '../components/members/InviteList.jsx'
 import OwnMembershipSection from '../components/members/OwnMembershipSection.jsx'
 import DissolveFamilyDialog from '../components/members/DissolveFamilyDialog.jsx'
-import FamilyKeySection from '../components/members/FamilyKeySection.jsx'
 
 
 // Mitglieder & Rollen einer Familie (/mitglieder, Phase R Task 4; nur für art 'rudel', siehe AreaRoutes).
@@ -24,7 +22,8 @@ import FamilyKeySection from '../components/members/FamilyKeySection.jsx'
 // dann wird neu geladen). ichBin aus der Antwort ist die eigene Rolle - ändert sie sich (Leitung
 // übergeben, sich selbst herabstufen), zieht "me" über onFamilyChange mit, damit Kopf, Bereichswechsler
 // und die übrigen Seiten die neue Rolle kennen. In der Demo ist alles sichtbar, Schreiben gesperrt.
-export default function MembersPage({ family, onFamilyChange }) {
+// embedded (Phase W): als Reiter "Mitglieder" der Gruppenseite - ohne eigenen Seitenkopf.
+export default function MembersPage({ family, onFamilyChange, embedded = false }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
@@ -34,6 +33,7 @@ export default function MembersPage({ family, onFamilyChange }) {
   const [error, setError] = useState(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [dissolveOpen, setDissolveOpen] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
   const handOverRef = useRef(null)
 
   const load = useCallback(async () => {
@@ -109,10 +109,25 @@ export default function MembersPage({ family, onFamilyChange }) {
     toast(`„${family.name}“ wurde aufgelöst.`)
   }
 
-  function focusHandOver() {
+  // "Übergib zuerst die Leitung": dorthin springen - auf der Gruppenseite erst den zugeklappten Bereich der Leitung öffnen.
+  const pendingHandOver = useRef(false)
+  function revealHandOver() {
     handOverRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     handOverRef.current?.focus()
   }
+  function focusHandOver() {
+    if (!embedded || toolsOpen) {
+      revealHandOver()
+      return
+    }
+    pendingHandOver.current = true
+    setToolsOpen(true)
+  }
+  useEffect(() => {
+    if (!toolsOpen || !pendingHandOver.current) return
+    pendingHandOver.current = false
+    revealHandOver()
+  }, [toolsOpen])
 
   function closeInvite() {
     setInviteOpen(false)
@@ -120,44 +135,24 @@ export default function MembersPage({ family, onFamilyChange }) {
   }
 
   return (
-    <div className="page members-page">
-      <header className="page-hero">
-        <div>
-          <span className="eyebrow">{words.group}</span>
-          <div className="page-title-row">
-            <h1>Mitglieder</h1>
-            <RoleBadge rolle={myRole} className="members-my-role" />
-          </div>
-          {/* Audit V7a: "Eine Familie ist nie öffentlich." steht gleich darunter in "Wer sieht was?" - hier nicht doppelt. */}
-          <p className="page-lede">Wer zu „{family.name}“ gehört – und wer was darf.</p>
-          <p className="hero-hint">
-            <Link to="/stammbaum">← {words.toTree}</Link>
-          </p>
-          {/* Phase U: der Demo-Hinweis gehört zum Kopf - nicht als eigene Zeile zwischen Kopf und erster Karte. */}
-          {isDemo && <p className="field-hint members-demo-hint">{readOnlyHint}</p>}
-        </div>
-        {data && (
-          <div className="page-hero-side">
-            <dl className="stats">
-              <div>
-                <dt>{mitglieder.length === 1 ? 'Mitglied' : 'Mitglieder'}</dt>
-                <dd>{mitglieder.length}</dd>
-              </div>
-              <div>
-                <dt>geteilte Tiere</dt>
-                <dd>{sharedTotal}</dd>
-              </div>
-            </dl>
-          </div>
-        )}
-      </header>
+    <div className={embedded ? 'members-page members-embedded' : 'page members-page'}>
+      {embedded ? (
+        isDemo && <p className="field-hint members-demo-hint">{readOnlyHint}</p>
+      ) : (
+        <MembersHero
+          family={family}
+          myRole={myRole}
+          stats={data ? { mitglieder: mitglieder.length, geteilt: sharedTotal } : null}
+          demoHint={isDemo ? readOnlyHint : null}
+        />
+      )}
 
       {error && (
         <div className="error-banner" role="alert">
           {error}
         </div>
       )}
-      <VisibilityCard />
+      <VisibilityCard collapsed={embedded} />
 
       <section className="card members-section" aria-labelledby="members-title">
         <h2 id="members-title">Wer dazugehört</h2>
@@ -180,17 +175,6 @@ export default function MembersPage({ family, onFamilyChange }) {
           </p>
         )}
       </section>
-
-      {isLeitung && data && (
-        <HandOverSection
-          ref={handOverRef}
-          members={mitglieder}
-          selfId={selfId}
-          selfDemoted={isHousehold}
-          disabled={isDemo}
-          onHandOver={handleHandOver}
-        />
-      )}
 
       {canInvite && data && (
         <InviteList
@@ -215,20 +199,20 @@ export default function MembersPage({ family, onFamilyChange }) {
       )}
 
       {isLeitung && data && (
-        <section className="card members-section members-danger" aria-labelledby="dissolve-title">
-          <h2 id="dissolve-title">{words.dissolveGroup}</h2>
-          <p className="muted">
-            Löscht {words.theGroup} mit {words.treeLabel}, Pinnwand und Einladungen. Geht nur, wenn {words.theGroup} keine eigenen
-            Tiere mehr hat – die übernimmst du vorher in deine Chronik.
-          </p>
-          <button type="button" className="btn btn-danger" disabled={isDemo} onClick={() => setDissolveOpen(true)}>
-            <Icon name="trash" />
-            {words.dissolveGroup} …
-          </button>
-        </section>
+        <LeitungTools
+          ref={handOverRef}
+          collapsed={embedded}
+          open={toolsOpen}
+          onToggle={setToolsOpen}
+          family={family}
+          members={mitglieder}
+          selfId={selfId}
+          isHousehold={isHousehold}
+          disabled={isDemo}
+          onHandOver={handleHandOver}
+          onDissolve={() => setDissolveOpen(true)}
+        />
       )}
-
-      {isLeitung && isHousehold && data && <FamilyKeySection family={family} disabled={isDemo} />}
 
       <Modal open={inviteOpen} title="Jemanden einladen" onClose={closeInvite}>
         {inviteOpen && <InviteDialog family={family} />}

@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import PedigreeTree from '../components/PedigreeTree.jsx'
-import DogForm from '../components/DogForm.jsx'
-import QuickAnimalForm from '../components/QuickAnimalForm.jsx'
-import Modal from '../components/Modal.jsx'
+import AnimalCreateModal from '../components/AnimalCreateModal.jsx'
 import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
-import FamilySettings from '../components/FamilySettings.jsx'
+import FamilySettingsModal from '../components/FamilySettingsModal.jsx'
 import OffspringSection from '../components/OffspringSection.jsx'
 import OverviewStats from '../components/OverviewStats.jsx'
 import FamiliesView from '../components/families/FamiliesView.jsx'
@@ -17,13 +15,12 @@ import TreeToggle, { TREE_PARAM, TREE_VALUE } from '../components/families/TreeT
 import useBreedingEvents from '../hooks/useBreedingEvents.js'
 import useFriendHomes from '../hooks/useFriendHomes.js'
 import useOpenArea from '../hooks/useOpenArea.js'
+import useAnimalCreate from '../hooks/useAnimalCreate.js'
 import { nextTermin } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
 import { isOwnHome, isVisit } from '../lib/visits.js'
-import { useToast } from '../components/Toast.jsx'
 import { buildFamilyGroups, familyAnimals, familyStat, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
 import { hasSiblingLitters } from '../lib/litters.js'
-import { displayName } from '../lib/timeline.js'
 
 export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const { theme, words } = useTheme()
@@ -32,12 +29,8 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const [links, setLinks] = useState([])
   const [activity, setActivity] = useState(null)
   const [error, setError] = useState(null)
-  // null: Modal zu. { livesWith, moreValues: null }: QuickAnimalForm (livesWith fest vorgegeben, sonst leer).
-  // moreValues gesetzt: "Mehr Angaben …" gewechselt, zeigt stattdessen DogForm damit vorbefüllt.
-  const [animalForm, setAnimalForm] = useState(null)
+  const animalCreate = useAnimalCreate()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const navigate = useNavigate()
-  const toast = useToast()
   // Rollen (Phase R): in einer Familie legt ab Mitglied Tiere an, lädt ab Stellvertretung ein - außerhalb
   // (eigenes Zuhause) darf man alles.
   const inGroup = family.art === 'rudel'
@@ -88,42 +81,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
     loadDogs().catch((err) => setError(err.message))
   }, [])
 
-  // Ist der aktive Bereich gerade das eigene Zuhause (family.id === family.home.id), zeigt der
-  // Bereichswechsler den Haushaltsnamen als Zusatz zu "Meine Chronik" – der muss beim Umbenennen
-  // mitziehen, sonst zeigt er nach dem Speichern noch den alten Namen.
-  function handleRenamed(renamed) {
-    setSettingsOpen(false)
-    const merged = { ...family, ...renamed }
-    if (family.home?.id === family.id) merged.home = { ...family.home, name: renamed.name }
-    onFamilyChange(merged)
-    toast(`${words.TheGroup} heißt jetzt „${renamed.name}“`)
-  }
-
-  function handleThemeSaved(updated) {
-    setSettingsOpen(false)
-    onFamilyChange({ ...family, ...updated })
-    toast('Neues Aussehen gespeichert')
-  }
-
-  function openAnimalForm(livesWith = null) {
-    setAnimalForm({ livesWith, moreValues: null })
-  }
-
-  function closeAnimalForm() {
-    setAnimalForm(null)
-  }
-
-  function announceCreated(dog) {
-    closeAnimalForm()
-    toast(`${displayName(dog)} ist jetzt dabei`)
-    navigate(`/tier/${dog.id}`)
-  }
-
-  // "Mehr Angaben …" aus QuickAnimalForm: volles DogForm übernimmt selbst das Anlegen
-  async function handleCreate(payload) {
-    const dog = await api.createDog(payload)
-    announceCreated(dog)
-  }
+  const openAnimalForm = animalCreate.open
 
   return (
     <div className="page">
@@ -227,36 +185,9 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
 
       {dogs && dogs.length > 0 && mode === 'families' && <FamiliesView groups={groups} onOpenArea={openArea} />}
 
-      <Modal open={settingsOpen} title={words.groupSettings} onClose={() => setSettingsOpen(false)}>
-        <FamilySettings
-          family={family}
-          onRenamed={handleRenamed}
-          onChange={handleThemeSaved}
-          onFamilyChange={onFamilyChange}
-          onCancel={() => setSettingsOpen(false)}
-        />
-      </Modal>
+      <FamilySettingsModal open={settingsOpen} family={family} onFamilyChange={onFamilyChange} onClose={() => setSettingsOpen(false)} />
 
-      <Modal open={Boolean(animalForm)} title="Neues Tier anlegen" onClose={closeAnimalForm}>
-        {animalForm &&
-          (animalForm.moreValues ? (
-            <DogForm
-              allDogs={allDogs}
-              ownFamilyId={family.id}
-              initialValues={animalForm.moreValues}
-              onSubmit={handleCreate}
-              onCancel={closeAnimalForm}
-            />
-          ) : (
-            <QuickAnimalForm
-              allDogs={allDogs}
-              livesWith={animalForm.livesWith}
-              onCreated={announceCreated}
-              onCancel={closeAnimalForm}
-              onMore={(moreValues) => setAnimalForm((current) => ({ ...current, moreValues }))}
-            />
-          ))}
-      </Modal>
+      <AnimalCreateModal creator={animalCreate} allDogs={allDogs} ownFamilyId={family.id} />
     </div>
   )
 }

@@ -94,7 +94,8 @@ function NoteComposer({ onCreated, draft }) {
 
 // family: der aktive Bereich (AreaRoutes). Rollen (Phase R): Zettel schreiben und abnehmen ab Mitglied,
 // Antworten darf jede Rolle; fremde Antworten löschen ab Stellvertretung - außerhalb einer Familie wie bisher.
-export default function PinboardPage({ family }) {
+// embedded (Phase W): als Reiter "Pinnwand" der Gruppenseite - ohne eigenen Seitenkopf (den hat die Gruppenseite).
+export default function PinboardPage({ family, embedded = false }) {
   const { words } = useTheme()
   const draft = useLocation().state?.draft
   const [notes, setNotes] = useState(null)
@@ -104,6 +105,7 @@ export default function PinboardPage({ family }) {
   const canWrite = hasRole(family, 'mitglied')
   const canModerate = hasRole(family, 'stellvertretung')
   const canDeleteReply = (reply) => (inGroup ? Boolean(reply.vonMir) || canModerate : true)
+  const [composerOpen, setComposerOpen] = useState(!embedded || Boolean(draft))
 
   useEffect(() => {
     api
@@ -141,25 +143,33 @@ export default function PinboardPage({ family }) {
   }
 
   return (
-    <div className="page">
-      <header className="page-hero">
-        <div>
-          {/* Phase U: über der Überschrift der Name des Bereichs statt "Pinnwand" ein zweites Mal. */}
-          <span className="eyebrow">{family?.name || 'Pinnwand'}</span>
-          <h1>Pinnwand</h1>
-          <p className="page-lede">
-            Treffen ausmachen, Neuigkeiten teilen, Grüße dalassen – alle {words.inGroup} sehen es. Kommende Termine
-            stehen immer ganz oben.
-          </p>
-        </div>
-      </header>
+    <div className={embedded ? 'pinboard-embedded' : 'page'}>
+      {!embedded && (
+        <header className="page-hero">
+          <div>
+            {/* Phase U: über der Überschrift der Name des Bereichs statt "Pinnwand" ein zweites Mal. */}
+            <span className="eyebrow">{family?.name || 'Pinnwand'}</span>
+            <h1>Pinnwand</h1>
+            <p className="page-lede">
+              Treffen ausmachen, Neuigkeiten teilen, Grüße dalassen – alle {words.inGroup} sehen es. Kommende Termine
+              stehen immer ganz oben.
+            </p>
+          </div>
+        </header>
+      )}
 
       {error && <div className="error-banner" role="alert">{error}</div>}
 
       <div className="pinboard-layout">
-        {canWrite ? (
-          <NoteComposer onCreated={handleCreated} draft={draft} />
-        ) : (
+        {canWrite && composerOpen && <NoteComposer onCreated={handleCreated} draft={draft} />}
+        {/* Phase W: im Reiter der Gruppenseite erst auf Wunsch - die Zettel stehen so weiter oben. */}
+        {canWrite && !composerOpen && (
+          <button type="button" className="card note-composer note-composer-open" onClick={() => setComposerOpen(true)}>
+            <Icon name="pin" />
+            Neuen Zettel anpinnen
+          </button>
+        )}
+        {!canWrite && (
           <div className="card note-composer">
             <h2>Mitlesen und antworten</h2>
             <p className="muted">Als {words.roleGast} kannst du auf Zettel antworten – eigene Zettel pinnen Mitglieder an.</p>

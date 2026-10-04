@@ -17,7 +17,7 @@ const { createVisitInvite, redeemVisitInvite, VISIT_INVITE_DAYS } = require('../
 // alles außer GET.
 const router = express.Router()
 
-const ONLY_HOME_MESSAGE = 'Nur aus „Meine Chronik“ heraus möglich'
+const ONLY_HOME_MESSAGE = 'Nur aus „Mein Zuhause“ heraus möglich'
 const NO_SUCH_VISIT_MESSAGE = 'Diesen Besuch gibt es nicht'
 
 const findArt = db.prepare('SELECT art FROM families WHERE id = ?')

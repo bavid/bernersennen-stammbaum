@@ -55,12 +55,14 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
     expect(stripe === null).toBe(!theme.tricolor)
   })
 
-  test('Footer verweist auf „Tierheime & Hundeschulen in der Nähe“ – nur nicht auf /umgebung selbst (Audit V7a)', async () => {
-    const footerFor = async (path) => {
+  // Phase W: der Fuß eines Haushalts hat nur noch Impressum und Datenschutz; Tierheime und Partner behalten "In der Nähe"
+  // (nur nicht auf /umgebung selbst, Audit V7a).
+  test('Footer: Haushalte nur Impressum/Datenschutz, Partner-Bereiche dazu „In der Nähe“ – nicht auf /umgebung selbst', async () => {
+    const footerFor = async (path, family) => {
       await render(
         <MemoryRouter initialEntries={[path]}>
           <ThemeProvider themeId={themeId}>
-            <AppFooter onInvite={() => {}} />
+            <AppFooter family={family} onInvite={() => {}} />
           </ThemeProvider>
         </MemoryRouter>
       )
@@ -69,8 +71,9 @@ describe.each(['standard', 'berner'])('App-Rahmen im Theme %s', (themeId) => {
       container = null
       return links
     }
-    expect(await footerFor('/wegbegleiter')).toContain('/umgebung')
-    expect(await footerFor('/umgebung')).not.toContain('/umgebung')
+    expect(await footerFor('/start', { art: 'zuhause' })).toEqual(['/impressum', '/datenschutz'])
+    expect(await footerFor('/profil', { art: 'partner' })).toContain('/umgebung')
+    expect(await footerFor('/umgebung', { art: 'partner' })).not.toContain('/umgebung')
   })
 
   test('DemoBanner-Button nutzt den Theme-Wortlaut für „eigene Familie/eigenes Rudel anlegen"', async () => {

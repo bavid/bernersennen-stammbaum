@@ -169,7 +169,7 @@ describe('Route /v – nach dem Anmelden landet man in der Chronik, nicht auf de
     await act(async () => continueButton.click())
 
     expect(container.textContent).not.toContain('Abmelden und Einladungscode einlösen')
-    expect(container.querySelector('h1')?.textContent).toBe('Wegbegleiter')
+    expect(container.querySelector('h1')?.textContent).toBe('Start – Mein Zuhause')
   })
 
   test('eine normale Anmeldung auf /v landet ebenfalls in der Chronik, nicht auf der Karte', async () => {
@@ -194,7 +194,7 @@ describe('Route /v – nach dem Anmelden landet man in der Chronik, nicht auf de
 
     expect(login).toHaveBeenCalledWith('ABCD-1234-HJKM')
     expect(container.textContent).not.toContain('Abmelden und Einladungscode einlösen')
-    expect(container.querySelector('h1')?.textContent).toBe('Wegbegleiter')
+    expect(container.querySelector('h1')?.textContent).toBe('Start – Mein Zuhause')
   })
 })
 
@@ -274,7 +274,7 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
 
     expect(checkVoucher).not.toHaveBeenCalled()
     expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')).toBe(true)
-    expect(container.textContent).toContain('Wechselt oben zu „Meine Chronik“, um das Tier zu übernehmen.')
+    expect(container.textContent).toContain('Wechselt zuerst zu „Mein Zuhause“ (über „Start“), um das Tier zu übernehmen.')
   })
 
   test('ein gewöhnlicher (Nicht-Übergabe) Gutschein-Code lässt es bei "Abmelden und Einladungscode einlösen"', async () => {
@@ -291,7 +291,7 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     checkVoucher.mockResolvedValue({ status: 'offen' })
     await render('/v#abcd1234hjkm')
 
-    expect(container.textContent).not.toContain('Wechselt oben zu „Meine Chronik“')
+    expect(container.textContent).not.toContain('Wechselt zuerst zu „Mein Zuhause“')
   })
 
   test('eine Demo-Sitzung des eigenen Zuhauses kann nichts übernehmen (final-review Phase T Finding 10)', async () => {

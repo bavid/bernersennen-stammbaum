@@ -79,7 +79,7 @@ describe('PublicHeader', () => {
   test('ohne Verlauf, aber angemeldet: "Zurück" führt zur Startseite des Bereichs', async () => {
     await render({ entries: ['/impressum'], family: { id: 1, art: 'zuhause' } })
     await act(async () => backButton().click())
-    expect(path()).toBe('/wegbegleiter')
+    expect(path()).toBe('/start')
 
     act(() => root.unmount())
     root = null
@@ -163,6 +163,6 @@ describe('canGoBack / backFallback', () => {
   test('Ziel ohne Verlauf: Startroute des Bereichs, ohne Sitzung "/"', () => {
     expect(backFallback(null)).toBe('/')
     expect(backFallback({ art: 'tierheim' })).toBe('/tiere')
-    expect(backFallback({ art: 'rudel' })).toBe('/stammbaum')
+    expect(backFallback({ art: 'rudel' })).toBe('/start')
   })
 })

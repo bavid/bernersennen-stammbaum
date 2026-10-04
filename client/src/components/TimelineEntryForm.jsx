@@ -14,7 +14,8 @@ import ErlebtMitPicker from './erlebtMit/ErlebtMitPicker.jsx'
 // Checkbox "Im Steckbrief zeigen (öffentlich)" (isPublic), s. Phase T Task 4.
 // canTag (Phase V2): im eigenen Zuhause lassen sich Tiere verbundener Zuhause markieren ("Erlebt mit", erlebtMit im
 // Payload) - nie bei einem privaten Eintrag.
-export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTag, onSubmit, onDelete, onCancel }) {
+// submitLabel (Phase W): Beschriftung des Knopfs für einen neuen Beitrag, z. B. "Erzählen" im Composer auf Start.
+export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTag, submitLabel, onSubmit, onDelete, onCancel }) {
   const [autorName, setAutorName] = useState(() => entry?.autor_name || readSetting('autorName', ''))
   const [datum, setDatum] = useState(() => entry?.datum || todayIso())
   const [titel, setTitel] = useState(entry?.titel || '')
@@ -151,7 +152,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
           </button>
         )}
         <button className="btn btn-primary" type="submit" disabled={saving || uploading}>
-          {saving ? 'Speichere …' : entry ? 'Speichern' : 'In die Chronik eintragen'}
+          {saving ? 'Speichere …' : entry ? 'Speichern' : submitLabel || 'In die Chronik eintragen'}
         </button>
       </div>
     </form>
