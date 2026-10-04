@@ -1,6 +1,6 @@
 import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
-import { ContactDetails, ContactPerson, hasPortalContact } from './PortalContact.jsx'
+import { ContactDetails, ContactPerson, hasContactInfo } from './PortalContact.jsx'
 import { InternalLink } from './PreviewLink.jsx'
 import { todayIso } from '../lib/dates.js'
 import { PENDING_APPROVAL_LABEL, isPartnerMedia, isPendingApproval } from '../lib/discover.js'
@@ -96,7 +96,9 @@ function AnimalStrip({ animals }) {
 }
 
 // Reiter "Übersicht" des Portals (Vorgabe): der Willkommenstext, bei Tierheimen eine kleine Tier-Vorschau, die ersten
-// Angebote, die nächsten Termine und eine Kontaktzeile - kurz, alles Weitere im jeweiligen Reiter (onShowTab).
+// Angebote, die nächsten Termine und eine Kontaktzeile - kurz, alles Weitere im jeweiligen Reiter (onShowTab). Die
+// Kontaktzeile nur mit etwas zum Nachlesen (Ansprechperson, Website, E-Mail, Telefon) - "Schreib uns" steht im Kopf, der
+// Einladungscode nur im Reiter "Kontakt".
 // Am Desktop zweispaltig (Text und Angebote links, Termine und Kontakt rechts), am Handy untereinander.
 export default function PortalOverview({ partner, posts, animals, onShowTab }) {
   const paragraphs = paragraphsOf(partner.portal_text)
@@ -105,7 +107,7 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
   // Feedback-Runde: dieselbe Zahl wie am Reiter "Termine".
   const terminCount = upcomingTerminCount(allTermine)
   const firstPosts = posts.slice(0, OVERVIEW_POSTS)
-  const hasContact = hasPortalContact(partner)
+  const hasContact = hasContactInfo(partner)
   const hasMain = paragraphs.length > 0 || animals.length > 0 || firstPosts.length > 0
   const hasSide = termine.length > 0 || hasContact
 
@@ -174,7 +176,7 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
               id="portal-overview-contact"
               title="Kontakt"
               className="card portal-overview-contact"
-              more={{ label: 'Alle Kontaktwege & Einladungscode', onClick: () => onShowTab(CONTACT_TAB) }}
+              more={{ label: 'Alle Kontaktwege', onClick: () => onShowTab(CONTACT_TAB) }}
             >
               <ContactPerson name={partner.ansprechperson} />
               <ContactDetails partner={partner} />

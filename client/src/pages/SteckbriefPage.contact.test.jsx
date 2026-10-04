@@ -149,7 +149,7 @@ describe('SteckbriefPage – "Schreib uns zu {Tiername}" (Phase P2)', () => {
 
     const writeUs = button('Schreib uns zu Benno')
     expect(writeUs.disabled).toBe(true)
-    expect(container.querySelector('.steckbrief-shelter').textContent).toContain('In der Demo werden keine Nachrichten verschickt.')
+    expect(container.querySelector('.steckbrief-shelter').textContent).toContain('Hier werden keine Nachrichten verschickt.')
     expect(container.querySelector('dialog')).toBeNull()
     expect(contactPartner).not.toHaveBeenCalled()
   })

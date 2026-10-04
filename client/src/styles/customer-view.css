@@ -211,10 +211,6 @@
   white-space: normal;
 }
 
-.preview-frame-screen .partner-portal-action {
-  max-width: none;
-}
-
 .preview-frame-screen .partner-portal-text {
   font-size: var(--text-base);
 }
@@ -388,23 +384,6 @@
 .preview-own-badge svg {
   width: 0.95rem;
   height: 0.95rem;
-}
-
-.preview-placeholder {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  border-style: dashed;
-  box-shadow: none;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
-.preview-placeholder svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  flex-shrink: 0;
 }
 
 /* Teaser-Foto der Partnerkarte (neuester Einblick) */

@@ -9,6 +9,14 @@
   gap: clamp(var(--space-10), 5vw, var(--space-16));
 }
 
+/* Feedback-Runde: angemeldet steht das Portal in der Hülle der App (App.jsx) - .app-main gibt Außenabstand und Breite
+   vor, hier nur das Raster (sonst von .public-page). */
+.partner-portal-in-app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-inline: auto;
+}
+
 .preview-banner {
   justify-self: center;
   padding: var(--space-2) var(--space-5);
@@ -143,7 +151,7 @@
   gap: var(--space-3);
 }
 
-/* "Schreib uns" gesperrt (Demo, Kundensicht): der Hinweis darunter in der hellen Schrift des Kopfes. */
+/* "Schreib uns" gesperrt (Beispiel-Partner, Kundensicht): der Hinweis darunter in der hellen Schrift des Kopfes. */
 .partner-portal-hero .contact-partner-preview .field-hint {
   color: var(--hero-muted);
 }
@@ -153,24 +161,16 @@
   white-space: normal;
 }
 
-/* Feedback-Runde: "Einladungscode einlösen" als leiser Link hinter den Knöpfen - "Schreib uns" bleibt die Hauptaktion. */
-.partner-portal-hero .partner-portal-redeem-link {
+/* Feedback-Runde: auf dem Reiter "Kontakt" steht "Schreib uns" in der Kontakt-Karte - im Kopf dann verdeckt (PortalHero
+   ContactCta), mit seinem Platz am Ende der Zeile: Kopf und Reiter-Leiste springen beim Wechsel nicht. */
+.partner-portal-contact-cta {
   display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  color: var(--hero-muted);
-  font-size: var(--text-sm);
-  font-weight: 600;
+  max-width: 100%;
 }
 
-.partner-portal-hero .partner-portal-redeem-link:hover {
-  color: var(--tan);
-}
-
-.partner-portal-hero .partner-portal-redeem-link:focus-visible {
-  outline: 3px solid var(--tan);
-  outline-offset: 2px;
-  border-radius: 4px;
+.partner-portal-contact-cta.is-concealed {
+  order: 1;
+  visibility: hidden;
 }
 
 .partner-portal-hero .btn-ghost {
@@ -548,24 +548,68 @@ a.portal-overview-animal:focus-visible {
   color: var(--rust);
 }
 
-/* Gutschein einlösen (PortalAction) */
+/* Einladungscode (PortalCodeNote): die Plattform, nicht der Partner - eine kleine, leise Karte am Ende des Reiters
+   "Kontakt", deutlich unter der Kontakt-Karte des Partners: kleine Schrift, versenkte Fläche, ein Text-Link. */
 
-.partner-portal-action {
-  width: 100%;
-  max-width: 28rem;
-}
-
-/* Dezenter Fuß: "Mit Familie auf Pfoten - eine Chronik für deine Tiere" */
-
-.portal-brand-strip {
+.portal-code-note {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3) var(--space-4);
-  padding: var(--space-4) var(--space-5);
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  max-width: 40rem;
+  padding: var(--space-3) var(--space-5);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface-sunk);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.portal-code-note-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.portal-code-note p {
+  margin: 0;
+}
+
+.portal-code-note-title {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Nur per Skript fokussiert (alte Sprungmarke #gutschein) - kein Ring um den Titel. */
+.portal-code-note-title:focus {
+  outline: none;
+}
+
+.portal-code-note-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 1.75rem;
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.portal-code-note-link svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+}
+
+/* Dezenter Fuß: EIN leiser Link zur Startseite der Plattform ("Was ist Familie auf Pfoten?", PortalBrandStrip). */
+
+.portal-brand-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0;
   color: var(--ink-soft);
   font-size: var(--text-sm);
 }
@@ -574,20 +618,8 @@ a.portal-overview-animal:focus-visible {
   flex-shrink: 0;
 }
 
-.portal-brand-strip p {
-  flex: 1 1 14rem;
-  margin: 0;
-  line-height: 1.45;
-}
-
-.portal-brand-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-5);
-}
-
-.portal-brand-links a,
-.portal-brand-links [role='link'] {
+.portal-brand-strip a,
+.portal-brand-strip [role='link'] {
   color: var(--rust);
   font-weight: 700;
 }
@@ -639,10 +671,6 @@ a.portal-overview-animal:focus-visible {
     aspect-ratio: 16 / 9;
     height: auto;
     scroll-snap-align: start;
-  }
-
-  .partner-portal-action {
-    max-width: none;
   }
 
   /* Einblicke am Handy zweispaltig - ein Foto je Zeile machte die Seite sehr lang. */

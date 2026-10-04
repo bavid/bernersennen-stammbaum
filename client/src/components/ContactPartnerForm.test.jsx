@@ -200,7 +200,7 @@ describe('PortalContact – Kontakt-Kasten (Phase P2)', () => {
     await render(<PortalContact partner={partner} />)
 
     expect(container.querySelector('h2').textContent).toBe('Kontakt')
-    const external = [...container.querySelectorAll('a')].find((a) => a.textContent.includes('Zum Kontaktformular von Hundeschule Wiesengrund'))
+    const external = [...container.querySelectorAll('a')].find((a) => a.textContent.includes('Zu unserem Kontaktformular'))
     expect(external.getAttribute('href')).toBe('https://wiesengrund.example.org/kontakt')
     expect(external.getAttribute('target')).toBe('_blank')
     expect(external.getAttribute('rel')).toBe('noopener noreferrer')
@@ -218,7 +218,7 @@ describe('PortalContact – Kontakt-Kasten (Phase P2)', () => {
     const { kontaktformular, ...withoutFlag } = partner
     await render(<PortalContact partner={withoutFlag} />)
     expect(button('Schreib uns')).toBeUndefined()
-    expect(container.textContent).toContain('Zum Kontaktformular von Hundeschule Wiesengrund')
+    expect(container.textContent).toContain('Zu unserem Kontaktformular')
 
     act(() => root.unmount())
     container.remove()
@@ -255,9 +255,11 @@ describe('PortalContact – Kontakt-Kasten (Phase P2)', () => {
 
     const writeUs = button('Schreib uns')
     expect(writeUs.disabled).toBe(true)
-    expect(writeUs.getAttribute('title')).toBe('In der Demo werden keine Nachrichten verschickt.')
-    expect(writeUs.getAttribute('aria-description')).toBe('In der Demo werden keine Nachrichten verschickt.')
-    expect(container.querySelector('.contact-partner-preview .field-hint').textContent).toBe('In der Demo werden keine Nachrichten verschickt.')
+    // Feedback-Runde: neutral, ohne "Demo" - Portale nennen keine Demo.
+    expect(writeUs.getAttribute('title')).toBe('Hier werden keine Nachrichten verschickt.')
+    expect(writeUs.getAttribute('aria-description')).toBe('Hier werden keine Nachrichten verschickt.')
+    expect(container.querySelector('.contact-partner-preview .field-hint').textContent).toBe('Hier werden keine Nachrichten verschickt.')
+    expect(container.textContent).not.toMatch(/Demo/)
     expect(container.querySelector('dialog')).toBeNull()
   })
 

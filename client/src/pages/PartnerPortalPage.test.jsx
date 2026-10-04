@@ -4,15 +4,13 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { publicPartner, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts, redeemVoucher, demo } = vi.hoisted(() => ({
+const { publicPartner, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts } = vi.hoisted(() => ({
   publicPartner: vi.fn(),
   publicPartnerAnimals: vi.fn(),
   publicHappyEnds: vi.fn(),
-  publicPartnerPosts: vi.fn(),
-  redeemVoucher: vi.fn(),
-  demo: vi.fn()
+  publicPartnerPosts: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { publicPartner, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts, redeemVoucher, demo } }))
+vi.mock('../api', () => ({ api: { publicPartner, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts } }))
 
 import PartnerPortalPage from './PartnerPortalPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
@@ -21,13 +19,6 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 let container
 let root
-
-const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
-
-function setInputValue(input, value) {
-  nativeInputValueSetter.call(input, value)
-  input.dispatchEvent(new Event('input', { bubbles: true }))
-}
 
 beforeEach(() => {
   // Sinnvoller Standard, damit Tests, die die Vermittlungs-Sektion/Happy-Ends nicht betreffen, die
@@ -52,8 +43,6 @@ afterEach(() => {
   publicPartnerAnimals.mockReset()
   publicHappyEnds.mockReset()
   publicPartnerPosts.mockReset()
-  redeemVoucher.mockReset()
-  demo.mockReset()
 })
 
 async function render(props) {
@@ -65,7 +54,7 @@ async function render(props) {
     root.render(
       <MemoryRouter initialEntries={[props?.path || `/p/${slug}`]}>
         <ThemeProvider themeId="standard">
-          <PartnerPortalPage slug={slug} family={null} onRedeemed={() => {}} onLogout={() => {}} {...props} />
+          <PartnerPortalPage slug={slug} {...props} />
         </ThemeProvider>
       </MemoryRouter>
     )
@@ -158,132 +147,107 @@ describe('PartnerPortalPage – Vorschau-Band für Admins', () => {
   })
 })
 
-describe('PartnerPortalPage – Gutschein einlösen', () => {
-  test('das Code-Feld unten bekommt beim Laden keinen Fokus - die Seite bleibt oben (Audit V7a)', async () => {
+function contactPanel() {
+  return container.querySelector('#portal-panel-kontakt')
+}
+
+describe('PartnerPortalPage – Reiter Kontakt: euer Kontakt zuerst, der Einladungscode klein am Ende', () => {
+  test('erst der Kontakt des Partners (Überschrift, Website, E-Mail, "PLZ Ort"), danach die leise Karte zum Einladungscode', async () => {
     publicPartner.mockResolvedValue(partner)
     await render()
 
-    expect(container.querySelector('#redeem-code')).not.toBeNull()
-    expect(document.activeElement?.id).not.toBe('redeem-code')
+    const panel = contactPanel()
+    const contact = panel.querySelector('#partner-portal-contact')
+    const note = panel.querySelector('.portal-code-note')
+    expect(contact.querySelector('h2').textContent).toBe('Kontakt')
+    expect(contact.querySelector('a[href="mailto:info@sonnenhang.example.org"]')).not.toBeNull()
+    expect(contact.textContent).toContain('10115 Berlin')
+    // Reihenfolge im Dokument: der Partner vor der Plattform.
+    expect(contact.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(panel.lastElementChild).toBe(note)
   })
 
-  test('sendet das Formular an api.redeemVoucher und zeigt danach KeyReveal', async () => {
+  test('die Karte ist klein: keine Überschrift, ein Satz, EIN Text-Link zu /v - kein Formular, kein großer Knopf', async () => {
     publicPartner.mockResolvedValue(partner)
-    redeemVoucher.mockResolvedValue({
-      id: 5,
-      name: 'Zuhause am Deich',
-      art: 'zuhause',
-      theme: 'standard',
-      isDemo: false,
-      home: null,
-      memberships: [],
-      key: 'ABCD-1234-HJKM',
-      fromOthers: true
-    })
     await render()
 
-    await act(async () => {
-      setInputValue(container.querySelector('#redeem-code'), 'abcd1234hjkm')
-      setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
-    })
-    await act(async () => container.querySelector('.form-stack').requestSubmit())
-
-    expect(redeemVoucher).toHaveBeenCalledWith(expect.objectContaining({ code: 'ABCD-1234-HJKM', name: 'Zuhause am Deich' }))
-    expect(container.querySelector('.key-reveal-value').textContent).toBe('ABCD-1234-HJKM')
+    const note = contactPanel().querySelector('.portal-code-note')
+    expect(note.querySelectorAll('h1, h2, h3, h4')).toHaveLength(0)
+    expect(note.querySelector('.portal-code-note-title').textContent).toBe('Einladungscode bekommen?')
+    expect(note.textContent).toContain('Damit legt ihr kostenlos eure eigene Tier-Chronik an.')
+    // Der Partner-Name steht hier nicht noch einmal.
+    expect(note.textContent).not.toContain('Tierheim Sonnenhang')
+    const links = note.querySelectorAll('a')
+    expect(links).toHaveLength(1)
+    expect(links[0].textContent).toBe('Code einlösen')
+    expect(links[0].getAttribute('href')).toBe('/v')
+    expect(links[0].className).not.toMatch(/\bbtn\b/)
+    expect(note.querySelectorAll('button, input, form')).toHaveLength(0)
+    expect(container.querySelector('#redeem-code')).toBeNull()
   })
 
-  test('„Weiter zu Mein Zuhause“ ruft onRedeemed mit den Zugangsdaten auf (ohne key/fromOthers)', async () => {
+  test('der Einladungscode steht genau einmal auf der Seite - nicht im Kopf, nicht in der Übersicht', async () => {
     publicPartner.mockResolvedValue(partner)
-    const response = {
-      id: 5,
-      name: 'Zuhause am Deich',
-      art: 'zuhause',
-      theme: 'standard',
-      isDemo: false,
-      home: null,
-      memberships: [],
-      key: 'ABCD-1234-HJKM',
-      fromOthers: true
-    }
-    redeemVoucher.mockResolvedValue(response)
-    const onRedeemed = vi.fn()
-    await render({ onRedeemed })
+    await render()
 
-    await act(async () => {
-      setInputValue(container.querySelector('#redeem-code'), 'abcd1234hjkm')
-      setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
-    })
-    await act(async () => container.querySelector('.form-stack').requestSubmit())
-
-    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu „Mein Zuhause“')
-    await act(async () => continueButton.click())
-
-    const { key, fromOthers, ...me } = response
-    expect(onRedeemed).toHaveBeenCalledWith(me)
+    expect(container.querySelector('.partner-portal-hero').textContent).not.toContain('Einladungscode')
+    expect(container.querySelector('#portal-panel-uebersicht').textContent).not.toContain('Einladungscode')
+    expect(container.textContent.match(/Einladungscode/g)).toHaveLength(1)
   })
 })
 
-describe('PartnerPortalPage – angemeldete Besucher', () => {
-  const loggedInHome = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: null, memberships: [] }
-
-  test('zeigt das Portal weiterhin, ersetzt aber die Einlöse-Aktion durch "Zurück zu eurer Chronik"', async () => {
+describe('PartnerPortalPage – angemeldet in der Hülle der App (inApp)', () => {
+  test('kein zweiter Kopf oder Fuß, kein Einladungscode und kein "Zurück zu eurer Chronik" - der Kontakt bleibt', async () => {
     publicPartner.mockResolvedValue(partner)
-    await render({ family: loggedInHome })
+    await render({ inApp: true })
 
     expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
-    expect(container.querySelector('#redeem-code')).toBeNull()
-    expect(container.textContent).toContain('Zuhause am Deich')
-
-    const backButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Zurück zu eurer Chronik')
-    expect(backButton).not.toBeUndefined()
-    const logoutButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')
-    expect(logoutButton).not.toBeUndefined()
+    expect(container.querySelector('.partner-portal').classList.contains('public-page')).toBe(false)
+    expect(container.querySelector('.public-header')).toBeNull()
+    expect(container.querySelector('.public-footer')).toBeNull()
+    expect(container.querySelector('.portal-brand-strip')).toBeNull()
+    expect(container.querySelector('.portal-code-note')).toBeNull()
+    expect(container.textContent).not.toContain('Einladungscode')
+    expect(container.textContent).not.toContain('Zurück zu eurer Chronik')
+    expect(container.textContent).not.toContain('Abmelden')
+    expect(contactPanel().querySelector('#partner-portal-contact')).not.toBeNull()
   })
 
-  test('"Abmelden und Einladungscode einlösen" ruft onLogout auf', async () => {
-    publicPartner.mockResolvedValue(partner)
-    const onLogout = vi.fn()
-    await render({ family: loggedInHome, onLogout })
+  test('ohne jeden Kontaktweg fehlt angemeldet der Reiter Kontakt ganz (er bliebe leer)', async () => {
+    publicPartner.mockResolvedValue({ ...partner, website: null, kontakt_email: null })
+    await render({ inApp: true })
+    expect([...container.querySelectorAll('[role="tab"]')].map((tab) => tab.firstChild.textContent)).not.toContain('Kontakt')
+  })
 
-    const logoutButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')
-    act(() => logoutButton.click())
-    expect(onLogout).toHaveBeenCalled()
+  test('"gibt es nicht" angemeldet ohne eigenen Kopf und Fuß', async () => {
+    publicPartner.mockRejectedValue(Object.assign(new Error('Diesen Partner gibt es nicht'), { status: 404 }))
+    await render({ inApp: true })
+    expect(container.textContent).toContain('Diesen Partner gibt es nicht')
+    expect(container.querySelector('.public-header')).toBeNull()
+    expect(container.querySelector('.public-footer')).toBeNull()
   })
 })
 
-describe('PartnerPortalPage – Demo ansehen', () => {
-  test('zeigt "Demo ansehen" im abgemeldeten Zustand; ein Klick ruft api.demo() und danach onRedeemed auf', async () => {
-    publicPartner.mockResolvedValue(partner)
-    const me = { id: 9, name: 'Demo-Zuhause', theme: 'standard', art: 'zuhause', isDemo: true, home: null, memberships: [] }
-    demo.mockResolvedValue(me)
-    const onRedeemed = vi.fn()
-    await render({ onRedeemed })
+describe('PartnerPortalPage – keine Demo auf dem Portal', () => {
+  // Auch ein Demo-Partner (shelterDemo/partnerDemo, gesperrtes "Schreib uns") nennt nirgends eine Demo.
+  const demoPartner = { ...partner, shelterDemo: true, partnerDemo: true, kontaktformular: false, kontaktformularDemo: true }
 
-    const demoButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo ansehen')
-    expect(demoButton).not.toBeUndefined()
-    await act(async () => demoButton.click())
-
-    expect(demo).toHaveBeenCalled()
-    expect(onRedeemed).toHaveBeenCalledWith(me)
-  })
-
-  test('ein Fehler von api.demo() erscheint als Alert', async () => {
-    publicPartner.mockResolvedValue(partner)
-    demo.mockRejectedValue(new Error('Demo gerade nicht verfügbar'))
+  test('weder Demo-Knöpfe noch Demo-Hinweise - auch nicht in den verborgenen Reitern', async () => {
+    publicPartner.mockResolvedValue(demoPartner)
     await render()
 
-    const demoButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo ansehen')
-    await act(async () => demoButton.click())
-
-    expect(container.querySelector('[role="alert"]').textContent).toBe('Demo gerade nicht verfügbar')
+    expect(container.textContent).not.toMatch(/Demo/i)
+    expect([...container.querySelectorAll('button')].some((btn) => /Demo/i.test(btn.textContent))).toBe(false)
+    // Das gesperrte "Schreib uns" erklärt sich neutral.
+    expect(container.querySelector('.contact-partner-preview .field-hint').textContent).toBe('Hier werden keine Nachrichten verschickt.')
   })
 
-  test('kein "Demo ansehen" im angemeldeten Zustand', async () => {
-    publicPartner.mockResolvedValue(partner)
-    const loggedInHome = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: null, memberships: [] }
-    await render({ family: loggedInHome })
+  test('stattdessen im Fuß EIN leiser Link zur Startseite: "Was ist Familie auf Pfoten?"', async () => {
+    publicPartner.mockResolvedValue(demoPartner)
+    await render()
 
-    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Demo ansehen')).toBe(false)
+    const strip = container.querySelector('.portal-brand-strip')
+    expect([...strip.querySelectorAll('a')].map((a) => [a.textContent, a.getAttribute('href')])).toEqual([['Was ist Familie auf Pfoten?', '/']])
   })
 })
 
@@ -292,7 +256,8 @@ describe('PartnerPortalPage – Links und Kontakt', () => {
     publicPartner.mockResolvedValue(partner)
     await render()
 
-    const spenden = [...container.querySelectorAll('a')].find((a) => a.textContent.includes('Spenden an Tierheim Sonnenhang'))
+    // Der Name steht nicht noch einmal im Knopf - nur "Spenden".
+    const spenden = [...container.querySelectorAll('.partner-portal-hero a')].find((a) => a.textContent.trim() === 'Spenden')
     expect(spenden.getAttribute('href')).toBe('https://sonnenhang.example.org/spenden')
     expect(spenden.getAttribute('target')).toBe('_blank')
     expect(spenden.getAttribute('rel')).toBe('noopener noreferrer')
@@ -417,95 +382,6 @@ describe('PartnerPortalPage – Sektion "Happy Ends" (Task 6)', () => {
   })
 })
 
-describe('PartnerPortalPage – "Demo als Tierheim ansehen" (Task 6)', () => {
-  test('kein Knopf, wenn der Partner nicht demo-fähig ist', async () => {
-    publicPartner.mockResolvedValue(partner)
-    await render()
-    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')).toBe(false)
-  })
-
-  test('zeigt den Knopf für einen demo-fähigen Partner; ein Klick ruft api.demo({ as: "tierheim" }) und onRedeemed auf', async () => {
-    publicPartner.mockResolvedValue({ ...partner, shelterDemo: true })
-    const me = { id: 9, name: 'Tierheim Sonnenhang', theme: 'standard', art: 'tierheim', isDemo: true, home: null, memberships: [] }
-    demo.mockResolvedValue(me)
-    const onRedeemed = vi.fn()
-    await render({ onRedeemed })
-
-    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')
-    expect(button).not.toBeUndefined()
-    await act(async () => button.click())
-
-    expect(demo).toHaveBeenCalledWith({ as: 'tierheim' })
-    expect(onRedeemed).toHaveBeenCalledWith(me)
-  })
-
-  test('ein Fehler von api.demo() erscheint als Alert', async () => {
-    publicPartner.mockResolvedValue({ ...partner, shelterDemo: true })
-    demo.mockRejectedValue(new Error('Demo gerade nicht verfügbar'))
-    await render()
-
-    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')
-    await act(async () => button.click())
-
-    expect(container.querySelector('[role="alert"]').textContent).toBe('Demo gerade nicht verfügbar')
-  })
-
-  test('kein Knopf im angemeldeten Zustand', async () => {
-    publicPartner.mockResolvedValue({ ...partner, shelterDemo: true })
-    const loggedInHome = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: null, memberships: [] }
-    await render({ family: loggedInHome })
-
-    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.trim() === 'Demo als Tierheim ansehen')).toBe(false)
-  })
-})
-
-describe('PartnerPortalPage – "Demo als Partner ansehen" (Phase P1)', () => {
-  const school = { ...partner, id: 4, slug: 'hundeschule-wiesengrund', name: 'Hundeschule Wiesengrund', typ: 'hundeschule' }
-
-  function partnerDemoButton() {
-    return [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Demo als Partner ansehen')
-  }
-
-  test('kein Knopf ohne partnerDemo', async () => {
-    publicPartner.mockResolvedValue(school)
-    await render({ slug: school.slug })
-    expect(partnerDemoButton()).toBeUndefined()
-  })
-
-  test('mit partnerDemo: ein Klick ruft api.demo({ as: "partner", slug }) und danach onRedeemed (-> /profil) auf', async () => {
-    publicPartner.mockResolvedValue({ ...school, partnerDemo: true })
-    const me = { id: 31, name: 'Hundeschule Wiesengrund', theme: 'standard', art: 'partner', isDemo: true, home: null, memberships: [] }
-    demo.mockResolvedValue(me)
-    const onRedeemed = vi.fn()
-    await render({ slug: school.slug, onRedeemed })
-
-    await act(async () => partnerDemoButton().click())
-
-    expect(demo).toHaveBeenCalledWith({ as: 'partner', slug: 'hundeschule-wiesengrund' })
-    expect(onRedeemed).toHaveBeenCalledWith(me)
-  })
-
-  test('ein Fehler erscheint als Alert über dem Knopf, die anderen Demos bleiben bedienbar', async () => {
-    publicPartner.mockResolvedValue({ ...school, partnerDemo: true })
-    demo.mockRejectedValue(new Error('Keine Demo verfügbar'))
-    await render({ slug: school.slug })
-
-    await act(async () => partnerDemoButton().click())
-
-    const alert = container.querySelector('[role="alert"]')
-    expect(alert.textContent).toBe('Keine Demo verfügbar')
-    expect(alert.nextElementSibling).toBe(partnerDemoButton())
-    expect(partnerDemoButton().disabled).toBe(false)
-  })
-
-  test('kein Knopf im angemeldeten Zustand', async () => {
-    publicPartner.mockResolvedValue({ ...school, partnerDemo: true })
-    const loggedInHome = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, home: null, memberships: [] }
-    await render({ slug: school.slug, family: loggedInHome })
-    expect(partnerDemoButton()).toBeUndefined()
-  })
-})
-
 describe('PartnerPortalPage – Einblicke (Phase P1)', () => {
   test('zeigt die Einblicke des Portals als eigene Sektion', async () => {
     publicPartner.mockResolvedValue({
@@ -527,7 +403,7 @@ describe('PartnerPortalPage – Einblicke (Phase P1)', () => {
   })
 })
 
-// Kundensicht: load statt api.publicPartner, preview schaltet Links, Einlösen und Demo-Knöpfe ab.
+// Kundensicht: load statt api.publicPartner, preview schaltet Links und "Schreib uns" ab.
 describe('PartnerPortalPage – Vorschau (Kundensicht)', () => {
   const previewData = {
     ...partner,
@@ -577,15 +453,16 @@ describe('PartnerPortalPage – Vorschau (Kundensicht)', () => {
     expect(container.querySelector('.shelter-card img').getAttribute('src')).toBe('/uploads/88888888-8888-8888-8888-888888888888.jpg')
   })
 
-  test('kein Einlöse-Formular, keine Demo-Knöpfe, kein Kopf mit "Zurück", kein Fuß - stattdessen ein Hinweis', async () => {
+  test('kein Formular, keine Demo, kein Kopf mit "Zurück", kein Fuß - die Karte zum Einladungscode wie bei Kunden, deaktiviert', async () => {
     await renderPreview(vi.fn().mockResolvedValue(previewData))
 
     expect(container.querySelector('.public-header')).toBeNull()
     expect(container.querySelector('form')).toBeNull()
-    expect(container.textContent).not.toContain('Demo ansehen')
-    expect(container.textContent).not.toContain('Demo als Partner ansehen')
+    expect(container.textContent).not.toMatch(/Demo/i)
     expect(container.querySelector('.public-footer')).toBeNull()
-    expect(container.querySelector('.preview-placeholder').textContent).toContain('in der Vorschau ausgeblendet')
+    const note = container.querySelector('.portal-code-note')
+    expect(note.querySelector('a')).toBeNull()
+    expect(note.querySelector('[aria-disabled="true"]').textContent).toBe('Code einlösen')
   })
 
   test('alle Links sind deaktiviert: Spenden, Vermittlung, Website, E-Mail und die Tierkarten', async () => {
@@ -595,12 +472,7 @@ describe('PartnerPortalPage – Vorschau (Kundensicht)', () => {
     const disabled = [...container.querySelectorAll('[aria-disabled="true"]')].map((el) => el.textContent.trim())
     // Mit eigenen Tieren steht die Vermittlungsseite im Reiter "Tiere" statt im Kopf.
     expect(disabled).toEqual(
-      expect.arrayContaining([
-        'Spenden an Tierheim Sonnenhang',
-        'Alle Tiere auf der Vermittlungsseite',
-        'https://sonnenhang.example.org',
-        'info@sonnenhang.example.org'
-      ])
+      expect.arrayContaining(['Spenden', 'Alle Tiere auf der Vermittlungsseite', 'https://sonnenhang.example.org', 'info@sonnenhang.example.org'])
     )
     expect(container.querySelector('.shelter-card').getAttribute('aria-disabled')).toBe('true')
   })

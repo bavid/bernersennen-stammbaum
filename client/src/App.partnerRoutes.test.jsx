@@ -4,21 +4,18 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts } =
-  vi.hoisted(() => ({
-    me: vi.fn(),
-    logout: vi.fn(),
-    redeemVoucher: vi.fn(),
-    listDogs: vi.fn(),
-    publicPartner: vi.fn(),
-    publicPartners: vi.fn(),
-    publicPartnerAnimals: vi.fn(),
-    publicHappyEnds: vi.fn(),
-    // Phase P2: "Aktuelles" auf dem Portal - hier reicht eine leere Liste.
-    publicPartnerPosts: vi.fn(() => Promise.resolve([]))
-  }))
+const { me, logout, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts } = vi.hoisted(() => ({
+  me: vi.fn(),
+  logout: vi.fn(),
+  publicPartner: vi.fn(),
+  publicPartners: vi.fn(),
+  publicPartnerAnimals: vi.fn(),
+  publicHappyEnds: vi.fn(),
+  // Phase P2: "Aktuelles" auf dem Portal - hier reicht eine leere Liste.
+  publicPartnerPosts: vi.fn(() => Promise.resolve([]))
+}))
 vi.mock('./api', () => ({
-  api: { me, logout, redeemVoucher, listDogs, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts },
+  api: { me, logout, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -60,13 +57,6 @@ const partner = {
   farbe: '#2f6b3f'
 }
 
-const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
-
-function setInputValue(input, value) {
-  nativeInputValueSetter.call(input, value)
-  input.dispatchEvent(new Event('input', { bubbles: true }))
-}
-
 beforeEach(() => {
   publicPartnerAnimals.mockResolvedValue([])
   publicHappyEnds.mockResolvedValue([])
@@ -86,8 +76,6 @@ afterEach(() => {
   window.history.replaceState(null, '', '/')
   me.mockReset()
   logout.mockReset()
-  redeemVoucher.mockReset()
-  listDogs.mockReset()
   publicPartner.mockReset()
   publicPartners.mockReset()
   publicPartnerAnimals.mockReset()
@@ -109,60 +97,53 @@ async function render(initialEntry) {
   return container
 }
 
-describe('Route /p/:slug – Gutschein direkt aus dem Partner-Portal einlösen', () => {
-  test('ohne Sitzung: Einlösen führt über KeyReveal ("Weiter") zur Start-Route, wie bei /v', async () => {
+// Feedback-Runde: das Portal löst keinen Code mehr selbst ein - ein leiser Link führt zum Einlösen auf /v. Angemeldet steht
+// es in der normalen Hülle der App (ein Kopf, ein Fuß), ohne Einladungscode und ohne "Zurück zu eurer Chronik".
+describe('Route /p/:slug – Portal ohne und mit Sitzung', () => {
+  test('ohne Sitzung: schlanker öffentlicher Kopf; "Code einlösen" am Ende von "Kontakt" führt zum Einlösen auf /v', async () => {
     me.mockRejectedValue(new Error('401'))
     publicPartner.mockResolvedValue(partner)
-    redeemVoucher.mockResolvedValue({
-      key: 'WXYZ-9876-MNPQ',
-      fromOthers: false,
-      id: 1,
-      name: 'Zuhause am Deich',
-      theme: 'standard',
-      art: 'zuhause',
-      isDemo: false,
-      home: null,
-      memberships: []
-    })
-    listDogs.mockResolvedValue([])
     await render('/p/tierheim-sonnenhang')
 
-    expect(container.textContent).toContain('Tierheim Sonnenhang')
-
-    await act(async () => {
-      setInputValue(container.querySelector('#redeem-code'), 'abcd1234hjkm')
-      setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich')
-    })
-    await act(async () => container.querySelector('.form-stack').requestSubmit())
-
-    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu „Mein Zuhause“')
-    await act(async () => continueButton.click())
-
-    expect(container.querySelector('h1')?.textContent).toBe('Start – Mein Zuhause')
-  })
-
-  test('mit bestehender Sitzung: zeigt das Portal weiter, mit "Zurück zu eurer Chronik" statt dem Formular', async () => {
-    me.mockResolvedValue(loggedInHome)
-    publicPartner.mockResolvedValue(partner)
-    await render('/p/tierheim-sonnenhang')
-
-    expect(container.textContent).toContain('Tierheim Sonnenhang')
+    expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
+    expect(container.querySelectorAll('header')).toHaveLength(1)
+    expect(container.querySelector('.public-header')).not.toBeNull()
+    expect(container.querySelector('.app-header')).toBeNull()
     expect(container.querySelector('#redeem-code')).toBeNull()
-    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Zurück zu eurer Chronik')
-    expect(button).not.toBeUndefined()
+
+    const link = container.querySelector('#portal-panel-kontakt .portal-code-note a')
+    expect(link.getAttribute('href')).toBe('/v')
+    await act(async () => link.click())
+
+    expect(container.querySelector('#redeem-code')).not.toBeNull()
   })
 
-  test('"Abmelden und Einladungscode einlösen" auf dem Portal meldet ab und zeigt danach das Formular', async () => {
+  test('mit Sitzung: das Portal in der Hülle der App - ein Kopf, ein Fuß, kein Einladungscode, keine doppelten Wege zurück', async () => {
     me.mockResolvedValue(loggedInHome)
-    logout.mockResolvedValue(null)
     publicPartner.mockResolvedValue(partner)
     await render('/p/tierheim-sonnenhang')
 
-    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')
-    await act(async () => button.click())
+    const main = container.querySelector('main.app-main')
+    expect(main.querySelector('.partner-portal h1').textContent).toBe('Tierheim Sonnenhang')
+    expect(container.querySelectorAll('.app-header')).toHaveLength(1)
+    expect(container.querySelectorAll('.app-footer')).toHaveLength(1)
+    expect(container.querySelector('.public-header')).toBeNull()
+    expect(container.querySelector('.public-footer')).toBeNull()
+    expect(container.querySelector('.portal-brand-strip')).toBeNull()
+    expect(container.querySelector('.portal-code-note')).toBeNull()
+    expect(container.textContent).not.toContain('Einladungscode')
+    expect(container.textContent).not.toContain('Zurück zu eurer Chronik')
+    // Der Name des Partners steht im Inhalt genau einmal als Überschrift.
+    expect([...container.querySelectorAll('h1, h2')].filter((h) => h.textContent === 'Tierheim Sonnenhang')).toHaveLength(1)
+  })
 
-    expect(logout).toHaveBeenCalled()
-    expect(container.querySelector('#redeem-code')).not.toBeNull()
+  test('mit Sitzung und ohne jeden Kontaktweg: kein leerer Reiter "Kontakt"', async () => {
+    me.mockResolvedValue(loggedInHome)
+    publicPartner.mockResolvedValue(partner)
+    await render('/p/tierheim-sonnenhang?reiter=kontakt')
+
+    const tabs = [...container.querySelectorAll('[role="tab"]')].map((tab) => tab.firstChild.textContent)
+    expect(tabs).toEqual(['Übersicht'])
   })
 })
 

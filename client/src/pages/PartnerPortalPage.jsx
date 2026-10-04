@@ -40,10 +40,11 @@ function demoParam(search) {
   return new URLSearchParams(search).get('demo') === '1' ? '1' : undefined
 }
 
-function NotFound({ family }) {
+// inApp: angemeldet in der Hülle der App - deren Kopf und Fuß stehen schon da.
+function NotFound({ inApp }) {
   return (
-    <div className="public-page partner-portal-missing">
-      <PublicHeader family={family} />
+    <div className={`partner-portal-missing ${inApp ? 'partner-portal-in-app' : 'public-page'}`}>
+      {!inApp && <PublicHeader />}
       <div className="card empty-state">
         <ThemeMark size={56} />
         <h1>Diesen Partner gibt es nicht</h1>
@@ -52,7 +53,22 @@ function NotFound({ family }) {
           Zur Partnerliste
         </Link>
       </div>
-      <PublicFooter />
+      {!inApp && <PublicFooter />}
+    </div>
+  )
+}
+
+function Loading({ preview, inApp }) {
+  if (preview || inApp) {
+    return (
+      <p className={`muted ${preview ? 'preview-loading' : 'page-loading'}`} role="status" aria-busy="true">
+        Lädt …
+      </p>
+    )
+  }
+  return (
+    <div className="splash" aria-busy="true">
+      <ThemeMark size={72} />
     </div>
   )
 }
@@ -87,12 +103,14 @@ function usePortalList(fetchList, slug, demo, skip) {
 
 // /p/:slug – Portal eines Partners, seit Phase U als ruhige Landingpage, auf die Partner von ihrer Website,
 // Instagram oder Visitenkarte verlinken. Seit den Portal-Reitern: Kopf (Banner, Logo, Name, Unterzeile, "Schreib
-// uns" und "Gutschein einlösen"), darunter Reiter statt eines langen Stapels - Übersicht, bei Tierheimen Tiere (samt
-// Happy Ends), Angebote, Termine, Einblicke, Kontakt (samt "Gutschein einlösen"), siehe PortalBody - und ein dezenter
-// Fuß. Angemeldete sehen dasselbe Portal, nur die Aktion ist ersetzt – man muss sich nicht abmelden, um es anzuschauen.
+// uns"), darunter Reiter statt eines langen Stapels - Übersicht, bei Tierheimen Tiere (samt Happy Ends), Angebote,
+// Termine, Einblicke, Kontakt (der Partner zuerst, am Ende leise der Einladungscode), siehe PortalBody.
+// Feedback-Runde: ohne Sitzung mit dem schlanken öffentlichen Kopf und einem dezenten Fuß ("Was ist Familie auf
+// Pfoten?" - die Demo gibt es dort, nicht auf dem Portal). Angemeldet (inApp, App.jsx) steht das Portal in der normalen
+// Hülle der App - ohne zweiten Kopf, Fuß oder Einladungscode, man muss sich nicht abmelden, um es anzuschauen.
 // Kundensicht (Phase P1): load liefert die Portal-Daten statt api.publicPartner(slug) (z. B.
-// api.partnerArea.previewPortal, samt tiere und posts) und preview schaltet Links, Einlösen und Demo-Knöpfe ab.
-export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, load, preview = false }) {
+// api.partnerArea.previewPortal, samt tiere und posts) und preview schaltet Links und "Schreib uns" ab.
+export default function PartnerPortalPage({ slug, inApp = false, load, preview = false }) {
   const location = useLocation()
   const injected = typeof load === 'function'
   const demo = demoParam(location.search)
@@ -128,17 +146,7 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
     }
   }, [slug, load, demo])
 
-  if (partner === undefined || (partner && !listsReady)) {
-    return preview ? (
-      <p className="muted preview-loading" role="status" aria-busy="true">
-        Lädt …
-      </p>
-    ) : (
-      <div className="splash" aria-busy="true">
-        <ThemeMark size={72} />
-      </div>
-    )
-  }
+  if (partner === undefined || (partner && !listsReady)) return <Loading preview={preview} inApp={inApp} />
 
   if (partner === null) {
     return preview ? (
@@ -146,32 +154,27 @@ export default function PartnerPortalPage({ slug, family, onRedeemed, onLogout, 
         {PREVIEW_LOAD_ERROR}
       </div>
     ) : (
-      <NotFound family={family} />
+      <NotFound inApp={inApp} />
     )
   }
 
+  // Eigener Kopf und Fuß nur ohne Sitzung - in der Kundensicht (preview) führte "Zurück" aus der Vorschau, angemeldet
+  // (inApp) stehen Kopf und Fuß der App schon da.
+  const ownChrome = !preview && !inApp
+  const classes = ['partner-portal', inApp ? 'partner-portal-in-app' : 'public-page', isValidHexColor(partner.farbe) && 'has-accent']
+
   return (
     <PreviewProvider value={preview}>
-      <div className={`public-page partner-portal${isValidHexColor(partner.farbe) ? ' has-accent' : ''}`} style={accentStyle(partner.farbe)}>
-        {/* Kopf mit "Zurück" nur auf der öffentlichen Seite - in der Kundensicht (preview) führte er aus der Vorschau. */}
-        {!preview && <PublicHeader family={family} />}
+      <div className={classes.filter(Boolean).join(' ')} style={accentStyle(partner.farbe)}>
+        {ownChrome && <PublicHeader />}
         {partner.preview && (
           <div className="preview-banner" role="status">
             Vorschau – nur für Admins sichtbar
           </div>
         )}
-        <PortalBody
-          partner={partner}
-          posts={posts}
-          animals={animals}
-          happyEnds={happyEnds}
-          family={family}
-          preview={preview}
-          onRedeemed={onRedeemed}
-          onLogout={onLogout}
-        />
-        <PortalBrandStrip />
-        {!preview && <PublicFooter />}
+        <PortalBody partner={partner} posts={posts} animals={animals} happyEnds={happyEnds} preview={preview} showCodeNote={!inApp} />
+        {!inApp && <PortalBrandStrip />}
+        {ownChrome && <PublicFooter />}
       </div>
     </PreviewProvider>
   )

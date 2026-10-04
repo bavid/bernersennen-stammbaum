@@ -222,6 +222,37 @@ describe('Hinweis in der Partner-Demo', () => {
     expect(container.querySelector('.demo-guide')).toBeNull()
   })
 
+  // Feedback-Runde: auf einem Partner-Portal steht keine Demo - auch nicht, weil die Sitzung eine Demo ist.
+  test.each([
+    ['einer Partner-Demo', partnerDemo],
+    ['einer Zuhause-Demo', { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: true, home: null, memberships: [] }]
+  ])('auf /p/:slug in %s: das Portal in der App-Hülle, ohne Demo-Hinweis, Rundgang und Umschalter', async (_label, me) => {
+    api.me.mockResolvedValue(me)
+    await render('/admin-schreiben')
+    // Gegenprobe: auf den Seiten des eigenen Bereichs steht der Demo-Hinweis (in der Partner-Demo auch Rundgang und Umschalter).
+    expect(container.querySelector('.demo-banner')).not.toBeNull()
+    if (me.art === 'partner') {
+      expect(container.querySelector('.demo-guide')).not.toBeNull()
+      expect(container.querySelector('.view-mode-switch')).not.toBeNull()
+    }
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render('/p/hundeschule-birkenhain')
+    await waitFor(() => container.querySelector('.partner-portal h1'))
+
+    expect(container.querySelector('main.app-main .partner-portal h1').textContent).toBe('Hundeschule Birkenhain')
+    expect(container.querySelectorAll('header')).toHaveLength(1)
+    expect(container.querySelector('.app-header')).not.toBeNull()
+    expect(container.querySelector('.public-header')).toBeNull()
+    expect(container.querySelector('.public-footer')).toBeNull()
+    expect(container.querySelector('.demo-banner')).toBeNull()
+    expect(container.querySelector('.demo-guide')).toBeNull()
+    expect(container.querySelector('.view-mode-switch')).toBeNull()
+    expect(container.textContent).not.toMatch(/Demo/i)
+  })
+
   test('schließen blendet ihn aus und merkt es sich für die nächste Demo', async () => {
     api.me.mockResolvedValue(partnerDemo)
     await render('/admin-schreiben')

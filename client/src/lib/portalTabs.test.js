@@ -76,6 +76,11 @@ describe('portalTabs / portalCounts', () => {
     expect(portalCounts({})).toEqual({})
   })
 
+  test('kontakt: false (angemeldet, ohne jeden Kontaktweg) - dann fehlt auch der Reiter Kontakt', () => {
+    expect(portalTabs({ kontakt: false }).map((tab) => tab.key)).toEqual([OVERVIEW_TAB])
+    expect(portalTabs({ kontakt: true }).map((tab) => tab.key)).toEqual([OVERVIEW_TAB, CONTACT_TAB])
+  })
+
   test('nur Happy Ends: der Reiter Tiere steht da, ohne Zähler', () => {
     const tabs = portalTabs({ happyEnds: [{ name: 'Nele' }] })
     expect(tabs.map((tab) => tab.key)).toEqual([OVERVIEW_TAB, 'tiere', CONTACT_TAB])

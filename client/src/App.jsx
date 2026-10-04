@@ -538,15 +538,15 @@ export default function App() {
     )
   }
 
-  // Partner-Portal und Partnerliste: öffentlich, funktionieren angemeldet wie abgemeldet (siehe dort) –
-  // deshalb wie /v ein eigener früher Zweig, statt sie unter die Routen des angemeldeten Bereichs zu
-  // hängen. onRedeemed teilt sich mit /v denselben Übergang: Familie setzen und zur Start-Route wechseln.
+  // Partner-Portal: öffentlich - ohne Sitzung wie /v ein eigener früher Zweig mit dem schlanken öffentlichen Kopf.
+  // Feedback-Runde: angemeldet steht es unten in der normalen Hülle der App (ein Kopf, ein Fuß - nicht doppelt), ohne
+  // Demo-Hinweis und ohne Einladungscode (PartnerPortalPage inApp).
   const partnerSlug = pathname.match(PARTNER_SLUG_RE)?.[1]
 
-  if (partnerSlug) {
+  if (partnerSlug && !family) {
     return (
       <ThemeProvider themeId="standard">
-        <PartnerPortalPage slug={partnerSlug} family={family} onRedeemed={handleVoucherLogin} onLogout={handleLogout} />
+        <PartnerPortalPage slug={partnerSlug} />
       </ThemeProvider>
     )
   }
@@ -614,6 +614,10 @@ export default function App() {
     )
   }
 
+  // Feedback-Runde: das Partner-Portal (/p/:slug) gehört dem Partner - in der Hülle ohne Demo-Hinweis, Demo-Rundgang und
+  // "Bearbeiten | Kundensicht" (die gelten dem eigenen Bereich), sonst stünde all das über dem Portal noch einmal.
+  const onPortal = Boolean(partnerSlug)
+
   return (
     <ThemeProvider themeId={family.theme}>
       {/* Schreibschutz für Demo UND Admin-Ansicht (lib/demo.js readOnlyModeOf liest isDemo/adminView aus me). */}
@@ -625,14 +629,12 @@ export default function App() {
           {family.adminView ? (
             <AdminViewBanner family={family} onEnd={handleEndAdminView} />
           ) : (
-            family.isDemo && (
-              <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
-            )
+            family.isDemo && !onPortal && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
           )}
           {/* Phase W, Schritt 2: zu Besuch steht ein Chip im Kopf der Besuchsseiten (visits/VisitChip) - kein Band mehr oben. */}
           <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
-          {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}
+          {isPartnerArea(family) && !onPortal && <ViewModeSwitch areaId={family.id} />}
           {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
               bliebe beim Wechsel des Bereichs (AreaGate wechselt auf derselben Adresse, z. B. /start aus einer
               Familie heraus) die alte Seiteninstanz samt Daten des vorherigen Bereichs stehen. Der key erzwingt
@@ -641,10 +643,14 @@ export default function App() {
             {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
                 Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
             {/* Phase U: Rundgang durch eine Partner- oder Tierheim-Demo (schließbar, bleibt dann zu). */}
-            {family.isDemo && !family.adminView && isPartnerArea(family) && <PartnerDemoGuide family={family} />}
-            <Suspense fallback={<RouteFallback />}>
-              <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={openInvite} />
-            </Suspense>
+            {family.isDemo && !family.adminView && isPartnerArea(family) && !onPortal && <PartnerDemoGuide family={family} />}
+            {onPortal ? (
+              <PartnerPortalPage slug={partnerSlug} inApp />
+            ) : (
+              <Suspense fallback={<RouteFallback />}>
+                <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={openInvite} />
+              </Suspense>
+            )}
           </main>
           <AppFooter family={family} onInvite={openInvite} />
           <Modal open={inviteOpen} title={inviteLabel(family)} onClose={() => setInviteOpen(false)}>

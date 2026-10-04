@@ -11,7 +11,8 @@ export const PORTAL_TAB_PARAM = 'reiter'
 export const OVERVIEW_TAB = 'uebersicht'
 export const CONTACT_TAB = 'kontakt'
 
-// Abschnitte im Portal (PortalSection-Ids) - Sprungziele für Kopf-Knöpfe und alte Links.
+// Abschnitte im Portal (Ids der PortalSection-Abschnitte, gutschein: die Karte PortalCodeNote) - Sprungziele für
+// Kopf-Knöpfe und alte Links.
 export const SECTION_IDS = Object.freeze({
   posts: 'partner-portal-posts',
   termine: 'partner-portal-termine',
@@ -110,14 +111,16 @@ function sizes({ posts, termine, einblicke, animals, happyEnds, preview = false,
   }
 }
 
-// Sichtbare Reiter: Übersicht und Kontakt immer, die übrigen nur mit Inhalt. Tiere auch mit nur Happy Ends.
+// Sichtbare Reiter: Übersicht immer, die übrigen nur mit Inhalt. Tiere auch mit nur Happy Ends. Kontakt, solange
+// data.kontakt nicht false ist (PortalBody: ein Kontaktweg des Partners oder die Karte zum Einladungscode).
 export function portalTabs(data) {
   const n = sizes(data)
   const hasContent = {
     angebote: n.angebote > 0,
     termine: n.termine > 0,
     einblicke: n.einblicke > 0,
-    tiere: n.tiere + n.happyEnds > 0
+    tiere: n.tiere + n.happyEnds > 0,
+    [CONTACT_TAB]: data.kontakt !== false
   }
   return TAB_DEFS.filter((tab) => hasContent[tab.key] ?? true)
 }

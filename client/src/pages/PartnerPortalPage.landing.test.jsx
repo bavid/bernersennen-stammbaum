@@ -96,7 +96,7 @@ async function render(props = {}) {
     root.render(
       <MemoryRouter initialEntries={['/p/tierheim-lindenhof']}>
         <ThemeProvider themeId="standard">
-          <PartnerPortalPage slug="tierheim-lindenhof" family={null} onRedeemed={() => {}} onLogout={() => {}} {...props} />
+          <PartnerPortalPage slug="tierheim-lindenhof" {...props} />
         </ThemeProvider>
       </MemoryRouter>
     )
@@ -121,14 +121,8 @@ describe('PartnerPortalPage – Landingpage (Phase U, seit den Portal-Reitern)',
     await render()
     expect(tabLabels()).toEqual(['Übersicht', 'Tiere', 'Angebote', 'Einblicke', 'Kontakt'])
     // Alle Reiter stehen (verborgen) im Dokument - die Seite bleibt vollständig.
-    expect(sectionTitles()).toEqual([
-      'Fellnasen suchen ein Zuhause',
-      'Happy Ends',
-      'Angebote & Aktuelles',
-      'Einblicke',
-      'Kontakt',
-      'Einladungscode einlösen'
-    ])
+    // Der Einladungscode ist keine eigene Abschnitts-Überschrift mehr (leise Karte am Ende von "Kontakt").
+    expect(sectionTitles()).toEqual(['Fellnasen suchen ein Zuhause', 'Happy Ends', 'Angebote & Aktuelles', 'Einblicke', 'Kontakt'])
   })
 
   test('"Kontakt" im Kopf öffnet den Reiter Kontakt und setzt den Fokus auf dessen Überschrift', async () => {
@@ -146,27 +140,27 @@ describe('PartnerPortalPage – Landingpage (Phase U, seit den Portal-Reitern)',
     expect(document.activeElement).toBe(heading)
   })
 
-  test('ohne jeden Kontaktweg: kein Kontakt-Abschnitt und kein Kopf-Knopf "Kontakt" - der Reiter bleibt für den Gutschein', async () => {
+  test('ohne jeden Kontaktweg: kein Kontakt-Abschnitt und kein Kopf-Knopf - der Reiter bleibt für den leisen Einladungscode', async () => {
     publicPartner.mockResolvedValue({ ...partner, website: null })
     await render()
     expect(heroButton('Kontakt')).toBeUndefined()
-    // Feedback-Runde: auch ohne Kontaktweg nur ein leiser Link, kein Hauptknopf.
-    expect(heroButton('Einladungscode einlösen').className).toContain('link-button')
-    expect(heroButton('Einladungscode einlösen').className).not.toContain('btn-primary')
+    // Feedback-Runde: kein Einladungscode im Kopf - ohne Kontaktweg und Spenden bleibt die Knopfzeile ganz weg.
+    expect(container.querySelector('.partner-portal-links')).toBeNull()
+    expect(container.querySelector('.partner-portal-hero').textContent).not.toContain('Einladungscode')
     expect(sectionTitles()).not.toContain('Kontakt')
     expect(tabLabels()).toContain('Kontakt')
+    expect(container.querySelector('#portal-panel-kontakt .portal-code-note')).not.toBeNull()
   })
 
-  test('der dezente Fuß führt zur Startseite und zum Gutschein-Anfragen', async () => {
+  test('der dezente Fuß: EIN leiser Link zur Startseite ("Was ist Familie auf Pfoten?") - dort gibt es die Demo', async () => {
     publicPartner.mockResolvedValue(partner)
     await render()
     const strip = container.querySelector('.portal-brand-strip')
-    expect(strip.textContent).toContain('Mit Familie auf Pfoten – eine Chronik für deine Tiere')
+    expect(strip.textContent).toBe('Was ist Familie auf Pfoten?')
     const links = [...strip.querySelectorAll('a')].map((a) => [a.textContent, a.getAttribute('href')])
-    expect(links).toEqual([
-      ['Mehr erfahren', '/'],
-      ['Einladungscode anfragen', '/#gutschein-anfragen']
-    ])
+    expect(links).toEqual([['Was ist Familie auf Pfoten?', '/']])
+    // Der Fuß steht nach dem Portal, vor Impressum und Datenschutz.
+    expect(strip.nextElementSibling.classList.contains('public-footer')).toBe(true)
   })
 
   test('keine fremden Anzeigen: das Portal fragt nur die Beiträge dieses Partners ab', async () => {
@@ -183,6 +177,6 @@ describe('PartnerPortalPage – Landingpage (Phase U, seit den Portal-Reitern)',
     await render({ slug: undefined, load, preview: true })
     const strip = container.querySelector('.portal-brand-strip')
     expect(strip.querySelectorAll('a')).toHaveLength(0)
-    expect([...strip.querySelectorAll('[aria-disabled="true"]')].map((el) => el.textContent)).toEqual(['Mehr erfahren', 'Einladungscode anfragen'])
+    expect([...strip.querySelectorAll('[aria-disabled="true"]')].map((el) => el.textContent)).toEqual(['Was ist Familie auf Pfoten?'])
   })
 })

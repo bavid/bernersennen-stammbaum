@@ -114,7 +114,7 @@ async function render(path = '/p/hundeschule-wiesengrund', slug = 'hundeschule-w
     root.render(
       <MemoryRouter initialEntries={Array.isArray(path) ? path : [path]} initialIndex={Array.isArray(path) ? path.length - 1 : 0}>
         <ThemeProvider themeId="standard">
-          <PartnerPortalPage slug={slug} family={null} onRedeemed={() => {}} onLogout={() => {}} />
+          <PartnerPortalPage slug={slug} />
           <Probe />
         </ThemeProvider>
       </MemoryRouter>
@@ -307,7 +307,9 @@ describe('Portal-Reiter – Kopf', () => {
     expect(hero.querySelector('h1').textContent).toBe('Hundeschule Wiesengrund')
     expect(hero.querySelector('.partner-portal-tagline').textContent).toBe('Gemeinsam lernen')
     expect(hero.querySelector('.partner-portal-text')).toBeNull()
-    expect([...hero.querySelectorAll('button')].map((btn) => btn.textContent.trim())).toEqual(['Kontakt', 'Einladungscode einlösen'])
+    // Feedback-Runde: nur die Hauptaktion - kein Einladungscode im Kopf.
+    expect([...hero.querySelectorAll('button')].map((btn) => btn.textContent.trim())).toEqual(['Kontakt'])
+    expect(hero.textContent).not.toContain('Einladungscode')
   })
 
   test('mit Kontaktformular öffnet "Schreib uns" im Kopf das Formular direkt', async () => {
@@ -332,14 +334,50 @@ describe('Portal-Reiter – Kopf', () => {
     expect(document.querySelector('dialog[open]')).toBeNull()
   })
 
-  test('"Gutschein einlösen" im Kopf öffnet den Reiter Kontakt und setzt den Fokus auf "Gutschein einlösen"', async () => {
+  test('auf dem Reiter Kontakt ist "Schreib uns" im Kopf verdeckt (Platz bleibt) - sichtbar nur einmal, in der Kontakt-Karte', async () => {
+    publicPartner.mockResolvedValue({ ...school, kontaktformular: true })
     await render()
-    await act(async () => button('Einladungscode einlösen', container.querySelector('.partner-portal-hero')).click())
+    const cta = container.querySelector('.partner-portal-hero .partner-portal-contact-cta')
+    expect(cta.classList.contains('is-concealed')).toBe(false)
+    expect(cta.getAttribute('aria-hidden')).toBeNull()
+
+    await act(async () => tab('Kontakt').click())
+
+    // Noch im Dokument (kein Sprung der Reiter-Leiste), aber verdeckt, nicht bedienbar und für Screenreader weg.
+    expect(container.querySelector('.partner-portal-hero .partner-portal-contact-cta')).toBe(cta)
+    expect(cta.classList.contains('is-concealed')).toBe(true)
+    expect(cta.getAttribute('aria-hidden')).toBe('true')
+    expect(cta.hasAttribute('inert')).toBe(true)
+    expect(visiblePanel().querySelectorAll('button')).toHaveLength(1)
+    expect(button('Schreib uns', visiblePanel())).toBeDefined()
+
+    await act(async () => tab('Übersicht').click())
+    expect(cta.classList.contains('is-concealed')).toBe(false)
+    expect(cta.hasAttribute('inert')).toBe(false)
+  })
+
+  test('ohne Formular: "Kontakt" im Kopf führt zum Reiter Kontakt und ist dort ebenso verdeckt', async () => {
+    await render()
+    await act(async () => button('Kontakt', container.querySelector('.partner-portal-hero')).click())
+
     expect(selectedLabel()).toBe('Kontakt')
-    expect(location.search).toBe('?reiter=kontakt')
-    expect(scrolledIds()).toContain('partner-portal-gutschein')
-    expect(document.activeElement.id).toBe('partner-portal-gutschein-title')
-    expect(visiblePanel().querySelector('#redeem-code')).not.toBeNull()
+    const cta = container.querySelector('.partner-portal-hero .partner-portal-contact-cta')
+    expect(cta.classList.contains('is-concealed')).toBe(true)
+    expect(cta.hasAttribute('inert')).toBe(true)
+    // Der Fokus liegt auf der Überschrift des Reiters, nicht auf dem verdeckten Knopf.
+    expect(document.activeElement.id).toBe('partner-portal-contact-title')
+  })
+
+  test('offenes "Schreib uns" aus dem Kopf, dann Vorwärts zum Reiter Kontakt: der Dialog schließt mit dem verdeckten Knopf', async () => {
+    publicPartner.mockResolvedValue({ ...school, kontaktformular: true })
+    await render(['/p/hundeschule-wiesengrund?reiter=kontakt', '/p/hundeschule-wiesengrund'])
+    await act(async () => button('Schreib uns', container.querySelector('.partner-portal-hero')).click())
+    expect(document.querySelector('dialog[open]')).not.toBeNull()
+
+    await act(async () => navigate(-1))
+
+    expect(selectedLabel()).toBe('Kontakt')
+    expect(document.querySelector('dialog[open]')).toBeNull()
   })
 })
 
@@ -359,6 +397,16 @@ describe('Portal-Reiter – Übersicht', () => {
     const contact = panel.querySelector('.portal-overview-contact')
     expect(contact.textContent).toContain('Ansprechperson: Mara Lind')
     expect(contact.querySelector('a[href^="tel:"]')).not.toBeNull()
+    // Der Einladungscode steht nur im Reiter Kontakt - auch nicht im Link dorthin.
+    expect(button('Alle Kontaktwege', panel)).toBeDefined()
+    expect(panel.textContent).not.toContain('Einladungscode')
+  })
+
+  test('nur "Schreib uns", sonst nichts zum Nachlesen: keine Kontaktzeile in der Übersicht (der Knopf steht im Kopf)', async () => {
+    publicPartner.mockResolvedValue({ ...school, kontaktformular: true, website: null, kontakt_telefon: null, ansprechperson: null })
+    await render()
+    expect(visiblePanel().querySelector('.portal-overview-contact')).toBeNull()
+    expect(button('Schreib uns', container.querySelector('.partner-portal-hero'))).toBeDefined()
   })
 
   test('"4 Termine ansehen" (so viele wie am Reiter) wechselt zum Reiter Termine und setzt den Fokus auf den Reiter', async () => {

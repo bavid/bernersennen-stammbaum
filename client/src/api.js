@@ -67,7 +67,7 @@ export const api = {
   login: (secret) => request('/login', json('POST', { secret })),
   loginUser: (username, password) => request('/login', json('POST', { username, password })),
   // as: 'tierheim' (Phase T Task 6) loggt ins Demo-Tierheim statt ins Demo-Zuhause ein, as: 'partner' mit
-  // slug (Phase P1) in den Demo-Partner-Bereich dieses Partners - siehe PortalAction (Demo-Knöpfe).
+  // slug (Phase P1) in den Demo-Partner-Bereich dieses Partners - siehe LoginPage und DemoStartPage.
   demo: ({ as, slug } = {}) => request('/demo', json('POST', as ? { as, ...(slug ? { slug } : {}) } : {})),
   logout: () => request('/logout', { method: 'POST' }),
   renameFamily: (name) => request('/family', json('PUT', { name })),

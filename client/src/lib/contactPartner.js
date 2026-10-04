@@ -11,7 +11,9 @@ export const REACHABLE_MESSAGE = 'Bitte gib eine E-Mail-Adresse oder Telefonnumm
 export const UNAVAILABLE_MESSAGE = 'Über dieses Formular lassen sich gerade keine Nachrichten verschicken.'
 const HTML_MESSAGE = 'Bitte nur reinen Text eingeben (kein HTML).'
 
-export const DEMO_CONTACT_HINT = 'In der Demo werden keine Nachrichten verschickt.'
+// Feedback-Runde: Portal und Steckbrief nennen keine "Demo" - der Hinweis am gesperrten "Schreib uns" eines Demo-Partners
+// bleibt neutral.
+export const DEMO_CONTACT_HINT = 'Hier werden keine Nachrichten verschickt.'
 
 // Ist "Schreib uns" für diesen Partner da? Das meldet allein der Server als kontaktformular: true (Formular
 // an, Postfach vorhanden) - auf dem Portal und am Tierheim eines Steckbriefs. Demo-Partner melden
