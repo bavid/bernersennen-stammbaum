@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
@@ -16,11 +17,22 @@ const MAX_TILES = 4
 // (Phase W: die Gruppenseite zeigt bis zu 20, sonst vier); terminTo: wohin das Treffen führt (die Pinnwand des Bereichs);
 // title: Überschrift (Standard "Neu in der Familie" bzw. "Neu im Rudel" - zu Besuch in einem Zuhause passt das nicht).
 // Ein Tier eines anderen Zuhauses trägt unter dem Namen, wo es wohnt (dog_zuhause, lib/tierZuhause.js) - das eigene nicht.
-export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_TILES, terminTo = '/pinnwand', title }) {
+// visible (Audit W, Gruppenseite): zuerst nur so viele Kacheln, der Rest hinter "Weitere Erinnerungen (n)" - wie auf Start;
+// danach rückt der Fokus auf die erste neu sichtbare Kachel.
+export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_TILES, visible = Infinity, terminTo = '/pinnwand', title }) {
   const { theme, words } = useTheme()
   const { pathname, search } = useLocation()
+  const [showAll, setShowAll] = useState(false)
+  const items = useRef(null)
   const heading = title || words.newsTitle
   const entries = allEntries.slice(0, termin ? limit - 1 : limit)
+  const hidden = showAll ? 0 : Math.max(0, entries.length - visible)
+  const shown = hidden > 0 ? entries.slice(0, visible) : entries
+
+  useEffect(() => {
+    if (showAll) items.current?.querySelectorAll('.feed-item:not(.feed-termin)')[visible]?.focus()
+  }, [showAll, visible])
+
   if (!entries.length && !termin) {
     return (
       <section className="feed feed-empty" aria-label={heading}>
@@ -37,7 +49,7 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
       <h2 id="feed-title" className="feed-title">
         {heading}
       </h2>
-      <div className="feed-items">
+      <div className="feed-items" ref={items}>
         {termin && (
           <Link to={terminTo} className="feed-item feed-termin">
             <span className="feed-termin-icon">
@@ -50,7 +62,7 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
             </span>
           </Link>
         )}
-        {entries.map((entry) => (
+        {shown.map((entry) => (
           <Link key={entry.id} to={`/tier/${entry.dog_id}#entry-${entry.id}`} state={{ from: pathname + search }} className="feed-item">
             <Avatar dog={toDog(entry)} size={44} />
             <span className="feed-body">
@@ -66,6 +78,11 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
           </Link>
         ))}
       </div>
+      {hidden > 0 && (
+        <button type="button" className="btn btn-ghost feed-more" onClick={() => setShowAll(true)}>
+          Weitere {words.entries} ({hidden})
+        </button>
+      )}
     </section>
   )
 }

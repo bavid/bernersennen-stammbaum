@@ -122,11 +122,18 @@ describe('GroupPage (Phase W)', () => {
     expect(selected()).toBe(words.entries)
   })
 
-  test('Beiträge: der nächste Termin führt zum Reiter Pinnwand, bis zu 20 Kacheln; erzählen für die eigenen Tiere der Familie', async () => {
+  test('Beiträge: der nächste Termin führt zum Reiter Pinnwand, bis zu 20 Kacheln (8 zuerst); erzählen für die eigenen Tiere der Familie', async () => {
     await render()
     expect(api.recentActivity).toHaveBeenCalledWith(20)
     expect(container.querySelector('.feed-termin').getAttribute('href')).toBe('/familien/5?reiter=pinnwand')
+    // Audit W: acht zuerst, der Rest hinter "Weitere Erinnerungen (11)" - danach alle 19 und der Fokus auf der neunten
+    expect(container.querySelectorAll('.feed-item:not(.feed-termin)')).toHaveLength(8)
+    const more = container.querySelector('.feed-more')
+    expect(more.textContent).toBe(`Weitere ${words.entries} (11)`)
+    act(() => more.click())
     expect(container.querySelectorAll('.feed-item:not(.feed-termin)')).toHaveLength(19)
+    expect(document.activeElement).toBe(container.querySelectorAll('.feed-item:not(.feed-termin)')[8])
+    expect(container.querySelector('.feed-more')).toBeNull()
     // B+ Familienalbum: erst „Erinnerung festhalten“, dann die Wahl des Tiers.
     act(() => container.querySelector('.start-composer-open').click())
     const choices = [...container.querySelectorAll('.start-composer-animal')].map((button) => button.querySelector(':scope > span').textContent)

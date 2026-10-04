@@ -76,14 +76,15 @@ export default function GroupPage({ family, onFamilyChange }) {
         {!visiting && (
           <div className="hero-actions">
             {/* Phase W, Schritt 2: "Familie verwalten" ist Einstellungen › Familien › [Familie] - kein Dialog mehr. */}
-            {/* B+ Familienalbum: die Fotos der Familie als Diashow (pages/BilderrahmenPage.jsx, Gate über ?in=). */}
-            <Link to={`/bilderrahmen?in=${family.id}`} className="btn btn-ghost">
-              <Icon name="frame" />
-              Bilderrahmen
-            </Link>
+            {/* B+ Familienalbum: die Fotos der Familie als Diashow (pages/BilderrahmenPage.jsx, Gate über ?in=). Audit W:
+                ein leiser Link nach dem Knopf (.hero-link) - am Handy stehen so nicht zwei breite Knöpfe übereinander. */}
             <Link to={familySettingsRoute(family.id)} className="btn btn-ghost">
               <Icon name="settings" />
               {words.groupSettings}
+            </Link>
+            <Link to={`/bilderrahmen?in=${family.id}`} className="hero-link">
+              <Icon name="frame" />
+              Bilderrahmen
             </Link>
           </div>
         )}

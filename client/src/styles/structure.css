@@ -486,8 +486,14 @@
   gap: var(--space-3);
 }
 
-.start-more {
+.start-more,
+.feed-more {
   justify-self: start;
+}
+
+/* Audit W: "Weitere Erinnerungen" unter den Kacheln der Gruppenseite (ActivityFeed visible) */
+.feed-more {
+  margin-top: var(--space-3);
 }
 
 .feed-card-link {

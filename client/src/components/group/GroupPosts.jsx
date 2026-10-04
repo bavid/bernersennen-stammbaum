@@ -7,6 +7,8 @@ import { nextTermin } from '../../lib/notes.js'
 
 // So viele Beiträge zeigt der Reiter "Beiträge" (GET /api/timeline/recent, höchstens 20).
 export const GROUP_FEED_LIMIT = 20
+// Audit W: zuerst acht Kacheln (sonst gut drei Bildschirme am Handy), der Rest hinter "Weitere Erinnerungen".
+export const GROUP_FEED_VISIBLE = 8
 
 // Reiter "Beiträge" der Gruppenseite (Phase W): erzählen (für die Tiere, die hier bearbeitbar sind), der nächste Termin
 // der Pinnwand und die neuesten Beiträge des Bereichs. canWrite: ab Mitglied (Phase R) und nie zu Besuch; visiting: zu
@@ -47,6 +49,7 @@ export default function GroupPosts({ family, dogs, canWrite, visiting }) {
           entries={activity.entries}
           termin={activity.termin}
           limit={GROUP_FEED_LIMIT}
+          visible={GROUP_FEED_VISIBLE}
           terminTo={groupRoute(family.id, 'pinnwand')}
           title={visiting ? 'Neuigkeiten' : undefined}
         />
