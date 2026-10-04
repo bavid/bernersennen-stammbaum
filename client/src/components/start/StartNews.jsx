@@ -7,7 +7,7 @@ import { byMemoryDate } from '../../lib/feed.js'
 
 // Zuerst so viele Erinnerungen, der Rest hinter "Weitere Erinnerungen" (die Seite bleibt so bei höchstens etwa drei
 // Bildschirmhöhen).
-export const START_FEED_VISIBLE = 6
+export const START_FEED_VISIBLE = 5
 
 // "Neue Erinnerungen" auf Start (B+ Familienalbum): die zuletzt festgehaltenen Erinnerungen (GET /api/timeline/recent) als
 // Karten - nach dem Tag der Erinnerung sortiert und nach Jahreszeiten in Kapitel geteilt („Herbst 2026“ in Handschrift). entries null: lädt noch bzw. konnte nicht

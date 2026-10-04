@@ -114,16 +114,16 @@ describe('StartPage (Phase W)', () => {
     expect(cards[1].querySelector('.feed-card-comments')).toBeNull()
   })
 
-  test('zuerst sechs Erinnerungen, der Rest hinter "Weitere Erinnerungen" - danach steht der Fokus auf der ersten neuen', async () => {
+  test('zuerst fünf Erinnerungen, der Rest hinter "Weitere Erinnerungen" - danach steht der Fokus auf der ersten neuen', async () => {
     api.recentActivity.mockResolvedValue(Array.from({ length: 9 }, (_, index) => entry(index + 1)))
     await render()
-    expect(container.querySelectorAll('.feed-card')).toHaveLength(6)
+    expect(container.querySelectorAll('.feed-card')).toHaveLength(5)
     const more = container.querySelector('.start-more')
-    expect(more.textContent).toBe('Weitere Erinnerungen (3)')
+    expect(more.textContent).toBe('Weitere Erinnerungen (4)')
     act(() => more.click())
     expect(container.querySelectorAll('.feed-card')).toHaveLength(9)
     expect(container.querySelector('.start-more')).toBeNull()
-    expect(document.activeElement.getAttribute('href')).toBe('/tier/10#entry-7')
+    expect(document.activeElement.getAttribute('href')).toBe('/tier/10#entry-6')
   })
 
   test('ohne Beiträge ein freundlicher Leerzustand', async () => {

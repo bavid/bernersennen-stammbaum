@@ -287,7 +287,7 @@
 }
 
 .entry-photos.count-1 {
-  grid-template-columns: minmax(0, 26rem);
+  grid-template-columns: minmax(0, 15rem);
 }
 
 .entry-photos.count-1 .entry-photo {

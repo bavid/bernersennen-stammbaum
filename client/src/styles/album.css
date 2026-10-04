@@ -159,6 +159,7 @@
   font-size: var(--text-xs);
   font-weight: 600;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .animal-circle.is-memorial {
@@ -298,6 +299,7 @@
    dadurch kaum höher. */
 .feed-card-body {
   display: grid;
+  align-content: start;
   gap: var(--space-2);
   min-width: 0;
 }
@@ -329,6 +331,11 @@
 @media (max-width: 480px) {
   .feed-card-photo {
     width: 5.5rem;
+  }
+
+  /* Am Handy zwei Zeilen Anriss - die ganze Erinnerung steht ein Antippen weiter. */
+  .feed-card-link .feed-card-text {
+    -webkit-line-clamp: 2;
   }
 }
 

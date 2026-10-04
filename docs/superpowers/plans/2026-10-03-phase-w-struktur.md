@@ -109,14 +109,21 @@ ein Leben lang, Geschichte zieht vom Tierheim mit, Familie über Haushalte, alle
 - **Bilderrahmen:** aus einer Familie heraus (Gruppenseite „Bilderrahmen“ → `/bilderrahmen?in=<Id>`, eigene gemerkte
   Auswahl je Familie, ohne private Erinnerungen); Rahmen-Links in den Einstellungen lassen sich „Ändern“ (Name, Tiere,
   Zeitraum, Anzeige – der Link bleibt derselbe).
-- **Seitenhöhen** (Demo „Zuhause am Deich“, Bildschirme = Seitenhöhe / Fensterhöhe, vorher → nachher):
+- **Seitenhöhen** (Demo „Zuhause am Deich“, Bildschirme = Seitenhöhe / Fensterhöhe, vorher → nachher; „nachher“ mit
+  frisch aufgefrischter Demo - mit Fotos im Feed, „Heute vor einem Jahr“ und zwei offenen „Für dich“-Anfragen, die am Handy
+  allein etwa 0,8 Bildschirme belegen und vorher erledigt waren):
 
   | Seite | 1440×900 | 375×812 |
   | --- | --- | --- |
-  | Start | 1,49 → 1,85 | 2,45 → 2,88 |
-  | Tierprofil · Chronik | 1,80 → 1,87 | 2,38 → 2,46 |
+  | Start (5 Erinnerungen statt 6) | 1,49 → 2,49 | 2,45 → 3,57 (ohne „Für dich“ ≈ 2,8) |
+  | Tierprofil · Chronik | 1,80 → 2,47 | 2,38 → 3,22 |
   | Familie · Erinnerungen | 1,23 → 1,23 | 3,03 → 3,06 |
   | Einstellungen · Darstellung | 1,23 → 1,58 | 1,60 → 2,04 |
+- **Review B+ (04.10.):** Fokus deckend in der Akzentfarbe (WCAG 1.4.11, `--focus-color`, Umriss statt Hauch), eigene
+  Akzentfarbe auch auf ihrem Hauch lesbar, Start nach dem Tag der Erinnerung sortiert (die Zeile nennt diesen Tag statt des
+  Schreibdatums - sonst stand „27. September“ scheinbar unter „Sommer 2026“), erstes Foto als Polaroid in der Karte,
+  Fokus im Composer und bei Rahmen-Links, theme-color nach Farbwelt und Modus, Server-Härtung (`canonical` nur für
+  Zeichenketten, Spalten-Migration transaktional) und Tests.
 - **Offen:** Namen bei den Grüßen („Mira und Familie Sonnenhang freuen sich“) bräuchte die Namen der Grüßenden im Feed;
   „Heute vor einem Jahr“ in der Demo nur am Tag des Auffrischens (tägliches Auffrischen wäre die Lösung); weitere Seiten
   mit Linien-Karten (Admin, Partner-Bereich) schrittweise auf Album-Karten.

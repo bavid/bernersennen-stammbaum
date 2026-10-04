@@ -161,7 +161,8 @@ const TIMELINE = [
   },
   // B+ Familienalbum: „Heute vor einem Jahr“ auf Start. relativ: { tage, jahre } - der Tag `tage` nach dem Anlegen der Demo,
   // `jahre` früher (lib/demoDates.js, Europe/Berlin). So zeigt die Karte am Tag des Auffrischens und an den drei Tagen
-  // danach je eine Erinnerung (zwei davon privat - die sieht nur das Zuhause, nicht die Familie oder das Tierheim).
+  // danach je eine Erinnerung (zwei davon privat - die sieht nur das Zuhause, nicht die Familie oder das Tierheim) - über
+  // mehrere Tiere verteilt, damit keine Chronik dadurch lang wird.
   {
     dog: 'flocke',
     relativ: { tage: 0, jahre: 1 },
@@ -187,11 +188,11 @@ const TIMELINE = [
     text: 'Den ganzen Nachmittag ist sie dem Sonnenfleck über den Teppich gefolgt.'
   },
   {
-    dog: 'nele',
+    dog: 'mira',
     relativ: { tage: 3, jahre: 3 },
     autor: 'Familie Nissen',
-    titel: 'Nele lernt den Seilknoten',
-    text: 'Seitdem bringt sie ihn zu jedem Besuch an die Tür.',
+    titel: 'Mira entdeckt den Wäschekorb',
+    text: 'Frisch gewaschen, noch warm – und schon belegt.',
     privat: true
   },
   {
