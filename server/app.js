@@ -41,6 +41,7 @@ const seoRoutes = require('./routes/seo')
 const bilderrahmenRoutes = require('./routes/bilderrahmen')
 const sucheRoutes = require('./routes/suche')
 const startRoutes = require('./routes/start')
+const tiereRoutes = require('./routes/tiere')
 const schuetzlingeRoutes = require('./routes/schuetzlinge')
 const { rahmenApiRouter, rahmenFotoRouter, rahmenPageHeaders } = require('./routes/rahmen')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
@@ -217,6 +218,8 @@ function createApp() {
   app.use('/api/suche', sucheRoutes)
   // Start: Neues aus dem eigenen Zuhause, den Familien und den befreundeten Zuhause - je Bereich mit dessen Regeln (routes/start.js).
   app.use('/api/start', startRoutes)
+  // Alle Tiere aus Zuhause, Familien und befreundeten Zuhause an einem Ort - je Bereich mit dessen Regeln (routes/tiere.js).
+  app.use('/api/tiere', tiereRoutes)
   // „So geht es euren Schützlingen“ - nur für Tierheime (routes/schuetzlinge.js)
   app.use('/api/schuetzlinge', schuetzlingeRoutes)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))

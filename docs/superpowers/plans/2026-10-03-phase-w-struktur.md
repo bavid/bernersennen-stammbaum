@@ -250,3 +250,24 @@ endlos die Fotos eurer Tiere – auch bei Oma, ohne dass sie sich anmeldet.
 - **Offen:** „n neu“ an den Familien-Karten (bräuchte „gelesen“-Stand); Zähl-Abfragen laufen je Bereich über alle sichtbaren
   Erinnerungen (für sehr große Chroniken später eine Spalte `last_activity_at`); Demo-Gleichheit je Freigabe (`dog_shares`)
   wie überall nur je Bereich geprüft.
+
+## Alle Tiere an einem Ort (Schritt 4, umgesetzt 04.10.)
+
+- **Server** `GET /api/tiere` (`routes/tiere.js`, `lib/allAnimals.js`) → `{ tiere, areas }`. Nur im eigenen Zuhause (sonst
+  400), keine Angaben (jede → 400, auch kein Bereich), Besuchs-Sitzung 403 (nicht in `lib/guestAccess.js`), Tierheim/Partner
+  404, Demo liest, `no-store`. Bereiche aus `lib/searchAreas.js homeScopeOf` (wie Start und Suche): eigenes Zuhause (auch
+  nicht geteilte Tiere), Familien mit Mitgliedschaft, laufende Besuche (nur die eigenen Tiere des Gastgebers).
+- **Jedes Tier einmal:** im Bereich, dem es gehört, wenn der dabei ist - sonst Zuhause > Familien (nach Namen) > Besuche.
+  Je Tier `area { id, name, art }`, `zuhause` (Eigentümer, nie das eigene Zuhause), `letzte_erinnerung` (Datum der zuletzt
+  festgehaltenen Erinnerung nach `visibleEntrySql` - private nur im eigenen Zuhause), sonst nur Kartenfelder (keine Freigaben,
+  Eltern-Ids, Freitexte, internen Angaben). Platzhalter für unbekannte Eltern fehlen; zusätzlich nur Tiere mit derselben
+  Demo-Angabe wie die Identität (fängt eine verirrte Freigabe ab). `areas` mit `anzahl` je Bereich.
+- **Client:** Tiere › Alle lädt `api.tiere()` (`hooks/useAllAnimals.js`, Fehler mit „Noch einmal versuchen“); Raster
+  `components/animals/AnimalGrid.jsx` mit Karten `AnimalTile.jsx` (Foto im Kreis, Rasse/Jahr, `OriginChip`, „Zuletzt: …“,
+  „In Erinnerung“) und Filtern `components/FilterChips.jsx` „Alle · Mein Zuhause · Familie Sonnenhang · Zuhause Möwenweg“ (mit
+  Zahl, `aria-pressed`, `?gruppe=eigen|<Id>`, nur ab zwei Bereichen mit Tieren). Links `/tier/:id?in=<Bereich>`, eigene ohne.
+  „Tier hinzufügen“ legt weiter im eigenen Zuhause an; Zeitleiste und Stammbaum bleiben beim eigenen Zuhause. Familie › Tiere
+  zeigt dasselbe Raster mit den Tieren des Bereichs (`lib/animalGrid.js areaGrid`, ohne Filter).
+- **Seitenhöhen** (Demo „Zuhause am Deich“, 24 Tiere): 1440×900 **1,33**, 375×812 **2,98**; Familie › Tiere am Handy 2,67.
+- **Offen:** die Familienbande des Tierheims (OverviewPage) nutzt weiter `FamiliesView`; sehr viele Tiere je Bereich ohne
+  Blättern (bisher unkritisch).

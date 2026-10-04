@@ -15,6 +15,7 @@ import useAnimalCreate from '../hooks/useAnimalCreate.js'
 import useTabParam from '../hooks/useTabParam.js'
 import { animalCountText, areaCounts, countsFromDogs } from '../lib/animalCounts.js'
 import { hasRole } from '../lib/roles.js'
+import { areaGrid } from '../lib/animalGrid.js'
 import { familySettingsRoute } from '../lib/areas.js'
 import { isVisit } from '../lib/visits.js'
 
@@ -59,6 +60,8 @@ export default function GroupPage({ family, onFamilyChange }) {
   const creator = useAnimalCreate()
   const canWrite = !visiting && hasRole(family, 'mitglied')
   const meta = groupMeta(family, animals.dogs, words)
+  // Reiter Tiere › Alle: dasselbe Raster wie /tiere, nur mit den Tieren dieses Bereichs (lib/animalGrid.js areaGrid).
+  const grid = useMemo(() => ({ data: areaGrid(family, animals.dogs, { visiting }), error: null }), [family, animals.dogs, visiting])
 
   return (
     <div className="page group-page">
@@ -105,8 +108,8 @@ export default function GroupPage({ family, onFamilyChange }) {
         {current === 'beitraege' && <GroupPosts family={family} dogs={animals.dogs} canWrite={canWrite} visiting={visiting} />}
         {current === 'tiere' && (
           <AnimalsTabs
-            family={family}
             animals={animals}
+            grid={grid}
             views={visiting ? ['alle', 'stammbaum'] : undefined}
             canWrite={canWrite}
             onAddAnimal={creator.open}

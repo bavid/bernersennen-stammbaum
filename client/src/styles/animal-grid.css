@@ -1,0 +1,160 @@
+/* Raster „Alle“ der Tiere (Phase W, Schritt 4; components/animals/AnimalGrid.jsx, AnimalTile.jsx) im B+ Familienalbum:
+   kleine Karten mit Foto im Kreis (Ring in der Akzentfarbe), Name in der Überschriften-Schrift, darunter leise Rasse/Jahr,
+   die Herkunft als Chip (Salbei für Familien, Rosé für Besuche - .feed-area-chip) und die letzte Erinnerung. Das Raster
+   selbst ist das der Familienbande (.families-grid, families.css). Verstorbene sanft grau, wie die Kreise auf Start. */
+
+.animal-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* Etwas breitere Spalten als die Familienbande: Herkunft („aus Familie Sonnenhang“) und letzte Erinnerung passen ganz. */
+.families-grid.animal-grid-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
+}
+
+.animal-tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+  text-decoration: none;
+  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.animal-tile:hover {
+  color: var(--text);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+}
+
+.animal-tile:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
+}
+
+.animal-tile:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-card);
+}
+
+.animal-tile-photo.avatar {
+  flex: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--rust);
+}
+
+.animal-tile-body {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.animal-tile-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.animal-tile-meta,
+.animal-tile-last,
+.animal-tile-note {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.animal-tile-note {
+  font-weight: 650;
+}
+
+.animal-tile-origin {
+  margin-top: 2px;
+}
+
+.animal-tile.is-memorial .animal-tile-name {
+  color: var(--muted);
+}
+
+.animal-tile.is-memorial .animal-tile-photo.avatar {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--line-strong);
+  filter: grayscale(0.6);
+}
+
+/* Am Handy zwei Spalten mit dem Foto oben (wie die Karten der Familienbande), die letzte Erinnerung bleibt weg - sie steht
+   auf der Tierseite, und das Raster bleibt so kurz. */
+@media (max-width: 720px) {
+  .families-grid.animal-grid-list {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  }
+
+  .animal-tile {
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-2);
+    text-align: center;
+  }
+
+  .animal-tile-photo.avatar {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .animal-tile-body {
+    justify-items: center;
+  }
+
+  .animal-tile-name {
+    font-size: 1.05rem;
+  }
+
+  /* Kein Tooltip am Handy - die Herkunft darf darum umbrechen statt abgeschnitten zu werden. */
+  .animal-tile-origin {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .animal-tile-last {
+    display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .families-grid.animal-grid-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .animal-tile {
+    flex-direction: row;
+    padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
+    text-align: left;
+  }
+
+  .animal-tile-body {
+    justify-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animal-tile,
+  .animal-tile:hover {
+    transition: none;
+    transform: none;
+  }
+}

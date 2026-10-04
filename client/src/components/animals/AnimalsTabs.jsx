@@ -7,10 +7,10 @@ import ThemeMark from '../ThemeMark.jsx'
 import RouteFallback from '../RouteFallback.jsx'
 import PedigreeTree from '../PedigreeTree.jsx'
 import OffspringSection from '../OffspringSection.jsx'
-import FamiliesView from '../families/FamiliesView.jsx'
 import CompanionsView from './CompanionsView.jsx'
+import AnimalGrid from './AnimalGrid.jsx'
 import useTabParam from '../../hooks/useTabParam.js'
-import { buildFamilyGroups, familyAnimals, hasFamilyTree } from '../../lib/familyGroups.js'
+import { hasFamilyTree } from '../../lib/familyGroups.js'
 import { hasSiblingLitters } from '../../lib/litters.js'
 
 // Adresse ?ansicht=… (wie früher der Stammbaum-Umschalter, components/families/TreeToggle.jsx) - ohne Angabe "Alle".
@@ -52,11 +52,34 @@ function NoAnimals({ canWrite, onAddAnimal }) {
   )
 }
 
+// Der Reiter „Alle“: das Raster (components/animals/AnimalGrid) - lädt noch, gescheitert (mit „Noch einmal versuchen“, nur wo
+// retry da ist) oder leer (der erste Schritt).
+function AllPanel({ grid, canWrite, onAddAnimal }) {
+  if (grid.error) {
+    return (
+      <div className="empty-state" role="alert">
+        <h3>Das hat nicht geklappt</h3>
+        <p>{grid.error}</p>
+        {grid.retry && (
+          <button type="button" className="btn btn-primary" onClick={grid.retry}>
+            Noch einmal versuchen
+          </button>
+        )}
+      </div>
+    )
+  }
+  if (!grid.data) return <RouteFallback />
+  if (grid.data.tiere.length === 0) return <NoAnimals canWrite={canWrite} onAddAnimal={onAddAnimal} />
+  return <AnimalGrid grid={grid.data} />
+}
+
 // Reiter der Tiere (Phase W) - auf /tiere und im Reiter "Tiere" der Gruppenseite: "Alle" (ruhiges Raster mit Filter je
-// Eigentümer), "Zeitleiste" (früher Wegbegleiter) und "Stammbaum" (mit dem Nachwuchs darunter, sobald es einen gibt; die
-// ganze Liste steht auf /wuerfe). animals: hooks/useAreaAnimals.js; views: welche Reiter es hier gibt (zu Besuch ohne
-// Zeitleiste - die ist dort ein eigener Reiter der Gruppenseite); onAddAnimal(livesWith?): "Neues Tier anlegen".
-export default function AnimalsTabs({ family, animals, views = ALL_VIEWS, canWrite, onAddAnimal, where, readOnly, idPrefix = 'tiere' }) {
+// Bereich), "Zeitleiste" (früher Wegbegleiter) und "Stammbaum" (mit dem Nachwuchs darunter, sobald es einen gibt; die ganze
+// Liste steht auf /wuerfe). grid: { data: { tiere, areas } | null, error, retry? } für "Alle" - auf /tiere aus GET /api/tiere
+// (hooks/useAllAnimals.js), auf der Gruppenseite aus lib/animalGrid.js areaGrid. animals: hooks/useAreaAnimals.js (Zeitleiste,
+// Stammbaum); views: welche Reiter es hier gibt (zu Besuch ohne Zeitleiste - die ist dort ein eigener Reiter der
+// Gruppenseite); onAddAnimal(livesWith?): "Neues Tier anlegen".
+export default function AnimalsTabs({ animals, grid, views = ALL_VIEWS, canWrite, onAddAnimal, where, readOnly, idPrefix = 'tiere' }) {
   const { words } = useTheme()
   const [searchParams] = useSearchParams()
   const { dogs, allDogs, links, events } = animals
@@ -69,23 +92,19 @@ export default function AnimalsTabs({ family, animals, views = ALL_VIEWS, canWri
     treeWanted: !loaded && searchParams.get(ANIMALS_VIEW_PARAM) === 'stammbaum'
   })
   const [current, select] = useTabParam(ANIMALS_VIEW_PARAM, tabs)
-  const gridDogs = useMemo(() => familyAnimals(dogs || []), [dogs])
-  const groups = useMemo(() => buildFamilyGroups({ family, dogs: gridDogs }), [family, gridDogs])
   const panelId = `${idPrefix}-panel`
 
   function panel() {
+    if (current === 'alle') return <AllPanel grid={grid} canWrite={canWrite} onAddAnimal={onAddAnimal} />
     if (!loaded) return <RouteFallback />
     if (current === 'zeitleiste') return <CompanionsView dogs={dogs} where={where} readOnly={readOnly} />
     if (dogs.length === 0) return <NoAnimals canWrite={canWrite} onAddAnimal={onAddAnimal} />
-    if (current === 'stammbaum') {
-      return (
-        <>
-          <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={canWrite ? onAddAnimal : undefined} />
-          <OffspringSection dogs={dogs} events={events} canWrite={canWrite} />
-        </>
-      )
-    }
-    return <FamiliesView groups={groups} hideTitle />
+    return (
+      <>
+        <PedigreeTree dogs={dogs} allDogs={allDogs} links={links} onAddMitbewohner={canWrite ? onAddAnimal : undefined} />
+        <OffspringSection dogs={dogs} events={events} canWrite={canWrite} />
+      </>
+    )
   }
 
   return (

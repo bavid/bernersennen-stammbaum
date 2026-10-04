@@ -1,40 +1,28 @@
 import { useId } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import DogCard from '../DogCard.jsx'
 import FamilyFilter from './FamilyFilter.jsx'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
-import { GROUP_PARAM, selectedGroup } from '../../lib/familyGroups.js'
+import useGroupParam from '../../hooks/useGroupParam.js'
+import { selectedGroup } from '../../lib/familyGroups.js'
 
 // Familienbande im Standard-Auftritt (Familienbande 2): ein ruhiges Raster aller Tiere statt Abschnitten je Familie -
 // ohne Beziehungs-Chips (Eltern, Geschwister und Nachwuchs stehen auf der Tierseite und im Stammbaum). Darüber, sobald
 // Tiere aus mehr als einem Bereich kommen, ein Filter je Eigentümer; die Wahl steht in der Adresse (?gruppe=…), Zurück
 // im Browser hebt sie wieder auf. Familien und befreundete Zuhause stehen seit Phase W unter "Familien". groups:
-// lib/familyGroups.js buildFamilyGroups. hideTitle (Phase W): im Reiter "Alle" sagt der Reiter schon, was hier steht - die
-// Überschrift bleibt nur für Screenreader.
-export default function FamiliesView({ groups, hideTitle = false }) {
+// lib/familyGroups.js buildFamilyGroups. Seit Phase W nur noch die Familienbande des Tierheims (OverviewPage) - die Tiere der
+// Haushalte zeigt components/animals/AnimalGrid.
+export default function FamiliesView({ groups }) {
   const { words } = useTheme()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [requested, select] = useGroupParam()
   const gridId = useId()
-  const requested = searchParams.get(GROUP_PARAM)
   const selected = selectedGroup(groups.owners, requested)
   const all = groups.owners.flatMap((group) => group.dogs)
   const shown = selected ? selected.dogs : all
 
-  function select(param) {
-    // Ein Klick auf die schon gewählte Gruppe legt keinen zweiten gleichen Eintrag in den Verlauf
-    if (param === requested) return
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current)
-      if (param) next.set(GROUP_PARAM, param)
-      else next.delete(GROUP_PARAM)
-      return next
-    })
-  }
-
   return (
     <section className="families-view" aria-labelledby="families-title">
       <div className="families-head">
-        <h2 id="families-title" className={hideTitle ? 'families-title visually-hidden' : 'families-title'}>
+        <h2 id="families-title" className="families-title">
           {words.animals}
         </h2>
         {groups.owners.length > 1 && (

@@ -143,6 +143,22 @@ describe('GroupPage (Phase W)', () => {
     expect(search()).toBe('')
   })
 
+  // Phase W, Schritt 4: dasselbe Raster wie /tiere (components/animals/AnimalGrid), nur mit den Tieren dieser Familie.
+  test('Tiere › Alle: das Raster von /tiere mit den Tieren der Familie - ohne Filter, Herkunft nur an Tieren anderer Zuhause', async () => {
+    await render(inGroup, '/familien/5?reiter=tiere')
+    const tiles = [...container.querySelectorAll('.animal-tile')]
+    // Nach Namen wie auf /tiere.
+    expect(tiles.map((tile) => tile.querySelector('.animal-tile-name').textContent)).toEqual(['Flocke', 'Hausi', 'Nele'])
+    expect(container.querySelector('.family-filter')).toBeNull()
+    expect(tiles.map((tile) => tile.getAttribute('href'))).toEqual(['/tier/11?in=5', '/tier/12?in=5', '/tier/10?in=5'])
+    // Nele wohnt im eigenen Zuhause, Hausi gehört der Familie - nur Flocke kommt von woanders.
+    expect(tiles.map((tile) => tile.querySelector('.animal-tile-origin')?.textContent ?? null)).toEqual([
+      'aus Zuhause am Deich, geteilt in Familie Sonnenhang',
+      null,
+      null
+    ])
+  })
+
   // Phase W, Schritt 2: dieselbe Zählung wie Familien-Liste und Einstellungen - bis die Tiere geladen sind aus me, danach
   // aus den geladenen Tieren (nach Anlegen oder Löschen sofort richtig, code-review W2).
   test('Zählung im Kopf: erst aus me ("21 Tiere · davon 4 von euch"), dann aus den geladenen Tieren', async () => {
@@ -191,6 +207,10 @@ describe('GroupPage zu Besuch (Phase W)', () => {
     api.listDogs.mockResolvedValue([dog(20, 'Wilma', { bei_uns_seit: '2020-06-01' })])
     await render(visiting, '/familien/9?reiter=tiere')
     expect([...container.querySelectorAll('.animals-tab-bar [role="tab"]')].map((tab) => tab.textContent)).toEqual(['Alle'])
+    // Dasselbe Raster: die Karte führt in den besuchten Bereich, eine Herkunft braucht es hier nicht.
+    const tile = container.querySelector('.animal-tile')
+    expect(tile.getAttribute('href')).toBe('/tier/20?in=9')
+    expect(tile.querySelector('.animal-tile-origin')).toBeNull()
     act(() => groupTabs()[2].click())
     expect(container.querySelector('.companion-link').getAttribute('aria-label')).toBe('Wilma, hier seit 1. Juni 2020')
   })

@@ -77,10 +77,15 @@ function searchScopeOf({ homeId, familyId, isGuest }) {
   return { areas: areasOf(identity, { familyId, isGuest }), isDemo: Boolean(identity.is_demo) }
 }
 
-// Start (lib/startFeed.js) und die Fotos von dort (lib/uploadAccess.js): die Bereiche einer Sitzung im eigenen Zuhause -
-// wie searchScopeOf ohne Besuchs-Sitzung (eigenes Zuhause, Familien, laufende Besuche). null für Tierheime und Partner.
+// Start (lib/startFeed.js), die Fotos von dort (lib/uploadAccess.js) und Tiere (lib/allAnimals.js): die Bereiche einer
+// Sitzung im eigenen Zuhause - wie searchScopeOf ohne Besuchs-Sitzung (eigenes Zuhause, Familien, laufende Besuche), als
+// { areas, isDemo }. null für Tierheime und Partner.
+function homeScopeOf(homeId) {
+  return searchScopeOf({ homeId, familyId: homeId, isGuest: false })
+}
+
 function homeAreasOf(homeId) {
-  return searchScopeOf({ homeId, familyId: homeId, isGuest: false })?.areas ?? null
+  return homeScopeOf(homeId)?.areas ?? null
 }
 
 // Welche Erinnerungen (Alias t) Start aus dem Bereich zeigt - und deren Fotos lib/uploadAccess.js darum freigibt: die Regeln
@@ -99,4 +104,4 @@ function areaRef(area) {
   return { id: area.id, name: area.name, art: area.art }
 }
 
-module.exports = { searchScopeOf, homeAreasOf, areaRef, visibleEntrySql, AREA_ART, MAX_AREAS }
+module.exports = { searchScopeOf, homeScopeOf, homeAreasOf, areaRef, visibleEntrySql, AREA_ART, MAX_AREAS }

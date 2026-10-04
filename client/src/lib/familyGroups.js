@@ -36,8 +36,13 @@ export function familyAnimals(dogs = []) {
 const DEMO_SUFFIX = /\s*\(Demo\)$/
 const HOME_PREFIX = /^Zuhause\s+(?=\p{Lu})/u
 
+// „Zuhause Möwenweg (Demo)“ -> „Zuhause Möwenweg“ (auch für die Filter der Tiere, lib/animalGrid.js).
+export function withoutDemoSuffix(name = '') {
+  return name.replace(DEMO_SUFFIX, '')
+}
+
 export function shortAreaName(name = '') {
-  const short = name.replace(DEMO_SUFFIX, '').replace(HOME_PREFIX, '').trim()
+  const short = withoutDemoSuffix(name).replace(HOME_PREFIX, '').trim()
   return short || name
 }
 

@@ -9,7 +9,8 @@ const api = vi.hoisted(() => ({
   listAllDogs: vi.fn(),
   listLinks: vi.fn(),
   listBreedingEvents: vi.fn(),
-  listTimeline: vi.fn()
+  listTimeline: vi.fn(),
+  tiere: vi.fn()
 }))
 vi.mock('../api', () => ({ api }))
 vi.mock('../components/PedigreeTree.jsx', () => ({ default: () => <div data-testid="pedigree-tree" /> }))
@@ -35,6 +36,27 @@ const home = { id: 1, name: 'Zuhause Lindenhof', art: 'zuhause' }
 const atHome = { ...home, home, role: 'leitung', memberships: [{ id: 5, name: 'Familie Sonnenhang', rolle: 'mitglied' }] }
 const dog = (id, name, extra = {}) => ({ id, name, name_unbekannt: 0, tierart: 'hund', geschlecht: 'huendin', foto_url: null, can_edit: 1, ...extra })
 
+// GET /api/tiere: jedes Tier mit seinem Bereich (area) und - bei fremden - wo es wohnt (zuhause).
+const homeArea = { id: 1, name: 'Zuhause Lindenhof', art: 'eigen' }
+const familyArea = { id: 5, name: 'Familie Sonnenhang', art: 'familie' }
+const visitArea = { id: 9, name: 'Zuhause Möwenweg (Demo)', art: 'besuch' }
+const tier = (id, name, area, extra = {}) => ({ ...dog(id, name), area, zuhause: null, letzte_erinnerung: null, ...extra })
+const allAnimals = (tiere, areas = [homeArea]) => ({
+  tiere,
+  areas: areas.map((area) => ({ ...area, anzahl: tiere.filter((animal) => animal.area.id === area.id).length }))
+})
+const mixed = allAnimals(
+  [
+    tier(10, 'Nele', homeArea, { letzte_erinnerung: '2026-09-20' }),
+    tier(11, 'Flocke', homeArea, { bei_uns_bis: '2025-01-01', abschied_grund: 'verstorben' }),
+    tier(20, 'Lotte', familyArea, { zuhause: 'Familie Sonnenhang' }),
+    tier(21, 'Benno', familyArea, { zuhause: 'Zuhause Heidekamp' }),
+    tier(30, 'Dorle', visitArea, { zuhause: 'Zuhause Möwenweg (Demo)' })
+  ],
+  [homeArea, familyArea, visitArea, { id: 12, name: 'Familie Ohne Tiere', art: 'familie' }]
+)
+
+
 function Where() {
   const { search } = useLocation()
   return <output data-testid="search">{search}</output>
@@ -48,6 +70,7 @@ beforeEach(() => {
   api.listLinks.mockResolvedValue([])
   api.listBreedingEvents.mockResolvedValue([])
   api.listTimeline.mockResolvedValue([])
+  api.tiere.mockResolvedValue(allAnimals([]))
 })
 
 afterEach(() => {
@@ -106,6 +129,7 @@ describe('AnimalsPage (Phase W)', () => {
 
   test('Reiter "Alle": das Raster ohne die Zeile zu Familien; Reiter-Muster mit Panel', async () => {
     api.listDogs.mockResolvedValue([dog(10, 'Nele'), dog(11, 'Flocke')])
+    api.tiere.mockResolvedValue(allAnimals([tier(10, 'Nele', homeArea), tier(11, 'Flocke', homeArea)]))
     await render()
 
     expect(tabLabels()).toEqual(['Alle', 'Zeitleiste'])
@@ -169,5 +193,122 @@ describe('AnimalsPage (Phase W)', () => {
     await render({ family: classicGuest })
     expect(container.querySelector('.eyebrow').textContent).toBe('Rudel vom Heidekamp')
     expect(container.textContent).not.toContain('Erstes Tier anlegen')
+  })
+})
+
+const chips = () => [...container.querySelectorAll('.family-filter button')]
+const chipText = (chip) => chip.textContent.replace(/\s+/g, ' ').trim()
+const tiles = () => [...container.querySelectorAll('.animal-tile')]
+const tileNames = () => tiles().map((tile) => tile.querySelector('.animal-tile-name').textContent)
+const searchText = () => container.querySelector('[data-testid="search"]').textContent
+
+describe('AnimalsPage › Alle: alle Tiere aus Zuhause, Familien und Besuchen (Phase W, Schritt 4)', () => {
+  test('ein Raster aus GET /api/tiere; Filter je Bereich mit Tieren, mit Zahl - Bereiche ohne Tiere nicht', async () => {
+    api.tiere.mockResolvedValue(mixed)
+    await render()
+
+    expect(api.tiere).toHaveBeenCalledTimes(1)
+    expect(tileNames()).toEqual(['Nele', 'Flocke', 'Lotte', 'Benno', 'Dorle'])
+    expect(chips().map(chipText)).toEqual(['Alle 5', 'Mein Zuhause 2', 'Familie Sonnenhang 2', 'Zuhause Möwenweg 1'])
+    expect(chips()[3].getAttribute('title')).toBe('Zuhause Möwenweg (Demo)')
+    expect(chips().map((chip) => chip.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false'])
+    const grid = container.querySelector('.animal-grid-list')
+    expect(chips().every((chip) => chip.getAttribute('aria-controls') === grid.id)).toBe(true)
+  })
+
+  test('Filter in der Adresse (?gruppe=): Klick wählt, Alle hebt auf; aus der Adresse gleich gefiltert', async () => {
+    api.tiere.mockResolvedValue(mixed)
+    await render({ path: '/tiere?gruppe=5' })
+    expect(tileNames()).toEqual(['Lotte', 'Benno'])
+    expect(chips()[2].getAttribute('aria-pressed')).toBe('true')
+
+    act(() => chips()[1].click())
+    expect(searchText()).toBe('?gruppe=eigen')
+    expect(tileNames()).toEqual(['Nele', 'Flocke'])
+    act(() => chips()[3].click())
+    expect(searchText()).toBe('?gruppe=9')
+    expect(tileNames()).toEqual(['Dorle'])
+    act(() => chips()[0].click())
+    expect(searchText()).toBe('')
+    expect(tiles()).toHaveLength(5)
+  })
+
+  test('unbekannte Gruppe in der Adresse: alle Tiere', async () => {
+    api.tiere.mockResolvedValue(mixed)
+    await render({ path: '/tiere?gruppe=77' })
+    expect(tiles()).toHaveLength(5)
+    expect(chips()[0].getAttribute('aria-pressed')).toBe('true')
+  })
+
+  test('nur Tiere aus einem Bereich: kein Filter', async () => {
+    api.tiere.mockResolvedValue(allAnimals([tier(10, 'Nele', homeArea)], [homeArea, familyArea]))
+    await render()
+    expect(tiles()).toHaveLength(1)
+    expect(container.querySelector('.family-filter')).toBeNull()
+  })
+
+  test('Herkunft nur an fremden Tieren; Links in den Bereich des Tiers (eigene ohne ?in)', async () => {
+    api.tiere.mockResolvedValue(mixed)
+    await render()
+    const origin = (index) => tiles()[index].querySelector('.animal-tile-origin')
+    expect(origin(0)).toBeNull()
+    expect(origin(2).textContent).toBe('aus Familie Sonnenhang')
+    expect(origin(3).textContent).toContain('aus Zuhause Heidekamp')
+    expect(origin(3).getAttribute('title')).toBe('geteilt in Familie Sonnenhang')
+    expect(origin(4).textContent).toBe('aus Zuhause Möwenweg (Demo)')
+    expect(origin(4).className).toContain('is-besuch')
+    expect(tiles().map((tile) => tile.getAttribute('href'))).toEqual([
+      '/tier/10',
+      '/tier/11',
+      '/tier/20?in=5',
+      '/tier/21?in=5',
+      '/tier/30?in=9'
+    ])
+  })
+
+  test('gefiltert nach einem Bereich: keine doppelte Herkunft für dessen eigene Tiere', async () => {
+    api.tiere.mockResolvedValue(mixed)
+    await render({ path: '/tiere?gruppe=5' })
+    expect(tiles()[0].querySelector('.animal-tile-origin')).toBeNull()
+    expect(tiles()[1].querySelector('.animal-tile-origin').textContent).toContain('aus Zuhause Heidekamp')
+  })
+
+  test('verstorbene Tiere „In Erinnerung“, die letzte Erinnerung leise darunter', async () => {
+    api.tiere.mockResolvedValue(mixed)
+    await render()
+    expect(tiles()[1].className).toContain('is-memorial')
+    expect(tiles()[1].querySelector('.animal-tile-note').textContent).toBe('In Erinnerung')
+    expect(tiles()[0].querySelector('.animal-tile-last').textContent).toBe('Zuletzt: 20. September 2026')
+    expect(tiles()[2].querySelector('.animal-tile-last')).toBeNull()
+  })
+
+  test('noch kein eigenes Tier, aber welche aus Familien: Raster und oben "Tier hinzufügen" (nur ins eigene Zuhause)', async () => {
+    api.tiere.mockResolvedValue(allAnimals([tier(20, 'Lotte', familyArea)], [homeArea, familyArea]))
+    await render()
+    expect(tileNames()).toEqual(['Lotte'])
+    const add = container.querySelector('.hero-actions button')
+    expect(add.textContent).toBe('Tier hinzufügen')
+    act(() => add.click())
+    expect(container.querySelector('dialog.modal #modal-title').textContent).toBe('Neues Tier anlegen')
+  })
+
+  test('Laden gescheitert: Hinweis mit "Noch einmal versuchen" - lädt erneut', async () => {
+    api.tiere.mockRejectedValueOnce(new Error('Netz weg'))
+    await render()
+    const alert = panel().querySelector('[role="alert"]')
+    expect(alert.textContent).toContain('Netz weg')
+    api.tiere.mockResolvedValue(mixed)
+    const retry = [...alert.querySelectorAll('button')].find((button) => button.textContent === 'Noch einmal versuchen')
+    await act(async () => retry.click())
+    expect(api.tiere).toHaveBeenCalledTimes(2)
+    expect(tiles()).toHaveLength(5)
+  })
+
+  test('Zeitleiste bleibt beim eigenen Zuhause (GET /api/dogs)', async () => {
+    api.tiere.mockResolvedValue(mixed)
+    api.listDogs.mockResolvedValue([dog(10, 'Nele', { bei_uns_seit: '2016-09-20' })])
+    await render({ path: '/tiere?ansicht=zeitleiste' })
+    expect(container.querySelectorAll('.companion-link')).toHaveLength(1)
+    expect(container.textContent).not.toContain('Lotte')
   })
 })
