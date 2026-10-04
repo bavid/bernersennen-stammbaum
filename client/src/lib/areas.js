@@ -39,3 +39,15 @@ export const HOME_LABEL = 'Meine Chronik'
 export function isEditable(dog) {
   return dog.can_edit === undefined || Boolean(dog.can_edit)
 }
+
+// Phase W: Bereichs-Id aus der Adresse (/familien/:id, /tier/:id?in=…) - nur eine ganze Zahl > 0 (als Zahl oder reine
+// Ziffernfolge), sonst null. So landet nie "3abc", "-1" oder "1e3" in einem Bereichswechsel.
+const AREA_ID_RE = /^[1-9]\d{0,15}$/
+
+export function parseAreaId(value) {
+  if (Number.isSafeInteger(value) && value > 0) return value
+  if (typeof value !== 'string' || !AREA_ID_RE.test(value)) return null
+  const id = Number(value)
+  return Number.isSafeInteger(id) ? id : null
+}
+

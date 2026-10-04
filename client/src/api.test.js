@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { api } from './api'
+import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -524,5 +525,48 @@ describe('Phase P2 – Beiträge, Postfach, Schreib uns, Freigabe', () => {
     ])
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ vorlage: 'Link führt ins Leere', text: 'Die Seite fehlt.' })
     expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ ids: [5, 6] })
+  })
+})
+
+// Phase W: der angezeigte Bereich geht als X-Bereich mit; 409 {code:'BEREICH'} meldet einen Wechsel in einem anderen Tab.
+describe('api – X-Bereich (Phase W)', () => {
+  afterEach(() => {
+    setActiveArea(null)
+    setAreaMismatchHandler(null)
+  })
+
+  test('mit bekanntem Bereich: Header an JSON- und FormData-Anfragen, ohne Bereich keiner', async () => {
+    const fetchMock = stubFetch([])
+    await api.listDogs()
+    expect(fetchMock.mock.calls[0][1].headers).toEqual({ 'Content-Type': 'application/json' })
+
+    setActiveArea(7)
+    await api.listDogs()
+    await api.upload(new File(['x'], 'foto.jpg', { type: 'image/jpeg' }))
+    expect(fetchMock.mock.calls[1][1].headers).toEqual({ 'Content-Type': 'application/json', 'X-Bereich': '7' })
+    expect(fetchMock.mock.calls[2][1].headers).toEqual({ 'X-Bereich': '7' })
+  })
+
+  test('ungültige Ids setzen keinen Header', async () => {
+    const fetchMock = stubFetch([])
+    for (const value of [0, -2, 1.5, '3', undefined]) {
+      setActiveArea(value)
+      await api.listDogs()
+    }
+    expect(fetchMock.mock.calls.every(([, options]) => !('X-Bereich' in options.headers))).toBe(true)
+  })
+
+  test('409 mit code BEREICH ruft den Handler und wirft trotzdem; anderes 409 nicht', async () => {
+    const handler = vi.fn()
+    setAreaMismatchHandler(handler)
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 409, json: async () => ({ error: 'Anderer Bereich', code: 'BEREICH' }) })
+      .mockResolvedValueOnce({ ok: false, status: 409, json: async () => ({ error: 'Passwort belegt' }) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(api.listDogs()).rejects.toMatchObject({ status: 409, message: 'Anderer Bereich' })
+    expect(handler).toHaveBeenCalledTimes(1)
+    await expect(api.createGroup({ name: 'X', password: 'geheim1' })).rejects.toMatchObject({ status: 409 })
+    expect(handler).toHaveBeenCalledTimes(1)
   })
 })

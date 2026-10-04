@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { HOME_LABEL, inviteLabel, isEditable, isPartnerArea, startRoute } from './areas.js'
+import { HOME_LABEL, inviteLabel, isEditable, isPartnerArea, parseAreaId, startRoute } from './areas.js'
 
 describe('startRoute', () => {
   test('a household area starts at Wegbegleiter', () => {
@@ -66,5 +66,18 @@ describe('isEditable', () => {
 
   test('treats a missing can_edit field as editable (lists that only ever return own animals)', () => {
     expect(isEditable({ id: 3 })).toBe(true)
+  })
+})
+
+describe('parseAreaId (Phase W)', () => {
+  test('accepts positive integers as number or digit string', () => {
+    expect(parseAreaId(5)).toBe(5)
+    expect(parseAreaId('12')).toBe(12)
+  })
+
+  test('rejects everything else', () => {
+    for (const value of [0, -1, 1.5, '0', '-1', '1e3', '3abc', ' 3', '', null, undefined, '99999999999999999', {}]) {
+      expect(parseAreaId(value), String(value)).toBeNull()
+    }
   })
 })

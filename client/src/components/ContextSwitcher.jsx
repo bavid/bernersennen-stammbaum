@@ -1,9 +1,10 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { HOME_LABEL } from '../lib/areas.js'
 import { roleLabel } from '../lib/roles.js'
 import { visitLabel } from '../lib/visits.js'
 import useOpenArea from '../hooks/useOpenArea.js'
+import useMenu from '../hooks/useMenu.js'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
 import JoinFamilyDialog from './JoinFamilyDialog.jsx'
@@ -51,60 +52,9 @@ function SwitcherGroup({ id, title, children }) {
 export default function ContextSwitcher({ family, onChange }) {
   const { words } = useTheme()
   const openArea = useOpenArea(onChange)
-  const [open, setOpen] = useState(false)
+  const { open, setOpen, toggle, close: closeMenu, rootRef, triggerRef, firstItemRef, onMenuKeyDown } = useMenu()
   const [joinOpen, setJoinOpen] = useState(false)
-  const rootRef = useRef(null)
-  const triggerRef = useRef(null)
-  const firstItemRef = useRef(null)
   const headingId = useId()
-
-  useEffect(() => {
-    if (!open) return undefined
-    function handlePointerDown(event) {
-      if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handlePointerDown)
-    return () => document.removeEventListener('mousedown', handlePointerDown)
-  }, [open])
-
-  useEffect(() => {
-    if (open) firstItemRef.current?.focus()
-  }, [open])
-
-  function closeMenu() {
-    setOpen(false)
-    triggerRef.current?.focus()
-  }
-
-  function handleMenuKeyDown(event) {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      closeMenu()
-      return
-    }
-    // Tab soll den Fokus wie gewohnt weiterreichen (zum nächsten bzw. vorherigen fokussierbaren
-    // Element) – das Menü schließt dabei nur, statt offen und ohne sichtbaren Fokus stehen zu bleiben.
-    if (event.key === 'Tab') {
-      setOpen(false)
-      return
-    }
-    const items = [...rootRef.current.querySelectorAll('[role="menuitem"]')]
-    if (event.key === 'Home') {
-      event.preventDefault()
-      items[0]?.focus()
-      return
-    }
-    if (event.key === 'End') {
-      event.preventDefault()
-      items[items.length - 1]?.focus()
-      return
-    }
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
-    event.preventDefault()
-    const index = items.indexOf(document.activeElement)
-    const step = event.key === 'ArrowDown' ? 1 : -1
-    items[(index + step + items.length) % items.length]?.focus()
-  }
 
   async function switchTo(id, name) {
     // Das Menü verschwindet aus dem DOM – ohne expliziten Fokus fiele er sonst auf <body> zurück
@@ -127,7 +77,7 @@ export default function ContextSwitcher({ family, onChange }) {
         className="context-switcher-trigger"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggle}
       >
         {/* Der eigene Bereich heißt hier immer "Meine Chronik" – der gespeicherte Name des Haushalts
             ist nur relevant, wo andere Familien ihn sehen (z. B. "aus <Name>" bei geteilten Tieren). */}
@@ -137,7 +87,7 @@ export default function ContextSwitcher({ family, onChange }) {
         <Icon name="chevronDown" />
       </button>
       {open && (
-        <div className="context-switcher-menu" role="menu" aria-label="Bereich wechseln" onKeyDown={handleMenuKeyDown}>
+        <div className="context-switcher-menu" role="menu" aria-label="Bereich wechseln" onKeyDown={onMenuKeyDown}>
           <SwitcherGroup id={`${headingId}-home`} title="Mein Zuhause">
             <SwitcherItem
               itemRef={firstItemRef}

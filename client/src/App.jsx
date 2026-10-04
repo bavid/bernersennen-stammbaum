@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
+import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
 import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { readSetting, writeSetting } from './lib/storage.js'
@@ -324,6 +325,29 @@ export default function App() {
     window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
     return hash.slice(1)
   })
+
+  // Phase W: der angezeigte Bereich geht mit jeder Anfrage mit (api.js, Header X-Bereich) - schon beim Rendern gesetzt,
+  // denn die Effekte der Seiten (ihre ersten Anfragen) laufen vor denen von App.
+  setActiveArea(family ? family.id : null)
+
+  // Phase W: hat ein anderer Tab die Sitzung in einen anderen Bereich gewechselt (409 BEREICH), /me neu laden - einmal,
+  // auch wenn mehrere Anfragen gleichzeitig scheitern. Das AreaGate der Seite schaltet danach zurück, main mountet neu.
+  useEffect(() => {
+    let reloading = false
+    setAreaMismatchHandler(() => {
+      if (reloading) return
+      reloading = true
+      api
+        .me()
+        .then(setFamily)
+        // Nicht erreichbar oder abgemeldet: die nächste Anfrage meldet das selbst (401 -> Login, sonst Fehlerhinweis).
+        .catch(() => {})
+        .finally(() => {
+          reloading = false
+        })
+    })
+    return () => setAreaMismatchHandler(null)
+  }, [])
 
   useEffect(() => {
     setUnauthorizedHandler(() => setFamily(null))

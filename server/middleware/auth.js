@@ -4,6 +4,7 @@ const { jwtSecret, cookieSecure, sessionCookie } = require('../config')
 const { canEnter } = require('../lib/context')
 const { isVisiting } = require('../lib/visits')
 const { isGuestAllowed, GUEST_READ_ONLY } = require('../lib/guestAccess')
+const { isAreaMismatch, sendAreaMismatch } = require('../lib/areaHeader')
 
 const SESSION_DAYS = 30
 // Phase 5 Task 5b: eine Admin-Ansicht (adminView) lebt nur so lange wie die Admin-Sitzung selbst
@@ -33,6 +34,7 @@ const SESSION_EXPIRED = 'Sitzung abgelaufen – bitte neu anmelden'
 // req.isGuest/req.guestOf (Phase V2): der aktive Bereich ist ein Zuhause, das die Identität besucht (lib/visits.js).
 // Eine solche Besuchs-Sitzung darf NUR, was lib/guestAccess.js ausdrücklich erlaubt (ansehen, kommentieren, eigene
 // Kommentare löschen, zurückwechseln) - jede andere Anfrage endet hier mit 403, bevor eine Route sie sieht.
+// Phase W: X-Bereich (lib/areaHeader.js) - nennt der Client einen anderen als den aktiven Bereich, 409 {code:'BEREICH'}.
 function requireSession(req, res, next) {
   const token = req.cookies?.[sessionCookie]
   if (!token) {
@@ -74,6 +76,9 @@ function requireSession(req, res, next) {
     req.isAdminView = adminView
     req.isGuest = isGuest
     req.guestOf = isGuest ? active : null
+    // Phase W: zeigt der Client einen anderen Bereich als die Sitzung (zweiter Tab), lieber ablehnen als im falschen
+    // Bereich lesen oder schreiben - vor der Besuchs-Sperre, damit ein veralteter Tab 409 (neu laden) statt 403 sieht.
+    if (isAreaMismatch(req, active)) return sendAreaMismatch(res)
     if (isGuest && !isGuestAllowed(req)) return res.status(403).json({ error: GUEST_READ_ONLY })
     next()
   } catch {

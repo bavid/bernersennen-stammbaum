@@ -1,3 +1,5 @@
+import { AREA_MISMATCH_CODE, areaHeaders, reportAreaMismatch } from './lib/activeArea.js'
+
 export class ApiError extends Error {
   constructor(message, status, details = {}) {
     super(message)
@@ -13,12 +15,19 @@ export function setUnauthorizedHandler(handler) {
   onUnauthorized = handler
 }
 
+// Phase W: jede Anfrage nennt den angezeigten Bereich (X-Bereich, lib/activeArea.js) - FormData ohne JSON-Content-Type
+// (der Browser setzt die multipart-Grenze selbst); ganz ohne Kopfzeilen bleibt headers undefined.
+function requestHeaders(body) {
+  const headers = { ...(body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...areaHeaders() }
+  return Object.keys(headers).length > 0 ? headers : undefined
+}
+
 async function request(path, options = {}) {
   let res
   try {
     res = await fetch(`/api${path}`, {
       credentials: 'include',
-      headers: options.body instanceof FormData ? undefined : { 'Content-Type': 'application/json' },
+      headers: requestHeaders(options.body),
       ...options
     })
   } catch {
@@ -35,6 +44,8 @@ async function request(path, options = {}) {
       // Antwort ohne JSON-Body
     }
     if (res.status === 401 && !path.startsWith('/admin') && path !== '/me' && path !== '/login') onUnauthorized()
+    // Phase W: ein anderer Tab hat den Bereich gewechselt - App.jsx lädt /me neu, das AreaGate schaltet zurück.
+    if (res.status === 409 && details.code === AREA_MISMATCH_CODE) reportAreaMismatch()
     throw new ApiError(message, res.status, details)
   }
 
@@ -372,13 +383,15 @@ export const api = {
       return request('/partner-area/profile/logo', { method: 'POST', body: formData })
     },
     publish: (aktiv) => request('/partner-area/profile/publish', json('POST', { aktiv })),
-    // Phase V4b: 1-2 Bannerfotos für den Kopf des Portals (server/routes/partnerArea/banner.js) - jede Antwort ist die
+    // Phase V4b: 1-3 Bannerfotos für den Kopf des Portals (server/routes/partnerArea/banner.js) - jede Antwort ist die
     // eigene Liste { banner: [{ position, fotoUrl, alt }] }. formData: foto (nur JPG/PNG), alt (optional).
     addBanner: (formData) => request('/partner-area/profile/banner', { method: 'POST', body: formData }),
     replaceBanner: (position, formData) =>
       request(`/partner-area/profile/banner/${encodeURIComponent(position)}/foto`, { method: 'PUT', body: formData }),
     updateBannerAlt: (position, alt) => request(`/partner-area/profile/banner/${encodeURIComponent(position)}`, json('PUT', { alt })),
     deleteBanner: (position) => request(`/partner-area/profile/banner/${encodeURIComponent(position)}`, { method: 'DELETE' }),
+    // Feedback-Runde: das Layout der Bannerfotos ({ banner, layout } wie jede Antwort oben).
+    setBannerLayout: (layout) => request('/partner-area/profile/banner/layout', json('PUT', { layout })),
     einblicke: () => request('/partner-area/einblicke'),
     // formData: foto, datum (JJJJ-MM-TT), text, einwilligung ('true') - siehe EinblickForm.
     createEinblick: (formData) => request('/partner-area/einblicke', { method: 'POST', body: formData }),
