@@ -171,6 +171,13 @@ function Datenschutz({ legal }) {
       {/* Digitaler Bilderrahmen: Diashow und Rahmen-Link für ein anderes Gerät. */}
       <PrivacyBilderrahmen />
 
+      <h2>Suche</h2>
+      <p>
+        Die Suche (Lupe oben) findet nur, was ihr ohnehin sehen dürft. Ein Suchbegriff geht nur für diese eine Suche an
+        unseren Server; wir speichern und protokollieren Suchbegriffe nicht. Die letzten fünf Suchen merkt sich nur euer
+        Browser auf diesem Gerät (localStorage) – bis ihr euch abmeldet oder in der Suche „Verlauf löschen“ wählt.
+      </p>
+
       <h2>Rechte und Kontakt</h2>
       <p>
         Für Auskunft über gespeicherte Daten oder deren Löschung wendet euch bitte an{' '}

@@ -383,4 +383,6 @@ module.exports.partnerCard = partnerCard
 module.exports.promotionCard = promotionCard
 module.exports.spendenCard = spendenCard
 module.exports.discoverLimiter = discoverLimiter
+// Suche (routes/suche.js): Partner nach derselben Demo-Regel wie hier.
+module.exports.partnerDemoValues = partnerDemoValues
 module.exports.MAX_BEGLEITER_TIERE = MAX_BEGLEITER_TIERE

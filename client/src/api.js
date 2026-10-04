@@ -126,6 +126,13 @@ export const api = {
   // Reiter "Entdecken" (Phase 3): alle vier Abschnitte in einer Antwort. Die PLZ steht wie bei
   // publicPartners im Body, nie in der URL; ohne PLZ liefert der Server alles, nach Name sortiert.
   discover: ({ plz, radius } = {}) => request('/discover', json('POST', plz ? { plz, radius } : {})),
+  // Suche (server/routes/suche.js): { gruppen: { tiere|erinnerungen|pinnwand|familien|partner: { treffer, mehr } } } - nur,
+  // was die Identität sehen darf. gruppen optional (Liste der Gruppen), sonst alle.
+  search: (q, gruppen) => {
+    const params = new URLSearchParams({ q })
+    if (gruppen?.length) params.set('gruppen', gruppen.join(','))
+    return request(`/suche?${params.toString()}`)
+  },
 
   checkVoucher: (code) => request('/vouchers/check', json('POST', { code })),
   redeemVoucher: (payload) => request('/vouchers/redeem', json('POST', payload)),

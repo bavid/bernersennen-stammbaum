@@ -22,6 +22,8 @@ const GUEST_READS = [
   /^\/api\/breeding$/,
   /^\/api\/notes$/,
   /^\/api\/besuche$/,
+  // Suche: lib/searchAreas.js beschränkt eine Besuchs-Sitzung auf das eigene Zuhause und die Gast-Regeln beim Gastgeber.
+  /^\/api\/suche$/,
   // Fotos: lib/uploadAccess.js canSeeUpload prüft für Gäste nur nicht-private Einträge und Tierfotos.
   /^\/uploads\/[^/]+$/
 ]

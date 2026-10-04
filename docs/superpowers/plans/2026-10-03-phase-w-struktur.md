@@ -113,3 +113,37 @@ endlos die Fotos eurer Tiere – auch bei Oma, ohne dass sie sich anmeldet.
   (`?tier=`). Datenschutz: Abschnitt „Digitaler Bilderrahmen“.
 - **Offen:** Caveat als Handschrift einbinden (bis dahin Systemschrift), Diashow aus einer Familie heraus
   (`/familien/:id`, der Server kann es schon), Fotos aus „Mit dabei“ (gespiegelte Erinnerungen) in der Diashow.
+
+## Suche (umgesetzt 04.10.)
+
+- **Einstieg:** Lupe „Suchen“ im Kopf (Desktop neben dem Konto-Menü, Handy oben rechts, 44 px) und `Strg/⌘+K` – ein
+  Tasten-Listener am Suchknopf, nicht in Feldern und nicht über einem anderen offenen Dialog. Nur für Haushalte und
+  klassische Familien-Logins; Tierheime/Partner haben keine Lupe (Server: 404).
+- **Dialog** (`components/search/`, `Modal`): Feld als Combobox (`aria-activedescendant`, ↑/↓, Enter öffnet – ohne aktive
+  Option die erste –, Esc schließt, Fokus zurück). Ab 2 Zeichen nach 250 ms Pause; Gruppen **Tiere · Erinnerungen ·
+  Pinnwand & Termine · Familien & befreundete Zuhause · Partner · Abkürzungen** (lokal über Stichwörter: Einstellungen,
+  Bilderrahmen, Einladen, Fotocollage, Hilfe & Kontakt, Familie beitreten), je 5 + „Alle n anzeigen“, Treffer
+  hervorgehoben. Davor „Zuletzt gesucht“ (5, nur dieses Gerät, je Zuhause getrennt, „Verlauf löschen“, beim Abmelden
+  gelöscht, nie in der Admin-Ansicht) und Tipps; „Keine Treffer für …“. Enter vor den Treffern wartet auf sie (nie ein
+  veralteter Treffer); nach einem Fehler „Noch einmal versuchen“. Ziele: `/tier/:id?in=…(#entry-N)`,
+  `/familien/:id(?reiter=pinnwand)`, `/pinnwand?in=home` (Zettel des Zuhauses, `AreaRoutes` PinboardRoute), `/p/:slug` –
+  das AreaGate wechselt den Bereich; ein Treffer, der auch im aktiven Bereich sichtbar ist, bleibt dort.
+- **Server** `GET /api/suche?q=&gruppen=` (`routes/suche.js`): `requireAuth`, 60 je Minute und Identität (Demo: je
+  Anschluss), `no-store`, `Sec-Fetch-Site: cross-site` → 403, Gast erlaubt (`lib/guestAccess.js`). `lib/searchAreas.js`
+  listet die Bereiche (höchstens 20) mit den vorhandenen Regeln: eigenes Zuhause (VISIBLE_DOGS/VISIBLE_ENTRY, private
+  Erinnerungen, Pinnwand), Familien mit Mitgliedschaft (gleiche Regeln mit der Familie, Demo-Gleichheit), laufende
+  Besuche (eigene Tiere des Gastgebers, GUEST_ENTRY_SQL, keine Pinnwand); Besuchs-Sitzung = Zuhause + Gastgeber;
+  klassischer Login = nur die Familie. Partner wie „Entdecken“ (öffentlich sichtbar, `partnerDemoValues` der Identität).
+  `lib/searchText.js`: Faltung klein/ohne Akzente in zwei Fassungen (ä→ae und ä→a, ß→ss), 2–80 Zeichen (gefaltet ≤ 160),
+  je Gruppe 20 (`mehr`), genau → Anfang → irgendwo, dann das Neueste; Erinnerungen/Zettel nur als Auszug (≤ 140 Zeichen
+  um den Treffer). Fotos nur für Tiere des aktiven Bereichs.
+- **Vergleich ohne LIKE (Sicherheits-Review, MEDIUM):** statt `LIKE` mit maskiertem `%`/`_`/`\` vergleichen die
+  SQL-Funktionen `suche_hat`/`suche_rang` (`lib/searchMatch.js`) per `String.includes` auf den gefalteten Texten –
+  linear statt Text × Muster, Platzhalter gibt es so gar nicht erst (Tests mit `%`, `_`, `\` und Vollbreite-Formen).
+  Jeder Text wird je Anfrage einmal gefaltet; nach 4 Mio. gefalteten Zeichen hört die Suche auf und antwortet mit
+  `unvollstaendig: true` (Client: „Nicht alles durchsucht …“) – der eine Node-Prozess bleibt für alle frei.
+- **Datenschutz:** Abschnitt „Suche“ (Begriffe weder gespeichert noch protokolliert, Verlauf nur im Browser bis zum
+  Abmelden).
+- **Offen:** Treffer in Grüßen (Kommentaren) und „Mit dabei“-Spiegelungen; Termine der Partner-Kalender; der Begriff
+  steht als `?q=` in der Adresse (Entscheidung GET) – bekäme der Proxy je ein Zugriffsprotokoll, `q` dort schwärzen oder
+  auf `POST` mit Body umstellen (wie `/api/discover`); für sehr große Chroniken später FTS5 mit gefalteter Spalte.

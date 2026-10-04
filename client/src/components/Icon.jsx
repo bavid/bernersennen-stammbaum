@@ -265,7 +265,14 @@ const PATHS = {
     </>
   ),
   play: <path d="M7 4.5v15l12-7.5Z" />,
-  pause: <path d="M8 5v14M16 5v14" />
+  pause: <path d="M8 5v14M16 5v14" />,
+  // Suche (Lupe im Kopf).
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20.5 20.5-4.5-4.5" />
+    </>
+  )
 }
 
 export default function Icon({ name, title, ...props }) {

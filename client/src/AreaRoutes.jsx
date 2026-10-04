@@ -102,6 +102,18 @@ function SettingsRoute({ family, onFamilyChange, onInvite }) {
   )
 }
 
+// /pinnwand - die Pinnwand des eigenen Zuhauses (beim klassischen Login: der Familie). In einer Familie führt die alte Adresse
+// zu deren Reiter - außer mit ?in=home (ein Zettel des Zuhauses aus der Suche): dann wechselt das Gate nach Hause.
+function PinboardRoute({ family, onFamilyChange }) {
+  const [searchParams] = useSearchParams()
+  if (areaContext(family) === 'group' && searchParams.get('in') !== 'home') return <LegacyRedirect family={family} kind="pinnwand" />
+  return (
+    <AreaGate family={family} need="home" onFamilyChange={onFamilyChange}>
+      <PinboardPage family={family} />
+    </AreaGate>
+  )
+}
+
 // Partner-Bereich (Phase P, family.art 'partner' - Hundeschule, Hundesalon, Betreuung, …): keine Tiere,
 // keine Chronik, kein Rudel - nur Profil, Beiträge und Nachrichten (P2), Kalender (V4a), Visitenkarten (V5), Zugang und die Kundensicht, dazu
 // die allgemeinen Seiten aus Kopf und Fuß (Schreib dem Admin, In der Nähe). Alles andere (Stammbaum,
@@ -200,10 +212,7 @@ function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/familienbande" element={<LegacyRedirect family={family} kind="tree" />} />
       {/* Entscheidung D2: die Pinnwand des Zuhauses hat keinen Menüpunkt (Start verlinkt sie), die einer Familie ist ein
           Reiter der Gruppenseite; beim klassischen Login bleibt sie in der Navigation. */}
-      <Route
-        path="/pinnwand"
-        element={context === 'group' ? <LegacyRedirect family={family} kind="pinnwand" /> : <PinboardPage family={family} />}
-      />
+      <Route path="/pinnwand" element={<PinboardRoute family={family} onFamilyChange={onFamilyChange} />} />
       <Route
         path="/mitglieder"
         element={

@@ -38,6 +38,7 @@ const partnerAreaRoutes = require('./routes/partnerArea')
 const redirectRoutes = require('./routes/redirect')
 const seoRoutes = require('./routes/seo')
 const bilderrahmenRoutes = require('./routes/bilderrahmen')
+const sucheRoutes = require('./routes/suche')
 const { rahmenApiRouter, rahmenFotoRouter, rahmenPageHeaders } = require('./routes/rahmen')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
@@ -207,6 +208,8 @@ function createApp() {
   // Header X-Rahmen-Token) - routes/bilderrahmen.js, routes/rahmen.js.
   app.use('/api/bilderrahmen', bilderrahmenRoutes)
   app.use('/api/rahmen', rahmenApiRouter)
+  // Suche über Tiere, Erinnerungen, Pinnwand, Familien und Partner - nur, was die Identität sehen darf (routes/suche.js).
+  app.use('/api/suche', sucheRoutes)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))
 
   // Fotos eines Rahmen-Geräts über signierte, kurzlebige Adressen (routes/rahmen.js) und die Seite /rahmen selbst: beide

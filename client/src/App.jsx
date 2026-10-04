@@ -14,6 +14,8 @@ import Icon from './components/Icon.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import AccountMenu from './components/AccountMenu.jsx'
 import AccountSheet, { MenuSlotButton } from './components/AccountSheet.jsx'
+import SearchButton from './components/search/SearchButton.jsx'
+import { clearRecent } from './lib/search.js'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
 import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
@@ -262,6 +264,8 @@ export function AppHeader({ family, onLogout, onInvite = () => {} }) {
           ))}
           {withMenu && <MenuSlotButton open={sheetOpen} onOpen={() => setSheetOpen(true)} />}
         </nav>
+        {/* Suche (Lupe, Strg/⌘+K) für Haushalte und klassische Familien-Logins - Tierheime und Partner haben keine. */}
+        {withMenu && <SearchButton family={family} onInvite={onInvite} />}
         {withMenu ? <AccountMenu family={family} onInvite={onInvite} onLogout={onLogout} /> : <PartnerHeaderActions onLogout={onLogout} />}
       </div>
       {withMenu && (
@@ -400,6 +404,8 @@ export default function App() {
   }, [invitePending, inviteReady, pathname])
 
   async function handleLogout() {
+    // Suche: der Verlauf dieses Geräts bleibt nicht über das Abmelden hinaus stehen (lib/search.js clearRecent).
+    clearRecent(family)
     try {
       await api.logout()
     } finally {

@@ -277,4 +277,16 @@ describe('LegalPage – /datenschutz, Anfragen und Benachrichtigungen', () => {
     expect(container.textContent).toMatch(/Mit „Beenden“ gilt ein Rahmen sofort nicht mehr/)
     expect(container.textContent).toMatch(/kein Tracking/)
   })
+
+  test('Suche: Begriffe nicht auf dem Server, der Verlauf nur auf diesem Gerät', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    const headings = [...container.querySelectorAll('h2')].map((h) => h.textContent)
+    expect(headings.indexOf('Suche')).toBeGreaterThan(-1)
+    expect(headings.indexOf('Suche')).toBeLessThan(headings.indexOf('Rechte und Kontakt'))
+    expect(container.textContent).toMatch(/wir speichern und protokollieren Suchbegriffe nicht/)
+    expect(container.textContent).toMatch(/letzten fünf Suchen merkt sich nur euer\s+Browser auf diesem Gerät/)
+    expect(container.textContent).toMatch(/bis ihr euch abmeldet/)
+  })
 })
