@@ -93,7 +93,9 @@ const MEMBERS = [
           fotos: ['pepper.jpg']
         },
         // Weitere Erinnerungen: zwei aus der Zeit im Tierheim (herkunftShelter, „aus Tierheim Sonnenhang“ - wie bei Nele),
-        // danach drei nicht-private und eine private (die sieht weder die Familie noch das Tierheim).
+        // danach drei nicht-private und eine private (die sieht weder die Familie noch das Tierheim). Audit W: die beiden
+        // neuesten liegen gut drei bis vier Wochen zurück - sonst belegte Pepper zwei der fünf Karten auf Start am Deich
+        // (sortiert nach dem Tag der Erinnerung), dort soll eine Mischung aus Zuhause, Familie und Besuch stehen.
         chronik: [
           {
             relativ: { tage: -190 },
@@ -123,13 +125,13 @@ const MEMBERS = [
             privat: true
           },
           {
-            relativ: { tage: -12 },
+            relativ: { tage: -31 },
             titel: 'Der Stock muss mit',
             text: 'Ohne Stock geht Pepper nicht aus dem Haus. Heute war es ein halber Ast – er hat ihn trotzdem bis nach Hause getragen.'
           },
           {
-            relativ: { tage: -2 },
-            titel: 'Fast ein halbes Jahr bei uns',
+            relativ: { tage: -26 },
+            titel: 'Schon vier Monate bei uns',
             text: 'Aus dem schüchternen Fundhund ist unser Wachhund geworden. Er bellt jeden Briefträger an – und wedelt dabei.',
             hoursAgo: 20
           }
