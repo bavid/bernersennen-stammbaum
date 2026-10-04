@@ -103,7 +103,14 @@ describe('App – Einstellungen (Calm-down-Runde)', () => {
     await render('/start')
     const { dataset } = document.documentElement
     expect([dataset.palette, dataset.modus, dataset.schrift, dataset.scheme]).toEqual(['wald', 'dunkel', 'gross', 'dunkel'])
-    expect(JSON.parse(window.localStorage.getItem('chronik.darstellung'))).toEqual(atHome.darstellung)
+    // Gemerkt wird die geprüfte, vollständige Fassung (Mini-Designer: mit den Vorgaben der neuen Felder).
+    expect(JSON.parse(window.localStorage.getItem('chronik.darstellung'))).toEqual({
+      ...atHome.darstellung,
+      akzent: '',
+      schriftart: 'klassisch',
+      handschrift: 'an',
+      ecken: 'weich'
+    })
   })
 
   test('Demo: angewendet, aber nicht gemerkt', async () => {

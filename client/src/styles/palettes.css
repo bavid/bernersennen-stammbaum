@@ -1,12 +1,17 @@
-/* Farbpaletten (Einstellungen → Darstellung, Calm-down-Runde): alle Farb-Tokens an EINER Stelle, je Palette hell und
-   dunkel. Terrakotta sind die Farben beider Auftritte (Familie auf Pfoten und Berner) und die Vorgabe; Wald, Meer,
-   Lavendel und Schiefer überschreiben Akzent (--rust …), Zweitfarbe (--alpine …), Flächen, Linien und Schrift. Warn- und
-   Fehlerfarben (--tan, --danger, --success) bleiben überall gleich - sie bedeuten etwas.
+/* Farbwelten (Einstellungen → Darstellung, Mini-Designer seit B+ Familienalbum): alle Farb-Tokens an EINER Stelle, je
+   Farbwelt hell und dunkel. „Familienalbum“ ist die Vorgabe (Papier, Terrakotta, Salbei, Rosé - die alte Palette
+   „terrakotta“ führt dorthin); Waldspaziergang, Strandtag, Lavendelfeld und Regentag überschreiben Akzent (--rust …),
+   Zweitfarbe (--alpine …), Flächen, Linien und Schrift. Warn- und Fehlerfarben (--tan, --danger, --success) bleiben überall
+   gleich - sie bedeuten etwas.
    Hell oder dunkel entscheidet data-scheme an <html> (client/src/lib/darstellung.js und public/darstellung-init.js
-   setzen es vor dem ersten Bild: „Automatisch“ folgt dem System, „Hell“/„Dunkel“ der Wahl) - deshalb kein
-   @media (prefers-color-scheme) hier. Die Palette steht in data-palette an <html>; dieselben Regeln gelten für jedes
-   Element mit data-palette (die Farbmuster in den Einstellungen zeigen so die echten Farben).
-   Jede Palette erfüllt WCAG AA für Text auf Papier und Flächen, Akzent als Link und als Knopf (palettes.test.js). */
+   setzen es vor dem ersten Bild: „Automatisch“ folgt dem System, „Papier“/„Weiß“/„Dunkel“ der Wahl) - deshalb kein
+   @media (prefers-color-scheme) hier. Die Farbwelt steht in data-palette an <html>; dieselben Regeln gelten für jedes
+   Element mit data-palette (die Farbmuster in den Einstellungen zeigen so die echten Farben). data-grund='weiss' macht das
+   Papier weiß, data-akzent setzt die eigene Akzentfarbe (lib/akzent.js rechnet sie lesbar).
+   Jede Farbwelt erfüllt WCAG AA für Text auf Papier und Flächen, Akzent als Link und als Knopf (palettes.test.js).
+   --sage ist nur Schmuck (Ringe, Linien), nie Schrift; Text in Salbei ist --alpine. --blush/--blush-ink: die Rosé-Fläche
+   (aktiver Menüpunkt, Kennzeichen) und die Schrift darauf. lib/paletteFlaechen.js schreibt die Flächen für die eigene
+   Akzentfarbe ab (paletteFlaechen.test.js prüft, dass sie hier genau so stehen). */
 
 :root {
   color-scheme: light;
@@ -16,34 +21,39 @@
   color-scheme: dark;
 }
 
-/* --- Terrakotta: warmes Schwarz, Rost, Schneeweiß auf Papier-Creme (Vorgabe) ------------------------------------- */
+/* --- Familienalbum: warmes Papier, Terrakotta, Salbei und Rosé (Vorgabe) ---------------------------------------- */
 
 :root,
-[data-palette='terrakotta'] {
-  --paper: #f6efe4;
-  --paper-deep: #ecdfcc;
-  --surface: #fffcf7;
-  --surface-sunk: #f9f3ea;
-  --ink: #1c1511;
-  --ink-soft: #3a2e25;
-  --text: #2a211a;
-  --muted: #74665a;
-  --line: #e3d5c1;
-  --line-strong: #cdb99f;
+[data-palette='familienalbum'] {
+  --paper: #fbf5ec;
+  --paper-deep: #f3e8d9;
+  --surface: #ffffff;
+  --surface-sunk: #f8f0e5;
+  --ink: #2e241d;
+  --ink-soft: #4a3c31;
+  --text: #2e241d;
+  --muted: #6b5d52;
+  --line: #ebdccb;
+  --line-strong: #d9c6b0;
 
-  --rust: #a4431d;
-  --rust-deep: #7d3014;
-  --rust-wash: rgba(164, 67, 29, 0.1);
-  --on-rust: #fffaf2;
-  --alpine: #3f4b39;
-  --alpine-wash: rgba(63, 75, 57, 0.1);
+  --rust: #a64b2a;
+  --rust-deep: #83391e;
+  --rust-wash: rgba(166, 75, 42, 0.1);
+  --on-rust: #ffffff;
+  --alpine: #56684a;
+  --alpine-wash: rgba(124, 143, 106, 0.14);
+  --sage: #7c8f6a;
+  --blush: #f3d9cc;
+  --blush-ink: #6b3a24;
 
-  --hero-bg: #1c1511;
-  --hero-text: #f6ecdd;
-  --hero-muted: #bda892;
+  --hero-bg: #f3d9cc;
+  --hero-text: #2e241d;
+  --hero-muted: #5e4637;
+  --hero-accent: #8e3f22;
 }
 
-/* Nur am Wurzelelement: gemeinsame Farben und die von Hell/Dunkel abhängigen Schatten. */
+/* Nur am Wurzelelement: gemeinsame Farben, die von Hell/Dunkel abhängigen Schatten (warm, weich - keine harten Kanten)
+   und das Polaroid (weißer Rand, sanfter Schatten). */
 :root {
   --tan: #d49a5b;
   --snow: #fffaf2;
@@ -51,36 +61,42 @@
   --danger-wash: #fbe9e7;
   --success: #2f6b3f;
 
-  --shadow-sm: 0 1px 2px rgba(28, 21, 17, 0.07);
-  --shadow-card: 0 1px 2px rgba(28, 21, 17, 0.06), 0 10px 28px -16px rgba(28, 21, 17, 0.28);
-  --shadow-raised: 0 2px 4px rgba(28, 21, 17, 0.06), 0 22px 44px -18px rgba(28, 21, 17, 0.42);
-  /* Folgt dem Akzent der Palette. */
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--rust) 28%, transparent);
+  --shadow-sm: 0 1px 2px rgba(110, 70, 40, 0.08);
+  --shadow-card: 0 1px 2px rgba(110, 70, 40, 0.05), 0 6px 18px rgba(110, 70, 40, 0.08);
+  --shadow-raised: 0 4px 10px rgba(110, 70, 40, 0.08), 0 18px 40px -12px rgba(110, 70, 40, 0.28);
+  --polaroid-paper: #ffffff;
+  --polaroid-shadow: 0 2px 8px rgba(60, 40, 20, 0.18);
+  /* Folgt dem Akzent der Farbwelt. */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--rust) 32%, transparent);
 }
 
 :root[data-scheme='dunkel'],
-[data-scheme='dunkel'] [data-palette='terrakotta'] {
-  --paper: #14100d;
-  --paper-deep: #1d1713;
-  --surface: #1f1914;
-  --surface-sunk: #191410;
-  --ink: #f5ecdf;
-  --ink-soft: #e2d4c2;
-  --text: #eadfd0;
-  --muted: #ae9e8c;
-  --line: #342a21;
-  --line-strong: #4a3c2f;
+[data-scheme='dunkel'] [data-palette='familienalbum'] {
+  --paper: #1e1712;
+  --paper-deep: #271e18;
+  --surface: #2a211b;
+  --surface-sunk: #231b16;
+  --ink: #f6ede2;
+  --ink-soft: #e6d8c8;
+  --text: #eadfd2;
+  --muted: #b8a796;
+  --line: #3a2e26;
+  --line-strong: #504034;
 
-  --rust: #e27b4f;
-  --rust-deep: #f09a72;
-  --rust-wash: rgba(226, 123, 79, 0.14);
-  --on-rust: #1a120d;
-  --alpine: #a9bb9c;
-  --alpine-wash: rgba(169, 187, 156, 0.12);
+  --rust: #e8906a;
+  --rust-deep: #f2ab89;
+  --rust-wash: rgba(232, 144, 106, 0.14);
+  --on-rust: #24170f;
+  --alpine: #afc29c;
+  --alpine-wash: rgba(175, 194, 156, 0.12);
+  --sage: #8fa27c;
+  --blush: #4a3027;
+  --blush-ink: #f6ddd0;
 
-  --hero-bg: #0d0a08;
-  --hero-text: #f6ecdd;
-  --hero-muted: #bda892;
+  --hero-bg: #3a2a21;
+  --hero-text: #f6ede2;
+  --hero-muted: #cdb9a6;
+  --hero-accent: #e8906a;
 }
 
 :root[data-scheme='dunkel'] {
@@ -89,12 +105,15 @@
   --danger-wash: rgba(242, 135, 127, 0.12);
   --success: #8fd19e;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -16px rgba(0, 0, 0, 0.8);
-  --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.4), 0 22px 44px -18px rgba(0, 0, 0, 0.9);
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--rust) 35%, transparent);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 22px -10px rgba(0, 0, 0, 0.6);
+  --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.4), 0 22px 44px -18px rgba(0, 0, 0, 0.85);
+  --polaroid-paper: #f1e8dc;
+  --polaroid-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--rust) 40%, transparent);
 }
 
-/* --- Wald: Tannengrün, Rinde, helles Moos ------------------------------------------------------------------------- */
+/* --- Waldspaziergang (wald): Tannengrün, Rinde, helles Moos ------------------------------------------------------- */
 
 [data-palette='wald'] {
   --paper: #f1f3ec;
@@ -114,10 +133,14 @@
   --on-rust: #fbfcf8;
   --alpine: #7a4a24;
   --alpine-wash: rgba(122, 74, 36, 0.1);
+  --sage: #7a9a72;
+  --blush: #e2ead7;
+  --blush-ink: #2d4a31;
 
-  --hero-bg: #141b15;
-  --hero-text: #eef2e8;
-  --hero-muted: #a9b7a2;
+  --hero-bg: #e2ead7;
+  --hero-text: #141b15;
+  --hero-muted: #3f4d3f;
+  --hero-accent: #214d29;
 }
 
 [data-scheme='dunkel'][data-palette='wald'],
@@ -139,13 +162,17 @@
   --on-rust: #0f140f;
   --alpine: #d6ad83;
   --alpine-wash: rgba(214, 173, 131, 0.12);
+  --sage: #86c28d;
+  --blush: #26332a;
+  --blush-ink: #d9ead6;
 
-  --hero-bg: #0a0e0a;
+  --hero-bg: #1a241b;
   --hero-text: #eef2e8;
   --hero-muted: #a9b7a2;
+  --hero-accent: #86c28d;
 }
 
-/* --- Meer: Tiefblau, Seegrün, kühles Weiß ------------------------------------------------------------------------- */
+/* --- Strandtag (meer): Tiefblau, Seegrün, kühles Weiß ------------------------------------------------------------- */
 
 [data-palette='meer'] {
   --paper: #eef2f5;
@@ -165,10 +192,14 @@
   --on-rust: #fafcfd;
   --alpine: #2b6a5c;
   --alpine-wash: rgba(43, 106, 92, 0.1);
+  --sage: #6f9e93;
+  --blush: #dbe7ef;
+  --blush-ink: #144466;
 
-  --hero-bg: #10181f;
-  --hero-text: #e9f0f5;
-  --hero-muted: #9db0bd;
+  --hero-bg: #dbe7ef;
+  --hero-text: #10181f;
+  --hero-muted: #3d4c58;
+  --hero-accent: #144466;
 }
 
 [data-scheme='dunkel'][data-palette='meer'],
@@ -190,13 +221,17 @@
   --on-rust: #0c1217;
   --alpine: #8ccab9;
   --alpine-wash: rgba(140, 202, 185, 0.12);
+  --sage: #8ccab9;
+  --blush: #1f2d38;
+  --blush-ink: #d3e6f3;
 
-  --hero-bg: #080d11;
+  --hero-bg: #15212b;
   --hero-text: #e9f0f5;
   --hero-muted: #9db0bd;
+  --hero-accent: #78b6df;
 }
 
-/* --- Lavendel: Flieder, Salbei, zartes Grau-Violett --------------------------------------------------------------- */
+/* --- Lavendelfeld (lavendel): Flieder, Salbei, zartes Grau-Violett ------------------------------------------------ */
 
 [data-palette='lavendel'] {
   --paper: #f4f1f6;
@@ -216,10 +251,14 @@
   --on-rust: #fcfbfd;
   --alpine: #4a6656;
   --alpine-wash: rgba(74, 102, 86, 0.1);
+  --sage: #869e8e;
+  --blush: #ebe2f2;
+  --blush-ink: #513472;
 
-  --hero-bg: #1a1520;
-  --hero-text: #f2edf6;
-  --hero-muted: #b4a8c0;
+  --hero-bg: #ebe2f2;
+  --hero-text: #1a1520;
+  --hero-muted: #4d4357;
+  --hero-accent: #513472;
 }
 
 [data-scheme='dunkel'][data-palette='lavendel'],
@@ -241,13 +280,17 @@
   --on-rust: #120f16;
   --alpine: #a6c3b0;
   --alpine-wash: rgba(166, 195, 176, 0.12);
+  --sage: #a6c3b0;
+  --blush: #2c2338;
+  --blush-ink: #e6dbf3;
 
-  --hero-bg: #0b090e;
+  --hero-bg: #211b29;
   --hero-text: #f2edf6;
   --hero-muted: #b4a8c0;
+  --hero-accent: #bba0e2;
 }
 
-/* --- Schiefer: Blaugrau, Petrol, neutrales Hellgrau --------------------------------------------------------------- */
+/* --- Regentag (schiefer): Blaugrau, Petrol, neutrales Hellgrau ---------------------------------------------------- */
 
 [data-palette='schiefer'] {
   --paper: #f0f1f3;
@@ -267,10 +310,14 @@
   --on-rust: #fbfbfc;
   --alpine: #3c625d;
   --alpine-wash: rgba(60, 98, 93, 0.1);
+  --sage: #7f9a96;
+  --blush: #e1e6ec;
+  --blush-ink: #2a3c4e;
 
-  --hero-bg: #16191d;
-  --hero-text: #eef0f3;
-  --hero-muted: #a5adb6;
+  --hero-bg: #e1e6ec;
+  --hero-text: #16191d;
+  --hero-muted: #454c55;
+  --hero-accent: #2a3c4e;
 }
 
 [data-scheme='dunkel'][data-palette='schiefer'],
@@ -292,10 +339,42 @@
   --on-rust: #101214;
   --alpine: #90bcb5;
   --alpine-wash: rgba(144, 188, 181, 0.12);
+  --sage: #90bcb5;
+  --blush: #262d35;
+  --blush-ink: #dbe3ec;
 
-  --hero-bg: #0a0b0d;
+  --hero-bg: #1b2026;
   --hero-text: #eef0f3;
   --hero-muted: #a5adb6;
+  --hero-accent: #9db7cf;
+}
+
+/* --- Hintergrund „Weiß“ (data-grund, Einstellungen → Darstellung): das Papier wird weiß, Karten heben sich nur noch
+   über ihren Schatten ab. Nur im hellen Modus - „Dunkel“ ist ein eigener Hintergrund. ------------------------------- */
+
+:root[data-grund='weiss'][data-scheme='hell'] {
+  --paper: #ffffff;
+  --paper-deep: #f6f1ea;
+  --surface-sunk: #faf7f2;
+}
+
+/* --- Eigene Akzentfarbe (data-akzent): lib/akzent.js rechnet je Modus eine lesbare Fassung (gegen Papier, Flächen und
+   die Schrift auf dem Knopf) und setzt sie als --akzent-* an <html> - hier werden daraus die Akzent-Tokens. ----------- */
+
+:root[data-akzent][data-scheme='hell'] {
+  --rust: var(--akzent-hell);
+  --rust-deep: var(--akzent-hell-tief);
+  --on-rust: var(--akzent-hell-auf);
+  --rust-wash: color-mix(in srgb, var(--akzent-hell) 10%, transparent);
+  --hero-accent: var(--akzent-hell);
+}
+
+:root[data-akzent][data-scheme='dunkel'] {
+  --rust: var(--akzent-dunkel);
+  --rust-deep: var(--akzent-dunkel-tief);
+  --on-rust: var(--akzent-dunkel-auf);
+  --rust-wash: color-mix(in srgb, var(--akzent-dunkel) 14%, transparent);
+  --hero-accent: var(--akzent-dunkel);
 }
 
 /* --- Partner-Portal mit eigener Akzentfarbe (portal.css) ----------------------------------------------------------

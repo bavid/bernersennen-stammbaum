@@ -1,7 +1,8 @@
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { api } from '../../api'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import Avatar from '../Avatar.jsx'
+import Icon from '../Icon.jsx'
 import TimelineEntryForm from '../TimelineEntryForm.jsx'
 import { useToast } from '../Toast.jsx'
 import { isEditable } from '../../lib/areas.js'
@@ -19,9 +20,10 @@ export function composerAnimals(dogs = []) {
     .sort((a, b) => displayName(a).localeCompare(displayName(b), 'de'))
 }
 
-// "Was erlebt euer Tier?" (Phase W, Start und Gruppenseite): erst das Tier wählen, dann der bekannte Beitrag-Dialog
-// (TimelineEntryForm). onCreated bekommt den neuen Beitrag samt Tier-Angaben, wie sie der Feed braucht. Ohne passendes
-// Tier gibt es nichts zu erzählen - dann steht hier nichts.
+// "Was erlebt euer Tier?" (Phase W, Start und Gruppenseite): ein Knopf „Erinnerung festhalten“ (B+ Familienalbum - die Tiere
+// stehen auf Start schon als Kreise darüber, also nicht noch einmal), danach das Tier wählen, dann der bekannte
+// Erinnerungs-Dialog (TimelineEntryForm). onCreated bekommt die neue Erinnerung samt Tier-Angaben, wie sie der Feed braucht.
+// Ohne passendes Tier gibt es nichts zu erzählen - dann steht hier nichts.
 export default function StartComposer({ family, dogs, onCreated }) {
   const { words } = useTheme()
   const toast = useToast()
@@ -29,13 +31,21 @@ export default function StartComposer({ family, dogs, onCreated }) {
   const selectId = useId()
   const animals = useMemo(() => composerAnimals(dogs), [dogs])
   const [dogId, setDogId] = useState(null)
+  const [picking, setPicking] = useState(false)
   const chosen = animals.find((dog) => dog.id === dogId)
+  const pickerRef = useRef(null)
+
+  // Nach „Erinnerung festhalten“ steht der Fokus auf der Wahl des Tiers.
+  useEffect(() => {
+    if (picking && !chosen) pickerRef.current?.querySelector('button, select')?.focus()
+  }, [picking, chosen])
 
   if (animals.length === 0) return null
 
   async function handleSubmit(payload) {
     const entry = await api.createTimelineEntry({ ...payload, dogId: chosen.id })
     setDogId(null)
+    setPicking(false)
     toast(`${words.entry} zu ${displayName(chosen)} gespeichert`)
     onCreated?.({
       comment_count: 0,
@@ -53,8 +63,14 @@ export default function StartComposer({ family, dogs, onCreated }) {
       <h2 id={titleId} className="start-composer-title">
         {chosen ? `${words.newEntry} zu ${displayName(chosen)}` : `Was erlebt euer ${words.animal}?`}
       </h2>
-      {animals.length > MAX_CHIPS ? (
-        <div className="field start-composer-select">
+      {!picking && !chosen && (
+        <button type="button" className="btn btn-primary start-composer-open" onClick={() => setPicking(true)}>
+          <Icon name="camera" />
+          {words.tellAction}
+        </button>
+      )}
+      {(picking || chosen) && animals.length > MAX_CHIPS && (
+        <div className="field start-composer-select" ref={pickerRef}>
           <label className="field-label" htmlFor={selectId}>
             {words.animal} wählen
           </label>
@@ -67,8 +83,9 @@ export default function StartComposer({ family, dogs, onCreated }) {
             ))}
           </select>
         </div>
-      ) : (
-        <div className="start-composer-animals" role="group" aria-label={`${words.animal} wählen`}>
+      )}
+      {(picking || chosen) && animals.length <= MAX_CHIPS && (
+        <div className="start-composer-animals" role="group" aria-label={`${words.animal} wählen`} ref={pickerRef}>
           {animals.map((dog) => (
             <button
               key={dog.id}
@@ -91,7 +108,10 @@ export default function StartComposer({ family, dogs, onCreated }) {
           isShelter={family.art === 'tierheim'}
           submitLabel={words.tellActionShort}
           onSubmit={handleSubmit}
-          onCancel={() => setDogId(null)}
+          onCancel={() => {
+            setDogId(null)
+            setPicking(false)
+          }}
         />
       )}
     </section>

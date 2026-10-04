@@ -39,7 +39,7 @@
 }
 
 .support-cta .btn-primary:focus-visible {
-  outline-color: var(--tan);
+  outline-color: var(--hero-accent);
 }
 
 .support-report,

@@ -74,9 +74,11 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   müssen sich dann neu anmelden) und Benutzer verwalten – jeweils nur mit Bestätigung.
 - **Bestehende Rudel mit Passwort** melden sich weiter mit ihrem gemeinsamen Passwort an und sehen nur ihre
   eigenen Tiere, Einträge und Fotos.
-- **Aussehen**: „Familie auf Pfoten“ (Pfoten-Logo, tierneutrale Texte: „Familie“, „Tier“) oder „Berner“
-  (Wappen, Dreifarb-Streifen, „Rudel“, „Hund“). Jede Familie wählt selbst unter „Familie einstellen“ – mit
-  Live-Vorschau. Bestehende Rudel behalten den Berner-Auftritt, neue starten mit „Familie auf Pfoten“.
+- **Aussehen**: ein Auftritt für alle – „Familie auf Pfoten“ als Familienalbum (Papierton, Terrakotta, Salbei, Fotos mit
+  weißem Rand, Kapitel nach Jahreszeiten, „Heute vor einem Jahr“, Handschrift für kleine Momente). Unter
+  Einstellungen › Darstellung stellt sich jeder sein Design im **Mini-Designer** ein: Farbwelt, eigene Akzentfarbe (wird
+  automatisch gut lesbar gemacht), Hintergrund Papier/Weiß/Dunkel, Schrift (Klassisch, Modern, Gut lesbar),
+  Handschrift-Akzente, Ecken und Schriftgröße – mit Vorschau und „Zurücksetzen“.
 - **Partner & Portale**: Tierheime, Vermittlungsstellen und Hundeschulen bekommen eine eigene Portalseite
   (`/p/kurzname`) mit Logo, Akzentfarbe und einem direkt einlösbaren Gutschein; die öffentliche Partnerliste
   (`/partner`) lässt sich nach PLZ und Umkreis filtern. Der Admin pflegt Partner, Status (Entwurf/Aktiv/
@@ -97,13 +99,12 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   keine E-Mails, Nachrichten werden nach 180 Tagen gelöscht. Hundesalons und Betreuung haben in „Entdecken“ ein
   eigenes Kapitel „Salon & Betreuung“; gibt es im Umkreis weniger als 5 Treffer, zeigen „Entdecken“ und die
   Partnerliste die nächsten weiteren unter „Weiter weg“.
-- **Rollen in Familien**: Jede Familie (im Berner-Auftritt „Rudel“) hat eine **Leitung** („Rudelführer“ bzw.
-  „Familienleitung“), darunter Stellvertretung, Mitglied und Gast. Gäste lesen und kommentieren, Mitglieder pflegen
-  Tiere und Einträge, die Stellvertretung lädt ein und moderiert, die Leitung ändert Rollen, entfernt Mitglieder,
-  übergibt die Leitung oder löst die Familie auf. Einladungs-Gutscheine tragen die Rolle schon mit. Die
-  Mitglieder-Seite erklärt „Wer sieht was?“ (privat – Familie – öffentlich); Tiere der Familie lassen sich in die
-  eigene Chronik übernehmen. Bestehende Familien: das älteste Mitglied wird Leitung, der gemeinsame Schlüssel
-  behält Leitungsrechte.
+- **Rollen in Familien**: Jede Familie hat eine **Leitung** („Familienleitung“), darunter Stellvertretung, Mitglied
+  und Gast. Gäste lesen und kommentieren, Mitglieder pflegen Tiere und Einträge, die Stellvertretung lädt ein und
+  moderiert, die Leitung ändert Rollen, entfernt Mitglieder, übergibt die Leitung oder löst die Familie auf.
+  Einladungs-Gutscheine tragen die Rolle schon mit. Die Mitglieder-Seite erklärt „Wer sieht was?“ (privat – Familie –
+  öffentlich); Tiere der Familie lassen sich in die eigene Chronik übernehmen. Bestehende Familien: das älteste
+  Mitglied wird Leitung, der gemeinsame Schlüssel behält Leitungsrechte.
 - **Admin: Karten, Statistik, Präsentation, Admin-Ansicht**: Gutschein-Stapel lassen sich als **Karten mit
   QR-Code** drucken (A4, 10 Karten je Bogen, drei Motive: Kunden-Karte, Partner-Karte „Euer kostenloses
   Partner-Profil“, Partner-Stapel mit Logo) – erst sinnvoll mit gesetzter `PUBLIC_URL`. Die Übersicht zeigt

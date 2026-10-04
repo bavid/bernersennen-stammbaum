@@ -70,3 +70,15 @@ export function hexToRgba(hex, alpha) {
   const { r, g, b } = hexToRgb(hex)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
+
+// ~15% heller in HSL (relativ zum Abstand nach Weiß) – für --rust-deep im dunklen Modus (lib/akzent.js).
+export function lightenHex(hex, amount = DARKEN_AMOUNT) {
+  const hsl = rgbToHsl(hexToRgb(hex))
+  return toHex(hslToRgb({ ...hsl, l: Math.min(1, hsl.l + (1 - hsl.l) * amount) }))
+}
+
+// Helligkeit in HSL um delta verschieben (-1 … 1, begrenzt auf 0 … 1) – Schritte für die Lesbarkeits-Anpassung.
+export function shiftLightness(hex, delta) {
+  const hsl = rgbToHsl(hexToRgb(hex))
+  return toHex(hslToRgb({ ...hsl, l: Math.max(0, Math.min(1, hsl.l + delta)) }))
+}

@@ -127,6 +127,8 @@ describe('GroupPage (Phase W)', () => {
     expect(api.recentActivity).toHaveBeenCalledWith(20)
     expect(container.querySelector('.feed-termin').getAttribute('href')).toBe('/familien/5?reiter=pinnwand')
     expect(container.querySelectorAll('.feed-item:not(.feed-termin)')).toHaveLength(19)
+    // B+ Familienalbum: erst „Erinnerung festhalten“, dann die Wahl des Tiers.
+    act(() => container.querySelector('.start-composer-open').click())
     const choices = [...container.querySelectorAll('.start-composer-animal')].map((button) => button.querySelector(':scope > span').textContent)
     expect(choices).toEqual(['Hausi'])
   })

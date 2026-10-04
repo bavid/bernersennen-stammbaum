@@ -200,6 +200,30 @@ router.get('/recent', requireAuth, (req, res) => {
   res.json(rows.map((row) => toEntry(row)))
 })
 
+// B+ Familienalbum: „Heute vor einem Jahr“ auf Start - Erinnerungen vom selben Tag (Monat und Tag von ?tag=JJJJ-MM-TT, dem
+// heutigen Tag des Geräts) in früheren Jahren, mit denselben Sichtregeln und Feldern wie /recent. Höchstens drei, solche mit
+// Fotos zuerst, dann die jüngsten Jahre.
+const JAHRESTAG_MAX = 3
+
+router.get('/jahrestag', requireAuth, (req, res) => {
+  const tag = req.query.tag
+  if (!isIsoDate(tag)) return res.status(400).json({ error: 'tag ist ungültig' })
+  const rows = db
+    .prepare(
+      `SELECT t.*, d.name AS dog_name, d.name_unbekannt AS dog_name_unbekannt, d.rasse AS dog_rasse,
+              d.foto_url AS dog_foto_url,
+              (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id AND ${commentSql(req)}) AS comment_count,
+              ${HERKUNFT_NAME_SELECT_SQL}
+       FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id
+       ${HERKUNFT_NAME_JOIN_SQL}
+       WHERE ${entrySql(req)} AND substr(t.datum, 6, 5) = @monatTag AND t.datum < @jahresAnfang
+       ORDER BY (t.foto_urls != '[]') DESC, t.datum DESC, t.id DESC
+       LIMIT @limit`
+    )
+    .all({ ...viewParams(req), monatTag: tag.slice(5, 10), jahresAnfang: `${tag.slice(0, 4)}-01-01`, limit: JAHRESTAG_MAX })
+  res.json(rows.map((row) => toEntry(row)))
+})
+
 // Chronologisch aufsteigend: die Timeline erzählt das Leben von der Geburt an.
 // Sichtbar sind eigene Einträge (auch private) und geteilte nicht-private Einträge.
 router.get('/', requireAuth, (req, res) => {

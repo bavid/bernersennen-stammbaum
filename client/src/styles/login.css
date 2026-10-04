@@ -10,10 +10,11 @@
   align-items: center;
   overflow: hidden;
   padding: clamp(var(--space-8), 6vw, 6rem);
+  /* B+ Familienalbum: Rosé-Papier statt dunkler Fläche, darauf leise Pfoten. */
   background-color: var(--hero-bg);
-  background-image: radial-gradient(ellipse 70% 55% at 85% 110%, rgba(181, 84, 31, 0.45), transparent 70%),
-    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(212, 154, 91, 0.16), transparent 65%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='%23f6ecdd' fill-opacity='0.035'%3E%3Cellipse cx='30' cy='36' rx='7' ry='9'/%3E%3Cellipse cx='44' cy='26' rx='6' ry='8'/%3E%3Cellipse cx='58' cy='30' rx='6' ry='8'/%3E%3Cellipse cx='68' cy='42' rx='6' ry='7.5'/%3E%3Cpath d='M36 52c6-8 22-8 28 2 5 8-2 16-14 14-12 2-19-7-14-16z'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: radial-gradient(ellipse 70% 55% at 85% 110%, color-mix(in srgb, var(--rust) 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 0% 0%, color-mix(in srgb, var(--paper) 55%, transparent), transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='%237c5a44' fill-opacity='0.035'%3E%3Cellipse cx='30' cy='36' rx='7' ry='9'/%3E%3Cellipse cx='44' cy='26' rx='6' ry='8'/%3E%3Cellipse cx='58' cy='30' rx='6' ry='8'/%3E%3Cellipse cx='68' cy='42' rx='6' ry='7.5'/%3E%3Cpath d='M36 52c6-8 22-8 28 2 5 8-2 16-14 14-12 2-19-7-14-16z'/%3E%3C/g%3E%3C/svg%3E");
   background-size: auto, auto, 120px 120px;
   color: var(--hero-text);
   isolation: isolate;
@@ -27,7 +28,7 @@
 }
 
 .login-mark {
-  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 12px 22px rgba(110, 70, 40, 0.25));
 }
 
 .login-kicker {
@@ -35,7 +36,7 @@
   font-weight: 800;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--tan);
+  color: var(--hero-accent);
 }
 
 .login-headline {
@@ -48,10 +49,14 @@
   color: var(--hero-text);
 }
 
+/* Die zweite Zeile in Handschrift (Caveat) - ein kleiner Moment, wie im Album. */
 .login-headline em {
-  font-style: italic;
-  font-weight: 400;
-  color: #e89266;
+  font-family: var(--font-hand);
+  font-style: normal;
+  font-weight: 600;
+  font-size: calc(1.15em * var(--hand-scale));
+  letter-spacing: 0;
+  color: var(--hero-accent);
 }
 
 .login-lede {
@@ -68,7 +73,7 @@
   margin: var(--space-4) 0 0;
   padding: var(--space-6) 0 0;
   list-style: none;
-  border-top: 1px solid rgba(246, 236, 221, 0.14);
+  border-top: 1px solid color-mix(in srgb, var(--hero-text) 14%, transparent);
 }
 
 .login-facts li {
@@ -92,7 +97,7 @@
 
 /* Eine dezente Linie trennt den Hero vom Anmelde-Panel, damit der Übergang nicht kantenlos wirkt. */
 .login-hero {
-  border-right: 1px solid rgba(246, 236, 221, 0.14);
+  border-right: 1px solid color-mix(in srgb, var(--hero-text) 10%, transparent);
 }
 
 .login-panel {
@@ -402,7 +407,7 @@
 
   .login-hero {
     border-right: none;
-    border-bottom: 1px solid rgba(246, 236, 221, 0.14);
+    border-bottom: 1px solid color-mix(in srgb, var(--hero-text) 10%, transparent);
   }
 
   .login-panel {

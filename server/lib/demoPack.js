@@ -188,6 +188,12 @@ function insertCompanions(db, familyId, copyImage) {
 // transferDog beim echten Umzug setzt, damit die Timeline "aus Tierheim Sonnenhang" zeigt.
 // fotos (Phase V2, optional): Seed-Bilder als eigene Kopie je Eintrag (copyImage.copyOwn) - ein Foto, das schon ein
 // anderes Tier oder einen anderen Eintrag zeigt, teilt sich so keine Datei (und keine Sichtbarkeit) mit ihm.
+// yearsAgo (statt datum): derselbe Tag vor so vielen Jahren - für „Heute vor einem Jahr“ auf Start (B+ Familienalbum).
+function isoYearsAgo(years, now = new Date()) {
+  const date = new Date(Date.UTC(now.getUTCFullYear() - years, now.getUTCMonth(), now.getUTCDate()))
+  return date.toISOString().slice(0, 10)
+}
+
 function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage } = {}) {
   const insertEntry = db.prepare(
     `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, privat, kategorie, herkunft_family_id, created_at)
@@ -195,12 +201,13 @@ function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage
   )
   const entryIds = {}
   for (const entry of HOUSEHOLD_TIMELINE) {
+    const datum = entry.yearsAgo ? isoYearsAgo(entry.yearsAgo) : entry.datum
     const writtenAgo = entry.hoursAgo ? ago(entry.hoursAgo) : null
     const herkunftFamilyId = entry.herkunftShelter && shelterFamilyId ? shelterFamilyId : null
     const fotos = copyImage ? (entry.fotos || []).map((file) => copyImage.copyOwn(file)) : []
     const entryId = insertEntry.run(
-      ids[entry.dog], familyId, entry.autor, entry.datum, entry.titel, entry.text || null, JSON.stringify(fotos),
-      entry.privat ? 1 : 0, entry.kategorie || null, herkunftFamilyId, writtenAgo, entry.datum
+      ids[entry.dog], familyId, entry.autor, datum, entry.titel, entry.text || null, JSON.stringify(fotos),
+      entry.privat ? 1 : 0, entry.kategorie || null, herkunftFamilyId, writtenAgo, datum
     ).lastInsertRowid
     if (entry.key) entryIds[entry.key] = entryId
   }

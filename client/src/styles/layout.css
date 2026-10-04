@@ -125,9 +125,10 @@
   background: var(--paper-deep);
 }
 
+/* B+ Familienalbum: der aktive Punkt als weiche Rosé-Pille. */
 .app-nav a.active {
-  color: var(--rust);
-  background: var(--rust-wash);
+  color: var(--blush-ink);
+  background: var(--blush);
 }
 
 /* Ungelesene Nachrichten (Phase P2) an "Nachrichten": in der Zeile hinter der Beschriftung, in den
@@ -163,7 +164,7 @@
     justify-content: space-around;
     gap: 0;
     padding: var(--space-1) var(--space-2) calc(var(--space-1) + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    background: color-mix(in srgb, var(--paper) 94%, transparent);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-top: 1px solid var(--line);

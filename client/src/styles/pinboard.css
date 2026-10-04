@@ -239,10 +239,10 @@
   gap: var(--space-3);
   min-width: 0;
   padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
   color: var(--text);
   text-decoration: none;
   transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
@@ -250,7 +250,7 @@
 
 .feed-item:hover {
   color: var(--text);
-  border-color: var(--tan);
+  box-shadow: var(--shadow-raised);
   transform: translateY(-2px);
 }
 

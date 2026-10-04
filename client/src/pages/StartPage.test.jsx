@@ -12,7 +12,8 @@ const api = vi.hoisted(() => ({
   visits: vi.fn(),
   createTimelineEntry: vi.fn(),
   erlebtMitTiere: vi.fn(),
-  upload: vi.fn()
+  upload: vi.fn(),
+  onThisDay: vi.fn()
 }))
 vi.mock('../api', () => ({ api }))
 
@@ -23,6 +24,16 @@ import { getTheme } from '../themes/index.js'
 const words = getTheme('standard').words
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+// jsdom kennt showModal/close am <dialog> nicht - „Neu“ öffnet den Dialog „Neues Tier anlegen“.
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function showModal() {
+    this.open = true
+  }
+  HTMLDialogElement.prototype.close = function close() {
+    this.open = false
+  }
+}
 
 let container
 let root
@@ -54,6 +65,7 @@ beforeEach(() => {
   api.erlebtMitOffen.mockResolvedValue([])
   api.visits.mockResolvedValue({ besuche: [], gaeste: [] })
   api.erlebtMitTiere.mockResolvedValue([])
+  api.onThisDay.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -99,12 +111,12 @@ describe('StartPage (Phase W)', () => {
     expect(cards[1].querySelector('.feed-card-comments')).toBeNull()
   })
 
-  test('zuerst sechs Beiträge, der Rest hinter "Weitere Neuigkeiten" - danach steht der Fokus auf dem ersten neuen', async () => {
+  test('zuerst sechs Erinnerungen, der Rest hinter "Weitere Erinnerungen" - danach steht der Fokus auf der ersten neuen', async () => {
     api.recentActivity.mockResolvedValue(Array.from({ length: 9 }, (_, index) => entry(index + 1)))
     await render()
     expect(container.querySelectorAll('.feed-card')).toHaveLength(6)
     const more = container.querySelector('.start-more')
-    expect(more.textContent).toBe('Weitere Neuigkeiten (3)')
+    expect(more.textContent).toBe('Weitere Erinnerungen (3)')
     act(() => more.click())
     expect(container.querySelectorAll('.feed-card')).toHaveLength(9)
     expect(container.querySelector('.start-more')).toBeNull()
@@ -113,7 +125,7 @@ describe('StartPage (Phase W)', () => {
 
   test('ohne Beiträge ein freundlicher Leerzustand', async () => {
     await render()
-    expect(container.querySelector('.start-news').textContent).toContain('Noch keine Neuigkeiten.')
+    expect(container.querySelector('.start-news').textContent).toContain('Noch keine Erinnerungen.')
   })
 
   test('Erzählen: nur bearbeitbare, lebende Tiere zur Wahl; die Wahl öffnet den Beitrag-Dialog, der neue Beitrag steht oben', async () => {
@@ -127,6 +139,11 @@ describe('StartPage (Phase W)', () => {
 
     const composer = container.querySelector('.start-composer')
     expect(composer.querySelector('h2').textContent).toBe('Was erlebt euer Tier?')
+    // B+ Familienalbum: die Tiere stehen oben schon als Kreise - hier erst „Erinnerung festhalten“, dann die Wahl.
+    expect(composer.querySelector('.start-composer-animal')).toBeNull()
+    act(() => composer.querySelector('.start-composer-open').click())
+    expect(composer.querySelector('.start-composer-open')).toBeNull()
+    expect(document.activeElement).toBe(composer.querySelector('.start-composer-animal'))
     const choices = [...composer.querySelectorAll('.start-composer-animal')]
     // Der Name ohne den (für Screenreader verborgenen) Anfangsbuchstaben im Avatar
     expect(choices.map((button) => button.querySelector(':scope > span').textContent)).toEqual(['Nele'])
@@ -206,5 +223,72 @@ describe('StartPage (Phase W)', () => {
     expect(container.querySelector('h1').textContent).toBe('Start – Rudel vom Heidekamp')
     expect(container.querySelector('.start-families')).toBeNull()
     expect(container.querySelector('.start-soon')).toBeNull()
+  })
+})
+
+// B+ Familienalbum: Begrüßung, „Eure Tiere“ als Kreise, „Heute vor einem Jahr“ und Kapitel nach Jahreszeiten.
+describe('StartPage – Look B+ Familienalbum', () => {
+  test('Begrüßung in Handschrift über dem Namen des Zuhauses', async () => {
+    await render()
+    expect(container.querySelector('.start-greeting-hand').textContent).toBe('Schön, dass ihr da seid')
+    expect(container.querySelector('h1').textContent).toBe('Start – Zuhause Lindenhof')
+  })
+
+  test('Eure Tiere: Kreise mit Namen, verstorbene „In Erinnerung“, am Ende „Neu“ für ein neues Tier', async () => {
+    api.listDogs.mockResolvedValue([
+      dog(10, 'Nele'),
+      dog(11, 'Balu', { bei_uns_bis: '2019-11-02', abschied_grund: 'verstorben' }),
+      dog(12, 'Wilma', { can_edit: 0, shared_from: 'Zuhause Möwenweg' })
+    ])
+    await render()
+    const circles = [...container.querySelectorAll('.animal-circles a.animal-circle')]
+    expect(circles.map((link) => [link.getAttribute('href'), link.querySelector('.animal-circle-name').textContent])).toEqual([
+      ['/tier/10', 'Nele'],
+      ['/tier/11', 'Balu']
+    ])
+    expect(circles[1].classList.contains('is-memorial')).toBe(true)
+    expect(circles[1].textContent).toContain('In Erinnerung')
+    const add = container.querySelector('.animal-circle.is-new')
+    expect(add.getAttribute('aria-label')).toBe('Neues Tier anlegen')
+    act(() => add.click())
+    expect(document.querySelector('dialog[open]')?.textContent).toContain('Neues Tier anlegen')
+  })
+
+  test('ohne Schreibrecht kein „Neu“', async () => {
+    api.listDogs.mockResolvedValue([dog(10, 'Nele')])
+    await render({ ...atHome, role: 'gast' })
+    expect(container.querySelectorAll('.animal-circles a')).toHaveLength(1)
+    expect(container.querySelector('.animal-circle.is-new')).toBeNull()
+  })
+
+  test('Heute vor einem Jahr: nur mit Erinnerung vom selben Tag, als Polaroid mit „Wieder ansehen“', async () => {
+    await render()
+    expect(api.onThisDay).toHaveBeenCalledWith('2026-09-28')
+    expect(container.querySelector('.on-this-day')).toBeNull()
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    api.onThisDay.mockResolvedValue([entry(3, { titel: 'Nele im ersten Schnee', datum: '2025-09-28', foto_urls: ['/uploads/schnee.jpg'] })])
+    await render()
+    const card = container.querySelector('.on-this-day')
+    expect(card.querySelector('h2').textContent).toBe('Heute vor einem Jahr')
+    expect(card.querySelector('.on-this-day-title').textContent).toBe('Nele im ersten Schnee')
+    expect(card.querySelector('.polaroid img').getAttribute('src')).toBe('/uploads/schnee.jpg')
+    expect(card.querySelector('a').getAttribute('href')).toBe('/tier/10#entry-3')
+  })
+
+  test('Kapitel: aufeinanderfolgende Erinnerungen derselben Jahreszeit stehen unter „Herbst 2026“ usw.', async () => {
+    api.recentActivity.mockResolvedValue([
+      entry(3, { datum: '2026-09-20' }),
+      entry(2, { datum: '2026-09-02' }),
+      entry(1, { datum: '2026-07-14', comment_count: 1 })
+    ])
+    await render()
+    const chapters = [...container.querySelectorAll('.feed-chapter')]
+    expect(chapters.map((chapter) => chapter.querySelector('.feed-chapter-label').textContent)).toEqual(['Herbst 2026', 'Sommer 2026'])
+    expect(chapters.map((chapter) => chapter.querySelectorAll('.feed-card').length)).toEqual([2, 1])
+    expect(chapters[0].querySelector('ul').getAttribute('aria-label')).toBe('Herbst 2026')
+    expect(chapters[1].querySelector('.feed-card-comments svg')).not.toBeNull()
   })
 })

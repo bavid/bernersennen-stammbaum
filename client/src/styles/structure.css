@@ -505,7 +505,7 @@
   display: grid;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-card);
@@ -515,7 +515,6 @@
 }
 
 .feed-card-link:hover {
-  border-color: var(--line-strong);
   box-shadow: var(--shadow-raised);
 }
 
@@ -562,21 +561,14 @@
   line-height: 1.5;
 }
 
+/* Die Fotos selbst sind Polaroids (Polaroid.jsx, album.css). */
 .feed-card-photos {
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
+  gap: var(--space-4);
   max-width: 30rem;
-}
-
-.feed-card-photos img {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-  background: var(--paper-deep);
+  padding: var(--space-1) var(--space-1) var(--space-2);
 }
 
 .feed-card-more {

@@ -7,7 +7,8 @@ import ExpandableText from './ExpandableText.jsx'
 import EntryPhotos from './EntryPhotos.jsx'
 import ErlebtMitChips from './erlebtMit/ErlebtMitChips.jsx'
 import MirroredEntry from './erlebtMit/MirroredEntry.jsx'
-import { dogLabel, groupByYear } from '../lib/timeline.js'
+import { dogLabel } from '../lib/timeline.js'
+import { groupBySeason } from '../lib/seasons.js'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 import { kategorieLabel } from '../lib/shelter.js'
 
@@ -99,6 +100,7 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
   )
 }
 
+// Kapitel nach Jahreszeiten (B+ Familienalbum): „Herbst 2026“ in Handschrift über den Erinnerungen eines Kapitels.
 // mirror (Phase V2, optional): { onOpenOrigin(item)?, onHide(item)?, hideDisabled } für gespiegelte Einträge
 // ("Erlebt mit", item.gespiegelt) - die erscheinen ohne Bearbeiten und Kommentare.
 export default function Timeline({
@@ -113,12 +115,12 @@ export default function Timeline({
   canDeleteComment,
   mirror = {}
 }) {
-  const groups = groupByYear(items)
+  const groups = groupBySeason(items)
   return (
     <ol className="timeline">
       {groups.map((group) => (
-        <li key={group.year} className="timeline-year">
-          <h3 className="timeline-year-label">{group.year}</h3>
+        <li key={group.key} className="timeline-year timeline-chapter">
+          {group.label && <h3 className="timeline-year-label timeline-chapter-label hand">{group.label}</h3>}
           <ol className="timeline-items">
             {group.items.map((item) => (
               <li

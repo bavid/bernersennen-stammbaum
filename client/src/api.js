@@ -227,6 +227,8 @@ export const api = {
   deleteTimelineEntry: (id) => request(`/timeline/${id}`, { method: 'DELETE' }),
 
   recentActivity: (limit = 5) => request(`/timeline/recent?limit=${limit}`),
+  // B+ Familienalbum: „Heute vor einem Jahr“ - Erinnerungen vom selben Tag in früheren Jahren (tag: heute, JJJJ-MM-TT).
+  onThisDay: (tag) => request(`/timeline/jahrestag?tag=${encodeURIComponent(tag)}`),
 
   sendMessage: (payload) => request('/messages', json('POST', payload)),
 

@@ -157,6 +157,16 @@ const TIMELINE = [
     kategorie: 'gassi',
     herkunftShelter: true
   },
+  // B+ Familienalbum: „Heute vor einem Jahr“ auf Start - genau ein Jahr vor dem Anlegen der Demo (lib/demoPack.js yearsAgo),
+  // damit die Karte nach dem Auffrischen der Demo zu sehen ist.
+  {
+    dog: 'flocke',
+    yearsAgo: 1,
+    autor: 'Familie Nissen',
+    titel: 'Flocke erobert den Garten',
+    text: 'Zum ersten Mal den ganzen Nachmittag draußen – jede Ecke wurde beschnuppert, die Möhre zuerst.',
+    fotos: ['flocke.jpg']
+  },
   {
     dog: 'nele',
     key: 'neleEinzug',

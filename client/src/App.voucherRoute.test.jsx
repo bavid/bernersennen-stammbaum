@@ -169,7 +169,7 @@ describe('Route /v – nach dem Anmelden landet man in der Chronik, nicht auf de
     await act(async () => continueButton.click())
 
     expect(container.textContent).not.toContain('Abmelden und Einladungscode einlösen')
-    expect(container.querySelector('h1')?.textContent).toBe('Start – Mein Zuhause')
+    expect(container.querySelector('h1')?.textContent).toBe('Start – Zuhause am Deich')
   })
 
   test('eine normale Anmeldung auf /v landet ebenfalls in der Chronik, nicht auf der Karte', async () => {
@@ -194,7 +194,7 @@ describe('Route /v – nach dem Anmelden landet man in der Chronik, nicht auf de
 
     expect(login).toHaveBeenCalledWith('ABCD-1234-HJKM')
     expect(container.textContent).not.toContain('Abmelden und Einladungscode einlösen')
-    expect(container.querySelector('h1')?.textContent).toBe('Start – Mein Zuhause')
+    expect(container.querySelector('h1')?.textContent).toBe('Start – Zuhause am Deich')
   })
 })
 

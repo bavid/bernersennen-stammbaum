@@ -51,7 +51,7 @@ const atHome = {
   home,
   memberships,
   besuche: [],
-  darstellung: { palette: 'terrakotta', modus: 'auto', schrift: 'normal' }
+  darstellung: { palette: 'familienalbum', modus: 'auto', schrift: 'normal', akzent: '', schriftart: 'klassisch', handschrift: 'an', ecken: 'weich' }
 }
 const inGroup = { ...atHome, id: 3, name: 'Familie Sonnenhang', art: 'rudel' }
 const dogs = [
@@ -161,27 +161,27 @@ describe('SettingsPage – Bereiche und Adresse (?bereich=)', () => {
 })
 
 describe('SettingsPage – Darstellung', () => {
-  test('fünf Paletten mit Farbmuster; eine Wahl wirkt sofort und wird für das Zuhause gespeichert', async () => {
+  test('fünf Farbwelten mit Farbmuster; eine Wahl wirkt sofort und wird für das Zuhause gespeichert', async () => {
     await render(atHome)
     expect([...container.querySelectorAll('input[name="palette"]')].map((input) => input.value)).toEqual([
-      'terrakotta',
+      'familienalbum',
       'wald',
       'meer',
       'lavendel',
       'schiefer'
     ])
     expect(container.querySelector('.palette-swatch[data-palette="wald"]')).not.toBeNull()
-    expect(radio('palette', 'terrakotta').checked).toBe(true)
+    expect(radio('palette', 'familienalbum').checked).toBe(true)
 
     await act(async () => radio('palette', 'wald').click())
-    expect(latest.darstellung).toEqual({ palette: 'wald', modus: 'auto', schrift: 'normal' })
+    expect(latest.darstellung).toEqual({ ...atHome.darstellung, palette: 'wald' })
     expect(api.setDarstellung).toHaveBeenCalledWith({ palette: 'wald' })
     expect(radio('palette', 'wald').checked).toBe(true)
 
     await act(async () => radio('modus', 'dunkel').click())
     await act(async () => radio('schrift', 'gross').click())
     expect(api.setDarstellung).toHaveBeenLastCalledWith({ schrift: 'gross' })
-    expect(latest.darstellung).toEqual({ palette: 'wald', modus: 'dunkel', schrift: 'gross' })
+    expect(latest.darstellung).toEqual({ ...atHome.darstellung, palette: 'wald', modus: 'dunkel', schrift: 'gross' })
     expect(container.querySelector('.settings-hint').textContent).toContain('auf jedem Gerät')
   })
 
@@ -206,7 +206,7 @@ describe('SettingsPage – Darstellung', () => {
     await flush()
     await flush()
     expect(order).toEqual(['wald', 'meer'])
-    expect(latest.darstellung.palette).toBe('terrakotta')
+    expect(latest.darstellung.palette).toBe('familienalbum')
   })
 
   test('ein 401 beim Speichern (App meldet ab) lässt die Seite nicht abstürzen', async () => {
@@ -226,7 +226,7 @@ describe('SettingsPage – Darstellung', () => {
     await render(atHome)
     await act(async () => radio('palette', 'lavendel').click())
     await flush()
-    expect(latest.darstellung.palette).toBe('terrakotta')
+    expect(latest.darstellung.palette).toBe('familienalbum')
     expect(toast).toHaveBeenCalledWith('Server nicht erreichbar')
   })
 })

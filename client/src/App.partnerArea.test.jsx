@@ -268,7 +268,7 @@ describe('Profil und Zugang gibt es nur für Partner-Bereiche', () => {
     listDogs.mockResolvedValue([])
     await render(path, home)
 
-    expect(container.querySelector('h1').textContent).toBe('Start – Mein Zuhause')
+    expect(container.querySelector('h1').textContent).toBe('Start – Zuhause am Deich')
   })
 })
 
@@ -406,6 +406,6 @@ describe('Umschalter "Bearbeiten | Kundensicht" (Phase P1)', () => {
       memberships: []
     })
 
-    expect(container.querySelector('h1').textContent).toBe('Start – Mein Zuhause')
+    expect(container.querySelector('h1').textContent).toBe('Start – Zuhause am Deich')
   })
 })

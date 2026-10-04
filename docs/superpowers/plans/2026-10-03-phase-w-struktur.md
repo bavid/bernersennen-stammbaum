@@ -70,6 +70,57 @@ ein Leben lang, Geschichte zieht vom Tierheim mit, Familie über Haushalte, alle
 - Entwurf: Leinwand „Familie auf Pfoten – Struktur-Mocks“, Artboards „B+ Familienalbum“ und „Mehrwert“.
 - Neues Feature dazu: **Digitaler Bilderrahmen** (Diashow, Rahmen-Link für ein anderes Gerät ohne Anmeldung).
 
+### Umgesetzt (04.10.)
+
+- **Farbwelt „Familienalbum“** als Vorgabe (`styles/palettes.css`): Papier `#fbf5ec`, Karte `#ffffff`, Schrift `#2e241d`,
+  leise `#6b5d52`, Terrakotta `#a64b2a` (Hover `#83391e`), Salbei `#7c8f6a` (nur Schmuck; Text in Salbei `#56684a`),
+  Rosé `#f3d9cc`, Linien `#ebdccb`; dunkel ein tiefes Braun (`#1e1712`, Karten `#2a211b`), kein Schwarz. Die alte Palette
+  „terrakotta“ führt zum Familienalbum (Server, Client, `darstellung-init.js`). Alle Farbwelten AA (`palettes.test.js`, dazu
+  Rosé, Kopf der Anmeldung, „Weiß“). Warme, weiche Schatten statt Linien; Karten 18 px; Anmeldung, Partner-Portal-Kopf und
+  Unterstützen-Kasten auf Rosé-Papier statt dunkler Fläche (Partner behalten ihre Akzentfarbe im Portal).
+- **Schriften selbst gehostet** (`styles/fonts.css`, npm `@fontsource*`, SIL OFL 1.1, Hinweise in
+  `client/public/schriften/LIZENZEN.txt` und README): Fraunces (Überschriften), Figtree (Text, als einzige vorgeladen),
+  Caveat 600 (Handschrift), Atkinson Hyperlegible („Gut lesbar“) – nur latin/latin-ext, woff2, `font-display: swap`.
+- **Bausteine** (`styles/album.css`): `.hand` (Caveat), **Polaroid** (`components/Polaroid.jsx`; Fotos im Feed, in der
+  Chronik und bei „Heute vor einem Jahr“ – weißer Rand, sanfter Schatten, abwechselnd schräg, mit „Bewegung reduzieren“
+  gerade), **Kapitel nach Jahreszeiten** (`lib/seasons.js`: „Herbst 2026“, „Winter 2026/27“ – Chronik und Start),
+  **„Eure Tiere“ als Kreise** auf Start (`components/start/AnimalCircles.jsx`; verstorbene grau, „In Erinnerung“, „Neu“
+  öffnet „Neues Tier anlegen“), **„Heute vor einem Jahr“** (`components/start/OnThisDayCard.jsx`,
+  `GET /api/timeline/jahrestag?tag=JJJJ-MM-TT` – gleiche Sichtregeln wie `/recent`, höchstens 3, mit Foto zuerst; ohne
+  Treffer keine Karte), Begrüßung „Schön, dass ihr da seid“ über dem Namen, Porträt im Tierprofil als Kreis mit Ring.
+  „Erinnerung festhalten“ auf Start ist zuerst ein Knopf (die Tiere stehen schon als Kreise darüber).
+- **Grüße mit Herz:** Es gibt keine Reaktionen/Likes – das Herz steht vor „3 Grüße“ (Kommentare), Namen gibt es dafür nicht
+  (kein neues Backend). Feed-Zeile „erzählt von … · vor 6 Tagen“, das Kapitel nennt die Jahreszeit der Erinnerung.
+- **Demo:** eine Erinnerung „Ein Nachmittag am See“ genau ein Jahr vor dem Anlegen der Demo (`seed/demo-household.js`
+  `yearsAgo`) – „Heute vor einem Jahr“ erscheint am Tag des Auffrischens.
+- **Ein Auftritt für alle:** `themes/berner.js`, das Berner-Wappen, `favicon-berner.svg` und die Auftritt-Wahl sind
+  entfernt; Wörter überall Standard (Tiere, Familie, Familienbande, Nachwuchs, Verpaarung). `PUT /api/family` nimmt ein
+  `theme` an und ignoriert es, die Spalte `families.theme` bleibt.
+  **Achtung Produktion:** Das bestehende Rudel mit Berner-Auftritt („Rudel“, „Hunde“, „Würfe“, „Deckakt“, Dreifarb-Streifen,
+  Wappen) sieht beim nächsten Hochstufen nach Produktion den gemeinsamen Auftritt – vorher Bescheid geben.
+- **Mini-Designer** (Einstellungen › Darstellung, ersetzt die Paletten-Kacheln): Vorschau-Karte (Polaroid, Kapitel, Knopf,
+  Grüße) und Farbwelt (Familienalbum, Waldspaziergang, Strandtag, Lavendelfeld, Regentag), **eigene Akzentfarbe**
+  (Farbfeld + 6 Vorschläge; `lib/akzent.js` rechnet je Modus eine lesbare Fassung gegen alle Flächen und den Knopf, sonst
+  „Angepasst für gute Lesbarkeit“), Hintergrund (Papier · Weiß · Dunkel · Automatisch), Schrift (Klassisch · Modern ·
+  Gut lesbar), Handschrift-Akzente an/aus, Ecken weich/eckig, Schriftgröße, „Zurücksetzen“. Gespeichert über
+  `/api/me/darstellung` (`akzent` #rrggbb oder leer, `schriftart`, `handschrift`, `ecken`, `modus` mit `weiss`; Spalten
+  legt `server/lib/darstellung.js` selbst an), gemerkt samt gerechneter Farben für `darstellung-init.js` (kein Aufblitzen),
+  Demo nur lokal. Das Farbfeld speichert erst, wenn es 0,5 s ruht.
+- **Bilderrahmen:** aus einer Familie heraus (Gruppenseite „Bilderrahmen“ → `/bilderrahmen?in=<Id>`, eigene gemerkte
+  Auswahl je Familie, ohne private Erinnerungen); Rahmen-Links in den Einstellungen lassen sich „Ändern“ (Name, Tiere,
+  Zeitraum, Anzeige – der Link bleibt derselbe).
+- **Seitenhöhen** (Demo „Zuhause am Deich“, Bildschirme = Seitenhöhe / Fensterhöhe, vorher → nachher):
+
+  | Seite | 1440×900 | 375×812 |
+  | --- | --- | --- |
+  | Start | 1,49 → 1,85 | 2,45 → 2,88 |
+  | Tierprofil · Chronik | 1,80 → 1,87 | 2,38 → 2,46 |
+  | Familie · Erinnerungen | 1,23 → 1,23 | 3,03 → 3,06 |
+  | Einstellungen · Darstellung | 1,23 → 1,58 | 1,60 → 2,04 |
+- **Offen:** Namen bei den Grüßen („Mira und Familie Sonnenhang freuen sich“) bräuchte die Namen der Grüßenden im Feed;
+  „Heute vor einem Jahr“ in der Demo nur am Tag des Auffrischens (tägliches Auffrischen wäre die Lösung); weitere Seiten
+  mit Linien-Karten (Admin, Partner-Bereich) schrittweise auf Album-Karten.
+
 ## Skizze Start (Desktop)
 
 ```
@@ -111,8 +162,8 @@ endlos die Fotos eurer Tiere – auch bei Oma, ohne dass sie sich anmeldet.
   Foto noch zur Auswahl gehört. Beendet/unbekannt → „Dieser Bilderrahmen wurde beendet“.
 - **Einstiege:** Konto-Menü „Bilderrahmen“, Karte auf Start (nur mit Fotos), Tierprofil ⋯ „Als Bilderrahmen zeigen“
   (`?tier=`). Datenschutz: Abschnitt „Digitaler Bilderrahmen“.
-- **Offen:** Caveat als Handschrift einbinden (bis dahin Systemschrift), Diashow aus einer Familie heraus
-  (`/familien/:id`, der Server kann es schon), Fotos aus „Mit dabei“ (gespiegelte Erinnerungen) in der Diashow.
+- **Offen:** Fotos aus „Mit dabei“ (gespiegelte Erinnerungen) in der Diashow. (Erledigt mit B+ Familienalbum: Caveat als
+  Handschrift, Diashow aus einer Familie heraus, Auswahl eines Rahmen-Links ändern.)
 
 ## Suche (umgesetzt 04.10.)
 

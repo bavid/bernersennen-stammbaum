@@ -13,7 +13,7 @@ export default function DogHead({ dog, canWrite, visibleIn, menuItems, badge, on
   const line = dogHeadLine(dog, !dog.canEdit ? { ownerName: dog.familyName } : undefined)
   const name = displayName(dog)
   return (
-    <header className="dog-head">
+    <header className={`dog-head${line.memorial ? ' is-memorial' : ''}`}>
       <div className="dog-head-photo">
         {dog.foto_url ? (
           <button type="button" onClick={() => onOpenPhoto(dog.foto_url)} aria-label="Porträt vergrößern">

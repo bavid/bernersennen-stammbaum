@@ -211,7 +211,7 @@ router.get('/me', requireAuth, (req, res) => {
   res.json(buildMe(req.homeId, req.familyId, req.isDemo, req.userId, { adminView: req.isAdminView }))
 })
 
-// Einstellungen „Darstellung“ (Calm-down-Runde, lib/darstellung.js): Farbpalette, Hell/Dunkel, Schrift der Identität
+// Einstellungen „Darstellung“ (lib/darstellung.js, seit B+ Familienalbum der Mini-Designer) der Identität
 // (req.homeId) - auch aus einer Familie heraus gilt und ändert man die eigene Wahl. Demo und Admin-Ansicht schreiben nie
 // (requireAuth, denyAdminViewWrites in app.js; der Client wendet sie dort nur lokal an), Besuchs-Sitzungen sperrt
 // lib/guestAccess.js. Nur Zuhause und klassische Rudel-Logins - Partner- und Tierheim-Bereiche haben keine Einstellungen-Seite.

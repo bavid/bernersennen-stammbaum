@@ -5,6 +5,8 @@
   --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
   --font-body: 'Figtree Variable', 'Segoe UI', system-ui, sans-serif;
   --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+  /* Caveat wirkt bei gleicher Größe kleiner - .hand (album.css) rechnet mit --hand-size × --hand-scale. */
+  --hand-scale: 1;
 
   /* Calm-down-Runde: kleinere, ruhigere Skala - die Grundschrift ist überall 15 px (--root-size, base.css), alle
      rem-Maße schrumpfen mit. Bei 15 px: Etiketten 12, klein 13, Text 15, Einleitung 17; Abschnittstitel 17-20,
@@ -31,9 +33,10 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
+  /* B+ Familienalbum: Karten mit 18 px weichen Ecken (Einstellungen → Darstellung „Eckig“: data-ecken unten). */
   --radius-sm: 8px;
   --radius-md: 14px;
-  --radius-lg: 22px;
+  --radius-lg: 18px;
   --radius-pill: 999px;
 
   --duration-fast: 140ms;
@@ -60,6 +63,30 @@
   --card-gap: var(--space-5);
   --card-pad: clamp(var(--space-5), 3vw, var(--space-8));
   --card-pad-compact: var(--space-5);
+}
+
+/* Mini-Designer (Einstellungen → Darstellung, data-Attribute an <html>, lib/darstellung.js): Schriftart, Handschrift-Akzente
+   und Ecken. „Modern“ setzt auch die Überschriften in Figtree, „Gut lesbar“ alles in Atkinson Hyperlegible (styles/fonts.css).
+   Ohne Handschrift stehen die kleinen Momente in der Textschrift - etwas kleiner, damit sie nicht schreien. */
+:root[data-schriftart='modern'] {
+  --font-display: 'Figtree Variable', 'Segoe UI', system-ui, sans-serif;
+}
+
+:root[data-schriftart='lesbar'] {
+  --font-display: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+}
+
+:root[data-handschrift='aus'] {
+  --font-hand: var(--font-body);
+  --hand-scale: 0.72;
+}
+
+:root[data-ecken='eckig'] {
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 6px;
+  --radius-pill: 6px;
 }
 
 /* Schriftgröße „Größer“ (Einstellungen → Darstellung, data-schrift an <html>): eine Stufe mehr - 17 statt 15 px, am Handy

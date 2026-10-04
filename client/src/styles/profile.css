@@ -19,22 +19,28 @@
   height: 10rem;
 }
 
+/* B+ Familienalbum: das Porträt als Kreis mit Papier- und Terrakotta-Ring (verstorben: sanft grau, .is-memorial). */
 .dog-head-photo button {
   display: block;
   width: 100%;
   height: 100%;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: 50%;
   overflow: hidden;
   background: var(--paper-deep);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--rust);
   cursor: zoom-in;
+}
+
+.dog-head.is-memorial .dog-head-photo button,
+.dog-head.is-memorial .avatar.dog-head-fallback {
+  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--line-strong);
 }
 
 .dog-head-photo button:focus-visible {
   outline: none;
-  box-shadow: var(--focus-ring);
+  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--rust), var(--focus-ring);
 }
 
 .dog-head-photo img {
@@ -46,7 +52,8 @@
 .avatar.dog-head-fallback {
   width: 100% !important;
   height: 100% !important;
-  border-radius: var(--radius-lg);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--rust);
   font-size: 4rem !important;
 }
 

@@ -6,7 +6,17 @@ const { useTempDataDir, startApp, cleanup, call, createFamily, createHousehold, 
 const dataDir = useTempDataDir('darstellung', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 const ADMIN_TEST_PASSWORD = 'admin-test-darstellung-1'
 
-const STANDARD = { palette: 'terrakotta', modus: 'auto', schrift: 'normal' }
+// B+ Familienalbum (04.10.): Vorgabe ist die Farbwelt „Familienalbum“; dazu der Mini-Designer (eigene Akzentfarbe,
+// Schriftart, Handschrift-Akzente, Ecken) und der Hintergrund „Weiß“ als weiterer Modus.
+const STANDARD = {
+  palette: 'familienalbum',
+  modus: 'auto',
+  schrift: 'normal',
+  akzent: '',
+  schriftart: 'klassisch',
+  handschrift: 'an',
+  ecken: 'weich'
+}
 
 // Calm-down-Runde: Einstellungen „Darstellung“ (lib/darstellung.js, routes/auth.js GET/PUT /api/me/darstellung).
 test('Darstellung: je Identität gespeichert, nur Werte aus der Liste, Demo schreibt nie, gilt auch in Familien', async (t) => {
@@ -29,12 +39,33 @@ test('Darstellung: je Identität gespeichert, nur Werte aus der Liste, Demo schr
   await t.test('eine Änderung legt sich über die bisherige Wahl und steht danach in /api/me', async () => {
     const first = await put(home.cookie, { palette: 'wald' })
     assert.equal(first.status, 200)
-    assert.deepEqual(first.data, { palette: 'wald', modus: 'auto', schrift: 'normal' })
+    assert.deepEqual(first.data, { ...STANDARD, palette: 'wald' })
     const second = await put(home.cookie, { modus: 'dunkel', schrift: 'gross' })
-    assert.deepEqual(second.data, { palette: 'wald', modus: 'dunkel', schrift: 'gross' })
+    assert.deepEqual(second.data, { ...STANDARD, palette: 'wald', modus: 'dunkel', schrift: 'gross' })
     assert.deepEqual((await call(base, '/api/me', { cookie: home.cookie })).data.darstellung, second.data)
     // Ein anderes Zuhause bleibt bei seiner eigenen Wahl.
     assert.deepEqual((await get(other.cookie)).data, STANDARD)
+  })
+
+  await t.test('Mini-Designer: Akzentfarbe (#rrggbb, klein geschrieben gespeichert, leer = die der Farbwelt), Schriftart, Handschrift, Ecken, Weiß', async () => {
+    const res = await put(home.cookie, { akzent: '#C8553A', schriftart: 'lesbar', handschrift: 'aus', ecken: 'eckig', modus: 'weiss' })
+    assert.equal(res.status, 200)
+    assert.deepEqual(res.data, { ...STANDARD, palette: 'wald', schrift: 'gross', modus: 'weiss', akzent: '#c8553a', schriftart: 'lesbar', handschrift: 'aus', ecken: 'eckig' })
+    assert.deepEqual((await call(base, '/api/me', { cookie: home.cookie })).data.darstellung, res.data)
+    const cleared = await put(home.cookie, { akzent: '', modus: 'dunkel' })
+    assert.equal(cleared.data.akzent, '')
+    assert.equal(cleared.data.schriftart, 'lesbar')
+    // Zurück auf Gewohntes für die Tests darunter
+    await put(home.cookie, { schriftart: 'klassisch', handschrift: 'an', ecken: 'weich' })
+  })
+
+  await t.test('die alte Palette „terrakotta“ heißt jetzt „familienalbum“ - beim Speichern und beim Lesen', async () => {
+    const res = await put(other.cookie, { palette: 'terrakotta' })
+    assert.equal(res.status, 200)
+    assert.equal(res.data.palette, 'familienalbum')
+    db.prepare("UPDATE home_darstellung SET palette = 'terrakotta' WHERE family_id = ?").run(other.data.home.id)
+    assert.equal((await get(other.cookie)).data.palette, 'familienalbum')
+    await put(other.cookie, { palette: 'familienalbum' })
   })
 
   await t.test('nur bekannte Felder und Werte - sonst 400 und nichts geändert', async () => {
@@ -45,6 +76,16 @@ test('Darstellung: je Identität gespeichert, nur Werte aus der Liste, Demo schr
       { modus: true },
       { schrift: 17 },
       { farbe: 'wald' },
+      { akzent: 'rot' },
+      { akzent: '#abc' },
+      { akzent: '#12345g' },
+      { akzent: '#1234567' },
+      { akzent: 'url(x)' },
+      { akzent: null },
+      { schriftart: 'comic' },
+      { handschrift: true },
+      { ecken: 'rund' },
+      { modus: 'grau' },
       { palette: 'meer', extra: 1 },
       JSON.parse('{"__proto__": {"palette": "wald"}}'),
       {},
@@ -82,7 +123,9 @@ test('Darstellung: je Identität gespeichert, nur Werte aus der Liste, Demo schr
 
   await t.test('ein unbekannter Wert in der Datenbank fällt einzeln auf die Vorgabe zurück', async () => {
     db.prepare("UPDATE home_darstellung SET palette = 'verschwunden' WHERE family_id = ?").run(home.data.home.id)
-    assert.deepEqual((await get(home.cookie)).data, { palette: 'terrakotta', modus: 'dunkel', schrift: 'gross' })
+    assert.deepEqual((await get(home.cookie)).data, { ...STANDARD, modus: 'dunkel', schrift: 'gross' })
+    db.prepare("UPDATE home_darstellung SET akzent = 'red;}', ecken = 'x' WHERE family_id = ?").run(home.data.home.id)
+    assert.deepEqual((await get(home.cookie)).data, { ...STANDARD, modus: 'dunkel', schrift: 'gross' })
   })
 
   await t.test('die Zeile verschwindet mit dem Zuhause', async () => {
@@ -128,7 +171,7 @@ test('Darstellung: je Identität gespeichert, nur Werte aus der Liste, Demo schr
     assert.equal((await get(viewCookie)).status, 200)
     const res = await put(viewCookie, { palette: 'wald' })
     assert.equal(res.status, 403)
-    assert.equal((await get(home.cookie)).data.palette, 'terrakotta')
+    assert.equal((await get(home.cookie)).data.palette, 'familienalbum')
   })
 
   await t.test('zu Besuch: die eigene Darstellung kommt mit /api/me, ändern geht nur aus der eigenen Chronik', async () => {

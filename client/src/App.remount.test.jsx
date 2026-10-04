@@ -109,7 +109,7 @@ describe('AreaGate in der App: Wechsel beim Navigieren', () => {
     await act(async () => start.click())
 
     expect(view).toHaveBeenCalledWith(1)
-    expect(mainHeading()).toBe('Start – Mein Zuhause')
+    expect(mainHeading()).toBe('Start – Zuhause am Deich')
     expect(listDogs).toHaveBeenCalledTimes(2)
   })
 
@@ -169,7 +169,7 @@ describe('Besuch und eigene Adresse (Phase W)', () => {
     await render('/start')
 
     expect(view).toHaveBeenCalledWith(1)
-    expect(mainHeading()).toBe('Start – Mein Zuhause')
+    expect(mainHeading()).toBe('Start – Zuhause am Deich')
   })
 
   test('zu Besuch bleibt die Gruppenseite des besuchten Zuhauses ohne Wechsel', async () => {
@@ -201,7 +201,7 @@ describe('genau ein api.view je Wechsel', () => {
     const back = container.querySelector('main .visit-chip')
     await act(async () => back.click())
     expect(view.mock.calls).toEqual([[1]])
-    expect(mainHeading()).toBe('Start – Mein Zuhause')
+    expect(mainHeading()).toBe('Start – Zuhause am Deich')
   })
 
   test('eine Familie aus "Meine Familien" auf Start öffnen', async () => {

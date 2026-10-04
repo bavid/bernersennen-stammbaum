@@ -54,3 +54,5 @@
 @import './visitenkarte-karte.css';
 @import './einladungskarte.css';
 @import './structure.css';
+/* Look B+ Familienalbum: Handschrift, Polaroid, Kapitel, Tier-Kreise - zuletzt, damit es über den Seiten-Stilen liegt. */
+@import './album.css';
