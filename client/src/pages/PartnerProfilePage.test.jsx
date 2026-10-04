@@ -122,16 +122,24 @@ afterEach(() => {
 })
 
 describe('PartnerProfilePage – Statuskarte', () => {
-  test('lädt das Profil und zeigt Status und Checkliste (fehlt / empfohlen)', async () => {
+  test('lädt das Profil und zeigt Status und in einem Satz, was fehlt – Empfehlungen erst, wenn nichts fehlt', async () => {
     await render()
 
     expect(profile).toHaveBeenCalledTimes(1)
     expect(container.querySelector('h1').textContent).toBe('Hundeschule Wiesengrund')
     expect(container.querySelector('.partner-status-badge').textContent).toBe('Entwurf')
-    const missing = [...container.querySelectorAll('.partner-checklist li.is-missing')].map((li) => li.textContent)
-    expect(missing).toEqual(['Postleitzahlfehlt', 'Portal-Text (mind. 40 Zeichen)fehlt'])
-    const recommended = [...container.querySelectorAll('.partner-checklist li.is-recommended')].map((li) => li.textContent)
-    expect(recommended).toEqual(['Logo'])
+    expect(container.querySelector('.partner-status-missing').textContent).toBe(
+      'Es fehlt noch: Postleitzahl, Portal-Text (mind. 40 Zeichen).'
+    )
+    expect(container.querySelector('.partner-status-next')).toBeNull()
+    expect(container.querySelector('.partner-status-card ul')).toBeNull()
+  })
+
+  test('nichts fehlt: genau ein empfohlener nächster Schritt', async () => {
+    await render({ data: { ...completeProfile, vollstaendig: { ok: true, fehlt: [], empfohlen: ['Logo', 'Einblicke'] } } })
+
+    expect(container.querySelector('.partner-status-next').textContent).toBe('Empfohlen: Logo')
+    expect(container.querySelector('.partner-status-text').textContent).toBe('Alles da – bereit zum Veröffentlichen.')
   })
 
   test('"Veröffentlichen" ist gesperrt, solange Pflichtangaben fehlen - mit Grund', async () => {
@@ -140,9 +148,7 @@ describe('PartnerProfilePage – Statuskarte', () => {
     const publishButton = button('Veröffentlichen')
     expect(publishButton.disabled).toBe(true)
     const reason = document.getElementById(publishButton.getAttribute('aria-describedby'))
-    // Audit V7a: sichtbar nur der Verweis auf die Checkliste, vorgelesen auch die Aufzählung.
-    expect(reason.textContent).toBe('Erst die Pflichtangaben oben ergänzen. Es fehlt noch: Postleitzahl, Portal-Text (mind. 40 Zeichen).')
-    expect(reason.querySelector('.visually-hidden').textContent).toBe(' Es fehlt noch: Postleitzahl, Portal-Text (mind. 40 Zeichen).')
+    expect(reason.textContent).toBe('Es fehlt noch: Postleitzahl, Portal-Text (mind. 40 Zeichen).')
   })
 
   test('vollständig: "Veröffentlichen" ruft publish(true), danach "Aktiv (öffentlich)" und der Link zum Portal', async () => {
