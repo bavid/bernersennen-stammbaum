@@ -97,7 +97,7 @@ export default function PartnerBannerEditor({ banner, layout, onChange }) {
           Fotos für den Kopf eures Portals – breite Querformate wirken am besten. JPG oder PNG.
         </p>
       </div>
-      <BannerLayoutPicker value={current} onChange={handleLayout} disabled={busy} />
+      <BannerLayoutPicker value={current} onChange={handleLayout} busy={busy} />
       {error && (
         <p className="field-error" role="alert">
           {error}

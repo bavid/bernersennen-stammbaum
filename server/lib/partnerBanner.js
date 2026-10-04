@@ -21,7 +21,7 @@ const MAX_ALT_LENGTH = 120
 const FULL_MESSAGE = `Höchstens ${MAX_BANNER} Bannerfotos – bitte zuerst eins ersetzen oder entfernen.`
 const NOT_FOUND_MESSAGE = 'Dieses Bannerfoto gibt es nicht'
 const LAYOUT_MESSAGE = 'Bitte eins der angebotenen Layouts wählen.'
-const POSITION_RE = /^[1-3]$/
+const POSITION_RE = new RegExp(`^[1-${MAX_BANNER}]$`)
 
 // Ältere Datenbanken kennen nur die Positionen 1 und 2 (CHECK in partner_banner) - SQLite ändert ein CHECK nicht, also
 // wird die Tabelle einmal neu angelegt (Spalten wie in db.js), die Zeilen samt Ids ziehen mit. true, wenn umgebaut.

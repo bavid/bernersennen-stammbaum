@@ -56,13 +56,14 @@ export function needsPublicUrl(publicUrl) {
 }
 
 // Feedback-Runde: Partner sehen nie eine technische Adresse (die Warnung mit Adresse bleibt der Druckseite des Admins).
-// Nur in Produktion ohne öffentliche Domain (PUBLIC_URL fehlt oder ist localhost/eine IP) wartet der Druck echter Karten
-// mit diesem einen Satz; Vorschau und Testsystem (appEnv staging/dev), Demo und Admin-Ansicht (readOnly) drucken wie
-// gewohnt bzw. Muster.
+// Ohne öffentliche Domain (PUBLIC_URL fehlt oder ist localhost/eine IP) wartet der Druck echter Karten mit diesem einen
+// Satz - außer in Vorschau und Testsystem (appEnv staging/dev); Demo und Admin-Ansicht (readOnly) drucken Muster. Ist die
+// Umgebung unbekannt (Konfiguration nicht geladen), gilt wie in Produktion: lieber warten als falsche QR-Ziele drucken.
 export const ADDRESS_PENDING_TEXT = 'Drucken ist bald möglich – wir richten gerade die Adresse der Plattform ein.'
+const TEST_ENVS = Object.freeze(['staging', 'dev'])
 
 export function printAddressPending({ appEnv, publicUrl, readOnly = false }) {
-  return appEnv === 'production' && !readOnly && needsPublicUrl(publicUrl)
+  return !readOnly && !TEST_ENVS.includes(appEnv) && needsPublicUrl(publicUrl)
 }
 
 // Motiv eines Stapels (server/lib/voucherPrint.js printBatch): partnerzugang schlägt alles, sonst

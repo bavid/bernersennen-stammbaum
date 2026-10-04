@@ -29,6 +29,7 @@ export function useVoucherPrint({ load, ready = true, key }) {
   const [print, setPrint] = useState(null)
   const [publicUrl, setPublicUrl] = useState(null)
   const [appEnv, setAppEnv] = useState(null)
+  const [configReady, setConfigReady] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -47,8 +48,11 @@ export function useVoucherPrint({ load, ready = true, key }) {
         if (cancelled) return
         setPublicUrl(config.publicUrl || null)
         setAppEnv(config.appEnv || null)
+        setConfigReady(true)
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setConfigReady(true)
+      })
     return () => {
       cancelled = true
     }
@@ -56,7 +60,7 @@ export function useVoucherPrint({ load, ready = true, key }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, key])
 
-  return { print, publicUrl, appEnv, error }
+  return { print, publicUrl, appEnv, configReady, error }
 }
 
 function pluralize(count, singular, plural) {
@@ -218,11 +222,12 @@ function PrintContent({ print, publicUrl, duplex, designLabel, hint, partner, ad
 // technische Adresse; ohne öffentliche Adresse in Produktion wartet der Druck), readOnly: Demo bzw. Admin-Ansicht.
 export default function VoucherPrintView({ state, back, actions = null, designLabel, hint = null, markPrinted = null, partner = false, readOnly = false }) {
   const [duplex, setDuplex] = useState(false)
-  const { print, publicUrl, appEnv, error } = state
+  const { print, publicUrl, appEnv, configReady = true, error } = state
   const addressPending = partner && printAddressPending({ appEnv, publicUrl, readOnly })
-  const { report, reportError } = usePrintedReport(print, addressPending ? null : markPrinted)
+  const { report, reportError } = usePrintedReport(print, addressPending || !configReady ? null : markPrinted)
 
-  if (!print && !error) {
+  // Partner: erst mit geladener Konfiguration zeichnen - sonst stünde kurz die Adresse dieser Seite auf den Karten.
+  if ((!print && !error) || (partner && !configReady && !error)) {
     return (
       <div className="print-page">
         <main className="print-main">

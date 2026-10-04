@@ -160,7 +160,7 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
               id="portal-overview-termine"
               title="Nächste Termine"
               className="card portal-overview-termine-block"
-              more={{ label: terminCount > 1 ? `Alle ${terminCount} Termine` : 'Zu den Terminen', onClick: () => onShowTab('termine') }}
+              more={{ label: terminCount > 1 ? `${terminCount} Termine ansehen` : 'Zu den Terminen', onClick: () => onShowTab('termine') }}
             >
               <ul className="portal-overview-termine">
                 {termine.map((item) => (

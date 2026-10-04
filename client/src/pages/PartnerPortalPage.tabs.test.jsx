@@ -361,9 +361,9 @@ describe('Portal-Reiter – Übersicht', () => {
     expect(contact.querySelector('a[href^="tel:"]')).not.toBeNull()
   })
 
-  test('"Alle 4 Termine" (so viele wie am Reiter) wechselt zum Reiter Termine und setzt den Fokus auf den Reiter', async () => {
+  test('"4 Termine ansehen" (so viele wie am Reiter) wechselt zum Reiter Termine und setzt den Fokus auf den Reiter', async () => {
     await render()
-    await act(async () => button('Alle 4 Termine').click())
+    await act(async () => button('4 Termine ansehen').click())
     expect(selectedLabel()).toBe('Termine')
     expect(document.activeElement).toBe(tab('Termine'))
     await act(async () => tab('Übersicht').click())

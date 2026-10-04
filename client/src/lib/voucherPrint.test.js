@@ -60,13 +60,15 @@ describe('isLocalAddress / needsPublicUrl', () => {
 })
 
 describe('printAddressPending', () => {
-  test('nur in Produktion ohne öffentliche Domain - nie in Vorschau, Testsystem, Demo oder Admin-Ansicht', () => {
+  test('ohne öffentliche Domain - nie in Vorschau, Testsystem, Demo oder Admin-Ansicht', () => {
     expect(printAddressPending({ appEnv: 'production', publicUrl: null })).toBe(true)
     expect(printAddressPending({ appEnv: 'production', publicUrl: 'http://10.0.0.5:4000' })).toBe(true)
     expect(printAddressPending({ appEnv: 'production', publicUrl: 'https://beispiel-chronik.de' })).toBe(false)
     expect(printAddressPending({ appEnv: 'staging', publicUrl: null })).toBe(false)
     expect(printAddressPending({ appEnv: 'dev', publicUrl: 'http://localhost:5173' })).toBe(false)
-    expect(printAddressPending({ appEnv: undefined, publicUrl: null })).toBe(false)
+    // Unbekannte Umgebung (Konfiguration nicht geladen): wie Produktion - der Druck wartet.
+    expect(printAddressPending({ appEnv: undefined, publicUrl: null })).toBe(true)
+    expect(printAddressPending({ appEnv: undefined, publicUrl: 'https://beispiel-chronik.de' })).toBe(false)
     expect(printAddressPending({ appEnv: 'production', publicUrl: null, readOnly: true })).toBe(false)
   })
 

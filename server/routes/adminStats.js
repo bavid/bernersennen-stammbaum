@@ -86,7 +86,7 @@ router.get('/voucher-batches/:id/export.csv', requireAdmin, (req, res) => {
   const batch = findBatch(req.params.id)
   if (!batch) return sendJson(res, 404, { error: BATCH_NOT_FOUND })
 
-  res.setHeader('Content-Disposition', `attachment; filename="gutscheine-stapel-${batch.id}.csv"`)
+  res.setHeader('Content-Disposition', `attachment; filename="einladungscodes-stapel-${batch.id}.csv"`)
   endWithoutEtag(res, 200, CSV_TYPE, voucherCsv(csvRowsStmt.all(batch.id)))
 })
 

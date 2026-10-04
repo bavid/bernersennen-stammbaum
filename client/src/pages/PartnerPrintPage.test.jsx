@@ -193,6 +193,14 @@ describe('PartnerPrintPage – ohne öffentliche Adresse (Feedback-Runde)', () =
     expect(markPrinted).not.toHaveBeenCalled()
   })
 
+  test('Konfiguration nicht ladbar: der Druck wartet ebenso, keine Karten', async () => {
+    config.mockRejectedValue(new Error('offline'))
+    await render()
+    expect(container.textContent).toContain(PENDING)
+    expect(button('Drucken').disabled).toBe(true)
+    expect(container.querySelector('.voucher-card')).toBeNull()
+  })
+
   test('Vorschau, Testsystem und Demo: kein Hinweis, Drucken wie gewohnt - nie die technische Warnung', async () => {
     for (const [appEnv, options] of [
       ['staging', {}],

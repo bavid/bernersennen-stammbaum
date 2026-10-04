@@ -198,7 +198,7 @@ test('Admin: Druckdaten, CSV-Export, Statistik und Herkunft', async (t) => {
     const res = await raw(`/api/admin/voucher-batches/${kundenkarten.data.batch.id}/export.csv`)
     assert.equal(res.status, 200)
     assert.match(res.headers.get('content-type'), /^text\/csv/)
-    assert.match(res.headers.get('content-disposition'), /^attachment; filename="gutscheine-stapel-\d+\.csv"$/)
+    assert.match(res.headers.get('content-disposition'), /^attachment; filename="einladungscodes-stapel-\d+\.csv"$/)
     assert.equal(res.headers.get('cache-control'), 'no-store')
     assert.deepEqual([...res.bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf])
     assert.ok(res.text.startsWith(CSV_BOM))

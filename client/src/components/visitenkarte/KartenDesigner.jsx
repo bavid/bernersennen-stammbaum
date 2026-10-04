@@ -127,7 +127,7 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
             onPrint={() => druck.print({ withCodes, cards: printable })}
             busy={druck.busy}
             printable={printable}
-            withCodes={hasCode && !readOnly}
+            withCodes={withCodes}
             addressNote={addressPending ? <AddressPendingNote /> : null}
           />
         </div>
