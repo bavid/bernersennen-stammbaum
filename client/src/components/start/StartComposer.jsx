@@ -8,6 +8,7 @@ import { useToast } from '../Toast.jsx'
 import { isEditable } from '../../lib/areas.js'
 import { displayName } from '../../lib/timeline.js'
 import { isOwnHome } from '../../lib/visits.js'
+import { visibleInNames } from '../../lib/dogProfile.js'
 
 // Bis zu so vielen Tieren stehen sie als Knöpfe mit Bild da, darüber (z. B. eine große Familie) als Auswahlliste.
 export const MAX_CHIPS = 6
@@ -115,6 +116,8 @@ export default function StartComposer({ family, dogs, onCreated }) {
           key={chosen.id}
           canTag={isOwnHome(family)}
           isHousehold={family.art === 'zuhause'}
+          shareNames={visibleInNames(chosen, family.memberships)}
+          draftKey={`tier-${chosen.id}`}
           isShelter={family.art === 'tierheim'}
           submitLabel={words.tellActionShort}
           onSubmit={handleSubmit}

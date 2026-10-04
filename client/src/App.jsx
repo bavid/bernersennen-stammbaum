@@ -19,6 +19,7 @@ import HinweisGlocke from './components/hinweise/HinweisGlocke.jsx'
 import HinweiseProvider from './components/hinweise/HinweiseProvider.jsx'
 import { clearRecent } from './lib/search.js'
 import { clearFamilyAuswahl } from './lib/bilderrahmen.js'
+import { clearDrafts } from './lib/entryForm.js'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
 import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
@@ -413,6 +414,8 @@ export default function App() {
     clearRecent(family)
     // Bilderrahmen: die je Familie gemerkte Auswahl (Tier-Ids) bleibt nicht über das Abmelden hinaus stehen.
     clearFamilyAuswahl()
+    // Entwürfe neuer Erinnerungen (lib/entryForm.js) bleiben nicht über das Abmelden hinaus liegen.
+    clearDrafts()
     try {
       await api.logout()
     } finally {

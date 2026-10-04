@@ -173,8 +173,8 @@ describe('StartPage (Phase W)', () => {
       input.dispatchEvent(new Event('input', { bubbles: true }))
     }
     act(() => {
-      setValue(container.querySelector('#entry-title'), 'Erster Schnee')
-      setValue(container.querySelector('#entry-author'), 'Mara')
+      setValue(container.querySelector('[name="titel"]'), 'Erster Schnee')
+      setValue(container.querySelector('[name="autorName"]'), 'Mara')
     })
     expect(container.querySelector('.entry-form button[type="submit"]').textContent).toBe(words.tellActionShort)
     await act(async () => container.querySelector('.entry-form').requestSubmit())

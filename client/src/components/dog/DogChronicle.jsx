@@ -14,7 +14,7 @@ import { isOwnHome, isVisit } from '../../lib/visits.js'
 import { buildTimeline, displayName, genitive } from '../../lib/timeline.js'
 import { formatDateLong } from '../../lib/dates.js'
 import { readSetting, writeSetting } from '../../lib/storage.js'
-import { RECENT_ITEMS, recentItems } from '../../lib/dogProfile.js'
+import { RECENT_ITEMS, recentItems, visibleInNames } from '../../lib/dogProfile.js'
 
 const HIGHLIGHT_MS = 2600
 export const COMPOSER_ID = 'composer'
@@ -160,7 +160,12 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
     writeSetting('newestFirst', !newestFirst)
   }
 
-  const formProps = { canTag: isOwnHome(family), isHousehold: family.art === 'zuhause', isShelter: family.art === 'tierheim' }
+  const formProps = {
+    canTag: isOwnHome(family),
+    isHousehold: family.art === 'zuhause',
+    isShelter: family.art === 'tierheim',
+    shareNames: visibleInNames(dog, family.memberships)
+  }
 
   return (
     <section className="chronicle dog-chronicle" aria-labelledby="chronicle-title">
@@ -185,7 +190,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
               <h3 className="composer-title">
                 {words.newEntry} zu {about}
               </h3>
-              <TimelineEntryForm {...formProps} onSubmit={handleCreate} onCancel={() => onComposerChange(false)} />
+              <TimelineEntryForm {...formProps} draftKey={`tier-${dog.id}`} onSubmit={handleCreate} onCancel={() => onComposerChange(false)} />
             </>
           ) : (
             <button type="button" className="composer-trigger" onClick={() => onComposerChange(true)}>

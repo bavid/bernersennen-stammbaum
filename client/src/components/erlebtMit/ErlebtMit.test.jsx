@@ -51,6 +51,8 @@ function setInput(selector, value) {
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 const submit = () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+// „Mit dabei“ steht in „Erinnerung festhalten“ unter „Mehr“ (zu, bis man es aufklappt).
+const openMore = () => act(async () => container.querySelector('.mehr-angaben-knopf').click())
 
 const animals = [
   { id: 21, name: 'Wilma', nameUnbekannt: false, tierart: 'hund', zuhauseId: 9, zuhause: 'Zuhause Möwenweg' },
@@ -62,11 +64,14 @@ describe('„Erlebt mit“ im Eintrags-Formular (Phase V2)', () => {
     api.erlebtMitTiere.mockResolvedValue(animals)
     const onSubmit = vi.fn().mockResolvedValue()
     await render(<TimelineEntryForm canTag isHousehold onSubmit={onSubmit} onCancel={() => {}} />)
+    expect(container.querySelector('.erlebt-mit-picker')).toBeNull()
+    expect(api.erlebtMitTiere).not.toHaveBeenCalled()
+    await openMore()
     expect(container.querySelector('.erlebt-mit-picker').textContent).toContain('Zuhause Möwenweg')
     const wilma = [...container.querySelectorAll('.erlebt-mit-option')].find((o) => o.textContent.includes('Wilma'))
     await act(async () => wilma.querySelector('input').click())
-    setInput('#entry-title', 'Deichrunde')
-    setInput('#entry-author', 'Nissen')
+    setInput('[name="titel"]', 'Deichrunde')
+    setInput('[name="autorName"]', 'Nissen')
     await act(async () => submit())
     expect(onSubmit.mock.calls[0][0].erlebtMit).toEqual([21])
   })
@@ -83,6 +88,7 @@ describe('„Erlebt mit“ im Eintrags-Formular (Phase V2)', () => {
         onCancel={() => {}}
       />
     )
+    await openMore()
     expect(container.querySelector('.erlebt-mit-picker').disabled).toBe(true)
     expect(container.textContent).toContain('Private Erinnerungen können keine anderen Tiere markieren.')
     await act(async () => submit())
@@ -93,8 +99,8 @@ describe('„Erlebt mit“ im Eintrags-Formular (Phase V2)', () => {
     const onSubmit = vi.fn().mockResolvedValue()
     await render(<TimelineEntryForm isHousehold onSubmit={onSubmit} onCancel={() => {}} />)
     expect(container.querySelector('.erlebt-mit-picker')).toBeNull()
-    setInput('#entry-title', 'Deichrunde')
-    setInput('#entry-author', 'Nissen')
+    setInput('[name="titel"]', 'Deichrunde')
+    setInput('[name="autorName"]', 'Nissen')
     await act(async () => submit())
     expect('erlebtMit' in onSubmit.mock.calls[0][0]).toBe(false)
     expect(api.erlebtMitTiere).not.toHaveBeenCalled()

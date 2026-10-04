@@ -1,6 +1,5 @@
-import { useId, useState } from 'react'
-import { api } from '../api'
-import { downscaleImage } from '../lib/images.js'
+import { useId } from 'react'
+import usePhotoUpload from '../hooks/usePhotoUpload.js'
 import { useIsAdminView, useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import Icon from './Icon.jsx'
 
@@ -11,33 +10,16 @@ export default function PhotoPicker({ value, onChange, multiple = true, label = 
   const isDemo = useIsDemo()
   const isAdminView = useIsAdminView()
   const readOnlyHint = useReadOnlyHint('Im Demo-Modus deaktiviert')
-  const [busy, setBusy] = useState(false)
+  const { busy, upload } = usePhotoUpload({
+    onUploaded: (uploaded) => onChange(multiple ? [...value, ...uploaded] : uploaded.slice(-1)),
+    onError,
+    onBusyChange
+  })
 
-  function setBusyState(next) {
-    setBusy(next)
-    onBusyChange?.(next)
-  }
-
-  async function handleFiles(event) {
+  function handleFiles(event) {
     const files = Array.from(event.target.files || [])
     event.target.value = ''
-    if (!files.length) return
-
-    setBusyState(true)
-    onError?.(null)
-    try {
-      const uploaded = []
-      for (const file of files) {
-        const prepared = await downscaleImage(file)
-        const { url } = await api.upload(prepared)
-        uploaded.push(url)
-      }
-      onChange(multiple ? [...value, ...uploaded] : uploaded.slice(-1))
-    } catch (err) {
-      onError?.(err.message)
-    } finally {
-      setBusyState(false)
-    }
+    upload(files)
   }
 
   const canAddMore = multiple || value.length === 0
