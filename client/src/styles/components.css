@@ -144,12 +144,13 @@
 }
 
 /* Trefferfläche 44 px (WCAG 2.5.5) für jeden Symbol-Knopf, auch "Schließen" im Modal - in Ruhe ist er durchsichtig, man
-   sieht nur das Symbol. Knöpfe mit sichtbarer Fläche zeigen sie bei Bedarf kleiner (z. B. .photo-thumb unten). */
+   sieht nur das Symbol. Knöpfe mit sichtbarer Fläche zeigen sie bei Bedarf kleiner (z. B. .photo-thumb unten). In px, nicht
+   rem: die Grundschrift ist 15 px (base.css), 2.75rem wären nur 41 px. */
 .icon-btn {
   display: inline-grid;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-pill);
   border: 1px solid transparent;
   background: transparent;
@@ -284,9 +285,9 @@ textarea {
   /* Audit V7a: --muted auf --paper-deep lag hell bei 4,2 : 1 (unter 4,5) - etwas Richtung --ink-soft gemischt reicht
      für beide Auftritte (hell ~5,4 : 1, dunkel heller statt dunkler). */
   color: color-mix(in srgb, var(--muted) 65%, var(--ink-soft));
-  /* Trefferfläche mindestens 44 × 44 px (WCAG 2.5.5) - überall, wo .segmented steht. */
-  min-height: 2.75rem;
-  min-width: 2.75rem;
+  /* Trefferfläche mindestens 44 × 44 px (WCAG 2.5.5) - überall, wo .segmented steht; in px wie bei .icon-btn. */
+  min-height: 44px;
+  min-width: 44px;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 
@@ -294,6 +295,17 @@ textarea {
   background: var(--surface);
   color: var(--ink);
   box-shadow: var(--shadow-sm);
+}
+
+/* Geschlecht „weiblich · männlich · weiß ich nicht“ („Neues Tier“, Tier bearbeiten): drei Knöpfe passen mit etwas weniger
+   Rand auch bei 320 px in eine Zeile - mit größerer Schrift dürfen sie umbrechen statt überzustehen. */
+.sex-choice {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.sex-choice button {
+  padding-inline: var(--space-3);
 }
 
 .error-banner {

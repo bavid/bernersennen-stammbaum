@@ -222,7 +222,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
 
       <div className="field">
         <span className="field-label">Geschlecht</span>
-        <div className="segmented" role="group" aria-label="Geschlecht">
+        <div className="segmented sex-choice" role="group" aria-label="Geschlecht">
           {SEX_CHOICES.map((choice) => (
             <button key={choice.value} type="button" aria-pressed={form.geschlecht === choice.value} onClick={() => update({ geschlecht: choice.value })}>
               {choice.label}

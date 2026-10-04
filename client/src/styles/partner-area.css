@@ -18,7 +18,7 @@
   justify-content: center;
   gap: var(--space-2);
   /* Trefferfläche 44 px wie .segmented button (components.css). */
-  min-height: 2.75rem;
+  min-height: 44px;
   padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-pill);
   /* Audit V7a: wie .segmented button (components.css) - --muted auf --paper-deep lag bei 4,2 : 1. */

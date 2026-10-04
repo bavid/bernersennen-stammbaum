@@ -113,7 +113,7 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
         <span className="field-label" id={sexId}>
           Geschlecht
         </span>
-        <div className="segmented" role="group" aria-labelledby={sexId}>
+        <div className="segmented sex-choice" role="group" aria-labelledby={sexId}>
           {SEX_CHOICES.map((choice) => (
             <button key={choice.value} type="button" aria-pressed={form.geschlecht === choice.value} onClick={() => update({ geschlecht: choice.value })}>
               {choice.label}

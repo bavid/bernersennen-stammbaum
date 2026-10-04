@@ -7,7 +7,8 @@ import { describe, expect, test } from 'vitest'
 // jeder Knopf eines Umschalters (.segmented, samt „Bearbeiten | Kundensicht“) ist mindestens 44 × 44 px groß. jsdom rechnet
 // kein Layout - darum prüft der Test die Regeln aller Stylesheets.
 const MIN_TARGET_PX = 44
-const ROOT_FONT_PX = 16
+// Die Grundschrift ist 15 px (base.css --root-size 93.75 %) - rem-Maße rechnen sich damit um (2.75rem wären nur 41 px).
+const ROOT_FONT_PX = 15
 const dir = dirname(fileURLToPath(import.meta.url))
 const sheets = readdirSync(dir)
   .filter((name) => name.endsWith('.css'))
