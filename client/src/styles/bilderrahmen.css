@@ -1,0 +1,410 @@
+/* Digitaler Bilderrahmen (/bilderrahmen, /rahmen) - „B+ Familienalbum“ im Dunkeln: warmer, fast schwarzer Grund mit einer
+   unscharfen Kopie des Fotos, das Foto selbst auf großen Bildschirmen in einem weißen Polaroid-Rand, die Handschrift nur
+   für die kleine Zeile „Heute vor 3 Jahren“. Immer dunkel (ein Rahmen im Regal), unabhängig von Hell/Dunkel der App -
+   deshalb eigene Farb-Tokens hier statt der Palette; das Einstellungs-Blatt (Modal) bleibt in den Farben der App.
+   Liegt als feste Ebene über Kopf und Leisten der App (z-index über top-strip/structure). */
+
+.frame-root {
+  --frame-bg: #17110d;
+  --frame-paper: #fbf7f0;
+  --frame-ink: #2b211b;
+  --frame-ink-soft: #75655a;
+  --frame-light: #f6efe6;
+  --frame-light-soft: rgba(246, 239, 230, 0.78);
+  --frame-accent: #b5541f;
+  --frame-focus: #f2c48d;
+  --frame-fade: 1200ms;
+  /* Freies Band unten (große Bildschirme): Steuerung, mit Uhr etwas höher. */
+  --frame-band: 108px;
+  /* Caveat (Plan Phase W, Look B+) ist noch nicht eingebunden - bis dahin die Handschrift des Systems, sonst Fraunces. */
+  --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', 'Noteworthy', var(--font-display);
+
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 40%, #2a1f18 0%, var(--frame-bg) 70%);
+  color: var(--frame-light);
+  font-family: var(--font-body);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Solange der Rahmen offen ist, scrollt die Seite dahinter nicht (keine Bildlaufleiste am Rand). */
+html:has(.frame-root),
+body:has(.frame-root) {
+  overflow: hidden;
+}
+
+/* „Zum Inhalt springen“ hat hier kein Ziel (kein <main>) - und lugte sonst oben links hervor. */
+body:has(.frame-root) .skip-link {
+  display: none;
+}
+
+.frame-root.is-idle {
+  cursor: none;
+}
+
+.frame-root.has-clock {
+  --frame-band: 150px;
+}
+
+/* --- Fotos ------------------------------------------------------------------------------------------------------- */
+
+.frame-slides,
+.frame-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.frame-layer {
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity var(--frame-fade) ease-in-out;
+}
+
+.frame-layer.is-ready {
+  opacity: 1;
+}
+
+.frame-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(40px) saturate(1.15) brightness(0.42);
+  transform: scale(1.15);
+}
+
+.frame-photo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.frame-photo-clip {
+  overflow: hidden;
+  line-height: 0;
+}
+
+.frame-img {
+  display: block;
+  max-width: 100vw;
+  max-height: 100dvh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transform-origin: center;
+}
+
+/* Sanfter Schwenk und Zoom (Ken Burns) - die Richtung je Foto aus FrameSlides.jsx, die Dauer = Wechsel-Abstand. */
+.frame-img.is-moving {
+  animation: frame-drift var(--frame-duration, 11s) ease-in-out both;
+}
+
+.frame-root.is-paused .frame-img.is-moving {
+  animation-play-state: paused;
+}
+
+@keyframes frame-drift {
+  from {
+    transform: scale(1.02) translate(0, 0);
+  }
+  to {
+    transform: scale(1.09) translate(var(--frame-drift-x, 0), var(--frame-drift-y, 0));
+  }
+}
+
+/* Handy: das Foto füllt den Bildschirm (ohne Rand), die Bildunterschrift liegt unten auf einem dunklen Verlauf. */
+.frame-caption {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: 2px;
+  padding: 48px 20px calc(20px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, rgba(23, 17, 13, 0.82));
+  color: var(--frame-light);
+  font-size: 1.05rem;
+  text-align: center;
+}
+
+.frame-caption-main strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.frame-caption-accent {
+  font-family: var(--font-hand);
+  font-size: 1.35rem;
+  line-height: 1.1;
+  color: #f2c48d;
+}
+
+/* Tablet, Monitor, Fernseher: weißer Polaroid-Rand, leicht gedreht, die Bildunterschrift auf dem breiten unteren Rand. */
+@media (min-width: 900px) and (min-height: 560px) {
+  /* Unten bleibt ein Band frei für Steuerung (und Uhr) - sie liegen nie auf dem Foto oder seiner Bildunterschrift. */
+  .frame-layer {
+    padding: 28px 32px var(--frame-band);
+  }
+
+  .frame-photo {
+    padding: clamp(10px, 1.1vw, 18px) clamp(10px, 1.1vw, 18px) 0;
+    background: var(--frame-paper);
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.35),
+      0 34px 90px -20px rgba(0, 0, 0, 0.7);
+    transform: rotate(-0.6deg);
+  }
+
+  .frame-img {
+    max-width: calc(100vw - 160px);
+    max-height: calc(100dvh - 28px - var(--frame-band) - 20px - 84px);
+  }
+
+  .frame-caption {
+    position: static;
+    min-height: 84px;
+    padding: 12px 8px 16px;
+    background: none;
+    color: var(--frame-ink);
+    font-size: clamp(1.1rem, 0.75rem + 0.6vw, 1.5rem);
+  }
+
+  .frame-caption-main span {
+    color: var(--frame-ink-soft);
+  }
+
+  .frame-caption-accent {
+    font-size: clamp(1.4rem, 1rem + 0.7vw, 1.9rem);
+    color: var(--frame-accent);
+  }
+}
+
+/* --- Uhr und Nacht ------------------------------------------------------------------------------------------------ */
+
+.frame-clock {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top));
+  left: 22px;
+  z-index: 2;
+  display: grid;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+}
+
+.frame-clock-time {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 1.6rem + 5vw, 7rem);
+  font-weight: 380;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.frame-clock-date {
+  font-size: clamp(1rem, 0.8rem + 0.9vw, 1.6rem);
+  color: var(--frame-light-soft);
+}
+
+@media (min-width: 900px) and (min-height: 560px) {
+  .frame-clock {
+    top: auto;
+    bottom: 24px;
+    left: clamp(24px, 3vw, 48px);
+  }
+
+  .frame-clock-time {
+    font-size: clamp(2.6rem, 1.4rem + 2.6vw, 5rem);
+  }
+
+  .frame-clock-date {
+    font-size: clamp(1rem, 0.85rem + 0.5vw, 1.35rem);
+  }
+}
+
+.frame-night {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #000;
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+/* --- Steuerung ---------------------------------------------------------------------------------------------------- */
+
+.frame-controls {
+  position: absolute;
+  left: 50%;
+  bottom: calc(clamp(14px, 3vh, 32px) + env(safe-area-inset-bottom));
+  z-index: 3;
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 999px;
+  background: rgba(23, 17, 13, 0.66);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+  pointer-events: none;
+}
+
+.frame-controls.is-visible,
+.frame-controls:focus-within {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.frame-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.frame-controls-group + .frame-controls-group {
+  padding-left: 10px;
+  border-left: 1px solid rgba(246, 239, 230, 0.18);
+}
+
+.frame-control {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--frame-light);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.frame-control svg {
+  width: 22px;
+  height: 22px;
+}
+
+.frame-control:hover {
+  background: rgba(246, 239, 230, 0.12);
+}
+
+.frame-control:active {
+  background: rgba(246, 239, 230, 0.2);
+}
+
+.frame-control:focus-visible {
+  outline: 3px solid var(--frame-focus);
+  outline-offset: 2px;
+}
+
+.frame-control-main {
+  width: 56px;
+  height: 56px;
+  background: var(--frame-paper);
+  color: var(--frame-ink);
+}
+
+.frame-control-main:hover {
+  background: #fff;
+}
+
+.frame-control:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.frame-control:disabled:hover {
+  background: transparent;
+}
+
+/* Kein Foto ließ sich laden: ein ruhiger Satz statt eines schwarzen Bildschirms. */
+.frame-status {
+  position: absolute;
+  inset: 50% 24px auto;
+  z-index: 2;
+  margin: 0 auto;
+  max-width: 28rem;
+  transform: translateY(-50%);
+  color: var(--frame-light-soft);
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .frame-controls {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .frame-control {
+    width: 44px;
+    height: 44px;
+  }
+
+  .frame-controls-group + .frame-controls-group {
+    padding-left: 4px;
+  }
+}
+
+/* --- Meldungen (keine Fotos, beendet, ruht) ------------------------------------------------------------------------ */
+
+.frame-message {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.frame-message-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  max-width: 30rem;
+  padding: clamp(24px, 4vw, 40px);
+  background: var(--frame-paper);
+  color: var(--frame-ink);
+  text-align: center;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  transform: rotate(-0.8deg);
+  user-select: text;
+}
+
+.frame-message-card h1 {
+  color: var(--frame-ink);
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+}
+
+.frame-message-card p {
+  margin: 0;
+  color: var(--frame-ink-soft);
+}
+
+.frame-message-card .btn {
+  margin-top: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame-img.is-moving {
+    animation: none;
+  }
+
+  .frame-layer {
+    transition-duration: 700ms;
+  }
+
+  .frame-controls {
+    transition: opacity 200ms ease;
+    transform: translate(-50%, 0);
+  }
+}

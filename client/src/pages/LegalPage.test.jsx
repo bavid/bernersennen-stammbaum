@@ -264,4 +264,17 @@ describe('LegalPage – /datenschutz, Anfragen und Benachrichtigungen', () => {
     // "Rechte und Kontakt" bleibt der letzte Abschnitt
     expect(headings[headings.length - 1]).toBe('Rechte und Kontakt')
   })
+  test('Digitaler Bilderrahmen: was ein Rahmen-Link zeigt, dass er sich beenden lässt, kein Tracking', async () => {
+    config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
+    await render('datenschutz')
+
+    const headings = [...container.querySelectorAll('h2')].map((h) => h.textContent)
+    expect(headings).toContain('Digitaler Bilderrahmen')
+    expect(headings.indexOf('Digitaler Bilderrahmen')).toBeLessThan(headings.indexOf('Rechte und Kontakt'))
+    expect(container.textContent).toMatch(/nur die Fotos\s+eurer eigenen Tiere und eurer eigenen Erinnerungen/)
+    expect(container.textContent).toMatch(/nie die Texte eurer Erinnerungen/)
+    expect(container.textContent).toMatch(/Private Erinnerungen erscheinen dort nur/)
+    expect(container.textContent).toMatch(/Mit „Beenden“ gilt ein Rahmen sofort nicht mehr/)
+    expect(container.textContent).toMatch(/kein Tracking/)
+  })
 })

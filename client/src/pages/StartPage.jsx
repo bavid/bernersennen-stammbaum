@@ -6,11 +6,13 @@ import Lightbox from '../components/Lightbox.jsx'
 import FeedItem from '../components/feed/FeedItem.jsx'
 import ForYou from '../components/start/ForYou.jsx'
 import MyFamiliesCard from '../components/start/MyFamiliesCard.jsx'
+import FrameStartCard from '../components/start/FrameStartCard.jsx'
 import StartComposer from '../components/start/StartComposer.jsx'
 import StartSoon from '../components/start/StartSoon.jsx'
 import { HOME_LABEL, areaContext } from '../lib/areas.js'
 import { nextAnniversary } from '../lib/companions.js'
 import { nextTermin } from '../lib/notes.js'
+import { firstFramePhoto } from '../lib/bilderrahmen.js'
 import { hasRole } from '../lib/roles.js'
 
 // So viele Beiträge lädt "Neuigkeiten" (GET /api/timeline/recent, höchstens 20) - sichtbar sind zuerst START_FEED_VISIBLE,
@@ -90,6 +92,7 @@ export default function StartPage({ family, onFamilyChange }) {
   const canWrite = hasRole(family, 'mitglied')
   const anniversary = useMemo(() => nextAnniversary(dogs || []), [dogs])
   const termin = useMemo(() => nextTermin(notes), [notes])
+  const framePhoto = useMemo(() => firstFramePhoto(dogs, entries), [dogs, entries])
 
   return (
     <div className="page start-page">
@@ -109,6 +112,7 @@ export default function StartPage({ family, onFamilyChange }) {
         {atHome && (
           <div className="start-side">
             <MyFamiliesCard memberships={family.memberships} />
+            {framePhoto && <FrameStartCard photo={framePhoto} />}
           </div>
         )}
       </div>

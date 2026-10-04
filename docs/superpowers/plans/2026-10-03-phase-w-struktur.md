@@ -82,3 +82,34 @@ ein Leben lang, Geschichte zieht vom Tierheim mit, Familie über Haushalte, alle
 │ Erster Schnee!  [Foto][Foto]     3 Kommentare            │   │ Familie Sonnenhang   3 neu  │
 └──────────────────────────────────────────────────────────┘  └─────────────────────────────┘
 ```
+
+## Digitaler Bilderrahmen (umgesetzt 04.10.)
+
+**Wunsch (Betreiber):** „digitaler Bilderrahmen – revolving gallery“. Ein Tablet, altes Handy oder der Fernseher zeigt
+endlos die Fotos eurer Tiere – auch bei Oma, ohne dass sie sich anmeldet.
+
+- **Diashow** `/bilderrahmen` (im eigenen Zuhause, AreaGate `home`): Vollbild-Knopf, dunkler warmer Grund mit unscharfer
+  Kopie des Fotos, auf großen Bildschirmen weißer Polaroid-Rand, Überblenden und sanfter Schwenk/Zoom –
+  `prefers-reduced-motion` → nur Überblenden. Wechsel 5/10/30/60 s; Bildunterschrift (Name · Datum, in Handschrift
+  „Heute vor 3 Jahren“ / „In Erinnerung“), Uhr + Datum, nachts dunkler (22–7 Uhr), „Heute vor … Jahren“ zuerst, mischen.
+  Steuerung auf Tippen/Maus (nach 4 s weg): Zurück · Pause/Weiter · Vor · Vollbild · Einstellungen · Beenden; Tasten
+  ←/→, Leertaste, Esc. Screen Wake Lock (neu nach `visibilitychange`), nächstes Foto vorgeladen, kaputte Fotos fallen
+  still heraus, Liste alle 30 Minuten neu. Auswahl (Tiere, Zeitraum) und Anzeige merkt sich das Gerät (localStorage).
+- **Fotos** `GET /api/bilderrahmen/fotos?tiere=1,2&zeitraum=alle|jahr|monat` → `{ fotos: [{ url, tierId, tierName,
+  datum, eintragId, inErinnerung }], tiere }` – genau, was der aktive Bereich sieht (`VISIBLE_DOGS_SQL`/
+  `VISIBLE_ENTRY_SQL`, private Erinnerungen nur im eigenen Zuhause), höchstens 300 („Heute vor“ und Tierfotos immer, dann
+  die neuesten 200, dazu zufällig ältere), `no-store`. Gast 403, Demo liest.
+- **Rahmen-Link für ein anderes Gerät** (Einstellungen › Mein Zuhause, höchstens 5): Name, eigene Tiere, Zeitraum,
+  Anzeige, „auch private Erinnerungen“ (Vorgabe aus). Token 256 Bit, gespeichert nur als HMAC (eigener Schlüssel aus
+  `CODE_PEPPER`), einmal gezeigt als `/rahmen#TOKEN` + QR-Code; Liste mit „zuletzt aktiv“, umbenennen, beenden (sofort
+  ungültig). Erneuert das Zuhause seinen Schlüssel (`auth_epoch`), enden alle Rahmen-Links. Tabelle `rahmen_geraete`
+  (`server/lib/rahmenGeraete.js`, legt sich selbst an).
+- **Gerät** `/rahmen`: Token aus dem `#` einmal in localStorage, Adresse sofort bereinigt; `GET /api/rahmen/fotos` mit
+  Header `X-Rahmen-Token` (öffentlich, eigenes Limit je IP, `no-store`, `noindex`, kein Referrer) – nur eigene Tiere und
+  eigene Erinnerungen des Zuhauses, nur Name und Datum. Fotos über signierte Adressen `/rahmen-foto/<datei>?g=&exp=&sig=`
+  (HMAC über Datei, Gerät, Ablauf; 90–100 min gültig); jede Auslieferung prüft zusätzlich, ob das Gerät noch gilt und das
+  Foto noch zur Auswahl gehört. Beendet/unbekannt → „Dieser Bilderrahmen wurde beendet“.
+- **Einstiege:** Konto-Menü „Bilderrahmen“, Karte auf Start (nur mit Fotos), Tierprofil ⋯ „Als Bilderrahmen zeigen“
+  (`?tier=`). Datenschutz: Abschnitt „Digitaler Bilderrahmen“.
+- **Offen:** Caveat als Handschrift einbinden (bis dahin Systemschrift), Diashow aus einer Familie heraus
+  (`/familien/:id`, der Server kann es schon), Fotos aus „Mit dabei“ (gespiegelte Erinnerungen) in der Diashow.

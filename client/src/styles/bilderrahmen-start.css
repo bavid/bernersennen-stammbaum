@@ -1,0 +1,27 @@
+/* Start › Karte „Bilderrahmen“ (components/start/FrameStartCard.jsx): ein kleines Polaroid mit einem eurer Fotos. */
+
+.start-frame-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.start-frame-body p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.start-frame-polaroid {
+  flex: none;
+  padding: 5px 5px 14px;
+  background: #fffdf9;
+  box-shadow: var(--shadow-card);
+  transform: rotate(-3deg);
+}
+
+.start-frame-polaroid img {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+}

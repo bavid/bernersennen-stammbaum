@@ -154,6 +154,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
 
   const menuItems = [
     ownHomeAnimal && { key: 'wer', label: `Wer sieht ${name}?`, icon: 'users', onSelect: () => goTo('infos', SHARE_PANEL_TITLE_ID) },
+    // Digitaler Bilderrahmen, nur mit den Fotos dieses Tiers (pages/BilderrahmenPage.jsx ?tier=).
+    ownHomeAnimal && { key: 'bilderrahmen', label: 'Als Bilderrahmen zeigen', icon: 'frame', onSelect: () => navigate(`/bilderrahmen?tier=${dog.id}`) },
     canTakeOver && { key: 'uebernehmen', label: 'In „Mein Zuhause“ übernehmen', icon: 'home', onSelect: () => goTo('infos', TAKE_OVER_ID) },
     { key: 'link', label: 'Link kopieren', icon: 'copy', onSelect: copyLink }
   ].filter(Boolean)

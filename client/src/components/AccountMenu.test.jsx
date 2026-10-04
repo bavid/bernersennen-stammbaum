@@ -80,8 +80,8 @@ describe('AccountMenu (Phase W)', () => {
   test('Einträge im eigenen Zuhause, dazu klein Impressum und Datenschutz', async () => {
     await render(<AccountMenu family={atHome} onInvite={() => {}} onLogout={() => {}} />)
     act(() => trigger().click())
-    expect(labels()).toEqual(['Einstellungen', 'Einladen', 'Fotocollage', 'Hilfe & Kontakt', 'Abmelden', 'Impressum', 'Datenschutz'])
-    expect(items().map((item) => item.getAttribute('href'))).toEqual(['/einstellungen', null, '/collage', '/admin-schreiben', null, '/impressum', '/datenschutz'])
+    expect(labels()).toEqual(['Einstellungen', 'Einladen', 'Fotocollage', 'Bilderrahmen', 'Hilfe & Kontakt', 'Abmelden', 'Impressum', 'Datenschutz'])
+    expect(items().map((item) => item.getAttribute('href'))).toEqual(['/einstellungen', null, '/collage', '/bilderrahmen', '/admin-schreiben', null, '/impressum', '/datenschutz'])
   })
 
   test('zu Besuch Einladen aus dem eigenen Zuhause (Phase W, Schritt 2); klassischer Login mit Mitglieder; Demo zeigt alles', async () => {
@@ -100,7 +100,7 @@ describe('AccountMenu (Phase W)', () => {
 
     await render(<AccountMenu family={{ ...atHome, isDemo: true }} onInvite={() => {}} onLogout={() => {}} />)
     act(() => trigger().click())
-    expect(labels()).toEqual(['Einstellungen', 'Einladen', 'Fotocollage', 'Hilfe & Kontakt', 'Abmelden', 'Impressum', 'Datenschutz'])
+    expect(labels()).toEqual(['Einstellungen', 'Einladen', 'Fotocollage', 'Bilderrahmen', 'Hilfe & Kontakt', 'Abmelden', 'Impressum', 'Datenschutz'])
   })
 
   test('Tastatur: Pfeile wandern (rundum), Pos1/Ende springen, Escape schließt und gibt den Fokus zurück', async () => {
@@ -179,6 +179,7 @@ describe('Menü am Handy (MenuSlotButton + AccountSheet)', () => {
       'Einstellungen',
       'Einladen',
       'Fotocollage',
+      'Bilderrahmen',
       'Hilfe & Kontakt',
       'Abmelden'
     ])

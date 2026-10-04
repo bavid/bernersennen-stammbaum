@@ -39,6 +39,8 @@ const CollagePage = lazy(() => import('./pages/CollagePage.jsx'))
 const MembersPage = lazy(() => import('./pages/MembersPage.jsx'))
 // Einstellungen (Calm-down-Runde): Darstellung, Familien, Mein Zuhause - eigener Chunk.
 const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx'))
+// Digitaler Bilderrahmen (Diashow im eigenen Zuhause) - eigener Chunk, wie die Fotocollage.
+const BilderrahmenPage = lazy(() => import('./pages/BilderrahmenPage.jsx'))
 
 // Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
 function RedirectTierUrl() {
@@ -217,6 +219,7 @@ function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/einstellungen" element={<SettingsRoute family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
       <Route path="/collage" element={atHome(<CollagePage family={family} />)} />
+      <Route path="/bilderrahmen" element={atHome(<BilderrahmenPage />)} />
       <Route path="/umgebung" element={<NearbyRedirect />} />
       <Route path="/entdecken" element={atHome(<DiscoverPage />)} />
       <Route path="*" element={<ToStart family={family} />} />

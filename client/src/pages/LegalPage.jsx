@@ -5,6 +5,7 @@ import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import PrivacyRequests from '../components/PrivacyRequests.jsx'
 import PrivacyConnections from '../components/PrivacyConnections.jsx'
+import PrivacyBilderrahmen from '../components/PrivacyBilderrahmen.jsx'
 
 const NO_LEGAL_HINT = 'Die Betreiberangaben werden vor dem Start ergänzt.'
 
@@ -166,6 +167,9 @@ function Datenschutz({ legal }) {
 
       {/* Audit V7a: Besuche, "Erlebt mit", Telegram für Partner, Hinweis-Band, Sicherungen. */}
       <PrivacyConnections />
+
+      {/* Digitaler Bilderrahmen: Diashow und Rahmen-Link für ein anderes Gerät. */}
+      <PrivacyBilderrahmen />
 
       <h2>Rechte und Kontakt</h2>
       <p>

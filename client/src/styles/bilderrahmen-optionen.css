@@ -1,0 +1,75 @@
+/* Digitaler Bilderrahmen - Auswahl und Anzeige: im Einstellungs-Blatt der Diashow (FrameSettings, FrameAuswahl) und beim
+   Einrichten eines Rahmen-Links in Einstellungen › Mein Zuhause (RahmenGeraetForm). In den Farben der App. */
+
+.frame-sheet {
+  user-select: text;
+}
+
+.frame-settings {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.frame-settings-group {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.frame-settings-group legend {
+  margin-bottom: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.frame-choice-row,
+.frame-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.frame-choice,
+.frame-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.frame-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.frame-choice.is-selected,
+.frame-chip.is-selected {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.frame-choice:focus-within,
+.frame-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.frame-chip-note {
+  font-weight: 500;
+  opacity: 0.75;
+}

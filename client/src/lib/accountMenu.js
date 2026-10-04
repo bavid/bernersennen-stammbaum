@@ -27,6 +27,8 @@ export function accountMenuItems(family) {
     { key: 'einstellungen', label: 'Einstellungen', icon: 'settings', to: '/einstellungen' },
     canInvite(family) && { key: 'einladen', label: 'Einladen', icon: 'send', action: 'invite' },
     { key: 'collage', label: 'Fotocollage', icon: 'collage', to: '/collage' },
+    // Digitaler Bilderrahmen: die Fotos eurer Tiere als Diashow (spielt wie die Fotocollage im eigenen Zuhause).
+    { key: 'bilderrahmen', label: 'Bilderrahmen', icon: 'frame', to: '/bilderrahmen' },
     areaContext(family) === 'classic' && { key: 'mitglieder', label: 'Mitglieder', icon: 'users', to: '/mitglieder' },
     { key: 'hilfe', label: 'Hilfe & Kontakt', icon: 'message', to: '/admin-schreiben' },
     { key: 'abmelden', label: 'Abmelden', icon: 'logout', action: 'logout' }

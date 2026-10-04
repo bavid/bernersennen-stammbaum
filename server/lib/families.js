@@ -111,6 +111,12 @@ function deleteFamily(db, familyId) {
        WHERE @familyId IN (issued_by_family_id, join_family_id, redeemed_by_family_id, visit_host_family_id, created_by_family_id)`
     ).run({ familyId })
 
+    // Digitaler Bilderrahmen: Rahmen-Links des Zuhauses (lib/rahmenGeraete.js legt die Tabelle beim ersten require an -
+    // Skripte ohne die App kennen sie womöglich noch nicht).
+    if (db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'rahmen_geraete'").get()) {
+      db.prepare('DELETE FROM rahmen_geraete WHERE family_id = ?').run(familyId)
+    }
+
     db.prepare('DELETE FROM families WHERE id = ?').run(familyId)
 
     if (affectedBatchIds.length) {

@@ -37,6 +37,8 @@ const discoverRoutes = require('./routes/discover')
 const partnerAreaRoutes = require('./routes/partnerArea')
 const redirectRoutes = require('./routes/redirect')
 const seoRoutes = require('./routes/seo')
+const bilderrahmenRoutes = require('./routes/bilderrahmen')
+const { rahmenApiRouter, rahmenFotoRouter, rahmenPageHeaders } = require('./routes/rahmen')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
 const { denyAdminViewWrites } = require('./middleware/auth')
@@ -201,7 +203,16 @@ function createApp() {
   app.use('/api/discover', discoverRoutes)
   app.use('/api/partner-area', partnerAreaRoutes)
   app.use('/api/uploads', uploadsRoutes)
+  // Digitaler Bilderrahmen: Diashow und Rahmen-Links (angemeldet) und die Fotoliste eines Rahmen-Geräts (ohne Sitzung,
+  // Header X-Rahmen-Token) - routes/bilderrahmen.js, routes/rahmen.js.
+  app.use('/api/bilderrahmen', bilderrahmenRoutes)
+  app.use('/api/rahmen', rahmenApiRouter)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))
+
+  // Fotos eines Rahmen-Geräts über signierte, kurzlebige Adressen (routes/rahmen.js) und die Seite /rahmen selbst: beide
+  // noindex und ohne Referrer - vor serveClient(), sonst beantwortet der Catch-all die Fotos mit index.html.
+  app.use('/rahmen-foto', photoLimiter, rahmenFotoRouter)
+  app.get('/rahmen', rahmenPageHeaders)
 
   // /r/:type/:id (Klickzählung, routes/redirect.js): unter apiLimiter wie der Rest der API, aber AUSSERHALB
   // von /api - der Link kann ohne Login/Session in einem neuen Tab geöffnet werden. Muss vor serveClient()

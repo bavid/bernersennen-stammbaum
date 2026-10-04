@@ -51,6 +51,8 @@ const PartnerInfoPage = lazy(() => import('./pages/PartnerInfoPage.jsx'))
 // Tab starten - dort landet man auf /demo-start (DemoStartPage), das POST /api/demo ruft. Beides eigene Chunks.
 const AdminPresentPage = lazy(() => import('./pages/AdminPresentPage.jsx'))
 const DemoStartPage = lazy(() => import('./pages/DemoStartPage.jsx'))
+// Digitaler Bilderrahmen auf einem anderen Gerät (/rahmen#TOKEN): öffentlich, ohne Anmeldung - eigener Chunk.
+const RahmenPage = lazy(() => import('./pages/RahmenPage.jsx'))
 
 // /admin/gutscheine/<stapel-id>/druck - die Id ist eine Zahl (server/lib/validate.js cleanId), alles andere
 // bleibt beim Admin-Dashboard.
@@ -64,6 +66,9 @@ const ADMIN_PRESENT_RE = /^\/admin\/praesentation\/?$/
 
 // /demo-start?as=…&slug=…&ziel=… - Einstieg hinter jeder Kachel des Präsentationsmodus (lib/present.js).
 const DEMO_START_PATH = '/demo-start'
+
+// /rahmen#TOKEN - Bilderrahmen auf einem anderen Gerät (RahmenPage; dieselbe Adresse wie lib/rahmenGeraet.js RAHMEN_PATH).
+const RAHMEN_PATH = '/rahmen'
 
 // /partner-drucken/<stapel-id> - Druckseite eines Kunden-Gutschein-Stapels aus dem Partner-Profil (Reiter
 // "Kunden-Gutscheine"); nur mit Sitzung in einem Partner- oder Tierheim-Bereich, sonst Login bzw. Startseite.
@@ -483,6 +488,18 @@ export default function App() {
       <ThemeProvider themeId="standard">
         <Suspense fallback={<RouteFallback />}>
           <AdminViewStartPage familyId={adminViewId} onEntered={handleEnterAdminView} />
+        </Suspense>
+      </ThemeProvider>
+    )
+  }
+
+  // Bilderrahmen auf einem anderen Gerät (z. B. Omas Tablet): unabhängig von jeder Sitzung, sofort ohne auf /me zu warten -
+  // die Seite holt ihre Fotos allein mit dem Token des Rahmen-Links (pages/RahmenPage.jsx).
+  if (pathname.replace(/\/+$/, '').toLowerCase() === RAHMEN_PATH) {
+    return (
+      <ThemeProvider themeId="standard">
+        <Suspense fallback={<RouteFallback />}>
+          <RahmenPage />
         </Suspense>
       </ThemeProvider>
     )

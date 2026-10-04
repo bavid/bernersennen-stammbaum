@@ -469,6 +469,22 @@ export const api = {
   createBreedingEvent: (payload) => request('/breeding', json('POST', payload)),
   deleteBreedingEvent: (id) => request(`/breeding/${id}`, { method: 'DELETE' }),
 
+  // Digitaler Bilderrahmen (server/routes/bilderrahmen.js): die Fotos der Diashow im aktiven Bereich ({ fotos, tiere }) und
+  // die Rahmen-Links für ein anderes Gerät ({ geraete, max }). Anlegen antwortet { geraet, token } - das Token nur dieses
+  // eine Mal, es gehört danach ausschließlich hinter das # des Links (lib/rahmenGeraet.js rahmenLink).
+  bilderrahmenFotos: ({ tiere = [], zeitraum = 'alle', privat = false } = {}) => {
+    const params = new URLSearchParams()
+    if (tiere.length) params.set('tiere', tiere.join(','))
+    if (zeitraum !== 'alle') params.set('zeitraum', zeitraum)
+    if (privat) params.set('privat', '1')
+    const query = params.toString()
+    return request(`/bilderrahmen/fotos${query ? `?${query}` : ''}`)
+  },
+  rahmenGeraete: () => request('/bilderrahmen/geraete'),
+  createRahmenGeraet: (payload) => request('/bilderrahmen/geraete', json('POST', payload)),
+  updateRahmenGeraet: (id, payload) => request(`/bilderrahmen/geraete/${encodeURIComponent(id)}`, json('PUT', payload)),
+  revokeRahmenGeraet: (id) => request(`/bilderrahmen/geraete/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
   upload: (file) => {
     const formData = new FormData()
     formData.append('file', file)

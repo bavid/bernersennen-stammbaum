@@ -187,6 +187,11 @@ module.exports = {
   contactRateLimit: Number(process.env.CONTACT_RATE_LIMIT) || 5,
   // Gutschein-/Partner-Anfragen (Phase N Task 1): Anfragen pro IP je Stunde - öffentlich ohne Login
   anfrageRateLimit: Number(process.env.ANFRAGE_RATE_LIMIT) || 3,
+  // Digitaler Bilderrahmen auf einem anderen Gerät (routes/rahmen.js): Fotolisten pro IP je 15 Minuten - öffentlich ohne Login
+  rahmenRateLimit: Number(process.env.RAHMEN_RATE_LIMIT) || 60,
+  // Diashow im eigenen Zuhause (routes/bilderrahmen.js GET /fotos): Fotolisten je Bereich alle 5 Minuten - die Seite holt
+  // sie nur beim Öffnen, bei einer neuen Auswahl und alle 30 Minuten
+  bilderrahmenRateLimit: Number(process.env.BILDERRAHMEN_RATE_LIMIT) || 30,
   // Anfragen pro IP je 5 Minuten (API bzw. Fotos) und Schreibzugriffe pro Rudel je 10 Minuten
   apiRateLimit: Number(process.env.API_RATE_LIMIT) || 900,
   photoRateLimit: Number(process.env.PHOTO_RATE_LIMIT) || 3000,

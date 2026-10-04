@@ -8,6 +8,14 @@ export function readSetting(key, fallback) {
   }
 }
 
+export function removeSetting(key) {
+  try {
+    window.localStorage.removeItem(`chronik.${key}`)
+  } catch {
+    // ohne Speicher gibt es nichts zu entfernen
+  }
+}
+
 export function writeSetting(key, value) {
   try {
     window.localStorage.setItem(`chronik.${key}`, JSON.stringify(value))

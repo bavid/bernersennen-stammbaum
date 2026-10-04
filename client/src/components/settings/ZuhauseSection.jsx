@@ -5,6 +5,7 @@ import { useToast } from '../Toast.jsx'
 import Icon from '../Icon.jsx'
 import ThemePicker from '../ThemePicker.jsx'
 import HomeSwitchNotice from './HomeSwitchNotice.jsx'
+import RahmenGeraete from './RahmenGeraete.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
 import VisitSection from '../visits/VisitSection.jsx'
 
@@ -64,6 +65,8 @@ export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
         <p className="muted">Wen ihr besucht und wer bei euch zu Gast ist. Einen Code von Freunden gebt ihr unter „{words.groups}“ ein.</p>
         <VisitSection onFamilyChange={onFamilyChange} />
       </section>
+      {/* Digitaler Bilderrahmen: Rahmen-Links für Omas Tablet & Co., ohne Anmeldung, jederzeit zu beenden. */}
+      <RahmenGeraete />
     </div>
   )
 }
