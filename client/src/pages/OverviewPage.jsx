@@ -7,7 +7,6 @@ import AnimalCreateModal from '../components/AnimalCreateModal.jsx'
 import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import ActivityFeed from '../components/ActivityFeed.jsx'
-import FamilySettingsModal from '../components/FamilySettingsModal.jsx'
 import OffspringSection from '../components/OffspringSection.jsx'
 import OverviewStats from '../components/OverviewStats.jsx'
 import FamiliesView from '../components/families/FamiliesView.jsx'
@@ -22,7 +21,7 @@ import { isOwnHome, isVisit } from '../lib/visits.js'
 import { buildFamilyGroups, familyAnimals, familyStat, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
 import { hasSiblingLitters } from '../lib/litters.js'
 
-export default function OverviewPage({ family, onFamilyChange, onInvite }) {
+export default function OverviewPage({ family, onInvite }) {
   const { theme, words } = useTheme()
   const [dogs, setDogs] = useState(null)
   const [allDogs, setAllDogs] = useState([])
@@ -30,7 +29,6 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const [activity, setActivity] = useState(null)
   const [error, setError] = useState(null)
   const animalCreate = useAnimalCreate()
-  const [settingsOpen, setSettingsOpen] = useState(false)
   // Rollen (Phase R): in einer Familie legt ab Mitglied Tiere an, lädt ab Stellvertretung ein - außerhalb
   // (eigenes Zuhause) darf man alles.
   const inGroup = family.art === 'rudel'
@@ -88,32 +86,8 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
       <header className={familiesView ? 'page-hero families-hero' : 'page-hero'}>
         <div>
           <span className="eyebrow">{words.treeLabel}</span>
-          <div className="page-title-row">
-            <h1>{family.name}</h1>
-            {/* Calm-down-Runde: Name, Auftritt und Zugang des eigenen Zuhauses stehen in den Einstellungen ("Mein Zuhause") -
-                der Stift führt dorthin. In einer Familie bleibt der Dialog (Name, Aussehen, Mitglieder, Verlassen). */}
-            {!visiting && isOwnHome(family) && (
-              <Link
-                to="/einstellungen?bereich=zuhause"
-                className="icon-btn title-edit"
-                aria-label="Einstellungen: Mein Zuhause"
-                title="Einstellungen: Mein Zuhause"
-              >
-                <Icon name="edit" />
-              </Link>
-            )}
-            {!visiting && !isOwnHome(family) && (
-              <button
-                type="button"
-                className="icon-btn title-edit"
-                onClick={() => setSettingsOpen(true)}
-                aria-label={words.groupSettings}
-                title={words.groupSettings}
-              >
-                <Icon name="edit" />
-              </button>
-            )}
-          </div>
+          {/* Phase W, Schritt 2: kein Stift mehr - Name und Aussehen stehen in den Einstellungen bzw. im Profil. */}
+          <h1>{family.name}</h1>
           <p className="page-lede">{canWrite ? theme.texts.overviewLede : theme.texts.overviewLedeReadOnly}</p>
           {inGroup && (
             <p className="hero-hint">
@@ -184,8 +158,6 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
       )}
 
       {dogs && dogs.length > 0 && mode === 'families' && <FamiliesView groups={groups} onOpenArea={openArea} />}
-
-      <FamilySettingsModal open={settingsOpen} family={family} onFamilyChange={onFamilyChange} onClose={() => setSettingsOpen(false)} />
 
       <AnimalCreateModal creator={animalCreate} allDogs={allDogs} ownFamilyId={family.id} />
     </div>

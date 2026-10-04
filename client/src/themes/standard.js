@@ -34,7 +34,7 @@ export default {
     newGroupName: 'Neuer Name',
     groupNamePlaceholder: 'z. B. Familie Sonnenhang',
     groupPassword: 'Familien-Passwort',
-    groupSettings: 'Familie einstellen',
+    groupSettings: 'Familie verwalten',
     groupsDative: 'Familien',
     // Familienbande 2: Überschrift der Gruppe im Bereichswechsler
     groups: 'Familien',

@@ -152,11 +152,11 @@ describe('GroupPage (Phase W)', () => {
     expect([...container.querySelectorAll('h1')].map((h) => h.textContent)).toEqual(['Familie Sonnenhang'])
   })
 
-  test('"Familie verwalten" öffnet den Dialog der Familie', async () => {
+  test('"Familie verwalten" führt zu Einstellungen › Familien › [Familie] - kein Dialog mehr', async () => {
     await render()
-    act(() => [...container.querySelectorAll('button')].find((button) => button.textContent === 'Familie verwalten').click())
-    const dialog = container.querySelector('dialog[open]')
-    expect(dialog.querySelector('#modal-title').textContent).toBe('Familie einstellen')
+    const link = [...container.querySelectorAll('a')].find((a) => a.textContent === 'Familie verwalten')
+    expect(link.getAttribute('href')).toBe('/einstellungen?bereich=familien&familie=5')
+    expect(container.querySelector('.family-settings')).toBeNull()
   })
 })
 

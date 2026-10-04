@@ -1,4 +1,5 @@
-import { Suspense, lazy, useMemo, useState } from 'react'
+import { Suspense, lazy, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
 import TabBar from '../components/TabBar.jsx'
@@ -6,7 +7,6 @@ import RouteFallback from '../components/RouteFallback.jsx'
 import AnimalsTabs from '../components/animals/AnimalsTabs.jsx'
 import CompanionsView from '../components/animals/CompanionsView.jsx'
 import AnimalCreateModal from '../components/AnimalCreateModal.jsx'
-import FamilySettingsModal from '../components/FamilySettingsModal.jsx'
 import GroupPosts from '../components/group/GroupPosts.jsx'
 import PinboardPage from './PinboardPage.jsx'
 import useAreaAnimals from '../hooks/useAreaAnimals.js'
@@ -14,6 +14,7 @@ import useAnimalCreate from '../hooks/useAnimalCreate.js'
 import useTabParam from '../hooks/useTabParam.js'
 import { familyAnimals } from '../lib/familyGroups.js'
 import { hasRole } from '../lib/roles.js'
+import { familySettingsRoute } from '../lib/areas.js'
 import { isVisit } from '../lib/visits.js'
 
 // Mitglieder & Rollen (Phase R) kommen wie bisher erst bei Bedarf als eigener Chunk.
@@ -59,7 +60,6 @@ export default function GroupPage({ family, onFamilyChange }) {
   const [current, select] = useTabParam(GROUP_TAB_PARAM, tabs, { drop: GROUP_TAB_DROP })
   const animals = useAreaAnimals()
   const creator = useAnimalCreate()
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const canWrite = !visiting && hasRole(family, 'mitglied')
   const meta = groupMeta(animals.dogs, words)
 
@@ -73,10 +73,11 @@ export default function GroupPage({ family, onFamilyChange }) {
         </div>
         {!visiting && (
           <div className="hero-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setSettingsOpen(true)}>
+            {/* Phase W, Schritt 2: "Familie verwalten" ist Einstellungen › Familien › [Familie] - kein Dialog mehr. */}
+            <Link to={familySettingsRoute(family.id)} className="btn btn-ghost">
               <Icon name="settings" />
-              {words.group} verwalten
-            </button>
+              {words.groupSettings}
+            </Link>
           </div>
         )}
       </header>
@@ -119,9 +120,6 @@ export default function GroupPage({ family, onFamilyChange }) {
         )}
       </div>
 
-      {!visiting && (
-        <FamilySettingsModal open={settingsOpen} family={family} onFamilyChange={onFamilyChange} onClose={() => setSettingsOpen(false)} />
-      )}
       <AnimalCreateModal creator={creator} allDogs={animals.allDogs} ownFamilyId={family.id} />
     </div>
   )

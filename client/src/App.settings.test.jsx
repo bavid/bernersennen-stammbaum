@@ -4,10 +4,12 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { me } = vi.hoisted(() => ({ me: vi.fn() }))
+const { me, view, familyMembers } = vi.hoisted(() => ({ me: vi.fn(), view: vi.fn(), familyMembers: vi.fn() }))
 vi.mock('./api', () => ({
   api: {
     me,
+    view,
+    familyMembers,
     logout: vi.fn(() => Promise.resolve()),
     listDogs: vi.fn(() => Promise.resolve([])),
     listAllDogs: vi.fn(() => Promise.resolve([])),
@@ -81,6 +83,8 @@ afterEach(() => {
   container?.remove()
   container = null
   me.mockReset()
+  view.mockReset()
+  familyMembers.mockReset()
 })
 
 describe('App – Einstellungen (Calm-down-Runde)', () => {
@@ -133,5 +137,39 @@ describe('App – Einstellungen (Calm-down-Runde)', () => {
     await render('/einstellungen')
     expect(container.querySelector('.account-menu')).toBeNull()
     expect(container.querySelector('main h1')?.textContent).not.toBe('Einstellungen')
+  })
+})
+
+// Phase W, Schritt 2: Einstellungen › Familien › [Familie] spielt in der Familie - das Gate der Route wechselt dorthin.
+describe('App – Familie verwalten in den Einstellungen', () => {
+  const group = { id: 3, name: 'Familie Sonnenhang', theme: 'standard', rolle: 'leitung' }
+  const meWithGroup = { ...atHome, memberships: [group], besuche: [{ id: 9, name: 'Zuhause Möwenweg' }] }
+
+  test('?familie=<Mitgliedschaft> wechselt genau einmal in die Familie und zeigt „Familie verwalten“', async () => {
+    me.mockResolvedValue(meWithGroup)
+    view.mockResolvedValue({ ...meWithGroup, id: 3, name: 'Familie Sonnenhang', art: 'rudel' })
+    familyMembers.mockResolvedValue({ familyId: 3, name: 'Familie Sonnenhang', ichBin: 'leitung', mitglieder: [] })
+    await render('/einstellungen?bereich=familien&familie=3')
+    await waitForMainHeading('Einstellungen')
+    for (let i = 0; i < 40 && !container.querySelector('.family-manage-title'); i += 1) {
+      await act(async () => new Promise((resolve) => setTimeout(resolve, 10)))
+    }
+
+    expect(view).toHaveBeenCalledTimes(1)
+    expect(view).toHaveBeenCalledWith(3)
+    expect(container.querySelector('.family-manage-title').textContent).toContain('Familie Sonnenhang')
+  })
+
+  test('ein besuchtes Zuhause oder eine fremde Id in ?familie= bleibt im eigenen Zuhause - ohne Wechsel', async () => {
+    for (const id of [9, 77]) {
+      me.mockResolvedValue(meWithGroup)
+      await render(`/einstellungen?bereich=familien&familie=${id}`)
+      await waitForMainHeading('Einstellungen')
+      expect(view).not.toHaveBeenCalled()
+      expect(container.querySelector('.family-manage')).toBeNull()
+      act(() => root.unmount())
+      root = null
+      container.remove()
+    }
   })
 })

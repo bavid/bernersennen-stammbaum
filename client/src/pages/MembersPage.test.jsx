@@ -167,8 +167,12 @@ describe('MembersPage – „Wer sieht was?“ und Liste (für alle Rollen)', ()
   })
 })
 
+// Phase W, Schritt 2: Leitung übergeben, Schlüssel, Verlassen und Auflösen stehen in Einstellungen › Familien › [Familie]
+// (components/settings/FamilyManage.test.jsx) - der Reiter "Mitglieder" zeigt nur noch, wer dazugehört, und die Einladungen.
+const LEITUNG_TOOLS = ['Leitung übergeben', 'Familie auflösen', 'Schlüssel der Familie erneuern', 'Deine Mitgliedschaft']
+
 describe('MembersPage – was welche Rolle sieht', () => {
-  test('Gast und Mitglied: keine Rollenauswahl, kein Entfernen, keine Einladungen, kein Auflösen, kein Schlüssel - aber "Familie verlassen"', async () => {
+  test('Gast und Mitglied: keine Rollenauswahl, kein Entfernen, keine Einladungen - und keine Verwaltung', async () => {
     for (const role of ['gast', 'mitglied']) {
       familyMembers.mockResolvedValue(payloadAs(role))
       await renderPage(familyAs(role))
@@ -176,11 +180,9 @@ describe('MembersPage – was welche Rolle sieht', () => {
       expect(container.querySelector('.role-select')).toBeNull()
       expect(buttonWith('Entfernen')).toBeUndefined()
       expect(heading('Offene Einladungen')).toBeUndefined()
-      expect(buttonWith('Einladen')).toBeUndefined()
-      expect(heading('Leitung übergeben')).toBeUndefined()
-      expect(heading('Familie auflösen')).toBeUndefined()
-      expect(heading('Schlüssel der Familie erneuern')).toBeUndefined()
-      expect(buttonWith('Familie verlassen')).not.toBeUndefined()
+      expect(buttonWith('Mitglied einladen')).toBeUndefined()
+      for (const title of LEITUNG_TOOLS) expect(heading(title), title).toBeUndefined()
+      expect(buttonWith('Familie verlassen')).toBeUndefined()
 
       act(() => root.unmount())
       root = null
@@ -188,23 +190,20 @@ describe('MembersPage – was welche Rolle sieht', () => {
     }
   })
 
-  test('Stellvertretung: Einladungen mit eingeschränkter Rollenauswahl (Gast/Mitglied) und "Einladen", sonst nichts von der Leitung', async () => {
+  test('Stellvertretung: Einladungen mit eingeschränkter Rollenauswahl (Gast/Mitglied) und "Mitglied einladen"', async () => {
     familyMembers.mockResolvedValue(payloadAs('stellvertretung'))
     await renderPage(familyAs('stellvertretung'))
 
     expect(heading('Offene Einladungen')).not.toBeUndefined()
-    expect(buttonWith('Einladen')).not.toBeUndefined()
+    expect(buttonWith('Mitglied einladen')).not.toBeUndefined()
     const inviteSelect = container.querySelector('.invite-list .role-select')
     expect([...inviteSelect.options].map((o) => o.value)).toEqual(['gast', 'mitglied'])
     expect(buttonWith('Widerrufen')).not.toBeUndefined()
     expect(memberRows()[0].querySelector('.role-select')).toBeNull()
     expect(buttonWith('Entfernen')).toBeUndefined()
-    expect(heading('Leitung übergeben')).toBeUndefined()
-    expect(heading('Familie auflösen')).toBeUndefined()
-    expect(heading('Schlüssel der Familie erneuern')).toBeUndefined()
   })
 
-  test('Leitung: Rollenauswahl je Mitglied (alle vier Rollen), Entfernen für andere, nicht für sich; dazu Übergeben, Einladungen, Auflösen, Schlüssel', async () => {
+  test('Leitung: Rollenauswahl je Mitglied (alle vier Rollen), Entfernen für andere, nicht für sich; Einladungen - die Werkzeuge der Leitung stehen in den Einstellungen', async () => {
     familyMembers.mockResolvedValue(payloadAs('leitung'))
     await renderPage(familyAs('leitung'))
 
@@ -215,14 +214,20 @@ describe('MembersPage – was welche Rolle sieht', () => {
     expect(rows[0].querySelector('.btn-danger')).toBeNull()
     expect([...rows[1].querySelector('.role-select').options].map((o) => o.value)).toEqual(['gast', 'mitglied', 'stellvertretung', 'leitung'])
     expect(rows[1].textContent).toContain('Entfernen')
-    expect(heading('Leitung übergeben')).not.toBeUndefined()
     expect(heading('Offene Einladungen')).not.toBeUndefined()
     expect([...container.querySelector('.invite-list .role-select').options]).toHaveLength(4)
-    expect(heading('Familie auflösen')).not.toBeUndefined()
-    expect(heading('Schlüssel der Familie erneuern')).not.toBeUndefined()
+    for (const title of LEITUNG_TOOLS) expect(heading(title), title).toBeUndefined()
   })
 
-  test('gibt es eine zweite Leitung, bekommt auch die eigene Zeile die Rollenauswahl und "Familie verlassen" bleibt', async () => {
+  test('Reihenfolge: Wer dazugehört, Offene Einladungen, „Wer sieht was?“ zum Aufklappen', async () => {
+    familyMembers.mockResolvedValue(payloadAs('leitung'))
+    await renderPage(familyAs('leitung'))
+
+    expect([...container.querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['Wer dazugehört', 'Offene Einladungen', 'Wer sieht was?'])
+    expect(container.querySelector('details.visibility-card').open).toBe(false)
+  })
+
+  test('gibt es eine zweite Leitung, bekommt auch die eigene Zeile die Rollenauswahl', async () => {
     const payload = payloadAs('leitung')
     payload.mitglieder[1].rolle = 'leitung'
     familyMembers.mockResolvedValue(payload)
@@ -230,31 +235,17 @@ describe('MembersPage – was welche Rolle sieht', () => {
 
     expect(memberRows()[0].querySelector('.role-select')).not.toBeNull()
     expect(container.textContent).not.toContain('Es muss immer eine Leitung geben.')
-    expect(buttonWith('Familie verlassen')).not.toBeUndefined()
-    expect(container.textContent).not.toContain('Du bist die einzige Leitung.')
   })
 
-  test('die einzige Leitung sieht statt "Familie verlassen" den Hinweis mit "Leitung übergeben" und "Familie auflösen"', async () => {
-    familyMembers.mockResolvedValue(payloadAs('leitung'))
-    await renderPage(familyAs('leitung'))
-
-    expect(buttonWith('Familie verlassen')).toBeUndefined()
-    const section = container.querySelector('[aria-labelledby="own-membership-title"]')
-    expect(section.textContent).toContain('Du bist die einzige Leitung.')
-    expect(section.textContent).toContain('Übergib zuerst die Leitung oder löse die Familie auf')
-    expect([...section.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Leitung übergeben', 'Familie auflösen'])
-  })
-
-  test('mit dem gemeinsamen Schlüssel angemeldet (Identität = Familie): keine eigene Mitgliedschaft, kein Familien-Schlüssel, aber Verwalten', async () => {
+  test('mit dem gemeinsamen Schlüssel angemeldet (Identität = Familie): ohne "(ich)", Rollen verwalten - und der Weg zu „Familie verwalten“', async () => {
     const sharedKey = { ...familyAs('leitung'), home: { id: 3, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel' }, memberships: [] }
     familyMembers.mockResolvedValue(payloadAs('leitung'))
     await renderPage(sharedKey)
 
     expect(container.textContent).not.toContain('(ich)')
-    expect(heading('Deine Mitgliedschaft')).toBeUndefined()
-    expect(heading('Schlüssel der Familie erneuern')).toBeUndefined()
-    expect(heading('Familie auflösen')).not.toBeUndefined()
     expect(memberRows()[1].querySelector('.role-select')).not.toBeNull()
+    const manage = [...container.querySelectorAll('.members-hero-links a')].find((a) => a.textContent === 'Familie verwalten')
+    expect(manage.getAttribute('href')).toBe('/einstellungen?bereich=familien')
   })
 })
 
@@ -325,8 +316,5 @@ describe('MembersPage – Demo', () => {
     expect(memberRows()[1].querySelector('.btn-danger').disabled).toBe(true)
     expect(buttonWith('Widerrufen').disabled).toBe(true)
     expect(container.querySelector('.invite-list .role-select').disabled).toBe(true)
-    expect(buttonWith('Familie auflösen …').disabled).toBe(true)
-    expect(container.querySelector('#family-key-confirm').disabled).toBe(true)
-    expect(container.querySelector('#handover-target').disabled).toBe(true)
   })
 })

@@ -84,3 +84,22 @@ export function parseAreaId(value) {
   return Number.isSafeInteger(id) ? id : null
 }
 
+
+// Phase W, Schritt 2: "Familie verwalten" steht in den Einstellungen (Einstellungen › Familien › [Familie]) - die Adresse
+// nennt die Familie, die Route schaltet über das AreaGate dorthin (PUT /family und /family/members/* wirken auf den
+// aktiven Bereich). Nur eine Familie aus me.memberships gilt; alles andere (fremde Id, besuchtes Zuhause, das eigene
+// Zuhause) bleibt im eigenen Zuhause - so kann die Adresse nie in einen Bereich führen, dessen Routen keine
+// Einstellungen kennen (sonst wechselten zwei Gates hin und her).
+export const SETTINGS_ROUTE = '/einstellungen'
+export const SETTINGS_FAMILY_PARAM = 'familie'
+
+export function familySettingsRoute(id) {
+  return `${SETTINGS_ROUTE}?bereich=familien&${SETTINGS_FAMILY_PARAM}=${encodeURIComponent(id)}`
+}
+
+export function settingsArea(family, searchParams) {
+  if (searchParams.get('bereich') !== 'familien') return 'home'
+  const id = parseAreaId(searchParams.get(SETTINGS_FAMILY_PARAM))
+  if (!id || id === family?.home?.id) return 'home'
+  return (family?.memberships || []).some((membership) => membership.id === id) ? id : 'home'
+}

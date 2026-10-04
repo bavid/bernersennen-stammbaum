@@ -2,6 +2,8 @@ import { describe, expect, test } from 'vitest'
 import {
   HOME_LABEL,
   animalsRoute,
+  familySettingsRoute,
+  settingsArea,
   areaContext,
   groupRoute,
   inviteLabel,
@@ -136,5 +138,25 @@ describe('parseAreaId (Phase W)', () => {
     for (const value of [0, -1, 1.5, '0', '-1', '1e3', '3abc', ' 3', '', null, undefined, '99999999999999999', {}]) {
       expect(parseAreaId(value), String(value)).toBeNull()
     }
+  })
+})
+
+describe('Einstellungen › Familien › [Familie] (Phase W, Schritt 2)', () => {
+  const me = { id: 1, art: 'zuhause', home: { id: 1, art: 'zuhause' }, memberships: [{ id: 3 }, { id: 4 }], besuche: [{ id: 9 }] }
+  const params = (query) => new URLSearchParams(query)
+
+  test('familySettingsRoute', () => {
+    expect(familySettingsRoute(3)).toBe('/einstellungen?bereich=familien&familie=3')
+  })
+
+  test('nur eine eigene Mitgliedschaft schaltet dorthin, alles andere bleibt im eigenen Zuhause', () => {
+    expect(settingsArea(me, params('bereich=familien&familie=3'))).toBe(3)
+    expect(settingsArea(me, params('bereich=familien&familie=4'))).toBe(4)
+    expect(settingsArea(me, params('bereich=familien&familie=9'))).toBe('home')
+    expect(settingsArea(me, params('bereich=familien&familie=1'))).toBe('home')
+    expect(settingsArea(me, params('bereich=familien&familie=3abc'))).toBe('home')
+    expect(settingsArea(me, params('bereich=familien'))).toBe('home')
+    expect(settingsArea(me, params('bereich=zuhause&familie=3'))).toBe('home')
+    expect(settingsArea(me, params(''))).toBe('home')
   })
 })

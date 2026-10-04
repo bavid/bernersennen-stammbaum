@@ -1,6 +1,6 @@
 import { lazy } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from 'react-router-dom'
-import { FAMILIES_ROUTE, areaContext, parseAreaId, startRoute } from './lib/areas.js'
+import { FAMILIES_ROUTE, areaContext, parseAreaId, settingsArea, startRoute } from './lib/areas.js'
 import AreaGate from './components/AreaGate.jsx'
 import LegacyRedirect from './components/LegacyRedirect.jsx'
 import StartPage from './pages/StartPage.jsx'
@@ -76,6 +76,17 @@ function TierRoute({ family, onFamilyChange }) {
   return (
     <AreaGate family={family} need={inArea} onFamilyChange={onFamilyChange}>
       {page}
+    </AreaGate>
+  )
+}
+
+// /einstellungen - im eigenen Zuhause; Einstellungen › Familien › [Familie] (?bereich=familien&familie=<Id>, Phase W
+// Schritt 2) in der genannten Familie, aber nur einer eigenen Mitgliedschaft (lib/areas.js settingsArea).
+function SettingsRoute({ family, onFamilyChange, onInvite }) {
+  const [searchParams] = useSearchParams()
+  return (
+    <AreaGate family={family} need={settingsArea(family, searchParams)} onFamilyChange={onFamilyChange}>
+      <SettingsPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />
     </AreaGate>
   )
 }
@@ -194,10 +205,7 @@ function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
       />
       <Route path="/wuerfe" element={<LittersPage family={family} />} />
       <Route path="/zuchtbuch" element={<Navigate to="/wuerfe" replace />} />
-      <Route
-        path="/einstellungen"
-        element={atHome(<SettingsPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />)}
-      />
+      <Route path="/einstellungen" element={<SettingsRoute family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
       <Route path="/collage" element={atHome(<CollagePage family={family} />)} />
       <Route path="/umgebung" element={<NearbyPage />} />

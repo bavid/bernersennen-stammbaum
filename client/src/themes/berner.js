@@ -33,7 +33,7 @@ export default {
     newGroupName: 'Neuer Rudelname',
     groupNamePlaceholder: 'z. B. Rudel vom Sonnenhang',
     groupPassword: 'Rudel-Passwort',
-    groupSettings: 'Rudel einstellen',
+    groupSettings: 'Rudel verwalten',
     groupsDative: 'Rudeln',
     // Familienbande 2: Überschrift der Gruppe im Bereichswechsler
     groups: 'Rudel',

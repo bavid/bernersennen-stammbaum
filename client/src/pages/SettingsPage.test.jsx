@@ -14,7 +14,8 @@ const api = vi.hoisted(() => ({
   endVisit: vi.fn(),
   removeGuest: vi.fn(),
   renameFamily: vi.fn(),
-  updateFamily: vi.fn()
+  updateFamily: vi.fn(),
+  familyMembers: vi.fn()
 }))
 vi.mock('../api', () => ({ api }))
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
@@ -144,11 +145,15 @@ describe('SettingsPage – Bereiche und Adresse (?bereich=)', () => {
     expect(selectedTab()).toBe('Darstellung')
   })
 
-  test('ein klassisches Rudel-Login hat nur die Darstellung, ohne Reiter', async () => {
+  test('ein klassisches Rudel-Login: Darstellung und "Familie" - dort gleich „Familie verwalten“ für die eine Familie', async () => {
     const rudel = { id: 5, name: 'Rudel Talblick', theme: 'berner', art: 'rudel', isDemo: false, role: 'leitung', home: { id: 5, art: 'rudel' }, memberships: [] }
+    api.familyMembers.mockResolvedValue({ familyId: 5, name: 'Rudel Talblick', ichBin: 'leitung', mitglieder: [] })
     await render(rudel, '/einstellungen?bereich=familien')
-    expect(container.querySelector('[role="tablist"]')).toBeNull()
-    expect(container.querySelector('legend').textContent).toBe('Farbpalette')
+    await flush()
+    expect(tabs()).toEqual(['Darstellung', 'Familie'])
+    expect(selectedTab()).toBe('Familie')
+    expect(container.querySelector('.family-manage-title').textContent).toContain('Rudel Talblick')
+    expect(container.querySelector('.family-manage .back-link')).toBeNull()
   })
 })
 
@@ -238,26 +243,33 @@ describe('SettingsPage – Familien', () => {
     expect(api.view).not.toHaveBeenCalled()
   })
 
-  test('Verlassen mit zweitem Klick; die einzige Leitung bekommt die Meldung des Servers an der Zeile', async () => {
-    api.leaveFamily.mockRejectedValueOnce(new Error('Übergib zuerst die Leitung oder löse die Familie auf.'))
-    api.leaveFamily.mockResolvedValueOnce({ ...atHome, memberships: [memberships[0]] })
+  // Phase W, Schritt 2: Verlassen, Leitung übergeben und Auflösen stehen in Einstellungen › Familien › [Familie].
+  test('jede Familie mit "Verwalten" - der Link nennt die Familie in der Adresse, kein Verlassen mehr in der Liste', async () => {
     await render(atHome, '/einstellungen?bereich=familien')
     await flush()
-    const leave = (name) => container.querySelector(`button[aria-label="${name} verlassen"]`)
+    const manage = (name) => container.querySelector(`a[aria-label="${name} verwalten"]`)
+    expect(manage('Familie Sonnenhang').getAttribute('href')).toBe('/einstellungen?bereich=familien&familie=3')
+    expect(manage('Familie Talgrund').getAttribute('href')).toBe('/einstellungen?bereich=familien&familie=4')
+    expect(container.querySelector('button[aria-label$="verlassen"]')).toBeNull()
+  })
 
-    await act(async () => leave('Familie Sonnenhang').click())
-    expect(api.leaveFamily).not.toHaveBeenCalled()
-    await act(async () => container.querySelector('button[aria-label="Wirklich verlassen?"]').click())
+  test('?familie=<aktive Familie>: „Familie verwalten“ statt der Liste; ein Reiter führt wieder ohne Familie weiter', async () => {
+    api.familyMembers.mockResolvedValue({ familyId: 3, name: 'Familie Sonnenhang', ichBin: 'leitung', mitglieder: [] })
+    await render(inGroup, '/einstellungen?bereich=familien&familie=3')
     await flush()
-    expect(api.leaveFamily).toHaveBeenCalledWith(3)
-    expect(container.querySelector('.settings-row-error').textContent).toBe('Übergib zuerst die Leitung oder löse die Familie auf.')
+    expect(container.querySelector('.family-manage-title').textContent).toContain('Familie Sonnenhang')
+    expect(container.querySelector('.family-manage .back-link').getAttribute('href')).toBe('/einstellungen?bereich=familien')
+    expect(container.querySelector('.settings-animal')).toBeNull()
 
-    await act(async () => leave('Familie Talgrund').click())
-    await act(async () => container.querySelector('button[aria-label="Wirklich verlassen?"]').click())
+    await act(async () => [...container.querySelectorAll('[role="tab"]')].find((tab) => tab.textContent === 'Mein Zuhause').click())
+    expect(location.search).toBe('?bereich=zuhause')
+  })
+
+  test('?familie= einer anderen als der aktiven Familie zeigt die Liste (das Gate der Route hat nicht gewechselt)', async () => {
+    await render(atHome, '/einstellungen?bereich=familien&familie=3')
     await flush()
-    expect(api.leaveFamily).toHaveBeenLastCalledWith(4)
-    expect(latest.memberships).toEqual([memberships[0]])
-    expect(toast).toHaveBeenCalledWith(expect.stringContaining('„Familie Talgrund“ verlassen'))
+    expect(container.querySelector('.family-manage')).toBeNull()
+    expect(container.querySelector('a[aria-label="Familie Sonnenhang verwalten"]')).not.toBeNull()
   })
 
   test('Eure Tiere in Familien: dieselbe Freigabe wie auf der Tierseite; als Gast nichts Neues teilen', async () => {
@@ -299,11 +311,11 @@ describe('SettingsPage – Familien', () => {
     expect(latest.id).toBe(1)
   })
 
-  test('Demo: Verlassen gesperrt mit Hinweis', async () => {
+  test('Demo: Freigaben gesperrt mit Hinweis', async () => {
     await render({ ...atHome, isDemo: true }, '/einstellungen?bereich=familien')
     await flush()
-    expect(container.querySelector('button[aria-label="Familie Sonnenhang verlassen"]').disabled).toBe(true)
-    expect(container.querySelector('#settings-familien-hint').textContent).toBe('In der Demo nicht möglich.')
+    expect(container.querySelector('.settings-animal input[type="checkbox"]').disabled).toBe(true)
+    expect(container.textContent).toContain('In der Demo nicht möglich.')
   })
 })
 

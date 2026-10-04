@@ -15,12 +15,12 @@ export default function InviteList({ einladungen, options, disabled, onRoleChang
         <h2 id="invites-title">Offene Einladungen</h2>
         <button type="button" className="btn btn-primary" onClick={onInvite}>
           <Icon name="send" />
-          Einladen
+          Mitglied einladen
         </button>
       </div>
       <p className="muted">
-        Wer eine Einladung einlöst, bekommt eine eigene Chronik und tritt mit der eingestellten Rolle bei. Die Rolle
-        lässt sich später auf dieser Seite ändern.
+        Wer eine Einladung einlöst, bekommt ein eigenes Zuhause und tritt mit der eingestellten Rolle bei. Die Rolle lässt
+        sich später hier ändern.
       </p>
       {einladungen.length === 0 ? (
         <p className="field-hint">Gerade keine offene Einladung.</p>
