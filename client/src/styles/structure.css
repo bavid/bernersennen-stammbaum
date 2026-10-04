@@ -301,6 +301,14 @@
   }
 }
 
+/* Handy: „Meine Familien“ und „Bilderrahmen“ gibt es schon in der unteren Leiste bzw. im Menü - auf Start
+   nicht noch einmal (Start bleibt so unter ~3 Bildschirmen). */
+@media (max-width: 720px) {
+  .start-side {
+    display: none;
+  }
+}
+
 .start-card {
   display: grid;
   gap: var(--space-3);
