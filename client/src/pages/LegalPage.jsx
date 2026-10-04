@@ -79,7 +79,7 @@ function Datenschutz({ legal }) {
         Partner-Datenbank – dafür wird kein Standort übermittelt und keine externe Suche angestoßen.
       </p>
       <p>
-        Für „Tierheime & Hundeschulen in der Nähe“ (/umgebung, nur angemeldet nutzbar) lässt sich wahlweise eine
+        Für die Karte „Tierheime & Hundeschulen in der Nähe“ (in „Entdecken“, für Partner im Fuß der Seite; nur angemeldet nutzbar) lässt sich wahlweise eine
         Postleitzahl eingeben oder – nur mit ausdrücklicher Zustimmung im Browser – der eigene, gerundete
         Standort verwenden. Der Standort wird dabei auf etwa 1 km gerundet, ausschließlich für diese eine Suche
         verwendet und nie gespeichert oder protokolliert. Postleitzahl und Umkreis der letzten Suche merkt sich
@@ -124,7 +124,8 @@ function Datenschutz({ legal }) {
         Zieht ein Tier über einen Übergabe-Code in ein neues Zuhause um, wandert seine ganze bisherige Chronik
         mit um; das abgebende Tierheim bleibt als Herkunft sichtbar. Das neue Zuhause kann dem abgebenden Tierheim
         freiwillig erlauben, weiterhin mitzulesen – diese Einwilligung lässt sich jederzeit widerrufen und umfasst
-        immer nur die nicht-privaten Erinnerungen.
+        immer nur die nicht-privaten Erinnerungen. Solange es mitliest, sieht das Tierheim dabei auch den Namen des neuen
+        Zuhauses.
       </p>
       <p>
         Öffentliche Happy Ends (Porträtfoto und die neueste nicht-private Erinnerung auf der Portalseite eines

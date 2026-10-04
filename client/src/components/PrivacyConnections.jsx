@@ -11,7 +11,7 @@ export default function PrivacyConnections() {
         einmal. Wer ihn einlöst, sieht als Gast eure Tiere und alle Erinnerungen, die nicht als privat markiert sind, und
         kann sie kommentieren – ändern kann er nichts. Private Erinnerungen, Pinnwand, Entdecken und Collage gehören nicht zum
         Besuch. Beide Seiten können den Besuch jederzeit beenden: einen Gast entfernt ihr mit „Beenden“ unter „Meine
-        Gäste“ im Einladen-Dialog, einen neuen Gast auch gleich mit „Gast entfernen“ bei den Wegbegleitern.
+        Gäste“ (Einstellungen › Mein Zuhause), einen neuen Gast auch gleich mit „Entfernen“ in den Hinweisen.
       </p>
 
       <h2>„Mit dabei“</h2>

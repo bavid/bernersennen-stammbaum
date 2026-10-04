@@ -22,6 +22,7 @@ import { clearFamilyAuswahl } from './lib/bilderrahmen.js'
 import useClearDraftsOnSignOut from './hooks/useClearDraftsOnSignOut.js'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
+import HandoverConsent from './components/HandoverConsent.jsx'
 import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
 import AdminViewBanner from './components/AdminViewBanner.jsx'
 import NavBadge from './components/NavBadge.jsx'
@@ -167,10 +168,7 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
         <p>
           Mit diesem Übergabe-Code zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
         </p>
-        <label className="check">
-          <input type="checkbox" checked={shelterMayRead} onChange={(e) => setShelterMayRead(e.target.checked)} />
-          {handover.shelterName} darf weiter mitlesen (freiwillig, jederzeit widerrufbar)
-        </label>
+        <HandoverConsent shelterName={handover.shelterName} checked={shelterMayRead} onChange={setShelterMayRead} />
         <button type="button" className="btn btn-primary btn-block" disabled={claiming} onClick={handleClaim}>
           {claiming ? 'Übernehme …' : 'In „Mein Zuhause“ übernehmen'}
         </button>

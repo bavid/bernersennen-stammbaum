@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import Honeypot from './Honeypot.jsx'
 import RedeemAccountFields, { EMPTY_ACCOUNT, accountPayload } from './RedeemAccountFields.jsx'
 import PartnerSetupFields from './PartnerSetupFields.jsx'
+import HandoverConsent from './HandoverConsent.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { formatVoucherCode, isCompleteVoucherCode } from '../lib/voucherCode.js'
 import { partnerAccessFrom, partnerSetupPayload, validatePartnerSetup } from '../lib/partnerSetup.js'
@@ -194,10 +195,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
               <p>
                 Mit diesem Übergabe-Code zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
               </p>
-              <label className="check">
-                <input type="checkbox" checked={shelterMayRead} onChange={(e) => setShelterMayRead(e.target.checked)} />
-                {handover.shelterName} darf weiter mitlesen (freiwillig, jederzeit widerrufbar)
-              </label>
+              <HandoverConsent shelterName={handover.shelterName} checked={shelterMayRead} onChange={setShelterMayRead} />
             </div>
           )}
           <div className="field">

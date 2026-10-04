@@ -61,7 +61,8 @@ export default function ShelterSharePanel({ dog, onChange }) {
       {/* Informed consent (final-review Phase T Finding 3): die Checkbox-Beschriftung allein sagt nicht,
           WAS "mitlesen" konkret bedeutet - der Hinweis macht es für die Einwilligung ausdrücklich. */}
       <p className="field-hint">
-        {share.shelterName} sieht {name} und alle nicht privaten {words.entries} (nur lesen und {words.greetings} schreiben)
+        {share.shelterName} sieht {name}, den Namen eures Zuhauses und alle nicht privaten {words.entries} (nur lesen und{' '}
+        {words.greetings} schreiben)
       </p>
       <label className="check">
         <input
