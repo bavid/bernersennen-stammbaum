@@ -92,4 +92,13 @@ test('Geschlecht "unbekannt": anlegen, anzeigen, nie als Elternteil, Eltern beha
     const keep = await send('PUT', `/api/dogs/${dog.data.id}`, { name: 'Pepper vom Bach' })
     assert.equal(keep.data.geschlecht, 'unbekannt')
   })
+
+  await t.test('ein leeres geschlecht beim Ändern behält ein bekanntes Geschlecht (kein stilles Zurücksetzen)', async () => {
+    const dog = await send('POST', '/api/dogs', { name: 'Socke', geschlecht: 'huendin' })
+    for (const geschlecht of ['', null]) {
+      const res = await send('PUT', `/api/dogs/${dog.data.id}`, { geschlecht })
+      assert.equal(res.status, 200)
+      assert.equal(res.data.geschlecht, 'huendin')
+    }
+  })
 })

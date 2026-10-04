@@ -164,7 +164,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     { key: 'link', label: 'Link kopieren', icon: 'copy', onSelect: copyLink }
   ].filter(Boolean)
 
-  async function handleUpdateDog({ housemateId, ...payload }) {
+  async function handleUpdateDog(payload) {
     await api.updateDog(dog.id, payload)
     setEditingDog(false)
     await page.load()

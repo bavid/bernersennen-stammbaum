@@ -82,7 +82,8 @@ function buildDogRecord(body, existing = {}) {
     name_unbekannt: nameUnbekannt ? 1 : 0,
     rasse: cleanText(pick(body, 'rasse', existing.rasse), 120),
     tierart: pick(body, 'tierart', existing.tierart || 'hund'),
-    geschlecht: cleanEnum(pick(body, 'geschlecht', existing.geschlecht)) ?? SEX.unknown,
+    // Leer/null beim Ändern behält den bisherigen Wert; nur ein neues Tier ohne Angabe ist „unbekannt“.
+    geschlecht: cleanEnum(pick(body, 'geschlecht', existing.geschlecht)) ?? existing.geschlecht ?? SEX.unknown,
     geburtsdatum: cleanText(pick(body, 'geburtsdatum', existing.geburtsdatum), 10),
     farbe_markings: cleanText(pick(body, 'farbeMarkings', existing.farbe_markings), 200),
     foto_url: cleanText(pick(body, 'fotoUrl', existing.foto_url), 300),
