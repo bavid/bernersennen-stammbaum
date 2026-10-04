@@ -4,6 +4,8 @@
 // gewählte Reiter steht in der Adresse (?reiter=termine), alte Sprungmarken (#kontakt, #partner-portal-termine, …)
 // führen zum passenden Reiter. Reine Funktionen über die Portal-Daten.
 import { isAllowedMedia } from './discover.js'
+import { todayIso } from './dates.js'
+import { PORTAL_MONATE, splitByHorizon } from './termine.js'
 
 export const PORTAL_TAB_PARAM = 'reiter'
 export const OVERVIEW_TAB = 'uebersicht'
@@ -78,10 +80,18 @@ export function nextTermine(items, count) {
   return items.filter((item) => !item.abgesagt).slice(0, count)
 }
 
-// Zähler am Reiter "Termine": jeder Termin einmal, eine Serie zählt als einer (wie im Kalender des Partners) - eine
-// wöchentliche Gruppe hieße sonst "52 Termine". Termine, deren Tage alle ausfallen, zählen nicht.
-export function upcomingTerminCount(items) {
-  return new Set(items.filter((item) => !item.abgesagt).map((item) => item.terminId)).size
+// Was der Reiter "Termine" zuerst zeigt (PortalTermine): die nächsten drei Monate - findet darin nichts statt, gleich
+// alle (sonst stünde dort nur Abgesagtes oder gar nichts). Den Rest zeigt "Mehr anzeigen".
+export function initialTermine(items, today = todayIso()) {
+  const { sichtbar } = splitByHorizon(items, today, PORTAL_MONATE)
+  return sichtbar.some((item) => !item.abgesagt) ? sichtbar : items
+}
+
+// Zähler am Reiter "Termine" (Feedback-Runde): so viele Tage, wie der Reiter zuerst zeigt und die stattfinden - jede
+// Woche einer Serie einzeln, wie in der Liste (vorher zählte eine Serie einmal: "Termine 3" über einer langen Liste).
+// Abgesagte stehen durchgestrichen in der Liste, zählen aber nicht; fällt alles aus, fehlt der Reiter.
+export function upcomingTerminCount(items, today = todayIso()) {
+  return initialTermine(items, today).filter((item) => !item.abgesagt).length
 }
 
 // Einblicke, die die Galerie zeigt: öffentlich nur /public-media, in der Kundensicht auch die eigenen über /uploads.
@@ -89,10 +99,11 @@ export function galleryEinblicke(einblicke, { preview = false } = {}) {
   return asList(einblicke).filter((einblick) => isAllowedMedia(einblick.fotoUrl, { preview }))
 }
 
-function sizes({ posts, termine, einblicke, animals, happyEnds, preview = false }) {
+// today: nur für Tests, sonst heute.
+function sizes({ posts, termine, einblicke, animals, happyEnds, preview = false, today = todayIso() }) {
   return {
     angebote: asList(posts).length,
-    termine: upcomingTerminCount(portalTermine(termine)),
+    termine: upcomingTerminCount(portalTermine(termine), today),
     einblicke: galleryEinblicke(einblicke, { preview }).length,
     tiere: asList(animals).length,
     happyEnds: asList(happyEnds).length

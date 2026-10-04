@@ -4,6 +4,7 @@ import {
   OVERVIEW_TAB,
   galleryEinblicke,
   hashTarget,
+  initialTermine,
   nextTermine,
   portalCounts,
   portalTabs,
@@ -28,9 +29,22 @@ describe('portalTermine / nextTermine / upcomingTerminCount', () => {
     expect(nextTermine(items, 3).map((item) => item.datum)).toEqual(['2026-10-03', '2026-10-11', '2026-10-17'])
   })
 
-  test('upcomingTerminCount zählt eine Serie einmal und Termine, die nur ausfallen, gar nicht', () => {
-    expect(upcomingTerminCount(items)).toBe(3)
-    expect(upcomingTerminCount([termin(4, '2026-10-03', { abgesagt: true })])).toBe(0)
+  test('upcomingTerminCount zählt die Tage, die der Reiter zeigt: jede Woche einer Serie, ohne abgesagte, drei Monate', () => {
+    const today = '2026-10-01'
+    expect(upcomingTerminCount(items, today)).toBe(4)
+    const longer = [...items, termin(3, '2026-12-31'), termin(5, '2027-01-02')]
+    expect(upcomingTerminCount(longer, today)).toBe(5)
+    expect(upcomingTerminCount([termin(4, '2026-10-03', { abgesagt: true })], today)).toBe(0)
+  })
+
+  test('initialTermine: das Fenster der Liste - drei Monate, sonst (nichts findet darin statt) alle', () => {
+    const today = '2026-10-01'
+    const later = [termin(6, '2027-02-01'), termin(6, '2027-02-08')]
+    expect(initialTermine([...items, ...later], today)).toHaveLength(5)
+    expect(initialTermine(later, today)).toEqual(later)
+    const onlyCancelled = [termin(7, '2026-10-05', { abgesagt: true }), ...later]
+    expect(initialTermine(onlyCancelled, today)).toEqual(onlyCancelled)
+    expect(upcomingTerminCount(later, today)).toBe(2)
   })
 })
 
@@ -48,12 +62,13 @@ describe('portalTabs / portalCounts', () => {
     termine: [termin(1, '2026-10-03'), termin(1, '2026-10-10')],
     einblicke: [einblick(1)],
     animals: [{ slug: 'a' }, { slug: 'b' }, { slug: 'c' }],
-    happyEnds: []
+    happyEnds: [],
+    today: '2026-10-01'
   }
 
   test('alles da: Übersicht, Tiere, Angebote, Termine, Einblicke, Kontakt - Tiere gleich nach der Übersicht', () => {
     expect(portalTabs(data).map((tab) => tab.label)).toEqual(['Übersicht', 'Tiere', 'Angebote', 'Termine', 'Einblicke', 'Kontakt'])
-    expect(portalCounts(data)).toEqual({ tiere: 3, angebote: 2, termine: 1, einblicke: 1 })
+    expect(portalCounts(data)).toEqual({ tiere: 3, angebote: 2, termine: 2, einblicke: 1 })
   })
 
   test('leere Reiter fehlen - nur Übersicht und Kontakt stehen immer da', () => {

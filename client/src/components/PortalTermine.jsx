@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import PortalSection from './PortalSection.jsx'
 import TerminDate from './TerminDate.jsx'
-import { PORTAL_MONATE, SERIE, formatUhrzeit, groupByMonth, serieLabel, splitByHorizon, vorkommenKey } from '../lib/termine.js'
+import { SERIE, formatUhrzeit, groupByMonth, serieLabel, vorkommenKey } from '../lib/termine.js'
 import { todayIso } from '../lib/dates.js'
-import { SECTION_IDS, portalTermine } from '../lib/portalTabs.js'
+import { SECTION_IDS, initialTermine, portalTermine } from '../lib/portalTabs.js'
 
 // Text und Regel nur beim ersten stattfindenden Tag eines Termins - sonst stünden sie bei jeder Woche einer Serie erneut.
 function firstKeys(items) {
@@ -43,9 +43,9 @@ export default function PortalTermine({ termine, today = todayIso() }) {
   const [showAll, setShowAll] = useState(false)
   const items = portalTermine(termine)
   if (items.length === 0) return null
-  const { sichtbar } = splitByHorizon(items, today, PORTAL_MONATE)
-  // Liegt in den nächsten drei Monaten nichts, gleich die späteren zeigen statt eines leeren Abschnitts.
-  const shown = showAll || sichtbar.length === 0 ? items : sichtbar
+  // Zuerst die nächsten drei Monate (findet darin nichts statt, gleich alle) - dasselbe Fenster zählt der Reiter
+  // (lib/portalTabs.js upcomingTerminCount).
+  const shown = showAll ? items : initialTermine(items, today)
   const hidden = items.length - shown.length
   const first = firstKeys(shown)
 

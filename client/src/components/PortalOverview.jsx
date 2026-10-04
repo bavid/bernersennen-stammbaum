@@ -4,7 +4,7 @@ import { ContactDetails, ContactPerson, hasPortalContact } from './PortalContact
 import { InternalLink } from './PreviewLink.jsx'
 import { todayIso } from '../lib/dates.js'
 import { PENDING_APPROVAL_LABEL, isPartnerMedia, isPendingApproval } from '../lib/discover.js'
-import { CONTACT_TAB, OVERVIEW_POSTS, OVERVIEW_TERMINE, nextTermine, portalTermine } from '../lib/portalTabs.js'
+import { CONTACT_TAB, OVERVIEW_POSTS, OVERVIEW_TERMINE, nextTermine, portalTermine, upcomingTerminCount } from '../lib/portalTabs.js'
 import { useIsPreview } from '../lib/preview.js'
 import { adoptionSectionTitle } from '../lib/shelter.js'
 import { formatTagKurz, formatTagLang, formatUhrzeit, vorkommenKey } from '../lib/termine.js'
@@ -100,7 +100,10 @@ function AnimalStrip({ animals }) {
 // Am Desktop zweispaltig (Text und Angebote links, Termine und Kontakt rechts), am Handy untereinander.
 export default function PortalOverview({ partner, posts, animals, onShowTab }) {
   const paragraphs = paragraphsOf(partner.portal_text)
-  const termine = nextTermine(portalTermine(partner.termine), OVERVIEW_TERMINE)
+  const allTermine = portalTermine(partner.termine)
+  const termine = nextTermine(allTermine, OVERVIEW_TERMINE)
+  // Feedback-Runde: dieselbe Zahl wie am Reiter "Termine".
+  const terminCount = upcomingTerminCount(allTermine)
   const firstPosts = posts.slice(0, OVERVIEW_POSTS)
   const hasContact = hasPortalContact(partner)
   const hasMain = paragraphs.length > 0 || animals.length > 0 || firstPosts.length > 0
@@ -157,7 +160,7 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
               id="portal-overview-termine"
               title="Nächste Termine"
               className="card portal-overview-termine-block"
-              more={{ label: 'Alle Termine', onClick: () => onShowTab('termine') }}
+              more={{ label: terminCount > 1 ? `Alle ${terminCount} Termine` : 'Zu den Terminen', onClick: () => onShowTab('termine') }}
             >
               <ul className="portal-overview-termine">
                 {termine.map((item) => (

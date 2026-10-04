@@ -156,8 +156,10 @@ describe('Portal-Reiter – Leiste', () => {
     expect(tabLabels()).toEqual(['Übersicht', 'Angebote', 'Termine', 'Kontakt'])
     expect(tab('Angebote').querySelector('.tab-bar-count').textContent).toBe('3')
     // Eine Serie zählt einmal: Welpenspielstunde, Social Walk, Erste Hilfe.
-    expect(tab('Termine').querySelector('.tab-bar-count').textContent).toBe('3')
-    expect(tab('Termine').querySelector('.visually-hidden').textContent).toBe(' (3 Termine)')
+    // Feedback-Runde: der Zähler nennt die Tage, die der Reiter zeigt (jede Woche der Serie, ohne den abgesagten).
+    expect(tab('Termine').querySelector('.tab-bar-count').textContent).toBe('4')
+    expect(tab('Termine').querySelector('.visually-hidden').textContent).toBe(' (4 Termine)')
+    expect(container.querySelectorAll('#partner-portal-termine .portal-termin:not(.is-cancelled)')).toHaveLength(4)
     expect(tab('Übersicht').querySelector('.tab-bar-count')).toBeNull()
     expect(selectedLabel()).toBe('Übersicht')
   })
@@ -359,9 +361,9 @@ describe('Portal-Reiter – Übersicht', () => {
     expect(contact.querySelector('a[href^="tel:"]')).not.toBeNull()
   })
 
-  test('"Alle Termine" wechselt zum Reiter Termine und setzt den Fokus auf den Reiter', async () => {
+  test('"Alle 4 Termine" (so viele wie am Reiter) wechselt zum Reiter Termine und setzt den Fokus auf den Reiter', async () => {
     await render()
-    await act(async () => button('Alle Termine').click())
+    await act(async () => button('Alle 4 Termine').click())
     expect(selectedLabel()).toBe('Termine')
     expect(document.activeElement).toBe(tab('Termine'))
     await act(async () => tab('Übersicht').click())
