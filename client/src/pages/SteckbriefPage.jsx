@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar.jsx'
 import ExpandableText from '../components/ExpandableText.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import PublicHeader from '../components/PublicHeader.jsx'
+import PortalBrandStrip from '../components/PortalBrandStrip.jsx'
 import Icon from '../components/Icon.jsx'
 import SteckbriefShelterBox from '../components/SteckbriefShelterBox.jsx'
 import { ageText, formatDayMonth } from '../lib/dates.js'
@@ -252,6 +253,8 @@ function SteckbriefContent({ animal, slug, age, preview, inApp, shareCopied, onS
 
       <SteckbriefShelterBox shelter={animal.shelter} animalName={animal.name} animalSlug={slug} />
 
+      {/* Feedback-Runde: wie auf dem Portal keine Demo, nur ein leiser Link zur Startseite (dort gibt es die Demo). */}
+      {ownChrome && <PortalBrandStrip />}
       {ownChrome && <PublicFooter />}
     </div>
   )

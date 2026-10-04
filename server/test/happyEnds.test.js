@@ -215,7 +215,8 @@ test('Happy Ends (Phase T Task 6): Einwilligung, Kürzung, keine Halterdaten, /p
     assert.equal(list.data.length, 6)
   })
 
-  await t.test('GET /api/public/partners/:slug meldet "shelterDemo: true" nur für Demo-Partner MIT Tierheim-Bereich', async () => {
+  // Feedback-Runde: Portale nennen keine Demo - "shelterDemo" (früher für "Demo als Tierheim ansehen") gibt es nicht mehr.
+  await t.test('GET /api/public/partners/:slug meldet kein "shelterDemo" - auch nicht für Demo-Partner MIT Tierheim-Bereich', async () => {
     const realId = db
       .prepare("INSERT INTO partners (slug, name, typ, status, is_demo) VALUES ('echter-partner-happy', 'Echter Partner', 'tierheim', 'aktiv', 0)")
       .run().lastInsertRowid
@@ -229,17 +230,15 @@ test('Happy Ends (Phase T Task 6): Einwilligung, Kürzung, keine Halterdaten, /p
     assert.equal(real.data.shelterDemo, undefined)
 
     // APP_ENV=production (siehe useTempDataDir oben) -> ein Demo-Partner braucht ?demo=1 (demoAllowed).
-    // Ohne eigenen Tierheim-Bereich bleibt shelterDemo weg (final-review Phase T: sonst liefe "Demo als
-    // Tierheim ansehen" ins Leere).
     const beforeShelter = await call(base, '/api/public/partners/demo-partner-happy?demo=1')
     assert.equal(beforeShelter.status, 200)
-    assert.equal(beforeShelter.data.shelterDemo, undefined)
+    assert.equal('shelterDemo' in beforeShelter.data, false)
 
     const shelter = await post(`/api/admin/partners/${demoId}/shelter`, undefined, adminCookie)
     assert.equal(shelter.status, 201)
 
     const demo = await call(base, '/api/public/partners/demo-partner-happy?demo=1')
     assert.equal(demo.status, 200)
-    assert.equal(demo.data.shelterDemo, true)
+    assert.equal('shelterDemo' in demo.data, false)
   })
 })

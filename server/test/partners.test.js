@@ -448,10 +448,9 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
     assert.equal(portal.status, 200)
   })
 
-  // final-review Phase T: shelterDemo darf nicht schon an is_demo allein hängen - erst ein
-  // tatsächlich bestehender Tierheim-Bereich (POST /:id/shelter) darf den Knopf "Demo als Tierheim
-  // ansehen" freischalten (sonst liefe er ins Leere, siehe PartnerPortalPage.jsx).
-  await t.test('shelterDemo: nur true, wenn der Demo-Partner tatsächlich einen Tierheim-Bereich hat', async () => {
+  // Feedback-Runde: Portale nennen keine Demo - shelterDemo (früher für den Knopf "Demo als Tierheim ansehen") gibt es
+  // nicht mehr, weder vor noch nach dem Anlegen eines Tierheim-Bereichs.
+  await t.test('kein shelterDemo mehr - auch nicht, wenn der Demo-Partner einen Tierheim-Bereich hat', async () => {
     const demoShelterPartner = await post('/api/admin/partners', samplePartner({ name: 'Demo ohne Bereich', slug: 'demo-ohne-bereich' }))
     assert.equal(demoShelterPartner.status, 201)
     const db = require('../db')
@@ -459,15 +458,17 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
 
     const beforeShelter = await get('/api/public/partners/demo-ohne-bereich')
     assert.equal(beforeShelter.status, 200)
-    assert.equal(beforeShelter.data.shelterDemo, undefined)
+    assert.equal('shelterDemo' in beforeShelter.data, false)
 
     const shelter = await post(`/api/admin/partners/${demoShelterPartner.data.id}/shelter`)
     assert.equal(shelter.status, 201)
 
     const afterShelter = await get('/api/public/partners/demo-ohne-bereich')
-    assert.equal(afterShelter.data.shelterDemo, true)
+    assert.equal(afterShelter.status, 200)
+    assert.equal('shelterDemo' in afterShelter.data, false)
+    assert.equal('partnerDemo' in afterShelter.data, false)
 
-    // Ein Nicht-Demo-Partner mit Tierheim-Bereich bekommt shelterDemo trotzdem nicht gesetzt.
+    // Ein Nicht-Demo-Partner mit Tierheim-Bereich ebenso nicht.
     const realPartner = await post('/api/admin/partners', samplePartner({ name: 'Echtes Tierheim', slug: 'echtes-tierheim' }))
     const realShelter = await post(`/api/admin/partners/${realPartner.data.id}/shelter`)
     assert.equal(realShelter.status, 201)

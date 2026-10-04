@@ -276,3 +276,27 @@ describe('SteckbriefPage – Vermittlungsstatus (Phase P)', () => {
     expect(container.textContent).not.toContain('Gerade nicht vermittelbar')
   })
 })
+
+// Feedback-Runde: wie auf dem Portal keine Demo - am Ende nur ein leiser Link zur Startseite; angemeldet (inApp) steht der
+// Steckbrief in der Hülle der App, ohne eigenen Kopf, Fuß und diesen Link.
+describe('SteckbriefPage – Fuß', () => {
+  test('ohne Sitzung: leiser Link „Was ist Familie auf Pfoten?“ zur Startseite über dem Fuß', async () => {
+    publicAnimal.mockResolvedValue(animal)
+    await render()
+
+    const link = container.querySelector('.portal-brand-strip a')
+    expect(link.textContent).toBe('Was ist Familie auf Pfoten?')
+    expect(link.getAttribute('href')).toBe('/')
+    expect(container.querySelector('.public-footer')).not.toBeNull()
+  })
+
+  test('angemeldet (inApp): weder eigener Kopf noch Fuß noch der leise Link', async () => {
+    publicAnimal.mockResolvedValue(animal)
+    await render({ inApp: true })
+
+    expect(container.querySelector('h1').textContent).toBe('Pepper')
+    expect(container.querySelector('.public-header')).toBeNull()
+    expect(container.querySelector('.public-footer')).toBeNull()
+    expect(container.querySelector('.portal-brand-strip')).toBeNull()
+  })
+})

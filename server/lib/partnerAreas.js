@@ -46,10 +46,8 @@ function insertPartnerArea(db, { partner, accessKeyHash, voucherId = null }) {
 }
 
 // Phase P1 Task 4: der Demo-Partner-Bereich (art 'partner', Bereich UND Partner is_demo = 1) zum Slug eines
-// Demo-Partners - EINE Regel für POST /api/demo { as: 'partner', slug } (routes/auth.js) und das
-// partnerDemo-Kennzeichen des Portals (lib/partnerPortal.js), damit der Knopf "Demo als Partner ansehen"
-// nie ins Leere führt. Ein echter Partner, das Demo-Tierheim (art 'tierheim', dafür gibt es { as:
-// 'tierheim' }) oder ein Demo-Partner ohne Bereich liefern undefined.
+// Demo-Partners - für POST /api/demo { as: 'partner', slug } (routes/auth.js). Ein echter Partner, das Demo-Tierheim
+// (art 'tierheim', dafür gibt es { as: 'tierheim' }) oder ein Demo-Partner ohne Bereich liefern undefined.
 function findDemoPartnerArea(db, slug) {
   return db
     .prepare(

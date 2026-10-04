@@ -276,18 +276,15 @@ test('Demo-Partner-Bereiche: Einblicke, Wuschelglück, Demo als Partner, Ersetze
     assert.deepEqual(snapshotAll(), before, 'nichts geändert')
   })
 
-  await t.test('das Portal meldet partnerDemo nur für Demo-Partner mit Demo-Partner-Bereich', async () => {
-    for (const slug of [PFOTENGLUECK, WUSCHELGLUECK]) {
+  // Feedback-Runde: Portale nennen keine Demo - auch Demo-Partner mit Demo-Bereich bekommen keine Demo-Kennzeichen mehr.
+  await t.test('das Portal meldet keine Demo-Kennzeichen - weder für Demo-Partner mit Bereich noch für das Demo-Tierheim', async () => {
+    for (const slug of [PFOTENGLUECK, WUSCHELGLUECK, SONNENHANG, DEICHLAND, 'hundesalon-echt']) {
       const portal = await get(`/api/public/partners/${slug}`)
-      assert.equal(portal.status, 200)
-      assert.equal(portal.data.partnerDemo, true, slug)
+      if (slug !== DEICHLAND && slug !== 'hundesalon-echt') assert.equal(portal.status, 200, slug)
+      assert.equal('partnerDemo' in portal.data, false, slug)
+      assert.equal('shelterDemo' in portal.data, false, slug)
     }
-    const shelter = await get(`/api/public/partners/${SONNENHANG}`)
-    assert.equal(shelter.data.partnerDemo, undefined, 'das Tierheim hat "Demo als Tierheim"')
-    assert.equal(shelter.data.shelterDemo, true)
-    assert.equal(shelter.data.einblicke.length, 2)
-    assert.equal((await get(`/api/public/partners/${DEICHLAND}`)).data.partnerDemo, undefined, 'ohne Bereich')
-    assert.equal((await get('/api/public/partners/hundesalon-echt')).data.partnerDemo, undefined, 'echter Partner')
+    assert.equal((await get(`/api/public/partners/${SONNENHANG}`)).data.einblicke.length, 2)
   })
 
   await t.test('zweimal ersetzen: keine Duplikate, keine verwaisten Einblicke, Bereiche oder Dateien, echte Daten unberührt', () => {

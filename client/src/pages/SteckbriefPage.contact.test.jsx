@@ -152,5 +152,7 @@ describe('SteckbriefPage – "Schreib uns zu {Tiername}" (Phase P2)', () => {
     expect(container.querySelector('.steckbrief-shelter').textContent).toContain('Hier werden keine Nachrichten verschickt.')
     expect(container.querySelector('dialog')).toBeNull()
     expect(contactPartner).not.toHaveBeenCalled()
+    // Feedback-Runde: wie auf dem Portal nennt auch der Steckbrief eines Demo-Tierheims keine Demo.
+    expect(container.textContent).not.toMatch(/Demo/i)
   })
 })
