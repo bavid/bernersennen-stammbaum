@@ -24,6 +24,7 @@ const adminHinweiseRoutes = require('./routes/adminHinweise')
 const adminServerRoutes = require('./routes/adminServer')
 const adminEinladungskarteRoutes = require('./routes/adminEinladungskarte')
 const hinweiseRoutes = require('./routes/hinweise')
+const meineHinweiseRoutes = require('./routes/meineHinweise')
 const vouchersRoutes = require('./routes/vouchers')
 const besucheRoutes = require('./routes/besuche')
 const erlebtMitRoutes = require('./routes/erlebtMit')
@@ -167,7 +168,7 @@ function createApp() {
   // Phase 5 Task 5b: die Admin-Ansicht (middleware/auth.js denyAdminViewWrites) ist nur lesend - VOR allen
   // Routern, damit auch Uploads abgelehnt werden, bevor multer eine Datei schreibt.
   app.use('/api', denyAdminViewWrites)
-  app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding', '/api/besuche', '/api/erlebt-mit'], limitWrites)
+  app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding', '/api/besuche', '/api/erlebt-mit', '/api/hinweise'], limitWrites)
   // Phase R Task 2: /api/family/members VOR authRoutes (dort liegen /family und /family/key) - Express
   // matcht Router-Pfade zwar exakt, so bleibt die Reihenfolge aber unabhängig von künftigen Routen dort.
   app.use('/api/family/members', membersRoutes)
@@ -195,6 +196,8 @@ function createApp() {
   // Einladungskarten: die Rückseite, die Familie auf Pfoten für alle Partner gestaltet (Reiter „Einstellungen“).
   app.use('/api/admin', adminEinladungskarteRoutes)
   // Phase N Task 5: die laufenden globalen Hinweise fürs Band oben auf jeder Seite - öffentlich, ohne Login.
+  // Hinweis-Glocke (Grüße, gelesen) - Prüfung je Route, das öffentliche Band darunter bleibt ohne Login.
+  app.use('/api/hinweise', meineHinweiseRoutes)
   app.use('/api/hinweise', hinweiseRoutes)
   app.use('/api/public/partners', partnersRoutes)
   // Phase N Task 1: Gutschein- und Partner-Anfragen (routes/anfragen.js) - vor dem allgemeinen /api/public.

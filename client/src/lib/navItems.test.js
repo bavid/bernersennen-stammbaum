@@ -27,23 +27,11 @@ describe('navItemsFor', () => {
     expect(labels({ art: 'rudel', theme: 'berner' })).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])
   })
 
-  test('offene „Mit dabei“-Anfragen und neue Gäste: Badge an „Start“ - in jedem Kontext', () => {
-    const item = navItemsFor({ ...household, erlebtMitOffen: 2 })[0]
+  test('Hinweis-Glocke: offene Anfragen und neue Gäste tragen kein Badge mehr an „Start“ (keine Doppelung)', () => {
+    const item = navItemsFor({ ...household, erlebtMitOffen: 2, neueGaeste: 1, neueGruesse: 3 })[0]
     expect(item.to).toBe('/start')
-    expect(item.badge).toBe('2')
-    expect(item.ariaLabel).toBe('Start, 2 offene Anfragen')
-    expect(navItemsFor({ ...household, erlebtMitOffen: 1 })[0].ariaLabel).toBe('Start, 1 offene Anfrage')
-    expect(navItemsFor({ ...household, erlebtMitOffen: 0 })[0].badge).toBeUndefined()
-    expect(navItemsFor({ ...household, id: 9, zuBesuch: true, erlebtMitOffen: 2 })[0].badge).toBe('2')
-    expect(navItemsFor({ ...household, id: 5, art: 'rudel', neueGaeste: 1 })[0].badge).toBe('1')
-  })
-
-  test('neue Gäste (security-review V2) zählen zum Badge an „Start“', () => {
-    const item = navItemsFor({ ...household, erlebtMitOffen: 1, neueGaeste: 1 })[0]
-    expect(item.badge).toBe('2')
-    expect(item.ariaLabel).toBe('Start, 1 offene Anfrage, 1 neuer Gast')
-    expect(navItemsFor({ ...household, neueGaeste: 2 })[0].ariaLabel).toBe('Start, 2 neue Gäste')
-    expect(navItemsFor({ ...household, neueGaeste: 120 })[0].badge).toBe('99+')
+    expect(item.badge).toBeUndefined()
+    expect(item.ariaLabel).toBeUndefined()
   })
 
   test('a partner area gets Profil, Beiträge, Kalender (Phase V4a), Nachrichten (Phase P2) and Zugang', () => {

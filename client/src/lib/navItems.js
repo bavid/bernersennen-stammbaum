@@ -24,10 +24,10 @@ const NAV_ITEM_INBOX = { to: '/nachrichten', icon: 'inbox', label: 'Nachrichten'
 const NAV_ITEM_CALENDAR = { to: '/kalender', icon: 'calendar', label: 'Kalender' }
 const NAV_ITEM_PINBOARD = { to: '/pinnwand', icon: 'pin', label: 'Pinnwand' }
 
-// Phase W (Ruhige Hülle): vier feste Punkte in jedem Kontext eines Haushalts - Start (Neuigkeiten, "Für dich"), Tiere
+// Phase W (Ruhige Hülle): vier feste Punkte in jedem Kontext eines Haushalts - Start (Neuigkeiten), Tiere
 // (Raster mit Reitern Zeitleiste/Stammbaum), Familien (Gruppenseiten, befreundete Zuhause) und Entdecken. "Tiere" und
 // "Familien" kommen aus den Wörtern des Auftritts (animals/groups); labelKey statt label, navItemsFor setzt das Wort ein. Am Handy kommt "Menü" als fünfter Platz dazu (App.jsx, hasMenuSlot).
-// Phase V2/W: Start trägt das Badge für offene "Mit dabei"-Anfragen und neue Gäste (withRequestBadge).
+// Offene "Mit dabei"-Anfragen, neue Gäste und Grüße zählt die Hinweis-Glocke im Kopf (components/hinweise) - nicht Start.
 const NAV_ITEM_START = { to: '/start', icon: 'home', label: 'Start' }
 const NAV_ITEM_ANIMALS = { to: '/tiere', icon: 'paw', labelKey: 'animals' }
 const NAV_ITEM_FAMILIES = { to: '/familien', icon: 'users', labelKey: 'groups' }
@@ -83,27 +83,6 @@ function withInboxBadge(item, family) {
   }
 }
 
-// Hinweise für das eigene Zuhause als Badge an "Start" (dort stehen sie unter "Für dich"): offene "Mit dabei"-Anfragen
-// (me.erlebtMitOffen, Phase V2) und neue Gäste, die noch niemand mit „Passt“ bestätigt hat (me.neueGaeste,
-// security-review V2 M-3). Phase W: in jedem Kontext - die Zahlen gehören der Identität, Start führt nach Hause.
-const countOf = (value) => (Number.isInteger(value) && value > 0 ? value : 0)
-
-function withRequestBadge(item, family) {
-  const offen = countOf(family?.erlebtMitOffen)
-  const gaeste = countOf(family?.neueGaeste)
-  const total = offen + gaeste
-  if (item !== NAV_ITEM_START || total === 0) return item
-  const parts = [
-    offen > 0 ? `${offen} ${offen === 1 ? 'offene Anfrage' : 'offene Anfragen'}` : null,
-    gaeste > 0 ? `${gaeste} ${gaeste === 1 ? 'neuer Gast' : 'neue Gäste'}` : null
-  ].filter(Boolean)
-  return {
-    ...item,
-    badge: total > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : String(total),
-    ariaLabel: `${item.label}, ${parts.join(', ')}`
-  }
-}
-
 // Beschriftung aus den Theme-Wörtern (labelKey) - labelKey selbst geht nicht mit hinaus.
 function withThemeLabel(item, words) {
   if (!item.labelKey) return item
@@ -115,7 +94,7 @@ function withThemeLabel(item, words) {
 // gespeicherte der Familie.
 export function navItemsFor(family, theme = getTheme(family?.theme)) {
   const items = NAV_ITEMS_BY_ART[family?.art] || (isHouseholdIdentity(family) ? NAV_ITEMS_HOUSEHOLD : NAV_ITEMS_CLASSIC)
-  return items.map((item) => withRequestBadge(withInboxBadge(withThemeLabel(item, theme.words), family), family))
+  return items.map((item) => withInboxBadge(withThemeLabel(item, theme.words), family))
 }
 
 // Neue family mit geänderter Zahl ungelesener Nachrichten (PartnerInboxPage nach Lesen/Löschen) - für

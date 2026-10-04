@@ -1,0 +1,325 @@
+/* Hinweis-Glocke im Kopf (components/hinweise): Knopf wie die Lupe (search.css), ein ruhiges Fenster unter der Glocke am
+   Desktop, das Blatt von unten am Handy (Modal .modal-sheet), dazu die schmale Zeile auf Start. Nur Tokens des Auftritts. */
+
+.hinweis-glocke {
+  position: relative;
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+}
+
+.hinweis-glocke-knopf {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+
+.hinweis-glocke-knopf svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.hinweis-glocke-knopf:hover,
+.hinweis-glocke-knopf[aria-expanded='true'] {
+  border-color: var(--line-strong);
+  background: var(--paper-deep);
+  color: var(--ink);
+}
+
+.hinweis-glocke-knopf:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.hinweis-glocke-knopf:active svg {
+  transform: rotate(-12deg);
+}
+
+.hinweis-glocke-badge {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: var(--radius-pill);
+  background: var(--rust);
+  color: var(--on-rust);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+/* Fenster unter der Glocke (Desktop) */
+.hinweis-popover {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: min(36rem, calc(100dvh - var(--header-height) - 2rem));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  animation: modal-in var(--duration-fast) var(--ease-out);
+}
+
+.hinweis-popover:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-raised), var(--focus-ring);
+}
+
+.hinweis-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.hinweis-popover-head h2 {
+  font-size: var(--text-lg);
+}
+
+.hinweis-popover-body {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  overflow-y: auto;
+}
+
+/* Blatt von unten (Handy) - der Inhalt ist derselbe */
+.modal-hinweise .modal-body {
+  padding-top: var(--space-2);
+}
+
+/* Liste */
+.hinweis-panel {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.hinweis-group {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.hinweis-group-label {
+  margin: var(--space-2) 0 0 var(--space-1);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hinweis-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hinweis-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.hinweis-item + .hinweis-item {
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+
+/* Neue Hinweise: ein schmaler Strich in der Akzentfarbe - kein lauter Kasten */
+.hinweis-item.is-new {
+  box-shadow: inset 3px 0 0 var(--rust);
+}
+
+.hinweis-mark {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.hinweis-mark svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.hinweis-mark-photo {
+  object-fit: cover;
+  border: 2px solid var(--polaroid-paper);
+  box-shadow: var(--shadow-sm);
+}
+
+.hinweis-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hinweis-text {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.hinweis-link {
+  text-decoration: none;
+}
+
+.hinweis-link:hover,
+.hinweis-link:focus-visible {
+  color: var(--rust);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hinweis-link:focus-visible {
+  outline: none;
+  border-radius: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+.hinweis-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.hinweis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.hinweis-actions .btn {
+  min-height: 40px;
+}
+
+.hinweis-reject-all {
+  justify-self: start;
+}
+
+.hinweis-empty,
+.hinweis-loading,
+.hinweis-away p {
+  margin: 0;
+  padding: var(--space-4) var(--space-2);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.hinweis-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hinweis-empty svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--sage);
+}
+
+.hinweis-away {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+/* Zeile auf Start: „2 neue Hinweise · ansehen“ */
+.start-hinweise {
+  display: inline-flex;
+  justify-self: start;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+
+.start-hinweise svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--rust);
+}
+
+.start-hinweise-action {
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.start-hinweise-action::before {
+  content: '·';
+  margin-right: var(--space-2);
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.start-hinweise:hover {
+  border-color: var(--line-strong);
+  background: var(--paper-deep);
+}
+
+.start-hinweise:hover .start-hinweise-action {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.start-hinweise:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 720px) {
+  .hinweis-glocke {
+    margin-left: var(--space-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hinweis-popover {
+    animation: none;
+  }
+
+  .hinweis-glocke-knopf:active svg {
+    transform: none;
+  }
+}

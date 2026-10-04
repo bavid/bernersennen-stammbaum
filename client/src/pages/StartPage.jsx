@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
-import Lightbox from '../components/Lightbox.jsx'
 import AnimalCreateModal from '../components/AnimalCreateModal.jsx'
-import ForYou from '../components/start/ForYou.jsx'
+import HinweisStartZeile from '../components/hinweise/HinweisStartZeile.jsx'
 import MyFamiliesCard from '../components/start/MyFamiliesCard.jsx'
 import FrameStartCard from '../components/start/FrameStartCard.jsx'
 import StartComposer from '../components/start/StartComposer.jsx'
@@ -44,12 +43,11 @@ function useStartData() {
 
 // /start (Phase W, Look B+ Familienalbum) - die Startseite im eigenen Zuhause und beim klassischen Familien-Login: oben in
 // Handschrift „Schön, dass ihr da seid“ mit dem Namen, darunter eure Tiere als Kreise (samt „Neu“), dann erzählen
-// („Erinnerung festhalten“), „Für dich“ (Anfragen, neue Gäste), „Heute vor einem Jahr“, „Bald“ (Termin, Jahrestag,
+// („Erinnerung festhalten“; offene Hinweise nur als schmale Zeile zur Glocke), „Heute vor einem Jahr“, „Bald“ (Termin, Jahrestag,
 // Notizen) und die neuen Erinnerungen in Kapiteln; am Rand die eigenen Familien. Ein Haushalt sieht /start immer im
 // eigenen Zuhause (AreaGate).
-export default function StartPage({ family, onFamilyChange }) {
+export default function StartPage({ family }) {
   const [{ dogs, entries, notes, error }, addEntry] = useStartData()
-  const [photo, setPhoto] = useState(null)
   const creator = useAnimalCreate()
   const atHome = areaContext(family) === 'home'
   const canWrite = hasRole(family, 'mitglied')
@@ -74,8 +72,9 @@ export default function StartPage({ family, onFamilyChange }) {
       )}
       <div className="start-layout">
         <div className="start-main">
+          {/* Hinweis-Glocke: statt der „Für dich“-Kästen eine schmale Zeile, die das Fenster der Glocke öffnet. */}
+          <HinweisStartZeile />
           {canWrite && dogs && <StartComposer family={family} dogs={dogs} onCreated={addEntry} />}
-          <ForYou family={family} onFamilyChange={onFamilyChange} onOpenPhoto={setPhoto} />
           <OnThisDayCard enabled={!family.zuBesuch} />
           <StartSoon termin={termin} anniversary={anniversary} notesCount={atHome ? notes.length : 0} />
           <StartNews entries={entries} loading={entries === null && !error} />
@@ -87,7 +86,6 @@ export default function StartPage({ family, onFamilyChange }) {
           </div>
         )}
       </div>
-      <Lightbox src={photo} onClose={() => setPhoto(null)} />
       {canWrite && <AnimalCreateModal creator={creator} allDogs={dogs || []} ownFamilyId={family.id} />}
     </div>
   )

@@ -266,6 +266,13 @@ const PATHS = {
   ),
   play: <path d="M7 4.5v15l12-7.5Z" />,
   pause: <path d="M8 5v14M16 5v14" />,
+  // Hinweis-Glocke im Kopf (components/hinweise).
+  bell: (
+    <>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </>
+  ),
   // Suche (Lupe im Kopf).
   search: (
     <>

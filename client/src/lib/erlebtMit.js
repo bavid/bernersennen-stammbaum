@@ -15,11 +15,6 @@ export function tagLabel(tag) {
   return tag.status === 'offen' ? `${base} (angefragt)` : base
 }
 
-// Anfrage an die Besitzer des markierten Tiers: "Wilma war dabei – übernehmen?"
-export function requestQuestion(request) {
-  return `${request.dogName} war dabei – übernehmen?`
-}
-
 // Gespiegelter Eintrag in der Chronik des eigenen Tiers: "erlebt mit Balu · Zuhause am Deich"
 export function mirrorLabel(gespiegelt) {
   return `mit dabei: ${animalName(gespiegelt.tier, gespiegelt.tierNameUnbekannt)} · ${gespiegelt.zuhause}`
@@ -28,12 +23,6 @@ export function mirrorLabel(gespiegelt) {
 // Ist das Zuhause, aus dem ein gespiegelter Eintrag stammt, eines, das man besuchen kann (me.besuche)?
 export function canVisitOrigin(family, gespiegelt) {
   return Boolean(family?.besuche?.some((visit) => visit.id === gespiegelt?.zuhauseId))
-}
-
-// Neue family mit geänderter Zahl offener Anfragen (für das Badge) - gleiche Zahl: dasselbe Objekt.
-export function withErlebtMitOffen(family, offen) {
-  if (!family || family.erlebtMitOffen === offen) return family
-  return { ...family, erlebtMitOffen: offen }
 }
 
 // Tier-Ids der (nicht abgelehnten) Markierungen eines Eintrags - Vorbelegung im Formular; getrennte fallen weg

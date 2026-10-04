@@ -5,7 +5,7 @@
 // Alles hängt an Demo-Familien: besuche verschwinden per ON DELETE CASCADE mit ihnen, erlebt_mit mit den Einträgen
 // und Tieren, die Foto-Kopien räumt deleteFamily (photoUrlsOf) beim nächsten Demo-Wechsel weg - keine Waisen.
 
-const { VISIT_HOST_NAME, HOST_ENTRIES, HOME_ENTRIES } = require('../seed/demo-visits')
+const { VISIT_HOST_NAME, HOST_ENTRIES, HOME_ENTRIES, HOST_GREETINGS } = require('../seed/demo-visits')
 
 const STATUS_VALUES = ['offen', 'bestaetigt']
 
@@ -67,6 +67,15 @@ function createDemoVisits(db, { copyImage, householdId, householdDogIds, memberH
       taggedDogId: wilma.id,
       copyImage
     })
+  }
+  // Grüße des Möwenwegs als Gast (Hinweis-Glocke am Deich): family_id = author_family_id = das Zuhause des Gasts.
+  const insertGreeting = db.prepare(
+    `INSERT INTO entry_comments (entry_id, family_id, author_family_id, autor_name, text, created_at)
+     VALUES (?, ?, ?, ?, ?, datetime('now', ?))`
+  )
+  for (const greeting of HOST_GREETINGS) {
+    if (!entryIds[greeting.entry]) throw new Error(`Demo-Gruß: Eintrag "${greeting.entry}" fehlt`)
+    insertGreeting.run(entryIds[greeting.entry], hostId, hostId, greeting.autor, greeting.text, `-${greeting.hoursAgo} hours`)
   }
   return { hostId, visits: 2, entryIds }
 }

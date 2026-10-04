@@ -4,7 +4,8 @@
 // - ein bestätigter Eintrag vom Möwenweg (Wilma) mit Nele: erscheint gespiegelt in Neles Chronik am Deich;
 // - ein offener Eintrag vom Möwenweg (Wilma) mit Flocke: steht als Anfrage auf den Wegbegleitern am Deich;
 // - ein eigener Eintrag vom Deich (Mira) mit Wilma, bestätigt: zeigt am Deich den Chip „erlebt mit Wilma“. Bewusst
-//   nicht bei Nele: ihr neuester Eintrag ist ihr öffentliches Happy End beim Demo-Tierheim (routes/publicAnimals.js).
+//   nicht bei Nele: ihr neuester Eintrag ist ihr öffentliches Happy End beim Demo-Tierheim (routes/publicAnimals.js);
+// - ein Gruß des Möwenwegs (als Gast) zu diesem Eintrag: neu in der Hinweis-Glocke am Deich.
 // Rein fiktive Namen. Fotos nur aus ./images (Unsplash, Inventar in images/QUELLEN.md) - als eigene Kopie je Eintrag.
 // Angelegt von lib/demoVisits.js (kennt die Ids); jede neue Besuchs- oder „Erlebt mit“-Funktion gehört auch hierher.
 
@@ -47,4 +48,15 @@ const HOME_ENTRIES = [
   }
 ]
 
-module.exports = { VISIT_HOST_NAME, HOST_ENTRIES, HOME_ENTRIES }
+// Hinweis-Glocke: der Möwenweg grüßt als Gast zu einem Eintrag vom Deich - so zeigt die Demo „… hat euch zu ‚…‘ gegrüßt“.
+// Geschrieben wie ein echter Gast-Gruß: unter dem Zuhause des Gasts (family_id = author_family_id = Möwenweg).
+const HOST_GREETINGS = [
+  {
+    entry: 'wilmaBesuch',
+    autor: 'Familie Jansen',
+    text: 'Wilma fragt schon, wann sie Mira wieder besuchen darf!',
+    hoursAgo: 5
+  }
+]
+
+module.exports = { VISIT_HOST_NAME, HOST_ENTRIES, HOME_ENTRIES, HOST_GREETINGS }

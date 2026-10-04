@@ -1,4 +1,4 @@
-/* Phase W (Ruhige Hülle): Konto-Menü oben rechts und "Menü" als fünfter Platz am Handy, Start (Erzählen, Für dich, Bald,
+/* Phase W (Ruhige Hülle): Konto-Menü oben rechts und "Menü" als fünfter Platz am Handy, Start (Erzählen, Bald,
    Neuigkeiten), Tiere mit Reitern, Familien-Liste und Gruppenseite. Nur die Tokens des bestehenden Auftritts - das Aussehen
    (A/B/C) wählt der Betreiber später. */
 
@@ -301,11 +301,6 @@
   }
 }
 
-.start-foryou {
-  display: grid;
-  gap: var(--space-3);
-}
-
 .start-card {
   display: grid;
   gap: var(--space-3);
@@ -322,20 +317,6 @@
 
 .start-section-title {
   font-size: var(--text-xl);
-}
-
-.start-count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--rust);
-  color: var(--on-rust);
-  font-family: var(--font-body);
-  font-size: var(--text-xs);
-  font-weight: 800;
 }
 
 .start-soon-list {

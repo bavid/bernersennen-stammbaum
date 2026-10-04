@@ -15,6 +15,8 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import AccountMenu from './components/AccountMenu.jsx'
 import AccountSheet, { MenuSlotButton } from './components/AccountSheet.jsx'
 import SearchButton from './components/search/SearchButton.jsx'
+import HinweisGlocke from './components/hinweise/HinweisGlocke.jsx'
+import HinweiseProvider from './components/hinweise/HinweiseProvider.jsx'
 import { clearRecent } from './lib/search.js'
 import { clearFamilyAuswahl } from './lib/bilderrahmen.js'
 import RoleBadge from './components/RoleBadge.jsx'
@@ -250,7 +252,7 @@ export function AppHeader({ family, onLogout, onInvite = () => {} }) {
           </span>
         </div>
         <nav className={`app-nav${navItems.length >= MAX_NAV_ITEMS ? ' app-nav-dense' : ''}`} aria-label="Hauptnavigation">
-          {/* badge/ariaLabel: ungelesene Nachrichten an "Nachrichten" (Phase P2), offene Anfragen an "Start" (Phase W). */}
+          {/* badge/ariaLabel: ungelesene Nachrichten an "Nachrichten" (Phase P2) - offene Anfragen zeigt die Glocke. */}
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -267,6 +269,8 @@ export function AppHeader({ family, onLogout, onInvite = () => {} }) {
         </nav>
         {/* Suche (Lupe, Strg/⌘+K) für Haushalte und klassische Familien-Logins - Tierheime und Partner haben keine. */}
         {withMenu && <SearchButton family={family} onInvite={onInvite} />}
+        {/* Hinweis-Glocke (components/hinweise): Anfragen, neue Gäste, Grüße - nur Haushalte, sonst rendert sie nichts. */}
+        <HinweisGlocke />
         {withMenu ? <AccountMenu family={family} onInvite={onInvite} onLogout={onLogout} /> : <PartnerHeaderActions onLogout={onLogout} />}
       </div>
       {withMenu && (
@@ -649,26 +653,29 @@ export default function App() {
             family.isDemo && !onPortal && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
           )}
           {/* Phase W, Schritt 2: zu Besuch steht ein Chip im Kopf der Besuchsseiten (visits/VisitChip) - kein Band mehr oben. */}
-          <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
-          {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
-          {isPartnerArea(family) && !onPortal && <ViewModeSwitch areaId={family.id} />}
-          {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
-              bliebe beim Wechsel des Bereichs (AreaGate wechselt auf derselben Adresse, z. B. /start aus einer
-              Familie heraus) die alte Seiteninstanz samt Daten des vorherigen Bereichs stehen. Der key erzwingt
-              ein sauberes Neu-Mounten. */}
-          <main className="app-main" key={family.id}>
-            {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
-                Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
-            {/* Phase U: Rundgang durch eine Partner- oder Tierheim-Demo (schließbar, bleibt dann zu). */}
-            {family.isDemo && !family.adminView && isPartnerArea(family) && !onPortal && <PartnerDemoGuide family={family} />}
-            {onPortal ? (
-              <PartnerPortalPage slug={partnerSlug} inApp />
-            ) : (
-              <Suspense fallback={<RouteFallback />}>
-                <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={openInvite} />
-              </Suspense>
-            )}
-          </main>
+          {/* Hinweis-Glocke: Kopf und Start öffnen dasselbe Fenster (HinweiseProvider), die Zahlen stehen in family. */}
+          <HinweiseProvider family={family} onFamilyChange={setFamily}>
+            <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
+            {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
+            {isPartnerArea(family) && !onPortal && <ViewModeSwitch areaId={family.id} />}
+            {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
+                bliebe beim Wechsel des Bereichs (AreaGate wechselt auf derselben Adresse, z. B. /start aus einer
+                Familie heraus) die alte Seiteninstanz samt Daten des vorherigen Bereichs stehen. Der key erzwingt
+                ein sauberes Neu-Mounten. */}
+            <main className="app-main" key={family.id}>
+              {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
+                  Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
+              {/* Phase U: Rundgang durch eine Partner- oder Tierheim-Demo (schließbar, bleibt dann zu). */}
+              {family.isDemo && !family.adminView && isPartnerArea(family) && !onPortal && <PartnerDemoGuide family={family} />}
+              {onPortal ? (
+                <PartnerPortalPage slug={partnerSlug} inApp />
+              ) : (
+                <Suspense fallback={<RouteFallback />}>
+                  <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={openInvite} />
+                </Suspense>
+              )}
+            </main>
+          </HinweiseProvider>
           <AppFooter family={family} onInvite={openInvite} />
           <Modal open={inviteOpen} title={inviteLabel(family)} onClose={() => setInviteOpen(false)}>
             {inviteOpen && inviteReady && <InviteDialog family={family} />}

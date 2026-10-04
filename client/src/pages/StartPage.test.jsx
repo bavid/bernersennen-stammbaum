@@ -18,6 +18,7 @@ const api = vi.hoisted(() => ({
 vi.mock('../api', () => ({ api }))
 
 import StartPage from './StartPage.jsx'
+import HinweiseProvider from '../components/hinweise/HinweiseProvider.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
 import { getTheme } from '../themes/index.js'
 
@@ -85,7 +86,9 @@ async function render(family = atHome, themeId = 'standard') {
     root.render(
       <MemoryRouter>
         <ThemeProvider themeId={themeId}>
-          <StartPage family={family} onFamilyChange={() => {}} />
+          <HinweiseProvider family={family} onFamilyChange={() => {}}>
+            <StartPage family={family} onFamilyChange={() => {}} />
+          </HinweiseProvider>
         </ThemeProvider>
       </MemoryRouter>
     )
@@ -201,23 +204,21 @@ describe('StartPage (Phase W)', () => {
     expect(container.querySelector('.start-soon')).toBeNull()
   })
 
-  test('Für dich: offene „Erlebt mit“-Anfragen und neue Gäste nur, wenn /me welche meldet', async () => {
-    api.erlebtMitOffen.mockResolvedValue([
-      { requestId: 3, dogName: 'Wilma', tier: 'Nele', zuhause: 'Zuhause am Deich', titel: 'Deichrunde', datum: '2026-08-30', foto_urls: [], autor_name: 'Nissen' }
-    ])
-    await render({ ...atHome, erlebtMitOffen: 1 })
-    const forYou = container.querySelector('.start-foryou')
-    expect(forYou.querySelector('h2').textContent).toBe('Für dich 1')
-    expect(forYou.textContent).toContain('Wilma war dabei – übernehmen?')
+  test('Hinweise: statt „Für dich“-Kästen nur eine schmale Zeile, wenn /me welche meldet - ohne eigene Anfragen', async () => {
+    await render({ ...atHome, erlebtMitOffen: 1, neueGaeste: 1 })
+    expect(container.querySelector('.start-foryou')).toBeNull()
+    const line = container.querySelector('.start-hinweise')
+    expect(line.textContent).toContain('2 neue Hinweise')
+    expect(line.textContent).toContain('ansehen')
+    expect(line.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(api.erlebtMitOffen).not.toHaveBeenCalled()
+    expect(api.visits).not.toHaveBeenCalled()
     act(() => root.unmount())
     root = null
     container.remove()
-    api.erlebtMitOffen.mockClear()
 
     await render({ ...atHome, erlebtMitOffen: 0, neueGaeste: 0 })
-    expect(container.querySelector('.start-foryou')).toBeNull()
-    expect(api.erlebtMitOffen).not.toHaveBeenCalled()
-    expect(api.visits).not.toHaveBeenCalled()
+    expect(container.querySelector('.start-hinweise')).toBeNull()
   })
 
   test('Meine Familien am Rand mit Rolle und Link zur Gruppenseite', async () => {

@@ -177,6 +177,10 @@ export const api = {
   rejectErlebtMit: (id) => request(`/erlebt-mit/${encodeURIComponent(id)}/ablehnen`, { method: 'POST' }),
   // „Alle von {Zuhause} ablehnen“ (security-review V2) -> { abgelehnt, offen }
   rejectAllErlebtMitFrom: (zuhauseId) => request(`/erlebt-mit/ablehnen-von/${encodeURIComponent(zuhauseId)}`, { method: 'POST' }),
+  // Hinweis-Glocke (server/routes/meineHinweise.js): Grüße zu eigenen Erinnerungen -> { gruesse: [{ id, entryId, dogId,
+  // titel, von, createdAt, neu }], zahlen: { anfragen, gaeste, gruesse } }; „gesehen“ (Zeitpunkt vom Server) -> { zahlen }.
+  hinweisGruesse: () => request('/hinweise/gruesse'),
+  hinweiseGelesen: () => request('/hinweise/gelesen', { method: 'POST' }),
   joinFamily: (password) => request('/families/join', json('POST', { password })),
   createGroup: (payload) => request('/families/group', json('POST', payload)),
   leaveFamily: (id) => request(`/memberships/${id}`, { method: 'DELETE' }),

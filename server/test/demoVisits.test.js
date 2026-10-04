@@ -68,6 +68,14 @@ test('Demo (Phase V2): Besuch Deich <-> Möwenweg, „Erlebt mit“, Fotos bei B
     assert.equal((await post(`/api/erlebt-mit/${requests[0].requestId}/bestaetigen`, {}, demoCookie)).status, 403)
   })
 
+  await t.test('Hinweis-Glocke: der Gruß des Möwenwegs ist am Deich neu (und die Demo liest nur)', async () => {
+    assert.equal(login.data.neueGruesse >= 1, true)
+    const res = (await get('/api/hinweise/gruesse', demoCookie)).data
+    const gruss = res.gruesse.find((g) => g.von === 'Zuhause Möwenweg (Demo)')
+    assert.deepEqual([gruss.titel, gruss.neu], ['Besuch vom Möwenweg', true])
+    assert.equal((await post('/api/hinweise/gelesen', {}, demoCookie)).status, 403)
+  })
+
   await t.test('Balu hat mehrere Einträge mit Fotos (eigene Kopien, sichtbar)', async () => {
     const balu = (await get(`/api/timeline?dogId=${dogId('Balu')}`, demoCookie)).data
     const withPhotos = balu.filter((entry) => entry.foto_urls.length > 0)

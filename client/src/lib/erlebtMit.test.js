@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { canVisitOrigin, mirrorLabel, requestGroups, requestQuestion, tagLabel, taggedDogIds, withErlebtMitOffen } from './erlebtMit.js'
+import { canVisitOrigin, mirrorLabel, requestGroups, tagLabel, taggedDogIds } from './erlebtMit.js'
 
 describe('lib/erlebtMit (Phase V2)', () => {
   test('tagLabel: bestätigt und angefragt', () => {
@@ -8,8 +8,7 @@ describe('lib/erlebtMit (Phase V2)', () => {
     expect(tagLabel({ name: 'Unbekannt', nameUnbekannt: true, status: 'bestaetigt' })).toBe('mit dabei: Unbekannt')
   })
 
-  test('requestQuestion und mirrorLabel', () => {
-    expect(requestQuestion({ dogName: 'Wilma' })).toBe('Wilma war dabei – übernehmen?')
+  test('mirrorLabel', () => {
     expect(mirrorLabel({ tier: 'Balu', zuhause: 'Zuhause am Deich' })).toBe('mit dabei: Balu · Zuhause am Deich')
   })
 
@@ -18,12 +17,6 @@ describe('lib/erlebtMit (Phase V2)', () => {
     expect(canVisitOrigin(family, { zuhauseId: 9 })).toBe(true)
     expect(canVisitOrigin(family, { zuhauseId: 4 })).toBe(false)
     expect(canVisitOrigin({}, { zuhauseId: 9 })).toBe(false)
-  })
-
-  test('withErlebtMitOffen: neue Zahl, gleiche Zahl dasselbe Objekt', () => {
-    const family = { id: 1, erlebtMitOffen: 2 }
-    expect(withErlebtMitOffen(family, 1)).toEqual({ id: 1, erlebtMitOffen: 1 })
-    expect(withErlebtMitOffen(family, 2)).toBe(family)
   })
 
   test('taggedDogIds - ohne getrennte', () => {

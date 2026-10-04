@@ -114,45 +114,6 @@
   font-size: var(--text-xs);
 }
 
-/* security-review V2 (M-3): „Neu zu Besuch“ auf den Wegbegleitern, bis „Passt“ oder „Gast entfernen“. */
-.new-guests {
-  margin-bottom: var(--space-6);
-}
-
-.new-guest-list {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.new-guest {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--rust);
-  border-left-width: 4px;
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-}
-
-.new-guest p {
-  margin: 0;
-}
-
-.new-guest-text {
-  font-size: var(--text-lg);
-  color: var(--ink);
-}
-
-.new-guest-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
 /* L-4: Name des Gast-Zuhauses neben dem frei eingetippten Namen eines Kommentars */
 .reply-guest {
   color: var(--muted);

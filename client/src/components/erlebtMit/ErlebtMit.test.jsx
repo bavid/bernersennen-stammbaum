@@ -6,10 +6,6 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
   erlebtMitTiere: vi.fn(),
-  erlebtMitOffen: vi.fn(),
-  confirmErlebtMit: vi.fn(),
-  rejectErlebtMit: vi.fn(),
-  rejectAllErlebtMitFrom: vi.fn(),
   upload: vi.fn()
 }))
 vi.mock('../../api', () => ({ api }))
@@ -18,7 +14,6 @@ vi.mock('../Toast.jsx', () => ({ useToast: () => toast }))
 
 import TimelineEntryForm from '../TimelineEntryForm.jsx'
 import Timeline from '../Timeline.jsx'
-import ErlebtMitRequests from './ErlebtMitRequests.jsx'
 import { DemoProvider } from '../../lib/demo.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -168,69 +163,5 @@ describe('„Erlebt mit“ in der Chronik (Phase V2)', () => {
   test('ohne Besuch beim Ursprung kein „ansehen“', async () => {
     await render(<Timeline items={[mirrored]} onOpenPhoto={() => {}} mirror={{ canOpenOrigin: () => false, onOpenOrigin: () => {} }} />)
     expect(container.textContent).not.toContain('ansehen')
-  })
-})
-
-describe('Anfragen „Wilma war dabei – übernehmen?“ (Phase V2)', () => {
-  const request = {
-    requestId: 3,
-    id: 40,
-    dogId: 21,
-    dogName: 'Wilma',
-    tier: 'Nele',
-    zuhause: 'Zuhause am Deich',
-    titel: 'Deichrunde',
-    datum: '2026-08-30',
-    text: 'Zu zweit am Deich',
-    foto_urls: [],
-    autor_name: 'Familie Nissen'
-  }
-
-  test('zeigt die Anfrage; Übernehmen bestätigt und meldet die neue Zahl', async () => {
-    api.erlebtMitOffen.mockResolvedValue([request])
-    api.confirmErlebtMit.mockResolvedValue({ id: 3, status: 'bestaetigt', offen: 0 })
-    const onCountChange = vi.fn()
-    await render(<ErlebtMitRequests onCountChange={onCountChange} />)
-    expect(container.textContent).toContain('Wilma war dabei – übernehmen?')
-    expect(container.textContent).toContain('„Deichrunde“')
-    const confirm = [...container.querySelectorAll('button')].find((b) => b.textContent === 'Übernehmen')
-    await act(async () => confirm.click())
-    expect(api.confirmErlebtMit).toHaveBeenCalledWith(3)
-    expect(onCountChange).toHaveBeenCalledWith(0)
-    expect(container.querySelector('.erlebt-mit-requests')).toBeNull()
-  })
-
-  test('Ablehnen ruft api.rejectErlebtMit', async () => {
-    api.erlebtMitOffen.mockResolvedValue([request])
-    api.rejectErlebtMit.mockResolvedValue({ id: 3, status: 'abgelehnt', offen: 0 })
-    await render(<ErlebtMitRequests />)
-    await act(async () => [...container.querySelectorAll('button')].find((b) => b.textContent === 'Ablehnen').click())
-    expect(api.rejectErlebtMit).toHaveBeenCalledWith(3)
-  })
-
-  test('„Alle von … ablehnen“ erscheint bei mehreren Anfragen eines Zuhauses (security-review V2)', async () => {
-    const second = { ...request, requestId: 4, titel: 'Noch eine' }
-    api.erlebtMitOffen.mockResolvedValue([{ ...request, zuhauseId: 8 }, { ...second, zuhauseId: 8 }])
-    api.rejectAllErlebtMitFrom.mockResolvedValue({ abgelehnt: 2, offen: 0 })
-    const onCountChange = vi.fn()
-    await render(<ErlebtMitRequests onCountChange={onCountChange} />)
-    const all = () => [...container.querySelectorAll('.erlebt-mit-request-groups button')][0]
-    expect(all().textContent).toContain('Alle 2 von „Zuhause am Deich“ ablehnen')
-    act(() => all().click())
-    await act(async () => all().click())
-    expect(api.rejectAllErlebtMitFrom).toHaveBeenCalledWith(8)
-    expect(onCountChange).toHaveBeenCalledWith(0)
-    expect(container.querySelector('.erlebt-mit-requests')).toBeNull()
-  })
-
-  test('Demo: Knöpfe gesperrt; ohne Anfragen nichts', async () => {
-    api.erlebtMitOffen.mockResolvedValue([request])
-    await render(<ErlebtMitRequests />, { isDemo: true })
-    expect([...container.querySelectorAll('.erlebt-mit-request button')].every((b) => b.disabled)).toBe(true)
-    act(() => root.unmount())
-    container.remove()
-    api.erlebtMitOffen.mockResolvedValue([])
-    await render(<ErlebtMitRequests />)
-    expect(container.innerHTML).toBe('')
   })
 })
