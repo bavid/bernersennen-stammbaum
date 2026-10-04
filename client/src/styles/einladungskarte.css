@@ -217,6 +217,7 @@
 }
 
 .vk-anzahl input {
+  flex: 0 0 5.5rem;
   width: 5.5rem;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -471,18 +472,16 @@
 
 .vk-kombi-col {
   display: grid;
-  grid-template-columns: calc(17 * var(--u)) minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr);
-  column-gap: calc(1.8 * var(--u));
-  row-gap: calc(0.6 * var(--u));
-  align-items: start;
+  align-self: center;
+  justify-items: center;
+  gap: calc(0.7 * var(--u));
   min-width: 0;
+  text-align: center;
 }
 
 .vk-back-kombi .vk-qr-box {
-  grid-row: 1 / -1;
   box-sizing: border-box;
-  width: 100%;
+  width: calc(19 * var(--u));
   padding: calc(1.1 * var(--u));
   border: calc(0.3 * var(--u)) solid var(--vk-pf-linie);
 }
@@ -497,27 +496,26 @@
 }
 
 .vk-kombi-sub {
+  max-width: 100%;
   font-size: calc(1.8 * var(--u));
   font-weight: 800;
   line-height: 1.25;
   color: var(--vk-ink);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
-/* In der schmalen Spalte darf auch der Host umbrechen. */
+/* Ein sehr langer Host darf in der Spalte umbrechen. */
 .vk-kombi-sub .vk-nowrap {
   white-space: normal;
 }
 
 .vk-back-kombi .vk-code {
-  flex-direction: column;
-  gap: calc(0.2 * var(--u));
+  gap: calc(0.8 * var(--u));
   margin-top: 0;
   padding: calc(0.4 * var(--u)) calc(0.9 * var(--u));
   background: #fff;
   font-size: calc(2.2 * var(--u));
-  letter-spacing: 0.04em;
-  line-height: 1.15;
+  letter-spacing: 0.03em;
 }
 
 /* --- Admin: Einstellung mit Vorschau -------------------------------------------------------------------- */

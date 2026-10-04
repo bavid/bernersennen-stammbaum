@@ -96,7 +96,7 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
   return (
     <>
       <KartenWahl karte={karte} onChange={chooseKarte} disabled={druck.busy} />
-      <div className="vk-designer">
+      <div className={`vk-designer${hasCode ? ' has-codes' : ''}`}>
         <div className="vk-stage-col">
           <Stage
             front={<VisitenkarteFront card={card} />}
@@ -104,17 +104,21 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
             backNote={hasCode ? RUECKSEITE_NOTE : null}
           />
         </div>
-        <div className="vk-controls">
-          <section className="vk-panel" aria-labelledby="vk-gestaltung-title">
-            <h2 id="vk-gestaltung-title" className="vk-panel-title">
-              Vorderseite
-            </h2>
-            <VisitenkarteVorlagen value={design.vorlage} farbe={design.farbe} hasFoto={Boolean(card.fotoUrl)} onChange={(vorlage) => update({ vorlage })} />
-            <VisitenkarteFarbe value={design.farbe} eigeneFarbe={profile.farbe} onChange={(farbe) => update({ farbe })} />
-            <VisitenkarteInhalt design={design} profile={profile} vorschlag={initial.vorschlag} onChange={update} />
-            <SaveRow entwurf={entwurf} readOnly={readOnly} readOnlyHint={readOnlyHint} />
-          </section>
-          {hasCode && <KartenCodes readOnly={readOnly} isAdminView={isAdminView} druck={druck} count={count} />}
+        <section className="vk-panel vk-area-front" aria-labelledby="vk-gestaltung-title">
+          <h2 id="vk-gestaltung-title" className="vk-panel-title">
+            Vorderseite
+          </h2>
+          <VisitenkarteVorlagen value={design.vorlage} farbe={design.farbe} hasFoto={Boolean(card.fotoUrl)} onChange={(vorlage) => update({ vorlage })} />
+          <VisitenkarteFarbe value={design.farbe} eigeneFarbe={profile.farbe} onChange={(farbe) => update({ farbe })} />
+          <VisitenkarteInhalt design={design} profile={profile} vorschlag={initial.vorschlag} onChange={update} />
+          <SaveRow entwurf={entwurf} readOnly={readOnly} readOnlyHint={readOnlyHint} />
+        </section>
+        {hasCode && (
+          <div className="vk-area-codes">
+            <KartenCodes readOnly={readOnly} isAdminView={isAdminView} druck={druck} count={count} />
+          </div>
+        )}
+        <div className="vk-area-druck">
           <KartenDruckOptionen
             count={count}
             onCount={setCount}

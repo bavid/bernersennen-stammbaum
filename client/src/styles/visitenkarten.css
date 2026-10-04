@@ -12,31 +12,60 @@
   line-height: 1.55;
 }
 
+/* Feedback-Runde: am Handy untereinander (Vorschau, Vorderseite, Codes, Drucken), am Desktop links die Vorschau mit
+   Codes und Drucken darunter, rechts die Vorderseite - so füllen beide Spalten die Höhe, statt rechts alles zu stapeln. */
 .vk-designer {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-8);
+  gap: var(--space-6);
   align-items: start;
+}
+
+.vk-designer > * {
+  min-width: 0;
 }
 
 @media (min-width: 68rem) {
   .vk-designer {
     grid-template-columns: minmax(0, 1fr) minmax(21rem, 26rem);
+    grid-template-areas:
+      'stage front'
+      'codes front'
+      'druck front';
+    grid-template-rows: auto auto 1fr;
+    column-gap: var(--space-8);
   }
-}
 
-/* Die Vorschau bleibt nur stehen, wenn sie ganz ins Fenster passt. */
-@media (min-width: 68rem) and (min-height: 50rem) {
+  .vk-designer:not(.has-codes) {
+    grid-template-areas:
+      'stage front'
+      'druck front';
+    grid-template-rows: auto 1fr;
+  }
+
   .vk-stage-col {
-    position: sticky;
-    top: 5.5rem;
+    grid-area: stage;
   }
-}
 
-.vk-controls {
-  display: grid;
-  gap: var(--space-6);
-  min-width: 0;
+  .vk-area-front {
+    grid-area: front;
+  }
+
+  .vk-area-codes {
+    grid-area: codes;
+  }
+
+  .vk-area-druck {
+    grid-area: druck;
+  }
+
+  /* In der breiten linken Spalte weder Knopf noch Umschalter über die ganze Breite. */
+  .vk-area-druck .vk-print-button,
+  .vk-area-druck .vk-segmented {
+    justify-self: start;
+    width: max-content;
+    max-width: 100%;
+  }
 }
 
 .vk-panel {
