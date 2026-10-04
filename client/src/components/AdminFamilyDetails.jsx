@@ -35,7 +35,7 @@ function DogsTable({ dogs }) {
                 </span>
               </td>
               <td>{dog.rasse || '–'}</td>
-              <td>{sexLabel(dog.geschlecht, dog.tierart)}</td>
+              <td>{sexLabel(dog.geschlecht, dog.tierart) || 'unbekannt'}</td>
               <td>{dog.geburtsdatum ? formatDateShort(dog.geburtsdatum) : '–'}</td>
               <td>{parentLabel(dog.mother_name, dog.mother_unbekannt, dog.mother_rasse, dog.mother_freitext)}</td>
               <td>{parentLabel(dog.father_name, dog.father_unbekannt, dog.father_rasse, dog.father_freitext)}</td>

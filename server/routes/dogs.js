@@ -15,6 +15,7 @@ const { takeOverDog } = require('../lib/transfers')
 const { rudelSharesOf, rudelSharesByOwnDog } = require('../lib/dogShares')
 const { formatCode } = require('../lib/codes')
 const { VERMITTLUNG_STATUS, PUBLISHABLE_STATUS, statusInSql } = require('../lib/vermittlung')
+const { SEX, sexError } = require('../lib/dogSex')
 
 const router = express.Router()
 
@@ -26,11 +27,10 @@ const router = express.Router()
 const canWrite = requireRole('mitglied')
 const canDelete = requireRole('stellvertretung')
 
-const SEXES = ['ruede', 'huendin']
 const SPECIES = ['hund', 'katze', 'anderes']
 const PARENTS = [
-  { idKey: 'motherDogId', textKey: 'motherFreitext', idCol: 'mother_dog_id', textCol: 'mother_freitext', sex: 'huendin', label: 'Mutter' },
-  { idKey: 'fatherDogId', textKey: 'fatherFreitext', idCol: 'father_dog_id', textCol: 'father_freitext', sex: 'ruede', label: 'Vater' }
+  { idKey: 'motherDogId', textKey: 'motherFreitext', idCol: 'mother_dog_id', textCol: 'mother_freitext', sex: SEX.female, label: 'Mutter' },
+  { idKey: 'fatherDogId', textKey: 'fatherFreitext', idCol: 'father_dog_id', textCol: 'father_freitext', sex: SEX.male, label: 'Vater' }
 ]
 const ABSCHIED_GRUENDE = ['verstorben', 'abgegeben', 'umgezogen', 'anderes']
 const HERKUNFT_ARTEN = ['tierheim', 'privat', 'zuechter', 'nachwuchs', 'fundtier', 'anderes']
@@ -82,7 +82,7 @@ function buildDogRecord(body, existing = {}) {
     name_unbekannt: nameUnbekannt ? 1 : 0,
     rasse: cleanText(pick(body, 'rasse', existing.rasse), 120),
     tierart: pick(body, 'tierart', existing.tierart || 'hund'),
-    geschlecht: pick(body, 'geschlecht', existing.geschlecht),
+    geschlecht: cleanEnum(pick(body, 'geschlecht', existing.geschlecht)) ?? SEX.unknown,
     geburtsdatum: cleanText(pick(body, 'geburtsdatum', existing.geburtsdatum), 10),
     farbe_markings: cleanText(pick(body, 'farbeMarkings', existing.farbe_markings), 200),
     foto_url: cleanText(pick(body, 'fotoUrl', existing.foto_url), 300),
@@ -125,7 +125,7 @@ function validateParent(record, parent, dogId, familyId, existingParentId = null
   if (!parentDog || parentDog.family_id !== familyId) return `${parent.label} muss ein Hund des eigenen Rudels sein`
   if (parentDog.tierart !== record.tierart) return `${parent.label} muss dieselbe Tierart haben`
   if (parentDog.geschlecht !== parent.sex) {
-    return `${parent.label} muss ${parent.sex === 'huendin' ? 'eine Hündin' : 'ein Rüde'} sein`
+    return `${parent.label} muss ${parent.sex === SEX.female ? 'eine Hündin' : 'ein Rüde'} sein`
   }
   if (dogId && (parentId === dogId || findDescendant.get({ root: dogId, candidate: parentId }))) {
     return `${parent.label} kann nicht der Hund selbst oder einer seiner Nachkommen sein`
@@ -142,7 +142,8 @@ function validateDogRecord(record, dogId, req, existing = {}) {
   const existingFotoUrl = existing.foto_url ?? null
   const previousVermittlungStatus = existing.vermittlung_status ?? null
   if (!record.name) return 'Name ist erforderlich (oder „Name unbekannt“ wählen)'
-  if (!SEXES.includes(record.geschlecht)) return 'Geschlecht muss ruede oder huendin sein'
+  const sexProblem = sexError(record.geschlecht, existing)
+  if (sexProblem) return sexProblem
   if (!SPECIES.includes(record.tierart)) return 'Tierart muss hund, katze oder anderes sein'
   if (record.geburtsdatum && !isIsoDate(record.geburtsdatum)) return 'Geburtsdatum ist ungültig'
   if (record.foto_url && !isUploadUrl(record.foto_url)) return 'Foto-URL ist ungültig'

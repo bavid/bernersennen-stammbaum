@@ -3,6 +3,8 @@ const path = require('node:path')
 const Database = require('better-sqlite3')
 const { dbPath } = require('./config')
 const { ensureLeitung } = require('./lib/ensureLeitung')
+const { rebuildTableIfOutdated: rebuildTable } = require('./lib/tableRebuild')
+const { DOGS_COLUMNS_SQL, rebuildDogsIfOutdated } = require('./lib/dogsSchema')
 
 fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 const db = new Database(dbPath)
@@ -18,21 +20,8 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
-  CREATE TABLE IF NOT EXISTS dogs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    family_id INTEGER NOT NULL REFERENCES families(id),
-    name TEXT NOT NULL,
-    geschlecht TEXT CHECK(geschlecht IN ('ruede','huendin')) NOT NULL,
-    geburtsdatum TEXT,
-    farbe_markings TEXT,
-    mother_dog_id INTEGER REFERENCES dogs(id),
-    father_dog_id INTEGER REFERENCES dogs(id),
-    mother_freitext TEXT,
-    father_freitext TEXT,
-    foto_url TEXT,
-    beschreibung TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
+  -- Alle Spalten an einer Stelle (lib/dogsSchema.js) - alte Datenbanken bekommen sie unten per ALTER und den Umbau.
+  CREATE TABLE IF NOT EXISTS dogs (${DOGS_COLUMNS_SQL});
 
   CREATE TABLE IF NOT EXISTS timeline_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,51 +127,9 @@ function addColumnIfMissing(table, column, definition) {
   return true
 }
 
-// Einen CHECK kann SQLite per ALTER nicht ändern - die Tabelle wird dann einmalig neu aufgebaut, solange
-// isCurrent(gespeichertes CREATE-SQL) false ist (das Muster "12 Schritte" aus
-// https://www.sqlite.org/lang_altertable.html#otheralter). columnsSql ist dieselbe Spalten-Definition wie
-// für neue Datenbanken, indexesSql legt die Indizes danach wieder an. Genutzt für partners (Phase P Task 1)
-// und promotions (Phase P2 Task 8). Nur mit festen Tabellennamen aus diesem Modul aufrufen.
-function rebuildTableIfOutdated(table, { columnsSql, indexesSql, isCurrent }) {
-  const current = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?").get(table)
-  if (!current || isCurrent(current.sql)) return
-
-  const newTable = `${table}_neu`
-  const oldColumns = db.prepare(`PRAGMA table_info(${table})`).all().map((column) => column.name)
-  // AUTOINCREMENT: der Umbau würde den Zähler sonst auf die höchste NOCH VORHANDENE Id zurücksetzen - die
-  // Id einer schon gelöschten Zeile dürfte dann neu vergeben werden.
-  const oldSequence = db.prepare('SELECT seq FROM sqlite_sequence WHERE name = ?').get(table)?.seq ?? 0
-
-  // Muss außerhalb jeder Transaktion umgestellt werden (innerhalb wirkt das Pragma nicht).
-  db.pragma('foreign_keys = OFF')
-  try {
-    db.transaction(() => {
-      db.exec(`CREATE TABLE ${newTable} (${columnsSql})`)
-      const newColumns = new Set(db.prepare(`PRAGMA table_info(${newTable})`).all().map((column) => column.name))
-      const lost = oldColumns.filter((column) => !newColumns.has(column))
-      // Lieber gar nicht umbauen (Rollback) als stillschweigend eine Spalte samt Daten verlieren.
-      if (lost.length) throw new Error(`Umbau von ${table} abgebrochen - unbekannte Spalten: ${lost.join(', ')}`)
-
-      const columnList = oldColumns.join(', ')
-      db.exec(`INSERT INTO ${newTable} (${columnList}) SELECT ${columnList} FROM ${table}`)
-      db.exec(`DROP TABLE ${table}`)
-      db.exec(`ALTER TABLE ${newTable} RENAME TO ${table}`)
-      db.exec(indexesSql)
-
-      const sequence = db.prepare('SELECT seq FROM sqlite_sequence WHERE name = ?').get(table)
-      if (!sequence) {
-        if (oldSequence > 0) db.prepare('INSERT INTO sqlite_sequence (name, seq) VALUES (?, ?)').run(table, oldSequence)
-      } else if (sequence.seq < oldSequence) {
-        db.prepare('UPDATE sqlite_sequence SET seq = ? WHERE name = ?').run(oldSequence, table)
-      }
-
-      const violations = db.pragma('foreign_key_check')
-      if (violations.length) throw new Error(`Umbau von ${table} abgebrochen - Fremdschlüssel verletzt: ${JSON.stringify(violations)}`)
-    })()
-  } finally {
-    db.pragma('foreign_keys = ON')
-  }
-}
+// Einen CHECK kann SQLite per ALTER nicht ändern - lib/tableRebuild.js baut die Tabelle dann einmalig neu auf (partners,
+// promotions, dogs). Nur mit festen Tabellennamen aus diesem Modul aufrufen.
+const rebuildTableIfOutdated = (table, options) => rebuildTable(db, table, options)
 
 addColumnIfMissing('dogs', 'rasse', 'TEXT')
 addColumnIfMissing('dogs', 'name_unbekannt', 'INTEGER NOT NULL DEFAULT 0')
@@ -380,6 +327,9 @@ db.exec(`
 addColumnIfMissing('dogs', 'vermittlung_status', 'TEXT')
 addColumnIfMissing('dogs', 'public_slug', 'TEXT')
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_dogs_public_slug ON dogs(public_slug) WHERE public_slug IS NOT NULL')
+// Geschlecht "weiß ich nicht" ('unbekannt'): alte Datenbanken bekommen den CHECK einmalig per Umbau (lib/dogsSchema.js) -
+// erst hier, wenn alle dogs-Spalten da sind.
+rebuildDogsIfOutdated(db)
 
 addColumnIfMissing('timeline_entries', 'kategorie', 'TEXT')
 addColumnIfMissing('timeline_entries', 'is_public', 'INTEGER NOT NULL DEFAULT 0')

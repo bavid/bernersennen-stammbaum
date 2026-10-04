@@ -4,7 +4,7 @@ import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { dogLabel, sexLabel, speciesLabel, speciesNoun } from '../lib/timeline.js'
+import { SEX_CHOICES, UNKNOWN_SEX, dogLabel, speciesLabel, speciesNoun } from '../lib/timeline.js'
 import { isEditable } from '../lib/areas.js'
 
 const HERKUNFT_OPTIONS = [
@@ -59,7 +59,7 @@ function initialState(dog, initialValues = {}) {
     rasse: dog?.rasse || initialValues.rasse || '',
     tierart: dog?.tierart || initialValues.tierart || 'hund',
     housemateId: dog ? '' : initialValues.housemateId || '',
-    geschlecht: dog?.geschlecht || initialValues.geschlecht || 'huendin',
+    geschlecht: dog?.geschlecht || initialValues.geschlecht || UNKNOWN_SEX,
     geburtsdatum: dog?.geburtsdatum || '',
     farbeMarkings: dog?.farbe_markings || '',
     beschreibung: dog?.beschreibung || '',
@@ -230,12 +230,11 @@ export default function DogForm({ dog, allDogs, ownFamilyId, initialValues, onSu
       <div className="field">
         <span className="field-label">Geschlecht</span>
         <div className="segmented" role="group" aria-label="Geschlecht">
-          <button type="button" aria-pressed={form.geschlecht === 'huendin'} onClick={() => update({ geschlecht: 'huendin' })}>
-            {sexLabel('huendin', form.tierart)}
-          </button>
-          <button type="button" aria-pressed={form.geschlecht === 'ruede'} onClick={() => update({ geschlecht: 'ruede' })}>
-            {sexLabel('ruede', form.tierart)}
-          </button>
+          {SEX_CHOICES.map((choice) => (
+            <button key={choice.value} type="button" aria-pressed={form.geschlecht === choice.value} onClick={() => update({ geschlecht: choice.value })}>
+              {choice.label}
+            </button>
+          ))}
         </div>
       </div>
 

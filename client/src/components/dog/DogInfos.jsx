@@ -25,7 +25,9 @@ function Fact({ label, wide = false, children }) {
 function DogFacts({ dog }) {
   const age = dog.geburtsdatum && !dog.bei_uns_bis ? ageText(dog.geburtsdatum) : null
   const stay = companionLine(dog, !dog.canEdit ? { ownerName: dog.familyName } : undefined)
-  const kind = dog.tierart === 'anderes' ? `${speciesLabel(dog.tierart)} · ${sexLabel(dog.geschlecht, dog.tierart)}` : sexLabel(dog.geschlecht, dog.tierart)
+  const sex = sexLabel(dog.geschlecht, dog.tierart)
+  // Geschlecht „weiß ich nicht“: „unbekannt“ wie ein fehlender Geburtstag - nie Hündin oder Rüde.
+  const kind = !sex ? <span className="muted">unbekannt</span> : dog.tierart === 'anderes' ? `${speciesLabel(dog.tierart)} · ${sex}` : sex
   return (
     <dl className="facts dog-info-facts">
       <Fact label="Rasse">{dog.rasse || <span className="muted">nicht angegeben</span>}</Fact>

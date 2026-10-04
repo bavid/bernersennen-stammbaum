@@ -11,7 +11,22 @@ const SEX_LABELS = {
 
 const SPECIES_LABELS = { hund: 'Hund', katze: 'Katze', anderes: 'Anderes Tier' }
 
-// "Rüde"/"Hündin", bei Katzen "Kater"/"Katze", sonst "männlich"/"weiblich"
+// Geschlecht „weiß ich nicht“ (server/lib/dogsSchema.js SEX.unknown): neue Tiere starten so. Mutter bzw. Vater kann nur
+// ein Tier mit bekanntem Geschlecht sein (ParentPicker, Verpaarungen filtern nach 'huendin'/'ruede').
+export const UNKNOWN_SEX = 'unbekannt'
+
+// Die Wahl im Formular („Neues Tier“, Tier bearbeiten) - bewusst in denselben Worten für jede Tierart.
+export const SEX_CHOICES = Object.freeze([
+  { value: 'huendin', label: 'weiblich' },
+  { value: 'ruede', label: 'männlich' },
+  { value: UNKNOWN_SEX, label: 'weiß ich nicht' }
+])
+
+export function isKnownSex(geschlecht) {
+  return geschlecht === 'huendin' || geschlecht === 'ruede'
+}
+
+// "Rüde"/"Hündin", bei Katzen "Kater"/"Katze", sonst "männlich"/"weiblich" - bei unbekanntem Geschlecht ''.
 export function sexLabel(geschlecht, tierart = 'hund') {
   return (SEX_LABELS[tierart] || SEX_LABELS.hund)[geschlecht] || ''
 }
@@ -22,11 +37,12 @@ export function speciesLabel(tierart = 'hund') {
 
 // Kombinierte Art+Geschlecht-Zeile ohne Dopplung: bei Katzen ist der Geschlechtsbegriff für Weibchen
 // identisch mit dem Artnamen ("Katze"/"Katze") – dann reicht ein Wort. Rüde/Hündin bzw. Kater bleiben
-// eigenständige Begriffe und werden weiter mit Mittelpunkt kombiniert ("Hund · Hündin", "Katze · Kater").
+// eigenständige Begriffe und werden weiter mit Mittelpunkt kombiniert ("Hund · Hündin", "Katze · Kater"). Bei unbekanntem
+// Geschlecht nur die Art ("Hund").
 export function speciesSexLabel(tierart = 'hund', geschlecht) {
   const species = speciesLabel(tierart)
   const sex = sexLabel(geschlecht, tierart)
-  return species === sex ? species : `${species} · ${sex}`
+  return !sex || species === sex ? species : `${species} · ${sex}`
 }
 
 const SPECIES_NOUNS = { hund: 'Hund', katze: 'Katze', anderes: 'Tier' }

@@ -171,6 +171,20 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(container.querySelector('.dog-head-visible').textContent).toBe('Sichtbar in: Familie Sonnenhang, Familie Möwenweg')
   })
 
+  // Geschlecht „weiß ich nicht“: in den Infos „unbekannt“ wie ein fehlender Geburtstag - nie Hündin oder Rüde.
+  test('Infos: Geschlecht bekannt als Hündin, unbekannt als "unbekannt"', async () => {
+    const fact = () => [...container.querySelectorAll('.dog-info-facts > div')].find((row) => row.querySelector('dt').textContent === 'Geschlecht')
+    await render('/tier/10?reiter=infos')
+    expect(fact().querySelector('dd').textContent).toBe('Hündin')
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render('/tier/10?reiter=infos', { dog: nele({ geschlecht: 'unbekannt' }) })
+    expect(fact().querySelector('dd').textContent).toBe('unbekannt')
+    expect(container.querySelector('.dog-info-facts').textContent).not.toMatch(/Hündin|Rüde/)
+  })
+
   test('#entry-N erzwingt die Chronik, auch mit ?reiter=infos', async () => {
     await render('/tier/10?reiter=infos#entry-5')
     expect(selectedTab()).toBe('Chronik')

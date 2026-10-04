@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { TIERART_CHOICES, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload, choiceTierart, sexChoices } from './newAnimal.js'
+import { TIERART_CHOICES, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload, choiceTierart } from './newAnimal.js'
 
 describe('Neues Tier: Tierart als große Wahl', () => {
   test('Hund, Katze, Kaninchen, Vogel, Pferd, Anderes', () => {
@@ -20,7 +20,8 @@ describe('Neues Tier: Tierart als große Wahl', () => {
 describe('Neues Tier: was an den Server geht (bestehende API, keine neuen Pflichtfelder)', () => {
   test('Kaninchen, Vogel, Pferd sind „anderes“ mit der Art als Rasse', () => {
     const payload = newAnimalPayload({ ...emptyAnimal(), art: 'kaninchen', name: 'Hoppel', rasse: 'egal' })
-    expect(payload).toEqual(expect.objectContaining({ tierart: 'anderes', rasse: 'Kaninchen', name: 'Hoppel', geschlecht: 'huendin' }))
+    // Ohne Wahl: Geschlecht „weiß ich nicht“.
+    expect(payload).toEqual(expect.objectContaining({ tierart: 'anderes', rasse: 'Kaninchen', name: 'Hoppel', geschlecht: 'unbekannt' }))
   })
 
   test('„Anderes“ nimmt „Welches Tier?“; Hund/Katze die Rasse aus „Mehr Angaben“', () => {
@@ -65,11 +66,8 @@ describe('Neues Tier: was an den Server geht (bestehende API, keine neuen Pflich
     expect(newAnimalPayload({ ...form, nameUnbekannt: true }).name).toBe('')
   })
 
-  test('Zusammenfassung von „Mehr Angaben“; das Geschlecht in den Wörtern der Tierart', () => {
+  test('Zusammenfassung von „Mehr Angaben“', () => {
     expect(moreSummary({ ...emptyAnimal(), art: 'hund' })).toBe('Rasse, Geburtstag, Eltern …')
     expect(moreSummary({ ...emptyAnimal(), art: 'vogel' })).toBe('Geburtstag, Eltern …')
-    expect(sexChoices('hund').map((c) => c.label)).toEqual(['Hündin', 'Rüde'])
-    expect(sexChoices('katze').map((c) => c.label)).toEqual(['Katze', 'Kater'])
-    expect(sexChoices('pferd').map((c) => c.label)).toEqual(['weiblich', 'männlich'])
   })
 })

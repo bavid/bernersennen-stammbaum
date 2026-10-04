@@ -5,8 +5,8 @@ import PortraitFeld from './animals/PortraitFeld.jsx'
 import TierartWahl from './animals/TierartWahl.jsx'
 import TierMehrAngaben from './animals/TierMehrAngaben.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
-import { choiceTierart, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload, sexChoices } from '../lib/newAnimal.js'
-import { livesWithLabel } from '../lib/timeline.js'
+import { choiceTierart, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload } from '../lib/newAnimal.js'
+import { SEX_CHOICES, livesWithLabel } from '../lib/timeline.js'
 import '../styles/neues-tier.css'
 
 const NAME_PLACEHOLDER = { hund: 'z. B. Benno', katze: 'z. B. Minka', anderes: 'z. B. Hoppel' }
@@ -114,7 +114,7 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
           Geschlecht
         </span>
         <div className="segmented" role="group" aria-labelledby={sexId}>
-          {sexChoices(form.art).map((choice) => (
+          {SEX_CHOICES.map((choice) => (
             <button key={choice.value} type="button" aria-pressed={form.geschlecht === choice.value} onClick={() => update({ geschlecht: choice.value })}>
               {choice.label}
             </button>

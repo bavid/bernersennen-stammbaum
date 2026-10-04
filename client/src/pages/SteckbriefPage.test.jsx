@@ -93,6 +93,13 @@ describe('SteckbriefPage – Grunddaten', () => {
     expect(container.querySelector('.dog-hero-photo img').getAttribute('src')).toBe('/public-media/pepper.jpg')
   })
 
+  test('Geschlecht „weiß ich nicht“: in der Zeile über dem Namen nur die Art', async () => {
+    publicAnimal.mockResolvedValue({ ...animal, geschlecht: 'unbekannt' })
+    await render()
+
+    expect(container.querySelector('.eyebrow').textContent).toBe('Hund')
+  })
+
   test('rendert die Beschreibung als Klartext (kein HTML)', async () => {
     publicAnimal.mockResolvedValue(animal)
     await render()

@@ -92,3 +92,23 @@ describe('DogCard – geteiltes Tier aus einem Zuhause', () => {
     expect(container.querySelector('.dog-card-shared')).toBeNull()
   })
 })
+
+// Geschlecht „weiß ich nicht“: weder Punkt noch Hündin/Rüde, nur die Art.
+describe('DogCard – Geschlecht', () => {
+  test('bekannt: Punkt und Hündin/Rüde bzw. Katze/Kater', async () => {
+    await render({ dog: dog() })
+    expect(container.querySelector('.sex-dot.sex-huendin')).not.toBeNull()
+    expect(container.querySelector('.sex-label').textContent).toBe('Hündin')
+  })
+
+  test.each([
+    ['hund', 'Hund'],
+    ['katze', 'Katze'],
+    ['anderes', 'Anderes Tier']
+  ])('unbekannt (%s): kein Punkt, nur die Art', async (tierart, label) => {
+    await render({ dog: dog({ tierart, geschlecht: 'unbekannt' }) })
+    expect(container.querySelector('.sex-dot')).toBeNull()
+    expect(container.querySelector('.sex-label').textContent).toBe(label)
+    expect(container.textContent).not.toMatch(/Hündin|Rüde|weiblich|männlich/)
+  })
+})

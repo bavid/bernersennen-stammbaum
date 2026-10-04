@@ -131,10 +131,11 @@ describe('canAddMatingFor', () => {
     expect(canAddMatingFor({ ...nele, tierart: undefined, geburtsdatum: null }, today)).toBe(true)
   })
 
-  test('nicht für Junge (unter einem Jahr), Rüden, andere Tierarten oder Tiere, die gegangen sind', () => {
+  test('nicht für Junge (unter einem Jahr), Rüden, Tiere mit unbekanntem Geschlecht, andere Tierarten oder Tiere, die gegangen sind', () => {
     expect(canAddMatingFor({ ...nele, geburtsdatum: '2025-11-01' }, today)).toBe(false)
     expect(canAddMatingFor({ ...nele, geburtsdatum: '2025-10-03' }, today)).toBe(true)
     expect(canAddMatingFor({ ...nele, geschlecht: 'ruede' }, today)).toBe(false)
+    expect(canAddMatingFor({ ...nele, geschlecht: 'unbekannt' }, today)).toBe(false)
     expect(canAddMatingFor({ ...nele, tierart: 'katze' }, today)).toBe(false)
     expect(canAddMatingFor({ ...nele, bei_uns_bis: '2024-01-01' }, today)).toBe(false)
     expect(canAddMatingFor(null, today)).toBe(false)

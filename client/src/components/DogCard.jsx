@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
-import { displayName, sexLabel, shortName } from '../lib/timeline.js'
+import { displayName, isKnownSex, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { yearOf } from '../lib/dates.js'
 
 const SPECIES_BADGE = { katze: '🐈', anderes: '🐾' }
@@ -111,8 +111,9 @@ const DogCard = forwardRef(function DogCard(
           </span>
         )}
         <span className="dog-card-meta">
-          <span className={`sex-dot sex-${dog.geschlecht}`} aria-hidden="true" />
-          <span className="sex-label">{sexLabel(dog.geschlecht, dog.tierart)}</span>
+          {/* Geschlecht „weiß ich nicht“: weder Punkt noch Hündin/Rüde - nur die Art. */}
+          {isKnownSex(dog.geschlecht) && <span className={`sex-dot sex-${dog.geschlecht}`} aria-hidden="true" />}
+          <span className="sex-label">{sexLabel(dog.geschlecht, dog.tierart) || speciesLabel(dog.tierart)}</span>
           {year && <span>{year}</span>}
         </span>
         <CardTag dog={dog} variant={variant} livesWithLabel={livesWithLabel} showOrigin={showOrigin} />

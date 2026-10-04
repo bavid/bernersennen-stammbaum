@@ -1,5 +1,19 @@
 import { describe, expect, test } from 'vitest'
-import { animalKind, buildTimeline, displayName, dogLabel, genitive, groupByYear, livesWithLabel, sexLabel, shortName, speciesNoun } from './timeline.js'
+import {
+  SEX_CHOICES,
+  animalKind,
+  buildTimeline,
+  displayName,
+  dogLabel,
+  genitive,
+  groupByYear,
+  isKnownSex,
+  livesWithLabel,
+  sexLabel,
+  shortName,
+  speciesNoun,
+  speciesSexLabel
+} from './timeline.js'
 import { ageText, formatDateLong, formatDateShort } from './dates.js'
 
 const dog = { id: 1, name: 'Aiko vom Sonnenhang', geburtsdatum: '2014-05-12' }
@@ -128,6 +142,24 @@ describe('dates', () => {
     expect(sexLabel('ruede')).toBe('Rüde')
     expect(sexLabel('huendin', 'katze')).toBe('Katze')
     expect(sexLabel('ruede', 'anderes')).toBe('männlich')
+  })
+
+  // Geschlecht „weiß ich nicht“: nie Hündin/Rüde, in der kombinierten Zeile nur die Art.
+  test('unknown sex: no sex word, only the species', () => {
+    expect(sexLabel('unbekannt')).toBe('')
+    expect(sexLabel('unbekannt', 'katze')).toBe('')
+    expect(speciesSexLabel('hund', 'unbekannt')).toBe('Hund')
+    expect(speciesSexLabel('anderes', 'unbekannt')).toBe('Anderes Tier')
+    expect(speciesSexLabel('hund', 'huendin')).toBe('Hund · Hündin')
+    expect(speciesSexLabel('katze', 'huendin')).toBe('Katze')
+    expect(isKnownSex('huendin')).toBe(true)
+    expect(isKnownSex('ruede')).toBe(true)
+    expect(isKnownSex('unbekannt')).toBe(false)
+    expect(SEX_CHOICES.map((choice) => [choice.value, choice.label])).toEqual([
+      ['huendin', 'weiblich'],
+      ['ruede', 'männlich'],
+      ['unbekannt', 'weiß ich nicht']
+    ])
   })
 
   test('livesWithLabel names the animals someone lives with', () => {

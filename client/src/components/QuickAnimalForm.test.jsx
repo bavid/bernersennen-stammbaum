@@ -82,7 +82,7 @@ describe('Neues Tier – nur Tierart und Name', () => {
     expect(chip('Kaninchen').classList.contains('is-selected')).toBe(true)
     act(() => setValue(field('name'), 'Hoppel'))
     await submit()
-    expect(api.createDog).toHaveBeenCalledWith(expect.objectContaining({ name: 'Hoppel', tierart: 'anderes', rasse: 'Kaninchen', geschlecht: 'huendin' }))
+    expect(api.createDog).toHaveBeenCalledWith(expect.objectContaining({ name: 'Hoppel', tierart: 'anderes', rasse: 'Kaninchen', geschlecht: 'unbekannt' }))
     expect(onCreated).toHaveBeenCalledWith({ id: 9, name: 'Hoppel' })
   })
 
@@ -123,17 +123,28 @@ describe('Neues Tier – Foto und „Mehr Angaben“', () => {
     expect(api.createDog).toHaveBeenCalledWith(expect.objectContaining({ fotoUrl: '/uploads/p.jpg' }))
   })
 
-  test('Geschlecht steht sichtbar neben dem Namen (vorbelegt) - in den Wörtern der Tierart', async () => {
+  test('Geschlecht steht sichtbar neben dem Namen: weiblich · männlich · weiß ich nicht, vorbelegt mit „weiß ich nicht“', async () => {
     await render()
     const sexButtons = () => [...container.querySelectorAll('.quick-animal-sex button')]
     expect(sexButtons().map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([
-      ['weiblich', 'true'],
-      ['männlich', 'false']
+      ['weiblich', 'false'],
+      ['männlich', 'false'],
+      ['weiß ich nicht', 'true']
     ])
+    // Dieselben Worte für jede Tierart.
     choose('Katze')
-    expect(sexButtons().map((b) => b.textContent)).toEqual(['Katze', 'Kater'])
+    expect(sexButtons().map((b) => b.textContent)).toEqual(['weiblich', 'männlich', 'weiß ich nicht'])
+    act(() => sexButtons()[0].click())
+    expect(sexButtons().map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false'])
+  })
+
+  test('ohne Wahl geht „weiß ich nicht“ an den Server - nie still „weiblich“', async () => {
+    api.createDog.mockResolvedValue({ id: 5, name: 'Pepper' })
+    await render()
     choose('Hund')
-    expect(sexButtons().map((b) => b.textContent)).toEqual(['Hündin', 'Rüde'])
+    act(() => setValue(field('name'), 'Pepper'))
+    await submit()
+    expect(api.createDog).toHaveBeenCalledWith(expect.objectContaining({ name: 'Pepper', tierart: 'hund', geschlecht: 'unbekannt' }))
   })
 
   test('ein Fehler verschwindet nur mit seinem eigenen Feld', async () => {
@@ -149,7 +160,7 @@ describe('Neues Tier – Foto und „Mehr Angaben“', () => {
     await render()
     choose('Hund')
     expect(container.querySelector('.mehr-angaben-summary').textContent).toBe('Rasse, Geburtstag, Eltern …')
-    act(() => [...container.querySelectorAll('.quick-animal-sex button')].find((b) => b.textContent === 'Rüde').click())
+    act(() => [...container.querySelectorAll('.quick-animal-sex button')].find((b) => b.textContent === 'männlich').click())
     openMore()
     act(() => setValue(field('rasse'), 'Hovawart'))
     act(() => setValue(field('geburtsdatum'), '2024-03-01'))

@@ -130,6 +130,46 @@ describe('DogForm – „Bei uns“', () => {
   })
 })
 
+// Geschlecht „weiß ich nicht“: dieselben drei Knöpfe wie bei „Neues Tier“; als Mutter oder Vater stehen nur Tiere mit
+// bekanntem Geschlecht zur Wahl.
+describe('DogForm – Geschlecht', () => {
+  const sexButtons = () => [...container.querySelectorAll('[aria-label="Geschlecht"] button')]
+
+  test('weiblich · männlich · weiß ich nicht - das Geschlecht des Tiers ist gewählt, "weiß ich nicht" geht an den Server', async () => {
+    const onSubmit = vi.fn().mockResolvedValue()
+    await render({ onSubmit, dog: { id: 1, name: 'Wilma', geschlecht: 'huendin', tierart: 'hund' } })
+    expect(sexButtons().map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([
+      ['weiblich', 'true'],
+      ['männlich', 'false'],
+      ['weiß ich nicht', 'false']
+    ])
+
+    act(() => sexButtons()[2].click())
+    await act(async () => container.querySelector('form').requestSubmit())
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ geschlecht: 'unbekannt' }))
+  })
+
+  test('ein Tier mit unbekanntem Geschlecht zeigt "weiß ich nicht" gewählt', async () => {
+    await render({ dog: { id: 1, name: 'Flocke', geschlecht: 'unbekannt', tierart: 'katze' } })
+    expect(sexButtons().find((b) => b.getAttribute('aria-pressed') === 'true').textContent).toBe('weiß ich nicht')
+  })
+
+  test('als Mutter und Vater nur Tiere mit bekanntem Geschlecht', async () => {
+    await render({
+      dog: { id: 9, name: 'Benno', geschlecht: 'ruede', tierart: 'hund' },
+      allDogs: [
+        { id: 1, name: 'Aiko', geschlecht: 'huendin', tierart: 'hund', can_edit: 1 },
+        { id: 2, name: 'Hermes', geschlecht: 'ruede', tierart: 'hund', can_edit: 1 },
+        { id: 3, name: 'Pepper', geschlecht: 'unbekannt', tierart: 'hund', can_edit: 1 }
+      ]
+    })
+    const offered = [...container.querySelectorAll('select option')].map((o) => o.textContent)
+    expect(offered.some((label) => label.includes('Aiko'))).toBe(true)
+    expect(offered.some((label) => label.includes('Hermes'))).toBe(true)
+    expect(offered.some((label) => label.includes('Pepper'))).toBe(false)
+  })
+})
+
 describe('DogForm – geteilte Tiere sind kein Schreibziel', () => {
   test('das "Lebt zusammen mit"-Auswahlfeld zeigt nur bearbeitbare (eigene) Tiere', async () => {
     await render({
