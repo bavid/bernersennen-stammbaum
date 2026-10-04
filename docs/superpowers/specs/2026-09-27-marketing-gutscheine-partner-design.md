@@ -896,6 +896,18 @@ warten“; Überschuss fließt in Spenden und lokale Projekte.
 - Start klein: ein einfacher Shop (z. B. ein fertiger Shop-Dienst statt eigener Shop-Technik), wenige Motive,
   Vorbestellung, um Lagerrisiko klein zu halten.
 
+### Partner-Merch (Zukunftsplan, ab ~200 Nutzern)
+- Partner bekommen eigene Produkte mit **ihrem Logo**: z. B. Hundeschule Pfotenglück auf Klickern, Halsbändern,
+  Leinen, Beuteln, Futterbeuteln, Tassen. Kunden bestellen im Shop, beim Partner-Portal verlinkt.
+- **Gewinn aus Partner-Produkten geht an den Partner** (abzüglich Material, Versand, Gebühren); die Plattform trägt
+  die Abwicklung. Der Betreiber verwaltet und arbeitet die Bestellungen aus (Qualität prüfen, verpacken, Flyer).
+- **Fertige Werkzeuge statt Eigenbau:** Print-on-Demand-/Stickerei-Anbieter mit Schnittstelle (API) für
+  personalisierte Produkte und ein Shop-System mit fertiger Anbindung; Zahlungen nur über gehostete Kassen. Anbieter
+  und Konditionen vor dem Start vergleichen.
+- Shop technisch getrennt von der App (eigene Subdomain/eigener Server), siehe Plan
+  `docs/superpowers/plans/2026-10-04-devops-sicherheit.md`.
+- **Start erst nach dem Stand „fein“ und ab ~200 Nutzern**; vorher nur eine Merch-Probe mit wenigen Motiven.
+
 ### Rechtsform und Förderung (Optionen, prüfen lassen)
 - **Gemeinnützigkeit:** Tierschutz ist ein steuerbegünstigter Zweck (§ 52 AO). Möglich als **e. V.** oder
   **gGmbH**. Dann sind Spenden an die Plattform steuerlich absetzbar, aber wirtschaftliche Tätigkeit (Merch,
