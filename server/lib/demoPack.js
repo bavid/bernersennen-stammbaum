@@ -577,7 +577,8 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     // Phase R Task 3: die Demo-Haushalte für Stellvertretung, Mitglied und Gast (lib/demoMembers.js) VOR
     // "Zuhause am Deich" - POST /api/demo landet im neuesten Demo-Zuhause (routes/auth.js findDemoFamily),
     // und das soll die Leitung bleiben.
-    const membersResult = createDemoMembers(db, { copyImage, groupFamilyId: rudelResult.familyId })
+    // Pepper (Lindenhof) kam aus dem Demo-Tierheim - darum mit dessen Id (das Tierheim steht schon, siehe oben).
+    const membersResult = createDemoMembers(db, { copyImage, groupFamilyId: rudelResult.familyId, shelterFamilyId: shelterResult.familyId })
 
     const householdResult = createDemoHousehold(db, {
       password: crypto.randomBytes(24).toString('base64url'),

@@ -93,13 +93,13 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
     for (const slug of [PFOTENGLUECK, SONNENHANG]) assert.equal(trust[slug], 0)
   })
 
-  await t.test('Posteingänge: Pfotenglück zwei Nachrichten (eine gelesen), Tierheim eine "Anfrage zu Pepper" - fiktiv, @example.org', () => {
+  await t.test('Posteingänge: Pfotenglück zwei Nachrichten (eine gelesen), Tierheim eine "Anfrage zu Frieda" - fiktiv, @example.org', () => {
     const pfoten = messagesOf(PFOTENGLUECK)
     assert.equal(pfoten.length, 2)
     assert.equal(pfoten.filter((m) => m.gelesen_at !== null).length, 1)
     const shelter = messagesOf(SONNENHANG)
     assert.equal(shelter.length, 1)
-    assert.equal(shelter[0].bezug, 'Anfrage zu Pepper')
+    assert.equal(shelter[0].bezug, 'Anfrage zu Frieda')
     assert.equal(messagesOf(WUSCHELGLUECK).length, 0)
     for (const message of [...pfoten, ...shelter]) {
       assert.equal(message.is_demo, 1)
@@ -142,7 +142,7 @@ test('Demo: Beiträge und Posteingänge der Demo-Partner', async (t) => {
     const shelterLogin = await post('/api/demo', { as: 'tierheim' })
     assert.equal(shelterLogin.data.partner.unread, 1)
     const shelterInbox = (await get('/api/partner-area/messages', getCookie(shelterLogin.res))).data
-    assert.deepEqual(shelterInbox.messages.map((m) => m.bezug), ['Anfrage zu Pepper'])
+    assert.deepEqual(shelterInbox.messages.map((m) => m.bezug), ['Anfrage zu Frieda'])
 
     const demoLogin = await post('/api/demo')
     const discover = (await post('/api/discover', {}, getCookie(demoLogin.res))).data

@@ -50,9 +50,9 @@ alle Metadaten entfernt (kein EXIF/XMP/ICC; die Downloads sind sRGB). Vier Bilde
 | nele.jpg | Zuhause am Deich: Nele, Mischling, Hündin, aus dem Tierheim – Profilfoto (wird ins Rudel geteilt) |
 | flocke.jpg | Zuhause am Deich: Flocke, Kaninchen aus einer Pflegestelle – Profilfoto, Eintrag „Neues Gehege“ |
 | wilma.jpg | Zuhause Möwenweg: Wilma, Berner-Hündin, liebt Schnee – Profilfoto (geteilt), Eintrag „Schneerunde mit Nele“ (eigene Kopie, „Erlebt mit“ Nele, gespiegelt am Deich) |
-| pepper.jpg | Zuhause Lindenhof: Pepper, Mischling, Rüde, Wasserfreund mit Stock – Profilfoto (geteilt) |
-| tierheim-pepper.jpg | Tierheim Sonnenhang: Pepper, Mischling, Hündin (in Vermittlung) – Profilfoto/Steckbrief |
-| tierheim-pepper-gassi.jpg | Tierheim: Peppers Eintrag „Gassi am Fluss“ (derselbe Hund) |
+| pepper.jpg | Zuhause Lindenhof: Pepper, Mischling, Rüde, Wasserfreund mit Stock, aus dem Tierheim Sonnenhang vermittelt – Profilfoto (geteilt), Eintrag „Pepper lernt schwimmen“ (eigene Kopie) |
+| tierheim-pepper.jpg | Tierheim Sonnenhang: Frieda (bis 04.10. „Pepper“), Mischling, Hündin (in Vermittlung) – Profilfoto/Steckbrief |
+| tierheim-pepper-gassi.jpg | Tierheim: Friedas Eintrag „Gassi am Fluss“ (derselbe Hund) |
 | tierheim-sunny.jpg | Tierheim: Sunny, Katze, liegt gern auf dem Fensterbrett – Profilfoto/Steckbrief |
 | tierheim-oskar.jpg | Tierheim: Oskar, ruhiger erwachsener Rüde (reserviert) – Profilfoto/Steckbrief |
 | tierheim-momo.jpg | Tierheim: Momo, Kaninchen – Profilfoto |

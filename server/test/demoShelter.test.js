@@ -6,7 +6,8 @@ const { useTempDataDir, startApp, cleanup, call, getCookie } = require('./helper
 // createDemoShelter) und seine Verknüpfung mit der Demo-Nele ("Zuhause am Deich"). Der allgemeine
 // Ersetzungs-Mechanismus (Photos, Partner, Orphans) steht in demoPack.test.js - diese Datei prüft nur
 // die Task-6-spezifischen Inhalte: die Tiere (seit Phase P2 Task 9 fünf, Lotte pausiert), /api/demo
-// {as:'tierheim'} und die Nele-Verknüpfung.
+// {as:'tierheim'} und die Verknüpfung mit den Schützlingen: Nele („Zuhause am Deich“) und Pepper („Zuhause
+// Lindenhof“, vor gut fünf Monaten vermittelt - „So geht es euren Schützlingen“, GET /api/schuetzlinge).
 // APP_ENV=staging: Demo-Partner/-Tiere sind dort ohne ?demo=1 sichtbar (wie demoPack.test.js).
 const dataDir = useTempDataDir('demo-shelter', { APP_ENV: 'staging' })
 
@@ -16,8 +17,12 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
   const db = require('../db')
   const { uploadDir } = require('../config')
   const { replaceDemoPack } = require('../lib/demoPack')
+  const { relativeDemoDate } = require('../lib/demoDates')
 
-  const { created, household, shelter } = replaceDemoPack(db, uploadDir)
+  const { created, household, members, shelter } = replaceDemoPack(db, uploadDir)
+  const lindenhof = members.households.find((h) => h.name === 'Zuhause Lindenhof (Demo)')
+  const pepperId = db.prepare('SELECT id FROM dogs WHERE family_id = ? AND name = ?').get(lindenhof.familyId, 'Pepper').id
+  const shelterCookie = async () => getCookie((await call(base, '/api/demo', { method: 'POST', body: { as: 'tierheim' } })).res)
 
   await t.test('fünf Tiere im Demo-Tierheim, vier davon mit veröffentlichtem Steckbrief (Lotte pausiert)', () => {
     assert.equal(shelter.dogs, 5)
@@ -26,13 +31,13 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
     )
     assert.deepEqual(
       dogs.map((d) => d.name),
-      ['Lotte', 'Momo', 'Oskar', 'Pepper', 'Sunny']
+      ['Frieda', 'Lotte', 'Momo', 'Oskar', 'Sunny']
     )
     const published = dogs.filter((d) => d.public_slug !== null)
-    assert.equal(published.length, 4, 'Pepper, Sunny, Oskar und Lotte sind veröffentlicht')
+    assert.equal(published.length, 4, 'Frieda, Sunny, Oskar und Lotte sind veröffentlicht')
     assert.deepEqual(
       published.map((d) => d.name).sort(),
-      ['Lotte', 'Oskar', 'Pepper', 'Sunny']
+      ['Frieda', 'Lotte', 'Oskar', 'Sunny']
     )
     const lotte = dogs.find((d) => d.name === 'Lotte')
     assert.equal(lotte.vermittlung_status, 'pausiert')
@@ -43,9 +48,9 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
     assert.equal(oskar.vermittlung_status, 'reserviert')
   })
 
-  await t.test('Peppers Chronik: vier Einträge mit den geforderten Kategorien, drei davon öffentlich', () => {
-    const pepperId = db.prepare('SELECT id FROM dogs WHERE family_id = ? AND name = ?').get(shelter.familyId, 'Pepper').id
-    const entries = db.prepare('SELECT kategorie, is_public FROM timeline_entries WHERE dog_id = ? ORDER BY datum').all(pepperId)
+  await t.test('Friedas Chronik: vier Einträge mit den geforderten Kategorien, drei davon öffentlich', () => {
+    const friedaId = db.prepare('SELECT id FROM dogs WHERE family_id = ? AND name = ?').get(shelter.familyId, 'Frieda').id
+    const entries = db.prepare('SELECT kategorie, is_public FROM timeline_entries WHERE dog_id = ? ORDER BY datum').all(friedaId)
     assert.equal(entries.length, 4)
     assert.deepEqual(
       entries.map((e) => e.kategorie).sort(),
@@ -55,18 +60,18 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
   })
 
   await t.test('der öffentliche Steckbrief eines Tiers funktioniert; die Partner-Tierliste zeigt nur die vier veröffentlichten', async () => {
-    const pepperSlug = db.prepare('SELECT public_slug FROM dogs WHERE family_id = ? AND name = ?').get(shelter.familyId, 'Pepper')
+    const friedaSlug = db.prepare('SELECT public_slug FROM dogs WHERE family_id = ? AND name = ?').get(shelter.familyId, 'Frieda')
       .public_slug
-    const view = await call(base, `/api/public/animals/${pepperSlug}`)
+    const view = await call(base, `/api/public/animals/${friedaSlug}`)
     assert.equal(view.status, 200)
-    assert.equal(view.data.name, 'Pepper')
+    assert.equal(view.data.name, 'Frieda')
     assert.equal(view.data.shelter.slug, 'tierheim-sonnenhang')
 
     const list = await call(base, '/api/public/partners/tierheim-sonnenhang/animals')
     assert.equal(list.status, 200)
     assert.deepEqual(
       list.data.map((a) => a.name).sort(),
-      ['Lotte', 'Oskar', 'Pepper', 'Sunny']
+      ['Frieda', 'Lotte', 'Oskar', 'Sunny']
     )
     assert.equal(list.data.find((a) => a.name === 'Lotte').vermittlung_status, 'pausiert')
   })
@@ -84,7 +89,8 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
     const discover = await call(base, '/api/discover', { method: 'POST', body: {}, cookie: getCookie(demoLogin.res) })
     assert.equal(discover.status, 200)
     const tiere = discover.data.begleiter.tiere.map((a) => a.name)
-    assert.ok(tiere.includes('Pepper'))
+    assert.ok(tiere.includes('Frieda'))
+    assert.ok(!tiere.includes('Pepper'), 'Pepper ist längst vermittelt')
     assert.ok(!tiere.includes('Lotte'), 'pausiert erscheint nicht in Entdecken')
   })
 
@@ -100,8 +106,8 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
     const shelterCookie = getCookie(login.res)
     const dogs = await call(base, '/api/dogs', { cookie: shelterCookie })
     assert.equal(dogs.status, 200)
-    // Fünf eigene Tiere plus Nele, die geteilt (dog_shares mit story_consent) unter "Ehemalige" erscheint.
-    assert.equal(dogs.data.length, 6)
+    // Fünf eigene Tiere plus Nele und Pepper, die geteilt (dog_shares mit story_consent) unter "Vermittelt" erscheinen.
+    assert.equal(dogs.data.length, 7)
     assert.equal(dogs.data.filter((d) => d.can_edit).length, 5, 'fünf davon eigene, bearbeitbare Tiere')
 
     // Schreibgeschützt wie jede Demo-Sitzung
@@ -159,14 +165,61 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
     assert.equal(moveIn.herkunft_name, null, 'frisch beim neuen Zuhause geschrieben, kein Umzugs-Eintrag')
   })
 
-  await t.test('das Demo-Tierheim sieht Nele unter "Ehemalige" (geteilt, nicht mehr eigen)', async () => {
-    const shelterLogin = await call(base, '/api/demo', { method: 'POST', body: { as: 'tierheim' } })
-    const shelterCookie = getCookie(shelterLogin.res)
-    const dogs = await call(base, '/api/dogs', { cookie: shelterCookie })
+  await t.test('das Demo-Tierheim sieht Nele und Pepper unter "Vermittelt" (geteilt, nicht mehr eigen)', async () => {
+    const dogs = await call(base, '/api/dogs', { cookie: await shelterCookie() })
     const nele = dogs.data.find((d) => d.name === 'Nele')
     assert.ok(nele, 'Nele erscheint in der Tierliste des Tierheims')
     assert.equal(nele.shared_from, 'Zuhause am Deich')
     assert.equal(nele.can_edit, 0)
+    const pepper = dogs.data.find((d) => d.id === pepperId)
+    assert.equal(pepper.shared_from, 'Zuhause Lindenhof (Demo)')
+    assert.equal(pepper.can_edit, 0)
+  })
+
+  await t.test('Pepper (Lindenhof): vor gut fünf Monaten aus dem Tierheim vermittelt - Übergabe, Einwilligung, frühe Einträge', async () => {
+    const dog = db.prepare('SELECT herkunft_art, herkunft_text, bei_uns_seit FROM dogs WHERE id = ?').get(pepperId)
+    assert.equal(dog.herkunft_art, 'tierheim')
+    assert.equal(dog.herkunft_text, 'Tierheim Sonnenhang')
+    assert.equal(dog.bei_uns_seit, relativeDemoDate({ days: -148 }))
+    const transfer = db.prepare('SELECT from_family_id, to_family_id FROM dog_transfers WHERE dog_id = ? ORDER BY id DESC').get(pepperId)
+    assert.deepEqual({ ...transfer }, { from_family_id: shelter.familyId, to_family_id: lindenhof.familyId })
+    const share = db.prepare('SELECT story_consent FROM dog_shares WHERE dog_id = ? AND family_id = ?').get(pepperId, shelter.familyId)
+    assert.equal(share.story_consent, 1)
+    assert.ok(db.prepare('SELECT 1 FROM dog_shares WHERE dog_id = ? AND family_id = ?').get(pepperId, created.familyId), 'weiter in der Familie')
+
+    const entries = db.prepare('SELECT titel, datum, privat, foto_urls, herkunft_family_id FROM timeline_entries WHERE dog_id = ?').all(pepperId)
+    const early = entries.filter((e) => e.herkunft_family_id === shelter.familyId)
+    assert.equal(early.length, 2, 'zwei Einträge aus der Zeit im Tierheim')
+    assert.ok(early.every((e) => e.datum < dog.bei_uns_seit && !e.privat))
+    const since = entries.filter((e) => e.herkunft_family_id === null)
+    const open = since.filter((e) => !e.privat)
+    assert.ok(open.length >= 3 && open.length <= 4, `3 bis 4 nicht-private Erinnerungen danach (${open.length})`)
+    assert.ok(open.every((e) => e.datum >= dog.bei_uns_seit))
+    assert.ok(open.some((e) => JSON.parse(e.foto_urls).length > 0), 'mit Foto')
+    assert.equal(since.filter((e) => e.privat).length, 1, 'genau eine private')
+  })
+
+  await t.test('„So geht es euren Schützlingen“: Peppers neueste Erinnerungen und Nele - nie die private', async () => {
+    const cookie = await shelterCookie()
+    const res = await call(base, '/api/schuetzlinge', { cookie })
+    assert.equal(res.status, 200)
+    const { items } = res.data
+    assert.equal(items.length, 5)
+    assert.deepEqual([...new Set(items.map((item) => item.dog.name))], ['Pepper', 'Nele'], 'zuerst Pepper (neu), dann Nele')
+    const privateTitles = db.prepare('SELECT titel FROM timeline_entries WHERE dog_id IN (?, ?) AND privat = 1').all(pepperId, household.dogIds.nele)
+    assert.ok(privateTitles.length >= 2)
+    for (const { titel } of privateTitles) assert.ok(!items.some((item) => item.titel === titel), `privat: ${titel}`)
+    assert.ok(!items.some((item) => item.titel === 'Ankunft im Tierheim'), 'die eigenen frühen Einträge des Tierheims nicht')
+    assert.ok(items.some((item) => item.titel === 'Nele zieht ein – die ersten Tage'))
+    const greeted = items.find((item) => item.titel === 'Pepper lernt schwimmen')
+    assert.equal(greeted.comment_count, 1, 'ein Gruß vom Tierheim')
+    const photo = await fetch(`${base}${greeted.foto_url}`, { headers: { Cookie: cookie } })
+    assert.equal(photo.status, 200, 'das Foto lädt im Tierheim')
+
+    // Dieselbe private Erinnerung fehlt auch in Peppers Chronik, die das Tierheim liest
+    const chronicle = await call(base, `/api/timeline?dogId=${pepperId}`, { cookie })
+    assert.ok(chronicle.data.length > 0)
+    assert.ok(chronicle.data.every((entry) => !entry.privat))
   })
 
   await t.test('Happy Ends: das Demo-Tierheim zeigt Neles Geschichte, ohne jede Angabe zum Zuhause', async () => {
@@ -174,6 +227,8 @@ test('Demo-Tierheim: fünf Tiere, Steckbriefe, /api/demo {as: "tierheim"}, Verkn
     assert.equal(happyEnds.status, 200)
     const nele = happyEnds.data.find((h) => h.name === 'Nele')
     assert.ok(nele, 'Nele erscheint als Happy End')
+    assert.ok(happyEnds.data.some((h) => h.name === 'Pepper'), 'Pepper ebenso (story_consent)')
+    assert.ok(!JSON.stringify(happyEnds.data).includes('Lindenhof'))
     assert.equal(nele.tierart, 'hund')
     assert.equal(nele.entry.titel, 'Nele zieht ein – die ersten Tage')
     const json = JSON.stringify(nele)

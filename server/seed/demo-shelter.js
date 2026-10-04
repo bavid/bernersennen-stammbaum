@@ -5,14 +5,16 @@
 // (art='tierheim', partner_id = der Demo-Partner mit slug 'tierheim-sonnenhang', siehe seed/demo-partners.js).
 //
 // Bilder liegen in ./images (Quellen in images/QUELLEN.md): jedes Tierheim-Tier hat ein eigenes Foto
-// (tierheim-*.jpg), keines davon zeigt ein Tier aus Rudel oder Zuhause. Peppers Porträt und ihr
-// Gassi-Eintrag zeigen denselben Hund (gleiche Fotoserie).
+// (tierheim-*.jpg), keines davon zeigt ein Tier aus Rudel oder Zuhause. Friedas Porträt und ihr
+// Gassi-Eintrag zeigen denselben Hund (gleiche Fotoserie; die Dateien heißen noch tierheim-pepper*.jpg).
+// Frieda hieß bis zum 04.10. Pepper - der Name gehört jetzt dem Rüden aus „Zuhause Lindenhof“, den das Tierheim
+// vermittelt hat (seed/demo-members.js) - zwei Peppers im selben Tierheim wären verwirrend.
 const SHELTER_NAME = 'Tierheim Sonnenhang'
 
 const DOGS = [
   {
-    key: 'pepper',
-    name: 'Pepper',
+    key: 'frieda',
+    name: 'Frieda',
     tierart: 'hund',
     rasse: 'Mischling',
     geschlecht: 'huendin',
@@ -75,20 +77,20 @@ const DOGS = [
   }
 ]
 
-// isPublic gilt nur für Pepper/Sunny/Oskar/Lotte, deren Steckbrief veröffentlicht ist (published: true oben) -
+// isPublic gilt nur für Frieda/Sunny/Oskar/Lotte, deren Steckbrief veröffentlicht ist (published: true oben) -
 // bei Momo (kein Steckbrief) bleibt es überall false, rein kosmetisch ohne Wirkung nach außen.
 const TIMELINE = [
   {
-    dog: 'pepper',
+    dog: 'frieda',
     datum: '2026-06-02',
     autor: 'Team Sonnenhang',
     titel: 'Ankunft im Tierheim',
-    text: 'Pepper kam über das Ordnungsamt zu uns – abgemagert, aber neugierig. Erste Untersuchung unauffällig.',
+    text: 'Frieda kam über das Ordnungsamt zu uns – abgemagert, aber neugierig. Erste Untersuchung unauffällig.',
     kategorie: 'ankunft',
     isPublic: true
   },
   {
-    dog: 'pepper',
+    dog: 'frieda',
     datum: '2026-06-05',
     autor: 'Team Sonnenhang',
     titel: 'Tierarzt-Check',
@@ -97,7 +99,7 @@ const TIMELINE = [
     isPublic: true
   },
   {
-    dog: 'pepper',
+    dog: 'frieda',
     datum: '2026-06-20',
     autor: 'Team Sonnenhang',
     titel: 'Verhaltensbeobachtung',
@@ -106,11 +108,11 @@ const TIMELINE = [
     isPublic: false
   },
   {
-    dog: 'pepper',
+    dog: 'frieda',
     datum: '2026-08-14',
     autor: 'Team Sonnenhang',
     titel: 'Gassi am Fluss',
-    text: 'Erster großer Spaziergang außerhalb des Geländes – Pepper war ruhig an der Leine und hat sich über jede Ente gefreut.',
+    text: 'Erster großer Spaziergang außerhalb des Geländes – Frieda war ruhig an der Leine und hat sich über jede Ente gefreut.',
     kategorie: 'gassi',
     isPublic: true,
     fotos: ['tierheim-pepper-gassi.jpg'],

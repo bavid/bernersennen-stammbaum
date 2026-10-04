@@ -38,6 +38,10 @@ test('Demo: Start mischt Zuhause, Familie und befreundetes Zuhause', async (t) =
     assert.equal(wilma.dog.zuhause, 'Zuhause Möwenweg (Demo)')
     const socke = res.data.items.find((item) => item.titel === 'Socke erobert den Kratzbaum')
     assert.equal(socke.dog.zuhause, 'Zuhause Möwenweg (Demo)')
+    // Pepper (Lindenhof, aus dem Tierheim vermittelt): seine Erinnerungen tragen sein Zuhause - die private fehlt
+    const pepper = res.data.items.find((item) => item.titel === 'Fast ein halbes Jahr bei uns')
+    assert.equal(pepper.dog.zuhause, 'Zuhause Lindenhof (Demo)')
+    assert.ok(!res.data.items.some((item) => item.titel === 'Impfung und Wurmkur'), 'Peppers private Erinnerung nie')
     const own = res.data.items.filter((item) => item.type === 'eintrag' && item.area.art === 'eigen')
     assert.ok(own.length > 0)
     assert.ok(own.every((item) => item.dog.zuhause === null), 'eigene Tiere ohne Herkunft')

@@ -64,6 +64,11 @@ const MEMBERS = [
     seitTagen: 120,
     autor: 'Familie Brandt',
     tiere: [
+      // Der zweite Schützling des Demo-Tierheims (nach Nele, seed/demo-household.js): vor gut fünf Monaten aus dem
+      // Tierheim Sonnenhang vermittelt. tierheim (lib/demoMembers.js): Übergabe (dog_transfers) und „darf mitlesen“
+      // samt Happy-End-Einwilligung (dog_shares mit story_consent), dazu ein Gruß des Tierheims auf eintrag. So zeigt
+      // das Tierheim unter „So geht es euren Schützlingen“, wie es Pepper seitdem geht - nie die private Erinnerung.
+      // Alle Tage relativ (lib/demoDates.js): nach jedem Auffrischen der Demo ist die Vermittlung gut fünf Monate her.
       {
         key: 'pepper',
         name: 'Pepper',
@@ -71,17 +76,64 @@ const MEMBERS = [
         tierart: 'hund',
         geschlecht: 'ruede',
         geburtsdatum: '2022-08-15',
-        beiUnsSeit: '2023-02-01',
-        herkunftArt: 'privat',
-        herkunftText: 'Von Freunden übernommen',
+        beiUnsSeitTage: -148,
+        herkunftArt: 'tierheim',
+        herkunftText: 'Tierheim Sonnenhang',
         foto: 'pepper.jpg',
-        beschreibung: 'Ein Wasserfreund mit Stock im Maul. Wer einen Ball wirft, sieht Pepper erst wieder, wenn der Ball trocken ist.',
+        beschreibung: 'Aus dem Tierheim Sonnenhang zu uns gekommen. Ein Wasserfreund mit Stock im Maul – wer einen Ball wirft, sieht Pepper erst wieder, wenn der Ball trocken ist.',
+        tierheim: {
+          storyConsent: true,
+          gruss: { autor: 'Team Sonnenhang', text: 'Was für ein Wasserhund! Schön zu sehen, wie gut es Pepper bei euch geht.', hoursAgo: 6 }
+        },
         eintrag: {
-          datum: '2026-07-20',
+          relativ: { tage: -76 },
           titel: 'Pepper lernt schwimmen',
           text: 'Erst nur bis zum Bauch, dann ein Stock zu weit draußen – und plötzlich schwimmt er. Die Enten waren wenig begeistert.',
-          hoursAgo: 30
+          hoursAgo: 30,
+          fotos: ['pepper.jpg']
         },
+        // Weitere Erinnerungen: zwei aus der Zeit im Tierheim (herkunftShelter, „aus Tierheim Sonnenhang“ - wie bei Nele),
+        // danach drei nicht-private und eine private (die sieht weder die Familie noch das Tierheim).
+        chronik: [
+          {
+            relativ: { tage: -190 },
+            autor: 'Team Sonnenhang',
+            titel: 'Ankunft im Tierheim',
+            text: 'Pepper wurde am Badesee gefunden – nass, hungrig und mit einem Stock im Maul. Niemand hat ihn vermisst gemeldet.',
+            kategorie: 'ankunft',
+            herkunftShelter: true
+          },
+          {
+            relativ: { tage: -163 },
+            autor: 'Team Sonnenhang',
+            titel: 'Kennenlernen mit Familie Brandt',
+            text: 'Familie Brandt war zum dritten Mal zum Gassigehen da – Pepper wartet schon am Tor, wenn ihr Auto kommt.',
+            kategorie: 'gassi',
+            herkunftShelter: true
+          },
+          {
+            relativ: { tage: -148 },
+            titel: 'Pepper zieht ein',
+            text: 'Heute aus dem Tierheim Sonnenhang abgeholt. Die erste Nacht hat er vor der Terrassentür geschlafen – mit Blick auf den Garten.'
+          },
+          {
+            relativ: { tage: -41 },
+            titel: 'Impfung und Wurmkur',
+            text: 'Alles in Ordnung, nur das Gewicht: zwei Kilo mehr als im Frühjahr. Die Leckerli werden gezählt.',
+            privat: true
+          },
+          {
+            relativ: { tage: -12 },
+            titel: 'Der Stock muss mit',
+            text: 'Ohne Stock geht Pepper nicht aus dem Haus. Heute war es ein halber Ast – er hat ihn trotzdem bis nach Hause getragen.'
+          },
+          {
+            relativ: { tage: -2 },
+            titel: 'Fast ein halbes Jahr bei uns',
+            text: 'Aus dem schüchternen Fundhund ist unser Wachhund geworden. Er bellt jeden Briefträger an – und wedelt dabei.',
+            hoursAgo: 20
+          }
+        ],
         teilen: true
       }
     ]

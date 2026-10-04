@@ -209,10 +209,10 @@ const MESSAGES = [
   },
   {
     partnerSlug: 'tierheim-sonnenhang',
-    bezugTier: 'Pepper',
+    bezugTier: 'Frieda',
     name: 'Lea Probe',
     email: 'lea.probe@example.org',
-    nachricht: 'Hallo, wir interessieren uns sehr für Pepper. Wann könnten wir sie einmal kennenlernen?',
+    nachricht: 'Hallo, wir interessieren uns sehr für Frieda. Wann könnten wir sie einmal kennenlernen?',
     stundenAlt: 12,
     gelesen: false
   }
