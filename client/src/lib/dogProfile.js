@@ -43,6 +43,14 @@ export function dogHeadLine(dog, { ownerName, stay = true, today = todayIso() } 
   return { text: parts.filter(Boolean).join(' · '), memorial }
 }
 
+// Wessen Zeit „seit …“ zählt: der Name des Zuhauses für ein Tier, das nicht euch gehört (dog.familyName) - für eigene Tiere
+// (auch ein eigenes, in eine Familie geteiltes) und Tiere des Bereichs selbst undefined („bei euch“). Kopf und Infos gleich.
+export function stayOwnerName(dog, family) {
+  if (!dog || dog.canEdit) return undefined
+  const yours = dog.ownerFamilyId != null && dog.ownerFamilyId === family?.home?.id
+  return yours ? undefined : dog.familyName || undefined
+}
+
 // Für ein Tier, das nicht euch gehört (dog.familyName: sein Zuhause, GET /api/dogs/:id): wo es lebt und wie ihr es seht -
 // "lebt bei Zuhause Möwenweg · geteilt mit euch über Familie Sonnenhang" (in einer Familie) bzw. "lebt bei Zuhause Lindenhof ·
 // ihr lest mit" (ein vermitteltes Tier im Tierheim). null für eigene Tiere (auch ein eigenes, in die Familie geteiltes), für

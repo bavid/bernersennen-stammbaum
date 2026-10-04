@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { dogHeadLine, dogTabs, hasRelatives, originLine, recentItems, safeFromPath, treeRoute, visibleInNames } from './dogProfile.js'
+import { dogHeadLine, dogTabs, hasRelatives, originLine, recentItems, safeFromPath, stayOwnerName, treeRoute, visibleInNames } from './dogProfile.js'
 
 const TODAY = '2026-10-04'
 
@@ -40,6 +40,18 @@ describe('dogHeadLine', () => {
   test('stay: false - ohne „seit …“ (das sagt bei fremden Tieren die Zeile darunter, originLine)', () => {
     const dog = { rasse: 'Mischling', geburtsdatum: '2019-03-10', bei_uns_seit: '2021-06-12' }
     expect(dogHeadLine(dog, { stay: false, today: TODAY }).text).toBe('Mischling · 7 Jahre')
+  })
+})
+
+describe('stayOwnerName: „bei euch“ oder „Im {Zuhause}“ - im Kopf und in den Infos gleich', () => {
+  const inFamily = { id: 2, art: 'rudel', home: { id: 3 } }
+  test('ein fremdes Tier: der Name seines Zuhauses', () => {
+    expect(stayOwnerName({ canEdit: false, ownerFamilyId: 9, familyName: 'Zuhause Möwenweg' }, inFamily)).toBe('Zuhause Möwenweg')
+  })
+  test('ein eigenes (auch in die Familie geteiltes) und ein bearbeitbares Tier: „bei euch“', () => {
+    expect(stayOwnerName({ canEdit: false, ownerFamilyId: 3, familyName: 'Zuhause am Deich' }, inFamily)).toBeUndefined()
+    expect(stayOwnerName({ canEdit: true, ownerFamilyId: 2, familyName: 'Familie Sonnenhang' }, inFamily)).toBeUndefined()
+    expect(stayOwnerName(null, inFamily)).toBeUndefined()
   })
 })
 

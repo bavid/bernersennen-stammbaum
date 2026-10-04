@@ -99,7 +99,7 @@ test('Schützlinge: das Tierheim liest, wie es seinen vermittelten Tieren geht -
       assert.deepEqual(Object.keys(item.dog).sort(), DOG_KEYS)
     }
     const raw = JSON.stringify(res.data)
-    assert.ok(!raw.includes('Zuhause Pepper'), 'der Name des neuen Zuhauses steht nicht drin')
+    assert.ok(!raw.includes('Zuhause Pepper'), 'der Name des neuen Zuhauses steht nicht drin (den nennt nur „Vermittelt“)')
     assert.ok(!raw.includes('family_id') && !raw.includes('autor'))
   })
 
@@ -130,6 +130,30 @@ test('Schützlinge: das Tierheim liest, wie es seinen vermittelten Tieren geht -
     assert.equal((await put(`/api/timeline/${sofa.id}`, sofaBody(false), pepper.home.cookie)).status, 200)
   })
 
+  await t.test('Grüße zählen wie auf der Tierseite des Tierheims: nicht die aus einer Familie, in die das Tier geteilt ist', async () => {
+    const rudel = await createFamily(base, 'Familie Lindenhof', 'lindenhof-pw-1')
+    db.prepare("INSERT INTO family_members (member_family_id, group_family_id, rolle) VALUES (?, ?, 'mitglied')").run(pepper.home.data.id, rudel.data.id)
+    db.prepare('INSERT INTO dog_shares (dog_id, family_id) VALUES (?, ?)').run(pepper.dogId, rudel.data.id)
+    assert.equal((await post(`/api/timeline/${strand.id}/comments`, { autorName: 'Rudel', text: 'Hallo Pepper!' }, rudel.cookie)).status, 201)
+    const beach = (await news(sonnenhang.cookie)).data.items.find((item) => item.id === strand.id)
+    assert.equal(beach.comment_count, 2, 'der Gruß aus der Familie zählt fürs Tierheim nicht')
+    // „Vermittelt“ und die Neuigkeiten der Familie nennen dasselbe Zuhause - mehr verrät /recent dem Tierheim nicht
+    const listed = (await get('/api/dogs', sonnenhang.cookie)).data.find((dog) => dog.id === pepper.dogId)
+    const recent = (await get('/api/timeline/recent?limit=20', sonnenhang.cookie)).data.find((item) => item.id === strand.id)
+    assert.equal(recent.dog_zuhause, listed.shared_from)
+  })
+
+  await t.test('ein vom Admin gesperrtes Tierheim bekommt nichts', async () => {
+    const { partner_id: partnerId } = db.prepare('SELECT partner_id FROM families WHERE id = ?').get(sonnenhang.familyId)
+    db.prepare('UPDATE partners SET gesperrt = 1 WHERE id = ?').run(partnerId)
+    try {
+      assert.deepEqual(titles(await news(sonnenhang.cookie)), [])
+    } finally {
+      db.prepare('UPDATE partners SET gesperrt = 0 WHERE id = ?').run(partnerId)
+    }
+    assert.ok(titles(await news(sonnenhang.cookie)).length > 0)
+  })
+
   await t.test('andere Tierheime nie - auch nicht mit einer verirrten Freigabe ohne Übergabe von dort', async () => {
     const birkenweg = await createShelter('Tierheim Birkenweg')
     assert.deepEqual(titles(await news(birkenweg.cookie)), [])
@@ -156,5 +180,11 @@ test('Schützlinge: das Tierheim liest, wie es seinen vermittelten Tieren geht -
     const guest = getCookie((await post('/api/view', { familyId: host.data.id }, pepper.home.cookie)).res)
     assert.equal((await news(guest)).status, 403)
     assert.equal((await news(sonnenhang.cookie, '?limit=50')).status, 400)
+    // ein Partner-Bereich (kein Tierheim) ebenso 404
+    const partner = await post('/api/admin/partners', { name: 'Hundeschule Pfote', typ: 'hundeschule', plz: '10115', status: 'aktiv', slug: 'hs-schuetz' }, adminCookie)
+    const area = await post(`/api/admin/partners/${partner.data.id}/area`, undefined, adminCookie)
+    assert.equal(area.status, 201)
+    const partnerLogin = await post('/api/login', { secret: area.data.key })
+    assert.equal((await news(getCookie(partnerLogin.res))).status, 404)
   })
 })

@@ -9,11 +9,8 @@ import { formatDateLong } from '../../lib/dates.js'
 import { commentsLabel } from '../../lib/feed.js'
 import { displayName } from '../../lib/timeline.js'
 
-// „So geht es euren Schützlingen“ auf „Unsere Tiere“ eines Tierheims (GET /api/schuetzlinge, server/lib/schuetzlinge.js): die
-// neuesten Erinnerungen der vermittelten Tiere, bei denen das neue Zuhause mitlesen lässt - höchstens fünf, die zuletzt
-// geschriebene zuerst. Je Karte das erste Foto als Polaroid (sonst das Porträt), Tier, Tag, Titel, Anriss und die Grüße; sie
-// führt zur Erinnerung auf der Tierseite. Private Erinnerungen kommen gar nicht erst an (der Server lässt sie weg).
-// onShowAll: „Alle ansehen“ - die vermittelten Tiere unten (Filter „Vermittelt“ der Seite).
+// Eine Karte: das erste Foto als Polaroid (ohne Foto das Porträt klein neben dem Namen), Tier, Tag, Titel, Anriss und die
+// Grüße - sie führt zur Erinnerung auf der Tierseite (state.from: „Zurück“ kommt wieder hierher).
 function WardCard({ item, index }) {
   const { words } = useTheme()
   const { pathname, search } = useLocation()
@@ -21,17 +18,14 @@ function WardCard({ item, index }) {
   return (
     <li>
       <Link to={`/tier/${item.dog.id}#entry-${item.id}`} state={{ from: pathname + search }} className="ward-news-card">
-        {item.foto_url ? (
-          <Polaroid src={item.foto_url} index={index} width={200} height={150} className="ward-news-photo" />
-        ) : (
-          <span className="ward-news-portrait">
-            <Avatar dog={item.dog} size={72} />
-          </span>
-        )}
+        {item.foto_url && <Polaroid src={item.foto_url} index={index} width={200} height={150} className="ward-news-photo" />}
         <span className="ward-news-body">
           <span className="ward-news-who">
-            <span className="ward-news-dog">{displayName(item.dog)}</span>
-            {item.datum && <span className="ward-news-date">{formatDateLong(item.datum)}</span>}
+            {!item.foto_url && <Avatar dog={item.dog} size={40} />}
+            <span className="ward-news-name">
+              <span className="ward-news-dog">{displayName(item.dog)}</span>
+              {item.datum && <span className="ward-news-date">{formatDateLong(item.datum)}</span>}
+            </span>
           </span>
           <h3 className="ward-news-title">{item.titel}</h3>
           {item.text && <p className="ward-news-text">{item.text}</p>}
@@ -47,6 +41,10 @@ function WardCard({ item, index }) {
   )
 }
 
+// „So geht es euren Schützlingen“ auf „Unsere Tiere“ eines Tierheims (GET /api/schuetzlinge, server/lib/schuetzlinge.js): die
+// neuesten Erinnerungen der vermittelten Tiere, bei denen das neue Zuhause mitlesen lässt - höchstens fünf, die zuletzt
+// geschriebene zuerst. Private Erinnerungen kommen gar nicht erst an (der Server lässt sie weg).
+// onShowAll: „Alle ansehen“ - die vermittelten Tiere unten (Filter „Vermittelt“ der Seite).
 export default function WardNews({ onShowAll }) {
   const [items, setItems] = useState(null)
   const [error, setError] = useState(null)
@@ -85,7 +83,8 @@ export default function WardNews({ onShowAll }) {
       )}
       {items?.length === 0 && (
         <p className="ward-news-empty muted">
-          Noch nichts Neues. Sobald ein neues Zuhause euch mitlesen lässt, seht ihr hier, wie es eurem Schützling geht.
+          Noch nichts Neues von euren Schützlingen. Sobald ein neues Zuhause euch mitlesen lässt und etwas festhält, seht ihr
+          es hier.
         </p>
       )}
       {items?.length > 0 && (

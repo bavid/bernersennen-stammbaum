@@ -278,7 +278,8 @@
   color: var(--muted);
 }
 
-/* Wo der Treffer liegt: „Mein Zuhause“ in Terrakotta, Familien und befreundete Zuhause in Salbei. */
+/* Wo ein Zettel liegt („Mein Zuhause“ in Terrakotta, Familien und befreundete Zuhause in Salbei) - und, wo ein Tier eines
+   anderen Zuhauses wohnt (components/feed/OriginChip.jsx „aus Zuhause Möwenweg“, Salbei). */
 .search-chip {
   display: inline-flex;
   padding: 1px var(--space-2);

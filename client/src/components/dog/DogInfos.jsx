@@ -1,5 +1,6 @@
 import { companionLine, herkunftText } from '../../lib/companions.js'
 import { withShareChange } from '../../lib/animalCounts.js'
+import { stayOwnerName } from '../../lib/dogProfile.js'
 import { ageText, formatDateLong } from '../../lib/dates.js'
 import { displayName, sexLabel, speciesLabel } from '../../lib/timeline.js'
 import Icon from '../Icon.jsx'
@@ -21,10 +22,12 @@ function Fact({ label, wide = false, children }) {
 }
 
 // Die Angaben zum Tier: Art und Geschlecht, Rasse, Geburtstag samt Alter, Farbe, die Zeit bei euch (Einzug, Herkunft bzw.
-// Abschied) und wo es lebt. Für ein geteiltes Tier im fremden Bereich (!dog.canEdit) "Im {Zuhause}" statt "Bei euch".
-function DogFacts({ dog }) {
+// Abschied) und wo es lebt. Für ein Tier, das nicht euch gehört, "Im {Zuhause}" statt "Bei euch" (stayOwnerName - dieselbe
+// Regel wie im Kopf; ein eigenes, in die Familie geteiltes Tier bleibt "Bei euch").
+function DogFacts({ dog, family }) {
   const age = dog.geburtsdatum && !dog.bei_uns_bis ? ageText(dog.geburtsdatum) : null
-  const stay = companionLine(dog, !dog.canEdit ? { ownerName: dog.familyName } : undefined)
+  const ownerName = stayOwnerName(dog, family)
+  const stay = companionLine(dog, ownerName ? { ownerName } : undefined)
   const sex = sexLabel(dog.geschlecht, dog.tierart)
   // Geschlecht „weiß ich nicht“: „unbekannt“ wie ein fehlender Geburtstag - nie Hündin oder Rüde.
   const kind = !sex ? <span className="muted">unbekannt</span> : dog.tierart === 'anderes' ? `${speciesLabel(dog.tierart)} · ${sex}` : sex
@@ -77,7 +80,7 @@ export default function DogInfos({ dog, setDog, family, allDogs, canWrite, canTa
   return (
     <div className="dog-infos">
       <h2 className="visually-hidden">Infos zu {displayName(dog)}</h2>
-      <DogFacts dog={dog} />
+      <DogFacts dog={dog} family={family} />
       {dog.beschreibung && <p className="dog-info-description">{dog.beschreibung}</p>}
       {embedRelatives && <DogRelatives dog={dog} setDog={setDog} family={family} allDogs={allDogs} canWrite={canWrite} reload={reload} embedded />}
       {canTakeOver && (

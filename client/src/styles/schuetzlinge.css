@@ -3,9 +3,12 @@
    zum Wischen (die Seite selbst scrollt nie seitwärts), so bleibt der Abschnitt eine Kartenhöhe kurz.
    Farben nur über die Paletten-Variablen (palettes.css). */
 
+/* minmax(0, 1fr) und min-width: 0: die wischbare Reihe darf die Seite nie breiter machen als den Bildschirm. */
 .ward-news {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
+  min-width: 0;
   margin-bottom: var(--space-6);
 }
 
@@ -21,11 +24,14 @@
   min-height: 44px;
 }
 
+/* Jede Karte so hoch wie ihr Inhalt - wie Fotos und Zettel in einem Album, ohne leere Flächen unter kurzen Texten. */
 .ward-news-list {
   display: grid;
+  align-items: start;
   grid-auto-flow: column;
   grid-auto-columns: minmax(13.5rem, 1fr);
   gap: var(--space-4);
+  min-width: 0;
   margin: 0;
   padding: var(--space-2) var(--space-1) var(--space-3);
   overflow-x: auto;
@@ -42,7 +48,7 @@
 
 .ward-news-card {
   display: grid;
-  grid-template-rows: auto 1fr;
+  align-content: start;
   gap: var(--space-3);
   width: 100%;
   padding: var(--space-3);
@@ -79,14 +85,6 @@
   margin: var(--space-1) auto 0;
 }
 
-.ward-news-portrait {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 4 / 3;
-  border-radius: var(--radius-md);
-  background: var(--surface-sunk);
-}
-
 .ward-news-body {
   display: grid;
   align-content: start;
@@ -96,9 +94,17 @@
 
 .ward-news-who {
   display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.ward-news-name {
+  display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 var(--space-2);
+  min-width: 0;
 }
 
 .ward-news-dog {

@@ -49,7 +49,7 @@ afterEach(() => {
 })
 
 describe('WardNews – „So geht es euren Schützlingen“', () => {
-  test('Karten mit Polaroid (oder Porträt), Tiername, Tag, Titel, Anriss und Grüßen - jede führt zur Erinnerung', async () => {
+  test('Karten mit Polaroid (ohne Foto das Porträt neben dem Namen), Tiername, Tag, Titel, Anriss und Grüßen - jede führt zur Erinnerung', async () => {
     schuetzlinge.mockResolvedValue({
       items: [
         item(1, { foto_url: '/uploads/fluss.jpg', comment_count: 2 }),
@@ -68,7 +68,8 @@ describe('WardNews – „So geht es euren Schützlingen“', () => {
     expect(cards[0].querySelector('.ward-news-text').textContent).toBe('Ein schöner Tag am Fluss.')
     expect(cards[0].querySelector('.ward-news-greetings').textContent).toBe('2 Grüße')
     expect(cards[1].querySelector('.polaroid')).toBeNull()
-    expect(cards[1].querySelector('.avatar img').getAttribute('src')).toBe('/uploads/nele.jpg')
+    expect(cards[1].querySelector('.ward-news-who .avatar img').getAttribute('src')).toBe('/uploads/nele.jpg')
+    expect(cards[0].querySelector('.avatar')).toBeNull()
     expect(cards[1].querySelector('.ward-news-text')).toBeNull()
     expect(cards[1].querySelector('.ward-news-greetings')).toBeNull()
   })

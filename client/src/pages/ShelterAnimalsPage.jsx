@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -28,7 +28,7 @@ const FILTERS = [
 const DEFAULT_FILTER = 'in_vermittlung'
 const ADOPTED_STATUS = 'vermittelt'
 // Der Filter steht in der Adresse (?status=…, ohne Angabe „Verfügbar“) - „Alle ansehen“ bei den Schützlingen führt so zu
-// „Vermittelt“, und Zurück aus einer Tierseite landet wieder im selben Filter.
+// „Vermittelt“, und Zurück aus einer Tierseite (Browser oder „Zurück“, state.from der Karten) landet im selben Filter.
 const FILTER_PARAM = 'status'
 const chipId = (key) => `shelter-filter-${key}`
 
@@ -42,11 +42,17 @@ function matchesFilter(dog, filter) {
 // Eine Tierkarte: der Status ist das einzige Badge, ob der Steckbrief öffentlich ist, steht als ruhige Meta-Zeile
 // darunter (Phase U). Ein mitgelesenes Tier (shared_from) ist vermittelt - statt des Steckbriefs nennt die
 // Meta-Zeile sein neues Zuhause, und die Karte führt mit „Neuigkeiten“ in seine Chronik (was das Zuhause dort zeigt).
+// state.from: „Zurück“ auf der Tierseite führt wieder in denselben Filter (?status=…).
 function ShelterAnimalCard({ dog }) {
+  const { pathname, search } = useLocation()
   const status = dog.shared_from ? ADOPTED_STATUS : dog.vermittlung_status
   const statusLabel = vermittlungStatusLabel(status)
   return (
-    <Link to={dog.shared_from ? `/tier/${dog.id}?reiter=chronik` : `/tier/${dog.id}`} className="shelter-card">
+    <Link
+      to={dog.shared_from ? `/tier/${dog.id}?reiter=chronik` : `/tier/${dog.id}`}
+      state={{ from: pathname + search }}
+      className="shelter-card"
+    >
       <span className="shelter-card-avatar">
         <Avatar dog={dog} size={64} />
       </span>

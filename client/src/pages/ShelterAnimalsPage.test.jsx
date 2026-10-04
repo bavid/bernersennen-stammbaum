@@ -45,7 +45,11 @@ const dog = (overrides = {}) => ({
 
 function Where() {
   const location = useLocation()
-  return <output data-testid="where">{`${location.pathname}${location.search}`}</output>
+  return (
+    <output data-testid="where" data-from={location.state?.from ?? ''}>
+      {`${location.pathname}${location.search}`}
+    </output>
+  )
 }
 
 async function render(url = '/tiere') {
@@ -194,6 +198,12 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
     const benno = cards.find((card) => card.textContent.includes('Benno'))
     expect(benno.getAttribute('href')).toBe('/tier/4')
     expect(benno.querySelector('.shelter-card-news')).toBeNull()
+
+    // „Zurück“ auf der Tierseite führt wieder in denselben Filter
+    act(() => nele.click())
+    const where = container.querySelector('[data-testid="where"]')
+    expect(where.textContent).toBe('/tier/3?reiter=chronik')
+    expect(where.dataset.from).toBe('/tiere?status=vermittelt')
   })
 
   test('der Filter steht in der Adresse (?status=…) - ohne Angabe „Verfügbar“', async () => {

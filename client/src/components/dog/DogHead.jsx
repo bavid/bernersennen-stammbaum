@@ -3,19 +3,20 @@ import Avatar from '../Avatar.jsx'
 import Icon from '../Icon.jsx'
 import DogMoreMenu from './DogMoreMenu.jsx'
 import { displayName, shortName } from '../../lib/timeline.js'
-import { dogHeadLine, originLine } from '../../lib/dogProfile.js'
+import { dogHeadLine, originLine, stayOwnerName } from '../../lib/dogProfile.js'
+
+// Optionen für die Zeile unter dem Namen: mit Herkunftszeile (originLine) ohne „seit …“ - das steht dann in den Infos.
+function headLineOptions(dog, family, origin) {
+  if (origin) return { ownerName: dog.familyName, stay: false }
+  const ownerName = stayOwnerName(dog, family)
+  return ownerName ? { ownerName } : undefined
+}
 
 // Kompakter Kopf der Tierseite (Phase W, Schritt 2 - Muster Profilseite): Bild (vergrößerbar), Name, eine Zeile
 // "Rasse · Alter · bei euch seit …", für ein geteiltes eigenes Tier der Chip "Sichtbar in: …" (führt zu "Wer sieht …?")
 // und die Knöpfe Erzählen · Bearbeiten · ⋯ (nur wer schreiben darf). badge: z. B. der Besuchs-Chip.
 // Ein Tier, das nicht euch gehört, sagt darunter, wo es lebt und wie ihr es seht (originLine: "lebt bei Zuhause Möwenweg ·
-// geteilt mit euch über Familie Sonnenhang") - "seit …" steht dann nur in den Infos. family: der aktive Bereich.
-function headLineOptions(dog, family, origin) {
-  if (origin) return { ownerName: dog.familyName, stay: false }
-  const yours = dog.ownerFamilyId != null && dog.ownerFamilyId === family?.home?.id
-  return !dog.canEdit && !yours ? { ownerName: dog.familyName } : undefined
-}
-
+// geteilt mit euch über Familie Sonnenhang"). family: der aktive Bereich.
 export default function DogHead({ dog, family, canWrite, visibleIn, menuItems, badge, onShowVisibility, onTell, onEdit, onOpenPhoto }) {
   const { words } = useTheme()
   const origin = originLine(dog, family)
