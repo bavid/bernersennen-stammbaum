@@ -92,7 +92,9 @@ function useDarstellungSave({ family, onFamilyChange, readOnly }) {
 
   // Verlässt man die Seite, während das Farbfeld noch ruht, geht die Farbe trotzdem mit (immer mit dem neuesten flushLive).
   const flushRef = useRef(flushLive)
-  flushRef.current = flushLive
+  useEffect(() => {
+    flushRef.current = flushLive
+  })
   useEffect(() => () => flushRef.current(), [])
 
   return { change, saved }

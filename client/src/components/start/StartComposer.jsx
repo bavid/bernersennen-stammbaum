@@ -35,10 +35,10 @@ export default function StartComposer({ family, dogs, onCreated }) {
   const chosen = animals.find((dog) => dog.id === dogId)
   const pickerRef = useRef(null)
 
-  // Nach „Erinnerung festhalten“ steht der Fokus auf der Wahl des Tiers.
+  // Nach „Erinnerung festhalten“ steht der Fokus auf der Wahl des Tiers (nur beim Öffnen, nicht nach jeder Wahl).
   useEffect(() => {
-    if (picking && !chosen) pickerRef.current?.querySelector('button, select')?.focus()
-  }, [picking, chosen])
+    if (picking) pickerRef.current?.querySelector('button, select')?.focus()
+  }, [picking])
 
   if (animals.length === 0) return null
 
