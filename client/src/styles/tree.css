@@ -149,7 +149,6 @@
   font-style: italic;
   font-weight: 500;
   color: var(--rust);
-  font-variation-settings: 'SOFT' 100, 'WONK' 1;
 }
 
 .pedigree-gen-date {

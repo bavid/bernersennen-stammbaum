@@ -414,7 +414,7 @@
   font-weight: 500;
   line-height: 1;
   color: var(--ink);
-  font-variation-settings: 'SOFT' 100, 'opsz' 144;
+  font-variation-settings: 'opsz' 144;
 }
 
 .stats dt {

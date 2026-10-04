@@ -1,7 +1,10 @@
 /* Maße, Schriften, Abstände und Zeiten. Die Farben (je Palette hell und dunkel) stehen in palettes.css. */
 :root {
+  /* Schriften (selbst gehostet, styles/fonts.css): Fraunces für Überschriften, Figtree für Text, Caveat als Handschrift nur
+     für kleine Momente (Begrüßung, Kapitel, Bildunterschriften). */
   --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
-  --font-body: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Figtree Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
 
   /* Calm-down-Runde: kleinere, ruhigere Skala - die Grundschrift ist überall 15 px (--root-size, base.css), alle
      rem-Maße schrumpfen mit. Bei 15 px: Etiketten 12, klein 13, Text 15, Einleitung 17; Abschnittstitel 17-20,

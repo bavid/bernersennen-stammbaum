@@ -16,8 +16,7 @@
   --frame-fade: 1200ms;
   /* Freies Band unten (große Bildschirme): Steuerung, mit Uhr etwas höher. */
   --frame-band: 108px;
-  /* Caveat (Plan Phase W, Look B+) ist noch nicht eingebunden - bis dahin die Handschrift des Systems, sonst Fraunces. */
-  --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', 'Noteworthy', var(--font-display);
+  /* Handschrift (Caveat, styles/fonts.css) - --font-hand kommt aus tokens.css und folgt „Handschrift-Akzente“. */
 
   position: fixed;
   inset: 0;

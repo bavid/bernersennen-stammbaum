@@ -115,7 +115,7 @@
   font-style: italic;
   font-weight: 500;
   color: var(--rust);
-  font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
+  font-variation-settings: 'opsz' 144;
 }
 
 .timeline-year-label::after {

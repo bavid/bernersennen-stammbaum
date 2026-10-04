@@ -132,13 +132,17 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
 - **Handy-tauglich**: kompakte Stammbaum-Karten, Navigation unten, Fotos werden vor dem Upload verkleinert.
 
 Stack: Node.js/Express + SQLite (better-sqlite3), React + Vite, Caddy für HTTPS, keine externen
-Dienste. Schriften werden selbst gehostet (keine Google-Fonts-Aufrufe).
+Dienste. Schriften werden selbst gehostet (keine Google-Fonts-Aufrufe): Fraunces (Überschriften), Figtree (Text),
+Caveat (Handschrift für kleine Momente) und Atkinson Hyperlegible (Schrift „Gut lesbar“) aus den npm-Paketen von
+[Fontsource](https://fontsource.org/), nur latin und latin-ext (`client/src/styles/fonts.css`).
 
 **Quellen**: Postleitzahlen von [GeoNames](https://www.geonames.org/) (CC BY 4.0); Umkreissuche über
 © [OpenStreetMap](https://www.openstreetmap.org/copyright)-Mitwirkende (ODbL); Collage-Sticker aus
 [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) von Microsoft (MIT-Lizenz, © Microsoft Corporation),
 lokal mitgeliefert in `client/public/stickers/` samt `LICENSE.txt` und `QUELLEN.md` – zur Laufzeit keine Aufrufe
-fremder Server.
+fremder Server. Schriften Fraunces (© The Fraunces Project Authors), Figtree (© The Figtree Project Authors), Caveat
+(© The Caveat Project Authors) und Atkinson Hyperlegible (© Braille Institute of America) unter der
+[SIL Open Font License 1.1](https://openfontlicense.org/) – Hinweise und Lizenztext in `client/public/schriften/LIZENZEN.txt`.
 
 ## Lokal starten
 

@@ -44,7 +44,7 @@
   font-weight: 480;
   line-height: 0.95;
   letter-spacing: -0.035em;
-  font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
+  font-variation-settings: 'opsz' 144;
   color: var(--hero-text);
 }
 

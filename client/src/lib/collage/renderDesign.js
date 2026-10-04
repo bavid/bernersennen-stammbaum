@@ -5,7 +5,7 @@ import { PAGE } from './layout.js'
 import { TIMELINE } from './layouts.js'
 
 export const DISPLAY_FONT = "'Fraunces Variable', Georgia, serif"
-export const BODY_FONT = "'Manrope Variable', 'Segoe UI', sans-serif"
+export const BODY_FONT = "'Figtree Variable', 'Segoe UI', sans-serif"
 export const POLAROID_PAPER = '#fffdf8'
 export const POLAROID_INK = '#3a2e25'
 // Gemeinsame Maße für Vorschau (CollageFrames.jsx, collage-design.css) und Export - parity.test.js vergleicht

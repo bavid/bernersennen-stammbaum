@@ -40,7 +40,6 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 50, 'WONK' 0;
   color: var(--ink);
   margin: 0;
   line-height: 1.1;
@@ -52,7 +51,7 @@ h1 {
   font-size: var(--text-display);
   font-weight: 560;
   letter-spacing: -0.02em;
-  font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
+  font-variation-settings: 'opsz' 144;
 }
 
 h2 {
