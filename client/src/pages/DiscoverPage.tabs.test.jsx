@@ -139,11 +139,12 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
     expect(panel.getAttribute('aria-labelledby')).toBe(tab('Alle').id)
   })
 
-  test('"Alle" zeigt je Bereich höchstens drei Einträge und "Alle anzeigen" mit der Gesamtzahl', async () => {
+  // Audit W: zwei je Bereich und kompakte Karten - „Alle“ bleibt ein Überblick.
+  test('"Alle" zeigt je Bereich höchstens zwei Einträge und "Alle anzeigen" mit der Gesamtzahl', async () => {
     discover.mockResolvedValue(response)
     await render()
 
-    expect(schoolNames()).toEqual(['Hundeschule Nummer 1', 'Hundeschule Nummer 2', 'Hundeschule Nummer 3'])
+    expect(schoolNames()).toEqual(['Hundeschule Nummer 1', 'Hundeschule Nummer 2'])
     const showAll = section('Hundeschulen').querySelector('.discover-show-all')
     expect(showAll.textContent).toBe('Alle anzeigen: Hundeschulen5')
     // Futter hat nur zwei - dort gibt es nichts weiter anzuzeigen.
@@ -220,7 +221,7 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
     const load = vi.fn().mockResolvedValue({ ...response, hundeschulen: [...response.hundeschulen, school(9, { name: 'Unsere Schule', vorschau: true })] })
     await render({ path: '/kundensicht', props: { load, preview: true } })
 
-    expect(schoolNames()).toEqual(['Hundeschule Nummer 1', 'Hundeschule Nummer 2', 'Hundeschule Nummer 3', 'Unsere Schule'])
+    expect(schoolNames()).toEqual(['Hundeschule Nummer 1', 'Hundeschule Nummer 2', 'Unsere Schule'])
     expect(section('Hundeschulen').querySelector('.is-own-preview h3').textContent).toBe('Unsere Schule')
 
     await act(async () => tab('Futter').click())
@@ -248,7 +249,7 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
   test('der Zähler steht für Screenreader als "n Einträge" im Namen des Reiters', async () => {
     discover.mockResolvedValue(response)
     await render()
-    expect(tab('Hundeschulen').textContent).toBe('Hundeschulen5 (5 Einträge)')
+    expect(tab('Hundeschulen').textContent).toBe('Hundeschulen5 (5 Treffer)')
     expect(tab('Hundeschulen').querySelector('.tab-bar-count').getAttribute('aria-hidden')).toBe('true')
   })
 })

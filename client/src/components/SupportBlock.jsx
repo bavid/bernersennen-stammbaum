@@ -85,7 +85,7 @@ export default function SupportBlock({ support, compact = false }) {
   }
 
   return (
-    <div className="support-block">
+    <div className={`support-block${compact ? ' is-compact' : ''}`}>
       {(support.text || hasGofundme) && (
         <div className="support-cta">
           {support.text && <p className="support-text">{support.text}</p>}
@@ -97,7 +97,7 @@ export default function SupportBlock({ support, compact = false }) {
           )}
         </div>
       )}
-      <PromotionList items={support.promotions} />
+      <PromotionList items={support.promotions} compact={compact} />
       {!compact && support.bericht && <DonationReport report={support.bericht} />}
       {!compact && donations.length > 0 && <PartnerDonations items={donations} />}
     </div>

@@ -19,7 +19,8 @@ import { zeitraeumeText } from '../lib/zeitraeume.js'
 // und rel="sponsored". In der Kundensicht (Phase P2) tragen eigene, noch nicht freigegebene Beiträge
 // zusätzlich "Wartet auf Freigabe". labelled={false} (Phase U): auf dem eigenen Portal des Partners ohne
 // Kennzeichnung - es ist seine Seite; "Wartet auf Freigabe" bleibt, der Link behält sein rel.
-export default function PromotionCard({ promotion, labelled = true }) {
+// compact (Entdecken unter "Alle", Audit W): ohne Bild, Text auf zwei Zeilen gekürzt.
+export default function PromotionCard({ promotion, labelled = true, compact = false }) {
   const preview = useIsPreview()
   const anzeige = labelled && isAnzeige(promotion.kennzeichnung)
   const hasLink = isClickUrl(promotion.clickUrl)
@@ -28,7 +29,7 @@ export default function PromotionCard({ promotion, labelled = true }) {
   const termine = zeitraeumeText(promotion.zeitraeume, todayIso())
 
   return (
-    <article className={`promotion-card card${anzeige ? ' promotion-card-anzeige' : ''}${pending ? ' is-pending' : ''}`}>
+    <article className={`promotion-card card${anzeige ? ' promotion-card-anzeige' : ''}${pending ? ' is-pending' : ''}${compact ? ' is-compact' : ''}`}>
       {(labelled || pending) && (
         <div className="promotion-badges">
           {labelled && <p className={`promotion-badge${anzeige ? ' promotion-badge-anzeige' : ''}`}>{kennzeichnungLabel(promotion)}</p>}
@@ -42,7 +43,7 @@ export default function PromotionCard({ promotion, labelled = true }) {
       )}
       {/* Das Bild steht außerhalb des Links ("Mehr erfahren") - es ist also nicht Teil eines Namens, der
           den Titel schon nennt, und bekommt den Titel als Alternativtext. */}
-      {isPartnerMedia(promotion.bildUrl) && (
+      {!compact && isPartnerMedia(promotion.bildUrl) && (
         <img src={promotion.bildUrl} alt={promotion.titel} className="promotion-card-image" loading="lazy" />
       )}
       <div className="promotion-card-body">
@@ -67,13 +68,13 @@ export default function PromotionCard({ promotion, labelled = true }) {
 
 // Empfehlungen als eigenes Raster (Begleiter, Futter, Unterstützen, Portal) - eine leere Liste rendert
 // nichts, damit sie die Leerzustände der Kapitel nicht verändert.
-export function PromotionList({ items, labelled = true }) {
+export function PromotionList({ items, labelled = true, compact = false }) {
   if (items.length === 0) return null
   return (
     <ul className="promotion-list">
       {items.map((promotion) => (
         <li key={promotion.id}>
-          <PromotionCard promotion={promotion} labelled={labelled} />
+          <PromotionCard promotion={promotion} labelled={labelled} compact={compact} />
         </li>
       ))}
     </ul>

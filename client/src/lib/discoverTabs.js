@@ -6,7 +6,8 @@ import { isClickUrl } from './discover.js'
 
 export const ALL_TAB = 'alle'
 export const TAB_PARAM = 'bereich'
-export const PREVIEW_LIMIT = 3
+// Audit W: zwei je Bereich (und kompakte Karten, DiscoverSections) - „Alle“ soll ein Überblick bleiben, keine lange Seite.
+export const PREVIEW_LIMIT = 2
 // Phase W, Schritt 2: "Karte" - Tierheime und Hundeschulen in der Nähe über OpenStreetMap (früher die Seite /umgebung,
 // components/nearby/NearbySearch.jsx). Kein Bereich der Antwort von POST /api/discover, darum ohne Zähler.
 export const MAP_TAB = 'karte'

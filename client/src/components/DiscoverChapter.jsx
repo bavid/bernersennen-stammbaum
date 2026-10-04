@@ -3,21 +3,22 @@ import Icon from './Icon.jsx'
 // Bausteine für die Bereiche im Reiter "Entdecken" (DiscoverPage, DiscoverSections, SupportBlock).
 
 // Ein Bereich: eigener Landmark-Abschnitt (aria-labelledby) mit Überschrift, Kurztext und - unter "Alle",
-// wenn es mehr gibt als gezeigt - "Alle anzeigen" rechts daneben (wechselt den Reiter).
-export default function DiscoverChapter({ id, title, lede, showAll, children }) {
+// wenn es mehr gibt als gezeigt - "Alle anzeigen" rechts daneben (wechselt den Reiter). compact (unter "Alle", Audit W):
+// ohne Kurztext - den zeigt der eigene Reiter.
+export default function DiscoverChapter({ id, title, lede, showAll, compact = false, children }) {
   const headingId = `${id}-title`
   return (
     <section className="discover-chapter" id={id} aria-labelledby={headingId}>
       <header className="discover-chapter-head">
         <div className="discover-chapter-titles">
           <h2 id={headingId}>{title}</h2>
-          {lede && <p className="discover-chapter-lede">{lede}</p>}
+          {lede && !compact && <p className="discover-chapter-lede">{lede}</p>}
         </div>
         {showAll && (
           <button type="button" className="discover-show-all" onClick={showAll.onClick}>
-            Alle anzeigen
+            {showAll.count === null ? 'Mehr' : 'Alle anzeigen'}
             <span className="visually-hidden">: {title}</span>
-            <span className="discover-show-all-count">{showAll.count}</span>
+            {showAll.count !== null && <span className="discover-show-all-count">{showAll.count}</span>}
             <Icon name="arrowRight" />
           </button>
         )}

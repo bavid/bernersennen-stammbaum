@@ -93,6 +93,22 @@ describe('DiscoverPage – eine Karte je Partner', () => {
     expect(cards[1].closest('li').classList.contains('has-anzeigen')).toBe(false)
   })
 
+  // Audit W: unter "Alle" kompakt - Kopf, Kurztext und Links; Anzeigen und Einblicke erst im eigenen Reiter, darum dort
+  // "Alle anzeigen", auch wenn alle Karten schon zu sehen sind.
+  test('unter "Alle" kompakte Karten ohne Anzeigen und Einblicke, mit "Alle anzeigen"', async () => {
+    discover.mockResolvedValue(response)
+    await render()
+    const card = container.querySelector('.partner-discover-card')
+    expect(card.classList.contains('is-compact')).toBe(true)
+    expect(card.querySelector('h3').textContent).toBe('Hundeschule Pfotenglück')
+    expect(card.querySelector('.partner-discover-text').textContent).toBe('Welpenkurse und Hundetraining für Familien.')
+    expect(card.querySelector('.partner-discover-ads')).toBeNull()
+    expect(card.querySelector('.partner-discover-einblicke')).toBeNull()
+    expect(card.closest('li').classList.contains('has-anzeigen')).toBe(false)
+    expect(container.querySelector('#entdecken-hundeschulen .discover-show-all')).not.toBeNull()
+    expect(container.querySelector('#entdecken-hundeschulen .discover-chapter-lede')).toBeNull()
+  })
+
   test('der Zähler des Reiters zählt Karten (zwei Partner und eine Empfehlung), nicht die Anzeigen darauf', async () => {
     discover.mockResolvedValue(response)
     await render()

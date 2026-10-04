@@ -45,7 +45,7 @@ function friendlyError(err) {
 // von POST /api/discover. Mit PLZ sortiert der Server nach Entfernung, ohne liefert er alles nach Namen.
 // Phase V1: die Seite öffnet sofort mit Inhalten (gemerkte PLZ oder überall); die Ortswahl ist eine Zeile
 // ("In der Nähe von … · ändern"), die Eingabe erscheint erst auf Wunsch.
-// Seit Phase U in Reitern mit Zählern (DiscoverTabs, ?bereich=): "Alle" zeigt je Bereich die ersten drei. Phase W
+// Seit Phase U in Reitern mit Zählern (DiscoverTabs, ?bereich=): "Alle" zeigt je Bereich die ersten zwei (Audit W: kompakt). Phase W
 // (Schritt 2): dazu der Reiter "Karte" (Tierheime und Hundeschulen in der Nähe über OpenStreetMap, früher /umgebung) mit
 // eigener Ortswahl samt Standort - ohne Zähler und nicht in der Kundensicht.
 // Kundensicht (Phase P1, CustomerViewPage): load ersetzt api.discover (gleiche Signatur { plz, radius },
@@ -140,10 +140,7 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
           <div>
             <span className="eyebrow">Rund ums Tier</span>
             <h1>Entdecken</h1>
-            <p className="page-lede">
-              Hundeschulen, Salons und Betreuung, neue Begleiter aus Tierheimen, Futter-Empfehlungen und Wege, Tieren zu
-              helfen – mit Postleitzahl zuerst das, was in eurer Nähe ist.
-            </p>
+            <p className="page-lede">Hundeschulen, Salons, neue Begleiter und mehr – mit Postleitzahl zuerst in eurer Nähe.</p>
           </div>
         </header>
 

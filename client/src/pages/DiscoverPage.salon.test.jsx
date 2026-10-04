@@ -106,7 +106,8 @@ describe('DiscoverPage – Kapitel "Salon & Betreuung" (Phase P2)', () => {
         salon: [salonPartner(), salonPartner({ id: 12, slug: 'pension-wilma', name: 'Pension Wilma', typ: 'betreuung' }), salonPromotion()]
       })
     )
-    await render()
+    // Audit W: unter "Alle" nur zwei je Bereich - die Anzeige steht im eigenen Reiter.
+    await render({}, '/entdecken?bereich=salon')
 
     const tabs = [...container.querySelectorAll('[role="tab"]')].map((tab) => tab.firstChild.textContent)
     expect(tabs.slice(1, 3)).toEqual(['Hundeschulen', 'Salon & Betreuung'])

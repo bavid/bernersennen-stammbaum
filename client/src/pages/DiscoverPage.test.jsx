@@ -354,7 +354,7 @@ describe('DiscoverPage – Empfehlungen bei Begleiter und Unterstützen', () => 
 
   test('Unterstützen: Empfehlungen unter dem GoFundMe-Aufruf; Anzeige mit sponsored, Empfehlung nennt die empfehlende Stelle', async () => {
     discover.mockResolvedValue(fullResponse)
-    await render()
+    await render('/entdecken?bereich=unterstuetzen')
     const el = section('Unterstützen')
     const cards = [...el.querySelectorAll('.promotion-card h3')].map((h) => h.textContent)
     expect(cards).toEqual(['Futterspende fürs Tierheim', 'Spendenlauf Mühlental'])
@@ -368,6 +368,16 @@ describe('DiscoverPage – Empfehlungen bei Begleiter und Unterstützen', () => 
     expect(empfehlung.querySelector('.promotion-badge').textContent).toBe('Empfehlung von Familie auf Pfoten')
     expect(linkIn(empfehlung, 'Mehr erfahren').getAttribute('rel')).not.toContain('sponsored')
     expect(linkIn(empfehlung, 'Mehr erfahren').getAttribute('href')).toBe('/r/promotion/40')
+  })
+
+  // Audit W: unter "Alle" nur der Aufruf und die erste Empfehlung, kompakt (ohne Bild) - der Rest über "Alle anzeigen".
+  test('Unterstützen unter "Alle": Aufruf und eine Empfehlung, dann "Alle anzeigen"', async () => {
+    discover.mockResolvedValue(fullResponse)
+    await render()
+    const el = section('Unterstützen')
+    expect([...el.querySelectorAll('.promotion-card h3')].map((h) => h.textContent)).toEqual(['Futterspende fürs Tierheim'])
+    expect(el.querySelector('.promotion-card').classList.contains('is-compact')).toBe(true)
+    expect(el.querySelector('.discover-show-all').textContent).toContain('Alle anzeigen')
   })
 
   test('Begleiter mit Umkreis-Fallback: Empfehlungen stehen nicht unter "Weiter weg"', async () => {

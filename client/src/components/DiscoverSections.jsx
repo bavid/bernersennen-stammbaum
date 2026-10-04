@@ -10,19 +10,21 @@ import { countItems, donationsOf, limitGroups, sectionCounts, tabLabel } from '.
 
 // Die Bereiche des Reiters "Entdecken" - jeder bekommt die bereits normalisierte Antwort (lib/discover.js
 // normalizeDiscover, fehlende Abschnitte sind leere Listen), dazu limit (unter "Alle" PREVIEW_LIMIT, im
-// eigenen Reiter unbegrenzt) und onShowAll (nur unter "Alle": "Alle anzeigen" wechselt den Reiter).
+// eigenen Reiter unbegrenzt) und onShowAll (nur unter "Alle": "Alle anzeigen" wechselt den Reiter). Audit W: unter "Alle"
+// (endliches limit) kompakt - Karten ohne Anzeigen, Einblicke, Termin und Bilder, Bereiche ohne Kurztext; das alles steht
+// im eigenen Reiter.
 
 // Alle Karten eines Bereichs in EINEM Raster, in dieser Reihenfolge: Partner, Tiere, Empfehlungen ohne Partner (Tiere
 // neben ihren Tierheimen - keine halb leeren Zeilen, eine linke Kante, gleiche Spalten). Phase V1: ein Partner = eine
 // Karte (PartnerDiscoverCard) mit seinen Anzeigen und Einblicken; mit Anzeigen darf sie am Desktop zwei Spalten
 // breit sein (has-anzeigen).
-function CardList({ partners = [], animals = [], promotions = [] }) {
+function CardList({ partners = [], animals = [], promotions = [], compact = false }) {
   if (partners.length + animals.length + promotions.length === 0) return null
   return (
     <ul className="partner-list discover-card-list">
       {partners.map((partner) => (
-        <li key={`partner-${partner.id}`} className={partner.anzeigen?.length > 0 ? 'has-anzeigen' : undefined}>
-          <PartnerDiscoverCard partner={partner} />
+        <li key={`partner-${partner.id}`} className={!compact && partner.anzeigen?.length > 0 ? 'has-anzeigen' : undefined}>
+          <PartnerDiscoverCard partner={partner} compact={compact} />
         </li>
       ))}
       {animals.map((animal) => (
@@ -32,7 +34,7 @@ function CardList({ partners = [], animals = [], promotions = [] }) {
       ))}
       {promotions.map((promotion) => (
         <li key={`promotion-${promotion.id}`}>
-          <PromotionCard promotion={promotion} />
+          <PromotionCard promotion={promotion} compact={compact} />
         </li>
       ))}
     </ul>
@@ -49,9 +51,17 @@ function FarAway({ children }) {
   )
 }
 
-// "Alle anzeigen" nur, wenn es mehr gibt als gezeigt - und nur unter "Alle" (dort gibt es onShowAll).
-function showAllFor(onShowAll, total, shown) {
-  return onShowAll && total > shown ? { count: total, onClick: onShowAll } : null
+// "Alle anzeigen" nur, wenn es mehr gibt als gezeigt - und nur unter "Alle" (dort gibt es onShowAll). hidden: die kompakte
+// Karte lässt etwas weg (Anzeigen oder Einblicke eines Partners) - dann führt "Mehr" ohne Zahl dorthin (alle Karten stehen
+// ja schon da).
+function showAllFor(onShowAll, total, shown, hidden = false) {
+  if (!onShowAll) return null
+  if (total > shown) return { count: total, onClick: onShowAll }
+  return hidden ? { count: null, onClick: onShowAll } : null
+}
+
+function hidesPartnerExtras(partners) {
+  return partners.some((partner) => partner.anzeigen?.length > 0 || partner.einblicke?.length > 0)
 }
 
 function PartnerListHint({ children }) {
@@ -69,18 +79,20 @@ function PartnerChapter({ id, title, lede, emptyHint, partner, promotions, fallb
   const groups = limitGroups([near, promotions, far], limit)
   const [nearShown, promotionsShown, farShown] = groups
   const total = partner.length + promotions.length
+  const compact = Number.isFinite(limit)
+  const hidden = compact && hidesPartnerExtras([...nearShown, ...farShown])
 
   return (
-    <DiscoverChapter id={id} title={title} lede={lede} showAll={showAllFor(onShowAll, total, countItems(groups))}>
+    <DiscoverChapter id={id} title={title} lede={lede} compact={compact} showAll={showAllFor(onShowAll, total, countItems(groups), hidden)}>
       {fallback && <FallbackNote />}
       {total === 0 ? (
         <PartnerListHint>{emptyHint}</PartnerListHint>
       ) : (
         <>
-          <CardList partners={nearShown} promotions={promotionsShown} />
+          <CardList partners={nearShown} promotions={promotionsShown} compact={compact} />
           {farShown.length > 0 && (
             <FarAway>
-              <CardList partners={farShown} />
+              <CardList partners={farShown} compact={compact} />
             </FarAway>
           )}
         </>
@@ -131,27 +143,32 @@ export function BegleiterSection({ data, limit, onShowAll }) {
   const groups = limitGroups([shelters.near, animals.near, promotions, shelters.far, animals.far], limit)
   const [sheltersNear, animalsNear, promotionsShown, sheltersFar, animalsFar] = groups
   const total = partner.length + tiere.length + promotions.length
+  const compact = Number.isFinite(limit)
+  const hidden = compact && hidesPartnerExtras([...sheltersNear, ...sheltersFar])
 
   return (
     <DiscoverChapter
       id="entdecken-begleiter"
       title={tabLabel('begleiter')}
       lede="Tierheime, Vermittlungsstellen und Tiere, die ein Zuhause suchen."
-      showAll={showAllFor(onShowAll, total, countItems(groups))}
+      compact={compact}
+      showAll={showAllFor(onShowAll, total, countItems(groups), hidden)}
     >
-      <p className="discover-trust-note">
-        <Icon name="check" />
-        Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.
-      </p>
+      {!compact && (
+        <p className="discover-trust-note">
+          <Icon name="check" />
+          Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.
+        </p>
+      )}
       {data.fallback.begleiter && <FallbackNote />}
       {total === 0 ? (
         <PartnerListHint>Noch keine Tierheime oder Vermittlungsstellen in der Nähe</PartnerListHint>
       ) : (
         <>
-          <CardList partners={sheltersNear} animals={animalsNear} promotions={promotionsShown} />
+          <CardList partners={sheltersNear} animals={animalsNear} promotions={promotionsShown} compact={compact} />
           {sheltersFar.length + animalsFar.length > 0 && (
             <FarAway>
-              <CardList partners={sheltersFar} animals={animalsFar} />
+              <CardList partners={sheltersFar} animals={animalsFar} compact={compact} />
             </FarAway>
           )}
         </>
@@ -162,33 +179,44 @@ export function BegleiterSection({ data, limit, onShowAll }) {
 
 export function FutterSection({ data, limit, onShowAll }) {
   const [shown] = limitGroups([data.futter], limit)
+  const compact = Number.isFinite(limit)
   return (
     <DiscoverChapter
       id="entdecken-futter"
       title={tabLabel('futter')}
       lede="Klar gekennzeichnet: was eine Empfehlung ist und was eine Anzeige."
+      compact={compact}
       showAll={showAllFor(onShowAll, data.futter.length, shown.length)}
     >
       {data.futter.length === 0 ? (
         <DiscoverEmpty icon="star">Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.</DiscoverEmpty>
       ) : (
-        <PromotionList items={shown} />
+        <PromotionList items={shown} compact={compact} />
       )}
     </DiscoverChapter>
   )
 }
 
-// Unterstützen: unter "Alle" nur der Aufruf und die ersten Empfehlungen (compact) - Transparenzbericht und
-// Spendenlinks der Tierheime stehen im eigenen Reiter, "Alle anzeigen" führt dorthin.
+// Unterstützen: unter "Alle" nur der Aufruf und die erste Empfehlung (compact, Audit W: eine statt PREVIEW_LIMIT - der
+// Aufruf ist schon groß) - Transparenzbericht und Spendenlinks der Tierheime stehen im eigenen Reiter, "Alle anzeigen"
+// führt dorthin.
+const SUPPORT_PREVIEW_LIMIT = 1
+
 export function SupportSection({ data, limit, onShowAll }) {
   const support = data.unterstuetzen
   const compact = Number.isFinite(limit)
-  const [promotions] = limitGroups([support.promotions], limit)
+  const [promotions] = limitGroups([support.promotions], compact ? Math.min(limit, SUPPORT_PREVIEW_LIMIT) : limit)
   const hidesMore = compact && (promotions.length < support.promotions.length || donationsOf(support).length > 0 || Boolean(support.bericht))
   const showAll = onShowAll && hidesMore ? { count: sectionCounts(data).unterstuetzen, onClick: onShowAll } : null
 
   return (
-    <DiscoverChapter id="entdecken-unterstuetzen" title={tabLabel('unterstuetzen')} lede="Tieren in Vermittlung helfen – und sehen, wohin das Geld geht." showAll={showAll}>
+    <DiscoverChapter
+      id="entdecken-unterstuetzen"
+      title={tabLabel('unterstuetzen')}
+      lede="Tieren in Vermittlung helfen – und sehen, wohin das Geld geht."
+      compact={compact}
+      showAll={showAll}
+    >
       <SupportBlock support={{ ...support, promotions }} compact={compact} />
     </DiscoverChapter>
   )

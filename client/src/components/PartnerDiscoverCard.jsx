@@ -147,15 +147,17 @@ function EinblickStrip({ partner, einblicke }) {
 // Phase V4a: im Kopf eine Zeile "Nächster Termin" (naechsterTermin), an den Anzeigen ihre kommenden Termine.
 // Mit Anzeigen darf die Karte am Desktop zwei Spalten breit sein (has-anzeigen, discover.css). In der Kundensicht
 // trägt die eigene Karte (vorschau: true) "Das seid ihr".
-export default function PartnerDiscoverCard({ partner }) {
+// compact (Entdecken unter "Alle", Audit W): Kopf, Kurztext (zwei Zeilen) und Links - Anzeigen, Einblicke und der nächste
+// Termin stehen im eigenen Reiter.
+export default function PartnerDiscoverCard({ partner, compact = false }) {
   const preview = useIsPreview()
   const isOwn = preview && partner.vorschau === true
   const website = websiteHref(partner)
-  const anzeigen = (Array.isArray(partner.anzeigen) ? partner.anzeigen : []).slice(0, MAX_ANZEIGEN)
-  const einblicke = (Array.isArray(partner.einblicke) ? partner.einblicke : [])
+  const anzeigen = compact || !Array.isArray(partner.anzeigen) ? [] : partner.anzeigen.slice(0, MAX_ANZEIGEN)
+  const einblicke = (compact || !Array.isArray(partner.einblicke) ? [] : partner.einblicke)
     .filter((einblick) => isAllowedMedia(einblick?.fotoUrl, { preview }))
     .slice(0, MAX_EINBLICKE)
-  const classes = ['partner-discover-card', 'partner-card', 'card', anzeigen.length > 0 && 'has-anzeigen', isOwn && 'is-own-preview']
+  const classes = ['partner-discover-card', 'partner-card', 'card', anzeigen.length > 0 && 'has-anzeigen', isOwn && 'is-own-preview', compact && 'is-compact']
 
   return (
     <article className={classes.filter(Boolean).join(' ')}>
@@ -168,7 +170,7 @@ export default function PartnerDiscoverCard({ partner }) {
         )}
         <CardHead partner={partner} preview={preview} />
         {partner.kurztext && <p className="partner-discover-text">{partner.kurztext}</p>}
-        <NextTermin termin={partner.naechsterTermin} />
+        {!compact && <NextTermin termin={partner.naechsterTermin} />}
         <div className="partner-card-links">
           <InternalLink className="btn btn-ghost" to={`/p/${partner.slug}`}>
             Zum Portal

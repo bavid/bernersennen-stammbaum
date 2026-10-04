@@ -30,7 +30,8 @@
   display: grid;
   /* minmax(0, …): die Karten-Raster bestimmen nie die Breite - bei 320 px ragte sie sonst über den Rand */
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(var(--space-10), 5vw, var(--space-16));
+  /* Audit W: am Handy etwas enger (vorher mindestens --space-10) - „Alle“ bleibt so bei etwa drei Bildschirmen */
+  gap: clamp(var(--space-8), 5vw, var(--space-16));
 }
 
 .discover-chapter {
@@ -459,4 +460,14 @@
   display: grid;
   gap: var(--page-gap, var(--space-6));
   min-width: 0;
+}
+
+/* Audit W: kompakte Karten unter "Alle" (DiscoverSections) - Kurztext auf zwei Zeilen; Anzeigen, Einblicke, Termin und
+   Bilder zeigt erst der eigene Reiter. */
+.partner-discover-card.is-compact .partner-discover-text,
+.promotion-card.is-compact .promotion-card-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
