@@ -195,10 +195,10 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
     expect(container.querySelector('.quick-animal-form')).not.toBeNull()
 
     // Standard-Theme: keine Tierart vorausgewählt - ohne Auswahl bricht das Absenden mit Feldfehler ab.
-    const hundButton = [...container.querySelectorAll('[aria-label="Tierart"] button')].find((btn) => btn.textContent === 'Hund')
-    act(() => hundButton.click())
+    const hund = [...container.querySelectorAll('.tierart-chip')].find((chip) => chip.textContent === 'Hund').querySelector('input')
+    act(() => hund.click())
 
-    const nameInput = container.querySelector('#quick-animal-name')
+    const nameInput = container.querySelector('.quick-animal-form [name="name"]')
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
     await act(async () => {
       nativeInputValueSetter.call(nameInput, 'Momo')

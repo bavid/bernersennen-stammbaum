@@ -354,3 +354,28 @@ describe('DogDetailPage – Familie und Verpaarung (Familienbande 2)', () => {
     }
   })
 })
+
+describe('Gerade angelegtes Tier (state.neuesTier, hooks/useAnimalCreate.js)', () => {
+  const home = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: false, role: 'leitung', home: { id: 1, art: 'zuhause' }, memberships: [] }
+  const ownDog = () => ({ ...sharedDog(), isOwn: true, canEdit: true, ownerFamilyId: 1, father: null })
+
+  test('noch ohne Erinnerung: „Schön, dass … dabei ist!“ und „Erzählt die erste Erinnerung“', async () => {
+    getDog.mockResolvedValue(ownDog())
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render(home, { pathname: '/tier/10', state: { neuesTier: true } })
+    expect(container.querySelector('.chronicle-first').textContent).toBe('Schön, dass Nele dabei ist!')
+    expect(container.querySelector('.composer-trigger').textContent).toContain('Erzählt die erste Erinnerung')
+  })
+
+  test('ohne den Hinweis aus dem Anlegen bleibt es beim gewohnten Knopf', async () => {
+    getDog.mockResolvedValue(ownDog())
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render(home)
+    expect(container.querySelector('.chronicle-first')).toBeNull()
+    expect(container.querySelector('.composer-trigger').textContent).toContain('Was gibt’s Neues von Nele?')
+  })
+})

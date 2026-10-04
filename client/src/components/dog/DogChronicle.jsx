@@ -55,7 +55,7 @@ function SharedNotice({ dog, family }) {
 export default function DogChronicle({ dog, family, entries, setEntries, breedingEvents, canWrite, composerOpen, onComposerChange, onOpenPhoto }) {
   const { words } = useTheme()
   const toast = useToast()
-  const { hash } = useLocation()
+  const { hash, state } = useLocation()
   const [editingEntry, setEditingEntry] = useState(null)
   const [highlightKey, setHighlightKey] = useState(null)
   const [newestFirst, setNewestFirst] = useState(() => readSetting('newestFirst', false))
@@ -93,6 +93,8 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
     [dog, entries, breedingEvents, newestFirst, words.mating]
   )
   const recent = recentItems(items, { newestFirst, showAll, keepKey: highlightKey })
+  // Gerade angelegt (hooks/useAnimalCreate.js, state.neuesTier) und noch ohne Erinnerung: ein freundlicher Anstoß zur ersten.
+  const firstOne = Boolean(state?.neuesTier) && entries.length === 0
   // Ein Ziel im verborgenen Teil (#entry-N, ein alter Beitrag gerade gespeichert) klappt die Chronik dauerhaft auf.
   useEffect(() => {
     if (highlightKey && recent.hidden === 0 && !showAll && items.length > RECENT_ITEMS + 1) setShowAll(true)
@@ -193,11 +195,14 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
               <TimelineEntryForm {...formProps} draftKey={`tier-${dog.id}`} onSubmit={handleCreate} onCancel={() => onComposerChange(false)} />
             </>
           ) : (
-            <button type="button" className="composer-trigger" onClick={() => onComposerChange(true)}>
-              <Avatar dog={dog} size={40} />
-              <span>Was gibt’s Neues von {about}?</span>
-              <Icon name="plus" />
-            </button>
+            <>
+              {firstOne && <p className="chronicle-first hand">Schön, dass {firstName} dabei ist!</p>}
+              <button type="button" className="composer-trigger" onClick={() => onComposerChange(true)}>
+                <Avatar dog={dog} size={40} />
+                <span>{firstOne ? `Erzählt die erste ${words.entry}` : `Was gibt’s Neues von ${about}?`}</span>
+                <Icon name="plus" />
+              </button>
+            </>
           )}
         </div>
       )}
@@ -217,7 +222,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
           mirror={mirror}
         />
       ) : (
-        canWrite && <p className="muted chronicle-empty">{words.entriesEmpty}</p>
+        canWrite && !firstOne && <p className="muted chronicle-empty">{words.entriesEmpty}</p>
       )}
       {newestFirst && earlier}
 

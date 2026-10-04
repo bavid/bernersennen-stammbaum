@@ -70,10 +70,8 @@ describe('Housemates', () => {
 
     expect(container.querySelector('.quick-animal-form')).not.toBeNull()
     expect(container.querySelector('.quick-animal-fixed-housemate').textContent).toBe('lebt mit Nele')
-    // Die Tierseite bietet kein volles Formular an, also keinen "Mehr Angaben …"-Knopf
-    expect([...container.querySelectorAll('.form-actions button')].some((b) => b.textContent === 'Mehr Angaben …')).toBe(
-      false
-    )
+    // Nur Tierart und Name - der Rest zugeklappt unter „Mehr Angaben“
+    expect(container.querySelector('.quick-animal-form .mehr-angaben-knopf').getAttribute('aria-expanded')).toBe('false')
   })
 
   test('legt über QuickAnimalForm ein Tier an, verlinkt es mit diesem Tier und meldet es über onCreated', async () => {
@@ -83,11 +81,9 @@ describe('Housemates', () => {
 
     act(() => addChip().click())
     // Ohne ThemeProvider fällt QuickAnimalForm auf das Standard-Theme zurück – keine Tierart vorausgewählt
-    const hundButton = [...container.querySelectorAll('[aria-label="Tierart"] button')].find(
-      (btn) => btn.textContent === 'Hund'
-    )
-    act(() => hundButton.click())
-    setInputValue(container.querySelector('#quick-animal-name'), 'Hoppel')
+    const hund = [...container.querySelectorAll('.tierart-chip')].find((chip) => chip.textContent === 'Hund').querySelector('input')
+    act(() => hund.click())
+    setInputValue(container.querySelector('.quick-animal-form [name="name"]'), 'Hoppel')
     await act(async () => container.querySelector('.quick-animal-form').requestSubmit())
 
     expect(createDog).toHaveBeenCalledWith(expect.objectContaining({ name: 'Hoppel', housemateId: 1 }))

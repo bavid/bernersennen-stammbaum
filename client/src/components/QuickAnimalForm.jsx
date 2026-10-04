@@ -1,202 +1,119 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { api } from '../api'
-import { SPECIES, SPECIES_FIELDS } from './DogForm.jsx'
-import Icon from './Icon.jsx'
-import { dogLabel, livesWithLabel, sexLabel, speciesLabel } from '../lib/timeline.js'
-import { isEditable } from '../lib/areas.js'
+import MehrAngaben from './MehrAngaben.jsx'
+import PortraitFeld from './animals/PortraitFeld.jsx'
+import TierartWahl from './animals/TierartWahl.jsx'
+import TierMehrAngaben from './animals/TierMehrAngaben.jsx'
+import useFocusFirstError from '../hooks/useFocusFirstError.js'
+import { choiceTierart, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload } from '../lib/newAnimal.js'
+import { livesWithLabel } from '../lib/timeline.js'
+import '../styles/neues-tier.css'
 
-const ANDERES_KIND_LABEL = 'Welches Tier?'
-const ANDERES_KIND_PLACEHOLDER = 'z. B. Kaninchen'
+const NAME_PLACEHOLDER = { hund: 'z. B. Benno', katze: 'z. B. Minka', anderes: 'z. B. Hoppel' }
 
-function buildValues({ tierart, name, nameUnbekannt, rasse, geschlecht, beiUnsSeit, housemateId, livesWith }) {
-  return {
-    tierart,
-    name: nameUnbekannt ? '' : name,
-    nameUnbekannt,
-    rasse: tierart === 'anderes' ? rasse : '',
-    geschlecht,
-    beiUnsSeit,
-    housemateId: livesWith ? livesWith.id : housemateId || ''
-  }
-}
-
-// Erster Schritt von "Tier hinzufügen": Tierart, Name, Geschlecht, optional "lebt mit" + Einzug – für
-// jede Tierart, nicht nur Hunde. livesWith fest gesetzt (aus dem Stammbaum oder der Tierseite) macht
-// "lebt mit" unveränderlich; sonst lässt sich ein vorhandenes eigenes Tier aus allDogs wählen.
-// "Mehr Angaben …" reicht die bisherigen Werte an onMore weiter (z. B. um DogForm damit vorzufüllen) –
-// ohne onMore-Prop bleibt der Knopf weg (z. B. auf der Tierseite, die kein volles Formular anbietet).
-// shelter: aus ShelterAnimalsPage ("Tier aufnehmen") aufgerufen – das neue Tier startet mit dem
-// Vermittlungsstatus "in Vermittlung" (nur im Tierheim-Bereich erlaubt, siehe server/routes/dogs.js).
-export default function QuickAnimalForm({ allDogs, livesWith = null, shelter = false, onCreated, onCancel, onMore }) {
-  // Keine Tierart vorbelegt - jede ist gleich wahrscheinlich.
-  const [tierart, setTierart] = useState('')
-  const [tierartError, setTierartError] = useState(false)
-  const [name, setName] = useState('')
-  const [nameUnbekannt, setNameUnbekannt] = useState(false)
-  const [rasse, setRasse] = useState('')
-  const [geschlecht, setGeschlecht] = useState('huendin')
-  const [housemateId, setHousemateId] = useState('')
-  const [beiUnsSeit, setBeiUnsSeit] = useState('')
-  const [error, setError] = useState(null)
+// „Neues Tier“ - nur Tierart (große Chips) und Name sind nötig, dazu auf Wunsch ein rundes Porträt; Geschlecht, Rasse,
+// Geburtstag, „bei uns seit“, Beschreibung, Eltern und „Lebt mit“ stehen zugeklappt unter „Mehr Angaben“ (lib/newAnimal.js).
+// livesWith (Stammbaum, Tierseite) macht „lebt mit“ fest; shelter (Tierheim, „Tier aufnehmen“) startet „in Vermittlung“.
+// onCreated bekommt das angelegte Tier (hooks/useAnimalCreate.js: weiter zur Tierseite). Fehler stehen am Feld.
+export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null, shelter = false, onCreated, onCancel }) {
+  const nameId = useId()
+  const kindId = useId()
+  const nameErrorId = useId()
+  const [form, setForm] = useState(emptyAnimal)
+  const [errors, setErrors] = useState({})
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
+  const tierart = choiceTierart(form.art)
 
-  const fields = SPECIES_FIELDS[tierart] || SPECIES_FIELDS.katze
-  const editableDogs = allDogs.filter(isEditable)
-
-  function selectTierart(next) {
-    setTierart(next)
-    setTierartError(false)
+  const update = (patch) => {
+    setForm((current) => ({ ...current, ...patch }))
+    setErrors({})
   }
 
-  function handleMore() {
-    if (!tierart) {
-      setTierartError(true)
-      return
-    }
-    onMore(buildValues({ tierart, name, nameUnbekannt, rasse, geschlecht, beiUnsSeit, housemateId, livesWith }))
+  // Eltern einer anderen Tierart passen nicht mehr (der Server lehnt sie ab).
+  function selectArt(art) {
+    const sameKind = choiceTierart(art) === tierart
+    update({ art, ...(sameKind ? {} : { mother: { dogId: '', freitext: form.mother.freitext }, father: { dogId: '', freitext: form.father.freitext } }) })
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (!tierart) {
-      setTierartError(true)
+    setError(null)
+    const found = newAnimalErrors(form)
+    setErrors(found)
+    if (Object.keys(found).length) {
+      focusFirstError()
       return
     }
-    setError(null)
     setSaving(true)
     try {
-      const dog = await api.createDog({
-        name: nameUnbekannt ? '' : name,
-        nameUnbekannt,
-        rasse: tierart === 'anderes' ? rasse || null : null,
-        tierart,
-        geschlecht,
-        beiUnsSeit: beiUnsSeit || null,
-        housemateId: (livesWith ? livesWith.id : housemateId) || null,
-        ...(shelter ? { vermittlungStatus: 'in_vermittlung' } : {})
-      })
+      const dog = await api.createDog(newAnimalPayload(form, { livesWith, shelter }))
       onCreated(dog)
     } catch (err) {
       setError(err.message)
       setSaving(false)
+      focusFirstError()
     }
   }
 
   return (
-    <form className="form-grid quick-animal-form" onSubmit={handleSubmit}>
+    <form className="quick-animal-form" ref={formRef} onSubmit={handleSubmit} noValidate>
       {error && (
-        <div className="error-banner span-2" role="alert">
+        <div className="error-banner" role="alert" ref={bannerRef} tabIndex={-1}>
           {error}
         </div>
       )}
-
-      <div className="field span-2">
-        <span className="field-label">Tierart</span>
-        <div className="segmented" role="group" aria-label="Tierart">
-          {SPECIES.map((option) => (
-            <button type="button" key={option} aria-pressed={tierart === option} onClick={() => selectTierart(option)}>
-              {speciesLabel(option)}
-            </button>
-          ))}
-        </div>
-        {tierartError && (
-          <p className="field-error" role="alert">
-            <Icon name="alert" /> Bitte wähle eine Tierart.
-          </p>
-        )}
-      </div>
-
-      {tierart === 'anderes' && (
-        <div className="field span-2">
-          <label className="field-label" htmlFor="quick-animal-kind">
-            {ANDERES_KIND_LABEL}
+      <TierartWahl value={form.art} onChange={selectArt} error={errors.art} />
+      {form.art === 'anderes' && (
+        <div className="field">
+          <label className="field-label" htmlFor={kindId}>
+            Welches Tier? <span className="muted">(optional)</span>
           </label>
-          <input
-            id="quick-animal-kind"
-            value={rasse}
-            onChange={(e) => setRasse(e.target.value)}
-            placeholder={ANDERES_KIND_PLACEHOLDER}
-            maxLength={120}
-          />
+          <input id={kindId} name="artText" value={form.artText} onChange={(e) => update({ artText: e.target.value })} placeholder="z. B. Schildkröte" maxLength={120} />
         </div>
       )}
-
-      <div className="field span-2">
-        <div className="field-row">
-          <label className="field-label" htmlFor="quick-animal-name">
-            {fields.nameLabel}
+      <div className="quick-animal-who">
+        <PortraitFeld value={form.fotos} onChange={(fotos) => update({ fotos })} onBusyChange={setUploading} onError={setError} />
+        <div className="field">
+          <label className="field-label" htmlFor={nameId}>
+            Name
           </label>
-          <label className="check">
-            <input type="checkbox" checked={nameUnbekannt} onChange={(e) => setNameUnbekannt(e.target.checked)} />
+          <input
+            id={nameId}
+            name="name"
+            value={form.nameUnbekannt ? '' : form.name}
+            onChange={(e) => update({ name: e.target.value })}
+            placeholder={form.nameUnbekannt ? 'Wird als „Unbekannt“ geführt' : NAME_PLACEHOLDER[tierart]}
+            maxLength={80}
+            disabled={form.nameUnbekannt}
+            autoFocus
+            aria-invalid={errors.name ? true : undefined}
+            aria-describedby={errors.name ? nameErrorId : undefined}
+          />
+          <label className="check quick-animal-unknown">
+            <input type="checkbox" name="nameUnbekannt" checked={form.nameUnbekannt} onChange={(e) => update({ nameUnbekannt: e.target.checked })} />
             Name unbekannt
           </label>
-        </div>
-        <input
-          id="quick-animal-name"
-          value={nameUnbekannt ? '' : name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={nameUnbekannt ? 'Wird als „Unbekannt“ geführt' : fields.namePlaceholder}
-          maxLength={80}
-          required={!nameUnbekannt}
-          disabled={nameUnbekannt}
-          autoFocus
-        />
-      </div>
-
-      <div className="field">
-        <span className="field-label">Geschlecht</span>
-        <div className="segmented" role="group" aria-label="Geschlecht">
-          <button type="button" aria-pressed={geschlecht === 'huendin'} onClick={() => setGeschlecht('huendin')}>
-            {sexLabel('huendin', tierart)}
-          </button>
-          <button type="button" aria-pressed={geschlecht === 'ruede'} onClick={() => setGeschlecht('ruede')}>
-            {sexLabel('ruede', tierart)}
-          </button>
+          {errors.name && (
+            <p className="field-error" id={nameErrorId}>
+              {errors.name}
+            </p>
+          )}
         </div>
       </div>
-
-      <div className="field">
-        <label className="field-label" htmlFor="quick-animal-bei-uns-seit">
-          Bei uns seit
-        </label>
-        <input
-          id="quick-animal-bei-uns-seit"
-          type="date"
-          value={beiUnsSeit}
-          onChange={(e) => setBeiUnsSeit(e.target.value)}
-        />
-      </div>
-
-      <div className="field span-2">
-        <span className="field-label">Lebt mit</span>
-        {livesWith ? (
-          <p className="quick-animal-fixed-housemate">{livesWithLabel([livesWith])}</p>
-        ) : (
-          <select
-            aria-label="Lebt mit"
-            value={housemateId}
-            onChange={(e) => setHousemateId(e.target.value ? Number(e.target.value) : '')}
-          >
-            <option value="">– niemandem –</option>
-            {editableDogs.map((other) => (
-              <option key={other.id} value={other.id}>
-                {dogLabel(other)}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      <div className="form-actions span-2">
+      {livesWith && <p className="quick-animal-fixed-housemate">{livesWithLabel([livesWith])}</p>}
+      <MehrAngaben label="Mehr Angaben" summary={moreSummary(form)} open={moreOpen} onToggle={setMoreOpen}>
+        <TierMehrAngaben form={form} onChange={update} allDogs={allDogs} ownFamilyId={ownFamilyId} livesWith={livesWith} />
+      </MehrAngaben>
+      <div className="form-actions">
+        <span className="form-actions-spacer" />
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
           Abbrechen
         </button>
-        {onMore && (
-          <button type="button" className="btn btn-ghost" onClick={handleMore}>
-            Mehr Angaben …
-          </button>
-        )}
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
           {saving ? 'Speichere …' : 'Tier anlegen'}
         </button>
       </div>

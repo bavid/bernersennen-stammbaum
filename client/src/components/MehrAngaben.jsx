@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import Icon from './Icon.jsx'
+import '../styles/mehr-angaben.css'
 
 // Aufklappbarer Teil eines Formulars (Erinnerung festhalten: „Mehr“, Neues Tier: „Mehr Angaben“) - zu ist nur der Knopf
 // zu sehen, mit einer leisen Zusammenfassung, was darin steht. Der Inhalt entsteht erst beim Aufklappen (seine Werte

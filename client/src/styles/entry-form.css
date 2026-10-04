@@ -1,5 +1,5 @@
-/* „Erinnerung festhalten“ (TimelineEntryForm, components/entryForm) und der aufklappbare Teil „Mehr“ (MehrAngaben, auch im
-   Formular „Neues Tier“). Fotos zuerst, ruhige Abstände, eine Spalte. Nur Tokens des Auftritts. */
+/* „Erinnerung festhalten“ (TimelineEntryForm, components/entryForm): Fotos zuerst, ruhige Abstände, eine Spalte. Nur Tokens
+   des Auftritts. Das aufklappbare „Mehr“ steht in mehr-angaben.css. */
 
 .entry-form {
   display: grid;
@@ -259,57 +259,6 @@
   outline-offset: 2px;
 }
 
-/* Aufklappbar: „Mehr“ / „Mehr Angaben“ */
-.mehr-angaben {
-  border-top: 1px solid var(--line);
-  padding-top: var(--space-2);
-}
-
-.mehr-angaben-knopf {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: var(--space-1) var(--space-2);
-  margin-left: calc(-1 * var(--space-2));
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-}
-
-.mehr-angaben-knopf svg {
-  width: 1rem;
-  height: 1rem;
-  color: var(--rust);
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-.mehr-angaben-knopf[aria-expanded='true'] svg {
-  transform: rotate(180deg);
-}
-
-.mehr-angaben-knopf:hover .mehr-angaben-label {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.mehr-angaben-summary {
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.mehr-angaben-inhalt:not([hidden]) {
-  display: grid;
-  gap: var(--space-4);
-  padding-top: var(--space-3);
-}
-
 .entry-extras {
   display: grid;
   gap: var(--space-4);
@@ -322,8 +271,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .entry-chip .entry-chip-caret,
-  .mehr-angaben-knopf svg {
+  .entry-chip .entry-chip-caret {
     transition: none;
   }
 }

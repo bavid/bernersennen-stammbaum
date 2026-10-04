@@ -47,6 +47,14 @@
   font-size: var(--text-xl);
 }
 
+/* Neues Tier, noch ohne Erinnerung (DogChronicle firstOne): eine Zeile Handschrift über dem Knopf zum Erzählen */
+.chronicle-first {
+  --hand-size: 1.45rem;
+  margin: 0;
+  padding: var(--space-3) var(--space-5) 0;
+  color: var(--rust);
+}
+
 .composer-trigger {
   display: flex;
   align-items: center;
