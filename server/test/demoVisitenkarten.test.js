@@ -2,9 +2,10 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { useTempDataDir, startApp, cleanup, call, getCookie } = require('./helpers')
 
-// Phase V5: die gespeicherten Visitenkarten der Demo (seed/demo-partner-area.js VISITENKARTEN, lib/demoPartnerAreas.js) -
-// Pfotenglück "Foto" mit Kunden-Gutschein, das Demo-Tierheim "Klassisch", geprüft wie echte Eingaben, is_demo = 1 und bei
-// jedem Demo-Wechsel ohne Waisen ersetzt. t.test() bleibt auf einer Ebene.
+// Phase V5, Feedback-Runde: die gespeicherten Karten der Demo (seed/demo-partner-area.js VISITENKARTEN,
+// lib/demoPartnerAreas.js) - Pfotenglück die Kombi auf "Foto" mit persönlicher Zeile, das Demo-Tierheim die Visitenkarte
+// "Klassisch", geprüft wie echte Eingaben, is_demo = 1 und bei jedem Demo-Wechsel ohne Waisen ersetzt. t.test() bleibt
+// auf einer Ebene.
 const dataDir = useTempDataDir('demo-visitenkarten', { LOGIN_RATE_LIMIT: '300' })
 
 const PFOTENGLUECK = 'hundeschule-pfotenglueck'
@@ -24,14 +25,17 @@ test('Demo: Visitenkarten der Demo-Partner', async (t) => {
 
   const first = replaceDemoPack(db, uploadDir)
 
-  await t.test('Pfotenglück Foto mit Gutschein, Tierheim Klassisch - beide als Demo markiert', () => {
-    assert.deepEqual(first.visitenkarten, { [PFOTENGLUECK]: 'foto', [SONNENHANG]: 'klassisch' })
+  await t.test('Pfotenglück Kombi auf Foto, Tierheim Visitenkarte Klassisch - beide als Demo markiert', () => {
+    assert.deepEqual(first.visitenkarten, {
+      [PFOTENGLUECK]: { vorlage: 'foto', karte: 'kombi' },
+      [SONNENHANG]: { vorlage: 'klassisch', karte: 'visitenkarte' }
+    })
     const [schule, tierheim] = rows()
     assert.deepEqual([schule.slug, schule.is_demo], [PFOTENGLUECK, 1])
     assert.deepEqual([tierheim.slug, tierheim.is_demo], [SONNENHANG, 1])
-    assert.equal(JSON.parse(schule.design).mitGutschein, true)
-    assert.equal(JSON.parse(tierheim.design).mitGutschein, false)
+    assert.equal(JSON.parse(schule.design).widmung, 'Für unsere Welpenkurs-Familien')
     for (const { design } of VISITENKARTEN) assert.deepEqual(validateDesign(design), design)
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM partner_einladungskarte').get().c, 0, 'keine getrennten Einladungskarten mehr')
   })
 
   await t.test('Kunden-Stapel von Pfotenglück: zwei offene Codes stehen schon auf gedruckten Karten', async () => {
@@ -55,6 +59,7 @@ test('Demo: Visitenkarten der Demo-Partner', async (t) => {
     const design = await call(base, '/api/partner-area/visitenkarte', { cookie: getCookie(partner.res) })
     assert.equal(design.data.gespeichert, true)
     assert.equal(design.data.design.vorlage, 'foto')
+    assert.equal(design.data.design.karte, 'kombi')
     const shelter = await post('/api/demo', { as: 'tierheim' })
     const shelterDesign = await call(base, '/api/partner-area/visitenkarte', { cookie: getCookie(shelter.res) })
     assert.equal(shelterDesign.data.design.vorlage, 'klassisch')
@@ -79,24 +84,17 @@ test('Demo: Visitenkarten der Demo-Partner', async (t) => {
     assert.equal(db.prepare('SELECT COUNT(*) AS c FROM partner_visitenkarte WHERE partner_id = ?').get(real.lastInsertRowid).c, 1)
   })
 
-  await t.test('Einladungskarten: Pfotenglück hat eine (geprüft, Demo), ersetzt ohne Waisen; echte überstehen den Wechsel', () => {
-    const { validateEinladungDesign } = require('../lib/einladungskarteDesign')
-    const { EINLADUNGSKARTEN } = require('../seed/demo-partner-area')
+  await t.test('frühere Einladungskarten: Demo-Zeilen verschwinden beim Wechsel, echte überstehen ihn', () => {
     const einladungen = () =>
       db.prepare('SELECT e.*, p.slug FROM partner_einladungskarte e LEFT JOIN partners p ON p.id = e.partner_id ORDER BY e.partner_id').all()
-    const result = replaceDemoPack(db, uploadDir)
-    assert.deepEqual(result.einladungskarten, { [PFOTENGLUECK]: 'klassisch' })
-    for (const { design } of EINLADUNGSKARTEN) assert.deepEqual(validateEinladungDesign(design), design)
-    const [row] = einladungen()
-    assert.deepEqual([row.slug, row.is_demo], [PFOTENGLUECK, 1])
-    assert.equal(JSON.parse(row.design).widmung, 'Für unsere Welpenkurs-Familien')
-
+    const demoPartner = db.prepare('SELECT id FROM partners WHERE slug = ?').get(PFOTENGLUECK)
+    db.prepare("INSERT INTO partner_einladungskarte (partner_id, design, is_demo) VALUES (?, '{}', 1)").run(demoPartner.id)
     const real = db.prepare("INSERT INTO partners (slug, name, typ) VALUES ('el-echt', 'Hundeschule Echt Zwei', 'hundeschule')").run()
     db.prepare("INSERT INTO partner_einladungskarte (partner_id, design, is_demo) VALUES (?, '{}', 0)").run(real.lastInsertRowid)
-    replaceDemoPack(db, uploadDir)
+    const result = replaceDemoPack(db, uploadDir)
+    assert.equal('einladungskarten' in result, false)
     const after = einladungen()
-    assert.equal(after.length, 2)
-    assert.ok(after.every((entry) => entry.slug !== null), 'jede Gestaltung gehört zu einem bestehenden Partner')
-    assert.equal(after.filter((entry) => entry.is_demo === 1).length, 1)
+    assert.equal(after.length, 1)
+    assert.deepEqual([after[0].slug, after[0].is_demo], ['el-echt', 0])
   })
 })

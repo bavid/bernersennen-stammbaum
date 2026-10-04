@@ -1,4 +1,5 @@
-/* Visitenkarte und A4-Bogen (Phase V5, components/visitenkarte/VisitenkarteFront/-Back/VisitenkartenBogen).
+/* Visitenkarte und A4-Bogen (Phase V5, components/visitenkarte/VisitenkarteFront/-Back/VisitenkartenBogen; die Rückseiten
+   mit Code: einladungskarte.css).
    Alles in --u: 1 mm im Druck, in der Vorschau so viel, wie der Platz hergibt (--vk-mm am umgebenden Element, gesetzt in
    visitenkarten.css) - so bleiben Proportionen, Schrift und QR-Codes überall gleich. Feste Druckfarben statt der
    Theme-Tokens: Papier kennt keinen Dunkelmodus. */
@@ -409,34 +410,6 @@
   color: var(--vk-on);
 }
 
-.vk-back-gutschein {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) calc(23 * var(--u));
-  gap: calc(3.5 * var(--u));
-  align-items: center;
-  padding: calc(5.6 * var(--u)) calc(5 * var(--u)) calc(4 * var(--u)) calc(5.5 * var(--u));
-}
-
-.vk-band-top {
-  position: absolute;
-  inset: 0 0 auto;
-  height: calc(2.2 * var(--u));
-  background: var(--vk-farbe);
-}
-
-.vk-back-gutschein .vk-back-text {
-  gap: calc(1 * var(--u));
-}
-
-.vk-back-gutschein .vk-back-title {
-  font-size: calc(3.5 * var(--u));
-  color: var(--vk-ink);
-}
-
-.vk-back-gutschein .vk-back-lead {
-  font-size: calc(2.2 * var(--u));
-}
-
 .vk-code {
   display: flex;
   gap: calc(1.5 * var(--u));
@@ -450,12 +423,6 @@
   font-size: calc(3.6 * var(--u));
   font-weight: 700;
   letter-spacing: 0.06em;
-}
-
-.vk-back-hint {
-  font-size: calc(1.9 * var(--u));
-  line-height: 1.35;
-  color: var(--vk-muted);
 }
 
 .vk-muster {

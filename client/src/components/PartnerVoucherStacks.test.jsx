@@ -78,7 +78,7 @@ describe('PartnerVoucherStacks – Liste', () => {
     vouchers.mockResolvedValue({ stapel: stacks })
     await render()
     const link = [...container.querySelectorAll('a')].find((el) => el.textContent.includes('Als Einladungskarten drucken'))
-    expect(link.getAttribute('href')).toBe('/visitenkarten?art=einladung')
+    expect(link.getAttribute('href')).toBe('/visitenkarten?karte=einladung')
     root.unmount()
     root = null
     container.remove()

@@ -469,15 +469,14 @@ describe('PartnerProfilePage – Kunden-Gutscheine im Reiter "Teilen"', () => {
     const print = container.querySelector('a.partner-stack-print')
     expect(print.getAttribute('href')).toBe('/partner-drucken/12')
     expect(container.querySelector('.partner-stack-quelle').textContent).toBe('weitergegeben')
-    // Phase V5: der Weg zum Visitenkarten-Designer steht im selben Reiter.
+    // Phase V5, Feedback-Runde: EIN Weg zum Karten-Designer im selben Reiter (ohne Vorwahl: gespeichert, sonst Kombi).
     const teaser = container.querySelector('.vk-teaser')
-    expect(teaser.querySelector('h2').textContent).toBe('Visitenkarten')
+    expect(teaser.querySelector('h2').textContent).toBe('Visitenkarten & Einladungskarten')
+    expect(teaser.querySelectorAll('a')).toHaveLength(1)
     expect(teaser.querySelector('a').getAttribute('href')).toBe('/visitenkarten')
-    expect(teaser.querySelector('a').textContent).toContain('Visitenkarten gestalten')
-    // Einladungskarten: der zweite Weg öffnet die Kartenart direkt.
-    const einladung = teaser.querySelector('a[href="/visitenkarten?art=einladung"]')
-    expect(einladung.textContent).toContain('Einladungskarten gestalten')
-    // Audit V7a: genau ein Weg zu den Visitenkarten im Reiter - kein zweiter Knopf bei den Kunden-Gutscheinen.
+    expect(teaser.querySelector('a').textContent).toContain('Karten gestalten')
+    expect(teaser.textContent).not.toContain('Gutschein')
+    // Audit V7a: genau ein Weg zu den Visitenkarten im Reiter - kein zweiter Knopf bei den Einladungscodes.
     expect(document.getElementById('partner-profile-panel-teilen').querySelectorAll('a[href="/visitenkarten"]')).toHaveLength(1)
   })
 

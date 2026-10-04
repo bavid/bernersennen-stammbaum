@@ -3,24 +3,16 @@ const assert = require('node:assert/strict')
 const { hashPassword } = require('../lib/adminAuth')
 const { useTempDataDir, startApp, cleanup, call, getCookie } = require('./helpers')
 
-// Einladungskarten im Partner-Bereich (/api/partner-area/visitenkarte): die Gestaltung der Vorderseite getrennt von der
-// Visitenkarte gespeichert (PUT /einladung, Tabelle partner_einladungskarte), die Rückseite von Familie auf Pfoten
-// (rueckseite, nur lesend) und die Codes über denselben Abruf wie die Visitenkarten (POST /gutscheine): je Karte ein
-// eigener Code, gedruckte nie zweimal. Demo und Admin-Ansicht lesen nur. t.test() bleibt auf einer Ebene.
-const ADMIN_TEST_PASSWORD = 'admin-test-einladungskarte-1'
-const dataDir = useTempDataDir('partner-einladungskarte', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
+// Feedback-Runde: Karten als Kombination (/api/partner-area/visitenkarte) - EINE Gestaltung der Vorderseite für
+// Visitenkarte, Einladungskarte und Kombi, die gewählte Kombination (karte) wird mit ihr gespeichert. Frühere getrennte
+// Gestaltungen (partner_visitenkarte mit Gutschein-Schalter, partner_einladungskarte mit persönlicher Zeile) werden beim
+// Lesen zusammengeführt und beim Speichern ersetzt. Die Rückseite der Plattform kommt nur lesend mit, die Codes über
+// denselben Abruf (POST /gutscheine). Demo und Admin-Ansicht lesen nur. t.test() bleibt auf einer Ebene. Namen erfunden.
+const ADMIN_TEST_PASSWORD = 'admin-test-karten-kombi-1'
+const dataDir = useTempDataDir('partner-karten-kombi', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 
-const VISITENKARTE = Object.freeze({
-  vorlage: 'foto',
-  farbe: '#1f5f8b',
-  kurztext: 'Training mit Herz',
-  zeigeAnsprechperson: false,
-  zeigeWebsite: true,
-  zeigeTelefon: false,
-  zeigeEmail: true,
-  mitGutschein: true
-})
-const EINLADUNG = Object.freeze({
+const KOMBI = Object.freeze({
+  karte: 'kombi',
   vorlage: 'schlicht',
   farbe: '#2F6B3F',
   kurztext: 'Gemeinsam lernen auf der Wiese',
@@ -30,8 +22,28 @@ const EINLADUNG = Object.freeze({
   zeigeTelefon: true,
   zeigeEmail: false
 })
+const OLD_VISITENKARTE = Object.freeze({
+  vorlage: 'foto',
+  farbe: '#1f5f8b',
+  kurztext: 'Training mit Herz',
+  zeigeAnsprechperson: false,
+  zeigeWebsite: true,
+  zeigeTelefon: false,
+  zeigeEmail: true,
+  mitGutschein: true
+})
+const OLD_EINLADUNG = Object.freeze({
+  vorlage: 'klassisch',
+  farbe: '#2f6b3f',
+  kurztext: 'Gemeinsam lernen',
+  widmung: 'Für unsere Kursfamilien',
+  zeigeAnsprechperson: true,
+  zeigeWebsite: true,
+  zeigeTelefon: true,
+  zeigeEmail: false
+})
 
-test('Partner-Bereich: Einladungskarten - Gestaltung, Rückseite und Codes', async (t) => {
+test('Partner-Bereich: Karten als Kombination - Gestaltung, Zusammenführung, Rückseite und Codes', async (t) => {
   process.env.ADMIN_PASSWORD_HASH = await hashPassword(ADMIN_TEST_PASSWORD)
   const { server, base } = await startApp()
   t.after(() => cleanup(dataDir, server))
@@ -46,9 +58,12 @@ test('Partner-Bereich: Einladungskarten - Gestaltung, Rückseite und Codes', asy
   const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
   const put = (urlPath, body, cookie) => call(base, urlPath, { method: 'PUT', body, cookie })
   const getState = (cookie) => call(base, '/api/partner-area/visitenkarte', { cookie })
-  const saveEinladung = (body, cookie) => put('/api/partner-area/visitenkarte/einladung', body, cookie)
-  const saveVisitenkarte = (body, cookie) => put('/api/partner-area/visitenkarte', body, cookie)
+  const save = (body, cookie) => put('/api/partner-area/visitenkarte', body, cookie)
   const takeCodes = (body, cookie) => post('/api/partner-area/visitenkarte/gutscheine', body, cookie)
+  const legacyRows = (partnerId) => ({
+    visitenkarte: db.prepare('SELECT design FROM partner_visitenkarte WHERE partner_id = ?').get(partnerId)?.design ?? null,
+    einladung: db.prepare('SELECT design FROM partner_einladungskarte WHERE partner_id = ?').get(partnerId)?.design ?? null
+  })
 
   async function createPartnerArea(input) {
     const partner = await post('/api/admin/partners', { typ: 'hundeschule', status: 'aktiv', ...input }, adminCookie)
@@ -58,74 +73,66 @@ test('Partner-Bereich: Einladungskarten - Gestaltung, Rückseite und Codes', asy
     return { partner: partner.data, familyId: area.data.familyId, cookie: getCookie(login.res) }
   }
 
-  const school = await createPartnerArea({ name: 'Hundeschule Wiesengrund', slug: 'el-wiesengrund', portalTitel: 'Training mit Herz' })
+  const school = await createPartnerArea({ name: 'Hundeschule Wiesengrund', slug: 'kk-wiesengrund', portalTitel: 'Training mit Herz' })
   db.prepare('UPDATE partners SET farbe = ? WHERE id = ?').run('#2a6f4e', school.partner.id)
   const stack = await post('/api/admin/voucher-batches', { label: 'Wiesengrund-Karten', size: 5, partnerId: school.partner.id }, adminCookie)
   assert.equal(stack.status, 201)
 
-  await t.test('GET: Einladungskarte mit Vorgabe aus dem Profil, Rückseite der Plattform, nie ein Code', async () => {
+  await t.test('GET: Vorgabe Kombi mit leerer Zeile, die Rückseite der Plattform, nie ein Code', async () => {
     const res = await getState(school.cookie)
     assert.equal(res.status, 200)
     assert.equal(res.headers.get('cache-control'), 'no-store')
-    assert.deepEqual(res.data.einladung, {
-      gespeichert: false,
-      design: {
-        vorlage: 'klassisch',
-        farbe: '#2a6f4e',
-        kurztext: 'Training mit Herz',
-        widmung: '',
-        zeigeAnsprechperson: false,
-        zeigeWebsite: true,
-        zeigeTelefon: true,
-        zeigeEmail: true
-      }
-    })
+    assert.equal(res.data.gespeichert, false)
+    assert.equal(res.data.design.karte, 'kombi')
+    assert.equal(res.data.design.widmung, '')
     assert.deepEqual(res.data.rueckseite, VORGABEN)
     const text = JSON.stringify(res.data)
     for (const code of stack.data.codes) assert.equal(text.includes(code), false)
   })
 
-  await t.test('Vorgabe folgt einer gespeicherten Visitenkarte (ohne Gutschein-Schalter)', async () => {
-    assert.equal((await saveVisitenkarte(VISITENKARTE, school.cookie)).status, 200)
-    const res = await getState(school.cookie)
-    assert.equal(res.data.einladung.gespeichert, false)
-    assert.equal(res.data.einladung.design.vorlage, 'foto')
-    assert.equal(res.data.einladung.design.farbe, '#1f5f8b')
-    assert.equal('mitGutschein' in res.data.einladung.design, false)
-  })
-
-  await t.test('PUT /einladung: getrennt von der Visitenkarte gespeichert, beide bleiben erhalten', async () => {
-    const saved = await saveEinladung(EINLADUNG, school.cookie)
+  await t.test('PUT: die Kombination wird mit der Gestaltung gespeichert; jede Kombination aus der Liste', async () => {
+    const saved = await save(KOMBI, school.cookie)
     assert.equal(saved.status, 200)
-    assert.deepEqual(saved.data.einladung, { gespeichert: true, design: { ...EINLADUNG, farbe: '#2f6b3f' } })
-    assert.deepEqual(saved.data.design, VISITENKARTE)
-    // Die Visitenkarte noch einmal ändern - die Einladungskarte bleibt, wie sie ist.
-    assert.equal((await saveVisitenkarte({ ...VISITENKARTE, vorlage: 'klassisch' }, school.cookie)).status, 200)
-    const after = await getState(school.cookie)
-    assert.equal(after.data.design.vorlage, 'klassisch')
-    assert.deepEqual(after.data.einladung.design, { ...EINLADUNG, farbe: '#2f6b3f' })
-    const row = db.prepare('SELECT design, is_demo FROM partner_einladungskarte WHERE partner_id = ?').get(school.partner.id)
-    assert.equal(row.is_demo, 0)
-    assert.equal(JSON.parse(row.design).widmung, 'Für unsere Welpenkurs-Familien')
-  })
-
-  await t.test('PUT /einladung: ungültig -> 400, nichts geändert; die Rückseite lässt sich nicht mitschicken', async () => {
-    for (const body of [
-      { ...EINLADUNG, widmung: 'x'.repeat(81) },
-      { ...EINLADUNG, mitGutschein: false },
-      { ...EINLADUNG, titel: 'Eigene Rückseite' },
-      { ...EINLADUNG, rueckseite: { titel: 'Eigene Rückseite' } },
-      { ...EINLADUNG, farbe: 'grün' },
-      { vorlage: 'foto' }
-    ]) {
-      const res = await saveEinladung(body, school.cookie)
-      assert.equal(res.status, 400, JSON.stringify(body))
+    assert.deepEqual(saved.data.design, { ...KOMBI, farbe: '#2f6b3f' })
+    assert.equal(saved.data.gespeichert, true)
+    for (const karte of ['visitenkarte', 'einladung', 'kombi']) {
+      assert.equal((await save({ ...KOMBI, karte }, school.cookie)).data.design.karte, karte)
     }
-    assert.equal((await getState(school.cookie)).data.einladung.design.widmung, 'Für unsere Welpenkurs-Familien')
-    assert.deepEqual((await getState(school.cookie)).data.rueckseite, VORGABEN)
+    for (const body of [{ ...KOMBI, karte: 'gutschein' }, { ...KOMBI, mitGutschein: true }, { ...KOMBI, titel: 'Eigene Rückseite' }]) {
+      assert.equal((await save(body, school.cookie)).status, 400, JSON.stringify(body))
+    }
+    assert.equal((await getState(school.cookie)).data.design.karte, 'kombi')
   })
 
-  await t.test('Codes: derselbe Abruf - je Karte ein eigener Code, ein zweiter Druck bekommt neue, ohne Code keine Karte', async () => {
+  await t.test('das frühere PUT /einladung gibt es nicht mehr', async () => {
+    assert.equal((await put('/api/partner-area/visitenkarte/einladung', OLD_EINLADUNG, school.cookie)).status, 404)
+  })
+
+  await t.test('frühere getrennte Gestaltungen: zusammengeführt gelesen, beim Speichern ersetzt', async () => {
+    const old = await createPartnerArea({ name: 'Hundeschule Altbestand', slug: 'kk-altbestand' })
+    db.prepare('INSERT INTO partner_visitenkarte (partner_id, design) VALUES (?, ?)').run(old.partner.id, JSON.stringify(OLD_VISITENKARTE))
+    db.prepare('INSERT INTO partner_einladungskarte (partner_id, design) VALUES (?, ?)').run(old.partner.id, JSON.stringify(OLD_EINLADUNG))
+    const merged = await getState(old.cookie)
+    assert.equal(merged.data.gespeichert, true)
+    const { mitGutschein, ...front } = OLD_VISITENKARTE
+    assert.equal(mitGutschein, true)
+    assert.deepEqual(merged.data.design, { karte: 'kombi', ...front, widmung: 'Für unsere Kursfamilien' })
+
+    const saved = await save(merged.data.design, old.cookie)
+    assert.equal(saved.status, 200)
+    const rows = legacyRows(old.partner.id)
+    assert.equal(rows.einladung, null, 'die frühere Einladungskarte fällt weg')
+    assert.deepEqual(JSON.parse(rows.visitenkarte), merged.data.design)
+
+    // Nur eine frühere Einladungskarte: deren Vorderseite, Kombination Einladungskarte.
+    const nurEinladung = await createPartnerArea({ name: 'Hundesalon Altbestand', slug: 'kk-salon-alt', typ: 'hundesalon' })
+    db.prepare('INSERT INTO partner_einladungskarte (partner_id, design) VALUES (?, ?)').run(nurEinladung.partner.id, JSON.stringify(OLD_EINLADUNG))
+    const state = await getState(nurEinladung.cookie)
+    assert.equal(state.data.gespeichert, true)
+    assert.deepEqual(state.data.design, { karte: 'einladung', ...OLD_EINLADUNG })
+  })
+
+  await t.test('Codes: derselbe Abruf - je Karte ein eigener Code, ein zweiter Druck bekommt neue', async () => {
     const first = await takeCodes({ anzahl: 3, nurUngedruckt: true }, school.cookie)
     const second = await takeCodes({ anzahl: 3, nurUngedruckt: true }, school.cookie)
     assert.equal(first.status, 200)
@@ -139,13 +146,14 @@ test('Partner-Bereich: Einladungskarten - Gestaltung, Rückseite und Codes', asy
     assert.deepEqual(second.data.gutscheine, { offen: 5, ungedruckt: 0 })
   })
 
-  await t.test('Demo: lesen ja (Pfotenglück hat eine Einladungskarte), Speichern 403', async () => {
+  await t.test('Demo: lesen ja (Pfotenglück zeigt die Kombi mit persönlicher Zeile), Speichern 403', async () => {
     const demo = await post('/api/demo', { as: 'partner' })
     const cookie = getCookie(demo.res)
     const res = await getState(cookie)
-    assert.equal(res.data.einladung.gespeichert, true)
-    assert.match(res.data.einladung.design.widmung, /\S/)
-    assert.equal((await saveEinladung(EINLADUNG, cookie)).status, 403)
+    assert.equal(res.data.gespeichert, true)
+    assert.equal(res.data.design.karte, 'kombi')
+    assert.match(res.data.design.widmung, /\S/)
+    assert.equal((await save(KOMBI, cookie)).status, 403)
   })
 
   await t.test('Admin-Ansicht: lesen ja, Speichern 403', async () => {
@@ -153,11 +161,11 @@ test('Partner-Bereich: Einladungskarten - Gestaltung, Rückseite und Codes', asy
     const viewCookie = getCookie(view.res)
     const res = await getState(viewCookie)
     assert.equal(res.status, 200)
-    assert.equal(res.data.einladung.design.vorlage, 'schlicht')
-    assert.equal((await saveEinladung(EINLADUNG, viewCookie)).status, 403)
+    assert.equal(res.data.design.vorlage, 'schlicht')
+    assert.equal((await save(KOMBI, viewCookie)).status, 403)
   })
 
   await t.test('ohne Sitzung: 401', async () => {
-    assert.equal((await saveEinladung(EINLADUNG)).status, 401)
+    assert.equal((await save(KOMBI)).status, 401)
   })
 })

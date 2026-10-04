@@ -455,13 +455,12 @@ export const api = {
     // Audit V7a: der Druck wird ausdrücklich gemeldet (GET oben liest nur) - ids aus der Antwort von printBatch.
     markPrinted: (id, ids) => request(`/partner-area/vouchers/${encodeURIComponent(id)}/print/gedruckt`, json('POST', { ids })),
 
-    // Visitenkarten (Phase V5, server/routes/partnerArea/visitenkarte.js): { design, gespeichert, einladung: { design,
-    // gespeichert }, rueckseite, vorschlag, gutscheine: { offen, ungedruckt }, maxJeAbruf } - Speichern (Visitenkarte bzw.
-    // Vorderseite der Einladungskarte) antwortet genauso. Die Gutschein-Codes für den Druck ({ codes, fehlen, gutscheine },
-    // Server: no-store, als gedruckt vermerkt) stehen nur im Body der Antwort, nie in einer URL.
+    // Karten (Phase V5, Feedback-Runde, server/routes/partnerArea/visitenkarte.js): { design (samt Kombination karte),
+    // gespeichert, rueckseite, vorschlag, gutscheine: { offen, ungedruckt }, maxJeAbruf } - Speichern antwortet genauso.
+    // Die Einladungscodes für den Druck ({ codes, fehlen, gutscheine }, Server: no-store, als gedruckt vermerkt) stehen nur
+    // im Body der Antwort, nie in einer URL.
     visitenkarte: () => request('/partner-area/visitenkarte'),
     saveVisitenkarte: (design) => request('/partner-area/visitenkarte', json('PUT', design)),
-    saveEinladungskarte: (design) => request('/partner-area/visitenkarte/einladung', json('PUT', design)),
     visitenkarteGutscheine: ({ anzahl, nurUngedruckt }) =>
       request('/partner-area/visitenkarte/gutscheine', json('POST', { anzahl, nurUngedruckt }))
   },

@@ -1,9 +1,9 @@
 import Icon from '../Icon.jsx'
 import { ADDRESS_PENDING_TEXT } from '../../lib/voucherPrint.js'
 
-// Teile, die Visitenkarten- und Einladungskarten-Designer teilen (VisitenkartenDesigner, EinladungskartenDesigner): der
-// Hinweis, solange die Plattform keine öffentliche Adresse hat, die Zeile "Gestaltung speichern" und die Vorschau-Bühne
-// mit Vorder- und Rückseite in echten Proportionen.
+// Teile des Karten-Designers (KartenDesigner): der Hinweis, solange die Plattform keine öffentliche Adresse hat, die
+// Zeile "Gestaltung speichern", die Vorschau-Bühne mit Vorder- und Rückseite in echten Proportionen und die aufklappbare
+// Vorschau des Druckbogens.
 
 // Feedback-Runde: ein freundlicher Satz statt einer technischen Adresse (lib/voucherPrint.js printAddressPending) - nur
 // in Produktion ohne Domain, nie in Vorschau, Demo oder Admin-Ansicht.
@@ -37,7 +37,7 @@ export function SaveRow({ entwurf, readOnly, readOnlyHint }) {
   )
 }
 
-// front/back: die gezeichneten Seiten; backNote: ein Satz unter der Rückseite (Einladungskarte: wer sie gestaltet).
+// front/back: die gezeichneten Seiten; backNote: ein Satz unter der Rückseite (Rückseiten mit Code: wer sie gestaltet).
 export function Stage({ front, back, backNote = null }) {
   return (
     <section className="vk-stage" aria-labelledby="vk-vorschau-title">
@@ -61,5 +61,24 @@ export function Stage({ front, back, backNote = null }) {
         </figure>
       </div>
     </section>
+  )
+}
+
+// Feedback-Runde: der erste A4-Bogen zum Aufklappen - zu sehen, wenn man ihn sehen will, statt die Seite lang zu machen.
+// note: ein Satz dazu (z. B. dass die echten Codes erst beim Drucken kommen); children: der Bogen (VisitenkartenBoegen).
+export function BogenVorschau({ note, children }) {
+  return (
+    <details className="vk-bogen-vorschau">
+      <summary>
+        <span className="vk-bogen-summary">Druckbogen ansehen</span>
+      </summary>
+      <div className="vk-bogen-body">
+        <p className="muted">
+          So kommt Bogen 1 aufs Papier – vorne eure Seite, hinten die Rückseite, gespiegelt.
+          {note && ` ${note}`}
+        </p>
+        {children}
+      </div>
+    </details>
   )
 }

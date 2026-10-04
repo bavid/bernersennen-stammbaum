@@ -5,18 +5,17 @@ const { noStore, sendJsonWithoutEtag } = require('../../lib/noStoreResponse')
 const { loadDesign, saveDesign } = require('../../lib/visitenkarte')
 const { defaultKurztext } = require('../../lib/visitenkarteDesign')
 const { MAX_CODES_PER_REQUEST, validateCodeRequest, stackCounts, takeCodesForPrint } = require('../../lib/visitenkarteGutscheine')
-const { loadEinladung, saveEinladung } = require('../../lib/einladungskarte')
 const { readRueckseite } = require('../../lib/einladungRueckseite')
 
-// Phase V5: Visitenkarten-Designer im Partner-Bereich (/api/partner-area/visitenkarte). Läuft hinter
+// Phase V5, Feedback-Runde: Karten-Designer im Partner-Bereich (/api/partner-area/visitenkarte). Läuft hinter
 // middleware/partnerArea.js requirePartnerArea (req.partner ist gesetzt).
-// - GET /            { design, gespeichert, einladung: { design, gespeichert }, rueckseite, vorschlag,
-//                    gutscheine: { offen, ungedruckt }, maxJeAbruf } - nie Codes; vorschlag ist der Kurztext aus dem
-//                    Portal (für "Aus dem Portal übernehmen"). einladung: die Vorderseite der Einladungskarte
-//                    (lib/einladungskarte.js, ohne gespeicherte der Look der Visitenkarte), rueckseite: die Rückseite, die
-//                    Familie auf Pfoten gestaltet (lib/einladungRueckseite.js - nur lesend, gepflegt im Admin).
-// - PUT /            die ganze Gestaltung (lib/visitenkarteDesign.js), Antwort wie GET.
-// - PUT /einladung   die ganze Vorderseite der Einladungskarte (lib/einladungskarteDesign.js), Antwort wie GET.
+// - GET /            { design, gespeichert, rueckseite, vorschlag, gutscheine: { offen, ungedruckt }, maxJeAbruf } - nie
+//                    Codes. design: EINE Vorderseite für alle Kombinationen samt gewählter Kombination (karte:
+//                    visitenkarte, einladung oder kombi - lib/visitenkarteDesign.js); vorschlag ist der Kurztext aus dem
+//                    Portal (für "Aus dem Portal übernehmen"); rueckseite: Titel und Texte, die Familie auf Pfoten für
+//                    die Code-Rückseiten gestaltet (lib/einladungRueckseite.js - nur lesend, gepflegt im Admin).
+// - PUT /            die ganze Gestaltung (lib/visitenkarteDesign.js), Antwort wie GET. (Das frühere PUT /einladung für
+//                    eine getrennte Einladungskarte gibt es nicht mehr - nichts nutzt es noch.)
 // - POST /gutscheine { anzahl 1-50, nurUngedruckt } -> { codes, fehlen, gutscheine }: offene Codes aus dem EIGENEN
 //                    Kunden-Stapel im Klartext, als gedruckt vermerkt (lib/visitenkarteGutscheine.js).
 // Jede Antwort no-store ohne ETag (lib/noStoreResponse.js), wie die Druckdaten der Stapel. Demo-Sitzungen lesen nur
@@ -51,10 +50,8 @@ function owner(req) {
 }
 
 function stateOf(req) {
-  const visitenkarte = loadDesign(req.partner)
   return {
-    ...visitenkarte,
-    einladung: loadEinladung(req.partner, visitenkarte.gespeichert ? visitenkarte.design : null),
+    ...loadDesign(req.partner),
     rueckseite: readRueckseite(),
     vorschlag: defaultKurztext(req.partner),
     gutscheine: stackCounts(owner(req)),
@@ -74,15 +71,6 @@ router.get('/', (req, res) => {
 router.put('/', denyDemoWrites, saveLimiter, (req, res, next) => {
   try {
     saveDesign(req.partner, req.body)
-    sendJsonWithoutEtag(res, 200, stateOf(req))
-  } catch (err) {
-    sendError(res, next, err)
-  }
-})
-
-router.put('/einladung', denyDemoWrites, saveLimiter, (req, res, next) => {
-  try {
-    saveEinladung(req.partner, req.body)
     sendJsonWithoutEtag(res, 200, stateOf(req))
   } catch (err) {
     sendError(res, next, err)

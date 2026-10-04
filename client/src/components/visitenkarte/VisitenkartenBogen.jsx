@@ -4,13 +4,13 @@ import VisitenkarteBack from './VisitenkarteBack.jsx'
 import VisitenkarteFront from './VisitenkarteFront.jsx'
 import { cropMarks } from '../../lib/visitenkarte.js'
 
-// A4-Bögen für den Visitenkarten-Druck (Phase V5): je Bogen 10 Karten (2 × 5) mittig mit Schnittmarken, die Vorderseiten
-// in Leserichtung, die Rückseiten in gespiegelter Spaltenfolge (lib/visitenkarte.js buildSheets) - so liegt beim
-// beidseitigen Druck jede Rückseite hinter ihrer Karte. Dieselben Bögen zeigt die Seite verkleinert als Druckvorschau und
-// druckt sie über VisitenkartenDruck: der hängt sie direkt in <body>, solange die Seite offen ist - beim Drucken blendet
-// styles/visitenkarten.css die App (#root) aus, so entstehen keine Leerseiten (wie die Collage, collage/PrintSheet.jsx).
-// Einladungskarten (EinladungskartenDesigner) drucken nach Kartenzahl: ein leerer Platz (null aus lib/einladungskarte.js
-// buildKartenSheets) bleibt leer, und renderBack zeichnet ihre Rückseite (EinladungBack) statt der Visitenkarten-Rückseite.
+// A4-Bögen für den Karten-Druck (Phase V5): je Bogen bis zu 10 Karten (2 × 5) mittig mit Schnittmarken, die Vorderseiten
+// in Leserichtung, die Rückseiten in gespiegelter Spaltenfolge (lib/einladungskarte.js buildKartenSheets) - so liegt beim
+// beidseitigen Druck jede Rückseite hinter ihrer Karte; ein leerer Platz auf dem letzten Bogen bleibt leer. Dieselben Bögen
+// zeigt die Seite verkleinert als Druckvorschau und druckt sie über VisitenkartenDruck: der hängt sie direkt in <body>,
+// solange die Seite offen ist - beim Drucken blendet styles/visitenkarten.css die App (#root) aus, so entstehen keine
+// Leerseiten (wie die Collage, collage/PrintSheet.jsx). renderBack zeichnet die Rückseite der gewählten Kombination
+// (KartenDesigner); ohne renderBack die Rückseite mit dem Portal.
 
 export const VK_PRINT_BODY_CLASS = 'has-visitenkarten-print'
 export const SEITEN = Object.freeze({ beide: 'beide', vorne: 'vorne', hinten: 'hinten' })
@@ -32,7 +32,7 @@ function EmptySlot() {
   return <span className="vk-slot-leer" aria-hidden="true" />
 }
 
-function Sheet({ sheet, side, total, card, muster, renderBack }) {
+function Sheet({ sheet, side, total, card, renderBack }) {
   const label = `Bogen ${sheet.number} von ${total}, ${SIDE_LABELS[side]}`
   return (
     <section className={`vk-sheet vk-sheet-${side}`} aria-label={label} data-seite={side}>
@@ -49,7 +49,7 @@ function Sheet({ sheet, side, total, card, muster, renderBack }) {
               back === null ? (
                 <EmptySlot key={`leer-${slot}`} />
               ) : (
-                <Back key={back.index} back={back} card={card} muster={muster} renderBack={renderBack} />
+                <Back key={back.index} back={back} card={card} renderBack={renderBack} />
               )
             )}
       </div>
@@ -57,20 +57,20 @@ function Sheet({ sheet, side, total, card, muster, renderBack }) {
   )
 }
 
-function Back({ back, card, muster, renderBack }) {
+function Back({ back, card, renderBack }) {
   if (renderBack) return renderBack(back)
-  return <VisitenkarteBack card={card} code={back.code} muster={muster && Boolean(back.code)} />
+  return <VisitenkarteBack card={card} />
 }
 
 // seiten: beide (je Bogen Vorder- und gleich danach Rückseite - für Drucker mit Duplex), nur vorne oder nur hinten (zum
 // Wenden von Hand: erst alle Vorderseiten, Stapel umdrehen, dann alle Rückseiten).
 // total: Zahl aller Bögen (die Druckvorschau zeigt nur den ersten). renderBack(back): eigene Rückseite ({ index, code }).
-export default function VisitenkartenBoegen({ sheets, card, seiten = SEITEN.beide, muster = false, total = sheets.length, renderBack = null }) {
+export default function VisitenkartenBoegen({ sheets, card, seiten = SEITEN.beide, total = sheets.length, renderBack = null }) {
   const sides = seiten === SEITEN.beide ? [SEITEN.vorne, SEITEN.hinten] : [seiten]
   return (
     <div className="vk-sheets">
       {sheets.flatMap((sheet) =>
-        sides.map((side) => <Sheet key={`${sheet.number}-${side}`} sheet={sheet} side={side} total={total} card={card} muster={muster} renderBack={renderBack} />)
+        sides.map((side) => <Sheet key={`${sheet.number}-${side}`} sheet={sheet} side={side} total={total} card={card} renderBack={renderBack} />)
       )}
     </div>
   )

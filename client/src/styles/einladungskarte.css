@@ -1,79 +1,164 @@
-/* Einladungskarten (components/visitenkarte/EinladungBack, KartenArtSwitch, EinladungDruckOptionen; AdminEinladungskarte).
-   Die Karte rechnet wie die Visitenkarte in --u (visitenkarte-karte.css). Die Rückseite gestaltet Familie auf Pfoten: feste
-   Farben der Plattform (Rost, Tinte, Papier aus tokens.css, hell) statt der Partnerfarbe - Papier kennt keinen Dunkelmodus.
-   Bedienelemente rund um die Karten nutzen die Theme-Tokens. */
+/* Rückseiten mit Code und die Wahl der Kombination (components/visitenkarte/EinladungBack, KombiBack, KartenWahl,
+   KartenDruckOptionen; AdminEinladungskarte). Die Karte rechnet wie die Visitenkarte in --u (visitenkarte-karte.css). Die
+   Rückseiten mit Code gestaltet Familie auf Pfoten: feste Farben der Plattform (Rost, Tinte, Papier aus tokens.css, hell)
+   statt der Partnerfarbe - Papier kennt keinen Dunkelmodus. Bedienelemente rund um die Karten nutzen die Theme-Tokens. */
 
-/* --- Wahl der Kartenart ------------------------------------------------------------------------------- */
+/* --- Wahl der Kombination (Feedback-Runde, KartenWahl) --------------------------------------------------- */
 
-/* Rückt näher an den Seitenkopf (halber Abschnittsabstand der Seite, layout.css .page) - die Wahl gehört zum Designer. */
-.vk-art {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-4);
-  margin-top: calc(var(--page-gap, 0px) * -0.5);
+/* Rückt näher an den Seitenkopf (halber Abschnittsabstand der Seite, layout.css .page) - die Wahl gehört zum Designer.
+   Drei Kacheln mit Skizze; der Radio-Knopf liegt unsichtbar über der Kachel (Tastatur, Screenreader). */
+.vk-wahl {
+  min-width: 0;
+  margin: calc(var(--page-gap, 0px) * -0.5) 0 0;
+  padding: 0;
+  border: 0;
 }
 
-.vk-art-options {
-  display: inline-flex;
-  gap: var(--space-1);
-  padding: var(--space-1);
+.vk-wahl legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+}
+
+.vk-wahl-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 15rem));
+  gap: var(--space-3);
+}
+
+.vk-wahl-option {
+  position: relative;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: 44px;
+  padding: var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: var(--surface-sunk);
-}
-
-.vk-art-option {
-  display: grid;
-  gap: 2px;
-  min-height: 44px;
-  padding: 0.55rem 1.1rem;
-  border: 0;
-  border-radius: calc(var(--radius-md) - 4px);
-  background: transparent;
+  background: var(--surface);
   color: var(--text);
-  font: inherit;
-  text-align: left;
   cursor: pointer;
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
-.vk-art-option strong {
-  font-size: var(--text-base);
+.vk-wahl-option:hover:not(.is-disabled) {
+  border-color: var(--rust);
 }
 
-.vk-art-hint {
-  font-size: var(--text-xs);
-  color: var(--muted);
+.vk-wahl-option.is-checked {
+  border-color: var(--rust);
+  background: var(--rust-wash);
+  box-shadow: inset 0 0 0 1px var(--rust);
 }
 
-.vk-art-option:hover {
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
+.vk-wahl-option.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.vk-art-option[aria-pressed='true'] {
-  background: var(--surface);
-  box-shadow:
-    var(--shadow-sm),
-    inset 0 -3px 0 var(--rust);
-}
-
-.vk-art-option[aria-pressed='true'] strong {
-  color: var(--rust-deep);
-}
-
-.vk-art-option:focus-visible {
-  outline: none;
+.vk-wahl-option:has(.vk-wahl-input:focus-visible) {
   box-shadow: var(--focus-ring);
 }
 
-@media (max-width: 30rem) {
-  .vk-art-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: 100%;
+.vk-wahl-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.vk-wahl-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vk-wahl-text strong {
+  font-size: var(--text-base);
+}
+
+.vk-wahl-option.is-checked .vk-wahl-text strong {
+  color: var(--rust-deep);
+}
+
+.vk-wahl-hint {
+  font-size: var(--text-xs);
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+/* Skizze: zwei Mini-Karten (vorne Zeilen, hinten QR-Quadrat(e) und eine Zeile). */
+.vk-wahl-skizze {
+  display: grid;
+  flex: none;
+  gap: 3px;
+}
+
+.vk-wahl-seite {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  box-sizing: border-box;
+  width: 2.6rem;
+  height: 1.7rem;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  background: var(--paper);
+}
+
+.vk-wahl-seite i {
+  display: block;
+  height: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
+.vk-wahl-seite.is-vorne i:first-child {
+  width: 70%;
+  height: 3px;
+  background: var(--rust);
+}
+
+.vk-wahl-seite.is-hinten {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+}
+
+.vk-wahl-seite.is-hinten b {
+  display: block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 1px;
+  background: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--paper);
+  outline: 1px solid var(--ink);
+}
+
+.vk-wahl-seite.is-hinten i {
+  flex: 1 1 0.6rem;
+}
+
+.vk-wahl-seite.is-hinten.is-einladung,
+.vk-wahl-seite.is-hinten.is-kombi {
+  border-top: 2px solid var(--rust);
+}
+
+@media (max-width: 40rem) {
+  .vk-wahl-options {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  .vk-wahl-option {
+    padding: var(--space-2) var(--space-3);
   }
 }
 
@@ -86,7 +171,7 @@
   text-transform: none;
 }
 
-/* --- Tipps zum Druck (beide Kartenarten, VisitenkarteDruckOptionen DruckHints): zum Aufklappen ------------------ */
+/* --- Tipps zum Druck (KartenDruckOptionen DruckHints): zum Aufklappen ----------------------------------------- */
 
 .vk-druck-tipps {
   font-size: var(--text-sm);
@@ -350,6 +435,89 @@
   font-weight: 800;
   color: var(--vk-ink);
   overflow-wrap: anywhere;
+}
+
+/* --- Rückseite der Kombi (Feedback-Runde, KombiBack): oben Marke, Titel und Text, darunter Portal und Code ------ */
+
+.vk-back-kombi {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: calc(2.2 * var(--u)) calc(4 * var(--u));
+  align-items: start;
+  padding: calc(4.4 * var(--u)) calc(5 * var(--u)) calc(3.4 * var(--u));
+}
+
+.vk-kombi-head {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: calc(0.7 * var(--u));
+  min-width: 0;
+}
+
+.vk-back-kombi .vk-einladung-titel {
+  font-size: calc(3.1 * var(--u));
+  -webkit-line-clamp: 1;
+}
+
+.vk-kombi-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: calc(1.75 * var(--u));
+  line-height: 1.3;
+  color: var(--vk-muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.vk-kombi-col {
+  display: grid;
+  grid-template-columns: calc(17 * var(--u)) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  column-gap: calc(1.8 * var(--u));
+  row-gap: calc(0.6 * var(--u));
+  align-items: start;
+  min-width: 0;
+}
+
+.vk-back-kombi .vk-qr-box {
+  grid-row: 1 / -1;
+  box-sizing: border-box;
+  width: 100%;
+  padding: calc(1.1 * var(--u));
+  border: calc(0.3 * var(--u)) solid var(--vk-pf-linie);
+}
+
+.vk-kombi-label {
+  font-size: calc(1.7 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--vk-pf-rost);
+}
+
+.vk-kombi-sub {
+  font-size: calc(1.8 * var(--u));
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--vk-ink);
+  overflow-wrap: anywhere;
+}
+
+/* In der schmalen Spalte darf auch der Host umbrechen. */
+.vk-kombi-sub .vk-nowrap {
+  white-space: normal;
+}
+
+.vk-back-kombi .vk-code {
+  flex-direction: column;
+  gap: calc(0.2 * var(--u));
+  margin-top: 0;
+  padding: calc(0.4 * var(--u)) calc(0.9 * var(--u));
+  background: #fff;
+  font-size: calc(2.2 * var(--u));
+  letter-spacing: 0.04em;
+  line-height: 1.15;
 }
 
 /* --- Admin: Einstellung mit Vorschau -------------------------------------------------------------------- */

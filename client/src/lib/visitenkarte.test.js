@@ -5,38 +5,40 @@ import {
   DARK_TEXT,
   GRID_MM,
   LIGHT_TEXT,
-  MAX_SHEETS,
   PALETTE,
+  PENDING_ADDRESS,
   VORLAGEN,
   accentOnWhite,
   availableContacts,
-  buildSheets,
   cardModel,
-  clampSheets,
   codeGroups,
   contactLines,
   cropMarks,
   designPayload,
   effectiveVorlage,
   isSameDesign,
+  maskPendingAddress,
   mirrorRows,
   musterCodes,
+  normalizeDesign,
   normalizeHex,
   textColorOn,
   voucherTarget,
   websiteLabel
 } from './visitenkarte.js'
 import { contrastRatio } from './contrast.js'
+import { buildKartenSheets } from './einladungskarte.js'
 
 const DESIGN = Object.freeze({
+  karte: 'kombi',
   vorlage: 'foto',
   farbe: '#1f5f8b',
   kurztext: 'Welpenkurse und Hundetraining',
+  widmung: 'Für unsere Welpenkurs-Familien',
   zeigeAnsprechperson: true,
   zeigeWebsite: true,
   zeigeTelefon: true,
-  zeigeEmail: false,
-  mitGutschein: true
+  zeigeEmail: false
 })
 
 const PROFILE = Object.freeze({
@@ -127,6 +129,7 @@ describe('Inhalt der Karte', () => {
       logoUrl: '/partner-media/logo.png',
       fotoUrl: '/uploads/banner.jpg',
       kurztext: 'Welpenkurse und Hundetraining',
+      widmung: 'Für unsere Welpenkurs-Familien',
       ansprechperson: 'Anna Berg',
       baseUrl: 'https://beispiel-chronik.de',
       host: 'beispiel-chronik.de',
@@ -152,6 +155,15 @@ describe('Inhalt der Karte', () => {
     expect(card.fotoUrl).toBe(null)
   })
 
+  test('cardModel: persönliche Zeile getrimmt, leer -> keine; ohne öffentliche Adresse ein Platzhalter statt Host', () => {
+    expect(cardModel({ profile: PROFILE, design: { ...DESIGN, widmung: '  ' }, publicUrl: null, origin: 'http://x.test' }).widmung).toBe(null)
+    const card = cardModel({ profile: PROFILE, design: DESIGN, publicUrl: null, origin: 'http://10.0.0.5:3010' })
+    const masked = maskPendingAddress(card)
+    expect(masked).toMatchObject({ host: PENDING_ADDRESS, portalLabel: PENDING_ADDRESS, portalPfad: '', addressPending: true })
+    expect(JSON.stringify([masked.host, masked.portalLabel, masked.portalPfad])).not.toContain('10.0.0.5')
+    expect(masked.portalUrl).toBe(card.portalUrl)
+  })
+
   test('Gutschein-QR: der Code steht nur hinter der Raute von /v', () => {
     const url = voucherTarget('https://beispiel-chronik.de', 'ABCD-EFGH-JKLM')
     expect(url).toBe('https://beispiel-chronik.de/v#ABCD-EFGH-JKLM')
@@ -171,10 +183,8 @@ describe('Inhalt der Karte', () => {
 })
 
 describe('Druckbogen', () => {
-  test('10 Karten je Bogen (2 × 5), 1 bis 5 Bögen', () => {
+  test('10 Karten je Bogen (2 × 5)', () => {
     expect(CARDS_PER_SHEET).toBe(10)
-    expect(MAX_SHEETS).toBe(5)
-    expect([0, 1, 3, 5, 9, Number.NaN, '2'].map(clampSheets)).toEqual([1, 1, 3, 5, 5, 1, 2])
   })
 
   test('mirrorRows spiegelt die Spalten jeder Reihe', () => {
@@ -182,27 +192,8 @@ describe('Druckbogen', () => {
     expect(mirrorRows(['a', 'b', 'c'], 3)).toEqual(['c', 'b', 'a'])
   })
 
-  test('buildSheets: Vorderseiten in Leserichtung, Rückseiten gespiegelt mit dem Code ihrer Karte', () => {
-    const codes = Array.from({ length: 13 }, (_, index) => `CODE-${String(index).padStart(4, '0')}-AAAA`)
-    const sheets = buildSheets({ sheetCount: 2, codes })
-    expect(sheets).toHaveLength(2)
-    expect(sheets[0].number).toBe(1)
-    expect(sheets[0].fronts).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    expect(sheets[0].backs.map((back) => back.index)).toEqual([1, 0, 3, 2, 5, 4, 7, 6, 9, 8])
-    expect(sheets[0].backs[0]).toEqual({ index: 1, code: codes[1] })
-    expect(sheets[1].fronts).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
-    // Mehr Karten als Codes: die übrigen bekommen die Rückseite ohne Gutschein.
-    expect(sheets[1].backs.slice(0, 4)).toEqual([
-      { index: 11, code: codes[11] },
-      { index: 10, code: codes[10] },
-      { index: 13, code: null },
-      { index: 12, code: codes[12] }
-    ])
-    expect(buildSheets({ sheetCount: 1 })[0].backs.every((back) => back.code === null)).toBe(true)
-  })
-
   test('Rückseiten passen zum Wenden über die lange Kante: links und rechts tauschen, die Reihen bleiben', () => {
-    const [sheet] = buildSheets({ sheetCount: 1 })
+    const [sheet] = buildKartenSheets({ count: CARDS_PER_SHEET })
     sheet.backs.forEach((back, position) => {
       const row = Math.floor(position / COLUMNS)
       const column = position % COLUMNS
@@ -227,9 +218,19 @@ describe('Druckbogen', () => {
 })
 
 describe('Speichern', () => {
-  test('designPayload schickt genau die Felder der Gestaltung, isSameDesign vergleicht sie', () => {
-    const payload = designPayload({ ...DESIGN, extra: 'weg' })
+  test('normalizeDesign: fehlende oder unbekannte Kombination -> Kombi, fehlende Zeile -> leer', () => {
+    const { karte, widmung, ...alt } = DESIGN
+    expect([karte, widmung.length > 0]).toEqual(['kombi', true])
+    expect(normalizeDesign({ ...alt, mitGutschein: true })).toMatchObject({ karte: 'kombi', widmung: '' })
+    expect(normalizeDesign({ ...DESIGN, karte: 'einladung' })).toEqual({ ...DESIGN, karte: 'einladung' })
+    expect(normalizeDesign({ ...DESIGN, karte: 'gutschein' }).karte).toBe('kombi')
+  })
+
+  test('designPayload schickt genau die Felder der Gestaltung (samt Kombination), isSameDesign vergleicht sie', () => {
+    const payload = designPayload({ ...DESIGN, extra: 'weg', mitGutschein: true })
     expect(payload).toEqual(DESIGN)
+    expect(isSameDesign(DESIGN, { ...DESIGN, karte: 'einladung' })).toBe(false)
+    expect(isSameDesign(DESIGN, { ...DESIGN, widmung: 'Anders' })).toBe(false)
     expect(isSameDesign(DESIGN, { ...DESIGN })).toBe(true)
     expect(isSameDesign(DESIGN, { ...DESIGN, farbe: '#000000' })).toBe(false)
     expect(isSameDesign(DESIGN, null)).toBe(false)

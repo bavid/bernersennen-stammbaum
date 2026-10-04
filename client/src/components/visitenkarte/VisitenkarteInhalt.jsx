@@ -1,10 +1,9 @@
-import { CONTACT_FIELDS, MAX_KURZTEXT_LENGTH, availableContacts } from '../../lib/visitenkarte.js'
-import { MAX_WIDMUNG_LENGTH } from '../../lib/einladungskarte.js'
+import { CONTACT_FIELDS, MAX_KURZTEXT_LENGTH, MAX_WIDMUNG_LENGTH, availableContacts } from '../../lib/visitenkarte.js'
 
 // Inhalt der Karte (Phase V5): Kurztext (höchstens 120 Zeichen, Vorschlag aus dem Portal) und welche Angaben aus dem
 // Profil auf der Karte stehen - Ansprechperson und Website/Telefon/E-Mail lassen sich nur schalten, wenn sie im Profil
-// eingetragen sind. Name, Logo und Kontaktdaten selbst pflegt der Partner im Profil. mitWidmung (Einladungskarte): dazu
-// die persönliche Zeile über dem Namen (höchstens 80 Zeichen, leer = keine).
+// eingetragen sind. Name, Logo und Kontaktdaten selbst pflegt der Partner im Profil. Dazu (Feedback-Runde: auf jeder
+// Kombination) die persönliche Zeile über dem Namen (höchstens 80 Zeichen, leer = keine).
 
 function Widmung({ value, onChange }) {
   return (
@@ -37,7 +36,7 @@ function Toggle({ id, checked, onChange, children }) {
   )
 }
 
-export default function VisitenkarteInhalt({ design, profile, vorschlag, onChange, mitWidmung = false }) {
+export default function VisitenkarteInhalt({ design, profile, vorschlag, onChange }) {
   const contacts = availableContacts(profile)
   const kurztextLength = design.kurztext.length
   const hasPerson = Boolean(profile.ansprechperson?.trim())
@@ -45,7 +44,7 @@ export default function VisitenkarteInhalt({ design, profile, vorschlag, onChang
   return (
     <fieldset className="vk-fieldset">
       <legend className="field-label">Inhalt</legend>
-      {mitWidmung && <Widmung value={design.widmung} onChange={onChange} />}
+      <Widmung value={design.widmung} onChange={onChange} />
       <div className="field">
         <label className="vk-label" htmlFor="vk-kurztext">
           Kurztext

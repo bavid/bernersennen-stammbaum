@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useToast } from '../components/Toast.jsx'
 
-// Entwurf einer Kartengestaltung (components/visitenkarte/KartenDesigner.jsx - je einer für Visitenkarte und
-// Einladungskarte, damit ein Wechsel der Kartenart keine Änderungen verliert): die Gestaltung, ob sie gespeichert ist,
+// Entwurf der Kartengestaltung (components/visitenkarte/KartenDesigner.jsx): die Gestaltung, ob sie gespeichert ist,
 // und Speichern. Übernommen wird nur, was gespeichert wurde: wer während des Speicherns weiter ändert, behält seine
 // Änderungen (und sieht "Noch nicht gespeichert").
-// toPayload: genau die Felder des PUT; isSame: Vergleich zweier Gestaltungen; request(payload): der PUT (Antwort: der
-// ganze Stand); pick(result): die gespeicherte Gestaltung aus der Antwort; onSaved(result): danach (z. B. Zähler).
-export default function useKartenEntwurf({ initial, gespeichert, toPayload, isSame, request, pick, onSaved }) {
+// initial/gespeichert: der Stand vom Server; override: Felder, die der Entwurf von Anfang an anders hat (z. B. die
+// Kombination aus der Adresse - dann gilt er als nicht gespeichert, bis man speichert). toPayload: genau die Felder des
+// PUT; isSame: Vergleich zweier Gestaltungen; request(payload): der PUT (Antwort: der ganze Stand); pick(result): die
+// gespeicherte Gestaltung aus der Antwort; onSaved(result): danach (z. B. Zähler).
+export default function useKartenEntwurf({ initial, gespeichert, override = null, toPayload, isSame, request, pick, onSaved }) {
   const toast = useToast()
-  const [design, setDesign] = useState(initial)
+  const [design, setDesign] = useState(() => (override ? { ...initial, ...override } : initial))
   const [saved, setSaved] = useState(gespeichert ? initial : null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)

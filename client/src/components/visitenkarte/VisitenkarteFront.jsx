@@ -3,8 +3,8 @@ import Icon from '../Icon.jsx'
 // Vorderseite einer Visitenkarte (Phase V5, 85 × 55 mm) in einer der drei Vorlagen - card kommt aus lib/visitenkarte.js
 // cardModel (Foto ohne Bannerfoto ist dort schon Klassisch). Maße und Schrift in styles/visitenkarten.css (alles in
 // --mm, damit Vorschau und Druck dieselben Proportionen haben). Feste Druckfarben, kein Theme: Papier kennt keinen
-// Dunkelmodus. Die Vorderseite trägt keinen QR-Code - der steht auf der Rückseite (Portal oder Gutschein). Einladungskarten
-// (lib/einladungskarte.js einladungCardModel) bringen card.widmung mit - die persönliche Zeile über dem Namen.
+// Dunkelmodus. Die Vorderseite trägt keinen QR-Code - der steht auf der Rückseite (Portal, Einladungscode oder beides).
+// card.widmung: die persönliche Zeile über dem Namen (Feedback-Runde: auf jeder Kombination).
 
 const VORLAGE_LABELS = { klassisch: 'Klassisch', foto: 'Foto', schlicht: 'Schlicht' }
 const MONOGRAM_LETTERS = 2

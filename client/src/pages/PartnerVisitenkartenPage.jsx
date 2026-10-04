@@ -3,33 +3,29 @@ import Icon from '../components/Icon.jsx'
 import KartenDesigner from '../components/visitenkarte/KartenDesigner.jsx'
 import useVisitenkarte from '../hooks/useVisitenkarte.js'
 import { profileTabRoute } from '../lib/partnerProfile.js'
-import { ART, ART_PARAM, artFromParam } from '../lib/einladungskarte.js'
+import { KARTE_PARAM, karteFromParams } from '../lib/kartenWahl.js'
 
-// /visitenkarten (Phase V5) - Karten-Designer eines Partner- oder Tierheim-Bereichs, verlinkt aus dem Profil (Reiter
-// "Teilen") und den Kunden-Gutscheinen; kein eigener Navigationspunkt. Zwei Kartenarten (?art=einladung): Visitenkarten
-// (vorne ihr, hinten euer Portal) und Einladungskarten (vorne ihr, hinten Familie auf Pfoten mit Code). Lädt Profil,
-// gespeicherte Gestaltungen und die öffentliche Adresse (hooks/useVisitenkarte.js), den Rest macht
-// components/visitenkarte/KartenDesigner.jsx.
+// /visitenkarten (Phase V5, Feedback-Runde) - Karten-Designer eines Partner- oder Tierheim-Bereichs, verlinkt aus dem
+// Profil (Reiter "Teilen") und den Einladungscodes; kein eigener Navigationspunkt. Eine Seite ohne "Kartenart": vorne
+// immer eure Kontakte, hinten wählbar euer Portal, ein Einladungscode oder beides (Kombi) - die Wahl steht in der
+// Adresse (?karte=…, das frühere ?art=einladung öffnet die Einladungskarte). Lädt Profil, gespeicherte Gestaltung und
+// die öffentliche Adresse (hooks/useVisitenkarte.js), den Rest macht components/visitenkarte/KartenDesigner.jsx.
 
-export const VISITENKARTEN_LEAD =
-  'Eure Karte im Scheckkarten-Format: vorne ihr, hinten der QR-Code zu eurem Portal – auf Wunsch mit einem Kunden-Gutschein auf jeder Karte.'
-export const EINLADUNGSKARTEN_LEAD =
-  'Zum Verteilen an eure Kundschaft: vorne ihr, hinten Familie auf Pfoten mit einem eigenen Code auf jeder Karte – wer ihn einlöst, legt eine eigene Tierchronik an.'
-
-const TITLES = { [ART.visitenkarte]: 'Visitenkarten gestalten', [ART.einladung]: 'Einladungskarten gestalten' }
-const LEADS = { [ART.visitenkarte]: VISITENKARTEN_LEAD, [ART.einladung]: EINLADUNGSKARTEN_LEAD }
+export const KARTEN_LEAD =
+  'Zum Selberdrucken im Scheckkarten-Format: vorne eure Kontakte, hinten euer Portal, ein Einladungscode für eure Kundschaft – oder beides.'
+const LEGACY_PARAM = 'art'
 
 export default function PartnerVisitenkartenPage() {
   const { profile, state, publicUrl, appEnv, configReady, error } = useVisitenkarte()
   const [params, setParams] = useSearchParams()
-  const art = artFromParam(params.get(ART_PARAM))
+  const karte = karteFromParams(params)
   const ready = profile && state && configReady
 
-  // Andere Parameter (z. B. aus der Demo) bleiben stehen; die Visitenkarte braucht keinen.
-  function selectArt(next) {
+  // Andere Parameter (z. B. aus der Demo) bleiben stehen; das frühere ?art= fällt weg.
+  function selectKarte(next) {
     const updated = new URLSearchParams(params)
-    if (next === ART.einladung) updated.set(ART_PARAM, next)
-    else updated.delete(ART_PARAM)
+    updated.delete(LEGACY_PARAM)
+    updated.set(KARTE_PARAM, next)
     setParams(updated, { replace: true })
   }
 
@@ -38,8 +34,8 @@ export default function PartnerVisitenkartenPage() {
       <header className="page-hero vk-hero">
         <div>
           <span className="eyebrow">Partner-Profil</span>
-          <h1>{TITLES[art]}</h1>
-          <p className="muted vk-lead">{LEADS[art]}</p>
+          <h1>Karten gestalten</h1>
+          <p className="muted vk-lead">{KARTEN_LEAD}</p>
         </div>
         {/* Audit V7a: zurück in den Reiter "Teilen", aus dem man meist kommt. */}
         <Link to={profileTabRoute('teilen')} className="btn btn-ghost">
@@ -57,7 +53,9 @@ export default function PartnerVisitenkartenPage() {
           Lade …
         </p>
       )}
-      {!error && ready && <KartenDesigner art={art} onArt={selectArt} profile={profile} initial={state} publicUrl={publicUrl} appEnv={appEnv} />}
+      {!error && ready && (
+        <KartenDesigner karte={karte} onKarte={selectKarte} profile={profile} initial={state} publicUrl={publicUrl} appEnv={appEnv} />
+      )}
     </div>
   )
 }

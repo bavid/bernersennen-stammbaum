@@ -9,7 +9,8 @@ vi.mock('../../lib/qr.js', () => ({ qrSvgPath }))
 import EinladungBack from './EinladungBack.jsx'
 import VisitenkarteFront from './VisitenkarteFront.jsx'
 import VisitenkartenBoegen, { SEITEN } from './VisitenkartenBogen.jsx'
-import { RUECKSEITE_VORGABEN, buildKartenSheets, einladungCardModel, rueckseiteModel } from '../../lib/einladungskarte.js'
+import { RUECKSEITE_VORGABEN, buildKartenSheets, rueckseiteModel } from '../../lib/einladungskarte.js'
+import { cardModel } from '../../lib/visitenkarte.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -24,6 +25,7 @@ const PROFILE = {
   kontaktEmail: 'hallo@example.org'
 }
 const DESIGN = {
+  karte: 'einladung',
   vorlage: 'klassisch',
   farbe: '#1f5f8b',
   kurztext: 'Training mit Herz',
@@ -53,7 +55,7 @@ afterEach(() => {
 })
 
 function card(patch = {}) {
-  return einladungCardModel({ profile: PROFILE, design: { ...DESIGN, ...patch }, publicUrl: BASE, origin: 'http://localhost' })
+  return cardModel({ profile: PROFILE, design: { ...DESIGN, ...patch }, publicUrl: BASE, origin: 'http://localhost' })
 }
 
 function render(element) {
@@ -138,10 +140,10 @@ describe('Einladungskarten – Bögen nach Kartenzahl', () => {
     expect(front.querySelectorAll('.vk-slot-leer')).toHaveLength(7)
     expect(backSheet.querySelectorAll('.vk-back-einladung')).toHaveLength(3)
     expect([...backSheet.querySelectorAll('.vk-sheet-grid > *')].slice(0, 4).map((el) => el.querySelector('.vk-code')?.getAttribute('aria-label') ?? 'leer')).toEqual([
-      'Code AAAA-0000-0002',
-      'Code AAAA-0000-0001',
+      'Einladungscode AAAA-0000-0002',
+      'Einladungscode AAAA-0000-0001',
       'leer',
-      'Code AAAA-0000-0003'
+      'Einladungscode AAAA-0000-0003'
     ])
   })
 })

@@ -12,14 +12,15 @@ const dataDir = useTempDataDir('partner-visitenkarte', { LOGIN_RATE_LIMIT: '300'
 
 const CODE_RE = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/
 const VALID_DESIGN = Object.freeze({
+  karte: 'einladung',
   vorlage: 'schlicht',
   farbe: '#3F4B39',
   kurztext: 'Gemeinsam lernen auf der Wiese',
+  widmung: 'Für unsere Kursfamilien',
   zeigeAnsprechperson: false,
   zeigeWebsite: true,
   zeigeTelefon: false,
-  zeigeEmail: true,
-  mitGutschein: true
+  zeigeEmail: true
 })
 
 test('Partner-Bereich: Visitenkarten-Gestaltung und Gutschein-Codes für den Druck', async (t) => {
@@ -103,15 +104,17 @@ test('Partner-Bereich: Visitenkarten-Gestaltung und Gutschein-Codes für den Dru
     assert.equal(res.headers.get('etag'), null)
     assert.equal(res.data.gespeichert, false)
     assert.deepEqual(res.data.design, {
+      karte: 'kombi',
       vorlage: 'klassisch',
       farbe: '#2a6f4e',
       kurztext: 'Training mit Herz',
+      widmung: '',
       zeigeAnsprechperson: true,
       zeigeWebsite: true,
       zeigeTelefon: true,
-      zeigeEmail: true,
-      mitGutschein: false
+      zeigeEmail: true
     })
+    assert.equal('einladung' in res.data, false, 'keine getrennte Einladungskarte mehr')
     assert.deepEqual(res.data.gutscheine, { offen: ownOpenAll.length, ungedruckt: ownOpenAll.length })
     assert.equal(res.data.maxJeAbruf, 50)
     assert.equal(res.data.vorschlag, 'Training mit Herz')
@@ -124,7 +127,8 @@ test('Partner-Bereich: Visitenkarten-Gestaltung und Gutschein-Codes für den Dru
       { ...VALID_DESIGN, vorlage: 'bunt' },
       { ...VALID_DESIGN, farbe: 'grün' },
       { ...VALID_DESIGN, kurztext: 'x'.repeat(121) },
-      { ...VALID_DESIGN, mitGutschein: 'ja' },
+      { ...VALID_DESIGN, karte: 'gutschein' },
+      { ...VALID_DESIGN, mitGutschein: true },
       { ...VALID_DESIGN, schriftart: 'Comic' },
       { vorlage: 'foto' }
     ]) {
@@ -224,7 +228,7 @@ test('Partner-Bereich: Visitenkarten-Gestaltung und Gutschein-Codes für den Dru
     assert.equal(res.status, 200)
     assert.equal(res.data.gespeichert, true)
     assert.equal(res.data.design.vorlage, 'foto')
-    assert.equal(res.data.design.mitGutschein, true)
+    assert.equal(res.data.design.karte, 'kombi')
     assert.equal((await saveDesign(VALID_DESIGN, demoCookie)).status, 403)
     // Der Demo-Stapel bringt zwei schon gedruckte Codes mit (seed) - ein Abruf der Demo vermerkt keine weiteren.
     const printedDemo = () =>

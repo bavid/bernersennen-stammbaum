@@ -41,7 +41,7 @@ export default function EinladungBack({ card, rueckseite, code, muster = false }
         <div className="vk-qr-box">
           <VisitenkarteQr url={voucherTarget(card.baseUrl, code)} label={`QR-Code mit dem Code der Karte, öffnet ${rueckseite.adresse}`} />
         </div>
-        <p className="vk-code" aria-label={`Code ${code}`}>
+        <p className="vk-code" aria-label={`Einladungscode ${code}`}>
           {codeGroups(code).map((group, index) => (
             <span key={`${index}-${group}`}>{group}</span>
           ))}

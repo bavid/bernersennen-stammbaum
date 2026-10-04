@@ -514,15 +514,41 @@ p.vk-note {
   color: var(--text);
 }
 
-/* --- Druckbogen-Vorschau ---------------------------------------------------------------------------- */
+/* --- Druckbogen-Vorschau (Feedback-Runde: zum Aufklappen, BogenVorschau) ------------------------------- */
 
 .vk-bogen-vorschau {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+}
+
+.vk-bogen-vorschau summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.vk-bogen-vorschau summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.vk-bogen-summary {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.vk-bogen-body {
   container-type: inline-size;
   display: grid;
   gap: var(--space-4);
+  margin-top: var(--space-3);
 }
 
-.vk-bogen-vorschau > p {
+.vk-bogen-body > p {
   margin: 0;
 }
 

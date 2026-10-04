@@ -8,7 +8,9 @@ vi.mock('../../lib/qr.js', () => ({ qrSvgPath }))
 
 import VisitenkarteFront from './VisitenkarteFront.jsx'
 import VisitenkarteBack from './VisitenkarteBack.jsx'
-import { cardModel } from '../../lib/visitenkarte.js'
+import KombiBack from './KombiBack.jsx'
+import { cardModel, maskPendingAddress } from '../../lib/visitenkarte.js'
+import { RUECKSEITE_VORGABEN, rueckseiteModel } from '../../lib/einladungskarte.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -23,14 +25,15 @@ const PROFILE = {
   kontaktEmail: null
 }
 const DESIGN = {
+  karte: 'kombi',
   vorlage: 'klassisch',
   farbe: '#1f5f8b',
   kurztext: 'Welpenkurse und Hundetraining',
+  widmung: '',
   zeigeAnsprechperson: true,
   zeigeWebsite: true,
   zeigeTelefon: true,
-  zeigeEmail: true,
-  mitGutschein: false
+  zeigeEmail: true
 }
 const BASE = 'https://beispiel-chronik.de'
 
@@ -104,7 +107,7 @@ describe('VisitenkarteFront', () => {
 })
 
 describe('VisitenkarteBack', () => {
-  test('ohne Gutschein: QR-Code zum Portal und die kurze Adresse', () => {
+  test('QR-Code zum Portal und die kurze Adresse', () => {
     const back = render(<VisitenkarteBack card={card()} />)
     expect(back.classList.contains('vk-back-portal')).toBe(true)
     expect(qrSvgPath).toHaveBeenCalledWith(`${BASE}/p/hundeschule-pfotenglueck`)
@@ -112,27 +115,40 @@ describe('VisitenkarteBack', () => {
     expect(back.querySelector('.vk-back-url').textContent).toBe('beispiel-chronik.de/p/hundeschule-pfotenglueck')
     expect(back.querySelector('.vk-code')).toBe(null)
   })
+})
 
-  test('mit Gutschein: QR auf /v#CODE (Code nur hinter der Raute), Code in Vierergruppen, kein Muster', () => {
-    const back = render(<VisitenkarteBack card={card({ mitGutschein: true })} code="ABCD-EFGH-JKLM" />)
-    expect(back.classList.contains('vk-back-gutschein')).toBe(true)
-    expect(back.textContent).toContain('Dein Gutschein für Familie auf Pfoten')
-    expect(back.textContent).toContain('überreicht von Hundeschule Pfotenglück')
-    const [target] = qrSvgPath.mock.calls.at(-1)
-    expect(target).toBe(`${BASE}/v#ABCD-EFGH-JKLM`)
-    expect(new URL(target).pathname).toBe('/v')
-    expect(new URL(target).search).toBe('')
-    expect([...back.querySelectorAll('.vk-code span')].map((span) => span.textContent)).toEqual(['ABCD', 'EFGH', 'JKLM'])
-    expect(back.querySelector('.vk-code').getAttribute('aria-label')).toBe('Gutschein-Code ABCD-EFGH-JKLM')
-    expect(back.querySelector('.vk-qr').getAttribute('aria-label')).not.toContain('ABCD')
-    expect(back.querySelector('.vk-muster')).toBe(null)
-    expect(back.dataset.muster).toBeUndefined()
+describe('KombiBack (Feedback-Runde)', () => {
+  const back = (patch = {}) => rueckseiteModel(RUECKSEITE_VORGABEN, patch.card || card())
+
+  test('Portal und Einladungscode nebeneinander: zwei QR-Codes mit Namen, Code in Vierergruppen, Titel und Text der Plattform', () => {
+    const element = render(<KombiBack card={card()} rueckseite={back()} code="ABCD-EFGH-JKLM" />)
+    expect(element.classList.contains('vk-back-kombi')).toBe(true)
+    expect([...element.querySelectorAll('.vk-kombi-label')].map((label) => label.textContent)).toEqual(['Unser Portal', 'Euer Einladungscode'])
+    expect(element.querySelector('.vk-einladung-titel').textContent).toBe(RUECKSEITE_VORGABEN.titel)
+    expect(element.querySelector('.vk-kombi-text').textContent).toBe(RUECKSEITE_VORGABEN.text)
+    const targets = qrSvgPath.mock.calls.map(([url]) => url)
+    expect(targets).toContain(`${BASE}/p/hundeschule-pfotenglueck`)
+    expect(targets).toContain(`${BASE}/v#ABCD-EFGH-JKLM`)
+    const voucher = new URL(`${BASE}/v#ABCD-EFGH-JKLM`)
+    expect([voucher.pathname, voucher.search]).toEqual(['/v', ''])
+    expect([...element.querySelectorAll('.vk-code span')].map((span) => span.textContent)).toEqual(['ABCD', 'EFGH', 'JKLM'])
+    expect(element.querySelector('.vk-code').getAttribute('aria-label')).toBe('Einladungscode ABCD-EFGH-JKLM')
+    expect([...element.querySelectorAll('.vk-qr')].every((qr) => !qr.getAttribute('aria-label').includes('ABCD'))).toBe(true)
+    expect(element.textContent).not.toMatch(/Gutschein/)
+    expect(element.querySelector('.vk-muster')).toBe(null)
   })
 
   test('Muster: deutlich gekennzeichnet, auch für Screenreader', () => {
-    const back = render(<VisitenkarteBack card={card({ mitGutschein: true })} code="DEMO-MUST-0001" muster />)
-    expect(back.dataset.muster).toBe('true')
-    expect(back.getAttribute('aria-label')).toBe('Rückseite mit Gutschein (Muster)')
-    expect(back.querySelector('.vk-muster').textContent).toBe('Muster – Beispiel-Code, lässt sich nicht einlösen')
+    const element = render(<KombiBack card={card()} rueckseite={back()} code="DEMO-MUST-0001" muster />)
+    expect(element.dataset.muster).toBe('true')
+    expect(element.getAttribute('aria-label')).toBe('Rückseite mit Portal und Einladungscode (Muster)')
+    expect(element.querySelector('.vk-muster').textContent).toBe('Muster – Beispiel-Code, lässt sich nicht einlösen')
+  })
+
+  test('ohne öffentliche Adresse: "Adresse folgt" statt eines technischen Hosts', () => {
+    const masked = maskPendingAddress(cardModel({ profile: PROFILE, design: DESIGN, publicUrl: null, origin: 'http://10.0.0.5:3010' }))
+    const element = render(<KombiBack card={masked} rueckseite={back({ card: masked })} code="DEMO-MUST-0001" muster />)
+    expect(element.querySelector('.vk-kombi-sub').textContent).toBe('Adresse folgt')
+    expect(element.textContent).not.toContain('10.0.0.5')
   })
 })

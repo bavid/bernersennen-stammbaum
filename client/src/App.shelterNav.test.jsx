@@ -11,14 +11,15 @@ const { me, logout, listDogs, recentActivity, profile, previewDiscover, previewP
   visitenkarte: vi.fn(() =>
     Promise.resolve({
       design: {
+        karte: 'kombi',
+        widmung: '',
         vorlage: 'klassisch',
         farbe: '#2f6b3f',
         kurztext: 'Hunde und Katzen suchen ein Zuhause',
         zeigeAnsprechperson: false,
         zeigeWebsite: true,
         zeigeTelefon: true,
-        zeigeEmail: true,
-        mitGutschein: false
+        zeigeEmail: true
       },
       gespeichert: true,
       vorschlag: '',
@@ -200,7 +201,7 @@ describe('Umschalter "Bearbeiten | Kundensicht" für Tierheime (Phase P1)', () =
     me.mockResolvedValue(shelterFamily)
     await render('/visitenkarten')
 
-    expect(container.querySelector('h1').textContent).toBe('Visitenkarten gestalten')
+    expect(container.querySelector('h1').textContent).toBe('Karten gestalten')
     expect(container.querySelector('.vk-stage .vk-front').dataset.vorlage).toBe('klassisch')
   })
 

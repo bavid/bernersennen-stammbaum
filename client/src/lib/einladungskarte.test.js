@@ -1,71 +1,17 @@
 import { describe, expect, test } from 'vitest'
 import {
-  ART,
   DEFAULT_KARTEN,
   MAX_KARTEN,
-  MAX_WIDMUNG_LENGTH,
   RUECKSEITE_LIMITS,
   RUECKSEITE_VORGABEN,
-  artFromParam,
   buildKartenSheets,
   clampKarten,
-  einladungCardModel,
-  einladungPayload,
-  isSameEinladung,
   rueckseiteClientErrors,
   rueckseiteForm,
   rueckseiteModel,
   rueckseitePayload,
   sheetCountFor
 } from './einladungskarte.js'
-
-const PROFILE = Object.freeze({
-  slug: 'hundeschule-pfotenglueck',
-  name: 'Hundeschule Pfotenglück',
-  farbe: '#1f5f8b',
-  logoUrl: null,
-  banner: [],
-  ansprechperson: 'Anna Berg',
-  website: null,
-  kontaktTelefon: null,
-  kontaktEmail: 'hallo@example.org'
-})
-const DESIGN = Object.freeze({
-  vorlage: 'klassisch',
-  farbe: '#1f5f8b',
-  kurztext: 'Training mit Herz',
-  widmung: 'Für unsere Welpenkurs-Familien',
-  zeigeAnsprechperson: true,
-  zeigeWebsite: true,
-  zeigeTelefon: true,
-  zeigeEmail: true
-})
-
-describe('Kartenart', () => {
-  test('nur "einladung" in der Adresse wählt die Einladungskarte - alles andere die Visitenkarte', () => {
-    expect(ART).toEqual({ visitenkarte: 'visitenkarte', einladung: 'einladung' })
-    expect(artFromParam('einladung')).toBe('einladung')
-    for (const value of [null, '', 'visitenkarte', 'EINLADUNG', 'x']) expect(artFromParam(value)).toBe('visitenkarte')
-  })
-})
-
-describe('Vorderseite', () => {
-  test('das Kartenmodell der Visitenkarte plus die persönliche Zeile (leer -> keine)', () => {
-    const card = einladungCardModel({ profile: PROFILE, design: DESIGN, publicUrl: 'https://beispiel-chronik.de', origin: 'http://localhost' })
-    expect(card.widmung).toBe('Für unsere Welpenkurs-Familien')
-    expect(card.name).toBe('Hundeschule Pfotenglück')
-    expect(card.baseUrl).toBe('https://beispiel-chronik.de')
-    expect(einladungCardModel({ profile: PROFILE, design: { ...DESIGN, widmung: '  ' }, publicUrl: null, origin: 'http://x.test' }).widmung).toBe(null)
-    expect(MAX_WIDMUNG_LENGTH).toBe(80)
-  })
-
-  test('Speichern: genau die Felder der Vorderseite - nie ein Gutschein-Schalter oder Texte der Rückseite', () => {
-    expect(einladungPayload({ ...DESIGN, mitGutschein: true, titel: 'x' })).toEqual(DESIGN)
-    expect(isSameEinladung(DESIGN, { ...DESIGN })).toBe(true)
-    expect(isSameEinladung(DESIGN, { ...DESIGN, widmung: 'Anders' })).toBe(false)
-    expect(isSameEinladung(DESIGN, null)).toBe(false)
-  })
-})
 
 describe('Rückseite', () => {
   test('Vorgaben wie der Server, ohne "ohne Werbung"; die Adresse ohne Eintrag = die Adresse des QR-Codes', () => {
@@ -78,6 +24,8 @@ describe('Rückseite', () => {
     expect(rueckseiteModel({ ...RUECKSEITE_VORGABEN, adresse: 'pfoten.example/v' }, card).adresse).toBe('pfoten.example/v')
     // Fehlt die Rückseite (alter Stand), gelten die Vorgaben.
     expect(rueckseiteModel(undefined, card).titel).toBe(RUECKSEITE_VORGABEN.titel)
+    // Ohne öffentliche Adresse ein Platzhalter statt des Hosts (Feedback-Runde).
+    expect(rueckseiteModel(RUECKSEITE_VORGABEN, { host: 'Adresse folgt', addressPending: true }).adresse).toBe('Adresse folgt')
   })
 
   test('Formular im Admin: drei Schritt-Felder, alle gesendet (leere lässt der Server weg); Titel und Text sind Pflicht', () => {

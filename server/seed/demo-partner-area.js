@@ -289,52 +289,37 @@ const TERMINE = [
   }
 ]
 
-// VISITENKARTEN (Phase V5): gespeicherte Visitenkarten-Gestaltungen - Felder wie PUT /api/partner-area/visitenkarte,
-// geprüft mit derselben Prüfung (lib/visitenkarteDesign.js validateDesign). Pfotenglück zeigt die Vorlage "Foto" mit
-// seinem Bannerfoto und Kunden-Gutschein (in der Demo mit Muster-Codes "DEMO-…"), das Demo-Tierheim "Klassisch".
+// VISITENKARTEN (Phase V5, Feedback-Runde): gespeicherte Karten-Gestaltungen - Felder wie PUT
+// /api/partner-area/visitenkarte, geprüft mit derselben Prüfung (lib/visitenkarteDesign.js validateDesign). Pfotenglück
+// zeigt die Kombi (hinten Portal und Einladungscode, in der Demo mit Muster-Codes "DEMO-…") auf der Vorlage "Foto" mit
+// persönlicher Zeile, das Demo-Tierheim die Visitenkarte "Klassisch" (hinten das Portal). Die Einladungskarte lässt sich
+// in der Demo per Klick ansehen.
 const VISITENKARTEN = [
   {
     partnerSlug: 'hundeschule-pfotenglueck',
     design: {
+      karte: 'kombi',
       vorlage: 'foto',
-      farbe: '#1f5f8b',
-      kurztext: 'Welpenkurse und Hundetraining für Familien aus der Region',
-      zeigeAnsprechperson: true,
-      zeigeWebsite: true,
-      zeigeTelefon: true,
-      zeigeEmail: true,
-      mitGutschein: true
-    }
-  },
-  {
-    partnerSlug: 'tierheim-sonnenhang',
-    design: {
-      vorlage: 'klassisch',
-      farbe: '#2f6b3f',
-      kurztext: 'Hunde, Katzen und andere Tiere suchen bei uns ein neues Zuhause',
-      zeigeAnsprechperson: true,
-      zeigeWebsite: true,
-      zeigeTelefon: true,
-      zeigeEmail: true,
-      mitGutschein: false
-    }
-  }
-]
-
-// EINLADUNGSKARTEN: gespeicherte Vorderseiten der Einladungskarten - Felder wie PUT /api/partner-area/visitenkarte/einladung,
-// geprüft mit derselben Prüfung (lib/einladungskarteDesign.js validateEinladungDesign). Die Rückseite gestaltet Familie auf
-// Pfoten (Admin-Einstellung, ohne Eintrag die Vorgaben) - in der Demo mit Muster-Codes "DEMO-…".
-const EINLADUNGSKARTEN = [
-  {
-    partnerSlug: 'hundeschule-pfotenglueck',
-    design: {
-      vorlage: 'klassisch',
       farbe: '#1f5f8b',
       kurztext: 'Welpenkurse und Hundetraining für Familien aus der Region',
       widmung: 'Für unsere Welpenkurs-Familien',
       zeigeAnsprechperson: true,
       zeigeWebsite: true,
-      zeigeTelefon: false,
+      zeigeTelefon: true,
+      zeigeEmail: true
+    }
+  },
+  {
+    partnerSlug: 'tierheim-sonnenhang',
+    design: {
+      karte: 'visitenkarte',
+      vorlage: 'klassisch',
+      farbe: '#2f6b3f',
+      kurztext: 'Hunde, Katzen und andere Tiere suchen bei uns ein neues Zuhause',
+      widmung: '',
+      zeigeAnsprechperson: true,
+      zeigeWebsite: true,
+      zeigeTelefon: true,
       zeigeEmail: true
     }
   }
@@ -351,6 +336,5 @@ module.exports = {
   MESSAGES,
   KUNDEN_GUTSCHEINE,
   TERMINE,
-  VISITENKARTEN,
-  EINLADUNGSKARTEN
+  VISITENKARTEN
 }

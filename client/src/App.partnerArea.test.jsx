@@ -18,14 +18,15 @@ const { me, logout, listUsers, listDogs, recentActivity, checkVoucher, redeemVou
   visitenkarte: vi.fn(() =>
     Promise.resolve({
       design: {
+        karte: 'kombi',
+        widmung: '',
         vorlage: 'klassisch',
         farbe: '#a4431d',
         kurztext: '',
         zeigeAnsprechperson: false,
         zeigeWebsite: true,
         zeigeTelefon: true,
-        zeigeEmail: true,
-        mitGutschein: false
+        zeigeEmail: true
       },
       gespeichert: false,
       vorschlag: '',
@@ -220,7 +221,7 @@ describe('Partner-Bereich – Seiten', () => {
   test('/visitenkarten zeigt den Designer (Phase V5) - ohne eigenen Punkt in der Leiste', async () => {
     await render('/visitenkarten')
 
-    expect(container.querySelector('h1').textContent).toBe('Visitenkarten gestalten')
+    expect(container.querySelector('h1').textContent).toBe('Karten gestalten')
     expect(visitenkarte).toHaveBeenCalled()
     expect(navLinks().map((a) => a.textContent)).toEqual(['Profil', 'Beiträge', 'Kalender', 'Nachrichten', 'Zugang'])
     expect(navLinks().some((a) => a.classList.contains('active'))).toBe(false)

@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import { ART } from '../lib/einladungskarte.js'
 
-// Drucken mit Kunden-Gutscheinen (Phase V5, VisitenkartenDesigner): die Codes holt erst der Klick auf "Drucken" - in
-// genau der Zahl, die gerade gedruckt wird (api.partnerArea.visitenkarteGutscheine, der Server vermerkt sie dabei als
-// gedruckt). So bleiben keine geholten, aber nie gedruckten Codes liegen, wenn man vorher die Bögen ändert, neu lädt
-// oder die Seite verlässt. Die Codes leben nur für diesen einen Druck im State (und im DOM der Druckfassung) und
-// verschwinden nach dem Druckdialog (afterprint) - ein neuer Druck bekommt neue Codes, nie dieselben zweimal.
-// available: wie viele Codes ein Druck gerade bekommen kann (ungedruckte bzw. mit nurUngedruckt false alle offenen).
-// Einladungskarten (EinladungskartenDesigner) nutzen denselben Abruf: art merkt sich, welche Kartenart zuletzt gedruckt
-// wurde (lastPrint.art), und nurMitCodes druckt gar nicht, wenn kein Code mehr frei war - ohne Code gibt es keine
-// Einladungskarte.
+// Drucken mit Einladungscodes (Phase V5, Feedback-Runde: components/visitenkarte/KartenDesigner.jsx, für jede Rückseite
+// mit Code): die Codes holt erst der Klick auf "Drucken" - in genau der Zahl, die gerade gedruckt wird
+// (api.partnerArea.visitenkarteGutscheine, der Server vermerkt sie dabei als gedruckt). So bleiben keine geholten, aber nie
+// gedruckten Codes liegen, wenn man vorher die Anzahl ändert, neu lädt oder die Seite verlässt. Die Codes leben nur für
+// diesen einen Druck im State (und im DOM der Druckfassung) und verschwinden nach dem Druckdialog (afterprint) - ein neuer
+// Druck bekommt neue Codes, nie dieselben zweimal. Ohne Code gibt es keine Karte mit Code-Rückseite: kam keiner, druckt
+// der Browser gar nicht. available: wie viele Codes ein Druck gerade bekommen kann (ungedruckte bzw. mit nurUngedruckt
+// false alle offenen). lastPrint: { codes, karten } des letzten Abrufs.
 export default function useVisitenkartenDruck(initialGutscheine) {
   const [gutscheine, setGutscheine] = useState(initialGutscheine)
   const [nurUngedruckt, setNurUngedruckt] = useState(true)
@@ -30,8 +28,8 @@ export default function useVisitenkartenDruck(initialGutscheine) {
 
   const available = nurUngedruckt ? gutscheine.ungedruckt : gutscheine.offen
 
-  // withCodes: mit Gutscheinen (eigener Bereich, Schalter an, etwas verfügbar); cards: Karten dieses Drucks.
-  async function print({ withCodes, cards, art = ART.visitenkarte, nurMitCodes = false }) {
+  // withCodes: mit Codes (eigener Bereich, Rückseite mit Code, Rückseiten im Druck); cards: Karten dieses Drucks.
+  async function print({ withCodes, cards }) {
     if (!withCodes) {
       window.print()
       return
@@ -41,8 +39,8 @@ export default function useVisitenkartenDruck(initialGutscheine) {
     try {
       const result = await api.partnerArea.visitenkarteGutscheine({ anzahl: cards, nurUngedruckt })
       setGutscheine(result.gutscheine)
-      setLastPrint({ art, gutscheine: result.codes.length, karten: cards })
-      if (nurMitCodes && result.codes.length === 0) return
+      setLastPrint({ codes: result.codes.length, karten: cards })
+      if (result.codes.length === 0) return
       setPrintCodes(result.codes)
       setPending(true)
     } catch (err) {

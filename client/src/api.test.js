@@ -366,23 +366,20 @@ describe('api.partnerArea – Visitenkarten (Phase V5)', () => {
     expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ anzahl: 20, nurUngedruckt: true })
   })
 
-  test('Einladungskarten: Vorderseite eigens gespeichert, die Rückseite nur im Admin', async () => {
+  test('Rückseite mit Code: Texte nur im Admin; die Partner speichern keine eigene Einladungskarte mehr', async () => {
     const fetchMock = stubFetch({})
-    const design = { vorlage: 'klassisch', widmung: 'Für euch' }
     const rueckseite = { titel: 'Titel', text: 'Text', schritte: [], adresse: '' }
 
-    await api.partnerArea.saveEinladungskarte(design)
     await api.admin.einladungskarte()
     await api.admin.saveEinladungskarte(rueckseite)
 
     const calls = fetchMock.mock.calls.map(([url, options]) => [url, options.method ?? 'GET'])
     expect(calls).toEqual([
-      ['/api/partner-area/visitenkarte/einladung', 'PUT'],
       ['/api/admin/einladungskarte', 'GET'],
       ['/api/admin/einladungskarte', 'PUT']
     ])
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(design)
-    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual(rueckseite)
+    expect(api.partnerArea.saveEinladungskarte).toBeUndefined()
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual(rueckseite)
   })
 })
 

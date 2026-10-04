@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
 import Icon from '../Icon.jsx'
+import { KARTE, karteRoute } from '../../lib/kartenWahl.js'
 
 // Einstieg in den Karten-Designer (Phase V5) im Profil-Reiter "Teilen" - der Designer hat keinen eigenen
-// Navigationspunkt (die Leiste ist voll). Die kleine Skizze zeigt Vorder- und Rückseite übereinander. Zwei Wege: die
-// Visitenkarten und die Einladungskarten (?art=einladung - vorne ihr, hinten Familie auf Pfoten mit Code).
+// Navigationspunkt (die Leiste ist voll). Die kleine Skizze zeigt Vorder- und Rückseite übereinander. Feedback-Runde: ein
+// Weg für alle Kombinationen - ohne Vorwahl öffnet der Designer die gespeicherte, sonst die Kombi (Portal und
+// Einladungscode); die Einladungscodes verlinken direkt die Einladungskarte (EINLADUNGSKARTEN_ROUTE).
 
-export const VISITENKARTEN_ROUTE = '/visitenkarten'
-export const EINLADUNGSKARTEN_ROUTE = '/visitenkarten?art=einladung'
+export const VISITENKARTEN_ROUTE = karteRoute()
+export const EINLADUNGSKARTEN_ROUTE = karteRoute(KARTE.einladung)
 
 export default function VisitenkartenTeaser() {
   return (
@@ -16,18 +18,14 @@ export default function VisitenkartenTeaser() {
         <span className="vk-teaser-front" />
       </span>
       <div className="vk-teaser-text">
-        <h2 id="vk-teaser-title">Visitenkarten</h2>
+        <h2 id="vk-teaser-title">Visitenkarten &amp; Einladungskarten</h2>
         <p className="muted">
-          Eure Karte mit QR-Code zum Portal – zum Selberdrucken, auf Wunsch mit einem Kunden-Gutschein. Oder Einladungskarten: hinten
-          Familie auf Pfoten mit einem eigenen Code für eure Kundschaft.
+          Zum Selberdrucken: vorne eure Kontakte, hinten euer Portal, ein Einladungscode für eure Kundschaft – oder beides.
         </p>
       </div>
       <div className="vk-teaser-actions">
         <Link to={VISITENKARTEN_ROUTE} className="btn btn-primary">
-          <Icon name="printer" /> Visitenkarten gestalten
-        </Link>
-        <Link to={EINLADUNGSKARTEN_ROUTE} className="btn btn-ghost">
-          <Icon name="printer" /> Einladungskarten gestalten
+          <Icon name="printer" /> Karten gestalten
         </Link>
       </div>
     </section>

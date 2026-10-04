@@ -1,18 +1,19 @@
-// Visitenkarten-Designer für Partner (Phase V5, PartnerVisitenkartenPage): Vorlagen, Farben samt Kontrast, Inhalt der
-// Karte, Ziele der QR-Codes und der A4-Druckbogen mit Schnittmarken. Reine Funktionen ohne DOM - spiegelt die Felder
-// von server/lib/visitenkarteDesign.js. Maße in Millimetern (styles/visitenkarten.css rechnet mit --mm).
+// Karten-Designer für Partner (Phase V5, Feedback-Runde, PartnerVisitenkartenPage): Vorlagen, Farben samt Kontrast,
+// Inhalt der Vorderseite, Ziele der QR-Codes und das Raster des A4-Bogens mit Schnittmarken (die Bögen selbst nach
+// Kartenzahl: lib/einladungskarte.js buildKartenSheets). Reine Funktionen ohne DOM - spiegelt die Felder von
+// server/lib/visitenkarteDesign.js. Maße in Millimetern (styles/visitenkarten.css rechnet mit --mm).
 import { contrastRatio } from './contrast.js'
 import { portalUrl } from './partnerShare.js'
 import { hostLabel, printBaseUrl, voucherUrl } from './voucherPrint.js'
+import { DEFAULT_KARTE, KARTEN } from './kartenWahl.js'
 
 export const CARD_MM = Object.freeze({ width: 85, height: 55 })
 export const SHEET_MM = Object.freeze({ width: 210, height: 297 })
 export const COLUMNS = 2
 export const ROWS = 5
 export const CARDS_PER_SHEET = COLUMNS * ROWS
-export const MIN_SHEETS = 1
-export const MAX_SHEETS = 5
 export const MAX_KURZTEXT_LENGTH = 120
+export const MAX_WIDMUNG_LENGTH = 80
 export const MIN_CONTRAST = 4.5
 export const LIGHT_TEXT = '#ffffff'
 // Tinte des Auftritts (styles/tokens.css --ink) - auf Papier wie auf hellen Farbflächen.
@@ -50,10 +51,14 @@ export const PALETTE = Object.freeze([
   { farbe: '#d49a5b', label: 'Sand' }
 ])
 
-const DESIGN_KEYS = Object.freeze(['vorlage', 'farbe', 'kurztext', 'zeigeAnsprechperson', 'zeigeWebsite', 'zeigeTelefon', 'zeigeEmail', 'mitGutschein'])
+// Feedback-Runde: EINE Vorderseite für alle Kombinationen (mit persönlicher Zeile) und die gewählte Kombination (karte).
+const DESIGN_KEYS = Object.freeze(['karte', 'vorlage', 'farbe', 'kurztext', 'widmung', 'zeigeAnsprechperson', 'zeigeWebsite', 'zeigeTelefon', 'zeigeEmail'])
 const HEX_RE = /^#?([0-9a-f]{6})$/i
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*:\/\//i
 const MUSTER_PREFIX = 'DEMO-MUST-'
+// Feedback-Runde: solange die Plattform keine öffentliche Adresse hat (lib/voucherPrint.js printAddressPending), steht
+// auf der Vorschau statt einer technischen Adresse dieser Platzhalter - gedruckt wird dann ohnehin nicht.
+export const PENDING_ADDRESS = 'Adresse folgt'
 
 // Welche Angabe des Profils in die Kontaktzeile gehört - in dieser Reihenfolge, je mit Schalter der Gestaltung.
 const CONTACTS = Object.freeze([
@@ -111,12 +116,14 @@ export function contactLines(profile, design) {
 }
 
 // Alles, was eine Karte zum Zeichnen braucht. publicUrl: PUBLIC_URL aus /api/config (sonst origin). demo: der Portal-Link
-// trägt ?demo=1 (wie im Reiter "Teilen"), damit er sich in der Demo öffnen lässt.
+// trägt ?demo=1 (wie im Reiter "Teilen"), damit er sich in der Demo öffnen lässt. widmung: die persönliche Zeile über dem
+// Namen (leer -> keine).
 export function cardModel({ profile, design, publicUrl, origin, demo = false }) {
   const baseUrl = printBaseUrl(publicUrl, origin)
   const host = hostLabel(baseUrl)
   const foto = profile.banner?.[0] ?? null
   const textOn = textColorOn(design.farbe)
+  const widmung = typeof design.widmung === 'string' ? design.widmung.trim() : ''
   return {
     vorlage: effectiveVorlage(design.vorlage, foto?.fotoUrl),
     farbe: design.farbe,
@@ -127,6 +134,7 @@ export function cardModel({ profile, design, publicUrl, origin, demo = false }) 
     fotoUrl: foto?.fotoUrl || null,
     fotoAlt: foto?.alt || '',
     kurztext: design.kurztext,
+    widmung: widmung || null,
     ansprechperson: design.zeigeAnsprechperson && hasValue(profile.ansprechperson) ? profile.ansprechperson.trim() : null,
     kontakte: contactLines(profile, design),
     baseUrl,
@@ -137,7 +145,12 @@ export function cardModel({ profile, design, publicUrl, origin, demo = false }) 
   }
 }
 
-// QR-Ziel eines Gutscheins: /v mit dem Code hinter der Raute - nie in Pfad oder Abfrage (lib/voucherPrint.js).
+// Die Vorschau ohne technische Adresse (PENDING_ADDRESS statt Host und Pfad) - die QR-Ziele bleiben, wie sie sind.
+export function maskPendingAddress(card) {
+  return { ...card, host: PENDING_ADDRESS, portalLabel: PENDING_ADDRESS, portalPfad: '', addressPending: true }
+}
+
+// QR-Ziel eines Einladungscodes: /v mit dem Code hinter der Raute - nie in Pfad oder Abfrage (lib/voucherPrint.js).
 export function voucherTarget(baseUrl, code) {
   return voucherUrl(baseUrl, code)
 }
@@ -151,12 +164,6 @@ export function musterCodes(count) {
   return Array.from({ length: count }, (_, index) => `${MUSTER_PREFIX}${String(index + 1).padStart(4, '0')}`)
 }
 
-export function clampSheets(value) {
-  const number = Math.round(Number(value))
-  if (!Number.isFinite(number)) return MIN_SHEETS
-  return Math.min(MAX_SHEETS, Math.max(MIN_SHEETS, number))
-}
-
 // Spiegelt die Spaltenreihenfolge jeder Reihe (für die Rückseiten: im Bogen läuft jede Reihe von rechts nach links). Das
 // entspricht dem Wenden über die lange Kante (Duplex "lange Kante", von Hand: das Blatt seitlich umdrehen) - links und
 // rechts tauschen, oben und unten bleiben.
@@ -164,16 +171,6 @@ export function mirrorRows(items, columns = COLUMNS) {
   const rows = []
   for (let start = 0; start < items.length; start += columns) rows.push(items.slice(start, start + columns).reverse())
   return rows.flat()
-}
-
-// Bögen mit je CARDS_PER_SHEET Karten: fronts sind die Karten-Nummern in Leserichtung, backs dieselben Karten in
-// gespiegelter Spaltenfolge, je mit dem Gutschein-Code ihrer Karte (null = Rückseite ohne Gutschein).
-export function buildSheets({ sheetCount, codes = [] }) {
-  return Array.from({ length: clampSheets(sheetCount) }, (_, sheet) => {
-    const fronts = Array.from({ length: CARDS_PER_SHEET }, (__, slot) => sheet * CARDS_PER_SHEET + slot)
-    const backs = mirrorRows(fronts).map((index) => ({ index, code: codes[index] ?? null }))
-    return { number: sheet + 1, fronts, backs }
-  })
 }
 
 // Schnittmarken als Linien in Millimetern (viewBox des Bogens): an jeder Spalten- und Reihenkante außerhalb des Rasters.
@@ -192,6 +189,13 @@ export function cropMarks() {
     { x1: right + MARK_GAP_MM, y1: y, x2: right + MARK_GAP_MM + MARK_LENGTH_MM, y2: y }
   ])
   return [...vertical, ...horizontal]
+}
+
+// Eine Gestaltung vom Server, auf die der Designer sich verlassen kann: unbekannte oder fehlende Kombination -> Kombi,
+// fehlende persönliche Zeile -> leer (z. B. eine ältere Antwort während eines Updates).
+export function normalizeDesign(design) {
+  const karte = KARTEN.some((entry) => entry.id === design?.karte) ? design.karte : DEFAULT_KARTE
+  return { ...design, karte, widmung: typeof design?.widmung === 'string' ? design.widmung : '' }
 }
 
 // Genau die Felder, die PUT /api/partner-area/visitenkarte erwartet.

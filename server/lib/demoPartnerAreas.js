@@ -22,8 +22,7 @@ const { validateTermin, insertTermin, addAbsage } = require('./partnerTermine')
 const { addDays, weekdayOf, nthWeekdayOf, expandTermin, maxSerieBis, berlinNow } = require('./terminSerien')
 const { validateDesign } = require('./visitenkarteDesign')
 const { saveDesign, removeDemoVisitenkarten } = require('./visitenkarte')
-const { validateEinladungDesign } = require('./einladungskarteDesign')
-const { saveEinladung, removeDemoEinladungskarten } = require('./einladungskarte')
+const { removeDemoEinladungskarten } = require('./einladungskarte')
 const {
   PARTNER_AREA_SLUGS,
   EINBLICKE,
@@ -34,8 +33,7 @@ const {
   MESSAGES,
   KUNDEN_GUTSCHEINE,
   TERMINE,
-  VISITENKARTEN,
-  EINLADUNGSKARTEN
+  VISITENKARTEN
 } = require('../seed/demo-partner-area')
 
 // Nur Demo-Partner (is_demo = 1): ein Seed-Eintrag darf nie an einem echten Partner landen.
@@ -363,38 +361,29 @@ function insertDemoTermine(db) {
   return counts
 }
 
-// Phase V5: die gespeicherten Visitenkarten der Demo-Partner (seed/demo-partner-area.js VISITENKARTEN) - erst alle prüfen
-// (Partner, eine Gestaltung je Partner, dieselbe Prüfung wie PUT /api/partner-area/visitenkarte), dann speichern
-// (lib/visitenkarte.js saveDesign, is_demo folgt dem Partner). Gibt die Vorlage je Partner-Slug zurück.
-// Einladungskarten: ebenso die gespeicherten Vorderseiten (seed/demo-partner-area.js EINLADUNGSKARTEN, lib/einladungskarte.js).
-function insertDemoKarten(db, { entries, art, validate, save }) {
-  const prepared = entries.map(({ partnerSlug, design }) => {
-    const label = `Demo-${art} für "${partnerSlug}"`
-    return { partner: findDemoPartner(db, partnerSlug, label), design: validateSeedEntry(label, () => validate(design)) }
-  })
-  const vorlagen = {}
-  for (const { partner, design } of prepared) {
-    if (vorlagen[partner.slug]) throw new Error(`Demo-Partner "${partner.slug}" hätte mehr als eine ${art}`)
-    vorlagen[partner.slug] = design.vorlage
-  }
-  for (const { partner, design } of prepared) save(partner, design)
-  return vorlagen
-}
-
+// Phase V5, Feedback-Runde: die gespeicherten Karten der Demo-Partner (seed/demo-partner-area.js VISITENKARTEN) - erst
+// alle prüfen (Partner, eine Gestaltung je Partner, dieselbe Prüfung wie PUT /api/partner-area/visitenkarte), dann
+// speichern (lib/visitenkarte.js saveDesign, is_demo folgt dem Partner). Gibt { vorlage, karte } je Partner-Slug zurück.
 function insertDemoVisitenkarten(db) {
-  return insertDemoKarten(db, { entries: VISITENKARTEN, art: 'Visitenkarte', validate: validateDesign, save: saveDesign })
-}
-
-function insertDemoEinladungskarten(db) {
-  return insertDemoKarten(db, { entries: EINLADUNGSKARTEN, art: 'Einladungskarte', validate: validateEinladungDesign, save: saveEinladung })
+  const prepared = VISITENKARTEN.map(({ partnerSlug, design }) => {
+    const label = `Demo-Karte für "${partnerSlug}"`
+    return { partner: findDemoPartner(db, partnerSlug, label), design: validateSeedEntry(label, () => validateDesign(design)) }
+  })
+  const karten = {}
+  for (const { partner, design } of prepared) {
+    if (karten[partner.slug]) throw new Error(`Demo-Partner "${partner.slug}" hätte mehr als eine Karten-Gestaltung`)
+    karten[partner.slug] = { vorlage: design.vorlage, karte: design.karte }
+  }
+  for (const { partner, design } of prepared) saveDesign(partner, design)
+  return karten
 }
 
 // Läuft innerhalb der replaceDemoPack-Transaktion NACH replaceDemoDiscoverContent (lib/demoPack.js) - das räumt
 // alle Demo-Empfehlungen (is_demo = 1, also auch die alten Beiträge der Demo-Partner) samt Klicks weg und
 // träfe sonst auch die neuen. Die alten Demo-Nachrichten, (Phase V4a) Demo-Termine (is_demo = 1 oder an einem alten
-// Demo-Partner, die Absagen gehen per ON DELETE CASCADE mit) und (Phase V5) Demo-Visitenkarten samt Einladungskarten räumt
-// diese Funktion selbst weg. Gibt die neuen Beitrags-Ids, die Nachrichten, die Termine und die Visitenkarten und
-// Einladungskarten je Partner-Slug zurück.
+// Demo-Partner, die Absagen gehen per ON DELETE CASCADE mit) und (Phase V5) Demo-Karten samt früherer Einladungskarten
+// räumt diese Funktion selbst weg. Gibt die neuen Beitrags-Ids, die Nachrichten, die Termine und die Karten je
+// Partner-Slug zurück.
 function createDemoPartnerContent(db, { previousPartnerIds = [] } = {}) {
   const placeholders = previousPartnerIds.map(() => '?').join(', ')
   const where = previousPartnerIds.length ? `is_demo = 1 OR partner_id IN (${placeholders})` : 'is_demo = 1'
@@ -408,8 +397,7 @@ function createDemoPartnerContent(db, { previousPartnerIds = [] } = {}) {
     postIds,
     messages: insertDemoMessages(db),
     termine: insertDemoTermine(db),
-    visitenkarten: insertDemoVisitenkarten(db),
-    einladungskarten: insertDemoEinladungskarten(db)
+    visitenkarten: insertDemoVisitenkarten(db)
   }
 }
 
