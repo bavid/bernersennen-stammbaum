@@ -142,7 +142,10 @@ test('Phase V2: „Erlebt mit“ - markieren, Anfrage, bestätigen/ablehnen, ges
     assert.equal(res.status, 200)
     assert.deepEqual(res.data.erlebt_mit, [])
     assert.deepEqual((await get('/api/erlebt-mit/offen', friend.cookie)).data, [])
-    assert.equal((await fetch(`${base}${photo}`, { headers: { Cookie: friend.cookie } })).status, 404)
+    // Das Foto bleibt für den Freund sichtbar - nicht mehr über die Markierung, sondern weil er die Autorin besucht und Start
+    // deren nicht-private Erinnerungen zeigt (Phase W, Schritt 3, lib/uploadAccess.js). Fremde sehen es weiterhin nicht.
+    assert.equal((await fetch(`${base}${photo}`, { headers: { Cookie: friend.cookie } })).status, 200)
+    assert.equal((await fetch(`${base}${photo}`, { headers: { Cookie: stranger.cookie } })).status, 404)
   })
 
   await t.test('privat machen löscht alle Markierungen; Löschen des Eintrags nimmt sie mit', async () => {

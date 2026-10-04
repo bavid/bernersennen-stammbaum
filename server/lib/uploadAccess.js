@@ -3,6 +3,7 @@ const db = require('../db')
 const { VISIBLE_DOGS_SQL, OWN_DOGS_SQL, VISIBLE_ENTRY_SQL, PARTNER_AREA_ARTS } = require('./context')
 const { GUEST_ENTRY_SQL } = require('./visits')
 const { isMirroredPhoto } = require('./erlebtMit')
+const { homeAreasOf, visibleEntrySql, AREA_ART } = require('./searchAreas')
 
 // uploads.js erzeugt Dateinamen ausschließlich aus crypto.randomUUID() (36 Zeichen: Hex-Ziffern und
 // Bindestriche) plus einer Endung aus EXTENSION_BY_MIME - das sind nur jpg, png, webp und gif ("jpeg"
@@ -57,6 +58,47 @@ const bannerPhotoStmt = db.prepare(
 const guestDogPhotoStmt = db.prepare('SELECT 1 FROM dogs WHERE foto_url = @url AND family_id = @familyId')
 const guestEntryPhotoStmt = db.prepare(`SELECT 1 FROM timeline_entries t WHERE foto_urls LIKE @pattern AND ${GUEST_ENTRY_SQL}`)
 
+// Phase W, Schritt 3 („Ein Start für alles“): Start zeigt im eigenen Zuhause auch Erinnerungen aus den Familien und den
+// befreundeten Zuhause (lib/startFeed.js) - deren Fotos sieht eine Haushalts-Sitzung (kein Gast) darum auch dann, wenn ein
+// anderer Bereich aktiv ist: je Familie (Mitgliedschaft mit gültiger Rolle, Demo-Gleichheit) und je laufendem Besuch
+// (lib/searchAreas.js homeAreasOf) genau die Tierfotos der dort sichtbaren Tiere und die Fotos der Erinnerungen, die Start
+// von dort zeigt (visibleEntrySql - nie private). Bewusst NICHT: uploads-Zeilen, Zuchtbuch, Einblicke, Banner - und nur
+// ansehen, nie anhängen (canAttachUpload bleibt beim aktiven Bereich). Endet die Mitgliedschaft oder der Besuch, ist das Foto
+// sofort wieder weg (die Bereiche werden je Anfrage neu bestimmt, nichts wird über Anfragen hinweg gemerkt).
+// Kosten (security-review Schritt 3, MEDIUM): zuerst die Kandidaten - die Tiere mit genau diesem Foto und die Erinnerungen,
+// in denen es steckt, je EIN Durchlauf, egal wie viele Bereiche. Ohne Kandidaten (z. B. ein ausgedachter Dateiname) ist
+// sofort Schluss; sonst werden die Bereiche einmal je Anfrage bestimmt und je Bereich nur noch Kandidaten über ihren
+// Schlüssel geprüft. Mehr als MAX_PHOTO_CANDIDATES Stellen mit demselben Foto: der Rest bleibt ungeprüft (im Zweifel 404).
+const MAX_PHOTO_CANDIDATES = 50
+const dogCandidatesStmt = db.prepare(`SELECT id FROM dogs WHERE foto_url = @url LIMIT ${MAX_PHOTO_CANDIDATES}`)
+const entryCandidatesStmt = db.prepare(`SELECT id FROM timeline_entries WHERE foto_urls LIKE @pattern LIMIT ${MAX_PHOTO_CANDIDATES}`)
+
+const areaPhotoStatements = new Map()
+function areaPhotoStatement(area) {
+  if (!areaPhotoStatements.has(area.art)) {
+    areaPhotoStatements.set(area.art, {
+      dog: db.prepare(`SELECT 1 WHERE @dogId IN ${area.dogsSql}`),
+      entry: db.prepare(`SELECT 1 FROM timeline_entries t WHERE t.id = @entryId AND ${visibleEntrySql(area)}`)
+    })
+  }
+  return areaPhotoStatements.get(area.art)
+}
+
+function isOtherAreaPhoto(homeId, params) {
+  if (!Number.isInteger(homeId)) return false
+  const dogIds = dogCandidatesStmt.all(params).map((row) => row.id)
+  const entryIds = entryCandidatesStmt.all(params).map((row) => row.id)
+  if (dogIds.length === 0 && entryIds.length === 0) return false
+  const areas = (homeAreasOf(homeId) || []).filter((area) => area.art !== AREA_ART.home)
+  return areas.some((area) => {
+    const statement = areaPhotoStatement(area)
+    return (
+      dogIds.some((dogId) => statement.dog.get({ dogId, familyId: area.id })) ||
+      entryIds.some((entryId) => statement.entry.get({ entryId, familyId: area.id }))
+    )
+  })
+}
+
 function uploadParams({ familyId, homeId }, filename) {
   return { familyId, homeId, filename, url: `/uploads/${filename}`, pattern: `%"/uploads/${filename}"%` }
 }
@@ -78,12 +120,14 @@ function isAttachableUpload(params) {
 // isGuest (Phase V2): die Sitzung besucht das Zuhause familyId - dann gelten allein die Gast-Regeln oben.
 // Dazu (Phase V2 "Erlebt mit"): Fotos eines Eintrags, der ein Tier des eigenen Zuhauses (homeId) markiert - nur
 // ansehen, nicht anhängen (deshalb nicht in isAttachableUpload), und nur solange die Verbindung besteht.
+// Zuletzt (Phase W, Schritt 3): Fotos aus den Familien und befreundeten Zuhause, die Start zeigt (isOtherAreaPhoto oben).
 function canSeeUpload({ familyId, homeId, isGuest = false }, filename) {
   if (!FILENAME_RE.test(filename)) return false
   const params = uploadParams({ familyId, homeId }, filename)
   if (isGuest) return Boolean(guestDogPhotoStmt.get(params) || guestEntryPhotoStmt.get(params))
   if (isAttachableUpload(params) || einblickPhotoStmt.get(params) || bannerPhotoStmt.get(params)) return true
-  return Number.isInteger(homeId) && isMirroredPhoto(homeId, params.pattern)
+  if (Number.isInteger(homeId) && isMirroredPhoto(homeId, params.pattern)) return true
+  return isOtherAreaPhoto(homeId, params)
 }
 
 // Für Schreibzugriffe: darf { familyId, homeId } die Foto-URL "url" an einen Hund/Eintrag/Wurf

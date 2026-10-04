@@ -207,8 +207,12 @@ test('Phase V2: Zuhause besuchen - Einladung, Einlösen, nur lesen und kommentie
     assert.equal(await status(publicPhoto, guestCookie), 200)
     assert.equal(await status(privatePhoto, guestCookie), 404)
     assert.equal(await status(freshPhoto, guestCookie), 404)
-    // Aus dem eigenen Zuhause heraus (kein Besuch aktiv) sieht der Gast gar nichts vom Gastgeber
-    assert.equal(await status(publicPhoto, guest.cookie), 404)
+    // Aus dem eigenen Zuhause heraus (Phase W, Schritt 3: Start zeigt die nicht-privaten Erinnerungen des Gastgebers) dieselben
+    // Fotos wie zu Besuch - private und frische nie
+    assert.equal(await status(publicPhoto, guest.cookie), 200)
+    assert.equal(await status(dogPhoto, guest.cookie), 200)
+    assert.equal(await status(privatePhoto, guest.cookie), 404)
+    assert.equal(await status(freshPhoto, guest.cookie), 404)
   })
 
   await t.test('Gastgeber beendet den Besuch: die Besuchs-Sitzung fällt nach Hause zurück', async () => {

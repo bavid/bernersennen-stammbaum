@@ -208,3 +208,41 @@ endlos die Fotos eurer Tiere – auch bei Oma, ohne dass sie sich anmeldet.
   Abmelden).
 - **Offen:** Treffer in Grüßen (Kommentaren) und „Mit dabei“-Spiegelungen; Termine der Partner-Kalender; für sehr große
   Chroniken später FTS5 mit gefalteter Spalte.
+
+## Ein Start für alles (Schritt 3, umgesetzt 04.10.)
+
+- **Server** `GET /api/start?limit=1–20&vor=<Cursor>` (`routes/start.js`, `lib/startFeed.js`) → `{ items, termine, notizen,
+  next }`. Nur im eigenen Zuhause (sonst 400), kein Bereichs-Parameter (jede andere Angabe → 400), Besuchs-Sitzung 403 (nicht
+  in `lib/guestAccess.js`), Tierheim/Partner 404, Demo liest, `no-store`. Die Bereiche kommen aus `lib/searchAreas.js
+  homeAreasOf` (dieselbe Liste wie die Suche, kein eigenes `identityAreas.js`): eigenes Zuhause, Familien mit Mitgliedschaft
+  (jetzt mit `canEnter` und gültiger Rolle - gilt auch für die Suche), laufende Besuche; höchstens 20.
+- **Regeln je Bereich** (`visibleEntrySql` in `lib/searchAreas.js`): die Regeln des Bereichs und nur dort sichtbare Tiere;
+  private Erinnerungen nur aus dem eigenen Zuhause (Familien und Besuche erzwingen `privat = 0`, auch für Erinnerungen der
+  Familie selbst). Grüße mit der Kommentar-Regel **dieses** Bereichs gezählt (`commentSql`) - ein Gruß aus einer anderen
+  Familie zählt nicht und rückt nichts nach oben. In mehreren Bereichen sichtbar: genau einmal, Zuhause > Familien (nach
+  Namen) > Besuche - jede Abfrage schließt aus, was ein früherer Bereich zeigt (auch beim Weiterblättern).
+- **Reihenfolge und Blättern:** `activity_at` = späteres von Festhalten und letztem sichtbaren Gruß; Cursor
+  `JJJJ-MM-TTTHH:MM:SSZ~e<Id>` (Gleichstand über die Id, nie doppelt oder verloren), je Bereich `limit + 1`, dann gemischt.
+  Zettel (mit Antworten, höchstens 5), Termine (höchstens 5, ab heute in Europe/Berlin) und `notizen` nur auf der ersten
+  Seite; Besuche ohne Pinnwand. Anriss ≤ 300 Zeichen, ≤ 4 Fotos (`foto_anzahl` zählt alle), nur Upload-Adressen; keine
+  internen Ids von Bereichen der Autorinnen, Grüßen oder Antworten.
+- **Fotos** (`lib/uploadAccess.js`): eine Haushalts-Sitzung (kein Gast) sieht zusätzlich Tierfotos der sichtbaren Tiere und
+  Fotos der Erinnerungen, die Start aus Familien/Besuchen zeigt - nie private, nie uploads-Zeilen/Zuchtbuch/Einblick/Banner,
+  anhängen bleibt beim aktiven Bereich. Zuerst die Kandidaten (je ein Durchlauf über Tiere und Erinnerungen), erst dann die
+  Bereiche (einmal je Anfrage) - ein ausgedachter Dateiname kostet nichts extra (Sicherheits-Review, MEDIUM). Nach dem
+  Verlassen bzw. Beenden sofort 404 (der Browser-Zwischenspeicher hält gesehene Fotos wie bisher bis zu 30 Tage).
+- **Client:** Start lädt `api.start()` (`hooks/useStartFeed.js`); Erinnerungen aller Bereiche im Album (Kapitel nach `datum`,
+  je Seite sortiert, 5 zuerst, „Weitere Erinnerungen“, darunter „Ältere anzeigen“ mit dem Cursor - nie dazwischen, Fokus auf
+  die erste neue), mit kleinem Hinweis „Familie Sonnenhang“ (Salbei) bzw. „Zu Besuch: Zuhause Möwenweg“ (Rosé), Links
+  `/tier/:id?in=:bereich#entry-:id`. Zettel nicht als Karten im Album (sie wären immer „von heute“ und stünden vor allen
+  Erinnerungen), sondern im Kasten „Bald“: Termine aus Zuhause und Familien (je eine Zeile mit Familie, Link zur Pinnwand),
+  darunter „Neu an der Pinnwand“ (2 Zeilen, ohne die Termine) und „Notizen (n)“. Bilderrahmen-Karte nur mit eigenen Fotos.
+- **Demo:** Möwenweg hat zusätzlich Socke (nicht in die Familie geteilt, Erinnerung von vorgestern) - so zeigt die Demo alle
+  drei Bereiche auf Start (`test/demoStart.test.js`).
+- **Seitenhöhen** (Demo „Zuhause am Deich“ frisch aufgefrischt, mit „Heute vor einem Jahr“, 2 Terminen, 2 Zetteln):
+  1440×900 **2,30**, 375×812 **3,30** (davon ≈ 0,34 für Termine, Zettel und Bereichs-Hinweise; „Meine Familien“ und
+  „Bilderrahmen“ unten am Handy ≈ 0,57 - beide gibt es dort auch im Menü bzw. unten in der Leiste). Alles aufgeklappt (40
+  Erinnerungen) 11,4.
+- **Offen:** „n neu“ an den Familien-Karten (bräuchte „gelesen“-Stand); Zähl-Abfragen laufen je Bereich über alle sichtbaren
+  Erinnerungen (für sehr große Chroniken später eine Spalte `last_activity_at`); Demo-Gleichheit je Freigabe (`dog_shares`)
+  wie überall nur je Bereich geprüft.
