@@ -14,7 +14,9 @@
 }
 
 /* Fehler am Feld: roter Rand zum roten Satz darunter */
-.entry-form [aria-invalid='true'] {
+/* Mindestens so spezifisch wie die Grundregel der Eingabefelder (components.css input:not(…)) */
+.entry-form textarea[aria-invalid='true'],
+.entry-form input[aria-invalid='true']:not([type='radio']):not([type='checkbox']):not([type='file']):not([type='color']) {
   border-color: var(--danger);
 }
 

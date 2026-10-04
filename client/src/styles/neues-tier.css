@@ -6,7 +6,9 @@
   gap: var(--space-5);
 }
 
-.quick-animal-form [aria-invalid='true'] {
+/* Mindestens so spezifisch wie die Grundregel der Eingabefelder (components.css input:not(…)) */
+.quick-animal-form textarea[aria-invalid='true'],
+.quick-animal-form input[aria-invalid='true']:not([type='radio']):not([type='checkbox']):not([type='file']):not([type='color']) {
   border-color: var(--danger);
 }
 
