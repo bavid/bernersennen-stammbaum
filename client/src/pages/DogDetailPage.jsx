@@ -187,6 +187,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
 
       <DogHead
         dog={dog}
+        family={family}
         canWrite={canWrite}
         visibleIn={ownHomeAnimal ? visibleInNames(dog, family.memberships) : []}
         menuItems={menuItems}

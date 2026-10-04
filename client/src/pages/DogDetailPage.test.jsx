@@ -212,7 +212,7 @@ describe('DogDetailPage – geteiltes Tier: Kommentare bleiben sichtbar', () => 
 })
 
 describe('DogDetailPage – Kopf und Infos für geteilte Tiere', () => {
-  test('der Kopf sagt "im {familyName} seit …", die Infos "Im {familyName} seit … · Herkunft"', async () => {
+  test('der Kopf sagt, wo das Tier lebt und über welche Familie ihr es seht; die Infos "Im {familyName} seit … · Herkunft"', async () => {
     getDog.mockResolvedValue(sharedDog())
     listTimeline.mockResolvedValue([])
     listBreedingEvents.mockResolvedValue([])
@@ -220,7 +220,8 @@ describe('DogDetailPage – Kopf und Infos für geteilte Tiere', () => {
 
     await render(activeFamily, '/tier/10?reiter=infos')
 
-    expect(container.querySelector('.dog-head-line').textContent).toContain('im Zuhause am Deich seit 12. Juni 2021')
+    expect(container.querySelector('.dog-head-line').textContent.trim()).toMatch(/^Mischling · \d+ Jahre$/)
+    expect(container.querySelector('.dog-head-origin').textContent.trim()).toBe('lebt bei Zuhause am Deich · geteilt mit euch über Familie Sonnenhang')
     const companion = container.querySelector('.dog-hero-companion')
     expect(companion.textContent.trim()).toBe('Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim Sonnenhang')
   })

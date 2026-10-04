@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { dogHeadLine, dogTabs, hasRelatives, recentItems, safeFromPath, treeRoute, visibleInNames } from './dogProfile.js'
+import { dogHeadLine, dogTabs, hasRelatives, originLine, recentItems, safeFromPath, treeRoute, visibleInNames } from './dogProfile.js'
 
 const TODAY = '2026-10-04'
 
@@ -35,6 +35,35 @@ describe('dogHeadLine', () => {
 
   test('ohne Angaben leer', () => {
     expect(dogHeadLine({}, { today: TODAY })).toEqual({ text: '', memorial: false })
+  })
+
+  test('stay: false - ohne „seit …“ (das sagt bei fremden Tieren die Zeile darunter, originLine)', () => {
+    const dog = { rasse: 'Mischling', geburtsdatum: '2019-03-10', bei_uns_seit: '2021-06-12' }
+    expect(dogHeadLine(dog, { stay: false, today: TODAY }).text).toBe('Mischling · 7 Jahre')
+  })
+})
+
+describe('originLine: wo ein Tier lebt, das nicht euch gehört', () => {
+  const home = { id: 3, name: 'Zuhause am Deich', art: 'zuhause' }
+  const inFamily = { id: 2, name: 'Familie Sonnenhang', art: 'rudel', home }
+  const wilma = { familyName: 'Zuhause Möwenweg', ownerFamilyId: 9, canEdit: false }
+
+  test('in einer Familie: das Zuhause des Tiers und über welche Familie ihr es seht', () => {
+    expect(originLine(wilma, inFamily)).toBe('lebt bei Zuhause Möwenweg · geteilt mit euch über Familie Sonnenhang')
+  })
+
+  test('im Tierheim (ein vermitteltes Tier): das neue Zuhause und dass ihr mitlest', () => {
+    const shelter = { id: 4, name: 'Tierheim Sonnenhang', art: 'tierheim', home: { id: 4, art: 'tierheim' } }
+    expect(originLine({ ...wilma, familyName: 'Zuhause Lindenhof' }, shelter)).toBe('lebt bei Zuhause Lindenhof · ihr lest mit')
+  })
+
+  test('nichts für eigene Tiere, Tiere der Familie selbst, zu Besuch (der Chip sagt es) und ohne Namen', () => {
+    expect(originLine({ ...wilma, canEdit: true }, inFamily)).toBeNull()
+    expect(originLine({ ...wilma, ownerFamilyId: 3 }, inFamily), 'euer eigenes Tier, in die Familie geteilt').toBeNull()
+    expect(originLine({ ...wilma, ownerFamilyId: 2 }, inFamily)).toBeNull()
+    expect(originLine(wilma, { id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home })).toBeNull()
+    expect(originLine({ ...wilma, familyName: null }, inFamily)).toBeNull()
+    expect(originLine(null, inFamily)).toBeNull()
   })
 })
 

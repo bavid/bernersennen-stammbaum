@@ -2,7 +2,7 @@ const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/validate')
-const { ART, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
+const { ART, VISIBLE_DOGS_SQL, OWN_DOGS_SQL, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
 const { GUEST_ENTRY_SQL, GUEST_COMMENT_SQL } = require('../lib/visits')
 const { readTagInput, applyTags, entryContentChanged, withTags, mirroredForDog } = require('../lib/erlebtMitView')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
@@ -180,6 +180,12 @@ function loadVisibleEntry(req, res) {
 const RECENT_DEFAULT = 6
 const RECENT_MAX = 20
 
+// Wo das Tier wohnt (dog_zuhause): der Name seines Zuhauses bzw. der Familie, der es selbst gehört - nie das eigene
+// Zuhause (@homeId) und nur für ein Tier, das der Bereich gerade zeigt (als Gast nur die Tiere des Gastgebers). Dessen
+// Zuhause nennt dort ohnehin GET /api/dogs (shared_from); eine Id gibt es nie.
+const dogHomeSql = (req) => `CASE WHEN d.family_id != @homeId AND d.id IN ${req.isGuest ? OWN_DOGS_SQL : VISIBLE_DOGS_SQL}
+  THEN (SELECT f.name FROM families f WHERE f.id = d.family_id) END`
+
 // "Was treiben die anderen?": zuletzt geschriebene Einträge, die im Bereich sichtbar sind
 // (eigene und geteilte nicht-private). comment_count zählt ALLE Kommentare, nicht nur eigene.
 router.get('/recent', requireAuth, (req, res) => {
@@ -187,7 +193,7 @@ router.get('/recent', requireAuth, (req, res) => {
   const rows = db
     .prepare(
       `SELECT t.*, d.name AS dog_name, d.name_unbekannt AS dog_name_unbekannt, d.rasse AS dog_rasse,
-              d.foto_url AS dog_foto_url,
+              d.foto_url AS dog_foto_url, ${dogHomeSql(req)} AS dog_zuhause,
               (SELECT COUNT(*) FROM entry_comments c WHERE c.entry_id = t.id AND ${commentSql(req)}) AS comment_count,
               ${HERKUNFT_NAME_SELECT_SQL}
        FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id

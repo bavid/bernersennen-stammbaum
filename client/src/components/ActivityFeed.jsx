@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { dogLabel } from '../lib/timeline.js'
 import { formatTermin, relativeTime } from '../lib/dates.js'
+import { originLabel } from '../lib/tierZuhause.js'
 
 function toDog(entry) {
   return { name: entry.dog_name, name_unbekannt: entry.dog_name_unbekannt, rasse: entry.dog_rasse, foto_url: entry.dog_foto_url }
@@ -14,6 +15,7 @@ const MAX_TILES = 4
 // "Was treiben die anderen?" – nächstes Treffen und die zuletzt geschriebenen Beiträge. limit: höchstens so viele Kacheln
 // (Phase W: die Gruppenseite zeigt bis zu 20, sonst vier); terminTo: wohin das Treffen führt (die Pinnwand des Bereichs);
 // title: Überschrift (Standard "Neu in der Familie" bzw. "Neu im Rudel" - zu Besuch in einem Zuhause passt das nicht).
+// Ein Tier eines anderen Zuhauses trägt unter dem Namen, wo es wohnt (dog_zuhause, lib/tierZuhause.js) - das eigene nicht.
 export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_TILES, terminTo = '/pinnwand', title }) {
   const { theme, words } = useTheme()
   const { pathname, search } = useLocation()
@@ -53,6 +55,7 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
             <Avatar dog={toDog(entry)} size={44} />
             <span className="feed-body">
               <span className="feed-kicker">{dogLabel(toDog(entry))}</span>
+              {entry.dog_zuhause && <span className="feed-origin">{originLabel(entry.dog_zuhause)}</span>}
               <span className="feed-headline">{entry.titel}</span>
               <span className="feed-meta">
                 {entry.autor_name} · {relativeTime(entry.created_at)}

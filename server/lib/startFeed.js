@@ -16,7 +16,8 @@
 // bei Gleichstand die höhere Id. Je Bereich höchstens limit + 1 Erinnerungen, danach gemischt; die Seite hat genau bis zu
 // limit Erinnerungen. Weiterblättern mit vor (parseCursor): ISO-Zeit, optional mit Gleichstand-Angabe „~e12“ - next trägt
 // sie immer. Nach außen nur, was die Karte braucht: keine Ids von Bereichen der Autorinnen, Grüße oder Antworten; Text als
-// Anriss, nur Upload-Adressen als Fotos.
+// Anriss, nur Upload-Adressen als Fotos. dog.zuhause: wo das Tier wohnt (Name, nie das eigene Zuhause) - der Client nennt
+// das auf der Karte („aus Zuhause Möwenweg“), nicht den Bereich, über den die Erinnerung sichtbar ist (area, für den Link).
 
 const db = require('../db')
 const { isUploadUrl } = require('./validate')
@@ -56,6 +57,11 @@ function cursorOf(entry) {
 
 const ACTIVITY_SQL = 'MAX(x.created_at, COALESCE(x.last_comment_at, x.created_at)) AS activity_at'
 
+// Wo das Tier wohnt (sein Zuhause bzw. die Familie, der es selbst gehört) - nur der Name und nur, wenn es nicht das eigene
+// Zuhause ist (@homeId). Sichtbar ist das Tier ohnehin nur, wenn es im Bereich gezeigt wird (visibleEntrySql: dogsSql) - in
+// einer Familie gehört es einem Mitglied (dessen Name steht auch in der Familienbande), beim Besuch dem Gastgeber.
+const DOG_HOME_SQL = '(SELECT f.name FROM families f WHERE f.id = d.family_id AND d.family_id != @homeId)'
+
 function entrySql(areas, index) {
   const area = areas[index]
   const earlier = areas.slice(0, index).map((other, j) => ` AND NOT ${visibleEntrySql(other, `p${j}`)}`).join('')
@@ -63,6 +69,7 @@ function entrySql(areas, index) {
   return `SELECT * FROM (SELECT x.*, ${ACTIVITY_SQL} FROM (
       SELECT t.id, t.dog_id, t.titel, t.text, t.foto_urls, t.datum, t.autor_name, t.created_at, t.privat,
         d.name AS dog_name, d.name_unbekannt AS dog_name_unbekannt, d.rasse AS dog_rasse, d.foto_url AS dog_foto_url,
+        ${DOG_HOME_SQL} AS dog_zuhause,
         (SELECT COUNT(*) ${comments}) AS comment_count, (SELECT MAX(c.created_at) ${comments}) AS last_comment_at
       FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id
       WHERE ${visibleEntrySql(area)}${earlier}
@@ -123,7 +130,8 @@ function toEntryItem(row, area) {
       name: row.dog_name,
       name_unbekannt: Boolean(row.dog_name_unbekannt),
       rasse: row.dog_rasse ?? null,
-      foto_url: isUploadUrl(row.dog_foto_url) ? row.dog_foto_url : null
+      foto_url: isUploadUrl(row.dog_foto_url) ? row.dog_foto_url : null,
+      zuhause: row.dog_zuhause ?? null
     },
     titel: row.titel,
     text: excerpt(row.text),

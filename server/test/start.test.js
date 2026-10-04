@@ -138,7 +138,21 @@ test('Start: Neues aus Zuhause, Familien und befreundeten Zuhause - nur, was der
     const own = itemOf(res, 'eintrag', aPrivate.id)
     assert.equal(own.privat, true)
     assert.deepEqual(own.area, { id: aId, name: 'Zuhause Lindenhof', art: 'eigen' })
-    assert.deepEqual(own.dog, { id: nele.id, name: 'Nele', name_unbekannt: false, rasse: null, foto_url: null })
+    assert.deepEqual(own.dog, { id: nele.id, name: 'Nele', name_unbekannt: false, rasse: null, foto_url: null, zuhause: null })
+  })
+
+  await t.test('jede Erinnerung nennt, wo das Tier wohnt - nicht den Bereich, über den man sie sieht; das eigene Zuhause nie', async () => {
+    const forA = await start(a.cookie)
+    const benno = itemOf(forA, 'eintrag', bPublic.id)
+    assert.equal(benno.area.art, 'familie', 'sichtbar über die Familie')
+    assert.equal(benno.dog.zuhause, 'Zuhause Möwenweg', 'wohnt aber im Möwenweg')
+    assert.equal(itemOf(forA, 'eintrag', fEntry.id).dog.zuhause, 'Familie Sonnenhang', 'ein Tier der Familie selbst')
+    assert.equal(itemOf(forA, 'eintrag', dPublic.id).dog.zuhause, 'Zuhause am Deich', 'beim Besuch das Zuhause des Gastgebers')
+    assert.equal(itemOf(forA, 'eintrag', aPublic.id).dog.zuhause, null)
+    const forB = await start(b.cookie)
+    assert.equal(itemOf(forB, 'eintrag', aPublic.id).dog.zuhause, 'Zuhause Lindenhof')
+    assert.equal(itemOf(forB, 'eintrag', bPublic.id).dog.zuhause, null)
+    assert.ok(!JSON.stringify(forA.data).includes('zuhause_id'), 'nur der Name, keine Id des fremden Zuhauses')
   })
 
   await t.test('fremde private Erinnerungen nie - auch nicht über eine gemeinsame Familie', async () => {

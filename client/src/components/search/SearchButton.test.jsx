@@ -28,9 +28,14 @@ const sonnenhang = { id: 7, name: 'Familie Sonnenhang', art: 'familie' }
 const tier = (id, name, extra = {}) => ({ id, name, rasse: null, tierart: 'hund', fotoUrl: null, zuhause: null, inErinnerung: false, bereich: eigen, ...extra })
 const RESULTS = {
   gruppen: {
-    tiere: { treffer: [1, 2, 3, 4, 5, 6, 7].map((id) => tier(id, `Nele ${id}`)), mehr: false },
+    tiere: {
+      treffer: [1, 2, 3, 4, 5, 6].map((id) => tier(id, `Nele ${id}`)).concat(tier(7, 'Nele 7', { zuhause: 'Zuhause Möwenweg', bereich: sonnenhang })),
+      mehr: false
+    },
     erinnerungen: {
-      treffer: [{ id: 12, titel: 'Strandtag', auszug: 'Mit Nele am Meer', datum: '2026-05-01', tier: { id: 3, name: 'Nele 3' }, bereich: sonnenhang }],
+      treffer: [
+        { id: 12, titel: 'Strandtag', auszug: 'Mit Nele am Meer', datum: '2026-05-01', tier: { id: 3, name: 'Nele 3' }, zuhause: 'Zuhause Möwenweg', bereich: sonnenhang }
+      ],
       mehr: false
     },
     pinnwand: { treffer: [], mehr: false },
@@ -189,10 +194,17 @@ describe('Suche: Treffer', () => {
     const expand = options().find((option) => option.textContent === 'Alle 7 anzeigen')
     expect(options()).toHaveLength(8)
     expect(container.querySelector('.search-mark').textContent).toBe('Nele')
-    expect(container.textContent).toContain('Familie Sonnenhang')
+    // Wo das Tier wohnt, nicht der Bereich: eigene Tiere ohne Chip, die Erinnerung aus dem Möwenweg mit leisem Familien-Zusatz
+    const chips = [...container.querySelectorAll('.search-chip')]
+    expect(chips.map((chip) => chip.textContent)).toEqual(['aus Zuhause Möwenweg, geteilt in Familie Sonnenhang'])
+    expect(chips[0].getAttribute('title')).toBe('geteilt in Familie Sonnenhang')
+    expect(container.textContent).not.toContain('Mein Zuhause')
     act(() => expand.click())
     expect(options()).toHaveLength(9)
     expect(options().some((option) => option.textContent === 'Alle 7 anzeigen')).toBe(false)
+    const seventh = options().find((option) => option.textContent.includes('Nele 7'))
+    expect(seventh.querySelector('.search-chip').textContent).toBe('aus Zuhause Möwenweg, geteilt in Familie Sonnenhang')
+    expect(seventh.textContent).not.toContain('bei Zuhause')
     expect(document.activeElement).toBe(input())
   })
 

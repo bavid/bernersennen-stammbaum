@@ -99,6 +99,23 @@
   color: var(--rust);
 }
 
+/* Wo ein Tier lebt, das nicht euch gehört („lebt bei Zuhause Möwenweg · geteilt mit euch über Familie Sonnenhang“). */
+.dog-head-origin {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.dog-head-origin svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15em;
+  color: var(--alpine);
+}
+
 .dog-head-visible {
   padding: var(--space-1) var(--space-3);
   text-align: left;

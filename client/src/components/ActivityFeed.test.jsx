@@ -65,4 +65,13 @@ describe.each(['standard'])('ActivityFeed im Theme %s', (themeId) => {
     })
     expect(container.querySelector('#feed-title').textContent).toBe(theme.words.newsTitle)
   })
+
+  test('ein Tier eines anderen Zuhauses sagt, wo es wohnt - das eigene nicht', async () => {
+    const now = new Date().toISOString()
+    const tile = (id, extra) => ({ id, dog_id: id, dog_name: `Tier ${id}`, titel: 'Am See', autor_name: 'Mo', created_at: now, comment_count: 0, ...extra })
+    await render(themeId, { entries: [tile(1, { dog_zuhause: 'Zuhause Möwenweg' }), tile(2, { dog_zuhause: null })], termin: null })
+    const items = [...container.querySelectorAll('.feed-item')]
+    expect(items[0].querySelector('.feed-origin').textContent).toBe('aus Zuhause Möwenweg')
+    expect(items[1].querySelector('.feed-origin')).toBeNull()
+  })
 })

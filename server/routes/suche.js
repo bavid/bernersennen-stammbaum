@@ -79,7 +79,7 @@ router.post('/', rejectCrossSite, requireSession, searchLimiter, (req, res) => {
   const { error, query, groups } = readSearchBody(req.body)
   if (error) return res.status(400).json({ error })
   const partnerDemo = partnerDemoValues(scope.isDemo)
-  const result = runSearch({ query, groups, areas: scope.areas, activeId: req.familyId, partnerDemo })
+  const result = runSearch({ query, groups, areas: scope.areas, activeId: req.familyId, homeId: req.homeId, partnerDemo })
   sendJsonWithoutEtag(res, 200, result)
 })
 

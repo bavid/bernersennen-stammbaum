@@ -17,7 +17,8 @@ export function toFeedItem(item) {
     dog_name: dog.name,
     dog_name_unbekannt: dog.name_unbekannt,
     dog_rasse: dog.rasse,
-    dog_foto_url: dog.foto_url
+    dog_foto_url: dog.foto_url,
+    dog_zuhause: dog.zuhause ?? null
   }
 }
 
@@ -26,7 +27,8 @@ export function feedKey(item) {
   return `${item.type || 'eintrag'}-${item.id}`
 }
 
-// Der kleine Bereichs-Hinweis auf der Karte: „Familie Sonnenhang“, „Zu Besuch: Zuhause Möwenweg“ - im eigenen Zuhause keiner.
+// Der kleine Bereichs-Hinweis an Zetteln und Terminen: „Familie Sonnenhang“, „Zu Besuch: Zuhause Möwenweg“ - im eigenen
+// Zuhause keiner. Erinnerungen nennen stattdessen, wo das Tier wohnt (lib/tierZuhause.js, components/feed/OriginChip.jsx).
 export function areaChipLabel(area) {
   if (!area?.name) return null
   if (area.art === 'familie') return area.name

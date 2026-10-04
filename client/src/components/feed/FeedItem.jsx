@@ -3,7 +3,7 @@ import { useTheme } from '../../themes/ThemeProvider.jsx'
 import Avatar from '../Avatar.jsx'
 import Icon from '../Icon.jsx'
 import Polaroid from '../Polaroid.jsx'
-import AreaChip from './AreaChip.jsx'
+import OriginChip from './OriginChip.jsx'
 import { dogLabel } from '../../lib/timeline.js'
 import { formatDateLong } from '../../lib/dates.js'
 import { commentsLabel, excerpt, feedDog, thumbnails } from '../../lib/feed.js'
@@ -16,9 +16,9 @@ import { feedEntryLink } from '../../lib/startFeed.js'
 // darum ist das Foto in der Karte Schmuck (alt leer), der Titel sagt schon, worum es geht.
 // itemRef: optionaler Ref auf das Listenelement (z. B. um nach „Weitere Erinnerungen“ den Fokus zu setzen).
 // state.from: die Tierseite führt mit "Zurück" wieder hierher (Phase W, Schritt 2).
-// Phase W, Schritt 3: aus einer Familie oder einem befreundeten Zuhause mit kleinem Bereichs-Hinweis (AreaChip) - der Link
-// öffnet die Tierseite in genau diesem Bereich (?in=…); foto_anzahl: so viele Fotos hat die Erinnerung (der Feed schickt
-// höchstens vier mit).
+// Phase W, Schritt 3: ein Tier eines anderen Zuhauses trägt dessen Namen (OriginChip „aus Zuhause Möwenweg“ - wo es wohnt,
+// nicht über welche Familie man es sieht) - der Link öffnet die Tierseite in dem Bereich, über den die Erinnerung sichtbar
+// ist (?in=…); foto_anzahl: so viele Fotos hat die Erinnerung (der Feed schickt höchstens vier mit).
 export default function FeedItem({ entry, itemRef }) {
   const { words } = useTheme()
   const { pathname, search } = useLocation()
@@ -37,7 +37,7 @@ export default function FeedItem({ entry, itemRef }) {
           <span className="feed-card-who">
             <span className="feed-card-dog-line">
               <span className="feed-card-dog">{dogLabel(dog)}</span>
-              <AreaChip area={entry.area} />
+              <OriginChip zuhause={entry.dog_zuhause} area={entry.area} />
             </span>
             {meta && <span className="feed-card-meta">{meta}</span>}
           </span>

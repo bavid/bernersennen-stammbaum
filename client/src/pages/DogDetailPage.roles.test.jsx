@@ -190,7 +190,9 @@ describe('DogDetailPage – Rechte je Rolle auf einem Tier der Familie', () => {
     mockLoad({ ...familyDog(), isOwn: false, canEdit: false, ownerFamilyId: 7, familyName: 'Haus Birkenweg' })
     await render(familyAs('mitglied'))
     expect(container.querySelector('#composer')).toBeNull()
-    expect(container.textContent).toContain('Lebt im Zuhause „Haus Birkenweg“ und wird hier geteilt.')
+    // Wo es lebt, sagt der Kopf - kein zweiter Hinweis in der Chronik
+    expect(container.querySelector('.dog-head-origin').textContent).toContain('lebt bei Haus Birkenweg · geteilt mit euch über')
+    expect(container.textContent).not.toContain('wird hier geteilt')
   })
 })
 

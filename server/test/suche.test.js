@@ -157,6 +157,24 @@ test('Suche: nur, was die Identität ohnehin sehen darf', async (t) => {
     assert.ok(found(await search('deichgeheimnis', d.cookie), 'erinnerungen', dPrivate.id))
   })
 
+  await t.test('Tiere und Erinnerungen nennen, wo das Tier wohnt (nur den Namen) - das eigene Zuhause nie', async () => {
+    const first = async (q, group, cookie = a.cookie) => hits(await search(q, cookie), group)[0]
+    assert.equal((await first('nele', 'tiere')).zuhause, null)
+    assert.equal((await first('strandtag', 'erinnerungen')).zuhause, null)
+    const benno = await first('benno', 'tiere')
+    assert.equal(benno.bereich.art, 'familie')
+    assert.equal(benno.zuhause, 'Zuhause Möwenweg')
+    assert.equal((await first('strandlauf', 'erinnerungen')).zuhause, 'Zuhause Möwenweg')
+    assert.equal((await first('lotte', 'tiere')).zuhause, 'Familie Sonnenhang', 'ein Tier der Familie selbst')
+    assert.equal((await first('familienfest', 'erinnerungen')).zuhause, 'Familie Sonnenhang')
+    assert.equal((await first('dorle', 'tiere')).zuhause, 'Zuhause am Deich', 'beim Besuch das Zuhause des Gastgebers')
+    assert.equal((await first('deichspaziergang', 'erinnerungen')).zuhause, 'Zuhause am Deich')
+    // aus der Familie heraus gesucht: das eigene Tier bleibt ohne Herkunft, das der Familie nennt sie
+    const aInFamily = await view(a.cookie, fId)
+    assert.equal((await first('lotte', 'tiere', aInFamily)).zuhause, 'Familie Sonnenhang')
+    assert.equal((await first('benno', 'tiere', b.cookie)).zuhause, null)
+  })
+
   await t.test('Besuchs-Sitzung: das eigene Zuhause und der Gastgeber, sonst nichts', async () => {
     const guest = await view(a.cookie, dId)
     const res = await search('dorle', guest)

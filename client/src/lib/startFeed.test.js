@@ -20,7 +20,8 @@ const visit = { id: 8, name: 'Zuhause Möwenweg', art: 'besuch' }
 describe('lib/startFeed (Phase W, Schritt 3)', () => {
   test('toFeedItem: das Tier flach für die Karte, Zettel bleiben, wie sie sind', () => {
     const entry = toFeedItem({ type: 'eintrag', id: 3, dog: { id: 10, name: 'Nele', name_unbekannt: false, rasse: 'Mix', foto_url: '/uploads/n.jpg' } })
-    expect(entry).toMatchObject({ dog_id: 10, dog_name: 'Nele', dog_name_unbekannt: false, dog_rasse: 'Mix', dog_foto_url: '/uploads/n.jpg' })
+    expect(entry).toMatchObject({ dog_id: 10, dog_name: 'Nele', dog_name_unbekannt: false, dog_rasse: 'Mix', dog_foto_url: '/uploads/n.jpg', dog_zuhause: null })
+    expect(toFeedItem({ type: 'eintrag', id: 4, dog: { id: 11, name: 'Wilma', zuhause: 'Zuhause Möwenweg' } }).dog_zuhause).toBe('Zuhause Möwenweg')
     const note = { type: 'zettel', id: 3, text: 'Hallo' }
     expect(toFeedItem(note)).toBe(note)
   })

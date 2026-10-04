@@ -162,11 +162,13 @@ describe('StartPage (Phase W)', () => {
     expect(container.querySelector('#start-news-title').textContent).toBe('Neue Erinnerungen')
   })
 
-  test('ein Feed über alle Bereiche: Familie und Besuch mit kleinem Hinweis, Links öffnen den Bereich der Karte', async () => {
+  test('ein Feed über alle Bereiche: jede Karte sagt, wo das Tier wohnt - Links öffnen den Bereich der Karte', async () => {
+    const tier = (id, name, zuhause, extra = {}) => ({ id, name, name_unbekannt: false, rasse: null, foto_url: null, zuhause, ...extra })
     api.start.mockResolvedValue(
       feed([
-        item(3, { area: familyArea, dog: { id: 20, name: 'Benno', name_unbekannt: false, rasse: null, foto_url: '/uploads/benno.jpg' } }),
-        item(4, { area: visitArea, datum: '2026-09-26', dog: { id: 30, name: 'Wilma', name_unbekannt: false, rasse: null, foto_url: null } }),
+        item(3, { area: familyArea, dog: tier(20, 'Wilma', 'Zuhause Möwenweg', { foto_url: '/uploads/wilma.jpg' }) }),
+        item(4, { area: visitArea, datum: '2026-09-26', dog: tier(30, 'Socke', 'Zuhause Möwenweg') }),
+        item(6, { area: familyArea, datum: '2026-09-26', dog: tier(40, 'Lotte', 'Familie Sonnenhang') }),
         item(5, { datum: '2026-09-25' })
       ])
     )
@@ -175,16 +177,23 @@ describe('StartPage (Phase W)', () => {
     expect(cards.map((card) => card.querySelector('a').getAttribute('href'))).toEqual([
       '/tier/20?in=5#entry-3',
       '/tier/30?in=8#entry-4',
+      '/tier/40?in=5#entry-6',
       '/tier/10?in=1#entry-5'
     ])
-    expect(cards.map((card) => card.querySelector('.feed-area-chip')?.textContent ?? null)).toEqual([
-      'Familie Sonnenhang',
-      'Zu Besuch: Zuhause Möwenweg',
-      null
-    ])
-    expect(cards[0].querySelector('.feed-area-chip').classList.contains('is-familie')).toBe(true)
-    expect(cards[1].querySelector('.feed-area-chip').classList.contains('is-besuch')).toBe(true)
-    expect(cards[0].querySelector('.avatar img').getAttribute('src')).toBe('/uploads/benno.jpg')
+    const chip = (card) => card.querySelector('.feed-area-chip')
+    // Wilma ist über die Familie zu sehen, wohnt aber im Möwenweg - die Familie steht nur leise dabei (kein zweiter Chip).
+    expect(chip(cards[0]).textContent).toBe('aus Zuhause Möwenweg, geteilt in Familie Sonnenhang')
+    expect(chip(cards[0]).getAttribute('title')).toBe('geteilt in Familie Sonnenhang')
+    expect(chip(cards[0]).querySelector('.visually-hidden').textContent).toBe(', geteilt in Familie Sonnenhang')
+    expect(cards[0].querySelectorAll('.feed-area-chip')).toHaveLength(1)
+    expect(chip(cards[1]).textContent).toBe('aus Zuhause Möwenweg')
+    expect(chip(cards[1]).hasAttribute('title')).toBe(false)
+    expect(chip(cards[2]).textContent).toBe('aus Familie Sonnenhang')
+    expect(chip(cards[3])).toBeNull()
+    expect(container.textContent).not.toContain('Zu Besuch:')
+    expect(chip(cards[0]).classList.contains('is-familie')).toBe(true)
+    expect(chip(cards[1]).classList.contains('is-besuch')).toBe(true)
+    expect(cards[0].querySelector('.avatar img').getAttribute('src')).toBe('/uploads/wilma.jpg')
   })
 
   test('Neu an der Pinnwand: die zwei neuesten Zettel als kurze Zeilen (nicht im Album), ohne die Termine unter „Bald“', async () => {

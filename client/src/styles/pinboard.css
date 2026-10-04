@@ -289,6 +289,15 @@
   color: var(--rust);
 }
 
+/* Wo ein Tier eines anderen Zuhauses wohnt („aus Zuhause Möwenweg“) - leise unter dem Namen, eine Zeile. */
+.feed-origin {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .feed-headline {
   display: -webkit-box;
   overflow: hidden;

@@ -32,6 +32,17 @@ test('Demo: Start mischt Zuhause, Familie und befreundetes Zuhause', async (t) =
     assert.ok(res.data.termine.length >= 1)
   })
 
+  await t.test('Wilma (Möwenweg, in die Familie geteilt) steht mit ihrem Zuhause da, nicht mit der Familie', () => {
+    const wilma = res.data.items.find((item) => item.titel === 'Wilma im ersten Schnee')
+    assert.equal(wilma.area.art, 'familie', 'sichtbar über die Familie (Zuhause > Familie > Besuch)')
+    assert.equal(wilma.dog.zuhause, 'Zuhause Möwenweg (Demo)')
+    const socke = res.data.items.find((item) => item.titel === 'Socke erobert den Kratzbaum')
+    assert.equal(socke.dog.zuhause, 'Zuhause Möwenweg (Demo)')
+    const own = res.data.items.filter((item) => item.type === 'eintrag' && item.area.art === 'eigen')
+    assert.ok(own.length > 0)
+    assert.ok(own.every((item) => item.dog.zuhause === null), 'eigene Tiere ohne Herkunft')
+  })
+
   await t.test('Fotos der Familie laden im eigenen Zuhause', async () => {
     const familyPhoto = res.data.items.find((item) => item.area.art === 'familie' && item.foto_urls.length > 0).foto_urls[0]
     const photo = await fetch(`${base}${familyPhoto}`, { headers: { Cookie: demoCookie } })

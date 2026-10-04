@@ -79,9 +79,12 @@ test('Tiere aus "Meine Chronik" in Rudel teilen', async (t) => {
     const tl = await call(base, `/api/timeline?dogId=${nele.id}`, { cookie: R.cookie })
     assert.deepEqual(tl.data.map((e) => e.id), [publicEntry.id])
 
-    const recentIds = (await call(base, '/api/timeline/recent', { cookie: R.cookie })).data.map((e) => e.id)
+    const recent = (await call(base, '/api/timeline/recent', { cookie: R.cookie })).data
+    const recentIds = recent.map((e) => e.id)
     assert.equal(recentIds.includes(publicEntry.id), true)
     assert.equal(recentIds.includes(privateEntry.id), false)
+    // Wo das Tier wohnt (Neuigkeiten der Familie): der Name seines Zuhauses, keine Id
+    assert.equal(recent.find((e) => e.id === publicEntry.id).dog_zuhause, 'Zuhause am Deich')
 
     const writeAttempt = await put(`/api/dogs/${nele.id}`, { name: 'Umbenannt' }, R.cookie)
     assert.equal(writeAttempt.status, 404)
@@ -101,6 +104,9 @@ test('Tiere aus "Meine Chronik" in Rudel teilen', async (t) => {
 
     const detailInR = await call(base, `/api/dogs/${nele.id}`, { cookie: viewedCookie })
     assert.equal(detailInR.data.canEdit, false)
+    // Das eigene Tier in der Familie: ohne Herkunft (es wohnt im eigenen Zuhause)
+    const recentInR = (await call(base, '/api/timeline/recent', { cookie: viewedCookie })).data
+    assert.equal(recentInR.find((e) => e.id === publicEntry.id).dog_zuhause, null)
 
     const backView = await post('/api/view', { familyId: Z.data.id }, viewedCookie)
     assert.equal(backView.status, 200)

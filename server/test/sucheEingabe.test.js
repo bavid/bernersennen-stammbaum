@@ -105,7 +105,7 @@ test('Suche: Eingabe, Platzhalter, Umlaute, Reihenfolge, Grenzen', async (t) => 
     assert.equal(created.status, 201)
     const res = await search('muschel', home.cookie)
     const [hit] = res.data.gruppen.erinnerungen.treffer
-    assert.deepEqual(Object.keys(hit).sort(), ['auszug', 'bereich', 'datum', 'id', 'tier', 'titel'])
+    assert.deepEqual(Object.keys(hit).sort(), ['auszug', 'bereich', 'datum', 'id', 'tier', 'titel', 'zuhause'])
     assert.ok(hit.auszug.length <= 140 && hit.auszug.includes('Muschel am Strand'), hit.auszug)
     // sieben Wiederholungen sind schon länger als jeder Auszug - so viel vom Text steht nirgends in der Antwort
     assert.ok(!JSON.stringify(res.data).includes('Wir gingen lange spazieren. '.repeat(7).trim()))

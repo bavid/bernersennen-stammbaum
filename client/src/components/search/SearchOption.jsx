@@ -1,5 +1,6 @@
 import Icon from '../Icon.jsx'
 import SearchHighlight from './SearchHighlight.jsx'
+import OriginChip from '../feed/OriginChip.jsx'
 import { HOME_LABEL, isHouseholdIdentity } from '../../lib/areas.js'
 import { formatDateShort } from '../../lib/dates.js'
 import { TYPE_LABELS } from '../../lib/partnerTypes.js'
@@ -9,7 +10,8 @@ import { useTheme } from '../../themes/ThemeProvider.jsx'
 
 // Inhalt einer Zeile im Suchergebnis je Gruppe (components/search/SearchResults.jsx stellt das role="option" drumherum).
 
-// Wo der Treffer liegt: das eigene Zuhause heißt „Mein Zuhause“ (beim klassischen Familien-Login der Name der Familie).
+// Wo ein Zettel liegt: das eigene Zuhause heißt „Mein Zuhause“ (beim klassischen Familien-Login der Name der Familie).
+// Tiere und Erinnerungen nennen stattdessen, wo das Tier wohnt (OriginChip „aus Zuhause Möwenweg“, das eigene ohne).
 function areaLabel(bereich, family) {
   if (bereich.art === 'eigen' && isHouseholdIdentity(family)) return HOME_LABEL
   return bereich.name
@@ -40,7 +42,7 @@ function Thumb({ src, letter, memorial = false, icon }) {
 
 const join = (...parts) => parts.filter(Boolean).join(' · ')
 
-function AnimalRow({ item, query, family }) {
+function AnimalRow({ item, query }) {
   const sub = (
     <>
       {speciesNoun(item.tierart)}
@@ -50,18 +52,21 @@ function AnimalRow({ item, query, family }) {
           <SearchHighlight text={item.rasse} query={query} />
         </>
       )}
-      {item.zuhause && ` · bei ${item.zuhause}`}
     </>
   )
   return (
     <>
       <Thumb src={item.fotoUrl} letter={([...(item.name || '?')][0] || '?').toUpperCase()} memorial={item.inErinnerung} />
-      <Lines title={<SearchHighlight text={item.name} query={query} />} sub={sub} meta={<AreaChip bereich={item.bereich} family={family} />} />
+      <Lines
+        title={<SearchHighlight text={item.name} query={query} />}
+        sub={sub}
+        meta={item.zuhause && <OriginChip zuhause={item.zuhause} area={item.bereich} className="search-chip" />}
+      />
     </>
   )
 }
 
-function MemoryRow({ item, query, family }) {
+function MemoryRow({ item, query }) {
   return (
     <>
       <Thumb icon="book" />
@@ -70,7 +75,8 @@ function MemoryRow({ item, query, family }) {
         sub={item.auszug && <SearchHighlight text={item.auszug} query={query} />}
         meta={
           <>
-            {join(item.tier?.name, formatDateShort(item.datum))} <AreaChip bereich={item.bereich} family={family} />
+            {join(item.tier?.name, formatDateShort(item.datum))}{' '}
+            <OriginChip zuhause={item.zuhause} area={item.bereich} className="search-chip" />
           </>
         }
       />

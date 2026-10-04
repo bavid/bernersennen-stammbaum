@@ -24,16 +24,21 @@ function prepared(key, sql) {
   return statements.get(key)
 }
 
+// Wo das Tier wohnt: der Name seines Zuhauses (bzw. der Familie, der es selbst gehört) - nie das eigene Zuhause (@homeId).
+// Nur für Tiere, die der Bereich ohnehin zeigt (dogsSql) - deren Zuhause nennt dort auch die Familienbande.
+const DOG_HOME_SQL = '(SELECT f.name FROM families f WHERE f.id = d.family_id AND d.family_id != @homeId)'
+
 const animalSql = (area) => `
   SELECT d.id, d.name, d.name_unbekannt, d.rasse, d.tierart, d.foto_url, d.abschied_grund, d.created_at,
-    CASE WHEN d.family_id != @familyId THEN (SELECT f.name FROM families f WHERE f.id = d.family_id) END AS zuhause,
+    ${DOG_HOME_SQL} AS zuhause,
     ${rankSql('d.name')} AS rang
   FROM dogs d
   WHERE d.id IN ${area.dogsSql} AND (${matchSql('d.name')} OR ${matchSql('d.rasse')})
   ORDER BY rang, d.created_at DESC, d.id DESC LIMIT ${LIMIT + 1}`
 
 const memorySql = (area) => `
-  SELECT t.id, t.titel, t.text, t.datum, d.id AS dog_id, d.name, d.name_unbekannt, d.rasse, ${rankSql('t.titel')} AS rang
+  SELECT t.id, t.titel, t.text, t.datum, d.id AS dog_id, d.name, d.name_unbekannt, d.rasse, ${DOG_HOME_SQL} AS zuhause,
+    ${rankSql('t.titel')} AS rang
   FROM timeline_entries t JOIN dogs d ON d.id = t.dog_id
   WHERE ${area.entrySql} AND t.dog_id IN ${area.dogsSql} AND (${matchSql('t.titel')} OR ${matchSql('t.text')})
   ORDER BY rang, t.datum DESC, t.id DESC LIMIT ${LIMIT + 1}`
@@ -72,10 +77,10 @@ function merge(rowsByArea, compare) {
 const newestFirst = (a, b) => (a === b ? 0 : String(a ?? '') < String(b ?? '') ? 1 : -1)
 const byRankThen = (field) => (a, b) => a.rang - b.rang || newestFirst(a[field], b[field]) || b.key - a.key
 
-function searchAnimals({ areas, activeId }) {
+function searchAnimals({ areas, activeId, homeId }) {
   const rowsByArea = areas.map((area) =>
     prepared(`tiere:${area.art}`, animalSql(area))
-      .all({ familyId: area.id })
+      .all({ familyId: area.id, homeId })
       .map((row) => ({
         key: row.id,
         rang: row.rang,
@@ -96,10 +101,10 @@ function searchAnimals({ areas, activeId }) {
   return merge(rowsByArea, byRankThen('created'))
 }
 
-function searchMemories({ areas, query }) {
+function searchMemories({ areas, query, homeId }) {
   const rowsByArea = areas.map((area) =>
     prepared(`erinnerungen:${area.art}`, memorySql(area))
-      .all({ familyId: area.id })
+      .all({ familyId: area.id, homeId })
       .map((row) => ({
         key: row.id,
         rang: row.rang,
@@ -110,6 +115,7 @@ function searchMemories({ areas, query }) {
           auszug: excerpt(row.text, query),
           datum: row.datum,
           tier: { id: row.dog_id, name: dogLabel(row) },
+          zuhause: row.zuhause || null,
           bereich: areaRef(area)
         }
       }))
@@ -178,14 +184,15 @@ const SEARCHERS = {
 }
 
 // query: schon geprüft (lib/searchText.js cleanQuery); groups: Teilmenge von GROUPS; areas: lib/searchAreas.js;
-// activeId: der aktive Bereich der Sitzung; partnerDemo: erlaubte is_demo-Werte der Partner (routes/discover.js).
+// activeId: der aktive Bereich der Sitzung; homeId: die Identität (Tiere und Erinnerungen nennen ihr Zuhause - zuhause - nur,
+// wenn es nicht dieses ist); partnerDemo: erlaubte is_demo-Werte der Partner (routes/discover.js).
 // Der aktive Bereich zuerst: ist ein Treffer auch dort sichtbar (z. B. ein Tier des Zuhauses, das in die gerade offene
 // Familie geteilt ist), führt er dorthin - mit Foto und ohne Wechsel des Bereichs.
 // Ist das Arbeitsbudget (lib/searchMatch.js) aufgebraucht, fehlen womöglich Treffer: jede Gruppe sagt dann mehr: true und die
 // Antwort unvollstaendig: true (der Client bittet um ein genaueres Wort).
-function runSearch({ query, groups, areas, activeId, partnerDemo }) {
+function runSearch({ query, groups, areas, activeId, homeId, partnerDemo }) {
   const ordered = [...areas.filter((area) => area.id === activeId), ...areas.filter((area) => area.id !== activeId)]
-  const context = { query, areas: ordered, activeId, partnerDemo }
+  const context = { query, areas: ordered, activeId, homeId, partnerDemo }
   begin({ qDe: foldDe(query), qBasis: foldBasis(query) })
   let gruppen
   let exhausted = false

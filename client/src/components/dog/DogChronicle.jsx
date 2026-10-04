@@ -32,18 +32,16 @@ function commentDeleteRule(family, dog) {
   }
 }
 
-// Ein hierher geteiltes Tier: wem es gehört - und, ist es das eigene, der Weg zum Bearbeiten in "Mein Zuhause" (das Gate
-// der Tierseite wechselt über ?in=home genau einmal dorthin). Zu Besuch kein Hinweis (der Chip im Kopf sagt es).
+// Das eigene, hierher geteilte Tier: der Weg zum Bearbeiten in "Mein Zuhause" (das Gate der Tierseite wechselt über ?in=home
+// genau einmal dorthin). Bei fremden Tieren sagt der Kopf, wo sie leben (lib/dogProfile.js originLine), zu Besuch der Chip.
 function SharedNotice({ dog, family }) {
-  if (dog.canEdit || isVisit(family)) return null
+  if (dog.canEdit || isVisit(family) || dog.ownerFamilyId !== family.home?.id) return null
   return (
     <div className="notice notice-with-action">
       <p>Lebt im Zuhause „{dog.familyName}“ und wird hier geteilt.</p>
-      {dog.ownerFamilyId === family.home?.id && (
-        <Link to={`/tier/${dog.id}?in=home`} className="btn btn-ghost">
-          In „Mein Zuhause“ bearbeiten
-        </Link>
-      )}
+      <Link to={`/tier/${dog.id}?in=home`} className="btn btn-ghost">
+        In „Mein Zuhause“ bearbeiten
+      </Link>
     </div>
   )
 }
