@@ -74,14 +74,15 @@ describe('PortalHero mit Bannerfotos', () => {
     expect(box.nextElementSibling.classList.contains('partner-logo')).toBe(true)
   })
 
-  test('zwei Fotos: nebeneinander, als benannte, per Tastatur erreichbare Gruppe; ohne Alternativtext Schmuckbild', async () => {
+  test('zwei Fotos ohne gewähltes Layout: groß links, klein rechts, als benannte, per Tastatur erreichbare Gruppe', async () => {
     const banner = [
       { fotoUrl: '/public-media/a.jpg', alt: 'Training' },
       { fotoUrl: '/public-media/b.jpg', alt: null }
     ]
     await render(<PortalHero partner={{ ...partner, banner }} onShowTab={() => {}} />)
     const box = container.querySelector('.portal-banner')
-    expect(box.classList.contains('portal-banner-double')).toBe(true)
+    expect(box.classList.contains('portal-banner-multi')).toBe(true)
+    expect(box.dataset.layout).toBe('gross-links')
     expect(box.getAttribute('role')).toBe('group')
     expect(box.getAttribute('aria-label')).toBe('Bannerfotos')
     expect(box.getAttribute('tabindex')).toBe('0')
@@ -89,6 +90,36 @@ describe('PortalHero mit Bannerfotos', () => {
     expect(imgs.map((img) => img.getAttribute('alt'))).toEqual(['Training', ''])
     expect(imgs[0].getAttribute('fetchpriority')).toBe('high')
     expect(imgs[1].getAttribute('loading')).toBeNull()
+  })
+
+  test('gewähltes Layout: halb/halb und drei Fotos; fehlt ein Foto, das nächstkleinere Layout', async () => {
+    const banner = ['a', 'b', 'c'].map((name) => ({ fotoUrl: `/public-media/${name}.jpg`, alt: name }))
+    await render(<PortalHero partner={{ ...partner, banner, bannerLayout: 'halb' }} onShowTab={() => {}} />)
+    let box = container.querySelector('.portal-banner')
+    expect(box.classList.contains('is-halb')).toBe(true)
+    expect(box.querySelectorAll('img')).toHaveLength(2)
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render(<PortalHero partner={{ ...partner, banner, bannerLayout: 'drei' }} onShowTab={() => {}} />)
+    box = container.querySelector('.portal-banner')
+    expect(box.dataset.layout).toBe('drei')
+    expect([...box.querySelectorAll('img')].map((img) => img.getAttribute('alt'))).toEqual(['a', 'b', 'c'])
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render(<PortalHero partner={{ ...partner, banner: banner.slice(0, 2), bannerLayout: 'drei' }} onShowTab={() => {}} />)
+    expect(container.querySelector('.portal-banner').dataset.layout).toBe('gross-links')
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    await render(<PortalHero partner={{ ...partner, banner: banner.slice(0, 1), bannerLayout: 'halb' }} onShowTab={() => {}} />)
+    box = container.querySelector('.portal-banner')
+    expect(box.classList.contains('portal-banner-single')).toBe(true)
+    expect(box.getAttribute('role')).toBeNull()
   })
 
   test('nur erlaubte Adressen - /uploads nur in der Kundensicht', async () => {

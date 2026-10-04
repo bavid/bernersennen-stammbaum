@@ -2,24 +2,81 @@ import { useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { downscaleImage } from '../lib/images.js'
-import { BANNER_ACCEPT, BANNER_TYPE_MESSAGE, MAX_BANNER, bannerFormData, isBannerFileType, ownBannerItems } from '../lib/partnerBanner.js'
+import { BANNER_ACCEPT, BANNER_LAYOUTS, BANNER_TYPE_MESSAGE, bannerFormData, editorSlots, isBannerFileType, layoutOf, ownBannerItems } from '../lib/partnerBanner.js'
+import BannerLayoutPicker from './BannerLayoutPicker.jsx'
 import Icon from './Icon.jsx'
 import PartnerBannerSlot from './PartnerBannerSlot.jsx'
 
 const TITLE_ID = 'partner-banner-title'
 const HINT_ID = 'partner-banner-hint'
 
-// Reiter "Angaben" auf /profil (Phase V4b): ein oder zwei Bannerfotos für den Kopf des Portals. Hinzufügen lädt sofort
-// hoch (wie das Logo), jedes Foto lässt sich ersetzen, beschreiben und entfernen (PartnerBannerSlot). banner: die Liste
-// aus GET /partner-area/profile, onChange(neueListe) nach jeder Änderung. Demo und Admin-Ansicht: sichtbar, gesperrt.
-export default function PartnerBannerEditor({ banner, onChange }) {
+function layoutLabel(id) {
+  return BANNER_LAYOUTS.find((layout) => layout.id === id)?.label ?? ''
+}
+
+// Der freie Platz im Layout: "Foto hinzufügen" lädt sofort hoch (an die nächste freie Stelle - Fotos rücken lückenlos).
+function AddSlot({ label, busy, locked, onFile }) {
+  return (
+    <li className="partner-banner-slot is-empty">
+      <span className="partner-banner-thumb partner-banner-placeholder" aria-hidden="true">
+        <Icon name="camera" />
+      </span>
+      <div className="partner-banner-slot-body">
+        <span className="partner-banner-slot-label">{label}</span>
+        <label className={`btn btn-ghost btn-compact admin-upload-btn${locked ? ' is-disabled' : ''}`}>
+          <Icon name={busy ? 'clock' : 'plus'} />
+          {busy ? 'Lädt …' : 'Foto hinzufügen'}
+          <input
+            type="file"
+            accept={BANNER_ACCEPT}
+            onChange={onFile}
+            disabled={locked}
+            className="admin-upload-input"
+            aria-label={`${label} hinzufügen`}
+            aria-describedby={HINT_ID}
+          />
+        </label>
+      </div>
+    </li>
+  )
+}
+
+// Reiter "Angaben" auf /profil (Phase V4b, Feedback-Runde): erst das Layout (BannerLayoutPicker - ein Foto, halb/halb,
+// groß links oder drei), darunter je Platz des Layouts das Foto (PartnerBannerSlot: ersetzen, beschreiben, entfernen)
+// bzw. der nächste freie Platz zum Hinzufügen. Fotos, die das gewählte Layout nicht zeigt, stehen darunter - sie bleiben
+// gespeichert, bis man sie entfernt. banner/layout: aus GET /partner-area/profile (banner, bannerLayout);
+// onChange({ banner, layout }) nach jeder Änderung. Demo und Admin-Ansicht: das Layout lässt sich ansehen und
+// umschalten (ohne Speichern), alles andere ist gesperrt.
+export default function PartnerBannerEditor({ banner, layout, onChange }) {
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [demoLayout, setDemoLayout] = useState(null)
   const items = ownBannerItems(banner)
-  const isFull = items.length >= MAX_BANNER
+  const current = layoutOf(isDemo && demoLayout ? demoLayout : layout, items.length)
+  const { slots, extra } = editorSlots(current, items)
   const locked = isDemo || busy
+
+  async function run(action) {
+    setBusy(true)
+    setError(null)
+    try {
+      onChange(await action())
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function handleLayout(next) {
+    if (isDemo) {
+      setDemoLayout(next)
+      return
+    }
+    run(() => api.partnerArea.setBannerLayout(next))
+  }
 
   async function handleAdd(event) {
     const file = event.target.files?.[0]
@@ -29,16 +86,7 @@ export default function PartnerBannerEditor({ banner, onChange }) {
       setError(BANNER_TYPE_MESSAGE)
       return
     }
-    setBusy(true)
-    setError(null)
-    try {
-      const result = await api.partnerArea.addBanner(bannerFormData(await downscaleImage(file)))
-      onChange(result.banner)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+    run(async () => api.partnerArea.addBanner(bannerFormData(await downscaleImage(file))))
   }
 
   return (
@@ -46,39 +94,33 @@ export default function PartnerBannerEditor({ banner, onChange }) {
       <div className="partner-banner-head">
         <h2 id={TITLE_ID}>Bannerfotos</h2>
         <p className="field-hint" id={HINT_ID}>
-          Ein oder zwei Fotos für den Kopf eures Portals – breite Querformate wirken am besten. JPG oder PNG.
+          Fotos für den Kopf eures Portals – breite Querformate wirken am besten. JPG oder PNG.
         </p>
       </div>
+      <BannerLayoutPicker value={current} onChange={handleLayout} disabled={busy} />
       {error && (
         <p className="field-error" role="alert">
           {error}
         </p>
       )}
-      {items.length > 0 && (
-        <ul className="partner-banner-list">
-          {items.map((item) => (
-            <PartnerBannerSlot
-              key={`${item.position}-${item.fotoUrl}`}
-              item={item}
-              label={item.position === 1 ? 'Foto 1 · groß' : 'Foto 2'}
-              onChange={onChange}
-            />
-          ))}
-        </ul>
-      )}
-      {!isFull && (
-        <label className={`btn btn-ghost btn-compact admin-upload-btn${locked ? ' is-disabled' : ''}`}>
-          <Icon name={busy ? 'clock' : 'plus'} />
-          {busy ? 'Lädt …' : items.length ? 'Zweites Bannerfoto hinzufügen' : 'Bannerfoto hinzufügen'}
-          <input
-            type="file"
-            accept={BANNER_ACCEPT}
-            onChange={handleAdd}
-            disabled={locked}
-            className="admin-upload-input"
-            aria-describedby={HINT_ID}
-          />
-        </label>
+      <ul className="partner-banner-list">
+        {slots.map((slot) =>
+          slot.item ? (
+            <PartnerBannerSlot key={`${slot.position}-${slot.item.fotoUrl}`} item={slot.item} label={slot.label} onChange={onChange} />
+          ) : (
+            <AddSlot key={`frei-${slot.position}`} label={slot.label} busy={busy} locked={locked} onFile={handleAdd} />
+          )
+        )}
+      </ul>
+      {extra.length > 0 && (
+        <div className="partner-banner-extra">
+          <p className="field-hint">Nicht im Banner – das Layout „{layoutLabel(current)}“ zeigt weniger Fotos:</p>
+          <ul className="partner-banner-list">
+            {extra.map((slot) => (
+              <PartnerBannerSlot key={`${slot.position}-${slot.item.fotoUrl}`} item={slot.item} label={slot.label} onChange={onChange} />
+            ))}
+          </ul>
+        </div>
       )}
       {isDemo && <p className="field-hint">{readOnlyHint}</p>}
     </section>

@@ -65,8 +65,9 @@ function completeness(partner, { einblickCount } = {}) {
 }
 
 // Das eigene Profil in camelCase (wie die Eingabe von PUT /profile), dazu Status, Sperre und Vollständigkeit.
-// banner: die Zeilen aus lib/partnerBanner.js listBanner (Phase V4b) - fehlt die Angabe, ist die Liste leer.
-function profileResponse(partner, { einblickCount, banner = [] } = {}) {
+// banner: die Zeilen aus lib/partnerBanner.js listBanner (Phase V4b) - fehlt die Angabe, ist die Liste leer;
+// bannerLayout: lib/partnerBanner.js readLayout (Feedback-Runde).
+function profileResponse(partner, { einblickCount, banner = [], bannerLayout = 'eins' } = {}) {
   return {
     id: partner.id,
     slug: partner.slug,
@@ -92,6 +93,7 @@ function profileResponse(partner, { einblickCount, banner = [] } = {}) {
     ansprechperson: partner.ansprechperson ?? null,
     logoUrl: partner.logo_file ? `/partner-media/${partner.logo_file}` : null,
     banner: banner.map(ownBanner),
+    bannerLayout,
     vollstaendig: completeness(partner, { einblickCount })
   }
 }

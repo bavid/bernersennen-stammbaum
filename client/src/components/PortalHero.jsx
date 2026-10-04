@@ -29,7 +29,7 @@ export default function PortalHero({ partner, hasAnimals = false, onShowTab }) {
 
   return (
     <div className={`partner-portal-hero${hasBanner ? ' has-banner' : ''}`}>
-      {hasBanner && <PortalBanner banner={partner.banner} />}
+      {hasBanner && <PortalBanner banner={partner.banner} layout={partner.bannerLayout} />}
       {partner.logoUrl && <img src={partner.logoUrl} alt={`Logo von ${partner.name}`} className="partner-logo" />}
       <div className="partner-portal-hero-text">
         {meta && <p className="partner-portal-meta">{meta}</p>}

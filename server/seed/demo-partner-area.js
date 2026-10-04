@@ -49,16 +49,24 @@ const EINBLICKE = [
   { partnerSlug: 'tierheim-sonnenhang', datum: '2026-08-08', text: 'Neue Kuschelecke im Katzenhaus', foto: 'katzenhaus.jpg' }
 ]
 
-// BANNER (Phase V4b, lib/partnerBanner.js): Bannerfotos für den Kopf des Portals, in dieser Reihenfolge (Position 1, 2) -
-// höchstens zwei je Partner, alt läuft durch dieselbe Prüfung wie im Partner-Bereich. Jedes Foto bekommt beim Anlegen
-// eine eigene Kopie (öffentlich über /public-media wie die Einblicke). Pfotenglück zeigt zwei, Wuschelglück und das
-// Tierheim je eins - der Tierschutzverein keins (so zeigt die Demo alle drei Köpfe).
+// BANNER (Phase V4b, lib/partnerBanner.js): Bannerfotos für den Kopf des Portals, in dieser Reihenfolge (Position 1-3) -
+// höchstens drei je Partner, alt läuft durch dieselbe Prüfung wie im Partner-Bereich. Jedes Foto bekommt beim Anlegen
+// eine eigene Kopie (öffentlich über /public-media wie die Einblicke). BANNER_LAYOUTS (Feedback-Runde): das gewählte
+// Layout je Partner, genau so viele Fotos, wie es zeigt - Pfotenglück zwei halb/halb, das Tierheim drei, Wuschelglück
+// eins; der Tierschutzverein hat keine (so zeigt die Demo jeden Kopf).
 const BANNER = [
   { partnerSlug: 'hundeschule-pfotenglueck', foto: 'welpenkurs.jpg', alt: 'Welpen toben über die Trainingswiese' },
   { partnerSlug: 'hundeschule-pfotenglueck', foto: 'see.jpg', alt: 'Berner Sennenhund beim Wassertraining am See' },
   { partnerSlug: 'hundesalon-wuschelglueck', foto: 'salon-sommerschnitt.jpg', alt: 'Frisch geschnittenes Sommerfell im Salon' },
-  { partnerSlug: 'tierheim-sonnenhang', foto: 'tierheim-alltag.jpg', alt: 'Golden Retriever schaut neugierig durchs Tor' }
+  { partnerSlug: 'tierheim-sonnenhang', foto: 'tierheim-alltag.jpg', alt: 'Golden Retriever schaut neugierig durchs Tor' },
+  { partnerSlug: 'tierheim-sonnenhang', foto: 'katzenhaus.jpg', alt: 'Katzen dösen im Katzenhaus' },
+  { partnerSlug: 'tierheim-sonnenhang', foto: 'tierheim-pepper-gassi.jpg', alt: 'Gassirunde mit einem Ehrenamtlichen' }
 ]
+const BANNER_LAYOUTS = Object.freeze({
+  'hundeschule-pfotenglueck': 'halb',
+  'hundesalon-wuschelglueck': 'eins',
+  'tierheim-sonnenhang': 'drei'
+})
 
 // POSTS (Phase P2 Task 9): Beiträge der Demo-Partner - Felder wie bei POST /api/partner-area/posts, geprüft
 // mit derselben Prüfung (lib/partnerPosts.js validatePartnerPost: Bereich passend zum Partner-Typ, immer
@@ -337,6 +345,7 @@ module.exports = {
   DEFAULT_DEMO_PARTNER_SLUG,
   EINBLICKE,
   BANNER,
+  BANNER_LAYOUTS,
   POSTS,
   KARTEN,
   MESSAGES,

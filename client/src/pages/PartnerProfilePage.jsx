@@ -98,9 +98,9 @@ export default function PartnerProfilePage({ family }) {
     refreshProfile()
   }
 
-  // Phase V4b: jede Änderung an den Bannerfotos antwortet mit der ganzen Liste.
-  function handleBannerChange(banner) {
-    setProfile((current) => ({ ...current, banner }))
+  // Phase V4b: jede Änderung an den Bannerfotos antwortet mit der ganzen Liste samt Layout (Feedback-Runde).
+  function handleBannerChange({ banner, layout }) {
+    setProfile((current) => ({ ...current, banner, bannerLayout: layout ?? current.bannerLayout }))
   }
 
   // Reiter-Wechsel ersetzt den Eintrag im Verlauf (kein "Zurück" durch alle Reiter).
@@ -146,7 +146,7 @@ export default function PartnerProfilePage({ family }) {
               onSelect={selectTab}
             />
             <Panel id="angaben" tab={tab} className="partner-profile-angaben">
-              <PartnerBannerEditor banner={profile.banner} onChange={handleBannerChange} />
+              <PartnerBannerEditor banner={profile.banner} layout={profile.bannerLayout} onChange={handleBannerChange} />
               <PartnerProfileForm profile={profile} onSaved={setProfile} onLogoUploaded={handleLogoUploaded} />
             </Panel>
             <Panel id="einblicke" tab={tab}>

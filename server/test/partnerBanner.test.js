@@ -5,7 +5,7 @@ const assert = require('node:assert/strict')
 const { hashPassword } = require('../lib/adminAuth')
 const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = require('./helpers')
 
-// Phase V4b: Ansprechperson und 1-2 Bannerfotos im Kopf des Portals (/api/partner-area/profile/banner, lib/partnerBanner.js)
+// Phase V4b: Ansprechperson und 1-3 Bannerfotos im Kopf des Portals (/api/partner-area/profile/banner, lib/partnerBanner.js)
 // - Upload-Prüfung wie bei den Einblicken, Ersetzen, Alternativtext, Entfernen mit Nachrücken, Portal- und
 // Kundensicht-Ausgabe, /public-media nur für sichtbare Partner, Demo- und Admin-Ansicht nur lesend. t.test() bleibt auf
 // einer Ebene. Namen sind erfunden.
@@ -108,7 +108,7 @@ test('Bannerfotos und Ansprechperson im Portal-Kopf', async (t) => {
 
   let first
   let second
-  await t.test('Upload: JPG an Position 1 (EXIF entfernt), PNG an Position 2, ein drittes -> 409 ohne Datei', async () => {
+  await t.test('Upload: JPG an Position 1 (EXIF entfernt), PNG an Position 2, ein drittes an 3, ein viertes -> 409 ohne Datei', async () => {
     const res = await sendPhoto(BANNER, school.cookie, { alt: '  Training auf der Wiese ' })
     assert.equal(res.status, 201)
     assert.equal(res.data.banner.length, 1)
@@ -124,11 +124,15 @@ test('Bannerfotos und Ansprechperson im Portal-Kopf', async (t) => {
     assert.deepEqual({ position: second.position, alt: second.alt }, { position: 2, alt: null })
     assert.ok(!fs.readFileSync(fileOf(second.fotoUrl)).includes(Buffer.from('Aufnahmeort geheim', 'latin1')), 'PNG-Text entfernt')
 
+    const third = await sendPhoto(BANNER, school.cookie, { alt: 'Drittes' })
+    assert.equal(third.status, 201)
+    assert.equal(third.data.banner[2].position, 3)
     const before = uploadedFiles()
     const full = await sendPhoto(BANNER, school.cookie)
     assert.equal(full.status, 409)
-    assert.match(full.data.error, /Höchstens 2 Bannerfotos/)
+    assert.match(full.data.error, /Höchstens 3 Bannerfotos/)
     assert.deepEqual(uploadedFiles(), before, 'keine Datei hinterlassen')
+    assert.equal((await del(`${BANNER}/3`, school.cookie)).status, 200)
 
     const profile = await get('/api/partner-area/profile', school.cookie)
     assert.deepEqual(profile.data.banner, [first, second])
@@ -246,7 +250,7 @@ test('Bannerfotos und Ansprechperson im Portal-Kopf', async (t) => {
   await t.test('Entfernen: das zweite rückt nach, Datei weg; ein fremder Partner kommt an nichts heran', async () => {
     const other = await createPartnerArea({ name: 'Hundesalon Kiesel', slug: 'hundesalon-kiesel', typ: 'hundesalon' })
     assert.equal((await del(`${BANNER}/1`, other.cookie)).status, 404, 'der andere Partner hat keine Bannerfotos')
-    assert.deepEqual((await get(BANNER, other.cookie)).data, { banner: [] })
+    assert.deepEqual((await get(BANNER, other.cookie)).data, { banner: [], layout: 'eins' })
 
     const res = await del(`${BANNER}/1`, school.cookie)
     assert.equal(res.status, 200)

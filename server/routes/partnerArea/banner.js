@@ -18,6 +18,7 @@ const {
   NOT_FOUND_MESSAGE,
   validateAlt,
   validateBannerUpdate,
+  validateLayoutUpdate,
   parsePosition,
   ownBanner,
   listBanner,
@@ -25,14 +26,16 @@ const {
   addBanner,
   replaceBanner,
   updateBannerAlt,
-  deleteBanner
+  deleteBanner,
+  readLayout,
+  saveLayout
 } = require('../../lib/partnerBanner')
 
 // Phase V4b: Bannerfotos des eigenen Partners (lib/partnerBanner.js) unter /api/partner-area/profile/banner. Läuft
 // hinter middleware/partnerArea.js requirePartnerArea (req.partner ist gesetzt). Dieselbe Upload-Strecke wie die
 // Einblicke (routes/partnerArea/einblicke.js): nur JPG/PNG (nur für diese entfernt lib/photoUpload.js die Metadaten),
 // Content-Type UND Magic Bytes geprüft, Upload-Limit je Bereich, freier Speicher. Jede Antwort ist die eigene Liste
-// { banner: [{ position, fotoUrl, alt }] }. Demo-Sitzungen lesen nur.
+// samt Layout { banner: [{ position, fotoUrl, alt }], layout }. Demo-Sitzungen lesen nur.
 
 const router = express.Router()
 
@@ -58,7 +61,7 @@ function sendError(res, next, err) {
 }
 
 function sendList(res, partnerId, status = 200) {
-  res.status(status).json({ banner: listBanner(partnerId).map(ownBanner) })
+  res.status(status).json({ banner: listBanner(partnerId).map(ownBanner), layout: readLayout(partnerId) })
 }
 
 // Nimmt das Foto (Feld "foto") entgegen, prüft es und ruft store({ fotoUrl, alt }) auf. Jede Ablehnung nach dem
@@ -119,6 +122,17 @@ router.put('/:position/foto', denyDemoWrites, uploadLimiter, requireFreeDisk, re
     removeUploadByUrl(previousUrl)
     sendList(res, req.partner.id)
   })
+})
+
+// Feedback-Runde: { layout } - wie die Fotos im Kopf stehen (lib/partnerBanner.js BANNER_LAYOUTS). Steht vor
+// /:position, sonst landete "layout" dort als unbekannte Position.
+router.put('/layout', denyDemoWrites, (req, res, next) => {
+  try {
+    saveLayout(req.partner.id, validateLayoutUpdate(req.body))
+    sendList(res, req.partner.id)
+  } catch (err) {
+    sendError(res, next, err)
+  }
 })
 
 // { alt } - nur der Alternativtext.

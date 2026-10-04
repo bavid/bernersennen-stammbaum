@@ -16,7 +16,7 @@ const { validateContactMessage, insertMessage } = require('./partnerMessages')
 const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
 const { markPrinted } = require('./voucherGedruckt')
 const { MAX_ANGEPINNT, PIN_VON } = require('./einblickPins')
-const { MAX_BANNER, validateAlt, addBanner } = require('./partnerBanner')
+const { BANNER_LAYOUTS: LAYOUT_SLOTS, MAX_BANNER, validateAlt, addBanner, saveLayout } = require('./partnerBanner')
 const { entdeckenAnzeigen, setReihenfolge, setInEntdecken } = require('./partnerPostOrder')
 const { validateTermin, insertTermin, addAbsage } = require('./partnerTermine')
 const { addDays, weekdayOf, nthWeekdayOf, expandTermin, maxSerieBis, berlinNow } = require('./terminSerien')
@@ -28,6 +28,7 @@ const {
   PARTNER_AREA_SLUGS,
   EINBLICKE,
   BANNER,
+  BANNER_LAYOUTS,
   POSTS,
   KARTEN,
   MESSAGES,
@@ -158,9 +159,9 @@ function insertDemoVoucherStacks(db, areas) {
 }
 
 // Phase V4b: die Bannerfotos der Demo-Partner (seed/demo-partner-area.js BANNER) - erst alle prüfen (Partner, Anzahl,
-// Alternativtext wie im Partner-Bereich), dann der Reihe nach je eine eigene Kopie anlegen (lib/partnerBanner.js
-// addBanner: Position 1, 2 in Seed-Reihenfolge). Läuft wie die Einblicke NACH insertDemoPartners und removeDemoBanner
-// (lib/demoPack.js). Gibt die Anzahl je Partner-Slug zurück.
+// Alternativtext wie im Partner-Bereich, Layout passend zur Zahl), dann der Reihe nach je eine eigene Kopie anlegen
+// (lib/partnerBanner.js addBanner: Position 1-3 in Seed-Reihenfolge) und das Layout setzen (BANNER_LAYOUTS). Läuft wie
+// die Einblicke NACH insertDemoPartners und removeDemoBanner (lib/demoPack.js). Gibt die Anzahl je Partner-Slug zurück.
 function insertDemoBanner(db, copyImage) {
   const prepared = BANNER.map(({ partnerSlug, foto, alt }) => {
     const partner = findDemoPartner(db, partnerSlug, `das Demo-Bannerfoto "${foto}"`)
@@ -174,7 +175,14 @@ function insertDemoBanner(db, copyImage) {
   for (const { partner } of prepared) counts[partner.slug] = (counts[partner.slug] || 0) + 1
   const overLimit = Object.keys(counts).find((slug) => counts[slug] > MAX_BANNER)
   if (overLimit) throw new Error(`Demo-Partner "${overLimit}" hätte mehr als ${MAX_BANNER} Bannerfotos`)
+  // Feedback-Runde: jedes Demo-Layout zeigt genau die Fotos seines Partners.
+  for (const [slug, layout] of Object.entries(BANNER_LAYOUTS)) {
+    if (LAYOUT_SLOTS[layout] !== counts[slug]) throw new Error(`Demo-Layout "${layout}" passt nicht zu den Bannerfotos von "${slug}"`)
+  }
   for (const { partner, foto, alt } of prepared) addBanner({ partner, fotoUrl: copyImage.copyOwn(foto), alt })
+  for (const partner of new Map(prepared.map(({ partner }) => [partner.id, partner])).values()) {
+    saveLayout(partner.id, BANNER_LAYOUTS[partner.slug])
+  }
   return counts
 }
 

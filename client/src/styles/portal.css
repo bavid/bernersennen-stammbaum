@@ -62,8 +62,23 @@
   background: color-mix(in srgb, var(--hero-text) 8%, transparent);
 }
 
-.portal-banner-double {
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+/* Feedback-Runde: das Layout, das der Partner gewählt hat (PortalBanner, data-layout) - halb/halb, groß links (2/3 und
+   1/3) oder groß links mit zwei Fotos rechts übereinander. */
+.portal-banner.is-halb {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.portal-banner.is-gross-links {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.portal-banner.is-drei {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
+.portal-banner.is-drei .portal-banner-photo:first-child {
+  grid-row: 1 / span 2;
 }
 
 /* Die Fotos füllen ihre Zelle (object-fit) - ihre eigenen Maße bestimmen nie die Größe des Banners. */
@@ -579,7 +594,10 @@ a.portal-overview-animal:focus-visible {
     aspect-ratio: 16 / 9;
   }
 
-  .portal-banner-double {
+  /* Am Handy jedes Layout mit mehreren Fotos als Wisch-Leiste: das erste fast in voller Breite, das nächste lugt rechts
+     herein. */
+  .portal-banner-multi,
+  .portal-banner.portal-banner-multi {
     grid-template-columns: none;
     grid-template-rows: auto;
     grid-auto-flow: column;
@@ -591,11 +609,13 @@ a.portal-overview-animal:focus-visible {
     scrollbar-width: none;
   }
 
-  .portal-banner-double::-webkit-scrollbar {
+  .portal-banner-multi::-webkit-scrollbar {
     display: none;
   }
 
-  .portal-banner-double .portal-banner-photo {
+  .portal-banner-multi .portal-banner-photo,
+  .portal-banner.is-drei .portal-banner-photo:first-child {
+    grid-row: auto;
     aspect-ratio: 16 / 9;
     height: auto;
     scroll-snap-align: start;

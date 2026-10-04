@@ -211,7 +211,7 @@ describe('PartnerProfilePage – Angaben', () => {
   test('Fieldsets Auftritt, Links, Kontakt, Standort - Spenden/Vermittlung nur für Tierheime', async () => {
     await render()
 
-    expect([...container.querySelectorAll('legend')].map((legend) => legend.textContent)).toEqual(['Auftritt', 'Links', 'Kontakt', 'Standort'])
+    expect([...container.querySelectorAll('.partner-profile-form legend')].map((legend) => legend.textContent)).toEqual(['Auftritt', 'Links', 'Kontakt', 'Standort'])
     expect(container.querySelector('#profile-name').getAttribute('maxlength')).toBe('120')
     expect(container.querySelector('#profile-portalTitel').getAttribute('maxlength')).toBe('120')
     expect(container.querySelector('#profile-website')).not.toBeNull()

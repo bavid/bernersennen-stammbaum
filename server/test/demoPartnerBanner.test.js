@@ -21,7 +21,7 @@ test('Demo-Partner: Ansprechperson und Bannerfotos, Ersetzen ohne Waisen', async
     db.prepare('SELECT p.slug, b.position, b.alt, b.foto_url, b.is_demo FROM partner_banner b JOIN partners p ON p.id = b.partner_id ORDER BY p.slug, b.position').all()
 
   const result = replaceDemoPack(db, uploadDir)
-  assert.deepEqual(result.banner, { 'hundeschule-pfotenglueck': 2, 'hundesalon-wuschelglueck': 1, 'tierheim-sonnenhang': 1 })
+  assert.deepEqual(result.banner, { 'hundeschule-pfotenglueck': 2, 'hundesalon-wuschelglueck': 1, 'tierheim-sonnenhang': 3 })
 
   await t.test('Bannerfotos in Seed-Reihenfolge, als Demo markiert, jede Datei eine eigene Kopie', () => {
     const rows = bannerRows()
@@ -46,6 +46,11 @@ test('Demo-Partner: Ansprechperson und Bannerfotos, Ersetzen ohne Waisen', async
       assert.match(banner.fotoUrl, /^\/public-media\/[0-9a-f-]{36}\.jpg$/)
       assert.equal((await fetch(`${base}${banner.fotoUrl}`)).status, 200)
     }
+    // Feedback-Runde: Pfotenglück zeigt seine zwei Fotos halb/halb, das Tierheim drei.
+    assert.equal(portal.data.bannerLayout, 'halb')
+    const sonnenhang = await call(base, '/api/public/partners/tierheim-sonnenhang')
+    assert.equal(sonnenhang.data.bannerLayout, 'drei')
+    assert.equal(sonnenhang.data.banner.length, 3)
     const deichland = await call(base, '/api/public/partners/tierschutzverein-deichland')
     assert.deepEqual(deichland.data.banner, [])
     assert.equal(deichland.data.ansprechperson, null)

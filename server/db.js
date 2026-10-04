@@ -744,16 +744,16 @@ db.exec(`
   );
 `)
 
-// Phase V4b: 1-2 Bannerfotos für den Kopf des Portals (lib/partnerBanner.js, routes/partnerArea/banner.js). position
-// 1 oder 2 (lückenlos - Löschen rückt nach), foto_url ein /uploads/-Pfad wie bei den Einblicken (dieselbe Upload-Strecke:
-// nur JPG/PNG, Metadaten entfernt). Öffentlich über /public-media nur, solange der Partner sichtbar ist
+// Phase V4b: 1-3 Bannerfotos für den Kopf des Portals (lib/partnerBanner.js, routes/partnerArea/banner.js). position
+// 1-3 lückenlos (Löschen rückt nach; alte Tabellen mit 1-2 baut lib/partnerBanner.js um), foto_url ein /uploads/-Pfad
+// wie bei den Einblicken (nur JPG/PNG, Metadaten entfernt). Öffentlich über /public-media nur für sichtbare Partner
 // (lib/publicMedia.js), der eigene Bereich sieht sie über /uploads (lib/uploadAccess.js). alt: optionaler Alternativtext.
 // Bewusst ohne REFERENCES auf partners(id) - wie partner_einblicke. idx_partner_banner_foto: Datei-Freigabe je Dateiname.
 db.exec(`
   CREATE TABLE IF NOT EXISTS partner_banner (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     partner_id INTEGER NOT NULL,
-    position INTEGER NOT NULL CHECK (position IN (1, 2)),
+    position INTEGER NOT NULL CHECK (position IN (1, 2, 3)),
     foto_url TEXT NOT NULL,
     alt TEXT,
     is_demo INTEGER NOT NULL DEFAULT 0,

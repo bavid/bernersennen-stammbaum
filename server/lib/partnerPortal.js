@@ -8,7 +8,7 @@
 const db = require('../db')
 const { publicPartner } = require('./partners')
 const { listVisibleEinblicke, publicEinblick } = require('./einblicke')
-const { listBanner, publicBanner } = require('./partnerBanner')
+const { listBanner, publicBanner, readLayout } = require('./partnerBanner')
 const { findDemoPartnerArea } = require('./partnerAreas')
 const { contactFormFlags } = require('./partnerMessages')
 const { publicTermine } = require('./partnerTermine')
@@ -36,8 +36,10 @@ function buildPortal(partner, { preview = false } = {}) {
     // Phase V4b: Ansprechperson neben "Schreib uns" und im Kontaktformular - reiner Text, optional.
     ansprechperson: partner.ansprechperson ?? null,
     farbe: partner.farbe,
-    // Phase V4b: 1-2 Bannerfotos für den Kopf (öffentlich über /public-media, in der Kundensicht über /uploads).
+    // Phase V4b: 1-3 Bannerfotos für den Kopf (öffentlich über /public-media, in der Kundensicht über /uploads) und
+    // (Feedback-Runde) ihr Layout - fehlen Fotos dafür, nimmt der Client das nächstkleinere (client/src/lib/partnerBanner.js).
     banner: listBanner(partner.id).map((row) => publicBanner(row, { preview })),
+    bannerLayout: readLayout(partner.id),
     // Phase T Task 6: der Client zeigt für Demo-Partner mit einem tatsächlich bestehenden Demo-Tierheim
     // zusätzlich "Demo als Tierheim ansehen" (PartnerPortalPage.jsx) - ohne extra Anfrage.
     ...(partner.is_demo && findShelterFamily.get(partner.id) ? { shelterDemo: true } : {}),

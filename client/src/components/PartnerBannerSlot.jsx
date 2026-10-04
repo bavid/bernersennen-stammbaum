@@ -17,8 +17,8 @@ const ALT_NOTE = 'Wird vorgelesen, wenn jemand das Foto nicht sehen kann.'
 
 // Ein Bannerfoto im Profil (PartnerBannerEditor): Vorschau, kurze Beschreibung mit eigenem "Speichern", "Ersetzen"
 // (neues Foto an derselben Stelle, die eingegebene Beschreibung kommt mit) und - abgesetzt am Ende - "Entfernen" (mit
-// Rückfrage; das folgende rückt nach). Jede Aktion antwortet mit der ganzen Liste (onChange). Alles ohne <form> - der
-// Abschnitt steht neben dem Profil-Formular, Enter im Textfeld speichert die Beschreibung. label: z. B. "Foto 1 · groß".
+// Rückfrage; das folgende rückt nach). Jede Aktion antwortet mit { banner, layout } (onChange). Alles ohne <form> - der
+// Abschnitt steht neben dem Profil-Formular, Enter im Textfeld speichert die Beschreibung. label: z. B. "Foto 2 · rechts".
 export default function PartnerBannerSlot({ item, label, onChange }) {
   const isDemo = useIsDemo()
   const [alt, setAlt] = useState(item.alt)
@@ -32,8 +32,7 @@ export default function PartnerBannerSlot({ item, label, onChange }) {
     setBusy(true)
     setError(null)
     try {
-      const result = await action()
-      onChange(result.banner)
+      onChange(await action())
     } catch (err) {
       setError(err.message)
     } finally {
