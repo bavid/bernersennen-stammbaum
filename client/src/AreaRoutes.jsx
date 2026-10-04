@@ -47,6 +47,15 @@ function RedirectTierUrl() {
   return <Navigate to={`/tier/${id}${hash}`} replace />
 }
 
+// Phase W, Schritt 2: "In der Nähe" ist für Haushalte der Reiter "Karte" in Entdecken - alte Links auf /umgebung landen
+// dort, Query und Hash bleiben.
+function NearbyRedirect() {
+  const { search, hash } = useLocation()
+  const params = new URLSearchParams(search)
+  params.set('bereich', 'karte')
+  return <Navigate to={`/entdecken?${params}${hash}`} replace />
+}
+
 function ToStart({ family }) {
   return <Navigate to={startRoute(family)} replace />
 }
@@ -208,7 +217,7 @@ function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/einstellungen" element={<SettingsRoute family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
       <Route path="/admin-schreiben" element={<ContactAdminPage />} />
       <Route path="/collage" element={atHome(<CollagePage family={family} />)} />
-      <Route path="/umgebung" element={<NearbyPage />} />
+      <Route path="/umgebung" element={<NearbyRedirect />} />
       <Route path="/entdecken" element={atHome(<DiscoverPage />)} />
       <Route path="*" element={<ToStart family={family} />} />
     </Routes>

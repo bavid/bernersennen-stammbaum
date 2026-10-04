@@ -452,3 +452,11 @@
     padding-top: 0;
   }
 }
+
+/* Phase W, Schritt 2: Reiter "Karte" (components/nearby/NearbySearch.jsx) - Ortswahl, Treffer und Leerzustand mit dem
+   Abstand der Seite (auch auf /umgebung der Partner). */
+.nearby-search {
+  display: grid;
+  gap: var(--page-gap, var(--space-6));
+  min-width: 0;
+}

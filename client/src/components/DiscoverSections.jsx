@@ -156,11 +156,6 @@ export function BegleiterSection({ data, limit, onShowAll }) {
           )}
         </>
       )}
-      <InternalLink to="/umgebung" className="discover-more-link">
-        Mehr in der Nähe
-        <span className="visually-hidden"> (Tierheime, Vermittlungsstellen und Hundeschulen)</span>
-        <span aria-hidden="true"> →</span>
-      </InternalLink>
     </DiscoverChapter>
   )
 }

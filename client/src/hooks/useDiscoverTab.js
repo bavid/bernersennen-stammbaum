@@ -8,11 +8,11 @@ import { ALL_TAB, TAB_PARAM, tabFromParam } from '../lib/discoverTabs.js'
 // Bereich der eigenen Karte (initialTab, lib/discoverTabs.js ownSectionTab).
 export default function useDiscoverTab(preview, initialTab = ALL_TAB) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [localTab, setLocalTab] = useState(() => tabFromParam(initialTab))
+  const [localTab, setLocalTab] = useState(() => tabFromParam(initialTab, { preview }))
   const tab = preview ? localTab : tabFromParam(searchParams.get(TAB_PARAM))
 
   function selectTab(key) {
-    const next = tabFromParam(key)
+    const next = tabFromParam(key, { preview })
     if (preview) {
       setLocalTab(next)
       return

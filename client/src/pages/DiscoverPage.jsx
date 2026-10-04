@@ -4,9 +4,10 @@ import Icon from '../components/Icon.jsx'
 import LocationPicker from '../components/LocationPicker.jsx'
 import DiscoverPanel from '../components/DiscoverPanel.jsx'
 import DiscoverTabs from '../components/DiscoverTabs.jsx'
+import NearbySearch from '../components/nearby/NearbySearch.jsx'
 import useDiscoverTab from '../hooks/useDiscoverTab.js'
 import { normalizeDiscover } from '../lib/discover.js'
-import { DISCOVER_TABS, sectionCounts } from '../lib/discoverTabs.js'
+import { MAP_TAB, discoverTabsFor, sectionCounts } from '../lib/discoverTabs.js'
 import { PreviewProvider } from '../lib/preview.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
@@ -19,8 +20,8 @@ const LOAD_ERROR = 'Entdecken konnte gerade nicht geladen werden. Bitte versucht
 const PLZ_HINT = 'Ohne Postleitzahl zeigen wir alles, nach Namen sortiert.'
 const PANEL_ID = 'entdecken-panel'
 
-// Gemerkte Werte teilt sich die Seite mit "In der Nähe" (/umgebung, NearbyPage) - dieselben Schlüssel,
-// damit eine dort eingegebene PLZ hier gleich gilt und umgekehrt. Nur PLZ und Radius, nie Koordinaten.
+// Gemerkte Werte teilt sich die Seite mit dem Reiter "Karte" (NearbySearch) und /umgebung der Partner - dieselben
+// Schlüssel, damit eine dort eingegebene PLZ hier gleich gilt und umgekehrt. Nur PLZ und Radius, nie Koordinaten.
 function storedPlz() {
   const value = readSetting('nearbyPlz', '')
   return typeof value === 'string' && PLZ_RE.test(value) ? value : ''
@@ -44,7 +45,9 @@ function friendlyError(err) {
 // von POST /api/discover. Mit PLZ sortiert der Server nach Entfernung, ohne liefert er alles nach Namen.
 // Phase V1: die Seite öffnet sofort mit Inhalten (gemerkte PLZ oder überall); die Ortswahl ist eine Zeile
 // ("In der Nähe von … · ändern"), die Eingabe erscheint erst auf Wunsch.
-// Seit Phase U in Reitern mit Zählern (DiscoverTabs, ?bereich=): "Alle" zeigt je Bereich die ersten drei.
+// Seit Phase U in Reitern mit Zählern (DiscoverTabs, ?bereich=): "Alle" zeigt je Bereich die ersten drei. Phase W
+// (Schritt 2): dazu der Reiter "Karte" (Tierheime und Hundeschulen in der Nähe über OpenStreetMap, früher /umgebung) mit
+// eigener Ortswahl samt Standort - ohne Zähler und nicht in der Kundensicht.
 // Kundensicht (Phase P1, CustomerViewPage): load ersetzt api.discover (gleiche Signatur { plz, radius },
 // z. B. api.partnerArea.previewDiscover), preview schaltet Links ab und zeigt die eigene Karte markiert; initialTab
 // öffnet dort gleich den Bereich der eigenen Karte statt "Alle".
@@ -127,6 +130,8 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
   }
 
   const counts = data ? sectionCounts(data) : null
+  const tabs = discoverTabsFor({ preview })
+  const onMap = tab === MAP_TAB
 
   return (
     <PreviewProvider value={preview}>
@@ -142,19 +147,21 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
           </div>
         </header>
 
-        <LocationPicker
-          plz={plz}
-          radius={radius}
-          onPlzChange={setPlz}
-          onRadiusChange={setRadius}
-          onSubmit={handleSubmit}
-          hint={PLZ_HINT}
-          collapsible
-          applied={applied}
-          allowEverywhere
-        />
+        {!onMap && (
+          <LocationPicker
+            plz={plz}
+            radius={radius}
+            onPlzChange={setPlz}
+            onRadiusChange={setRadius}
+            onSubmit={handleSubmit}
+            hint={PLZ_HINT}
+            collapsible
+            applied={applied}
+            allowEverywhere
+          />
+        )}
 
-        {error && (
+        {error && !onMap && (
           <div className="error-banner" role="alert">
             {error}
           </div>
@@ -167,21 +174,22 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
           </p>
         )}
 
-        <DiscoverTabs tabs={DISCOVER_TABS} current={tab} counts={counts} panelId={PANEL_ID} onSelect={selectTab} />
+        <DiscoverTabs tabs={tabs} current={tab} counts={counts} panelId={PANEL_ID} onSelect={selectTab} />
 
         <div
           id={PANEL_ID}
           role="tabpanel"
           aria-labelledby={`discover-tab-${tab}`}
           className="discover-chapters"
-          aria-busy={loading || undefined}
+          aria-busy={(loading && !onMap) || undefined}
         >
-          {loading && (
+          {onMap && <NearbySearch plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} />}
+          {loading && !onMap && (
             <p className="muted" role="status" aria-busy="true">
               Lädt …
             </p>
           )}
-          {data && <DiscoverPanel data={data} tab={tab} onShowAll={showAll} />}
+          {data && !onMap && <DiscoverPanel data={data} tab={tab} onShowAll={showAll} />}
         </div>
       </div>
     </PreviewProvider>

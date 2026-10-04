@@ -4,14 +4,15 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, listDogs, searchPlaces } = vi.hoisted(() => ({
+const { me, logout, listDogs, searchPlaces, discover } = vi.hoisted(() => ({
+  discover: vi.fn(),
   me: vi.fn(),
   logout: vi.fn(),
   listDogs: vi.fn(),
   searchPlaces: vi.fn()
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, listDogs, searchPlaces },
+  api: { me, logout, listDogs, searchPlaces, discover },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -48,6 +49,7 @@ afterEach(() => {
   logout.mockReset()
   listDogs.mockReset()
   searchPlaces.mockReset()
+  discover.mockReset()
   window.localStorage.clear()
   vi.restoreAllMocks()
 })
@@ -67,12 +69,16 @@ async function render(initialEntry) {
 }
 
 describe('Route /umgebung – "In der Nähe" innerhalb der angemeldeten App', () => {
-  test('zeigt NearbyPage, kein Reiter in der Hauptnavigation', async () => {
+  // Phase W, Schritt 2: für Haushalte ist "In der Nähe" der Reiter "Karte" in Entdecken - die Adresse leitet dorthin.
+  test('ein Haushalt landet auf Entdecken › Karte, die Query bleibt', async () => {
     me.mockResolvedValue(loggedInHome)
     listDogs.mockResolvedValue([])
-    await render('/umgebung')
+    discover.mockResolvedValue({})
+    searchPlaces.mockResolvedValue({ results: [], radius: 25, center: null, limited: false, attribution: [] })
+    await render('/umgebung?quelle=karte-alt')
 
-    expect(container.querySelector('h1')?.textContent).toBe('Tierheime & Hundeschulen')
+    expect(container.querySelector('main h1')?.textContent).toBe('Entdecken')
+    expect(container.querySelector('[role="tab"][aria-selected="true"]').textContent).toBe('Karte')
     expect([...container.querySelectorAll('.app-nav a')].some((a) => a.textContent.includes('Nähe'))).toBe(false)
   })
 

@@ -7,6 +7,9 @@ import { isClickUrl } from './discover.js'
 export const ALL_TAB = 'alle'
 export const TAB_PARAM = 'bereich'
 export const PREVIEW_LIMIT = 3
+// Phase W, Schritt 2: "Karte" - Tierheime und Hundeschulen in der Nähe über OpenStreetMap (früher die Seite /umgebung,
+// components/nearby/NearbySearch.jsx). Kein Bereich der Antwort von POST /api/discover, darum ohne Zähler.
+export const MAP_TAB = 'karte'
 
 export const DISCOVER_TABS = [
   { key: ALL_TAB, label: 'Alle' },
@@ -14,17 +17,24 @@ export const DISCOVER_TABS = [
   { key: 'salon', label: 'Salon & Betreuung' },
   { key: 'begleiter', label: 'Neue Begleiter' },
   { key: 'futter', label: 'Futter' },
-  { key: 'unterstuetzen', label: 'Unterstützen' }
+  { key: 'unterstuetzen', label: 'Unterstützen' },
+  { key: MAP_TAB, label: 'Karte' }
 ]
 
-export const SECTION_KEYS = DISCOVER_TABS.filter((tab) => tab.key !== ALL_TAB).map((tab) => tab.key)
+export const SECTION_KEYS = DISCOVER_TABS.filter((tab) => tab.key !== ALL_TAB && tab.key !== MAP_TAB).map((tab) => tab.key)
+
+// Die Kundensicht (preview) zeigt, wie Entdecken für die Kundschaft aussieht - ohne die Karte.
+export function discoverTabsFor({ preview = false } = {}) {
+  return preview ? DISCOVER_TABS.filter((tab) => tab.key !== MAP_TAB) : DISCOVER_TABS
+}
 
 export function tabLabel(key) {
   return DISCOVER_TABS.find((tab) => tab.key === key)?.label || key
 }
 
-// Unbekannte oder fehlende Werte in der Adresse landen bei "Alle".
-export function tabFromParam(value) {
+// Unbekannte oder fehlende Werte in der Adresse landen bei "Alle" - die Karte nur außerhalb der Kundensicht.
+export function tabFromParam(value, { preview = false } = {}) {
+  if (value === MAP_TAB) return preview ? ALL_TAB : MAP_TAB
   return SECTION_KEYS.includes(value) ? value : ALL_TAB
 }
 

@@ -1,19 +1,28 @@
 import { describe, expect, test } from 'vitest'
 import { normalizeDiscover } from './discover.js'
-import { ALL_TAB, DISCOVER_TABS, countItems, isSectionEmpty, limitGroups, ownSectionTab, sectionCounts, tabFromParam, tabLabel } from './discoverTabs.js'
+import { ALL_TAB, DISCOVER_TABS, MAP_TAB, SECTION_KEYS, discoverTabsFor, countItems, isSectionEmpty, limitGroups, ownSectionTab, sectionCounts, tabFromParam, tabLabel } from './discoverTabs.js'
 
 const item = (id, extra = {}) => ({ id, kind: 'partner', ...extra })
 
 describe('DISCOVER_TABS', () => {
-  test('Alle | Hundeschulen | Salon & Betreuung | Neue Begleiter | Futter | Unterstützen', () => {
-    expect(DISCOVER_TABS.map((tab) => tab.label)).toEqual(['Alle', 'Hundeschulen', 'Salon & Betreuung', 'Neue Begleiter', 'Futter', 'Unterstützen'])
+  test('Alle | Hundeschulen | Salon & Betreuung | Neue Begleiter | Futter | Unterstützen | Karte (Phase W, Schritt 2)', () => {
+    expect(DISCOVER_TABS.map((tab) => tab.label)).toEqual(['Alle', 'Hundeschulen', 'Salon & Betreuung', 'Neue Begleiter', 'Futter', 'Unterstützen', 'Karte'])
     expect(tabLabel('begleiter')).toBe('Neue Begleiter')
+    // Die Karte ist kein Bereich der Antwort von POST /api/discover - sie zählt nicht mit.
+    expect(SECTION_KEYS).not.toContain(MAP_TAB)
+  })
+
+  test('die Kundensicht (Vorschau) hat keine Karte', () => {
+    expect(discoverTabsFor({ preview: true }).map((tab) => tab.key)).not.toContain(MAP_TAB)
+    expect(discoverTabsFor({ preview: false }).map((tab) => tab.key)).toContain(MAP_TAB)
+    expect(tabFromParam(MAP_TAB, { preview: true })).toBe(ALL_TAB)
   })
 })
 
 describe('tabFromParam', () => {
   test('bekannte Bereiche bleiben, alles andere wird "Alle"', () => {
     expect(tabFromParam('futter')).toBe('futter')
+    expect(tabFromParam('karte')).toBe(MAP_TAB)
     expect(tabFromParam('alle')).toBe(ALL_TAB)
     expect(tabFromParam(null)).toBe(ALL_TAB)
     expect(tabFromParam('<script>')).toBe(ALL_TAB)

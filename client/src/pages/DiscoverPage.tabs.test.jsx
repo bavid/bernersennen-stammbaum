@@ -4,8 +4,8 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { discover } = vi.hoisted(() => ({ discover: vi.fn() }))
-vi.mock('../api', () => ({ api: { discover } }))
+const { discover, searchPlaces } = vi.hoisted(() => ({ discover: vi.fn(), searchPlaces: vi.fn() }))
+vi.mock('../api', () => ({ api: { discover, searchPlaces } }))
 
 import DiscoverPage from './DiscoverPage.jsx'
 
@@ -36,6 +36,7 @@ afterEach(() => {
     container = null
   }
   discover.mockReset()
+  searchPlaces.mockReset()
   window.localStorage.clear()
 })
 
@@ -116,18 +117,19 @@ async function press(key) {
 }
 
 describe('DiscoverPage – Reiter (Phase U)', () => {
-  test('eine echte Tabliste mit sechs Reitern und Zählern; "Alle" ist gewählt und steuert das Panel', async () => {
+  test('eine echte Tabliste mit sieben Reitern und Zählern (die Karte ohne); "Alle" ist gewählt und steuert das Panel', async () => {
     discover.mockResolvedValue(response)
     await render()
 
     expect(container.querySelector('[role="tablist"]').getAttribute('aria-label')).toBe('Bereiche')
-    expect(tabs().map((el) => [el.firstChild.textContent, el.querySelector('.tab-bar-count').textContent])).toEqual([
+    expect(tabs().map((el) => [el.firstChild.textContent, el.querySelector('.tab-bar-count')?.textContent ?? null])).toEqual([
       ['Alle', '7'],
       ['Hundeschulen', '5'],
       ['Salon & Betreuung', '0'],
       ['Neue Begleiter', '0'],
       ['Futter', '2'],
-      ['Unterstützen', '0']
+      ['Unterstützen', '0'],
+      ['Karte', null]
     ])
     expect(tab('Alle').getAttribute('aria-selected')).toBe('true')
     expect(tab('Alle').tabIndex).toBe(0)
@@ -193,11 +195,11 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
     expect(currentSearch).toBe('?bereich=hundeschulen')
 
     await press('End')
-    expect(document.activeElement).toBe(tab('Unterstützen'))
+    expect(document.activeElement).toBe(tab('Karte'))
     await press('ArrowRight')
     expect(document.activeElement).toBe(tab('Alle'))
     await press('ArrowLeft')
-    expect(document.activeElement).toBe(tab('Unterstützen'))
+    expect(document.activeElement).toBe(tab('Karte'))
     await press('Home')
     expect(tab('Alle').getAttribute('aria-selected')).toBe('true')
   })
@@ -248,5 +250,30 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
     await render()
     expect(tab('Hundeschulen').textContent).toBe('Hundeschulen5 (5 Einträge)')
     expect(tab('Hundeschulen').querySelector('.tab-bar-count').getAttribute('aria-hidden')).toBe('true')
+  })
+})
+
+// Phase W, Schritt 2: "Karte" statt der eigenen Seite /umgebung - Tierheime und Hundeschulen in der Nähe (OpenStreetMap).
+describe('DiscoverPage – Reiter "Karte"', () => {
+  const places = { results: [], radius: 25, center: { ort: 'Hamburg' }, limited: false, attribution: ['© OpenStreetMap-Mitwirkende'] }
+
+  test('?bereich=karte: die Ortswahl mit Standort und die Suche über OpenStreetMap mit der gemerkten PLZ', async () => {
+    window.localStorage.setItem('chronik.nearbyPlz', JSON.stringify('20095'))
+    discover.mockResolvedValue(response)
+    searchPlaces.mockResolvedValue(places)
+    await render({ path: '/entdecken?bereich=karte' })
+
+    expect(tab('Karte').getAttribute('aria-selected')).toBe('true')
+    expect(searchPlaces).toHaveBeenCalledWith({ plz: '20095' }, 25)
+    // Nur eine Ortswahl - die der Karte im Panel (zugeklappt auf die gemerkte PLZ)
+    expect(container.querySelectorAll('.location-summary')).toHaveLength(1)
+    expect(container.querySelector('[role="tabpanel"] .nearby-search .location-summary')).not.toBeNull()
+    expect(section('Hundeschulen')).toBeUndefined()
+  })
+
+  test('die Kundensicht (Vorschau) hat keine Karte', async () => {
+    discover.mockResolvedValue(response)
+    await render({ props: { preview: true, load: discover } })
+    expect(tab('Karte')).toBeUndefined()
   })
 })

@@ -260,7 +260,7 @@ describe('DiscoverPage – Kopf und Laden', () => {
   test('eine Antwort ohne Abschnitte bringt die Seite nicht zum Absturz', async () => {
     discover.mockResolvedValue({})
     await render()
-    expect(container.querySelectorAll('[role="tab"]')).toHaveLength(6)
+    expect(container.querySelectorAll('[role="tab"]')).toHaveLength(7)
     expect(container.querySelector('[role="tabpanel"]').textContent).toContain('Hier ist gerade noch nichts')
   })
 })
@@ -282,14 +282,15 @@ describe('DiscoverPage – Kapitel', () => {
     expect(el.querySelector('.promotion-card h3').textContent).toBe('Welpenkurs im Herbst')
   })
 
-  test('Begleiter: Tierheim, Tierkarte → /t/:slug, Hinweis ohne Züchter und Link "Mehr in der Nähe"', async () => {
+  // Phase W, Schritt 2: kein Link "Mehr in der Nähe" mehr - dafür der Reiter "Karte".
+  test('Begleiter: Tierheim, Tierkarte → /t/:slug, Hinweis ohne Züchter, kein Link auf /umgebung', async () => {
     discover.mockResolvedValue(fullResponse)
     await render('/entdecken?bereich=begleiter')
     const el = section('Neue Begleiter')
     expect(el.textContent).toContain('Tierheim Birkenweg')
     expect(linkIn(el, 'Fips').getAttribute('href')).toBe('/t/fips-ab12cd')
     expect(el.textContent).toContain('Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.')
-    expect(linkIn(el, 'Mehr in der Nähe').getAttribute('href')).toBe('/umgebung')
+    expect(el.querySelector('a[href="/umgebung"]')).toBeNull()
   })
 
   test('Futter: Anzeigen-Links tragen sponsored, Empfehlungen nicht', async () => {
@@ -325,7 +326,7 @@ describe('DiscoverPage – Kapitel', () => {
 })
 
 describe('DiscoverPage – Empfehlungen bei Begleiter und Unterstützen', () => {
-  test('Begleiter: Empfehlungen als PromotionCard nach Tierheim und Tieren, vor "Mehr in der Nähe"', async () => {
+  test('Begleiter: Empfehlungen als PromotionCard nach Tierheim und Tieren', async () => {
     discover.mockResolvedValue(fullResponse)
     await render('/entdecken?bereich=begleiter')
     const el = section('Neue Begleiter')
@@ -335,7 +336,6 @@ describe('DiscoverPage – Empfehlungen bei Begleiter und Unterstützen', () => 
     const patenschaft = cardIn(el, 'Patenschaft für Senioren-Hunde')
     expect(isBefore(linkIn(el, 'Fips'), patenschaft)).toBe(true)
     expect(isBefore(el.querySelector('.partner-card'), patenschaft)).toBe(true)
-    expect(isBefore(cardIn(el, 'Leinenwerk Starterset'), linkIn(el, 'Mehr in der Nähe'))).toBe(true)
   })
 
   test('Begleiter: Kennzeichnung wie bei Futter - Anzeige mit sponsored, Partner ohne', async () => {
@@ -453,7 +453,6 @@ describe('DiscoverPage – Leerzustände', () => {
     await openTab('Neue Begleiter')
     const begleiter = section('Neue Begleiter')
     expect(begleiter.textContent).toContain('Noch keine Tierheime oder Vermittlungsstellen in der Nähe – schaut in die Partnerliste.')
-    expect(linkIn(begleiter, 'Mehr in der Nähe').getAttribute('href')).toBe('/umgebung')
 
     await openTab('Futter')
     expect(section('Futter').textContent).toContain('Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.')
@@ -461,13 +460,12 @@ describe('DiscoverPage – Leerzustände', () => {
     expect(section('Unterstützen').textContent).toContain('Noch keine Spendenmöglichkeiten hinterlegt – schaut in die Partnerliste.')
   })
 
-  test('Begleiter nur mit Empfehlungen: kein Leerzustand, die Empfehlungen und "Mehr in der Nähe" bleiben', async () => {
+  test('Begleiter nur mit Empfehlungen: kein Leerzustand, die Empfehlungen bleiben', async () => {
     discover.mockResolvedValue({ ...emptyResponse, begleiter: { partner: [], tiere: [], promotions: begleiterPromotions } })
     await render()
     const el = section('Neue Begleiter')
     expect(el.textContent).not.toContain('Noch keine Tierheime oder Vermittlungsstellen')
     expect(cardIn(el, 'Patenschaft für Senioren-Hunde')).toBeDefined()
-    expect(linkIn(el, 'Mehr in der Nähe').getAttribute('href')).toBe('/umgebung')
   })
 
   test('Unterstützen nur mit Empfehlungen: kein Leerzustand, die Empfehlungen werden gezeigt', async () => {
