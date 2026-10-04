@@ -131,6 +131,15 @@ describe('AreaGate', () => {
     expect(toast).toHaveBeenCalledTimes(1)
   })
 
+  test('scheitert schon der Weg nach Hause: nur Hinweis und Meldung, kein Umweg über /familien', async () => {
+    view.mockRejectedValue(new Error('Keine Verbindung zum Server.'))
+    await render(inGroup, 'home')
+    expect(view).toHaveBeenCalledTimes(1)
+    expect(toast).toHaveBeenCalledTimes(1)
+    expect(where()).toBe('/x')
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Das hat nicht geklappt – bitte lade die Seite neu.')
+  })
+
   test('eine ungültige Id führt ohne Anfrage zu /familien', async () => {
     await render(atHome, 'abc')
     expect(view).not.toHaveBeenCalled()

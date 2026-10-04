@@ -43,7 +43,7 @@ export default function OverviewPage({ family, onFamilyChange, onInvite }) {
   const [searchParams] = useSearchParams()
   const events = useBreedingEvents(familiesView || !theme.littersInNav)
   const friends = useFriendHomes(familiesView && isOwnHome(family))
-  const openArea = useOpenArea(onFamilyChange)
+  const openArea = useOpenArea(family)
   // Familienbande 2: "Stammbaum & Nachwuchs" gibt es, sobald es einen Baum oder Geschwister zu zeigen gibt.
   const treeAvailable = useMemo(
     () => familiesView && (hasFamilyTree({ dogs: dogs || [], allDogs, events: events || [] }) || hasSiblingLitters(dogs, events)),

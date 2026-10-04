@@ -1,9 +1,11 @@
 import { useId, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { HOME_LABEL } from '../lib/areas.js'
+import { HOME_LABEL, startRoute } from '../lib/areas.js'
 import { roleLabel } from '../lib/roles.js'
 import { visitLabel } from '../lib/visits.js'
-import useOpenArea from '../hooks/useOpenArea.js'
+import { useToast } from './Toast.jsx'
 import useMenu from '../hooks/useMenu.js'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
@@ -49,9 +51,21 @@ function SwitcherGroup({ id, title, children }) {
 // die der Haushalt besucht (family.besuche, nur ansehen); Überschriften nur für Gruppen mit Einträgen. Abgesetzt
 // darunter der Einstieg zum Beitreten/Gründen. "Mitglieder & Rollen" steht im Kopf der Familienbande, nicht hier.
 // family ist das volle "me"-Objekt, onChange bekommt das neue.
+// Phase W: nicht mehr eingebunden (das Konto-Menü und das AreaGate ersetzen ihn), fällt in Schritt 5 weg - bis dahin mit
+// seinem bisherigen eigenen Wechsel per api.view.
 export default function ContextSwitcher({ family, onChange }) {
   const { words } = useTheme()
-  const openArea = useOpenArea(onChange)
+  const navigate = useNavigate()
+  const toast = useToast()
+  async function openArea(id) {
+    try {
+      const me = await api.view(id)
+      onChange(me)
+      navigate(startRoute(me))
+    } catch (err) {
+      toast(err.message)
+    }
+  }
   const { open, setOpen, toggle, close: closeMenu, rootRef, triggerRef, firstItemRef, onMenuKeyDown } = useMenu()
   const [joinOpen, setJoinOpen] = useState(false)
   const headingId = useId()

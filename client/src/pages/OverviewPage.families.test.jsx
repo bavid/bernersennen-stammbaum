@@ -173,38 +173,23 @@ describe('Familienbande im Standard-Auftritt (Familienbande 2): ein Raster statt
     expect(areaButton('Zuhause Möwenweg').textContent).toBe('Zuhause Möwenweg besuchen')
   })
 
-  test('ein Klick auf die Familie in der Zeile wechselt dorthin (POST /api/view)', async () => {
+  // Phase W: die Zeile navigiert nur zur Gruppenseite - den Wechsel (POST /api/view) macht dort das AreaGate.
+  test('ein Klick auf die Familie in der Zeile führt zu ihrer Gruppenseite', async () => {
     const onFamilyChange = vi.fn()
-    const me = { ...group }
-    api.view.mockResolvedValue(me)
     await render({ onFamilyChange })
 
     await click(areaButton('Familie Sonnenhang'))
 
-    expect(api.view).toHaveBeenCalledWith(7)
-    expect(onFamilyChange).toHaveBeenCalledWith(me)
-    // Phase W: die Startseite einer Familie ist ihre Gruppenseite
     expect(location.pathname).toBe('/familien/7')
-  })
-
-  test('schlägt der Wechsel fehl, bleibt man auf der Seite', async () => {
-    const onFamilyChange = vi.fn()
-    api.view.mockRejectedValue(new Error('Diesen Bereich gibt es nicht'))
-    await render({ onFamilyChange })
-    await click(areaButton('Familie Sonnenhang'))
+    expect(api.view).not.toHaveBeenCalled()
     expect(onFamilyChange).not.toHaveBeenCalled()
-    expect(location.pathname).toBe('/familienbande')
   })
 
-  test('ein Klick auf das befreundete Zuhause wechselt zu Besuch', async () => {
-    const onFamilyChange = vi.fn()
-    const me = { ...homeArea, id: 4, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast' }
-    api.view.mockResolvedValue(me)
-    await render({ onFamilyChange })
+  test('ein Klick auf das befreundete Zuhause führt zu dessen Gruppenseite', async () => {
+    await render({ onFamilyChange: vi.fn() })
     await click(areaButton('Zuhause Möwenweg'))
-    expect(api.view).toHaveBeenCalledWith(4)
-    expect(onFamilyChange).toHaveBeenCalledWith(me)
     expect(location.pathname).toBe('/familien/4')
+    expect(api.view).not.toHaveBeenCalled()
   })
 
   test('Zuhause, die nur bei euch zu Gast sind, stehen ohne Link da; Familien ohne geteilte Tiere als "Mitglied in"', async () => {

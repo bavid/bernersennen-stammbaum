@@ -3,7 +3,7 @@ import Modal from './Modal.jsx'
 import FamilySettings from './FamilySettings.jsx'
 import { useToast } from './Toast.jsx'
 
-// "Familie verwalten" als Dialog (Phase W: gemeinsam für Gruppenseite und Familienbande): Name, Aussehen, Mitglieder,
+// "Familie verwalten" als Dialog (Phase W: gemeinsam für Gruppenseite und OverviewPage): Name, Aussehen, Mitglieder,
 // Verlassen. Nach dem Umbenennen bzw. neuen Aussehen zieht "me" mit (onFamilyChange) - ist der Bereich das eigene
 // Zuhause, auch dessen Name in me.home.
 export default function FamilySettingsModal({ open, family, onFamilyChange, onClose }) {

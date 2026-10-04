@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
@@ -36,8 +36,12 @@ export default function LeaveFamilySection({ family, onFamilyChange, onLeft }) {
     try {
       const me = await api.leaveFamily(family.id)
       onLeft?.()
-      onFamilyChange(me)
-      navigate(startRoute(me))
+      // Phase W: neues "me" und neue Adresse in derselben Transition - sonst sähe das AreaGate der Gruppenseite kurz das
+      // Zuhause mit der alten Adresse und wechselte vergeblich zurück in die verlassene Familie.
+      startTransition(() => {
+        onFamilyChange(me)
+        navigate(startRoute(me))
+      })
       toast(`Du hast „${family.name}“ verlassen. Deine geteilten Tiere sind dort nicht mehr sichtbar.`)
     } catch (err) {
       setError(err.message)

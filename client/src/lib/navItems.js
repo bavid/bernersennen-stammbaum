@@ -3,8 +3,9 @@ import { isHouseholdIdentity } from './areas.js'
 
 // Hauptnavigation je Bereichsart (family.art) - AppHeader rendert sie, am Handy als untere Leiste.
 
-// Mehr als fünf Einträge passen am Handy (375 px) nicht mehr in die untere Leiste - bei genau so vielen
-// schaltet App.jsx die Leiste auf die kompakte Variante (layout.css .app-nav-dense).
+// Mehr als fünf Plätze passen am Handy (375 px) nicht in die untere Leiste: Haushalte haben vier Punkte plus "Menü",
+// Tierheime und Partner fünf Punkte - bei genau so vielen Punkten schaltet App.jsx die Leiste auf die kompakte Variante
+// (layout.css .app-nav-dense).
 export const MAX_NAV_ITEMS = 5
 
 // Ab so vielen ungelesenen Nachrichten zeigt das Badge nur noch "99+" (die Leiste bleibt schmal).

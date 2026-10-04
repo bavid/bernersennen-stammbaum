@@ -97,12 +97,12 @@ function PartnerAreaRoutes({ family, onFamilyChange }) {
 }
 
 // Tierheime (Phase T/P, unverändert durch Phase W): "Unsere Tiere" als Start, Pinnwand, Collage, Profil und Nachrichten.
-function ShelterRoutes({ family, onFamilyChange }) {
+function ShelterRoutes({ family, onFamilyChange, onInvite }) {
   return (
     <Routes>
       <Route path="/tiere" element={<ShelterAnimalsPage family={family} />} />
-      <Route path="/stammbaum" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} />} />
-      <Route path="/familienbande" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} />} />
+      <Route path="/stammbaum" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
+      <Route path="/familienbande" element={<OverviewPage family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />} />
       <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/hund/:id" element={<RedirectTierUrl />} />
       <Route path="/pinnwand" element={<PinboardPage family={family} />} />
@@ -205,7 +205,7 @@ function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
 // Routen des angemeldeten Bereichs (App.jsx, unter <main key={family.id}>) je Bereichsart.
 export default function AreaRoutes({ family, onFamilyChange, onInvite }) {
   if (family.art === 'partner') return <PartnerAreaRoutes family={family} onFamilyChange={onFamilyChange} />
-  if (family.art === 'tierheim') return <ShelterRoutes family={family} onFamilyChange={onFamilyChange} />
+  if (family.art === 'tierheim') return <ShelterRoutes family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />
   if (family.zuBesuch) return <VisitRoutes family={family} onFamilyChange={onFamilyChange} />
   return <HouseholdRoutes family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />
 }

@@ -141,6 +141,8 @@ describe('AccountMenu (Phase W)', () => {
     act(() => items().find((item) => item.textContent === 'Einladen').click())
     expect(onInvite).toHaveBeenCalledTimes(1)
     expect(container.querySelector('[role="menu"]')).toBeNull()
+    // Der Fokus fällt nicht auf <body>, sondern zurück an den Knopf des Menüs
+    expect(document.activeElement).toBe(trigger())
 
     act(() => trigger().click())
     act(() => items().find((item) => item.textContent === 'Abmelden').click())

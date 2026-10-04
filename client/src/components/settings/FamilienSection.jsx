@@ -208,7 +208,7 @@ export default function FamilienSection({ family, onFamilyChange }) {
   const { words } = useTheme()
   const readOnly = useIsDemo()
   const toast = useToast()
-  const openArea = useOpenArea(onFamilyChange)
+  const openArea = useOpenArea(family)
   const ownHome = isOwnHome(family)
   const memberships = family.memberships || []
   const animals = useOwnAnimals(ownHome, family.id)
@@ -229,7 +229,7 @@ export default function FamilienSection({ family, onFamilyChange }) {
         memberships={memberships}
         shownCount={shownCount}
         readOnly={readOnly}
-        onOpen={(item) => openArea(item.id, item.name)}
+        onOpen={(item) => openArea(item.id)}
         onLeave={handleLeave}
         onJoin={() => setJoinOpen(true)}
       />

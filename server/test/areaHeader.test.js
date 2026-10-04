@@ -63,6 +63,20 @@ test('X-Bereich: Abweichung vom aktiven Bereich -> 409, nie mehr Zugriff', async
     assert.equal(plain.status, 404)
   })
 
+  await t.test('befreite Pfade auch mit Schrägstrich am Ende, anderer Schreibweise oder Query', async () => {
+    for (const urlPath of ['/api/me/', '/api/ME', '/api/me?frisch=1']) {
+      assert.equal((await send(base, urlPath, { cookie: home.cookie, bereich: groupId })).status, 200, urlPath)
+    }
+  })
+
+  await t.test('doppelter Header zählt als Abweichung', async () => {
+    const headers = new Headers({ Cookie: home.cookie })
+    headers.append('X-Bereich', String(homeId))
+    headers.append('X-Bereich', String(homeId))
+    const res = await fetch(`${base}/api/dogs`, { headers })
+    assert.equal(res.status, 409)
+  })
+
   await t.test('/me, /view und /logout prüfen den Header nicht', async () => {
     const me = await send(base, '/api/me', { cookie: home.cookie, bereich: groupId })
     assert.equal(me.status, 200)

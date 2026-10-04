@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
@@ -17,10 +17,11 @@ import OwnMembershipSection from '../components/members/OwnMembershipSection.jsx
 import DissolveFamilyDialog from '../components/members/DissolveFamilyDialog.jsx'
 
 
-// Mitglieder & Rollen einer Familie (/mitglieder, Phase R Task 4; nur für art 'rudel', siehe AreaRoutes).
+// Mitglieder & Rollen einer Familie (Phase R Task 4): für Haushalte der Reiter "Mitglieder" der Gruppenseite (embedded),
+// beim klassischen Familien-Login die Seite /mitglieder (AreaRoutes).
 // Die Daten kommen aus GET /api/family/members; jede Änderung antwortet mit demselben Aufbau (oder 204,
 // dann wird neu geladen). ichBin aus der Antwort ist die eigene Rolle - ändert sie sich (Leitung
-// übergeben, sich selbst herabstufen), zieht "me" über onFamilyChange mit, damit Kopf, Bereichswechsler
+// übergeben, sich selbst herabstufen), zieht "me" über onFamilyChange mit, damit Kopf, Menü
 // und die übrigen Seiten die neue Rolle kennen. In der Demo ist alles sichtbar, Schreiben gesperrt.
 // embedded (Phase W): als Reiter "Mitglieder" der Gruppenseite - ohne eigenen Seitenkopf.
 export default function MembersPage({ family, onFamilyChange, embedded = false }) {
@@ -104,8 +105,11 @@ export default function MembersPage({ family, onFamilyChange, embedded = false }
       window.location.assign('/')
       return
     }
-    onFamilyChange?.(me)
-    navigate(startRoute(me))
+    // Phase W: wie beim Verlassen in einer Transition - kein vergeblicher Wechsel zurück durch das AreaGate.
+    startTransition(() => {
+      onFamilyChange?.(me)
+      navigate(startRoute(me))
+    })
     toast(`„${family.name}“ wurde aufgelöst.`)
   }
 

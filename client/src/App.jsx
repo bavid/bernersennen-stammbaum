@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
@@ -78,10 +78,6 @@ const PARTNER_SLUG_RE = /^\/p\/([^/]+)\/?$/
 // /t/<slug> – öffentlicher Steckbrief eines Tiers (Phase T Task 5), derselbe Aufbau wie PARTNER_SLUG_RE.
 const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
 
-// Hauptnavigation je Bereichsart (lib/navItems.js navItemsFor), Routen des Bereichs in AreaRoutes.jsx.
-// Bei der Höchstzahl von Einträgen (MAX_NAV_ITEMS) wird die Leiste kompakter (layout.css .app-nav-dense),
-// damit sie am Handy bei 375 px und am schmalen Desktop ohne Überlappung passt.
-
 // Karte auf /v#CODE mit laufender Sitzung (Phase T Task 5): normalerweise nur "Abmelden und Gutschein
 // einlösen" - trägt der Code aber einen offenen Übergabe-Gutschein UND die Sitzung ist das eigene
 // Zuhause selbst (nicht ein beigetretenes Rudel, nicht ein klassischer Rudel-Login), bietet sie
@@ -103,13 +99,13 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
   // final-review Phase T Finding 10: eine Demo-Sitzung darf nichts übernehmen (schreibgeschützt wie
   // jede andere Demo-Aktion, api.claimVoucher würde ohnehin mit 403 ablehnen) - canClaim schließt sie
   // deshalb schon hier aus, statt erst den Fehler vom Server abzuwarten.
-  const isHouseholdIdentity = family.home?.art === 'zuhause'
+  const hasHouseholdHome = family.home?.art === 'zuhause'
   const canClaim = !isReadOnly(family) && family.art === 'zuhause' && Boolean(family.home) && family.id === family.home.id
   // Ein Haushalt, der gerade ein Rudel ansieht (Gruppenseite), kann von hier aus nicht übernehmen -
   // canClaim ist dann false, ohne dass wir wüssten, ob der Code überhaupt einen offenen Übergabe-
   // Gutschein trägt. "Abmelden und neu einlösen" wäre hier die falsche Empfehlung (verschenkt die
   // Übernahme in die bestehende Chronik) - stattdessen der Hinweis, zuerst zurückzuwechseln.
-  const viewingGroupAsHousehold = isHouseholdIdentity && family.id !== family.home.id
+  const viewingGroupAsHousehold = hasHouseholdHome && family.id !== family.home.id
 
   useEffect(() => {
     let cancelled = false
@@ -213,7 +209,8 @@ function PartnerHeaderActions({ onLogout }) {
 // Phase W (Ruhige Hülle): Haushalte und Familien bekommen vier feste Punkte (lib/navItems.js) und rechts das Konto-Menü
 // (AccountMenu: Einstellungen, Einladen, Fotocollage, Hilfe & Kontakt, Abmelden) - am Handy als fünfter Platz "Menü" in
 // der unteren Leiste. Kein Bereichswechsler mehr: das AreaGate der Routen wechselt beim Navigieren. Tierheime und
-// Partner behalten ihren Kopf. onInvite: den Einladen-Dialog öffnen (App).
+// Partner behalten ihren Kopf (bei fünf Punkten die kompakte Leiste, layout.css .app-nav-dense). onInvite: den
+// Einladen-Dialog öffnen (App).
 export function AppHeader({ family, onLogout, onInvite = () => {} }) {
   const { pathname } = useLocation()
   const { theme } = useTheme()
@@ -322,9 +319,10 @@ export default function App() {
     return hash.slice(1)
   })
 
-  // Phase W: der angezeigte Bereich geht mit jeder Anfrage mit (api.js, Header X-Bereich) - schon beim Rendern gesetzt,
-  // denn die Effekte der Seiten (ihre ersten Anfragen) laufen vor denen von App.
-  setActiveArea(family ? family.id : null)
+  // Phase W: der angezeigte Bereich geht mit jeder Anfrage mit (api.js, Header X-Bereich). Als Layout-Effekt: er läuft
+  // nach dem Festschreiben (ein verworfenes Rendern setzt nichts), aber vor den Effekten der Seiten mit ihren ersten Anfragen.
+  const activeId = family ? family.id : null
+  useLayoutEffect(() => setActiveArea(activeId), [activeId])
 
   // Phase W: hat ein anderer Tab die Sitzung in einen anderen Bereich gewechselt (409 BEREICH), /me neu laden - einmal,
   // auch wenn mehrere Anfragen gleichzeitig scheitern. Das AreaGate der Seite schaltet danach zurück, main mountet neu.
@@ -606,7 +604,7 @@ export default function App() {
             )
           )}
           {/* Phase V2: zu Besuch in einem anderen Zuhause - nur ansehen und kommentieren, mit Weg zurück. */}
-          {family.zuBesuch && <VisitBanner family={family} onFamilyChange={setFamily} />}
+          {family.zuBesuch && <VisitBanner family={family} />}
           <AppHeader family={family} onLogout={handleLogout} onInvite={() => setInviteOpen(true)} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
           {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}

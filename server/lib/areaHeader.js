@@ -29,7 +29,8 @@ function isAreaMismatch(req, activeId) {
   const raw = req.get(AREA_HEADER)
   if (raw === undefined || raw === '') return false
   if (EXEMPT_PATHS.has(requestPath(req))) return false
-  return !(AREA_ID_RE.test(raw) && Number(raw) === activeId)
+  // Als Text vergleichen: ein überlanger Wert verlöre als Zahl Stellen und passte dann womöglich doch.
+  return !(AREA_ID_RE.test(raw) && raw === String(activeId))
 }
 
 function sendAreaMismatch(res) {

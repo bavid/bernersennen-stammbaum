@@ -224,8 +224,8 @@ describe('SettingsPage – Darstellung', () => {
 })
 
 describe('SettingsPage – Familien', () => {
-  test('Familien mit Rolle und Zahl der eigenen Tiere dort; Öffnen wechselt den Bereich', async () => {
-    api.view.mockResolvedValue({ ...inGroup })
+  // Phase W: "Öffnen" führt zur Gruppenseite - den Wechsel macht dort das AreaGate.
+  test('Familien mit Rolle und Zahl der eigenen Tiere dort; Öffnen führt zur Gruppenseite', async () => {
     await render(atHome, '/einstellungen?bereich=familien')
     await flush()
     const rows = [...container.querySelectorAll('.settings-list')[0].querySelectorAll('.settings-row')]
@@ -234,8 +234,8 @@ describe('SettingsPage – Familien', () => {
     expect(rows[1].querySelector('.settings-row-sub').textContent).toBe('Gast · zeigt keines eurer Tiere')
 
     await act(async () => rows[0].querySelector('button').click())
-    expect(api.view).toHaveBeenCalledWith(3)
-    expect(latest.id).toBe(3)
+    expect(location.pathname).toBe('/familien/3')
+    expect(api.view).not.toHaveBeenCalled()
   })
 
   test('Verlassen mit zweitem Klick; die einzige Leitung bekommt die Meldung des Servers an der Zeile', async () => {

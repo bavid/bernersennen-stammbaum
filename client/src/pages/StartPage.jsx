@@ -28,7 +28,7 @@ function useStartData() {
         if (!cancelled) setData({ dogs, entries, notes, error: null })
       })
       .catch((err) => {
-        if (!cancelled) setData((current) => ({ ...current, entries: current.entries || [], error: err.message }))
+        if (!cancelled) setData((current) => ({ ...current, error: err.message }))
       })
     return () => {
       cancelled = true
@@ -38,7 +38,8 @@ function useStartData() {
   return [data, addEntry]
 }
 
-function News({ entries }) {
+// entries null: lädt noch bzw. konnte nicht geladen werden (dann steht der Fehler darüber) - kein Leerzustand.
+function News({ entries, loading }) {
   const { theme } = useTheme()
   const [showAll, setShowAll] = useState(false)
   const firstMore = useRef(null)
@@ -51,7 +52,7 @@ function News({ entries }) {
   }, [showAll])
 
   return (
-    <section className="start-news" aria-labelledby="start-news-title" aria-busy={entries === null || undefined}>
+    <section className="start-news" aria-labelledby="start-news-title" aria-busy={loading || undefined}>
       <h2 id="start-news-title" className="start-section-title">
         Neuigkeiten
       </h2>
@@ -103,7 +104,7 @@ export default function StartPage({ family, onFamilyChange }) {
           {canWrite && dogs && <StartComposer family={family} dogs={dogs} onCreated={addEntry} />}
           <ForYou family={family} onFamilyChange={onFamilyChange} onOpenPhoto={setPhoto} />
           <StartSoon termin={termin} anniversary={anniversary} notesCount={atHome ? notes.length : 0} />
-          <News entries={entries} />
+          <News entries={entries} loading={entries === null && !error} />
         </div>
         {atHome && (
           <div className="start-side">

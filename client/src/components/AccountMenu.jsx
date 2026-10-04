@@ -46,14 +46,20 @@ function MenuEntry({ item, itemRef, pathname, onSelect }) {
 // Abmelden und klein Impressum · Datenschutz (lib/accountMenu.js). Tastatur nach dem Muster "Menu Button"
 // (hooks/useMenu.js). Am Handy steht dasselbe als Blatt hinter "Menü" in der unteren Leiste (AccountSheet).
 export default function AccountMenu({ family, onInvite, onLogout }) {
-  const { open, setOpen, toggle, rootRef, triggerRef, firstItemRef, onMenuKeyDown, onTriggerKeyDown } = useMenu()
+  const { open, setOpen, toggle, close, rootRef, triggerRef, firstItemRef, onMenuKeyDown, onTriggerKeyDown } = useMenu()
   const { pathname } = useLocation()
   const menuId = useId()
   const name = accountName(family)
   const items = accountMenuItems(family)
 
+  // Knöpfe schließen über close(): der Fokus geht zurück an den Knopf des Menüs (der Einladen-Dialog gibt ihn beim
+  // Schließen dorthin zurück), statt mit dem verschwundenen Eintrag auf <body> zu fallen. Links navigieren ohnehin weiter.
   function select(item) {
-    setOpen(false)
+    if (!item.action) {
+      setOpen(false)
+      return
+    }
+    close()
     if (item.action === 'invite') onInvite()
     if (item.action === 'logout') onLogout()
   }

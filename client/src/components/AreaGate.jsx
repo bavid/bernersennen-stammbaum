@@ -56,9 +56,10 @@ export default function AreaGate({ family, need, onFamilyChange, children }) {
         if (!mounted.current) return
         setFailed(true)
         toast(err?.message || NOT_FOUND)
-        navigate(AREA_FALLBACK_ROUTE, { replace: true })
+        // Scheitert schon der Weg nach Hause, hilft die Familien-Liste nicht (sie spielt selbst dort) - dann nur der Hinweis.
+        if (need !== 'home') navigate(AREA_FALLBACK_ROUTE, { replace: true })
       })
-  }, [satisfied, target, navigate, onFamilyChange, toast])
+  }, [satisfied, target, need, navigate, onFamilyChange, toast])
 
   if (satisfied) return children
   if (failed) {

@@ -165,3 +165,28 @@ describe('Besuch und eigene Adresse (Phase W)', () => {
     expect(mainHeading()).toBe('Familien')
   })
 })
+
+// code-review W1 (H1): ein Wechsel per Klick läuft genau einmal über das AreaGate - kein Hin und Her der Sitzung.
+describe('genau ein api.view je Wechsel', () => {
+  const visiting = { id: 9, name: 'Zuhause Möwenweg', theme: 'standard', art: 'zuhause', zuBesuch: true, role: 'gast', isDemo: false, home, memberships: [] }
+
+  test('"Zurück" im Besuchsband', async () => {
+    me.mockResolvedValue(visiting)
+    view.mockResolvedValue(meAtHome)
+    await render('/familien/9')
+    const back = container.querySelector('.visit-banner-back')
+    await act(async () => back.click())
+    expect(view.mock.calls).toEqual([[1]])
+    expect(mainHeading()).toBe('Start – Mein Zuhause')
+  })
+
+  test('eine Familie aus "Meine Familien" auf Start öffnen', async () => {
+    me.mockResolvedValue(meAtHome)
+    view.mockResolvedValue(meInGroupA)
+    await render('/start')
+    const link = [...container.querySelectorAll('.start-families a')].find((a) => a.textContent.includes('Familie Sonnenhang'))
+    await act(async () => link.click())
+    expect(view.mock.calls).toEqual([[2]])
+    expect(mainHeading()).toBe('Familie Sonnenhang')
+  })
+})

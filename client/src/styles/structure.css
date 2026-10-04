@@ -128,6 +128,13 @@
   color: var(--ink);
 }
 
+/* Fokus deutlich mehr als nur der Hover-Farbton - die Pfeiltasten wandern hier von Eintrag zu Eintrag. */
+.account-menu-item:focus-visible,
+.account-menu-legal-link:focus-visible,
+.account-sheet-item:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--rust);
+}
+
 /* Abmelden steht abgesetzt am Ende der Einträge */
 .account-menu-item.is-separated {
   margin-top: var(--space-1);

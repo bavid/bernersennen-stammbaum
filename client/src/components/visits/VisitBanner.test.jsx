@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({ view: vi.fn(), redeemVisit: vi.fn() }))
@@ -35,18 +35,25 @@ async function render(element) {
 
 const home = { id: 1, name: 'Zuhause am Deich', art: 'zuhause' }
 
+function Where() {
+  return <output data-testid="where">{useLocation().pathname}</output>
+}
+
 describe('VisitBanner und VisitClaimCard (Phase V2)', () => {
-  test('das Band nennt den Gastgeber und wechselt zurück in die eigene Chronik', async () => {
-    const me = { ...home, home, besuche: [] }
-    api.view.mockResolvedValue(me)
-    const onFamilyChange = vi.fn()
-    await render(<VisitBanner family={{ id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home }} onFamilyChange={onFamilyChange} />)
+  // Phase W: "Zurück" navigiert nur nach /start - den Wechsel macht dort das AreaGate (kein eigener api.view).
+  test('das Band nennt den Gastgeber und führt zurück nach Hause (/start)', async () => {
+    await render(
+      <>
+        <VisitBanner family={{ id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home }} />
+        <Where />
+      </>
+    )
     expect(container.textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
     expect(container.textContent).toContain('ansehen und kommentieren')
     expect(container.querySelector('button').textContent).toBe('Zurück zu Mein Zuhause')
     await act(async () => container.querySelector('button').click())
-    expect(api.view).toHaveBeenCalledWith(1)
-    expect(onFamilyChange).toHaveBeenCalledWith(me)
+    expect(container.querySelector('[data-testid="where"]').textContent).toBe('/start')
+    expect(api.view).not.toHaveBeenCalled()
   })
 
   test('die Karte auf /v verbindet mit dem einladenden Zuhause', async () => {
