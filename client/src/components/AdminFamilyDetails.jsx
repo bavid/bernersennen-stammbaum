@@ -22,7 +22,7 @@ function DogsTable({ dogs }) {
             <th>Geboren</th>
             <th>Mutter</th>
             <th>Vater</th>
-            <th>Einträge</th>
+            <th>Erinnerungen</th>
           </tr>
         </thead>
         <tbody>
@@ -48,7 +48,7 @@ function DogsTable({ dogs }) {
   )
 }
 
-// Alles zu einem Rudel: Hunde, neueste Einträge, Pinnwand samt Antworten (nur lesend)
+// Alles zu einem Rudel: Hunde, neueste Erinnerungen, Pinnwand samt Antworten (nur lesend)
 export default function AdminFamilyDetails({ familyId }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
@@ -71,8 +71,8 @@ export default function AdminFamilyDetails({ familyId }) {
       </section>
 
       <section>
-        <h4>Neueste Einträge ({data.entries.length})</h4>
-        {data.entries.length === 0 && <p className="muted">Keine Einträge.</p>}
+        <h4>Neueste Erinnerungen ({data.entries.length})</h4>
+        {data.entries.length === 0 && <p className="muted">Keine Erinnerungen.</p>}
         <ul className="admin-list">
           {data.entries.map((entry) => (
             <li key={entry.id}>

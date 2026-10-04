@@ -8,18 +8,18 @@ export default function PrivacyConnections() {
       <h2>Zuhause besuchen</h2>
       <p>
         Ein Zuhause kann ein anderes Zuhause mit einer Besuchs-Einladung zu sich einladen; der Code gilt 7 Tage und nur
-        einmal. Wer ihn einlöst, sieht als Gast eure Tiere und alle Einträge, die nicht als privat markiert sind, und kann
-        sie kommentieren – ändern kann er nichts. Private Einträge, Pinnwand, Entdecken und Collage gehören nicht zum
+        einmal. Wer ihn einlöst, sieht als Gast eure Tiere und alle Erinnerungen, die nicht als privat markiert sind, und
+        kann sie kommentieren – ändern kann er nichts. Private Erinnerungen, Pinnwand, Entdecken und Collage gehören nicht zum
         Besuch. Beide Seiten können den Besuch jederzeit beenden: einen Gast entfernt ihr mit „Beenden“ unter „Meine
         Gäste“ im Einladen-Dialog, einen neuen Gast auch gleich mit „Gast entfernen“ bei den Wegbegleitern.
       </p>
 
       <h2>„Mit dabei“</h2>
       <p>
-        Wer in seinem Zuhause einen nicht-privaten Eintrag schreibt, kann darin Tiere aus verbundenen Zuhausen markieren
+        Wer in seinem Zuhause eine nicht-private Erinnerung festhält, kann darin Tiere aus verbundenen Zuhausen markieren
         (über einen Besuch oder eine gemeinsame Familie). Die Menschen des markierten Tiers bekommen dazu eine Anfrage. Erst
-        wenn sie bestätigen, erscheint der Eintrag auch in der Chronik ihres Tiers – als Verweis auf den Original-Eintrag,
-        nicht als Kopie, und nur, solange die Verbindung besteht und der Eintrag nicht privat ist. Lehnen sie ab,
+        wenn sie bestätigen, erscheint die Erinnerung auch in der Chronik ihres Tiers – als Verweis auf das Original, nicht
+        als Kopie, und nur, solange die Verbindung besteht und die Erinnerung nicht privat ist. Lehnen sie ab,
         verschwindet die Markierung.
       </p>
 

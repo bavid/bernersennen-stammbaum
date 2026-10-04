@@ -142,7 +142,7 @@ describe('LegalPage – /datenschutz', () => {
 
   // final-review Phase T Finding 3: eigener Absatz "Tierheime" - öffentliche Steckbriefe, Übergabe/
   // Umzug der Chronik, freiwilliges Mitlesen und Happy Ends brauchen eine eigene, ehrliche Erklärung.
-  test('Absatz "Tierheime": öffentliche Steckbriefe (/t/…, nur als öffentlich markierte Einträge, noindex)', async () => {
+  test('Absatz "Tierheime": öffentliche Steckbriefe (/t/…, nur als öffentlich markierte Erinnerungen, noindex)', async () => {
     config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
     await render('datenschutz')
 
@@ -159,7 +159,7 @@ describe('LegalPage – /datenschutz', () => {
     expect(container.textContent).toMatch(/Herkunft sichtbar/)
     expect(container.textContent).toMatch(/freiwillig/)
     expect(container.textContent).toMatch(/jederzeit widerrufen/)
-    expect(container.textContent).toMatch(/nicht-privaten Einträge/)
+    expect(container.textContent).toMatch(/nicht-privaten Erinnerungen/)
   })
 
   test('Absatz "Tierheime": Happy Ends nur mit separater Einwilligung, keine Namen, sofortiger Widerruf (Browser-Cache als Ausnahme)', async () => {
@@ -168,7 +168,7 @@ describe('LegalPage – /datenschutz', () => {
 
     expect(container.textContent).toMatch(/Happy End/)
     expect(container.textContent).toMatch(/Porträtfoto/)
-    expect(container.textContent).toMatch(/neueste[nr]? nicht-private[nr]? Eintrag/)
+    expect(container.textContent).toMatch(/neueste nicht-private Erinnerung/)
     expect(container.textContent).toMatch(/nie Namen/)
     expect(container.textContent).toMatch(/Widerruf wirkt sofort/)
     expect(container.textContent).toMatch(/Browser.*zwischengespeichert/)

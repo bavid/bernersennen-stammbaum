@@ -60,8 +60,8 @@ function Datenschutz({ legal }) {
 
       <h2>Gespeicherte Inhalte</h2>
       <p>
-        Gespeichert werden die Inhalte, die ihr selbst anlegt: Tiere, Chronik-Einträge, Fotos, Kommentare und
-        Pinnwand-Zettel. Benutzername und E-Mail-Adresse sind optional und nur für den eigenen Login gedacht;
+        Gespeichert werden die Inhalte, die ihr selbst anlegt: Tiere, Erinnerungen (die Einträge der Chronik), Fotos,
+        Kommentare und Pinnwand-Zettel. Benutzername und E-Mail-Adresse sind optional und nur für den eigenen Login gedacht;
         bei optionalen Benutzer-Logins merken wir uns außerdem den Zeitpunkt der letzten Anmeldung. Ist ein
         Zuhause über einen Einladungscode eines Partners entstanden, speichern wir, über welchen Partner das war.
       </p>
@@ -117,17 +117,17 @@ function Datenschutz({ legal }) {
       <h2>Tierheime</h2>
       <p>
         Ein Tierheim kann einen eigenen Steckbrief für ein vermittelbares Tier veröffentlichen (/t/…) – sichtbar sind
-        dort nur die Einträge, die das Tierheim ausdrücklich als öffentlich markiert. Diese Seiten sind für
+        dort nur die Erinnerungen, die das Tierheim ausdrücklich als öffentlich markiert. Diese Seiten sind für
         Suchmaschinen ausgeschlossen (noindex).
       </p>
       <p>
         Zieht ein Tier über einen Übergabe-Code in ein neues Zuhause um, wandert seine ganze bisherige Chronik
         mit um; das abgebende Tierheim bleibt als Herkunft sichtbar. Das neue Zuhause kann dem abgebenden Tierheim
         freiwillig erlauben, weiterhin mitzulesen – diese Einwilligung lässt sich jederzeit widerrufen und umfasst
-        immer nur die nicht-privaten Einträge.
+        immer nur die nicht-privaten Erinnerungen.
       </p>
       <p>
-        Öffentliche Happy Ends (Porträtfoto und der neueste nicht-private Eintrag auf der Portalseite eines
+        Öffentliche Happy Ends (Porträtfoto und die neueste nicht-private Erinnerung auf der Portalseite eines
         Tierheims) zeigen wir nur mit einer eigenen, separaten Einwilligung des neuen Zuhauses – nie Namen oder
         andere Angaben zu den Menschen dahinter. Ein Widerruf wirkt sofort; nur ein vom Browser bereits
         zwischengespeichertes Foto kann noch kurz sichtbar bleiben.

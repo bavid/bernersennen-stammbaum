@@ -61,7 +61,7 @@ export default function AdminFamilyList({ families }) {
                 </span>
                 <span className="admin-family-counts">
                   <span className="pill">{plural(family.dogs, 'Tier', 'Tiere')}</span>
-                  <span className="pill">{plural(family.entries, 'Eintrag', 'Einträge')}</span>
+                  <span className="pill">{plural(family.entries, 'Erinnerung', 'Erinnerungen')}</span>
                   <span className="pill">{plural(family.notes, 'Zettel', 'Zettel')}</span>
                   <span className="pill">{plural(family.replies, 'Antwort', 'Antworten')}</span>
                 </span>

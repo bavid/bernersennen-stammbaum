@@ -110,17 +110,17 @@ describe('AdminFamilyList – Herkunft als Chip', () => {
     expect(container.querySelector('.admin-family-head .muted').textContent).toMatch(/^angelegt .* · zuletzt aktiv /)
     expect([...container.querySelectorAll('.admin-family-counts .pill')].map((pill) => pill.textContent)).toEqual([
       '2 Tiere',
-      '5 Einträge',
+      '5 Erinnerungen',
       '1 Zettel',
       '0 Antworten'
     ])
   })
 
-  test('Audit V7a: Einzahl bei genau einem ("1 Tier", "1 Eintrag", "1 Antwort" statt "1 Hunde", "1 Einträge")', async () => {
+  test('Audit V7a: Einzahl bei genau einem ("1 Tier", "1 Erinnerung", "1 Antwort" statt "1 Hunde", "1 Erinnerungen")', async () => {
     await render(<AdminFamilyList families={[family({ dogs: 1, entries: 1, notes: 1, replies: 1 })]} />)
     expect([...container.querySelectorAll('.admin-family-counts .pill')].map((pill) => pill.textContent)).toEqual([
       '1 Tier',
-      '1 Eintrag',
+      '1 Erinnerung',
       '1 Zettel',
       '1 Antwort'
     ])

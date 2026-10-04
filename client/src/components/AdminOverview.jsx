@@ -52,7 +52,7 @@ function StatsGrid({ stats }) {
     // Audit V7a: "Rudel" zählte alle Bereiche (auch Zuhause, Tierheime, Partner), "Hunde" alle Tiere.
     ['Bereiche', stats.families],
     ['Tiere', stats.dogs],
-    ['Einträge', stats.entries],
+    ['Erinnerungen', stats.entries],
     ['Zettel', stats.notes],
     ['Antworten', stats.replies],
     ['Würfe', stats.breeding],
