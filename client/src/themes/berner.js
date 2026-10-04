@@ -68,6 +68,20 @@ export default {
     mating: 'Deckakt',
     matings: 'Deckakte',
     matingOf: 'des Deckakts',
+    // Phase W, Schritt 2 (Betreiber, Richtung „Familienalbum“): Chronik-Einträge heißen „Erinnerung“, Kommentare
+    // „Grüße“ - an EINER Stelle, damit ein späterer Wechsel nur diese Wörter ändert. Ganze Sätze (entriesEmpty,
+    // greetingsEmpty), wo das Geschlecht des Nomens mitspielt.
+    entry: 'Erinnerung',
+    entries: 'Erinnerungen',
+    entriesDat: 'Erinnerungen',
+    newEntry: 'Neue Erinnerung',
+    tellAction: 'Erinnerung festhalten',
+    tellActionShort: 'Festhalten',
+    entriesEmpty: 'Noch keine Erinnerungen – haltet die erste fest.',
+    greeting: 'Gruß',
+    greetings: 'Grüße',
+    greetingAction: 'Gruß schreiben',
+    greetingsEmpty: 'Noch keine Grüße',
     addMating: 'Deckakt eintragen',
     matingAdded: 'Deckakt eingetragen',
     breedingBook: 'Zuchtbuch'

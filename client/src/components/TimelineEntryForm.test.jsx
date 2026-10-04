@@ -3,6 +3,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import TimelineEntryForm from './TimelineEntryForm.jsx'
+import { getTheme } from '../themes/index.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -67,7 +68,7 @@ describe('TimelineEntryForm – privat', () => {
     await render({ isHousehold: true })
     expect(privatCheckbox()).not.toBeNull()
     expect(privatCheckbox().closest('.field').querySelector('.field-hint').textContent).toBe(
-      'Private Einträge sehen nur die Menschen in eurem Zuhause.'
+      `Private ${getTheme('standard').words.entries} sehen nur die Menschen in eurem Zuhause.`
     )
   })
 

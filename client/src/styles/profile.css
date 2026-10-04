@@ -1,0 +1,255 @@
+/* Phase W, Schritt 2: Tierprofil /tier/:id (pages/DogDetailPage.jsx, components/dog/*) - kompakter Kopf wie eine
+   Profilseite, darunter die Reiter Chronik · Infos · Verwandte. Der große Kopf (.dog-hero, dog.css) bleibt für den
+   öffentlichen Steckbrief. */
+
+.dog-page {
+  --page-gap: var(--space-5);
+}
+
+.dog-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-3) var(--space-6);
+}
+
+.dog-head-photo {
+  grid-row: span 2;
+  width: 10rem;
+  height: 10rem;
+}
+
+.dog-head-photo button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--paper-deep);
+  box-shadow: var(--shadow-card);
+  cursor: zoom-in;
+}
+
+.dog-head-photo button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.dog-head-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar.dog-head-fallback {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: var(--radius-lg);
+  font-size: 4rem !important;
+}
+
+.dog-head-body {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.dog-head-body h1 {
+  font-size: var(--text-display);
+  overflow-wrap: anywhere;
+}
+
+.dog-head-body h1.is-unknown {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.dog-head-fullname {
+  margin-top: calc(-1 * var(--space-1));
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--muted);
+}
+
+.dog-head-line {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.dog-head-line.is-memorial {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-style: italic;
+}
+
+.dog-head-line svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--rust);
+}
+
+.dog-head-visible {
+  padding: var(--space-1) var(--space-3);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dog-head-visible svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+}
+
+.dog-head-visible:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.dog-head-actions {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-self: start;
+  gap: var(--space-2);
+}
+
+.dog-head-tell .is-short {
+  display: none;
+}
+
+/* ⋯ Weitere Aktionen: das Panel nutzt das Aussehen des Konto-Menüs (.account-menu-panel, structure.css) */
+.dog-more {
+  position: relative;
+}
+
+.dog-more-trigger {
+  padding-inline: var(--space-3);
+}
+
+.dog-more-trigger svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.dog-more-panel {
+  right: auto;
+  left: 0;
+}
+
+.dog-tab-bar {
+  border-bottom: 1px solid var(--line);
+}
+
+.dog-panel,
+.dog-infos,
+.dog-relatives {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.dog-chronicle-more {
+  justify-self: start;
+}
+
+/* Im Reiter kein zweiter Trennstrich und kein großer Abstand nach oben (die Reiter-Leiste trennt schon) */
+.chronicle.dog-chronicle {
+  gap: var(--space-5);
+  padding-top: 0;
+  border-top: 0;
+}
+
+.dog-info-facts,
+.dog-relatives-facts {
+  margin: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.dog-info-description {
+  max-width: 42rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.dog-infos-anchor:focus {
+  outline: none;
+}
+
+.share-panel h2:focus {
+  outline: none;
+}
+
+.share-panel h2:focus-visible {
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+.dog-relatives-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.dog-relatives-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.dog-relatives-links a:hover {
+  color: var(--rust);
+}
+
+.dog-relatives-links svg {
+  width: 1em;
+  height: 1em;
+}
+
+@media (max-width: 640px) {
+  .dog-head {
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .dog-head-photo {
+    grid-row: auto;
+    width: 5.5rem;
+    height: 5.5rem;
+  }
+
+  .dog-head-actions {
+    grid-column: 1 / -1;
+  }
+
+  .dog-head-tell .is-long {
+    display: none;
+  }
+
+  .dog-head-tell .is-short {
+    display: inline;
+  }
+
+  .avatar.dog-head-fallback {
+    font-size: 2.5rem !important;
+  }
+
+  .dog-head-body h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .dog-head-visible {
+    font-size: var(--text-xs);
+  }
+}

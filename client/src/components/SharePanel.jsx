@@ -1,22 +1,25 @@
 import { useState } from 'react'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
+import { displayName } from '../lib/timeline.js'
 import useDogShares from '../hooks/useDogShares.js'
 import Modal from './Modal.jsx'
 import JoinFamilyDialog from './JoinFamilyDialog.jsx'
 
 const DEMO_HINT_ID = 'share-panel-demo-hint'
 
-// "In Familien zeigen": nur für den eigenen Haushalt ("Meine Chronik"), auf einem seiner Tiere.
-// Jede Checkbox ist eine Familie/ein Rudel, in dem der Haushalt Mitglied ist. Speichern, Zurücknehmen bei Fehlern und
-// das Sperren während einer laufenden Änderung übernimmt useDogShares (dieselbe Logik wie in den Einstellungen).
-export default function SharePanel({ dog, family, onFamilyChange }) {
+// "Wer sieht {Name}?" (Phase W, Reiter "Infos" der Tierseite; früher "In Familien zeigen"): nur für den eigenen Haushalt
+// ("Mein Zuhause"), auf einem seiner Tiere. Jede Checkbox ist eine Familie/ein Rudel, in dem der Haushalt Mitglied ist.
+// Speichern, Zurücknehmen bei Fehlern und das Sperren während einer laufenden Änderung übernimmt useDogShares (dieselbe
+// Logik wie in den Einstellungen). onSharesChange (optional): die gespeicherten Freigaben für die Seite (Chip im Kopf).
+export default function SharePanel({ dog, family, onFamilyChange, onSharesChange }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
-  const { shares, saving, toggleShare } = useDogShares(dog)
+  const { shares, saving, toggleShare } = useDogShares(dog, onSharesChange)
   const [joinOpen, setJoinOpen] = useState(false)
   const disabled = isDemo || saving
+  const name = dog.name_unbekannt ? words.animal : displayName(dog)
 
   function handleJoined(me) {
     onFamilyChange?.(me)
@@ -24,12 +27,17 @@ export default function SharePanel({ dog, family, onFamilyChange }) {
 
   return (
     <section className="share-panel" aria-labelledby="share-panel-title">
-      <h2 id="share-panel-title">In {words.groupsDative} zeigen</h2>
-      <p className="muted">Geteilt werden das Tier und alle Einträge, die nicht als privat markiert sind.</p>
+      <h2 id="share-panel-title" tabIndex={-1}>
+        Wer sieht {name}?
+      </h2>
+      <p className="muted">
+        Angehakte {words.groups} sehen {name} und alle {words.entries}, die nicht privat sind. Private {words.entries} bleiben
+        immer bei euch.
+      </p>
 
       {family.memberships.length > 0 ? (
         <>
-          <div className="share-panel-list">
+          <div className="share-panel-list" role="group" aria-label={`${name} zeigen in`}>
             {family.memberships.map((membership) => (
               <label className="check" key={membership.id}>
                 <input

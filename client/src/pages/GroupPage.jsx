@@ -26,13 +26,13 @@ const GROUP_TAB_DROP = ['ansicht', 'gruppe']
 function tabsFor(visiting, words) {
   if (visiting) {
     return [
-      { key: 'beitraege', label: 'Beiträge' },
+      { key: 'beitraege', label: words.entries },
       { key: 'tiere', label: words.animals },
       { key: 'zeitleiste', label: 'Zeitleiste' }
     ]
   }
   return [
-    { key: 'beitraege', label: 'Beiträge' },
+    { key: 'beitraege', label: words.entries },
     { key: 'tiere', label: words.animals },
     { key: 'pinnwand', label: 'Pinnwand' },
     { key: 'mitglieder', label: 'Mitglieder' }

@@ -13,6 +13,7 @@ vi.mock('../api', () => ({ api: { setDogShares, joinFamily, createGroup } }))
 import SharePanel from './SharePanel.jsx'
 import { DemoProvider } from '../lib/demo.js'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
+import { getTheme } from '../themes/index.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -30,7 +31,7 @@ if (!HTMLDialogElement.prototype.showModal) {
 let container
 let root
 
-const dog = { id: 42, shares: [3] }
+const dog = { id: 42, name: 'Pepper', shares: [3] }
 const family = {
   id: 1,
   name: 'Zuhause am Deich',
@@ -91,6 +92,16 @@ describe('SharePanel', () => {
 
     expect(setDogShares).toHaveBeenCalledWith(42, [3, 5])
     expect(checkboxFor('Rudel Nachbarn').checked).toBe(true)
+  })
+
+  test('meldet die gespeicherten Freigaben an onSharesChange (Chip „Sichtbar in“ im Kopf der Tierseite)', async () => {
+    const onSharesChange = vi.fn()
+    setDogShares.mockResolvedValue({ shares: [3, 5] })
+    await render({ onSharesChange })
+
+    await act(async () => checkboxFor('Rudel Nachbarn').click())
+
+    expect(onSharesChange).toHaveBeenCalledWith([3, 5])
   })
 
   test('Abhaken ruft api.setDogShares ohne die entfernte Familie auf', async () => {
@@ -186,9 +197,13 @@ describe('SharePanel – Texte über den Theme-Wortschatz', () => {
     return container
   }
 
-  test('Berner-Theme: Überschrift, Leerzustand und Knopf sprechen von "Rudel(n)" statt "Familie(n)"', async () => {
+  test('Berner-Theme: „Wer sieht …?“, Leerzustand und Knopf sprechen von "Rudel(n)" statt "Familie(n)"', async () => {
     await renderThemed('berner', { family: { ...family, memberships: [] } })
-    expect(container.querySelector('#share-panel-title').textContent).toBe('In Rudeln zeigen')
+    expect(container.querySelector('#share-panel-title').textContent).toBe('Wer sieht Pepper?')
+    const { entries } = getTheme('berner').words
+    expect(container.querySelector('.share-panel > p').textContent).toBe(
+      `Angehakte Rudel sehen Pepper und alle ${entries}, die nicht privat sind. Private ${entries} bleiben immer bei euch.`
+    )
     expect(container.querySelector('.share-panel-empty').textContent).toContain('Noch kein Rudel verbunden.')
     const button = [...container.querySelectorAll('.share-panel-empty button')].find(
       (btn) => btn.textContent === 'Rudel beitreten oder gründen'
@@ -196,9 +211,10 @@ describe('SharePanel – Texte über den Theme-Wortschatz', () => {
     expect(button).not.toBeUndefined()
   })
 
-  test('Standard-Theme: Überschrift, Leerzustand und Knopf sprechen von "Familie(n)"', async () => {
+  test('Standard-Theme: „Wer sieht …?“, Leerzustand und Knopf sprechen von "Familie(n)"', async () => {
     await renderThemed('standard', { family: { ...family, memberships: [] } })
-    expect(container.querySelector('#share-panel-title').textContent).toBe('In Familien zeigen')
+    expect(container.querySelector('#share-panel-title').textContent).toBe('Wer sieht Pepper?')
+    expect(container.querySelector('.share-panel > p').textContent).toContain('Angehakte Familien sehen Pepper')
     expect(container.querySelector('.share-panel-empty').textContent).toContain('Noch keine Familie verbunden.')
   })
 })

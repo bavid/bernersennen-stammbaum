@@ -16,6 +16,9 @@ vi.mock('../api', () => ({ api: { getDog, listTimeline, listBreedingEvents, list
 import DogDetailPage from './DogDetailPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
 import { DemoProvider } from '../lib/demo.js'
+import { getTheme } from '../themes/index.js'
+
+const words = getTheme('standard').words
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -89,13 +92,13 @@ const entry = () => ({
   ]
 })
 
-async function render(family, { isDemo = false } = {}) {
+async function render(family, { isDemo = false, url = '/tier/10' } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter initialEntries={['/tier/10']}>
+      <MemoryRouter initialEntries={[url]}>
         <ThemeProvider themeId="standard">
           <DemoProvider value={isDemo}>
             <Routes>
@@ -116,6 +119,7 @@ function mockLoad(dog = familyDog()) {
   listAllDogs.mockResolvedValue([])
 }
 
+const INFOS = '/tier/10?reiter=infos'
 const buttons = () => [...container.querySelectorAll('button')]
 const buttonWith = (text) => buttons().find((btn) => btn.textContent.includes(text))
 
@@ -132,12 +136,12 @@ afterEach(() => {
 })
 
 describe('DogDetailPage – Rechte je Rolle auf einem Tier der Familie', () => {
-  test('Gast: weder Erinnerung schreiben noch Bearbeiten oder Eintrag ändern - Kommentieren geht, eigene Kommentare löschen auch', async () => {
+  test('Gast: weder erzählen noch Bearbeiten oder Eintrag ändern - Kommentieren geht, eigene Kommentare löschen auch', async () => {
     mockLoad()
     await render(familyAs('gast'))
 
     expect(container.querySelector('#composer')).toBeNull()
-    expect(buttonWith('Erinnerung hinzufügen')).toBeUndefined()
+    expect(buttonWith(words.tellAction)).toBeUndefined()
     expect(buttonWith('Bearbeiten')).toBeUndefined()
     expect(container.querySelector('[aria-label="„Wilma zieht ein“ bearbeiten"]')).toBeNull()
     expect(container.querySelector('.reply-open')).not.toBeNull()
@@ -152,7 +156,7 @@ describe('DogDetailPage – Rechte je Rolle auf einem Tier der Familie', () => {
     await render(familyAs('mitglied'))
 
     expect(container.querySelector('#composer')).not.toBeNull()
-    expect(buttonWith('Erinnerung hinzufügen')).not.toBeUndefined()
+    expect(buttonWith(words.tellAction)).not.toBeUndefined()
     expect(container.querySelectorAll('.reply-delete')).toHaveLength(1)
 
     await act(async () => buttonWith('Bearbeiten').click())
@@ -220,21 +224,21 @@ describe('DogDetailPage – zu Besuch in einem anderen Zuhause (Phase V2)', () =
   })
 })
 
-describe('DogDetailPage – „In meine Chronik übernehmen“ (Leitung mit eigenem Zuhause)', () => {
+describe('DogDetailPage – „In „Mein Zuhause“ übernehmen“ im Reiter Infos (Leitung mit eigenem Zuhause)', () => {
   test('erscheint für die Leitung auf einem Tier der Familie, erklärt Umzug und Sichtbarkeit, zweistufig → api.takeOverDog, dann neu laden', async () => {
     mockLoad()
     takeOverDog.mockResolvedValue({})
-    await render(familyAs('leitung'))
+    await render(familyAs('leitung'), { url: INFOS })
 
     const panel = container.querySelector('.take-over-panel')
     expect(panel).not.toBeNull()
-    expect(panel.textContent).toContain('zieht Wilma mit allen Einträgen zu dir um')
+    expect(panel.textContent).toContain(`zieht Wilma mit allen ${words.entriesDat} zu dir um`)
     expect(panel.textContent).toContain('bleibt hier als geteiltes Tier sichtbar')
     const button = () => panel.querySelector('button')
-    expect(button().textContent).toContain('In meine Chronik übernehmen')
+    expect(button().textContent).toContain('In „Mein Zuhause“ übernehmen')
 
     act(() => button().click())
-    expect(button().textContent).toContain('Ja, in meine Chronik übernehmen')
+    expect(button().textContent).toContain('Ja, in „Mein Zuhause“ übernehmen')
     expect(takeOverDog).not.toHaveBeenCalled()
 
     getDog.mockResolvedValue({ ...familyDog(), isOwn: false, canEdit: false, ownerFamilyId: 1, familyName: 'Zuhause am Deich' })
@@ -242,31 +246,33 @@ describe('DogDetailPage – „In meine Chronik übernehmen“ (Leitung mit eige
     expect(takeOverDog).toHaveBeenCalledWith(10)
     expect(getDog).toHaveBeenCalledTimes(2)
     expect(container.querySelector('.take-over-panel')).toBeNull()
+    await act(async () => [...container.querySelectorAll('[role="tab"]')].find((tab) => tab.textContent === 'Chronik').click())
     expect(container.textContent).toContain('Lebt im Zuhause „Zuhause am Deich“ und wird hier geteilt.')
+    expect(container.querySelector('.notice a').getAttribute('href')).toBe('/tier/10?in=home')
   })
 
   test('nicht mit dem gemeinsamen Schlüssel (kein eigenes Zuhause) und nicht auf einem Tier eines anderen Haushalts', async () => {
     mockLoad()
-    await render({ ...familyAs('leitung'), home: { id: 2, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel' }, memberships: [] })
+    await render({ ...familyAs('leitung'), home: { id: 2, name: 'Familie Sonnenhang', theme: 'standard', art: 'rudel' }, memberships: [] }, { url: INFOS })
     expect(container.querySelector('.take-over-panel')).toBeNull()
 
     act(() => root.unmount())
     root = null
     container.remove()
     mockLoad({ ...familyDog(), isOwn: false, canEdit: false, ownerFamilyId: 7 })
-    await render(familyAs('leitung'))
+    await render(familyAs('leitung'), { url: INFOS })
     expect(container.querySelector('.take-over-panel')).toBeNull()
   })
 
   test('kannUebernehmen vom Server hat Vorrang vor der Client-Regel', async () => {
     mockLoad({ ...familyDog(), kannUebernehmen: false })
-    await render(familyAs('leitung'))
+    await render(familyAs('leitung'), { url: INFOS })
     expect(container.querySelector('.take-over-panel')).toBeNull()
   })
 
   test('in der Demo gesperrt, mit Hinweis', async () => {
     mockLoad()
-    await render(familyAs('leitung'), { isDemo: true })
+    await render(familyAs('leitung'), { isDemo: true, url: INFOS })
     const panel = container.querySelector('.take-over-panel')
     expect(panel.querySelector('button').disabled).toBe(true)
     expect(panel.textContent).toContain('In der Demo nicht möglich.')
@@ -274,12 +280,12 @@ describe('DogDetailPage – „In meine Chronik übernehmen“ (Leitung mit eige
 
   test('ein Fehler des Servers erscheint im Panel', async () => {
     mockLoad()
-    takeOverDog.mockRejectedValue(new Error('Übernehmen geht nur als Mitglied mit eigener Chronik („Meine Chronik“)'))
-    await render(familyAs('leitung'))
+    takeOverDog.mockRejectedValue(new Error('Übernehmen geht nur als Mitglied mit eigenem Zuhause („Mein Zuhause“)'))
+    await render(familyAs('leitung'), { url: INFOS })
     const button = () => container.querySelector('.take-over-panel button')
     act(() => button().click())
     await act(async () => button().click())
     expect(container.querySelector('.take-over-panel [role="alert"]').textContent).toContain('Übernehmen geht nur')
-    expect(button().textContent).toBe('In meine Chronik übernehmen')
+    expect(button().textContent).toBe('In „Mein Zuhause“ übernehmen')
   })
 })

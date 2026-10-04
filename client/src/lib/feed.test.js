@@ -19,8 +19,9 @@ describe('feed (Phase W)', () => {
 
   test('commentsLabel, entryLink, feedDog', () => {
     expect(commentsLabel(0)).toBeNull()
-    expect(commentsLabel(1)).toBe('1 Kommentar')
-    expect(commentsLabel(3)).toBe('3 Kommentare')
+    expect(commentsLabel(1)).toBe('1 Gruß')
+    expect(commentsLabel(3)).toBe('3 Grüße')
+    expect(commentsLabel(2, { greeting: 'Kommentar', greetings: 'Kommentare' })).toBe('2 Kommentare')
     expect(entryLink({ id: 7, dog_id: 3 })).toBe('/tier/3#entry-7')
     expect(feedDog({ dog_name: 'Nele', dog_foto_url: '/uploads/n.jpg' })).toMatchObject({ name: 'Nele', foto_url: '/uploads/n.jpg' })
   })

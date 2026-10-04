@@ -91,7 +91,7 @@ export default function FamiliesPage({ family, onFamilyChange }) {
         <AreaSection
           id="families-friends-title"
           title="Befreundete Zuhause"
-          empty="Noch bei niemandem zu Besuch. Mit einem Code von Freunden seht ihr deren Tiere und Beiträge."
+          empty={`Noch bei niemandem zu Besuch. Mit einem Code von Freunden seht ihr deren Tiere und ${words.entries}.`}
         >
           {visits.map((visit) => (
             <AreaRow key={visit.id} to={groupRoute(visit.id)} name={visit.name} sub="Zu Besuch – ansehen und kommentieren" />

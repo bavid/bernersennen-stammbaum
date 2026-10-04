@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
@@ -16,6 +16,7 @@ const MAX_TILES = 4
 // title: Überschrift (Standard "Neu in der Familie" bzw. "Neu im Rudel" - zu Besuch in einem Zuhause passt das nicht).
 export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_TILES, terminTo = '/pinnwand', title }) {
   const { theme, words } = useTheme()
+  const { pathname, search } = useLocation()
   const heading = title || words.newsTitle
   const entries = allEntries.slice(0, termin ? limit - 1 : limit)
   if (!entries.length && !termin) {
@@ -48,7 +49,7 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
           </Link>
         )}
         {entries.map((entry) => (
-          <Link key={entry.id} to={`/tier/${entry.dog_id}#entry-${entry.id}`} className="feed-item">
+          <Link key={entry.id} to={`/tier/${entry.dog_id}#entry-${entry.id}`} state={{ from: pathname + search }} className="feed-item">
             <Avatar dog={toDog(entry)} size={44} />
             <span className="feed-body">
               <span className="feed-kicker">{dogLabel(toDog(entry))}</span>
@@ -56,7 +57,7 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
               <span className="feed-meta">
                 {entry.autor_name} · {relativeTime(entry.created_at)}
                 {entry.comment_count > 0 &&
-                  ` · ${entry.comment_count} ${entry.comment_count === 1 ? 'Kommentar' : 'Kommentare'}`}
+                  ` · ${entry.comment_count} ${entry.comment_count === 1 ? words.greeting : words.greetings}`}
               </span>
             </span>
           </Link>

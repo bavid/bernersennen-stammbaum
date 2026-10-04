@@ -36,7 +36,7 @@ export default function StartComposer({ family, dogs, onCreated }) {
   async function handleSubmit(payload) {
     const entry = await api.createTimelineEntry({ ...payload, dogId: chosen.id })
     setDogId(null)
-    toast(`Beitrag zu ${displayName(chosen)} gespeichert`)
+    toast(`${words.entry} zu ${displayName(chosen)} gespeichert`)
     onCreated?.({
       comment_count: 0,
       ...entry,
@@ -51,7 +51,7 @@ export default function StartComposer({ family, dogs, onCreated }) {
   return (
     <section className={`composer start-composer${chosen ? ' is-open' : ''}`} aria-labelledby={titleId}>
       <h2 id={titleId} className="start-composer-title">
-        {chosen ? `Neuer Beitrag zu ${displayName(chosen)}` : `Was erlebt euer ${words.animal}?`}
+        {chosen ? `${words.newEntry} zu ${displayName(chosen)}` : `Was erlebt euer ${words.animal}?`}
       </h2>
       {animals.length > MAX_CHIPS ? (
         <div className="field start-composer-select">
@@ -89,7 +89,7 @@ export default function StartComposer({ family, dogs, onCreated }) {
           canTag={isOwnHome(family)}
           isHousehold={family.art === 'zuhause'}
           isShelter={family.art === 'tierheim'}
-          submitLabel="Erzählen"
+          submitLabel={words.tellActionShort}
           onSubmit={handleSubmit}
           onCancel={() => setDogId(null)}
         />

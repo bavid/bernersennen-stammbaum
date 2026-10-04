@@ -62,10 +62,15 @@ function GroupRoute({ family, onFamilyChange }) {
   )
 }
 
-// /tier/:id - mit ?in=<Bereich> im genannten Bereich (z. B. aus einem bereichsübergreifenden Feed), sonst im aktiven.
+// /tier/:id - mit ?in=<Bereich> im genannten Bereich (z. B. aus einem bereichsübergreifenden Feed), mit ?in=home im eigenen
+// Zuhause ("In „Mein Zuhause“ bearbeiten" auf einem hierher geteilten Tier), sonst im aktiven.
+function tierArea(value) {
+  return value === 'home' ? 'home' : parseAreaId(value)
+}
+
 function TierRoute({ family, onFamilyChange }) {
   const [searchParams] = useSearchParams()
-  const inArea = parseAreaId(searchParams.get('in'))
+  const inArea = tierArea(searchParams.get('in'))
   const page = <DogDetailPage family={family} onFamilyChange={onFamilyChange} />
   if (!inArea) return page
   return (

@@ -82,14 +82,14 @@ const shelterDog = (overrides = {}) => ({
 })
 
 // adminView: die Nur-Lesen-Sitzung des Admins (Phase 5 Task 5b) - derselbe Provider wie die Demo, mit me-Objekt.
-async function render({ isDemo = false, adminView = false } = {}) {
+async function render({ isDemo = false, adminView = false, url = '/tier/20?reiter=vermittlung' } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
       <DemoProvider value={adminView ? { isDemo, adminView } : isDemo}>
-        <MemoryRouter initialEntries={['/tier/20']}>
+        <MemoryRouter initialEntries={[url]}>
           <Routes>
             <Route path="/tier/:id" element={<DogDetailPage family={shelterFamily} onFamilyChange={() => {}} />} />
           </Routes>
@@ -164,6 +164,22 @@ describe('DogDetailPage – Tierheim: Status', () => {
     await render()
 
     expect(container.querySelector('#vermittlung-status')).toBeNull()
+    expect([...container.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual(['Chronik', 'Infos', 'Verwandte'])
+  })
+
+  test('eigene Tiere des Tierheims: Reiter Chronik · Vermittlung · Infos, Eltern und Mitbewohner unter Infos', async () => {
+    getDog.mockResolvedValue(shelterDog())
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    listAllDogs.mockResolvedValue([])
+    await render({ url: '/tier/20' })
+
+    expect([...container.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual(['Chronik', 'Vermittlung', 'Infos'])
+    expect(container.querySelector('#vermittlung-status')).toBeNull()
+
+    await act(async () => [...container.querySelectorAll('[role="tab"]')].find((tab) => tab.textContent === 'Infos').click())
+    expect(container.querySelector('.dog-relatives')).not.toBeNull()
+    expect(container.textContent).toContain('Mutter')
   })
 })
 

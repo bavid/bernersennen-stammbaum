@@ -18,6 +18,9 @@ vi.mock('../api', () => ({ api }))
 
 import StartPage from './StartPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
+import { getTheme } from '../themes/index.js'
+
+const words = getTheme('standard').words
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -92,7 +95,7 @@ describe('StartPage (Phase W)', () => {
     expect(cards[0].querySelector('.feed-card-title').textContent).toBe('Beitrag 7')
     expect(cards[0].querySelectorAll('.feed-card-photos img')).toHaveLength(3)
     expect(cards[0].querySelector('.feed-card-more').textContent).toBe('+1')
-    expect(cards[0].querySelector('.feed-card-comments').textContent).toBe('2 Kommentare')
+    expect(cards[0].querySelector('.feed-card-comments').textContent).toBe(`2 ${words.greetings}`)
     expect(cards[1].querySelector('.feed-card-comments')).toBeNull()
   })
 
@@ -138,7 +141,7 @@ describe('StartPage (Phase W)', () => {
       setValue(container.querySelector('#entry-title'), 'Erster Schnee')
       setValue(container.querySelector('#entry-author'), 'Mara')
     })
-    expect(container.querySelector('.entry-form button[type="submit"]').textContent).toBe('Erzählen')
+    expect(container.querySelector('.entry-form button[type="submit"]').textContent).toBe(words.tellActionShort)
     await act(async () => container.querySelector('.entry-form').requestSubmit())
 
     expect(api.createTimelineEntry).toHaveBeenCalledWith(expect.objectContaining({ dogId: 10, titel: 'Erster Schnee' }))

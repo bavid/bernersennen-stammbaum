@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
 import Avatar from './Avatar.jsx'
 import CommentThread from './CommentThread.jsx'
@@ -40,6 +41,7 @@ function Milestone({ item, onOpenPhoto }) {
 }
 
 function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment, canDeleteComment }) {
+  const { words } = useTheme()
   const age = birthDate ? ageText(birthDate, item.datum) : null
   const kategorie = kategorieLabel(item.kategorie)
   return (
@@ -56,7 +58,7 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
               </span>
             ) : null}
             {item.privat ? (
-              <span className="privat-badge" title="Privater Eintrag" aria-label="Privater Eintrag">
+              <span className="privat-badge" title="Nur für euch" aria-label="Privat – nur für euch">
                 <Icon name="lock" />
                 privat
               </span>
@@ -83,10 +85,10 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
         <div className="entry-comments">
           <CommentThread
             items={item.comments || []}
-            noun="Kommentar"
-            plural="Kommentare"
-            verb="Kommentieren"
-            placeholder="Dein Kommentar …"
+            noun={words.greeting}
+            plural={words.greetings}
+            verb={words.greetingAction}
+            placeholder={`${words.greetingAction} …`}
             onAdd={(payload) => onAddComment(item, payload)}
             onDelete={(comment) => onDeleteComment(item, comment)}
             canDelete={canDeleteComment ? (comment) => canDeleteComment(item, comment) : undefined}

@@ -3,6 +3,14 @@ const PATHS = {
   plus: <path d="M12 5v14M5 12h14" />,
   // Phase W: "Menü" als fünfter Platz der unteren Leiste am Handy.
   menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  // Phase W, Schritt 2: "Weitere Aktionen" (⋯) im Kopf der Tierseite.
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="19" cy="12" r="1.5" />
+    </>
+  ),
   minus: <path d="M5 12h14" />,
   layers: (
     <>

@@ -4,7 +4,10 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { me, view, listDogs, listAllDogs, recentActivity, listNotes, listLinks } = vi.hoisted(() => ({
+const { me, view, listDogs, listAllDogs, recentActivity, listNotes, listLinks, getDog, listTimeline, listBreedingEvents } = vi.hoisted(() => ({
+  getDog: vi.fn(),
+  listTimeline: vi.fn(),
+  listBreedingEvents: vi.fn(),
   me: vi.fn(),
   view: vi.fn(),
   listDogs: vi.fn(),
@@ -15,7 +18,7 @@ const { me, view, listDogs, listAllDogs, recentActivity, listNotes, listLinks } 
 }))
 
 vi.mock('./api', () => ({
-  api: { me, view, listDogs, listAllDogs, recentActivity, listNotes, listLinks },
+  api: { me, view, listDogs, listAllDogs, recentActivity, listNotes, listLinks, getDog, listTimeline, listBreedingEvents },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -74,6 +77,9 @@ afterEach(() => {
   recentActivity.mockReset()
   listNotes.mockReset()
   listLinks.mockReset()
+  getDog.mockReset()
+  listTimeline.mockReset()
+  listBreedingEvents.mockReset()
 })
 
 const mainHeading = () => container.querySelector('main h1')?.textContent
@@ -114,6 +120,23 @@ describe('AreaGate in der App: Wechsel beim Navigieren', () => {
 
     expect(view).toHaveBeenCalledTimes(1)
     expect(mainHeading()).toBe('Familien')
+  })
+})
+
+// Phase W, Schritt 2: "In „Mein Zuhause“ bearbeiten" auf einem hierher geteilten Tier ist ein Link /tier/:id?in=home.
+describe('/tier/:id?in=home', () => {
+  test('aus einer Familie heraus wechselt das Gate genau einmal ins eigene Zuhause, dort lädt das Tier', async () => {
+    me.mockResolvedValue(meInGroupA)
+    view.mockResolvedValue(meAtHome)
+    getDog.mockResolvedValue({ id: 10, name: 'Nele', tierart: 'hund', geschlecht: 'huendin', familyName: 'Zuhause am Deich', isOwn: true, canEdit: true, shares: [2], children: [], housemates: [] })
+    listTimeline.mockResolvedValue([])
+    listBreedingEvents.mockResolvedValue([])
+    await render('/tier/10?in=home')
+
+    expect(view).toHaveBeenCalledTimes(1)
+    expect(view).toHaveBeenCalledWith(1)
+    expect(mainHeading()).toBe('Nele')
+    expect(container.querySelector('.dog-head-visible').textContent).toBe('Sichtbar in: Familie Sonnenhang')
   })
 })
 

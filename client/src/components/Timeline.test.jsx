@@ -50,7 +50,7 @@ describe('Timeline – private Einträge', () => {
     await render([entry({ privat: 1 })])
     const badge = container.querySelector('.privat-badge')
     expect(badge).not.toBeNull()
-    expect(badge.getAttribute('aria-label')).toBe('Privater Eintrag')
+    expect(badge.getAttribute('aria-label')).toBe('Privat – nur für euch')
     expect(badge.querySelector('svg')).not.toBeNull()
     expect(badge.textContent).toContain('privat')
   })

@@ -19,6 +19,9 @@ vi.mock('../components/PedigreeTree.jsx', () => ({ default: () => <div data-test
 
 import GroupPage from './GroupPage.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
+import { getTheme } from '../themes/index.js'
+
+const words = getTheme('standard').words
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -113,8 +116,8 @@ describe('GroupPage (Phase W)', () => {
     expect(container.querySelector('.eyebrow').textContent).toBe('Familie')
     expect(container.querySelector('h1').textContent).toBe('Familie Sonnenhang')
     expect(container.querySelector('.group-meta').textContent).toBe('3 Tiere · aus 2 Zuhause')
-    expect(groupTabs().map((tab) => tab.textContent)).toEqual(['Beiträge', 'Tiere', 'Pinnwand', 'Mitglieder'])
-    expect(selected()).toBe('Beiträge')
+    expect(groupTabs().map((tab) => tab.textContent)).toEqual([words.entries, 'Tiere', 'Pinnwand', 'Mitglieder'])
+    expect(selected()).toBe(words.entries)
   })
 
   test('Beiträge: der nächste Termin führt zum Reiter Pinnwand, bis zu 20 Kacheln; erzählen für die eigenen Tiere der Familie', async () => {
@@ -161,7 +164,7 @@ describe('GroupPage zu Besuch (Phase W)', () => {
   test('nur lesen: Beiträge · Tiere · Zeitleiste, nichts verwalten, nichts erzählen, keine Pinnwand', async () => {
     await render(visiting)
     expect(container.querySelector('.eyebrow').textContent).toBe('Befreundetes Zuhause')
-    expect(groupTabs().map((tab) => tab.textContent)).toEqual(['Beiträge', 'Tiere', 'Zeitleiste'])
+    expect(groupTabs().map((tab) => tab.textContent)).toEqual([words.entries, 'Tiere', 'Zeitleiste'])
     expect(container.textContent).not.toContain('verwalten')
     expect(container.querySelector('.start-composer')).toBeNull()
     expect(api.listNotes).not.toHaveBeenCalled()

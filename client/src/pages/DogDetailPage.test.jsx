@@ -84,13 +84,13 @@ const entryWithComments = () => ({
   ]
 })
 
-async function render(family = activeFamily) {
+async function render(family = activeFamily, url = '/tier/10') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter initialEntries={['/tier/10']}>
+      <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={() => {}} />} />
         </Routes>
@@ -211,15 +211,16 @@ describe('DogDetailPage – geteiltes Tier: Kommentare bleiben sichtbar', () => 
   })
 })
 
-describe('DogDetailPage – Hero-Zeile für geteilte Tiere', () => {
-  test('zeigt "Im {familyName} seit …" statt "Bei euch seit …"', async () => {
+describe('DogDetailPage – Kopf und Infos für geteilte Tiere', () => {
+  test('der Kopf sagt "im {familyName} seit …", die Infos "Im {familyName} seit … · Herkunft"', async () => {
     getDog.mockResolvedValue(sharedDog())
     listTimeline.mockResolvedValue([])
     listBreedingEvents.mockResolvedValue([])
     listAllDogs.mockResolvedValue([])
 
-    await render()
+    await render(activeFamily, '/tier/10?reiter=infos')
 
+    expect(container.querySelector('.dog-head-line').textContent).toContain('im Zuhause am Deich seit 12. Juni 2021')
     const companion = container.querySelector('.dog-hero-companion')
     expect(companion.textContent.trim()).toBe('Im Zuhause am Deich seit 12. Juni 2021 · aus dem Tierheim Sonnenhang')
   })
@@ -290,7 +291,7 @@ describe('DogDetailPage – Familie und Verpaarung (Familienbande 2)', () => {
     root = createRoot(container)
     await act(async () =>
       root.render(
-        <MemoryRouter initialEntries={['/tier/10']}>
+        <MemoryRouter initialEntries={['/tier/10?reiter=verwandte']}>
           <ThemeProvider themeId={themeId}>
             <Routes>
               <Route path="/tier/:id" element={<DogDetailPage family={family} onFamilyChange={() => {}} />} />
@@ -311,7 +312,7 @@ describe('DogDetailPage – Familie und Verpaarung (Familienbande 2)', () => {
     expect([...siblings.querySelectorAll('a')].map((a) => [a.lastChild.textContent, a.getAttribute('href')])).toEqual([['Kira', '/tier/14']])
   })
 
-  test('ohne Geschwister keine leere Zeile; im Berner-Auftritt bleibt die Seite wie bisher', async () => {
+  test('ohne Geschwister keine leere Zeile; der Berner-Auftritt nennt den Reiter "Stammbaum" und sagt "Deckakt eintragen"', async () => {
     await renderDog(ownDog({ siblings: [] }))
     expect(fact('Geschwister')).toBeUndefined()
 
@@ -319,8 +320,21 @@ describe('DogDetailPage – Familie und Verpaarung (Familienbande 2)', () => {
     root = null
     container.remove()
     await renderDog(ownDog(), { themeId: 'berner' })
-    expect(fact('Geschwister')).toBeUndefined()
-    expect(matingLink()).toBeNull()
+    expect([...container.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual(['Chronik', 'Infos', 'Stammbaum'])
+    expect(fact('Geschwister')).not.toBeUndefined()
+    expect(matingLink().textContent).toContain('Deckakt eintragen')
+  })
+
+  test('"Im Stammbaum ansehen" führt zum Stammbaum der Familie - nur, wenn es Verwandte gibt', async () => {
+    await renderDog(ownDog())
+    const tree = [...container.querySelectorAll('.dog-relatives-links a')].find((a) => a.textContent.includes('Im Stammbaum ansehen'))
+    expect(tree.getAttribute('href')).toBe('/familien/2?reiter=tiere&ansicht=stammbaum')
+
+    act(() => root.unmount())
+    root = null
+    container.remove()
+    await renderDog(ownDog({ siblings: [], geschlecht: 'ruede' }))
+    expect(container.querySelector('.dog-relatives-links')).toBeNull()
   })
 
   test('eine erwachsene eigene Hündin: leiser Link "Verpaarung eintragen" mit ihr als Mutter', async () => {

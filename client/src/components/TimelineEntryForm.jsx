@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import { todayIso } from '../lib/dates.js'
@@ -8,7 +9,7 @@ import { taggedDogIds } from '../lib/erlebtMit.js'
 import ErlebtMitPicker from './erlebtMit/ErlebtMitPicker.jsx'
 
 // Neuer oder bearbeiteter Timeline-Eintrag. Das Datum bestimmt die Position in der Chronik.
-// isHousehold: der aktive Bereich ist ein Haushalt ("Meine Chronik") – nur dort kann ein Eintrag als
+// isHousehold: der aktive Bereich ist ein Haushalt ("Mein Zuhause") – nur dort kann ein Eintrag als
 // privat markiert werden (sonst gibt es niemanden, vor dem er verborgen bleiben könnte).
 // isShelter: der aktive Bereich ist ein Tierheim – statt "privat" gibt es hier eine Kategorie und die
 // Checkbox "Im Steckbrief zeigen (öffentlich)" (isPublic), s. Phase T Task 4.
@@ -16,6 +17,7 @@ import ErlebtMitPicker from './erlebtMit/ErlebtMitPicker.jsx'
 // Payload) - nie bei einem privaten Eintrag.
 // submitLabel (Phase W): Beschriftung des Knopfs für einen neuen Beitrag, z. B. "Erzählen" im Composer auf Start.
 export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTag, submitLabel, onSubmit, onDelete, onCancel }) {
+  const { words } = useTheme()
   const [autorName, setAutorName] = useState(() => entry?.autor_name || readSetting('autorName', ''))
   const [datum, setDatum] = useState(() => entry?.datum || todayIso())
   const [titel, setTitel] = useState(entry?.titel || '')
@@ -80,7 +82,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
           Datum
         </label>
         <input id="entry-date" type="date" value={datum} onChange={(e) => setDatum(e.target.value)} required />
-        <span className="field-hint">Der Eintrag wird automatisch an dieser Stelle einsortiert.</span>
+        <span className="field-hint">Wird automatisch nach dem Datum einsortiert.</span>
       </div>
       <div className="field">
         <label className="field-label" htmlFor="entry-author">
@@ -111,7 +113,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
             <input type="checkbox" checked={privat} onChange={(e) => setPrivat(e.target.checked)} />
             Nur für uns (privat)
           </label>
-          <span className="field-hint">Private Einträge sehen nur die Menschen in eurem Zuhause.</span>
+          <span className="field-hint">Private {words.entries} sehen nur die Menschen in eurem Zuhause.</span>
         </div>
       )}
       {canTag && (
@@ -144,7 +146,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
         </div>
       )}
       <div className="form-actions span-2">
-        {onDelete && <ConfirmButton onConfirm={handleDelete} label="Eintrag löschen" disabled={saving} />}
+        {onDelete && <ConfirmButton onConfirm={handleDelete} label={`${words.entry} löschen`} disabled={saving} />}
         <span className="form-actions-spacer" />
         {onCancel && (
           <button type="button" className="btn btn-ghost" onClick={onCancel}>
@@ -152,7 +154,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
           </button>
         )}
         <button className="btn btn-primary" type="submit" disabled={saving || uploading}>
-          {saving ? 'Speichere …' : entry ? 'Speichern' : submitLabel || 'In die Chronik eintragen'}
+          {saving ? 'Speichere …' : entry ? 'Speichern' : submitLabel || words.tellActionShort}
         </button>
       </div>
     </form>

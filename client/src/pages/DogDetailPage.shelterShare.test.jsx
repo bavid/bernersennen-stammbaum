@@ -70,7 +70,7 @@ async function render() {
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter initialEntries={['/tier/30']}>
+      <MemoryRouter initialEntries={['/tier/30?reiter=infos']}>
         <Routes>
           <Route path="/tier/:id" element={<DogDetailPage family={homeFamily} onFamilyChange={() => {}} />} />
         </Routes>
@@ -109,19 +109,19 @@ describe('DogDetailPage – Einwilligung "Tierheim darf mitlesen"', () => {
   })
 
   // V-Fehler 1 (Vorschau, Demo-Nele): SharePanel und ShelterSharePanel trugen beide key={dog.id} - gleiche
-  // Schlüssel unter Geschwistern lassen React bei jedem Neu-Rendern der Seite (hier: Sortierung umschalten)
-  // eine weitere Kopie von "In Familien zeigen" im DOM zurück. Nach mehreren Klicks stand die Sektion ~20× da.
-  test('Neu-Rendern der Seite verdoppelt "In Familien zeigen" und die Tierheim-Sektion nicht', async () => {
+  // Schlüssel unter Geschwistern lassen React bei jedem Neu-Rendern der Seite eine weitere Kopie von "Wer sieht …?" im
+  // DOM zurück. Nach mehreren Klicks stand die Sektion ~20× da. Hier: zwischen den Reitern hin und her.
+  test('Neu-Rendern der Seite verdoppelt "Wer sieht …?" und die Tierheim-Sektion nicht', async () => {
     getDog.mockResolvedValue(homeDog({ shelterShare: { shelterName: 'Tierheim Sonnenhang', enabled: true, storyConsent: true } }))
     listTimeline.mockResolvedValue([])
     listBreedingEvents.mockResolvedValue([])
     listAllDogs.mockResolvedValue([])
     await render()
 
-    const sortButton = [...container.querySelectorAll('button')].find((button) => /zuerst/.test(button.textContent))
-    expect(sortButton).toBeDefined()
+    const tab = (label) => [...container.querySelectorAll('[role="tab"]')].find((button) => button.textContent === label)
     for (let i = 0; i < 3; i += 1) {
-      await act(async () => sortButton.click())
+      await act(async () => tab('Chronik').click())
+      await act(async () => tab('Infos').click())
     }
 
     expect(container.querySelectorAll('.share-panel')).toHaveLength(1)
