@@ -492,19 +492,28 @@
   box-shadow: none;
 }
 
-/* Audit W: kleine Links und Chips (Zurück-Link, Chips, „Alle anzeigen“ in Entdecken) bekommen eine 44 px hohe
-   Tippfläche, ohne dass sich das Layout ändert - ein unsichtbarer Streifen über und unter dem Element. */
+/* Audit W: kleine Links und Chips (Zurück-Link, Chips, „Alle anzeigen“ in Entdecken, Website-Links auf Karten,
+   „Gruß schreiben“, Links im Fuß) bekommen eine 44 px hohe Tippfläche, ohne dass sich das Layout ändert - ein
+   unsichtbarer Streifen über und unter dem Element. */
 .back-link,
 a.chip,
 button.chip,
-.discover-show-all {
+.discover-show-all,
+.card-link,
+.reply-open,
+.footer-link,
+.brand-name {
   position: relative;
 }
 
 .back-link::after,
 a.chip::after,
 button.chip::after,
-.discover-show-all::after {
+.discover-show-all::after,
+.card-link::after,
+.reply-open::after,
+.footer-link::after,
+.brand-name::after {
   content: '';
   position: absolute;
   top: 50%;

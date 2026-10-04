@@ -582,6 +582,19 @@
   align-items: center;
 }
 
+/* Audit W: am Handy „Familie verwalten“ und der leise Link „Bilderrahmen“ in einer Zeile (mit größerer Schrift bricht der
+   Link einfach darunter um) - statt zwei breiter Knöpfe übereinander. */
+@media (max-width: 720px) {
+  .group-hero .hero-actions {
+    align-items: center;
+  }
+
+  .group-hero .hero-actions > .btn {
+    flex: 0 1 auto;
+    padding: 0 var(--space-4);
+  }
+}
+
 .animals-tabs,
 .animals-panel,
 .group-panel,

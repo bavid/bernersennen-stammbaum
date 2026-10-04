@@ -510,7 +510,8 @@
 
 .partner-card-links .btn {
   padding: 0 var(--space-4);
-  min-height: 2.3rem;
+  /* Audit W: kleiner Knopf, aber 44 px Tippfläche */
+  min-height: 44px;
   font-size: var(--text-xs);
 }
 
