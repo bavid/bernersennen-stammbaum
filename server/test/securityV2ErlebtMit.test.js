@@ -57,7 +57,7 @@ test('security-review V2 (Runde 2): Erlebt mit', async (t) => {
     }
     const tooMany = await post('/api/timeline', entry(balu.id, 'Eine zu viel', [wilma.id]), author.cookie)
     assert.equal(tooMany.status, 409)
-    assert.match(tooMany.data.error, /20 offene „Erlebt mit“-Anfragen an „Zuhause Besitzer L3“/)
+    assert.match(tooMany.data.error, /20 offene „Mit dabei“-Anfragen an „Zuhause Besitzer L3“/)
     assert.equal(db.prepare("SELECT COUNT(*) AS c FROM timeline_entries WHERE titel = 'Eine zu viel'").get().c, 0, 'nichts halb gespeichert')
     // Ohne Markierung geht der Eintrag weiter
     assert.equal((await post('/api/timeline', entry(balu.id, 'Ohne Markierung', []), author.cookie)).status, 201)

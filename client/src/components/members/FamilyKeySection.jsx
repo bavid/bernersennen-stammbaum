@@ -54,7 +54,7 @@ export default function FamilyKeySection({ family, disabled }) {
       ) : (
         <>
           <p className="muted">
-            Mit dem gemeinsamen Schlüssel öffnet man {words.theGroup} direkt, ohne eigene Chronik. Nach dem Erneuern gilt
+            Mit dem gemeinsamen Schlüssel öffnet man {words.theGroup} direkt, ohne eigenes Zuhause. Nach dem Erneuern gilt
             nur noch der neue – alle, die so angemeldet waren, müssen sich neu anmelden.
           </p>
           {error && (

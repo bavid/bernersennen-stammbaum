@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api'
+import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { formatDateLong } from '../../lib/dates.js'
 import { requestGroups, requestQuestion } from '../../lib/erlebtMit.js'
@@ -12,6 +13,7 @@ import { useToast } from '../Toast.jsx'
 // Eintrags. Übernehmen spiegelt ihn in Wilmas Chronik, Ablehnen nimmt die Markierung weg. onCountChange(n) bekommt
 // die Zahl der danach noch offenen Anfragen (Badge in der Navigation). Ohne offene Anfragen: nichts.
 export default function ErlebtMitRequests({ onCountChange, onOpenPhoto }) {
+  const { words } = useTheme()
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
@@ -63,7 +65,7 @@ export default function ErlebtMitRequests({ onCountChange, onOpenPhoto }) {
 
   return (
     <section className="erlebt-mit-requests" aria-labelledby="erlebt-mit-requests-title">
-      <h2 id="erlebt-mit-requests-title">Erlebt mit – Anfragen</h2>
+      <h2 id="erlebt-mit-requests-title">Wart ihr mit dabei?</h2>
       {groups.length > 0 && (
         <div className="erlebt-mit-request-groups">
           {groups.map((group) => (
@@ -82,7 +84,7 @@ export default function ErlebtMitRequests({ onCountChange, onOpenPhoto }) {
           <li key={request.requestId} className="erlebt-mit-request">
             <p className="erlebt-mit-request-question">{requestQuestion(request)}</p>
             <p className="muted">
-              „{request.titel}“ vom {formatDateLong(request.datum)} – ein Eintrag zu {request.tier} aus „{request.zuhause}“,
+              „{request.titel}“ vom {formatDateLong(request.datum)} – {words.entry} zu {request.tier} aus „{request.zuhause}“,
               von {request.autor_name}
             </p>
             {request.text && <p className="erlebt-mit-request-text">{request.text}</p>}

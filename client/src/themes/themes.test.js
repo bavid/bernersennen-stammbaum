@@ -58,6 +58,23 @@ describe('themes', () => {
     expect(getTheme('berner').texts.loginDemoHint).toBe('Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren über mehrere Generationen.')
   })
 
+  // Phase W, Schritt 2 (Betreiber, Richtung „Familienalbum“): Chronik-Einträge heißen „Erinnerung“, Kommentare „Grüße“ -
+  // in beiden Auftritten gleich, an einer Stelle; dazu „Familie verwalten“ und „Zu den Tieren“.
+  test('entry and greeting nouns (Phase W, Schritt 2) are the same in both themes', () => {
+    for (const id of THEME_IDS) {
+      const { words } = getTheme(id)
+      expect([words.entry, words.entries, words.entriesDat, words.newEntry]).toEqual(['Erinnerung', 'Erinnerungen', 'Erinnerungen', 'Neue Erinnerung'])
+      expect([words.tellAction, words.tellActionShort]).toEqual(['Erinnerung festhalten', 'Festhalten'])
+      expect([words.greeting, words.greetings, words.greetingAction, words.greetingsEmpty]).toEqual(['Gruß', 'Grüße', 'Gruß schreiben', 'Noch keine Grüße'])
+    }
+    expect(getTheme('standard').words.groupSettings).toBe('Familie verwalten')
+    expect(getTheme('berner').words.groupSettings).toBe('Rudel verwalten')
+    expect(getTheme('standard').words.toTree).toBe('Zu den Tieren')
+    expect(getTheme('berner').words.toTree).toBe('Zum Stammbaum')
+    expect(getTheme('standard').words.wholeGroup).toBe('die ganze Familie')
+    expect(getTheme('berner').words.wholeGroup).toBe('das ganze Rudel')
+  })
+
   test('no word or text of the standard theme uses breeding vocabulary', () => {
     const { words, texts } = getTheme('standard')
     const all = [...Object.values(words), ...Object.values(texts).flat(2)]

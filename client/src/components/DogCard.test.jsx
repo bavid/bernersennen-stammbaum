@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test } from 'vitest'
 import DogCard from './DogCard.jsx'
+import { getTheme } from '../themes/index.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -56,7 +57,7 @@ describe('DogCard – geteiltes Tier aus einem Zuhause', () => {
   test('ohne shared_from bleibt der bisherige Tag (Einträge-Zähler) erhalten', async () => {
     await render({ dog: dog({ timeline_count: 3 }) })
     expect(container.querySelector('.dog-card-shared')).toBeNull()
-    expect(container.querySelector('.dog-card-tag').textContent).toBe('3 Einträge')
+    expect(container.querySelector('.dog-card-tag').textContent).toBe(`3 ${getTheme('standard').words.entries}`)
   })
 
   test('mini-Variante zeigt statt Text ein Haus-Symbol mit visuell verstecktem Text', async () => {

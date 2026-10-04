@@ -165,7 +165,7 @@ describe('Route /v – nach dem Anmelden landet man in der Chronik, nicht auf de
     await act(async () => setInputValue(container.querySelector('#redeem-name'), 'Zuhause am Deich'))
     await act(async () => container.querySelector('.form-stack').requestSubmit())
 
-    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu Meiner Chronik')
+    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu „Mein Zuhause“')
     await act(async () => continueButton.click())
 
     expect(container.textContent).not.toContain('Abmelden und Einladungscode einlösen')
@@ -209,19 +209,19 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     memberships: []
   }
 
-  test('zeigt den Umzugs-Hinweis und "In Meine Chronik übernehmen" statt "Abmelden und Einladungscode einlösen"', async () => {
+  test('zeigt den Umzugs-Hinweis und „In Mein Zuhause übernehmen“ statt "Abmelden und Einladungscode einlösen"', async () => {
     me.mockResolvedValue(qualifyingHome)
     checkVoucher.mockResolvedValue({ status: 'offen', handover: { animalName: 'Pepper', shelterName: 'Tierheim Sonnenhang' } })
     await render('/v#abcd1234hjkm')
 
     expect(checkVoucher).toHaveBeenCalledWith('ABCD-1234-HJKM')
     expect(container.textContent).toContain('Mit diesem Übergabe-Code zieht Pepper aus Tierheim Sonnenhang zu euch – mit der ganzen Chronik.')
-    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In Meine Chronik übernehmen')
+    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In „Mein Zuhause“ übernehmen')
     expect(claimButton).not.toBeUndefined()
     expect([...container.querySelectorAll('button')].some((btn) => btn.textContent === 'Abmelden und Einladungscode einlösen')).toBe(false)
   })
 
-  test('Klick auf "In Meine Chronik übernehmen" ruft api.claimVoucher auf und verlässt die Gutschein-Karte', async () => {
+  test('Klick auf „In Mein Zuhause übernehmen“ ruft api.claimVoucher auf und verlässt die Gutschein-Karte', async () => {
     me.mockResolvedValue(qualifyingHome)
     checkVoucher.mockResolvedValue({ status: 'offen', handover: { animalName: 'Pepper', shelterName: 'Tierheim Sonnenhang' } })
     claimVoucher.mockResolvedValue({ dogId: 42 })
@@ -231,11 +231,11 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
     listAllDogs.mockResolvedValue([])
     await render('/v#abcd1234hjkm')
 
-    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In Meine Chronik übernehmen')
+    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In „Mein Zuhause“ übernehmen')
     await act(async () => claimButton.click())
 
     expect(claimVoucher).toHaveBeenCalledWith({ code: 'ABCD-1234-HJKM', shelterMayRead: false })
-    expect(container.textContent).not.toContain('In Meine Chronik übernehmen')
+    expect(container.textContent).not.toContain('In „Mein Zuhause“ übernehmen')
     expect(container.textContent).not.toContain('angemeldet als')
   })
 
@@ -253,7 +253,7 @@ describe('Route /v – Übergabe-Gutschein mit laufender Zuhause-Sitzung überne
       .find((l) => l.textContent.includes('darf weiter mitlesen'))
       .querySelector('input[type="checkbox"]')
     await act(async () => checkbox.click())
-    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In Meine Chronik übernehmen')
+    const claimButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'In „Mein Zuhause“ übernehmen')
     await act(async () => claimButton.click())
 
     expect(claimVoucher).toHaveBeenCalledWith({ code: 'ABCD-1234-HJKM', shelterMayRead: true })

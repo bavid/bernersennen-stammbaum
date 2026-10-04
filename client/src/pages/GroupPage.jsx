@@ -8,6 +8,7 @@ import AnimalsTabs from '../components/animals/AnimalsTabs.jsx'
 import CompanionsView from '../components/animals/CompanionsView.jsx'
 import AnimalCreateModal from '../components/AnimalCreateModal.jsx'
 import GroupPosts from '../components/group/GroupPosts.jsx'
+import VisitChip from '../components/visits/VisitChip.jsx'
 import PinboardPage from './PinboardPage.jsx'
 import useAreaAnimals from '../hooks/useAreaAnimals.js'
 import useAnimalCreate from '../hooks/useAnimalCreate.js'
@@ -66,6 +67,8 @@ export default function GroupPage({ family, onFamilyChange }) {
           <span className="eyebrow">{visiting ? 'Befreundetes Zuhause' : words.group}</span>
           <h1>{family.name}</h1>
           {meta && <p className="group-meta">{meta}</p>}
+          {/* Phase W, Schritt 2: zu Besuch ein Chip im Kopf statt des Bands in der Leiste oben. */}
+          {visiting && <VisitChip name={family.name} />}
         </div>
         {!visiting && (
           <div className="hero-actions">

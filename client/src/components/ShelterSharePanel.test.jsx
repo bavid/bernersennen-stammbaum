@@ -58,13 +58,13 @@ describe('ShelterSharePanel', () => {
     await render()
     expect(container.textContent).toContain('Tierheim Sonnenhang darf mitlesen')
     expect(container.textContent).toContain(
-      'Tierheim Sonnenhang darf Nele mit Foto und dem neuesten nicht-privaten Eintrag öffentlich auf seiner Portalseite zeigen (Happy End)'
+      'Tierheim Sonnenhang darf Nele mit Foto und der neuesten nicht privaten Erinnerung öffentlich auf seiner Portalseite zeigen (Happy End)'
     )
   })
 
   test('erklärt "darf mitlesen" mit einem Hinweis, was das Tierheim dadurch sieht (informed consent)', async () => {
     await render()
-    expect(container.textContent).toContain('Tierheim Sonnenhang sieht Nele und alle nicht-privaten Einträge (nur lesen und kommentieren)')
+    expect(container.textContent).toContain('Tierheim Sonnenhang sieht Nele und alle nicht privaten Erinnerungen (nur lesen und Grüße schreiben)')
   })
 
   test('spiegelt den aktuellen Stand (enabled/storyConsent) in den Checkboxen', async () => {

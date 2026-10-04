@@ -3,14 +3,14 @@ import { canVisitOrigin, mirrorLabel, requestGroups, requestQuestion, tagLabel, 
 
 describe('lib/erlebtMit (Phase V2)', () => {
   test('tagLabel: bestätigt und angefragt', () => {
-    expect(tagLabel({ name: 'Wilma', status: 'bestaetigt' })).toBe('erlebt mit Wilma')
-    expect(tagLabel({ name: 'Wilma', status: 'offen' })).toBe('erlebt mit Wilma (angefragt)')
-    expect(tagLabel({ name: 'Unbekannt', nameUnbekannt: true, status: 'bestaetigt' })).toBe('erlebt mit Unbekannt')
+    expect(tagLabel({ name: 'Wilma', status: 'bestaetigt' })).toBe('mit dabei: Wilma')
+    expect(tagLabel({ name: 'Wilma', status: 'offen' })).toBe('mit dabei: Wilma (angefragt)')
+    expect(tagLabel({ name: 'Unbekannt', nameUnbekannt: true, status: 'bestaetigt' })).toBe('mit dabei: Unbekannt')
   })
 
   test('requestQuestion und mirrorLabel', () => {
     expect(requestQuestion({ dogName: 'Wilma' })).toBe('Wilma war dabei – übernehmen?')
-    expect(mirrorLabel({ tier: 'Balu', zuhause: 'Zuhause am Deich' })).toBe('erlebt mit Balu · Zuhause am Deich')
+    expect(mirrorLabel({ tier: 'Balu', zuhause: 'Zuhause am Deich' })).toBe('mit dabei: Balu · Zuhause am Deich')
   })
 
   test('canVisitOrigin: nur besuchte Zuhause', () => {
@@ -32,7 +32,7 @@ describe('lib/erlebtMit (Phase V2)', () => {
   })
 
   test('getrennte Markierung ohne Namen (security-review V2)', () => {
-    expect(tagLabel({ id: 9, status: 'bestaetigt', getrennt: true })).toBe('erlebt mit einem früher verbundenen Tier')
+    expect(tagLabel({ id: 9, status: 'bestaetigt', getrennt: true })).toBe('mit dabei: ein früher verbundenes Tier')
   })
 
   test('requestGroups: nur Zuhause mit mindestens zwei Anfragen', () => {

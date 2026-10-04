@@ -9,7 +9,7 @@ vi.mock('../../api', () => ({ api }))
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
 vi.mock('../Toast.jsx', () => ({ useToast: () => toast }))
 
-import VisitBanner from './VisitBanner.jsx'
+import VisitChip from './VisitChip.jsx'
 import VisitClaimCard from './VisitClaimCard.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -39,19 +39,20 @@ function Where() {
   return <output data-testid="where">{useLocation().pathname}</output>
 }
 
-describe('VisitBanner und VisitClaimCard (Phase V2)', () => {
-  // Phase W: "Zurück" navigiert nur nach /start - den Wechsel macht dort das AreaGate (kein eigener api.view).
-  test('das Band nennt den Gastgeber und führt zurück nach Hause (/start)', async () => {
+describe('VisitChip und VisitClaimCard (Phase V2, Phase W)', () => {
+  // Phase W, Schritt 2: statt des Bands oben ein Chip im Kopf der Besuchsseite; er navigiert nur nach /start - den Wechsel
+  // macht dort das AreaGate (kein eigener api.view).
+  test('der Chip sagt "Zu Besuch · Zurück zu Mein Zuhause" und führt nach Hause (/start)', async () => {
     await render(
       <>
-        <VisitBanner family={{ id: 9, name: 'Zuhause Möwenweg', art: 'zuhause', zuBesuch: true, home }} />
+        <VisitChip name="Zuhause Möwenweg" />
         <Where />
       </>
     )
-    expect(container.textContent).toContain('Zu Besuch bei Zuhause Möwenweg')
-    expect(container.textContent).toContain('ansehen und kommentieren')
-    expect(container.querySelector('button').textContent).toBe('Zurück zu Mein Zuhause')
-    await act(async () => container.querySelector('button').click())
+    const chip = container.querySelector('a.visit-chip')
+    expect(chip.textContent).toBe('Zu Besuch · Zurück zu Mein Zuhause')
+    expect(chip.getAttribute('aria-label')).toBe('Zu Besuch bei Zuhause Möwenweg – zurück zu Mein Zuhause')
+    await act(async () => chip.click())
     expect(container.querySelector('[data-testid="where"]').textContent).toBe('/start')
     expect(api.view).not.toHaveBeenCalled()
   })

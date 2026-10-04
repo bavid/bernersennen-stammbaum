@@ -48,11 +48,10 @@ export function visibleInNames(dog, memberships = []) {
   return (memberships || []).filter((membership) => shares.has(membership.id)).map((membership) => membership.name)
 }
 
-// Gibt es Verwandte, für die sich der Stammbaum lohnt? Eltern (auch nur als Freitext), Geschwister oder Nachwuchs.
+// Gibt es Verwandte, für die sich der Stammbaum lohnt? Eingetragene Eltern, Geschwister oder Nachwuchs - ein Elternteil,
+// der nur dem Namen nach bekannt ist (Freitext), steht im Stammbaum nicht als eigene Karte.
 export function hasRelatives(dog) {
-  return Boolean(
-    dog.mother || dog.father || dog.mother_freitext || dog.father_freitext || dog.siblings?.length || dog.children?.length
-  )
+  return Boolean(dog.mother || dog.father || dog.siblings?.length || dog.children?.length)
 }
 
 // "Im Stammbaum ansehen": der Reiter Stammbaum dort, wo man die Tiere dieses Bereichs sieht.

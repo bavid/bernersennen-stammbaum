@@ -168,3 +168,8 @@
 .invite-visit h3:focus {
   outline: none;
 }
+
+.invite-visit {
+  display: grid;
+  gap: var(--space-5);
+}

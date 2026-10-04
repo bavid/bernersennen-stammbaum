@@ -20,7 +20,7 @@ const STATUS = { offen: 'offen', bestaetigt: 'bestaetigt', abgelehnt: 'abgelehnt
 
 const NOT_TAGGABLE_MESSAGE = 'Dieses Tier kannst du nicht markieren – nur Tiere von Zuhausen, mit denen ihr verbunden seid.'
 const PRIVATE_MESSAGE = 'Private Einträge können keine anderen Tiere markieren.'
-const ONLY_HOME_MESSAGE = '„Erlebt mit“ gibt es nur in „Meine Chronik“.'
+const ONLY_HOME_MESSAGE = '„Mit dabei“ gibt es nur in „Mein Zuhause“.'
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -53,7 +53,7 @@ function taggableDogs(homeId) {
 function cleanTagList(value) {
   if (value === undefined || value === null) return []
   if (!Array.isArray(value) || value.length > MAX_TAGS || !value.every((id) => Number.isInteger(id) && id > 0)) {
-    throw httpError(400, `„Erlebt mit“: höchstens ${MAX_TAGS} Tiere`)
+    throw httpError(400, `„Mit dabei“: höchstens ${MAX_TAGS} Tiere`)
   }
   return [...new Set(value)]
 }
@@ -98,7 +98,7 @@ function assertOpenRequestLimit(authorId, newDogIds) {
   }
   for (const [targetId, { name, count }] of perTarget) {
     if (countOpenBetweenStmt.get(authorId, targetId).c + count > MAX_OPEN_PER_HOME) {
-      throw httpError(409, `Ihr habt schon ${MAX_OPEN_PER_HOME} offene „Erlebt mit“-Anfragen an „${name}“ – wartet, bis sie entschieden sind.`)
+      throw httpError(409, `Ihr habt schon ${MAX_OPEN_PER_HOME} offene „Mit dabei“-Anfragen an „${name}“ – wartet, bis sie entschieden sind.`)
     }
   }
 }

@@ -34,7 +34,7 @@ export default function VisitRedeemForm({ onRedeemed }) {
       <p className="muted">
         Du hast einen Einladungs-Code bekommen? Gib ihn hier ein – danach findest du das Zuhause unter „Familien“ bei
         „Befreundete Zuhause“. Verbundene Zuhause sehen die Namen eurer Tiere, damit ihr euch gegenseitig bei
-        „Erlebt mit“ markieren könnt.
+        „Mit dabei“ markieren könnt.
       </p>
       <form className="visit-redeem-form" onSubmit={handleSubmit}>
         {error && (

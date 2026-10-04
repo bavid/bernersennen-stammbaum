@@ -52,10 +52,10 @@ describe('visibleInNames', () => {
 })
 
 describe('hasRelatives', () => {
-  test('Eltern (auch als Freitext), Geschwister oder Nachwuchs zählen', () => {
+  test('eingetragene Eltern, Geschwister oder Nachwuchs zählen - ein Elternteil nur als Freitext nicht', () => {
     expect(hasRelatives({ children: [] })).toBe(false)
     expect(hasRelatives({ mother: { id: 1 }, children: [] })).toBe(true)
-    expect(hasRelatives({ father_freitext: 'Balu', children: [] })).toBe(true)
+    expect(hasRelatives({ father_freitext: 'Balu', children: [] })).toBe(false)
     expect(hasRelatives({ siblings: [{ id: 3 }], children: [] })).toBe(true)
     expect(hasRelatives({ children: [{ id: 4 }] })).toBe(true)
   })

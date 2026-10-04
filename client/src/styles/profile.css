@@ -253,3 +253,22 @@
     font-size: var(--text-xs);
   }
 }
+
+/* Phase W, Schritt 2: zu Besuch ein kleiner Chip im Kopf der Besuchsseiten statt des Bands oben (visits/VisitChip) */
+.visit-chip {
+  justify-self: start;
+  width: fit-content;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.visit-chip svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--muted);
+}
+
+.visit-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

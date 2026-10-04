@@ -14,7 +14,7 @@ export default function PrivacyConnections() {
         Gäste“ im Einladen-Dialog, einen neuen Gast auch gleich mit „Gast entfernen“ bei den Wegbegleitern.
       </p>
 
-      <h2>„Erlebt mit“</h2>
+      <h2>„Mit dabei“</h2>
       <p>
         Wer in seinem Zuhause einen nicht-privaten Eintrag schreibt, kann darin Tiere aus verbundenen Zuhausen markieren
         (über einen Besuch oder eine gemeinsame Familie). Die Menschen des markierten Tiers bekommen dazu eine Anfrage. Erst

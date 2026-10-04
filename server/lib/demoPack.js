@@ -150,9 +150,9 @@ function insertBreeding(db, familyId, ids, copyImage) {
 function insertCompanions(db, familyId, copyImage) {
   const insert = db.prepare(
     `INSERT INTO dogs (family_id, name, rasse, tierart, geschlecht, geburtsdatum, foto_url, beschreibung,
-       bei_uns_seit, bei_uns_bis, abschied_grund, herkunft_art, herkunft_text)
+       bei_uns_seit, bei_uns_bis, abschied_grund, herkunft_art, herkunft_text, mother_freitext, father_freitext)
      VALUES (@familyId, @name, @rasse, @tierart, @geschlecht, @geburtsdatum, @fotoUrl, @beschreibung,
-       @beiUnsSeit, @beiUnsBis, @abschiedGrund, @herkunftArt, @herkunftText)`
+       @beiUnsSeit, @beiUnsBis, @abschiedGrund, @herkunftArt, @herkunftText, @motherFreitext, @fatherFreitext)`
   )
   const ids = {}
   for (const companion of COMPANIONS) {
@@ -169,7 +169,9 @@ function insertCompanions(db, familyId, copyImage) {
       beiUnsBis: companion.beiUnsBis || null,
       abschiedGrund: companion.abschiedGrund || null,
       herkunftArt: companion.herkunftArt || null,
-      herkunftText: companion.herkunftText || null
+      herkunftText: companion.herkunftText || null,
+      motherFreitext: companion.motherFreitext || null,
+      fatherFreitext: companion.fatherFreitext || null
     }).lastInsertRowid
   }
   const link = db.prepare('INSERT INTO dog_links (family_id, dog_a_id, dog_b_id) VALUES (?, ?, ?)')

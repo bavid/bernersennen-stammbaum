@@ -306,13 +306,13 @@ describe('SettingsPage – Familien', () => {
     expect(buttonText('Familie beitreten oder gründen')).not.toBeUndefined()
   })
 
-  test('aus einer Familie heraus: kein Teilen hier, aber der Weg nach „Meine Chronik“', async () => {
+  test('aus einer Familie heraus: kein Teilen hier, aber der Weg nach „Mein Zuhause“', async () => {
     api.view.mockResolvedValue({ ...atHome })
     await render(inGroup, '/einstellungen?bereich=familien')
     await flush()
     expect(api.listDogs).not.toHaveBeenCalled()
     expect(container.querySelector('.share-card')).toBeNull()
-    await act(async () => buttonText('Zu „Meiner Chronik“ wechseln').click())
+    await act(async () => buttonText('Zu „Mein Zuhause“ wechseln').click())
     expect(api.view).toHaveBeenCalledWith(1)
     expect(latest.id).toBe(1)
   })
@@ -368,6 +368,6 @@ describe('SettingsPage – Mein Zuhause', () => {
   test('aus einer Familie heraus nur der Weg nach Hause', async () => {
     await render(inGroup, '/einstellungen?bereich=zuhause')
     expect(buttonText('Umbenennen')).toBeUndefined()
-    expect(buttonText('Zu „Meiner Chronik“ wechseln')).not.toBeUndefined()
+    expect(buttonText('Zu „Mein Zuhause“ wechseln')).not.toBeUndefined()
   })
 })

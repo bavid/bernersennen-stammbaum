@@ -193,11 +193,12 @@ describe('Besuch und eigene Adresse (Phase W)', () => {
 describe('genau ein api.view je Wechsel', () => {
   const visiting = { id: 9, name: 'Zuhause Möwenweg', theme: 'standard', art: 'zuhause', zuBesuch: true, role: 'gast', isDemo: false, home, memberships: [] }
 
-  test('"Zurück" im Besuchsband', async () => {
+  test('"Zurück zu Mein Zuhause" am Besuchs-Chip (Phase W, Schritt 2: statt des Bands)', async () => {
     me.mockResolvedValue(visiting)
     view.mockResolvedValue(meAtHome)
     await render('/familien/9')
-    const back = container.querySelector('.visit-banner-back')
+    expect(container.querySelector('.visit-banner')).toBeNull()
+    const back = container.querySelector('main .visit-chip')
     await act(async () => back.click())
     expect(view.mock.calls).toEqual([[1]])
     expect(mainHeading()).toBe('Start – Mein Zuhause')

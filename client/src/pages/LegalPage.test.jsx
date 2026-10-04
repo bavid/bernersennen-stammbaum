@@ -250,12 +250,12 @@ describe('LegalPage – /datenschutz, Anfragen und Benachrichtigungen', () => {
     expect(headings().indexOf('Benachrichtigungen des Betreibers')).toBeLessThan(headings().indexOf('Rechte und Kontakt'))
   })
 
-  test('Audit V7a: Besuche, "Erlebt mit", Telegram für Partner, Hinweis-Band und Sicherungen sind beschrieben', async () => {
+  test('Audit V7a: Besuche, "Mit dabei", Telegram für Partner, Hinweis-Band und Sicherungen sind beschrieben', async () => {
     config.mockResolvedValue({ appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } })
     await render('datenschutz')
 
     const headings = [...container.querySelectorAll('h2')].map((h) => h.textContent)
-    expect(headings).toEqual(expect.arrayContaining(['Zuhause besuchen', '„Erlebt mit“', 'Telegram-Hinweise für Partner', 'Hinweise oben auf der Seite', 'Sicherungen']))
+    expect(headings).toEqual(expect.arrayContaining(['Zuhause besuchen', '„Mit dabei“', 'Telegram-Hinweise für Partner', 'Hinweise oben auf der Seite', 'Sicherungen']))
     expect(container.textContent).toMatch(/nicht als privat markiert/)
     expect(container.textContent).toMatch(/Erst\s+wenn sie bestätigen/)
     expect(container.textContent).toMatch(/Chat-ID speichern wir verschlüsselt/)

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import { displayName } from '../lib/timeline.js'
@@ -11,6 +12,7 @@ import { displayName } from '../lib/timeline.js'
 // Toast erklärt, warum. onChange bekommt die neue, rohe shelterShare-Antwort des Servers (nicht den
 // ganzen Hund) - DogDetailPage mischt sie in dog.shelterShare (siehe dort handleShelterShareChange).
 export default function ShelterSharePanel({ dog, onChange }) {
+  const { words } = useTheme()
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
@@ -54,7 +56,7 @@ export default function ShelterSharePanel({ dog, onChange }) {
       {/* Informed consent (final-review Phase T Finding 3): die Checkbox-Beschriftung allein sagt nicht,
           WAS "mitlesen" konkret bedeutet - der Hinweis macht es für die Einwilligung ausdrücklich. */}
       <p className="field-hint">
-        {share.shelterName} sieht {name} und alle nicht-privaten Einträge (nur lesen und kommentieren)
+        {share.shelterName} sieht {name} und alle nicht privaten {words.entries} (nur lesen und {words.greetings} schreiben)
       </p>
       <label className="check">
         <input
@@ -63,7 +65,7 @@ export default function ShelterSharePanel({ dog, onChange }) {
           disabled={disabled || !share.enabled}
           onChange={(e) => toggleStoryConsent(e.target.checked)}
         />
-        {share.shelterName} darf {name} mit Foto und dem neuesten nicht-privaten Eintrag öffentlich auf seiner
+        {share.shelterName} darf {name} mit Foto und der neuesten nicht privaten {words.entry} öffentlich auf seiner
         Portalseite zeigen (Happy End)
       </label>
       {isDemo && <p className="field-hint">{readOnlyHint}</p>}

@@ -3,9 +3,9 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { layoutPedigree, collectNodes } from '../lib/pedigree.js'
 
 const entriesOf = (dogs) => dogs.reduce((sum, dog) => sum + (dog.timeline_count || 0), 0)
-const entriesItem = (dogs) => {
+const entriesItem = (dogs, words) => {
   const entries = entriesOf(dogs)
-  return { value: entries, label: entries === 1 ? 'Erinnerung' : 'Erinnerungen' }
+  return { value: entries, label: entries === 1 ? words.entry : words.entries }
 }
 
 // Standard (Familienbande 2): alle Tiere, Zuhause bzw. Familien (falls es etwas zu zählen gibt), Erinnerungen.
@@ -13,19 +13,19 @@ function familyItems(dogs, familyStat, words) {
   return [
     { value: dogs.length, label: dogs.length === 1 ? words.animal : words.animals },
     ...(familyStat ? [familyStat] : []),
-    entriesItem(dogs)
+    entriesItem(dogs, words)
   ]
 }
 
 // Berner: Hunde, weitere Tiere (falls es welche gibt), Generationen des Stammbaums, Erinnerungen.
-function treeItems(dogs, generations) {
+function treeItems(dogs, generations, words) {
   const dogCount = dogs.filter((dog) => (dog.tierart || 'hund') === 'hund').length
   const others = dogs.length - dogCount
   return [
     { value: dogCount, label: dogCount === 1 ? 'Hund' : 'Hunde' },
     ...(others ? [{ value: others, label: others === 1 ? 'weiteres Tier' : 'weitere Tiere' }] : []),
     { value: generations, label: generations === 1 ? 'Generation' : 'Generationen' },
-    entriesItem(dogs)
+    entriesItem(dogs, words)
   ]
 }
 
@@ -41,7 +41,7 @@ export default function OverviewStats({ dogs, allDogs, links, familyStat }) {
     () => (showFamilies ? 0 : layoutPedigree(collectNodes(dogs, allDogs), links).length),
     [showFamilies, dogs, allDogs, links]
   )
-  const items = showFamilies ? familyItems(dogs, familyStat, words) : treeItems(dogs, generations)
+  const items = showFamilies ? familyItems(dogs, familyStat, words) : treeItems(dogs, generations, words)
   return (
     <dl className="stats">
       {items.map((item) => (

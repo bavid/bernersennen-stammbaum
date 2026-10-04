@@ -1,6 +1,7 @@
 import { forwardRef } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar.jsx'
+import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
 import { displayName, sexLabel, shortName } from '../lib/timeline.js'
 import { yearOf } from '../lib/dates.js'
@@ -11,6 +12,7 @@ const SPECIES_BADGE = { katze: '🐈', anderes: '🐾' }
 // oder die Zahl der Einträge. Im Raster der Familienbande (grid, Familienbande 2) nur die Herkunft - und die nur, wo
 // nicht ohnehin nach diesem Zuhause gefiltert ist (showOrigin).
 function CardTag({ dog, variant, livesWithLabel, showOrigin }) {
+  const { words } = useTheme()
   if (dog.shared_from && showOrigin) {
     // Im Raster bleibt die Zeile einzeilig (gekürzt) - der volle Name steht dann im Tooltip.
     const title = variant === 'grid' ? `aus ${dog.shared_from}` : undefined
@@ -26,7 +28,7 @@ function CardTag({ dog, variant, livesWithLabel, showOrigin }) {
   if (!(dog.timeline_count > 0)) return null
   return (
     <span className="dog-card-tag">
-      {dog.timeline_count} {dog.timeline_count === 1 ? 'Eintrag' : 'Einträge'}
+      {dog.timeline_count} {dog.timeline_count === 1 ? words.entry : words.entries}
     </span>
   )
 }

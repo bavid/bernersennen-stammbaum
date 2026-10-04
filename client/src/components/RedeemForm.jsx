@@ -143,7 +143,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
 
   const knownInvalid = Boolean(status) && status !== 'offen'
   const statusText = status ? STATUS_TEXT[status] || STATUS_TEXT.unbekannt : null
-  const submitLabel = partnerAccess ? 'Partner-Profil einrichten' : 'Meine Chronik anlegen'
+  const submitLabel = partnerAccess ? 'Partner-Profil einrichten' : 'Mein Zuhause anlegen'
 
   return (
     <form ref={formRef} className="form-stack" onSubmit={handleSubmit}>
@@ -186,7 +186,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
           {visit && (
             <p className="handover-notice" role="status">
               Eine Einladung von „{visit.name}“: Mit eurer neuen Chronik seid ihr gleich verbunden und könnt dort zu
-              Besuch vorbeischauen. Verbunden sehen beide Zuhause die Namen der Tiere des anderen (für „Erlebt mit“).
+              Besuch vorbeischauen. Verbunden sehen beide Zuhause die Namen der Tiere des anderen (für „Mit dabei“).
             </p>
           )}
           {handover && (

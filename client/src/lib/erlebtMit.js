@@ -10,8 +10,8 @@ function animalName(name, nameUnbekannt) {
 // Chip am eigenen Eintrag: "erlebt mit Wilma" (noch nicht bestätigt: "erlebt mit Wilma (angefragt)"). Ist das andere
 // Zuhause nicht mehr verbunden (getrennt, security-review V2), nennt der Server den Namen nicht mehr.
 export function tagLabel(tag) {
-  if (tag.getrennt) return 'erlebt mit einem früher verbundenen Tier'
-  const base = `erlebt mit ${animalName(tag.name, tag.nameUnbekannt)}`
+  if (tag.getrennt) return 'mit dabei: ein früher verbundenes Tier'
+  const base = `mit dabei: ${animalName(tag.name, tag.nameUnbekannt)}`
   return tag.status === 'offen' ? `${base} (angefragt)` : base
 }
 
@@ -22,7 +22,7 @@ export function requestQuestion(request) {
 
 // Gespiegelter Eintrag in der Chronik des eigenen Tiers: "erlebt mit Balu · Zuhause am Deich"
 export function mirrorLabel(gespiegelt) {
-  return `erlebt mit ${animalName(gespiegelt.tier, gespiegelt.tierNameUnbekannt)} · ${gespiegelt.zuhause}`
+  return `mit dabei: ${animalName(gespiegelt.tier, gespiegelt.tierNameUnbekannt)} · ${gespiegelt.zuhause}`
 }
 
 // Ist das Zuhause, aus dem ein gespiegelter Eintrag stammt, eines, das man besuchen kann (me.besuche)?

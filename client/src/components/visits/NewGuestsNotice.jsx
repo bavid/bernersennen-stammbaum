@@ -70,7 +70,7 @@ export default function NewGuestsNotice({ onFamilyChange }) {
               Neu zu Besuch: <strong>{guest.name}</strong>
               {guest.ueberCode && <span className="muted"> – über deinen Code „{guest.ueberCode}“</span>}
             </p>
-            <p className="field-hint">Sieht eure Tiere und nicht-privaten Einträge und darf kommentieren.</p>
+            <p className="field-hint">Sieht eure Tiere und nicht privaten Erinnerungen und darf Grüße schreiben.</p>
             <div className="new-guest-actions">
               <button type="button" className="btn btn-primary" disabled={isDemo || busyId === guest.id} onClick={() => acknowledge(guest)}>
                 Passt

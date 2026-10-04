@@ -192,7 +192,7 @@ describe('PartnerPortalPage – Gutschein einlösen', () => {
     expect(container.querySelector('.key-reveal-value').textContent).toBe('ABCD-1234-HJKM')
   })
 
-  test('"Weiter zu Meiner Chronik" ruft onRedeemed mit den Zugangsdaten auf (ohne key/fromOthers)', async () => {
+  test('„Weiter zu Mein Zuhause“ ruft onRedeemed mit den Zugangsdaten auf (ohne key/fromOthers)', async () => {
     publicPartner.mockResolvedValue(partner)
     const response = {
       id: 5,
@@ -215,7 +215,7 @@ describe('PartnerPortalPage – Gutschein einlösen', () => {
     })
     await act(async () => container.querySelector('.form-stack').requestSubmit())
 
-    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu Meiner Chronik')
+    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu „Mein Zuhause“')
     await act(async () => continueButton.click())
 
     const { key, fromOthers, ...me } = response

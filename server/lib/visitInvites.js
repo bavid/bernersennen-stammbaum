@@ -29,7 +29,7 @@ function httpError(status, message) {
 // Zuhauses (lib/voucherManage.js, 409) - Prüfen und Anlegen in einer Transaktion.
 function createVisitInvite(db, hostId, { now = new Date() } = {}) {
   const host = findHome(hostId)
-  if (!host) throw httpError(400, 'Einladen geht nur aus „Meine Chronik“ heraus')
+  if (!host) throw httpError(400, 'Einladen geht nur aus „Mein Zuhause“ heraus')
   const expiresAt = new Date(now.getTime() + VISIT_INVITE_DAYS * DAY_MS)
   return db.transaction(() => {
     assertOpenCodeSlot(db, hostId)
@@ -55,7 +55,7 @@ function redeemVisitInvite(db, { code, guestId }) {
   const normalized = normalizeCode(code)
   if (!normalized) throw httpError(404, 'Diesen Code kennen wir nicht')
   const guest = findHome(guestId)
-  if (!guest || guest.is_demo) throw httpError(400, 'Nur aus „Meine Chronik“ heraus möglich')
+  if (!guest || guest.is_demo) throw httpError(400, 'Nur aus „Mein Zuhause“ heraus möglich')
   const codeHash = hashCode(normalized)
 
   return db.transaction(() => {

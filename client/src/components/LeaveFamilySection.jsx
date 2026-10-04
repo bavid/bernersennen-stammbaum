@@ -59,8 +59,8 @@ export default function LeaveFamilySection({ family, onFamilyChange, onLeft }) {
         </div>
       )}
       <p className="muted">
-        Ihr verlasst „{family.name}“. Eure geteilten Tiere sind dort danach nicht mehr sichtbar; eure eigene Chronik
-        bleibt unverändert.
+        Ihr verlasst „{family.name}“. Eure geteilten Tiere sind dort danach nicht mehr sichtbar; euer Zuhause bleibt
+        unverändert.
       </p>
       <button
         type="button"

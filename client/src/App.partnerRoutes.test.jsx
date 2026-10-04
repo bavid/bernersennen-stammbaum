@@ -135,7 +135,7 @@ describe('Route /p/:slug – Gutschein direkt aus dem Partner-Portal einlösen',
     })
     await act(async () => container.querySelector('.form-stack').requestSubmit())
 
-    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu Meiner Chronik')
+    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu „Mein Zuhause“')
     await act(async () => continueButton.click())
 
     expect(container.querySelector('h1')?.textContent).toBe('Start – Mein Zuhause')

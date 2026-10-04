@@ -34,6 +34,7 @@ const COMPANIONS = [
     beiUnsSeit: '2012-08-01',
     herkunftArt: 'privat',
     herkunftText: 'Bauernhof der Cousine',
+    motherFreitext: 'Minka vom Bauernhof',
     // Bewusst ohne Foto: Mira zeigt in der Demo den Initialen-Avatar, den der Client statt eines
     // Fotos anzeigt (test/demoPack.test.js prüft das).
     beschreibung: 'Vom Bauernhof der Cousine, mit acht Wochen zu uns geholt. Schläft am liebsten auf dem Fensterbrett.'
@@ -48,6 +49,8 @@ const COMPANIONS = [
     beiUnsSeit: '2021-06-12',
     herkunftArt: 'tierheim',
     herkunftText: 'Tierheim Sonnenhang',
+    // Phase W, Schritt 2: der Reiter "Verwandte" der Tierseite zeigt eine Mutter, die nur dem Namen nach bekannt ist.
+    motherFreitext: 'Tinka (Fundhündin im Tierheim Sonnenhang)',
     // Eigenes Foto: Nele wird nach Rudel geteilt - ein Bild, das dort schon ein anderes Tier zeigt,
     // sähe wie ein Duplikat aus.
     foto: 'nele.jpg',

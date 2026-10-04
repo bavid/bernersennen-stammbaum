@@ -35,6 +35,7 @@ function BirthdayBadge({ birthday, onPlanMeeting }) {
 }
 
 function Sibling({ dog, latest }) {
+  const { words } = useTheme()
   return (
     <Link to={`/tier/${dog.id}`} className="litter-sibling">
       <Avatar dog={dog} size={56} />
@@ -46,7 +47,7 @@ function Sibling({ dog, latest }) {
             <span className="muted">{relativeTime(latest.created_at)}</span>
           </span>
         ) : (
-          <span className="muted">Noch keine Einträge</span>
+          <span className="muted">Noch keine {words.entries}</span>
         )}
       </span>
     </Link>

@@ -174,6 +174,8 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
       'origin variety (tierheim/privat/anderes)'
     )
     assert.ok((await call(base, '/api/dogs/links', { cookie: demoCookie })).data.length >= 1, 'housemates (Nele + Mira)')
+    // Phase W, Schritt 2: der Reiter "Verwandte" der Tierseite zeigt bei Nele eine Mutter, die nur dem Namen nach bekannt ist.
+    assert.equal(dogs.find((d) => d.name === 'Nele').mother_freitext, 'Tinka (Fundhündin im Tierheim Sonnenhang)')
 
     const entries = (await call(base, '/api/timeline', { cookie: demoCookie })).data
     assert.ok(entries.filter((e) => e.privat).length >= 2, 'private entries visible to the owner')

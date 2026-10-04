@@ -102,7 +102,8 @@ export default function HomeInvite() {
 
   return (
     <div className="invite invite-home">
-      {isDemo && <p className="field-hint">{readOnlyHint}</p>}
+      {/* "Zu Besuch einladen" nennt die Demo selbst (VisitInviteCreator) - hier nicht doppelt. */}
+      {isDemo && mode !== 'besuch' && <p className="field-hint">{readOnlyHint}</p>}
       {mode === null ? (
         <InviteChoice onChoose={setMode} focusKey={lastMode} />
       ) : (

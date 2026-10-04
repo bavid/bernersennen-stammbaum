@@ -89,7 +89,7 @@ describe('„Erlebt mit“ im Eintrags-Formular (Phase V2)', () => {
       />
     )
     expect(container.querySelector('.erlebt-mit-picker').disabled).toBe(true)
-    expect(container.textContent).toContain('Private Einträge können keine anderen Tiere markieren.')
+    expect(container.textContent).toContain('Private Erinnerungen können keine anderen Tiere markieren.')
     await act(async () => submit())
     expect(onSubmit.mock.calls[0][0].erlebtMit).toEqual([])
   })
@@ -132,10 +132,10 @@ describe('„Erlebt mit“ in der Chronik (Phase V2)', () => {
     gespiegelt: { requestId: 3, tierId: 50, tier: 'Wilma', tierNameUnbekannt: false, zuhauseId: 9, zuhause: 'Zuhause Möwenweg' }
   }
 
-  test('eigener Eintrag: Chips „erlebt mit …“, offene als angefragt', async () => {
+  test('eigener Eintrag: Chips „mit dabei: …“, offene als angefragt', async () => {
     await render(<Timeline items={[ownEntry]} canEdit onEdit={() => {}} onOpenPhoto={() => {}} onAddComment={() => {}} />)
     const chips = [...container.querySelectorAll('.erlebt-mit-chip')].map((chip) => chip.textContent)
-    expect(chips).toEqual(['erlebt mit Wilma', 'erlebt mit Pepper (angefragt)'])
+    expect(chips).toEqual(['mit dabei: Wilma', 'mit dabei: Pepper (angefragt)'])
   })
 
   test('gespiegelter Eintrag: Herkunft, ohne Bearbeiten und Kommentare, mit „ansehen“ und „nicht mehr zeigen“', async () => {
@@ -152,7 +152,7 @@ describe('„Erlebt mit“ in der Chronik (Phase V2)', () => {
       />
     )
     const card = container.querySelector('.entry-card-mirrored')
-    expect(card.textContent).toContain('erlebt mit Wilma · Zuhause Möwenweg')
+    expect(card.textContent).toContain('mit dabei: Wilma · Zuhause Möwenweg')
     expect(card.querySelector('.entry-comments')).toBeNull()
     expect(card.querySelector('[aria-label*="bearbeiten"]')).toBeNull()
     expect(card.querySelector('img').getAttribute('src')).toBe('/uploads/x.jpg')

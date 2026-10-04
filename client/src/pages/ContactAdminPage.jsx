@@ -11,7 +11,7 @@ function buildTypes(words) {
       label: 'Feedback',
       icon: 'heart',
       prompt: 'Was gefällt dir, was fehlt dir, was könnte besser sein?',
-      placeholder: `z. B. Es wäre toll, wenn man Einträge auch als Liste für alle ${words.animals} sehen könnte.`
+      placeholder: `z. B. Es wäre toll, wenn man ${words.entries} auch als Liste für alle ${words.animals} sehen könnte.`
     },
     problem: {
       label: 'Problem melden',

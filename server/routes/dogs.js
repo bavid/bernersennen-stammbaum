@@ -448,7 +448,7 @@ function canTakeOverInArea(req) {
 router.post('/:id/uebernehmen', requireAuth, requireRole('leitung'), (req, res) => {
   if (findFamilyArt.get(req.familyId)?.art !== ART.rudel) return res.status(400).json({ error: 'Nur in einer Familie möglich' })
   if (!canTakeOverInArea(req)) {
-    return res.status(400).json({ error: 'Übernehmen geht nur als Mitglied mit eigener Chronik („Meine Chronik“)' })
+    return res.status(400).json({ error: 'Übernehmen geht nur als Mitglied mit eigenem Zuhause („Mein Zuhause“)' })
   }
   const dog = loadVisibleDog(req, res)
   if (!dog) return
@@ -707,7 +707,7 @@ router.put('/:id/shares', requireAuth, canWrite, (req, res) => {
 
   const identity = db.prepare('SELECT art FROM families WHERE id = ?').get(req.familyId)
   if (!identity || identity.art !== ART.zuhause) {
-    return res.status(400).json({ error: 'Teilen geht aus „Meine Chronik“' })
+    return res.status(400).json({ error: 'Teilen geht nur aus „Mein Zuhause“' })
   }
 
   const familyIds = (req.body || {}).familyIds

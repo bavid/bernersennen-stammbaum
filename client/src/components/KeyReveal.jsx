@@ -12,7 +12,7 @@ const COPIED_MS = 2000
 // (an ein Zuhause gerichtet) nicht passen, ohne die Kernerklärung selbst zu verdoppeln oder zu ersetzen.
 // freshKey (Audit V7a): nach einem persönlichen Code (Weitergabe, Besuch, Übergabe, Familien-Einladung) ist der
 // Schlüssel neu erzeugt (Server: fromOthers false) - dann kennt ihn niemand sonst, statt des Kartenhinweises steht das da.
-export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu Meiner Chronik', showCardHint = true, freshKey = false, note }) {
+export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu „Mein Zuhause“', showCardHint = true, freshKey = false, note }) {
   const [copied, setCopied] = useState(false)
   const headingRef = useRef(null)
 

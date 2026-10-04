@@ -63,11 +63,11 @@ describe('KeyReveal', () => {
     expect(container.querySelector('button').textContent).toContain('Kopiert')
   })
 
-  test('"Weiter zu Meiner Chronik" ruft onContinue auf', async () => {
+  test('„Weiter zu Mein Zuhause“ ruft onContinue auf', async () => {
     const onContinue = vi.fn()
     await render({ onContinue })
 
-    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu Meiner Chronik')
+    const button = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu „Mein Zuhause“')
     act(() => button.click())
 
     expect(onContinue).toHaveBeenCalled()

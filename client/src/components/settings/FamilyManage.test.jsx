@@ -173,7 +173,7 @@ describe('FamilyManage – Familie auflösen', () => {
     await act(async () => buttonWith('Familie auflösen …').click())
     const form = container.querySelector('.dissolve-dialog')
     expect(form.textContent).toContain('Das lässt sich nicht rückgängig machen.')
-    expect(form.textContent).toContain('Die Tiere der Mitglieder bleiben in ihren eigenen Chroniken')
+    expect(form.textContent).toContain('Die Tiere der Mitglieder bleiben in ihrem eigenen Zuhause')
     const submit = () => form.querySelector('button[type="submit"]')
     expect(submit().disabled).toBe(true)
 
@@ -188,7 +188,7 @@ describe('FamilyManage – Familie auflösen', () => {
     expect(container.querySelector('h1').textContent).toBe('Start')
   })
 
-  test('409 "eigene Tiere": zeigt den Hinweis und die Tiere der Familie als Links „In meine Chronik übernehmen“', async () => {
+  test('409 "eigene Tiere": zeigt den Hinweis und die Tiere der Familie als Links „In Mein Zuhause übernehmen“', async () => {
     familyMembers.mockResolvedValue(payloadAs('leitung'))
     dissolveFamily.mockRejectedValue(Object.assign(new Error('Die Familie hat eigene Tiere – bitte vorher in eine Chronik übernehmen.'), { status: 409 }))
     listDogs.mockResolvedValue([
@@ -207,7 +207,7 @@ describe('FamilyManage – Familie auflösen', () => {
     const links = [...form.querySelectorAll('.dissolve-animals a')]
     expect(links.map((a) => a.getAttribute('href'))).toEqual(['/tier/21'])
     expect(links[0].textContent).toContain('Wilma')
-    expect(links[0].textContent).toContain('In meine Chronik übernehmen')
+    expect(links[0].textContent).toContain('In „Mein Zuhause“ übernehmen')
     expect(form.textContent).not.toContain('Flocke')
   })
 

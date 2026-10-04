@@ -28,8 +28,8 @@ export default function VisitClaimCard({ code, visit, onConnected }) {
         </div>
       )}
       <p>
-        „{visit.name}“ lädt euch zu Besuch ein: Ihr seht dort die Tiere und alle nicht-privaten Einträge und dürft
-        kommentieren. Verbunden sehen beide Zuhause die Namen der Tiere des anderen (für „Erlebt mit“).
+        „{visit.name}“ lädt euch zu Besuch ein: Ihr seht dort die Tiere und alle nicht privaten Erinnerungen und dürft
+        Grüße schreiben. Verbunden sehen beide Zuhause die Namen der Tiere des anderen (für „Mit dabei“).
       </p>
       <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={handleConnect}>
         {busy ? 'Verbinde …' : `Bei „${visit.name}“ vorbeischauen`}

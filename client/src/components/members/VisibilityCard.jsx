@@ -11,13 +11,13 @@ export default function VisibilityCard({ collapsed = false }) {
       icon: 'lock',
       title: 'Privat',
       who: 'nur euer Zuhause',
-      text: 'Als privat markierte Einträge und alles, was ihr nicht teilt, sehen nur die Menschen mit Zugang zu eurer Chronik.'
+      text: `Private ${words.entries} und alles, was ihr nicht teilt, sehen nur die Menschen in eurem Zuhause.`
     },
     {
       icon: 'users',
       title: words.group,
       who: 'Mitglieder, je nach Rolle',
-      text: `Geteilte Tiere und ihre Einträge sehen alle Mitglieder ${words.ofGroup}. Was wer ändern darf, hängt an der Rolle.`
+      text: `Geteilte Tiere und ihre ${words.entries} sehen alle Mitglieder ${words.ofGroup}. Was wer ändern darf, hängt an der Rolle.`
     },
     {
       icon: 'globe',

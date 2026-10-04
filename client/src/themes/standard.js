@@ -56,7 +56,7 @@ export default {
     thisAnimalDat: 'diesem Tier',
     // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - im Standard-Auftritt "Familienbande" und "Nachwuchs"
     treeLabel: 'Familienbande',
-    toTree: 'Zur Familienbande',
+    toTree: 'Zu den Tieren',
     inTree: 'in der Familienbande',
     inTreeArticle: 'in der',
     yourTreeAcc: 'eure Familienbande',

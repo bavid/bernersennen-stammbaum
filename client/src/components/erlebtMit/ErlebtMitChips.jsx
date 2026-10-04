@@ -5,7 +5,7 @@ import { tagLabel } from '../../lib/erlebtMit.js'
 export default function ErlebtMitChips({ tags }) {
   if (!tags?.length) return null
   return (
-    <ul className="erlebt-mit-chips" aria-label="Erlebt mit">
+    <ul className="erlebt-mit-chips" aria-label="Mit dabei">
       {tags.map((tag) => (
         <li key={tag.id} className={`chip erlebt-mit-chip${tag.status === 'offen' ? ' is-pending' : ''}`} title={tag.zuhause}>
           <Icon name="paw" />

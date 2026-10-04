@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api'
+import { useTheme } from '../../themes/ThemeProvider.jsx'
 
 // "Erlebt mit" im Eintrags-Formular (Phase V2): Tiere verbundener Zuhause zum Ankreuzen (GET /api/erlebt-mit/tiere).
 // value: ausgewählte Tier-Ids, onChange(neue Liste). disabled (z. B. bei einem privaten Eintrag) sperrt die Auswahl
 // mit Hinweis. Ohne verbundene Zuhause bleibt nur ein kurzer Satz, wie man Verbindungen bekommt.
 export default function ErlebtMitPicker({ value, onChange, disabled }) {
+  const { words } = useTheme()
   const [animals, setAnimals] = useState(null)
   const [error, setError] = useState(null)
 
@@ -26,7 +28,7 @@ export default function ErlebtMitPicker({ value, onChange, disabled }) {
   return (
     <fieldset className="erlebt-mit-picker" disabled={disabled}>
       <legend className="field-label">
-        Erlebt mit <span className="muted">(optional)</span>
+        Mit dabei <span className="muted">(optional)</span>
       </legend>
       {error && <p className="field-error">{error}</p>}
       {animals && animals.length === 0 && (
@@ -49,8 +51,8 @@ export default function ErlebtMitPicker({ value, onChange, disabled }) {
       )}
       <p className="field-hint">
         {disabled
-          ? 'Private Einträge können keine anderen Tiere markieren.'
-          : 'Die Besitzer werden gefragt – erst danach erscheint der Eintrag auch in der Chronik ihres Tiers.'}
+          ? `Private ${words.entries} können keine anderen Tiere markieren.`
+          : `Die Besitzer werden gefragt – erst danach steht das auch in der Chronik ihres Tiers.`}
       </p>
     </fieldset>
   )

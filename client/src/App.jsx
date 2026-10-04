@@ -30,7 +30,6 @@ import AreaRoutes from './AreaRoutes.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 import RouteFallback from './components/RouteFallback.jsx'
-import VisitBanner from './components/visits/VisitBanner.jsx'
 import VisitClaimCard from './components/visits/VisitClaimCard.jsx'
 
 // Der Admin-Bereich (samt aller Admin*-Komponenten) kommt erst bei Bedarf als eigener Chunk - nur der
@@ -87,7 +86,7 @@ const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
 // Karte auf /v#CODE mit laufender Sitzung (Phase T Task 5): normalerweise nur "Abmelden und Gutschein
 // einlösen" - trägt der Code aber einen offenen Übergabe-Gutschein UND die Sitzung ist das eigene
 // Zuhause selbst (nicht ein beigetretenes Rudel, nicht ein klassischer Rudel-Login), bietet sie
-// stattdessen "In Meine Chronik übernehmen" (api.claimVoucher, ohne Ab-/Anmelden). code kommt aus dem
+// stattdessen "In „Mein Zuhause“ übernehmen" (api.claimVoucher, ohne Ab-/Anmelden). code kommt aus dem
 // #Hash der Adresse (App.jsx voucherCode) - ohne Code (z. B. direkter Aufruf von /v) bleibt es bei der
 // einfachen Karte, ganz ohne Prüf-Anfrage.
 // Phase V2: trägt der Code eine offene Besuchs-Einladung (checkVoucher meldet besuch), bietet die Karte im eigenen
@@ -165,7 +164,7 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
           {handover.shelterName} darf weiter mitlesen (freiwillig, jederzeit widerrufbar)
         </label>
         <button type="button" className="btn btn-primary btn-block" disabled={claiming} onClick={handleClaim}>
-          {claiming ? 'Übernehme …' : 'In Meine Chronik übernehmen'}
+          {claiming ? 'Übernehme …' : 'In „Mein Zuhause“ übernehmen'}
         </button>
       </div>
     )
@@ -627,11 +626,10 @@ export default function App() {
             <AdminViewBanner family={family} onEnd={handleEndAdminView} />
           ) : (
             family.isDemo && (
-              <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} compact={Boolean(family.zuBesuch)} />
+              <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
             )
           )}
-          {/* Phase V2: zu Besuch in einem anderen Zuhause - nur ansehen und kommentieren, mit Weg zurück. */}
-          {family.zuBesuch && <VisitBanner family={family} />}
+          {/* Phase W, Schritt 2: zu Besuch steht ein Chip im Kopf der Besuchsseiten (visits/VisitChip) - kein Band mehr oben. */}
           <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
           {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
           {isPartnerArea(family) && <ViewModeSwitch areaId={family.id} />}

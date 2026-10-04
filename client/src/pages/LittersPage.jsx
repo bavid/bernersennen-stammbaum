@@ -136,7 +136,7 @@ export default function LittersPage({ family, embedded = false }) {
     try {
       await api.deleteBreedingEvent(event.id)
       setEvents((current) => current.filter((e) => e.id !== event.id))
-      toast('Eintrag gelöscht')
+      toast(`${words.mating} gelöscht`)
     } catch (err) {
       setError(err.message)
     }

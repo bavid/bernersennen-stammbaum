@@ -13,9 +13,11 @@ import DogChronicle, { COMPOSER_ID } from '../components/dog/DogChronicle.jsx'
 import DogInfos, { SHARE_PANEL_TITLE_ID, TAKE_OVER_ID } from '../components/dog/DogInfos.jsx'
 import DogRelatives from '../components/dog/DogRelatives.jsx'
 import ShelterPlacement from '../components/dog/ShelterPlacement.jsx'
+import VisitChip from '../components/visits/VisitChip.jsx'
 import useDogPage from '../hooks/useDogPage.js'
 import useTabParam from '../hooks/useTabParam.js'
 import { hasRole } from '../lib/roles.js'
+import { isVisit } from '../lib/visits.js'
 import { animalsRoute } from '../lib/areas.js'
 import { CHRONICLE_TAB, DOG_TAB_PARAM, dogTabs, safeFromPath, visibleInNames } from '../lib/dogProfile.js'
 import { displayName } from '../lib/timeline.js'
@@ -184,6 +186,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         canWrite={canWrite}
         visibleIn={ownHomeAnimal ? visibleInNames(dog, family.memberships) : []}
         menuItems={menuItems}
+        badge={isVisit(family) ? <VisitChip name={family.name} /> : null}
         onShowVisibility={() => goTo('infos', SHARE_PANEL_TITLE_ID)}
         onTell={openComposer}
         onEdit={() => setEditingDog(true)}

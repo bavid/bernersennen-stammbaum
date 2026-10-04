@@ -201,7 +201,7 @@ describe('LoginPage – Gutschein einlösen', () => {
     )
   })
 
-  test('zeigt nach dem Einlösen KeyReveal; onLogin wird erst nach "Weiter zu Meiner Chronik" aufgerufen', async () => {
+  test('zeigt nach dem Einlösen KeyReveal; onLogin wird erst nach „Weiter zu Mein Zuhause“ aufgerufen', async () => {
     const onLogin = vi.fn()
     const response = {
       id: 5,
@@ -227,7 +227,7 @@ describe('LoginPage – Gutschein einlösen', () => {
     expect(container.querySelector('.key-reveal-value').textContent).toBe('ABCD-1234-HJKM')
     expect(onLogin).not.toHaveBeenCalled()
 
-    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu Meiner Chronik')
+    const continueButton = [...container.querySelectorAll('button')].find((btn) => btn.textContent === 'Weiter zu „Mein Zuhause“')
     act(() => continueButton.click())
 
     const { key, fromOthers, ...me } = response
