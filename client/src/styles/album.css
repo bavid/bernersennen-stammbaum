@@ -295,6 +295,44 @@
   stroke: none;
 }
 
+/* Feed auf Start: das erste Foto als Polaroid rechts neben Titel und Text (Polaroid.jsx, album.css) - die Karte wird
+   dadurch kaum höher. */
+.feed-card-body {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.feed-card-link.has-photo {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head head'
+    'body photo';
+  column-gap: var(--space-4);
+}
+
+.feed-card-link.has-photo .feed-card-head {
+  grid-area: head;
+}
+
+.feed-card-link.has-photo .feed-card-body {
+  grid-area: body;
+}
+
+.feed-card-photo {
+  grid-area: photo;
+  position: relative;
+  align-self: start;
+  width: 7.5rem;
+  padding: var(--space-1) var(--space-1) 0;
+}
+
+@media (max-width: 480px) {
+  .feed-card-photo {
+    width: 5.5rem;
+  }
+}
+
 /* „Erinnerung festhalten“ (StartComposer): zu ist es eine Zeile mit Frage und Knopf. */
 .start-composer:not(.is-open) {
   display: flex;

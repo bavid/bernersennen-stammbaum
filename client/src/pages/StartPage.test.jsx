@@ -105,8 +105,11 @@ describe('StartPage (Phase W)', () => {
     expect(cards).toHaveLength(2)
     expect(cards[0].querySelector('a').getAttribute('href')).toBe('/tier/10#entry-7')
     expect(cards[0].querySelector('.feed-card-title').textContent).toBe('Beitrag 7')
-    expect(cards[0].querySelectorAll('.feed-card-photos img')).toHaveLength(3)
-    expect(cards[0].querySelector('.feed-card-more').textContent).toBe('+1')
+    // B+ Familienalbum: das erste Foto als Polaroid, die übrigen als „+3“
+    expect(cards[0].querySelectorAll('.feed-card-photo .polaroid img')).toHaveLength(1)
+    expect(cards[0].querySelector('.feed-card-photo img').getAttribute('src')).toBe('/uploads/a.jpg')
+    expect(cards[0].querySelector('.feed-card-more').textContent).toBe('+3')
+    expect(cards[1].querySelector('.feed-card-photo')).toBeNull()
     expect(cards[0].querySelector('.feed-card-comments').textContent).toBe(`2 ${words.greetings}`)
     expect(cards[1].querySelector('.feed-card-comments')).toBeNull()
   })
@@ -147,8 +150,20 @@ describe('StartPage (Phase W)', () => {
     const choices = [...composer.querySelectorAll('.start-composer-animal')]
     // Der Name ohne den (für Screenreader verborgenen) Anfangsbuchstaben im Avatar
     expect(choices.map((button) => button.querySelector(':scope > span').textContent)).toEqual(['Nele'])
-    act(() => choices[0].click())
-    expect(choices[0].getAttribute('aria-pressed')).toBe('true')
+    // Abbrechen vor der Wahl: zu, der Fokus steht wieder auf „Erinnerung festhalten“
+    act(() => composer.querySelector('.start-composer-cancel').click())
+    expect(composer.querySelector('.start-composer-animal')).toBeNull()
+    expect(document.activeElement).toBe(composer.querySelector('.start-composer-open'))
+    act(() => composer.querySelector('.start-composer-open').click())
+    const chips = () => [...composer.querySelectorAll('.start-composer-animal')]
+    act(() => chips()[0].click())
+    expect(chips()[0].getAttribute('aria-pressed')).toBe('true')
+    // Abwählen lässt den Fokus, wo er ist - erneut wählen öffnet das Formular
+    chips()[0].focus()
+    act(() => chips()[0].click())
+    expect(chips()[0].getAttribute('aria-pressed')).toBe('false')
+    expect(document.activeElement).toBe(chips()[0])
+    act(() => chips()[0].click())
 
     const setValue = (input, value) => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, value)
@@ -162,6 +177,8 @@ describe('StartPage (Phase W)', () => {
     await act(async () => container.querySelector('.entry-form').requestSubmit())
 
     expect(api.createTimelineEntry).toHaveBeenCalledWith(expect.objectContaining({ dogId: 10, titel: 'Erster Schnee' }))
+    // Nach dem Speichern: zu, der Fokus zurück auf „Erinnerung festhalten“
+    expect(document.activeElement).toBe(composer.querySelector('.start-composer-open'))
     expect(container.querySelector('.feed-card-title').textContent).toBe('Erster Schnee')
     expect(container.querySelector('.feed-card a').getAttribute('href')).toBe('/tier/10#entry-99')
   })
@@ -278,11 +295,12 @@ describe('StartPage – Look B+ Familienalbum', () => {
     expect(card.querySelector('a').getAttribute('href')).toBe('/tier/10#entry-3')
   })
 
-  test('Kapitel: aufeinanderfolgende Erinnerungen derselben Jahreszeit stehen unter „Herbst 2026“ usw.', async () => {
+  test('Kapitel: nach dem Tag der Erinnerung sortiert, je Jahreszeit ein Kapitel - auch wenn sie anders festgehalten wurden', async () => {
+    // /recent liefert nach created_at: die Sommer-Erinnerung zuletzt geschrieben, dazwischen eine aus dem Herbst
     api.recentActivity.mockResolvedValue([
-      entry(3, { datum: '2026-09-20' }),
-      entry(2, { datum: '2026-09-02' }),
-      entry(1, { datum: '2026-07-14', comment_count: 1 })
+      entry(1, { datum: '2026-07-14', comment_count: 1, created_at: '2026-09-28 10:00:00' }),
+      entry(3, { datum: '2026-09-20', created_at: '2026-09-27 10:00:00' }),
+      entry(2, { datum: '2026-09-02', created_at: '2026-09-26 10:00:00' })
     ])
     await render()
     const chapters = [...container.querySelectorAll('.feed-chapter')]
@@ -290,5 +308,8 @@ describe('StartPage – Look B+ Familienalbum', () => {
     expect(chapters.map((chapter) => chapter.querySelectorAll('.feed-card').length)).toEqual([2, 1])
     expect(chapters[0].querySelector('ul').getAttribute('aria-label')).toBe('Herbst 2026')
     expect(chapters[1].querySelector('.feed-card-comments svg')).not.toBeNull()
+    // Die Zeile unter dem Tier nennt den Tag der Erinnerung - passend zum Kapitel
+    expect(chapters[0].querySelector('.feed-card-meta').textContent).toBe('erzählt von Mara · 20. September 2026')
+    expect(chapters[1].querySelector('.feed-card-meta').textContent).toBe('erzählt von Mara · 14. Juli 2026')
   })
 })

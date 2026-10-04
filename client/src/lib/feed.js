@@ -3,7 +3,8 @@
 import { getTheme } from '../themes/index.js'
 
 export const EXCERPT_LENGTH = 180
-export const MAX_THUMBS = 3
+// B+ Familienalbum: auf Start ein Foto je Erinnerung als Polaroid, weitere als „+n“.
+export const MAX_THUMBS = 1
 
 // Das Tier eines Beitrags in der Form, die Avatar und dogLabel erwarten.
 export function feedDog(entry) {
@@ -19,7 +20,7 @@ export function excerpt(text, length = EXCERPT_LENGTH) {
   return `${(lastSpace > length * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.–-]+$/, '')} …`
 }
 
-// Vorschaubilder: die ersten MAX_THUMBS Fotos und wie viele darüber hinaus ("+2").
+// Vorschaubilder: die ersten max Fotos und wie viele darüber hinaus ("+2").
 export function thumbnails(urls, max = MAX_THUMBS) {
   const list = Array.isArray(urls) ? urls.filter((url) => typeof url === 'string' && url) : []
   return { shown: list.slice(0, max), more: Math.max(0, list.length - max) }
@@ -29,6 +30,16 @@ export function thumbnails(urls, max = MAX_THUMBS) {
 export function commentsLabel(count, words = getTheme('standard').words) {
   if (!Number.isInteger(count) || count <= 0) return null
   return count === 1 ? `1 ${words.greeting}` : `${count} ${words.greetings}`
+}
+
+// Nach dem Tag der Erinnerung, die neueste zuerst; am selben Tag die zuletzt festgehaltene (created_at), ohne Datum ans
+// Ende. Die Kapitel nach Jahreszeiten (lib/seasons.js) folgen so der Liste, statt hin und her zu springen. Neue Liste.
+export function byMemoryDate(entries) {
+  const list = Array.isArray(entries) ? [...entries] : []
+  return list.sort((a, b) => {
+    if ((a.datum || '') !== (b.datum || '')) return (b.datum || '').localeCompare(a.datum || '')
+    return String(b.created_at || '').localeCompare(String(a.created_at || ''))
+  })
 }
 
 // Ziel eines Beitrags: die Tierseite, dort direkt am Eintrag (Timeline.jsx setzt id="entry-…").

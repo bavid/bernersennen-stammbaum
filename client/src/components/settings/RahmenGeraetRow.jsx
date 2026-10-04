@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon from '../Icon.jsx'
 import ConfirmButton from '../ConfirmButton.jsx'
 import RahmenGeraetForm from './RahmenGeraetForm.jsx'
@@ -32,6 +32,14 @@ function seen(geraet) {
 export default function RahmenGeraetRow({ geraet, tiere, readOnly, onUpdate, onRevoke }) {
   const [editing, setEditing] = useState(false)
   const [error, setError] = useState(null)
+  const editRef = useRef(null)
+  const wasEditing = useRef(false)
+
+  // Nach dem Ändern (gespeichert oder abgebrochen) steht der Fokus wieder auf „Ändern“.
+  useEffect(() => {
+    if (!editing && wasEditing.current) editRef.current?.focus()
+    wasEditing.current = editing
+  }, [editing])
 
   async function save(payload) {
     await onUpdate(payload)
@@ -62,6 +70,7 @@ export default function RahmenGeraetRow({ geraet, tiere, readOnly, onUpdate, onR
             <div className="settings-row-actions">
               <button
                 type="button"
+                ref={editRef}
                 className="btn btn-ghost"
                 onClick={() => {
                   setError(null)

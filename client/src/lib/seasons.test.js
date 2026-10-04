@@ -18,6 +18,17 @@ describe('seasonLabel – Kapitel nach Jahreszeiten (meteorologisch)', () => {
     expect(seasonLabel('2000-01-01')).toBe('Winter 1999/00')
   })
 
+  test('Grenzen: 31.08./01.09., 30.11./01.12., 28./29.02. und 01.03. (Schaltjahr)', () => {
+    expect(seasonLabel('2026-08-31')).toBe('Sommer 2026')
+    expect(seasonLabel('2026-09-01')).toBe('Herbst 2026')
+    expect(seasonLabel('2026-09-27')).toBe('Herbst 2026')
+    expect(seasonLabel('2026-11-30')).toBe('Herbst 2026')
+    expect(seasonLabel('2026-12-01')).toBe('Winter 2026/27')
+    expect(seasonLabel('2027-02-28')).toBe('Winter 2026/27')
+    expect(seasonLabel('2028-02-29')).toBe('Winter 2027/28')
+    expect(seasonLabel('2028-03-01')).toBe('Frühling 2028')
+  })
+
   test('ohne gültiges Datum kein Kapitel', () => {
     expect(seasonLabel(null)).toBeNull()
     expect(seasonLabel('gestern')).toBeNull()

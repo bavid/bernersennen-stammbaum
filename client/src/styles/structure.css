@@ -561,16 +561,6 @@
   line-height: 1.5;
 }
 
-/* Die Fotos selbst sind Polaroids (Polaroid.jsx, album.css). */
-.feed-card-photos {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
-  max-width: 30rem;
-  padding: var(--space-1) var(--space-1) var(--space-2);
-}
-
 .feed-card-more {
   position: absolute;
   right: var(--space-2);

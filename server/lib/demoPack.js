@@ -5,6 +5,7 @@ const path = require('node:path')
 const bcrypt = require('bcryptjs')
 const { partnerMediaDir: defaultMediaDir } = require('../config')
 const { deleteFamily, removeUploads } = require('./families')
+const { relativeDemoDate } = require('./demoDates')
 const { validatePartner, slugify } = require('./partners')
 const { validatePromotion, validateDonationReport, validateUrl, cleanOptionalText, MAX_TEXT_LENGTH } = require('./promotions')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
@@ -188,10 +189,10 @@ function insertCompanions(db, familyId, copyImage) {
 // transferDog beim echten Umzug setzt, damit die Timeline "aus Tierheim Sonnenhang" zeigt.
 // fotos (Phase V2, optional): Seed-Bilder als eigene Kopie je Eintrag (copyImage.copyOwn) - ein Foto, das schon ein
 // anderes Tier oder einen anderen Eintrag zeigt, teilt sich so keine Datei (und keine Sichtbarkeit) mit ihm.
-// yearsAgo (statt datum): derselbe Tag vor so vielen Jahren - für „Heute vor einem Jahr“ auf Start (B+ Familienalbum).
-function isoYearsAgo(years, now = new Date()) {
-  const date = new Date(Date.UTC(now.getUTCFullYear() - years, now.getUTCMonth(), now.getUTCDate()))
-  return date.toISOString().slice(0, 10)
+// relativ (statt datum): { tage, jahre } - der Tag `tage` nach heute, `jahre` früher (lib/demoDates.js, Europe/Berlin) - für
+// „Heute vor einem Jahr“ auf Start (B+ Familienalbum).
+function entryDatum(entry) {
+  return entry.relativ ? relativeDemoDate({ days: entry.relativ.tage, years: entry.relativ.jahre }) : entry.datum
 }
 
 function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage } = {}) {
@@ -201,7 +202,7 @@ function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage
   )
   const entryIds = {}
   for (const entry of HOUSEHOLD_TIMELINE) {
-    const datum = entry.yearsAgo ? isoYearsAgo(entry.yearsAgo) : entry.datum
+    const datum = entryDatum(entry)
     const writtenAgo = entry.hoursAgo ? ago(entry.hoursAgo) : null
     const herkunftFamilyId = entry.herkunftShelter && shelterFamilyId ? shelterFamilyId : null
     const fotos = copyImage ? (entry.fotos || []).map((file) => copyImage.copyOwn(file)) : []

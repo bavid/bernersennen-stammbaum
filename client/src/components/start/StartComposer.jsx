@@ -34,10 +34,15 @@ export default function StartComposer({ family, dogs, onCreated }) {
   const [picking, setPicking] = useState(false)
   const chosen = animals.find((dog) => dog.id === dogId)
   const pickerRef = useRef(null)
+  const openRef = useRef(null)
+  const wasPicking = useRef(false)
 
-  // Nach „Erinnerung festhalten“ steht der Fokus auf der Wahl des Tiers (nur beim Öffnen, nicht nach jeder Wahl).
+  // Fokus nur beim Wechsel: nach „Erinnerung festhalten“ auf die Wahl des Tiers, nach Abbrechen oder Speichern zurück auf
+  // den Knopf - nicht nach jeder Wahl eines Tiers.
   useEffect(() => {
-    if (picking) pickerRef.current?.querySelector('button, select')?.focus()
+    if (picking && !wasPicking.current) pickerRef.current?.querySelector('button, select')?.focus()
+    if (!picking && wasPicking.current) openRef.current?.focus()
+    wasPicking.current = picking
   }, [picking])
 
   if (animals.length === 0) return null
@@ -64,7 +69,7 @@ export default function StartComposer({ family, dogs, onCreated }) {
         {chosen ? `${words.newEntry} zu ${displayName(chosen)}` : `Was erlebt euer ${words.animal}?`}
       </h2>
       {!picking && !chosen && (
-        <button type="button" className="btn btn-primary start-composer-open" onClick={() => setPicking(true)}>
+        <button type="button" ref={openRef} className="btn btn-primary start-composer-open" onClick={() => setPicking(true)}>
           <Icon name="camera" />
           {words.tellAction}
         </button>
@@ -83,6 +88,11 @@ export default function StartComposer({ family, dogs, onCreated }) {
             ))}
           </select>
         </div>
+      )}
+      {picking && !chosen && (
+        <button type="button" className="btn btn-ghost btn-compact start-composer-cancel" onClick={() => setPicking(false)}>
+          Abbrechen
+        </button>
       )}
       {(picking || chosen) && animals.length <= MAX_CHIPS && (
         <div className="start-composer-animals" role="group" aria-label={`${words.animal} wählen`} ref={pickerRef}>

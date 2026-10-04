@@ -158,4 +158,42 @@ describe('Einstellungen › Bilderrahmen auf einem anderen Gerät', () => {
     expect(buttonByText('Bilderrahmen einrichten').disabled).toBe(true)
     expect(container.textContent).toContain('Höchstens 5 Bilderrahmen')
   })
+
+  // Review B+: „Ändern“ - Fokus, Abbrechen, Fehler, vorbelegte Werte.
+  test('Ändern: Fokus im Namen, vorbelegt mit Tieren, Zeitraum, Anzeige und Haken; Abbrechen führt den Fokus zurück', async () => {
+    api.rahmenGeraete.mockResolvedValue({
+      geraete: [{ ...OMA, auswahl: { ...AUSWAHL, tiere: [11], zeitraum: 'jahr', intervall: 30, uhr: true, privat: true } }],
+      max: 5
+    })
+    api.listDogs.mockResolvedValue([{ id: 11, name: 'Nele', can_edit: 1 }])
+    await render()
+    act(() => buttonByText('Ändern').click())
+    const form = container.querySelector('.rahmen-row .rahmen-form')
+    expect(document.activeElement).toBe(form.querySelector('input:not([type])'))
+    const privat = [...form.querySelectorAll('label.check')].find((label) => label.textContent.includes('Auch private'))
+    expect(privat.querySelector('input').checked).toBe(true)
+    await act(async () => form.requestSubmit())
+    expect(api.updateRahmenGeraet).toHaveBeenCalledWith(1, {
+      name: OMA.name,
+      auswahl: expect.objectContaining({ tiere: [11], zeitraum: 'jahr', intervall: 30, uhr: true, privat: true })
+    })
+    api.updateRahmenGeraet.mockClear()
+
+    act(() => buttonByText('Ändern').click())
+    act(() => buttonByText('Abbrechen').click())
+    expect(container.querySelector('.rahmen-row .rahmen-form')).toBeNull()
+    expect(document.activeElement).toBe(buttonByText('Ändern'))
+    expect(api.updateRahmenGeraet).not.toHaveBeenCalled()
+  })
+
+  test('Ändern scheitert: das Formular bleibt offen und sagt warum', async () => {
+    api.updateRahmenGeraet.mockRejectedValue(new Error('Der Name darf höchstens 40 Zeichen haben'))
+    await render()
+    act(() => buttonByText('Ändern').click())
+    const form = container.querySelector('.rahmen-row .rahmen-form')
+    await act(async () => form.requestSubmit())
+    expect(container.querySelector('.rahmen-row .rahmen-form')).not.toBeNull()
+    expect(container.querySelector('.rahmen-row [role="alert"]').textContent).toBe('Der Name darf höchstens 40 Zeichen haben')
+    expect(buttonByText('Speichern').disabled).toBe(false)
+  })
 })

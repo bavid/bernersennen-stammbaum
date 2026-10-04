@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import Icon from '../Icon.jsx'
 import FrameAuswahl from '../bilderrahmen/FrameAuswahl.jsx'
 import FrameSettings from '../bilderrahmen/FrameSettings.jsx'
@@ -24,6 +24,12 @@ export default function RahmenGeraetForm({ tiere, geraet = null, onSubmit, onCan
   const [privat, setPrivat] = useState(Boolean(geraet?.auswahl.privat))
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const nameRef = useRef(null)
+
+  // Beim Ändern steht der Fokus gleich im Namen (beim Neu-Anlegen bleibt er auf dem Knopf, der das Formular öffnete).
+  useEffect(() => {
+    if (geraet) nameRef.current?.focus()
+  }, [geraet])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -31,7 +37,6 @@ export default function RahmenGeraetForm({ tiere, geraet = null, onSubmit, onCan
     setSaving(true)
     try {
       await onSubmit({ name: name.trim(), auswahl: { ...auswahl, ...optionen, privat } })
-      if (geraet) setSaving(false)
     } catch (err) {
       setError(err.message)
       setSaving(false)
@@ -52,6 +57,7 @@ export default function RahmenGeraetForm({ tiere, geraet = null, onSubmit, onCan
         </label>
         <input
           id={`${id}-name`}
+          ref={nameRef}
           value={name}
           maxLength={MAX_NAME_LENGTH}
           required

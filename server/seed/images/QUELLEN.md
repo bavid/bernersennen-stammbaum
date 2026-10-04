@@ -32,8 +32,8 @@ alle Metadaten entfernt (kein EXIF/XMP/ICC; die Downloads sind sRGB). Vier Bilde
 | paula.jpg | Rudel: Paula, Berner-Mix, Hündin (2025) – Profilfoto, Eintrag „Paulas erster Geburtstag“ |
 | moritz.jpg | Rudel: Moritz, Berner-Mix, Rüde (2025) – Profilfoto, Eintrag „Moritz’ erster Schnee“ |
 | max.jpg | Rudel: Max, Labrador-Mix, schokobraun, Rüde (2021) – Profilfoto, Eintrag „Max zieht ein“ |
-| minka.jpg | Rudel: Minka, Katze, Europäisch Kurzhaar, grau getigert – Profilfoto |
-| hoppel.jpg | Rudel: Hoppel, Zwergkaninchen, hellbraun mit weißem Bauch – Profilfoto, Eintrag „Paula trifft Hoppel“ |
+| minka.jpg | Rudel: Minka, Katze, Europäisch Kurzhaar, grau getigert – Profilfoto; Zuhause am Deich: Eintrag „Neuer Lieblingsplatz“ (Mira) |
+| hoppel.jpg | Rudel: Hoppel, Zwergkaninchen, hellbraun mit weißem Bauch – Profilfoto, Eintrag „Paula trifft Hoppel“; Zuhause am Deich: Eintrag „Besuch von Nachbars Hoppel“ (Flocke, heute vor einem Jahr) |
 | minka-hermes.jpg | Rudel: Eintrag „Minka erobert das Hundekörbchen“ (Katze und Berner liegen nebeneinander) |
 | luna-aare.jpg | Rudel: Eintrag „Luna zieht an die Aare“ (Enten am Fluss) |
 | welpen.jpg | Rudel: Einträge „Sechs Welpen!“ (Bella), „Junas Wurf ist da“; Zuchtbuch Bella × Aiko und Juna × Theo |
@@ -42,13 +42,13 @@ alle Metadaten entfernt (kein EXIF/XMP/ICC; die Downloads sind sRGB). Vier Bilde
 | kira-einzug.jpg | Rudel: Eintrag „Einzug in Bern“ (Kira als Welpe) |
 | moritz-garten.jpg | Rudel: Eintrag „Moritz entdeckt den Garten“ (Moritz als Welpe im Juni) |
 | garten-ida.jpg | Rudel: Eintrag „Erste Nacht im Garten“ (Ida) |
-| wanderung.jpg | Rudel: Einträge „Wanderung zum Niesen“ (Aiko), „Alpwanderung Gantrisch“ (Gustav) |
+| wanderung.jpg | Rudel: Einträge „Wanderung zum Niesen“ (Aiko), „Alpwanderung Gantrisch“ (Gustav); Zuhause am Deich: privater Eintrag „Bergtour mit Nele“ |
 | schnee.jpg | Rudel: Einträge „Erster richtiger Schnee“ (Aiko), „Schneetag im Garten“ (Emma), „Grüße vom Thunersee“ (Finn) |
 | see.jpg | Rudel: Einträge „Erstes Mal schwimmen“ (Cora), „Stand-up-Paddling“ (Finn), „Erster Ausflug an den See“ (Hermes) |
 | ausstellung.jpg | Rudel: Eintrag „Ausstellung in Bern“ (Bella) |
 | balu.jpg | Zuhause am Deich: Balu, Rüde (2006–2019, verstorben), von Nachbarn übernommen – Profilfoto, Eintrag „Lieblingsplatz Sofa“ (eigene Kopie) |
 | nele.jpg | Zuhause am Deich: Nele, Mischling, Hündin, aus dem Tierheim – Profilfoto (wird ins Rudel geteilt) |
-| flocke.jpg | Zuhause am Deich: Flocke, Kaninchen aus einer Pflegestelle – Profilfoto, Eintrag „Flocke erobert den Garten“ (heute vor einem Jahr) |
+| flocke.jpg | Zuhause am Deich: Flocke, Kaninchen aus einer Pflegestelle – Profilfoto, Eintrag „Neues Gehege“ |
 | wilma.jpg | Zuhause Möwenweg: Wilma, Berner-Hündin, liebt Schnee – Profilfoto (geteilt), Eintrag „Schneerunde mit Nele“ (eigene Kopie, „Erlebt mit“ Nele, gespiegelt am Deich) |
 | pepper.jpg | Zuhause Lindenhof: Pepper, Mischling, Rüde, Wasserfreund mit Stock – Profilfoto (geteilt) |
 | tierheim-pepper.jpg | Tierheim Sonnenhang: Pepper, Mischling, Hündin (in Vermittlung) – Profilfoto/Steckbrief |

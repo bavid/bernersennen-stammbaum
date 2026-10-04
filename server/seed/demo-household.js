@@ -132,7 +132,9 @@ const TIMELINE = [
     autor: 'Familie Nissen',
     titel: 'Neuer Lieblingsplatz',
     text: 'Mira hat das Fensterbrett im Wohnzimmer für sich entdeckt – Sonnenplatz reserviert.',
-    hoursAgo: 40
+    hoursAgo: 40,
+    // B+ Familienalbum: Fotos im Feed auf Start (Polaroid)
+    fotos: ['minka.jpg']
   },
   // Zwei frühe Einträge aus Neles Zeit im Tierheim Sonnenhang (Phase T Task 6): lib/demoPack.js
   // verknüpft sie beim Anlegen mit herkunft_family_id = dem Demo-Tierheim (dieselbe Spalte, die auch
@@ -157,15 +159,40 @@ const TIMELINE = [
     kategorie: 'gassi',
     herkunftShelter: true
   },
-  // B+ Familienalbum: „Heute vor einem Jahr“ auf Start - genau ein Jahr vor dem Anlegen der Demo (lib/demoPack.js yearsAgo),
-  // damit die Karte nach dem Auffrischen der Demo zu sehen ist.
+  // B+ Familienalbum: „Heute vor einem Jahr“ auf Start. relativ: { tage, jahre } - der Tag `tage` nach dem Anlegen der Demo,
+  // `jahre` früher (lib/demoDates.js, Europe/Berlin). So zeigt die Karte am Tag des Auffrischens und an den drei Tagen
+  // danach je eine Erinnerung (zwei davon privat - die sieht nur das Zuhause, nicht die Familie oder das Tierheim).
   {
     dog: 'flocke',
-    yearsAgo: 1,
+    relativ: { tage: 0, jahre: 1 },
     autor: 'Familie Nissen',
-    titel: 'Flocke erobert den Garten',
-    text: 'Zum ersten Mal den ganzen Nachmittag draußen – jede Ecke wurde beschnuppert, die Möhre zuerst.',
-    fotos: ['flocke.jpg']
+    titel: 'Besuch von Nachbars Hoppel',
+    text: 'Hoppel von nebenan war zum ersten Mal da – nach zehn Minuten lagen die beiden nebeneinander im Gras.',
+    fotos: ['hoppel.jpg']
+  },
+  {
+    dog: 'nele',
+    relativ: { tage: 1, jahre: 2 },
+    autor: 'Familie Nissen',
+    titel: 'Bergtour mit Nele',
+    text: 'Drei Stunden bergauf, oben ein Käsebrot geteilt – Nele wollte danach gleich weiter.',
+    privat: true,
+    fotos: ['wanderung.jpg']
+  },
+  {
+    dog: 'mira',
+    relativ: { tage: 2, jahre: 1 },
+    autor: 'Familie Nissen',
+    titel: 'Mira im Sonnenfleck',
+    text: 'Den ganzen Nachmittag ist sie dem Sonnenfleck über den Teppich gefolgt.'
+  },
+  {
+    dog: 'nele',
+    relativ: { tage: 3, jahre: 3 },
+    autor: 'Familie Nissen',
+    titel: 'Nele lernt den Seilknoten',
+    text: 'Seitdem bringt sie ihn zu jedem Besuch an die Tür.',
+    privat: true
   },
   {
     dog: 'nele',
@@ -198,7 +225,8 @@ const TIMELINE = [
     autor: 'Familie Nissen',
     titel: 'Neues Gehege',
     text: 'Ein größeres Freigehege für den Garten ist fertig – Flocke testet es ausgiebig.',
-    hoursAgo: 8
+    hoursAgo: 8,
+    fotos: ['flocke.jpg']
   }
 ]
 
