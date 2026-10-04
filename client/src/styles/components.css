@@ -5,7 +5,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 2.6rem;
+  /* Audit W: mindestens 44 px Tippfläche (2,6rem allein sind bei kleinerer Grundschrift nur 39 px) */
+  min-height: max(2.6rem, 44px);
   padding: 0 var(--space-5);
   border-radius: var(--radius-pill);
   border: 1px solid transparent;

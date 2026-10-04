@@ -604,7 +604,7 @@
 }
 
 .group-panel .animals-tab-bar .tab-bar-tab {
-  min-height: 2.2rem;
+  min-height: 44px;
   font-size: var(--text-xs);
 }
 

@@ -492,6 +492,28 @@
   box-shadow: none;
 }
 
+/* Audit W: kleine Links und Chips (Zurück-Link, Chips, „Alle anzeigen“ in Entdecken) bekommen eine 44 px hohe
+   Tippfläche, ohne dass sich das Layout ändert - ein unsichtbarer Streifen über und unter dem Element. */
+.back-link,
+a.chip,
+button.chip,
+.discover-show-all {
+  position: relative;
+}
+
+.back-link::after,
+a.chip::after,
+button.chip::after,
+.discover-show-all::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: max(100%, 44px);
+  transform: translateY(-50%);
+}
+
 .chip:hover {
   border-color: var(--rust);
   color: var(--rust);
