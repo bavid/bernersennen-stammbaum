@@ -146,7 +146,7 @@ export default function ShelterAnimalsPage({ family }) {
           <h1>Unsere Tiere</h1>
           <p className="page-lede">
             Alle eure Tiere – verfügbar, reserviert, pausiert oder vermittelt. Bei vermittelten Tieren lest ihr weiter mit,
-            wenn ihr neues Zuhause es erlaubt.
+            wenn das neue Zuhause es erlaubt.
           </p>
         </div>
         <div className="page-hero-side">

@@ -193,7 +193,9 @@ export default function BreedingRecords({ events, ownDogs, allDogs, canWrite = t
       )}
       {events.length > 0 && (
         <details className="breeding-all">
-          <summary>Alle Einträge ({events.length})</summary>
+          <summary>
+            Alle {words.matings} ({events.length})
+          </summary>
           <ol className="breeding-list">
             {events.map((event) => (
               <BreedingEvent key={event.id} event={event} onDelete={onDelete} onOpenPhoto={onOpenPhoto} />

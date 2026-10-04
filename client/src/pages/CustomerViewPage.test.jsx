@@ -209,7 +209,7 @@ describe('CustomerViewPage – Reiter', () => {
     const nav = container.querySelector('.preview-frame-nav')
     expect(nav.getAttribute('aria-hidden')).toBe('true')
     expect(nav.querySelectorAll('a, button, [tabindex]')).toHaveLength(0)
-    expect([...nav.children].map((item) => item.textContent)).toEqual(['Wegbegleiter', 'Familienbande', 'Pinnwand', 'Entdecken', 'Collage'])
+    expect([...nav.children].map((item) => item.textContent)).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken', 'Menü'])
     expect(nav.querySelector('.is-active').textContent).toBe('Entdecken')
   })
 })

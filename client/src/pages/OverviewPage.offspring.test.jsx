@@ -94,7 +94,7 @@ describe('Familienbande – "Nachwuchs" beim Stammbaum (Phase U, Familienbande 2
   test('mit Geschwistern: Abschnitt unter dem Baum mit Titel, Eltern, Geschwister-Chips und dem Weg zu /wuerfe', async () => {
     await render()
 
-    expect(container.querySelector('.eyebrow').textContent).toBe('Familienbande')
+    expect(container.querySelector('.eyebrow').textContent).toBe('Stammbaum')
     expect(tree()).not.toBeNull()
     expect(section().querySelector('h2').textContent).toBe('Nachwuchs')
     expect(section().querySelector('.offspring-item-title').textContent).toBe('Nachwuchs vom 18. April 2021 · von Frieda × Anton')
@@ -221,7 +221,8 @@ describe('Familienbande – "Nachwuchs" beim Stammbaum (Phase U, Familienbande 2
 
     const toggle = [...container.querySelectorAll('.hero-actions a')].find((link) => link.textContent.includes('Stammbaum'))
     expect(toggle.textContent).toBe('Stammbaum & Nachwuchs')
-    const rest = container.textContent.replace('Stammbaum & Nachwuchs', '')
+    // Audit W: die Überschrift über den Familien heißt jetzt wie der Reiter „Stammbaum“ (statt „Familienbande“).
+    const rest = container.textContent.replace('Stammbaum & Nachwuchs', '').replace(/^Stammbaum/, '')
     expect(rest).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht/)
   })
 })

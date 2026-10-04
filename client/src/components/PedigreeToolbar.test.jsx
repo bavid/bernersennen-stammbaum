@@ -36,9 +36,9 @@ function render(themeId) {
 }
 
 describe('PedigreeToolbar – Name des Baums (Phase U)', () => {
-  test('Standard: "Ansicht der Familienbande", "Ganze Familienbande zeigen"', () => {
+  test('Standard: "Ansicht des Stammbaums", "Ganzen Stammbaum zeigen"', () => {
     render('standard')
-    expect(container.querySelector('[role="toolbar"]').getAttribute('aria-label')).toBe('Ansicht der Familienbande')
-    expect(container.querySelector('button[aria-label="Einpassen"]').getAttribute('title')).toBe('Ganze Familienbande zeigen')
+    expect(container.querySelector('[role="toolbar"]').getAttribute('aria-label')).toBe('Ansicht des Stammbaums')
+    expect(container.querySelector('button[aria-label="Einpassen"]').getAttribute('title')).toBe('Ganzen Stammbaum zeigen')
   })
 })

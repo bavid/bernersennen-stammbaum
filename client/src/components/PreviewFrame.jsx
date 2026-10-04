@@ -5,15 +5,15 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 // Die Beispiel-Kundin der Kundensicht - dieselbe Familie wie die Demo ("Zuhause am Deich").
 export const EXAMPLE_CUSTOMER_NAME = 'Zuhause am Deich'
 
-// Untere Leiste eines Haushalts (lib/navItems.js NAV_ITEMS_HOME) - hier nur als Bild: "Entdecken" aktiv. Der
-// Stammbaum heißt wie im Auftritt (Phase U: Standard "Familienbande").
+// Untere Leiste eines Haushalts (lib/navItems.js, Phase W: Start · Tiere · Familien · Entdecken + Menü) - hier nur als
+// Bild: "Entdecken" aktiv. Tiere und Familien heißen wie im Auftritt.
 function customerNav(words) {
   return [
-    { icon: 'route', label: 'Wegbegleiter' },
-    { icon: 'tree', label: words.treeLabel },
-    { icon: 'pin', label: 'Pinnwand' },
+    { icon: 'home', label: 'Start' },
+    { icon: 'paw', label: words.animals },
+    { icon: 'users', label: words.groups },
     { icon: 'compass', label: 'Entdecken', active: true },
-    { icon: 'collage', label: 'Collage' }
+    { icon: 'menu', label: 'Menü' }
   ]
 }
 

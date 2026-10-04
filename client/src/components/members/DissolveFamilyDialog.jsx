@@ -49,7 +49,7 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
         <div>
           <strong>Das lässt sich nicht rückgängig machen.</strong>
           <p>
-            {words.treeLabel}, Pinnwand, Kommentare und offene Einladungen {words.ofGroup} werden gelöscht. Die Tiere der
+            {words.treeLabel}, Pinnwand, {words.greetings} und offene Einladungen {words.ofGroup} werden gelöscht. Die Tiere der
             Mitglieder bleiben in ihrem eigenen Zuhause – sie sind danach nur nicht mehr hier zu sehen.
           </p>
         </div>

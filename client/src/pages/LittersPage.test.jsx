@@ -85,14 +85,15 @@ describe('LittersPage im Standard-Auftritt: "Nachwuchs" und "Verpaarung" (Phase 
     expect(container.querySelector('.litter-breeding').textContent).toContain('Verpaarung am 14. Februar 2021')
     expect(container.querySelector('.planned-litter').textContent).toMatch(/Verpaarung .* · Nachwuchs in etwa \d+ Tagen/)
     expect(container.querySelector('#breeding-records-title').textContent).toBe('Verpaarungen')
-    expect(container.textContent).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht|züchte|Welpe/)
+    // Audit W: der Link zurück heißt wie der Reiter in „Tiere“ - „Stammbaum“ (kein Zucht-Wort mehr).
+    expect(container.textContent).not.toMatch(/Würfe|Wurf|Deckakt|Zucht|züchte|Welpe/)
   })
 
-  test('kein eigener Reiter - oben führt ein Link zurück zur Familienbande (dort, wo der Nachwuchs steht: beim Stammbaum)', async () => {
+  test('kein eigener Reiter - oben führt ein Link zurück zum Stammbaum (dort, wo der Nachwuchs steht: beim Stammbaum)', async () => {
     await render('standard')
     const back = container.querySelector('.back-link')
     expect(back.getAttribute('href')).toBe('/stammbaum?ansicht=stammbaum')
-    expect(back.textContent.trim()).toBe('Familienbande')
+    expect(back.textContent.trim()).toBe('Stammbaum')
   })
 
   test('"Verpaarung eintragen" öffnet das Formular mit neutralen Beschriftungen', async () => {

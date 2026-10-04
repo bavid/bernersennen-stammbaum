@@ -26,10 +26,10 @@ describe('themes', () => {
     expect(words.wholeGroup).toBe('die ganze Familie')
   })
 
-  // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - hier "Familienbande", "Nachwuchs" und "Verpaarung".
-  test('tree and litters words: Familienbande, Nachwuchs, Verpaarung; animals are Tiere', () => {
+  // Phase U: "Würfe" klingt nach Zucht - hier "Nachwuchs" und "Verpaarung"; Audit W: der Baum heißt wie der Reiter „Stammbaum“.
+  test('tree and litters words: Stammbaum, Nachwuchs, Verpaarung; animals are Tiere', () => {
     const { words, texts } = THEME
-    expect([words.treeLabel, words.littersLabel, words.mating]).toEqual(['Familienbande', 'Nachwuchs', 'Verpaarung'])
+    expect([words.treeLabel, words.littersLabel, words.mating]).toEqual(['Stammbaum', 'Nachwuchs', 'Verpaarung'])
     expect([words.animal, words.animals]).toEqual(['Tier', 'Tiere'])
     expect(words.toTree).toBe('Zu den Tieren')
     expect(texts.loginDemoHint).toBe('Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren, Familien und Erinnerungen.')
@@ -43,10 +43,11 @@ describe('themes', () => {
     expect([words.greeting, words.greetings, words.greetingAction, words.greetingsEmpty]).toEqual(['Gruß', 'Grüße', 'Gruß schreiben', 'Noch keine Grüße'])
   })
 
+  // Audit W: „Stammbaum“ ist seit Phase V3/W der Name des Baums (Reiter in „Tiere“) - kein Zucht-Wort mehr hier.
   test('no word or text uses breeding vocabulary', () => {
     const { words, texts } = THEME
     const all = [...Object.values(words), ...Object.values(texts).flat(2)]
-    for (const value of all) expect(value).not.toMatch(/Stammbaum|Würfe|Wurf|Deckakt|Zucht|züchte|Welpe|Rudel|Hunde\b/)
+    for (const value of all) expect(value).not.toMatch(/Würfe|Wurf|Deckakt|Zucht|züchte|Welpe|Rudel|Hunde\b/)
   })
 
   test('the theme defines a Mark component', () => {

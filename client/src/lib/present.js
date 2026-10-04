@@ -31,7 +31,7 @@ export const PRESENT_TILES = Object.freeze([
   {
     key: 'rudel',
     label: 'Als Rudel ansehen',
-    description: 'Mehrere Zuhause, eine gemeinsame Familienbande – mit Mitgliedern und Rollen.',
+    description: 'Mehrere Zuhause, eine gemeinsame Familie – mit Mitgliedern und Rollen.',
     icon: 'users',
     as: DEMO_AS.rudel
   },

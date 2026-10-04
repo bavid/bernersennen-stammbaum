@@ -137,7 +137,7 @@ export function portalCounts(data) {
 
 // Vorgelesen am Zähler: "(2 Angebote)", "(1 Termin)".
 export function tabCountText(count, key) {
-  const [one, many] = COUNT_WORDS[key] || ['Eintrag', 'Einträge']
+  const [one, many] = COUNT_WORDS[key] || ['Treffer', 'Treffer']
   return `${count} ${count === 1 ? one : many}`
 }
 

@@ -46,15 +46,16 @@ export default {
     animal: 'Tier',
     animals: 'Tiere',
     thisAnimalDat: 'diesem Tier',
-    // Phase U: "Stammbaum" und "Würfe" klingen nach Zucht - hier "Familienbande" und "Nachwuchs"
-    treeLabel: 'Familienbande',
+    // Phase U: "Würfe" klingt nach Zucht - hier "Nachwuchs". Audit W: der Baum heißt wie der Reiter in „Tiere“
+    // (components/animals/AnimalsTabs.jsx) „Stammbaum“ - nicht mehr „Familienbande“.
+    treeLabel: 'Stammbaum',
     toTree: 'Zu den Tieren',
-    inTree: 'in der Familienbande',
-    inTreeArticle: 'in der',
-    yourTreeAcc: 'eure Familienbande',
-    treeEmpty: 'Eure Familienbande ist noch leer',
-    treeFit: 'Ganze Familienbande zeigen',
-    treeView: 'Ansicht der Familienbande',
+    inTree: 'im Stammbaum',
+    inTreeArticle: 'im',
+    yourTreeAcc: 'euren Stammbaum',
+    treeEmpty: 'Euer Stammbaum ist noch leer',
+    treeFit: 'Ganzen Stammbaum zeigen',
+    treeView: 'Ansicht des Stammbaums',
     littersLabel: 'Nachwuchs',
     litter: 'Nachwuchs',
     litterBirthday: 'Geburtstag der Geschwister',
@@ -98,11 +99,11 @@ export default {
     overviewLedeReadOnly: 'Damit wir wissen, was die anderen treiben: Klick ein Tier an und schau nach, wie es ihm geht.',
     feedEmpty: 'Klick ein Tier an und erzähl, was es so treibt',
     littersLede:
-      'Geschwister mit gleichen Eltern und gleichem Geburtstag: was sie gerade treiben und wie sie im gleichen Alter aussahen. Entsteht automatisch aus der Familienbande – eintragen muss man nichts.',
+      'Geschwister mit gleichen Eltern und gleichem Geburtstag: was sie gerade treiben und wie sie im gleichen Alter aussahen. Entsteht automatisch aus dem Stammbaum – eintragen muss man nichts.',
     littersEmpty:
-      'Noch kein Nachwuchs: Sobald in der Familienbande Geschwister mit gleichen Eltern und gleichem Geburtstag stehen, erscheinen sie hier.',
-    littersSingles: 'Diese Tiere haben bisher keine Geschwister in der Familienbande.',
-    plannedDue: 'Der Nachwuchs müsste jetzt da sein – Zeit für neue Karten in der Familienbande!',
+      'Noch kein Nachwuchs: Sobald im Stammbaum Geschwister mit gleichen Eltern und gleichem Geburtstag stehen, erscheinen sie hier.',
+    littersSingles: 'Diese Tiere haben bisher keine Geschwister im Stammbaum.',
+    plannedDue: 'Der Nachwuchs müsste jetzt da sein – Zeit für neue Karten im Stammbaum!',
     breedingIntro: 'Für die, die Nachwuchs planen: Eine Verpaarung erscheint oben als erwarteter Nachwuchs und später bei den Jungtieren.',
     matingNotesPlaceholder: 'Anzahl Jungtiere, Besonderheiten, Ultraschall …',
     loginDemoHint: 'Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren, Familien und Erinnerungen.'
