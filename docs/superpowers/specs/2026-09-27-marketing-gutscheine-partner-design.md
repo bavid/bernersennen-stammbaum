@@ -861,6 +861,77 @@ bewusste Ausnahme vom Grundsatz „Eine Familie ist nie öffentlich“: nur mit 
 
 ---
 
+## Phase F — Finanzierung: gemeinnützig gedacht, Spenden, Merch (Idee 04.10.)
+
+**Grundsatz (Betreiber):** Familie auf Pfoten soll für Nutzer frei bleiben und dem Gemeinwohl dienen –
+„alles für wohltätige Zwecke, rein spendenfinanziert“. Geld braucht es vor allem, um die „Server-Kisten zu
+warten“; Überschuss fließt in Spenden und lokale Projekte.
+
+### Wer zahlt was
+- **Nutzer (Zuhause, Familien):** immer frei. Keine fremde Werbung, kein Tracking, kein Datenhandel.
+- **Partner-Portale (Hundeschulen, Tierheime, Salons):** vorerst frei.
+- **Partner „überall sichtbar“:** eine Hervorhebung, die nicht nur in der Nähe, sondern überall in Entdecken
+  erscheint. Vorerst frei, später als freiwilliger Beitrag oder kleiner Betrag, der die Serverkosten deckt.
+- **Spenden:** freiwillige Spenden von Nutzern und Unternehmen, ein Spenden-Knopf (z. B. über die Seite
+  „So finanzieren wir uns“), Sponsoren aus Phase B (gesponserte Einladungscodes für Adoptionsfamilien).
+- **Merch:** siehe unten.
+
+### Wohin der Überschuss geht
+- Erst Betrieb (Server, Domain, Backups), dann:
+- Spenden an Tierheime und Tierschutz, gern sichtbar („Diesen Monat 120 € an Tierheim Sonnenhang“).
+- Lokale Projekte in der Stadt (z. B. Hundewiese, Kotbeutel-Spender, Trinkstellen).
+- Eigene Gemeinschafts-Aktionen: Hundetreffen, Hunde-Flohmarkt, Tag der offenen Tür mit Partnern. Diese sind
+  zugleich Mundpropaganda für die Plattform.
+- **Transparenz:** eine öffentliche Seite „So finanzieren wir uns“ mit Einnahmen, Kosten und Spenden pro Quartal,
+  in einfachen Worten.
+
+### Merch („Home Company“)
+- Produkte: bestickte Textilien (Shirts, Hoodies, Mützen), Halstücher, Beutel, Tassen, später Fotobücher aus der
+  Chronik.
+- Ablauf (Betreiber): Lieferant mit Stickerei liefert an den Betreiber; dort Qualität prüfen, verpacken, Flyer
+  beilegen, versenden. Streng genommen ist das kein Dropshipping, sondern Eigenversand („Home Fulfillment“) –
+  dafür passen Qualität und persönliche Note.
+- **10 % gehen an Spenden:** 10 % des Umsatzes oder des Gewinns – je nachdem, was günstiger ist. Spenden können
+  steuerlich abgesetzt werden (Grenzen und Form mit Steuerberater klären).
+- Start klein: ein einfacher Shop (z. B. ein fertiger Shop-Dienst statt eigener Shop-Technik), wenige Motive,
+  Vorbestellung, um Lagerrisiko klein zu halten.
+
+### Rechtsform und Förderung (Optionen, prüfen lassen)
+- **Gemeinnützigkeit:** Tierschutz ist ein steuerbegünstigter Zweck (§ 52 AO). Möglich als **e. V.** oder
+  **gGmbH**. Dann sind Spenden an die Plattform steuerlich absetzbar, aber wirtschaftliche Tätigkeit (Merch,
+  bezahlte Partner-Hervorhebung) unterliegt eigenen Regeln.
+- **Zwei-Säulen-Modell (Vorschlag):** gemeinnütziger Verein betreibt die Plattform; eine kleine private Firma
+  (die „Home Company“) macht Merch und spendet 10 % an den Verein bzw. Tierheime. Trennt Ehrenamt und Geschäft
+  sauber.
+- **Förderung (Kandidaten, Bedingungen prüfen):** Prototype Fund (Open-Source-Software fürs Gemeinwohl),
+  Deutsche Stiftung für Engagement und Ehrenamt, kommunale Förder- und Ehrenamts-Programme der Stadt,
+  Landes-Gründerprogramme, Stiftungen aus dem Tierschutz. Viele verlangen eine gemeinnützige Rechtsform oder
+  Open Source.
+- **Für den Merch-Teil (Checkliste):** Gewerbeanmeldung, Kleinunternehmerregelung prüfen, Verpackungsregister
+  (LUCID) vor dem ersten Versand, Impressum/AGB/Widerruf im Shop, Produktsicherheit (GPSR) und
+  Textilkennzeichnung beim Lieferanten absichern.
+
+### Wortwahl in der App
+- Nicht „ohne Werbung“ schreiben, solange Partner-Angebote in Entdecken stehen. Diese bleiben als
+  Partner-Angebot klar gekennzeichnet (auch wenn sie kostenlos sind).
+- Stattdessen: **„Keine fremde Werbung, kein Tracking, kein Datenhandel – getragen von Spenden und lokalen
+  Partnern.“**
+
+### Umsetzung (wenn entschieden)
+1. Öffentliche Seite **„So finanzieren wir uns“** (Landing, Fuß, Datenschutz verlinken): Grundsatz, wer zahlt was,
+   wohin der Überschuss geht, Spenden-Knopf, Merch-Hinweis. Zahlen pro Quartal pflegt der Admin.
+2. Admin: einfache Pflege der Transparenz-Zahlen und Spenden-Ziele („Ziel: 500 € für die Hundewiese“).
+3. Partner: Schalter „überall sichtbar“ (vorerst kostenlos) + Kennzeichnung.
+4. Merch: Link zum externen Shop, Flyer-Vorlage aus dem Visitenkarten-Designer (Druckbogen A6).
+
+### Offene Fragen an den Betreiber
+- Verein (e. V.) oder gGmbH – oder erst einmal privat starten und später umwandeln?
+- Soll „überall sichtbar“ später etwas kosten, und wenn ja, als fester Betrag oder als Spende nach Wahl?
+- Welche Spendenempfänger zuerst (ein Tierheim fest oder jedes Quartal ein anderes)?
+- Darf die Transparenz-Seite echte Zahlen zeigen (empfohlen), oder nur Spendensummen?
+
+---
+
 ## Phase B — Netzwerk für Tierheime und Partner (B2B, Idee 04.10.)
 
 **Idee:** Tierheime, Hundeschulen, Salons und Sponsoren helfen sich über die Plattform gegenseitig. Neuer Reiter
