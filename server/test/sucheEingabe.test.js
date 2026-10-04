@@ -9,9 +9,9 @@ test('Suche: Eingabe, Platzhalter, Umlaute, Reihenfolge, Grenzen', async (t) => 
   t.after(() => cleanup(dataDir, server))
   const db = require('../db')
 
-  const get = (query, cookie) => call(base, `/api/suche?${query}`, { cookie })
-  const search = (q, cookie, extra = '') => get(`q=${encodeURIComponent(q)}${extra}`, cookie)
   const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
+  const raw = (body, cookie) => post('/api/suche', body, cookie)
+  const search = (q, cookie, extra = {}) => raw({ q, ...extra }, cookie)
   const names = (res) => res.data.gruppen.tiere.treffer.map((item) => item.name)
 
   const home = await createHousehold(base, 'Zuhause Lindenhof')
@@ -23,19 +23,37 @@ test('Suche: Eingabe, Platzhalter, Umlaute, Reihenfolge, Grenzen', async (t) => 
       .run(homeId, name, rasse, createdAt).lastInsertRowid
 
   await t.test('ungültige Eingaben: 400', async () => {
-    assert.equal((await get('', home.cookie)).status, 400)
+    assert.equal((await raw({}, home.cookie)).status, 400)
     assert.equal((await search('a', home.cookie)).status, 400)
     assert.equal((await search('   b   ', home.cookie)).status, 400)
     assert.equal((await search('x'.repeat(81), home.cookie)).status, 400)
-    assert.equal((await get('q[]=benno', home.cookie)).status, 400)
-    assert.equal((await get('q=benno&q=nele', home.cookie)).status, 400)
-    assert.equal((await search('benno', home.cookie, '&gruppen=tiere,geheim')).status, 400)
-    assert.equal((await search('benno', home.cookie, '&gruppen[]=tiere')).status, 400)
+    assert.equal((await raw({ q: ['benno'] }, home.cookie)).status, 400)
+    assert.equal((await raw({ q: { text: 'benno' } }, home.cookie)).status, 400)
+    assert.equal((await raw({ q: 42 }, home.cookie)).status, 400)
+    assert.equal((await raw(['benno'], home.cookie)).status, 400)
+    assert.equal((await raw({ q: 'benno', seite: 2 }, home.cookie)).status, 400, 'unbekannte Angabe')
+    assert.equal((await search('benno', home.cookie, { gruppen: ['tiere', 'geheim'] })).status, 400)
+    assert.equal((await search('benno', home.cookie, { gruppen: 'tiere' })).status, 400)
+    assert.equal((await search('benno', home.cookie, { gruppen: [] })).status, 400)
+    assert.equal((await search('benno', home.cookie, { gruppen: [1] })).status, 400)
+    // kein JSON (z. B. ein Formular als Text): nichts gelesen -> 400
+    const text = await fetch(`${base}/api/suche`, { method: 'POST', headers: { Cookie: home.cookie, 'Content-Type': 'text/plain' }, body: 'q=benno' })
+    assert.equal(text.status, 400)
     assert.equal((await search('x'.repeat(80), home.cookie)).status, 200)
   })
 
+  await t.test('nur POST: GET mit ?q= (oder ohne) und andere Methoden -> 405, der Begriff nie in der Adresse', async () => {
+    for (const method of ['GET', 'PUT', 'DELETE']) {
+      const res = await call(base, '/api/suche?q=benno', { method, cookie: home.cookie })
+      assert.equal(res.status, 405, method)
+      assert.equal(res.headers.get('allow'), 'POST')
+      assert.equal(res.headers.get('cache-control'), 'no-store')
+    }
+    assert.equal((await call(base, '/api/suche')).status, 405)
+  })
+
   await t.test('gruppen: nur die gewünschten Gruppen', async () => {
-    const res = await search('benno', home.cookie, '&gruppen=tiere,partner')
+    const res = await search('benno', home.cookie, { gruppen: ['tiere', 'partner', 'tiere'] })
     assert.deepEqual(Object.keys(res.data.gruppen).sort(), ['partner', 'tiere'])
   })
 
@@ -129,10 +147,26 @@ test('Suche: Eingabe, Platzhalter, Umlaute, Reihenfolge, Grenzen', async (t) => 
   })
 
   await t.test('nur aus der App: ein fremder Seitenaufruf (Sec-Fetch-Site: cross-site) bekommt 403', async () => {
-    const res = await fetch(`${base}/api/suche?q=wilma`, { headers: { Cookie: home.cookie, 'Sec-Fetch-Site': 'cross-site' } })
-    assert.equal(res.status, 403)
-    const same = await fetch(`${base}/api/suche?q=wilma`, { headers: { Cookie: home.cookie, 'Sec-Fetch-Site': 'same-origin' } })
-    assert.equal(same.status, 200)
+    const send = (site) =>
+      fetch(`${base}/api/suche`, {
+        method: 'POST',
+        headers: { Cookie: home.cookie, 'Content-Type': 'application/json', 'Sec-Fetch-Site': site },
+        body: JSON.stringify({ q: 'wilma' })
+      })
+    assert.equal((await send('cross-site')).status, 403)
+    assert.equal((await send('same-origin')).status, 200)
+  })
+
+  await t.test('Admin-Ansicht (nur lesend) und Demo dürfen suchen - die Suche ist ein lesender POST', async () => {
+    const { signSession } = require('../middleware/auth')
+    const { sessionCookie } = require('../config')
+    const adminView = `${sessionCookie}=${signSession(homeId, homeId, { adminView: true })}`
+    assert.equal((await search('wilma', adminView)).status, 200)
+    assert.equal((await post('/api/dogs', { name: 'Neu', geschlecht: 'ruede' }, adminView)).status, 403, 'schreiben bleibt gesperrt')
+    const demo = await createHousehold(base, 'Zuhause Demoweg')
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(demo.data.id)
+    assert.equal((await search('wilma', demo.cookie)).status, 200)
+    assert.equal((await post('/api/dogs', { name: 'Neu', geschlecht: 'ruede' }, demo.cookie)).status, 403, 'Demo schreibt nicht')
   })
 
   await t.test('höchstens 60 Suchen je Minute und Identität', async () => {

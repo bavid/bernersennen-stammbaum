@@ -1,4 +1,4 @@
-// Suche (components/search, server GET /api/suche): Gruppen, Ziele der Treffer, Abkürzungen, der Verlauf auf diesem Gerät
+// Suche (components/search, server POST /api/suche): Gruppen, Ziele der Treffer, Abkürzungen, der Verlauf auf diesem Gerät
 // und die Liste der Optionen für die Tastatur (Combobox mit aria-activedescendant).
 import { groupRoute, isHouseholdIdentity } from './areas.js'
 import { canInvite } from './accountMenu.js'

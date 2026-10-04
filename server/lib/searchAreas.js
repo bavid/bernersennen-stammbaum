@@ -1,6 +1,6 @@
 'use strict'
 
-// Suche (GET /api/suche, lib/search.js): in welchen Bereichen die angemeldete Identität sucht - und mit welchen Regeln.
+// Suche (POST /api/suche, lib/search.js): in welchen Bereichen die angemeldete Identität sucht - und mit welchen Regeln.
 // Keine eigenen Sichtbarkeitsregeln: je Bereich genau die SQL-Teile, mit denen die Seiten dort ohnehin lesen.
 // - das eigene Zuhause (bzw. beim klassischen Login mit dem Schlüssel einer Familie: die Familie selbst) - wie jede Seite
 //   im eigenen Bereich (VISIBLE_DOGS_SQL, VISIBLE_ENTRY_SQL: eigene Erinnerungen auch privat, hierher geteilte nicht-private),

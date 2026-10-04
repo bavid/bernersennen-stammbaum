@@ -22,14 +22,15 @@ const GUEST_READS = [
   /^\/api\/breeding$/,
   /^\/api\/notes$/,
   /^\/api\/besuche$/,
-  // Suche: lib/searchAreas.js beschränkt eine Besuchs-Sitzung auf das eigene Zuhause und die Gast-Regeln beim Gastgeber.
-  /^\/api\/suche$/,
   // Fotos: lib/uploadAccess.js canSeeUpload prüft für Gäste nur nicht-private Einträge und Tierfotos.
   /^\/uploads\/[^/]+$/
 ]
 
 // Schreiben nur: kommentieren, den eigenen Kommentar löschen, zurück nach Hause wechseln, abmelden, den Besuch beenden.
+// Dazu ein lesender POST: die Suche (Suchbegriff im Body, nie in der URL) - lib/searchAreas.js beschränkt eine
+// Besuchs-Sitzung auf das eigene Zuhause und die Gast-Regeln beim Gastgeber.
 const GUEST_WRITES = [
+  { method: 'POST', re: /^\/api\/suche$/ },
   { method: 'POST', re: /^\/api\/view$/ },
   { method: 'POST', re: /^\/api\/logout$/ },
   { method: 'POST', re: /^\/api\/timeline\/\d+\/comments$/ },

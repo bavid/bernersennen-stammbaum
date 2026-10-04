@@ -1,6 +1,6 @@
 'use strict'
 
-// Suche (GET /api/suche, routes/suche.js): Tiere, Erinnerungen, Pinnwand, Familien & befreundete Zuhause und Partner -
+// Suche (POST /api/suche, routes/suche.js): Tiere, Erinnerungen, Pinnwand, Familien & befreundete Zuhause und Partner -
 // je Bereich aus lib/searchAreas.js mit dessen eigenen Sichtbarkeitsregeln, danach zusammengeführt.
 // Vergleich: lib/searchText.js faltet Text und Suchbegriff gleich (zwei Fassungen, siehe dort); in der Datenbank prüfen
 // die SQL-Funktionen aus lib/searchMatch.js (suche_hat, suche_rang) - ohne LIKE, mit Arbeitsbudget je Anfrage.

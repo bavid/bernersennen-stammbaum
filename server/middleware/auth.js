@@ -149,7 +149,8 @@ const ADMIN_VIEW_READ_ONLY = 'Admin-Ansicht – nur lesen'
 //   die PLZ nicht in der URL steht (routes/discover.js, routes/partnerArea/preview.js);
 // - /places/search, /public/partners/near: Umkreissuche "In der Nähe", PLZ/Koordinaten im Body (routes/places.js,
 //   routes/partners.js);
-// - /vouchers/check: reines Nachschauen eines Codes, nie in der URL (routes/vouchers.js).
+// - /vouchers/check: reines Nachschauen eines Codes, nie in der URL (routes/vouchers.js);
+// - /suche: die Suche, der Suchbegriff im Body statt in der URL (routes/suche.js).
 // /api/admin/* läuft über das Admin-Cookie, nicht über die Sitzung - deshalb ebenfalls frei (sonst könnte der
 // Admin mit offener Admin-Ansicht im selben Browser nichts mehr verwalten).
 const ADMIN_VIEW_READ_ONLY_POSTS = new Set([
@@ -159,7 +160,8 @@ const ADMIN_VIEW_READ_ONLY_POSTS = new Set([
   '/partner-area/preview/discover',
   '/places/search',
   '/public/partners/near',
-  '/vouchers/check'
+  '/vouchers/check',
+  '/suche'
 ])
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 

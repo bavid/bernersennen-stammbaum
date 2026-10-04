@@ -5,7 +5,7 @@ import { SEARCH_DELAY_MS, searchableQuery } from '../lib/search.js'
 const IDLE = { status: 'idle', query: null, gruppen: null, error: null, unvollstaendig: false }
 const FAILED = 'Die Suche hat gerade nicht geklappt – bitte gleich noch einmal versuchen.'
 
-// Treffer zur Eingabe (GET /api/suche): erst ab zwei Zeichen und nach SEARCH_DELAY_MS ohne weiteres Tippen eine Anfrage;
+// Treffer zur Eingabe (POST /api/suche): erst ab zwei Zeichen und nach SEARCH_DELAY_MS ohne weiteres Tippen eine Anfrage;
 // eine ältere Antwort, die nach einer neueren Eingabe eintrifft, wird verworfen. Während eine neue Suche läuft, bleiben die
 // bisherigen Treffer stehen (status 'loading') - query nennt immer die Suche, zu der gruppen gehört (für die Hervorhebung).
 // unvollstaendig: der Server hat nicht alles durchsucht (Arbeitsbudget) - genauer suchen hilft.

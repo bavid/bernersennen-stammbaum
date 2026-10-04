@@ -127,12 +127,9 @@ export const api = {
   // publicPartners im Body, nie in der URL; ohne PLZ liefert der Server alles, nach Name sortiert.
   discover: ({ plz, radius } = {}) => request('/discover', json('POST', plz ? { plz, radius } : {})),
   // Suche (server/routes/suche.js): { gruppen: { tiere|erinnerungen|pinnwand|familien|partner: { treffer, mehr } } } - nur,
-  // was die Identität sehen darf. gruppen optional (Liste der Gruppen), sonst alle.
-  search: (q, gruppen) => {
-    const params = new URLSearchParams({ q })
-    if (gruppen?.length) params.set('gruppen', gruppen.join(','))
-    return request(`/suche?${params.toString()}`)
-  },
+  // was die Identität sehen darf. POST wie discover: der Suchbegriff steht nur im Body, nie in einer Adresse (und damit in
+  // keinem Zugriffsprotokoll). gruppen optional (Liste der Gruppen), sonst alle.
+  search: (q, gruppen) => request('/suche', json('POST', gruppen?.length ? { q, gruppen } : { q })),
 
   checkVoucher: (code) => request('/vouchers/check', json('POST', { code })),
   redeemVoucher: (payload) => request('/vouchers/redeem', json('POST', payload)),

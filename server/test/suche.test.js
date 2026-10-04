@@ -10,7 +10,7 @@ test('Suche: nur, was die Identität ohnehin sehen darf', async (t) => {
   t.after(() => cleanup(dataDir, server))
   const db = require('../db')
 
-  const search = (q, cookie, extra = '') => call(base, `/api/suche?q=${encodeURIComponent(q)}${extra}`, { cookie })
+  const search = (q, cookie) => call(base, '/api/suche', { method: 'POST', body: { q }, cookie })
   const post = (urlPath, body, cookie) => call(base, urlPath, { method: 'POST', body, cookie })
   const dog = async (cookie, name, extra = {}) => (await post('/api/dogs', { name, geschlecht: 'huendin', ...extra }, cookie)).data
   const entry = async (cookie, dogId, titel, text, extra = {}) =>

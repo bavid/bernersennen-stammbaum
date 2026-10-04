@@ -1,6 +1,6 @@
 'use strict'
 
-// Suche (GET /api/suche, lib/search.js): Text vergleichbar machen, Suchbegriff prüfen, Auszug um den Treffer.
+// Suche (POST /api/suche, lib/search.js): Text vergleichbar machen, Suchbegriff prüfen, Auszug um den Treffer.
 // Gefaltet wird in zwei Fassungen, beide klein geschrieben und ohne Akzente (NFKD, Zeichen wie é -> e):
 // - "de": deutsche Umschrift, ä/ö/ü -> ae/oe/ue - "Müller" findet "Mueller" und umgekehrt;
 // - "basis": Umlaut ohne Punkte, ä/ö/ü -> a/o/u - "Muller" (ohne Umlaut-Taste getippt) findet "Müller".

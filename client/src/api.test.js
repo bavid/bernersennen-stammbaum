@@ -153,6 +153,28 @@ describe('api.discover – Reiter "Entdecken" (Phase 3)', () => {
   })
 })
 
+describe('api.search – Suche: der Suchbegriff nie in der Adresse', () => {
+  test('POST an /suche, Begriff und Gruppen im Body', async () => {
+    const fetchMock = stubFetch({ gruppen: {} })
+
+    await api.search('Zitronenfalter', ['tiere', 'partner'])
+
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/suche')
+    expect(url).not.toContain('Zitronenfalter')
+    expect(options.method).toBe('POST')
+    expect(JSON.parse(options.body)).toEqual({ q: 'Zitronenfalter', gruppen: ['tiere', 'partner'] })
+  })
+
+  test('ohne Gruppen: nur der Begriff', async () => {
+    const fetchMock = stubFetch({ gruppen: {} })
+
+    await api.search('Nele')
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ q: 'Nele' })
+  })
+})
+
 describe('api.admin – Entdecken pflegen (Phase 3 Task 5)', () => {
   test('Empfehlungen: Liste, Anlegen, Ändern, Löschen an /admin/promotions', async () => {
     const fetchMock = stubFetch({})

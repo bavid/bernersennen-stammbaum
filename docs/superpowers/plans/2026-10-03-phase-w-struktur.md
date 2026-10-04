@@ -128,8 +128,12 @@ endlos die Fotos eurer Tiere – auch bei Oma, ohne dass sie sich anmeldet.
   veralteter Treffer); nach einem Fehler „Noch einmal versuchen“. Ziele: `/tier/:id?in=…(#entry-N)`,
   `/familien/:id(?reiter=pinnwand)`, `/pinnwand?in=home` (Zettel des Zuhauses, `AreaRoutes` PinboardRoute), `/p/:slug` –
   das AreaGate wechselt den Bereich; ein Treffer, der auch im aktiven Bereich sichtbar ist, bleibt dort.
-- **Server** `GET /api/suche?q=&gruppen=` (`routes/suche.js`): `requireAuth`, 60 je Minute und Identität (Demo: je
-  Anschluss), `no-store`, `Sec-Fetch-Site: cross-site` → 403, Gast erlaubt (`lib/guestAccess.js`). `lib/searchAreas.js`
+- **Server** `POST /api/suche` mit Body `{ q, gruppen? }` (`routes/suche.js`, Entscheidung der Leitung 04.10.: der
+  Suchbegriff steht nie in einer Adresse und damit in keinem Zugriffsprotokoll – wie `/api/discover`; jede andere Methode,
+  auch `GET ?q=`, → 405). Angemeldet (`requireSession` wie Entdecken – ein lesender POST, die Demo-Schreibsperre greift
+  nicht; Admin-Ansicht über `ADMIN_VIEW_READ_ONLY_POSTS`, Gast über `GUEST_WRITES`), unbekannte Angaben, `q`/`gruppen`
+  falschen Typs → 400, 60 je Minute und Identität (Demo: je Anschluss), `no-store`, `Sec-Fetch-Site: cross-site` → 403.
+  `lib/searchAreas.js`
   listet die Bereiche (höchstens 20) mit den vorhandenen Regeln: eigenes Zuhause (VISIBLE_DOGS/VISIBLE_ENTRY, private
   Erinnerungen, Pinnwand), Familien mit Mitgliedschaft (gleiche Regeln mit der Familie, Demo-Gleichheit), laufende
   Besuche (eigene Tiere des Gastgebers, GUEST_ENTRY_SQL, keine Pinnwand); Besuchs-Sitzung = Zuhause + Gastgeber;
@@ -144,6 +148,5 @@ endlos die Fotos eurer Tiere – auch bei Oma, ohne dass sie sich anmeldet.
   `unvollstaendig: true` (Client: „Nicht alles durchsucht …“) – der eine Node-Prozess bleibt für alle frei.
 - **Datenschutz:** Abschnitt „Suche“ (Begriffe weder gespeichert noch protokolliert, Verlauf nur im Browser bis zum
   Abmelden).
-- **Offen:** Treffer in Grüßen (Kommentaren) und „Mit dabei“-Spiegelungen; Termine der Partner-Kalender; der Begriff
-  steht als `?q=` in der Adresse (Entscheidung GET) – bekäme der Proxy je ein Zugriffsprotokoll, `q` dort schwärzen oder
-  auf `POST` mit Body umstellen (wie `/api/discover`); für sehr große Chroniken später FTS5 mit gefalteter Spalte.
+- **Offen:** Treffer in Grüßen (Kommentaren) und „Mit dabei“-Spiegelungen; Termine der Partner-Kalender; für sehr große
+  Chroniken später FTS5 mit gefalteter Spalte.
