@@ -18,10 +18,11 @@ import { useNoIndex } from '../hooks/useNoIndex.js'
 const SHARE_COPIED_MS = 2000
 const PREVIEW_LOAD_ERROR = 'Dieser Steckbrief konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
 
-function NotFound({ family }) {
+// inApp: angemeldet in der Hülle der App (App.jsx) - deren Kopf und Fuß stehen schon da.
+function NotFound({ inApp }) {
   return (
-    <div className="public-page steckbrief-missing">
-      <PublicHeader family={family} />
+    <div className={`steckbrief-missing ${inApp ? 'public-in-app' : 'public-page'}`}>
+      {!inApp && <PublicHeader />}
       <div className="card empty-state">
         <ThemeMark size={56} />
         <h1>Diesen Steckbrief gibt es nicht</h1>
@@ -30,7 +31,7 @@ function NotFound({ family }) {
           Zur Partnerliste
         </Link>
       </div>
-      <PublicFooter />
+      {!inApp && <PublicFooter />}
     </div>
   )
 }
@@ -115,8 +116,9 @@ function VermittlungStatus({ status }) {
 // per "Schreib uns" in dessen Postfach (SteckbriefShelterBox).
 // Kundensicht (Phase P1): load liefert den Steckbrief statt api.publicAnimal(slug) (z. B.
 // api.partnerArea.previewAnimal, auch für ein noch unveröffentlichtes Tier), preview schaltet Links und
-// "Teilen" ab. family: die laufende Sitzung (App.jsx) oder null - nur für das Ziel von "Zurück" (PublicHeader).
-export default function SteckbriefPage({ slug, load, preview = false, family = null }) {
+// "Teilen" ab. Feedback-Runde: ohne Sitzung mit dem schlanken öffentlichen Kopf, angemeldet (inApp, App.jsx) in der
+// normalen Hülle der App - ohne zweiten Kopf, Fuß oder "Zurück".
+export default function SteckbriefPage({ slug, load, preview = false, inApp = false }) {
   const [animal, setAnimal] = useState(undefined) // undefined: lädt, null: nicht gefunden
   const [shareCopied, setShareCopied] = useState(false)
 
@@ -147,8 +149,8 @@ export default function SteckbriefPage({ slug, load, preview = false, family = n
   }, [shareCopied])
 
   if (animal === undefined) {
-    return preview ? (
-      <p className="muted preview-loading" role="status" aria-busy="true">
+    return preview || inApp ? (
+      <p className={`muted ${preview ? 'preview-loading' : 'page-loading'}`} role="status" aria-busy="true">
         Lädt …
       </p>
     ) : (
@@ -164,7 +166,7 @@ export default function SteckbriefPage({ slug, load, preview = false, family = n
         {PREVIEW_LOAD_ERROR}
       </div>
     ) : (
-      <NotFound family={family} />
+      <NotFound inApp={inApp} />
     )
   }
 
@@ -196,7 +198,7 @@ export default function SteckbriefPage({ slug, load, preview = false, family = n
         slug={slug}
         age={age}
         preview={preview}
-        family={family}
+        inApp={inApp}
         shareCopied={shareCopied}
         onShare={handleShare}
       />
@@ -206,11 +208,13 @@ export default function SteckbriefPage({ slug, load, preview = false, family = n
 
 // Der geladene Steckbrief. In der Vorschau ist "Teilen" sichtbar, aber deaktiviert - es gäbe (noch) keine
 // öffentliche Adresse, und die Kundensicht soll nichts nach außen tragen. Ohne Fußzeile: die Links dort
-// würden die Vorschau verlassen - aus demselben Grund auch ohne Kopf mit "Zurück" (PublicHeader).
-function SteckbriefContent({ animal, slug, age, preview, family, shareCopied, onShare }) {
+// würden die Vorschau verlassen - aus demselben Grund auch ohne Kopf mit "Zurück" (PublicHeader). Angemeldet (inApp)
+// stehen Kopf und Fuß der App schon da.
+function SteckbriefContent({ animal, slug, age, preview, inApp, shareCopied, onShare }) {
+  const ownChrome = !preview && !inApp
   return (
-    <div className="public-page steckbrief-page">
-      {!preview && <PublicHeader family={family} />}
+    <div className={`steckbrief-page ${inApp ? 'public-in-app' : 'public-page'}`}>
+      {ownChrome && <PublicHeader />}
       <div className="dog-hero steckbrief-hero">
         <div className="dog-hero-photo">
           <Avatar dog={{ foto_url: animal.fotoUrl, name: animal.name }} size={320} className="dog-hero-fallback" />
@@ -248,7 +252,7 @@ function SteckbriefContent({ animal, slug, age, preview, family, shareCopied, on
 
       <SteckbriefShelterBox shelter={animal.shelter} animalName={animal.name} animalSlug={slug} />
 
-      {!preview && <PublicFooter />}
+      {ownChrome && <PublicFooter />}
     </div>
   )
 }

@@ -32,8 +32,9 @@ function PartnerCards({ items }) {
   )
 }
 
-// family: die laufende Sitzung (App.jsx) oder null - nur für das Ziel von "Zurück" (PublicHeader).
-export default function PartnersPage({ family = null }) {
+// Feedback-Runde: ohne Sitzung mit dem schlanken öffentlichen Kopf und Fuß, angemeldet (inApp, App.jsx) in der normalen
+// Hülle der App - ohne zweiten Kopf, Fuß oder "Zurück".
+export default function PartnersPage({ inApp = false }) {
   const [plz, setPlz] = useState('')
   const [radius, setRadius] = useState(DEFAULT_RADIUS)
   const [partners, setPartners] = useState([])
@@ -79,8 +80,8 @@ export default function PartnersPage({ family = null }) {
   }
 
   return (
-    <div className="public-page partners-page">
-      <PublicHeader family={family} />
+    <div className={`partners-page ${inApp ? 'public-in-app' : 'public-page'}`}>
+      {!inApp && <PublicHeader />}
       <div className="partners-hero">
         <span className="eyebrow">Partner</span>
         <h1>Unsere Partner</h1>
@@ -139,7 +140,7 @@ export default function PartnersPage({ family = null }) {
         </Link>
       </aside>
 
-      <PublicFooter />
+      {!inApp && <PublicFooter />}
     </div>
   )
 }

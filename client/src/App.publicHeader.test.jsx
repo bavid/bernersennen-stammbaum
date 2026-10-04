@@ -222,11 +222,17 @@ describe('Hinweis in der Partner-Demo', () => {
     expect(container.querySelector('.demo-guide')).toBeNull()
   })
 
-  // Feedback-Runde: auf einem Partner-Portal steht keine Demo - auch nicht, weil die Sitzung eine Demo ist.
+  // Feedback-Runde: auf einem Partner-Portal, einem Steckbrief und der Partnerliste steht keine Demo - auch nicht, weil die
+  // Sitzung eine Demo ist.
+  const homeDemo = { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: true, home: null, memberships: [] }
   test.each([
-    ['einer Partner-Demo', partnerDemo],
-    ['einer Zuhause-Demo', { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: true, home: null, memberships: [] }]
-  ])('auf /p/:slug in %s: das Portal in der App-Hülle, ohne Demo-Hinweis, Rundgang und Umschalter', async (_label, me) => {
+    ['/p/hundeschule-birkenhain', 'einer Partner-Demo', partnerDemo, '.partner-portal h1', 'Hundeschule Birkenhain'],
+    ['/p/hundeschule-birkenhain', 'einer Zuhause-Demo', homeDemo, '.partner-portal h1', 'Hundeschule Birkenhain'],
+    ['/t/pepper-ab12cd', 'einer Partner-Demo', partnerDemo, '.steckbrief-page h1', 'Pepper'],
+    ['/t/pepper-ab12cd', 'einer Zuhause-Demo', homeDemo, '.steckbrief-page h1', 'Pepper'],
+    ['/partner', 'einer Partner-Demo', partnerDemo, '.partners-page h1', 'Unsere Partner'],
+    ['/partner', 'einer Zuhause-Demo', homeDemo, '.partners-page h1', 'Unsere Partner']
+  ])('auf %s in %s: die Seite in der App-Hülle, ohne Demo-Hinweis, Rundgang und Umschalter', async (path, _label, me, heading, title) => {
     api.me.mockResolvedValue(me)
     await render('/admin-schreiben')
     // Gegenprobe: auf den Seiten des eigenen Bereichs steht der Demo-Hinweis (in der Partner-Demo auch Rundgang und Umschalter).
@@ -239,10 +245,10 @@ describe('Hinweis in der Partner-Demo', () => {
     root = null
     container.remove()
 
-    await render('/p/hundeschule-birkenhain')
-    await waitFor(() => container.querySelector('.partner-portal h1'))
+    await render(path)
+    await waitFor(() => container.querySelector(heading))
 
-    expect(container.querySelector('main.app-main .partner-portal h1').textContent).toBe('Hundeschule Birkenhain')
+    expect(container.querySelector(`main.app-main ${heading}`).textContent).toBe(title)
     expect(container.querySelectorAll('header')).toHaveLength(1)
     expect(container.querySelector('.app-header')).not.toBeNull()
     expect(container.querySelector('.public-header')).toBeNull()

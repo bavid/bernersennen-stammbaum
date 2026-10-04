@@ -12,6 +12,17 @@
   gap: clamp(var(--space-8), 4vw, var(--space-10));
 }
 
+/* Feedback-Runde: angemeldet stehen Steckbrief und Partnerliste in der Hülle der App (App.jsx) - .app-main gibt den
+   Außenabstand vor, hier nur Breite und Raster wie bei .public-page (das Portal hat .partner-portal-in-app). */
+.public-in-app {
+  width: 100%;
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(var(--space-8), 4vw, var(--space-10));
+}
+
 .partners-page {
   max-width: var(--list-max);
 }

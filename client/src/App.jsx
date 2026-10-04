@@ -81,6 +81,9 @@ const PARTNER_PRINT_RE = /^\/partner-drucken\/(\d+)\/?$/
 // Öffentliche Infoseite für künftige Partner (PartnerInfoPage), verlinkt von Login-Seite und Partnerliste.
 const PARTNER_INFO_PATH = '/partner-werden'
 
+// Öffentliche Partnerliste (PartnersPage).
+const PARTNER_LIST_PATH = '/partner'
+
 // /p/<slug> – öffentliches Partner-Portal, unabhängig von Groß-/Kleinschreibung des Pfads egal (der
 // Slug selbst bleibt roh, die Route validiert nur die Form).
 const PARTNER_SLUG_RE = /^\/p\/([^/]+)\/?$/
@@ -563,35 +566,17 @@ export default function App() {
     )
   }
 
-  // Partner-Portal: öffentlich - ohne Sitzung wie /v ein eigener früher Zweig mit dem schlanken öffentlichen Kopf.
-  // Feedback-Runde: angemeldet steht es unten in der normalen Hülle der App (ein Kopf, ein Fuß - nicht doppelt), ohne
-  // Demo-Hinweis und ohne Einladungscode (PartnerPortalPage inApp).
+  // Partner-Portal (/p/:slug), Steckbrief (/t/:slug, Phase T Task 5) und Partnerliste (/partner): öffentlich - ohne
+  // Sitzung wie /v je ein eigener früher Zweig mit dem schlanken öffentlichen Kopf. Feedback-Runde: angemeldet stehen sie
+  // unten in der normalen Hülle der App (ein Kopf, ein Fuß - nicht doppelt), ohne Demo-Hinweis (inApp).
   const partnerSlug = pathname.match(PARTNER_SLUG_RE)?.[1]
-
-  if (partnerSlug && !family) {
-    return (
-      <ThemeProvider>
-        <PartnerPortalPage slug={partnerSlug} />
-      </ThemeProvider>
-    )
-  }
-
-  // Öffentlicher Steckbrief /t/:slug (Phase T Task 5): wie partnerSlug oben ein eigener früher Zweig,
-  // unabhängig vom Login-Status - reine Lesevorschau, keine Personalisierung nötig.
   const animalSlug = pathname.match(ANIMAL_SLUG_RE)?.[1]
+  const onPartnerList = pathname === PARTNER_LIST_PATH
 
-  if (animalSlug) {
+  if (!family && (partnerSlug || animalSlug || onPartnerList)) {
     return (
       <ThemeProvider>
-        <SteckbriefPage slug={animalSlug} family={family} />
-      </ThemeProvider>
-    )
-  }
-
-  if (pathname === '/partner') {
-    return (
-      <ThemeProvider>
-        <PartnersPage family={family} />
+        {partnerSlug ? <PartnerPortalPage slug={partnerSlug} /> : animalSlug ? <SteckbriefPage slug={animalSlug} /> : <PartnersPage />}
       </ThemeProvider>
     )
   }
@@ -639,9 +624,16 @@ export default function App() {
     )
   }
 
-  // Feedback-Runde: das Partner-Portal (/p/:slug) gehört dem Partner - in der Hülle ohne Demo-Hinweis, Demo-Rundgang und
-  // "Bearbeiten | Kundensicht" (die gelten dem eigenen Bereich), sonst stünde all das über dem Portal noch einmal.
-  const onPortal = Boolean(partnerSlug)
+  // Feedback-Runde: Portal, Steckbrief und Partnerliste gehören dem Partner bzw. allen - in der Hülle ohne Demo-Hinweis,
+  // Demo-Rundgang und "Bearbeiten | Kundensicht" (die gelten dem eigenen Bereich), sonst stünde all das darüber noch einmal.
+  const publicPage = partnerSlug ? (
+    <PartnerPortalPage slug={partnerSlug} inApp />
+  ) : animalSlug ? (
+    <SteckbriefPage slug={animalSlug} inApp />
+  ) : onPartnerList ? (
+    <PartnersPage inApp />
+  ) : null
+  const onPublicPage = publicPage !== null
 
   return (
     <ThemeProvider>
@@ -654,14 +646,14 @@ export default function App() {
           {family.adminView ? (
             <AdminViewBanner family={family} onEnd={handleEndAdminView} />
           ) : (
-            family.isDemo && !onPortal && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
+            family.isDemo && !onPublicPage && <DemoBanner onLeave={handleLeaveDemo} partnerArea={isPartnerArea(family)} />
           )}
           {/* Phase W, Schritt 2: zu Besuch steht ein Chip im Kopf der Besuchsseiten (visits/VisitChip) - kein Band mehr oben. */}
           {/* Hinweis-Glocke: Kopf und Start öffnen dasselbe Fenster (HinweiseProvider), die Zahlen stehen in family. */}
           <HinweiseProvider family={family} onFamilyChange={setFamily}>
             <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
             {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
-            {isPartnerArea(family) && !onPortal && <ViewModeSwitch areaId={family.id} />}
+            {isPartnerArea(family) && !onPublicPage && <ViewModeSwitch areaId={family.id} />}
             {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
                 bliebe beim Wechsel des Bereichs (AreaGate wechselt auf derselben Adresse, z. B. /start aus einer
                 Familie heraus) die alte Seiteninstanz samt Daten des vorherigen Bereichs stehen. Der key erzwingt
@@ -670,9 +662,9 @@ export default function App() {
               {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
                   Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
               {/* Phase U: Rundgang durch eine Partner- oder Tierheim-Demo (schließbar, bleibt dann zu). */}
-              {family.isDemo && !family.adminView && isPartnerArea(family) && !onPortal && <PartnerDemoGuide family={family} />}
-              {onPortal ? (
-                <PartnerPortalPage slug={partnerSlug} inApp />
+              {family.isDemo && !family.adminView && isPartnerArea(family) && !onPublicPage && <PartnerDemoGuide family={family} />}
+              {onPublicPage ? (
+                publicPage
               ) : (
                 <Suspense fallback={<RouteFallback />}>
                   <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={openInvite} />

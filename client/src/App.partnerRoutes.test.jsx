@@ -4,9 +4,10 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { me, logout, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts } = vi.hoisted(() => ({
+const { me, logout, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts, publicAnimal } = vi.hoisted(() => ({
   me: vi.fn(),
   logout: vi.fn(),
+  publicAnimal: vi.fn(),
   publicPartner: vi.fn(),
   publicPartners: vi.fn(),
   publicPartnerAnimals: vi.fn(),
@@ -15,7 +16,7 @@ const { me, logout, publicPartner, publicPartners, publicPartnerAnimals, publicH
   publicPartnerPosts: vi.fn(() => Promise.resolve([]))
 }))
 vi.mock('./api', () => ({
-  api: { me, logout, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts },
+  api: { me, logout, publicAnimal, publicPartner, publicPartners, publicPartnerAnimals, publicHappyEnds, publicPartnerPosts },
   setUnauthorizedHandler: () => {}
 }))
 
@@ -76,6 +77,7 @@ afterEach(() => {
   window.history.replaceState(null, '', '/')
   me.mockReset()
   logout.mockReset()
+  publicAnimal.mockReset()
   publicPartner.mockReset()
   publicPartners.mockReset()
   publicPartnerAnimals.mockReset()
@@ -154,5 +156,66 @@ describe('Route /partner – öffentliche Partnerliste', () => {
     await render('/partner')
 
     expect(container.querySelector('h1')?.textContent).toBe('Unsere Partner')
+  })
+})
+
+// Feedback-Runde: Steckbrief und Partnerliste wie das Portal - ohne Sitzung mit dem schlanken öffentlichen Kopf, angemeldet
+// in der normalen Hülle der App (ein Kopf, ein Fuß, kein zweites "Zurück").
+describe('Steckbrief (/t/:slug) und Partnerliste (/partner) – ohne und mit Sitzung', () => {
+  const animal = {
+    name: 'Benno',
+    tierart: 'hund',
+    geschlecht: 'ruede',
+    rasse: 'Mischling',
+    geburtsdatum: null,
+    vermittlung_status: 'in_vermittlung',
+    entries: [],
+    shelter: { name: 'Tierheim Sonnenhang', slug: 'tierheim-sonnenhang', kontakt_email: null, logoUrl: null }
+  }
+  const pages = [
+    ['/t/benno-ab12cd', '.steckbrief-page', 'Benno'],
+    ['/partner', '.partners-page', 'Unsere Partner']
+  ]
+  const backButtons = () => [...container.querySelectorAll('button')].filter((btn) => btn.textContent.trim() === 'Zurück')
+
+  beforeEach(() => {
+    publicAnimal.mockResolvedValue(animal)
+    publicPartners.mockResolvedValue([])
+  })
+
+  test.each(pages)('ohne Sitzung (%s): schlanker öffentlicher Kopf mit "Zurück" und eigener Fuß', async (path, page, title) => {
+    me.mockRejectedValue(new Error('401'))
+    await render(path)
+
+    expect(container.querySelector(`.public-page${page} h1`).textContent).toBe(title)
+    expect(container.querySelectorAll('header')).toHaveLength(1)
+    expect(container.querySelector('.public-header')).not.toBeNull()
+    expect(container.querySelector('.public-footer')).not.toBeNull()
+    expect(container.querySelector('.app-header')).toBeNull()
+    expect(backButtons()).toHaveLength(1)
+  })
+
+  test.each(pages)('mit Sitzung (%s): in der Hülle der App - ein Kopf, ein Fuß, kein "Zurück"', async (path, page, title) => {
+    me.mockResolvedValue(loggedInHome)
+    await render(path)
+
+    expect(container.querySelector(`main.app-main ${page} h1`).textContent).toBe(title)
+    expect(container.querySelector(`${page}.public-page`)).toBeNull()
+    expect(container.querySelectorAll('.app-header')).toHaveLength(1)
+    expect(container.querySelectorAll('.app-footer')).toHaveLength(1)
+    expect(container.querySelector('.public-header')).toBeNull()
+    expect(container.querySelector('.public-footer')).toBeNull()
+    expect(backButtons()).toHaveLength(0)
+  })
+
+  test('mit Sitzung: auch „Diesen Steckbrief gibt es nicht“ steht in der Hülle der App', async () => {
+    me.mockResolvedValue(loggedInHome)
+    publicAnimal.mockRejectedValue(new Error('404'))
+    await render('/t/gibt-es-nicht')
+
+    expect(container.querySelector('main.app-main .steckbrief-missing h1').textContent).toBe('Diesen Steckbrief gibt es nicht')
+    expect(container.querySelectorAll('header')).toHaveLength(1)
+    expect(container.querySelector('.public-header')).toBeNull()
+    expect(container.querySelector('.public-footer')).toBeNull()
   })
 })
