@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { MemoryRouter, useLocation } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { listDogs, createDog } = vi.hoisted(() => ({
+const { listDogs, createDog, schuetzlinge } = vi.hoisted(() => ({
   listDogs: vi.fn(),
-  createDog: vi.fn()
+  createDog: vi.fn(),
+  schuetzlinge: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { listDogs, createDog } }))
+vi.mock('../api', () => ({ api: { listDogs, createDog, schuetzlinge } }))
 
 import ShelterAnimalsPage from './ShelterAnimalsPage.jsx'
 
@@ -42,14 +43,20 @@ const dog = (overrides = {}) => ({
   ...overrides
 })
 
-async function render() {
+function Where() {
+  const location = useLocation()
+  return <output data-testid="where">{`${location.pathname}${location.search}`}</output>
+}
+
+async function render(url = '/tiere') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[url]}>
         <ShelterAnimalsPage family={family} />
+        <Where />
       </MemoryRouter>
     )
   )
@@ -67,6 +74,11 @@ afterEach(() => {
   }
   listDogs.mockReset()
   createDog.mockReset()
+  schuetzlinge.mockReset()
+})
+
+beforeEach(() => {
+  schuetzlinge.mockResolvedValue({ items: [] })
 })
 
 function chip(label) {
@@ -168,6 +180,51 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
     expect(card.querySelector('.status-chip').textContent).toBe('Vermittelt')
     expect(card.textContent).toContain('Ihr lest mit · Zuhause am Deich')
     expect(card.textContent).not.toContain('Steckbrief')
+  })
+
+  test('ein mitgelesenes Tier führt mit „Neuigkeiten“ in seine Chronik', async () => {
+    listDogs.mockResolvedValue([dog({ id: 3, name: 'Nele', vermittlung_status: null, shared_from: 'Zuhause am Deich' }), dog({ id: 4, name: 'Benno', vermittlung_status: 'vermittelt' })])
+    await render('/tiere?status=vermittelt')
+
+    const cards = [...container.querySelectorAll('.shelter-card')]
+    const nele = cards.find((card) => card.textContent.includes('Nele'))
+    expect(nele.getAttribute('href')).toBe('/tier/3?reiter=chronik')
+    expect(nele.querySelector('.shelter-card-news').textContent).toBe('Neuigkeiten')
+    // ein eigenes (nicht mitgelesenes) Tier hat keine Neuigkeiten von dort
+    const benno = cards.find((card) => card.textContent.includes('Benno'))
+    expect(benno.getAttribute('href')).toBe('/tier/4')
+    expect(benno.querySelector('.shelter-card-news')).toBeNull()
+  })
+
+  test('der Filter steht in der Adresse (?status=…) - ohne Angabe „Verfügbar“', async () => {
+    listDogs.mockResolvedValue([dog({ id: 1, name: 'Pepper' }), dog({ id: 2, name: 'Oskar', vermittlung_status: 'reserviert' })])
+    await render('/tiere?status=reserviert')
+    expect(chip('Reserviert').getAttribute('aria-pressed')).toBe('true')
+    expect(container.textContent).toContain('Oskar')
+    act(() => chip('Alle').click())
+    expect(container.querySelector('[data-testid="where"]').textContent).toBe('/tiere?status=alle')
+    act(() => chip('Verfügbar').click())
+    expect(container.querySelector('[data-testid="where"]').textContent).toBe('/tiere')
+  })
+
+  test('„So geht es euren Schützlingen“ steht oben; „Alle ansehen“ wählt „Vermittelt“', async () => {
+    listDogs.mockResolvedValue([dog({ id: 1, name: 'Pepper' }), dog({ id: 3, name: 'Nele', vermittlung_status: null, shared_from: 'Zuhause am Deich' })])
+    schuetzlinge.mockResolvedValue({
+      items: [{ id: 7, dog: { id: 3, name: 'Nele', name_unbekannt: false, tierart: 'hund', foto_url: null }, titel: 'Am Deich', text: null, datum: '2026-09-12', foto_url: null, comment_count: 1 }]
+    })
+    await render()
+
+    const section = container.querySelector('.ward-news')
+    expect(section.querySelector('h2').textContent).toBe('So geht es euren Schützlingen')
+    expect(section.compareDocumentPosition(container.querySelector('.filter-chips')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(section.querySelector('.ward-news-card').getAttribute('href')).toBe('/tier/3#entry-7')
+
+    const all = [...section.querySelectorAll('button')].find((button) => button.textContent === 'Alle ansehen')
+    act(() => all.click())
+    expect(chip('Vermittelt').getAttribute('aria-pressed')).toBe('true')
+    expect(container.querySelector('[data-testid="where"]').textContent).toBe('/tiere?status=vermittelt')
+    expect(document.activeElement).toBe(chip('Vermittelt'))
+    expect(container.querySelector('.shelter-grid').textContent).toContain('Nele')
   })
 
   test('eine Karte zeigt den Steckbrief-Status', async () => {

@@ -4,6 +4,7 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import { displayName } from '../lib/timeline.js'
+import Icon from './Icon.jsx'
 
 // Einwilligung "Tierheim darf mitlesen" (Phase T Task 5) - auf der Tierseite im eigenen Zuhause, nur
 // wenn dog.shelterShare überhaupt etwas zum Verwalten kennt (dog_transfers kennt ein abgebendes
@@ -48,7 +49,11 @@ export default function ShelterSharePanel({ dog, onChange }) {
 
   return (
     <section className="shelter-share-panel" aria-labelledby="shelter-share-title">
-      <h2 id="shelter-share-title">Tierheim</h2>
+      {/* Die Überschrift ist der Stand: liest das Tierheim gerade mit oder nicht (die Checkbox darunter ändert ihn). */}
+      <h2 id="shelter-share-title" className={share.enabled ? 'is-reading' : undefined}>
+        {share.enabled && <Icon name="eye" />}
+        {share.shelterName} {share.enabled ? 'liest mit' : 'liest nicht mit'}
+      </h2>
       <label className="check">
         <input type="checkbox" checked={share.enabled} disabled={disabled} onChange={(e) => toggleEnabled(e.target.checked)} />
         {share.shelterName} darf mitlesen

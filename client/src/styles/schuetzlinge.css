@@ -1,0 +1,173 @@
+/* „So geht es euren Schützlingen“ (components/shelter/WardNews.jsx) auf „Unsere Tiere“ eines Tierheims - im Look
+   „B+ Familienalbum“: die neuesten Erinnerungen vermittelter Tiere als Polaroid-Karten nebeneinander. Am Handy eine Reihe
+   zum Wischen (die Seite selbst scrollt nie seitwärts), so bleibt der Abschnitt eine Kartenhöhe kurz.
+   Farben nur über die Paletten-Variablen (palettes.css). */
+
+.ward-news {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.ward-news-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.ward-news-all {
+  min-height: 44px;
+}
+
+.ward-news-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(13.5rem, 1fr);
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-2) var(--space-1) var(--space-3);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  list-style: none;
+}
+
+.ward-news-list > li {
+  display: flex;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.ward-news-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+  text-decoration: none;
+  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
+}
+
+.ward-news-card:hover,
+.ward-news-card:focus-visible {
+  color: var(--text);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-raised);
+  border-color: var(--tan);
+}
+
+.ward-news-card:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 3px;
+}
+
+.ward-news-card:hover .polaroid,
+.ward-news-card:focus-visible .polaroid {
+  --tilt: 0deg;
+}
+
+.ward-news-photo {
+  width: calc(100% - var(--space-2));
+  margin: var(--space-1) auto 0;
+}
+
+.ward-news-portrait {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.ward-news-body {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ward-news-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+}
+
+.ward-news-dog {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ward-news-date {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.ward-news-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ward-news-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.ward-news-greetings {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--rust);
+}
+
+.ward-news-greetings svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.ward-news-empty,
+.ward-news-error {
+  font-size: var(--text-sm);
+}
+
+.ward-news-error {
+  color: var(--rust);
+}
+
+/* Breit genug: alle Karten nebeneinander, ohne Wischen. */
+@media (min-width: 1100px) {
+  .ward-news-list {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+    overflow-x: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ward-news-card {
+    transition: none;
+  }
+
+  .ward-news-card:hover,
+  .ward-news-card:focus-visible {
+    transform: none;
+  }
+}

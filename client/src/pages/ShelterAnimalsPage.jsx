@@ -6,7 +6,9 @@ import Avatar from '../components/Avatar.jsx'
 import Modal from '../components/Modal.jsx'
 import QuickAnimalForm from '../components/QuickAnimalForm.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
+import WardNews from '../components/shelter/WardNews.jsx'
 import { useToast } from '../components/Toast.jsx'
+import useTabParam from '../hooks/useTabParam.js'
 import { displayName, speciesLabel } from '../lib/timeline.js'
 import { formatDayMonth } from '../lib/dates.js'
 import { VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel, vermittlungStatusShortLabel } from '../lib/vermittlung.js'
@@ -25,6 +27,10 @@ const FILTERS = [
 
 const DEFAULT_FILTER = 'in_vermittlung'
 const ADOPTED_STATUS = 'vermittelt'
+// Der Filter steht in der Adresse (?status=…, ohne Angabe „Verfügbar“) - „Alle ansehen“ bei den Schützlingen führt so zu
+// „Vermittelt“, und Zurück aus einer Tierseite landet wieder im selben Filter.
+const FILTER_PARAM = 'status'
+const chipId = (key) => `shelter-filter-${key}`
 
 function matchesFilter(dog, filter) {
   if (filter === 'alle') return true
@@ -35,12 +41,12 @@ function matchesFilter(dog, filter) {
 
 // Eine Tierkarte: der Status ist das einzige Badge, ob der Steckbrief öffentlich ist, steht als ruhige Meta-Zeile
 // darunter (Phase U). Ein mitgelesenes Tier (shared_from) ist vermittelt - statt des Steckbriefs nennt die
-// Meta-Zeile sein neues Zuhause.
+// Meta-Zeile sein neues Zuhause, und die Karte führt mit „Neuigkeiten“ in seine Chronik (was das Zuhause dort zeigt).
 function ShelterAnimalCard({ dog }) {
   const status = dog.shared_from ? ADOPTED_STATUS : dog.vermittlung_status
   const statusLabel = vermittlungStatusLabel(status)
   return (
-    <Link to={`/tier/${dog.id}`} className="shelter-card">
+    <Link to={dog.shared_from ? `/tier/${dog.id}?reiter=chronik` : `/tier/${dog.id}`} className="shelter-card">
       <span className="shelter-card-avatar">
         <Avatar dog={dog} size={64} />
       </span>
@@ -70,17 +76,24 @@ function ShelterAnimalCard({ dog }) {
             {formatDayMonth(dog.latest_entry_datum)} · {dog.latest_entry_titel}
           </span>
         )}
+        {dog.shared_from && (
+          <span className="shelter-card-news">
+            <Icon name="book" />
+            Neuigkeiten
+          </span>
+        )}
       </span>
     </Link>
   )
 }
 
 // "Unsere Tiere" - die Tiere des Tierheims (verfügbar/reserviert/pausiert/vermittelt); unter "Vermittelt" auch
-// die Ehemaligen, die es (mit Einwilligung des neuen Zuhauses) weiter mitlesen darf.
+// die Ehemaligen, die es (mit Einwilligung des neuen Zuhauses) weiter mitlesen darf. Darüber „So geht es euren
+// Schützlingen“: deren neueste Erinnerungen (WardNews).
 export default function ShelterAnimalsPage({ family }) {
   const [dogs, setDogs] = useState(null)
   const [error, setError] = useState(null)
-  const [filter, setFilter] = useState(DEFAULT_FILTER)
+  const [filter, setFilter] = useTabParam(FILTER_PARAM, FILTERS, { fallback: DEFAULT_FILTER })
   const [formOpen, setFormOpen] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
@@ -105,6 +118,12 @@ export default function ShelterAnimalsPage({ family }) {
 
   function closeForm() {
     setFormOpen(false)
+  }
+
+  // „Alle ansehen“: die vermittelten Tiere - der Fokus geht auf den gewählten Filter (die Liste steht gleich darunter).
+  function showAdopted() {
+    setFilter(ADOPTED_STATUS)
+    document.getElementById(chipId(ADOPTED_STATUS))?.focus()
   }
 
   function announceCreated(dog) {
@@ -140,10 +159,13 @@ export default function ShelterAnimalsPage({ family }) {
         </div>
       )}
 
+      <WardNews onShowAll={showAdopted} />
+
       <div className="filter-chips" role="group" aria-label="Nach Status filtern">
         {FILTERS.map((item) => (
           <button
             key={item.key}
+            id={chipId(item.key)}
             type="button"
             className={`filter-chip ${filter === item.key ? 'filter-chip-active' : ''}`}
             aria-pressed={filter === item.key}

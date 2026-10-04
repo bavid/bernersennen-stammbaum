@@ -149,6 +149,29 @@
   color: var(--muted);
 }
 
+/* Ein mitgelesenes Tier: „Neuigkeiten“ - die Karte führt in seine Chronik. */
+.shelter-card-news {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: fit-content;
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--rust);
+}
+
+.shelter-card-news svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.shelter-card:hover .shelter-card-news,
+.shelter-card:focus-visible .shelter-card-news {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* Happy-End-Karte (Portal, Sektion "Happy Ends") - teilt sich die .shelter-card-Optik, ist aber kein
    Link (kein Steckbrief mehr für ein längst vermitteltes Tier), darum ohne den Hover-"anklickbar"-Effekt. */
 
@@ -206,7 +229,21 @@
 /* Audit V7a: dieselbe Überschrift wie das Kästchen "In Familien zeigen" direkt darüber (dog.css .share-panel h2) -
    vorher stand "Tierheim" doppelt so groß da. */
 .shelter-share-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--text-lg);
+}
+
+/* Der Stand als Überschrift: liest das Tierheim mit, steht das Auge in Salbei davor. */
+.shelter-share-panel h2.is-reading {
+  color: var(--alpine);
+}
+
+.shelter-share-panel h2 svg {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .steckbrief-panel {

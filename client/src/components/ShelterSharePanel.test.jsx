@@ -54,6 +54,19 @@ function checkboxes() {
 }
 
 describe('ShelterSharePanel', () => {
+  test('die Überschrift sagt auf einen Blick, ob das Tierheim mitliest', async () => {
+    await render()
+    expect(container.querySelector('h2').textContent).toBe('Tierheim Sonnenhang liest mit')
+    act(() => root.unmount())
+    container.remove()
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    const off = { id: 10, name: 'Nele', name_unbekannt: false, shelterShare: { shelterName: 'Tierheim Sonnenhang', enabled: false, storyConsent: false } }
+    await act(async () => root.render(<Wrapper dog={off} />))
+    expect(container.querySelector('h2').textContent).toBe('Tierheim Sonnenhang liest nicht mit')
+  })
+
   test('zeigt den Namen des Tierheims in beiden Checkbox-Beschriftungen', async () => {
     await render()
     expect(container.textContent).toContain('Tierheim Sonnenhang darf mitlesen')

@@ -231,6 +231,8 @@ export const api = {
   deleteTimelineEntry: (id) => request(`/timeline/${id}`, { method: 'DELETE' }),
 
   recentActivity: (limit = 5) => request(`/timeline/recent?limit=${limit}`),
+  // Tierheim: „So geht es euren Schützlingen“ - die neuesten Erinnerungen vermittelter Tiere, bei denen es mitlesen darf.
+  schuetzlinge: () => request('/schuetzlinge'),
   // Phase W, Schritt 3: der Feed von Start über Zuhause, Familien und befreundete Zuhause (server/routes/start.js) - ohne
   // Bereich (den bestimmt die Sitzung), vor: der Cursor (next) der vorigen Seite.
   start: ({ vor, limit = 20 } = {}) => request(`/start?limit=${limit}${vor ? `&vor=${encodeURIComponent(vor)}` : ''}`),
