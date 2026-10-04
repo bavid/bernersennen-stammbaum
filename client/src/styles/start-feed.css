@@ -1,0 +1,167 @@
+/* Start (Phase W, Schritt 3 „Ein Start für alles“): Bereichs-Hinweis auf den Karten, Termine und „Neu an der Pinnwand“
+   im Kasten „Bald“.
+   Farben nur über die Paletten-Variablen (palettes.css) - Salbei für Familien, Rosé für befreundete Zuhause. */
+
+.feed-area-chip {
+  max-width: 100%;
+  padding: 1px var(--space-2);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--alpine-wash);
+  color: var(--alpine);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-area-chip.is-besuch {
+  background: var(--blush);
+  color: var(--blush-ink);
+}
+
+/* Tiername und Bereich in einer Zeile - bricht der Platz nicht, rutscht der Hinweis darunter. */
+.feed-card-dog-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--space-2);
+  min-width: 0;
+}
+
+/* „Neu an der Pinnwand“: kurze Zeilen mit Reißzwecke, eine je Zettel. */
+/* „Neu an der Pinnwand“ im Kasten „Bald“: unter den Terminen durch eine Linie getrennt. */
+.start-pinboard {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.start-soon-list + .start-pinboard {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.start-pinboard-title {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  color: var(--muted);
+}
+
+/* Die Zeilen kürzen sich mit „…“ - dafür dürfen die Listen nicht breiter werden als ihre Karte. */
+.start-pinboard-list,
+.start-soon-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.start-pinboard-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.start-pinboard-link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.start-pinboard-list li:first-child .start-pinboard-link {
+  border-top: 0;
+}
+
+.start-pinboard-link:hover .start-pinboard-text {
+  text-decoration: underline;
+}
+
+.start-pinboard-link:focus-visible {
+  outline: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--focus-ring);
+}
+
+.start-pinboard-link > svg {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.15rem;
+  color: var(--rust);
+}
+
+.start-pinboard-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.start-pinboard-text {
+  overflow: hidden;
+  font-weight: 700;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.start-pinboard-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* „Bald“: jeder Termin führt zu seiner Pinnwand - oben Tag und Familie, darunter der Anfang des Texts in einer Zeile (der
+   ganze Text steht dort), Trefferfläche mindestens 44 px. */
+.start-soon-termin {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+  min-height: 44px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.start-soon-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--space-2);
+}
+
+.start-soon-text {
+  overflow: hidden;
+  color: var(--ink-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.start-soon-termin:hover .start-soon-text {
+  text-decoration: underline;
+}
+
+.start-soon-termin:focus-visible {
+  outline: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--focus-ring);
+}
+
+.start-more[aria-disabled='true'] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.start-more-error {
+  color: var(--danger);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

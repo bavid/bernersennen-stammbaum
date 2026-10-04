@@ -44,8 +44,10 @@ test('Demo (Phase V2): Besuch Deich <-> Möwenweg, „Erlebt mit“, Fotos bei B
     assert.equal(view.data.zuBesuch, true)
     const guestCookie = getCookie(view.res)
     const hostDogs = (await get('/api/dogs', guestCookie)).data
-    assert.deepEqual(hostDogs.map((dog) => dog.name), ['Wilma'])
-    const timeline = (await get(`/api/timeline?dogId=${hostDogs[0].id}`, guestCookie)).data
+    // Socke (nicht in die Familie geteilt, Phase W Schritt 3) zeigt auf Start „Zu Besuch: Zuhause Möwenweg“
+    assert.deepEqual(hostDogs.map((dog) => dog.name), ['Wilma', 'Socke'])
+    const wilma = hostDogs.find((dog) => dog.name === 'Wilma')
+    const timeline = (await get(`/api/timeline?dogId=${wilma.id}`, guestCookie)).data
     assert.ok(timeline.some((entry) => entry.titel === 'Schneerunde mit Nele' && entry.foto_urls.length === 1))
     const photo = timeline.find((entry) => entry.titel === 'Schneerunde mit Nele').foto_urls[0]
     assert.equal((await fetch(`${base}${photo}`, { headers: { Cookie: guestCookie } })).status, 200)

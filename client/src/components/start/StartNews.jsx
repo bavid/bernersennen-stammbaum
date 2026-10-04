@@ -4,38 +4,62 @@ import Icon from '../Icon.jsx'
 import FeedItem from '../feed/FeedItem.jsx'
 import { groupBySeason } from '../../lib/seasons.js'
 import { byMemoryDate } from '../../lib/feed.js'
+import { feedEntries, feedKey } from '../../lib/startFeed.js'
 
 // Zuerst so viele Erinnerungen, der Rest hinter "Weitere Erinnerungen" (die Seite bleibt so bei höchstens etwa drei
 // Bildschirmhöhen).
 export const START_FEED_VISIBLE = 5
 
-// "Neue Erinnerungen" auf Start (B+ Familienalbum): die zuletzt festgehaltenen Erinnerungen (GET /api/timeline/recent) als
-// Karten - nach dem Tag der Erinnerung sortiert und nach Jahreszeiten in Kapitel geteilt („Herbst 2026“ in Handschrift). entries null: lädt noch bzw. konnte nicht
-// geladen werden (dann steht der Fehler darüber) - kein Leerzustand. Das Kapitel ist der Name der Liste (aria-label), die
-// Handschrift darüber nur sein Bild.
-export default function StartNews({ entries, loading }) {
+// "Neue Erinnerungen" auf Start (B+ Familienalbum, Phase W Schritt 3): die Erinnerungen aus dem Zuhause, den Familien und
+// den befreundeten Zuhause (GET /api/start, hooks/useStartFeed.js; Zettel stehen in StartPinboard) als Karten - je
+// geladener Seite nach dem Tag der Erinnerung sortiert und nach Jahreszeiten in Kapitel geteilt („Herbst 2026“ in
+// Handschrift). Eine weitere Seite („Ältere anzeigen“) kommt darunter, nie dazwischen. pages null: lädt noch bzw. konnte
+// nicht geladen werden (dann steht der Fehler darüber) - kein Leerzustand. Das Kapitel ist der Name der Liste
+// (aria-label), die Handschrift darüber nur sein Bild. Nach „Weitere Erinnerungen“ bzw. „Ältere anzeigen“ rückt der Fokus
+// auf die erste neu sichtbare Karte.
+export default function StartNews({ pages, loading, hasMore = false, onLoadMore, more = {} }) {
   const { theme, words } = useTheme()
   const [showAll, setShowAll] = useState(false)
-  const firstMore = useRef(null)
-  // Nach dem Tag der Erinnerung sortiert (lib/feed.js byMemoryDate) - so folgen die Kapitel der Liste.
-  const sorted = useMemo(() => (entries ? byMemoryDate(entries) : null), [entries])
+  const [focusKey, setFocusKey] = useState(null)
+  const focusRef = useRef(null)
+  const mounted = useRef(true)
+  const sorted = useMemo(() => (pages ? pages.flatMap((page) => byMemoryDate(feedEntries(page))) : null), [pages])
   const hidden = sorted ? Math.max(0, sorted.length - START_FEED_VISIBLE) : 0
   const shown = sorted && !showAll ? sorted.slice(0, START_FEED_VISIBLE) : sorted
   const chapters = shown ? groupBySeason(shown) : []
-  // Die erste nachgeladene Erinnerung (für den Fokus) - über alle Kapitel gezählt.
-  const firstMoreId = showAll && sorted?.[START_FEED_VISIBLE]?.id
 
-  // Nach "Weitere Erinnerungen" rückt der Fokus auf die erste nachgeladene (wie bei den Würfen).
   useEffect(() => {
-    if (showAll) firstMore.current?.querySelector('a')?.focus()
-  }, [showAll])
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (focusKey) focusRef.current?.querySelector('a')?.focus()
+  }, [focusKey])
+
+  function revealAll() {
+    setShowAll(true)
+    setFocusKey(sorted[START_FEED_VISIBLE] ? feedKey(sorted[START_FEED_VISIBLE]) : null)
+  }
+
+  async function loadOlder() {
+    const added = feedEntries(await onLoadMore?.())
+    if (mounted.current && added.length > 0) {
+      setShowAll(true)
+      setFocusKey(feedKey(byMemoryDate(added)[0]))
+    }
+  }
+
+  const refFor = (item) => (feedKey(item) === focusKey ? focusRef : undefined)
 
   return (
-    <section className="start-news" aria-labelledby="start-news-title" aria-busy={loading || undefined}>
+    <section className="start-news" aria-labelledby="start-news-title" aria-busy={loading || more.loading || undefined}>
       <h2 id="start-news-title" className="start-section-title">
         Neue {words.entries}
       </h2>
-      {entries?.length === 0 && (
+      {sorted?.length === 0 && !hasMore && (
         <div className="feed feed-empty">
           <Icon name="sprout" />
           <p>
@@ -52,15 +76,25 @@ export default function StartNews({ entries, loading }) {
           )}
           <ul className="feed-cards" role="list" aria-label={chapter.label || undefined}>
             {chapter.items.map((entry) => (
-              <FeedItem key={entry.id} entry={entry} itemRef={entry.id === firstMoreId ? firstMore : undefined} />
+              <FeedItem key={feedKey(entry)} entry={entry} itemRef={refFor(entry)} />
             ))}
           </ul>
         </div>
       ))}
       {!showAll && hidden > 0 && (
-        <button type="button" className="btn btn-ghost start-more" onClick={() => setShowAll(true)}>
+        <button type="button" className="btn btn-ghost start-more" onClick={revealAll}>
           Weitere {words.entries} ({hidden})
         </button>
+      )}
+      {(showAll || hidden === 0) && hasMore && (
+        <button type="button" className="btn btn-ghost start-more" onClick={loadOlder} aria-disabled={more.loading || undefined}>
+          {more.loading ? 'Lädt …' : 'Ältere anzeigen'}
+        </button>
+      )}
+      {more.error && (
+        <p className="start-more-error" role="alert">
+          {more.error}
+        </p>
       )}
     </section>
   )

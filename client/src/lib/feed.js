@@ -32,13 +32,16 @@ export function commentsLabel(count, words = getTheme('standard').words) {
   return count === 1 ? `1 ${words.greeting}` : `${count} ${words.greetings}`
 }
 
-// Nach dem Tag der Erinnerung, die neueste zuerst; am selben Tag die zuletzt festgehaltene (created_at), ohne Datum ans
-// Ende. Die Kapitel nach Jahreszeiten (lib/seasons.js) folgen so der Liste, statt hin und her zu springen. Neue Liste.
+// Nach dem Tag der Erinnerung, die neueste zuerst; am selben Tag die zuletzt aktive (activity_at aus GET /api/start, sonst
+// created_at), ohne Datum ans Ende. Die Kapitel nach Jahreszeiten (lib/seasons.js) folgen so der Liste, statt hin und her
+// zu springen. Neue Liste.
+const lastActive = (entry) => String(entry.activity_at || entry.created_at || '')
+
 export function byMemoryDate(entries) {
   const list = Array.isArray(entries) ? [...entries] : []
   return list.sort((a, b) => {
     if ((a.datum || '') !== (b.datum || '')) return (b.datum || '').localeCompare(a.datum || '')
-    return String(b.created_at || '').localeCompare(String(a.created_at || ''))
+    return lastActive(b).localeCompare(lastActive(a))
   })
 }
 

@@ -12,6 +12,7 @@
 const { MEMBERS, LEITUNG_COMMENT, INVITE } = require('../seed/demo-members')
 const { isRole } = require('./roles')
 const { createBatch, DEMO_BATCH_KIND } = require('./vouchers')
+const { relativeDemoDate } = require('./demoDates')
 
 const insertFamilySql = `INSERT INTO families (name, password_hash, art, theme, legacy_password, is_demo)
   VALUES (?, '!', 'zuhause', 'standard', 0, 1)`
@@ -28,6 +29,11 @@ const insertCommentSql = `INSERT INTO entry_comments (entry_id, family_id, autho
 // Seed-Fehler früh und benannt: eine unbekannte Rolle im Seed darf nie stillschweigend in der DB landen.
 function assertSeedRole(rolle, label) {
   if (!isRole(rolle)) throw new Error(`${label}: unbekannte Rolle "${rolle}"`)
+}
+
+// datum oder relativ ({ tage, jahre }: der Tag `tage` nach heute, `jahre` früher - lib/demoDates.js, wie lib/demoPack.js).
+function entryDate(eintrag) {
+  return eintrag.relativ ? relativeDemoDate({ days: eintrag.relativ.tage, years: eintrag.relativ.jahre }) : eintrag.datum
 }
 
 function insertMemberHousehold(db, member, { copyImage, groupFamilyId }) {
@@ -54,8 +60,9 @@ function insertMemberHousehold(db, member, { copyImage, groupFamilyId }) {
       herkunftText: animal.herkunftText || null
     }).lastInsertRowid
     if (animal.eintrag) {
-      const { datum, titel, text, hoursAgo } = animal.eintrag
-      entryIds[animal.key] = insertEntry.run(dogId, familyId, member.autor, datum, titel, text || null, `-${hoursAgo} hours`).lastInsertRowid
+      const { titel, text, hoursAgo } = animal.eintrag
+      entryIds[animal.key] = insertEntry.run(dogId, familyId, member.autor, entryDate(animal.eintrag), titel, text || null, `-${hoursAgo} hours`)
+        .lastInsertRowid
     }
     if (animal.teilen) share.run(dogId, groupFamilyId)
   }

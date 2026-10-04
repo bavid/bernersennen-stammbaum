@@ -231,6 +231,9 @@ export const api = {
   deleteTimelineEntry: (id) => request(`/timeline/${id}`, { method: 'DELETE' }),
 
   recentActivity: (limit = 5) => request(`/timeline/recent?limit=${limit}`),
+  // Phase W, Schritt 3: der Feed von Start über Zuhause, Familien und befreundete Zuhause (server/routes/start.js) - ohne
+  // Bereich (den bestimmt die Sitzung), vor: der Cursor (next) der vorigen Seite.
+  start: ({ vor, limit = 20 } = {}) => request(`/start?limit=${limit}${vor ? `&vor=${encodeURIComponent(vor)}` : ''}`),
   // B+ Familienalbum: „Heute vor einem Jahr“ - Erinnerungen vom selben Tag in früheren Jahren (tag: heute, JJJJ-MM-TT).
   onThisDay: (tag) => request(`/timeline/jahrestag?tag=${encodeURIComponent(tag)}`),
 

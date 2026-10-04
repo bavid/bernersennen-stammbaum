@@ -33,6 +33,27 @@ const MEMBERS = [
           hoursAgo: 60
         },
         teilen: true
+      },
+      // Phase W, Schritt 3 („Ein Start für alles“): ein Tier, das NICHT in die Familie geteilt ist - seine Erinnerung sieht
+      // „Zuhause am Deich“ nur als Gast (seed/demo-visits.js), darum steht sie auf Start mit „Zu Besuch: Zuhause Möwenweg“.
+      // relativ (statt datum): vorgestern, wie lib/demoPack.js - so steht sie nach jedem Auffrischen oben im Album.
+      {
+        key: 'socke',
+        name: 'Socke',
+        rasse: 'Europäisch Kurzhaar',
+        tierart: 'katze',
+        geschlecht: 'ruede',
+        geburtsdatum: '2023-05-02',
+        beiUnsSeit: '2023-07-15',
+        herkunftArt: 'privat',
+        herkunftText: 'Aus der Nachbarschaft',
+        beschreibung: 'Schläft am liebsten auf Wilma. Wilma lässt ihn.',
+        eintrag: {
+          relativ: { tage: -2 },
+          titel: 'Socke erobert den Kratzbaum',
+          text: 'Drei Anläufe, ein empörtes Maunzen – und jetzt thront Socke ganz oben und schaut auf Wilma hinunter.',
+          hoursAgo: 4
+        }
       }
     ]
   },

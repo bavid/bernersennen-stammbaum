@@ -6,8 +6,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
   listDogs: vi.fn(),
-  recentActivity: vi.fn(),
-  listNotes: vi.fn(),
+  start: vi.fn(),
   erlebtMitOffen: vi.fn(),
   visits: vi.fn(),
   createTimelineEntry: vi.fn(),
@@ -44,6 +43,7 @@ const atHome = { ...home, home, role: 'leitung', memberships: [{ id: 5, name: 'F
 const classic = { id: 2, name: 'Rudel vom Heidekamp', art: 'rudel', role: 'leitung', home: { id: 2, art: 'rudel' }, memberships: [] }
 
 const dog = (id, name, extra = {}) => ({ id, name, name_unbekannt: 0, tierart: 'hund', foto_url: null, bei_uns_seit: null, bei_uns_bis: null, ...extra })
+// Eine Erinnerung, wie /api/timeline/jahrestag sie liefert (flach).
 const entry = (id, extra = {}) => ({
   id,
   dog_id: 10,
@@ -56,13 +56,52 @@ const entry = (id, extra = {}) => ({
   comment_count: 0,
   ...extra
 })
+// Bereiche und Einträge, wie GET /api/start sie liefert (Phase W, Schritt 3).
+const homeArea = { id: 1, name: 'Zuhause Lindenhof', art: 'eigen' }
+const familyArea = { id: 5, name: 'Familie Sonnenhang', art: 'familie' }
+const visitArea = { id: 8, name: 'Zuhause Möwenweg', art: 'besuch' }
+const item = (id, extra = {}) => ({
+  type: 'eintrag',
+  id,
+  area: homeArea,
+  dog: { id: 10, name: 'Nele', name_unbekannt: false, rasse: null, foto_url: null },
+  titel: `Beitrag ${id}`,
+  text: 'Heute am See.',
+  foto_urls: [],
+  foto_anzahl: 0,
+  datum: '2026-09-27',
+  autor_name: 'Mara',
+  created_at: '2026-09-27 10:00:00',
+  activity_at: '2026-09-27 10:00:00',
+  comment_count: 0,
+  privat: false,
+  ...extra
+})
+const zettel = (id, extra = {}) => ({
+  type: 'zettel',
+  id,
+  area: homeArea,
+  titel: null,
+  text: 'Treffen am Deich',
+  foto_urls: [],
+  foto_anzahl: 0,
+  datum: null,
+  termin_datum: null,
+  termin_zeit: null,
+  autor_name: 'Mara',
+  created_at: '2026-09-26 10:00:00',
+  activity_at: '2026-09-26 10:00:00',
+  comment_count: 0,
+  privat: false,
+  ...extra
+})
+const feed = (items = [], extra = {}) => ({ items, termine: [], notizen: 0, next: null, ...extra })
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-09-28T12:00:00Z'))
   api.listDogs.mockResolvedValue([])
-  api.recentActivity.mockResolvedValue([])
-  api.listNotes.mockResolvedValue([])
+  api.start.mockResolvedValue(feed())
   api.erlebtMitOffen.mockResolvedValue([])
   api.visits.mockResolvedValue({ besuche: [], gaeste: [] })
   api.erlebtMitTiere.mockResolvedValue([])
@@ -96,29 +135,115 @@ async function render(family = atHome, themeId = 'standard') {
 }
 
 describe('StartPage (Phase W)', () => {
-  test('Neuigkeiten: bis zu 20 Beiträge als Karten mit Anriss, Fotos und Kommentaren, je ein Link zum Beitrag', async () => {
-    api.recentActivity.mockResolvedValue([
-      entry(7, { foto_urls: ['/uploads/a.jpg', '/uploads/b.jpg', '/uploads/c.jpg', '/uploads/d.jpg'], comment_count: 2 }),
-      entry(6)
-    ])
+  test('Neuigkeiten: Karten mit Anriss, Fotos und Grüßen aus GET /api/start, je ein Link zur Erinnerung im Bereich', async () => {
+    api.start.mockResolvedValue(
+      feed([
+        item(7, { foto_urls: ['/uploads/a.jpg', '/uploads/b.jpg', '/uploads/c.jpg', '/uploads/d.jpg'], foto_anzahl: 6, comment_count: 2 }),
+        item(6, { datum: '2026-09-26' })
+      ])
+    )
     await render()
 
-    expect(api.recentActivity).toHaveBeenCalledWith(20)
+    expect(api.start).toHaveBeenCalledWith()
     const cards = [...container.querySelectorAll('.feed-card')]
     expect(cards).toHaveLength(2)
-    expect(cards[0].querySelector('a').getAttribute('href')).toBe('/tier/10#entry-7')
+    expect(cards[0].querySelector('a').getAttribute('href')).toBe('/tier/10?in=1#entry-7')
     expect(cards[0].querySelector('.feed-card-title').textContent).toBe('Beitrag 7')
-    // B+ Familienalbum: das erste Foto als Polaroid, die übrigen als „+3“
+    expect(cards[0].querySelector('.feed-card-dog').textContent).toBe('Nele')
+    // B+ Familienalbum: das erste Foto als Polaroid, die übrigen als „+5“ (der Feed schickt höchstens vier mit)
     expect(cards[0].querySelectorAll('.feed-card-photo .polaroid img')).toHaveLength(1)
     expect(cards[0].querySelector('.feed-card-photo img').getAttribute('src')).toBe('/uploads/a.jpg')
-    expect(cards[0].querySelector('.feed-card-more').textContent).toBe('+3')
+    expect(cards[0].querySelector('.feed-card-more').textContent).toBe('+5')
     expect(cards[1].querySelector('.feed-card-photo')).toBeNull()
     expect(cards[0].querySelector('.feed-card-comments').textContent).toBe(`2 ${words.greetings}`)
     expect(cards[1].querySelector('.feed-card-comments')).toBeNull()
+    // Im eigenen Zuhause kein Bereichs-Hinweis
+    expect(container.querySelector('.feed-area-chip')).toBeNull()
+    expect(container.querySelector('#start-news-title').textContent).toBe('Neue Erinnerungen')
+  })
+
+  test('ein Feed über alle Bereiche: Familie und Besuch mit kleinem Hinweis, Links öffnen den Bereich der Karte', async () => {
+    api.start.mockResolvedValue(
+      feed([
+        item(3, { area: familyArea, dog: { id: 20, name: 'Benno', name_unbekannt: false, rasse: null, foto_url: '/uploads/benno.jpg' } }),
+        item(4, { area: visitArea, datum: '2026-09-26', dog: { id: 30, name: 'Wilma', name_unbekannt: false, rasse: null, foto_url: null } }),
+        item(5, { datum: '2026-09-25' })
+      ])
+    )
+    await render()
+    const cards = [...container.querySelectorAll('.feed-card')]
+    expect(cards.map((card) => card.querySelector('a').getAttribute('href'))).toEqual([
+      '/tier/20?in=5#entry-3',
+      '/tier/30?in=8#entry-4',
+      '/tier/10?in=1#entry-5'
+    ])
+    expect(cards.map((card) => card.querySelector('.feed-area-chip')?.textContent ?? null)).toEqual([
+      'Familie Sonnenhang',
+      'Zu Besuch: Zuhause Möwenweg',
+      null
+    ])
+    expect(cards[0].querySelector('.feed-area-chip').classList.contains('is-familie')).toBe(true)
+    expect(cards[1].querySelector('.feed-area-chip').classList.contains('is-besuch')).toBe(true)
+    expect(cards[0].querySelector('.avatar img').getAttribute('src')).toBe('/uploads/benno.jpg')
+  })
+
+  test('Neu an der Pinnwand: die zwei neuesten Zettel als kurze Zeilen (nicht im Album), ohne die Termine unter „Bald“', async () => {
+    api.start.mockResolvedValue(
+      feed(
+        [
+          zettel(1, { comment_count: 2, activity_at: '2026-09-28 09:00:00' }),
+          item(2),
+          zettel(1, { area: familyArea, text: 'Grillen im Garten', activity_at: '2026-09-27 09:00:00', comment_count: 1 }),
+          zettel(4, { text: 'Impfung', termin_datum: '2026-10-14' }),
+          zettel(5, { text: 'Vierter Zettel' }),
+          zettel(6, { text: 'Fünfter Zettel' })
+        ],
+        { termine: [{ id: 4, text: 'Impfung', termin_datum: '2026-10-14', termin_zeit: null, area: homeArea }] }
+      )
+    )
+    await render()
+    const rows = [...container.querySelectorAll('.start-pinboard-link')]
+    expect(rows.map((row) => [row.getAttribute('href'), row.querySelector('.start-pinboard-text').textContent])).toEqual([
+      ['/pinnwand?in=home', 'Treffen am Deich'],
+      ['/familien/5?reiter=pinnwand', 'Grillen im Garten']
+    ])
+    expect(rows[0].querySelector('.start-pinboard-meta').textContent).toBe('2 Antworten · heute')
+    expect(rows[0].querySelector('.feed-area-chip')).toBeNull()
+    expect(rows[1].querySelector('.feed-area-chip').textContent).toBe('Familie Sonnenhang')
+    expect(rows[1].querySelector('.start-pinboard-meta').textContent).toBe('Familie Sonnenhang1 Antwort · gestern')
+    // Zettel stehen nicht im Album darunter
+    expect(container.querySelectorAll('.feed-card')).toHaveLength(1)
+  })
+
+  test('Zettel stehen im Kasten „Bald“ unter den Terminen; nur Zettel: der Kasten heißt „Neu an der Pinnwand“', async () => {
+    api.start.mockResolvedValue(
+      feed([zettel(1)], { termine: [{ id: 2, text: 'Impfung', termin_datum: '2026-10-14', termin_zeit: null, area: homeArea }] })
+    )
+    await render()
+    let soon = container.querySelector('.start-soon')
+    expect(soon.querySelector('h2').textContent).toBe('Bald')
+    expect(soon.querySelector('.start-pinboard-title').textContent).toBe('Neu an der Pinnwand')
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    api.start.mockResolvedValue(feed([zettel(1)]))
+    await render()
+    soon = container.querySelector('.start-soon')
+    expect(soon.querySelector('h2').textContent).toBe('Neu an der Pinnwand')
+    expect(soon.querySelector('.start-pinboard-title')).toBeNull()
+    expect(soon.querySelector('.start-soon-list')).toBeNull()
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    api.start.mockResolvedValue(feed([item(1)]))
+    await render()
+    expect(container.querySelector('.start-pinboard')).toBeNull()
   })
 
   test('zuerst fünf Erinnerungen, der Rest hinter "Weitere Erinnerungen" - danach steht der Fokus auf der ersten neuen', async () => {
-    api.recentActivity.mockResolvedValue(Array.from({ length: 9 }, (_, index) => entry(index + 1)))
+    api.start.mockResolvedValue(feed(Array.from({ length: 9 }, (_, index) => item(index + 1, { activity_at: `2026-09-27 10:0${9 - index}:00` }))))
     await render()
     expect(container.querySelectorAll('.feed-card')).toHaveLength(5)
     const more = container.querySelector('.start-more')
@@ -126,7 +251,65 @@ describe('StartPage (Phase W)', () => {
     act(() => more.click())
     expect(container.querySelectorAll('.feed-card')).toHaveLength(9)
     expect(container.querySelector('.start-more')).toBeNull()
-    expect(document.activeElement.getAttribute('href')).toBe('/tier/10#entry-6')
+    expect(document.activeElement.getAttribute('href')).toBe('/tier/10?in=1#entry-6')
+  })
+
+  test('Ältere anzeigen: holt mit dem Cursor die nächste Seite und hängt sie darunter an, Fokus auf die erste neue', async () => {
+    api.start.mockResolvedValueOnce(feed([item(1), item(2)], { next: '2026-09-27T10:00:00Z~e2' }))
+    api.start.mockResolvedValueOnce(feed([item(2), item(3, { datum: '2026-09-30' }), item(4, { datum: '2026-09-29' })]))
+    await render()
+    const older = container.querySelector('.start-more')
+    expect(older.textContent).toBe('Ältere anzeigen')
+    await act(async () => older.click())
+    expect(api.start).toHaveBeenLastCalledWith({ vor: '2026-09-27T10:00:00Z~e2' })
+    // Die neue Seite steht darunter (nie dazwischen), schon Geladenes nicht doppelt
+    const links = [...container.querySelectorAll('.feed-card a')].map((link) => link.getAttribute('href'))
+    expect(links).toEqual(['/tier/10?in=1#entry-1', '/tier/10?in=1#entry-2', '/tier/10?in=1#entry-3', '/tier/10?in=1#entry-4'])
+    expect(document.activeElement.getAttribute('href')).toBe('/tier/10?in=1#entry-3')
+    expect(container.querySelector('.start-more')).toBeNull()
+  })
+
+  test('Ältere anzeigen: ein Fehler steht darunter, der Knopf bleibt für einen neuen Versuch', async () => {
+    api.start.mockResolvedValueOnce(feed([item(1)], { next: '2026-09-27T10:00:00Z~e1' }))
+    api.start.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'))
+    await render()
+    await act(async () => container.querySelector('.start-more').click())
+    expect(container.querySelector('.start-more-error').textContent).toBe('Keine Verbindung zum Server.')
+    expect(container.querySelector('.start-more').textContent).toBe('Ältere anzeigen')
+  })
+
+  test('Ältere anzeigen: ein zweiter Klick während des Ladens holt nichts doppelt; verlässt man Start, passiert nichts', async () => {
+    let answer
+    api.start.mockResolvedValueOnce(feed([item(1)], { next: '2026-09-27T10:00:00Z~e1' }))
+    api.start.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)))
+    await render()
+    const older = container.querySelector('.start-more')
+    await act(async () => older.click())
+    expect(older.getAttribute('aria-disabled')).toBe('true')
+    expect(older.textContent).toBe('Lädt …')
+    await act(async () => older.click())
+    expect(api.start).toHaveBeenCalledTimes(2)
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    act(() => root.unmount())
+    root = null
+    await act(async () => answer(feed([item(2, { datum: '2026-09-20' })])))
+    expect(errors).not.toHaveBeenCalled()
+    errors.mockRestore()
+  })
+
+  test('ohne Erinnerungen, aber mit weiteren Seiten: kein „Noch keine Erinnerungen“', async () => {
+    api.start.mockResolvedValue(feed([zettel(1)], { next: '2026-09-27T10:00:00Z~e1' }))
+    await render()
+    expect(container.querySelector('.feed-empty')).toBeNull()
+    expect(container.querySelector('.start-more').textContent).toBe('Ältere anzeigen')
+  })
+
+  test('kann der Feed nicht geladen werden: eine Fehlermeldung statt eines Leerzustands', async () => {
+    api.start.mockRejectedValue(new Error('Fehler 500'))
+    await render()
+    expect(container.querySelector('.error-banner').textContent).toBe('Fehler 500')
+    expect(container.querySelector('.feed-empty')).toBeNull()
+    expect(container.querySelector('.start-news').getAttribute('aria-busy')).toBeNull()
   })
 
   test('ohne Beiträge ein freundlicher Leerzustand', async () => {
@@ -140,7 +323,8 @@ describe('StartPage (Phase W)', () => {
       dog(11, 'Aiko', { bei_uns_bis: '2020-01-01' }),
       dog(12, 'Wilma', { can_edit: 0, shared_from: 'Zuhause Möwenweg' })
     ])
-    api.createTimelineEntry.mockResolvedValue({ id: 99, dog_id: 10, titel: 'Erster Schnee', text: '', foto_urls: [], created_at: '2026-09-28 11:00:00' })
+    api.createTimelineEntry.mockResolvedValue({ id: 99, dog_id: 10, titel: 'Erster Schnee', text: '', foto_urls: [], datum: '2026-09-28', created_at: '2026-09-28 11:00:00' })
+    api.start.mockResolvedValue(feed([item(5, { area: familyArea })]))
     await render()
 
     const composer = container.querySelector('.start-composer')
@@ -183,19 +367,42 @@ describe('StartPage (Phase W)', () => {
     // Nach dem Speichern: zu, der Fokus zurück auf „Erinnerung festhalten“
     expect(document.activeElement).toBe(composer.querySelector('.start-composer-open'))
     expect(container.querySelector('.feed-card-title').textContent).toBe('Erster Schnee')
-    expect(container.querySelector('.feed-card a').getAttribute('href')).toBe('/tier/10#entry-99')
+    expect(container.querySelector('.feed-card a').getAttribute('href')).toBe('/tier/10?in=1#entry-99')
+    expect(container.querySelector('.feed-card').querySelector('.feed-area-chip')).toBeNull()
+    expect(container.querySelectorAll('.feed-card')).toHaveLength(2)
   })
 
-  test('Bald: Jahrestag innerhalb von 30 Tagen, Termin und der Weg zu den Notizen', async () => {
+  test('Bald: Jahrestag innerhalb von 30 Tagen, Termine aus Zuhause und Familien und der Weg zu den Notizen', async () => {
     api.listDogs.mockResolvedValue([dog(10, 'Nele', { bei_uns_seit: '2021-10-05' })])
-    api.listNotes.mockResolvedValue([{ id: 1, text: 'Geschwistertreffen', termin_datum: '2026-10-12', termin_zeit: null, replies: [] }])
+    api.start.mockResolvedValue(
+      feed([], {
+        notizen: 1,
+        termine: [
+          { id: 3, text: 'Altes Treffen', termin_datum: '2026-09-27', termin_zeit: null, area: homeArea },
+          { id: 1, text: 'Geschwistertreffen', termin_datum: '2026-10-12', termin_zeit: null, area: familyArea },
+          { id: 2, text: 'Impfung', termin_datum: '2026-10-14', termin_zeit: '10:30', area: homeArea }
+        ]
+      })
+    )
     await render()
 
     const soon = container.querySelector('.start-soon')
     expect(soon.textContent).toContain('In 7 Tagen: Nele ist 5 Jahre bei euch')
-    expect(soon.textContent).toContain('Geschwistertreffen')
-    expect(soon.querySelector('a').getAttribute('href')).toBe('/pinnwand')
-    expect(soon.querySelector('a').textContent).toBe('Notizen (1) ')
+    const termine = [...soon.querySelectorAll('.start-soon-termin')]
+    // Vergangenes (nach der Uhr des Geräts) fällt heraus, höchstens drei
+    const row = (link) => [
+      link.getAttribute('href'),
+      link.querySelector('strong').textContent,
+      link.querySelector('.feed-area-chip')?.textContent ?? null,
+      link.querySelector('.start-soon-text').textContent
+    ]
+    expect(termine.map(row)).toEqual([
+      ['/familien/5?reiter=pinnwand', 'Mo, 12. Oktober', 'Familie Sonnenhang', 'Geschwistertreffen'],
+      ['/pinnwand?in=home', 'Mi, 14. Oktober · 10:30 Uhr', null, 'Impfung']
+    ])
+    const notes = soon.querySelector('.start-card-link')
+    expect(notes.getAttribute('href')).toBe('/pinnwand')
+    expect(notes.textContent).toBe('Notizen (1) ')
   })
 
   test('ohne Termin, Notizen und nahen Jahrestag: kein Kasten "Bald"', async () => {
@@ -236,7 +443,7 @@ describe('StartPage (Phase W)', () => {
   })
 
   test('klassischer Login: Neuigkeiten der Familie, kein Rand mit Familien, keine Notizen-Abkürzung', async () => {
-    api.listNotes.mockResolvedValue([{ id: 1, text: 'Hallo', termin_datum: null, replies: [] }])
+    api.start.mockResolvedValue(feed([], { notizen: 1 }))
     await render(classic)
     expect(container.querySelector('h1').textContent).toBe('Start – Rudel vom Heidekamp')
     expect(container.querySelector('.start-families')).toBeNull()
@@ -315,12 +522,14 @@ describe('StartPage – Look B+ Familienalbum', () => {
   })
 
   test('Kapitel: nach dem Tag der Erinnerung sortiert, je Jahreszeit ein Kapitel - auch wenn sie anders festgehalten wurden', async () => {
-    // /recent liefert nach created_at: die Sommer-Erinnerung zuletzt geschrieben, dazwischen eine aus dem Herbst
-    api.recentActivity.mockResolvedValue([
-      entry(1, { datum: '2026-07-14', comment_count: 1, created_at: '2026-09-28 10:00:00' }),
-      entry(3, { datum: '2026-09-20', created_at: '2026-09-27 10:00:00' }),
-      entry(2, { datum: '2026-09-02', created_at: '2026-09-26 10:00:00' })
-    ])
+    // /api/start liefert nach letzter Aktivität: die Sommer-Erinnerung zuletzt gegrüßt, dazwischen eine aus dem Herbst
+    api.start.mockResolvedValue(
+      feed([
+        item(1, { datum: '2026-07-14', comment_count: 1, activity_at: '2026-09-28 10:00:00' }),
+        item(3, { datum: '2026-09-20', activity_at: '2026-09-27 10:00:00' }),
+        item(2, { datum: '2026-09-02', activity_at: '2026-09-26 10:00:00' })
+      ])
+    )
     await render()
     const chapters = [...container.querySelectorAll('.feed-chapter')]
     expect(chapters.map((chapter) => chapter.querySelector('.feed-chapter-label').textContent)).toEqual(['Herbst 2026', 'Sommer 2026'])
@@ -330,5 +539,18 @@ describe('StartPage – Look B+ Familienalbum', () => {
     // Die Zeile unter dem Tier nennt den Tag der Erinnerung - passend zum Kapitel
     expect(chapters[0].querySelector('.feed-card-meta').textContent).toBe('erzählt von Mara · 20. September 2026')
     expect(chapters[1].querySelector('.feed-card-meta').textContent).toBe('erzählt von Mara · 14. Juli 2026')
+  })
+
+  test('Bilderrahmen-Karte nur mit Fotos aus dem eigenen Zuhause', async () => {
+    api.start.mockResolvedValue(feed([item(1, { area: familyArea, foto_urls: ['/uploads/familie.jpg'], foto_anzahl: 1 })]))
+    await render()
+    expect(container.querySelector('.start-frame')).toBeNull()
+    act(() => root.unmount())
+    root = null
+    container.remove()
+
+    api.start.mockResolvedValue(feed([item(1, { foto_urls: ['/uploads/zuhause.jpg'], foto_anzahl: 1 })]))
+    await render()
+    expect(container.querySelector('.start-frame img').getAttribute('src')).toBe('/uploads/zuhause.jpg')
   })
 })

@@ -39,7 +39,7 @@ test('Demo (Phase V3): Familienbande mit Zuhause, Familie, befreundetem Zuhause 
     assert.deepEqual(lists.besuche.map((b) => b.id), [visits.hostId])
     assert.deepEqual(lists.gaeste.map((g) => g.id), [visits.hostId])
     const tiere = (await get('/api/erlebt-mit/tiere', demoCookie)).data
-    assert.deepEqual(tiere.filter((dog) => dog.zuhauseId === visits.hostId).map((dog) => dog.name), ['Wilma'])
+    assert.deepEqual(tiere.filter((dog) => dog.zuhauseId === visits.hostId).map((dog) => dog.name), ['Socke', 'Wilma'])
   })
 
   await t.test('im Zuhause entsteht noch kein Stammbaum: keine Verpaarung, keine Eltern', async () => {
