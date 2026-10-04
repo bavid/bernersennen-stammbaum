@@ -12,8 +12,8 @@ function openerFrom(event) {
   return current instanceof HTMLElement && current !== document.body ? current : null
 }
 
-// Gemeinsamer Zustand der Hinweis-Glocke (App.jsx, um Kopf und Seiten): die Glocke im Kopf (HinweisGlocke) und die
-// schmale Zeile auf Start (HinweisStartZeile) öffnen dasselbe Fenster. Nur für Haushalte (eigenes Zuhause, auch in einer
+// Gemeinsamer Zustand der Hinweis-Glocke (App.jsx, um Kopf und Seiten): die Glocke im Kopf (HinweisGlocke) öffnet das
+// Fenster - Start zeigt keine eigene Hinweis-Zeile (Wunsch 04.10.: „Notification oben rechts reicht“). Nur für Haushalte (eigenes Zuhause, auch in einer
 // Familie oder zu Besuch - die Zahlen gehören der Identität); klassische Familien-Logins, Tierheime und Partner haben
 // keine Glocke. opener: wer das Fenster geöffnet hat (der geklickte Knopf) - beim Schließen geht der Fokus dorthin
 // zurück, außer es schließt, weil ein Link auf eine andere Seite führt (closePanel({ restoreFocus: false })).

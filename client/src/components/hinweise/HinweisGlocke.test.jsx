@@ -19,7 +19,6 @@ vi.mock('../../api', () => ({ api }))
 
 import HinweiseProvider from './HinweiseProvider.jsx'
 import HinweisGlocke from './HinweisGlocke.jsx'
-import HinweisStartZeile from './HinweisStartZeile.jsx'
 import { DemoProvider } from '../../lib/demo.js'
 import { REFRESH_MS } from '../../lib/glocke.js'
 
@@ -60,7 +59,6 @@ function Harness({ initial }) {
     <MemoryRouter>
       <DemoProvider value={family}>
         <HinweiseProvider family={family} onFamilyChange={setFamily}>
-          <HinweisStartZeile />
           <HinweisGlocke />
         </HinweiseProvider>
       </DemoProvider>
@@ -97,7 +95,6 @@ describe('Hinweis-Glocke', () => {
     expect(bell().getAttribute('aria-expanded')).toBe('false')
     expect(container.querySelector('.hinweis-glocke-badge').textContent).toBe('3')
     expect(api.hinweisGruesse).not.toHaveBeenCalled()
-    expect(container.querySelector('.start-hinweise').textContent).toContain('3 neue Hinweise')
   })
 
   test('Öffnen: holt die drei Listen, zeigt sie ruhig, Fokus im Fenster, Grüße gelten als gesehen', async () => {
@@ -139,7 +136,6 @@ describe('Hinweis-Glocke', () => {
     expect(api.rejectErlebtMit).toHaveBeenCalledWith(6)
     expect(latest.erlebtMitOffen).toBe(0)
     expect(container.textContent).toContain('Alles erledigt – nichts Neues.')
-    expect(container.querySelector('.start-hinweise')).toBeNull()
   })
 
   test('ein Fehler steht im Fenster; die anderen Hinweise bleiben bedienbar', async () => {
@@ -225,7 +221,7 @@ describe('Hinweis-Glocke', () => {
     expect(latest.neueGaeste).toBe(0)
   })
 
-  test('Escape schließt, der Fokus geht zurück an die Glocke; die Zeile auf Start öffnet dasselbe Fenster', async () => {
+  test('Escape schließt, der Fokus geht zurück an die Glocke; die Glocke schließt ein offenes Fenster wieder', async () => {
     mockLists()
     await render()
     await openBell()
@@ -233,20 +229,19 @@ describe('Hinweis-Glocke', () => {
     expect(panel()).toBeNull()
     expect(document.activeElement).toBe(bell())
 
-    const line = container.querySelector('.start-hinweise')
-    await act(async () => line.click())
+    await openBell()
     expect(panel()).not.toBeNull()
     // Escape auch, wenn der Fokus gerade nicht im Fenster liegt
     document.body.focus()
     await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
     expect(panel()).toBeNull()
-    expect(document.activeElement).toBe(line)
+    expect(document.activeElement).toBe(bell())
 
-    // Die Zeile schließt ein offenes Fenster wieder (kein Zu-und-wieder-Auf über „Klick daneben“)
-    await act(async () => line.click())
-    await act(async () => line.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })))
+    // Die Glocke schließt ein offenes Fenster wieder (kein Zu-und-wieder-Auf über „Klick daneben“)
+    await act(async () => bell().click())
+    await act(async () => bell().dispatchEvent(new MouseEvent('mousedown', { bubbles: true })))
     expect(panel()).not.toBeNull()
-    await act(async () => line.click())
+    await act(async () => bell().click())
     expect(panel()).toBeNull()
   })
 
@@ -262,10 +257,9 @@ describe('Hinweis-Glocke', () => {
     expect(document.activeElement).not.toBe(bell())
   })
 
-  test('nichts Neues: ruhiger Leerzustand, keine Zeile auf Start', async () => {
+  test('nichts Neues: ruhiger Leerzustand ohne Badge', async () => {
     mockLists({ anfragen: [], gaeste: [], gruesse: [] })
     await render({ ...home, erlebtMitOffen: 0, neueGaeste: 0, neueGruesse: 0 })
-    expect(container.querySelector('.start-hinweise')).toBeNull()
     expect(container.querySelector('.hinweis-glocke-badge')).toBeNull()
     await openBell()
     expect(container.textContent).toContain('Alles erledigt – nichts Neues.')

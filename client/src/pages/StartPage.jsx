@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
 import AnimalCreateModal from '../components/AnimalCreateModal.jsx'
-import HinweisStartZeile from '../components/hinweise/HinweisStartZeile.jsx'
 import MyFamiliesCard from '../components/start/MyFamiliesCard.jsx'
 import FrameStartCard from '../components/start/FrameStartCard.jsx'
 import StartComposer from '../components/start/StartComposer.jsx'
@@ -80,8 +79,6 @@ export default function StartPage({ family }) {
       )}
       <div className="start-layout">
         <div className="start-main">
-          {/* Hinweis-Glocke: statt der „Für dich“-Kästen eine schmale Zeile, die das Fenster der Glocke öffnet. */}
-          <HinweisStartZeile />
           {canWrite && dogs && <StartComposer family={family} dogs={dogs} onCreated={addEntry} />}
           <OnThisDayCard enabled={!family.zuBesuch} />
           <StartSoon termine={termine} anniversary={anniversary} notes={notes} notesCount={atHome ? feed.notizen : 0} />

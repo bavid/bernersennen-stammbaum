@@ -411,21 +411,13 @@ describe('StartPage (Phase W)', () => {
     expect(container.querySelector('.start-soon')).toBeNull()
   })
 
-  test('Hinweise: statt „Für dich“-Kästen nur eine schmale Zeile, wenn /me welche meldet - ohne eigene Anfragen', async () => {
+  test('Hinweise stehen nur in der Glocke oben rechts - Start zeigt weder Kästen noch eine Hinweis-Zeile', async () => {
     await render({ ...atHome, erlebtMitOffen: 1, neueGaeste: 1 })
     expect(container.querySelector('.start-foryou')).toBeNull()
-    const line = container.querySelector('.start-hinweise')
-    expect(line.textContent).toContain('2 neue Hinweise')
-    expect(line.textContent).toContain('ansehen')
-    expect(line.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(container.querySelector('.start-hinweise')).toBeNull()
+    expect(container.textContent).not.toContain('neue Hinweise')
     expect(api.erlebtMitOffen).not.toHaveBeenCalled()
     expect(api.visits).not.toHaveBeenCalled()
-    act(() => root.unmount())
-    root = null
-    container.remove()
-
-    await render({ ...atHome, erlebtMitOffen: 0, neueGaeste: 0 })
-    expect(container.querySelector('.start-hinweise')).toBeNull()
   })
 
   test('Meine Familien am Rand mit Rolle und Link zur Gruppenseite', async () => {

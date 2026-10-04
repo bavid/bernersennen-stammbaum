@@ -1,5 +1,5 @@
 /* Hinweis-Glocke im Kopf (components/hinweise): Knopf wie die Lupe (search.css), ein ruhiges Fenster unter der Glocke am
-   Desktop, das Blatt von unten am Handy (Modal .modal-sheet), dazu die schmale Zeile auf Start. Nur Tokens des Auftritts. */
+   Desktop, das Blatt von unten am Handy (Modal .modal-sheet), Nur Tokens des Auftritts. */
 
 .hinweis-glocke {
   position: relative;
@@ -275,58 +275,6 @@
   justify-items: start;
   gap: var(--space-2);
   padding-bottom: var(--space-2);
-}
-
-/* Zeile auf Start: „2 neue Hinweise · ansehen“ */
-.start-hinweise {
-  display: inline-flex;
-  justify-self: start;
-  max-width: 100%;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
-}
-
-.start-hinweise svg {
-  width: 1.05rem;
-  height: 1.05rem;
-  color: var(--rust);
-}
-
-.start-hinweise-action {
-  color: var(--rust);
-  font-weight: 700;
-}
-
-.start-hinweise-action::before {
-  content: '·';
-  margin-right: var(--space-2);
-  color: var(--muted);
-  font-weight: 400;
-}
-
-.start-hinweise:hover {
-  border-color: var(--line-strong);
-  background: var(--paper-deep);
-}
-
-.start-hinweise:hover .start-hinweise-action {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.start-hinweise:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
 }
 
 @media (max-width: 720px) {
