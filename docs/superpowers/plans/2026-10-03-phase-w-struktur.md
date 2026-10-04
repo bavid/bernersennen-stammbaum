@@ -28,7 +28,7 @@ Linkzeile, Besuchsband, „In Meiner Chronik bearbeiten“), und die Familienban
 Wegbegleiter → Reiter „Zeitleiste“ · Familienbande → **Tiere** (Berner: Hunde) · Meine Chronik/Mein Zuhause →
 überall **„Mein Zuhause“** · Mitglieder & Rollen → Reiter „Mitglieder“ · Familie einstellen → „Familie verwalten“ ·
 Schreib dem Admin → „Hilfe & Kontakt“ · In Familien zeigen → „Wer sieht {Name}?“ · Erlebt mit → „Mit dabei“ ·
-Collage → „Fotocollage“ · Eintrag/Erinnerung → **„Beitrag“** (Entscheidung D5).
+Collage → „Fotocollage“ · Eintrag → **„Erinnerung“**, Kommentare → **„Grüße“** (Entscheidung D5, 04.10.).
 
 ## Phasen
 
@@ -56,7 +56,19 @@ Collage → „Fotocollage“ · Eintrag/Erinnerung → **„Beitrag“** (Entsc
 - **D2** Pinnwand des Zuhauses ohne Menüpunkt; Notizen/Termine erscheinen auf Start, Pinnwand bleibt in Familien.
 - **D3** Besuche als „Befreundete Zuhause“ unter Familien.
 - **D4** Beiträge besuchter Zuhause erscheinen im Start-Feed.
-- **D5** Nomen „Beitrag“ statt „Eintrag/Erinnerung“.
+- **D5** ~~Nomen „Beitrag“~~ → entschieden 04.10.: **„Erinnerung“** (Erinnerungen, „Erinnerung festhalten“) und **„Grüße“** statt Kommentare – passend zum Familienalbum.
+
+## Look: „B+ Familienalbum“ (entschieden 04.10.)
+
+Kein weiteres Hunde-Netzwerk, sondern das **Familienalbum eurer Tiere** (Abgrenzung zu Community-Apps: privat,
+ein Leben lang, Geschichte zieht vom Tierheim mit, Familie über Haushalte, alle Tierarten, zum Anfassen).
+- Papierton, Terrakotta + Salbei + Rosé, Fraunces (Überschriften) + Figtree (Text), **Caveat** nur für kleine
+  Momente („Schön, dass ihr da seid“, Kapitel „Herbst 2026“, Bildunterschriften).
+- Fotos mit weißem Rand (Polaroid), sanft gedreht; Kapitel nach Jahreszeiten; „Heute vor einem Jahr“ als Karte.
+- Tiere als Kreise mit Namen; verstorbene Tiere sanft grau, „In Erinnerung“.
+- **Herzen mit Namen statt Zahlen** („Mira und Familie Sonnenhang freuen sich · 3 Grüße“), keine Like-Zähler.
+- Entwurf: Leinwand „Familie auf Pfoten – Struktur-Mocks“, Artboards „B+ Familienalbum“ und „Mehrwert“.
+- Neues Feature dazu: **Digitaler Bilderrahmen** (Diashow, Rahmen-Link für ein anderes Gerät ohne Anmeldung).
 
 ## Skizze Start (Desktop)
 
