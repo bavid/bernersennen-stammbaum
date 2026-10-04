@@ -129,7 +129,7 @@ describe('SettingsPage – Bereiche und Adresse (?bereich=)', () => {
     expect(tabs()).toEqual(['Darstellung', 'Familien', 'Mein Zuhause'])
     expect(selectedTab()).toBe('Darstellung')
     expect(container.querySelector('[role="tabpanel"]').getAttribute('aria-labelledby')).toBe('einstellungen-darstellung')
-    expect(container.querySelector('legend').textContent).toBe('Farbpalette')
+    expect(container.querySelector('legend').textContent).toBe('Farbwelt')
   })
 
   test('?bereich=familien öffnet die Familien, ein Reiter schreibt die Adresse, Unbekanntes fällt auf die Darstellung', async () => {
