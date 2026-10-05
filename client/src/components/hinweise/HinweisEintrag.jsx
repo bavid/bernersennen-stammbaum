@@ -7,7 +7,7 @@ import { greetingText, guestText, requestText } from '../../lib/glocke.js'
 
 // Kleines Bild links: das erste Foto einer Anfrage (hilft beim Erinnern), sonst ein Zeichen für die Art des Hinweises.
 function Mark({ icon, photo }) {
-  if (photo) return <img className="hinweis-mark hinweis-mark-photo" src={photo} alt="" width="40" height="40" loading="lazy" />
+  if (photo) return <img className="hinweis-mark hinweis-mark-photo" src={photo} alt="" width="36" height="36" loading="lazy" />
   return (
     <span className="hinweis-mark" aria-hidden="true">
       <Icon name={icon} />
@@ -22,7 +22,7 @@ function Anfrage({ request, busy, disabled, actions }) {
     <>
       <Mark icon="paw" photo={request.foto_urls?.[0]} />
       <div className="hinweis-body">
-        <p className="hinweis-text" id={questionId}>
+        <p className="hinweis-text" id={questionId} title={requestText(request)}>
           {requestText(request)}
         </p>
         <p className="hinweis-meta">
@@ -60,7 +60,9 @@ function Gast({ guest, busy, disabled, actions }) {
     <>
       <Mark icon="home" />
       <div className="hinweis-body">
-        <p className="hinweis-text">{guestText(guest)}</p>
+        <p className="hinweis-text" title={guestText(guest)}>
+          {guestText(guest)}
+        </p>
         <p className="hinweis-meta">
           {guest.ueberCode ? `über deinen Code „${guest.ueberCode}“` : 'sieht eure nicht privaten Erinnerungen'}
         </p>
@@ -89,7 +91,7 @@ function Gruss({ greeting, onNavigate }) {
     <>
       <Mark icon="heart" />
       <div className="hinweis-body">
-        <Link className="hinweis-text hinweis-link" to={`/tier/${greeting.dogId}#entry-${greeting.entryId}`} onClick={onNavigate}>
+        <Link className="hinweis-text hinweis-link" to={`/tier/${greeting.dogId}#entry-${greeting.entryId}`} onClick={onNavigate} title={greetingText(greeting)}>
           {greetingText(greeting)}
         </Link>
         <p className="hinweis-meta">{relativeTime(greeting.createdAt)}</p>
