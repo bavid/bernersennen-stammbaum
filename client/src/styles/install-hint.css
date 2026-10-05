@@ -1,0 +1,92 @@
+/* „Als App aufs Handy“ (components/InstallHint.jsx): eine ruhige Karte auf der Login-Seite und in Einstellungen › App. */
+
+.install-hint {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.install-hint-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.install-hint-head svg {
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  color: var(--rust);
+}
+
+.install-hint-head h2,
+.install-hint-head h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.install-hint-steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--ink-soft);
+}
+
+.install-hint-steps svg,
+.install-hint p svg {
+  width: 1rem;
+  height: 1rem;
+  vertical-align: -0.15em;
+  color: var(--rust);
+}
+
+.install-hint-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.install-hint-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.install-hint-later {
+  justify-self: start;
+}
+
+/* Login-Seite: die Karte unter den beiden Einstiegen, so breit wie sie (auf breiten Bildschirmen wie beide zusammen) */
+.login-install {
+  width: min(25rem, 100%);
+  margin-top: var(--space-8);
+}
+
+@media (min-width: 1180px) {
+  .login-install {
+    width: min(54rem, 100%);
+  }
+}
+
+/* „Neue Version verfügbar · Neu laden“ (components/PwaUpdate.jsx) - der Toast mit einem Knopf */
+.toast-update .toast-action {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+}
+
+.toast-update .toast-action:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}

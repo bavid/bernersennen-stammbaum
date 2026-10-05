@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#fbf5ec" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Gerade offline – Familie auf Pfoten</title>
+    <!-- Offline-Seite des Service Workers (src/sw/sw.js): liegt im Cache und kommt ohne Netz statt der App. Kein Skript
+         (die Content-Security-Policy erlaubt nur Skripte aus Dateien), Systemschriften (die eigenen liegen womöglich noch
+         nicht im Cache), Farben des Familienalbums hell und dunkel. -->
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: #fbf5ec;
+        --ink: #2e241d;
+        --muted: #6b5c50;
+        --accent: #a64b2a;
+        --surface: #ffffff;
+        --line: #e8dccd;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #1e1712;
+          --ink: #f6ede2;
+          --muted: #c7b8a8;
+          --accent: #e0896a;
+          --surface: #2a211b;
+          --line: #41352c;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      main {
+        width: min(26rem, 100%);
+        padding: 2rem 1.5rem;
+        border: 1px solid var(--line);
+        border-radius: 1.25rem;
+        background: var(--surface);
+        text-align: center;
+      }
+      img {
+        display: block;
+        width: 5.5rem;
+        height: 5.5rem;
+        margin: 0 auto 1rem;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.6rem;
+        font-weight: 700;
+      }
+      p {
+        margin: 0 0 1.5rem;
+        color: var(--muted);
+      }
+      a {
+        display: inline-block;
+        min-height: 44px;
+        padding: 0.7rem 1.4rem;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icons/icon-192.png" alt="" width="96" height="96" />
+      <h1>Gerade offline</h1>
+      <p>Eure Erinnerungen sind sicher auf dem Server. Sobald das Handy wieder Verbindung hat, geht es hier weiter.</p>
+      <a href="/start">Noch einmal versuchen</a>
+    </main>
+  </body>
+</html>

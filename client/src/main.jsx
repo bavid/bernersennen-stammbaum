@@ -8,12 +8,17 @@ import TopStrip, { TopStripProvider } from './components/TopStrip.jsx'
 import SkipLink from './components/SkipLink.jsx'
 import { trackScrollbarWidth } from './lib/viewport.js'
 import { installChunkReload } from './lib/chunkReload.js'
+import { captureInstallPrompt } from './lib/install.js'
+import PwaUpdate from './components/PwaUpdate.jsx'
 import { applyDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { removeSetting } from './lib/storage.js'
 import './styles/global.css'
 
 trackScrollbarWidth()
 installChunkReload()
+// Als App aufs Handy: den Installations-Dialog von Chrome/Android abfangen, bis jemand „App installieren“ drückt
+// (components/InstallHint.jsx). Der Service Worker selbst wird in PwaUpdate angemeldet (nur im Produktions-Build).
+captureInstallPrompt()
 // Die zuletzt gemerkte Darstellung (public/darstellung-init.js hat sie schon vor dem ersten Bild gesetzt) - hier dazu der
 // Lauscher, der „Automatisch“ einem Wechsel des Systems folgen lässt. /api/me übernimmt danach (App.jsx).
 applyDarstellung(storedDarstellung())
@@ -31,6 +36,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               Demo-/Besuchs-Hinweis, den App per Portal dort einhängt - über jeder Seite der App. */}
           <TopStrip />
           <App />
+          {/* „Neue Version verfügbar · Neu laden“, sobald der Service Worker eine neue Version fertig hat */}
+          <PwaUpdate />
         </TopStripProvider>
       </ToastProvider>
     </BrowserRouter>

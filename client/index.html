@@ -9,6 +9,14 @@
     />
     <meta name="theme-color" content="#fbf5ec" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Als App aufs Handy (ohne App Store): Manifest, Symbole und Startbildschirm-Angaben für iOS - der Service Worker
+         (dist/sw.js) wird in src/main.jsx angemeldet, nur im Produktions-Build. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pfoten" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <script src="/darstellung-init.js"></script>
     <title>Familie auf Pfoten</title>
   </head>

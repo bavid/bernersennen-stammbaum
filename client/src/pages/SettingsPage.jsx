@@ -3,6 +3,7 @@ import TabBar from '../components/TabBar.jsx'
 import DarstellungSection from '../components/settings/DarstellungSection.jsx'
 import FamilienSection from '../components/settings/FamilienSection.jsx'
 import ZuhauseSection from '../components/settings/ZuhauseSection.jsx'
+import AppSection from '../components/settings/AppSection.jsx'
 import FamilyManage from '../components/settings/FamilyManage.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { HOME_LABEL, SETTINGS_FAMILY_PARAM, areaContext, parseAreaId } from '../lib/areas.js'
@@ -10,6 +11,7 @@ import { HOME_LABEL, SETTINGS_FAMILY_PARAM, areaContext, parseAreaId } from '../
 // Adresse ?bereich=… - ohne oder mit unbekanntem Wert die Darstellung.
 export const BEREICH_PARAM = 'bereich'
 const DARSTELLUNG = 'darstellung'
+const APP = 'app'
 
 function sectionsFor(family, words) {
   const sections = [{ key: DARSTELLUNG, label: 'Darstellung' }]
@@ -19,6 +21,8 @@ function sectionsFor(family, words) {
   } else {
     sections.push({ key: 'familien', label: words.group })
   }
+  // „App“: als App aufs Handy (Install-Hinweis) - für alle gleich.
+  sections.push({ key: APP, label: 'App' })
   return sections
 }
 
@@ -83,6 +87,7 @@ export default function SettingsPage({ family, onFamilyChange, onInvite }) {
           <FamiliesPanel family={family} onFamilyChange={onFamilyChange} familyParam={parseAreaId(searchParams.get(SETTINGS_FAMILY_PARAM))} />
         )}
         {current === 'zuhause' && <ZuhauseSection family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />}
+        {current === APP && <AppSection />}
       </div>
     </div>
   )

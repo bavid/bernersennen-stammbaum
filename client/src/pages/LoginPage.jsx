@@ -10,6 +10,7 @@ import LoginVoucherRequest from '../components/LoginVoucherRequest.jsx'
 import RedeemForm from '../components/RedeemForm.jsx'
 import RecoverForm from '../components/RecoverForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
+import InstallHint from '../components/InstallHint.jsx'
 import { isPartnerArea } from '../lib/areas.js'
 
 const REDEEM_HINT = 'Das ist ein Einladungscode – löst ihn ein, um eure Chronik anzulegen.'
@@ -194,6 +195,12 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
           </section>
           {showPartnerEntry && !showingKeyReveal && <LoginPartnerEntry onLogin={onLogin} onRedeem={handlePartnerRedeem} />}
         </div>
+        {/* „Als App aufs Handy – ohne App Store“: eine ruhige Karte unter den Einstiegen (nicht beim Einlösen auf /v). */}
+        {showPartnerEntry && !showingKeyReveal && (
+          <div className="login-install">
+            <InstallHint variant="card" />
+          </div>
+        )}
       </section>
 
       <footer className="login-footer">

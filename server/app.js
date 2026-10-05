@@ -76,6 +76,9 @@ const securityHeaders = helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       fontSrc: ["'self'", 'data:'],
       scriptSrc: ["'self'"],
+      // Als App aufs Handy: der Service Worker (client/dist/sw.js) und das Web App Manifest - beide nur von hier.
+      workerSrc: ["'self'"],
+      manifestSrc: ["'self'"],
       connectSrc: ["'self'"],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
@@ -101,13 +104,27 @@ function errorHandler(err, req, res, next) {
   res.status(status).json({ error: status >= 500 ? 'Unerwarteter Serverfehler' : err.message })
 }
 
+// Service Worker, seine Dateiliste und die index.html immer neu prüfen lassen (no-cache): eine neue Version soll beim
+// nächsten Öffnen ankommen, nicht erst nach der Cache-Stunde der übrigen Dateien (die gehashten unter /assets ändern
+// sich nie, die Stunde ist dort nur ein Rückfall).
+const FRESH_FILES = new Set(['sw.js', 'sw-assets.json', 'index.html'])
+const FRESH_CACHE = 'no-cache'
+
 function serveClient(app) {
   const indexHtml = path.join(config.clientDist, 'index.html')
   if (!fs.existsSync(indexHtml)) return
 
-  app.use(express.static(config.clientDist, { index: false, maxAge: '1h' }))
+  app.use(
+    express.static(config.clientDist, {
+      index: false,
+      maxAge: '1h',
+      setHeaders: (res, filePath) => {
+        if (FRESH_FILES.has(path.basename(filePath))) res.setHeader('Cache-Control', FRESH_CACHE)
+      }
+    })
+  )
   app.get(/^\/(?!api\/|uploads\/|health$).*/, (req, res) => {
-    res.sendFile(indexHtml)
+    res.sendFile(indexHtml, { cacheControl: false, headers: { 'Cache-Control': FRESH_CACHE } })
   })
 }
 

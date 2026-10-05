@@ -177,7 +177,23 @@ lokale Datenbank bleibt unberührt.
 | `npm run db:reset -- -- --yes`  | Lokale Datenbank und Fotos löschen             |
 | `npm --prefix server run family:delete -- "Name" --yes` | Ein Rudel samt Hunden und Fotos löschen |
 
-## Auf einem Server betreiben (Docker + HTTPS)
+## Als App installieren
+
+Familie auf Pfoten ist eine installierbare Web-App (PWA) - ohne App Store, direkt aus dem Browser. Die Anleitung dazu
+steht auf der Login-Seite („Als App aufs Handy - ohne App Store“) und unter Einstellungen › App.
+
+- **Android (Chrome):** Knopf „App installieren“ auf der Login-Seite oder Menü ⋮ → „App installieren“.
+- **iPhone/iPad (Safari):** Teilen-Symbol → „Zum Home-Bildschirm“ → „Hinzufügen“.
+- **PC (Chrome/Edge):** Symbol in der Adressleiste.
+
+Technik: `client/public/manifest.webmanifest` (Name, Startseite `/start`, Symbole unter `client/public/icons/`, aus
+`favicon.svg` gerendert), Service Worker `client/src/sw/sw.js` (gebaut nach `dist/sw.js` von `client/build/swPlugin.js`,
+Routing in `client/src/lib/swRoutes.js`). Er cacht nur die App selbst - Bündel, Schriften, Symbole und eine
+Offline-Seite - nie die API, Fotos oder andere Nutzerdaten; Admin und das Bilderrahmen-Gerät (`/rahmen`) laufen ohne
+ihn. Eine neue Version meldet sich mit „Neue Version verfügbar · Neu laden“ und übernimmt erst auf Klick. Native
+Store-Apps sind eine spätere Option.
+
+
 
 Die App läuft als Container und lauscht nur auf `127.0.0.1:3010`. HTTPS davor macht der
 **gemeinsame Caddy des Servers** (eigenes Repo `server`, auf dem Server in `/opt/proxy`), der
@@ -279,7 +295,8 @@ für die Vorschau), siehe `.deploy.env.example`:
 - Uploads nur als JPG/PNG/WebP/GIF, Dateiname und Endung vergibt der Server
 - Fotos sieht nur, wer das Tier bzw. den Eintrag sehen darf (fremde Foto-Adressen liefern 404 und lassen sich
   auch nicht an eigene Tiere hängen)
-- Security-Header (CSP, nosniff, frame-ancestors) per helmet
+; Service Worker und Web App Manifest nur von der
+  eigenen Adresse (worker-src/manifest-src), der Worker cacht nie API, Fotos oder Nutzerdaten
 
 ## Projektstruktur
 

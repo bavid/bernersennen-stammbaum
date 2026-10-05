@@ -1,0 +1,20 @@
+{
+  "id": "/start",
+  "name": "Familie auf Pfoten",
+  "short_name": "Pfoten",
+  "description": "Die gemeinsame Chronik eurer Tiere – Erinnerungen, Familienbande und Pinnwand.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "/start",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fbf5ec",
+  "theme_color": "#fbf5ec",
+  "categories": ["lifestyle", "social", "photo"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

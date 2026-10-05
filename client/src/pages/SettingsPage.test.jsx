@@ -124,9 +124,9 @@ afterEach(() => {
 })
 
 describe('SettingsPage – Bereiche und Adresse (?bereich=)', () => {
-  test('ohne Angabe die Darstellung; drei Reiter für Haushalte', async () => {
+  test('ohne Angabe die Darstellung; vier Reiter für Haushalte', async () => {
     await render(atHome)
-    expect(tabs()).toEqual(['Darstellung', 'Familien', 'Mein Zuhause'])
+    expect(tabs()).toEqual(['Darstellung', 'Familien', 'Mein Zuhause', 'App'])
     expect(selectedTab()).toBe('Darstellung')
     expect(container.querySelector('[role="tabpanel"]').getAttribute('aria-labelledby')).toBe('einstellungen-darstellung')
     expect(container.querySelector('legend').textContent).toBe('Farbwelt')
@@ -153,10 +153,17 @@ describe('SettingsPage – Bereiche und Adresse (?bereich=)', () => {
     api.familyMembers.mockResolvedValue({ familyId: 5, name: 'Rudel Talblick', ichBin: 'leitung', mitglieder: [] })
     await render(rudel, '/einstellungen?bereich=familien')
     await flush()
-    expect(tabs()).toEqual(['Darstellung', 'Familie'])
+    expect(tabs()).toEqual(['Darstellung', 'Familie', 'App'])
     expect(selectedTab()).toBe('Familie')
     expect(container.querySelector('.family-manage-title').textContent).toContain('Rudel Talblick')
     expect(container.querySelector('.family-manage .back-link')).toBeNull()
+  })
+
+  test('?bereich=app: „Als App aufs Handy“ mit dem Install-Hinweis in der bleibenden Fassung', async () => {
+    await render(atHome, '/einstellungen?bereich=app')
+    expect(selectedTab()).toBe('App')
+    expect(container.querySelector('.install-hint-settings h3').textContent).toContain('Als App aufs Handy')
+    expect(container.querySelector('.install-hint-later')).toBeNull()
   })
 })
 
