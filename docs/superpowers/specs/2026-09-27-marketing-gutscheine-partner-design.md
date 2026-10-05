@@ -916,6 +916,20 @@ warten“; Überschuss fließt in Spenden und lokale Projekte.
   `docs/superpowers/plans/2026-10-04-devops-sicherheit.md`.
 - **Start erst nach dem Stand „fein“ und ab ~200 Nutzern**; vorher nur eine Merch-Probe mit wenigen Motiven.
 
+### Schaukasten „Sowas könnten wir anbieten“ (Ideensammlung, Zukunft – nicht bauen, 05.10.)
+- **Zweck:** Partnern in der Präsentation zeigen, was möglich wäre (Verkaufsargument), nicht verkaufen. Nur über die
+  Präsentation erreichbar, klar als Idee/Vorschau beschriftet, kein Bestellknopf.
+- **Baukasten (Mock):** Partner wählen → Produkt wählen (Halsband/Halstuch, Klicker, Beutel, Tasse, Shirt/Hoodie) →
+  Logo liegt live auf dem Produktbild, Farbe und kurzer Text. Grobe Preisbeispiele, abhängig vom Weg
+  (Druckdienst mit Schnittstelle vs. Eigenversand mit Stickerei).
+- **Interessens-Abfrage** für den Betreiber (wie die Partner-Zugang-Anfrage): erst bei 3–5 ernsthaften Partnern wird
+  zwischen Druckdienst (z. B. Anbieter mit API: Produktion + Versand ausgelagert) und Eigenversand entschieden.
+- **Einschätzung (05.10.):** Technisch sind Mockups klein (Tage), ein Baukasten mit Druckdienst-Anbindung mittel, ein
+  eigener Shop mit Eigenversand groß – und die Arbeit liegt dann bei jeder Bestellung beim Betreiber. Wirtschaftlich
+  bleiben bei 25–35 € Stickerei-Produkten oft nur 5–10 € Gewinn je Stück, davon der Großteil an den Partner; der Wert
+  liegt eher im Partner-Gewinn („Produkte mit eurem Logo“ als Argument für Hundeschulen/Salons) als im Produkt-Gewinn.
+- **Offen:** nur Schaukasten oder unverbindliche Bestellliste; Produkt-Reihenfolge; Druckdienst vs. Eigenversand.
+
 ### Rechtsform und Förderung (Optionen, prüfen lassen)
 - **Gemeinnützigkeit:** Tierschutz ist ein steuerbegünstigter Zweck (§ 52 AO). Möglich als **e. V.** oder
   **gGmbH**. Dann sind Spenden an die Plattform steuerlich absetzbar, aber wirtschaftliche Tätigkeit (Merch,
