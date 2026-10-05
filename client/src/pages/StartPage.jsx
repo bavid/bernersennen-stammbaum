@@ -6,14 +6,17 @@ import FrameStartCard from '../components/start/FrameStartCard.jsx'
 import StartComposer from '../components/start/StartComposer.jsx'
 import StartSoon from '../components/start/StartSoon.jsx'
 import StartNews from '../components/start/StartNews.jsx'
+import StartAreaFilter from '../components/start/StartAreaFilter.jsx'
 import AnimalCircles from '../components/start/AnimalCircles.jsx'
 import OnThisDayCard from '../components/start/OnThisDayCard.jsx'
 import useAnimalCreate from '../hooks/useAnimalCreate.js'
+import useGroupParam from '../hooks/useGroupParam.js'
 import useStartFeed from '../hooks/useStartFeed.js'
-import { areaContext } from '../lib/areas.js'
+import { HOME_LABEL, areaContext, isHouseholdIdentity } from '../lib/areas.js'
 import { nextAnniversary } from '../lib/companions.js'
 import { firstFramePhoto } from '../lib/bilderrahmen.js'
 import { homeEntries, pinboardNews, upcomingTermine } from '../lib/startFeed.js'
+import { areaOptions, filterPages, selectedAreaParam } from '../lib/startFilter.js'
 import { todayIso } from '../lib/dates.js'
 import { hasRole } from '../lib/roles.js'
 import '../styles/start-feed.css'
@@ -46,13 +49,20 @@ function useStartDogs() {
 // Jahrestag, „Neu an der Pinnwand“, Notizen) und die neuen Erinnerungen in Kapiteln - Phase W, Schritt 3: aus dem Zuhause,
 // den Familien und den befreundeten Zuhause in einem Feed (GET /api/start, ohne Bereichswechsel); am Rand die eigenen
 // Familien. Ein Haushalt sieht /start immer im eigenen Zuhause (AreaGate).
+// Filter nach Zuhause über den Erinnerungen (StartAreaFilter, ?gruppe=…): die Chips kommen aus den geladenen Einträgen und
+// stehen nur, wenn Erinnerungen aus mehr als einem Zuhause da sind; gefiltert wird im Browser (lib/startFilter.js).
 export default function StartPage({ family }) {
   const { dogs, error: dogsError } = useStartDogs()
   const feed = useStartFeed()
   const creator = useAnimalCreate()
+  const [requestedArea] = useGroupParam()
   const atHome = areaContext(family) === 'home'
   const canWrite = hasRole(family, 'mitglied')
   const anniversary = useMemo(() => nextAnniversary(dogs || []), [dogs])
+  const ownLabel = isHouseholdIdentity(family) ? HOME_LABEL : family.name
+  const areaChips = useMemo(() => areaOptions((feed.pages || []).flat(), { ownLabel }), [feed.pages, ownLabel])
+  const areaParam = selectedAreaParam(requestedArea, areaChips)
+  const shownPages = useMemo(() => filterPages(feed.pages, areaParam), [feed.pages, areaParam])
   const firstPage = feed.pages?.[0]
   const framePhoto = useMemo(() => firstFramePhoto(dogs, homeEntries(firstPage)), [dogs, firstPage])
   const termine = useMemo(() => upcomingTermine(feed.termine, todayIso()), [feed.termine])
@@ -83,11 +93,12 @@ export default function StartPage({ family }) {
           <OnThisDayCard enabled={!family.zuBesuch} />
           <StartSoon termine={termine} anniversary={anniversary} notes={notes} notesCount={atHome ? feed.notizen : 0} />
           <StartNews
-            pages={feed.pages}
+            pages={shownPages}
             loading={feed.pages === null && !feed.error}
             hasMore={Boolean(feed.next)}
             onLoadMore={feed.loadMore}
             more={feed.more}
+            filter={<StartAreaFilter options={areaChips} controls="start-news" />}
           />
         </div>
         {atHome && (

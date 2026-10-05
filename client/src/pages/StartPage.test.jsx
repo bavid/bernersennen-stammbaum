@@ -117,13 +117,13 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-async function render(family = atHome, themeId = 'standard') {
+async function render(family = atHome, themeId = 'standard', { initialEntries } = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={initialEntries}>
         <ThemeProvider themeId={themeId}>
           <HinweiseProvider family={family} onFamilyChange={() => {}}>
             <StartPage family={family} onFamilyChange={() => {}} />
@@ -553,5 +553,58 @@ describe('StartPage – Look B+ Familienalbum', () => {
     api.start.mockResolvedValue(feed([item(1, { foto_urls: ['/uploads/zuhause.jpg'], foto_anzahl: 1 })]))
     await render()
     expect(container.querySelector('.start-frame img').getAttribute('src')).toBe('/uploads/zuhause.jpg')
+  })
+})
+
+// Filter nach Zuhause über „Neue Erinnerungen“ (StartAreaFilter, lib/startFilter.js) - Chips wie über dem Tier-Raster.
+describe('StartPage – Filter nach Zuhause', () => {
+  const mixed = () =>
+    feed([
+      item(1),
+      item(2, { datum: '2026-09-26' }),
+      item(3, { area: familyArea, datum: '2026-09-25', dog: { id: 20, name: 'Wilma', name_unbekannt: false, rasse: null, foto_url: null } }),
+      item(4, { area: visitArea, datum: '2026-09-24', dog: { id: 30, name: 'Socke', name_unbekannt: false, rasse: null, foto_url: null } }),
+      zettel(9, { area: familyArea })
+    ])
+  const chips = () => [...container.querySelectorAll('.start-news .family-filter-option')]
+  const chipTexts = () => chips().map((chip) => chip.textContent.replace(/\s+/g, ' ').trim())
+  const cardTitles = () => [...container.querySelectorAll('.feed-card-title')].map((el) => el.textContent)
+
+  test('Erinnerungen aus mehreren Zuhause: Chips mit Zahlen, ein Klick filtert die Karten, „Alle“ zeigt wieder alles', async () => {
+    api.start.mockResolvedValue(mixed())
+    await render()
+    expect(chipTexts()).toEqual(['Alle 4', 'Mein Zuhause 2', 'Familie Sonnenhang 1', 'Zuhause Möwenweg 1'])
+    expect(chips()[0].getAttribute('aria-pressed')).toBe('true')
+    expect(chips()[0].getAttribute('aria-controls')).toBe('start-news')
+    expect(cardTitles()).toEqual(['Beitrag 1', 'Beitrag 2', 'Beitrag 3', 'Beitrag 4'])
+
+    await act(async () => chips()[2].click())
+    expect(chips()[2].getAttribute('aria-pressed')).toBe('true')
+    expect(cardTitles()).toEqual(['Beitrag 3'])
+    await act(async () => chips()[1].click())
+    expect(cardTitles()).toEqual(['Beitrag 1', 'Beitrag 2'])
+    await act(async () => chips()[0].click())
+    expect(cardTitles()).toEqual(['Beitrag 1', 'Beitrag 2', 'Beitrag 3', 'Beitrag 4'])
+  })
+
+  test('die Adresse wählt vor (?gruppe=8); eine unbekannte Gruppe zählt als „Alle“', async () => {
+    api.start.mockResolvedValue(mixed())
+    await render(atHome, 'standard', { initialEntries: ['/start?gruppe=8'] })
+    expect(chips()[3].getAttribute('aria-pressed')).toBe('true')
+    expect(cardTitles()).toEqual(['Beitrag 4'])
+
+    act(() => root.unmount())
+    root = null
+    container.remove()
+    await render(atHome, 'standard', { initialEntries: ['/start?gruppe=999'] })
+    expect(chips()[0].getAttribute('aria-pressed')).toBe('true')
+    expect(cardTitles()).toHaveLength(4)
+  })
+
+  test('nur ein Zuhause: keine Chips', async () => {
+    api.start.mockResolvedValue(feed([item(1), item(2, { datum: '2026-09-26' })]))
+    await render()
+    expect(container.querySelector('.start-news .family-filter')).toBeNull()
+    expect(cardTitles()).toHaveLength(2)
   })
 })

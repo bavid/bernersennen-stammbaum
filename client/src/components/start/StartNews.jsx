@@ -17,7 +17,9 @@ export const START_FEED_VISIBLE = 5
 // nicht geladen werden (dann steht der Fehler darüber) - kein Leerzustand. Das Kapitel ist der Name der Liste
 // (aria-label), die Handschrift darüber nur sein Bild. Nach „Weitere Erinnerungen“ bzw. „Ältere anzeigen“ rückt der Fokus
 // auf die erste neu sichtbare Karte.
-export default function StartNews({ pages, loading, hasMore = false, onLoadMore, more = {} }) {
+// filter: die Chips „Alle · Mein Zuhause · …“ (StartAreaFilter) direkt unter der Überschrift - die Seiten kommen dann schon
+// gefiltert (pages), Kapitel und „Weitere“ rechnen wie gewohnt.
+export default function StartNews({ pages, loading, hasMore = false, onLoadMore, more = {}, filter = null }) {
   const { theme, words } = useTheme()
   const [showAll, setShowAll] = useState(false)
   const [focusKey, setFocusKey] = useState(null)
@@ -55,10 +57,11 @@ export default function StartNews({ pages, loading, hasMore = false, onLoadMore,
   const refFor = (item) => (feedKey(item) === focusKey ? focusRef : undefined)
 
   return (
-    <section className="start-news" aria-labelledby="start-news-title" aria-busy={loading || more.loading || undefined}>
+    <section id="start-news" className="start-news" aria-labelledby="start-news-title" aria-busy={loading || more.loading || undefined}>
       <h2 id="start-news-title" className="start-section-title">
         Neue {words.entries}
       </h2>
+      {filter}
       {sorted?.length === 0 && !hasMore && (
         <div className="feed feed-empty">
           <Icon name="sprout" />
