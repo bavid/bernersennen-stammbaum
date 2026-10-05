@@ -15,6 +15,7 @@ const db = require('../db')
 const { encryptSecret, decryptSecret, hashCode } = require('./codes')
 const { NUMERIC_CHAT_ID_RE } = require('./telegram')
 const { detailValue } = require('./notify')
+const { GETRENNT_BOT_GEWECHSELT, effectiveBotIdFor } = require('./partnerTelegramBots')
 
 const CODE_BYTES = 16
 const CODE_VALID_MINUTES = 15
@@ -24,11 +25,17 @@ const START_RE = /^\/start(?:@[A-Za-z0-9_]{1,64})?\s+(\S{1,64})\s*$/
 const STOP_RE = /^\/stop(?:@[A-Za-z0-9_]{1,64})?\s*$/
 // Antwort auf die Knöpfe der Rückfrage: "ja:<code>" bzw. "nein:<code>" (callback_data, höchstens 64 Byte).
 const CALLBACK_RE = /^(ja|nein):([A-Za-z0-9_-]{16,64})$/
-const GETRENNT = Object.freeze({ blockiert: 'blockiert' })
+// Warum eine Verbindung endete: Telegram meldet den Bot als blockiert (403), oder der wirksame Bot des Partners hat
+// gewechselt (lib/partnerTelegramBots.js) - dann muss der Partner über den neuen Bot neu verbinden.
+const GETRENNT = Object.freeze({ blockiert: 'blockiert', botGewechselt: GETRENNT_BOT_GEWECHSELT })
+const GETRENNT_VALUES = Object.values(GETRENNT)
 const HINWEIS_COLUMNS = Object.freeze({ nachricht: 'hinweis_nachricht', freigabe: 'hinweis_freigabe' })
 const HINWEIS_NAMES = Object.keys(HINWEIS_COLUMNS)
 const APP_NAME = 'Familie auf Pfoten'
 const EXPIRED_REPLY = 'Dieser Link ist abgelaufen oder wurde schon benutzt – bitte im Partner-Bereich einen neuen erzeugen.'
+// Ein Link wurde beim falschen Bot gestartet (z. B. der Team-Bot statt des eigenen) - verbinden darf nur der Bot, der
+// dem Partner später auch schreibt.
+const WRONG_BOT_REPLY = 'Dieser Link gehört zu einem anderen Bot – bitte im Partner-Bereich einen neuen Link erzeugen und ihn dort öffnen.'
 const DECLINED_REPLY = 'Alles klar – es wurde nichts verbunden.'
 const STOPPED_REPLY = 'Erledigt – hier kommen keine Hinweise mehr. Wieder verbinden geht jederzeit im Partner-Bereich.'
 const YES_LABEL = 'Ja, Hinweise aktivieren'
@@ -66,7 +73,7 @@ const upsertConnectionStmt = db.prepare(
      hinweis_freigabe = 1, verbunden_at = excluded.verbunden_at, getrennt_grund = NULL, updated_at = excluded.updated_at`
 )
 const deleteConnectionStmt = db.prepare('DELETE FROM partner_telegram WHERE partner_id = ?')
-const deleteByChatStmt = db.prepare('DELETE FROM partner_telegram WHERE chat_hash = ?')
+const partnersByChatStmt = db.prepare('SELECT partner_id FROM partner_telegram WHERE chat_hash = ?')
 const linkedChatStmt = db.prepare('SELECT 1 FROM partner_telegram WHERE chat_hash = ? AND chat_cipher IS NOT NULL LIMIT 1')
 const markBlockedStmt = db.prepare(
   "UPDATE partner_telegram SET chat_cipher = NULL, chat_hash = NULL, getrennt_grund = ?, updated_at = datetime('now') WHERE partner_id = ? AND chat_cipher IS NOT NULL"
@@ -87,16 +94,18 @@ function decryptChat(row) {
   }
 }
 
-// Für den Partner-Bereich: nie die Chat-ID, nur ob verbunden, warum getrennt und die Schalter.
-// eingerichtet: hat der Admin einen Bot-Token hinterlegt (lib/telegramConfig.js)?
-function connectionStatus(partnerId, { eingerichtet }) {
+// Für den Partner-Bereich: nie die Chat-ID, nur ob verbunden, warum getrennt und die Schalter. bot: der wirksame Bot
+// (lib/partnerTelegramBots.js effectiveBotFor) oder null - nach außen nur quelle ('eigener' | 'plattform') und beim
+// eigenen Bot sein Name, nie der Token.
+function connectionStatus(partnerId, { bot }) {
   const row = findRowStmt.get(partnerId)
   const verbunden = decryptChat(row) !== null
   return {
-    eingerichtet: Boolean(eingerichtet),
+    eingerichtet: Boolean(bot),
     verbunden,
-    getrennt: !verbunden && row?.getrennt_grund === GETRENNT.blockiert ? GETRENNT.blockiert : null,
-    hinweise: { nachricht: verbunden && Boolean(row.hinweis_nachricht), freigabe: verbunden && Boolean(row.hinweis_freigabe) }
+    getrennt: !verbunden && GETRENNT_VALUES.includes(row?.getrennt_grund) ? row.getrennt_grund : null,
+    hinweise: { nachricht: verbunden && Boolean(row.hinweis_nachricht), freigabe: verbunden && Boolean(row.hinweis_freigabe) },
+    bot: bot ? { quelle: bot.quelle, username: bot.quelle === 'eigener' ? bot.username : null } : null
   }
 }
 
@@ -135,10 +144,15 @@ function partnerForCode(code) {
   return partner && !partner.is_demo ? { row, partner } : null
 }
 
+// Kam das Update über den Bot, der diesem Partner auch schreibt? Ohne botId (ältere Aufrufer) gilt jeder.
+function botMatches(found, botId) {
+  return botId === undefined || botId === null || effectiveBotIdFor(found.partner.id) === botId
+}
+
 // "Ja": Code verbrauchen und verbinden - in EINER Transaktion, ein Code wirkt so höchstens einmal.
-const connectWithCode = db.transaction((code, chatId) => {
+const connectWithCode = db.transaction((code, chatId, botId) => {
   const found = partnerForCode(code)
-  if (!found || !markUsedStmt.run(found.row.id).changes) return null
+  if (!found || !botMatches(found, botId) || !markUsedStmt.run(found.row.id).changes) return null
   upsertConnectionStmt.run({ partnerId: found.partner.id, cipher: encryptSecret(chatId, chatAad(found.partner.id)), chatHash: chatHashOf(chatId) })
   deleteCodesOfStmt.run(found.partner.id)
   return found.partner
@@ -171,7 +185,21 @@ function privateChatId(chat, fromId) {
   return fromId === undefined || String(fromId) === chatId ? chatId : null
 }
 
-function consumeMessage(message) {
+// "/stop" trennt jeden Partner, der mit diesem Chat über DIESEN Bot verbunden ist - Chat-IDs sind bei allen Bots
+// dieselben, also bleibt eine Verbindung über einen anderen Bot bestehen.
+const stopChat = db.transaction((chatId, botId) => {
+  for (const { partner_id: partnerId } of partnersByChatStmt.all(chatHashOf(chatId))) {
+    if (botMatches({ partner: { id: partnerId } }, botId)) deleteConnectionStmt.run(partnerId)
+  }
+})
+
+function startReply(chatId, code, botId) {
+  const found = partnerForCode(code)
+  if (!found) return send(chatId, EXPIRED_REPLY)
+  return botMatches(found, botId) ? askConsent(chatId, code, found.partner) : send(chatId, WRONG_BOT_REPLY)
+}
+
+function consumeMessage(message, botId) {
   if (typeof message?.text !== 'string') return { consumed: false }
   const start = START_RE.exec(message.text)
   const stop = !start && STOP_RE.test(message.text)
@@ -179,14 +207,13 @@ function consumeMessage(message) {
   const chatId = privateChatId(message.chat)
   if (!chatId) return { consumed: false }
   if (stop) {
-    deleteByChatStmt.run(chatHashOf(chatId))
+    stopChat(chatId, botId)
     return { consumed: true, actions: [send(chatId, STOPPED_REPLY)] }
   }
-  const found = partnerForCode(start[1])
-  return { consumed: true, actions: [found ? askConsent(chatId, start[1], found.partner) : send(chatId, EXPIRED_REPLY)] }
+  return { consumed: true, actions: [startReply(chatId, start[1], botId)] }
 }
 
-function consumeCallback(query) {
+function consumeCallback(query, botId) {
   const match = typeof query?.data === 'string' ? CALLBACK_RE.exec(query.data) : null
   if (!match) return { consumed: false }
   const answer = typeof query.id === 'string' && query.id ? [{ method: 'answerCallbackQuery', callbackQueryId: query.id }] : []
@@ -196,16 +223,19 @@ function consumeCallback(query) {
     declineCode(match[2])
     return { consumed: true, actions: [...answer, send(chatId, DECLINED_REPLY)] }
   }
-  const partner = connectWithCode(match[2], chatId)
+  const found = partnerForCode(match[2])
+  if (found && !botMatches(found, botId)) return { consumed: true, actions: [...answer, send(chatId, WRONG_BOT_REPLY)] }
+  const partner = connectWithCode(match[2], chatId, botId)
   return { consumed: true, actions: [...answer, send(chatId, partner ? connectedReply(partner) : EXPIRED_REPLY)] }
 }
 
 // Für lib/telegramUpdates.js: gehört dieses Update den Partner-Verbindungen ("/start <code>", "/stop" oder ein Knopf der
 // Rückfrage, jeweils aus einem privaten Chat)? Dann consumed: true (nie in die Chat-Liste des Admins) und actions: was der
 // Bot darauf schickt ({ method: 'sendMessage', chatId, text, replyMarkup? } bzw. { method: 'answerCallbackQuery', … }).
-function consumeUpdate(update) {
-  if (update?.callback_query) return consumeCallback(update.callback_query)
-  if (update?.message) return consumeMessage(update.message)
+// botId: über welchen Bot das Update kam - verbinden und trennen darf nur der Bot, der dem Partner auch schreibt.
+function consumeUpdate(update, { botId } = {}) {
+  if (update?.callback_query) return consumeCallback(update.callback_query, botId)
+  if (update?.message) return consumeMessage(update.message, botId)
   return { consumed: false }
 }
 
@@ -246,6 +276,7 @@ module.exports = {
   EXPIRED_REPLY,
   DECLINED_REPLY,
   STOPPED_REPLY,
+  WRONG_BOT_REPLY,
   connectionStatus,
   chatIdFor,
   hasOpenLinkCode,

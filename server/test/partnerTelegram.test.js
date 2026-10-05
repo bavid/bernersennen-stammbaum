@@ -120,7 +120,7 @@ test('Telegram-Hinweise für Partner: verbinden, prüfen, Hinweise, Testnachrich
     const status = await partnerApi('')
     assert.equal(status.status, 200)
     assert.equal(status.headers.get('cache-control'), 'no-store')
-    assert.deepEqual(status.data, { eingerichtet: false, verbunden: false, getrennt: null, hinweise: { nachricht: false, freigabe: false } })
+    assert.deepEqual(status.data, { eingerichtet: false, verbunden: false, getrennt: null, hinweise: { nachricht: false, freigabe: false }, bot: null })
     for (const urlPath of ['/verbinden', '/pruefen', '/test']) {
       const res = await partnerApi(urlPath, { method: 'POST' })
       assert.equal(res.status, 409, urlPath)
@@ -177,7 +177,7 @@ test('Telegram-Hinweise für Partner: verbinden, prüfen, Hinweise, Testnachrich
     telegram.updates = [buttonPress(106, PARTNER_CHAT, `ja:${code}`, 999999), buttonPress(107, PARTNER_CHAT, `ja:${code}`)]
     advance()
     const connected = await partnerApi('/pruefen', { method: 'POST' })
-    assert.deepEqual(connected.data, { eingerichtet: true, verbunden: true, getrennt: null, hinweise: { nachricht: true, freigabe: true } })
+    assert.deepEqual(connected.data, { eingerichtet: true, verbunden: true, getrennt: null, hinweise: { nachricht: true, freigabe: true }, bot: { quelle: 'plattform', username: null } })
     await settle()
     assert.deepEqual(telegram.answered, ['cb-106', 'cb-107'], 'jeder Knopf wird bestätigt')
     assert.equal(sentTo(PARTNER_CHAT).at(-1), 'Verbunden: Familie auf Pfoten schickt dir hier Hinweise für Hundeschule Pfotenweg. Mit /stop beendest du das jederzeit.')
@@ -380,7 +380,7 @@ test('Telegram-Hinweise für Partner: verbinden, prüfen, Hinweise, Testnachrich
     await settle()
     telegram.sendError = null
     const status = await partnerApi('')
-    assert.deepEqual(status.data, { eingerichtet: true, verbunden: false, getrennt: 'blockiert', hinweise: { nachricht: false, freigabe: false } })
+    assert.deepEqual(status.data, { eingerichtet: true, verbunden: false, getrennt: 'blockiert', hinweise: { nachricht: false, freigabe: false }, bot: { quelle: 'plattform', username: null } })
     assert.equal(db.prepare('SELECT chat_cipher FROM partner_telegram WHERE partner_id = ?').get(school.partner.id).chat_cipher, null)
     assert.ok(logged.includes('Telegram-Hinweis an einen Partner fehlgeschlagen (403, Verbindung beendet)'))
     const before = telegram.sent.length

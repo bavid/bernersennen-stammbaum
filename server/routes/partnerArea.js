@@ -8,6 +8,7 @@ const messagesRoutes = require('./partnerArea/messages')
 const vouchersRoutes = require('./partnerArea/vouchers')
 const termineRoutes = require('./partnerArea/termine')
 const telegramRoutes = require('./partnerArea/telegram')
+const telegramBotRoutes = require('./partnerArea/telegramBot')
 const visitenkarteRoutes = require('./partnerArea/visitenkarte')
 
 // Phase P Task 3 (docs/superpowers/plans/2026-09-29-phase-p-partnerbereich.md): alle Endpunkte des
@@ -27,6 +28,8 @@ router.use('/messages', messagesRoutes)
 router.use('/vouchers', vouchersRoutes)
 // Phase V4a: der Kalender (Termine, Serien und Absagen).
 router.use('/termine', termineRoutes)
+// Eigener Telegram-Bot des Partners (Token eintragen, entfernen) - vor /telegram, damit /telegram/bot nicht dort landet.
+router.use('/telegram/bot', telegramBotRoutes)
 // Phase V4b: Telegram-Hinweise (Verbinden, Schalter, Testnachricht, Trennen).
 router.use('/telegram', telegramRoutes)
 // Phase V5: Visitenkarten-Designer (Gestaltung speichern, Gutschein-Codes für den Druck - no-store).

@@ -479,6 +479,10 @@ export const api = {
     updateTelegramHinweise: (hinweise) => request('/partner-area/telegram/hinweise', json('PUT', hinweise)),
     sendTelegramTest: () => request('/partner-area/telegram/test', { method: 'POST' }),
     disconnectTelegram: () => request('/partner-area/telegram', { method: 'DELETE' }),
+    // Eigener Telegram-Bot (server/routes/partnerArea/telegramBot.js): Token speichern (Telegram prüft ihn vorher) bzw.
+    // entfernen - Antwort jeweils der Telegram-Status wie oben. Der Token kommt nie zurück.
+    saveTelegramBot: (token) => request('/partner-area/telegram/bot', json('PUT', { token })),
+    removeTelegramBot: () => request('/partner-area/telegram/bot', { method: 'DELETE' }),
 
     // Kunden-Gutscheine (Phase 5 Task 4, server/routes/partnerArea/vouchers.js): { stapel } ohne Codes; die
     // Druckdaten eines eigenen Stapels (offene Codes im Klartext, Server: no-store) nur für PartnerPrintPage.

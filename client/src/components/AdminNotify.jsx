@@ -58,6 +58,9 @@ export default function AdminNotify() {
       <p className="muted admin-notify-intro">
         Eine kurze Nachricht aufs Handy, wenn etwas Neues ankommt – standardmäßig ohne Namen oder E-Mail-Adressen.
       </p>
+      <p className="field-hint">
+        Dieser Bot schreibt auch den Partnern. Partner können stattdessen einen eigenen Bot verwenden – im Partner-Bereich unter „Zugang“.
+      </p>
 
       {loadError && (
         <div className="error-banner" role="alert">

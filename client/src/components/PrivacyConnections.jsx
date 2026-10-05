@@ -33,7 +33,9 @@ export default function PrivacyConnections() {
           Partner können sich über den Messenger-Dienst Telegram benachrichtigen lassen, zum Beispiel wenn über „Schreib
           uns“ eine neue Nachricht da ist oder ein Beitrag freigegeben bzw. abgelehnt wurde. Verbunden wird erst, wenn der
           Partner im Telegram-Chat ausdrücklich zustimmt. Die Chat-ID speichern wir verschlüsselt; sie geht nur an Telegram
-          und erscheint weder in einer Antwort unseres Servers noch in einem Protokoll.
+          und erscheint weder in einer Antwort unseres Servers noch in einem Protokoll. Richtet ein Partner einen eigenen
+          Telegram-Bot ein, speichern wir dessen Zugangs-Token ebenfalls verschlüsselt; die Hinweise gehen dann über diesen
+          Bot an Telegram.
         </p>
         <p>
           Die Hinweise enthalten keine personenbezogenen Daten – keinen Namen, keine E-Mail-Adresse oder Telefonnummer und

@@ -3,16 +3,20 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { telegram, connectTelegram, checkTelegram, updateTelegramHinweise, sendTelegramTest, disconnectTelegram } = vi.hoisted(() => ({
-  telegram: vi.fn(),
-  connectTelegram: vi.fn(),
-  checkTelegram: vi.fn(),
-  updateTelegramHinweise: vi.fn(),
-  sendTelegramTest: vi.fn(),
-  disconnectTelegram: vi.fn()
-}))
+const { telegram, connectTelegram, checkTelegram, updateTelegramHinweise, sendTelegramTest, disconnectTelegram, saveTelegramBot, removeTelegramBot } = vi.hoisted(
+  () => ({
+    telegram: vi.fn(),
+    connectTelegram: vi.fn(),
+    checkTelegram: vi.fn(),
+    updateTelegramHinweise: vi.fn(),
+    sendTelegramTest: vi.fn(),
+    disconnectTelegram: vi.fn(),
+    saveTelegramBot: vi.fn(),
+    removeTelegramBot: vi.fn()
+  })
+)
 vi.mock('../api', () => ({
-  api: { partnerArea: { telegram, connectTelegram, checkTelegram, updateTelegramHinweise, sendTelegramTest, disconnectTelegram } }
+  api: { partnerArea: { telegram, connectTelegram, checkTelegram, updateTelegramHinweise, sendTelegramTest, disconnectTelegram, saveTelegramBot, removeTelegramBot } }
 }))
 
 import PartnerTelegramSection from './PartnerTelegramSection.jsx'
@@ -73,6 +77,17 @@ describe('PartnerTelegramSection', () => {
     expect(container.querySelector('h2').textContent).toBe('Benachrichtigungen')
     expect(container.textContent).toContain('Telegram ist noch nicht eingerichtet.')
     expect(button('Mit Telegram verbinden')).toBeUndefined()
+    // Ohne jeden Bot steht die Anleitung für den eigenen Bot gleich offen (TelegramOwnBot).
+    expect(container.querySelectorAll('.telegram-bot-steps li')).toHaveLength(3)
+    expect(container.querySelector('.telegram-own-bot input[type="password"]')).not.toBeNull()
+  })
+
+  test('nach einem Bot-Wechsel: Hinweis „neu verbinden“, der Knopf und der eigene Bot mit Namen', async () => {
+    await render({ ...notConnected, getrennt: 'bot-gewechselt', bot: { quelle: 'eigener', username: 'lindenhof_bot' } })
+    expect(container.querySelector('.telegram-state.is-blocked').textContent).toContain('Der Bot hat gewechselt')
+    expect(button('Mit Telegram verbinden').disabled).toBe(false)
+    expect(container.querySelector('.telegram-own-bot').textContent).toContain('Eingerichtet · @lindenhof_bot')
+    expect(button('Bot wechseln')).not.toBeUndefined()
   })
 
   test('nicht verbunden: Knopf mit Datenschutz-Hinweis; ein blockierter Bot wird erklärt', async () => {

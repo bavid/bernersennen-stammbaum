@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
-import { telegramStatus } from '../lib/partnerTelegram.js'
+import { GETRENNT, telegramStatus } from '../lib/partnerTelegram.js'
 import Icon from './Icon.jsx'
 import TelegramConnectDialog from './TelegramConnectDialog.jsx'
 import TelegramConnected from './TelegramConnected.jsx'
+import TelegramOwnBot from './TelegramOwnBot.jsx'
 import { useToast } from './Toast.jsx'
 
 const TITLE_ID = 'partner-telegram-title'
@@ -75,16 +76,22 @@ export default function PartnerTelegramSection() {
       {status && !status.eingerichtet && (
         <p className="telegram-state">
           <Icon name="info" />
-          Telegram ist noch nicht eingerichtet. Sobald das Team von Familie auf Pfoten den Bot eingerichtet hat, könnt ihr euch hier verbinden.
+          Telegram ist noch nicht eingerichtet. Richtet euren eigenen Bot ein – die Anleitung steht unten.
         </p>
       )}
       {status?.eingerichtet && status.verbunden && <TelegramConnected status={status} onStatus={setStatus} />}
       {status?.eingerichtet && !status.verbunden && (
         <div className="telegram-disconnected">
-          {status.getrennt === 'blockiert' && (
+          {status.getrennt === GETRENNT.blockiert && (
             <p className="telegram-state is-blocked" role="status">
               <Icon name="alert" />
               Telegram hat die Verbindung beendet – der Bot wurde blockiert. Ihr könnt jederzeit neu verbinden.
+            </p>
+          )}
+          {status.getrennt === GETRENNT.botGewechselt && (
+            <p className="telegram-state is-blocked" role="status">
+              <Icon name="alert" />
+              Der Bot hat gewechselt – bitte einmal neu verbinden, damit die Hinweise über den neuen Bot ankommen.
             </p>
           )}
           <button type="button" className="btn btn-primary" disabled={isDemo || connecting} onClick={connect}>
@@ -100,6 +107,7 @@ export default function PartnerTelegramSection() {
       )}
       {status?.eingerichtet && <p className="field-hint">{PRIVACY_NOTE}</p>}
       {isDemo && status?.eingerichtet && <p className="field-hint">{readOnlyHint}</p>}
+      {status && <TelegramOwnBot status={status} onStatus={setStatus} openByDefault={!status.eingerichtet} />}
       {link && <TelegramConnectDialog link={link} onConnected={handleConnected} onClose={() => setLink(null)} />}
     </section>
   )

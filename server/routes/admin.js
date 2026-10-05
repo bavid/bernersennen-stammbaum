@@ -10,6 +10,7 @@ const { setSessionCookie } = require('../middleware/auth')
 const { AKTION, familyZiel, partnerZiel, logAdminAction, recentAdminLog } = require('../lib/adminLog')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { cleanId } = require('../lib/validate')
+const { ownBotSql } = require('../lib/partnerTelegramBots')
 const { createBatch, voucherStatus, isPersonalVoucher, validateBatchInput, validateZweck, ZWECK } = require('../lib/vouchers')
 const { formatCode, decryptCode, generateCode, hashCode } = require('../lib/codes')
 const { validatePartner, SHELTER_TYP_VALUES } = require('../lib/partners')
@@ -375,7 +376,8 @@ function logTrustChange(partnerId, before, after) {
 
 // shelter_family_id: die Tierheim-Familie (falls vorhanden) - bleibt für den bisherigen Admin-Client.
 // area_family_id/area_art (Phase P Task 1): der Bereich des Partners, egal welcher Art - der Client zeigt
-// damit z. B. einen "Schlüssel erneuern"-statt-"Anlegen"-Knopf. gesperrt kommt über p.* mit. telegram_verbunden (Phase
+// damit z. B. einen "Schlüssel erneuern"-statt-"Anlegen"-Knopf. gesperrt kommt über p.* mit. telegram_eigener_bot: 1,
+// wenn der Partner einen eigenen Bot eingetragen hat (lib/partnerTelegramBots.js, nie der Token). telegram_verbunden (Phase
 // V4b): 1, wenn der Partner Telegram-Hinweise verbunden hat, sonst 0 oder null - nie die Chat-ID.
 router.get('/partners', requireAdmin, (req, res) => {
   const areaSubquery = (column) =>
@@ -387,7 +389,8 @@ router.get('/partners', requireAdmin, (req, res) => {
            (SELECT f.id FROM families f WHERE f.partner_id = p.id AND f.art = 'tierheim') AS shelter_family_id,
            ${areaSubquery('id')} AS area_family_id,
            ${areaSubquery('art')} AS area_art,
-           (SELECT CASE WHEN t.chat_cipher IS NULL THEN 0 ELSE 1 END FROM partner_telegram t WHERE t.partner_id = p.id) AS telegram_verbunden
+           (SELECT CASE WHEN t.chat_cipher IS NULL THEN 0 ELSE 1 END FROM partner_telegram t WHERE t.partner_id = p.id) AS telegram_verbunden,
+           ${ownBotSql('p')}
          FROM partners p ORDER BY p.name COLLATE NOCASE`
       )
       .all()

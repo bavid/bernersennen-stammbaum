@@ -15,7 +15,7 @@
 // Die Testnachricht hat ihre eigene Grenze (Route).
 
 const db = require('../db')
-const { effectiveTelegram } = require('./telegramConfig')
+const { effectiveBotFor } = require('./partnerTelegramBots')
 const { telegramClient, isRejectedByTelegram } = require('./telegram')
 const { detailValue, failureReason } = require('./notify')
 const { chatIdFor, markBlocked } = require('./partnerTelegram')
@@ -76,9 +76,11 @@ function setPartnerNotifyRuntimeForTests(overrides) {
   }
 }
 
-function currentToken() {
+// Der Token des Bots, der DIESEM Partner schreibt: sein eigener, sonst der des Teams, sonst null
+// (lib/partnerTelegramBots.js effectiveBotFor). Tests setzen runtime.token (null = kein Bot).
+function currentToken(partnerId) {
   if (Object.hasOwn(runtime, 'token')) return runtime.token
-  return effectiveTelegram({ logger: runtime.logger }).token
+  return effectiveBotFor(partnerId, { logger: runtime.logger })?.token ?? null
 }
 
 // 'send', 'warn' (Warnung statt dieses Hinweises, Pause beginnt) oder 'drop' - je Partner und Ereignis.
@@ -142,7 +144,7 @@ function notifyPartner(partnerId, ereignis, daten = {}) {
     }
     const partner = Number.isInteger(partnerId) ? findPartnerStmt.get(partnerId) : null
     if (!partner || partner.is_demo) return null
-    const token = currentToken()
+    const token = currentToken(partner.id)
     if (!token) return null
     const chatId = chatIdFor(partner.id, { hinweis: ereignis })
     if (!chatId) return null
@@ -160,7 +162,7 @@ function notifyPartner(partnerId, ereignis, daten = {}) {
 // "Testnachricht senden" im Partner-Bereich: einmal, ohne Wiederholung, abgewartet, an der Obergrenze vorbei.
 // DELIVERY.*, oder null, wenn kein Bot eingerichtet bzw. nicht verbunden ist (die Route antwortet dann 409).
 async function sendPartnerTestMessage(partner) {
-  const token = currentToken()
+  const token = currentToken(partner.id)
   const chatId = token ? chatIdFor(partner.id) : null
   if (!chatId) return null
   return deliver(partner.id, { token, chatId, text: testText(partner) }, 1)

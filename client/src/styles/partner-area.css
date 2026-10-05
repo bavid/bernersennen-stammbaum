@@ -866,3 +866,47 @@
     display: none;
   }
 }
+
+/* Eigener Telegram-Bot (TelegramOwnBot) - ein eigener Abschnitt unten in der Karte "Benachrichtigungen": kurze
+   Anleitung, ein Token-Feld, danach „Eingerichtet · @name“ mit Wechseln und Entfernen. */
+.telegram-own-bot {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.telegram-own-bot h3 {
+  margin: 0;
+  font-size: var(--text-md, 1.05rem);
+}
+
+.telegram-bot-steps {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.5;
+}
+
+.telegram-bot-form {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.telegram-bot-form .field {
+  margin: 0;
+}
+
+.telegram-bot-form input {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.telegram-bot-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
