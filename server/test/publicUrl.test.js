@@ -138,6 +138,7 @@ test('Domain-Betrieb: HSTS, Secure-Cookies, robots.txt und sitemap.xml', async (
       `${PUBLIC_URL}/`,
       `${PUBLIC_URL}/partner`,
       `${PUBLIC_URL}/partner-werden`,
+      `${PUBLIC_URL}/finanzierung`,
       `${PUBLIC_URL}/p/pfotenglueck`
     ])
   })

@@ -199,6 +199,8 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
       <footer className="login-footer">
         {/* Phase 5 Task 4: Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung (PartnerInfoPage). */}
         <Link to="/partner-werden">Für Partner</Link>
+        {/* Phase F: „So finanzieren wir uns“ (FinanzierungPage) - eine kleine Zeile unten, wie die anderen. */}
+        <Link to="/finanzierung">So finanzieren wir uns</Link>
         <Link to="/impressum">Impressum</Link>
         <Link to="/datenschutz">Datenschutz</Link>
       </footer>

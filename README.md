@@ -113,6 +113,12 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   `/partner-werden` wirbt um neue Partner. Der **Präsentationsmodus** startet Demo-Sitzungen (Familie, Rudel,
   Tierheim, Hundeschule, Hundesalon, Kundensicht) mit einem Klick. Über **„Als Admin ansehen“** öffnet der Admin
   jeden Bereich **nur lesend** (Band oben, alle Schreibaktionen gesperrt, jeder Aufruf im Protokoll).
+- **„So finanzieren wir uns“** (`/finanzierung`, öffentlich): Nutzer immer kostenlos, Partner-Portale und die Hervorhebung
+  **„Überall sichtbar“** vorerst kostenlos – keine fremde Werbung, kein Tracking, kein Datenhandel, getragen von Spenden und
+  lokalen Partnern. Der Admin pflegt im Reiter **Finanzierung** Spenden-Hinweis (Text oder externer Link, nie ein
+  Zahlungsformular), aktuelles Ziel und die Zahlen je Quartal (Einnahmen, Kosten, weitergegebene Spenden) mit Vorschau;
+  ohne Einträge zeigt die Seite nur den Grundsatz. Partner schalten „Überall sichtbar“ unter Profil › Teilen selbst ein und
+  erscheinen in „Entdecken“ dann hinter den nahen Treffern mit leisem Hinweis; der Admin kann es ausschalten.
 - **Tierheime**: Ein eigener Bereich für Tierheime und Vermittlungsstellen (vom Admin aus der
   Partnerverwaltung angelegt). Sie pflegen eine Chronik je Tier (Ankunft, Tierarzt, Verhalten, Gassi …),
   zeigen Tiere in Vermittlung mit öffentlichem Steckbrief (`/t/kurzname`) und erzeugen bei einer
@@ -250,9 +256,9 @@ für die Vorschau), siehe `.deploy.env.example`:
   - **HSTS** (`Strict-Transport-Security: max-age=31536000`, ohne preload) auf jeder Antwort und **Secure**
     auf Sitzungs- und Admin-Cookies – unabhängig von `COOKIE_SECURE`. Ohne https-`PUBLIC_URL` bleibt beides aus,
     damit eine Instanz per `http://IP:PORT` weiter funktioniert.
-  - **`/robots.txt`** erlaubt Suchmaschinen die Startseite, `/partner`, `/partner-werden` und die Portale
-    `/p/…`, sperrt API, Admin, `/v`, Steckbriefe `/t/…` und alle Foto-Verzeichnisse aus. Mit `PUBLIC_URL`
-    nennt sie die **`/sitemap.xml`** (Startseite, Partnerseiten, alle öffentlich sichtbaren Portale; zehn
+  - **`/robots.txt`** erlaubt Suchmaschinen die Startseite, `/partner`, `/partner-werden`, `/finanzierung` und die
+    Portale `/p/…`, sperrt API, Admin, `/v`, Steckbriefe `/t/…` und alle Foto-Verzeichnisse aus. Mit `PUBLIC_URL`
+    nennt sie die **`/sitemap.xml`** (Startseite, Partnerseiten, `/finanzierung`, alle öffentlich sichtbaren Portale; zehn
     Minuten im Speicher gehalten). Ohne `PUBLIC_URL` gibt es keine Sitemap (Sitemaps brauchen absolute
     Adressen), `robots.txt` lässt die Zeile dann weg.
   - Die **QR-Codes** der Druckbögen (Admin und Partner-Bereich) zeigen auf `PUBLIC_URL` – vor dem Drucken

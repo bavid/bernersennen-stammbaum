@@ -936,6 +936,17 @@ warten“; Überschuss fließt in Spenden und lokale Projekte.
 3. Partner: Schalter „überall sichtbar“ (vorerst kostenlos) + Kennzeichnung.
 4. Merch: Link zum externen Shop, Flyer-Vorlage aus dem Visitenkarten-Designer (Druckbogen A6).
 
+**Umgesetzt (05.10.), Punkte 1–3:** öffentliche Seite `/finanzierung` „So finanzieren wir uns“ (Grundsatz, „Wer zahlt
+was“ als drei Zeilen, „Wohin das Geld geht“ mit optionalem Ziel, Zahlen je Quartal als zugängliche Balkenliste, Karte
+„Mithelfen“ mit dem Spenden-Hinweis des Admins – nie ein Zahlungsformular; in Sitemap, verlinkt von Login-Seite, App-Fuß,
+Datenschutz und `/partner-werden`); Admin-Reiter „Finanzierung“ (Spenden-Hinweis mit Text/Link, aktuelles Ziel, Quartale
+mit Vorschau; `server/lib/finanzierung.js`, Tabelle `finanzierung_quartale`, `GET /api/finanzierung` öffentlich und fünf
+Minuten cachebar); Partner-Schalter „Überall sichtbar (vorerst kostenlos)“ im Reiter „Teilen“ (`partners.ueberall_sichtbar`,
+`server/lib/ueberallSichtbar.js`; in „Entdecken“ hinter den nahen Treffern mit leisem Hinweis, Admin kann ausschalten,
+Demo: Hundeschule Pfotenglück). Entscheidungen des Betreibers: Nutzer immer kostenlos, Partner-Portale und Hervorhebung
+vorerst kostenlos; Texte ohne Rechtsform als Tatsache; Zahlen und Spendenempfänger pflegt der Admin, ohne Einträge zeigt die
+Seite den Grundsatz ohne Zahlen. **Punkt 4 (Merch) bleibt Zukunftsplan** – nichts davon in der App.
+
 ### Offene Fragen an den Betreiber
 - Verein (e. V.) oder gGmbH – oder erst einmal privat starten und später umwandeln?
 - Soll „überall sichtbar“ später etwas kosten, und wenn ja, als fester Betrag oder als Spende nach Wahl?

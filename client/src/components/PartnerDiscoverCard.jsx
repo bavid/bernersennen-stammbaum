@@ -46,6 +46,8 @@ function CardHead({ partner, preview }) {
             </span>
           )}
           {typeof partner.distanceKm === 'number' && <span className="partner-card-distance">{formatDistanceKm(partner.distanceKm)}</span>}
+          {/* Phase F: steht hier wegen „Überall sichtbar“, nicht wegen der Nähe - ein leiser Hinweis. */}
+          {partner.ueberall === true && <span className="partner-card-ueberall">überall sichtbar</span>}
         </p>
       </div>
     </div>

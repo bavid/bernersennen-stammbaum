@@ -33,7 +33,18 @@ const AKTION = Object.freeze({
   hinweisGeloescht: 'hinweis-geloescht',
   // Einladungskarten: die Admin-Einstellung "Einladungskarte – Rückseite" geändert (routes/adminEinladungskarte.js),
   // ziel 'einstellung:einladungskarte' - nie die Texte selbst.
-  einladungskarteGeaendert: 'einladungskarte-geaendert'
+  einladungskarteGeaendert: 'einladungskarte-geaendert',
+  // Phase F: „So finanzieren wir uns“ (routes/adminFinanzierung.js) - Spenden-Hinweis oder Ziel geändert (ziel
+  // 'einstellung:finanzierung-spenden-hinweis' bzw. 'einstellung:finanzierung-ziel') und Quartale (ziel 'quartal:<id>') -
+  // nie Beträge oder Texte.
+  finanzierungGeaendert: 'finanzierung-geaendert',
+  finanzierungQuartalAngelegt: 'finanzierung-quartal-angelegt',
+  finanzierungQuartalGeaendert: 'finanzierung-quartal-geaendert',
+  finanzierungQuartalGeloescht: 'finanzierung-quartal-geloescht',
+  // Phase F: der Admin hat „Überall sichtbar“ eines Partners ausgeschaltet (routes/adminPartnerSichtbar.js), ziel
+  // 'partner:<id>'.
+  partnerUeberallSichtbar: 'partner-ueberall-sichtbar',
+  partnerNichtUeberallSichtbar: 'partner-nicht-ueberall-sichtbar'
 })
 
 const DEFAULT_LIMIT = 50
@@ -62,6 +73,10 @@ function hinweisZiel(hinweisId) {
   return `hinweis:${hinweisId}`
 }
 
+function quartalZiel(quartalId) {
+  return `quartal:${quartalId}`
+}
+
 function logAdminAction(aktion, ziel) {
   insertStmt.run(aktion, ziel)
 }
@@ -87,6 +102,7 @@ module.exports = {
   partnerZiel,
   terminZiel,
   hinweisZiel,
+  quartalZiel,
   logAdminAction,
   cleanLimit,
   recentAdminLog

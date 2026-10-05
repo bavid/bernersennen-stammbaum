@@ -1,0 +1,418 @@
+/* Phase F: „So finanzieren wir uns“ (/finanzierung, FinanzierungPage) im Rahmen der öffentlichen Seiten (partners.css
+   .public-page, .legal-hero), dazu die Admin-Pflege (AdminFinanzierung*) und der Schalter „Überall sichtbar“ im Partner-Profil
+   (PartnerUeberallSwitch) sowie der leise Hinweis auf der Partner-Karte in Entdecken. Nur Tokens aus tokens.css/palettes.css.
+   Look B+ Familienalbum: Album-Karten, Handschrift für den Grundsatz, Balken in Salbei/Terrakotta. */
+
+.finanz-hero-hand {
+  --hand-size: 1.35rem;
+  max-width: var(--measure-lede);
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.finanz-section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.finanz-section h2 {
+  font-size: var(--text-xl);
+}
+
+.finanz-section > p {
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* --- Wer zahlt was: drei Zeilen, Chip „kostenlos“ rechts vom Namen ----------------------------------------------- */
+
+.finanz-wer {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.finanz-wer-row {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.finanz-wer-row dt {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.finanz-wer-row dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.finanz-pill {
+  background: var(--alpine-wash);
+  color: var(--alpine);
+}
+
+.finanz-wer-text {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/* --- Wohin das Geld geht: nummerierte Schritte wie auf „Partner werden“ ---------------------------------------------- */
+
+.finanz-wohin {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finanz-wohin li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.finanz-wohin-number {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--rust-wash);
+  color: var(--rust);
+  font-weight: 800;
+}
+
+.finanz-wohin h3 {
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.finanz-wohin p {
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.finanz-ziel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-5);
+  border: 1.5px dashed var(--tan);
+  border-radius: var(--radius-md);
+  background: var(--rust-wash);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.finanz-ziel svg {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 3px;
+  color: var(--rust);
+}
+
+/* --- Zahlen je Quartal: je Quartal drei Balken an einer Skala, Zahl als Text daneben ---------------------------------- */
+
+.finanz-zahlen-lede {
+  margin: 0;
+}
+
+.finanz-empty {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  color: var(--muted);
+}
+
+.finanz-quartale {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finanz-quartal {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.finanz-quartal-title {
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.finanz-quartal-rows {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.finanz-row {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.finanz-row dt {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.finanz-row dd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  min-width: 0;
+}
+
+.finanz-bar {
+  flex: 1;
+  height: 0.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.finanz-bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: var(--radius-pill);
+  background: var(--sage);
+  transition: width var(--duration-normal) var(--ease-out);
+}
+
+.finanz-row.is-kosten .finanz-bar-fill {
+  background: var(--tan);
+}
+
+.finanz-row.is-weitergegeben .finanz-bar-fill {
+  background: var(--rust);
+}
+
+.finanz-value {
+  flex-shrink: 0;
+  min-width: 5.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.finanz-quartal-detail {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .finanz-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+}
+
+/* --- Mithelfen: ruhige Album-Karte mit Handschrift oben --------------------------------------------------------------- */
+
+.finanz-mithelfen {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.finanz-mithelfen-hand {
+  --hand-size: 1.25rem;
+  color: var(--rust);
+}
+
+.finanz-mithelfen h2 {
+  font-size: var(--text-xl);
+}
+
+.finanz-mithelfen-lede,
+.finanz-mithelfen-text {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.finanz-mithelfen-text {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.finanz-mithelfen-link svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* --- Admin: Reiter „Finanzierung“ ------------------------------------------------------------------------------------- */
+
+.admin-finanz-card {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.admin-finanz-card h3 {
+  font-size: var(--text-lg);
+}
+
+.admin-finanz-layout {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.admin-finanz-forms {
+  display: grid;
+  gap: var(--space-8);
+}
+
+@media (min-width: 960px) {
+  .admin-finanz-layout {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: start;
+  }
+}
+
+.admin-finanz-preview {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+}
+
+.admin-finanz-preview .finanz-mithelfen {
+  width: 100%;
+}
+
+.admin-quartal-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-quartal-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.admin-quartal-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-quartal-main .muted {
+  font-size: var(--text-sm);
+}
+
+.admin-quartal-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.admin-quartal-form {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1.5px dashed var(--line-strong);
+}
+
+/* --- Partner: Schalter „Überall sichtbar“ und Admin-Chip ------------------------------------------------------------- */
+
+.partner-ueberall {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.partner-ueberall-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.partner-ueberall-head > svg {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 2px;
+  color: var(--rust);
+}
+
+.partner-ueberall-head h2 {
+  font-size: var(--text-xl);
+}
+
+.partner-ueberall-head .muted {
+  margin: var(--space-1) 0 0;
+  line-height: 1.5;
+}
+
+.partner-ueberall-switch {
+  min-height: 2.75rem;
+  color: var(--ink);
+  font-size: var(--text-base);
+}
+
+.partner-ueberall-switch input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.admin-partner-ueberall {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.admin-partner-ueberall-pill {
+  background: var(--alpine-wash);
+  color: var(--alpine);
+}
+
+.admin-partner-ueberall-pill svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+/* Entdecken: leiser Hinweis in der Meta-Zeile der Partner-Karte (PartnerDiscoverCard) */
+.partner-card-ueberall {
+  color: var(--alpine);
+  font-weight: 700;
+}

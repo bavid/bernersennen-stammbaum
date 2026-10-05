@@ -91,6 +91,8 @@ function profileResponse(partner, { einblickCount, banner = [], bannerLayout = '
     portalText: partner.portal_text,
     farbe: partner.farbe,
     ansprechperson: partner.ansprechperson ?? null,
+    // Phase F: „Überall sichtbar“ (lib/ueberallSichtbar.js, eigene Route PUT /profile/ueberall-sichtbar - nicht über PUT /profile).
+    ueberallSichtbar: Boolean(partner.ueberall_sichtbar),
     logoUrl: partner.logo_file ? `/partner-media/${partner.logo_file}` : null,
     banner: banner.map(ownBanner),
     bannerLayout,

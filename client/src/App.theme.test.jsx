@@ -56,7 +56,7 @@ describe.each(['standard'])('App-Rahmen im Theme %s', (themeId) => {
 
   // Phase W: der Fuß eines Haushalts hat nur noch Impressum und Datenschutz; Tierheime und Partner behalten "In der Nähe"
   // (nur nicht auf /umgebung selbst, Audit V7a).
-  test('Footer: Haushalte nur Impressum/Datenschutz, Partner-Bereiche dazu „In der Nähe“ – nicht auf /umgebung selbst', async () => {
+  test('Footer: Haushalte nur „So finanzieren wir uns“/Impressum/Datenschutz, Partner-Bereiche dazu „In der Nähe“ – nicht auf /umgebung selbst', async () => {
     const footerFor = async (path, family) => {
       await render(
         <MemoryRouter initialEntries={[path]}>
@@ -70,7 +70,8 @@ describe.each(['standard'])('App-Rahmen im Theme %s', (themeId) => {
       container = null
       return links
     }
-    expect(await footerFor('/start', { art: 'zuhause' })).toEqual(['/impressum', '/datenschutz'])
+    // Phase F: dazu „So finanzieren wir uns“.
+    expect(await footerFor('/start', { art: 'zuhause' })).toEqual(['/finanzierung', '/impressum', '/datenschutz'])
     expect(await footerFor('/profil', { art: 'partner' })).toContain('/umgebung')
     expect(await footerFor('/umgebung', { art: 'partner' })).not.toContain('/umgebung')
   })

@@ -7,6 +7,7 @@ const { partnerMediaDir: defaultMediaDir } = require('../config')
 const { deleteFamily, removeUploads } = require('./families')
 const { relativeDemoDate } = require('./demoDates')
 const { validatePartner, slugify } = require('./partners')
+const { setUeberallSichtbar } = require('./ueberallSichtbar')
 const { validatePromotion, validateDonationReport, validateUrl, cleanOptionalText, MAX_TEXT_LENGTH } = require('./promotions')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
 const {
@@ -218,6 +219,8 @@ function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage
 // Legt die Demo-Partner an (is_demo = 1, siehe seed/demo-partners.js) - dieselbe validatePartner()
 // wie der Admin (POST /api/admin/partners, siehe lib/partners.js), damit Slug, Kontrastprüfung und
 // Züchter-Schutz identisch greifen. Gibt die neuen Ids zurück.
+// Phase F: ueberallSichtbar (seed) setzt den Schalter „Überall sichtbar“ (lib/ueberallSichtbar.js) - validatePartner kennt
+// das Feld bewusst nicht, es gehört dem Partner selbst.
 function insertDemoPartners(db) {
   const ids = []
   for (const input of DEMO_PARTNERS) {
@@ -226,6 +229,7 @@ function insertDemoPartners(db) {
     const id = db
       .prepare(`INSERT INTO partners (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
       .run(...columns.map((col) => (col === 'is_demo' ? 1 : clean[col]))).lastInsertRowid
+    if (input.ueberallSichtbar) setUeberallSichtbar(id, true)
     ids.push(id)
   }
   return ids

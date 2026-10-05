@@ -28,7 +28,10 @@ const DEMO_PARTNERS = [
     portalText:
       'Wir bieten Welpenkurse und Hundetraining für Familien aus der Region an – vom ersten „Sitz“ bis zum entspannten Spaziergang im Alltag.',
     website: 'https://example.org/pfotenglueck',
-    ansprechperson: 'Anna Berg'
+    ansprechperson: 'Anna Berg',
+    // Phase F: „Überall sichtbar (vorerst kostenlos)“ - die Demo zeigt die Hervorhebung an einem Partner
+    // (lib/demoPack.js insertDemoPartners, lib/ueberallSichtbar.js).
+    ueberallSichtbar: true
   },
   {
     // Phase P1 Task 4: ein Hundesalon mit eigenem Demo-Partner-Bereich und Einblicken (seed/demo-partner-area.js).

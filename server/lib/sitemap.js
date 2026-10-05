@@ -21,8 +21,9 @@ const ROBOTS_RULES = [
   'Disallow: /partner-media/'
 ]
 
-// Seiten ohne Datenbank-Bezug, immer in der Sitemap - Reihenfolge ist auch die Ausgabereihenfolge.
-const STATIC_PATHS = ['/', '/partner', '/partner-werden']
+// Seiten ohne Datenbank-Bezug, immer in der Sitemap - Reihenfolge ist auch die Ausgabereihenfolge. Phase F: dazu
+// „So finanzieren wir uns“ (/finanzierung) - öffentlich und bewusst auffindbar.
+const STATIC_PATHS = ['/', '/partner', '/partner-werden', '/finanzierung']
 
 const SITEMAP_TTL_MS = 10 * 60 * 1000
 const SITEMAP_NS = 'http://www.sitemaps.org/schemas/sitemap/0.9'

@@ -15,6 +15,7 @@ const { nextTermine } = require('../lib/partnerTermine')
 const { parseZeitraeume, upcomingZeitraeume } = require('../lib/promotionZeitraeume')
 const { berlinNow } = require('../lib/terminSerien')
 const { MIN_IN_RADIUS, sortByName, roundKm, withDistances, splitByRadius, radiusSection } = require('../lib/nearby')
+const { withUeberallSichtbar } = require('../lib/ueberallSichtbar')
 
 // Phase 3 Task 2: Reiter "Entdecken" - eine Antwort bündelt alle Abschnitte (seit Phase P2 Task 9 auch salon)
 // (docs/superpowers/plans/2026-09-29-phase-3-entdecken.md). requireSession statt requireAuth: die Demo
@@ -187,7 +188,8 @@ function kurztext(row) {
 // Partner-Karte: wie lib/partners.js publicPartner, aber die Website läuft über die Klickzählung
 // (clickUrl + rohe url zur Anzeige) statt roh im Feld "website" zu stehen (Aufgabenstellung: "Every
 // external link is delivered as clickUrl ... plus the raw url for display").
-function partnerCard(row, { distanceKm: distanceKmValue, ausserhalb } = {}) {
+// Phase F: ueberall (true) - der Partner steht hier wegen „Überall sichtbar“, nicht wegen der Nähe (lib/ueberallSichtbar.js).
+function partnerCard(row, { distanceKm: distanceKmValue, ausserhalb, ueberall } = {}) {
   const { website, ...pub } = publicPartner(row)
   return {
     ...pub,
@@ -197,7 +199,8 @@ function partnerCard(row, { distanceKm: distanceKmValue, ausserhalb } = {}) {
     url: website || null,
     clickUrl: website ? `/r/partner-website/${row.id}` : null,
     ...(distanceKmValue !== undefined ? { distanceKm: distanceKmValue } : {}),
-    ...(ausserhalb !== undefined ? { ausserhalb } : {})
+    ...(ausserhalb !== undefined ? { ausserhalb } : {}),
+    ...(ueberall ? { ueberall: true } : {})
   }
 }
 
@@ -275,8 +278,8 @@ function resolveDiscoverCenter({ plz, radius } = {}) {
   return { center: { lat: hit.lat, lon: hit.lon, ort: hit.ort }, radiusKm }
 }
 
-function partnerCardFromItem({ row, distanceKm: d, ausserhalb }) {
-  return partnerCard(row, { distanceKm: d, ausserhalb })
+function partnerCardFromItem({ row, distanceKm: d, ausserhalb, ueberall }) {
+  return partnerCard(row, { distanceKm: d, ausserhalb, ueberall })
 }
 
 // Phase V1: eine Karte je Partner - der Kopf (partnerCard), darunter anzeigen (bis zu drei Empfehlungen des Partners
@@ -297,9 +300,10 @@ function withCardContent(card, { anzeigen, einblicke, termine }) {
 // Partner oder mit einem Partner, der nicht in diesen Abschnitt gehört (sortiert nach dessen Entfernung). Die eines
 // Partners aus diesem Abschnitt, dessen Karte nicht gezeigt wird (außerhalb des Umkreises), fallen mit ihr weg.
 // rows/items: alle passenden bzw. die gezeigten Partner (für die Tiere und Spendenlinks der Begleiter).
+// Phase F: Partner mit „Überall sichtbar“ stehen auch außerhalb des Umkreises da - hinter den nahen (lib/ueberallSichtbar.js).
 function partnerSection(typs, bereich, { isDemo, center, radiusKm, distanceMap }) {
   const partnerRows = activePartnerRows(typs, isDemo)
-  const section = radiusSection(partnerRows, center, radiusKm)
+  const section = withUeberallSichtbar(radiusSection(partnerRows, center, radiusKm), partnerRows, center)
   const shownIds = section.items.map(({ row }) => row.id)
   const sectionPartnerIds = new Set(partnerRows.map((row) => row.id))
   const promotionRows = activePromotionRows(bereich, isDemo)

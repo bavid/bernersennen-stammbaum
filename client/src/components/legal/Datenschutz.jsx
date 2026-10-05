@@ -62,7 +62,8 @@ export default function Datenschutz({ legal }) {
         <p>
           Diese Seite verwendet keine Analyse- oder Tracking-Dienste und keine externen Werbenetzwerke. Schriften
           werden selbst gehostet, es werden keine Skripte oder Schriften von fremden Servern (z. B. Google Fonts)
-          nachgeladen.
+          nachgeladen. Getragen wird die Plattform von Spenden und lokalen Partnern – mehr dazu auf der Seite{' '}
+          <Link to="/finanzierung">„So finanzieren wir uns“</Link>.
         </p>
       </LegalSection>
 

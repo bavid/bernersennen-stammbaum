@@ -21,10 +21,22 @@ const AKTION_LABELS = {
   'hinweis-ausgeschaltet': 'Hinweis ausgeschaltet',
   'hinweis-geloescht': 'Hinweis gelöscht',
   // Einladungskarten: die Rückseite geändert (server/routes/adminEinladungskarte.js, ziel 'einstellung:einladungskarte').
-  'einladungskarte-geaendert': 'Einstellung geändert'
+  'einladungskarte-geaendert': 'Einstellung geändert',
+  // Phase F: „So finanzieren wir uns“ (server/routes/adminFinanzierung.js) und „Überall sichtbar“ eines Partners
+  // (server/routes/adminPartnerSichtbar.js, ziel 'partner:<id>').
+  'finanzierung-geaendert': 'Einstellung geändert',
+  'finanzierung-quartal-angelegt': 'Quartal eingetragen',
+  'finanzierung-quartal-geaendert': 'Quartal geändert',
+  'finanzierung-quartal-geloescht': 'Quartal gelöscht',
+  'partner-ueberall-sichtbar': 'Partner überall sichtbar',
+  'partner-nicht-ueberall-sichtbar': 'Partner nicht mehr überall sichtbar'
 }
 
-const EINSTELLUNG_LABELS = { einladungskarte: 'Einladungskarte – Rückseite' }
+const EINSTELLUNG_LABELS = {
+  einladungskarte: 'Einladungskarte – Rückseite',
+  'finanzierung-spenden-hinweis': 'Finanzierung – Spenden-Hinweis',
+  'finanzierung-ziel': 'Finanzierung – Ziel'
+}
 
 // ziel aus dem Protokoll ('family:<id>', server/lib/adminLog.js) lesbar machen. Das Protokoll selbst speichert
 // keine Namen - der Name kommt, falls bekannt, aus der Übersicht (families), sonst bleibt es bei der Nummer.

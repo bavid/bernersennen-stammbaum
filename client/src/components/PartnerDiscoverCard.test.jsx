@@ -182,3 +182,21 @@ describe('PartnerDiscoverCard – Termine', () => {
     expect(container.querySelector('.partner-discover-ad-termine').textContent).toBe('Termine: 1.11., 5.–10.12.')
   })
 })
+
+// Phase F: der leise Hinweis „überall sichtbar“ - der Server markiert Partner, die wegen „Überall sichtbar“ statt wegen der
+// Nähe in der Liste stehen (ueberall: true, server/lib/ueberallSichtbar.js).
+describe('PartnerDiscoverCard – „überall sichtbar“', () => {
+  test('mit ueberall: Hinweis in der Meta-Zeile, sonst eine Partner-Karte wie jede andere (Merkmal, Entfernung, Portal)', async () => {
+    await render({ ...school, distanceKm: 255.3, ueberall: true })
+    const meta = container.querySelector('.partner-card-meta')
+    expect(meta.querySelector('.partner-card-ueberall').textContent).toBe('überall sichtbar')
+    expect(meta.querySelector('.partner-mark')).not.toBeNull()
+    expect(meta.querySelector('.partner-card-distance')).not.toBeNull()
+    expect(link(container, 'Zum Portal').getAttribute('href')).toBe('/p/hundeschule-pfotenglueck')
+  })
+
+  test('ohne ueberall: kein Hinweis', async () => {
+    await render({ ...school, distanceKm: 3.2 })
+    expect(container.querySelector('.partner-card-ueberall')).toBeNull()
+  })
+})

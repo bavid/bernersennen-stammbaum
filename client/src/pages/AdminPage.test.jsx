@@ -141,6 +141,7 @@ describe('AdminPage – Reiter (Phase U)', () => {
       'Familien',
       'Nachrichten',
       'Hinweise',
+      'Finanzierung',
       'Einstellungen',
       'Server',
       'Protokoll'

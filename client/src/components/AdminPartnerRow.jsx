@@ -4,6 +4,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import AdminPartnerArea from './AdminPartnerArea.jsx'
 import AdminPartnerLock from './AdminPartnerLock.jsx'
 import AdminPartnerTrust from './AdminPartnerTrust.jsx'
+import AdminPartnerUeberall from './AdminPartnerUeberall.jsx'
 import AdminPartnerBanner from './AdminPartnerBanner.jsx'
 import AdminPartnerEinblicke from './AdminPartnerEinblicke.jsx'
 import AdminPartnerTermine from './AdminPartnerTermine.jsx'
@@ -71,6 +72,8 @@ export default function AdminPartnerRow({ partner, onEdit, onToggleStatus, onDel
         </button>
       </span>
       <AdminPartnerTrust partner={partner} onChanged={onChanged} />
+      {/* Phase F: „Überall sichtbar“ - nur sichtbar, wenn der Partner es eingeschaltet hat; der Admin kann es ausschalten. */}
+      <AdminPartnerUeberall partner={partner} onChanged={onChanged} />
       <AdminPartnerArea partner={partner} onKeyIssued={onKeyIssued} onChanged={onChanged} />
       {showEinblicke && (
         <div className="admin-partner-photos" id={einblickeId}>

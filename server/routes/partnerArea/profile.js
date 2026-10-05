@@ -5,6 +5,7 @@ const { profileResponse, validateProfileUpdate, completeness } = require('../../
 const { handlePartnerLogoUpload } = require('../../lib/partnerLogo')
 const { countVisibleEinblicke } = require('../../lib/einblicke')
 const { listBanner, readLayout } = require('../../lib/partnerBanner')
+const { parseAn, setUeberallSichtbar } = require('../../lib/ueberallSichtbar')
 const bannerRoutes = require('./banner')
 
 // Phase P Task 3a: das eigene Profil im Partner-Bereich - lesen, ändern, Logo, veröffentlichen/pausieren.
@@ -50,6 +51,19 @@ router.put('/', denyDemoWrites, (req, res, next) => {
     sendProfile(res, req.partner.id)
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message, ...(err.fehlt ? { fehlt: err.fehlt } : {}) })
+    next(err)
+  }
+})
+
+// Phase F: „Überall sichtbar (vorerst kostenlos)“ (lib/ueberallSichtbar.js) - { an: true|false }. Wirkt nur, solange das
+// Profil öffentlich ist (Entdecken zeigt nur aktive, nicht gesperrte Partner); eine Sperre lässt den Schalter nicht zu.
+router.put('/ueberall-sichtbar', denyDemoWrites, (req, res, next) => {
+  try {
+    if (req.partner.gesperrt) return res.status(403).json({ error: LOCKED_MESSAGE })
+    setUeberallSichtbar(req.partner.id, parseAn(req.body))
+    sendProfile(res, req.partner.id)
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)
   }
 })

@@ -52,6 +52,8 @@ const AdminViewStartPage = lazy(() => import('./pages/AdminViewStartPage.jsx'))
 const PartnerPrintPage = lazy(() => import('./pages/PartnerPrintPage.jsx'))
 // Öffentliche Infoseite "Partner werden" (Phase 5 Task 4): selten aufgerufen, eigener Chunk.
 const PartnerInfoPage = lazy(() => import('./pages/PartnerInfoPage.jsx'))
+// Phase F: „So finanzieren wir uns“ (/finanzierung) - öffentlich wie Impressum und Datenschutz, eigener Chunk.
+const FinanzierungPage = lazy(() => import('./pages/FinanzierungPage.jsx'))
 // Präsentationsmodus (Phase 5 Task 5): Vorführseite des Admins mit Kacheln, die je eine Demo in einem neuen
 // Tab starten - dort landet man auf /demo-start (DemoStartPage), das POST /api/demo ruft. Beides eigene Chunks.
 const AdminPresentPage = lazy(() => import('./pages/AdminPresentPage.jsx'))
@@ -81,6 +83,9 @@ const PARTNER_PRINT_RE = /^\/partner-drucken\/(\d+)\/?$/
 
 // Öffentliche Infoseite für künftige Partner (PartnerInfoPage), verlinkt von Login-Seite und Partnerliste.
 const PARTNER_INFO_PATH = '/partner-werden'
+
+// Phase F: „So finanzieren wir uns“ (FinanzierungPage), verlinkt von Login-Seite, App-Fuß, Datenschutz und /partner-werden.
+const FINANZIERUNG_PATH = '/finanzierung'
 
 // Öffentliche Partnerliste (PartnersPage).
 const PARTNER_LIST_PATH = '/partner'
@@ -304,6 +309,10 @@ export function AppFooter({ family, onInvite }) {
         </Link>
       )}
       <span className="app-footer-legal">
+        {/* Phase F: „So finanzieren wir uns“ neben Impressum und Datenschutz. */}
+        <Link to={FINANZIERUNG_PATH} className="footer-link">
+          So finanzieren wir uns
+        </Link>
         <Link to="/impressum" className="footer-link">
           Impressum
         </Link>
@@ -586,6 +595,17 @@ export default function App() {
       <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           <PartnerInfoPage onDemo={handleVoucherLogin} family={family} />
+        </Suspense>
+      </ThemeProvider>
+    )
+  }
+
+  // Phase F: „So finanzieren wir uns“ - öffentlich wie Impressum/Datenschutz, mit oder ohne Sitzung.
+  if (pathname === FINANZIERUNG_PATH) {
+    return (
+      <ThemeProvider>
+        <Suspense fallback={<RouteFallback />}>
+          <FinanzierungPage family={family} />
         </Suspense>
       </ThemeProvider>
     )

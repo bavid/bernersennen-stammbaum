@@ -57,6 +57,8 @@ const json = (method, body) => ({ method, body: JSON.stringify(body) })
 
 export const api = {
   config: () => request('/config'),
+  // Phase F: „So finanzieren wir uns“ (/finanzierung, server/routes/finanzierung.js) - ohne Login, cachebar.
+  finanzierung: () => request('/finanzierung'),
   // Globale Hinweise fürs Band oben (Phase N Task 5, server/routes/hinweise.js): ohne Login, höchstens fünf laufende,
   // neueste zuerst -> { hinweise: [{ id, titel, text, stufe }] }.
   hinweise: () => request('/hinweise'),
@@ -322,6 +324,15 @@ export const api = {
     // schritte, adresse }; Speichern ersetzt die ganze Rückseite, Fehler tragen womöglich details.feld.
     einladungskarte: () => request('/admin/einladungskarte'),
     saveEinladungskarte: (rueckseite) => request('/admin/einladungskarte', json('PUT', rueckseite)),
+    // Phase F: Reiter „Finanzierung“ (server/routes/adminFinanzierung.js) - Spenden-Hinweis, Ziel, Quartale.
+    finanzierung: () => request('/admin/finanzierung'),
+    saveFinanzierungHinweis: (hinweis) => request('/admin/finanzierung/spenden-hinweis', json('PUT', hinweis)),
+    saveFinanzierungZiel: (ziel) => request('/admin/finanzierung/ziel', json('PUT', ziel)),
+    createFinanzierungQuartal: (quartal) => request('/admin/finanzierung/quartale', json('POST', quartal)),
+    updateFinanzierungQuartal: (id, quartal) => request(`/admin/finanzierung/quartale/${id}`, json('PUT', quartal)),
+    deleteFinanzierungQuartal: (id) => request(`/admin/finanzierung/quartale/${id}`, { method: 'DELETE' }),
+    // Phase F: „Überall sichtbar“ eines Partners aus- oder einschalten (server/routes/adminPartnerSichtbar.js).
+    setPartnerUeberallSichtbar: (id, an) => request(`/admin/partners/${id}/ueberall-sichtbar`, json('PUT', { an })),
 
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),
@@ -395,6 +406,8 @@ export const api = {
     profile: () => request('/partner-area/profile'),
     // Nur die geänderten Felder (camelCase wie die Antwort) - unbekannte Felder lehnt der Server mit 400 ab.
     updateProfile: (fields) => request('/partner-area/profile', json('PUT', fields)),
+    // Phase F: „Überall sichtbar (vorerst kostenlos)“ - eigene Route, liefert das ganze Profil zurück.
+    setUeberallSichtbar: (an) => request('/partner-area/profile/ueberall-sichtbar', json('PUT', { an })),
     uploadLogo: (file) => {
       const formData = new FormData()
       formData.append('file', file)

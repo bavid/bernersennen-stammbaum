@@ -9,6 +9,7 @@ import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
 import PartnerTermineEditor from '../components/PartnerTermineEditor.jsx'
 import PartnerVoucherStacks from '../components/PartnerVoucherStacks.jsx'
 import PartnerShareSection from '../components/PartnerShareSection.jsx'
+import PartnerUeberallSwitch from '../components/PartnerUeberallSwitch.jsx'
 import VisitenkartenTeaser from '../components/visitenkarte/VisitenkartenTeaser.jsx'
 import TabBar from '../components/TabBar.jsx'
 import { useToast } from '../components/Toast.jsx'
@@ -180,6 +181,8 @@ export default function PartnerProfilePage({ family }) {
               {openedTabs.includes('teilen') && (
                 <>
                   <PartnerShareSection profile={profile} />
+                  {/* Phase F: „Überall sichtbar (vorerst kostenlos)“ - in Entdecken nicht nur in der Nähe erscheinen. */}
+                  <PartnerUeberallSwitch profile={profile} onSaved={setProfile} />
                   {/* Phase V5: Visitenkarten mit QR-Code zum Portal und optionalem Kunden-Gutschein. */}
                   <VisitenkartenTeaser />
                   <PartnerVoucherStacks />

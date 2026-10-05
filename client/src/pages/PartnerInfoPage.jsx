@@ -162,6 +162,10 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
           Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein kostenloses Profil, das eure Kundschaft direkt in ihre eigene
           Chronik holt – und euch als Herkunft zeigt.
         </p>
+        {/* Phase F: ein Satz zur Finanzierung - Partner-Portale sind kostenlos, die Plattform lebt von Spenden und Partnern. */}
+        <p className="muted partner-info-finanzierung">
+          Euer Portal kostet nichts – wie wir uns finanzieren, steht auf <Link to="/finanzierung">„So finanzieren wir uns“</Link>.
+        </p>
         <ul className="partner-info-benefits">
           {BENEFITS.map((benefit) => (
             <li key={benefit.title} className="card partner-info-benefit">

@@ -19,6 +19,7 @@ import AdminNotify from '../components/AdminNotify.jsx'
 import AdminEinladungskarte from '../components/AdminEinladungskarte.jsx'
 import AdminHinweise from '../components/AdminHinweise.jsx'
 import AdminServer from '../components/AdminServer.jsx'
+import AdminFinanzierung from '../components/AdminFinanzierung.jsx'
 import useAdminTab from '../hooks/useAdminTab.js'
 import { ADMIN_TABS, adminPanelId, adminTabCounts, openCountText } from '../lib/adminTabs.js'
 
@@ -184,6 +185,8 @@ function Dashboard({ onLogout }) {
             {panel('nachrichten', <AdminMessages onCountChange={handleMessageCount} />)}
             {/* Phase N Task 5: globale Hinweise - das Band oben auf allen Seiten, mit Vorschau. */}
             {panel('hinweise', <AdminHinweise />)}
+            {/* Phase F: „So finanzieren wir uns“ - Spenden-Hinweis, Ziel und Quartale, mit Vorschau der Seite. */}
+            {panel('finanzierung', <AdminFinanzierung />)}
             {/* Einladungskarten: die Rückseite, die Familie auf Pfoten auf jede Karte der Partner druckt. */}
             {panel(
               'einstellungen',
