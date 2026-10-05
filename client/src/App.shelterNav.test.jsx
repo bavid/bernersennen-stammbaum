@@ -111,14 +111,14 @@ async function render(initialEntry) {
 }
 
 describe('Navigation für Tierheime (family.art === "tierheim")', () => {
-  test('die Hauptnavigation zeigt Tiere, Pinnwand, Collage, Profil, Nachrichten - kein Stammbaum/Wegbegleiter/Würfe', async () => {
+  test('die Hauptnavigation zeigt Profil, Tiere, Pinnwand, Collage, Nachrichten - kein Stammbaum/Wegbegleiter/Würfe', async () => {
     me.mockResolvedValue(shelterFamily)
     listDogs.mockResolvedValue([])
     recentActivity.mockResolvedValue([])
     await render('/tiere')
 
     const labels = [...container.querySelectorAll('.app-nav a')].map((a) => a.textContent)
-    expect(labels).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
+    expect(labels).toEqual(['Profil', 'Tiere', 'Pinnwand', 'Collage', 'Nachrichten'])
     expect(labels.length).toBeLessThanOrEqual(5)
   })
 
@@ -161,22 +161,23 @@ describe('Navigation für Tierheime (family.art === "tierheim")', () => {
     expect(link.classList.contains('active')).toBe(true)
   })
 
-  test('eine unbekannte Route leitet auf die Startseite eines Tierheims (/tiere) um', async () => {
+  test('eine unbekannte Route leitet auf die Startseite eines Tierheims (/profil, wie bei jedem Partner) um', async () => {
     me.mockResolvedValue(shelterFamily)
     listDogs.mockResolvedValue([])
     recentActivity.mockResolvedValue([])
     await render('/irgendwas')
 
-    expect(container.querySelector('h1').textContent).toBe('Unsere Tiere')
+    expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
+    expect([...container.querySelectorAll('.app-nav a')].find((a) => a.textContent === 'Profil').classList.contains('active')).toBe(true)
   })
 
-  test('/wegbegleiter ist für ein Tierheim nicht erreichbar und leitet auf /tiere um', async () => {
+  test('/wegbegleiter ist für ein Tierheim nicht erreichbar und leitet auf /profil um', async () => {
     me.mockResolvedValue(shelterFamily)
     listDogs.mockResolvedValue([])
     recentActivity.mockResolvedValue([])
     await render('/wegbegleiter')
 
-    expect(container.querySelector('h1').textContent).toBe('Unsere Tiere')
+    expect(container.querySelector('h1').textContent).toBe('Tierheim Sonnenhang')
   })
 })
 

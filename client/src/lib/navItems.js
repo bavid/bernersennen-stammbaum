@@ -37,14 +37,15 @@ const NAV_ITEMS_HOUSEHOLD = [NAV_ITEM_START, NAV_ITEM_ANIMALS, NAV_ITEM_FAMILIES
 // der Familie. Mitglieder & Rollen stehen im Menü.
 const NAV_ITEMS_CLASSIC = [NAV_ITEM_START, NAV_ITEM_ANIMALS, NAV_ITEM_PINBOARD, NAV_ITEM_DISCOVER]
 
-// Tierheime (Phase T): kein Stammbaum/Würfe, sondern "Unsere Tiere" als Startseite - Pinnwand und
-// Collage bleiben unverändert nutzbar, dazu (Phase P) das eigene Profil und (P2) die Nachrichten. Kein
-// "Entdecken". Die Beiträge und (Phase V4a) der Kalender stehen hier als Reiter im Profil, damit es bei fünf Einträgen bleibt.
+// Tierheime (Phase T): kein Stammbaum/Würfe - wie bei allen Partner-Bereichen zuerst das eigene Profil (Startseite,
+// lib/areas.js), dann "Unsere Tiere", Pinnwand und Collage, zuletzt (P2) die Nachrichten - dieselbe Reihenfolge wie bei
+// Hundeschule und Salon, wo sich die Punkte entsprechen (Profil … Nachrichten). Kein "Entdecken". Die Beiträge und
+// (Phase V4a) der Kalender stehen hier als Reiter im Profil, damit es bei fünf Einträgen bleibt.
 const NAV_ITEMS_SHELTER = [
+  NAV_ITEM_PROFILE,
   { to: '/tiere', icon: 'paw', label: 'Tiere' },
   NAV_ITEM_PINBOARD,
   { to: '/collage', icon: 'collage', label: 'Collage' },
-  NAV_ITEM_PROFILE,
   NAV_ITEM_INBOX
 ]
 

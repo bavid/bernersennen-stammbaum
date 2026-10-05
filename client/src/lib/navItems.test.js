@@ -44,8 +44,8 @@ describe('navItemsFor', () => {
     ])
   })
 
-  test('a shelter keeps Tiere, Pinnwand, Collage, adds Profil and Nachrichten - Beiträge live in the Profil tab', () => {
-    expect(labels({ art: 'tierheim' })).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
+  test('a shelter starts with Profil, then Tiere, Pinnwand, Collage, Nachrichten - Beiträge live in the Profil tab', () => {
+    expect(labels({ art: 'tierheim' })).toEqual(['Profil', 'Tiere', 'Pinnwand', 'Collage', 'Nachrichten'])
     expect(navItemsFor({ art: 'tierheim' }).find((item) => item.label === 'Profil').to).toBe('/profil')
     expect(navItemsFor({ art: 'tierheim' }).find((item) => item.label === 'Nachrichten').to).toBe('/nachrichten')
   })

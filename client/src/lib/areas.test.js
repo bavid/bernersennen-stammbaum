@@ -54,8 +54,8 @@ describe('startRoute', () => {
     expect(startRoute(visiting)).toBe('/familien/9')
   })
 
-  test('a shelter area starts at Tiere', () => {
-    expect(startRoute({ art: 'tierheim' })).toBe('/tiere')
+  test('a shelter area starts at Profil like every partner area', () => {
+    expect(startRoute({ art: 'tierheim' })).toBe('/profil')
   })
 
   test('a partner area (dog school, groomer, ...) starts at Profil', () => {

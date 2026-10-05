@@ -162,7 +162,7 @@ describe('canGoBack / backFallback', () => {
 
   test('Ziel ohne Verlauf: Startroute des Bereichs, ohne Sitzung "/"', () => {
     expect(backFallback(null)).toBe('/')
-    expect(backFallback({ art: 'tierheim' })).toBe('/tiere')
+    expect(backFallback({ art: 'tierheim' })).toBe('/profil')
     expect(backFallback({ art: 'rudel' })).toBe('/start')
   })
 })

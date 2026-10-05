@@ -110,9 +110,9 @@ describe('Reiter "Entdecken" in der Hauptnavigation', () => {
     expect(navLabels()).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])
   })
 
-  test('Tierheim: Tiere, Pinnwand, Collage, (Phase P) Profil und (P2) Nachrichten - kein Entdecken', async () => {
+  test('Tierheim: Profil, Tiere, Pinnwand, Collage, (P2) Nachrichten - kein Entdecken', async () => {
     await render(shelter, '/tiere')
-    expect(navLabels()).toEqual(['Tiere', 'Pinnwand', 'Collage', 'Profil', 'Nachrichten'])
+    expect(navLabels()).toEqual(['Profil', 'Tiere', 'Pinnwand', 'Collage', 'Nachrichten'])
   })
 
   // Mit fünf Einträgen (Tierheim) bekommt die Leiste die kompakte Variante - Haushalte mit vier (+ "Menü") nicht.
@@ -137,9 +137,10 @@ describe('Reiter "Entdecken" in der Hauptnavigation', () => {
     expect(discover).toHaveBeenCalledWith({})
   })
 
-  test('ein Tierheim wird von /entdecken auf seine Startseite umgeleitet', async () => {
+  test('ein Tierheim wird von /entdecken auf seine Startseite (/profil) umgeleitet', async () => {
     await render(shelter, '/entdecken')
-    expect(container.querySelector('h1').textContent).toBe('Unsere Tiere')
+    expect(container.querySelector('h1')?.textContent).not.toBe('Entdecken')
+    expect([...container.querySelectorAll('.app-nav a')].find((a) => a.textContent === 'Entdecken')).toBeUndefined()
     expect(discover).not.toHaveBeenCalled()
   })
 })

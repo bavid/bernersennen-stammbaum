@@ -2,12 +2,13 @@
 
 // Phase W (Ruhige Hülle): Startseite je Kontext - das eigene Zuhause und klassische Familien-Logins (gemeinsamer
 // Schlüssel, kein Zuhause dahinter) starten auf /start (Neuigkeiten), ein Haushalt in einer Familie oder zu Besuch auf
-// deren Gruppenseite /familien/:id, Tierheime auf ihren Tieren, Partner-Bereiche (Phase P) im Profil.
+// deren Gruppenseite /familien/:id. Alle Partner-Bereiche (Tierheim, Hundeschule, Salon, …) starten im Profil - ein
+// erster Reiter für alle, die Tiere eines Tierheims stehen gleich daneben in der Leiste (lib/navItems.js).
 export const START_ROUTE = '/start'
 export const FAMILIES_ROUTE = '/familien'
 
 const PARTNER_START_ROUTES = {
-  tierheim: '/tiere',
+  tierheim: '/profil',
   partner: '/profil'
 }
 
