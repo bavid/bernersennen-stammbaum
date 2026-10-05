@@ -114,7 +114,7 @@ Pinnwand für Treffen und Notizen, Wurf-Übersicht und druckbaren Collagen.
   Tierheim, Hundeschule, Hundesalon, Kundensicht) mit einem Klick. Über **„Als Admin ansehen“** öffnet der Admin
   jeden Bereich **nur lesend** (Band oben, alle Schreibaktionen gesperrt, jeder Aufruf im Protokoll).
 - **„So finanzieren wir uns“** (`/finanzierung`, öffentlich): Nutzer immer kostenlos, Partner-Portale und die Hervorhebung
-  **„Überall sichtbar“** vorerst kostenlos – keine fremde Werbung, kein Tracking, kein Datenhandel, getragen von Spenden und
+  **„Überall sichtbar“** heute kostenlos (ohne Preisversprechen, Änderungen würden offen angekündigt) – keine fremde Werbung, kein Tracking, kein Datenhandel, getragen von Spenden und
   lokalen Partnern. Der Admin pflegt im Reiter **Finanzierung** Spenden-Hinweis (Text oder externer Link, nie ein
   Zahlungsformular), aktuelles Ziel und die Zahlen je Quartal (Einnahmen, Kosten, weitergegebene Spenden) mit Vorschau;
   ohne Einträge zeigt die Seite nur den Grundsatz. Partner schalten „Überall sichtbar“ unter Profil › Teilen selbst ein und

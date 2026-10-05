@@ -407,7 +407,7 @@ export const api = {
     profile: () => request('/partner-area/profile'),
     // Nur die geänderten Felder (camelCase wie die Antwort) - unbekannte Felder lehnt der Server mit 400 ab.
     updateProfile: (fields) => request('/partner-area/profile', json('PUT', fields)),
-    // Phase F: „Überall sichtbar (vorerst kostenlos)“ - eigene Route, liefert das ganze Profil zurück.
+    // Phase F: „Überall sichtbar“ - eigene Route, liefert das ganze Profil zurück.
     setUeberallSichtbar: (an) => request('/partner-area/profile/ueberall-sichtbar', json('PUT', { an })),
     uploadLogo: (file) => {
       const formData = new FormData()

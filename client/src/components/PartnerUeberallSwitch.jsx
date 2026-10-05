@@ -4,7 +4,7 @@ import Icon from './Icon.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 
-export const UEBERALL_LABEL = 'Überall sichtbar (vorerst kostenlos)'
+export const UEBERALL_LABEL = 'Überall sichtbar'
 export const UEBERALL_HINT = 'Euer Portal erscheint in „Entdecken“ nicht nur in der Nähe, sondern bei allen – hinter den nahen Treffern, klar als „überall sichtbar“ gekennzeichnet.'
 // Wie server/lib/ueberallSichtbar.js GESPERRT_MESSAGE.
 export const TEAM_AUS_HINT = 'Diese Hervorhebung wurde vom Team ausgeschaltet – bitte meldet euch bei uns.'
@@ -12,7 +12,7 @@ export const TEAM_AUS_HINT = 'Diese Hervorhebung wurde vom Team ausgeschaltet �
 const HINT_ID = 'partner-ueberall-hint'
 const DEMO_HINT_ID = 'partner-ueberall-demo-hint'
 
-// Phase F: der Schalter „Überall sichtbar (vorerst kostenlos)“ im Reiter „Teilen“ des Partner-Profils
+// Phase F: der Schalter „Überall sichtbar“ im Reiter „Teilen“ des Partner-Profils (heute kostenlos - kein Preisversprechen im Label)
 // (PUT /api/partner-area/profile/ueberall-sichtbar, server/lib/ueberallSichtbar.js). Ein Klick speichert sofort; die Antwort
 // ist das ganze Profil (onSaved). In der Demo, bei einer Sperre des Profils und wenn das Team die Hervorhebung ausgeschaltet
 // hat (ueberallGesperrt) gesperrt, jeweils mit Hinweis. Wirkt nur, solange das Profil öffentlich ist - das sagt die Zeile

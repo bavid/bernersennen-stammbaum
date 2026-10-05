@@ -9,7 +9,7 @@ vi.mock('../api', () => ({ api: { partnerArea: { setUeberallSichtbar } } }))
 import PartnerUeberallSwitch, { TEAM_AUS_HINT, UEBERALL_LABEL } from './PartnerUeberallSwitch.jsx'
 import { DemoProvider } from '../lib/demo.js'
 
-// Phase F: Schalter „Überall sichtbar (vorerst kostenlos)“ im Reiter „Teilen“.
+// Phase F: Schalter „Überall sichtbar“ im Reiter „Teilen“ - ohne Preisversprechen im Label (Wunsch 05.10.).
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 let container
@@ -49,6 +49,7 @@ describe('PartnerUeberallSwitch', () => {
     await render({}, { onSaved })
 
     expect(container.querySelector('label').textContent).toBe(UEBERALL_LABEL)
+    expect(UEBERALL_LABEL).not.toMatch(/vorerst|kostenlos/)
     expect(toggle().checked).toBe(false)
     expect(toggle().disabled).toBe(false)
     const hint = document.getElementById(toggle().getAttribute('aria-describedby'))

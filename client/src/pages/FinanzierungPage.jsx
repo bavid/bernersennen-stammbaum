@@ -17,10 +17,15 @@ import { zielText } from '../lib/finanzierung.js'
 export const GRUNDSATZ = 'Keine fremde Werbung, kein Tracking, kein Datenhandel – getragen von Spenden und lokalen Partnern.'
 
 const WER_ZAHLT = [
-  { wer: 'Nutzerinnen und Nutzer', was: 'kostenlos', text: 'Zuhause, Familien und Chronik – immer frei.' },
-  { wer: 'Partner-Portale', was: 'vorerst kostenlos', text: 'Hundeschulen, Tierheime, Salons und Betreuung zeigen sich mit eigenem Portal.' },
-  { wer: 'Hervorhebung „überall sichtbar“', was: 'vorerst kostenlos', text: 'Ein Partner erscheint in „Entdecken“ nicht nur in der Nähe – klar als „überall sichtbar“ gekennzeichnet.' }
+  { wer: 'Nutzerinnen und Nutzer', was: 'heute kostenlos', text: 'Zuhause, Familien und Chronik – die Grundfunktionen sollen frei bleiben.' },
+  { wer: 'Partner-Portale', was: 'heute kostenlos', text: 'Hundeschulen, Tierheime, Salons und Betreuung zeigen sich mit eigenem Portal.' },
+  { wer: 'Hervorhebung „überall sichtbar“', was: 'heute kostenlos', text: 'Ein Partner erscheint in „Entdecken“ nicht nur in der Nähe – klar als „überall sichtbar“ gekennzeichnet.' }
 ]
+
+// Ehrlich statt Versprechen (Wunsch 05.10.): kein „für immer“, kein „vorerst“ - was heute gilt, und wie wir mit
+// Änderungen umgehen würden.
+const AUSBLICK =
+  'Sollte sich daran etwas ändern, sagen wir es rechtzeitig und offen – an dieser Stelle. Die Grundfunktionen sollen frei bleiben; denkbar sind später freiwillige Zusatzpakete, etwa für sehr viele Fotos oder Familien.'
 
 const WOHIN = [
   { icon: 'wrench', title: 'Zuerst der Betrieb', text: 'Server, Domain und Sicherungen – damit eure Erinnerungen sicher bleiben.' },
@@ -41,9 +46,9 @@ function Grundsatz() {
   return (
     <Section id="finanz-grundsatz" title="Unser Grundsatz">
       <p>
-        Familie auf Pfoten ist für alle Tierhalterinnen und Tierhalter kostenlos – und bleibt es. Wir zeigen keine fremde
-        Werbung, verfolgen niemanden und handeln nicht mit Daten. Getragen wird die Plattform von Spenden und von lokalen
-        Partnern, die sich mit ihrem Portal zeigen. Was nach dem Betrieb übrig bleibt, geht an Tiere und an Projekte vor Ort.
+        Familie auf Pfoten ist heute für alle Tierhalterinnen und Tierhalter kostenlos. Wir zeigen keine fremde Werbung,
+        verfolgen niemanden und handeln nicht mit Daten. Getragen wird die Plattform von Spenden und von lokalen Partnern,
+        die sich mit ihrem Portal zeigen. Was nach dem Betrieb übrig bleibt, geht an Tiere und an Projekte vor Ort.
       </p>
     </Section>
   )
@@ -63,6 +68,7 @@ function WerZahltWas() {
           </div>
         ))}
       </dl>
+      <p className="muted finanz-ausblick">{AUSBLICK}</p>
     </Section>
   )
 }

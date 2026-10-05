@@ -867,14 +867,20 @@ bewusste Ausnahme vom Grundsatz „Eine Familie ist nie öffentlich“: nur mit 
 „alles für wohltätige Zwecke, rein spendenfinanziert“. Geld braucht es vor allem, um die „Server-Kisten zu
 warten“; Überschuss fließt in Spenden und lokale Projekte.
 
-### Wer zahlt was
-- **Nutzer (Zuhause, Familien):** immer frei. Keine fremde Werbung, kein Tracking, kein Datenhandel.
-- **Partner-Portale (Hundeschulen, Tierheime, Salons):** vorerst frei.
-- **Partner „überall sichtbar“:** eine Hervorhebung, die nicht nur in der Nähe, sondern überall in Entdecken
-  erscheint. Vorerst frei, später als freiwilliger Beitrag oder kleiner Betrag, der die Serverkosten deckt.
-- **Spenden:** freiwillige Spenden von Nutzern und Unternehmen, ein Spenden-Knopf (z. B. über die Seite
-  „So finanzieren wir uns“), Sponsoren aus Phase B (gesponserte Einladungscodes für Adoptionsfamilien).
-- **Merch:** siehe unten.
+### Wer zahlt was (Stand und Ausblick – Entscheidung 05.10.)
+- **Wortwahl:** Nichts „für immer“ versprechen, aber auch kein „vorerst“ (klingt nach „gleich kommt 9,99 € pro
+  Woche“). In der App steht **„heute kostenlos“** plus der Satz: „Sollte sich daran etwas ändern, sagen wir es
+  rechtzeitig und offen – an dieser Stelle. Die Grundfunktionen sollen frei bleiben.“
+- **Nutzer (Zuhause, Familien):** heute kostenlos; keine fremde Werbung, kein Tracking, kein Datenhandel.
+  **Zukunfts-Option (Businessplan):** ein Freemium-Modell – Grundfunktionen frei, freiwillige Zusatzpakete, z. B.
+  mehr Fotos je Erinnerung, mehr als X Familien gleichzeitig, mehr Bilderrahmen-Geräte, Fotobuch-Export. Nie das
+  Wegsperren von Erinnerungen, die schon da sind.
+- **Partner-Portale:** heute kostenlos. **Option:** später ein kleiner monatlicher Beitrag oder Spende nach Wahl
+  für Portal und Hervorhebung, Tierheime dauerhaft frei (Vorschlag).
+- **Partner „überall sichtbar“:** heute kostenlos; **Option:** erstes bezahltes Partner-Extra.
+- **Spenden:** freiwillige Spenden von Nutzern und Unternehmen (Seite „So finanzieren wir uns“), Sponsoren aus
+  Phase B (gesponserte Einladungscodes für Adoptionsfamilien).
+- **Merch:** siehe unten (Zukunftsplan).
 
 ### Wohin der Überschuss geht
 - Erst Betrieb (Server, Domain, Backups), dann:
@@ -899,8 +905,10 @@ warten“; Überschuss fließt in Spenden und lokale Projekte.
 ### Partner-Merch (Zukunftsplan, ab ~200 Nutzern)
 - Partner bekommen eigene Produkte mit **ihrem Logo**: z. B. Hundeschule Pfotenglück auf Klickern, Halsbändern,
   Leinen, Beuteln, Futterbeuteln, Tassen. Kunden bestellen im Shop, beim Partner-Portal verlinkt.
-- **Gewinn aus Partner-Produkten geht an den Partner** (abzüglich Material, Versand, Gebühren); die Plattform trägt
-  die Abwicklung. Der Betreiber verwaltet und arbeitet die Bestellungen aus (Qualität prüfen, verpacken, Flyer).
+- **Gemeinsam mit dem Partner ausarbeiten** (Motive, Produkte, Preise). **Gewinnbeteiligung an den Betreiber**
+  (Plattform/„Home Company“): der Partner bekommt den Großteil des Gewinns, ein vereinbarter Anteil (Vorschlag
+  20–30 %) bleibt beim Betreiber für Abwicklung, Qualitätsprüfung, Verpackung und Versand; Material, Versand und
+  Gebühren vorab abgezogen. Der Betreiber verwaltet und arbeitet die Bestellungen aus.
 - **Fertige Werkzeuge statt Eigenbau:** Print-on-Demand-/Stickerei-Anbieter mit Schnittstelle (API) für
   personalisierte Produkte und ein Shop-System mit fertiger Anbindung; Zahlungen nur über gehostete Kassen. Anbieter
   und Konditionen vor dem Start vergleichen.

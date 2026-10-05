@@ -65,11 +65,15 @@ describe('FinanzierungPage', () => {
     // Drei Zeilen „Wer zahlt was“ mit den Beiträgen.
     const rows = [...container.querySelectorAll('.finanz-wer-row')].map((row) => [row.querySelector('dt').textContent, row.querySelector('.pill').textContent])
     expect(rows).toEqual([
-      ['Nutzerinnen und Nutzer', 'kostenlos'],
-      ['Partner-Portale', 'vorerst kostenlos'],
-      ['Hervorhebung „überall sichtbar“', 'vorerst kostenlos']
+      ['Nutzerinnen und Nutzer', 'heute kostenlos'],
+      ['Partner-Portale', 'heute kostenlos'],
+      ['Hervorhebung „überall sichtbar“', 'heute kostenlos']
     ])
     expect(container.textContent).toContain('klar als „überall sichtbar“ gekennzeichnet')
+    // Ehrlich statt Versprechen: kein „für immer“, kein „vorerst“ (Wunsch 05.10.) - dafür der Satz, wie es weitergeht.
+    expect(container.textContent).not.toMatch(/für immer|bleibt es|vorerst/)
+    expect(container.textContent).toContain('Sollte sich daran etwas ändern, sagen wir es rechtzeitig und offen')
+    expect(container.textContent).toContain('Grundfunktionen')
     expect(container.querySelector('.finanz-empty').textContent).toBe(QUARTALE_LEER)
     expect(container.querySelector('.finanz-mithelfen')).toBeNull()
     expect(container.querySelector('.finanz-ziel')).toBeNull()

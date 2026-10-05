@@ -39,7 +39,7 @@ const BENEFITS = [
 ]
 
 const STEPS = [
-  { title: 'Partner-Zugang erhalten', text: 'Ihr bekommt vom Betreiber einen Partner-Zugang – eine Karte oder ein Code, kostenlos.' },
+  { title: 'Partner-Zugang erhalten', text: 'Ihr bekommt vom Betreiber einen Partner-Zugang – eine Karte oder ein Code.' },
   { title: 'Profil einrichten', text: 'Löst den Zugang ein, wählt euren Namen, Logo und Farbe und schreibt ein paar Sätze über euch.' },
   { title: 'Veröffentlichen', text: 'Sobald die Pflichtangaben stehen, schaltet ihr euer Profil frei – und könnt es jederzeit pausieren.' }
 ]
@@ -159,12 +159,12 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
       <section className="partner-info-section" aria-labelledby="partner-info-benefits-title">
         <h2 id="partner-info-benefits-title">Was ihr bekommt</h2>
         <p className="page-lede">
-          Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein kostenloses Profil, das eure Kundschaft direkt in ihre eigene
+          Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein Profil, das eure Kundschaft direkt in ihre eigene
           Chronik holt – und euch als Herkunft zeigt.
         </p>
-        {/* Phase F: ein Satz zur Finanzierung - Partner-Portale sind vorerst kostenlos, die Plattform lebt von Spenden und Partnern. */}
+        {/* Phase F: ein Satz zur Finanzierung - Partner-Portale sind heute kostenlos, die Plattform lebt von Spenden und Partnern. */}
         <p className="muted partner-info-finanzierung">
-          Euer Portal kostet vorerst nichts – wie wir uns finanzieren, steht auf <Link to="/finanzierung">„So finanzieren wir uns“</Link>.
+          Euer Portal ist heute kostenlos – wie wir uns finanzieren, steht auf <Link to="/finanzierung">„So finanzieren wir uns“</Link>.
         </p>
         <ul className="partner-info-benefits">
           {BENEFITS.map((benefit) => (

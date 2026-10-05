@@ -181,7 +181,7 @@ export default function PartnerProfilePage({ family }) {
               {openedTabs.includes('teilen') && (
                 <>
                   <PartnerShareSection profile={profile} />
-                  {/* Phase F: „Überall sichtbar (vorerst kostenlos)“ - in Entdecken nicht nur in der Nähe erscheinen. */}
+                  {/* Phase F: „Überall sichtbar“ - in Entdecken nicht nur in der Nähe erscheinen. */}
                   <PartnerUeberallSwitch profile={profile} onSaved={setProfile} />
                   {/* Phase V5: Visitenkarten mit QR-Code zum Portal und optionalem Kunden-Gutschein. */}
                   <VisitenkartenTeaser />

@@ -1,6 +1,6 @@
 'use strict'
 
-// Phase F: „Überall sichtbar (vorerst kostenlos)“ - eine Hervorhebung, mit der ein Partner in „Entdecken“ nicht nur im
+// Phase F: „Überall sichtbar“ (heute kostenlos) - eine Hervorhebung, mit der ein Partner in „Entdecken“ nicht nur im
 // Umkreis, sondern bei allen erscheint (docs/superpowers/specs/2026-09-27-marketing-gutscheine-partner-design.md, Phase F).
 // Zwei Spalten auf partners, die dieses Modul selbst anlegt (db.js ist an seiner Dateigrenze):
 // - ueberall_sichtbar (0/1): der Schalter des Partners (routes/partnerArea/profile.js).
