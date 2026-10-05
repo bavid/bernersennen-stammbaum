@@ -14,7 +14,6 @@ import {
 } from '../lib/partnerProfile.js'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import AdminField, { fieldProps } from './AdminField.jsx'
-import AdminImageUpload from './AdminImageUpload.jsx'
 import ColorField from './ColorField.jsx'
 import { useToast } from './Toast.jsx'
 
@@ -40,11 +39,11 @@ function portalTextHint(length) {
   return `${length} / ${MAX_PORTAL_TEXT_LENGTH} Zeichen${minimum}`
 }
 
-// Reiter "Angaben" auf /profil: Auftritt, Links, Kontakt, Standort. Speichern schickt nur geänderte
-// Felder (changedProfileFields); Fehler vom Server stehen am passenden Feld (profileErrorField), sonst
-// - z. B. die Ablehnung "Solange euer Profil öffentlich ist …" mit fehlt - oben im Banner. Das Logo
-// speichert sofort über einen eigenen Endpunkt (onLogoUploaded).
-export default function PartnerProfileForm({ profile, onSaved, onLogoUploaded }) {
+// Reiter "Angaben" auf /profil: drei ruhige Abschnitte - Auftritt (Name, Texte, Farbe, Links), Kontakt, Standort (Audit W,
+// M7: Logo und Fotos stehen im Reiter "Fotos", PartnerFotosPanel). Speichern schickt nur geänderte Felder
+// (changedProfileFields); Fehler vom Server stehen am passenden Feld (profileErrorField), sonst - z. B. die Ablehnung
+// "Solange euer Profil öffentlich ist …" mit fehlt - oben im Banner.
+export default function PartnerProfileForm({ profile, onSaved }) {
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
@@ -113,24 +112,7 @@ export default function PartnerProfileForm({ profile, onSaved, onLogoUploaded })
             />
           </AdminField>
           <ColorField id="profile-farbe" label="Farbe" value={form.farbe} error={fieldErrors.farbe} onChange={(farbe) => update({ farbe })} />
-          <div className="partner-logo-field">
-            <AdminImageUpload
-              label="Logo"
-              buttonLabel="Logo hochladen"
-              imageUrl={profile.logoUrl}
-              disabled={isDemo}
-              upload={async (file) => (await api.partnerArea.uploadLogo(file)).logoUrl}
-              onUploaded={onLogoUploaded}
-            />
-            {isDemo && <p className="field-hint">{readOnlyHint}</p>}
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset className="partner-fieldset">
-        <legend>Links</legend>
-        <div className="form-grid">
-          <ProfileInput name="website" label="Website" type="url" placeholder="https://…" className="span-2" {...fieldState} />
+          <ProfileInput name="website" label="Website" type="url" placeholder="https://…" {...fieldState} />
           {hasShelterLinks(profile.typ) && (
             <>
               <ProfileInput name="spendenUrl" label="Spenden-Link" type="url" placeholder="https://…" {...fieldState} />

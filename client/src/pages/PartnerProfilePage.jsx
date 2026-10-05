@@ -4,8 +4,7 @@ import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import PartnerStatusCard from '../components/PartnerStatusCard.jsx'
 import PartnerProfileForm from '../components/PartnerProfileForm.jsx'
-import PartnerBannerEditor from '../components/PartnerBannerEditor.jsx'
-import EinblickeEditor from '../components/EinblickeEditor.jsx'
+import PartnerFotosPanel from '../components/PartnerFotosPanel.jsx'
 import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
 import PartnerTermineEditor from '../components/PartnerTermineEditor.jsx'
 import PartnerVoucherStacks from '../components/PartnerVoucherStacks.jsx'
@@ -20,7 +19,10 @@ import { PROFILE_TAB_PARAM as TAB_PARAM } from '../lib/partnerProfile.js'
 const ACCESS_ROUTE = '/zugang'
 
 const TAB_ANGABEN = { key: 'angaben', label: 'Angaben' }
-const TAB_EINBLICKE = { key: 'einblicke', label: 'Einblicke' }
+// Audit W (M7): Logo, Bannerfotos und Einblicke in einem Reiter "Fotos" (PartnerFotosPanel) - der frühere Reiter
+// "Einblicke" (?reiter=einblicke) führt weiter dorthin.
+const TAB_FOTOS = { key: 'fotos', label: 'Fotos' }
+const LEGACY_TABS = { einblicke: TAB_FOTOS.key }
 // Phase P2: Tierheime haben keinen Navigationspunkt "Beiträge" (sonst wären es mehr als fünf) - bei ihnen
 // stehen die Beiträge als dritter Reiter hier.
 const TAB_BEITRAEGE = { key: 'beitraege', label: 'Beiträge' }
@@ -33,7 +35,13 @@ const TAB_KALENDER = { key: 'kalender', label: 'Kalender' }
 const TAB_TEILEN = { key: 'teilen', label: 'Teilen' }
 
 function tabsFor(family) {
-  return family?.art === 'tierheim' ? [TAB_ANGABEN, TAB_EINBLICKE, TAB_BEITRAEGE, TAB_KALENDER, TAB_TEILEN] : [TAB_ANGABEN, TAB_EINBLICKE, TAB_TEILEN]
+  return family?.art === 'tierheim' ? [TAB_ANGABEN, TAB_FOTOS, TAB_BEITRAEGE, TAB_KALENDER, TAB_TEILEN] : [TAB_ANGABEN, TAB_FOTOS, TAB_TEILEN]
+}
+
+// Der Reiter aus der Adresse: alte Namen übersetzt, Unbekanntes (oder ein fremder Reiter) -> "Angaben".
+function tabFromParam(tabs, requested) {
+  const key = LEGACY_TABS[requested] ?? requested
+  return tabs.some((item) => item.key === key) ? key : TAB_ANGABEN.key
 }
 
 function panelId(key) {
@@ -50,13 +58,12 @@ function Panel({ id, tab, className, children }) {
   )
 }
 
-// /profil (Phase P) - das eigene Profil eines Partner- oder Tierheim-Bereichs (api.partnerArea): oben
-// die Statuskarte (Status, Checkliste, Veröffentlichen/Pausieren), darunter die Reiter "Angaben"
-// (PartnerProfileForm), "Einblicke" (EinblickeEditor), bei Tierheimen "Beiträge" (PartnerPostsEditor) und "Kalender"
-// (PartnerTermineEditor) und
-// "Teilen" (Portal-Link, QR-Code, Website-Knopf, Social-Media-Text, der Weg zu den Visitenkarten und die Kunden-Gutscheine).
-// Den Typ ändert nur der Betreiber. Wo "Zugang" nicht in der Hauptnavigation steht (Tierheim), führt ein
-// Link dorthin.
+// /profil (Phase P) - das eigene Profil eines Partner- oder Tierheim-Bereichs (api.partnerArea): oben die schmale
+// Statusleiste (Status, was fehlt, Veröffentlichen/Pausieren), darunter die Reiter "Angaben" (PartnerProfileForm: Auftritt,
+// Kontakt, Standort), "Fotos" (PartnerFotosPanel: Logo, Bannerfotos, Einblicke), bei Tierheimen "Beiträge"
+// (PartnerPostsEditor) und "Kalender" (PartnerTermineEditor) und "Teilen" (Portal-Link, QR-Code, Website-Knopf,
+// Social-Media-Text, der Weg zu den Visitenkarten und die Kunden-Gutscheine). Den Typ ändert nur der Betreiber. Wo
+// "Zugang" nicht in der Hauptnavigation steht (Tierheim), führt ein Link dorthin.
 export default function PartnerProfilePage({ family }) {
   const toast = useToast()
   const [profile, setProfile] = useState(null)
@@ -64,8 +71,7 @@ export default function PartnerProfilePage({ family }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const showAccessLink = !navItemsFor(family).some((item) => item.to === ACCESS_ROUTE)
   const tabs = tabsFor(family)
-  const requested = searchParams.get(TAB_PARAM)
-  const tab = tabs.some((item) => item.key === requested) ? requested : TAB_ANGABEN.key
+  const tab = tabFromParam(tabs, searchParams.get(TAB_PARAM))
   const [openedTabs, setOpenedTabs] = useState(() => [tab])
   const name = profile?.name || family.partner?.name || family.name
   const typ = profile?.typ || family.partner?.typ
@@ -145,12 +151,18 @@ export default function PartnerProfilePage({ family }) {
               className="partner-profile-tabs"
               onSelect={selectTab}
             />
-            <Panel id="angaben" tab={tab} className="partner-profile-angaben">
-              <PartnerBannerEditor banner={profile.banner} layout={profile.bannerLayout} onChange={handleBannerChange} />
-              <PartnerProfileForm profile={profile} onSaved={setProfile} onLogoUploaded={handleLogoUploaded} />
+            <Panel id="angaben" tab={tab}>
+              <PartnerProfileForm profile={profile} onSaved={setProfile} />
             </Panel>
-            <Panel id="einblicke" tab={tab}>
-              {openedTabs.includes('einblicke') && <EinblickeEditor onChanged={refreshProfile} />}
+            <Panel id="fotos" tab={tab} className="partner-profile-fotos">
+              {openedTabs.includes('fotos') && (
+                <PartnerFotosPanel
+                  profile={profile}
+                  onLogoUploaded={handleLogoUploaded}
+                  onBannerChange={handleBannerChange}
+                  onEinblickeChanged={refreshProfile}
+                />
+              )}
             </Panel>
             {tabs.includes(TAB_BEITRAEGE) && (
               <Panel id="beitraege" tab={tab}>

@@ -208,10 +208,13 @@ describe('PartnerProfilePage – Angaben', () => {
     expect(container.querySelector('#profile-typ')).toBeNull()
   })
 
-  test('Fieldsets Auftritt, Links, Kontakt, Standort - Spenden/Vermittlung nur für Tierheime', async () => {
+  // Audit W (M7): drei ruhige Abschnitte statt vier - die Links gehören zum Auftritt; Logo und Fotos im Reiter "Fotos".
+  test('Fieldsets Auftritt, Kontakt, Standort - Links im Auftritt, Spenden/Vermittlung nur für Tierheime, kein Logo', async () => {
     await render()
 
-    expect([...container.querySelectorAll('.partner-profile-form legend')].map((legend) => legend.textContent)).toEqual(['Auftritt', 'Links', 'Kontakt', 'Standort'])
+    expect([...container.querySelectorAll('.partner-profile-form legend')].map((legend) => legend.textContent)).toEqual(['Auftritt', 'Kontakt', 'Standort'])
+    expect(container.querySelector('#profile-website').closest('fieldset').querySelector('legend').textContent).toBe('Auftritt')
+    expect(container.querySelector('.partner-profile-form .partner-logo-field')).toBeNull()
     expect(container.querySelector('#profile-name').getAttribute('maxlength')).toBe('120')
     expect(container.querySelector('#profile-portalTitel').getAttribute('maxlength')).toBe('120')
     expect(container.querySelector('#profile-website')).not.toBeNull()
@@ -265,11 +268,39 @@ describe('PartnerProfilePage – Angaben', () => {
     expect(updateProfile).toHaveBeenCalledWith({ ansprechperson: 'Greta Lindner' })
   })
 
-  test('Phase V4b: die Bannerfotos stehen als eigener Abschnitt über dem Formular', async () => {
+  test('Audit W: Logo, Bannerfotos und Einblicke stehen im Reiter "Fotos" - in dieser Reihenfolge, nicht bei den Angaben', async () => {
+    einblicke.mockResolvedValue([])
     await render({ data: { ...baseProfile, banner: [{ position: 1, fotoUrl: '/uploads/kopf.jpg', alt: 'Wiese' }] } })
-    const panel = container.querySelector('#partner-profile-panel-angaben')
-    expect(panel.firstElementChild.classList.contains('partner-banner-editor')).toBe(true)
+    const angaben = container.querySelector('#partner-profile-panel-angaben')
+    expect(angaben.querySelector('.partner-banner-editor')).toBeNull()
+    expect(angaben.querySelector('.partner-logo-field')).toBeNull()
+
+    await act(async () => button('Fotos').click())
+    const panel = container.querySelector('#partner-profile-panel-fotos')
+    expect(panel.hidden).toBe(false)
+    expect([...panel.querySelectorAll('h2')].map((h2) => h2.textContent)).toEqual(['Logo', 'Bannerfotos', 'Einblicke'])
+    expect(panel.querySelector('.partner-logo-field input[type="file"]')).not.toBeNull()
     expect(panel.querySelector('.partner-banner-thumb').getAttribute('src')).toBe('/uploads/kopf.jpg')
+  })
+
+  test('das Logo lädt im Reiter "Fotos" hoch und frischt den Status (vollstaendig) auf', async () => {
+    einblicke.mockResolvedValue([])
+    uploadLogo.mockResolvedValue({ logoUrl: '/partner-media/logo.png' })
+    await render()
+    await act(async () => button('Fotos').click())
+    profile.mockResolvedValue({ ...baseProfile, logoUrl: '/partner-media/logo.png', vollstaendig: { ok: false, fehlt: ['Postleitzahl'], empfohlen: [] } })
+
+    const input = container.querySelector('.partner-logo-field input[type="file"]')
+    const file = new File(['png'], 'logo.png', { type: 'image/png' })
+    await act(async () => {
+      Object.defineProperty(input, 'files', { value: [file], configurable: true })
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+
+    expect(uploadLogo).toHaveBeenCalledWith(file)
+    expect(container.querySelector('.partner-logo-field img').getAttribute('src')).toBe('/partner-media/logo.png')
+    expect(profile).toHaveBeenCalledTimes(2)
+    expect(container.querySelector('.partner-status-missing').textContent).toBe('Es fehlt noch: Postleitzahl.')
   })
 
   test('der Portal-Text zählt mit und nennt die 40 Zeichen fürs Veröffentlichen', async () => {
@@ -323,22 +354,22 @@ describe('PartnerProfilePage – Angaben', () => {
 })
 
 describe('PartnerProfilePage – Reiter', () => {
-  test('"Angaben" ist vorgewählt, "Einblicke" lädt die Einblicke erst beim Öffnen', async () => {
+  test('"Angaben" ist vorgewählt, "Fotos" lädt die Einblicke erst beim Öffnen', async () => {
     einblicke.mockResolvedValue([])
     await render()
 
     expect(button('Angaben').getAttribute('aria-selected')).toBe('true')
-    expect(button('Einblicke').getAttribute('aria-selected')).toBe('false')
+    expect(button('Fotos').getAttribute('aria-selected')).toBe('false')
     expect(container.querySelector('.partner-profile-tabs').getAttribute('role')).toBe('tablist')
     expect(document.getElementById('partner-profile-panel-angaben').getAttribute('aria-labelledby')).toBe(button('Angaben').id)
     expect(einblicke).not.toHaveBeenCalled()
 
-    await act(async () => button('Einblicke').click())
+    await act(async () => button('Fotos').click())
 
     expect(einblicke).toHaveBeenCalledTimes(1)
-    expect(button('Einblicke').getAttribute('aria-selected')).toBe('true')
+    expect(button('Fotos').getAttribute('aria-selected')).toBe('true')
     expect(document.getElementById('partner-profile-panel-angaben').hidden).toBe(true)
-    expect(document.getElementById('partner-profile-panel-einblicke').hidden).toBe(false)
+    expect(document.getElementById('partner-profile-panel-fotos').hidden).toBe(false)
     expect(container.querySelector('#einblicke-title').textContent).toBe('Einblicke')
   })
 
@@ -347,22 +378,35 @@ describe('PartnerProfilePage – Reiter', () => {
     await render()
 
     await act(async () => setInputValue(container.querySelector('#profile-portalTitel'), 'Noch nicht gespeichert'))
-    await act(async () => button('Einblicke').click())
+    await act(async () => button('Fotos').click())
     await act(async () => button('Angaben').click())
 
     expect(container.querySelector('#profile-portalTitel').value).toBe('Noch nicht gespeichert')
+  })
+
+  test('der alte Reiter ?reiter=einblicke öffnet "Fotos" (Links von früher bleiben gültig)', async () => {
+    einblicke.mockResolvedValue([])
+    await render({ path: '/profil?reiter=einblicke' })
+
+    expect(button('Fotos').getAttribute('aria-selected')).toBe('true')
+    expect(document.getElementById('partner-profile-panel-fotos').hidden).toBe(false)
+    expect(einblicke).toHaveBeenCalledTimes(1)
+    expect(container.querySelector('#einblicke-title').textContent).toBe('Einblicke')
   })
 })
 
 describe('PartnerProfilePage – Demo', () => {
   test('alles sichtbar, Schreib-Knöpfe gesperrt mit "In der Demo nicht möglich."', async () => {
+    einblicke.mockResolvedValue([])
     await render({ data: completeProfile, isDemo: true })
 
     expect(container.querySelector('#profile-name').value).toBe('Hundeschule Wiesengrund')
     expect(button('Veröffentlichen').disabled).toBe(true)
     expect(button('Speichern').disabled).toBe(true)
-    expect(container.querySelector('.partner-logo-field input[type="file"]').disabled).toBe(true)
     expect(container.textContent).toContain('In der Demo nicht möglich.')
+    await act(async () => button('Fotos').click())
+    expect(container.querySelector('.partner-logo-field input[type="file"]').disabled).toBe(true)
+    await act(async () => button('Angaben').click())
 
     await act(async () => setInputValue(container.querySelector('#profile-portalTitel'), 'Demo-Titel'))
     expect(button('Speichern').disabled).toBe(true)
@@ -378,14 +422,17 @@ describe('PartnerProfilePage – Demo', () => {
 
 describe('PartnerProfilePage – Admin-Ansicht (Phase 5 Task 5b)', () => {
   test('dieselben Sperren wie in der Demo, aber mit "In der Admin-Ansicht nicht möglich."', async () => {
+    einblicke.mockResolvedValue([])
     await render({ data: completeProfile, adminView: true })
 
     expect(container.querySelector('#profile-name').value).toBe('Hundeschule Wiesengrund')
     expect(button('Veröffentlichen').disabled).toBe(true)
     expect(button('Speichern').disabled).toBe(true)
+    await act(async () => button('Fotos').click())
     expect(container.querySelector('.partner-logo-field input[type="file"]').disabled).toBe(true)
     expect(container.textContent).toContain('In der Admin-Ansicht nicht möglich.')
     expect(container.textContent).not.toContain('In der Demo nicht möglich.')
+    await act(async () => button('Angaben').click())
 
     await act(async () => setInputValue(container.querySelector('#profile-portalTitel'), 'Neuer Titel'))
     expect(button('Speichern').disabled).toBe(true)
@@ -402,7 +449,7 @@ describe('PartnerProfilePage – Reiter "Beiträge" (Tierheim)', () => {
     await render({ data: { ...completeProfile, typ: 'tierheim', slug: 'tierheim-sonnenhang' }, family: shelterFamily })
 
     const tabs = [...container.querySelectorAll('.partner-profile-tabs button')].map((btn) => btn.textContent)
-    expect(tabs).toEqual(['Angaben', 'Einblicke', 'Beiträge', 'Kalender', 'Teilen'])
+    expect(tabs).toEqual(['Angaben', 'Fotos', 'Beiträge', 'Kalender', 'Teilen'])
     expect(posts).not.toHaveBeenCalled()
 
     await act(async () => button('Beiträge').click())
@@ -414,10 +461,10 @@ describe('PartnerProfilePage – Reiter "Beiträge" (Tierheim)', () => {
     expect([...container.querySelector('#post-bereich').options].map((option) => option.value)).toEqual(['', 'begleiter', 'unterstuetzen'])
   })
 
-  test('ein Partner-Bereich hat "Beiträge" in der Navigation - im Profil Angaben, Einblicke und Teilen', async () => {
+  test('ein Partner-Bereich hat "Beiträge" in der Navigation - im Profil Angaben, Fotos und Teilen', async () => {
     await render()
     const tabs = [...container.querySelectorAll('.partner-profile-tabs button')].map((btn) => btn.textContent)
-    expect(tabs).toEqual(['Angaben', 'Einblicke', 'Teilen'])
+    expect(tabs).toEqual(['Angaben', 'Fotos', 'Teilen'])
     expect(document.getElementById('partner-profile-panel-beitraege')).toBeNull()
   })
 })
@@ -435,9 +482,9 @@ describe('PartnerProfilePage – Reiter in der Adresse', () => {
     expect(document.getElementById('partner-profile-panel-teilen').hidden).toBe(false)
     expect(vouchers).toHaveBeenCalledTimes(1)
 
-    await act(async () => button('Einblicke').click())
-    expect(location()).toBe('/profil?reiter=einblicke')
-    expect(button('Einblicke').getAttribute('aria-selected')).toBe('true')
+    await act(async () => button('Fotos').click())
+    expect(location()).toBe('/profil?reiter=fotos')
+    expect(button('Fotos').getAttribute('aria-selected')).toBe('true')
     await act(async () => button('Angaben').click())
     expect(location()).toBe('/profil')
   })

@@ -24,8 +24,9 @@ function usePreviewUrl(file) {
 
 // Formular "Neuer Einblick": Foto (nur JPG/PNG, vor dem Upload verkleinert wie Tierfotos), Datum (bis
 // heute), Text (bis 300 Zeichen) und die Pflicht-Einwilligung. Absenden erst mit Foto und Einwilligung;
-// isFull (60 erreicht) sperrt das Formular. Fehler vom Server stehen im Banner.
-export default function EinblickForm({ isFull, onCreated }) {
+// isFull (60 erreicht) sperrt das Formular. Fehler vom Server stehen im Banner. onCancel (Audit W): das Formular
+// öffnet erst auf Wunsch (EinblickeEditor) - "Abbrechen" schließt es wieder.
+export default function EinblickForm({ isFull, onCreated, onCancel }) {
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const [file, setFile] = useState(null)
@@ -150,6 +151,11 @@ export default function EinblickForm({ isFull, onCreated }) {
           <Icon name="plus" />
           {saving ? 'Lädt hoch …' : 'Einblick hinzufügen'}
         </button>
+        {onCancel && (
+          <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>
+            Abbrechen
+          </button>
+        )}
         {isDemo && <span className="field-hint">{readOnlyHint}</span>}
         {!isDemo && isFull && <span className="field-hint">{LIMIT_MESSAGE}</span>}
       </div>

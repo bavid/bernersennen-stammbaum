@@ -329,11 +329,26 @@
   margin-top: 2px;
 }
 
-/* Reiter "Angaben": Bannerfotos (Phase V4b, PartnerBannerEditor) als eigene Karte über dem Formular */
+/* Reiter "Fotos" (Audit W, PartnerFotosPanel): Logo, Bannerfotos (Phase V4b, PartnerBannerEditor) und Einblicke als
+   Karten untereinander */
 
-.partner-profile-angaben:not([hidden]) {
+.partner-profile-fotos:not([hidden]) {
   display: grid;
   gap: var(--space-6);
+}
+
+.partner-logo-card {
+  display: grid;
+  gap: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: clamp(var(--space-5), 3vw, var(--space-8));
+}
+
+.partner-logo-card h2 {
+  font-size: var(--text-lg);
 }
 
 /* Reiter "Angaben": Fieldsets mit Überschrift statt Rahmen */
@@ -386,7 +401,7 @@
   cursor: not-allowed;
 }
 
-/* Reiter "Einblicke" */
+/* Einblicke (seit Audit W im Reiter "Fotos") */
 
 .einblicke-editor {
   display: grid;
@@ -409,6 +424,22 @@
 .einblicke-count {
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
+}
+
+/* Audit W: "Neuer Einblick" öffnet das Formular erst auf Wunsch; "Weitere Einblicke (n)" wie auf Start */
+.einblicke-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.einblicke-actions .field-hint {
+  margin: 0;
+}
+
+.einblicke-more {
+  justify-self: start;
 }
 
 .einblick-form {

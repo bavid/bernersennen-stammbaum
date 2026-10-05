@@ -1,24 +1,31 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
-import { MAX_ANGEPINNT, MAX_EINBLICKE, countPinned, sortEinblicke } from '../lib/einblicke.js'
+import { LIMIT_MESSAGE, MAX_ANGEPINNT, MAX_EINBLICKE, countPinned, sortEinblicke } from '../lib/einblicke.js'
+import useShowMore from '../hooks/useShowMore.js'
 import EinblickCard from './EinblickCard.jsx'
 import EinblickForm from './EinblickForm.jsx'
+import Icon from './Icon.jsx'
 
 const DEMO_HINT_ID = 'einblicke-demo-hint'
+// Audit W: zuerst sechs Karten, der Rest hinter „Weitere Einblicke (n)“ - der Reiter „Fotos“ bleibt so kurz.
+export const VISIBLE_EINBLICKE = 6
 
-// Reiter "Einblicke" auf /profil (Phase P): Fotos mit Datum, die auf dem Portal erscheinen - oben das
-// Formular "Neuer Einblick", darunter das Raster der vorhandenen (neueste zuerst). Höchstens
-// MAX_EINBLICKE; onChanged meldet Anlegen/Löschen, damit die Statuskarte ihre Empfehlung
-// "mindestens ein Einblick" auffrischt.
+// Einblicke im Reiter "Fotos" auf /profil (Phase P, seit Audit W unter PartnerFotosPanel): Fotos mit Datum, die auf dem
+// Portal erscheinen - oben der Knopf "Neuer Einblick" (das Formular öffnet erst auf Wunsch, wie bei den Beiträgen), darunter
+// das Raster der vorhandenen (neueste zuerst, zuerst VISIBLE_EINBLICKE). Höchstens MAX_EINBLICKE; onChanged meldet
+// Anlegen/Löschen, damit die Statuskarte ihre Empfehlung "mindestens ein Einblick" auffrischt.
 export default function EinblickeEditor({ onChanged }) {
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const [einblicke, setEinblicke] = useState(undefined)
   const [loadError, setLoadError] = useState(null)
+  const [composing, setComposing] = useState(false)
   const count = einblicke?.length ?? 0
+  const isFull = count >= MAX_EINBLICKE
   const pinned = countPinned(einblicke)
   const teamPinned = (einblicke || []).some((einblick) => einblick.angepinntVon === 'admin' && !einblick.ausgeblendet)
+  const more = useShowMore(einblicke, VISIBLE_EINBLICKE)
 
   useEffect(() => {
     let cancelled = false
@@ -37,6 +44,7 @@ export default function EinblickeEditor({ onChanged }) {
 
   function handleCreated(einblick) {
     setEinblicke((list) => sortEinblicke([einblick, ...(list || [])]))
+    setComposing(false)
     onChanged?.()
   }
 
@@ -67,7 +75,27 @@ export default function EinblickeEditor({ onChanged }) {
         </span>
       </div>
 
-      <EinblickForm isFull={count >= MAX_EINBLICKE} onCreated={handleCreated} />
+      {composing ? (
+        <EinblickForm isFull={isFull} onCreated={handleCreated} onCancel={() => setComposing(false)} />
+      ) : (
+        <div className="einblicke-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setComposing(true)}
+            disabled={isDemo || isFull || einblicke === undefined}
+            aria-describedby={isDemo ? DEMO_HINT_ID : undefined}
+          >
+            <Icon name="plus" /> Neuer Einblick
+          </button>
+          {isDemo && (
+            <p id={DEMO_HINT_ID} className="field-hint">
+              {readOnlyHint}
+            </p>
+          )}
+          {!isDemo && isFull && <p className="field-hint">{LIMIT_MESSAGE}</p>}
+        </div>
+      )}
 
       {loadError && (
         <div className="error-banner" role="alert">
@@ -76,15 +104,9 @@ export default function EinblickeEditor({ onChanged }) {
       )}
       {einblicke === undefined && !loadError && <p className="muted">Lade …</p>}
       {einblicke?.length === 0 && <p className="empty-state">Noch keine Einblicke – zeigt eurer Kundschaft, was bei euch los ist.</p>}
-      {/* Audit V7a: das Formular direkt darüber zeigt denselben Satz schon - hier nur für aria-describedby der Knöpfe. */}
-      {isDemo && count > 0 && (
-        <p id={DEMO_HINT_ID} className="visually-hidden">
-          {readOnlyHint}
-        </p>
-      )}
       {count > 0 && (
-        <ul className="einblicke-grid">
-          {einblicke.map((einblick) => (
+        <ul className="einblicke-grid" ref={more.focusRef}>
+          {more.shown.map((einblick) => (
             <EinblickCard
               key={einblick.id}
               einblick={einblick}
@@ -95,6 +117,11 @@ export default function EinblickeEditor({ onChanged }) {
             />
           ))}
         </ul>
+      )}
+      {more.hidden > 0 && (
+        <button type="button" className="btn btn-ghost einblicke-more" onClick={more.expand}>
+          Weitere Einblicke ({more.hidden})
+        </button>
       )}
     </section>
   )

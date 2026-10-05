@@ -63,6 +63,15 @@ function submitButton() {
   return container.querySelector('.einblick-form button[type="submit"]')
 }
 
+// Audit W: das Formular öffnet erst über "Neuer Einblick" (wie "Beitrag anlegen" bei den Beiträgen).
+function openButton() {
+  return [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Neuer Einblick')
+}
+
+async function openForm() {
+  await act(async () => openButton().click())
+}
+
 function cards() {
   return [...container.querySelectorAll('.einblick-card')]
 }
@@ -126,8 +135,23 @@ describe('EinblickeEditor – Liste', () => {
 })
 
 describe('EinblickeEditor – Neuer Einblick', () => {
+  test('das Formular öffnet erst über "Neuer Einblick" und schließt mit "Abbrechen"', async () => {
+    await render()
+
+    expect(container.querySelector('.einblick-form')).toBeNull()
+    expect(openButton().disabled).toBe(false)
+    await openForm()
+    expect(container.querySelector('.einblick-form')).not.toBeNull()
+    expect(openButton()).toBeUndefined()
+
+    await act(async () => [...container.querySelectorAll('.einblick-form button')].find((btn) => btn.textContent === 'Abbrechen').click())
+    expect(container.querySelector('.einblick-form')).toBeNull()
+    expect(openButton()).toBeDefined()
+  })
+
   test('Datum ist heute vorbelegt und darf nicht in der Zukunft liegen; Hinweise stehen da', async () => {
     await render()
+    await openForm()
 
     const datum = container.querySelector('#einblick-datum')
     expect(datum.value).toBe(todayIso())
@@ -139,6 +163,7 @@ describe('EinblickeEditor – Neuer Einblick', () => {
 
   test('der Text zählt bis 300 mit', async () => {
     await render()
+    await openForm()
 
     const text = container.querySelector('#einblick-text')
     expect(text.getAttribute('maxlength')).toBe('300')
@@ -148,6 +173,7 @@ describe('EinblickeEditor – Neuer Einblick', () => {
 
   test('Absenden erst mit Foto UND Einwilligung', async () => {
     await render()
+    await openForm()
 
     expect(submitButton().disabled).toBe(true)
     await act(async () => pickFile(photo()))
@@ -160,6 +186,7 @@ describe('EinblickeEditor – Neuer Einblick', () => {
 
   test('ohne Einwilligung geht nichts raus, auch nicht per Enter', async () => {
     await render()
+    await openForm()
 
     await act(async () => pickFile(photo()))
     await act(async () => container.querySelector('.einblick-form').requestSubmit())
@@ -169,6 +196,7 @@ describe('EinblickeEditor – Neuer Einblick', () => {
 
   test('nur JPG oder PNG', async () => {
     await render()
+    await openForm()
 
     await act(async () => pickFile(new File(['x'], 'bild.webp', { type: 'image/webp' })))
 
@@ -176,10 +204,11 @@ describe('EinblickeEditor – Neuer Einblick', () => {
     expect(container.querySelector('.einblick-preview')).toBeNull()
   })
 
-  test('legt mit FormData an (foto, datum, text, einwilligung) und setzt das Formular zurück', async () => {
+  test('legt mit FormData an (foto, datum, text, einwilligung) und schließt das Formular', async () => {
     const created = { id: 3, fotoUrl: '/uploads/c.jpg', datum: '2026-09-20', text: 'Welpenstunde', ausgeblendet: false }
     createEinblick.mockResolvedValue(created)
     await render()
+    await openForm()
 
     const file = photo()
     await act(async () => pickFile(file))
@@ -199,14 +228,14 @@ describe('EinblickeEditor – Neuer Einblick', () => {
     expect(cards()[0].querySelector('.einblick-text').textContent).toBe('Welpenstunde')
     expect(container.querySelector('.einblicke-count').textContent).toBe('3 von 60')
     expect(onChanged).toHaveBeenCalledTimes(1)
-    expect(container.querySelector('#einblick-text').value).toBe('')
-    expect(container.querySelector('.einblick-consent input').checked).toBe(false)
-    expect(submitButton().disabled).toBe(true)
+    expect(container.querySelector('.einblick-form')).toBeNull()
+    expect(openButton().disabled).toBe(false)
   })
 
   test('ein Fehler vom Server steht im Banner und bekommt den Fokus', async () => {
     createEinblick.mockRejectedValue(new Error('Höchstens 60 Einblicke – bitte ältere löschen.'))
     await render()
+    await openForm()
 
     await act(async () => pickFile(photo()))
     await act(async () => container.querySelector('.einblick-consent input').click())
@@ -218,14 +247,25 @@ describe('EinblickeEditor – Neuer Einblick', () => {
     expect(cards()).toHaveLength(2)
   })
 
-  test('bei 60 Einblicken ist das Formular gesperrt', async () => {
+  test('bei 60 Einblicken lässt sich kein neuer anlegen - mit Grund', async () => {
     const full = Array.from({ length: 60 }, (_, index) => ({ ...einblickA, id: index + 1 }))
     await render({ list: full })
 
     expect(container.querySelector('.einblicke-count').textContent).toBe('60 von 60')
-    expect(container.querySelector('.einblick-form input[type="file"]').disabled).toBe(true)
-    expect(submitButton().disabled).toBe(true)
-    expect(container.querySelector('.einblick-form').textContent).toContain('Höchstens 60 Einblicke – bitte ältere löschen.')
+    expect(openButton().disabled).toBe(true)
+    expect(container.querySelector('.einblicke-actions').textContent).toContain('Höchstens 60 Einblicke – bitte ältere löschen.')
+  })
+
+  // Audit W: der Reiter "Fotos" bleibt kurz - sechs Karten zuerst, der Rest auf Wunsch.
+  test('zeigt zuerst sechs Karten, dann „Weitere Einblicke (n)“ - aufgeklappt alle', async () => {
+    const many = Array.from({ length: 9 }, (_, index) => ({ ...einblickA, id: index + 1, datum: `2026-08-0${9 - index}` }))
+    await render({ list: many })
+
+    expect(cards()).toHaveLength(6)
+    const more = [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim() === 'Weitere Einblicke (3)')
+    await act(async () => more.click())
+    expect(cards()).toHaveLength(9)
+    expect(container.textContent).not.toContain('Weitere Einblicke')
   })
 })
 
@@ -286,8 +326,8 @@ describe('EinblickeEditor – Demo', () => {
     await render({ isDemo: true })
 
     expect(cards()).toHaveLength(2)
-    expect(container.querySelector('.einblick-form input[type="file"]').disabled).toBe(true)
-    expect(submitButton().disabled).toBe(true)
+    expect(openButton().disabled).toBe(true)
+    expect(openButton().getAttribute('aria-describedby')).toBe('einblicke-demo-hint')
     const hint = document.getElementById('einblicke-demo-hint')
     expect(hint.textContent).toBe('In der Demo nicht möglich.')
     for (const card of cards()) {
