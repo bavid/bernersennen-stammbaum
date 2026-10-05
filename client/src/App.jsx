@@ -434,6 +434,14 @@ export default function App() {
     }
   }
 
+  // Normale Anmeldung (Schlüssel, Passwort oder Demo): immer auf die Startseite des neuen Bereichs - nicht auf die
+  // Adresse, die vor dem Abmelden offen war (Wunsch 05.10.: sonst landet ein anderes Zuhause auf /tier/200 der vorigen
+  // Familie und sieht „nicht gefunden“).
+  function handleLogin(me) {
+    setFamily(me)
+    navigate(startRoute(me), { replace: true })
+  }
+
   // Anmeldung auf /v (eingelöst, per Schlüssel/Passwort oder Demo): family setzen reicht allein nicht,
   // der Pfad bleibt sonst /v und zeigt dauerhaft die Karte "Du bist angemeldet als …" (siehe family-Zweig
   // unten). Der Gutscheincode wird hier gleich mit geleert, er wird nach dem Anmelden nicht mehr gebraucht.
@@ -624,7 +632,7 @@ export default function App() {
   if (!family) {
     return (
       <ThemeProvider>
-        <LoginPage onLogin={setFamily} />
+        <LoginPage onLogin={handleLogin} />
       </ThemeProvider>
     )
   }
