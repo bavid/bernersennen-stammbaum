@@ -167,6 +167,27 @@ test('rotateAutoBackups: alte Zwischendateien weg, ein nicht löschbarer Eintrag
   }
 })
 
+// DevOps Schritt 1, Block 6: die Sicherung außer Haus (deploy/haertung/fap-backup.sh) schreibt ihre eigene Markierung
+// last-offsite-backup.json mit kind offsite - so wie das Skript sie schreibt (eine JSON-Zeile), nicht über writeBackupMarker.
+test('readOffsiteMarker: eigene Datei mit kind offsite, andere Arten und last-backup.json zählen nicht', async () => {
+  const { OFFSITE_MARKER_FILE, readOffsiteMarker } = require('../lib/autoBackup')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-marker-offsite-'))
+  try {
+    assert.equal(OFFSITE_MARKER_FILE, 'last-offsite-backup.json')
+    assert.equal(readOffsiteMarker(dir), null, 'ohne Datei')
+    fs.writeFileSync(path.join(dir, OFFSITE_MARKER_FILE), '{"at":"2026-10-03T01:50:00.000Z","bytes":734003200,"kind":"offsite"}\n')
+    assert.deepEqual(readOffsiteMarker(dir), { at: '2026-10-03T01:50:00.000Z', bytes: 734003200, kind: 'offsite' })
+    assert.equal(readBackupMarker(dir), null, 'last-backup.json bleibt getrennt')
+
+    fs.writeFileSync(path.join(dir, OFFSITE_MARKER_FILE), JSON.stringify({ at: '2026-10-03T01:50:00Z', bytes: 1, kind: 'auto' }))
+    assert.equal(readOffsiteMarker(dir), null, 'nur kind offsite')
+    await writeBackupMarker(dir, { at: '2026-10-03T01:30:00Z', bytes: 2, kind: 'offsite' })
+    assert.equal(readOffsiteMarker(dir), null, 'last-backup.json ist nicht die Markierung außer Haus')
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('readBackupMarker: ein Ordner statt einer Datei zählt nicht', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronik-marker-dir-'))
   try {

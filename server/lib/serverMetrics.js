@@ -12,7 +12,7 @@
 const config = require('../config')
 const { systemProbe } = require('./serverProbe')
 const history = require('./serverHistory')
-const { readBackupMarker } = require('./autoBackup')
+const { readBackupMarker, readOffsiteMarker } = require('./autoBackup')
 const { THRESHOLDS, ampel, usedPercent } = require('./serverThresholds')
 
 const SIZE_TTL_MS = 60 * 60 * 1000
@@ -96,9 +96,14 @@ function verlaufPoint(row) {
   return { at: row.at, speicherFrei: free(row.mem_used_pct), platteFrei: free(row.disk_used_pct), last: round(row.load1, 2) }
 }
 
-function backupInfo(dir) {
-  const marker = readBackupMarker(dir)
+function backupInfo(marker) {
   return marker && { at: marker.at, bytes: marker.bytes, art: marker.kind }
+}
+
+// Letztes Backup auf dem Server (App täglich bzw. vor einem Deploy) und die letzte Sicherung außer Haus (restic, eigene
+// Markierung) - beide aus dem Sicherungs-Ordner, beide null ohne Markierung.
+function backupStand(dir) {
+  return { letztesBackup: backupInfo(readBackupMarker(dir)), ausserHaus: backupInfo(readOffsiteMarker(dir)) }
 }
 
 async function measure(probe, dirs) {
@@ -149,7 +154,7 @@ function createServerMonitor({ probe = systemProbe, dirs = defaultDirs(), warnin
       gemessenAt: iso(current.at),
       ...sections(current),
       groessen: sizes && { ...sizes.value, berechnetAt: iso(sizes.at) },
-      stand: { version: commit ? commit.slice(0, SHORT_SHA_LENGTH) : null, letztesBackup: backupInfo(dirs.backupDir) },
+      stand: { version: commit ? commit.slice(0, SHORT_SHA_LENGTH) : null, ...backupStand(dirs.backupDir) },
       verlauf: history.listSamples({ now: current.at }).map(verlaufPoint),
       schwellen: THRESHOLDS,
       warnungen: warner.status()

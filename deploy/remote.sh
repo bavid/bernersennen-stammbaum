@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Läuft AUF dem Server. Aufruf vom eigenen Rechner:
 #   ssh root@HOST "APP_DIR=/opt/bernersennen-stammbaum bash -s -- <befehl> [arg]" < deploy/remote.sh
+# Nach der Härtung (deploy/haertung, Block 2) als Deploy-Nutzer statt root: docker läuft dann über sudo -n
+# (sudoers-Regel), alles andere ohne Rechteausweitung. Root funktioniert im Übergang weiter.
 #
 # Befehle:
 #   setup          Docker installieren, Repo holen, .env mit Secrets erzeugen, starten
@@ -46,17 +48,36 @@ APP_ENV="${APP_ENV:-production}"
 CONTAINER_NAME="${CONTAINER_NAME:-bernersennen-stammbaum}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 CONTAINER_UID=1000
-COMPOSE="docker compose"
 readonly BACKUP_KEEP=10
 
 log() { printf '==> %s\n' "$*"; }
 warn() { printf 'WARNUNG: %s\n' "$*" >&2; }
 fail() { printf 'FEHLER: %s\n' "$*" >&2; exit 1; }
 
+# Als Deploy-Nutzer (deploy/haertung/02-ssh.sh, DEPLOY_USER in .deploy.env) laufen docker und die wenigen Root-Schritte
+# über sudo -n - erlaubt ohne Passwort durch /etc/sudoers.d/fap-deploy. Als root (Übergang) wie bisher ohne sudo.
+# Nur unter Linux: die Tests laden das Skript auch in der Git-Bash unter Windows, und dort gibt es ein fremdes sudo.exe.
+if [ "$(id -u)" -eq 0 ] || [ "$(uname -s)" != Linux ] || ! command -v sudo >/dev/null 2>&1; then
+  SUDO=""
+else
+  SUDO="sudo -n"
+fi
+DOCKER="$SUDO docker"
+COMPOSE="$SUDO docker compose"
+
+# Gehört der App-Ordner einem anderen Nutzer (root deployt noch, der Ordner gehört schon dem Deploy-Nutzer), lehnt
+# git ihn als „dubious ownership“ ab - für diesen Aufruf erlauben, ohne eine Datei anzufassen.
+allow_foreign_git_dir() {
+  [ -d "$APP_DIR/.git" ] || return 0
+  [ "$(stat -c %u "$APP_DIR")" != "$(id -u)" ] || return 0
+  export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP_DIR"
+}
+
 install_docker() {
   if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
     return
   fi
+  [ -z "$SUDO" ] || fail "Docker fehlt - die Erstinstallation läuft als root (DEPLOY_USER=root in .deploy.env), nicht als Deploy-Nutzer"
   log "Installiere Docker (Ubuntu-Pakete)"
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -y -q
@@ -65,7 +86,11 @@ install_docker() {
 }
 
 checkout() {
-  mkdir -p "$APP_DIR"
+  if [ ! -d "$APP_DIR" ]; then
+    $SUDO mkdir -p "$APP_DIR"
+    [ -z "$SUDO" ] || $SUDO chown "$(id -un):$(id -gn)" "$APP_DIR"
+  fi
+  allow_foreign_git_dir
   cd "$APP_DIR"
   if [ ! -d .git ]; then
     log "Klone $REPO_URL nach $APP_DIR"
@@ -169,7 +194,7 @@ ensure_env() {
   )
   chmod 600 .env
   mkdir -p data backups
-  chown "$CONTAINER_UID:$CONTAINER_UID" data
+  $SUDO chown "$CONTAINER_UID:$CONTAINER_UID" "$APP_DIR/data"
 }
 
 wait_healthy() {
@@ -205,7 +230,7 @@ start() {
   # APP_COMMIT: Stand der App für den Admin-Reiter „Server“ - landet beim Bauen im Image (Dockerfile ARG). Ohne git leer,
   # der Admin zeigt dann „unbekannt“.
   APP_COMMIT="$(git rev-parse HEAD 2>/dev/null || true)" $COMPOSE up -d --build --remove-orphans
-  docker image prune -f >/dev/null
+  $DOCKER image prune -f >/dev/null
   wait_healthy
 }
 

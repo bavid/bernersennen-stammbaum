@@ -72,7 +72,11 @@ test('Admin-Reiter Server: nur Admin, no-store, Messwerte mit Ampel und ohne Pfa
     assert.equal(data.platte.belegtProzent, 90)
     assert.equal(data.platte.ampel, 'kritisch')
     assert.equal(data.last.ampel, 'ok')
-    assert.deepEqual(data.stand, { version: 'abcdef1', letztesBackup: { at: '2026-10-03T01:30:00.000Z', bytes: 5 * MB, art: 'deploy' } })
+    assert.deepEqual(data.stand, {
+      version: 'abcdef1',
+      letztesBackup: { at: '2026-10-03T01:30:00.000Z', bytes: 5 * MB, art: 'deploy' },
+      ausserHaus: null
+    })
     assert.equal(data.groessen.fotos, 20 * MB)
     assert.ok(Array.isArray(data.verlauf))
 

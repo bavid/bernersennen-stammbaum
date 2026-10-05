@@ -78,7 +78,24 @@ Preise nach der Hetzner-Anpassung vom Juni 2026 vor Bestellung prüfen).
 
 ## Schritte
 1. 🧑 **Sofort, ohne neue Kosten:** Cloud Firewall, SSH härten, `unattended-upgrades`, CrowdSec, Docker-Härtung,
-   restic + Storage Box (einzige Kosten ~3 €). Agent schreibt Skripte + Anleitung, Betreiber führt aus bzw. gibt frei.
+   restic + Storage Box (einzige Kosten ~3 €). **Vorbereitet (05.10.):** Skripte und Anleitung in
+   [`deploy/haertung/`](../../../deploy/haertung/README.md) – jedes Skript idempotent, mit `--check`; nichts läuft
+   ohne den Betreiber. Reihenfolge und Stand:
+   - [ ] Ordner auf den Server kopieren, `check.sh` (Ist-Zustand)
+   - [ ] Block 1 `01-firewall.sh`: 22/80/443, 3000 zu, 3005/3010 bleiben bis zur Domain · Hetzner Cloud Firewall (Konsole)
+   - [ ] Block 2 `02-ssh.sh`: Phase A (Deploy-Nutzer, kein Passwort-Login) → Test im zweiten Terminal →
+         `DEPLOY_USER=deploy` in `.deploy*.env`, Deploy der Vorschau → Phase B `--confirm-key-tested` (kein Root-Login)
+   - [ ] Block 3 `03-updates.sh`: nur Sicherheits-Updates, Neustart 04:00 falls nötig
+   - [ ] Block 4 `04-crowdsec.sh`: sshd + caddy, Firewall-Bouncer (statt Caddy-Plugin im fremden Proxy); Caddy-Logs als
+         JSON im Repo „server“ (Freigabe)
+   - [ ] Block 5 `05-docker.sh` + `docker-compose.override.yml`: über Deploy erst Vorschau, dann Prod
+   - [ ] Storage Box BX11 bestellen, Snapshots täglich, Sub-Account `fap` mit SSH-Schlüssel des Servers
+   - [ ] Block 6 `06-restic.sh`: zwei Repos, Timer 03:50, Passwörter in den Passwort-Manager; Admin-Reiter „Server“
+         zeigt „Außer Haus“; `forget/prune` (7/4/6) monatlich vom eigenen Rechner
+   - [ ] Block 7 `07-restore-test.sh`: erste Probe, danach monatlich
+   - Offen (Betreiber): Storage Box ja/nein, Name des Deploy-Nutzers, 3005/3010 bis zur Domain, feste Betreiber-IP
+   - Hinweis: echtes append-only geht über SFTP nicht – Schutz sind Storage-Box-Snapshots + kein `prune` auf dem Server
+     (README, Block 6); mit dem Werkzeug-Server (Schritt 2) käme `rest-server --append-only` in Frage.
 2. 🧑 **Werkzeug-Server:** CX33 bestellen; Forgejo + Runner + Scans + Renovate + Uptime Kuma per Docker Compose;
    GitHub als Spiegel.
 3. 🧑 **Trennen:** Prod und Vorschau auf eigene CX23, Admin hinter WireGuard, alte geteilte Maschine räumen.

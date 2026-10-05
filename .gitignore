@@ -16,6 +16,7 @@ backups/
 .env
 .deploy.env
 .deploy.staging.env
+deploy/haertung/haertung.env
 .claude/
 server/.claude/
 *.log

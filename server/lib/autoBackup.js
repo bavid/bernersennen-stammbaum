@@ -21,8 +21,11 @@ const AUTO_RE = /^auto-\d{4}-\d{2}-\d{2}\.db$/
 const STALE_TMP_RE = /^auto-\d{4}-\d{2}-\d{2}\.db\.tmp$/
 const STALE_TMP_MS = 24 * 60 * 60 * 1000
 const MARKER_FILE = 'last-backup.json'
+// Sicherung außer Haus (deploy/haertung/fap-backup.sh, restic → Storage Box): eigene Datei, damit sie die tägliche
+// App-Sicherung in last-backup.json nicht überschreibt; geschrieben vom Server (root) mit Besitzer des Ordners.
+const OFFSITE_MARKER_FILE = 'last-offsite-backup.json'
 const MARKER_MAX_BYTES = 4096
-const KINDS = Object.freeze(['auto', 'deploy'])
+const KINDS = Object.freeze(['auto', 'deploy', 'offsite'])
 const DUE_TIME = '03:30'
 const CHECK_INTERVAL_MS = 15 * 60 * 1000
 const RETRY_AFTER_FAILURE_MS = 60 * 60 * 1000
@@ -56,9 +59,19 @@ function cleanMarker(value) {
 // Liest die Markierung; fehlt sie oder ist sie unbrauchbar (keine normale Datei, größer als MARKER_MAX_BYTES, kaputt,
 // falsche Felder), null. Die Größe wird VOR dem Lesen geprüft - nie eine riesige Datei in den Speicher.
 function readBackupMarker(dir) {
+  return readMarkerFile(path.join(dir, MARKER_FILE))
+}
+
+// Markierung der Sicherung außer Haus - nur mit kind 'offsite', sonst null.
+function readOffsiteMarker(dir) {
+  const marker = readMarkerFile(path.join(dir, OFFSITE_MARKER_FILE))
+  return marker && marker.kind === 'offsite' ? marker : null
+}
+
+function readMarkerFile(file) {
   let fd = null
   try {
-    fd = fs.openSync(path.join(dir, MARKER_FILE), MARKER_OPEN_FLAGS)
+    fd = fs.openSync(file, MARKER_OPEN_FLAGS)
     const stats = fs.fstatSync(fd)
     if (!stats.isFile() || stats.size > MARKER_MAX_BYTES) return null
     const buffer = Buffer.alloc(stats.size)
@@ -201,9 +214,11 @@ function scheduleAutoBackup({ db = require('../db'), dir = require('../config').
 module.exports = {
   KEEP_AUTO_BACKUPS,
   MARKER_FILE,
+  OFFSITE_MARKER_FILE,
   createAutoBackup,
   rotateAutoBackups,
   readBackupMarker,
+  readOffsiteMarker,
   writeBackupMarker,
   isBackupDue,
   scheduleAutoBackup

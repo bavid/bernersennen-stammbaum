@@ -9,7 +9,7 @@ import {
   relativeTime
 } from '../lib/adminServer.js'
 
-const BACKUP_ART_LABELS = Object.freeze({ auto: 'automatisch (täglich)', deploy: 'vor einem Deploy' })
+const BACKUP_ART_LABELS = Object.freeze({ auto: 'automatisch (täglich)', deploy: 'vor einem Deploy', offsite: 'außer Haus' })
 
 // Ampel als Punkt UND Wort ("ok", "erhöht", "kritisch") - die Farbe ist nie das einzige Signal.
 function Ampel({ stufe }) {
@@ -139,22 +139,32 @@ function GroessenCard({ groessen }) {
   )
 }
 
+function backupWhen(backup) {
+  return (
+    backup && (
+      <>
+        {formatDateTime(backup.at)} <small className="server-card-sub">({relativeTime(backup.at)})</small>
+      </>
+    )
+  )
+}
+
+// Letztes Backup auf dem Server (App täglich / vor einem Deploy) und darunter die letzte Sicherung außer Haus (restic auf
+// die Storage Box, deploy/haertung) - zwei getrennte Zeilen, damit die eine die andere nie verdeckt.
 function StandCard({ stand }) {
   const backup = stand?.letztesBackup
-  const when = backup && (
-    <>
-      {formatDateTime(backup.at)} <small className="server-card-sub">({relativeTime(backup.at)})</small>
-    </>
-  )
+  const offsite = stand?.ausserHaus
   return (
     <ServerCard
       id="stand"
       title="Stand"
       rows={[
         ['Version', stand?.version ? <code>{stand.version}</code> : 'unbekannt'],
-        ['Letztes Backup', when || 'noch keins'],
+        ['Letztes Backup', backupWhen(backup) || 'noch keins'],
         backup && ['Größe', formatBytes(backup.bytes)],
-        backup && ['Art', BACKUP_ART_LABELS[backup.art] ?? backup.art]
+        backup && ['Art', BACKUP_ART_LABELS[backup.art] ?? backup.art],
+        ['Außer Haus', backupWhen(offsite) || 'noch keine Sicherung'],
+        offsite && ['Umfang', formatBytes(offsite.bytes)]
       ]}
     />
   )

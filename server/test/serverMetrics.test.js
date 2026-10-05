@@ -126,7 +126,7 @@ test('status: Werte mit Ampel, Laufzeit, Stand und Größen - ohne Pfade', async
   assert.deepEqual(status.platte, { gesamt: 40 * GB, frei: 10 * GB, belegtProzent: 75, ampel: 'erhoeht' })
   assert.deepEqual(status.last, { kerne: 2, load1: 1.2, load5: 0.9, load15: 0.5, proKern: 0.6, ampel: 'ok' })
   assert.deepEqual(status.laufzeit, { server: 259205, app: 7200 })
-  assert.deepEqual(status.stand, { version: '03eb39d', letztesBackup: null })
+  assert.deepEqual(status.stand, { version: '03eb39d', letztesBackup: null, ausserHaus: null })
   assert.deepEqual(status.groessen, {
     datenbank: 6 * MB,
     fotos: 320 * MB,
@@ -167,6 +167,18 @@ test('status: ohne Markierung kein letztes Backup, mit Markierung Zeit, Größe 
   await writeBackupMarker(DIRS.backupDir, { at: '2026-10-03T01:30:00Z', bytes: 4096, kind: 'auto' })
   const status = await createServerMonitor({ probe: stubProbe(), dirs: DIRS, warnings: quietWarnings }).status()
   assert.deepEqual(status.stand.letztesBackup, { at: '2026-10-03T01:30:00.000Z', bytes: 4096, art: 'auto' })
+})
+
+// DevOps Schritt 1, Block 6: deploy/haertung/fap-backup.sh schreibt nach der Sicherung außer Haus eine eigene Markierung
+// last-offsite-backup.json (kind offsite) - sie erscheint getrennt vom letzten Backup auf dem Server.
+test('status: Sicherung außer Haus aus der eigenen Markierung, getrennt vom letzten Backup', async () => {
+  const fs = require('node:fs')
+  const path = require('node:path')
+  const { OFFSITE_MARKER_FILE } = require('../lib/autoBackup')
+  fs.writeFileSync(path.join(DIRS.backupDir, OFFSITE_MARKER_FILE), JSON.stringify({ at: '2026-10-03T01:50:00Z', bytes: 8192, kind: 'offsite' }))
+  const status = await createServerMonitor({ probe: stubProbe(), dirs: DIRS, warnings: quietWarnings }).status()
+  assert.deepEqual(status.stand.ausserHaus, { at: '2026-10-03T01:50:00.000Z', bytes: 8192, art: 'offsite' })
+  assert.deepEqual(status.stand.letztesBackup, { at: '2026-10-03T01:30:00.000Z', bytes: 4096, art: 'auto' }, 'bleibt unberührt')
 })
 
 test('Ordnergrößen: höchstens einmal je Stunde berechnet, auch bei gleichzeitigen Aufrufen nur einmal', async () => {

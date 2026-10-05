@@ -1,0 +1,32 @@
+# Härtung der App-Container (DevOps Schritt 1, Block 5 - deploy/haertung/05-docker.sh zeigt Ist und Soll).
+# Docker Compose lädt diese Datei automatisch zusätzlich zur docker-compose.yml - lokal wie auf dem Server über das
+# normale Deploy (manage.ps1 → [3]). Nichts hier kennt Pfade oder Ports des Servers.
+# Im Notfall abschalten, ohne das Repo zu ändern: COMPOSE_FILE=docker-compose.yml in die .env der Instanz schreiben
+# und `docker compose up -d` - dann gilt wieder nur die docker-compose.yml.
+services:
+  chronik:
+    # Kein Prozess im Container kann sich mehr Rechte holen (setuid & Co.), und der Container startet ohne jede
+    # Linux-Capability: Node läuft als Nutzer node auf Port 3000 (> 1024) und braucht keine.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Dateisystem des Images schreibgeschützt. Schreiben darf die App nur nach /data (Volume: Datenbank, Fotos,
+    # Sicherungen) und /tmp (flüchtig, im RAM, 64 MB). Multer legt Uploads direkt unter /data/uploads ab.
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    # Grenzen: ein Amoklauf (Speicherleck, Bilder-Bombe) trifft nicht den ganzen Server (4 GB, 2 vCPU, geteilt mit der
+    # Vorschau und dem Proxy). Bei Überschreitung des Speichers startet Docker den Container neu (restart: unless-stopped).
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.5"
+          pids: 256
+        reservations:
+          memory: 256M
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 8192

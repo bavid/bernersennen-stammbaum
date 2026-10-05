@@ -5,6 +5,8 @@
 #
 # Liest .deploy.env (siehe .deploy.env.example), mit -Target staging .deploy.staging.env (siehe .deploy.staging.env.example).
 # Alle Server-Befehle stecken in deploy/remote.sh und werden per SSH ausgeführt. Funktioniert mit Windows PowerShell 5.1 und PowerShell 7.
+# DEPLOY_USER: root bis zur SSH-Härtung (deploy/haertung/02-ssh.sh), danach der Deploy-Nutzer - remote.sh nutzt dann
+# sudo -n für docker. Erstinstallation [9] braucht weiterhin root (Docker-Pakete).
 
 param(
     [string]$Command,

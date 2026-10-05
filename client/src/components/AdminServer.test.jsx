@@ -30,7 +30,11 @@ function fixture(overrides = {}) {
       sicherungen: 640 * MB,
       berechnetAt: '2026-10-03T08:00:00.000Z'
     },
-    stand: { version: '03eb39d', letztesBackup: { at: '2026-10-03T01:30:00.000Z', bytes: 41 * MB, art: 'auto' } },
+    stand: {
+      version: '03eb39d',
+      letztesBackup: { at: '2026-10-03T01:30:00.000Z', bytes: 41 * MB, art: 'auto' },
+      ausserHaus: { at: '2026-10-03T01:50:00.000Z', bytes: 700 * MB, art: 'offsite' }
+    },
     verlauf: [
       { at: '2026-10-03T06:00:00.000Z', speicherFrei: 78, platteFrei: 84.2, last: 0.2 },
       { at: '2026-10-03T07:00:00.000Z', speicherFrei: 74, platteFrei: 84.1, last: 0.4 },
@@ -104,7 +108,9 @@ describe('AdminServer', () => {
       Version: '03eb39d',
       'Letztes Backup': '03.10.2026, 03:30 (vor 7 Stunden)',
       Größe: '41 MB',
-      Art: 'automatisch (täglich)'
+      Art: 'automatisch (täglich)',
+      'Außer Haus': '03.10.2026, 03:50 (vor 6 Stunden)',
+      Umfang: '700 MB'
     })
     expect(text('.admin-server-warn-note')).toBe('Warnungen per Telegram: an (höchstens eine je Messwert und Tag).')
   })
@@ -154,7 +160,7 @@ describe('AdminServer', () => {
 
     expect(card('Größe').querySelector('.server-card-hint').textContent).toBe('Wird gerade ermittelt – bitte gleich noch einmal aktualisieren.')
     expect(rows(card('Größe'))).toEqual({})
-    expect(rows(card('Stand'))).toEqual({ Version: 'unbekannt', 'Letztes Backup': 'noch keins' })
+    expect(rows(card('Stand'))).toEqual({ Version: 'unbekannt', 'Letztes Backup': 'noch keins', 'Außer Haus': 'noch keine Sicherung' })
     expect(text('.server-verlauf-empty')).toBe('Noch keine Messungen – der Verlauf füllt sich stündlich.')
     expect(text('.admin-server-warn-note')).toBe(
       'Warnungen per Telegram: Telegram ist noch nicht eingerichtet (Reiter „Einstellungen“).'

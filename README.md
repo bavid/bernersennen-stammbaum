@@ -291,5 +291,6 @@ server/          Express-API + SQLite
   seed/          Demo-Daten und Testbilder
   scripts/       seed.js, demo.js, reset.js
 deploy/remote.sh Server-Befehle (setup, deploy, backup, demo, showcase, wipe …)
+deploy/haertung/ Server-Härtung Schritt für Schritt (Firewall, SSH, Updates, CrowdSec, Docker, restic) - README dort
 manage.ps1       Windows-Menü für den Server
 ```
