@@ -3,19 +3,20 @@ import { useTheme } from '../../themes/ThemeProvider.jsx'
 import FilterChips from '../FilterChips.jsx'
 import AnimalTile from './AnimalTile.jsx'
 import useGroupParam from '../../hooks/useGroupParam.js'
-import { gridGroups, selectedGridGroup } from '../../lib/animalGrid.js'
+import { animalsInGroup, gridGroups, selectedGridGroup } from '../../lib/animalGrid.js'
 
 // Raster „Alle“ der Tiere (Phase W, Schritt 4): auf /tiere alle Tiere aus Zuhause, Familien und befreundeten Zuhause (GET
 // /api/tiere), auf der Gruppenseite die Tiere dieses einen Bereichs (lib/animalGrid.js areaGrid) - dieselbe Ansicht. Darüber,
 // sobald die Tiere aus mehr als einem Bereich kommen, ein Filter je Bereich („Alle · Mein Zuhause · Familie Sonnenhang ·
-// Zuhause Möwenweg“, mit Zahl); die Wahl steht in der Adresse (?gruppe=…), Zurück hebt sie wieder auf. grid: { tiere, areas }.
+// Zuhause Möwenweg“, mit Zahl - die Familie zählt wie ihre Karte, samt eigenen dorthin geteilten Tieren, Audit W M5); die
+// Wahl steht in der Adresse (?gruppe=…), Zurück hebt sie wieder auf. grid: { tiere, areas }.
 export default function AnimalGrid({ grid }) {
   const { words } = useTheme()
   const gridId = useId()
   const [requested, select] = useGroupParam()
   const groups = gridGroups(grid.areas)
   const selected = selectedGridGroup(groups, requested)
-  const shown = selected ? grid.tiere.filter((animal) => animal.area.id === selected.areaId) : grid.tiere
+  const shown = animalsInGroup(grid.tiere, selected)
   const options = [{ param: null, label: 'Alle', count: grid.tiere.length }, ...groups]
 
   return (

@@ -40,10 +40,14 @@ const dog = (id, name, extra = {}) => ({ id, name, name_unbekannt: 0, tierart: '
 const homeArea = { id: 1, name: 'Zuhause Lindenhof', art: 'eigen' }
 const familyArea = { id: 5, name: 'Familie Sonnenhang', art: 'familie' }
 const visitArea = { id: 9, name: 'Zuhause Möwenweg (Demo)', art: 'besuch' }
-const tier = (id, name, area, extra = {}) => ({ ...dog(id, name), area, zuhause: null, letzte_erinnerung: null, ...extra })
+const tier = (id, name, area, extra = {}) => ({ ...dog(id, name), area, zuhause: null, letzte_erinnerung: null, auch_in: [], ...extra })
+// areas[].anzahl wie der Server (lib/allAnimals.js): alle Tiere, die der Bereich zeigt - einsortierte und die aus auch_in.
 const allAnimals = (tiere, areas = [homeArea]) => ({
   tiere,
-  areas: areas.map((area) => ({ ...area, anzahl: tiere.filter((animal) => animal.area.id === area.id).length }))
+  areas: areas.map((area) => ({
+    ...area,
+    anzahl: tiere.filter((animal) => animal.area.id === area.id || animal.auch_in.includes(area.id)).length
+  }))
 })
 const mixed = allAnimals(
   [
@@ -271,6 +275,30 @@ describe('AnimalsPage › Alle: alle Tiere aus Zuhause, Familien und Besuchen (P
     await render({ path: '/tiere?gruppe=5' })
     expect(tiles()[0].querySelector('.animal-tile-origin')).toBeNull()
     expect(tiles()[1].querySelector('.animal-tile-origin').textContent).toContain('aus Zuhause Heidekamp')
+  })
+
+  // Audit W, M5: die Familie zählt wie ihre Karte („21 Tiere · davon 3 von euch“) - mit den eigenen, dorthin geteilten
+  // Tieren (auch_in); in „Alle“ steht jedes trotzdem nur einmal, unter „Mein Zuhause“.
+  test('eigene, in die Familie geteilte Tiere: zählen im Familien-Chip mit und erscheinen unter dem Filter - ohne Herkunft', async () => {
+    const shared = allAnimals(
+      [
+        tier(10, 'Nele', homeArea, { auch_in: [5] }),
+        tier(11, 'Flocke', homeArea),
+        tier(20, 'Lotte', familyArea, { zuhause: 'Familie Sonnenhang' })
+      ],
+      [homeArea, familyArea]
+    )
+    api.tiere.mockResolvedValue(shared)
+    await render()
+    expect(tileNames()).toEqual(['Nele', 'Flocke', 'Lotte'])
+    expect(chips().map(chipText)).toEqual(['Alle 3', 'Mein Zuhause 2', 'Familie Sonnenhang 2'])
+
+    act(() => chips()[2].click())
+    expect(tileNames()).toEqual(['Nele', 'Lotte'])
+    expect(tiles()[0].querySelector('.animal-tile-origin')).toBeNull()
+    expect(tiles()[0].getAttribute('href')).toBe('/tier/10')
+    act(() => chips()[1].click())
+    expect(tileNames()).toEqual(['Nele', 'Flocke'])
   })
 
   test('verstorbene Tiere „In Erinnerung“, die letzte Erinnerung leise darunter', async () => {

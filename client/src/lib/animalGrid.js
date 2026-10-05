@@ -1,7 +1,7 @@
 // Raster „Alle“ der Tiere (Phase W, Schritt 4 „Alle Tiere an einem Ort“): reine Logik für die Filter je Bereich, die Links
 // und das Raster einer Gruppenseite. Die Tiere kommen auf /tiere aus GET /api/tiere ({ tiere, areas } - jedes Tier einmal, mit
-// area { id, name, art: 'eigen' | 'familie' | 'besuch' } und zuhause), auf der Gruppenseite aus den Tieren des Bereichs
-// (areaGrid unten, dieselbe Form).
+// area { id, name, art: 'eigen' | 'familie' | 'besuch' }, auch_in (Ids weiterer Bereiche, die es zeigen) und zuhause), auf
+// der Gruppenseite aus den Tieren des Bereichs (areaGrid unten, dieselbe Form).
 import { HOME_LABEL } from './areas.js'
 import { OWN_GROUP_PARAM, familyAnimals, withoutDemoSuffix } from './familyGroups.js'
 
@@ -27,6 +27,14 @@ export function gridGroups(areas = []) {
 export function selectedGridGroup(groups, param) {
   if (!param) return null
   return groups.find((group) => group.param === param) || null
+}
+
+// Die Tiere unter einem gewählten Filter (Audit W, M5): die im Bereich einsortierten und die, die er zusätzlich zeigt
+// (auch_in aus GET /api/tiere - ein eigenes, in die Familie geteiltes Tier steht in „Alle“ nur einmal, unter „Mein Zuhause“,
+// gehört aber zur Familie wie auf deren Karte). Ohne Wahl alle.
+export function animalsInGroup(tiere, group) {
+  if (!group) return tiere
+  return tiere.filter((animal) => animal.area.id === group.areaId || (animal.auch_in ?? []).includes(group.areaId))
 }
 
 // Wohin eine Karte führt: ein eigenes Tier ins eigene Zuhause (ohne Angabe), jedes andere in seinen Bereich (?in=, das

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { animalLink, areaGrid, gridGroups, selectedGridGroup } from './animalGrid.js'
+import { animalLink, animalsInGroup, areaGrid, gridGroups, selectedGridGroup } from './animalGrid.js'
 
 const home = { id: 1, name: 'Zuhause Lindenhof', art: 'eigen', anzahl: 2 }
 const family = { id: 7, name: 'Familie Sonnenhang (Demo)', art: 'familie', anzahl: 3 }
@@ -26,6 +26,28 @@ describe('gridGroups', () => {
     expect(selectedGridGroup(groups, 'eigen').label).toBe('Mein Zuhause')
     expect(selectedGridGroup(groups, '99')).toBeNull()
     expect(selectedGridGroup(groups, null)).toBeNull()
+  })
+})
+
+// Audit W, M5: der Filter einer Familie zeigt alle Tiere, die sie zeigt - auch die eigenen, dorthin geteilten (auch_in).
+describe('animalsInGroup', () => {
+  const tiere = [
+    { id: 3, name: 'Nele', area: home, auch_in: [7] },
+    { id: 4, name: 'Lotte', area: family, auch_in: [] },
+    { id: 5, name: 'Dorle', area: visit, auch_in: [] },
+    { id: 6, name: 'Benno', area: visit, auch_in: [7] }
+  ]
+  const groups = gridGroups([home, family, visit])
+
+  test('gewählt: die Tiere des Bereichs samt denen, die er zusätzlich zeigt - in der Reihenfolge der Liste', () => {
+    expect(animalsInGroup(tiere, groups[1]).map((animal) => animal.name)).toEqual(['Nele', 'Lotte', 'Benno'])
+    expect(animalsInGroup(tiere, groups[0]).map((animal) => animal.name)).toEqual(['Nele'])
+    expect(animalsInGroup(tiere, groups[2]).map((animal) => animal.name)).toEqual(['Dorle', 'Benno'])
+  })
+
+  test('ohne Wahl alle; Tiere ohne auch_in (Gruppenseite) zählen nur in ihrem Bereich', () => {
+    expect(animalsInGroup(tiere, null)).toBe(tiere)
+    expect(animalsInGroup([{ id: 9, name: 'Zora', area: home }], groups[1])).toEqual([])
   })
 })
 

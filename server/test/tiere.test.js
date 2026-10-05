@@ -3,13 +3,15 @@ const assert = require('node:assert/strict')
 const { useTempDataDir, startApp, cleanup, call, createHousehold, createFamily, getCookie } = require('./helpers')
 
 // GET /api/tiere (routes/tiere.js, lib/allAnimals.js): alle Tiere aus dem eigenen Zuhause, den Familien des Haushalts und den
-// befreundeten Zuhause an einem Ort - je Bereich mit dessen Regeln, jedes Tier genau einmal (der Bereich, dem es gehört).
+// befreundeten Zuhause an einem Ort - je Bereich mit dessen Regeln, jedes Tier genau einmal (der Bereich, dem es gehört);
+// auch_in nennt die weiteren Bereiche, in denen es zu sehen ist, und areas[].anzahl zählt alle Tiere eines Bereichs
+// (Audit W, M5: der Filter „Familie Sonnenhang 21“ zählt wie die Familien-Karte, auch die eigenen dorthin geteilten).
 const dataDir = useTempDataDir('tiere', { LOGIN_RATE_LIMIT: '400', CODE_RATE_LIMIT: '400' })
 
 // Felder, die ein Tier hier haben darf - keine Freigaben, keine Eltern-Ids, keine internen Angaben.
 const ANIMAL_KEYS = new Set([
   'id', 'name', 'name_unbekannt', 'rasse', 'tierart', 'geschlecht', 'geburtsdatum', 'foto_url', 'bei_uns_bis',
-  'abschied_grund', 'letzte_erinnerung', 'area', 'zuhause'
+  'abschied_grund', 'letzte_erinnerung', 'area', 'zuhause', 'auch_in'
 ])
 
 test('Tiere: alle Tiere aus Zuhause, Familien und Besuchen - je Bereich mit dessen Regeln, jedes einmal', async (t) => {
@@ -99,13 +101,21 @@ test('Tiere: alle Tiere aus Zuhause, Familien und Besuchen - je Bereich mit dess
     assert.equal(animalOf(res, dorle.id).zuhause, 'Zuhause am Deich')
   })
 
-  await t.test('areas: alle Bereiche in fester Reihenfolge mit der Zahl ihrer Tiere', async () => {
+  await t.test('areas: alle Bereiche in fester Reihenfolge mit der Zahl ALLER Tiere dort - eigene geteilte zählen in der Familie mit', async () => {
     const res = await tiere(a.cookie)
+    // Nele gehört A und ist in Sonnenhang geteilt: einmal in der Liste („Mein Zuhause“), aber Sonnenhang zählt sie wie die
+    // Familien-Karte („3 Tiere · davon 1 von euch“, lib/areaCounts.js) - auch_in sagt dem Filter, dass sie dort dazugehört.
     assert.deepEqual(res.data.areas, [
       { id: aId, name: 'Zuhause Lindenhof', art: 'eigen', anzahl: 2 },
-      { id: fId, name: 'Familie Sonnenhang', art: 'familie', anzahl: 2 },
+      { id: fId, name: 'Familie Sonnenhang', art: 'familie', anzahl: 3 },
       { id: dId, name: 'Zuhause am Deich', art: 'besuch', anzahl: 1 }
     ])
+    assert.deepEqual(animalOf(res, nele.id).auch_in, [fId])
+    assert.deepEqual(animalOf(res, flocke.id).auch_in, [])
+    assert.deepEqual(animalOf(res, lotte.id).auch_in, [])
+    assert.deepEqual(animalOf(res, benno.id).auch_in, [])
+    assert.deepEqual(animalOf(res, dorle.id).auch_in, [])
+    assert.equal(res.data.tiere.filter((animal) => animal.id === nele.id).length, 1, 'in der Liste trotzdem nur einmal')
   })
 
   await t.test('nur erlaubte Felder - keine Freigaben, Eltern-Ids oder internen Angaben', async () => {
@@ -164,12 +174,16 @@ test('Tiere: alle Tiere aus Zuhause, Familien und Besuchen - je Bereich mit dess
       assert.deepEqual(animalOf(withVisit, benno.id).area, { id: bId, name: 'Zuhause Möwenweg', art: 'besuch' })
       assert.deepEqual(animalOf(withVisit, kasimir.id).area, { id: bId, name: 'Zuhause Möwenweg', art: 'besuch' })
       assert.equal(animalOf(withVisit, benno.id).letzte_erinnerung, '2026-06-01', 'mit den Gast-Regeln, nie privat')
-      // Nele gehört A - in Sonnenhang geteilt, bleibt sie "Mein Zuhause" und zählt nur dort.
+      // Nele gehört A - in Sonnenhang geteilt, bleibt sie "Mein Zuhause"; Sonnenhang nennt sie in auch_in.
       assert.deepEqual(animalOf(withVisit, nele.id).area.art, 'eigen')
+      assert.deepEqual(animalOf(withVisit, nele.id).auch_in, [fId])
+      // Benno steht als Besuch - und ist in Heidekamp und Sonnenhang zu sehen (auch_in in der Reihenfolge der Bereiche).
+      assert.deepEqual(animalOf(withVisit, benno.id).auch_in, [gId, fId])
+      // Jeder Bereich zählt alle Tiere, die er zeigt - die Summe ist darum größer als die Liste.
       const counts = Object.fromEntries(withVisit.data.areas.map((area) => [area.id, area.anzahl]))
-      assert.deepEqual(counts, { [aId]: 2, [gId]: 0, [fId]: 1, [dId]: 1, [bId]: 2 })
+      assert.deepEqual(counts, { [aId]: 2, [gId]: 1, [fId]: 3, [dId]: 1, [bId]: 2 })
       const total = withVisit.data.areas.reduce((sum, area) => sum + area.anzahl, 0)
-      assert.equal(total, withVisit.data.tiere.length)
+      assert.equal(total, withVisit.data.tiere.reduce((sum, animal) => sum + 1 + animal.auch_in.length, 0))
     } finally {
       endVisit(aId, bId)
       db.prepare('DELETE FROM dog_shares WHERE family_id = ?').run(gId)
@@ -205,6 +219,7 @@ test('Tiere: alle Tiere aus Zuhause, Familien und Besuchen - je Bereich mit dess
     assert.equal(res.status, 200)
     assert.deepEqual(names(res), ['Benno', 'Lotte', 'Nele'])
     assert.ok(res.data.tiere.every((animal) => animal.area.id === fId && animal.area.art === 'eigen'))
+    assert.ok(res.data.tiere.every((animal) => animal.auch_in.length === 0))
     assert.equal(res.data.tiere.find((animal) => animal.name === 'Lotte').zuhause, null)
     assert.equal(res.data.tiere.find((animal) => animal.name === 'Nele').zuhause, 'Zuhause Lindenhof')
   })
