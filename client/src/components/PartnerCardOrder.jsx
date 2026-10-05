@@ -153,15 +153,19 @@ export default function PartnerCardOrder({ refreshKey, hideWhenEmpty = false }) 
   const anzeigen = data?.anzeigen || []
   if (hideWhenEmpty && data && anzeigen.length === 0) return null
 
+  // Audit W: zugeklappt (details) - die Reihenfolge braucht man selten, die Liste der Beiträge darunter öfter.
   return (
-    <section className="partner-card-order card" aria-labelledby="partner-card-order-title">
-      <div className="partner-card-order-head">
+    <details className="partner-card-order card" aria-labelledby="partner-card-order-title">
+      <summary className="partner-card-order-head">
         <h3 id="partner-card-order-title">Eure Karte in Entdecken</h3>
-        <p className="partner-card-order-hint">
-          Die ersten {data?.max === 3 || !data ? 'drei' : data.max} Anzeigen, die ihr zeigt, stehen auf eurer Karte – in dieser Reihenfolge.
-          Auf eurem Portal stehen alle.
-        </p>
-      </div>
+        <span className="partner-card-order-toggle" aria-hidden="true">
+          <Icon name="chevronDown" />
+        </span>
+      </summary>
+      <p className="partner-card-order-hint">
+        Die ersten {data?.max === 3 || !data ? 'drei' : data.max} Anzeigen, die ihr zeigt, stehen auf eurer Karte – in dieser Reihenfolge.
+        Auf eurem Portal stehen alle.
+      </p>
       {error && (
         <div className="error-banner" role="alert">
           {error}
@@ -193,6 +197,6 @@ export default function PartnerCardOrder({ refreshKey, hideWhenEmpty = false }) 
       <p className="visually-hidden" aria-live="polite">
         {status}
       </p>
-    </section>
+    </details>
   )
 }

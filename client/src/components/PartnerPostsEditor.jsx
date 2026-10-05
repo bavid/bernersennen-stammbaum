@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { LIMIT_HINT, MAX_POSTS, POSTS_HINT, POSTS_HINT_TRUSTED, TRUSTED_HINT, allowedBereiche, savedMessage } from '../lib/partnerPosts.js'
+import useShowMore from '../hooks/useShowMore.js'
 import Icon from './Icon.jsx'
 import PartnerCardOrder from './PartnerCardOrder.jsx'
 import PartnerPostForm from './PartnerPostForm.jsx'
@@ -10,6 +11,8 @@ import { useToast } from './Toast.jsx'
 
 const DEMO_HINT_ID = 'partner-posts-demo-hint'
 const NO_BEREICH_HINT = 'Für euren Partner-Typ gibt es noch keinen Bereich in „Entdecken“ – schreibt uns gern.'
+// Audit W: zuerst sechs Beiträge, der Rest hinter „Weitere Beiträge (n)“ (wie Start und Gruppenseite).
+export const VISIBLE_POSTS = 6
 
 // Eigene Beiträge (Phase P2) - auf /beitraege (Partner) bzw. als Reiter "Beiträge" im Profil (Tierheim):
 // oben Hinweis und Zähler "x von 20", dann entweder das Formular (Anlegen/Bearbeiten) oder - seit Phase V1 unter
@@ -31,6 +34,7 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
   const count = posts?.length ?? 0
   const isFull = count >= MAX_POSTS
   const hasBereich = allowedBereiche(typ).length > 0
+  const more = useShowMore(posts, VISIBLE_POSTS)
 
   useEffect(() => {
     let cancelled = false
@@ -148,8 +152,8 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
         </h3>
       )}
       {!editing && count > 0 && (
-        <ul className="partner-post-list">
-          {posts.map((post) => (
+        <ul className="partner-post-list" ref={more.focusRef}>
+          {more.shown.map((post) => (
             <PartnerPostRow
               key={post.id}
               post={post}
@@ -159,6 +163,11 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
             />
           ))}
         </ul>
+      )}
+      {!editing && more.hidden > 0 && (
+        <button type="button" className="btn btn-ghost partner-posts-more" onClick={more.expand}>
+          Weitere Beiträge ({more.hidden})
+        </button>
       )}
     </section>
   )

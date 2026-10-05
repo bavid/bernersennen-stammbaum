@@ -66,7 +66,8 @@ describe('PartnerCardOrder', () => {
   test('listet die Anzeigen der Karte mit Stelle, Herkunft und Stand', async () => {
     cardAnzeigen.mockResolvedValue(list)
     await render()
-    expect(container.querySelector('h3').textContent).toBe('Eure Karte in Entdecken')
+    expect(container.querySelector('summary h3').textContent).toBe('Eure Karte in Entdecken')
+    expect(container.querySelector('details.partner-card-order').open).toBe(false)
     expect(titles()).toEqual(['Welpenkurs ab Oktober', 'Einzeltraining am Abend', 'Welpenkurs im Frühjahr', 'Agility'])
     expect(rows()[0].textContent).toContain('auf der Karte')
     expect(rows()[2].textContent).toContain('vom Team')

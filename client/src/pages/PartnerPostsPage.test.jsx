@@ -159,6 +159,22 @@ describe('PartnerPostsPage – Liste', () => {
     expect(button('Beitrag anlegen').disabled).toBe(true)
     expect(container.textContent).toContain('Höchstens 20 Beiträge')
   })
+
+  // Audit W: die Seite bleibt kurz - sechs Beiträge zuerst, der Rest auf Wunsch; das Formular öffnet erst auf Klick.
+  test('zeigt zuerst sechs Beiträge, dann „Weitere Beiträge (n)“ - aufgeklappt alle; kein Formular ohne Klick', async () => {
+    await render({ list: Array.from({ length: 8 }, (_, index) => post({ id: index + 1, titel: `Kurs ${index + 1}` })) })
+    expect(container.querySelectorAll('.partner-post')).toHaveLength(6)
+    expect(container.querySelector('form')).toBeNull()
+    const more = button('Weitere Beiträge (2)')
+    await click(more)
+    expect(container.querySelectorAll('.partner-post')).toHaveLength(8)
+    expect(button('Weitere Beiträge (2)')).toBeUndefined()
+  })
+
+  test('mit bis zu sechs Beiträgen kein „Weitere“-Knopf', async () => {
+    await render()
+    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.startsWith('Weitere Beiträge'))).toBe(false)
+  })
 })
 
 describe('PartnerPostsPage – Anlegen', () => {
@@ -403,6 +419,10 @@ describe('PartnerPostsPage – Eure Karte in Entdecken', () => {
     await render()
     const panel = container.querySelector('.partner-card-order')
     expect(panel.querySelector('h3').textContent).toBe('Eure Karte in Entdecken')
+    // Audit W: zugeklappt, die Überschrift ist die Zusammenfassung.
+    expect(panel.tagName).toBe('DETAILS')
+    expect(panel.open).toBe(false)
+    expect(panel.querySelector('summary h3')).not.toBeNull()
     expect(Boolean(panel.compareDocumentPosition(container.querySelector('.partner-post-list')) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true)
     expect(cardAnzeigen).toHaveBeenCalledTimes(1)
 

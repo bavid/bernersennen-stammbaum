@@ -374,13 +374,45 @@
   padding: var(--card-pad-compact);
 }
 
+/* Audit W: zugeklappt (details) - die Überschrift ist die Zusammenfassung, ein Pfeil zeigt den Zustand */
 .partner-card-order-head {
-  display: grid;
-  gap: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 2.75rem;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius-sm);
+}
+
+.partner-card-order-head::-webkit-details-marker {
+  display: none;
+}
+
+.partner-card-order-head:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .partner-card-order-head h3 {
   font-size: var(--text-lg);
+}
+
+.partner-card-order-toggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--rust);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.partner-card-order[open] .partner-card-order-toggle svg {
+  transform: rotate(180deg);
+}
+
+/* Audit W: zuerst sechs Beiträge, der Rest hinter „Weitere Beiträge (n)“ */
+.partner-posts-more {
+  justify-self: start;
 }
 
 .partner-card-order-hint,
