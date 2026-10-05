@@ -31,8 +31,9 @@ export function LegalToc() {
 
 // id: aus lib/legalSections.js (Überschrift und Sprungmarke folgen daraus). children: die Absätze des Abschnitts.
 export default function LegalSection({ id, children }) {
-  const forced = isForcedOpen(id, useContext(LegalContext))
+  const context = useContext(LegalContext)
   const [open, setOpen] = useState(false)
+  const forced = isForcedOpen(id, context)
   const [first, ...rest] = Children.toArray(children)
   const expanded = forced || open
   const restId = `${id}-mehr`
