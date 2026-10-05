@@ -1,7 +1,10 @@
+/* Ladebild vor der ersten Antwort von /me (App.jsx): dieselbe Pfote wie das App-Symbol auf dem Papier der Farbwelt - so
+   geht das Startbild der installierten App (Manifest background_color, iOS-Startbilder) nahtlos in die App über. */
 .splash {
   display: grid;
   place-items: center;
   min-height: 100dvh;
+  background: var(--paper);
 }
 
 .splash svg {

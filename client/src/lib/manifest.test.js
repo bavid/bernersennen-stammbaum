@@ -57,6 +57,24 @@ describe('manifest.webmanifest', () => {
     expect(html).toMatch(/<meta name="theme-color" content="#fbf5ec"/)
   })
 
+  test('Startbilder für iOS: jede verlinkte Datei liegt in der genannten Größe vor, hell und dunkel, zusammen klein', () => {
+    const html = readFileSync(join(root, 'index.html'), 'utf8')
+    const links = [...html.matchAll(/<link rel="apple-touch-startup-image" href="([^"]+)" media="([^"]+)"/g)]
+    expect(links.length).toBeGreaterThanOrEqual(6)
+    expect(links.filter(([, , media]) => media.includes('prefers-color-scheme: dark')).length).toBe(links.length / 2)
+    let total = 0
+    for (const [, href, media] of links) {
+      const file = join(publicDir, href)
+      const [, w, h] = href.match(/splash-(\d+)x(\d+)/)
+      expect(pngSize(file)).toEqual({ width: Number(w), height: Number(h) })
+      const [, cssW, cssH, ratio] = media.match(/device-width: (\d+)px\) and \(device-height: (\d+)px\) and \(-webkit-device-pixel-ratio: (\d)\)/)
+      expect(Number(cssW) * Number(ratio)).toBe(Number(w))
+      expect(Number(cssH) * Number(ratio)).toBe(Number(h))
+      total += statSync(file).size
+    }
+    expect(total).toBeLessThan(320 * 1024)
+  })
+
   test('die Offline-Seite kommt ohne eingebettetes Skript aus (Content-Security-Policy)', () => {
     const html = readFileSync(join(publicDir, 'offline.html'), 'utf8')
     expect(html).not.toMatch(/<script/)
