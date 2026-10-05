@@ -12,6 +12,17 @@ const PATHS = {
     </>
   ),
   minus: <path d="M5 12h14" />,
+  // Griff zum Anordnen per Ziehen (ReorderHandle, Reiter „Fotos“) - sechs Punkte.
+  grip: (
+    <>
+      <circle cx="9" cy="6" r="1.5" />
+      <circle cx="15" cy="6" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="18" r="1.5" />
+      <circle cx="15" cy="18" r="1.5" />
+    </>
+  ),
   layers: (
     <>
       <path d="m12 3 9 5-9 5-9-5 9-5Z" />

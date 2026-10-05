@@ -5,6 +5,7 @@ import { downscaleImage } from '../lib/images.js'
 import { BANNER_ACCEPT, BANNER_TYPE_MESSAGE, MAX_BANNER_ALT_LENGTH, bannerFormData, isBannerFileType } from '../lib/partnerBanner.js'
 import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
+import ReorderHandle from './ReorderHandle.jsx'
 
 const THUMB_WIDTH = 480
 const THUMB_HEIGHT = 160
@@ -19,14 +20,16 @@ const ALT_NOTE = 'Wird vorgelesen, wenn jemand das Foto nicht sehen kann.'
 // (neues Foto an derselben Stelle, die eingegebene Beschreibung kommt mit) und - abgesetzt am Ende - "Entfernen" (mit
 // Rückfrage; das folgende rückt nach). Jede Aktion antwortet mit { banner, layout } (onChange). Alles ohne <form> - der
 // Abschnitt steht neben dem Profil-Formular, Enter im Textfeld speichert die Beschreibung. label: z. B. "Foto 2 · rechts".
-export default function PartnerBannerSlot({ item, label, onChange }) {
+// reorder (Reiter „Fotos“): { hook, index, count } aus useDragReorder - dann steht auf dem Foto ein Griff zum Anordnen
+// (ReorderHandle); null ohne. locked: der Editor sperrt alle Plätze, solange eine Reihenfolge gespeichert wird.
+export default function PartnerBannerSlot({ item, label, onChange, locked: lockedByEditor = false, reorder = null }) {
   const isDemo = useIsDemo()
   const [alt, setAlt] = useState(item.alt)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const altId = `partner-banner-alt-${item.position}`
   const altDirty = alt.trim() !== item.alt
-  const locked = isDemo || busy
+  const locked = isDemo || busy || lockedByEditor
 
   async function run(action) {
     setBusy(true)
@@ -63,8 +66,13 @@ export default function PartnerBannerSlot({ item, label, onChange }) {
   }
 
   return (
-    <li className="partner-banner-slot">
-      <img src={item.fotoUrl} alt="" width={THUMB_WIDTH} height={THUMB_HEIGHT} className="partner-banner-thumb" />
+    <li ref={reorder?.hook.itemRef(item.fotoUrl)} className={`partner-banner-slot${reorder ? ` ${reorder.hook.itemClass(item.fotoUrl)}` : ''}`} style={reorder?.hook.itemStyle(item.fotoUrl)}>
+      <div className="partner-banner-thumb-wrap">
+        <img src={item.fotoUrl} alt="" width={THUMB_WIDTH} height={THUMB_HEIGHT} className="partner-banner-thumb" />
+        {reorder && (
+          <ReorderHandle reorder={reorder.hook} itemKey={item.fotoUrl} index={reorder.index} count={reorder.count} label={label || `Foto ${item.position}`} className="partner-banner-handle" />
+        )}
+      </div>
       <div className="partner-banner-slot-body">
         {label && <span className="partner-banner-slot-label">{label}</span>}
         <div className="field">

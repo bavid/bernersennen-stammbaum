@@ -25,10 +25,23 @@ export function isEinblickFileType(file) {
 // Neueste zuerst (Datum absteigend, bei gleichem Datum die jüngere id vorn) - wie der Server.
 export function sortEinblicke(list) {
   return [...list].sort((a, b) => {
+    const aOrdered = Number.isInteger(a.reihenfolge)
+    const bOrdered = Number.isInteger(b.reihenfolge)
+    // Von Hand eingeordnete (reihenfolge 1, 2, …) stehen hinter den neuen ohne Stelle - wie der Server.
+    if (aOrdered !== bOrdered) return aOrdered ? 1 : -1
+    if (aOrdered && a.reihenfolge !== b.reihenfolge) return a.reihenfolge - b.reihenfolge
     if (a.datum !== b.datum) return a.datum < b.datum ? 1 : -1
     return b.id - a.id
   })
 }
+
+// Nach dem Ziehen: die Liste in der Reihenfolge der ids, jede mit ihrer neuen Stelle (so sortiert sortEinblicke sie auch
+// ohne Antwort des Servers richtig). Unbekannte ids fallen weg.
+export function applyEinblickeOrder(list, ids) {
+  const byId = new Map((list || []).map((einblick) => [einblick.id, einblick]))
+  return ids.filter((id) => byId.has(id)).map((id, index) => ({ ...byId.get(id), reihenfolge: index + 1 }))
+}
+
 
 // Das eigene Foto kommt über /uploads (server ownEinblick) - nur solche Adressen landen in einem src.
 export function isUploadUrl(url) {

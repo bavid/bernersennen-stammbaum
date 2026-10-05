@@ -424,7 +424,11 @@ export const api = {
     deleteBanner: (position) => request(`/partner-area/profile/banner/${encodeURIComponent(position)}`, { method: 'DELETE' }),
     // Feedback-Runde: das Layout der Bannerfotos ({ banner, layout } wie jede Antwort oben).
     setBannerLayout: (layout) => request('/partner-area/profile/banner/layout', json('PUT', { layout })),
+    // Ziehen im Reiter „Fotos“: die bisherigen Positionen in neuer Reihenfolge, Antwort { banner, layout }.
+    setBannerOrder: (positions) => request('/partner-area/profile/banner/reihenfolge', json('PUT', { positions })),
     einblicke: () => request('/partner-area/einblicke'),
+    // Ziehen im Reiter „Fotos“: alle eigenen Einblick-Ids in neuer Reihenfolge, Antwort: die Liste.
+    setEinblickeOrder: (ids) => request('/partner-area/einblicke/reihenfolge', json('PUT', { ids })),
     // formData: foto, datum (JJJJ-MM-TT), text, einwilligung ('true') - siehe EinblickForm.
     createEinblick: (formData) => request('/partner-area/einblicke', { method: 'POST', body: formData }),
     updateEinblick: (id, fields) => request(`/partner-area/einblicke/${encodeURIComponent(id)}`, json('PUT', fields)),

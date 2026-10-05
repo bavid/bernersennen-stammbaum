@@ -910,3 +910,90 @@
   gap: var(--space-2);
 }
 
+/* Anordnen per Ziehen (hooks/useDragReorder.js, ReorderHandle) im Reiter „Fotos“: der Griff sitzt auf dem Foto, die
+   gezogene Karte schwebt als Geist mit, das Ablageziel bekommt einen gestrichelten Rahmen, ein per Tastatur aufgenommenes
+   Foto einen kräftigen. Mindestens 44 px Zielfläche. */
+.reorder-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 12px);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.reorder-handle svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.reorder-handle:hover,
+.reorder-handle:focus-visible {
+  background: var(--surface);
+}
+
+.reorder-handle.is-grabbed,
+.is-dragging .reorder-handle {
+  cursor: grabbing;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.reorder-handle:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.einblick-card .einblick-handle {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+}
+
+.einblick-card.is-dragging,
+.partner-banner-slot.is-dragging {
+  position: relative;
+  z-index: 5;
+  opacity: 0.85;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+
+.einblick-card.is-drop-target,
+.partner-banner-slot.is-drop-target {
+  outline: 2px dashed var(--rust);
+  outline-offset: 3px;
+}
+
+.einblick-card.is-grabbed,
+.partner-banner-slot.is-grabbed {
+  outline: 3px solid var(--rust);
+  outline-offset: 3px;
+}
+
+.partner-banner-thumb-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.partner-banner-thumb-wrap .partner-banner-handle {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .einblick-card,
+  .partner-banner-slot {
+    transition: outline-color 150ms ease, box-shadow 150ms ease;
+  }
+}

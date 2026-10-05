@@ -6,6 +6,7 @@ import { MAX_EINBLICK_TEXT, einblickChanges, isUploadUrl } from '../lib/einblick
 import ConfirmButton from './ConfirmButton.jsx'
 import EinblickPinButton from './EinblickPinButton.jsx'
 import Icon from './Icon.jsx'
+import ReorderHandle from './ReorderHandle.jsx'
 
 // Datum und Text eines Einblicks direkt in der Karte ändern - das Foto bleibt (neues Foto = neuer Einblick).
 function EinblickEditForm({ einblick, onSaved, onCancel }) {
@@ -83,7 +84,9 @@ function EinblickEditForm({ einblick, onSaved, onCancel }) {
 // verborgen hat (dann erscheint er nicht auf dem Portal). Bearbeiten klappt Datum/Text inline auf,
 // Löschen fragt einmal nach (ConfirmButton) und steht abgesetzt am Ende der Zeile. In der Demo sind beide gesperrt. Phase V1: dazu "Anpinnen" für die Karte in
 // "Entdecken" (EinblickPinButton) - canPin false, sobald drei angepinnt sind.
-export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintId, canPin = true }) {
+// reorder (Reiter „Fotos“): { hook, index, count } aus useDragReorder - dann trägt die Karte einen Griff zum Anordnen
+// (ReorderHandle) und zeigt Ziehen, Ablageziel und „aufgenommen“ an; null ohne.
+export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintId, canPin = true, reorder = null }) {
   const isDemo = useIsDemo()
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -108,9 +111,16 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
   }
 
   return (
-    <li className={`einblick-card${einblick.ausgeblendet ? ' is-hidden-by-admin' : ''}${editing ? ' is-editing' : ''}`}>
+    <li
+      ref={reorder?.hook.itemRef(einblick.id)}
+      className={`einblick-card${einblick.ausgeblendet ? ' is-hidden-by-admin' : ''}${editing ? ' is-editing' : ''}${reorder ? ` ${reorder.hook.itemClass(einblick.id)}` : ''}`}
+      style={reorder?.hook.itemStyle(einblick.id)}
+    >
       <div className="einblick-photo">
         {isUploadUrl(einblick.fotoUrl) && <img src={einblick.fotoUrl} alt={`Einblick vom ${dateLabel}`} loading="lazy" />}
+        {reorder && (
+          <ReorderHandle reorder={reorder.hook} itemKey={einblick.id} index={reorder.index} count={reorder.count} label={`Einblick vom ${dateLabel}`} className="einblick-handle" />
+        )}
         {einblick.ausgeblendet && (
           <span className="pill einblick-hidden-badge">
             <Icon name="eyeOff" />

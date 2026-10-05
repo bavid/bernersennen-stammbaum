@@ -136,6 +136,39 @@ const followingStmt = db.prepare('SELECT id, position FROM partner_banner WHERE 
 const moveStmt = db.prepare('UPDATE partner_banner SET position = ? WHERE id = ?')
 const layoutStmt = db.prepare('SELECT banner_layout FROM partners WHERE id = ?')
 const saveLayoutStmt = db.prepare('UPDATE partners SET banner_layout = ? WHERE id = ?')
+const deleteAllStmt = db.prepare('DELETE FROM partner_banner WHERE partner_id = ?')
+const reinsertStmt = db.prepare('INSERT INTO partner_banner (id, partner_id, position, foto_url, alt, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+
+const ORDER_MESSAGE = 'Bitte alle Bannerfotos genau einmal in der neuen Reihenfolge schicken.'
+
+// { positions: [...] } -> die bisherigen Positionen aller Fotos dieses Partners in neuer Reihenfolge, jede genau einmal
+// (vollständige Umstellung) - sonst 400. Andere Felder -> 400, statt sie stillschweigend zu übergehen.
+function validateBannerOrder(body, rows) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw httpError(400, ORDER_MESSAGE)
+  const unknown = Object.keys(body).find((key) => key !== 'positions')
+  if (unknown !== undefined) throw httpError(400, `Dieses Feld lässt sich hier nicht ändern: ${unknown.slice(0, 40)}`)
+  const positions = body.positions
+  if (!Array.isArray(positions) || positions.length !== rows.length) throw httpError(400, ORDER_MESSAGE)
+  const known = new Set(rows.map((row) => row.position))
+  if (!positions.every((position) => Number.isInteger(position) && known.has(position)) || new Set(positions).size !== positions.length) {
+    throw httpError(400, ORDER_MESSAGE)
+  }
+  return positions
+}
+
+// Neue Reihenfolge (Ziehen im Reiter „Fotos“, routes/partnerArea/banner.js PUT /reihenfolge). Positionen sind UNIQUE und
+// per CHECK auf 1..MAX_BANNER begrenzt - für Zwischenwerte ist kein Platz. Darum werden die Zeilen in EINER Transaktion
+// gelöscht und mit denselben Ids an den neuen Stellen wieder angelegt (Datei, Beschreibung, Demo-Kennzeichen und Datum
+// ziehen mit).
+const reorderBanner = db.transaction((partnerId, body) => {
+  const rows = listStmt.all(partnerId)
+  const positions = validateBannerOrder(body, rows)
+  deleteAllStmt.run(partnerId)
+  positions.forEach((position, index) => {
+    const row = rows.find((candidate) => candidate.position === position)
+    reinsertStmt.run(row.id, partnerId, index + 1, row.foto_url, row.alt, row.is_demo, row.created_at)
+  })
+})
 
 function listBanner(partnerId) {
   return listStmt.all(partnerId)
@@ -204,6 +237,8 @@ module.exports = {
   validateLayoutUpdate,
   defaultLayout,
   widenBannerPositions,
+  ORDER_MESSAGE,
+  reorderBanner,
   parsePosition,
   ownBanner,
   publicBanner,

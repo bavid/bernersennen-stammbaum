@@ -91,6 +91,7 @@ function ownEinblick(row) {
     text: row.text,
     ausgeblendet: Boolean(row.ausgeblendet),
     angepinntVon: row.angepinnt_von ?? null,
+    reihenfolge: Number.isInteger(row.reihenfolge) ? row.reihenfolge : null,
     createdAt: row.created_at
   }
 }
@@ -103,12 +104,27 @@ function publicEinblick(row, { preview = false } = {}) {
 
 // --- Abfragen ------------------------------------------------------------------------------------
 
+// Reihenfolge von Hand (Reiter „Fotos“, Ziehen - routes/partnerArea/einblicke.js PUT /reihenfolge): Spalte reihenfolge,
+// NULL = noch nicht eingeordnet. Dieses Modul legt die Spalte selbst an (db.js ist an seiner Dateigrenze). Sortiert
+// wird im Partner-Bereich und auf dem Portal gleich: neue Einblicke (ohne Stelle) zuerst, neueste vorn - danach die
+// eingeordneten an ihrer Stelle. Teaser und Karte in "Entdecken" bleiben beim Datum (teaserFotoSql, lib/einblickPins.js).
+function ensureReihenfolgeColumn(database) {
+  const exists = database.prepare("SELECT 1 FROM pragma_table_info('partner_einblicke') WHERE name = 'reihenfolge'").get()
+  if (!exists) database.exec('ALTER TABLE partner_einblicke ADD COLUMN reihenfolge INTEGER')
+}
+
+ensureReihenfolgeColumn(db)
+
+const ORDER_SQL = '(reihenfolge IS NULL) DESC, reihenfolge, datum DESC, id DESC'
+const ORDER_MESSAGE = 'Bitte alle Einblicke genau einmal in der neuen Reihenfolge schicken.'
+
 const countAllStmt = db.prepare('SELECT COUNT(*) AS c FROM partner_einblicke WHERE partner_id = ?')
 const countVisibleStmt = db.prepare('SELECT COUNT(*) AS c FROM partner_einblicke WHERE partner_id = ? AND ausgeblendet = 0')
-const listOwnStmt = db.prepare('SELECT * FROM partner_einblicke WHERE partner_id = ? ORDER BY datum DESC, id DESC')
+const listOwnStmt = db.prepare(`SELECT * FROM partner_einblicke WHERE partner_id = ? ORDER BY ${ORDER_SQL}`)
 const listVisibleStmt = db.prepare(
-  `SELECT * FROM partner_einblicke WHERE partner_id = ? AND ausgeblendet = 0 ORDER BY datum DESC, id DESC LIMIT ${MAX_EINBLICKE}`
+  `SELECT * FROM partner_einblicke WHERE partner_id = ? AND ausgeblendet = 0 ORDER BY ${ORDER_SQL} LIMIT ${MAX_EINBLICKE}`
 )
+const setOrderStmt = db.prepare('UPDATE partner_einblicke SET reihenfolge = ? WHERE id = ? AND partner_id = ?')
 const findStmt = db.prepare('SELECT * FROM partner_einblicke WHERE id = ?')
 const findOwnStmt = db.prepare('SELECT * FROM partner_einblicke WHERE id = ? AND partner_id = ?')
 const insertStmt = db.prepare(
@@ -169,6 +185,25 @@ function updateEinblick(id, changes) {
   return findStmt.get(id)
 }
 
+// { ids: [...] } -> alle Einblicke DIESES Partners, jede Id genau einmal (vollständige Umstellung) - sonst 400. Ids kommen
+// als Zahlen; fremde, unbekannte oder doppelte Ids lehnt die Prüfung ab, bevor etwas geschrieben wird.
+function validateOrderIds(body, rows) {
+  const ids = body && typeof body === 'object' && !Array.isArray(body) ? body.ids : undefined
+  if (!Array.isArray(ids) || ids.length !== rows.length) throw httpError(400, ORDER_MESSAGE)
+  const known = new Set(rows.map((row) => row.id))
+  const cleaned = ids.map((value) => (typeof value === 'number' ? cleanId(value) : NaN))
+  if (!cleaned.every((id) => known.has(id)) || new Set(cleaned).size !== cleaned.length) throw httpError(400, ORDER_MESSAGE)
+  return cleaned
+}
+
+// Neue Reihenfolge (Ziehen im Reiter „Fotos“): die genannten Einblicke bekommen 1, 2, 3 … - in EINER Transaktion.
+// Gibt die eigene Liste in neuer Reihenfolge zurück.
+const setEinblickeReihenfolge = db.transaction((partnerId, body) => {
+  const ids = validateOrderIds(body, listOwnStmt.all(partnerId))
+  ids.forEach((id, index) => setOrderStmt.run(index + 1, id, partnerId))
+  return listOwnStmt.all(partnerId)
+})
+
 // Löscht den Einblick; true, wenn sein Foto danach von keinem anderen Einblick mehr genutzt wird (dann
 // darf der Aufrufer die Datei entfernen).
 function deleteEinblick(einblick) {
@@ -215,6 +250,8 @@ module.exports = {
   MAX_EINBLICKE,
   MAX_TEXT_LENGTH,
   LIMIT_MESSAGE,
+  ORDER_MESSAGE,
+  setEinblickeReihenfolge,
   CONSENT_MESSAGE,
   validateDatum,
   validateText,

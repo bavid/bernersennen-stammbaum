@@ -23,7 +23,8 @@ const {
   findOwnEinblick,
   insertEinblick,
   updateEinblick,
-  deleteEinblick
+  deleteEinblick,
+  setEinblickeReihenfolge
 } = require('../../lib/einblicke')
 const { pinByPartner, unpinByPartner } = require('../../lib/einblickPins')
 
@@ -95,6 +96,16 @@ router.post('/', denyDemoWrites, uploadLimiter, requireFreeDisk, rejectWhenFull,
       sendError(res, next, err)
     }
   })
+})
+
+// Ziehen im Reiter „Fotos“: { ids } - alle eigenen Einblicke genau einmal in der neuen Reihenfolge (lib/einblicke.js
+// setEinblickeReihenfolge). Antwort: die eigene Liste in neuer Reihenfolge. Steht vor /:id.
+router.put('/reihenfolge', denyDemoWrites, (req, res, next) => {
+  try {
+    res.json(setEinblickeReihenfolge(req.partner.id, req.body).map(ownEinblick))
+  } catch (err) {
+    sendError(res, next, err)
+  }
 })
 
 router.put('/:id', denyDemoWrites, (req, res, next) => {

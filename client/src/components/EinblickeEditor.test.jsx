@@ -3,18 +3,22 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick } = vi.hoisted(() => ({
+const { einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick, setEinblickeOrder } = vi.hoisted(() => ({
   einblicke: vi.fn(),
   createEinblick: vi.fn(),
   updateEinblick: vi.fn(),
   deleteEinblick: vi.fn(),
   pinEinblick: vi.fn(),
-  unpinEinblick: vi.fn()
+  unpinEinblick: vi.fn(),
+  setEinblickeOrder: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { partnerArea: { einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick } } }))
+vi.mock('../api', () => ({
+  api: { partnerArea: { einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick, setEinblickeOrder } }
+}))
 
 import EinblickeEditor from './EinblickeEditor.jsx'
 import { DemoProvider } from '../lib/demo.js'
+import { ToastProvider } from './Toast.jsx'
 import { todayIso } from '../lib/dates.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -52,7 +56,9 @@ async function render({ list = [einblickA, einblickB], isDemo = false } = {}) {
   await act(async () =>
     root.render(
       <DemoProvider value={isDemo}>
-        <EinblickeEditor onChanged={onChanged} />
+        <ToastProvider>
+          <EinblickeEditor onChanged={onChanged} />
+        </ToastProvider>
       </DemoProvider>
     )
   )
@@ -94,7 +100,7 @@ afterEach(() => {
     container.remove()
     container = null
   }
-  for (const mock of [einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick]) mock.mockReset()
+  for (const mock of [einblicke, createEinblick, updateEinblick, deleteEinblick, pinEinblick, unpinEinblick, setEinblickeOrder]) mock.mockReset()
   delete URL.createObjectURL
   delete URL.revokeObjectURL
 })
@@ -394,5 +400,66 @@ describe('EinblickeEditor – Anpinnen', () => {
   test('in der Demo gesperrt', async () => {
     await render({ list: [einblickA], isDemo: true })
     expect(pinButton(cards()[0]).disabled).toBe(true)
+  })
+})
+
+// Anordnen per Griff (ReorderHandle, hooks/useDragReorder.js) - hier der Tastaturweg; das Ziehen prüft useDragReorder.test.
+describe('EinblickeEditor – Reihenfolge', () => {
+  const photos = () => cards().map((card) => card.querySelector('img').getAttribute('src'))
+  const handles = () => cards().map((card) => card.querySelector('.reorder-handle'))
+
+  async function press(target, key) {
+    await act(async () => target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })))
+  }
+
+  test('ein einzelner Einblick hat keinen Griff', async () => {
+    await render({ list: [einblickA] })
+    expect(container.querySelector('.reorder-handle')).toBeNull()
+    expect(container.textContent).not.toContain('Reihenfolge ändern')
+  })
+
+  test('aufnehmen, Pfeil, ablegen: alle Ids in neuer Reihenfolge zum Server, die Antwort gilt', async () => {
+    setEinblickeOrder.mockResolvedValue([
+      { ...einblickA, reihenfolge: 1 },
+      { ...einblickB, reihenfolge: 2 }
+    ])
+    await render({ list: [einblickA, einblickB] })
+    expect(photos()).toEqual(['/uploads/b.jpg', '/uploads/a.jpg'], 'neueste zuerst')
+    expect(container.textContent).toContain('Reihenfolge ändern')
+    const handle = handles()[1]
+    expect(handle.getAttribute('aria-label')).toMatch(/^Einblick vom .+ verschieben – Stelle 2 von 2$/)
+    await press(handle, ' ')
+    expect(handle.getAttribute('aria-grabbed')).toBe('true')
+    await press(handle, 'ArrowLeft')
+    expect(photos()).toEqual(['/uploads/a.jpg', '/uploads/b.jpg'], 'Vorschau')
+    expect(setEinblickeOrder).not.toHaveBeenCalled()
+    await press(handle, ' ')
+    expect(setEinblickeOrder).toHaveBeenCalledWith([1, 2])
+    expect(photos()).toEqual(['/uploads/a.jpg', '/uploads/b.jpg'])
+    expect(container.querySelector('[aria-live="assertive"]').textContent).toMatch(/liegt jetzt an Stelle 1 von 2/)
+  })
+
+  test('scheitert das Speichern, springt die alte Reihenfolge zurück und ein Hinweis erscheint', async () => {
+    setEinblickeOrder.mockRejectedValue(new Error('kaputt'))
+    await render({ list: [einblickA, einblickB] })
+    const handle = handles()[1]
+    await press(handle, ' ')
+    await press(handle, 'ArrowLeft')
+    await press(handle, 'Enter')
+    expect(setEinblickeOrder).toHaveBeenCalledTimes(1)
+    expect(photos()).toEqual(['/uploads/b.jpg', '/uploads/a.jpg'])
+    expect(container.querySelector('.toast').textContent).toContain('Reihenfolge ließ sich nicht speichern')
+  })
+
+  test('Demo: anordnen bleibt lokal, mit Hinweis', async () => {
+    await render({ list: [einblickA, einblickB], isDemo: true })
+    const handle = handles()[1]
+    expect(handle.disabled).toBe(false)
+    await press(handle, ' ')
+    await press(handle, 'ArrowLeft')
+    await press(handle, ' ')
+    expect(setEinblickeOrder).not.toHaveBeenCalled()
+    expect(photos()).toEqual(['/uploads/a.jpg', '/uploads/b.jpg'])
+    expect(container.querySelector('.toast').textContent).toContain('In der Demo nicht möglich.')
   })
 })

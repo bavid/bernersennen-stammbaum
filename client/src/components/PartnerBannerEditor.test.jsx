@@ -3,17 +3,19 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { addBanner, replaceBanner, updateBannerAlt, deleteBanner, setBannerLayout } = vi.hoisted(() => ({
+const { addBanner, replaceBanner, updateBannerAlt, deleteBanner, setBannerLayout, setBannerOrder } = vi.hoisted(() => ({
   addBanner: vi.fn(),
   replaceBanner: vi.fn(),
   updateBannerAlt: vi.fn(),
   deleteBanner: vi.fn(),
-  setBannerLayout: vi.fn()
+  setBannerLayout: vi.fn(),
+  setBannerOrder: vi.fn()
 }))
-vi.mock('../api', () => ({ api: { partnerArea: { addBanner, replaceBanner, updateBannerAlt, deleteBanner, setBannerLayout } } }))
+vi.mock('../api', () => ({ api: { partnerArea: { addBanner, replaceBanner, updateBannerAlt, deleteBanner, setBannerLayout, setBannerOrder } } }))
 
 import PartnerBannerEditor from './PartnerBannerEditor.jsx'
 import { DemoProvider } from '../lib/demo.js'
+import { ToastProvider } from './Toast.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -45,7 +47,9 @@ async function render({ banner = [], layout, isDemo = false } = {}) {
   await act(async () =>
     root.render(
       <DemoProvider value={isDemo}>
-        <PartnerBannerEditor banner={banner} layout={layout} onChange={onChange} />
+        <ToastProvider>
+          <PartnerBannerEditor banner={banner} layout={layout} onChange={onChange} />
+        </ToastProvider>
       </DemoProvider>
     )
   )
@@ -62,7 +66,7 @@ afterEach(() => {
   }
   container?.remove()
   container = null
-  for (const mock of [addBanner, replaceBanner, updateBannerAlt, deleteBanner, setBannerLayout]) mock.mockReset()
+  for (const mock of [addBanner, replaceBanner, updateBannerAlt, deleteBanner, setBannerLayout, setBannerOrder]) mock.mockReset()
 })
 
 describe('PartnerBannerEditor', () => {
@@ -200,5 +204,63 @@ describe('PartnerBannerEditor', () => {
     expect(container.querySelector('#partner-banner-alt-1').disabled).toBe(true)
     expect(container.querySelector('.partner-banner-slot .btn-danger').disabled).toBe(true)
     expect(container.textContent).toContain('In der Demo nicht möglich.')
+  })
+})
+
+// Anordnen per Griff (ReorderHandle, hooks/useDragReorder.js) - hier der Tastaturweg; das Ziehen prüft useDragReorder.test.
+describe('PartnerBannerEditor – Reihenfolge', () => {
+  const thumbs = () => [...container.querySelectorAll('img.partner-banner-thumb')].map((img) => img.getAttribute('src'))
+  const handles = () => [...container.querySelectorAll('.reorder-handle')]
+  const swapped = { banner: [{ ...second, position: 1 }, { ...first, position: 2 }], layout: 'halb' }
+
+  async function press(target, key) {
+    await act(async () => target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })))
+  }
+
+  test('ein Foto: kein Griff', async () => {
+    await render({ banner: [first], layout: 'eins' })
+    expect(handles()).toHaveLength(0)
+  })
+
+  test('aufnehmen, Pfeil, ablegen: die bisherigen Positionen in neuer Reihenfolge zum Server, Antwort an onChange', async () => {
+    setBannerOrder.mockResolvedValue(swapped)
+    await render({ banner: [first, second], layout: 'halb' })
+    expect(handles()).toHaveLength(2)
+    expect(handles()[0].getAttribute('aria-label')).toBe('Foto 1 · links verschieben – Stelle 1 von 2')
+    const handle = handles()[0]
+    await press(handle, ' ')
+    expect(handle.getAttribute('aria-grabbed')).toBe('true')
+    await press(handle, 'ArrowRight')
+    expect(thumbs()).toEqual(['/uploads/b.jpg', '/uploads/a.jpg'], 'Vorschau')
+    expect(container.querySelector('[aria-live="assertive"]').textContent).toBe('Foto 1 · links – Stelle 2 von 2')
+    await press(handle, 'Enter')
+    expect(setBannerOrder).toHaveBeenCalledWith([2, 1])
+    expect(onChange).toHaveBeenCalledWith(swapped)
+    expect(thumbs()).toEqual(['/uploads/b.jpg', '/uploads/a.jpg'])
+  })
+
+  test('scheitert das Speichern, springt die alte Reihenfolge zurück und ein Hinweis erscheint', async () => {
+    setBannerOrder.mockRejectedValue(new Error('kaputt'))
+    await render({ banner: [first, second], layout: 'halb' })
+    const handle = handles()[0]
+    await press(handle, ' ')
+    await press(handle, 'ArrowRight')
+    await press(handle, ' ')
+    expect(setBannerOrder).toHaveBeenCalledTimes(1)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(thumbs()).toEqual(['/uploads/a.jpg', '/uploads/b.jpg'])
+    expect(container.querySelector('.toast').textContent).toContain('Reihenfolge ließ sich nicht speichern')
+  })
+
+  test('Demo: anordnen bleibt lokal, mit Hinweis', async () => {
+    await render({ banner: [first, second], layout: 'halb', isDemo: true })
+    const handle = handles()[0]
+    expect(handle.disabled).toBe(false)
+    await press(handle, ' ')
+    await press(handle, 'ArrowRight')
+    await press(handle, ' ')
+    expect(setBannerOrder).not.toHaveBeenCalled()
+    expect(thumbs()).toEqual(['/uploads/b.jpg', '/uploads/a.jpg'])
+    expect(container.querySelector('.toast').textContent).toContain('In der Demo nicht möglich.')
   })
 })

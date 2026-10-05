@@ -27,6 +27,7 @@ const {
   replaceBanner,
   updateBannerAlt,
   deleteBanner,
+  reorderBanner,
   readLayout,
   saveLayout
 } = require('../../lib/partnerBanner')
@@ -122,6 +123,17 @@ router.put('/:position/foto', denyDemoWrites, uploadLimiter, requireFreeDisk, re
     removeUploadByUrl(previousUrl)
     sendList(res, req.partner.id)
   })
+})
+
+// Ziehen im Reiter „Fotos“: { positions } - die bisherigen Positionen in neuer Reihenfolge (lib/partnerBanner.js
+// reorderBanner). Steht vor /:position wie /layout.
+router.put('/reihenfolge', denyDemoWrites, (req, res, next) => {
+  try {
+    reorderBanner(req.partner.id, req.body)
+    sendList(res, req.partner.id)
+  } catch (err) {
+    sendError(res, next, err)
+  }
 })
 
 // Feedback-Runde: { layout } - wie die Fotos im Kopf stehen (lib/partnerBanner.js BANNER_LAYOUTS). Steht vor
