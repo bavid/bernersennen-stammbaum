@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import InstallHint from '../InstallHint.jsx'
 
 // Einstellungen › App: „Als App aufs Handy“ für Angemeldete - der Install-Hinweis in der Fassung, die stehen bleibt
@@ -8,7 +9,11 @@ export default function AppSection() {
       <h2 id="app-title" className="visually-hidden">
         App
       </h2>
-      <InstallHint variant="settings" headingLevel="h3" />
+      <InstallHint variant="settings" headingLevel="h3">
+        <Link to="/app" className="install-hint-link">
+          Ausführliche Anleitung für Android, iPhone und PC
+        </Link>
+      </InstallHint>
     </section>
   )
 }

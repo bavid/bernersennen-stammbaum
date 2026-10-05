@@ -90,3 +90,10 @@
   outline: 2px solid var(--paper);
   outline-offset: 2px;
 }
+
+/* Link zur ausführlichen Anleitung (/app) in der Karte */
+.install-hint-link {
+  justify-self: start;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}

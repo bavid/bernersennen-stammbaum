@@ -198,7 +198,11 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
         {/* „Als App aufs Handy – ohne App Store“: eine ruhige Karte unter den Einstiegen (nicht beim Einlösen auf /v). */}
         {showPartnerEntry && !showingKeyReveal && (
           <div className="login-install">
-            <InstallHint variant="card" />
+            <InstallHint variant="card">
+              <Link to="/app" className="install-hint-link">
+                Ausführliche Anleitung für Android, iPhone und PC
+              </Link>
+            </InstallHint>
           </div>
         )}
       </section>

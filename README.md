@@ -180,7 +180,8 @@ lokale Datenbank bleibt unberührt.
 ## Als App installieren
 
 Familie auf Pfoten ist eine installierbare Web-App (PWA) - ohne App Store, direkt aus dem Browser. Die Anleitung dazu
-steht auf der Login-Seite („Als App aufs Handy - ohne App Store“) und unter Einstellungen › App.
+steht auf der Login-Seite („Als App aufs Handy - ohne App Store“), ausführlich je Gerät unter `/app` und unter
+Einstellungen › App.
 
 - **Android (Chrome):** Knopf „App installieren“ auf der Login-Seite oder Menü ⋮ → „App installieren“.
 - **iPhone/iPad (Safari):** Teilen-Symbol → „Zum Home-Bildschirm“ → „Hinzufügen“.
