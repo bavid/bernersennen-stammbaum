@@ -46,6 +46,7 @@ const sucheRoutes = require('./routes/suche')
 const startRoutes = require('./routes/start')
 const tiereRoutes = require('./routes/tiere')
 const schuetzlingeRoutes = require('./routes/schuetzlinge')
+const pushRoutes = require('./routes/push')
 const { rahmenApiRouter, rahmenFotoRouter, rahmenPageHeaders } = require('./routes/rahmen')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
@@ -248,6 +249,8 @@ function createApp() {
   app.use('/api/tiere', tiereRoutes)
   // „So geht es euren Schützlingen“ - nur für Tierheime (routes/schuetzlinge.js)
   app.use('/api/schuetzlinge', schuetzlingeRoutes)
+  // Benachrichtigungen aufs Handy (Web Push): Abos je Zuhause, öffentlicher VAPID-Schlüssel (routes/push.js, lib/push.js).
+  app.use('/api/push', pushRoutes)
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))
 
   // Fotos eines Rahmen-Geräts über signierte, kurzlebige Adressen (routes/rahmen.js) und die Seite /rahmen selbst: beide

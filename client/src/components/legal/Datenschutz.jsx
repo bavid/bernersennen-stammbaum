@@ -50,6 +50,11 @@ export default function Datenschutz({ legal }) {
           euer Browser (localStorage) auf diesem Gerät, damit ihr sie nicht jedes Mal neu eingeben müsst.
         </p>
         <p>
+          „Standort für ‚In der Nähe‘ merken“ (Einstellungen › App) fragt den Standort einmal auf Tippen ab und lässt den
+          Server die nächste Postleitzahl nennen – wieder nur gerundet und nur für diese eine Antwort. Gemerkt wird allein
+          die Postleitzahl, auf eurem Gerät; „Vergessen“ nimmt sie wieder weg.
+        </p>
+        <p>
           Die Suche läuft über unseren eigenen Server bei OpenStreetMap (Overpass-API): OpenStreetMap sieht dabei
           nur die Adresse unseres Servers und die gerundeten Koordinaten, niemals die IP-Adresse oder den genauen
           Standort der Nutzerin oder des Nutzers. Der Server speichert Treffer aus dieser Suche für etwa 7 Tage in

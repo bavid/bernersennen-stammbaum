@@ -194,6 +194,14 @@ Offline-Seite - nie die API, Fotos oder andere Nutzerdaten; Admin und das Bilder
 ihn. Eine neue Version meldet sich mit „Neue Version verfügbar · Neu laden“ und übernimmt erst auf Klick. Native
 Store-Apps sind eine spätere Option.
 
+**Benachrichtigungen aufs Handy** (Einstellungen › App, Web Push): nur mit VAPID-Schlüsselpaar in der `.env`
+(`node server/scripts/vapid.js` erzeugt `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, siehe `.env.example`). Verschickt wird
+nur, was die Hinweis-Glocke zählt (Gruß, „Mit dabei“-Anfrage, neuer Gast) - als fester Text ohne Namen
+(`server/lib/push.js`, `/api/push`). Der Browser fragt die Erlaubnis erst beim Einschalten; auf iPhone/iPad geht es nur
+installiert (iOS 16.4+). Dazu „Standort für ‚In der Nähe‘ merken“ (nur die Postleitzahl, auf dem Gerät) und „Unsere
+Einstellungen zurücksetzen“ (Abo, PLZ, Hinweise - Browser-Berechtigungen selbst kann eine Website nicht zurücknehmen,
+die Seite zeigt den Weg je Gerät).
+
 
 
 Die App läuft als Container und lauscht nur auf `127.0.0.1:3010`. HTTPS davor macht der

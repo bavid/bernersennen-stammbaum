@@ -1,0 +1,79 @@
+/* Einstellungen › App (components/settings/AppSection.jsx): Install-Hinweis, Benachrichtigungen, Standort, Zurücksetzen -
+   ruhige Karten untereinander, je eine Sache. */
+
+.app-section {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.app-section-group {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.app-section-group > h3 {
+  font-size: var(--text-lg);
+}
+
+.app-setting {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.app-setting-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.app-setting-label {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Der Schalter wie die Admin-Schalter (.check), nur in der normalen Textfarbe und mit Trefferfläche */
+.app-setting-switch {
+  min-height: 44px;
+  color: var(--text);
+  font-size: var(--text-base);
+}
+
+.app-setting-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.app-setting-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.app-reset .btn {
+  justify-self: start;
+}
+
+.app-reset-anleitung {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.app-reset-anleitung ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}

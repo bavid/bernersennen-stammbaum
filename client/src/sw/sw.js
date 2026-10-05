@@ -10,6 +10,7 @@
 // - NIE im Cache: die API, Fotos und alles mit Nutzerdaten, Admin und das Bilderrahmen-Gerät (lib/swRoutes.js).
 // - skipWaiting nur auf Wunsch der Seite („Neu laden“ im Hinweis „Neue Version verfügbar“), nie von allein.
 import { ROUTES, routeFor } from '../lib/swRoutes.js'
+import { handleNotificationClick, handlePush } from './push.js'
 
 // __SW_VERSION__ setzt build/swPlugin.js (Hash der Dateiliste): neue Version -> neuer Cache-Name -> neuer Worker.
 const VERSION = typeof __SW_VERSION__ === 'string' ? __SW_VERSION__ : 'dev'
@@ -96,3 +97,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
+
+// Benachrichtigungen aufs Handy (Einstellungen › App, server/lib/push.js) - siehe ./push.js
+self.addEventListener('push', handlePush)
+self.addEventListener('notificationclick', handleNotificationClick)

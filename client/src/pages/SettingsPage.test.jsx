@@ -17,7 +17,9 @@ const api = vi.hoisted(() => ({
   updateFamily: vi.fn(),
   familyMembers: vi.fn(),
   // Mein Zuhause zeigt auch die Rahmen-Links des digitalen Bilderrahmens (eigener Abschnitt)
-  rahmenGeraete: vi.fn()
+  rahmenGeraete: vi.fn(),
+  // Einstellungen › App: Benachrichtigungen aufs Handy fragen den Server nach dem Schlüssel
+  pushKey: vi.fn()
 }))
 vi.mock('../api', () => ({ api }))
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
@@ -111,6 +113,7 @@ beforeEach(() => {
   api.listDogs.mockResolvedValue(dogs)
   api.visits.mockResolvedValue({ besuche: [{ id: 9, name: 'Zuhause Möwenweg', seit: '2026-09-01 10:00:00' }], gaeste: [] })
   api.setDarstellung.mockImplementation(async (patch) => ({ ...atHome.darstellung, ...patch }))
+  api.pushKey.mockResolvedValue({ enabled: false, publicKey: null, geraete: 0 })
 })
 
 afterEach(() => {

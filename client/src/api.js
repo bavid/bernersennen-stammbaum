@@ -125,6 +125,14 @@ export const api = {
 
   // "In der Nähe" (/umgebung, angemeldet): location ist { plz } oder { lat, lon }, nie beides.
   searchPlaces: (location, radius) => request('/places/search', json('POST', { ...location, radius })),
+  // Nächste PLZ zum Standort („Standort für ‚In der Nähe‘ merken“, Einstellungen › App): Koordinaten gerundet, der
+  // Server speichert nichts (routes/places.js POST /plz).
+  plzFromLocation: (location) => request('/places/plz', json('POST', location)),
+  // Benachrichtigungen aufs Handy (Web Push, routes/push.js): öffentlicher Schlüssel, Abo anlegen, Abo kündigen
+  // (ohne endpoint: alle Geräte dieses Zuhauses - „Unsere Einstellungen zurücksetzen“).
+  pushKey: () => request('/push/key'),
+  pushSubscribe: (subscription) => request('/push/abo', json('POST', { subscription })),
+  pushUnsubscribe: (endpoint) => request('/push/abo', json('DELETE', endpoint ? { endpoint } : {})),
   // Reiter "Entdecken" (Phase 3): alle vier Abschnitte in einer Antwort. Die PLZ steht wie bei
   // publicPartners im Body, nie in der URL; ohne PLZ liefert der Server alles, nach Name sortiert.
   discover: ({ plz, radius } = {}) => request('/discover', json('POST', plz ? { plz, radius } : {})),

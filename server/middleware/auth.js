@@ -149,6 +149,7 @@ const ADMIN_VIEW_READ_ONLY = 'Admin-Ansicht – nur lesen'
 //   die PLZ nicht in der URL steht (routes/discover.js, routes/partnerArea/preview.js);
 // - /places/search, /public/partners/near: Umkreissuche "In der Nähe", PLZ/Koordinaten im Body (routes/places.js,
 //   routes/partners.js);
+// - /places/plz: nächste PLZ zum Standort (Einstellungen › App), Koordinaten im Body (routes/places.js);
 // - /vouchers/check: reines Nachschauen eines Codes, nie in der URL (routes/vouchers.js);
 // - /suche: die Suche, der Suchbegriff im Body statt in der URL (routes/suche.js).
 // /api/admin/* läuft über das Admin-Cookie, nicht über die Sitzung - deshalb ebenfalls frei (sonst könnte der
@@ -159,6 +160,7 @@ const ADMIN_VIEW_READ_ONLY_POSTS = new Set([
   '/discover',
   '/partner-area/preview/discover',
   '/places/search',
+  '/places/plz',
   '/public/partners/near',
   '/vouchers/check',
   '/suche'

@@ -27,4 +27,19 @@ function distanceKm(a, b) {
   return 2 * EARTH_KM * Math.asin(Math.sqrt(h))
 }
 
-module.exports = { lookupPlz, roundCoord, validCoords, distanceKm }
+// Nächste Postleitzahl zu (gerundeten) Koordinaten - für „Standort für ‚In der Nähe‘ merken“ (Einstellungen › App): die
+// App merkt sich danach nur die PLZ, auf dem Gerät. Außerhalb Deutschlands (nichts in MAX_NEAREST_KM) null.
+const MAX_NEAREST_KM = 30
+
+function nearestPlz(lat, lon) {
+  if (!validCoords(lat, lon)) return null
+  const here = { lat, lon }
+  let best = null
+  for (const [code, [plat, plon, ort]] of Object.entries(plz)) {
+    const km = distanceKm(here, { lat: plat, lon: plon })
+    if (!best || km < best.km) best = { plz: code, ort, km }
+  }
+  return best && best.km <= MAX_NEAREST_KM ? { plz: best.plz, ort: best.ort } : null
+}
+
+module.exports = { lookupPlz, nearestPlz, roundCoord, validCoords, distanceKm }

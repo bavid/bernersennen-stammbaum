@@ -38,6 +38,19 @@ export default function PrivacyRequests() {
           Kontakt zu Telegram – Telegram erfährt weder eure IP-Adresse noch etwas über euer Gerät.
         </p>
       </LegalSection>
+
+      <LegalSection id="push">
+        <p>
+          Wer möchte, schaltet unter Einstellungen › App „Benachrichtigungen aufs Handy“ ein (Web Push). Der Browser fragt
+          dabei erst auf Tippen nach der Erlaubnis. Wir speichern dann die Zustelladresse eures Geräts (ein technischer
+          Endpunkt beim Push-Dienst eures Browser-Herstellers – Google, Apple oder Mozilla – samt den Schlüsseln, die der
+          Browser dafür erzeugt), verknüpft mit eurem Zuhause. Verschickt wird nur, was die Hinweis-Glocke ohnehin zählt –
+          ein neuer Gruß, eine „Mit dabei“-Anfrage, ein neuer Gast – als kurzer, fester Text ohne Namen, Titel oder
+          Inhalte, Ende-zu-Ende verschlüsselt; die Einzelheiten zeigt erst die App nach dem Anmelden. Schaltet ihr die
+          Benachrichtigungen aus oder meldet der Push-Dienst, dass das Gerät sie nicht mehr annimmt, löschen wir die
+          Adresse. Mit der App gehen auch alle Abos des Zuhauses.
+        </p>
+      </LegalSection>
     </>
   )
 }

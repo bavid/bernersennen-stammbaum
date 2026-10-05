@@ -12,6 +12,7 @@ export const DATENSCHUTZ_SECTIONS = [
   { id: 'nachrichten', title: 'Nachrichten an Partner' },
   { id: 'anfragen', title: 'Anfragen' },
   { id: 'benachrichtigungen', title: 'Benachrichtigungen des Betreibers' },
+  { id: 'push', title: 'Benachrichtigungen aufs Handy' },
   { id: 'besuche', title: 'Zuhause besuchen' },
   { id: 'mit-dabei', title: '„Mit dabei“' },
   { id: 'telegram-partner', title: 'Telegram-Hinweise für Partner' },

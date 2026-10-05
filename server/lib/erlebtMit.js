@@ -63,6 +63,7 @@ const reopenConfirmedStmt = db.prepare(
   "UPDATE erlebt_mit SET status = 'offen', entschieden_at = NULL, created_at = datetime('now') WHERE entry_id = ? AND status = 'bestaetigt'"
 )
 const insertTagStmt = db.prepare("INSERT INTO erlebt_mit (entry_id, dog_id, status) VALUES (?, ?, 'offen')")
+const findDogFamilyStmt = db.prepare('SELECT family_id FROM dogs WHERE id = ?').pluck()
 const deleteTagStmt = db.prepare('DELETE FROM erlebt_mit WHERE id = ?')
 const clearTagsStmt = db.prepare('DELETE FROM erlebt_mit WHERE entry_id = ?')
 
@@ -113,6 +114,15 @@ function syncTags(entryId, dogIds) {
   const added = [...wanted].filter((dogId) => !existingDogs.has(dogId))
   assertOpenRequestLimit(findEntryFamilyStmt.get(entryId), added)
   for (const dogId of added) insertTagStmt.run(entryId, dogId)
+  notifyOwners(findEntryFamilyStmt.get(entryId), added)
+}
+
+// Neue „Mit dabei“-Anfragen: die Besitzer der markierten Tiere erfahren es aufs Handy (lib/push.js) - je Zuhause einmal,
+// nie das eigene. Erst nach der Transaktion der Route wirksam (notifyHome verschickt per setImmediate).
+function notifyOwners(authorId, dogIds) {
+  const { EREIGNIS, notifyHome } = require('./push')
+  const owners = new Set(dogIds.map((dogId) => findDogFamilyStmt.get(dogId)).filter((id) => Number.isInteger(id) && id !== authorId))
+  for (const ownerId of owners) notifyHome(ownerId, EREIGNIS.mitDabei)
 }
 
 function clearTags(entryId) {

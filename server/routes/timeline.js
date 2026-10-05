@@ -5,6 +5,7 @@ const { isIsoDate, cleanText, cleanId, cleanPhotoList } = require('../lib/valida
 const { ART, VISIBLE_DOGS_SQL, OWN_DOGS_SQL, VISIBLE_ENTRY_SQL, VISIBLE_COMMENT_SQL } = require('../lib/context')
 const { GUEST_ENTRY_SQL, GUEST_COMMENT_SQL } = require('../lib/visits')
 const { readTagInput, applyTags, entryContentChanged, withTags, mirroredForDog } = require('../lib/erlebtMitView')
+const { EREIGNIS: PUSH, notifyHome } = require('../lib/push')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
 const { requireRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { authorContext, withAuthorFlags, mayDeleteInArea } = require('../lib/authorship')
@@ -361,6 +362,9 @@ router.post('/:id/comments', requireAuth, canComment, (req, res) => {
        ${GUEST_HOME_JOIN_SQL} WHERE c.id = ?`
     )
     .get(result.lastInsertRowid)
+  // Ein Gruß von einer anderen Identität an das Zuhause des Eintrags (wie lib/gruesse.js): Benachrichtigung aufs Handy,
+  // ohne Namen oder Text (lib/push.js).
+  if (entry.family_id !== req.homeId) notifyHome(entry.family_id, PUSH.gruss)
   res.status(201).json(toComment(comment, authorContext(req)))
 })
 

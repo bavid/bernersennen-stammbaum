@@ -135,6 +135,19 @@ function readAutoBackup(value, env) {
   return env !== 'dev'
 }
 
+// Benachrichtigungen aufs Handy (lib/push.js): VAPID-Schlüsselpaar aus der .env (node scripts/vapid.js). Beide oder
+// keiner - ein halbes Paar bleibt aus, damit nie ein Versand mit falschem Schlüssel versucht wird. Der Absender
+// (VAPID_SUBJECT, mailto: oder https-Adresse) ist Pflicht des Protokolls; ohne Angabe die öffentliche https-Adresse,
+// sonst ein mailto-Platzhalter. Der private Schlüssel wird nie geloggt und nie an einen Client gegeben.
+function readVapid(env, httpsUrl) {
+  const publicKey = (env.VAPID_PUBLIC_KEY || '').trim()
+  const privateKey = (env.VAPID_PRIVATE_KEY || '').trim()
+  const complete = publicKey.length > 0 && privateKey.length > 0
+  const subjectRaw = (env.VAPID_SUBJECT || '').trim()
+  const subject = /^(mailto:|https:\/\/)/.test(subjectRaw) ? subjectRaw : httpsUrl || 'mailto:admin@localhost'
+  return Object.freeze({ publicKey: complete ? publicKey : '', privateKey: complete ? privateKey : '', subject })
+}
+
 const dataDir = process.env.DATA_DIR || __dirname
 
 const appEnv = readAppEnv(process.env.APP_ENV)
@@ -156,6 +169,7 @@ module.exports = {
   readTelegram,
   readAppCommit,
   readAutoBackup,
+  readVapid,
   isHttpsUrl,
   cookiePrefix,
   sessionCookie: `${cookiePrefix}session`,
@@ -207,6 +221,8 @@ module.exports = {
   httpsPublicUrl,
   // Impressum/Datenschutz (Task 7, siehe routes/auth.js GET /config und lib/geo.js-Nachbarn)
   legal: readLegal(),
+  // Web Push (lib/push.js): nur der öffentliche Schlüssel geht an den Client, der private nie.
+  vapid: readVapid(process.env, httpsPublicUrl ? publicUrl : null),
   // Rückfall für die Telegram-Benachrichtigungen (siehe readTelegram) - nie loggen, nie an einen Client geben.
   telegram: readTelegram()
 }

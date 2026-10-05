@@ -10,6 +10,7 @@ const { cleanId } = require('../lib/validate')
 const { ART } = require('../lib/areaArt')
 const { visitsOf, guestsOf, endVisit, acknowledgeGuest } = require('../lib/visits')
 const { createVisitInvite, redeemVisitInvite, VISIT_INVITE_DAYS } = require('../lib/visitInvites')
+const { EREIGNIS: PUSH, notifyHome } = require('../lib/push')
 
 // Phase V2: Zuhause besuchen (/api/besuche). Alles bezieht sich auf die Identität der Sitzung (req.homeId) und nur,
 // wenn sie ein Zuhause ist - nie auf einen fremden Bereich. Einladen und Einlösen nur aus dem eigenen Zuhause
@@ -63,6 +64,8 @@ router.post('/einladungen', requireAuth, requireOwnHome, (req, res, next) => {
 router.post('/einloesen', requireAuth, codeLimiter, requireOwnHome, (req, res, next) => {
   try {
     const { host } = redeemVisitInvite(db, { code: req.body?.code, guestId: req.homeId })
+    // Neuer Gast: der Gastgeber erfährt es aufs Handy (lib/push.js) - ohne Namen.
+    notifyHome(host.id, PUSH.gast)
     res.status(201).json({ gastgeber: host, me: buildMe(req.homeId, req.familyId, req.isDemo, req.userId) })
   } catch (err) {
     sendError(err, res, next)

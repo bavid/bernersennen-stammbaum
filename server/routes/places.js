@@ -3,7 +3,7 @@ const rateLimit = require('express-rate-limit')
 const db = require('../db')
 const { requireSession } = require('../middleware/auth')
 const { ipKeyGenerator } = require('../lib/rateLimitKey')
-const { lookupPlz, roundCoord, validCoords } = require('../lib/geo')
+const { lookupPlz, nearestPlz, roundCoord, validCoords } = require('../lib/geo')
 const { searchPlaces } = require('../lib/places')
 
 const router = express.Router()
@@ -26,6 +26,19 @@ const placesLimiter = rateLimit({
 // NIE in Logs: kein Request-Logging hier, und der Fehler-Handler (app.js) gibt bei einem 5xx nur das
 // Error-Objekt aus, nie req.body - deshalb wird unten auch nie etwas aus dem Body in eine Fehlermeldung
 // eingebaut.
+// POST /api/places/plz { lat, lon } -> { plz, ort }: die nächste Postleitzahl zum Standort („Standort für ‚In der Nähe‘
+// merken“, Einstellungen › App). Koordinaten nur gerundet (~1 km) und nur für diese Antwort - nichts wird gespeichert
+// oder geloggt; die App merkt sich allein die PLZ auf dem Gerät. POST, damit nichts in der URL steht.
+router.post('/plz', placesLimiter, requireSession, (req, res) => {
+  const lat = roundCoord(Number(req.body?.lat))
+  const lon = roundCoord(Number(req.body?.lon))
+  res.setHeader('Cache-Control', 'private, no-store')
+  if (!validCoords(lat, lon)) return res.status(400).json({ error: 'Ungültiger Standort' })
+  const hit = nearestPlz(lat, lon)
+  if (!hit) return res.status(404).json({ error: 'Keine Postleitzahl in der Nähe gefunden' })
+  res.json(hit)
+})
+
 router.post('/search', placesLimiter, requireSession, async (req, res, next) => {
   try {
     const { plz, lat, lon, radius } = req.body || {}
