@@ -1,10 +1,11 @@
+import LegalSection from './legal/LegalSection.jsx'
+
 // Datenschutz-Abschnitt zum Digitalen Bilderrahmen (LegalPage, /datenschutz): die Diashow im eigenen Zuhause und der
 // Rahmen-Link für ein anderes Gerät (server/lib/rahmenGeraete.js, server/routes/rahmen.js). Nur, was die App tatsächlich
-// tut - eigene Datei wie PrivacyConnections.
+// tut - eigene Datei wie PrivacyConnections. Überschrift: lib/legalSections.js.
 export default function PrivacyBilderrahmen() {
   return (
-    <>
-      <h2>Digitaler Bilderrahmen</h2>
+    <LegalSection id="bilderrahmen">
       <p>
         Der Bilderrahmen zeigt die Fotos eurer Tiere als Diashow – angemeldet die Fotos, die ihr in eurem Zuhause ohnehin seht;
         private Erinnerungen nur, wenn ihr das in der Diashow ausdrücklich einschaltet. Welche Tiere, welcher Zeitraum und
@@ -25,6 +26,6 @@ export default function PrivacyBilderrahmen() {
         Minuten „beendet“; erneuert ihr euren Schlüssel, enden alle Rahmen-Links eures Zuhauses. Die Seite des Rahmens ist für
         Suchmaschinen ausgeschlossen (noindex).
       </p>
-    </>
+    </LegalSection>
   )
 }

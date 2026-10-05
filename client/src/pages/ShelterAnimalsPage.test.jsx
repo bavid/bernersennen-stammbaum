@@ -93,11 +93,35 @@ describe('ShelterAnimalsPage – "Unsere Tiere"', () => {
   // V-Fehler 2: "Vermittelt" und ganz rechts "Ehemalige (mitgelesen)" zeigten sinngemäß dasselbe (ein vermitteltes
   // Tier ist ein Ehemaliges) - jetzt ein Chip je Funktion.
   test('zeigt sechs Filter-Chips, jede Ansicht genau einmal: Alle, Verfügbar, Reserviert, Pausiert, Vermittelt, Ohne Status', async () => {
-    listDogs.mockResolvedValue([])
+    listDogs.mockResolvedValue([
+      dog({ id: 1, vermittlung_status: 'in_vermittlung' }),
+      dog({ id: 2, vermittlung_status: 'reserviert' }),
+      dog({ id: 3, vermittlung_status: 'pausiert' }),
+      dog({ id: 4, vermittlung_status: 'vermittelt' }),
+      dog({ id: 5, vermittlung_status: null })
+    ])
     await render()
 
     const labels = [...container.querySelectorAll('.filter-chip')].map((btn) => btn.textContent.split(' ·')[0])
     expect(labels).toEqual(['Alle', 'Verfügbar', 'Reserviert', 'Pausiert', 'Vermittelt', 'Ohne Status'])
+  })
+
+  // Audit W (N10): ein Chip mit „· 0“ sagt nichts - er bleibt weg; „Alle“ und der gewählte Filter stehen immer da.
+  test('Chips ohne Tiere bleiben weg - außer „Alle“ und dem gewählten Filter', async () => {
+    listDogs.mockResolvedValue([dog({ id: 1, vermittlung_status: 'in_vermittlung' }), dog({ id: 2, vermittlung_status: 'vermittelt' })])
+    await render()
+    const labels = () => [...container.querySelectorAll('.filter-chip')].map((btn) => btn.textContent.split(' ·')[0])
+    expect(labels()).toEqual(['Alle', 'Verfügbar', 'Vermittelt'])
+
+    act(() => chip('Vermittelt').click())
+    expect(labels()).toEqual(['Alle', 'Verfügbar', 'Vermittelt'])
+  })
+
+  test('ohne Tiere nur „Alle“ und der gewählte Filter; ein Filter aus der Adresse bleibt sichtbar', async () => {
+    listDogs.mockResolvedValue([])
+    await render('/tiere?status=ohne_status')
+    const labels = [...container.querySelectorAll('.filter-chip')].map((btn) => btn.textContent.split(' ·')[0])
+    expect(labels).toEqual(['Alle', 'Ohne Status'])
   })
 
   test('Standardfilter "Verfügbar" zeigt nur Tiere mit Status in_vermittlung', async () => {

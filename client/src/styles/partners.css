@@ -111,6 +111,70 @@
   color: var(--rust);
 }
 
+/* Audit W (N7): Inhaltsverzeichnis als fließende Sprungmarken, Abschnitte mit „Mehr“ (components/legal/LegalSection) */
+
+.legal-toc ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legal-toc a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.2rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.legal-toc a:hover {
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+.legal-section {
+  display: grid;
+  gap: var(--space-3);
+  scroll-margin-top: var(--space-8);
+}
+
+/* :not([hidden]) - ein display: grid würde das hidden-Attribut sonst aushebeln */
+.legal-section-rest:not([hidden]) {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.legal-more {
+  justify-self: start;
+  min-height: 2.2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rust);
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+.legal-more:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal-more:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
 /* Logo eines Partners (Portal-Kopf, Tierheim-Kasten im Steckbrief) */
 .partner-logo {
   max-height: 3.5rem;

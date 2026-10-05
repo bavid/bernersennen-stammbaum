@@ -26,19 +26,98 @@ afterEach(() => {
   config.mockReset()
 })
 
-async function render(variant) {
+async function render(variant, path = `/${variant}`) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <LegalPage variant={variant} />
       </MemoryRouter>
     )
   )
   return container
 }
+
+const noLegal = { appEnv: 'dev', legal: { name: '', address: '', email: '', phone: '' } }
+
+// Audit W (N7): der Datenschutz ist ein langer Rechtstext - oben ein kompaktes Inhaltsverzeichnis (Sprungmarken), jeder
+// Abschnitt zeigt zuerst nur seinen ersten Absatz, der Rest steht hinter „Mehr“ (im Dokument, aber hidden). ?alles=1 und
+// eine Sprungmarke (#tierheime) klappen auf.
+describe('LegalPage – Inhaltsverzeichnis und eingeklappte Abschnitte', () => {
+  const sections = () => [...container.querySelectorAll('section.legal-section')]
+  const sectionById = (id) => container.querySelector(`section#${id}`)
+
+  test('Datenschutz: ein Inhaltsverzeichnis mit einer Sprungmarke je Abschnitt, in der Reihenfolge der Überschriften', async () => {
+    config.mockResolvedValue(noLegal)
+    await render('datenschutz')
+
+    const toc = container.querySelector('nav.legal-toc')
+    expect(toc.getAttribute('aria-label')).toBe('Inhalt')
+    const links = [...toc.querySelectorAll('a')]
+    const headings = [...container.querySelectorAll('.legal-block h2')]
+    expect(links.map((a) => a.textContent)).toEqual(headings.map((h) => h.textContent))
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(headings.map((h) => `#${h.closest('section').id}`))
+    expect(links[0].getAttribute('href')).toBe('#anmeldung')
+    expect(links[links.length - 1].getAttribute('href')).toBe('#rechte')
+  })
+
+  test('Impressum: kein Inhaltsverzeichnis', async () => {
+    config.mockResolvedValue(noLegal)
+    await render('impressum')
+    expect(container.querySelector('nav.legal-toc')).toBeNull()
+  })
+
+  test('ein Abschnitt mit mehreren Absätzen zeigt den ersten, der Rest ist hidden hinter „Mehr“; „Weniger“ klappt zu', async () => {
+    config.mockResolvedValue(noLegal)
+    await render('datenschutz')
+
+    const section = sectionById('tierheime')
+    const paragraphs = [...section.querySelectorAll('p')]
+    expect(paragraphs.length).toBeGreaterThan(1)
+    expect(paragraphs[0].closest('[hidden]')).toBeNull()
+    const rest = section.querySelector('.legal-section-rest')
+    expect(rest.hidden).toBe(true)
+    expect(rest.textContent).toMatch(/Happy End/)
+    const more = section.querySelector('button.legal-more')
+    expect(more.textContent).toBe('Mehr')
+    expect(more.getAttribute('aria-expanded')).toBe('false')
+    expect(more.getAttribute('aria-controls')).toBe(rest.id)
+
+    await act(async () => more.click())
+    expect(rest.hidden).toBe(false)
+    expect(more.textContent).toBe('Weniger')
+    expect(more.getAttribute('aria-expanded')).toBe('true')
+    await act(async () => more.click())
+    expect(rest.hidden).toBe(true)
+  })
+
+  test('ein Abschnitt mit nur einem Absatz hat keinen Knopf', async () => {
+    config.mockResolvedValue(noLegal)
+    await render('datenschutz')
+    const section = sectionById('tracker')
+    expect(section.querySelectorAll('p')).toHaveLength(1)
+    expect(section.querySelector('.legal-more')).toBeNull()
+    expect(sections().length).toBeGreaterThan(10)
+  })
+
+  test('?alles=1 zeigt alle Abschnitte offen - ohne Knöpfe', async () => {
+    config.mockResolvedValue(noLegal)
+    await render('datenschutz', '/datenschutz?alles=1')
+    expect(container.querySelectorAll('.legal-section-rest[hidden]')).toHaveLength(0)
+    expect(container.querySelectorAll('.legal-more')).toHaveLength(0)
+    expect(container.querySelector('.legal-toc')).not.toBeNull()
+  })
+
+  test('eine Sprungmarke in der Adresse öffnet genau ihren Abschnitt', async () => {
+    config.mockResolvedValue(noLegal)
+    await render('datenschutz', '/datenschutz#tierheime')
+    expect(sectionById('tierheime').querySelector('.legal-section-rest').hidden).toBe(false)
+    expect(sectionById('tierheime').querySelector('.legal-more')).toBeNull()
+    expect(sectionById('inhalte').querySelector('.legal-section-rest').hidden).toBe(true)
+  })
+})
 
 describe('LegalPage – /impressum', () => {
   test('ohne Betreiberangaben: ehrlicher Hinweis statt erfundener Daten', async () => {

@@ -121,6 +121,9 @@ export default function ShelterAnimalsPage({ family }) {
     for (const item of FILTERS) result[item.key] = (dogs || []).filter((dog) => matchesFilter(dog, item.key)).length
     return result
   }, [dogs])
+  // Audit W (N10): ein Chip „· 0“ sagt nichts - weg damit; „Alle“ und der gewählte Filter bleiben immer (sonst stünde die
+  // Liste ohne ihren Filter da). Solange nichts geladen ist, alle.
+  const shownFilters = FILTERS.filter((item) => !dogs || item.key === 'alle' || item.key === filter || counts[item.key] > 0)
 
   function closeForm() {
     setFormOpen(false)
@@ -168,7 +171,7 @@ export default function ShelterAnimalsPage({ family }) {
       <WardNews onShowAll={showAdopted} />
 
       <div className="filter-chips" role="group" aria-label="Nach Status filtern">
-        {FILTERS.map((item) => (
+        {shownFilters.map((item) => (
           <button
             key={item.key}
             id={chipId(item.key)}

@@ -178,6 +178,10 @@
   background: #fffaf2;
 }
 
+.note .thread-more {
+  color: #7d3014;
+}
+
 .note .reply-form textarea,
 .note .reply-form input {
   border-color: rgba(28, 21, 17, 0.2);

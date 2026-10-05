@@ -1,10 +1,13 @@
 import { useId, useState } from 'react'
 import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
+import useShowMore from '../hooks/useShowMore.js'
 import { relativeTime } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 
 const MAX_LENGTH = 1000
+// Audit W (N6): ein langes Gespräch zeigt zuerst nur die letzten zwei Beiträge - der Rest hinter „Alle n Antworten“.
+export const VISIBLE_REPLIES = 2
 
 function CommentForm({ placeholder, onSubmit, onCancel }) {
   const id = useId()
@@ -77,6 +80,7 @@ function CommentForm({ placeholder, onSubmit, onCancel }) {
 // onAdd bekommt { autorName, text } und muss den gespeicherten Beitrag liefern oder werfen.
 // canDelete(item): ob der Löschen-Knopf für diesen Beitrag erscheint (Standard: immer, wie bisher) –
 // Chronik-Kommentare auf geteilten Tieren blenden ihn für Beiträge anderer Bereiche aus.
+// Mehr als VISIBLE_REPLIES Beiträge: zuerst nur die letzten (neuesten), darüber „Alle n Antworten“ (Audit W).
 export default function CommentThread({
   items,
   noun = 'Antwort',
@@ -89,14 +93,21 @@ export default function CommentThread({
 }) {
   const [writing, setWriting] = useState(false)
   const count = items.length
+  const more = useShowMore(items, VISIBLE_REPLIES, { fromEnd: true })
 
   return (
     <>
       {count > 0 && (
         <section className="thread" aria-label={`${count} ${count === 1 ? noun : plural}`}>
-          <ol className="replies">
-            {items.map((item) => (
-              <li key={item.id} className="reply">
+          {more.hidden > 0 && (
+            <button type="button" className="thread-more" onClick={more.expand}>
+              Alle {count} {plural}
+            </button>
+          )}
+          <ol className="replies" ref={more.focusRef}>
+            {more.shown.map((item) => (
+              // tabIndex -1: nach „Alle n Antworten“ bekommt der erste Beitrag den Fokus (der Knopf ist dann weg).
+              <li key={item.id} className="reply" tabIndex={-1}>
                 <p className="reply-meta">
                   <strong>{item.autor_name}</strong>
                   {/* security-review V2 (L-4): ein Gast-Kommentar trägt den echten Namen seines Zuhauses (vom Server) */}
