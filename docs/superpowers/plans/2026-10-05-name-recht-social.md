@@ -96,3 +96,49 @@ Woche nichts und riskiert Sperren.
 **Was ich für dich vorbereiten kann (ohne Beratung zu ersetzen):** Entwurf Nutzungsbedingungen und Partner-Regeln in
 einfacher Sprache, Verarbeitungsverzeichnis-Tabelle, Checkliste für das Impressum, Redaktionsplan Social Media.
 **Eine Stunde beim Anwalt für Marke + Nutzungsbedingungen** (ca. 200–400 €) ist gut angelegt, sobald die Domain steht.
+
+## 5. Patent? – Nein. Was stattdessen schützt
+
+- **Patente** gibt es nur für technische Erfindungen mit Neuheit und erfinderischer Tätigkeit; Software „als solche“
+  und Geschäftsideen (Familienalbum für Tiere, Partner-Portale, Einladungscodes) sind in Deutschland/EU **nicht
+  patentierbar**. Eine Anmeldung kostet Tausende Euro und würde abgelehnt oder wäre wertlos.
+- **Was wirklich schützt:** die **Wortmarke** (Name, 290 €), ggf. **Wort-/Bildmarke** (Logo), das **Urheberrecht am
+  Code und an den Texten/Grafiken** (entsteht automatisch), **Datenbanken** (sui-generis-Schutz), Domains sichern –
+  und im Alltag: schnell gut sein, Partner binden, Community. Ideen kopieren kann jeder; die Ausführung nicht.
+- **Open Source und Schutz** passen zusammen: Marke und Logo bleiben geschützt, auch wenn der Code frei ist
+  (Beispiel: viele gemeinnützige Projekte). Lizenz (z. B. AGPL) legt fest, dass Weiterentwicklungen offen bleiben müssen.
+
+## 6. Staatliche Förderung und wohltätige Organisation – konkret
+
+**Wohltätig/gemeinnützig werden (Tierschutz ist anerkannter Zweck, § 52 Abs. 2 Nr. 14 AO):**
+1. **e. V. gründen:** 7 Gründungsmitglieder, Satzung mit gemeinnützigem Zweck (Mustersatzung des Finanzamts),
+   Gründungsversammlung, Eintrag ins Vereinsregister (Notar ~100–150 €, Gericht ~75 €), **Freistellungsbescheid vom
+   Finanzamt** beantragen (Satzung vorher mit dem Finanzamt abstimmen – kostenlos). Danach: Spendenquittungen möglich,
+   Spenden für Spender absetzbar, Körperschaft-/Gewerbesteuer-Befreiung im ideellen Bereich.
+2. **Alternative gGmbH:** 25.000 € Stammkapital (12.500 € eingezahlt), Notar – für den Start zu groß.
+3. **Zwischenlösung:** unter das Dach eines **bestehenden Tierschutzvereins** schlüpfen (Projektpartnerschaft: der
+   Verein nimmt zweckgebundene Spenden an und stellt Quittungen aus) – schnell, ohne eigene Gründung; erst später
+   eigener Verein.
+
+**Förderprogramme (Stand/Bedingungen vor Antrag prüfen; viele setzen Gemeinnützigkeit oder Open Source voraus):**
+- **Prototype Fund** (BMBF/Open Knowledge Foundation): Open-Source-Software fürs Gemeinwohl, bis ~95.000 €/6 Monate,
+  Einzelpersonen und kleine Teams, Bewerbungsrunden 2× jährlich. Passt, wenn der Code offen ist.
+- **Deutsche Stiftung für Engagement und Ehrenamt (DSEE):** Mikroförderungen für Vereine/Ehrenamt (Digitalisierung).
+- **Aktion Mensch / Robert Bosch Stiftung / Software AG Stiftung:** Projektförderung für gemeinnützige Träger –
+  meist mit Verein als Antragsteller.
+- **Kommune/Land:** Ehrenamtsförderung, Digitalisierungs-Gutscheine (je nach Bundesland, z. B. „Digitalbonus“),
+  Gründerstipendien (z. B. EXIST, nur bei Hochschulbezug).
+- **Tierschutz-Stiftungen** und **Zoofachhandel/Futterhersteller** (Sponsoring statt Förderung, siehe Phase B).
+- **Nicht passend:** klassische Startup-Förderung mit Gewinnabsicht (Wagniskapital), solange das Projekt gemeinnützig
+  gedacht ist.
+
+**Realistischer Fahrplan:** 1) Marke + Domain sichern, 2) Verein gründen oder Projektpartnerschaft mit einem Tierheim-
+Verein, 3) Code als Open Source (AGPL) mit geschützter Marke, 4) Prototype-Fund-Bewerbung zur nächsten Runde,
+5) DSEE-Mikroförderung für Material/Server.
+
+## 7. Partner-Vernetzung (B2B) als Präsentationsseite
+Wunsch 05.10.: „Tierheim fragt Hundeschule an oder Tierheim ein anderes Heim.“ Konzept steht als **Phase B** im
+Konzept-Dokument (Kontakte, Börse, gemeinsam vermitteln, Sponsoren) und als Artboard „B2B · Netzwerk“ in den Mocks.
+Umsetzung als **Präsentationsseite** (Mock mit Demo-Daten, nur über die Präsentation erreichbar), bevor echte
+Funktionen gebaut werden – analog zum Schaukasten: zeigt Kontaktanfrage Tierheim → Hundeschule („Empfehlt ihr uns
+für Adoptionsfamilien?“), Tierheim → Tierheim („Notfallplatz für 2 Hunde, 3 Wochen“), Börse-Einträge, Sponsor.
