@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import {
+  AMOUNT_TOO_LARGE,
   FINANZIERUNG_LIMITS,
+  INVALID_AMOUNT,
   balkenBreiten,
   hinweisPayload,
   isSafeHttpUrl,
@@ -95,6 +97,14 @@ describe('Admin-Formulare: Euro rein, Cent raus', () => {
     expect(Object.keys(errors).sort()).toEqual(['einnahmenPartner', 'einnahmenSpenden', 'jahr', 'notiz', 'quartal'])
     expect(errors.jahr).toMatch(/2024/)
     expect(errors.quartal).toMatch(/1 bis 4/)
+    expect(errors.einnahmenSpenden).toBe(INVALID_AMOUNT)
+  })
+
+  test('zu große Beträge bekommen eine freundliche Meldung statt des Server-Fehlers (Review L6)', () => {
+    const base = { jahr: '2026', quartal: '1', einnahmenSpenden: '', einnahmenPartner: '', kosten: '', spendenWeitergegeben: '', notiz: '' }
+    expect(quartalPayload({ ...base, kosten: '10.000.000,01' }).errors.kosten).toBe(AMOUNT_TOO_LARGE)
+    expect(quartalPayload({ ...base, kosten: '10.000.000,00' }).payload.kostenCents).toBe(1e9)
+    expect(zielPayload({ titel: 'x', betrag: '99999999999', empfaenger: '' }).errors.betrag).toBe(AMOUNT_TOO_LARGE)
   })
 
   test('zielPayload und hinweisPayload: Euro -> Cent, leer -> leer, Fehler am Feld', () => {

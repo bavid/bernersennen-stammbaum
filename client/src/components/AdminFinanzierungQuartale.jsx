@@ -13,7 +13,9 @@ function sortQuartale(quartale) {
   return quartale.slice().sort((a, b) => b.jahr - a.jahr || b.quartal - a.quartal)
 }
 
-function QuartalRow({ quartal, onEdit, onDelete }) {
+// formOpen: solange ein Formular offen ist, lässt sich kein anderes Quartal öffnen oder löschen - erst speichern oder
+// abbrechen (Review: kein Wechsel des Ziels mit halb geänderten Werten).
+function QuartalRow({ quartal, formOpen, onEdit, onDelete }) {
   return (
     <li className="admin-quartal-row">
       <span className="admin-quartal-main">
@@ -24,11 +26,11 @@ function QuartalRow({ quartal, onEdit, onDelete }) {
         </span>
       </span>
       <span className="admin-quartal-actions">
-        <button type="button" className="btn btn-ghost" onClick={() => onEdit(quartal)}>
+        <button type="button" className="btn btn-ghost" disabled={formOpen} onClick={() => onEdit(quartal)}>
           Bearbeiten
           <span className="visually-hidden">: {quartalLabel(quartal.jahr, quartal.quartal)}</span>
         </button>
-        <ConfirmButton onConfirm={() => onDelete(quartal)} ariaLabel={`${quartalLabel(quartal.jahr, quartal.quartal)} löschen`} />
+        <ConfirmButton onConfirm={() => onDelete(quartal)} disabled={formOpen} ariaLabel={`${quartalLabel(quartal.jahr, quartal.quartal)} löschen`} />
       </span>
     </li>
   )
@@ -74,11 +76,14 @@ export default function AdminFinanzierungQuartale({ quartale, onChanged }) {
           {error}
         </div>
       )}
-      {editing !== null && <AdminQuartalForm quartal={editing === 'neu' ? null : editing} onSave={handleSave} onCancel={() => setEditing(null)} />}
+      {/* key: ein anderes Ziel ist ein neues Formular - nie die Werte eines Quartals unter einer anderen Id (Review). */}
+      {editing !== null && (
+        <AdminQuartalForm key={editing === 'neu' ? 'neu' : editing.id} quartal={editing === 'neu' ? null : editing} onSave={handleSave} onCancel={() => setEditing(null)} />
+      )}
       {quartale.length > 0 ? (
         <ul className="admin-quartal-list">
           {quartale.map((quartal) => (
-            <QuartalRow key={quartal.id} quartal={quartal} onEdit={setEditing} onDelete={handleDelete} />
+            <QuartalRow key={quartal.id} quartal={quartal} formOpen={editing !== null} onEdit={setEditing} onDelete={handleDelete} />
           ))}
         </ul>
       ) : (

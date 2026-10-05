@@ -34,9 +34,10 @@ function expectError(fn, feld, pattern) {
 }
 
 test('lib/finanzierung: Prüfung von Spenden-Hinweis, Ziel und Quartal', async () => {
-  const { validateSpendenHinweis, validateZiel, validateQuartal, LIMITS } = require('../lib/finanzierung')
+  const { validateSpendenHinweis, validateZiel, validateQuartal, LIMITS, EMPTY_ZIEL } = require('../lib/finanzierung')
 
   assert.deepEqual(LIMITS, { hinweisText: 400, zielTitel: 80, empfaenger: 120, notiz: 200, jahrMin: 2024, jahrMax: 2100 })
+  assert.deepEqual(EMPTY_ZIEL, { titel: '', betragCents: null, empfaenger: null })
 
   // Spenden-Hinweis: reiner Text, Link nur http(s); leer = kein Hinweis.
   assert.deepEqual(validateSpendenHinweis({ text: '  Spendenkonto: Familie auf Pfoten \n Verwendungszweck: Server ', url: '' }), {
@@ -49,6 +50,11 @@ test('lib/finanzierung: Prüfung von Spenden-Hinweis, Ziel und Quartal', async (
   expectError(() => validateSpendenHinweis({ text: '<b>Spenden</b>', url: '' }), 'text', /reinen Text/)
   expectError(() => validateSpendenHinweis({ text: '', url: 'javascript:alert(1)' }), 'url', /Adresse/)
   expectError(() => validateSpendenHinweis({ text: '', url: 'ftp://example.org' }), 'url', /Adresse/)
+  // Review L1: auch die normalisierte Adresse (https:// davor, / dahinter) muss in 300 Zeichen passen - sonst verschwände der
+  // gespeicherte Hinweis beim Lesen.
+  // Genau 300 Zeichen roh, die Normalisierung hängt „/“ an -> 301 -> 400 statt still gespeichert und beim Lesen verworfen.
+  expectError(() => validateSpendenHinweis({ text: '', url: `https://${'a'.repeat(289)}.de` }), 'url', /300/)
+  assert.equal(validateSpendenHinweis({ text: '', url: `https://${'a'.repeat(280)}.de` }).url.length <= 300, true)
   expectError(() => validateSpendenHinweis({ text: 7, url: '' }), 'text', /Text/)
   expectError(() => validateSpendenHinweis({ text: '', url: '', extra: 1 }), undefined, /Unbekannt/)
 
@@ -113,10 +119,13 @@ test('Finanzierung: öffentliche Antwort, Admin-Pflege, Protokoll', async (t) =>
     assert.deepEqual(res.data, { spendenHinweis: null, ziel: null, quartale: [] })
   })
 
-  await t.test('Admin-Routen: ohne Anmeldung 401, jede Antwort no-store', async () => {
+  await t.test('Admin-Routen: ohne Anmeldung 401, jede Antwort no-store; unbekannte Admin-Pfade bleiben 404', async () => {
     const res = await get('/api/admin/finanzierung')
     assert.equal(res.status, 401)
     assert.equal(res.headers.get('cache-control'), 'no-store')
+    // Review L3: kein router-weites requireAdmin - ein unbekannter Pfad landet beim 404 am Ende von app.js, nicht bei 401.
+    assert.equal((await get('/api/admin/finanzierung-gibt-es-nicht')).status, 404)
+    assert.equal((await get('/api/admin/finanzierung-gibt-es-nicht', adminCookie)).status, 404)
     const ok = await get('/api/admin/finanzierung', adminCookie)
     assert.equal(ok.status, 200)
     assert.equal(ok.headers.get('cache-control'), 'no-store')

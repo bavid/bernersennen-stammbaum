@@ -331,8 +331,9 @@ export const api = {
     createFinanzierungQuartal: (quartal) => request('/admin/finanzierung/quartale', json('POST', quartal)),
     updateFinanzierungQuartal: (id, quartal) => request(`/admin/finanzierung/quartale/${id}`, json('PUT', quartal)),
     deleteFinanzierungQuartal: (id) => request(`/admin/finanzierung/quartale/${id}`, { method: 'DELETE' }),
-    // Phase F: „Überall sichtbar“ eines Partners aus- oder einschalten (server/routes/adminPartnerSichtbar.js).
-    setPartnerUeberallSichtbar: (id, an) => request(`/admin/partners/${id}/ueberall-sichtbar`, json('PUT', { an })),
+    // Phase F: „Überall sichtbar“ eines Partners vom Team ausschalten und sperren (erlaubt: false) oder wieder erlauben
+    // (erlaubt: true) - server/routes/adminPartnerSichtbar.js; einschalten tut der Partner selbst.
+    setPartnerUeberallErlaubt: (id, erlaubt) => request(`/admin/partners/${id}/ueberall-sichtbar`, json('PUT', { erlaubt })),
 
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),

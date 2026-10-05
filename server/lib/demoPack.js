@@ -7,7 +7,8 @@ const { partnerMediaDir: defaultMediaDir } = require('../config')
 const { deleteFamily, removeUploads } = require('./families')
 const { relativeDemoDate } = require('./demoDates')
 const { validatePartner, slugify } = require('./partners')
-const { setUeberallSichtbar } = require('./ueberallSichtbar')
+// Phase F: legt die Spalten ueberall_sichtbar/ueberall_gesperrt an - geschrieben wird unten über die übergebene db.
+const { COLUMN: UEBERALL_COLUMN } = require('./ueberallSichtbar')
 const { validatePromotion, validateDonationReport, validateUrl, cleanOptionalText, MAX_TEXT_LENGTH } = require('./promotions')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
 const {
@@ -229,7 +230,7 @@ function insertDemoPartners(db) {
     const id = db
       .prepare(`INSERT INTO partners (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
       .run(...columns.map((col) => (col === 'is_demo' ? 1 : clean[col]))).lastInsertRowid
-    if (input.ueberallSichtbar) setUeberallSichtbar(id, true)
+    if (input.ueberallSichtbar) db.prepare(`UPDATE partners SET ${UEBERALL_COLUMN} = 1 WHERE id = ?`).run(id)
     ids.push(id)
   }
   return ids

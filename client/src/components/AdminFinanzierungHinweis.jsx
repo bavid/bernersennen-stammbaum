@@ -2,19 +2,26 @@ import { useState } from 'react'
 import { api } from '../api'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import FinanzierungMithelfen from './finanzierung/FinanzierungMithelfen.jsx'
+import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { FINANZIERUNG_LIMITS, hinweisForm, hinweisPayload, serverFieldError, zielForm, zielPayload, zielText } from '../lib/finanzierung.js'
 
 const ID = 'admin-finanz-'
 const id = (key) => `${ID}${key}`
 
-// Ein kleines Formular mit Speichern-Knopf, Erfolgsmeldung und Fehlerbanner - für Spenden-Hinweis und Ziel gleich.
+// Ein kleines Formular mit Speichern-Knopf, Erfolgsmeldung und Fehlerbanner - für Spenden-Hinweis und Ziel gleich. Nach
+// einem Fehler springt der Fokus zum ersten Feldfehler bzw. zum Banner (useFocusFirstError, wie AdminQuartalForm).
 function useSave(save, onSaved) {
   const [state, setState] = useState({ saving: false, saved: false, error: null, fieldErrors: {} })
+  const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
   const clearField = (key) => setState((s) => ({ ...s, saved: false, fieldErrors: Object.fromEntries(Object.entries(s.fieldErrors).filter(([k]) => k !== key)) }))
 
   async function submit(event, { payload, errors }) {
     event.preventDefault()
-    if (!payload) return setState((s) => ({ ...s, saved: false, fieldErrors: errors }))
+    if (!payload) {
+      setState((s) => ({ ...s, saved: false, fieldErrors: errors }))
+      focusFirstError()
+      return
+    }
     setState({ saving: true, saved: false, error: null, fieldErrors: {} })
     try {
       onSaved(await save(payload))
@@ -22,9 +29,10 @@ function useSave(save, onSaved) {
     } catch (err) {
       const field = serverFieldError(err)
       setState({ saving: false, saved: false, error: field ? null : err.message, fieldErrors: field ? { [field.field]: field.message } : {} })
+      focusFirstError()
     }
   }
-  return { ...state, clearField, submit }
+  return { ...state, formRef, bannerRef, clearField, submit }
 }
 
 function SaveRow({ saving, saved }) {
@@ -55,10 +63,10 @@ function HinweisForm({ hinweis, onSaved }) {
   const bind = (key, hint = false) => fieldProps(id(key), { error: save.fieldErrors[key], hint })
 
   return (
-    <form className="form-stack" onSubmit={(e) => save.submit(e, { payload: hinweisPayload(form), errors: {} })} noValidate>
+    <form ref={save.formRef} className="form-stack" onSubmit={(e) => save.submit(e, { payload: hinweisPayload(form), errors: {} })} noValidate>
       <h3>Spenden-Hinweis</h3>
       {save.error && (
-        <div className="error-banner" role="alert">
+        <div ref={save.bannerRef} className="error-banner" role="alert" tabIndex={-1}>
           {save.error}
         </div>
       )}
@@ -72,7 +80,7 @@ function HinweisForm({ hinweis, onSaved }) {
         >
           <textarea {...bind('text', true)} value={form.text} maxLength={FINANZIERUNG_LIMITS.hinweisText} rows={3} onChange={(e) => update('text', e.target.value)} />
         </AdminField>
-        <AdminField id={id('url')} label="Spenden-Link (optional)" error={save.fieldErrors.url} hint="Nur https://… – öffnet in einem neuen Tab. Nie ein Zahlungsformular in der App." className="span-2">
+        <AdminField id={id('url')} label="Spenden-Link (optional)" error={save.fieldErrors.url} hint="Nur http(s)://… – öffnet in einem neuen Tab. Nie ein Zahlungsformular in der App." className="span-2">
           <input {...bind('url', true)} type="url" value={form.url} placeholder="https://…" onChange={(e) => update('url', e.target.value)} />
         </AdminField>
       </div>
@@ -94,10 +102,10 @@ function ZielForm({ ziel, onSaved }) {
   const bind = (key, hint = false) => fieldProps(id(key), { error: save.fieldErrors[key], hint })
 
   return (
-    <form className="form-stack" onSubmit={(e) => save.submit(e, zielPayload(form))} noValidate>
+    <form ref={save.formRef} className="form-stack" onSubmit={(e) => save.submit(e, zielPayload(form))} noValidate>
       <h3>Aktuelles Ziel</h3>
       {save.error && (
-        <div className="error-banner" role="alert">
+        <div ref={save.bannerRef} className="error-banner" role="alert" tabIndex={-1}>
           {save.error}
         </div>
       )}

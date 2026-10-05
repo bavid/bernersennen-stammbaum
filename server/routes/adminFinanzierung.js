@@ -7,6 +7,7 @@ const { noStore } = require('../lib/noStoreResponse')
 const { cleanId } = require('../lib/validate')
 const { AKTION, logAdminAction, quartalZiel } = require('../lib/adminLog')
 const {
+  EMPTY_ZIEL,
   adminFinanzierung,
   saveSpendenHinweis,
   saveZiel,
@@ -16,8 +17,9 @@ const {
 } = require('../lib/finanzierung')
 
 // Phase F: der Admin pflegt „So finanzieren wir uns“ (lib/finanzierung.js) - Reiter „Finanzierung“. Eingehängt unter
-// /api/admin in app.js, GENAU wie routes/adminEinladungskarte.js: derselbe 404-ohne-Passwort-Hash-Gate, requireAdmin auf
-// jeder Route, alle Antworten no-store. Jede Änderung landet im Admin-Protokoll (nur das Objekt, nie Beträge oder Texte).
+// /api/admin in app.js, GENAU wie routes/adminEinladungskarte.js: derselbe 404-ohne-Passwort-Hash-Gate, requireAdmin und
+// no-store je Route (nicht router-weit - sonst bekäme jeder unbekannte /api/admin-Pfad hier 401 statt des 404 am Ende von
+// app.js). Jede Änderung landet im Admin-Protokoll (nur das Objekt, nie Beträge oder Texte).
 // Fehler tragen das betroffene Feld ({ error, feld }), damit das Formular sie direkt am Feld zeigt.
 // - GET    /finanzierung                       { spendenHinweis, ziel, quartale }
 // - PUT    /finanzierung/spenden-hinweis       { text, url }                       -> { spendenHinweis }
@@ -36,18 +38,18 @@ router.use((req, res, next) => {
   next()
 })
 
-router.use(noStore, requireAdmin)
+const guarded = [noStore, requireAdmin]
 
 function sendError(res, next, err) {
   if (!err.status) return next(err)
   res.status(err.status).json(err.feld ? { error: err.message, feld: err.feld } : { error: err.message })
 }
 
-router.get('/finanzierung', (req, res) => {
+router.get('/finanzierung', guarded, (req, res) => {
   res.json(adminFinanzierung())
 })
 
-router.put('/finanzierung/spenden-hinweis', (req, res, next) => {
+router.put('/finanzierung/spenden-hinweis', guarded, (req, res, next) => {
   try {
     const { hinweis, changed } = saveSpendenHinweis(req.body)
     if (changed) logAdminAction(AKTION.finanzierungGeaendert, ZIEL_HINWEIS)
@@ -57,17 +59,17 @@ router.put('/finanzierung/spenden-hinweis', (req, res, next) => {
   }
 })
 
-router.put('/finanzierung/ziel', (req, res, next) => {
+router.put('/finanzierung/ziel', guarded, (req, res, next) => {
   try {
     const { ziel, changed } = saveZiel(req.body)
     if (changed) logAdminAction(AKTION.finanzierungGeaendert, ZIEL_ZIEL)
-    res.json({ ziel: ziel || { titel: '', betragCents: null, empfaenger: null } })
+    res.json({ ziel: ziel || { ...EMPTY_ZIEL } })
   } catch (err) {
     sendError(res, next, err)
   }
 })
 
-router.post('/finanzierung/quartale', (req, res, next) => {
+router.post('/finanzierung/quartale', guarded, (req, res, next) => {
   try {
     const quartal = createQuartal(req.body)
     logAdminAction(AKTION.finanzierungQuartalAngelegt, quartalZiel(quartal.id))
@@ -77,7 +79,7 @@ router.post('/finanzierung/quartale', (req, res, next) => {
   }
 })
 
-router.put('/finanzierung/quartale/:id', (req, res, next) => {
+router.put('/finanzierung/quartale/:id', guarded, (req, res, next) => {
   try {
     const id = cleanId(req.params.id)
     const quartal = id ? updateQuartal(id, req.body) : null
@@ -89,7 +91,7 @@ router.put('/finanzierung/quartale/:id', (req, res, next) => {
   }
 })
 
-router.delete('/finanzierung/quartale/:id', (req, res) => {
+router.delete('/finanzierung/quartale/:id', guarded, (req, res) => {
   const id = cleanId(req.params.id)
   if (!id || !deleteQuartal(id)) return res.status(404).json({ error: NOT_FOUND })
   logAdminAction(AKTION.finanzierungQuartalGeloescht, quartalZiel(id))

@@ -49,6 +49,8 @@ describe('AdminLog – Protokoll der Admin-Ansicht', () => {
     expect(describeZiel('partner:4', families)).toBe('Partner #4')
     // Phase N Task 5: globale Hinweise
     expect(describeZiel('hinweis:12', families)).toBe('Hinweis #12')
+    // Phase F: Quartale der Finanzierung
+    expect(describeZiel('quartal:3', families)).toBe('Quartal #3')
     // Einladungskarten: die Admin-Einstellung der Rückseite
     expect(describeZiel('einstellung:einladungskarte', families)).toBe('Einladungskarte – Rückseite')
   })

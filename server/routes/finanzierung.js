@@ -10,9 +10,11 @@ const router = express.Router()
 
 const PUBLIC_CACHE = 'public, max-age=300'
 
+// Erst die Antwort bauen, dann den Cache-Header setzen - ein Fehler beim Lesen darf nie als cachebare Antwort rausgehen.
 router.get('/', (req, res) => {
+  const payload = publicFinanzierung()
   res.setHeader('Cache-Control', PUBLIC_CACHE)
-  res.json(publicFinanzierung())
+  res.json(payload)
 })
 
 module.exports = router

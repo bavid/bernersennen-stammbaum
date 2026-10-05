@@ -18,8 +18,8 @@ export const GRUNDSATZ = 'Keine fremde Werbung, kein Tracking, kein Datenhandel 
 
 const WER_ZAHLT = [
   { wer: 'Nutzerinnen und Nutzer', was: 'kostenlos', text: 'Zuhause, Familien und Chronik – immer frei.' },
-  { wer: 'Partner-Portale', was: 'kostenlos', text: 'Hundeschulen, Tierheime, Salons und Betreuung zeigen sich mit eigenem Portal.' },
-  { wer: 'Hervorhebung „überall sichtbar“', was: 'vorerst kostenlos', text: 'Ein Partner erscheint in „Entdecken“ nicht nur in der Nähe – klar als Partner gekennzeichnet.' }
+  { wer: 'Partner-Portale', was: 'vorerst kostenlos', text: 'Hundeschulen, Tierheime, Salons und Betreuung zeigen sich mit eigenem Portal.' },
+  { wer: 'Hervorhebung „überall sichtbar“', was: 'vorerst kostenlos', text: 'Ein Partner erscheint in „Entdecken“ nicht nur in der Nähe – klar als „überall sichtbar“ gekennzeichnet.' }
 ]
 
 const WOHIN = [

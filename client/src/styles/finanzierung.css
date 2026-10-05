@@ -406,6 +406,12 @@
   color: var(--alpine);
 }
 
+/* Vom Team ausgeschaltet und gesperrt (AdminPartnerUeberall): gedämpft statt Salbei. */
+.admin-partner-ueberall-pill.is-gesperrt {
+  background: var(--surface-sunk);
+  color: var(--muted);
+}
+
 .admin-partner-ueberall-pill svg {
   width: 0.9rem;
   height: 0.9rem;

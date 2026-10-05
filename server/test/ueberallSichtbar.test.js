@@ -94,6 +94,21 @@ test('„Überall sichtbar“: Schalter, Entdecken, Demo-Trennung, Protokoll', a
     const result2 = withUeberallSichtbar(radiusSection(onlyUeberall, center, 10), onlyUeberall, center)
     assert.equal(result2.fallback, false)
     assert.equal(result2.items.some((item) => item.ausserhalb), false)
+
+    // Review: vom Team ausgeschaltet (ueberall_gesperrt) zählt nie - auch wenn der Schalter in Rohdaten noch an wäre.
+    const lockedRows = [rows[0], { ...rows[2], ueberall_gesperrt: 1 }]
+    const locked = withUeberallSichtbar(radiusSection(lockedRows, center, 10), lockedRows, center)
+    assert.equal(locked.items.some((item) => item.ueberall), false)
+
+    // Review L5: höchstens die 20 nächsten „überall“-Partner (MAX_FALLBACK), nicht beliebig viele.
+    const many = [rows[0], ...Array.from({ length: 25 }, (_, i) => ({ id: 100 + i, name: `Fern ${i}`, lat: 48 + i * 0.01, lon: 11, ueberall_sichtbar: 1 }))]
+    const capped = withUeberallSichtbar(radiusSection(many, center, 10), many, center)
+    assert.equal(capped.items.filter((item) => item.ueberall).length, 20)
+    assert.equal(capped.items[1].row.id, 124, 'die nächsten zuerst (Index 24 liegt am weitesten nördlich, also am nächsten an Berlin)')
+
+    const { parseErlaubt } = require('../lib/ueberallSichtbar')
+    assert.equal(parseErlaubt({ erlaubt: false }), false)
+    assert.throws(() => parseErlaubt({ an: true }), (err) => err.status === 400)
   })
 
   // --- Entdecken über die API -----------------------------------------------------------------------
@@ -166,6 +181,7 @@ test('„Überall sichtbar“: Schalter, Entdecken, Demo-Trennung, Protokoll', a
 
     const profile = await get('/api/partner-area/profile', area.cookie)
     assert.equal(profile.data.ueberallSichtbar, false)
+    assert.equal(profile.data.ueberallGesperrt, false)
 
     const viaProfile = await put('/api/partner-area/profile', { ueberallSichtbar: true }, area.cookie)
     assert.equal(viaProfile.status, 400)
@@ -188,35 +204,54 @@ test('„Überall sichtbar“: Schalter, Entdecken, Demo-Trennung, Protokoll', a
     db.prepare('UPDATE partners SET gesperrt = 0 WHERE id = ?').run(area.partnerId)
   })
 
-  await t.test('Admin: Schalter ausschalten, Protokoll nur bei Änderung, Prüfung', async () => {
-    const logBefore = adminLog().length
-    const off = await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { an: false }, adminCookie)
-    assert.equal(off.status, 200)
-    assert.equal(off.headers.get('cache-control'), 'no-store')
-    assert.deepEqual(off.data, { id: area.partnerId, ueberallSichtbar: false })
-    assert.deepEqual(adminLog().slice(logBefore), [{ aktion: 'partner-nicht-ueberall-sichtbar', ziel: `partner:${area.partnerId}` }])
-
-    // Unverändert: kein weiterer Eintrag.
-    await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { an: false }, adminCookie)
-    assert.equal(adminLog().length, logBefore + 1)
-
-    const on = await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { an: true }, adminCookie)
-    assert.equal(on.data.ueberallSichtbar, true)
-    assert.deepEqual(adminLog().at(-1), { aktion: 'partner-ueberall-sichtbar', ziel: `partner:${area.partnerId}` })
-
-    assert.equal((await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { an: 1 }, adminCookie)).status, 400)
-    assert.equal((await put('/api/admin/partners/999/ueberall-sichtbar', { an: true }, adminCookie)).status, 404)
-    assert.equal((await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { an: false })).status, 401)
-    assert.equal((await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { an: false }, area.cookie)).status, 401)
-
-    // Die Partnerliste des Admins zeigt den Schalter mit.
-    const list = await get('/api/admin/partners', adminCookie)
-    assert.equal(list.data.find((row) => row.id === area.partnerId).ueberall_sichtbar, 1)
-
+  await t.test('Admin: Ausschalten sperrt (Partner kann nicht wieder einschalten), Wieder erlauben, Protokoll, Prüfung', async () => {
+    const flags = () => db.prepare('SELECT ueberall_sichtbar, ueberall_gesperrt FROM partners WHERE id = ?').get(area.partnerId)
     // Ein normales Bearbeiten durch den Admin (PUT /partners/:id) lässt den Schalter stehen.
     const edit = await put(`/api/admin/partners/${area.partnerId}`, { name: 'Hundeschule Schalter', typ: 'hundeschule' }, adminCookie)
     assert.equal(edit.status, 200)
-    assert.equal(db.prepare('SELECT ueberall_sichtbar FROM partners WHERE id = ?').get(area.partnerId).ueberall_sichtbar, 1)
+    assert.deepEqual(flags(), { ueberall_sichtbar: 1, ueberall_gesperrt: 0 })
+
+    const logBefore = adminLog().length
+    const off = await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { erlaubt: false }, adminCookie)
+    assert.equal(off.status, 200)
+    assert.equal(off.headers.get('cache-control'), 'no-store')
+    assert.deepEqual(off.data, { id: area.partnerId, ueberallSichtbar: false, ueberallGesperrt: true })
+    assert.deepEqual(flags(), { ueberall_sichtbar: 0, ueberall_gesperrt: 1 })
+    assert.deepEqual(adminLog().slice(logBefore), [{ aktion: 'partner-ueberall-gesperrt', ziel: `partner:${area.partnerId}` }])
+
+    // Unverändert: kein weiterer Eintrag.
+    await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { erlaubt: false }, adminCookie)
+    assert.equal(adminLog().length, logBefore + 1)
+
+    // Der Partner sieht die Sperre im Profil und kann nicht wieder einschalten (403 mit dem Hinweis ans Team).
+    const profile = await get('/api/partner-area/profile', area.cookie)
+    assert.equal(profile.data.ueberallSichtbar, false)
+    assert.equal(profile.data.ueberallGesperrt, true)
+    const retry = await put('/api/partner-area/profile/ueberall-sichtbar', { an: true }, area.cookie)
+    assert.equal(retry.status, 403)
+    assert.match(retry.data.error, /vom Team ausgeschaltet/)
+    assert.deepEqual(flags(), { ueberall_sichtbar: 0, ueberall_gesperrt: 1 })
+
+    // Die Partnerliste des Admins zeigt beide Spalten.
+    const list = await get('/api/admin/partners', adminCookie)
+    const row = list.data.find((item) => item.id === area.partnerId)
+    assert.equal(row.ueberall_sichtbar, 0)
+    assert.equal(row.ueberall_gesperrt, 1)
+
+    // Wieder erlauben: Sperre weg, Schalter bleibt aus - der Partner schaltet selbst wieder ein.
+    const allow = await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { erlaubt: true }, adminCookie)
+    assert.deepEqual(allow.data, { id: area.partnerId, ueberallSichtbar: false, ueberallGesperrt: false })
+    assert.deepEqual(adminLog().at(-1), { aktion: 'partner-ueberall-erlaubt', ziel: `partner:${area.partnerId}` })
+    const on = await put('/api/partner-area/profile/ueberall-sichtbar', { an: true }, area.cookie)
+    assert.equal(on.status, 200)
+    assert.deepEqual(flags(), { ueberall_sichtbar: 1, ueberall_gesperrt: 0 })
+
+    assert.equal((await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { an: false }, adminCookie)).status, 400)
+    assert.equal((await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { erlaubt: 1 }, adminCookie)).status, 400)
+    assert.equal((await put('/api/admin/partners/999/ueberall-sichtbar', { erlaubt: true }, adminCookie)).status, 404)
+    assert.equal((await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { erlaubt: false })).status, 401)
+    assert.equal((await put(`/api/admin/partners/${area.partnerId}/ueberall-sichtbar`, { erlaubt: false }, area.cookie)).status, 401)
+    assert.deepEqual(flags(), { ueberall_sichtbar: 1, ueberall_gesperrt: 0 })
   })
 
   await t.test('Demo-Pack: Hundeschule Pfotenglück hat den Schalter an, die anderen nicht', () => {

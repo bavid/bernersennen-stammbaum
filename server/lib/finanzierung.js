@@ -95,11 +95,14 @@ function cleanCents(value, { feld, label, required = false }) {
   return value
 }
 
+// Auch die normalisierte Form (z. B. „www.…“ -> „https://www.…/“) muss in MAX_URL_LENGTH passen - sonst würde der
+// gespeicherte Hinweis beim Lesen (readJsonSetting prüft wie beim Speichern) stillschweigend verschwinden.
 function cleanUrl(value) {
   if (value === undefined || value === null || value === '') return null
   if (typeof value !== 'string') throw httpError(400, 'Der Link muss Text sein.', 'url')
   const href = sanitizeExternalUrl(value, MAX_URL_LENGTH)
   if (!href) throw httpError(400, 'Der Link: bitte eine vollständige Adresse mit http(s), z. B. https://example.org/spenden.', 'url')
+  if (href.length > MAX_URL_LENGTH) throw httpError(400, `Der Link darf höchstens ${MAX_URL_LENGTH} Zeichen haben.`, 'url')
   return href
 }
 
@@ -176,6 +179,8 @@ function readJsonSetting(key, validate, fallback) {
 }
 
 const EMPTY_HINWEIS = Object.freeze({ text: '', url: null })
+// Die Admin-Sicht ohne Ziel (Formularwerte statt null) - auch routes/adminFinanzierung.js antwortet damit.
+const EMPTY_ZIEL = Object.freeze({ titel: '', betragCents: null, empfaenger: null })
 
 function readSpendenHinweis() {
   return readJsonSetting(KEY_SPENDEN_HINWEIS, validateSpendenHinweis, { ...EMPTY_HINWEIS })
@@ -290,7 +295,7 @@ function publicFinanzierung() {
 function adminFinanzierung() {
   return {
     spendenHinweis: readSpendenHinweis(),
-    ziel: readZiel() || { titel: '', betragCents: null, empfaenger: null },
+    ziel: readZiel() || { ...EMPTY_ZIEL },
     quartale: listQuartale()
   }
 }
@@ -298,6 +303,7 @@ function adminFinanzierung() {
 module.exports = {
   LIMITS,
   MAX_CENTS,
+  EMPTY_ZIEL,
   KEY_SPENDEN_HINWEIS,
   KEY_ZIEL,
   validateSpendenHinweis,

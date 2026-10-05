@@ -21,6 +21,9 @@ export const QUARTAL_AMOUNTS = Object.freeze([
 ])
 
 export const INVALID_AMOUNT = 'Bitte einen Betrag in Euro eingeben, z. B. 1.250,50 (nicht negativ).'
+// Wie server/lib/finanzierung.js MAX_CENTS (und lib/adminMarketing.js MAX_AMOUNT_CENTS): zehn Millionen Euro.
+export const MAX_AMOUNT_CENTS = 1e9
+export const AMOUNT_TOO_LARGE = 'Höchstens 10.000.000,00 € pro Betrag.'
 
 // --- Lesen ----------------------------------------------------------------------------------------------------------
 
@@ -75,10 +78,14 @@ export function quartalForm(quartal, defaultJahr = new Date().getFullYear()) {
   }
 }
 
-// Ein Betrag in Euro -> Cent; leer zählt als 0 (die Felder dürfen leer bleiben).
+// Ein Betrag in Euro -> { cents, error }; leer zählt als 0 (die Felder dürfen leer bleiben). Zu groß bekommt eine eigene,
+// freundliche Meldung statt des Server-Fehlers.
 function amountCents(value) {
-  if (!value || !value.trim()) return 0
-  return parseEuroToCents(value)
+  if (!value || !value.trim()) return { cents: 0, error: null }
+  const cents = parseEuroToCents(value)
+  if (cents === null) return { cents: null, error: INVALID_AMOUNT }
+  if (cents > MAX_AMOUNT_CENTS) return { cents: null, error: AMOUNT_TOO_LARGE }
+  return { cents, error: null }
 }
 
 function integerIn(value, min, max) {
@@ -95,9 +102,9 @@ export function quartalPayload(form) {
   if (quartal === null) errors.quartal = 'Bitte ein Quartal von 1 bis 4.'
   const cents = {}
   for (const field of QUARTAL_AMOUNTS) {
-    const value = amountCents(form[field.key])
-    if (value === null) errors[field.key] = INVALID_AMOUNT
-    else cents[field.payloadKey] = value
+    const amount = amountCents(form[field.key])
+    if (amount.error) errors[field.key] = amount.error
+    else cents[field.payloadKey] = amount.cents
   }
   const notiz = (form.notiz || '').trim()
   if (notiz.length > FINANZIERUNG_LIMITS.notiz) errors.notiz = `Die Notiz darf höchstens ${FINANZIERUNG_LIMITS.notiz} Zeichen haben.`
@@ -108,9 +115,10 @@ export function quartalPayload(form) {
 // Ziel: Titel, Betrag (Euro -> Cent, leer -> null), Empfänger.
 export function zielPayload(form) {
   const errors = {}
-  const betrag = form.betrag && form.betrag.trim() ? parseEuroToCents(form.betrag) : null
-  if (form.betrag && form.betrag.trim() && betrag === null) errors.betrag = INVALID_AMOUNT
-  const payload = Object.keys(errors).length ? null : { titel: form.titel.trim(), betragCents: betrag, empfaenger: form.empfaenger.trim() }
+  const hasBetrag = Boolean(form.betrag && form.betrag.trim())
+  const amount = hasBetrag ? amountCents(form.betrag) : { cents: null, error: null }
+  if (amount.error) errors.betrag = amount.error
+  const payload = Object.keys(errors).length ? null : { titel: form.titel.trim(), betragCents: amount.cents, empfaenger: form.empfaenger.trim() }
   return { payload, errors }
 }
 

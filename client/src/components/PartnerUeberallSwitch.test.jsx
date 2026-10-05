@@ -6,7 +6,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 const { setUeberallSichtbar } = vi.hoisted(() => ({ setUeberallSichtbar: vi.fn() }))
 vi.mock('../api', () => ({ api: { partnerArea: { setUeberallSichtbar } } }))
 
-import PartnerUeberallSwitch, { UEBERALL_LABEL } from './PartnerUeberallSwitch.jsx'
+import PartnerUeberallSwitch, { TEAM_AUS_HINT, UEBERALL_LABEL } from './PartnerUeberallSwitch.jsx'
 import { DemoProvider } from '../lib/demo.js'
 
 // Phase F: Schalter „Überall sichtbar (vorerst kostenlos)“ im Reiter „Teilen“.
@@ -79,5 +79,15 @@ describe('PartnerUeberallSwitch', () => {
     await render({ gesperrt: true })
     expect(toggle().disabled).toBe(true)
     expect(container.textContent).toMatch(/Gesperrt – bitte meldet euch beim Betreiber/)
+  })
+
+  test('vom Team ausgeschaltet (ueberallGesperrt): Schalter aus und gesperrt, Hinweis ans Team, kein „gilt, sobald …“', async () => {
+    await render({ ueberallGesperrt: true, status: 'entwurf' })
+    expect(toggle().checked).toBe(false)
+    expect(toggle().disabled).toBe(true)
+    expect(container.querySelector('[role="note"]').textContent).toBe(TEAM_AUS_HINT)
+    expect(container.textContent).not.toContain('Gilt, sobald')
+    await act(async () => toggle().click())
+    expect(setUeberallSichtbar).not.toHaveBeenCalled()
   })
 })

@@ -7,12 +7,13 @@ const { requireAdmin } = require('../middleware/admin')
 const { noStore } = require('../lib/noStoreResponse')
 const { cleanId } = require('../lib/validate')
 const { AKTION, logAdminAction, partnerZiel } = require('../lib/adminLog')
-const { parseAn, setUeberallSichtbar } = require('../lib/ueberallSichtbar')
+const { parseErlaubt, setUeberallErlaubt } = require('../lib/ueberallSichtbar')
 
-// Phase F: der Admin schaltet „Überall sichtbar“ eines Partners um - meist aus (der Partner schaltet es selbst ein,
-// routes/partnerArea/profile.js). Eingehängt unter /api/admin in app.js wie routes/adminEinladungskarte.js: 404-Gate ohne
-// Passwort-Hash, requireAdmin, no-store. Eine Änderung landet im Admin-Protokoll (ziel 'partner:<id>').
-// - PUT /partners/:id/ueberall-sichtbar { an } -> { id, ueberallSichtbar }
+// Phase F: das Team schaltet „Überall sichtbar“ eines Partners aus - und sperrt es damit, bis es die Hervorhebung wieder
+// erlaubt (lib/ueberallSichtbar.js setUeberallErlaubt; einschalten tut der Partner selbst, routes/partnerArea/profile.js).
+// Eingehängt unter /api/admin in app.js wie routes/adminEinladungskarte.js: 404-Gate ohne Passwort-Hash, requireAdmin und
+// no-store je Route. Eine Änderung landet im Admin-Protokoll (ziel 'partner:<id>').
+// - PUT /partners/:id/ueberall-sichtbar { erlaubt } -> { id, ueberallSichtbar, ueberallGesperrt }
 const router = express.Router()
 
 const findPartner = db.prepare('SELECT id FROM partners WHERE id = ?')
@@ -26,9 +27,9 @@ router.put('/partners/:id/ueberall-sichtbar', noStore, requireAdmin, (req, res, 
   try {
     const id = cleanId(req.params.id)
     if (!id || !findPartner.get(id)) return res.status(404).json({ error: 'Diesen Partner gibt es nicht' })
-    const { an, changed } = setUeberallSichtbar(id, parseAn(req.body))
-    if (changed) logAdminAction(an ? AKTION.partnerUeberallSichtbar : AKTION.partnerNichtUeberallSichtbar, partnerZiel(id))
-    res.json({ id, ueberallSichtbar: an })
+    const { an, gesperrt, changed } = setUeberallErlaubt(id, parseErlaubt(req.body))
+    if (changed) logAdminAction(gesperrt ? AKTION.partnerUeberallGesperrt : AKTION.partnerUeberallErlaubt, partnerZiel(id))
+    res.json({ id, ueberallSichtbar: an, ueberallGesperrt: gesperrt })
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)

@@ -56,7 +56,8 @@ router.put('/', denyDemoWrites, (req, res, next) => {
 })
 
 // Phase F: „Überall sichtbar (vorerst kostenlos)“ (lib/ueberallSichtbar.js) - { an: true|false }. Wirkt nur, solange das
-// Profil öffentlich ist (Entdecken zeigt nur aktive, nicht gesperrte Partner); eine Sperre lässt den Schalter nicht zu.
+// Profil öffentlich ist (Entdecken zeigt nur aktive, nicht gesperrte Partner); eine Sperre des Profils lässt den Schalter
+// nicht zu, und hat das Team die Hervorhebung ausgeschaltet (ueberall_gesperrt), antwortet die Lib mit 403.
 router.put('/ueberall-sichtbar', denyDemoWrites, (req, res, next) => {
   try {
     if (req.partner.gesperrt) return res.status(403).json({ error: LOCKED_MESSAGE })

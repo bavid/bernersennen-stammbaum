@@ -66,9 +66,10 @@ describe('FinanzierungPage', () => {
     const rows = [...container.querySelectorAll('.finanz-wer-row')].map((row) => [row.querySelector('dt').textContent, row.querySelector('.pill').textContent])
     expect(rows).toEqual([
       ['Nutzerinnen und Nutzer', 'kostenlos'],
-      ['Partner-Portale', 'kostenlos'],
+      ['Partner-Portale', 'vorerst kostenlos'],
       ['Hervorhebung „überall sichtbar“', 'vorerst kostenlos']
     ])
+    expect(container.textContent).toContain('klar als „überall sichtbar“ gekennzeichnet')
     expect(container.querySelector('.finanz-empty').textContent).toBe(QUARTALE_LEER)
     expect(container.querySelector('.finanz-mithelfen')).toBeNull()
     expect(container.querySelector('.finanz-ziel')).toBeNull()

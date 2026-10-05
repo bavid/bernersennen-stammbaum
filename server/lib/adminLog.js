@@ -41,10 +41,10 @@ const AKTION = Object.freeze({
   finanzierungQuartalAngelegt: 'finanzierung-quartal-angelegt',
   finanzierungQuartalGeaendert: 'finanzierung-quartal-geaendert',
   finanzierungQuartalGeloescht: 'finanzierung-quartal-geloescht',
-  // Phase F: der Admin hat „Überall sichtbar“ eines Partners ausgeschaltet (routes/adminPartnerSichtbar.js), ziel
-  // 'partner:<id>'.
-  partnerUeberallSichtbar: 'partner-ueberall-sichtbar',
-  partnerNichtUeberallSichtbar: 'partner-nicht-ueberall-sichtbar'
+  // Phase F: das Team hat „Überall sichtbar“ eines Partners ausgeschaltet und gesperrt bzw. wieder erlaubt
+  // (routes/adminPartnerSichtbar.js), ziel 'partner:<id>'.
+  partnerUeberallGesperrt: 'partner-ueberall-gesperrt',
+  partnerUeberallErlaubt: 'partner-ueberall-erlaubt'
 })
 
 const DEFAULT_LIMIT = 50

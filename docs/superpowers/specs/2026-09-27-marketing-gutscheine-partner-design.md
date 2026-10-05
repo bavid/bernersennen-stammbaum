@@ -945,7 +945,8 @@ Minuten cachebar); Partner-Schalter „Überall sichtbar (vorerst kostenlos)“ 
 `server/lib/ueberallSichtbar.js`; in „Entdecken“ hinter den nahen Treffern mit leisem Hinweis, Admin kann ausschalten,
 Demo: Hundeschule Pfotenglück). Entscheidungen des Betreibers: Nutzer immer kostenlos, Partner-Portale und Hervorhebung
 vorerst kostenlos; Texte ohne Rechtsform als Tatsache; Zahlen und Spendenempfänger pflegt der Admin, ohne Einträge zeigt die
-Seite den Grundsatz ohne Zahlen. **Punkt 4 (Merch) bleibt Zukunftsplan** – nichts davon in der App.
+Seite den Grundsatz ohne Zahlen. Das Team kann die Hervorhebung eines Partners ausschalten und sperren („Wieder
+erlauben“ hebt es auf). **Punkt 4 bleibt Zukunftsplan** – nichts davon in der App.
 
 ### Offene Fragen an den Betreiber
 - Verein (e. V.) oder gGmbH – oder erst einmal privat starten und später umwandeln?

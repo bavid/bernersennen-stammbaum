@@ -109,6 +109,9 @@ describe('AdminFinanzierung', () => {
     await submit(field('admin-finanz-text').closest('form'))
     expect(field('admin-finanz-url').getAttribute('aria-invalid')).toBe('true')
     expect(field('admin-finanz-url-error').textContent).toMatch(/vollständige Adresse/)
+    // Review L8: der Fokus springt zum ersten Feldfehler (useFocusFirstError wie im Quartal-Formular).
+    expect(document.activeElement).toBe(field('admin-finanz-url'))
+    expect(field('admin-finanz-url-hint').textContent).toMatch(/http\(s\)/)
   })
 
   test('Ziel: Euro -> Cent, Vorschau als Satz; ungültiger Betrag bleibt beim Client', async () => {
@@ -167,6 +170,34 @@ describe('AdminFinanzierung', () => {
     await click(container.querySelector('.admin-quartal-actions button[aria-label="1. Quartal 2026 löschen"]') || del)
     expect(mocks.deleteFinanzierungQuartal).toHaveBeenCalledWith(7)
     expect(container.querySelector('.admin-quartal-row')).toBeNull()
+  })
+
+  test('Wechsel des Ziels: andere Knöpfe gesperrt, solange ein Formular offen ist; nach Abbrechen startet das nächste frisch', async () => {
+    const Q2 = { ...Q1, id: 8, quartal: 2, einnahmenSpendenCents: 24100, notiz: 'Zweites' }
+    mocks.finanzierung.mockResolvedValue({ ...EMPTY, quartale: [Q2, Q1] })
+    await render()
+    const editButtons = () => [...container.querySelectorAll('.admin-quartal-actions button')].filter((btn) => btn.textContent.startsWith('Bearbeiten'))
+
+    await click(editButtons()[0])
+    expect(field('admin-quartal-einnahmenSpenden').value).toBe('241,00')
+    expect(field('admin-quartal-notiz').value).toBe('Zweites')
+    // Solange offen: kein zweites Bearbeiten, kein Löschen, kein „Quartal eintragen“.
+    expect(editButtons().every((btn) => btn.disabled)).toBe(true)
+    expect([...container.querySelectorAll('.admin-quartal-actions button')].every((btn) => btn.disabled)).toBe(true)
+    expect(button('Quartal eintragen')).toBeUndefined()
+
+    // Tippen, dann abbrechen und das andere Quartal öffnen: dessen Werte, nichts vom ersten.
+    await type(field('admin-quartal-notiz'), 'halb geändert')
+    await click(button('Abbrechen'))
+    await click(editButtons()[1])
+    expect(field('admin-quartal-einnahmenSpenden').value).toBe('120,50')
+    expect(field('admin-quartal-notiz').value).toBe('Server')
+
+    // Und „Quartal eintragen“ danach: leeres Formular.
+    await click(button('Abbrechen'))
+    await click(button('Quartal eintragen'))
+    expect(field('admin-quartal-einnahmenSpenden').value).toBe('')
+    expect(field('admin-quartal-notiz').value).toBe('')
   })
 
   test('Quartal ändern: Formular vorbelegt, Serverfehler (409) als Banner', async () => {

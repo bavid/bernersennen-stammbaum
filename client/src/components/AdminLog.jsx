@@ -28,8 +28,8 @@ const AKTION_LABELS = {
   'finanzierung-quartal-angelegt': 'Quartal eingetragen',
   'finanzierung-quartal-geaendert': 'Quartal geändert',
   'finanzierung-quartal-geloescht': 'Quartal gelöscht',
-  'partner-ueberall-sichtbar': 'Partner überall sichtbar',
-  'partner-nicht-ueberall-sichtbar': 'Partner nicht mehr überall sichtbar'
+  'partner-ueberall-gesperrt': '„Überall sichtbar“ ausgeschaltet und gesperrt',
+  'partner-ueberall-erlaubt': '„Überall sichtbar“ wieder erlaubt'
 }
 
 const EINSTELLUNG_LABELS = {
@@ -47,6 +47,9 @@ export function describeZiel(ziel, families = []) {
   if (termin) return `Termin #${termin[1]}`
   const hinweis = /^hinweis:(\d+)$/.exec(ziel || '')
   if (hinweis) return `Hinweis #${hinweis[1]}`
+  // Phase F: Quartale der Finanzierung (server/routes/adminFinanzierung.js, ziel 'quartal:<id>').
+  const quartal = /^quartal:(\d+)$/.exec(ziel || '')
+  if (quartal) return `Quartal #${quartal[1]}`
   const einstellung = /^einstellung:([a-z-]+)$/.exec(ziel || '')
   if (einstellung) return EINSTELLUNG_LABELS[einstellung[1]] || `Einstellung ${einstellung[1]}`
   const match = /^family:(\d+)$/.exec(ziel || '')

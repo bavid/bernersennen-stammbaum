@@ -93,6 +93,8 @@ function profileResponse(partner, { einblickCount, banner = [], bannerLayout = '
     ansprechperson: partner.ansprechperson ?? null,
     // Phase F: „Überall sichtbar“ (lib/ueberallSichtbar.js, eigene Route PUT /profile/ueberall-sichtbar - nicht über PUT /profile).
     ueberallSichtbar: Boolean(partner.ueberall_sichtbar),
+    // Phase F: das Team hat die Hervorhebung ausgeschaltet - der Schalter bleibt dann aus und gesperrt.
+    ueberallGesperrt: Boolean(partner.ueberall_gesperrt),
     logoUrl: partner.logo_file ? `/partner-media/${partner.logo_file}` : null,
     banner: banner.map(ownBanner),
     bannerLayout,
