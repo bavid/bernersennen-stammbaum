@@ -6,7 +6,7 @@ import { pushClient } from '../../../lib/pushClient.js'
 import { anleitungFuer, forgetOurSettings } from '../../../lib/zuruecksetzen.js'
 
 // „Unsere Einstellungen zurücksetzen“ (Einstellungen › App). Ehrlich: Berechtigungen des Browsers kann eine Website
-// nicht selbst zurücknehmen. Der Knopf (1) kündigt das Benachrichtigungs-Abo im Browser und löscht es auf dem Server,
+// nicht selbst zurücknehmen. Der Knopf (1) kündigt das Benachrichtigungs-Abo dieses Geräts im Browser und auf dem Server,
 // (2) vergisst die gemerkte Postleitzahl und weggeklickte Hinweise auf diesem Gerät (lib/zuruecksetzen.js) und (3) zeigt,
 // wo die Berechtigungen selbst sitzen - je Gerät. onDone: der Bereich darüber lädt seinen Zustand neu.
 export default function EinstellungenZuruecksetzen({ platform = detectPlatform(), client = pushClient, onDone }) {
@@ -16,9 +16,9 @@ export default function EinstellungenZuruecksetzen({ platform = detectPlatform()
   async function reset() {
     setError(null)
     try {
-      await client.unsubscribePush().catch(() => null)
-      // ohne endpoint: alle Abos des Zuhauses (in der Demo 403 - dort gibt es ohnehin keine)
-      await api.pushUnsubscribe(null).catch(() => null)
+      // nur dieses Gerät - die anderen Geräte des Zuhauses behalten ihre Benachrichtigungen (Demo: 403, dort gibt es keine)
+      const endpoint = await client.unsubscribePush().catch(() => null)
+      if (endpoint) await api.pushUnsubscribe(endpoint).catch(() => null)
       forgetOurSettings()
       setDone(true)
       onDone?.()

@@ -52,7 +52,7 @@ describe('EinstellungenZuruecksetzen: „Unsere Einstellungen zurücksetzen“',
     await act(async () => resetButton().click())
 
     expect(client.unsubscribePush).toHaveBeenCalledTimes(1)
-    expect(api.pushUnsubscribe).toHaveBeenCalledWith(null)
+    expect(api.pushUnsubscribe).toHaveBeenCalledWith('https://push.example/alt')
     expect(readSetting('nearbyPlz', null)).toBe(null)
     expect(readSetting('standortGemerkt', null)).toBe(null)
     expect(readSetting('installHintDismissedAt', null)).toBe(null)
@@ -64,7 +64,7 @@ describe('EinstellungenZuruecksetzen: „Unsere Einstellungen zurücksetzen“',
   test('scheitert der Server (z. B. Demo 403), wird trotzdem lokal aufgeräumt', async () => {
     writeSetting('nearbyPlz', '20095')
     api.pushUnsubscribe.mockRejectedValue(new Error('Demo – nur lesen'))
-    await render({ client: { unsubscribePush: vi.fn(async () => null) }, platform: 'ios' })
+    await render({ client: { unsubscribePush: vi.fn(async () => 'https://push.example/demo') }, platform: 'ios' })
     await act(async () => resetButton().click())
     await act(async () => resetButton().click())
     expect(readSetting('nearbyPlz', null)).toBe(null)

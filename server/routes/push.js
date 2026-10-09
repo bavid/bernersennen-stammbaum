@@ -2,7 +2,7 @@
 
 const express = require('express')
 const { requireAuth, requireSession } = require('../middleware/auth')
-const { isEnabled, publicKey, saveAbo, deleteAbo, deleteAllAbos, countAbos } = require('../lib/push')
+const { isEnabled, publicKey, saveAbo, deleteAbo, countAbos } = require('../lib/push')
 
 // Benachrichtigungen aufs Handy (Web Push, Einstellungen › App) - /api/push. Alles bezieht sich auf die Identität der
 // Sitzung (req.homeId): ein Abo gehört dem Zuhause, egal in welchem Bereich gerade jemand unterwegs ist. requireAuth
@@ -33,14 +33,12 @@ router.post('/abo', requireAuth, (req, res, next) => {
   }
 })
 
-// { endpoint } -> 204; ohne endpoint: alle Abos des Zuhauses („Unsere Einstellungen zurücksetzen“).
+// { endpoint } -> 204: genau dieses Gerät (Ausschalten, „Unsere Einstellungen zurücksetzen“) - die anderen Geräte des
+// Zuhauses behalten ihre Benachrichtigungen.
 router.delete('/abo', requireAuth, (req, res) => {
   res.setHeader('Cache-Control', NO_STORE)
   const endpoint = req.body?.endpoint
-  if (endpoint === undefined || endpoint === null) {
-    deleteAllAbos(req.homeId)
-    return res.status(204).end()
-  }
+  if (typeof endpoint !== 'string' || endpoint.length === 0) return res.status(400).json({ error: 'Welches Gerät? (endpoint fehlt)' })
   if (!deleteAbo(req.homeId, endpoint)) return res.status(404).json({ error: 'Dieses Abo gibt es nicht' })
   res.status(204).end()
 })

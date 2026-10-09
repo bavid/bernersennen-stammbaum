@@ -11,7 +11,7 @@ const dataDir = useTempDataDir('push', { VAPID_PUBLIC_KEY: keys.publicKey, VAPID
 const config = require('../config')
 const push = require('../lib/push')
 
-const subscription = (name) => ({ endpoint: `https://push.example/abo/${name}`, keys: { p256dh: 'BPdh_abc-123', auth: 'auth_abc' } })
+const subscription = (name) => ({ endpoint: `https://fcm.googleapis.com/fcm/send/${name}`, keys: { p256dh: 'BPdh_abc-123', auth: 'auth_abc' } })
 const flush = () => new Promise((resolve) => setImmediate(() => setImmediate(resolve)))
 
 test('readVapid: beide Schlüssel oder keiner, Absender mailto/https', () => {
@@ -25,8 +25,28 @@ test('readVapid: beide Schlüssel oder keiner, Absender mailto/https', () => {
   assert.equal(config.readVapid({ VAPID_SUBJECT: 'javascript:1' }, null).subject, 'mailto:admin@localhost')
 })
 
-test('cleanSubscription: nur https-Endpunkte mit beiden Schlüsseln, begrenzte Längen', () => {
+test('cleanSubscription: nur https-Endpunkte bekannter Push-Dienste mit beiden Schlüsseln, begrenzte Längen', () => {
   assert.deepEqual(push.cleanSubscription(subscription('a')), subscription('a'))
+  const keys = subscription('a').keys
+  for (const endpoint of [
+    'https://updates.push.services.mozilla.com/wpush/v2/abc',
+    'https://web.push.apple.com/QGx',
+    'https://wns2-par02p.notify.windows.com/w/?token=abc'
+  ]) {
+    assert.ok(push.cleanSubscription({ endpoint, keys }), endpoint)
+  }
+  // SSRF: web-push schickt per POST an den Endpunkt - keine beliebigen oder internen Adressen
+  for (const endpoint of [
+    'https://push.example/x',
+    'https://127.0.0.1/x',
+    'https://localhost/x',
+    'https://fcm.googleapis.com.boese.example/x',
+    'https://boese-fcm.googleapis.com/x',
+    'https://fcm.googleapis.com:8443/x',
+    'https://user:pw@fcm.googleapis.com/x'
+  ]) {
+    assert.equal(push.cleanSubscription({ endpoint, keys }), null, endpoint)
+  }
   assert.equal(push.cleanSubscription(null), null)
   assert.equal(push.cleanSubscription({ endpoint: 'http://push.example/x', keys: subscription('a').keys }), null)
   assert.equal(push.cleanSubscription({ endpoint: 'https://push.example/x', keys: { p256dh: 'ok' } }), null)
@@ -140,18 +160,22 @@ test('Web Push über die API', async (t) => {
     assert.equal(push.countAbos(hostId), 1)
   })
 
-  await t.test('DELETE /abo: ein Gerät (404 wenn fremd oder unbekannt) oder ohne endpoint alle', async () => {
+  await t.test('DELETE /abo: nur ein Gerät (404 wenn fremd oder unbekannt, 400 ohne endpoint) - die anderen bleiben', async () => {
     assert.equal((await del('/api/push/abo', { endpoint: subscription('handy').endpoint }, guest.cookie)).status, 404)
     assert.equal((await del('/api/push/abo', { endpoint: subscription('handy').endpoint }, host.cookie)).status, 204)
     assert.equal(push.countAbos(hostId), 0)
     push.saveAbo(hostId, subscription('a'))
     push.saveAbo(hostId, subscription('b'))
-    assert.equal((await del('/api/push/abo', {}, host.cookie)).status, 204)
-    assert.equal(push.countAbos(hostId), 0)
+    assert.equal((await del('/api/push/abo', {}, host.cookie)).status, 400)
+    assert.equal((await del('/api/push/abo', { endpoint: subscription('a').endpoint }, host.cookie)).status, 204)
+    assert.equal(push.countAbos(hostId), 1)
   })
 
-  await t.test('Demo-Zuhause lösen nie etwas aus', async () => {
+  await t.test('nur echte Zuhause: Demo und klassische Rudel lösen nie etwas aus (wie die Glocke)', async () => {
     assert.equal(push.notifyHome(demoFamily.data.id, push.EREIGNIS.gast), false)
+    const rudel = await createFamily(base, 'Rudel Talblick', 'talblick123')
+    assert.equal(push.notifyHome(rudel.data.id, push.EREIGNIS.gruss), false)
+    assert.equal(push.notifyHome(hostId, push.EREIGNIS.gruss), true)
     assert.equal(push.notifyHome(null, push.EREIGNIS.gast), false)
   })
 })

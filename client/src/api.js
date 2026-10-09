@@ -128,11 +128,10 @@ export const api = {
   // Nächste PLZ zum Standort („Standort für ‚In der Nähe‘ merken“, Einstellungen › App): Koordinaten gerundet, der
   // Server speichert nichts (routes/places.js POST /plz).
   plzFromLocation: (location) => request('/places/plz', json('POST', location)),
-  // Benachrichtigungen aufs Handy (Web Push, routes/push.js): öffentlicher Schlüssel, Abo anlegen, Abo kündigen
-  // (ohne endpoint: alle Geräte dieses Zuhauses - „Unsere Einstellungen zurücksetzen“).
+  // Benachrichtigungen aufs Handy (Web Push, routes/push.js): öffentlicher Schlüssel, Abo anlegen, Abo dieses Geräts kündigen.
   pushKey: () => request('/push/key'),
   pushSubscribe: (subscription) => request('/push/abo', json('POST', { subscription })),
-  pushUnsubscribe: (endpoint) => request('/push/abo', json('DELETE', endpoint ? { endpoint } : {})),
+  pushUnsubscribe: (endpoint) => request('/push/abo', json('DELETE', { endpoint })),
   // Reiter "Entdecken" (Phase 3): alle vier Abschnitte in einer Antwort. Die PLZ steht wie bei
   // publicPartners im Body, nie in der URL; ohne PLZ liefert der Server alles, nach Name sortiert.
   discover: ({ plz, radius } = {}) => request('/discover', json('POST', plz ? { plz, radius } : {})),

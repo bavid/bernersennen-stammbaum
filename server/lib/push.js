@@ -46,6 +46,15 @@ const MAX_KEY_LENGTH = 512
 const MAX_ABOS_PER_HOME = 10
 const TTL_SECONDS = 24 * 60 * 60
 const BASE64URL = /^[A-Za-z0-9_-]+=*$/
+// Nur die Push-Dienste der Browser-Hersteller (Chrome/Android/Edge-Chromium über FCM, Firefox, Safari/iOS, Windows):
+// web-push schickt jede Nachricht per POST an den Endpunkt des Abos - ohne diese Liste ließe sich der Server mit einem
+// selbst gebauten "Abo" Anfragen an beliebige Adressen schicken lassen (SSRF, security-review PWA).
+const PUSH_HOSTS = Object.freeze(['fcm.googleapis.com', 'android.googleapis.com', 'web.push.apple.com'])
+const PUSH_HOST_SUFFIXES = Object.freeze(['.push.services.mozilla.com', '.notify.windows.com', '.push.apple.com'])
+
+function isPushServiceHost(hostname) {
+  return PUSH_HOSTS.includes(hostname) || PUSH_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
+}
 
 const countStmt = db.prepare('SELECT COUNT(*) AS c FROM push_abos WHERE family_id = ?')
 const findByEndpointStmt = db.prepare('SELECT id, family_id FROM push_abos WHERE endpoint = ?')
@@ -54,11 +63,10 @@ const upsertStmt = db.prepare(
    ON CONFLICT(endpoint) DO UPDATE SET family_id = excluded.family_id, keys_json = excluded.keys_json, created_at = datetime('now')`
 )
 const deleteStmt = db.prepare('DELETE FROM push_abos WHERE family_id = ? AND endpoint = ?')
-const deleteAllStmt = db.prepare('DELETE FROM push_abos WHERE family_id = ?')
 const deleteByIdStmt = db.prepare('DELETE FROM push_abos WHERE id = ?')
 const listStmt = db.prepare('SELECT id, endpoint, keys_json FROM push_abos WHERE family_id = ? ORDER BY id')
 const okStmt = db.prepare("UPDATE push_abos SET last_ok_at = datetime('now') WHERE id = ?")
-const isDemoStmt = db.prepare('SELECT is_demo FROM families WHERE id = ?')
+const homeStmt = db.prepare('SELECT is_demo, art FROM families WHERE id = ?')
 
 function httpError(status, message) {
   const err = new Error(message)
@@ -84,7 +92,8 @@ function cleanSubscription(input) {
   const { endpoint, keys } = input
   if (typeof endpoint !== 'string' || endpoint.length > MAX_ENDPOINT_LENGTH) return null
   try {
-    if (new URL(endpoint).protocol !== 'https:') return null
+    const url = new URL(endpoint)
+    if (url.protocol !== 'https:' || url.port !== '' || url.username || url.password || !isPushServiceHost(url.hostname)) return null
   } catch {
     return null
   }
@@ -109,10 +118,6 @@ function saveAbo(familyId, input) {
 function deleteAbo(familyId, endpoint) {
   if (typeof endpoint !== 'string' || endpoint.length > MAX_ENDPOINT_LENGTH) return false
   return deleteStmt.run(familyId, endpoint).changes > 0
-}
-
-function deleteAllAbos(familyId) {
-  return deleteAllStmt.run(familyId).changes
 }
 
 function countAbos(familyId) {
@@ -159,10 +164,12 @@ async function deliver(homeId, ereignis) {
   return sent
 }
 
-// Aus den Routen: nie warten, nie für Demo-Zuhause, nichts ohne Schlüssel.
+// Aus den Routen: nie warten, nur für echte Zuhause, nichts ohne Schlüssel.
 function notifyHome(homeId, ereignis) {
   if (!isEnabled() || !Number.isInteger(homeId)) return false
-  if (isDemoStmt.get(homeId)?.is_demo) return false
+  // Nur Zuhause - wie die Glocke (routes/meineHinweise.js); Demo-Zuhause nie.
+  const home = homeStmt.get(homeId)
+  if (!home || home.is_demo || home.art !== 'zuhause') return false
   setImmediate(() => {
     deliver(homeId, ereignis).catch((err) => console.warn(`Push-Benachrichtigung fehlgeschlagen (${err?.code || 'Fehler'})`))
   })
@@ -178,7 +185,6 @@ module.exports = {
   cleanSubscription,
   saveAbo,
   deleteAbo,
-  deleteAllAbos,
   countAbos,
   payloadFor,
   deliver,

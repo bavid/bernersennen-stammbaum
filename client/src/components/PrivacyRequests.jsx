@@ -46,9 +46,10 @@ export default function PrivacyRequests() {
           Endpunkt beim Push-Dienst eures Browser-Herstellers – Google, Apple oder Mozilla – samt den Schlüsseln, die der
           Browser dafür erzeugt), verknüpft mit eurem Zuhause. Verschickt wird nur, was die Hinweis-Glocke ohnehin zählt –
           ein neuer Gruß, eine „Mit dabei“-Anfrage, ein neuer Gast – als kurzer, fester Text ohne Namen, Titel oder
-          Inhalte, Ende-zu-Ende verschlüsselt; die Einzelheiten zeigt erst die App nach dem Anmelden. Schaltet ihr die
+          Inhalte, Ende-zu-Ende verschlüsselt; die Einzelheiten zeigt erst die App nach dem Anmelden. Wir schicken nur an die
+          Push-Dienste der Browser-Hersteller, an keine anderen Adressen. Schaltet ihr die
           Benachrichtigungen aus oder meldet der Push-Dienst, dass das Gerät sie nicht mehr annimmt, löschen wir die
-          Adresse. Mit der App gehen auch alle Abos des Zuhauses.
+          Adresse. Wird euer Zuhause gelöscht, gehen auch alle seine Abos.
         </p>
       </LegalSection>
     </>
