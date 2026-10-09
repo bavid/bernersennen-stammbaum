@@ -138,18 +138,18 @@ export default function SearchPanel({ family, onClose, onInvite }) {
 
   function retrySearch() {
     results.retry()
-    inputRef.current?.focus()
+    inputRef.current?.focus({ preventScroll: true })
   }
 
   function resetInput() {
     setInput('')
-    inputRef.current?.focus()
+    inputRef.current?.focus({ preventScroll: true })
   }
 
   function forgetRecent() {
     clearRecent(family)
     setRecent([])
-    inputRef.current?.focus()
+    inputRef.current?.focus({ preventScroll: true })
   }
 
   const status = statusText({ query, results, shortcutHits })

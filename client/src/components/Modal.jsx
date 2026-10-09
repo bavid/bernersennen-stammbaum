@@ -13,7 +13,7 @@ export default function Modal({ open, title, onClose, children, className = '' }
       dialog.showModal()
       // React setzt autoFocus beim Einfügen - da ist der Dialog noch zu. Ein Feld mit data-autofocus bekommt den Fokus
       // deshalb hier, sobald der Dialog offen ist (sonst landet er auf „Schließen“).
-      dialog.querySelector('[data-autofocus]')?.focus()
+      dialog.querySelector('[data-autofocus]')?.focus({ preventScroll: true })
     }
     if (!open && dialog.open) dialog.close()
   }, [open])

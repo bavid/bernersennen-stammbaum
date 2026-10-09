@@ -21,6 +21,14 @@ body,
   min-height: 100%;
 }
 
+/* Zoom am Handy: nichts darf breiter werden als die Seite - was doch übersteht (z. B. ein Schatten, ein gedrehtes Foto),
+   wird abgeschnitten statt eine waagerechte Scrollleiste zu ergeben, die den Zoom verschiebt. clip statt hidden: kein
+   Scroll-Container, position: sticky in Kopf und Reitern bleibt. */
+html,
+body {
+  overflow-x: clip;
+}
+
 /* B+ Familienalbum: ruhiges Papier, nur oben ein Hauch Wärme. */
 body {
   margin: 0;
@@ -87,6 +95,35 @@ select,
 textarea {
   font: inherit;
   color: inherit;
+}
+
+/* Tippen ohne 300-ms-Verzögerung und ohne Doppeltipp-Zoom auf Bedienelementen - der Pinch-Zoom der Seite bleibt
+   (kein user-scalable=no, kein maximum-scale). */
+a,
+button,
+input,
+select,
+textarea,
+label,
+summary,
+[role='button'],
+[role='tab'],
+[role='switch'] {
+  touch-action: manipulation;
+}
+
+/* iOS Safari zoomt beim Fokus in ein Feld mit weniger als 16 px Schrift hinein - und bleibt oft gezoomt, Inhalte stehen
+   dann verschoben. Die Grundschrift ist 15 px, Felder erben sie oder bekommen var(--text-sm): am Handy deshalb jedes Feld
+   mindestens 16 px. !important mit Absicht - ein Sicherheitsnetz über allen Komponenten-Stilen (.reply-form input,
+   .copy-field-row textarea, .search-input …); am PC bleibt die kleinere Schrift (styles/mobileInputs.test.js). */
+@media (max-width: 820px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  textarea,
+  select,
+  [contenteditable='true'],
+  [contenteditable=''] {
+    font-size: max(16px, 1rem) !important;
+  }
 }
 
 button {

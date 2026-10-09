@@ -44,7 +44,7 @@
 
 /* Dialog: oben statt mittig - die Treffer wachsen nach unten, das Feld springt beim Tippen nicht. */
 .modal.modal-search {
-  width: min(40rem, calc(100vw - 2rem));
+  width: min(40rem, calc(100% - 2rem));
   max-height: min(44rem, 86dvh);
   margin: 7vh auto auto;
 }
@@ -64,8 +64,8 @@
 @media (max-width: 560px) {
   /* Am Handy die ganze Höhe: Tastatur unten, Feld oben, dazwischen die Treffer. */
   .modal.modal-search {
-    width: 100vw;
-    max-width: 100vw;
+    width: 100%;
+    max-width: 100%;
     height: 100dvh;
     max-height: 100dvh;
     margin: 0;

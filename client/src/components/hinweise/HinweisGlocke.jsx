@@ -25,7 +25,7 @@ function Popover({ id, onClose, children }) {
 
   // Nur beim Öffnen - nicht bei jedem neuen Rendern (sonst spränge der Fokus aus der Liste zurück aufs Fenster).
   useEffect(() => {
-    panelRef.current?.focus()
+    panelRef.current?.focus({ preventScroll: true })
     function handlePointerDown(event) {
       if (panelRef.current?.contains(event.target) || event.target.closest?.(OPENER_SELECTOR)) return
       onCloseRef.current()

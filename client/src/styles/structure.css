@@ -202,7 +202,7 @@
 /* Menü als Blatt von unten (AccountSheet im Modal, das am Handy ohnehin unten andockt und volle Breite hat) */
 @media (min-width: 561px) {
   .modal-sheet {
-    width: min(26rem, calc(100vw - 2rem));
+    width: min(26rem, calc(100% - 2rem));
   }
 }
 
