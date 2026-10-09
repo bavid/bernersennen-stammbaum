@@ -1,13 +1,15 @@
 import PawMark from '../components/PawMark.jsx'
+import { getLang } from '../lib/i18n/index.js'
+import { textsEn, wordsEn } from './standard.en.js'
 
 // „Familie auf Pfoten" – der eine Auftritt für alle (B+ Familienalbum, 04.10.: der Berner-Auftritt ist entfernt). Die Wörter
 // stehen weiter an EINER Stelle (useTheme().words), damit ein späterer Wechsel nur sie ändert.
-export default {
+const theme = {
   id: 'standard',
   Mark: PawMark,
   appName: 'Familie auf Pfoten',
   footer: 'Familie auf Pfoten · Eine tierisch nette Familie',
-  words: {
+  wordsDe: {
     group: 'Familie',
     theGroup: 'die Familie',
     TheGroup: 'Die Familie',
@@ -83,7 +85,7 @@ export default {
     matingAdded: 'Verpaarung eingetragen',
     breedingBook: 'Verpaarungen'
   },
-  texts: {
+  textsDe: {
     loginKicker: 'Eine Familie · viele Zuhause',
     loginHeadline: ['Wie geht’s den anderen', 'Fellnasen?'],
     loginLede:
@@ -109,3 +111,19 @@ export default {
     loginDemoHint: 'Ohne Anmeldung, schreibgeschützt – mit Beispiel-Tieren, Familien und Erinnerungen.'
   }
 }
+
+// words/texts folgen der gewählten Sprache; fehlt ein englischer Schlüssel, gilt der deutsche.
+Object.defineProperty(theme, 'words', {
+  enumerable: true,
+  get() {
+    return getLang() === 'en' ? { ...theme.wordsDe, ...wordsEn } : theme.wordsDe
+  }
+})
+Object.defineProperty(theme, 'texts', {
+  enumerable: true,
+  get() {
+    return getLang() === 'en' ? { ...theme.textsDe, ...textsEn } : theme.textsDe
+  }
+})
+
+export default theme

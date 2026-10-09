@@ -1,56 +1,177 @@
-/* Laufband „Zahlen aus der Gemeinschaft“ (CommunityTicker): eine schlanke Papier-Zeile (mind. 44 px), Einträge durch „·“
-   getrennt. Bewegung nur per transform (doppelter Inhalt, -50 % = nahtlos), Halt bei Hover/Fokus; ohne Bewegung
-   (prefers-reduced-motion oder angehalten) eine ruhige, umbrechende Zeile. Nur Tokens aus tokens.css/palettes.css. */
+/* Band „Mit dabei“ (CommunityTicker): ein warmes Papierband mit kleinen Karten - Symbol im Kreis, Zahl in der Titelschrift,
+   Wort daneben; der vorgestellte Partner als hervorgehobene Karte mit Pfeil. Bewegung nur per transform (doppelter Inhalt,
+   -50 % = nahtlos), nur wenn die Reihe nicht passt; Halt bei Hover/Fokus. Nur Tokens aus tokens.css/palettes.css. */
 
 .community-ticker {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  min-height: 2.75rem;
-  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  gap: var(--space-4);
+  min-height: 4.25rem;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
   border-block: 1px solid var(--line);
-  background: var(--paper);
+  background:
+    radial-gradient(120% 140% at 0% 0%, var(--rust-wash), transparent 55%),
+    linear-gradient(180deg, var(--paper), var(--paper-deep));
   color: var(--ink-soft);
-  font-size: var(--text-sm);
-  font-weight: 600;
 }
 
-.community-ticker > svg {
+/* Fester Titel links: „Mit dabei“ in der Handschrift, mit Pfote. */
+.community-ticker-title {
+  display: inline-flex;
   flex-shrink: 0;
-  width: 1rem;
-  height: 1rem;
-  color: var(--rust);
-}
-
-.community-ticker a {
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding-right: var(--space-4);
+  border-right: 1px dashed var(--line-strong);
   color: var(--rust-deep);
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  font-family: var(--font-hand);
+  font-size: var(--text-2xl);
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.community-ticker a:hover {
+.community-ticker-title svg {
+  width: 1.1rem;
+  height: 1.1rem;
   color: var(--rust);
+}
+
+.community-ticker-space {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  /* Die Messkopie ist breiter als der Platz - nicht über den Rand hinaus zählen lassen (Fokusrahmen bleibt sichtbar). */
+  overflow: clip;
+  overflow-clip-margin: 6px;
 }
 
 .community-ticker-empty {
   margin: 0;
+  font-weight: 600;
+}
+
+/* --- Karten -------------------------------------------------------------------------------------------------------- */
+
+.community-ticker ul {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.community-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: 0.3rem var(--space-4) 0.3rem 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+.community-chip-icon {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--rust-wash);
+  color: var(--rust);
+}
+
+.community-chip-icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.community-chip-value {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.community-chip-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* Vorgestellter Partner: kräftiger, mit kleinem Vorspann und Pfeil - der einzige Link im Band. */
+.community-chip.is-featured {
+  border-color: color-mix(in srgb, var(--rust) 35%, var(--line));
+  background: color-mix(in srgb, var(--rust-wash) 60%, var(--surface));
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+
+.community-chip.is-featured .community-chip-icon {
+  background: var(--rust);
+  color: var(--surface);
+}
+
+.community-chip-kicker {
+  color: var(--rust-deep);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.community-chip-name {
+  font-size: var(--text-sm);
+}
+
+.community-chip.is-featured > svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--rust);
+}
+
+.community-chip.is-featured:hover {
+  border-color: var(--rust);
+  transform: translateY(-1px);
+}
+
+.community-chip.is-featured:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 2px;
+}
+
+/* --- Messkopie: unsichtbar, gleiche Breite wie die laufende Reihe ------------------------------------------------- */
+
+.community-ticker .community-ticker-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* --- Laufend ------------------------------------------------------------------------------------------------------- */
 
 .community-ticker-viewport {
-  flex: 1;
-  min-width: 0;
   overflow: hidden;
-  /* Weiche Ränder, damit die Einträge nicht hart abgeschnitten wirken. */
-  mask-image: linear-gradient(90deg, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+  padding-block: 3px;
+  /* Weiche Ränder, damit die Karten nicht hart abgeschnitten wirken. */
+  mask-image: linear-gradient(90deg, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
 }
 
 .community-ticker-track {
   display: flex;
   width: max-content;
-  animation: community-ticker-run var(--ticker-duration, 75s) linear infinite;
+  animation: community-ticker-run var(--ticker-duration, 60s) linear infinite;
   will-change: transform;
 }
 
@@ -59,20 +180,9 @@
   animation-play-state: paused;
 }
 
-.community-ticker-list {
-  display: flex;
+.community-ticker .community-ticker-list {
   flex-shrink: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  white-space: nowrap;
-}
-
-.community-ticker-list li::before {
-  content: '·';
-  padding-inline: var(--space-3);
-  color: var(--tan);
-  font-weight: 800;
+  padding-right: var(--space-2);
 }
 
 @keyframes community-ticker-run {
@@ -84,25 +194,18 @@
   }
 }
 
-/* --- Ruhig (reduzierte Bewegung oder angehalten) ------------------------------------------------------------------ */
+/* --- Ruhig (passt, reduzierte Bewegung oder angehalten) ----------------------------------------------------------- */
 
-.community-ticker-static {
+.community-ticker-static-wrap {
   display: flex;
-  flex: 1;
   flex-wrap: wrap;
   align-items: center;
-  min-width: 0;
-  margin: 0;
-  padding: var(--space-1) 0;
-  list-style: none;
-  row-gap: var(--space-1);
+  gap: var(--space-2);
 }
 
-.community-ticker-static li + li::before {
-  content: '·';
-  padding-inline: var(--space-2);
-  color: var(--tan);
-  font-weight: 800;
+.community-ticker .community-ticker-static {
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
 }
 
 .community-ticker-more,
@@ -113,12 +216,13 @@
   justify-content: center;
   min-width: 2.75rem;
   min-height: 2.75rem;
-  padding: 0 var(--space-2);
-  border: 0;
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   font: inherit;
+  font-size: var(--text-sm);
   font-weight: 700;
   cursor: pointer;
 }
@@ -128,9 +232,14 @@
   text-underline-offset: 3px;
 }
 
+.community-ticker-toggle {
+  border-color: var(--line);
+  background: var(--surface);
+}
+
 .community-ticker-toggle svg {
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .community-ticker-more:hover,
@@ -140,8 +249,7 @@
 }
 
 .community-ticker-more:focus-visible,
-.community-ticker-toggle:focus-visible,
-.community-ticker a:focus-visible {
+.community-ticker-toggle:focus-visible {
   outline: 2px solid var(--rust);
   outline-offset: 2px;
 }
@@ -152,12 +260,37 @@
   }
 }
 
+/* Handy: Titel über der Reihe, damit für die Karten die volle Breite bleibt. */
+@media (max-width: 720px) {
+  .community-ticker {
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  }
+
+  .community-ticker-title {
+    padding-right: 0;
+    border-right: 0;
+    font-size: var(--text-xl);
+  }
+
+  .community-ticker-space {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .community-ticker-toggle {
+    margin-left: auto;
+  }
+}
+
 /* Einbau: Startseite (unter den Einstiegen, über dem Fuß - über beide Spalten), öffentliche Seiten (unter dem Kopf). */
 .login .community-ticker {
   grid-column: 1 / -1;
+  min-width: 0;
 }
 
 .public-page .community-ticker {
   border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-lg);
 }

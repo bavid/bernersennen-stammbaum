@@ -15,6 +15,7 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import AccountMenu from './components/AccountMenu.jsx'
 import AccountSheet, { MenuSlotButton } from './components/AccountSheet.jsx'
 import SearchButton from './components/search/SearchButton.jsx'
+import QuickSettings from './components/QuickSettings.jsx'
 import HinweisGlocke from './components/hinweise/HinweisGlocke.jsx'
 import HinweiseProvider from './components/hinweise/HinweiseProvider.jsx'
 import { clearRecent } from './lib/search.js'
@@ -235,7 +236,7 @@ function PartnerHeaderActions({ onLogout }) {
 // der unteren Leiste. Kein Bereichswechsler mehr: das AreaGate der Routen wechselt beim Navigieren. Tierheime und
 // Partner behalten ihren Kopf (bei fünf Punkten die kompakte Leiste, layout.css .app-nav-dense). onInvite: den
 // Einladen-Dialog öffnen (App).
-export function AppHeader({ family, onLogout, onInvite = () => {} }) {
+export function AppHeader({ family, onLogout, onInvite = () => {}, onFamilyChange }) {
   const { pathname } = useLocation()
   const { theme } = useTheme()
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -284,6 +285,8 @@ export function AppHeader({ family, onLogout, onInvite = () => {} }) {
         </nav>
         {/* Suche (Lupe, Strg/⌘+K) für Haushalte und klassische Familien-Logins - Tierheime und Partner haben keine. */}
         {withMenu && <SearchButton family={family} onInvite={onInvite} />}
+        {/* Sprache, Hintergrund und Schriftgröße direkt im Kopf - wirkt beim Klick (components/QuickSettings). */}
+        <QuickSettings family={family} onFamilyChange={onFamilyChange} />
         {/* Hinweis-Glocke (components/hinweise): Anfragen, neue Gäste, Grüße - nur Haushalte, sonst rendert sie nichts. */}
         <HinweisGlocke />
         {withMenu ? <AccountMenu family={family} onInvite={onInvite} onLogout={onLogout} /> : <PartnerHeaderActions onLogout={onLogout} />}
@@ -707,7 +710,7 @@ export default function App() {
           {/* Phase W, Schritt 2: zu Besuch steht ein Chip im Kopf der Besuchsseiten (visits/VisitChip) - kein Band mehr oben. */}
           {/* Hinweis-Glocke: Kopf und Start öffnen dasselbe Fenster (HinweiseProvider), die Zahlen stehen in family. */}
           <HinweiseProvider family={family} onFamilyChange={setFamily}>
-            <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
+            <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} onFamilyChange={setFamily} />
             {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
             {isPartnerArea(family) && !onPublicPage && <ViewModeSwitch areaId={family.id} />}
             {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key

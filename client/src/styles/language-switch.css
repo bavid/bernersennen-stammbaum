@@ -31,3 +31,16 @@
   padding-top: var(--space-4);
   border-top: 1px solid var(--line);
 }
+
+/* Mit Weltkugel davor (oben auf der Startseite). */
+.language-switch.has-icon {
+  align-items: center;
+  padding-left: var(--space-3);
+}
+
+.language-switch.has-icon > svg {
+  width: 1rem;
+  height: 1rem;
+  margin-right: var(--space-1);
+  color: var(--muted);
+}

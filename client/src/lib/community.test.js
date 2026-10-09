@@ -36,7 +36,33 @@ describe('Laufband: Einträge', () => {
     expect(tickerItems(null)).toEqual([])
     expect(tickerSentence([])).toBe('')
     expect(tickerSentence(tickerItems({ familien: 2, erinnerungen: 5 }))).toBe('Dabei sind 2 Familien, 5 Erinnerungen.')
-    expect(tickerDuration([{ text: 'x' }])).toBe(60)
-    expect(tickerDuration(Array.from({ length: 40 }, () => ({ text: 'Dabei sind 10 Familien' })))).toBe(90)
+    expect(tickerDuration([{ text: 'x' }])).toBe(40)
+    expect(tickerDuration(Array.from({ length: 40 }, () => ({ text: 'Dabei sind 10 Familien' })))).toBe(80)
+  })
+})
+
+describe('Laufband: Zahl und Wort, Englisch', () => {
+  test('Einträge tragen Zahl, Wort und Symbol; vorgestellte Partner sind hervorgehoben', async () => {
+    const items = tickerItems(FULL)
+    expect(items[2]).toMatchObject({ key: 'erinnerungen', value: '1.234', label: 'Erinnerungen', icon: 'book' })
+    expect(items.at(-1)).toMatchObject({ featured: true, kicker: 'Partner des Monats', label: 'Hundeschule Pfotenglück' })
+  })
+
+  test('auf Englisch: englische Wörter und Zahlen', async () => {
+    const { setLang } = await import('./i18n/index.js')
+    setLang('en')
+    try {
+      const items = tickerItems(FULL)
+      expect(items.map((item) => item.text)).toEqual([
+        'On board: 10 families',
+        '12 homes',
+        '1,234 memories',
+        expect.stringMatching(/^€500 donated$/),
+        '1 partner',
+        'Partner of the month: Hundeschule Pfotenglück'
+      ])
+    } finally {
+      setLang('de')
+    }
   })
 })

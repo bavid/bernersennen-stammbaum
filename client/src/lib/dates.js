@@ -1,4 +1,19 @@
+import { getLang } from './i18n/index.js'
+
 export const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+// Monatsnamen in der gewählten Sprache (lib/i18n) - MONTHS bleibt die deutsche Liste für bestehende Aufrufer.
+export function monthNames() {
+  return getLang() === 'en' ? MONTHS_EN : MONTHS
+}
+
+const isEn = () => getLang() === 'en'
+// Einzahl/Mehrzahl je Sprache: unit(3, 'Jahr', 'Jahre', 'year', 'years') -> "3 Jahre" bzw. "3 years"
+function unit(n, deOne, deMany, enOne, enMany) {
+  if (isEn()) return `${n} ${n === 1 ? enOne : enMany}`
+  return `${n} ${n === 1 ? deOne : deMany}`
+}
 
 function parts(iso) {
   if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return null
@@ -19,7 +34,8 @@ export function yearOf(iso) {
 // "12. Mai 2014"
 export function formatDateLong(iso) {
   const p = parts(iso)
-  return p ? `${p.day}. ${MONTHS[p.month - 1]} ${p.year}` : ''
+  if (!p) return ''
+  return isEn() ? `${p.day} ${MONTHS_EN[p.month - 1]} ${p.year}` : `${p.day}. ${MONTHS[p.month - 1]} ${p.year}`
 }
 
 // "12.05.2014"
@@ -27,13 +43,14 @@ export function formatDateShort(iso) {
   const p = parts(iso)
   if (!p) return ''
   const pad = (n) => String(n).padStart(2, '0')
-  return `${pad(p.day)}.${pad(p.month)}.${p.year}`
+  return isEn() ? `${pad(p.day)}/${pad(p.month)}/${p.year}` : `${pad(p.day)}.${pad(p.month)}.${p.year}`
 }
 
 // "12. Mai"
 export function formatDayMonth(iso) {
   const p = parts(iso)
-  return p ? `${p.day}. ${MONTHS[p.month - 1]}` : ''
+  if (!p) return ''
+  return isEn() ? `${p.day} ${MONTHS_EN[p.month - 1]}` : `${p.day}. ${MONTHS[p.month - 1]}`
 }
 
 function monthsBetween(fromIso, toIso) {
@@ -51,23 +68,25 @@ export function ageText(birthIso, atIso = todayIso()) {
   if (months === null || months < 0) return null
   if (months >= 12) {
     const years = Math.floor(months / 12)
-    return `${years} ${years === 1 ? 'Jahr' : 'Jahre'}`
+    return unit(years, 'Jahr', 'Jahre', 'year', 'years')
   }
-  if (months >= 1) return `${months} ${months === 1 ? 'Monat' : 'Monate'}`
+  if (months >= 1) return unit(months, 'Monat', 'Monate', 'month', 'months')
   const days = Math.round((Date.parse(atIso) - Date.parse(birthIso)) / 86_400_000)
-  if (days < 7) return days <= 0 ? null : `${days} ${days === 1 ? 'Tag' : 'Tage'}`
+  if (days < 7) return days <= 0 ? null : unit(days, 'Tag', 'Tage', 'day', 'days')
   const weeks = Math.floor(days / 7)
-  return `${weeks} ${weeks === 1 ? 'Woche' : 'Wochen'}`
+  return unit(weeks, 'Woche', 'Wochen', 'week', 'weeks')
 }
 
 const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
+const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 // "Sa, 18. Oktober 2026 · 14:00 Uhr" – mit short ohne Jahr: "Sa, 18. Oktober · 14:00 Uhr"
 export function formatTermin(dateIso, time, { short = false } = {}) {
   const p = parts(dateIso)
   if (!p) return ''
-  const weekday = WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()]
+  const weekday = (isEn() ? WEEKDAYS_EN : WEEKDAYS)[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()]
   const day = short ? formatDayMonth(dateIso) : formatDateLong(dateIso)
+  if (isEn()) return `${weekday}, ${day}${time ? ` · ${time}` : ''}`
   return `${weekday}, ${day}${time ? ` · ${time} Uhr` : ''}`
 }
 
@@ -76,13 +95,14 @@ export function relativeTime(sqliteTimestamp, now = new Date()) {
   const then = new Date(`${sqliteTimestamp.replace(' ', 'T')}Z`)
   if (Number.isNaN(then.getTime())) return ''
   const minutes = Math.floor((now - then) / 60_000)
-  if (minutes < 2) return 'gerade eben'
-  if (minutes < 60) return `vor ${minutes} Minuten`
+  const en = isEn()
+  if (minutes < 2) return en ? 'just now' : 'gerade eben'
+  if (minutes < 60) return en ? `${minutes} minutes ago` : `vor ${minutes} Minuten`
   const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
   const days = Math.round((startOfDay(now) - startOfDay(then)) / 86_400_000)
-  if (days === 0) return 'heute'
-  if (days === 1) return 'gestern'
-  if (days < 7) return `vor ${days} Tagen`
+  if (days === 0) return en ? 'today' : 'heute'
+  if (days === 1) return en ? 'yesterday' : 'gestern'
+  if (days < 7) return en ? `${days} days ago` : `vor ${days} Tagen`
   const pad = (n) => String(n).padStart(2, '0')
   return formatDateLong(`${then.getFullYear()}-${pad(then.getMonth() + 1)}-${pad(then.getDate())}`)
 }

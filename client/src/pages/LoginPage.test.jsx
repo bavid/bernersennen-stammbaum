@@ -300,7 +300,7 @@ describe('LoginPage – Wiederherstellung', () => {
     expect(recover).toHaveBeenCalledWith({ code: 'ABCD-1234-HJKM', username: 'nele', newPassword: 'neuesPasswort1' })
     expect(container.textContent).toContain('Passwort geändert – jetzt anmelden.')
 
-    act(() => container.querySelector('button').click())
+    act(() => container.querySelector('.login-entry button').click())
     expect(container.querySelector('#login-secret')).not.toBeNull()
   })
 })

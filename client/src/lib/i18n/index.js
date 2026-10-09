@@ -66,6 +66,11 @@ export function translateOr(lang, key, fallback, vars) {
   return text === undefined ? fallback : fill(text, vars)
 }
 
+// Gebietsschema für Intl/toLocale* (Zahlen, Beträge, Daten).
+export function locale() {
+  return current === 'en' ? 'en-GB' : 'de-DE'
+}
+
 export function t(key, vars) {
   return translate(current, key, vars)
 }

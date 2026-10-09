@@ -1,0 +1,118 @@
+/* Schnell-Einstellungen im Kopf (components/QuickSettings.jsx): runder Knopf wie die Lupe, mit Kürzel der Sprache; darunter
+   ein ruhiges Feld mit Sprache, Hintergrund und Schriftgröße. Nur Tokens aus tokens.css/palettes.css. */
+
+.quick-settings {
+  position: relative;
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+}
+
+.quick-settings-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 44px;
+  padding: 0 0.85rem 0 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.quick-settings-trigger svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.quick-settings-code {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.quick-settings-trigger:hover,
+.quick-settings-trigger[aria-expanded='true'] {
+  border-color: var(--line-strong);
+  background: var(--paper-deep);
+  color: var(--ink);
+}
+
+.quick-settings-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.quick-settings-panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 50;
+  display: grid;
+  gap: var(--space-4);
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  animation: modal-in var(--duration-fast) var(--ease-out);
+}
+
+.quick-settings-row {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.quick-settings-row .segmented {
+  flex-wrap: wrap;
+}
+
+.quick-settings-label {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quick-settings-more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  justify-self: start;
+  min-height: 44px;
+  color: var(--rust-deep);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.quick-settings-more svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+/* Handy: nur Weltkugel und Kürzel, schmal neben Lupe und Glocke. Das Feld klebt am rechten Rand des Bildschirms. */
+@media (max-width: 720px) {
+  .quick-settings-trigger {
+    padding: 0 0.6rem;
+  }
+
+  .quick-settings {
+    position: static;
+  }
+
+  .quick-settings-panel {
+    top: calc(100% + var(--space-1));
+    right: var(--space-4);
+    left: var(--space-4);
+    width: auto;
+    max-width: none;
+  }
+}

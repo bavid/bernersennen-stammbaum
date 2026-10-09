@@ -116,6 +116,10 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
       </section>
 
       <section className="login-panel">
+        {/* Sprache gleich oben sichtbar - ein Klick, und die ganze Seite wechselt. */}
+        <div className="login-lang">
+          <LanguageSwitch withIcon />
+        </div>
         <div className="login-entries">
           <section className="login-card login-entry" aria-labelledby="login-owner-label">
             <div className="login-card-head">
@@ -205,7 +209,6 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
         <Link to="/finanzierung">{t('login.footer.finance')}</Link>
         <Link to="/impressum">{t('login.footer.imprint')}</Link>
         <Link to="/datenschutz">{t('login.footer.privacy')}</Link>
-        <LanguageSwitch compact />
       </footer>
     </div>
   )

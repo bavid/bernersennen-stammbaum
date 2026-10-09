@@ -106,6 +106,11 @@
   padding: clamp(var(--space-8), 5vw, var(--space-16)) clamp(var(--space-4), 4vw, var(--space-12));
 }
 
+.login-lang {
+  justify-self: end;
+  align-self: start;
+}
+
 .login-card {
   display: grid;
   gap: var(--space-8);
@@ -384,8 +389,22 @@
 }
 
 @media (max-width: 900px) {
+  /* minmax(0, …): sonst macht die lange Reihe des Bands „Mit dabei“ die Spalte so breit wie sich selbst. */
   .login {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    position: relative;
+  }
+
+  /* Handy: die Sprachwahl oben rechts neben dem Logo, nicht erst unter dem Bild. */
+  .login-lang {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    z-index: 2;
+  }
+
+  .login-lang .language-switch button {
+    padding-inline: var(--space-3);
   }
 
   .login-hero {
