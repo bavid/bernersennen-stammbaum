@@ -195,7 +195,7 @@ function createApp() {
   // Phase 5 Task 5b: die Admin-Ansicht (middleware/auth.js denyAdminViewWrites) ist nur lesend - VOR allen
   // Routern, damit auch Uploads abgelehnt werden, bevor multer eine Datei schreibt.
   app.use('/api', denyAdminViewWrites)
-  app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding', '/api/besuche', '/api/erlebt-mit', '/api/hinweise', '/api/wir-waren-hier'], limitWrites)
+  app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding', '/api/besuche', '/api/erlebt-mit', '/api/hinweise'], limitWrites)
   // Phase R Task 2: /api/family/members VOR authRoutes (dort liegen /family und /family/key) - Express
   // matcht Router-Pfade zwar exakt, so bleibt die Reihenfolge aber unabhängig von künftigen Routen dort.
   app.use('/api/family/members', membersRoutes)
