@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import useFocusFirstError from './useFocusFirstError.js'
+import { kontaktFor, saveKontakt } from '../lib/kontaktDefaults.js'
 import { requestClientErrors, requestErrorField, requestErrorMessage, toRequestPayload } from '../lib/anfragen.js'
 
 function withoutKey(object, key) {
@@ -12,7 +13,7 @@ function withoutKey(object, key) {
 // oben im Banner (429, sonst) mit Fokus dorthin (useFocusFirstError). Nach dem Erfolg ist sent true - das Formular
 // klappt zu, der Fokus geht auf den Dank (successRef, tabIndex -1), damit er nicht im Nichts landet.
 export default function useRequestForm(typ, emptyForm) {
-  const [form, setForm] = useState(emptyForm)
+  const [form, setForm] = useState(() => ({ ...emptyForm, ...kontaktFor(emptyForm) }))
   const [website, setWebsite] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState(null)
@@ -43,6 +44,7 @@ export default function useRequestForm(typ, emptyForm) {
     setSending(true)
     try {
       await api.sendAnfrage({ ...toRequestPayload(form, typ), website })
+      saveKontakt(form)
       setSent(true)
     } catch (err) {
       const field = requestErrorField(err, Object.keys(emptyForm))

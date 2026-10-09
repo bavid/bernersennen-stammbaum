@@ -32,8 +32,8 @@ export default function EinstellungenZuruecksetzen({ platform = detectPlatform()
       <p className="app-setting-label">Unsere Einstellungen zurücksetzen</p>
       <p className="app-setting-text">
         Eine Website kann die Berechtigungen des Browsers nicht selbst zurücknehmen. Dieser Knopf löscht, was wir gespeichert
-        haben: das Benachrichtigungs-Abo (auch auf dem Server), die gemerkte Postleitzahl und weggeklickte Hinweise auf
-        diesem Gerät.
+        haben: das Benachrichtigungs-Abo (auch auf dem Server), die gemerkte Postleitzahl, gemerkte Kontaktdaten (Name,
+        E-Mail, Telefon aus Formularen) und weggeklickte Hinweise auf diesem Gerät.
       </p>
       <ConfirmButton
         label="Unsere Einstellungen zurücksetzen"
@@ -44,7 +44,7 @@ export default function EinstellungenZuruecksetzen({ platform = detectPlatform()
       />
       {done && (
         <p className="app-setting-hint" role="status">
-          Zurückgesetzt – Benachrichtigungen aus, Postleitzahl und Hinweise vergessen.
+          Zurückgesetzt – Benachrichtigungen aus, Postleitzahl, Kontaktdaten und Hinweise vergessen.
         </p>
       )}
       {error && (

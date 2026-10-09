@@ -1,6 +1,7 @@
 import AdminField, { fieldProps } from './AdminField.jsx'
 import Honeypot from './Honeypot.jsx'
 import Icon from './Icon.jsx'
+import KontaktMerkenHinweis from './KontaktMerkenHinweis.jsx'
 import useRequestForm from '../hooks/useRequestForm.js'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { SETUP_TYPE_OPTIONS } from '../lib/partnerTypes.js'
@@ -98,6 +99,8 @@ export default function RequestPartnerForm({ idPrefix = 'request-partner' }) {
           rows={4}
         />
       </AdminField>
+
+      <KontaktMerkenHinweis />
 
       <Honeypot id={id('hp')} value={website} onChange={setWebsite} />
 

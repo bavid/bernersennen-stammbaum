@@ -1,10 +1,11 @@
+import { KONTAKT_KEY } from './kontaktDefaults.js'
 import { removeSetting } from './storage.js'
 
 // „Unsere Einstellungen zurücksetzen“ (Einstellungen › App, components/settings/app/EinstellungenZuruecksetzen.jsx).
 // Ehrlich: eine Website kann die Berechtigungen des Browsers nicht selbst zurücknehmen. Der Knopf löscht, was WIR auf
 // diesem Gerät gespeichert haben (dazu das Push-Abo im Browser und auf dem Server) und zeigt, wo die Berechtigungen
 // selbst sitzen - je Gerät.
-export const UNSERE_EINSTELLUNGEN = Object.freeze(['nearbyPlz', 'nearbyRadius', 'standortGemerkt', 'installHintDismissedAt'])
+export const UNSERE_EINSTELLUNGEN = Object.freeze(['nearbyPlz', 'nearbyRadius', 'standortGemerkt', 'installHintDismissedAt', KONTAKT_KEY])
 
 export function forgetOurSettings() {
   for (const key of UNSERE_EINSTELLUNGEN) removeSetting(key)

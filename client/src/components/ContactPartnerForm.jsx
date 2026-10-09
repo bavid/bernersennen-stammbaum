@@ -4,6 +4,8 @@ import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import Honeypot from './Honeypot.jsx'
 import Icon from './Icon.jsx'
+import KontaktMerkenHinweis from './KontaktMerkenHinweis.jsx'
+import { kontaktFor, saveKontakt } from '../lib/kontaktDefaults.js'
 import {
   EMPTY_CONTACT_FORM,
   MAX_NACHRICHT_LENGTH,
@@ -45,7 +47,7 @@ function nachrichtHint(length) {
 // wenn das Portal mit ?demo=1 geladen wurde. Nach dem Absenden bleibt das Formular leer stehen, darüber
 // der Dank. Fehler stehen am Feld (400) oder oben (403 Demo, 404, 429) - der Fokus springt hin.
 export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
-  const [form, setForm] = useState(EMPTY_CONTACT_FORM)
+  const [form, setForm] = useState(() => ({ ...EMPTY_CONTACT_FORM, ...kontaktFor(EMPTY_CONTACT_FORM) }))
   const [website, setWebsite] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState(null)
@@ -79,7 +81,8 @@ export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
     try {
       const payload = { ...toContactPayload(form), ...(bezugSlug ? { bezugSlug } : {}), website }
       await api.contactPartner(partner.slug, payload, { demo })
-      setForm(EMPTY_CONTACT_FORM)
+      saveKontakt(form)
+      setForm({ ...EMPTY_CONTACT_FORM, ...kontaktFor(EMPTY_CONTACT_FORM) })
       setSent(true)
     } catch (err) {
       const field = contactErrorField(err)
@@ -125,6 +128,7 @@ export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
           </AdminField>
         </div>
       </fieldset>
+      <KontaktMerkenHinweis />
 
       <AdminField id={IDS.nachricht} label="Deine Nachricht" hint={nachrichtHint(form.nachricht.trim().length)} error={fieldErrors.nachricht}>
         <textarea

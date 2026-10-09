@@ -1,6 +1,7 @@
 import AdminField, { fieldProps } from './AdminField.jsx'
 import Honeypot from './Honeypot.jsx'
 import Icon from './Icon.jsx'
+import KontaktMerkenHinweis from './KontaktMerkenHinweis.jsx'
 import useRequestForm from '../hooks/useRequestForm.js'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { ANFRAGE_TYP, EMPTY_VOUCHER_REQUEST, MAX_EMAIL_LENGTH, MAX_NACHRICHT_LENGTH, MAX_NAME_LENGTH } from '../lib/anfragen.js'
@@ -82,6 +83,8 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
           rows={3}
         />
       </AdminField>
+
+      <KontaktMerkenHinweis />
 
       <Honeypot id={id('hp')} value={website} onChange={setWebsite} />
 

@@ -61,6 +61,7 @@ afterEach(() => {
     container = null
   }
   contactPartner.mockReset()
+  window.localStorage.clear()
 })
 
 async function render(ui, path = '/p/hundeschule-wiesengrund') {
@@ -140,8 +141,9 @@ describe('ContactPartnerForm – Absenden', () => {
       { demo: undefined }
     )
     expect(container.querySelector('[role="status"]').textContent).toBe('Danke! Hundeschule Wiesengrund meldet sich bei dir.')
-    expect(field('name').value).toBe('')
-    expect(field('email').value).toBe('')
+    // Name und E-Mail bleiben (auf diesem Gerät gemerkt), die Nachricht wird geleert.
+    expect(field('name').value).toBe('Wilma')
+    expect(field('email').value).toBe('wilma@example.org')
     expect(field('nachricht').value).toBe('')
   })
 
@@ -267,5 +269,29 @@ describe('PortalContact – Kontakt-Kasten (Phase P2)', () => {
     const { kontaktformular, ...withoutFlag } = partner
     await render(<PortalContact partner={{ ...withoutFlag, kontaktformularAktiv: true, kontaktformular_aktiv: 1 }} />)
     expect(button('Schreib uns')).toBeUndefined()
+  })
+})
+
+describe('ContactPartnerForm – Kontaktdaten merken', () => {
+  afterEach(() => window.localStorage.clear())
+
+  test('füllt Name, E-Mail und Telefon vor, nie die Nachricht; Absenden merkt sich die Angaben', async () => {
+    window.localStorage.setItem('chronik.kontakt', JSON.stringify({ name: 'Wilma', email: 'wilma@example.org', nachricht: 'alt' }))
+    contactPartner.mockResolvedValue({ ok: true })
+    await render(<ContactPartnerForm partner={partner} />)
+
+    expect(field('name').value).toBe('Wilma')
+    expect(field('email').value).toBe('wilma@example.org')
+    expect(field('nachricht').value).toBe('')
+    expect(container.textContent).toContain('Wir merken uns das nur auf diesem Gerät.')
+
+    type(field('telefon'), '040 99')
+    type(field('nachricht'), 'Habt ihr noch Plätze im Welpenkurs?')
+    await submit()
+
+    const saved = JSON.parse(window.localStorage.getItem('chronik.kontakt'))
+    expect(saved).toEqual({ name: 'Wilma', email: 'wilma@example.org', telefon: '040 99' })
+    expect(field('email').value).toBe('wilma@example.org')
+    expect(field('nachricht').value).toBe('')
   })
 })
