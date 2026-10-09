@@ -56,6 +56,8 @@ const PartnerInfoPage = lazy(() => import('./pages/PartnerInfoPage.jsx'))
 const FinanzierungPage = lazy(() => import('./pages/FinanzierungPage.jsx'))
 // „Als App aufs Handy“ (/app): die Anleitung je Gerät - öffentlich wie /finanzierung, eigener Chunk.
 const AppPage = lazy(() => import('./pages/AppPage.jsx'))
+// Präsentation zum Durchklicken (/vorstellung): öffentlich wie /app, eigener Chunk.
+const VorstellungPage = lazy(() => import('./pages/VorstellungPage.jsx'))
 // Präsentationsmodus (Phase 5 Task 5): Vorführseite des Admins mit Kacheln, die je eine Demo in einem neuen
 // Tab starten - dort landet man auf /demo-start (DemoStartPage), das POST /api/demo ruft. Beides eigene Chunks.
 const AdminPresentPage = lazy(() => import('./pages/AdminPresentPage.jsx'))
@@ -90,6 +92,8 @@ const PARTNER_INFO_PATH = '/partner-werden'
 const FINANZIERUNG_PATH = '/finanzierung'
 // „Als App aufs Handy“ - Anleitung zum Installieren (pages/AppPage.jsx APP_PATH).
 const APP_PATH = '/app'
+// Präsentation zum Durchklicken (pages/VorstellungPage.jsx, lib/vorstellung.js VORSTELLUNG_PATH).
+const VORSTELLUNG_PATH = '/vorstellung'
 
 // Öffentliche Partnerliste (PartnersPage).
 const PARTNER_LIST_PATH = '/partner'
@@ -629,6 +633,17 @@ export default function App() {
       <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           <AppPage family={family} />
+        </Suspense>
+      </ThemeProvider>
+    )
+  }
+
+  // Präsentation zum Durchklicken: öffentlich wie /app, mit oder ohne Sitzung.
+  if (pathname === VORSTELLUNG_PATH) {
+    return (
+      <ThemeProvider>
+        <Suspense fallback={<RouteFallback />}>
+          <VorstellungPage family={family} />
         </Suspense>
       </ThemeProvider>
     )

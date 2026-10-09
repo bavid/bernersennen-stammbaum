@@ -1,0 +1,176 @@
+/* /vorstellung - Präsentation zum Durchklicken (pages/VorstellungPage.jsx): eine Folie pro Bildschirm, ruhig, große Schrift. */
+
+.vorstellung-page {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.vorstellung-main {
+  display: grid;
+  gap: var(--space-6);
+  width: min(100%, 60rem);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.vorstellung-folie {
+  display: grid;
+  gap: var(--space-5);
+  align-content: start;
+  min-height: min(26rem, 60vh);
+  padding: var(--space-8) var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  animation: vorstellung-in 300ms var(--ease-out) both;
+}
+
+.vorstellung-folie h1 {
+  margin: 0;
+  font-size: var(--text-display);
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.vorstellung-lead {
+  max-width: 44rem;
+  margin: 0;
+  font-size: var(--text-xl);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.vorstellung-points {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vorstellung-points li {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  font-size: var(--text-lg);
+}
+
+.vorstellung-point-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--rust) 12%, transparent);
+  color: var(--rust);
+}
+
+.vorstellung-point-text {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-base);
+  color: var(--muted);
+}
+
+.vorstellung-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vorstellung-cta,
+.vorstellung-more {
+  justify-self: start;
+}
+
+.vorstellung-more {
+  color: var(--rust);
+  font-weight: 600;
+}
+
+.vorstellung-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.vorstellung-nav .btn {
+  min-height: 2.75rem;
+}
+
+.vorstellung-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Fläche 2,75 rem für den Daumen, sichtbar bleibt nur der kleine Punkt. */
+.vorstellung-dots button {
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.vorstellung-dots button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--line);
+  transform: translate(-50%, -50%);
+  transition: transform var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+
+.vorstellung-dots button:hover::before {
+  background: var(--muted);
+}
+
+.vorstellung-dots button[aria-current="step"]::before {
+  background: var(--rust);
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+@keyframes vorstellung-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vorstellung-folie {
+    animation: none;
+  }
+
+  .vorstellung-dots button::before {
+    transition: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .vorstellung-folie {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .vorstellung-folie h1 {
+    font-size: var(--text-2xl);
+  }
+}

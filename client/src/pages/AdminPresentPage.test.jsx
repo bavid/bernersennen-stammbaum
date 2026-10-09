@@ -79,6 +79,14 @@ describe('AdminPresentPage – Zugang', () => {
     expect(container.querySelector('.admin-header')).toBeNull()
     expect(container.querySelector('.admin-main')).toBeNull()
   })
+
+  test('verlinkt die Präsentation zum Durchklicken (/vorstellung)', async () => {
+    await render()
+
+    const link = container.querySelector('a[href="/vorstellung"]')
+    expect(link).not.toBeNull()
+    expect(link.textContent).toContain('Präsentation zum Durchklicken')
+  })
 })
 
 describe('AdminPresentPage – Kacheln', () => {

@@ -134,6 +134,9 @@ export default function AdminPresentPage() {
           Jede Kachel öffnet eine schreibgeschützte Demo in einem neuen Tab – dieser Tab bleibt stehen, ihr kommt jederzeit
           zurück.
         </p>
+        <Link to="/vorstellung" className="btn btn-primary present-tour">
+          <Icon name="play" /> Präsentation zum Durchklicken
+        </Link>
         <Link to="/admin" className="btn btn-ghost present-back">
           <Icon name="arrowLeft" /> Zurück zum Admin
         </Link>
