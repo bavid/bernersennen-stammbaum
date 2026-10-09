@@ -22,8 +22,10 @@ const { chatIdFor, markBlocked } = require('./partnerTelegram')
 const { absoluteUrl } = require('./publicUrl')
 const config = require('../config')
 
-const PARTNER_EREIGNIS = Object.freeze({ nachricht: 'nachricht', freigabe: 'freigabe' })
+const PARTNER_EREIGNIS = Object.freeze({ nachricht: 'nachricht', freigabe: 'freigabe', anmeldung: 'anmeldung' })
 const PARTNER_EREIGNIS_VALUES = Object.values(PARTNER_EREIGNIS)
+// Die Schalter in lib/partnerTelegram.js kennen nur nachricht und freigabe: „Neue Anmeldung“ („Wir waren hier“) folgt dem Schalter „Nachrichten“.
+const HINWEIS_SWITCH = Object.freeze({ anmeldung: 'nachricht' })
 const MAX_ATTEMPTS = 3
 const RETRY_DELAYS_MS = Object.freeze([1000, 3000])
 const CAP_PER_WINDOW = 20
@@ -43,6 +45,7 @@ function whereToLook(urlPath, label) {
 
 function buildPartnerText(ereignis, daten = {}) {
   if (ereignis === PARTNER_EREIGNIS.nachricht) return `${PAW} Neue Nachricht über „Schreib uns“ – lesen ${whereToLook('/nachrichten', 'Nachrichten')}.`
+  if (ereignis === PARTNER_EREIGNIS.anmeldung) return `${PAW} Neue Anmeldung bei „Wir waren hier“ – ansehen ${whereToLook('/nachrichten', 'Nachrichten')}.`
   const titel = detailValue(daten.titel) || 'ohne Titel'
   if (daten.freigegeben) return `${PAW} Dein Beitrag „${titel}“ wurde freigegeben – er ist jetzt online.`
   return `${PAW} Dein Beitrag „${titel}“ wurde abgelehnt – den Grund findest du ${whereToLook('/beitraege', 'Beiträge')}.`
@@ -146,7 +149,7 @@ function notifyPartner(partnerId, ereignis, daten = {}) {
     if (!partner || partner.is_demo) return null
     const token = currentToken(partner.id)
     if (!token) return null
-    const chatId = chatIdFor(partner.id, { hinweis: ereignis })
+    const chatId = chatIdFor(partner.id, { hinweis: HINWEIS_SWITCH[ereignis] ?? ereignis })
     if (!chatId) return null
     const decision = admitToCap(partner.id, ereignis, runtime.now())
     if (decision === 'drop') return null

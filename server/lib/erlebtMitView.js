@@ -16,6 +16,7 @@ const {
   tagsForEntries,
   mirroredEntries
 } = require('./erlebtMit')
+const { clearPins, reopenPins } = require('./wwhPins')
 
 const findArt = db.prepare('SELECT art FROM families WHERE id = ?')
 
@@ -45,10 +46,14 @@ function readTagInput(body, req, privat) {
 function applyTags(entryId, dogIds, privat, { contentChanged = false } = {}) {
   if (privat) {
     clearTags(entryId)
+    clearPins(entryId)
     return
   }
   if (dogIds !== null) syncTags(entryId, dogIds)
-  if (contentChanged) reopenConfirmedTags(entryId)
+  if (contentChanged) {
+    reopenConfirmedTags(entryId)
+    reopenPins(entryId)
+  }
 }
 
 // Hat sich am Inhalt etwas geändert, das die markierte Seite in ihrer Chronik sieht?

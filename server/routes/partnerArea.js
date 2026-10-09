@@ -10,6 +10,7 @@ const termineRoutes = require('./partnerArea/termine')
 const telegramRoutes = require('./partnerArea/telegram')
 const telegramBotRoutes = require('./partnerArea/telegramBot')
 const visitenkarteRoutes = require('./partnerArea/visitenkarte')
+const wirWarenHierRoutes = require('./partnerArea/wirWarenHier')
 
 // Phase P Task 3 (docs/superpowers/plans/2026-09-29-phase-p-partnerbereich.md): alle Endpunkte des
 // Partner-Bereichs unter /api/partner-area. Jede Anfrage braucht eine Sitzung in einem Partner-Bereich
@@ -34,5 +35,7 @@ router.use('/telegram/bot', telegramBotRoutes)
 router.use('/telegram', telegramRoutes)
 // Phase V5: Visitenkarten-Designer (Gestaltung speichern, Gutschein-Codes für den Druck - no-store).
 router.use('/visitenkarte', visitenkarteRoutes)
+// „Wir waren hier“: Anmeldungen und angeheftete Erinnerungen freigeben (no-store).
+router.use('/wir-waren-hier', wirWarenHierRoutes)
 
 module.exports = router
