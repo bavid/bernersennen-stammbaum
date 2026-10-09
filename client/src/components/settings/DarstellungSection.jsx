@@ -5,6 +5,8 @@ import useDarstellungSave from '../../hooks/useDarstellungSave.js'
 import AccentPicker from './AccentPicker.jsx'
 import DesignChoice from './DesignChoice.jsx'
 import DesignPreview from './DesignPreview.jsx'
+import LanguageSwitch from '../LanguageSwitch.jsx'
+import { useT } from '../../lib/i18n/index.js'
 
 const HINT_ID = 'darstellung-hint'
 export { LIVE_SAVE_DELAY_MS } from '../../hooks/useDarstellungSave.js'
@@ -31,6 +33,7 @@ const sameAsStandard = (darstellung) => Object.keys(STANDARD).every((key) => dar
 // Attribute an <html>, sobald family.darstellung sich ändert) und wird für das eigene Zuhause gespeichert - auf jedem
 // Gerät, auf dem man angemeldet ist. „Zurücksetzen“ führt alles auf das Familienalbum zurück.
 export default function DarstellungSection({ family, onFamilyChange }) {
+  const t = useT()
   const readOnly = useIsDemo()
   const adminView = useIsAdminView()
   const { change, saved } = useDarstellungSave({ family, onFamilyChange, readOnly })
@@ -42,19 +45,19 @@ export default function DarstellungSection({ family, onFamilyChange }) {
   )
 
   const hint = readOnly
-    ? `${adminView ? 'In der Admin-Ansicht' : 'In der Demo'} nur für diesen Besuch – gespeichert wird nichts.`
-    : 'Gilt für euer Zuhause – auf jedem Gerät, auf dem ihr angemeldet seid.'
+    ? t(adminView ? 'settings.design.hintAdmin' : 'settings.design.hintDemo')
+    : t('settings.design.hintSaved')
 
   return (
     <section className="settings-block designer" aria-labelledby="darstellung-title">
       <h2 id="darstellung-title" className="visually-hidden">
-        Darstellung
+        {t('settings.tab.darstellung')}
       </h2>
       <DesignPreview />
       <div className="designer-controls">
         <DesignChoice
           name="palette"
-          legend="Farbwelt"
+          legend={t('settings.design.palette')}
           variant="tiles"
           options={PALETTEN}
           value={current.palette}
@@ -69,17 +72,17 @@ export default function DarstellungSection({ family, onFamilyChange }) {
           describedBy={HINT_ID}
           onChange={(akzent, options) => change({ akzent }, options)}
         />
-        {segments('modus', 'Hintergrund', MODI)}
-        {segments('schriftart', 'Schrift', SCHRIFTARTEN, (option) => (
+        {segments('modus', t('settings.design.modus'), MODI)}
+        {segments('schriftart', t('settings.design.schriftart'), SCHRIFTARTEN, (option) => (
           <span className={`designer-font-sample is-${option.id}`} aria-hidden="true">
             Aa
           </span>
         ))}
         <div className="designer-pair">
-          {segments('handschrift', 'Handschrift-Akzente', HANDSCHRIFT)}
-          {segments('ecken', 'Ecken', ECKEN)}
+          {segments('handschrift', t('settings.design.handschrift'), HANDSCHRIFT)}
+          {segments('ecken', t('settings.design.ecken'), ECKEN)}
         </div>
-        {segments('schrift', 'Schriftgröße', SCHRIFTEN, (option) => (
+        {segments('schrift', t('settings.design.schrift'), SCHRIFTEN, (option) => (
           <span className={`settings-schrift-sample is-${option.id}`} aria-hidden="true">
             Aa
           </span>
@@ -94,7 +97,7 @@ export default function DarstellungSection({ family, onFamilyChange }) {
               if (!unchanged) change({ ...STANDARD })
             }}
           >
-            Zurücksetzen
+            {t('settings.design.reset')}
           </button>
           <p id={HINT_ID} className="field-hint settings-hint">
             {hint}
@@ -103,6 +106,13 @@ export default function DarstellungSection({ family, onFamilyChange }) {
         <p className="visually-hidden" aria-live="polite">
           {saved}
         </p>
+        <div className="designer-language">
+          <span className="field-label" id="language-label">
+            Sprache / Language
+          </span>
+          <LanguageSwitch labelledBy="language-label" />
+          <p className="field-hint">{t('settings.language.hint')}</p>
+        </div>
       </div>
     </section>
   )

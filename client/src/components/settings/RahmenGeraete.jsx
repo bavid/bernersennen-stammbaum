@@ -8,6 +8,7 @@ import RahmenLinkReveal from './RahmenLinkReveal.jsx'
 import useRahmenGeraete from '../../hooks/useRahmenGeraete.js'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { useToast } from '../Toast.jsx'
+import { t, useT } from '../../lib/i18n/index.js'
 
 // Eigene Tiere des Zuhauses für die Auswahl ({ id, name, inErinnerung }) - erst, wenn das Formular aufgeht.
 function useOwnAnimals(enabled) {
@@ -27,7 +28,7 @@ function useOwnAnimals(enabled) {
         )
       })
       .catch((err) => {
-        if (!cancelled) setError(`Eure Tiere ließen sich nicht laden: ${err.message}`)
+        if (!cancelled) setError(t('settings.frames.loadError', { message: err.message }))
       })
     return () => {
       cancelled = true
@@ -40,6 +41,7 @@ function useOwnAnimals(enabled) {
 // Fernseher - ohne Anmeldung, höchstens fünf, jederzeit zu beenden. Der Link (und QR-Code) erscheint genau einmal.
 // Demo und Admin-Ansicht (lib/demo.js): Liste ansehen, nichts anlegen oder ändern - mit dem üblichen Hinweis.
 export default function RahmenGeraete() {
+  const t = useT()
   const readOnly = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const { geraete, max, error, create, update, revoke } = useRahmenGeraete()
@@ -58,16 +60,13 @@ export default function RahmenGeraete() {
 
   async function handleRevoke(geraet) {
     await revoke(geraet.id)
-    toast(`„${geraet.name}“ ist beendet – das Gerät zeigt in wenigen Minuten keine Fotos mehr.`)
+    toast(t('settings.frames.ended', { name: geraet.name }))
   }
 
   return (
     <section className="settings-group rahmen-geraete" aria-labelledby="settings-rahmen-title">
-      <h2 id="settings-rahmen-title">Bilderrahmen auf einem anderen Gerät</h2>
-      <p className="muted">
-        Zeigt die Fotos eurer Tiere auf einem Tablet, alten Handy oder Fernseher – zum Beispiel bei Oma, ganz ohne Anmeldung.
-        Jeden Rahmen könnt ihr jederzeit beenden.
-      </p>
+      <h2 id="settings-rahmen-title">{t('settings.frames.title')}</h2>
+      <p className="muted">{t('settings.frames.lede')}</p>
       {(error || tiereError) && (
         <p className="field-error" role="alert">
           {error || tiereError}
@@ -75,7 +74,7 @@ export default function RahmenGeraete() {
       )}
       {reveal && <RahmenLinkReveal geraet={reveal.geraet} token={reveal.token} onDone={() => setReveal(null)} />}
       {geraete?.length > 0 && (
-        <ul className="settings-list rahmen-list" role="list" aria-label="Eure Bilderrahmen">
+        <ul className="settings-list rahmen-list" role="list" aria-label={t('settings.frames.list')}>
           {geraete.map((geraet) => (
             <RahmenGeraetRow
               key={geraet.id}
@@ -100,13 +99,13 @@ export default function RahmenGeraete() {
             aria-describedby={readOnly || full ? 'settings-rahmen-hint' : undefined}
           >
             <Icon name="frame" />
-            Bilderrahmen einrichten
+            {t('settings.frames.setup')}
           </button>
         </div>
       )}
       {(readOnly || full) && (
         <p id="settings-rahmen-hint" className="field-hint">
-          {readOnly ? readOnlyHint : `Höchstens ${max} Bilderrahmen – beendet zuerst einen, um einen neuen einzurichten.`}
+          {readOnly ? readOnlyHint : t('settings.frames.max', { max })}
         </p>
       )}
     </section>

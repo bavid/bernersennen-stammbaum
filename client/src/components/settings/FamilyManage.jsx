@@ -14,16 +14,15 @@ import FamilyKeySection from '../members/FamilyKeySection.jsx'
 import OwnMembershipSection from '../members/OwnMembershipSection.jsx'
 import DissolveFamilyDialog from '../members/DissolveFamilyDialog.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
+import { useT } from '../../lib/i18n/index.js'
 
 function DissolveGroup({ disabled, onOpen }) {
   const { words } = useTheme()
+  const t = useT()
   return (
     <section className="card members-section members-danger" aria-labelledby="dissolve-title">
       <h2 id="dissolve-title">{words.dissolveGroup}</h2>
-      <p className="muted">
-        Löscht {words.theGroup} mit {words.treeLabel}, Pinnwand und Einladungen. Geht nur, wenn {words.theGroup} keine eigenen
-        Tiere mehr hat – die übernimmst du vorher in „Mein Zuhause“.
-      </p>
+      <p className="muted">{t('settings.manage.dissolveText', { ...words, tree: words.treeLabel })}</p>
       <button type="button" className="btn btn-danger" disabled={disabled} onClick={onOpen}>
         <Icon name="trash" />
         {words.dissolveGroup} …
@@ -39,6 +38,7 @@ function DissolveGroup({ disabled, onOpen }) {
 // prüft der Server. classic: Anmeldung mit dem gemeinsamen Schlüssel (die Familie ist selbst die Identität).
 export default function FamilyManage({ family, onFamilyChange, classic = false }) {
   const { words } = useTheme()
+  const t = useT()
   const isDemo = useIsDemo()
   const readOnlyHint = useReadOnlyHint()
   const toast = useToast()
@@ -53,10 +53,10 @@ export default function FamilyManage({ family, onFamilyChange, classic = false }
   function handleRenamed(renamed) {
     const memberships = (family.memberships || []).map((m) => (m.id === family.id ? { ...m, name: renamed.name } : m))
     onFamilyChange({ ...family, ...renamed, memberships })
-    toast(`${words.TheGroup} heißt jetzt „${renamed.name}“`)
+    toast(t('settings.manage.renamed', { ...words, name: renamed.name }))
   }
 
-  const handleHandOver = (member) => members.run(() => api.handOverLeitung(member.familyId), `„${member.name}“ hat jetzt die Leitung.`)
+  const handleHandOver = (member) => members.run(() => api.handOverLeitung(member.familyId), t('settings.manage.newLeader', { name: member.name }))
 
   // "Übergib zuerst die Leitung" (einzige Leitung): zur Auswahl darüber springen.
   function focusHandOver() {
@@ -76,7 +76,7 @@ export default function FamilyManage({ family, onFamilyChange, classic = false }
       onFamilyChange?.(me)
       navigate(startRoute(me))
     })
-    toast(`„${family.name}“ wurde aufgelöst.`)
+    toast(t('settings.manage.dissolved', { name: family.name }))
   }
 
   return (
@@ -84,7 +84,7 @@ export default function FamilyManage({ family, onFamilyChange, classic = false }
       <div className="family-manage-head">
         {!classic && (
           <Link to={`${SETTINGS_ROUTE}?bereich=familien`} className="back-link">
-            <Icon name="arrowLeft" /> Alle {words.groups}
+            <Icon name="arrowLeft" /> {t('settings.manage.all', words)}
           </Link>
         )}
         <span className="eyebrow">{words.groupSettings}</span>
@@ -101,13 +101,11 @@ export default function FamilyManage({ family, onFamilyChange, classic = false }
       )}
 
       {isLeitung ? (
-        <NameGroup family={family} readOnly={isDemo} onRenamed={handleRenamed} sub={`So heißt ${words.theGroup} für alle Mitglieder.`} />
+        <NameGroup family={family} readOnly={isDemo} onRenamed={handleRenamed} sub={t('settings.manage.nameSub', words)} />
       ) : (
         <section className="settings-group" aria-labelledby="family-readonly-title">
           <h2 id="family-readonly-title">{words.groupName}</h2>
-          <p className="muted settings-readonly-hint">
-            Den Namen {words.ofGroup} ändert nur die {words.roleLeitung}. Wer das ist, steht im Reiter „Mitglieder“.
-          </p>
+          <p className="muted settings-readonly-hint">{t('settings.manage.nameReadonly', { ...words, leitung: words.roleLeitung })}</p>
         </section>
       )}
 

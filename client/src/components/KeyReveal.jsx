@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
+import { useT } from '../lib/i18n/index.js'
 
 const COPIED_MS = 2000
 
@@ -12,7 +13,8 @@ const COPIED_MS = 2000
 // (an ein Zuhause gerichtet) nicht passen, ohne die Kernerklärung selbst zu verdoppeln oder zu ersetzen.
 // freshKey (Audit V7a): nach einem persönlichen Code (Weitergabe, Besuch, Übergabe, Familien-Einladung) ist der
 // Schlüssel neu erzeugt (Server: fromOthers false) - dann kennt ihn niemand sonst, statt des Kartenhinweises steht das da.
-export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter zu „Mein Zuhause“', showCardHint = true, freshKey = false, note }) {
+export default function KeyReveal({ value, onContinue, continueLabel, showCardHint = true, freshKey = false, note }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
   const headingRef = useRef(null)
 
@@ -42,27 +44,24 @@ export default function KeyReveal({ value, onContinue, continueLabel = 'Weiter z
     <div className="key-reveal">
       <div role="status">
         <p className="field-label" ref={headingRef} tabIndex={-1}>
-          Euer Schlüssel
+          {t('login.keyReveal.title')}
         </p>
         <p className="key-reveal-value">{value}</p>
       </div>
       <button type="button" className={`btn ${copied ? 'btn-ink' : 'btn-ghost'} btn-block`} onClick={handleCopy}>
         <Icon name={copied ? 'check' : 'copy'} />
-        {copied ? 'Kopiert' : 'Kopieren'}
+        {copied ? t('login.keyReveal.copied') : t('login.keyReveal.copy')}
       </button>
       <p className="key-reveal-text">
-        Mit diesem Schlüssel meldet ihr euch an – auf jedem Gerät. Hebt ihn gut auf, er ist auch eure Wiederherstellung.
+        {t('login.keyReveal.text')}
       </p>
-      {freshKey && <p className="field-hint">Diesen Schlüssel haben wir eben neu erzeugt – nur ihr kennt ihn.</p>}
+      {freshKey && <p className="field-hint">{t('login.keyReveal.fresh')}</p>}
       {showCardHint && !freshKey && (
-        <p className="field-hint">
-          Wer euch die Karte gegeben hat, kennt diesen Code. Erneuert den Schlüssel später in den Einstellungen unter „Mein
-          Zuhause“, wenn ihr sicher gehen wollt.
-        </p>
+        <p className="field-hint">{t('login.keyReveal.cardHint')}</p>
       )}
       {note && <p className="field-hint">{note}</p>}
       <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onContinue}>
-        {continueLabel}
+        {continueLabel || t('login.keyReveal.continue')}
       </button>
     </div>
   )

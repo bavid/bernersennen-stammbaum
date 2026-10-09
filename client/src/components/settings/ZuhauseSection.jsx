@@ -5,6 +5,7 @@ import Icon from '../Icon.jsx'
 import RahmenGeraete from './RahmenGeraete.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
 import VisitSection from '../visits/VisitSection.jsx'
+import { useT } from '../../lib/i18n/index.js'
 
 // Einstellungen → Mein Zuhause: Name (RenameFamilyForm, erst auf Klick - das Formular holt sich den Fokus), Schlüssel und
 // Benutzer (AccessSettings) und die Einladungen (der bekannte Dialog aus dem
@@ -12,6 +13,7 @@ import VisitSection from '../visits/VisitSection.jsx'
 // aktiven Bereich) - dorthin wechselt das AreaGate der Route (AreaRoutes SettingsRoute) vorher.
 export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
   const { words } = useTheme()
+  const t = useT()
   const readOnly = useIsDemo()
   const toast = useToast()
 
@@ -19,7 +21,7 @@ export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
   // blieben sonst weg). Der Bereichswechsler zeigt den Namen des Zuhauses als Zusatz: home zieht mit.
   function handleRenamed(renamed) {
     onFamilyChange({ ...family, ...renamed, home: { ...family.home, name: renamed.name } })
-    toast(`Euer Zuhause heißt jetzt „${renamed.name}“`)
+    toast(t('settings.home.renamed', { name: renamed.name }))
   }
 
   return (
@@ -27,19 +29,19 @@ export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
       <NameGroup family={family} readOnly={readOnly} onRenamed={handleRenamed} />
       <AccessGroup family={family} readOnly={readOnly} onFamilyChange={onFamilyChange} />
       <section className="settings-group" aria-labelledby="settings-einladen-title">
-        <h2 id="settings-einladen-title">Einladungen</h2>
-        <p className="muted">Freunde zu Besuch einladen oder ein Zuhause verschenken – dort stehen auch eure offenen Codes.</p>
+        <h2 id="settings-einladen-title">{t('settings.home.invite.title')}</h2>
+        <p className="muted">{t('settings.home.invite.lede')}</p>
         <div className="settings-actions">
           <button type="button" className="btn btn-ghost" onClick={onInvite}>
             <Icon name="send" />
-            Einladen
+            {t('settings.home.invite.button')}
           </button>
         </div>
       </section>
       {/* Phase W, Schritt 2: Besuche und Gäste gehören zum eigenen Zuhause (vorher unter "Familien"). */}
       <section className="settings-group" aria-labelledby="settings-besuche-title">
-        <h2 id="settings-besuche-title">Befreundete Zuhause</h2>
-        <p className="muted">Wen ihr besucht und wer bei euch zu Gast ist. Einen Code von Freunden gebt ihr unter „{words.groups}“ ein.</p>
+        <h2 id="settings-besuche-title">{t('settings.home.friends.title')}</h2>
+        <p className="muted">{t('settings.home.friends.lede', words)}</p>
         <VisitSection onFamilyChange={onFamilyChange} />
       </section>
       {/* Digitaler Bilderrahmen: Rahmen-Links für Omas Tablet & Co., ohne Anmeldung, jederzeit zu beenden. */}

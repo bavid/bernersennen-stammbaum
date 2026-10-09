@@ -8,16 +8,17 @@ import HandoverConsent from './HandoverConsent.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { formatVoucherCode, isCompleteVoucherCode } from '../lib/voucherCode.js'
 import { partnerAccessFrom, partnerSetupPayload, validatePartnerSetup } from '../lib/partnerSetup.js'
+import { useT } from '../lib/i18n/index.js'
 
 const NAME_MAX_LENGTH = 80
 const EMPTY_PARTNER_VALUES = { name: '', typ: '', plz: '' }
 
-const STATUS_TEXT = {
-  offen: 'Einladungscode gültig',
-  eingelöst: 'Dieser Einladungscode wurde schon eingelöst.',
-  abgelaufen: 'Dieser Einladungscode ist abgelaufen.',
-  widerrufen: 'Dieser Einladungscode wurde zurückgezogen.',
-  unbekannt: 'Diesen Einladungscode kennen wir nicht.'
+const STATUS_KEYS = {
+  offen: 'login.redeemForm.valid',
+  eingelöst: 'login.redeemForm.redeemed',
+  abgelaufen: 'login.redeemForm.expired',
+  widerrufen: 'login.redeemForm.revoked',
+  unbekannt: 'login.redeemForm.unknown'
 }
 
 function withoutKeys(object, keys) {
@@ -31,6 +32,7 @@ function withoutKeys(object, keys) {
 // siehe KeyReveal). autoFocus (Audit V7a): auf der Login-Seite holt der Fokus das Code-Feld ins Bild; im Portal steht
 // das Formular ganz unten - dort ohne Fokus, sonst springt die Seite beim Laden ans Ende.
 export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, onPartnerModeChange, autoFocus = true }) {
+  const t = useT()
   const [code, setCode] = useState(() => formatVoucherCode(initialCode))
   const [name, setName] = useState('')
   const [partnerValues, setPartnerValues] = useState(EMPTY_PARTNER_VALUES)
@@ -143,8 +145,8 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
   }
 
   const knownInvalid = Boolean(status) && status !== 'offen'
-  const statusText = status ? STATUS_TEXT[status] || STATUS_TEXT.unbekannt : null
-  const submitLabel = partnerAccess ? 'Partner-Profil einrichten' : 'Mein Zuhause anlegen'
+  const statusText = status ? t(STATUS_KEYS[status] || STATUS_KEYS.unbekannt) : null
+  const submitLabel = partnerAccess ? t('login.redeemForm.createPartner') : t('login.redeemForm.createHome')
 
   return (
     <form ref={formRef} className="form-stack" onSubmit={handleSubmit}>
@@ -160,7 +162,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
       )}
       <div className={`field ${knownInvalid ? 'has-error' : ''}`}>
         <label className="field-label" htmlFor="redeem-code">
-          Einladungscode
+          {t('login.redeemForm.code')}
         </label>
         <input
           id="redeem-code"
@@ -173,7 +175,7 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
           autoFocus={autoFocus}
           required
         />
-        {checking && <p className="field-hint">Prüfe …</p>}
+        {checking && <p className="field-hint">{t('login.redeemForm.checking')}</p>}
         {!checking && statusText && (
           <p className={status === 'offen' ? 'field-hint field-hint-success' : 'field-error'} role={status === 'offen' ? 'status' : 'alert'}>
             {status !== 'offen' && <Icon name="alert" />} {statusText}
@@ -186,27 +188,24 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
         <>
           {visit && (
             <p className="handover-notice" role="status">
-              Eine Einladung von „{visit.name}“: Mit eurer neuen Chronik seid ihr gleich verbunden und könnt dort zu
-              Besuch vorbeischauen. Verbunden sehen beide Zuhause die Namen der Tiere des anderen (für „Mit dabei“).
+              {t('login.redeemForm.visit', { name: visit.name })}
             </p>
           )}
           {handover && (
             <div className="handover-notice" role="status">
-              <p>
-                Mit diesem Übergabe-Code zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
-              </p>
+              <p>{t('login.redeemForm.handover', { animal: handover.animalName, shelter: handover.shelterName })}</p>
               <HandoverConsent shelterName={handover.shelterName} checked={shelterMayRead} onChange={setShelterMayRead} />
             </div>
           )}
           <div className="field">
             <label className="field-label" htmlFor="redeem-name">
-              Wie heißt euer Zuhause?
+              {t('login.redeemForm.homeName')}
             </label>
             <input
               id="redeem-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="z. B. Zuhause am Deich"
+              placeholder={t('login.redeemForm.homePlaceholder')}
               maxLength={NAME_MAX_LENGTH}
               required
             />
@@ -216,10 +215,10 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
       <RedeemAccountFields value={account} onChange={setAccount} />
       <Honeypot value={website} onChange={setWebsite} />
       <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading || knownInvalid}>
-        {loading ? 'Lege an …' : submitLabel}
+        {loading ? t('login.redeemForm.creating') : submitLabel}
       </button>
       {partnerAccess && (
-        <p className="field-hint partner-setup-hint">Privat eine eigene Chronik führen? Dafür gibt es Einladungscodes.</p>
+        <p className="field-hint partner-setup-hint">{t('login.redeemForm.partnerHint')}</p>
       )}
     </form>
   )

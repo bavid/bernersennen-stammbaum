@@ -1,4 +1,5 @@
 import { createContext, createElement, useContext, useMemo } from 'react'
+import { useTr } from './i18n/index.js'
 
 // Schreibgeschützte Sitzungen - zwei Fälle, dieselbe Sperre:
 // - die öffentliche Demo (me.isDemo): Ansehen ja, Speichern nie ("In der Demo nicht möglich.");
@@ -43,5 +44,7 @@ export function useIsAdminView() {
 // Der Hinweis unter einem gesperrten Knopf: in der Admin-Ansicht immer ADMIN_VIEW_HINT, sonst der Demo-Text
 // der Komponente (Standard DEMO_HINT - manche Stellen haben einen eigenen, z. B. "nur als Vorschau").
 export function useReadOnlyHint(demoHint = DEMO_HINT) {
-  return useIsAdminView() ? ADMIN_VIEW_HINT : demoHint
+  const tr = useTr()
+  if (useIsAdminView()) return tr('demo.adminHint', ADMIN_VIEW_HINT)
+  return demoHint === DEMO_HINT ? tr('demo.hint', DEMO_HINT) : demoHint
 }

@@ -1,5 +1,6 @@
 import Icon from './Icon.jsx'
 import PasswordField from './PasswordField.jsx'
+import { useT } from '../lib/i18n/index.js'
 
 const ACCOUNT_PASSWORD_MIN = 8
 const EMAIL_MAX_LENGTH = 120
@@ -18,6 +19,7 @@ export function accountPayload(account) {
 // zwischen Kunden-Gutschein ("Meine Chronik") und Partner-Zugang (RedeemForm). value/onChange: das
 // ganze Objekt { open, username, password, email }, onChange bekommt jeweils eine neue Kopie.
 export default function RedeemAccountFields({ value, onChange }) {
+  const t = useT()
   function update(patch) {
     onChange({ ...value, ...patch })
   }
@@ -31,14 +33,14 @@ export default function RedeemAccountFields({ value, onChange }) {
         aria-controls={PANEL_ID}
         onClick={() => update({ open: !value.open })}
       >
-        Benutzername und eigenes Passwort (optional)
+        {t('login.account.toggle')}
         <Icon name="chevronDown" className={value.open ? 'is-flipped' : ''} />
       </button>
       {value.open && (
         <div id={PANEL_ID} className="redeem-account form-stack">
           <div className="field">
             <label className="field-label" htmlFor="redeem-username">
-              Benutzername
+              {t('login.form.username')}
             </label>
             <input
               id="redeem-username"
@@ -49,7 +51,7 @@ export default function RedeemAccountFields({ value, onChange }) {
           </div>
           <PasswordField
             id="redeem-password"
-            label="Passwort"
+            label={t('login.form.password')}
             value={value.password}
             onChange={(password) => update({ password })}
             autoComplete="new-password"
@@ -58,7 +60,7 @@ export default function RedeemAccountFields({ value, onChange }) {
           />
           <div className="field">
             <label className="field-label" htmlFor="redeem-email">
-              E-Mail <span className="muted">(optional)</span>
+              {t('login.account.email')} <span className="muted">{t('login.account.optional')}</span>
             </label>
             <input
               id="redeem-email"
@@ -67,7 +69,7 @@ export default function RedeemAccountFields({ value, onChange }) {
               onChange={(e) => update({ email: e.target.value })}
               maxLength={EMAIL_MAX_LENGTH}
             />
-            <span className="field-hint">Nur für Rückfragen, keine Werbung.</span>
+            <span className="field-hint">{t('login.account.emailHint')}</span>
           </div>
         </div>
       )}

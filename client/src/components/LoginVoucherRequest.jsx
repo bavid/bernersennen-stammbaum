@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import RequestVoucherForm from './RequestVoucherForm.jsx'
+import { useT } from '../lib/i18n/index.js'
 
 // Sprungziel für "Gutschein anfragen" (/#gutschein-anfragen) - für Links von außerhalb der App (z. B. gedruckt); in der
 // App selbst verlinkt es seit der Feedback-Runde zum Partner-Portal niemand mehr.
@@ -12,6 +13,7 @@ export const VOUCHER_REQUEST_ANCHOR = 'gutschein-anfragen'
 // Feld); nach dem Absenden bleibt nur der Dank stehen. Kommt man über /#gutschein-anfragen, ist das
 // Formular gleich offen und der Abschnitt im Blick.
 export default function LoginVoucherRequest() {
+  const t = useT()
   const { hash } = useLocation()
   const viaAnchor = hash === `#${VOUCHER_REQUEST_ANCHOR}`
   const [open, setOpen] = useState(viaAnchor)
@@ -25,14 +27,14 @@ export default function LoginVoucherRequest() {
 
   return (
     <section ref={sectionRef} id={VOUCHER_REQUEST_ANCHOR} className="login-request" aria-labelledby="login-request-title">
-      <h2 id="login-request-title">Noch keinen Einladungscode?</h2>
-      <p className="muted">Schreib uns – wir schicken dir einen Einladungscode per E-Mail.</p>
+      <h2 id="login-request-title">{t('login.request.title')}</h2>
+      <p className="muted">{t('login.request.lede')}</p>
       {open ? (
         <RequestVoucherForm idPrefix="login-request" autoFocus />
       ) : (
         <button type="button" className="btn btn-ghost btn-block" onClick={() => setOpen(true)}>
           <Icon name="mail" />
-          Einladungscode anfragen
+          {t('login.request.button')}
         </button>
       )}
     </section>

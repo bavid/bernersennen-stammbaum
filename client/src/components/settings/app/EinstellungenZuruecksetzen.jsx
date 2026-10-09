@@ -4,12 +4,14 @@ import ConfirmButton from '../../ConfirmButton.jsx'
 import { detectPlatform } from '../../../lib/install.js'
 import { pushClient } from '../../../lib/pushClient.js'
 import { anleitungFuer, forgetOurSettings } from '../../../lib/zuruecksetzen.js'
+import { useT } from '../../../lib/i18n/index.js'
 
 // „Unsere Einstellungen zurücksetzen“ (Einstellungen › App). Ehrlich: Berechtigungen des Browsers kann eine Website
 // nicht selbst zurücknehmen. Der Knopf (1) kündigt das Benachrichtigungs-Abo dieses Geräts im Browser und auf dem Server,
 // (2) vergisst die gemerkte Postleitzahl und weggeklickte Hinweise auf diesem Gerät (lib/zuruecksetzen.js) und (3) zeigt,
 // wo die Berechtigungen selbst sitzen - je Gerät. onDone: der Bereich darüber lädt seinen Zustand neu.
 export default function EinstellungenZuruecksetzen({ platform = detectPlatform(), client = pushClient, onDone }) {
+  const t = useT()
   const [done, setDone] = useState(false)
   const [error, setError] = useState(null)
 
@@ -23,28 +25,24 @@ export default function EinstellungenZuruecksetzen({ platform = detectPlatform()
       setDone(true)
       onDone?.()
     } catch (err) {
-      setError(err.message || 'Das hat gerade nicht geklappt.')
+      setError(err.message || t('settings.failed'))
     }
   }
 
   return (
     <div className="app-setting app-reset">
-      <p className="app-setting-label">Unsere Einstellungen zurücksetzen</p>
-      <p className="app-setting-text">
-        Eine Website kann die Berechtigungen des Browsers nicht selbst zurücknehmen. Dieser Knopf löscht, was wir gespeichert
-        haben: das Benachrichtigungs-Abo (auch auf dem Server), die gemerkte Postleitzahl, gemerkte Kontaktdaten (Name,
-        E-Mail, Telefon aus Formularen) und weggeklickte Hinweise auf diesem Gerät.
-      </p>
+      <p className="app-setting-label">{t('settings.reset.title')}</p>
+      <p className="app-setting-text">{t('settings.reset.text')}</p>
       <ConfirmButton
-        label="Unsere Einstellungen zurücksetzen"
-        confirmLabel="Wirklich zurücksetzen?"
+        label={t('settings.reset.title')}
+        confirmLabel={t('settings.reset.confirm')}
         icon="rotate"
         className="btn btn-ghost"
         onConfirm={reset}
       />
       {done && (
         <p className="app-setting-hint" role="status">
-          Zurückgesetzt – Benachrichtigungen aus, Postleitzahl, Kontaktdaten und Hinweise vergessen.
+          {t('settings.reset.done')}
         </p>
       )}
       {error && (
@@ -53,7 +51,7 @@ export default function EinstellungenZuruecksetzen({ platform = detectPlatform()
         </div>
       )}
       <div className="app-reset-anleitung">
-        <p className="app-setting-hint muted">Die Berechtigungen selbst (Benachrichtigungen, Standort) setzt ihr so zurück:</p>
+        <p className="app-setting-hint muted">{t('settings.reset.guideIntro')}</p>
         <ul>
           {anleitungFuer(platform).map((zeile) => (
             <li key={zeile}>{zeile}</li>

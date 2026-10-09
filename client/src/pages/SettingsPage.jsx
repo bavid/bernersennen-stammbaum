@@ -6,23 +6,24 @@ import ZuhauseSection from '../components/settings/ZuhauseSection.jsx'
 import AppSection from '../components/settings/AppSection.jsx'
 import FamilyManage from '../components/settings/FamilyManage.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
-import { HOME_LABEL, SETTINGS_FAMILY_PARAM, areaContext, parseAreaId } from '../lib/areas.js'
+import { SETTINGS_FAMILY_PARAM, areaContext, parseAreaId } from '../lib/areas.js'
+import { useT } from '../lib/i18n/index.js'
 
 // Adresse ?bereich=… - ohne oder mit unbekanntem Wert die Darstellung.
 export const BEREICH_PARAM = 'bereich'
 const DARSTELLUNG = 'darstellung'
 const APP = 'app'
 
-function sectionsFor(family, words) {
-  const sections = [{ key: DARSTELLUNG, label: 'Darstellung' }]
+function sectionsFor(family, words, t) {
+  const sections = [{ key: DARSTELLUNG, label: t('settings.tab.darstellung') }]
   // Familien und Zuhause gibt es nur für Haushalte; ein klassisches Rudel-Login verwaltet hier seine eine Familie.
   if (family.home?.art === 'zuhause') {
-    sections.push({ key: 'familien', label: words.groups }, { key: 'zuhause', label: 'Mein Zuhause' })
+    sections.push({ key: 'familien', label: t('settings.tab.groups', words) }, { key: 'zuhause', label: t('settings.tab.zuhause') })
   } else {
-    sections.push({ key: 'familien', label: words.group })
+    sections.push({ key: 'familien', label: t('settings.tab.group', words) })
   }
   // „App“: als App aufs Handy (Install-Hinweis) - für alle gleich.
-  sections.push({ key: APP, label: 'App' })
+  sections.push({ key: APP, label: t('settings.tab.app') })
   return sections
 }
 
@@ -41,8 +42,9 @@ function FamiliesPanel({ family, onFamilyChange, familyParam }) {
 // Zuhause (Name, Auftritt, Zugang, Einladungen). Die Bereiche als Reiter (TabBar), der gewählte steht in der Adresse.
 export default function SettingsPage({ family, onFamilyChange, onInvite }) {
   const { words } = useTheme()
+  const t = useT()
   const [searchParams, setSearchParams] = useSearchParams()
-  const sections = sectionsFor(family, words)
+  const sections = sectionsFor(family, words, t)
   const wanted = searchParams.get(BEREICH_PARAM)
   const current = sections.some((section) => section.key === wanted) ? wanted : DARSTELLUNG
 
@@ -54,12 +56,10 @@ export default function SettingsPage({ family, onFamilyChange, onInvite }) {
     <div className="page settings-page">
       <header className="page-hero settings-hero">
         <div>
-          <span className="eyebrow">{family.home?.art === 'zuhause' ? HOME_LABEL : family.name}</span>
-          <h1>Einstellungen</h1>
+          <span className="eyebrow">{family.home?.art === 'zuhause' ? t('settings.tab.zuhause') : family.name}</span>
+          <h1>{t('settings.title')}</h1>
           <p className="page-lede">
-            {family.home?.art === 'zuhause'
-              ? `Farben, Schrift und eure ${words.groups} – alles an einer Stelle.`
-              : `Farben, Schrift und ${words.yourGroup} – alles an einer Stelle.`}
+            {t(family.home?.art === 'zuhause' ? 'settings.lede.home' : 'settings.lede.other', words)}
           </p>
         </div>
       </header>
@@ -68,7 +68,7 @@ export default function SettingsPage({ family, onFamilyChange, onInvite }) {
         <TabBar
           tabs={sections}
           current={current}
-          label="Bereiche der Einstellungen"
+          label={t('settings.tabsLabel')}
           idPrefix="einstellungen"
           panelId="einstellungen-panel"
           className="settings-tabs"

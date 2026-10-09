@@ -3,12 +3,14 @@ import { api } from '../api'
 import Icon from './Icon.jsx'
 import PasswordField from './PasswordField.jsx'
 import { formatVoucherCode } from '../lib/voucherCode.js'
+import { useT } from '../lib/i18n/index.js'
 
 const NEW_PASSWORD_MIN = 8
 
 // Der Schlüssel ist die Wiederherstellung (PUK): zusammen mit dem Benutzernamen setzt er ein neues
 // Passwort. Wer keinen eigenen Benutzer hat, braucht das gar nicht – der Schlüssel selbst ist der Login.
 export default function RecoverForm({ onBack }) {
+  const t = useT()
   const [code, setCode] = useState('')
   const [username, setUsername] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -33,10 +35,10 @@ export default function RecoverForm({ onBack }) {
     return (
       <div className="form-stack recover-done">
         <p className="field-hint field-hint-success" role="status">
-          Passwort geändert – jetzt anmelden.
+          {t('login.recover.done')}
         </p>
         <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onBack}>
-          Zum Anmelden
+          {t('login.recover.toSignIn')}
         </button>
       </div>
     )
@@ -45,7 +47,7 @@ export default function RecoverForm({ onBack }) {
   return (
     <form className="form-stack" onSubmit={handleSubmit}>
       <button type="button" className="login-link-btn recover-back" onClick={onBack}>
-        <Icon name="arrowLeft" /> Zurück zum Anmelden
+        <Icon name="arrowLeft" /> {t('login.recover.back')}
       </button>
       {error && (
         <div className="error-banner" role="alert">
@@ -54,7 +56,7 @@ export default function RecoverForm({ onBack }) {
       )}
       <div className="field">
         <label className="field-label" htmlFor="recover-code">
-          Schlüssel
+          {t('login.recover.key')}
         </label>
         <input
           id="recover-code"
@@ -69,22 +71,22 @@ export default function RecoverForm({ onBack }) {
       </div>
       <div className="field">
         <label className="field-label" htmlFor="recover-username">
-          Benutzername
+          {t('login.form.username')}
         </label>
         <input id="recover-username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />
       </div>
       <PasswordField
         id="recover-password"
-        label="Neues Passwort"
+        label={t('login.recover.newPassword')}
         value={newPassword}
         onChange={setNewPassword}
         autoComplete="new-password"
         minLength={NEW_PASSWORD_MIN}
       />
       <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading || !code || !username || !newPassword}>
-        {loading ? 'Ändere …' : 'Passwort ändern'}
+        {loading ? t('login.recover.changing') : t('login.recover.change')}
       </button>
-      <p className="field-hint">Kein Benutzer? Dann meldet euch einfach mit dem Schlüssel an.</p>
+      <p className="field-hint">{t('login.recover.noUser')}</p>
     </form>
   )
 }

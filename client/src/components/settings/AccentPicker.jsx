@@ -2,6 +2,7 @@ import { useId } from 'react'
 import { AKZENT_VORSCHLAEGE, akzentFarben } from '../../lib/akzent.js'
 import { resolveScheme } from '../../lib/darstellung.js'
 import useSystemDark from '../../hooks/useSystemDark.js'
+import { useT, useTr } from '../../lib/i18n/index.js'
 
 // Ohne eigene Farbe zeigt das Farbfeld das Terrakotta des Albums an.
 const PICKER_DEFAULT = AKZENT_VORSCHLAEGE[0].farbe
@@ -13,6 +14,8 @@ const PICKER_DEFAULT = AKZENT_VORSCHLAEGE[0].farbe
 // value: '' oder #rrggbb; onChange(akzent, { live }) - live: das Farbfeld zieht gerade (gespeichert wird erst, wenn es
 // ruht, hooks/useDarstellungSave.js).
 export default function AccentPicker({ value, palette, modus, describedBy, onChange }) {
+  const t = useT()
+  const tr = useTr()
   const pickerId = useId()
   const noteId = useId()
   const systemDark = useSystemDark()
@@ -23,18 +26,18 @@ export default function AccentPicker({ value, palette, modus, describedBy, onCha
 
   return (
     <fieldset className="settings-choice designer-accent" aria-describedby={[describedBy, noteId].filter(Boolean).join(' ')}>
-      <legend>Akzentfarbe</legend>
+      <legend>{t('settings.design.accent')}</legend>
       <div className="designer-accent-options">
         <label className={`designer-accent-own${value === '' ? ' is-checked' : ''}`}>
           <input type="radio" name="akzent" value="" checked={value === ''} onChange={() => onChange('')} />
           <span className="designer-accent-dot is-palette" aria-hidden="true" />
-          <span>Wie die Farbwelt</span>
+          <span>{t('settings.design.accentPalette')}</span>
         </label>
         {AKZENT_VORSCHLAEGE.map((option) => (
-          <label key={option.farbe} className={`designer-accent-swatch${value === option.farbe ? ' is-checked' : ''}`} title={option.label}>
+          <label key={option.farbe} className={`designer-accent-swatch${value === option.farbe ? ' is-checked' : ''}`} title={tr(`design.akzent.${option.farbe}`, option.label)}>
             <input type="radio" name="akzent" value={option.farbe} checked={value === option.farbe} onChange={() => onChange(option.farbe)} />
             <span className="designer-accent-dot" style={{ background: option.farbe }} aria-hidden="true" />
-            <span className="visually-hidden">{option.label}</span>
+            <span className="visually-hidden">{tr(`design.akzent.${option.farbe}`, option.label)}</span>
           </label>
         ))}
         <label className={`designer-accent-custom${isCustom ? ' is-checked' : ''}`} htmlFor={pickerId}>
@@ -45,12 +48,12 @@ export default function AccentPicker({ value, palette, modus, describedBy, onCha
             aria-describedby={noteId}
             onChange={(event) => onChange(event.target.value, { live: true })}
           />
-          <span>Eigene Farbe</span>
-          {isCustom && <span className="visually-hidden">, aktuell {value}</span>}
+          <span>{t('settings.design.accentOwn')}</span>
+          {isCustom && <span className="visually-hidden">{t('settings.design.accentCurrent', { value })}</span>}
         </label>
       </div>
       <p id={noteId} className="field-hint designer-adjusted">
-        {adjusted ? 'Angepasst für gute Lesbarkeit – Schrift und Knöpfe bleiben gut zu lesen.' : ''}
+        {adjusted ? t('settings.design.accentAdjusted') : ''}
       </p>
     </fieldset>
   )

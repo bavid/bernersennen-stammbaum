@@ -3,28 +3,30 @@ import Icon from './Icon.jsx'
 import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
 import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
+import { useT } from '../lib/i18n/index.js'
 
 // Die beiden Demos direkt auf der Login-Seite: Hundeschule (Partner-Bereich) und Tierheim (Tiere, Steckbriefe,
 // Übergabe). Weitere (Hundesalon) stehen auf /partner-werden.
 const LOGIN_DEMOS = [
-  { key: 'hundeschule', label: 'Demo: Hundeschule', target: { as: 'partner', slug: DEMO_PARTNER_SLUGS.hundeschule } },
-  { key: 'tierheim', label: 'Demo: Tierheim', target: { as: 'tierheim' } }
+  { key: 'hundeschule', labelKey: 'login.partner.demoSchool', target: { as: 'partner', slug: DEMO_PARTNER_SLUGS.hundeschule } },
+  { key: 'tierheim', labelKey: 'login.partner.demoShelter', target: { as: 'tierheim' } }
 ]
 
 // Zweiter Einstieg der Login-Seite (Phase U): für Hundeschulen, Tierheime & Co. - erst die Demo eines Partner-
 // Bereichs (Hundeschule oder Tierheim, wie auf /partner-werden), dann "Mehr erfahren". Ein Partner-Zugang ist ein
 // Gutschein: onRedeem schaltet die Karte daneben auf "Gutschein einlösen". onLogin bekommt die Demo-Sitzung.
 export default function LoginPartnerEntry({ onLogin, onRedeem }) {
+  const t = useT()
   const { pending, error, startDemo } = usePartnerDemo(onLogin)
 
   return (
     <section className="login-entry login-partner" aria-labelledby="login-partner-title">
       <div className="login-partner-head">
         <p className="login-entry-label">
-          <Icon name="globe" /> Für Hundeschulen, Tierheime &amp; Co.
+          <Icon name="globe" /> {t('login.partner.label')}
         </p>
-        <h2 id="login-partner-title">Euer Partner-Bereich</h2>
-        <p className="muted">Eigenes Profil, Beiträge in „Entdecken“, Postfach und Einladungscodes für eure Kundschaft – kostenlos.</p>
+        <h2 id="login-partner-title">{t('login.partner.title')}</h2>
+        <p className="muted">{t('login.partner.lede')}</p>
       </div>
       {error && (
         <div className="error-banner" role="alert">
@@ -41,25 +43,25 @@ export default function LoginPartnerEntry({ onLogin, onRedeem }) {
               onClick={() => startDemo(demo.key, demo.target)}
               disabled={pending !== null}
             >
-              {pending === demo.key ? 'Lädt …' : demo.label}
+              {pending === demo.key ? t('login.loading') : t(demo.labelKey)}
             </button>
           ))}
         </div>
         <Link to="/partner-werden" className="btn btn-ghost btn-block">
-          Mehr erfahren <Icon name="arrowRight" />
+          {t('login.partner.more')} <Icon name="arrowRight" />
         </Link>
       </div>
       <p className="field-hint">
-        Partner-Zugang bekommen? Den löst ihr wie einen Einladungscode ein:{' '}
+        {t('login.partner.gotAccess')}{' '}
         <button type="button" className="login-link-btn" onClick={onRedeem}>
-          Einladungscode einlösen
+          {t('login.redeem')}
         </button>
       </p>
       {/* Phase N: das Anfrage-Formular steht auf der Infoseite unter #anfragen (PartnerInfoPage). */}
       <p className="field-hint">
-        Noch keinen Zugang?{' '}
+        {t('login.partner.noAccess')}{' '}
         <Link to={`/partner-werden#${PARTNER_REQUEST_ANCHOR}`} className="login-link-btn">
-          Partner-Zugang anfragen
+          {t('login.partner.request')}
         </Link>
       </p>
     </section>

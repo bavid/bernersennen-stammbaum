@@ -1,5 +1,6 @@
 import { KONTAKT_KEY } from './kontaktDefaults.js'
 import { removeSetting } from './storage.js'
+import { tOr } from './i18n/index.js'
 
 // „Unsere Einstellungen zurücksetzen“ (Einstellungen › App, components/settings/app/EinstellungenZuruecksetzen.jsx).
 // Ehrlich: eine Website kann die Berechtigungen des Browsers nicht selbst zurücknehmen. Der Knopf löscht, was WIR auf
@@ -27,5 +28,6 @@ const ANLEITUNG = Object.freeze({
 })
 
 export function anleitungFuer(platform) {
-  return ANLEITUNG[platform] || ANLEITUNG.desktop
+  const key = ANLEITUNG[platform] ? platform : 'desktop'
+  return tOr(`settings.reset.guide.${key}`, ANLEITUNG[key])
 }

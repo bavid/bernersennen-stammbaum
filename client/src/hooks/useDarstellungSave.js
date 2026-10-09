@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import { normalizeDarstellung } from '../lib/darstellung.js'
 import { useToast } from '../components/Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Das Farbfeld meldet beim Ziehen jede Zwischenfarbe - gespeichert wird erst, wenn es so lange ruht.
 export const LIVE_SAVE_DELAY_MS = 500
@@ -45,7 +46,7 @@ export default function useDarstellungSave({ family, onFamilyChange, readOnly })
     try {
       await api.setDarstellung(patch)
       confirmed.current = { ...confirmed.current, ...patch }
-      setSaved('Gespeichert.')
+      setSaved(t('settings.saved'))
     } catch (err) {
       onFamilyChange((me) => revertDarstellung(me, patch, confirmed.current))
       toast(err.message)

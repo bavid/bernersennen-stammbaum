@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { api } from '../api'
 import PasswordField from './PasswordField.jsx'
+import { useT } from '../lib/i18n/index.js'
 
 // Anmelden per Schlüssel (Standardfall) oder – aufklappbar – per Benutzername/Passwort. Ein offener
 // Gutschein im Schlüsselfeld beantwortet der Server mit 409 { redeem: true }: onRedeemRequired wechselt
 // dann in den Einlöse-Modus, statt nur einen Fehler zu zeigen.
 export default function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
+  const t = useT()
   const [useUsername, setUseUsername] = useState(false)
   const [secret, setSecret] = useState('')
   const [username, setUsername] = useState('')
@@ -46,7 +48,7 @@ export default function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
         <>
           <div className="field">
             <label className="field-label" htmlFor="login-username">
-              Benutzername
+              {t('login.form.username')}
             </label>
             <input
               id="login-username"
@@ -59,7 +61,7 @@ export default function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
           </div>
           <PasswordField
             id="login-user-password"
-            label="Passwort"
+            label={t('login.form.password')}
             value={password}
             onChange={setPassword}
             autoComplete="current-password"
@@ -68,7 +70,7 @@ export default function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
       ) : (
         <PasswordField
           id="login-secret"
-          label="Schlüssel oder Passwort"
+          label={t('login.form.secret')}
           value={secret}
           onChange={setSecret}
           autoFocus
@@ -80,14 +82,14 @@ export default function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
         type="submit"
         disabled={loading || (useUsername ? !username || !password : !secret)}
       >
-        {loading ? 'Öffne Chronik …' : 'Chronik öffnen'}
+        {loading ? t('login.form.opening') : t('login.form.open')}
       </button>
       <div className="login-links">
         <button type="button" className="login-link-btn" onClick={toggleUsername}>
-          {useUsername ? 'Mit Schlüssel anmelden' : 'Mit Benutzername anmelden'}
+          {useUsername ? t('login.form.withKey') : t('login.form.withUser')}
         </button>
         <button type="button" className="login-link-btn" onClick={onForgot}>
-          Passwort vergessen?
+          {t('login.form.forgot')}
         </button>
       </div>
     </form>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../../../api'
 import { roundCoord } from '../../../lib/geo.js'
 import { readSetting, removeSetting, writeSetting } from '../../../lib/storage.js'
+import { t, useT } from '../../../lib/i18n/index.js'
 
 export const STANDORT_KEY = 'standortGemerkt'
 const NEARBY_PLZ_KEY = 'nearbyPlz'
@@ -13,7 +14,7 @@ const PERMISSION_DENIED = 1
 function defaultLocate() {
   return new Promise((resolve, reject) => {
     if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
-      reject(new Error('Dieser Browser kennt keinen Standort.'))
+      reject(new Error(t('settings.location.noBrowser')))
       return
     }
     navigator.geolocation.getCurrentPosition(
@@ -22,8 +23,8 @@ function defaultLocate() {
         reject(
           new Error(
             err.code === PERMISSION_DENIED
-              ? 'Vom Browser blockiert – in den Seiteneinstellungen des Browsers wieder erlauben.'
-              : 'Der Standort ließ sich gerade nicht bestimmen.'
+              ? t('settings.push.blocked')
+              : t('settings.location.failed')
           )
         ),
       { timeout: LOCATE_TIMEOUT_MS, maximumAge: LOCATE_MAX_AGE_MS }
@@ -36,6 +37,7 @@ function defaultLocate() {
 // PLZ - auf diesem Gerät (localStorage), in derselben Einstellung, mit der Entdecken und „In der Nähe“ starten
 // (DiscoverPage nearbyPlz). Ehrlich beschriftet; „Vergessen“ nimmt beides wieder weg.
 export default function StandortSchalter({ locate = defaultLocate }) {
+  const t = useT()
   const [gemerkt, setGemerkt] = useState(() => readSetting(STANDORT_KEY, null))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -51,7 +53,7 @@ export default function StandortSchalter({ locate = defaultLocate }) {
       writeSetting(NEARBY_PLZ_KEY, hit.plz)
       setGemerkt(next)
     } catch (err) {
-      setError(err.message || 'Das hat gerade nicht geklappt.')
+      setError(err.message || t('settings.failed'))
     } finally {
       setBusy(false)
     }
@@ -68,24 +70,23 @@ export default function StandortSchalter({ locate = defaultLocate }) {
     <div className="app-setting">
       <div className="app-setting-row">
         <span className="app-setting-label" id="standort-label">
-          Standort für „In der Nähe“ merken
+          {t('settings.location.label')}
         </span>
         {gemerkt ? (
           <button type="button" className="btn btn-ghost" onClick={vergessen} aria-describedby="standort-hint">
-            Vergessen
+            {t('settings.location.forget')}
           </button>
         ) : (
           <button type="button" className="btn btn-ghost" onClick={merken} disabled={busy} aria-describedby="standort-hint">
-            {busy ? 'Fragt …' : 'Standort einmal abfragen'}
+            {busy ? t('settings.location.asking') : t('settings.location.ask')}
           </button>
         )}
       </div>
       <p id="standort-hint" className="app-setting-hint muted">
-        {gemerkt ? `Gemerkt: ${gemerkt.plz} ${gemerkt.ort}` : 'Noch nichts gemerkt.'}
+        {gemerkt ? t('settings.location.saved', gemerkt) : t('settings.location.none')}
       </p>
       <p className="app-setting-text">
-        Wir fragen den Standort nur auf Tippen ab und merken uns allein die Postleitzahl – auf diesem Gerät, nicht auf dem
-        Server. Entdecken und „In der Nähe“ starten dann dort.
+        {t('settings.location.text')}
       </p>
       {error && (
         <div className="error-banner" role="alert">

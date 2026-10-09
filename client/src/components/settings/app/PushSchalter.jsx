@@ -3,25 +3,27 @@ import { api } from '../../../api'
 import { useIsDemo } from '../../../lib/demo.js'
 import { PUSH_STATUS, PUSH_SUPPORT, pushStatus, pushSupport } from '../../../lib/push.js'
 import { pushClient } from '../../../lib/pushClient.js'
+import { useT } from '../../../lib/i18n/index.js'
 
 const HINT_ID = 'push-hint'
 
+// Schlüssel der Hinweise (lib/i18n/settings.js) je Zustand.
 const TEXTE = Object.freeze({
-  [PUSH_SUPPORT.iosInstall]:
-    'Auf iPhone und iPad geht das erst, wenn die App auf dem Home-Bildschirm liegt (iOS 16.4 oder neuer) – siehe Anleitung oben.',
-  [PUSH_SUPPORT.unsupported]: 'Dieser Browser kann keine Benachrichtigungen empfangen.',
-  server: 'Auf diesem Server noch nicht eingerichtet.',
-  demo: 'In der Demo nicht möglich.',
-  prueft: 'Prüft …',
-  [PUSH_STATUS.blockiert]: 'Vom Browser blockiert – in den Seiteneinstellungen des Browsers wieder erlauben.',
-  [PUSH_STATUS.an]: 'An – bei neuen Grüßen, „Mit dabei“-Anfragen und Gästen.',
-  [PUSH_STATUS.aus]: 'Aus'
+  [PUSH_SUPPORT.iosInstall]: 'settings.push.iosInstall',
+  [PUSH_SUPPORT.unsupported]: 'settings.push.unsupported',
+  server: 'settings.push.server',
+  demo: 'settings.push.demo',
+  prueft: 'settings.push.checking',
+  [PUSH_STATUS.blockiert]: 'settings.push.blocked',
+  [PUSH_STATUS.an]: 'settings.push.on',
+  [PUSH_STATUS.aus]: 'settings.push.off'
 })
 
 // „Benachrichtigungen aufs Handy“ (Einstellungen › App): ein Schalter. Die Erlaubnis fragt der Browser erst beim
 // Einschalten (lib/pushClient.js subscribePush) - nie beim Laden. Zustand: an / aus / vom Browser blockiert; auf dem
 // iPhone im Browser der Hinweis, dass es erst installiert geht. support/client sind für Tests von außen setzbar.
 export default function PushSchalter({ support = pushSupport(), client = pushClient }) {
+  const t = useT()
   const demo = useIsDemo()
   const [server, setServer] = useState(null)
   const [permission, setPermission] = useState(() => client.currentPermission())
@@ -54,7 +56,7 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
   const status = pushStatus({ permission, subscribed })
   const reason =
     support !== PUSH_SUPPORT.ok ? support : demo ? 'demo' : server === null ? 'prueft' : !server.enabled ? 'server' : status === PUSH_STATUS.blockiert ? status : null
-  const hint = TEXTE[reason || status]
+  const hint = t(TEXTE[reason || status])
 
   async function toggle() {
     setBusy(true)
@@ -73,7 +75,7 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
         }
       }
     } catch (err) {
-      setError(err.message || 'Das hat gerade nicht geklappt.')
+      setError(err.message || t('settings.failed'))
     } finally {
       setBusy(false)
     }
@@ -90,14 +92,13 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
           aria-describedby={HINT_ID}
           onChange={toggle}
         />
-        Benachrichtigungen aufs Handy
+        {t('settings.push.label')}
       </label>
       <p id={HINT_ID} className="app-setting-hint muted">
         {hint}
       </p>
       <p className="app-setting-text">
-        Nur, was die Glocke auch zeigt – ohne Namen oder Inhalte. Der kurze Hinweis geht verschlüsselt über den Push-Dienst
-        eures Browsers.
+        {t('settings.push.text')}
       </p>
       {error && (
         <div className="error-banner" role="alert">

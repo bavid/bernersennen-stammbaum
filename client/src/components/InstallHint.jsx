@@ -8,21 +8,23 @@ import {
   promptInstall,
   subscribeInstallPrompt
 } from '../lib/install.js'
+import { tList, useT } from '../lib/i18n/index.js'
 import '../styles/install-hint.css'
 
 export const INSTALL_TITLE = 'Als App aufs Handy – ohne App Store'
-const STORES_LINE = 'Später auch in den App Stores – heute schon als App über den Browser.'
 
 // Kurze Anleitung je Gerät - Android/Chrome bekommt den echten Knopf, sobald der Browser den Dialog anbietet
 // (lib/install.js, beforeinstallprompt); iPhone/iPad kennen nur den Weg über „Teilen“.
 function Steps({ platform, promptReady, onInstall, installing }) {
+  const t = useT()
+  const [ios1, ios2, and1, and2, desktop] = ['install.ios.1', 'install.ios.2', 'install.android.1', 'install.android.2', 'install.desktop'].map(tList)
   if (promptReady) {
     return (
       <div className="install-hint-actions">
         <button type="button" className="btn btn-primary" onClick={onInstall} disabled={installing}>
-          App installieren
+          {t('install.install')}
         </button>
-        <span className="muted">Ein Tippen – dann liegt die Chronik auf dem Startbildschirm.</span>
+        <span className="muted">{t('install.tap')}</span>
       </div>
     )
   }
@@ -30,10 +32,10 @@ function Steps({ platform, promptReady, onInstall, installing }) {
     return (
       <ol className="install-hint-steps">
         <li>
-          In Safari unten <Icon name="share" /> <strong>Teilen</strong> antippen.
+          {ios1[0]} <Icon name="share" /> <strong>{ios1[1]}</strong> {ios1[2]}
         </li>
         <li>
-          <strong>„Zum Home-Bildschirm“</strong> wählen (ggf. in der Liste nach unten scrollen) und mit „Hinzufügen“ bestätigen.
+          {ios2[0]} <strong>{ios2[1]}</strong> {ios2[2]}
         </li>
       </ol>
     )
@@ -42,17 +44,17 @@ function Steps({ platform, promptReady, onInstall, installing }) {
     return (
       <ol className="install-hint-steps">
         <li>
-          In Chrome oben rechts <strong>⋮</strong> antippen.
+          {and1[0]} <strong>{and1[1]}</strong> {and1[2]}
         </li>
         <li>
-          <strong>„App installieren“</strong> oder <strong>„Zum Startbildschirm hinzufügen“</strong> wählen.
+          {and2[0]} <strong>{and2[1]}</strong> {and2[2]} <strong>{and2[3]}</strong> {and2[4]}
         </li>
       </ol>
     )
   }
   return (
     <p className="muted">
-      Diese Seite auf dem Handy öffnen – oder hier im Browser über das Symbol <Icon name="download" /> in der Adressleiste installieren.
+      {desktop[0]} <Icon name="download" /> {desktop[1]}
     </p>
   )
 }
@@ -67,6 +69,7 @@ export default function InstallHint({
   standalone = isStandalone(),
   children = null
 }) {
+  const t = useT()
   const [promptReady, setPromptReady] = useState(false)
   const [installing, setInstalling] = useState(false)
   const [installed, setInstalled] = useState(standalone)
@@ -96,22 +99,22 @@ export default function InstallHint({
     <section className={`install-hint install-hint-${variant}`} aria-labelledby={titleId}>
       <div className="install-hint-head">
         <Icon name="paw" />
-        <Heading id={titleId}>{installed ? 'Schon als App installiert' : INSTALL_TITLE}</Heading>
+        <Heading id={titleId}>{installed ? t('install.installedTitle') : t('install.title')}</Heading>
       </div>
       {installed ? (
         <p className="muted">
-          <Icon name="check" /> Diese Chronik läuft vom Startbildschirm aus – alles ist eingerichtet.
+          <Icon name="check" /> {t('install.running')}
         </p>
       ) : (
         <>
           <Steps platform={platform} promptReady={promptReady} onInstall={handleInstall} installing={installing} />
-          <p className="install-hint-note">{STORES_LINE}</p>
+          <p className="install-hint-note">{t('install.stores')}</p>
         </>
       )}
       {children}
       {variant === 'card' && !installed && (
         <button type="button" className="btn btn-ghost install-hint-later" onClick={handleDismiss}>
-          Später
+          {t('install.later')}
         </button>
       )}
     </section>

@@ -14,6 +14,7 @@ import Modal from '../Modal.jsx'
 import JoinFamilyDialog from '../JoinFamilyDialog.jsx'
 import FamilyShareCard from '../shares/FamilyShareCard.jsx'
 import ShareNote from '../shares/ShareNote.jsx'
+import { useT } from '../../lib/i18n/index.js'
 
 const SHARE_NOTE_ID = 'settings-share-note'
 
@@ -22,6 +23,7 @@ const SHARE_NOTE_ID = 'settings-share-note'
 // › [Familie] - dort stehen auch Verlassen, Leitung übergeben und Auflösen).
 function MembershipRow({ membership, counts, onOpen }) {
   const { words } = useTheme()
+  const t = useT()
   const details = [roleLabel(words, membership.rolle), animalCountText(counts, words)].filter(Boolean)
   return (
     <li className="settings-row">
@@ -31,11 +33,11 @@ function MembershipRow({ membership, counts, onOpen }) {
       </div>
       <div className="settings-row-actions">
         <button type="button" className="btn btn-ghost" onClick={() => onOpen(membership)}>
-          Öffnen
+          {t('settings.families.open')}
         </button>
-        <Link to={familySettingsRoute(membership.id)} className="btn btn-ghost" aria-label={`${membership.name} verwalten`}>
+        <Link to={familySettingsRoute(membership.id)} className="btn btn-ghost" aria-label={t('settings.families.manageLabel', { name: membership.name })}>
           <Icon name="settings" />
-          Verwalten
+          {t('settings.families.manage')}
         </Link>
       </div>
     </li>
@@ -72,9 +74,10 @@ function useOwnAnimals(homeId, onFamilyChange) {
 
 function MembershipsGroup({ family, memberships, onOpen, onJoin }) {
   const { words } = useTheme()
+  const t = useT()
   return (
     <section className="settings-group" aria-labelledby="settings-familien-title">
-      <h2 id="settings-familien-title">Eure {words.groups}</h2>
+      <h2 id="settings-familien-title">{t('settings.families.title', words)}</h2>
       {memberships.length === 0 ? (
         <p className="muted">{words.noGroupConnected}</p>
       ) : (
@@ -92,7 +95,7 @@ function MembershipsGroup({ family, memberships, onOpen, onJoin }) {
       <div className="settings-actions">
         <button type="button" className="btn btn-ghost" onClick={onJoin}>
           <Icon name="plus" />
-          {words.group} beitreten oder gründen
+          {t('settings.families.join', words)}
         </button>
       </div>
     </section>
@@ -124,11 +127,12 @@ function ShareCards({ dogs, memberships, readOnly, onSaved }) {
 
 function AnimalsGroup({ animals, memberships, readOnly }) {
   const { words } = useTheme()
+  const t = useT()
   const readOnlyHint = useReadOnlyHint()
   const { dogs, error, updateShares } = animals
   let content
   if (memberships.length === 0) {
-    content = <p className="muted">Sobald ihr in einer {words.group} seid, wählt ihr hier, welche Tiere dort zu sehen sind.</p>
+    content = <p className="muted">{t('settings.families.animalsLater', words)}</p>
   } else {
     content = (
       <>
@@ -137,7 +141,7 @@ function AnimalsGroup({ animals, memberships, readOnly }) {
             {error}
           </div>
         )}
-        {dogs && dogs.length === 0 && <p className="muted">Ihr habt noch keine eigenen Tiere eingetragen.</p>}
+        {dogs && dogs.length === 0 && <p className="muted">{t('settings.families.noAnimals')}</p>}
         {dogs && dogs.length > 0 && <ShareCards dogs={dogs} memberships={memberships} readOnly={readOnly} onSaved={updateShares} />}
         {readOnly && <p className="field-hint">{readOnlyHint}</p>}
       </>
@@ -145,7 +149,7 @@ function AnimalsGroup({ animals, memberships, readOnly }) {
   }
   return (
     <section className="settings-group" aria-labelledby="settings-tiere-title">
-      <h2 id="settings-tiere-title">Eure Tiere in {words.groupsDative}</h2>
+      <h2 id="settings-tiere-title">{t('settings.families.animalsTitle', words)}</h2>
       {content}
     </section>
   )
@@ -157,6 +161,7 @@ function AnimalsGroup({ animals, memberships, readOnly }) {
 // heraus (der Server erlaubt es nur dort) - dorthin wechselt das AreaGate der Route (AreaRoutes SettingsRoute) vorher.
 export default function FamilienSection({ family, onFamilyChange }) {
   const { words } = useTheme()
+  const t = useT()
   const readOnly = useIsDemo()
   const openArea = useOpenArea(family)
   const memberships = family.memberships || []
@@ -172,7 +177,7 @@ export default function FamilienSection({ family, onFamilyChange }) {
         onJoin={() => setJoinOpen(true)}
       />
       <AnimalsGroup animals={animals} memberships={memberships} readOnly={readOnly} />
-      <Modal open={joinOpen} title={`${words.group} beitreten oder gründen`} onClose={() => setJoinOpen(false)}>
+      <Modal open={joinOpen} title={t('settings.families.join', words)} onClose={() => setJoinOpen(false)}>
         <JoinFamilyDialog onChange={onFamilyChange} onClose={() => setJoinOpen(false)} />
       </Modal>
     </div>
