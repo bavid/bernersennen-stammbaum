@@ -9,7 +9,10 @@
 // Reiner Text (Steuer-/Bidi-Zeichen raus, kein HTML), Links nur http(s) - der Client zeigt alles nur als Text bzw. href.
 
 const db = require('../db')
-const { stripUnsafeChars, sanitizeExternalUrl } = require('./partners')
+const { sanitizeExternalUrl } = require('./partners')
+const { MAX_CENTS, httpError, assertKnownFields, cleanText, cleanCents } = require('./finanzierungFelder')
+const { listKosten, publicPosten } = require('./finanzierungKosten')
+const { berechneFinanzen, verteileUeberschuss } = require('./finanzierungVerteilung')
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS finanzierung_quartale (
@@ -27,12 +30,17 @@ db.exec(`
   );
 `)
 
+// „Kosten & Reserve“: was der Admin in diesem Quartal aus der Rücklage „Server-Zukunft“ entnommen hat (lib/
+// finanzierungVerteilung.js zieht es vom berechneten Stand ab). Alte Datenbanken bekommen die Spalte hier.
+const ENTNAHME_COLUMN = 'reserve_entnahme_cents'
+if (!db.prepare('PRAGMA table_info(finanzierung_quartale)').all().some((column) => column.name === ENTNAHME_COLUMN)) {
+  db.exec(`ALTER TABLE finanzierung_quartale ADD COLUMN ${ENTNAHME_COLUMN} INTEGER NOT NULL DEFAULT 0`)
+}
+
 const KEY_SPENDEN_HINWEIS = 'finanzierung_spenden_hinweis'
 const KEY_ZIEL = 'finanzierung_ziel'
 
 const LIMITS = Object.freeze({ hinweisText: 400, zielTitel: 80, empfaenger: 120, notiz: 200, jahrMin: 2024, jahrMax: 2100 })
-// Wie lib/promotions.js MAX_CENTS: zehn Millionen Euro reichen.
-const MAX_CENTS = 1e9
 const MAX_URL_LENGTH = 300
 
 const HINWEIS_FIELDS = Object.freeze(['text', 'url'])
@@ -44,56 +52,7 @@ const QUARTAL_AMOUNTS = Object.freeze({
   kostenCents: 'kosten_cents',
   spendenWeitergegebenCents: 'spenden_weitergegeben_cents'
 })
-const QUARTAL_FIELDS = Object.freeze(['jahr', 'quartal', ...Object.keys(QUARTAL_AMOUNTS), 'notiz'])
-
-const HTML_RE = /[<>]/
-// Wie lib/einladungRueckseite.js: unsichtbare Zeichen, die stripUnsafeChars nicht kennt.
-const INVISIBLE_RE = /[\u200B\u200E\u200F\u2060\u061C\uFEFF\u2028\u2029]/g
-const MAX_KEY_ECHO = 40
-
-function httpError(status, message, feld) {
-  const err = new Error(message)
-  err.status = status
-  if (feld) err.feld = feld
-  return err
-}
-
-function assertKnownFields(body, fields) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) throw httpError(400, 'Bitte die Angaben als Objekt senden.')
-  const unknown = Object.keys(body).find((key) => !fields.includes(key))
-  if (unknown !== undefined) throw httpError(400, `Unbekanntes Feld: ${unknown.slice(0, MAX_KEY_ECHO)}`)
-}
-
-// Reiner Text: gesäubert, höchstens max Zeichen; mehrzeilig behält Zeilenumbrüche (Spendenkonto, Verwendungszweck).
-// undefined/null zählen als leer. Liefert '' für leer.
-function cleanText(value, { feld, label, max, multiline = false }) {
-  if (value === undefined || value === null) return ''
-  if (typeof value !== 'string') throw httpError(400, `${label} muss Text sein.`, feld)
-  const stripped = stripUnsafeChars(value, { allowNewline: multiline }).replace(INVISIBLE_RE, '')
-  const text = multiline
-    ? stripped
-        .split('\n')
-        .map((line) => line.replace(/[ \t]+/g, ' ').trim())
-        .join('\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim()
-    : stripped.replace(/\s+/g, ' ').trim()
-  if (HTML_RE.test(text)) throw httpError(400, `${label}: bitte nur reinen Text (kein HTML).`, feld)
-  if (text.length > max) throw httpError(400, `${label} darf höchstens ${max} Zeichen haben.`, feld)
-  return text
-}
-
-// Ganze Cent, 0 bis MAX_CENTS. required: fehlend -> Fehler, sonst null.
-function cleanCents(value, { feld, label, required = false }) {
-  if (value === undefined || value === null || value === '') {
-    if (required) throw httpError(400, `${label} fehlt.`, feld)
-    return null
-  }
-  if (!Number.isInteger(value) || value < 0 || value > MAX_CENTS) {
-    throw httpError(400, `${label}: bitte einen Betrag in ganzen Cent zwischen 0 und ${MAX_CENTS} senden.`, feld)
-  }
-  return value
-}
+const QUARTAL_FIELDS = Object.freeze(['jahr', 'quartal', ...Object.keys(QUARTAL_AMOUNTS), 'reserveEntnahmeCents', 'notiz'])
 
 // Auch die normalisierte Form (z. B. „www.…“ -> „https://www.…/“) muss in MAX_URL_LENGTH passen - sonst würde der
 // gespeicherte Hinweis beim Lesen (readJsonSetting prüft wie beim Speichern) stillschweigend verschwinden.
@@ -156,6 +115,8 @@ function validateQuartal(body) {
   for (const [feld, column] of Object.entries(QUARTAL_AMOUNTS)) {
     row[column] = cleanCents(body[feld], { feld, label: 'Der Betrag', required: true })
   }
+  // Optional (ältere Formulare kennen das Feld nicht): fehlend = keine Entnahme.
+  row[ENTNAHME_COLUMN] = cleanCents(body.reserveEntnahmeCents, { feld: 'reserveEntnahmeCents', label: 'Die Entnahme' }) ?? 0
   row.notiz = cleanText(body.notiz, { feld: 'notiz', label: 'Die Notiz', max: LIMITS.notiz }) || null
   return row
 }
@@ -212,12 +173,13 @@ function saveZiel(body) {
 const listQuartaleStmt = db.prepare('SELECT * FROM finanzierung_quartale ORDER BY jahr DESC, quartal DESC')
 const findQuartalStmt = db.prepare('SELECT * FROM finanzierung_quartale WHERE id = ?')
 const insertQuartalStmt = db.prepare(`
-  INSERT INTO finanzierung_quartale (jahr, quartal, einnahmen_spenden_cents, einnahmen_partner_cents, kosten_cents, spenden_weitergegeben_cents, notiz)
-  VALUES (@jahr, @quartal, @einnahmen_spenden_cents, @einnahmen_partner_cents, @kosten_cents, @spenden_weitergegeben_cents, @notiz)`)
+  INSERT INTO finanzierung_quartale (jahr, quartal, einnahmen_spenden_cents, einnahmen_partner_cents, kosten_cents, spenden_weitergegeben_cents, reserve_entnahme_cents, notiz)
+  VALUES (@jahr, @quartal, @einnahmen_spenden_cents, @einnahmen_partner_cents, @kosten_cents, @spenden_weitergegeben_cents, @reserve_entnahme_cents, @notiz)`)
 const updateQuartalStmt = db.prepare(`
   UPDATE finanzierung_quartale
   SET jahr = @jahr, quartal = @quartal, einnahmen_spenden_cents = @einnahmen_spenden_cents, einnahmen_partner_cents = @einnahmen_partner_cents,
-      kosten_cents = @kosten_cents, spenden_weitergegeben_cents = @spenden_weitergegeben_cents, notiz = @notiz, updated_at = datetime('now')
+      kosten_cents = @kosten_cents, spenden_weitergegeben_cents = @spenden_weitergegeben_cents, reserve_entnahme_cents = @reserve_entnahme_cents,
+      notiz = @notiz, updated_at = datetime('now')
   WHERE id = @id`)
 const deleteQuartalStmt = db.prepare('DELETE FROM finanzierung_quartale WHERE id = ?')
 
@@ -230,6 +192,7 @@ function publicQuartal(row) {
     einnahmenPartnerCents: row.einnahmen_partner_cents,
     kostenCents: row.kosten_cents,
     spendenWeitergegebenCents: row.spenden_weitergegeben_cents,
+    reserveEntnahmeCents: row.reserve_entnahme_cents,
     notiz: row.notiz
   }
 }
@@ -281,22 +244,49 @@ function deleteQuartal(id) {
   return deleteQuartalStmt.run(id).changes > 0
 }
 
-// Die ganze öffentliche Antwort (GET /api/finanzierung): nur, was der Admin eingetragen hat.
+// „Kosten & Reserve“: Jahreskosten, Saldo, Rücklage „Server-Zukunft“ und die Verteilung je Quartal
+// (lib/finanzierungVerteilung.js) - berechnet, nie gespeichert.
+function finanzen(quartale, posten) {
+  return berechneFinanzen({ quartale, posten, heute: new Date() })
+}
+
+// Die ganze öffentliche Antwort (GET /api/finanzierung): nur, was der Admin eingetragen hat - Posten ohne Id, Notiz und Daten.
 function publicFinanzierung() {
   const hinweis = readSpendenHinweis()
+  const quartale = listQuartaleStmt.all().map(publicQuartal)
+  const posten = listKosten()
+  const rechnung = finanzen(quartale, posten)
   return {
     spendenHinweis: hinweis.text || hinweis.url ? hinweis : null,
     ziel: readZiel(),
-    quartale: listQuartaleStmt.all().map(publicQuartal)
+    quartale,
+    kosten: { proJahrCents: rechnung.kostenProJahrCents, posten: posten.map(publicPosten) },
+    saldoCents: rechnung.saldoCents,
+    ruecklage: rechnung.ruecklage,
+    verteilung: rechnung.verteilung
   }
 }
 
-// Die Admin-Sicht (GET /api/admin/finanzierung): Formularwerte statt null, Quartale mit Id.
+// Die Admin-Sicht (GET /api/admin/finanzierung): Formularwerte statt null, Quartale und Posten mit Id, dazu die Prognose
+// („Du bist … im Minus“, „bis Jahresende fehlen …“).
 function adminFinanzierung() {
+  const quartale = listQuartale()
+  const posten = listKosten()
+  const rechnung = finanzen(quartale, posten)
   return {
     spendenHinweis: readSpendenHinweis(),
     ziel: readZiel() || { ...EMPTY_ZIEL },
-    quartale: listQuartale()
+    quartale,
+    kosten: { proJahrCents: rechnung.kostenProJahrCents, posten },
+    prognose: {
+      kostenBisherCents: rechnung.kostenBisherCents,
+      spendenBisherCents: rechnung.spendenBisherCents,
+      saldoCents: rechnung.saldoCents,
+      restKostenJahrCents: rechnung.restKostenJahrCents,
+      prognoseJahresendeCents: rechnung.prognoseJahresendeCents
+    },
+    ruecklage: rechnung.ruecklage,
+    verteilung: rechnung.verteilung
   }
 }
 
@@ -318,5 +308,6 @@ module.exports = {
   updateQuartal,
   deleteQuartal,
   publicFinanzierung,
-  adminFinanzierung
+  adminFinanzierung,
+  verteileUeberschuss
 }

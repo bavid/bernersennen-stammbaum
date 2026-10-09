@@ -157,6 +157,7 @@ describe('AdminFinanzierung', () => {
       einnahmenPartnerCents: 0,
       kostenCents: 8900,
       spendenWeitergegebenCents: 3000,
+      reserveEntnahmeCents: 0,
       notiz: 'Server'
     })
     expect(container.querySelector('.admin-quartal-form')).toBeNull()

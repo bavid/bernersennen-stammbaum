@@ -5,7 +5,8 @@ const config = require('../config')
 const { requireAdmin } = require('../middleware/admin')
 const { noStore } = require('../lib/noStoreResponse')
 const { cleanId } = require('../lib/validate')
-const { AKTION, logAdminAction, quartalZiel } = require('../lib/adminLog')
+const { AKTION, logAdminAction, quartalZiel, kostenZiel } = require('../lib/adminLog')
+const { createKosten, updateKosten, deleteKosten } = require('../lib/finanzierungKosten')
 const {
   EMPTY_ZIEL,
   adminFinanzierung,
@@ -27,11 +28,15 @@ const {
 // - POST   /finanzierung/quartale              { jahr, quartal, …Cents, notiz }    -> 201 Quartal
 // - PUT    /finanzierung/quartale/:id          dito                                -> Quartal
 // - DELETE /finanzierung/quartale/:id                                              -> 204
+// - POST   /finanzierung/kosten                { titel, betragCents, intervall, ab, bis, notiz } -> 201 Posten
+// - PUT    /finanzierung/kosten/:id            dito                                -> Posten
+// - DELETE /finanzierung/kosten/:id                                                -> 204
 const router = express.Router()
 
 const ZIEL_HINWEIS = 'einstellung:finanzierung-spenden-hinweis'
 const ZIEL_ZIEL = 'einstellung:finanzierung-ziel'
 const NOT_FOUND = 'Dieses Quartal gibt es nicht'
+const KOSTEN_NOT_FOUND = 'Diesen Kosten-Posten gibt es nicht'
 
 router.use((req, res, next) => {
   if (!config.adminPasswordHash) return res.status(404).json({ error: 'Nicht gefunden' })
@@ -95,6 +100,35 @@ router.delete('/finanzierung/quartale/:id', guarded, (req, res) => {
   const id = cleanId(req.params.id)
   if (!id || !deleteQuartal(id)) return res.status(404).json({ error: NOT_FOUND })
   logAdminAction(AKTION.finanzierungQuartalGeloescht, quartalZiel(id))
+  res.status(204).end()
+})
+
+router.post('/finanzierung/kosten', guarded, (req, res, next) => {
+  try {
+    const posten = createKosten(req.body)
+    logAdminAction(AKTION.finanzierungKostenAngelegt, kostenZiel(posten.id))
+    res.status(201).json(posten)
+  } catch (err) {
+    sendError(res, next, err)
+  }
+})
+
+router.put('/finanzierung/kosten/:id', guarded, (req, res, next) => {
+  try {
+    const id = cleanId(req.params.id)
+    const posten = id ? updateKosten(id, req.body) : null
+    if (!posten) return res.status(404).json({ error: KOSTEN_NOT_FOUND })
+    logAdminAction(AKTION.finanzierungKostenGeaendert, kostenZiel(id))
+    res.json(posten)
+  } catch (err) {
+    sendError(res, next, err)
+  }
+})
+
+router.delete('/finanzierung/kosten/:id', guarded, (req, res) => {
+  const id = cleanId(req.params.id)
+  if (!id || !deleteKosten(id)) return res.status(404).json({ error: KOSTEN_NOT_FOUND })
+  logAdminAction(AKTION.finanzierungKostenGeloescht, kostenZiel(id))
   res.status(204).end()
 })
 

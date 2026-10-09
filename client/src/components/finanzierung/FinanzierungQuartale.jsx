@@ -5,6 +5,8 @@ import { balkenBreiten, quartalLabel, quartalSummen } from '../../lib/finanzieru
 // (Spenden und Partner zusammen), Kosten des Betriebs, weitergegebene Spenden - an EINER Skala über alle Quartale. Keine
 // Diagramm-Bibliothek: eine Liste mit Beschreibungsliste je Quartal, die Balken sind reine Darstellung (aria-hidden), die
 // Zahlen stehen als Text daneben. Ohne Quartale der ruhige Leerzustand.
+// verteilung (optional, GET /api/finanzierung): je Quartal die Spendenrechnung (server/lib/finanzierungVerteilung.js) -
+// dann zählen bei „Kosten“ auch die laufenden Posten, und eine Zeile nennt Rücklage und Spendenanteil des Überschusses.
 
 export const QUARTALE_LEER = 'Die ersten Zahlen veröffentlichen wir nach dem ersten Quartal.'
 
@@ -14,7 +16,21 @@ const ROWS = [
   { key: 'weitergegeben', label: 'Weitergegeben' }
 ]
 
-function QuartalRow({ quartal, breiten }) {
+function VerteilungZeile({ zeile }) {
+  if (!zeile) return null
+  if (!zeile.ueberschussCents) {
+    return <p className="finanz-quartal-verteilung">Kein Überschuss in diesem Quartal – nichts zu verteilen.</p>
+  }
+  return (
+    <p className="finanz-quartal-verteilung">
+      Überschuss {formatEuroCents(zeile.ueberschussCents)}: Rücklage {formatEuroCents(zeile.reserveCents)} ({zeile.anteilProzent} %) · zum Spenden{' '}
+      {formatEuroCents(zeile.gespendetCents)}
+      {zeile.entnahmeCents > 0 && <> · aus der Rücklage entnommen {formatEuroCents(zeile.entnahmeCents)}</>}
+    </p>
+  )
+}
+
+function QuartalRow({ quartal, breiten, zeile }) {
   const summen = quartalSummen(quartal)
   return (
     <li className="finanz-quartal">
@@ -36,11 +52,21 @@ function QuartalRow({ quartal, breiten }) {
         Spenden {formatEuroCents(quartal.einnahmenSpendenCents)} · Partner {formatEuroCents(quartal.einnahmenPartnerCents)}
         {quartal.notiz && <> · {quartal.notiz}</>}
       </p>
+      <VerteilungZeile zeile={zeile} />
     </li>
   )
 }
 
-export default function FinanzierungQuartale({ quartale }) {
+// Mit Verteilung: die Kosten des Quartals samt laufender Posten (wie die Rechnung des Servers).
+function mitVerteilung(quartale, verteilung) {
+  const zeilen = new Map((verteilung || []).map((zeile) => [`${zeile.jahr}-${zeile.quartal}`, zeile]))
+  return quartale.map((quartal) => {
+    const zeile = zeilen.get(`${quartal.jahr}-${quartal.quartal}`) || null
+    return { quartal: zeile ? { ...quartal, kostenCents: zeile.kostenCents } : quartal, zeile }
+  })
+}
+
+export default function FinanzierungQuartale({ quartale, verteilung = null }) {
   if (!quartale?.length) {
     return (
       <p className="finanz-empty" role="note">
@@ -48,11 +74,12 @@ export default function FinanzierungQuartale({ quartale }) {
       </p>
     )
   }
-  const breiten = balkenBreiten(quartale)
+  const rows = mitVerteilung(quartale, verteilung)
+  const breiten = balkenBreiten(rows.map((row) => row.quartal))
   return (
     <ul className="finanz-quartale" aria-label="Zahlen je Quartal">
-      {quartale.map((quartal, index) => (
-        <QuartalRow key={`${quartal.jahr}-${quartal.quartal}`} quartal={quartal} breiten={breiten[index]} />
+      {rows.map(({ quartal, zeile }, index) => (
+        <QuartalRow key={`${quartal.jahr}-${quartal.quartal}`} quartal={quartal} breiten={breiten[index]} zeile={zeile} />
       ))}
     </ul>
   )

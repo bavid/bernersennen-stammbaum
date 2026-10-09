@@ -11,6 +11,7 @@ import RedeemForm from '../components/RedeemForm.jsx'
 import RecoverForm from '../components/RecoverForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
 import InstallHint from '../components/InstallHint.jsx'
+import CommunityTicker from '../components/CommunityTicker.jsx'
 import { isPartnerArea } from '../lib/areas.js'
 
 const REDEEM_HINT = 'Das ist ein Einladungscode – löst ihn ein, um eure Chronik anzulegen.'
@@ -206,6 +207,9 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
           </div>
         )}
       </section>
+
+      {/* Laufband „Zahlen aus der Gemeinschaft“ - unten über dem Fuß, damit der schlanke Streifen oben schlank bleibt. */}
+      <CommunityTicker fallback />
 
       <footer className="login-footer">
         {/* Phase 5 Task 4: Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung (PartnerInfoPage). */}

@@ -1,0 +1,163 @@
+/* Laufband „Zahlen aus der Gemeinschaft“ (CommunityTicker): eine schlanke Papier-Zeile (mind. 44 px), Einträge durch „·“
+   getrennt. Bewegung nur per transform (doppelter Inhalt, -50 % = nahtlos), Halt bei Hover/Fokus; ohne Bewegung
+   (prefers-reduced-motion oder angehalten) eine ruhige, umbrechende Zeile. Nur Tokens aus tokens.css/palettes.css. */
+
+.community-ticker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border-block: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.community-ticker > svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--rust);
+}
+
+.community-ticker a {
+  color: var(--rust-deep);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.community-ticker a:hover {
+  color: var(--rust);
+}
+
+.community-ticker-empty {
+  margin: 0;
+}
+
+/* --- Laufend ------------------------------------------------------------------------------------------------------- */
+
+.community-ticker-viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  /* Weiche Ränder, damit die Einträge nicht hart abgeschnitten wirken. */
+  mask-image: linear-gradient(90deg, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+}
+
+.community-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: community-ticker-run var(--ticker-duration, 75s) linear infinite;
+  will-change: transform;
+}
+
+.community-ticker:hover .community-ticker-track,
+.community-ticker:focus-within .community-ticker-track {
+  animation-play-state: paused;
+}
+
+.community-ticker-list {
+  display: flex;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.community-ticker-list li::before {
+  content: '·';
+  padding-inline: var(--space-3);
+  color: var(--tan);
+  font-weight: 800;
+}
+
+@keyframes community-ticker-run {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* --- Ruhig (reduzierte Bewegung oder angehalten) ------------------------------------------------------------------ */
+
+.community-ticker-static {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+  row-gap: var(--space-1);
+}
+
+.community-ticker-static li + li::before {
+  content: '·';
+  padding-inline: var(--space-2);
+  color: var(--tan);
+  font-weight: 800;
+}
+
+.community-ticker-more,
+.community-ticker-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.community-ticker-more {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.community-ticker-toggle svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.community-ticker-more:hover,
+.community-ticker-toggle:hover {
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+.community-ticker-more:focus-visible,
+.community-ticker-toggle:focus-visible,
+.community-ticker a:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .community-ticker-track {
+    animation: none;
+  }
+}
+
+/* Einbau: Startseite (unter den Einstiegen, über dem Fuß - über beide Spalten), öffentliche Seiten (unter dem Kopf). */
+.login .community-ticker {
+  grid-column: 1 / -1;
+}
+
+.public-page .community-ticker {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+}

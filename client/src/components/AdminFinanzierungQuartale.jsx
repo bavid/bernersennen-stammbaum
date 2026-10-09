@@ -36,7 +36,7 @@ function QuartalRow({ quartal, formOpen, onEdit, onDelete }) {
   )
 }
 
-export default function AdminFinanzierungQuartale({ quartale, onChanged }) {
+export default function AdminFinanzierungQuartale({ quartale, verteilung = null, onChanged }) {
   const [editing, setEditing] = useState(null) // null = zu, 'neu' = neues Quartal, sonst die Zeile
   const [error, setError] = useState(null)
 
@@ -91,7 +91,7 @@ export default function AdminFinanzierungQuartale({ quartale, onChanged }) {
       )}
       <figure className="admin-finanz-preview admin-finanz-preview-wide">
         <figcaption className="field-hint">Vorschau – so stehen die Zahlen auf der Seite.</figcaption>
-        <FinanzierungQuartale quartale={quartale} />
+        <FinanzierungQuartale quartale={quartale} verteilung={verteilung} />
       </figure>
     </section>
   )

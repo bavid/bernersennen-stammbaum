@@ -422,3 +422,210 @@
   color: var(--alpine);
   font-weight: 700;
 }
+
+/* --- Kosten & Reserve: Spendenrechnung (FinanzierungRegel), Rücklage-Anzeige, Stand und Verteilung je Quartal ---------- */
+
+.finanz-regel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.finanz-regel-hand {
+  --hand-size: 1.2rem;
+  color: var(--alpine);
+}
+
+.finanz-regel-text {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.finanz-regel-stufen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finanz-regel-stufen li {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+  font-variant-numeric: tabular-nums;
+}
+
+.finanz-regel-stufe-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.finanz-regel-stufen strong {
+  color: var(--ink);
+}
+
+/* Die geltende Stufe: Salbei-Wäsche mit Rand - nicht nur über die Farbe, auch über den Rahmen erkennbar. */
+.finanz-regel-stufen li.is-aktuell {
+  background: var(--alpine-wash);
+  box-shadow: inset 0 0 0 1.5px var(--alpine);
+}
+
+.ruecklage-anzeige {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.ruecklage-anzeige-text,
+.ruecklage-anzeige-detail {
+  margin: 0;
+}
+
+.ruecklage-anzeige-detail {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Drei Jahre = voll; die zwei Striche markieren ein und zwei Jahre. */
+.ruecklage-anzeige-bar {
+  position: relative;
+  display: block;
+  height: 0.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.ruecklage-anzeige-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--alpine);
+  transition: width var(--duration-normal) var(--ease-out);
+}
+
+.ruecklage-anzeige-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--surface);
+}
+
+.ruecklage-anzeige-mark.is-1 {
+  left: 33.333%;
+}
+
+.ruecklage-anzeige-mark.is-2 {
+  left: 66.666%;
+}
+
+.finanz-stand {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.finanz-stand-item {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.finanz-stand-item dt {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.finanz-stand-item dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.finanz-stand-value {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.finanz-stand-detail {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.finanz-quartal-verteilung {
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--line);
+  font-size: var(--text-sm);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Admin: Zusammenfassung der Rechnung, Saldo rot im Minus (Farbe UND Text „im Minus“). */
+.admin-kosten-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.admin-kosten-summary > div {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.admin-kosten-summary dt {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.admin-kosten-summary dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-kosten-saldo-text {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.admin-kosten-summary > .is-minus {
+  background: var(--danger-wash);
+}
+
+.admin-kosten-summary > .is-minus dd {
+  color: var(--danger);
+}
+
+.admin-kosten-prognose {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.admin-kosten-prognose.is-minus {
+  color: var(--danger);
+}

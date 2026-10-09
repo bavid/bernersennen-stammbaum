@@ -80,15 +80,35 @@ describe('Admin-Formulare: Euro rein, Cent raus', () => {
       einnahmenPartner: '0,00',
       kosten: '89,00',
       spendenWeitergegeben: '30,00',
+      reserveEntnahme: '',
       notiz: 'Server und Domain'
     })
-    expect(quartalForm(null, 2026)).toEqual({ jahr: '2026', quartal: '1', einnahmenSpenden: '', einnahmenPartner: '', kosten: '', spendenWeitergegeben: '', notiz: '' })
+    expect(quartalForm({ ...QUARTAL, reserveEntnahmeCents: 2500 }).reserveEntnahme).toBe('25,00')
+    expect(quartalForm(null, 2026)).toEqual({
+      jahr: '2026',
+      quartal: '1',
+      einnahmenSpenden: '',
+      einnahmenPartner: '',
+      kosten: '',
+      spendenWeitergegeben: '',
+      reserveEntnahme: '',
+      notiz: ''
+    })
   })
 
   test('quartalPayload: gültig -> Cent und Ganzzahlen; leere Beträge zählen als 0', () => {
     const { payload, errors } = quartalPayload({ jahr: '2026', quartal: '2', einnahmenSpenden: '1.250,50', einnahmenPartner: '', kosten: '89', spendenWeitergegeben: '0', notiz: '  ' })
     expect(errors).toEqual({})
-    expect(payload).toEqual({ jahr: 2026, quartal: 2, einnahmenSpendenCents: 125050, einnahmenPartnerCents: 0, kostenCents: 8900, spendenWeitergegebenCents: 0, notiz: '' })
+    expect(payload).toEqual({
+      jahr: 2026,
+      quartal: 2,
+      einnahmenSpendenCents: 125050,
+      einnahmenPartnerCents: 0,
+      kostenCents: 8900,
+      spendenWeitergegebenCents: 0,
+      reserveEntnahmeCents: 0,
+      notiz: ''
+    })
   })
 
   test('quartalPayload: Fehler je Feld, payload dann null', () => {

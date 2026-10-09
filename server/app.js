@@ -26,6 +26,8 @@ const adminEinladungskarteRoutes = require('./routes/adminEinladungskarte')
 const adminFinanzierungRoutes = require('./routes/adminFinanzierung')
 const adminPartnerSichtbarRoutes = require('./routes/adminPartnerSichtbar')
 const finanzierungRoutes = require('./routes/finanzierung')
+const communityRoutes = require('./routes/community')
+const adminCommunityRoutes = require('./routes/adminCommunity')
 const hinweiseRoutes = require('./routes/hinweise')
 const meineHinweiseRoutes = require('./routes/meineHinweise')
 const vouchersRoutes = require('./routes/vouchers')
@@ -223,12 +225,16 @@ function createApp() {
   // „Überall sichtbar“ eines Partners (Partnerliste).
   app.use('/api/admin', adminFinanzierungRoutes)
   app.use('/api/admin', adminPartnerSichtbarRoutes)
+  // Laufband der Startseite: Partner vorstellen und die Demo-Ausnahme (routes/adminCommunity.js).
+  app.use('/api/admin', adminCommunityRoutes)
   // Phase N Task 5: die laufenden globalen Hinweise fürs Band oben auf jeder Seite - öffentlich, ohne Login.
   // Hinweis-Glocke (Grüße, gelesen) - Prüfung je Route, das öffentliche Band darunter bleibt ohne Login.
   app.use('/api/hinweise', meineHinweiseRoutes)
   app.use('/api/hinweise', hinweiseRoutes)
   // Phase F: die Zahlen für „So finanzieren wir uns“ - öffentlich, ohne Login, cachebar (routes/finanzierung.js).
   app.use('/api/finanzierung', finanzierungRoutes)
+  // Laufband der Startseite: Zahlen aus der Gemeinschaft - öffentlich, ohne Login, cachebar (routes/community.js).
+  app.use('/api/community', communityRoutes)
   app.use('/api/public/partners', partnersRoutes)
   // Phase N Task 1: Gutschein- und Partner-Anfragen (routes/anfragen.js) - vor dem allgemeinen /api/public.
   app.use('/api/public/anfragen', anfragenRoutes)

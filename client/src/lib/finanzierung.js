@@ -17,7 +17,9 @@ export const QUARTAL_AMOUNTS = Object.freeze([
   { key: 'einnahmenSpenden', payloadKey: 'einnahmenSpendenCents', label: 'Einnahmen: Spenden' },
   { key: 'einnahmenPartner', payloadKey: 'einnahmenPartnerCents', label: 'Einnahmen: Partner' },
   { key: 'kosten', payloadKey: 'kostenCents', label: 'Kosten (Betrieb)' },
-  { key: 'spendenWeitergegeben', payloadKey: 'spendenWeitergegebenCents', label: 'Spenden weitergegeben' }
+  { key: 'spendenWeitergegeben', payloadKey: 'spendenWeitergegebenCents', label: 'Spenden weitergegeben' },
+  // „Kosten & Reserve“: was in diesem Quartal aus der Rücklage „Server-Zukunft“ genommen wurde (leer = nichts).
+  { key: 'reserveEntnahme', payloadKey: 'reserveEntnahmeCents', label: 'Aus der Rücklage entnommen' }
 ])
 
 export const INVALID_AMOUNT = 'Bitte einen Betrag in Euro eingeben, z. B. 1.250,50 (nicht negativ).'
@@ -68,7 +70,7 @@ export function isSafeHttpUrl(url) {
 // Formularwerte (Strings) eines Quartals; ohne Zeile ein neues Quartal im gegebenen Jahr.
 export function quartalForm(quartal, defaultJahr = new Date().getFullYear()) {
   if (!quartal) {
-    return { jahr: String(defaultJahr), quartal: '1', einnahmenSpenden: '', einnahmenPartner: '', kosten: '', spendenWeitergegeben: '', notiz: '' }
+    return { jahr: String(defaultJahr), quartal: '1', ...Object.fromEntries(QUARTAL_AMOUNTS.map((field) => [field.key, ''])), notiz: '' }
   }
   return {
     jahr: String(quartal.jahr),
@@ -140,6 +142,7 @@ const SERVER_FIELD_TO_FORM = Object.freeze({
   einnahmenPartnerCents: 'einnahmenPartner',
   kostenCents: 'kosten',
   spendenWeitergegebenCents: 'spendenWeitergegeben',
+  reserveEntnahmeCents: 'reserveEntnahme',
   betragCents: 'betrag'
 })
 

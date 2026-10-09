@@ -9,6 +9,7 @@ vi.mock('../api', () => ({ api: { finanzierung } }))
 
 import FinanzierungPage, { GRUNDSATZ } from './FinanzierungPage.jsx'
 import { QUARTALE_LEER } from '../components/finanzierung/FinanzierungQuartale.jsx'
+import { REGEL_TEXT } from '../lib/finanzierungRuecklage.js'
 
 // Phase F: /finanzierung - „So finanzieren wir uns“. Mit Admin-Daten (Ziel, Quartale, Spenden-Hinweis) und ohne.
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -118,6 +119,43 @@ describe('FinanzierungPage', () => {
     expect(link.getAttribute('rel')).toBe('noopener noreferrer')
     // Kein Zahlungsformular in der App.
     expect(mithelfen.querySelector('form, input')).toBeNull()
+  })
+
+  test('Kosten & Reserve: Regel in Worten, Rücklage-Anzeige, Stand ehrlich im Minus, Verteilung je Quartal', async () => {
+    finanzierung.mockResolvedValue({
+      ...FULL,
+      kosten: { proJahrCents: 28800, posten: [{ titel: 'Server', betragCents: 2300, intervall: 'monat' }, { titel: 'Domain', betragCents: 1200, intervall: 'jahr' }] },
+      saldoCents: -34000,
+      ruecklage: { centsAktuell: 11520, jahreGedeckt: 0.4, anteilProzent: 20 },
+      verteilung: [
+        { jahr: 2026, quartal: 1, kostenCents: 15800, ueberschussCents: 0, anteilProzent: 20, reserveCents: 0, gespendetCents: 0, entnahmeCents: 0, ruecklageDanachCents: 0 },
+        { jahr: 2026, quartal: 2, kostenCents: 15800, ueberschussCents: 8300, anteilProzent: 20, reserveCents: 1660, gespendetCents: 6640, entnahmeCents: 0, ruecklageDanachCents: 1660 }
+      ]
+    })
+    await render()
+    const regel = container.querySelector('.finanz-regel')
+    expect(regel.textContent).toContain(REGEL_TEXT)
+    expect(regel.querySelector('[aria-current="step"]').textContent).toMatch(/unter 1 Jahr.*20 %/)
+    expect(regel.querySelector('.ruecklage-anzeige').textContent).toContain('Rücklage: deckt 0,4 Jahre')
+    const stand = container.querySelector('.finanz-stand')
+    expect(stand.textContent).toMatch(/288,00\s€/)
+    expect(stand.textContent).toMatch(/Server: 23,00\s€ im Monat · Domain: 12,00\s€ im Jahr/)
+    expect(stand.textContent).toMatch(/Zurzeit tragen wir 340,00\s€ selbst\./)
+    const verteilung = [...container.querySelectorAll('.finanz-quartal-verteilung')].map((p) => p.textContent)
+    expect(verteilung[0]).toMatch(/Überschuss 83,00\s€: Rücklage 16,60\s€ \(20 %\) · zum Spenden 66,40\s€/)
+    expect(verteilung[1]).toMatch(/Kein Überschuss/)
+    // Kosten im Balken samt laufender Posten (158 €), nicht nur die einmaligen 89 €.
+    const kosten = container.querySelectorAll('.finanz-quartal')[0].querySelectorAll('.finanz-row')[1]
+    expect(kosten.querySelector('.finanz-value').textContent).toMatch(/^158,00\s€$/)
+  })
+
+  test('ohne Zahlen: die Regel steht da, aber keine Rücklage-Anzeige und kein Stand', async () => {
+    finanzierung.mockResolvedValue({ ...EMPTY, kosten: { proJahrCents: 0, posten: [] }, saldoCents: 0, ruecklage: { centsAktuell: 0, jahreGedeckt: null, anteilProzent: 0 }, verteilung: [] })
+    await render()
+    expect(container.querySelector('.finanz-regel').textContent).toContain(REGEL_TEXT)
+    expect(container.querySelector('.ruecklage-anzeige')).toBeNull()
+    expect(container.querySelector('[aria-current="step"]')).toBeNull()
+    expect(container.querySelector('.finanz-stand')).toBeNull()
   })
 
   test('nur Text ohne Link: Karte ohne Knopf; ein unsicherer Link landet nie im href', async () => {

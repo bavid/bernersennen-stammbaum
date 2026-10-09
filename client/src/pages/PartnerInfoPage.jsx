@@ -5,6 +5,7 @@ import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
 import RequestPartnerForm from '../components/RequestPartnerForm.jsx'
+import CommunityTicker from '../components/CommunityTicker.jsx'
 import { useNoIndex } from '../hooks/useNoIndex.js'
 import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
@@ -145,6 +146,8 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
         <span className="eyebrow">Partner werden</span>
         <h1>Euer Auftritt bei Familie auf Pfoten</h1>
       </div>
+      {/* Laufband „Zahlen aus der Gemeinschaft“ - nur für Besucher, nicht in der angemeldeten App. */}
+      {!family && <CommunityTicker />}
 
       <section className="partner-info-section partner-info-showcase card" aria-labelledby="partner-info-demo-title">
         <div>

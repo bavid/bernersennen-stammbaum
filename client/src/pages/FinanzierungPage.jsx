@@ -5,6 +5,10 @@ import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
 import FinanzierungQuartale from '../components/finanzierung/FinanzierungQuartale.jsx'
 import FinanzierungMithelfen from '../components/finanzierung/FinanzierungMithelfen.jsx'
+import FinanzierungRegel from '../components/finanzierung/FinanzierungRegel.jsx'
+import FinanzierungStand from '../components/finanzierung/FinanzierungStand.jsx'
+import { hatFinanzDaten } from '../lib/finanzierungRuecklage.js'
+import CommunityTicker from '../components/CommunityTicker.jsx'
 import { zielText } from '../lib/finanzierung.js'
 
 // Phase F: /finanzierung - „So finanzieren wir uns“ (docs/superpowers/specs/2026-09-27-marketing-gutscheine-partner-design.md,
@@ -86,7 +90,8 @@ function Ziel({ ziel }) {
   )
 }
 
-function WohinDasGeld({ ziel }) {
+// ruecklage: nur, wenn der Admin Zahlen eingetragen hat - sonst steht die Regel ohne Anzeige da.
+function WohinDasGeld({ ziel, ruecklage }) {
   return (
     <Section id="finanz-wohin" title="Wohin das Geld geht">
       <ol className="finanz-wohin">
@@ -102,6 +107,7 @@ function WohinDasGeld({ ziel }) {
           </li>
         ))}
       </ol>
+      <FinanzierungRegel ruecklage={ruecklage} />
       <Ziel ziel={ziel} />
     </Section>
   )
@@ -129,6 +135,7 @@ function useFinanzierung() {
 // family: die laufende Sitzung oder null - „Zurück“ (PublicHeader) führt ohne Verlauf zur Startseite des Bereichs.
 export default function FinanzierungPage({ family = null }) {
   const { data, error } = useFinanzierung()
+  const mitZahlen = hatFinanzDaten(data)
 
   return (
     <div className="public-page finanz-page">
@@ -138,10 +145,12 @@ export default function FinanzierungPage({ family = null }) {
         <h1>So finanzieren wir uns</h1>
         <p className="hand finanz-hero-hand">{GRUNDSATZ}</p>
       </div>
+      {/* Laufband nur für Besucher - nicht in der angemeldeten App. */}
+      {!family && <CommunityTicker />}
 
       <Grundsatz />
       <WerZahltWas />
-      <WohinDasGeld ziel={data?.ziel} />
+      <WohinDasGeld ziel={data?.ziel} ruecklage={mitZahlen ? data.ruecklage : null} />
 
       <Section id="finanz-zahlen" title="Zahlen je Quartal">
         <p className="muted finanz-zahlen-lede">Einnahmen, Kosten und weitergegebene Spenden – je Quartal, in einfachen Worten.</p>
@@ -155,7 +164,8 @@ export default function FinanzierungPage({ family = null }) {
             {error}
           </p>
         )}
-        {data && <FinanzierungQuartale quartale={data.quartale} />}
+        {mitZahlen && <FinanzierungStand data={data} />}
+        {data && <FinanzierungQuartale quartale={data.quartale} verteilung={data.verteilung} />}
       </Section>
 
       {data && <FinanzierungMithelfen hinweis={data.spendenHinweis} />}

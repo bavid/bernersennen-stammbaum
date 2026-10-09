@@ -80,6 +80,7 @@ test('lib/finanzierung: Prüfung von Spenden-Hinweis, Ziel und Quartal', async (
     einnahmen_partner_cents: 0,
     kosten_cents: 8900,
     spenden_weitergegeben_cents: 3000,
+    reserve_entnahme_cents: 0,
     notiz: 'Erstes Quartal, Server und Domain'
   })
   assert.equal(validateQuartal({ ...QUARTAL, notiz: '' }).notiz, null)
@@ -116,7 +117,15 @@ test('Finanzierung: öffentliche Antwort, Admin-Pflege, Protokoll', async (t) =>
     const res = await get('/api/finanzierung')
     assert.equal(res.status, 200)
     assert.equal(res.headers.get('cache-control'), 'public, max-age=300')
-    assert.deepEqual(res.data, { spendenHinweis: null, ziel: null, quartale: [] })
+    assert.deepEqual(res.data, {
+      spendenHinweis: null,
+      ziel: null,
+      quartale: [],
+      kosten: { proJahrCents: 0, posten: [] },
+      saldoCents: 0,
+      ruecklage: { centsAktuell: 0, jahreGedeckt: null, anteilProzent: 0 },
+      verteilung: []
+    })
   })
 
   await t.test('Admin-Routen: ohne Anmeldung 401, jede Antwort no-store; unbekannte Admin-Pfade bleiben 404', async () => {
@@ -132,7 +141,11 @@ test('Finanzierung: öffentliche Antwort, Admin-Pflege, Protokoll', async (t) =>
     assert.deepEqual(ok.data, {
       spendenHinweis: { text: '', url: null },
       ziel: { titel: '', betragCents: null, empfaenger: null },
-      quartale: []
+      quartale: [],
+      kosten: { proJahrCents: 0, posten: [] },
+      prognose: { kostenBisherCents: 0, spendenBisherCents: 0, saldoCents: 0, restKostenJahrCents: 0, prognoseJahresendeCents: 0 },
+      ruecklage: { centsAktuell: 0, jahreGedeckt: null, anteilProzent: 0 },
+      verteilung: []
     })
   })
 
@@ -209,8 +222,8 @@ test('Finanzierung: öffentliche Antwort, Admin-Pflege, Protokoll', async (t) =>
 
     const pub = await get('/api/finanzierung')
     assert.deepEqual(pub.data.quartale, [
-      { jahr: 2026, quartal: 2, einnahmenSpendenCents: 12050, einnahmenPartnerCents: 0, kostenCents: 8900, spendenWeitergegebenCents: 3000, notiz: null },
-      { jahr: 2026, quartal: 1, einnahmenSpendenCents: 12050, einnahmenPartnerCents: 0, kostenCents: 9000, spendenWeitergegebenCents: 3000, notiz: 'Erstes Quartal, Server und Domain' }
+      { jahr: 2026, quartal: 2, einnahmenSpendenCents: 12050, einnahmenPartnerCents: 0, kostenCents: 8900, spendenWeitergegebenCents: 3000, reserveEntnahmeCents: 0, notiz: null },
+      { jahr: 2026, quartal: 1, einnahmenSpendenCents: 12050, einnahmenPartnerCents: 0, kostenCents: 9000, spendenWeitergegebenCents: 3000, reserveEntnahmeCents: 0, notiz: 'Erstes Quartal, Server und Domain' }
     ])
     // Öffentlich ohne Ids und Zeitstempel.
     assert.equal('id' in pub.data.quartale[0], false)

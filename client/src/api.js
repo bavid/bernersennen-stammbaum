@@ -59,6 +59,8 @@ export const api = {
   config: () => request('/config'),
   // Phase F: „So finanzieren wir uns“ (/finanzierung, server/routes/finanzierung.js) - ohne Login, cachebar.
   finanzierung: () => request('/finanzierung'),
+  // Laufband der Startseite (server/routes/community.js): Zahlen aus der Gemeinschaft - ohne Login, cachebar.
+  community: () => request('/community'),
   // Globale Hinweise fürs Band oben (Phase N Task 5, server/routes/hinweise.js): ohne Login, höchstens fünf laufende,
   // neueste zuerst -> { hinweise: [{ id, titel, text, stufe }] }.
   hinweise: () => request('/hinweise'),
@@ -338,9 +340,17 @@ export const api = {
     createFinanzierungQuartal: (quartal) => request('/admin/finanzierung/quartale', json('POST', quartal)),
     updateFinanzierungQuartal: (id, quartal) => request(`/admin/finanzierung/quartale/${id}`, json('PUT', quartal)),
     deleteFinanzierungQuartal: (id) => request(`/admin/finanzierung/quartale/${id}`, { method: 'DELETE' }),
+    // „Kosten & Reserve“: laufende Kosten-Posten (server/routes/adminFinanzierung.js) - { titel, betragCents, intervall, ab, bis, notiz }.
+    createFinanzierungKosten: (posten) => request('/admin/finanzierung/kosten', json('POST', posten)),
+    updateFinanzierungKosten: (id, posten) => request(`/admin/finanzierung/kosten/${id}`, json('PUT', posten)),
+    deleteFinanzierungKosten: (id) => request(`/admin/finanzierung/kosten/${id}`, { method: 'DELETE' }),
     // Phase F: „Überall sichtbar“ eines Partners vom Team ausschalten und sperren (erlaubt: false) oder wieder erlauben
     // (erlaubt: true) - server/routes/adminPartnerSichtbar.js; einschalten tut der Partner selbst.
     setPartnerUeberallErlaubt: (id, erlaubt) => request(`/admin/partners/${id}/ueberall-sichtbar`, json('PUT', { erlaubt })),
+    // Laufband der Startseite (server/routes/adminCommunity.js): Partner vorstellen (höchstens drei) und die Demo-Ausnahme.
+    setPartnerVorgestellt: (id, an) => request(`/admin/partners/${id}/vorgestellt`, json('PUT', { an })),
+    community: () => request('/admin/community'),
+    setCommunityDemoPartner: (erlaubt) => request('/admin/community/demo-partner', json('PUT', { erlaubt })),
 
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),

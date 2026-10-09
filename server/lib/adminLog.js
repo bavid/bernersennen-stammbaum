@@ -44,7 +44,19 @@ const AKTION = Object.freeze({
   // Phase F: das Team hat „Überall sichtbar“ eines Partners ausgeschaltet und gesperrt bzw. wieder erlaubt
   // (routes/adminPartnerSichtbar.js), ziel 'partner:<id>'.
   partnerUeberallGesperrt: 'partner-ueberall-gesperrt',
-  partnerUeberallErlaubt: 'partner-ueberall-erlaubt'
+  partnerUeberallErlaubt: 'partner-ueberall-erlaubt',
+  // „Kosten & Reserve“: ein laufender Kosten-Posten angelegt, geändert oder gelöscht (routes/adminFinanzierung.js), ziel
+  // 'kosten:<id>' - nie Beträge oder Titel.
+  finanzierungKostenAngelegt: 'finanzierung-kosten-angelegt',
+  finanzierungKostenGeaendert: 'finanzierung-kosten-geaendert',
+  finanzierungKostenGeloescht: 'finanzierung-kosten-geloescht',
+  // Startseite: der Admin stellt einen Partner im Laufband vor bzw. nimmt ihn heraus (routes/adminPartnerVorgestellt.js),
+  // ziel 'partner:<id>'.
+  partnerVorgestellt: 'partner-vorgestellt',
+  partnerNichtVorgestellt: 'partner-nicht-vorgestellt',
+  // Startseite: die Demo-Ausnahme des Laufbands ein- oder ausgeschaltet (routes/adminCommunity.js), ziel
+  // 'einstellung:community-demo-partner'.
+  communityDemoPartnerGeaendert: 'community-demo-partner-geaendert'
 })
 
 const DEFAULT_LIMIT = 50
@@ -77,6 +89,10 @@ function quartalZiel(quartalId) {
   return `quartal:${quartalId}`
 }
 
+function kostenZiel(kostenId) {
+  return `kosten:${kostenId}`
+}
+
 function logAdminAction(aktion, ziel) {
   insertStmt.run(aktion, ziel)
 }
@@ -103,6 +119,7 @@ module.exports = {
   terminZiel,
   hinweisZiel,
   quartalZiel,
+  kostenZiel,
   logAdminAction,
   cleanLimit,
   recentAdminLog
