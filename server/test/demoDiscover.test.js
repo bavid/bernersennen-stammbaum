@@ -264,7 +264,9 @@ test('Demo-Inhalte für "Entdecken": angelegt, ersetzbar, strikt getrennt von ec
     assert.equal(orphanPartnerRefs, 0, 'keine Empfehlung zeigt auf einen gelöschten Partner')
 
     for (const file of oldImages) assert.equal(fs.existsSync(path.join(partnerMediaDir, file)), false, `altes Bild ${file} ist weg`)
-    const liveImages = rows.map((r) => r.bild_file).filter(Boolean)
+    // Dazu die Logos der Demo-Partner (seed/demo-entdecken-partners.js) - auch sie liegen in partner-media.
+    const logos = db.prepare('SELECT logo_file FROM partners WHERE logo_file IS NOT NULL').all().map((r) => r.logo_file)
+    const liveImages = [...rows.map((r) => r.bild_file).filter(Boolean), ...logos]
     assert.deepEqual(fs.readdirSync(partnerMediaDir).sort(), liveImages.sort(), 'keine verwaisten Bilddateien')
 
     assert.deepEqual(snapshotReal(), realBefore, 'echte Empfehlung, Einstellungen, Bericht und Klicks unverändert')

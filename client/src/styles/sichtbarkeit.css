@@ -1,0 +1,170 @@
+/* Einstellungen › Wer sieht was (components/sichtbarkeit/*) - ruhig, eine Spalte am Handy, zwei Karten breit am Rechner. */
+
+.sicht-legende-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.sicht-legende-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.sicht-legende-item {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.sicht-legende-item dt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sicht-legende-item dd {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.sicht-tabs {
+  margin-top: var(--space-4);
+}
+
+.sicht-panel {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+
+.sicht-tiere {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 900px) {
+  .sicht-tiere {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.sicht-tier {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+.sicht-tier-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sicht-tier-head h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-lg);
+}
+
+.sicht-lines {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.sicht-lines li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sicht-tier-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.sicht-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sicht-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sicht-filter-chips .chip[aria-pressed='true'] {
+  background: var(--tone-ok-bg);
+  color: var(--tone-ok-ink);
+  border-color: currentColor;
+}
+
+.sicht-alle-privaten {
+  justify-self: start;
+  margin-top: var(--space-3);
+}
+
+.sicht-erinnerung .settings-row-main {
+  gap: var(--space-1);
+}
+
+.sicht-erinnerung .ui-chip {
+  align-self: flex-start;
+}
+
+.sicht-vorschau {
+  margin-top: var(--space-3);
+}
+
+.sicht-vorschau-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sicht-vorschau-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sicht-vorschau-list li > div {
+  display: grid;
+}
+
+@media (max-width: 520px) {
+  .sicht-legende-item {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* Symbole in Zeilen und Legende: klein wie im übrigen Text (Icon.jsx bringt keine eigene Größe mit). */
+.sicht-legende-item dt svg,
+.sicht-lines svg {
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
+}

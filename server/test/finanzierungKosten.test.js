@@ -30,11 +30,12 @@ test('lib/finanzierungKosten: Prüfung eines Postens', () => {
   const { validateKosten, KOSTEN_LIMITS } = require('../lib/finanzierungKosten')
   assert.deepEqual(KOSTEN_LIMITS, { titel: 80, notiz: 200 })
 
-  assert.deepEqual(validateKosten(SERVER), { titel: 'Server', betrag_cents: 2300, intervall: 'monat', ab: '2026-01-01', bis: null, notiz: 'Hetzner' })
-  assert.deepEqual(validateKosten({ titel: 'Domain', betragCents: 1200, intervall: 'jahr', ab: '2026-03-15', bis: '2027-03-14' }), {
+  assert.deepEqual(validateKosten(SERVER), { titel: 'Server', betrag_cents: 2300, intervall: 'monat', kategorie: 'technik', ab: '2026-01-01', bis: null, notiz: 'Hetzner' })
+  assert.deepEqual(validateKosten({ titel: 'Domain', betragCents: 1200, intervall: 'jahr', kategorie: 'druck', ab: '2026-03-15', bis: '2027-03-14' }), {
     titel: 'Domain',
     betrag_cents: 1200,
     intervall: 'jahr',
+    kategorie: 'druck',
     ab: '2026-03-15',
     bis: '2027-03-14',
     notiz: null
@@ -47,6 +48,7 @@ test('lib/finanzierungKosten: Prüfung eines Postens', () => {
   expectError(() => validateKosten({ ...SERVER, betragCents: 12.5 }), 'betragCents', /Betrag/)
   expectError(() => validateKosten({ ...SERVER, betragCents: undefined }), 'betragCents', /Betrag/)
   expectError(() => validateKosten({ ...SERVER, intervall: 'woche' }), 'intervall', /Monat oder Jahr/)
+  expectError(() => validateKosten({ ...SERVER, kategorie: 'werbung' }), 'kategorie', /Kategorie/)
   expectError(() => validateKosten({ ...SERVER, ab: '2026-13-01' }), 'ab', /Datum/)
   expectError(() => validateKosten({ ...SERVER, ab: undefined }), 'ab', /Datum/)
   expectError(() => validateKosten({ ...SERVER, bis: '2025-12-31' }), 'bis', /nach dem Beginn/)
@@ -113,7 +115,7 @@ test('Kosten & Reserve: Admin-CRUD, Protokoll und die Rechnung in beiden Antwort
     assert.equal(res.headers.get('cache-control'), 'no-store')
     serverId = res.data.id
     assert.ok(Number.isInteger(serverId))
-    assert.deepEqual(res.data, { id: serverId, titel: 'Server', betragCents: 2300, intervall: 'monat', ab: '2026-01-01', bis: null, notiz: 'Hetzner', updatedAt: res.data.updatedAt })
+    assert.deepEqual(res.data, { id: serverId, titel: 'Server', betragCents: 2300, intervall: 'monat', kategorie: 'technik', ab: '2026-01-01', bis: null, notiz: 'Hetzner', updatedAt: res.data.updatedAt })
     assert.deepEqual(adminLog(), [{ aktion: 'finanzierung-kosten-angelegt', ziel: `kosten:${serverId}` }])
   })
 
@@ -140,7 +142,7 @@ test('Kosten & Reserve: Admin-CRUD, Protokoll und die Rechnung in beiden Antwort
     assert.equal(pub.status, 200)
     assert.equal(pub.headers.get('cache-control'), 'public, max-age=300')
     // Posten öffentlich: Titel, Betrag, Intervall - keine Id, keine Notiz, keine Daten.
-    assert.deepEqual(pub.data.kosten.posten, [{ titel: 'Server', betragCents: 2500, intervall: 'monat' }])
+    assert.deepEqual(pub.data.kosten.posten, [{ titel: 'Server', betragCents: 2500, intervall: 'monat', kategorie: 'technik' }])
     // 25 €/Monat × 12 + einmalig 25 € im einzigen Quartal × 4 = 400 €
     assert.equal(pub.data.kosten.proJahrCents, 30000 + 10000)
     assert.equal(typeof pub.data.saldoCents, 'number')

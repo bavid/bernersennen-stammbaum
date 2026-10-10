@@ -160,3 +160,5 @@ router.post('/:slug/contact', contactLimiter, rejectHoneypot, (req, res, next) =
 })
 
 module.exports = router
+// Öffentliches Entdecken (routes/publicEntdecken.js): dieselbe Demo-Regel.
+module.exports.demoAllowed = demoAllowed

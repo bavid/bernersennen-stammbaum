@@ -1,0 +1,174 @@
+/* Rundgang (components/tour): abgedunkelte Fläche mit Ausschnitt, Sprechblase bzw. Blatt, die Frage unten.
+   Die Ebene sperrt die App nicht (pointer-events: none) - nur Sprechblase und Frage nehmen Klicks an. */
+:root {
+  --tour-z: 80;
+  --tour-width: 340px;
+  /* Am Handy liegt unten die Leiste (layout.css .app-nav) - Frage und Blatt bleiben darüber. */
+  --tour-nav-clear: 4.75rem;
+}
+
+.tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--tour-z);
+  pointer-events: none;
+}
+
+.tour-dim {
+  position: absolute;
+  inset: 0;
+}
+
+.tour-dim path {
+  fill: var(--ink);
+  fill-opacity: 0.42;
+}
+
+.tour-ring {
+  fill: none;
+  stroke: var(--rust);
+  stroke-width: 2;
+}
+
+.tour-pop,
+.tour-prompt {
+  pointer-events: auto;
+  position: fixed;
+  z-index: var(--tour-z);
+  width: var(--tour-width);
+  max-width: calc(100% - 2 * var(--space-4));
+  padding: var(--space-5);
+  background: var(--surface-raised);
+  color: var(--text);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  animation: tour-in 180ms ease-out;
+}
+
+.tour-pop:focus,
+.tour-prompt:focus {
+  outline: none;
+}
+
+.tour-pop:focus-visible,
+.tour-prompt:focus-visible {
+  outline: var(--outline-selected) solid var(--focus-color);
+}
+
+.tour-pop-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tour-pop-sheet {
+  left: var(--space-3);
+  right: var(--space-3);
+  width: auto;
+  max-width: none;
+}
+
+.tour-pop-bottom {
+  bottom: calc(var(--tour-nav-clear) + env(safe-area-inset-bottom));
+}
+
+.tour-pop-top {
+  top: var(--space-3);
+}
+
+.tour-kicker {
+  margin: 0 0 var(--space-1);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+}
+
+.tour-title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  line-height: 1.25;
+}
+
+.tour-text {
+  margin: 0 0 var(--space-4);
+  line-height: 1.5;
+}
+
+.tour-note {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.tour-end {
+  display: block;
+  margin: var(--space-3) 0 0 auto;
+  font-size: var(--text-sm);
+}
+
+/* Die Frage: rechts unten am Desktop, am Handy als Blatt über der Leiste. */
+.tour-prompt {
+  right: var(--space-6);
+  bottom: var(--space-6);
+  padding-right: var(--space-10);
+}
+
+.tour-prompt-close {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+}
+
+.tour-prompt-actions {
+  justify-content: flex-start;
+}
+
+.tour-chapters,
+.tour-prompt-foot {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.tour-restart {
+  margin-bottom: var(--space-6);
+}
+
+.tour-restart .tour-chapters {
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 720px) {
+  .tour-prompt {
+    left: var(--space-3);
+    right: var(--space-3);
+    bottom: calc(var(--tour-nav-clear) + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+  }
+}
+
+@keyframes tour-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-pop,
+  .tour-prompt {
+    animation: none;
+  }
+}

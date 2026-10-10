@@ -30,6 +30,8 @@ const AKTION_LABELS = {
   'finanzierung-quartal-geloescht': 'Quartal gelöscht',
   'partner-ueberall-gesperrt': '„Überall sichtbar“ ausgeschaltet und gesperrt',
   'partner-ueberall-erlaubt': '„Überall sichtbar“ wieder erlaubt',
+  'partner-ueberall-freigegeben': 'Antrag „Deutschlandweit“ freigegeben',
+  'partner-ueberall-abgelehnt': 'Antrag „Deutschlandweit“ abgelehnt',
   // Plan 2027 Kap. 6: Landeadressen je Kanal (server/routes/adminLandeadressen.js, ziel 'landeadresse:<id>').
   'landeadresse-angelegt': 'Landeadresse angelegt',
   'landeadresse-geaendert': 'Landeadresse geändert',

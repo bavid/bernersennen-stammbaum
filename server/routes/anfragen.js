@@ -6,6 +6,7 @@ const { ipKeyGenerator } = require('../lib/rateLimitKey')
 const { checkEmailDomain, EMAIL_DOMAIN_RESULT } = require('../lib/emailCheck')
 const { validateAnfrage, insertAnfrage, httpError, EMAIL_UNKNOWN_MESSAGE, TYP } = require('../lib/anfragen')
 const { notify, EREIGNIS } = require('../lib/notify')
+const { termineText } = require('../lib/geschaeftAnfragen')
 
 // Phase N Task 1: öffentliche Anfragen - "Noch keinen Gutschein?" (Login-Seite) und "Partner-Zugang anfragen"
 // (/partner-werden). Eingehängt unter /api/public/anfragen in app.js. Prüfung und Speichern: lib/anfragen.js.
@@ -25,7 +26,8 @@ const anfrageLimiter = rateLimit({
   message: { error: 'Zu viele Anfragen in kurzer Zeit – bitte später noch einmal versuchen.' }
 })
 
-// POST /api/public/anfragen { typ, name?, email, nachricht?, firma?, partnerTyp?, plz?, website }
+// POST /api/public/anfragen { typ, name?, email, nachricht?, firma?, partnerTyp?, plz?, geschaeft?, website }
+// geschaeft: die Geschäftsanfrage von /partner-werden mit Terminvorschlägen (lib/geschaeftAnfragen.js).
 // website ist der Honigtopf (middleware/abuse.js). Die E-Mail muss eine Domain haben, die es gibt (MX, sonst A/AAAA,
 // lib/emailCheck.js) - hängt das DNS, wird die Anfrage trotzdem angenommen. Eine gleiche offene Anfrage aus den
 // letzten 24 Stunden legt nichts neu an, die Antwort ist dieselbe: 201 { ok: true }, nie ein Echo der Eingaben.
@@ -42,7 +44,15 @@ router.post('/', anfrageLimiter, rejectHoneypot, async (req, res, next) => {
     // Phase N Task 2: nur für eine neue Zeile (ein Duplikat meldet nichts), asynchron - die Antwort wartet nicht.
     if (created) {
       const ereignis = clean.typ === TYP.partner ? EREIGNIS.partnerAnfrage : EREIGNIS.gutscheinAnfrage
-      notify(ereignis, { name: clean.name, email: clean.email, firma: clean.firma, partnerTyp: clean.partner_typ })
+      const geschaeft = clean.geschaeft
+      notify(ereignis, {
+        name: clean.name,
+        email: clean.email,
+        firma: clean.firma,
+        partnerTyp: geschaeft ? geschaeft.art : clean.partner_typ,
+        ort: geschaeft ? `${clean.plz} ${geschaeft.ort}` : undefined,
+        termine: geschaeft ? termineText(geschaeft.termine) : undefined
+      })
     }
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })

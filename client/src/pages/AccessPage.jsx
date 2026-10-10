@@ -1,6 +1,7 @@
 import AccessSettings from '../components/AccessSettings.jsx'
 import PartnerTelegramSection from '../components/PartnerTelegramSection.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
+import TourRestart from '../components/tour/TourRestart.jsx'
 import { t } from '../lib/i18n/index.js'
 
 // /zugang (Phase P) - Schlüssel erneuern und eigene Benutzer-Logins für Partner- und Tierheim-Bereiche.
@@ -33,6 +34,7 @@ export default function AccessPage({ family, onFamilyChange }) {
       )}
 
       <PartnerTelegramSection />
+      <TourRestart headingLevel="h2" className="card access-page-card" />
     </div>
   )
 }

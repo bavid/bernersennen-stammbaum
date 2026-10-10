@@ -25,5 +25,10 @@ import vermisst from './vermisst.js'
 import fotoImport from './import.js'
 import admin from './admin.js'
 import fotobuch from './fotobuch.js'
+import spenden from './spenden.js'
+import entdecken from './entdecken.js'
+import tour from './tour.js'
+import sichtbarkeit from './sichtbarkeit.js'
+import geschaeft from './geschaeft.js'
 
-export default { ...fotobuch, ...admin, ...fotoImport, ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...geschaeft, ...spenden, ...sichtbarkeit, ...entdecken, ...tour, ...fotobuch, ...admin, ...fotoImport, ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

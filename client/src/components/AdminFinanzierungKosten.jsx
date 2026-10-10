@@ -5,6 +5,7 @@ import AdminKostenForm from './AdminKostenForm.jsx'
 import FinanzierungRegel from './finanzierung/FinanzierungRegel.jsx'
 import { formatEuroCents } from '../lib/discover.js'
 import { adminSaldoText, postenText, prognoseText } from '../lib/finanzierungRuecklage.js'
+import { kategorieLabel } from '../lib/spendenLive.js'
 import { Button } from './ui/index.js'
 
 // „Kosten & Reserve“ im Reiter „Finanzierung“: die laufenden Kosten als Posten (POST/PUT/DELETE
@@ -51,7 +52,7 @@ function PostenRow({ posten, formOpen, onEdit, onDelete }) {
       <span className="admin-quartal-main">
         <strong>{postenText(posten)}</strong>
         <span className="muted">
-          seit {datum(posten.ab)}
+          {kategorieLabel(posten.kategorie || 'technik', true)} · seit {datum(posten.ab)}
           {posten.bis && <> · bis {datum(posten.bis)}</>}
           {posten.notiz && <> · {posten.notiz}</>}
         </span>
@@ -100,7 +101,7 @@ export default function AdminFinanzierungKosten({ data, onChanged }) {
         )}
       </div>
       <p className="admin-section-intro muted">
-        Laufende Kosten wie Server oder Domain trägst du einmal als Posten ein – einmalige Kosten weiter je Quartal. Daraus rechnet die Seite
+        Laufende Kosten (Server &amp; Technik, Druck &amp; Material, Sonstiges) trägst du einmal als Posten ein – einmalige Kosten weiter je Quartal. Daraus rechnet die Seite
         Jahreskosten, Saldo und die Rücklage „Server-Zukunft“.
       </p>
       {data.kosten && data.prognose && <Zusammenfassung kosten={data.kosten} prognose={data.prognose} />}

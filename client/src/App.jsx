@@ -38,6 +38,7 @@ import PartnersPage from './pages/PartnersPage.jsx'
 import SteckbriefPage from './pages/SteckbriefPage.jsx'
 import LegalPage from './pages/LegalPage.jsx'
 import AreaRoutes from './AreaRoutes.jsx'
+import TourProvider from './components/tour/TourProvider.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 import RouteFallback from './components/RouteFallback.jsx'
@@ -748,26 +749,28 @@ export default function App() {
           {/* Phase W, Schritt 2: zu Besuch steht ein Chip im Kopf der Besuchsseiten (visits/VisitChip) - kein Band mehr oben. */}
           {/* Hinweis-Glocke: Kopf und Start öffnen dasselbe Fenster (HinweiseProvider), die Zahlen stehen in family. */}
           <HinweiseProvider family={family} onFamilyChange={setFamily}>
-            <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
-            {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
-            {isPartnerArea(family) && !onPublicPage && <ViewModeSwitch areaId={family.id} />}
-            {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
-                bliebe beim Wechsel des Bereichs (AreaGate wechselt auf derselben Adresse, z. B. /start aus einer
-                Familie heraus) die alte Seiteninstanz samt Daten des vorherigen Bereichs stehen. Der key erzwingt
-                ein sauberes Neu-Mounten. */}
-            <main className="app-main" key={family.id}>
-              {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
-                  Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
-              {/* Phase U: Hinweis in einer Partner- oder Tierheim-Demo - nur auf /profil, einmal je Sitzung, schließbar. */}
-              {family.isDemo && !family.adminView && isPartnerArea(family) && !onPublicPage && <PartnerDemoGuide />}
-              {onPublicPage ? (
-                publicPage
-              ) : (
-                <Suspense fallback={<RouteFallback />}>
-                  <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={openInvite} />
-                </Suspense>
-              )}
-            </main>
+            <TourProvider family={family} onFamilyChange={setFamily}>
+              <AppHeader family={family} onLogout={handleLogout} onInvite={openInvite} />
+              {/* Partner- und Tierheim-Bereiche: "Bearbeiten | Kundensicht" über jeder Seite (Phase P1). */}
+              {isPartnerArea(family) && !onPublicPage && <ViewModeSwitch areaId={family.id} />}
+              {/* key={family.id}: Seiten laden ihre Daten einmalig in useEffect(…, []) – ohne den key
+                  bliebe beim Wechsel des Bereichs (AreaGate wechselt auf derselben Adresse, z. B. /start aus einer
+                  Familie heraus) die alte Seiteninstanz samt Daten des vorherigen Bereichs stehen. Der key erzwingt
+                  ein sauberes Neu-Mounten. */}
+              <main className="app-main" key={family.id}>
+                {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
+                    Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
+                {/* Phase U: Hinweis in einer Partner- oder Tierheim-Demo - nur auf /profil, einmal je Sitzung, schließbar. */}
+                {family.isDemo && !family.adminView && isPartnerArea(family) && !onPublicPage && <PartnerDemoGuide />}
+                {onPublicPage ? (
+                  publicPage
+                ) : (
+                  <Suspense fallback={<RouteFallback />}>
+                    <AreaRoutes family={family} onFamilyChange={setFamily} onInvite={openInvite} />
+                  </Suspense>
+                )}
+              </main>
+            </TourProvider>
           </HinweiseProvider>
           <AppFooter family={family} onInvite={openInvite} />
           <Modal open={inviteOpen} title={inviteLabel(family)} onClose={() => setInviteOpen(false)}>

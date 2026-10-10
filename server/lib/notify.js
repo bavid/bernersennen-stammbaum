@@ -83,7 +83,14 @@ const HEADLINES = Object.freeze({
 // Nur mit "Details mitsenden": [Beschriftung, Wert] - leere Werte fallen weg.
 const DETAILS = Object.freeze({
   [EREIGNIS.gutscheinAnfrage]: (daten) => [['Name', daten.name], ['E-Mail', daten.email]],
-  [EREIGNIS.partnerAnfrage]: (daten) => [['Firma', daten.firma], ['Art', daten.partnerTyp], ['Name', daten.name], ['E-Mail', daten.email]],
+  [EREIGNIS.partnerAnfrage]: (daten) => [
+    ['Firma', daten.firma],
+    ['Art', daten.partnerTyp],
+    ['Name', daten.name],
+    ['E-Mail', daten.email],
+    ['Ort', daten.ort],
+    ['Termine', daten.termine]
+  ],
   [EREIGNIS.registrierung]: (daten) => [[daten.art === 'partner' ? 'Partner' : 'Bereich', daten.name]],
   [EREIGNIS.feedback]: (daten) => [['Nachricht', daten.text]],
   [EREIGNIS.beitrag]: (daten) => [['Partner', daten.partnerName], ['Titel', daten.titel]]

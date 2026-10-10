@@ -2,6 +2,8 @@
 // docs/superpowers/plans/2026-09-28-phase-2-partner.md, Task 4. Fiktive Namen, wie vom Plan verlangt.
 // Felder wie bei POST /api/admin/partners (camelCase) - lib/demoPack.js prüft sie mit derselben
 // validatePartner()-Funktion wie der Admin, damit Slug/Kontrast/Züchter-Schutz identisch greifen.
+const { DEMO_ENTDECKEN_PARTNERS } = require('./demo-entdecken-partners')
+
 const DEMO_PARTNERS = [
   {
     slug: 'tierheim-sonnenhang',
@@ -63,7 +65,9 @@ const DEMO_PARTNERS = [
     status: 'aktiv',
     plz: '26122',
     istPartner: false
-  }
+  },
+  // Öffentliches Entdecken: zwölf weitere Partner in mehreren Städten (seed/demo-entdecken-partners.js).
+  ...DEMO_ENTDECKEN_PARTNERS
 ]
 
 module.exports = { DEMO_PARTNERS }

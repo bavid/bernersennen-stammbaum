@@ -16,6 +16,10 @@ const { isVisiting } = require('./visits')
 const MAX_NAME_LENGTH = 40
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/
 const BILD_ARTS = ['zuhause', 'rudel']
+// Rundgang (Client components/tour): je Zuhause bzw. klassischem Familien-Login - 'neu' fragt beim nächsten Start einmal
+// nach, 'fertig' (gesehen oder beendet) und 'aus' („Nicht mehr fragen“) nicht mehr. Neu gestartet wird er in den
+// Einstellungen › App.
+const RUNDGANG_STATUS = ['neu', 'fertig', 'aus']
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS bereich_profil (
@@ -30,6 +34,10 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `)
+// Spalte nachrüsten (Muster lib/darstellung.js): bestehende Zuhause starten mit 'neu' - sie werden einmal gefragt.
+if (!db.prepare('PRAGMA table_info(bereich_profil)').all().some((column) => column.name === 'rundgang_status')) {
+  db.exec("ALTER TABLE bereich_profil ADD COLUMN rundgang_status TEXT NOT NULL DEFAULT 'neu'")
+}
 
 const bereichStmt = db.prepare('SELECT anzeigename, bild_file FROM bereich_profil WHERE family_id = ?')
 const userStmt = db.prepare('SELECT anzeigename FROM user_profil WHERE user_id = ?')
@@ -42,6 +50,10 @@ const setUserName = db.prepare(`
 const setBildStmt = db.prepare(`
   INSERT INTO bereich_profil (family_id, bild_file) VALUES (?, ?)
   ON CONFLICT (family_id) DO UPDATE SET bild_file = excluded.bild_file, updated_at = datetime('now')`)
+const rundgangStmt = db.prepare('SELECT rundgang_status FROM bereich_profil WHERE family_id = ?')
+const setRundgangStmt = db.prepare(`
+  INSERT INTO bereich_profil (family_id, rundgang_status) VALUES (?, ?)
+  ON CONFLICT (family_id) DO UPDATE SET rundgang_status = excluded.rundgang_status, updated_at = datetime('now')`)
 const familyStmt = db.prepare('SELECT id, art, is_demo FROM families WHERE id = ?')
 // Teilen sich zwei Haushalte eine Familie - oder ist der eine die Familie des anderen (klassischer Login, Mitgliedschaft)?
 const relatedStmt = db.prepare(`
@@ -125,7 +137,21 @@ function memberProfile(familyId) {
   return { anzeigename, bild: bildUrl(familyId) }
 }
 
+function rundgangOf(homeId) {
+  return rundgangStmt.get(homeId)?.rundgang_status || 'neu'
+}
+
+// Wirft 400 bei einem unbekannten Stand.
+function saveRundgang(homeId, status) {
+  if (!RUNDGANG_STATUS.includes(status)) throw httpError(400, 'Unbekannter Stand des Rundgangs')
+  setRundgangStmt.run(homeId, status)
+  return { rundgang: rundgangOf(homeId) }
+}
+
 module.exports = {
+  RUNDGANG_STATUS,
+  rundgangOf,
+  saveRundgang,
   MAX_NAME_LENGTH,
   memberProfile,
   cleanAnzeigename,

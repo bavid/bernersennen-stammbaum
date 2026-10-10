@@ -4,10 +4,11 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { publicPartners } = vi.hoisted(() => ({ publicPartners: vi.fn() }))
-vi.mock('../api', () => ({ api: { publicPartners } }))
+const { publicEntdecken } = vi.hoisted(() => ({ publicEntdecken: vi.fn() }))
+vi.mock('../api', () => ({ api: { publicEntdecken } }))
 
 import PartnersPage from './PartnersPage.jsx'
+import { setLang } from '../lib/i18n/index.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -26,18 +27,11 @@ afterEach(() => {
     act(() => root.unmount())
     root = null
   }
-  if (container) {
-    container.remove()
-    container = null
-  }
-  publicPartners.mockReset()
+  container?.remove()
+  container = null
+  publicEntdecken.mockReset()
+  setLang('de')
 })
-
-// Phase V1: die Ortswahl ist zugeklappt ("Überall · Ort wählen") - erst aufklappen, dann tippen.
-async function plzInput() {
-  if (!container.querySelector('#location-plz')) await act(async () => container.querySelector('.location-summary-toggle').click())
-  return container.querySelector('#location-plz')
-}
 
 async function render() {
   container = document.createElement('div')
@@ -53,193 +47,110 @@ async function render() {
   return container
 }
 
-const sonnenhang = {
-  id: 1,
-  slug: 'tierheim-sonnenhang',
-  name: 'Tierheim Sonnenhang',
-  typ: 'tierheim',
-  plz: '10115',
-  ort: 'Berlin',
-  lat: 52.52,
-  lon: 13.41,
-  website: null,
-  kontakt_email: null,
-  kontakt_telefon: null,
-  logoUrl: null,
-  badge: 'partner'
-}
-
-const pfotenglueck = {
-  id: 2,
-  slug: 'hundeschule-pfotengluck',
-  name: 'Hundeschule Pfotenglück',
+const card = (slug, extra = {}) => ({
+  slug,
+  name: extra.name || slug,
   typ: 'hundeschule',
   plz: '20095',
   ort: 'Hamburg',
-  lat: 53.55,
-  lon: 10.0,
-  website: null,
-  kontakt_email: null,
-  kontakt_telefon: null,
-  logoUrl: null,
-  badge: 'geprueft'
-}
-
-describe('PartnersPage – Liste ohne PLZ', () => {
-  test('lädt beim Öffnen alle Partner ohne plz-Parameter und zeigt sie als Karten', async () => {
-    publicPartners.mockResolvedValue([sonnenhang, pfotenglueck])
-    await render()
-    await act(async () => Promise.resolve())
-
-    expect(publicPartners).toHaveBeenCalledWith({})
-    expect(container.textContent).toContain('Tierheim Sonnenhang')
-    expect(container.textContent).toContain('Hundeschule Pfotenglück')
-    expect(container.querySelectorAll('.partner-card').length).toBe(2)
-  })
-
-  test('zeigt einen leeren Zustand, wenn keine Partner gefunden werden', async () => {
-    publicPartners.mockResolvedValue([])
-    await render()
-    await act(async () => Promise.resolve())
-    expect(container.textContent).toContain('Keine Partner gefunden')
-  })
+  bildUrl: '/partner-media/0f1e2d3c-4b5a-6978-8a9b-0c1d2e3f4a5b.jpg',
+  bildArt: 'logo',
+  kurztext: 'Training mit Herz.',
+  badge: 'partner',
+  ...extra
 })
 
-// Phase V1: dezente Ortswahl - die Liste steht sofort da, oben nur "Überall · Ort wählen".
-describe('PartnersPage – dezente Ortswahl', () => {
-  test('öffnet mit allen Partnern und "Überall · Ort wählen", nach einer Suche "In der Nähe von 10115 · ändern"', async () => {
-    publicPartners.mockResolvedValue([])
+const weit = card('tierschutznetz-weitblick', { name: 'Tierschutznetz Weitblick', typ: 'tierheim', deutschlandweit: true })
+const elbe = card('welpenschule-elbkiesel', { name: 'Welpenschule Elbkiesel' })
+const answer = (overrides = {}) => ({ deutschlandweit: [weit], treffer: [elbe], gesamt: 1, seite: 1, seiten: 1, mehr: false, ...overrides })
+const buttonByText = (text) => [...container.querySelectorAll('button')].find((btn) => btn.textContent.trim().startsWith(text))
+
+describe('PartnersPage – öffentliches Entdecken', () => {
+  test('lädt ohne Filter, zeigt Text, „Deutschlandweit“ und Treffer mit Portal-Link', async () => {
+    publicEntdecken.mockResolvedValue(answer())
     await render()
-    expect(container.querySelector('#location-plz')).toBeNull()
-    expect(container.querySelector('.location-summary').textContent).toContain('Überall')
-    expect(container.querySelector('.location-summary-toggle').textContent).toBe('Ort wählen')
-    const plzField = await plzInput()
-    await act(async () => setInputValue(plzField, '10115'))
-    await act(async () => container.querySelector('.location-picker').requestSubmit())
-    expect(container.querySelector('#location-plz')).toBeNull()
-    expect(container.querySelector('.location-summary').textContent).toContain('In der Nähe von 10115')
-  })
-})
 
-describe('PartnersPage – Liste mit PLZ', () => {
-  test('das Absenden mit einer 5-stelligen PLZ ruft api.publicPartners mit plz und radius auf', async () => {
-    publicPartners.mockResolvedValue([sonnenhang, pfotenglueck])
+    expect(publicEntdecken).toHaveBeenCalledWith({ q: undefined, typ: undefined, plz: undefined, radius: undefined, seite: undefined })
+    expect(container.querySelector('h1').textContent).toBe('Entdecken')
+    expect(container.textContent).toContain('sichtbar, weil sie mitmachen. Keine fremde Werbung, kein Tracking, kein Datenhandel.')
+    expect(container.textContent).not.toMatch(/ohne Werbung/)
+    const weitSection = container.querySelector('.entdecken-weit')
+    expect(weitSection.querySelector('h2').textContent).toContain('Deutschlandweit')
+    expect(weitSection.textContent).toContain('Tierschutznetz Weitblick')
+    expect(weitSection.querySelector('.entdecken-card-weit').textContent).toBe('deutschlandweit')
+    const link = container.querySelector('#entdecken-treffer a')
+    expect(link.getAttribute('href')).toBe('/p/welpenschule-elbkiesel')
+    expect(container.querySelector('#entdecken-treffer').textContent).toContain('20095 Hamburg')
+  })
+
+  test('Suche und Typ-Umschalter fragen den Server mit q und typ', async () => {
+    publicEntdecken.mockResolvedValue(answer())
     await render()
-    await act(async () => Promise.resolve())
-    publicPartners.mockClear()
-    publicPartners.mockResolvedValue([sonnenhang])
 
-    const plzField = await plzInput()
-    await act(async () => setInputValue(plzField, '10115'))
-    await act(async () => container.querySelector('.location-picker').requestSubmit())
+    await act(async () => setInputValue(container.querySelector('input[type="search"]'), 'Köln'))
+    await act(async () => container.querySelector('form[role="search"]').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(publicEntdecken).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'Köln', typ: undefined }))
 
-    expect(publicPartners).toHaveBeenCalledWith({ plz: '10115', radius: 25 })
-    expect(container.textContent).toContain('Tierheim Sonnenhang')
-    expect(container.textContent).not.toContain('Hundeschule Pfotenglück')
+    await act(async () => buttonByText('Tierheime').click())
+    expect(publicEntdecken).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'Köln', typ: 'tierheim,vermittlung' }))
+    expect(buttonByText('Tierheime').getAttribute('aria-pressed')).toBe('true')
+    expect(buttonByText('Alle').getAttribute('aria-pressed')).toBe('false')
   })
 
-  test('zeigt eine Fehlermeldung bei unbekannter PLZ (400 vom Server)', async () => {
-    publicPartners.mockResolvedValue([])
+  test('In der Nähe: PLZ + Umkreis gehen mit, eine unvollständige PLZ gibt einen Hinweis statt einer Anfrage', async () => {
+    publicEntdecken.mockResolvedValue(answer())
     await render()
-    await act(async () => Promise.resolve())
-    publicPartners.mockRejectedValue(Object.assign(new Error('Diese Postleitzahl kennen wir nicht'), { status: 400 }))
+    await act(async () => container.querySelector('.location-summary-toggle').click())
 
-    const plzField = await plzInput()
-    await act(async () => setInputValue(plzField, '99999'))
-    await act(async () => container.querySelector('.location-picker').requestSubmit())
+    await act(async () => setInputValue(container.querySelector('#location-plz'), '201'))
+    await act(async () => container.querySelector('#location-plz').form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(container.querySelector('[role="alert"]').textContent).toMatch(/5-stellige Postleitzahl/)
+    expect(publicEntdecken).toHaveBeenCalledTimes(1)
 
-    expect(container.querySelector('[role="alert"]').textContent).toBe('Diese Postleitzahl kennen wir nicht')
+    await act(async () => setInputValue(container.querySelector('#location-plz'), '20095'))
+    await act(async () => container.querySelector('#location-plz').form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(publicEntdecken).toHaveBeenLastCalledWith(expect.objectContaining({ plz: '20095', radius: 25 }))
   })
 
-  test('eine unvollständige PLZ (1-4 Ziffern) zeigt einen Hinweis statt stillschweigend alle Partner zu listen', async () => {
-    publicPartners.mockResolvedValue([sonnenhang, pfotenglueck])
+  test('„Mehr laden“ hängt die nächste Seite an, ohne „Deutschlandweit“ zu verdoppeln', async () => {
+    publicEntdecken.mockResolvedValueOnce(answer({ gesamt: 2, seiten: 2, mehr: true }))
+    publicEntdecken.mockResolvedValueOnce(answer({ deutschlandweit: [], treffer: [card('hundeschule-pfotenweg', { name: 'Hundeschule Pfotenweg' })], gesamt: 2, seite: 2, seiten: 2 }))
     await render()
-    await act(async () => Promise.resolve())
-    publicPartners.mockClear()
 
-    const plzField = await plzInput()
-    await act(async () => setInputValue(plzField, '101'))
-    await act(async () => container.querySelector('.location-picker').requestSubmit())
-
-    expect(container.querySelector('[role="alert"]').textContent).toBe('Bitte eine 5-stellige Postleitzahl eingeben.')
-    // keine erneute (stillschweigende) Suche über alle Partner ausgelöst
-    expect(publicPartners).not.toHaveBeenCalled()
+    await act(async () => buttonByText('Mehr laden').click())
+    expect(publicEntdecken).toHaveBeenLastCalledWith(expect.objectContaining({ seite: 2 }))
+    expect(container.querySelectorAll('#entdecken-treffer li')).toHaveLength(2)
+    expect(container.querySelectorAll('.entdecken-weit li')).toHaveLength(1)
+    expect(buttonByText('Mehr laden')).toBeUndefined()
   })
-})
 
-describe('PartnersPage – kein Standort-Knopf für Gäste', () => {
-  test('LocationPicker bekommt kein allowGeolocation – der Knopf bleibt aus (Task 6 schaltet ihn frei)', async () => {
-    publicPartners.mockResolvedValue([])
+  test('leer: ruhiger Hinweis; Fehler: Meldung; fremde Bild-Adressen werden nicht geladen', async () => {
+    publicEntdecken.mockResolvedValue(answer({ deutschlandweit: [], treffer: [], gesamt: 0 }))
     await render()
-    await act(async () => Promise.resolve())
-    expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.includes('Standort verwenden'))).toBe(false)
-  })
-})
+    expect(container.querySelector('.ui-empty').textContent).toContain('Nichts gefunden')
 
-describe('PartnersPage – Fuß', () => {
-  test('nennt die Quelle der PLZ-Daten und verlinkt Impressum/Datenschutz', async () => {
-    publicPartners.mockResolvedValue([])
+    act(() => root.unmount())
+    root = null
+    publicEntdecken.mockResolvedValue(answer({ deutschlandweit: [], treffer: [card('x-y', { bildUrl: 'https://tracker.example/pixel.gif' })] }))
     await render()
-    await act(async () => Promise.resolve())
-    expect(container.textContent).toContain('GeoNames')
-    expect([...container.querySelectorAll('a')].find((a) => a.textContent === 'Impressum').getAttribute('href')).toBe('/impressum')
-    expect([...container.querySelectorAll('a')].find((a) => a.textContent === 'Datenschutz').getAttribute('href')).toBe('/datenschutz')
-  })
+    expect(container.querySelector('#entdecken-treffer img')).toBeNull()
 
-  // Phase 5 Task 4: Weg zur Infoseite für künftige Partner.
-  test('wirbt um neue Partner und verlinkt /partner-werden', async () => {
-    publicPartners.mockResolvedValue([])
+    act(() => root.unmount())
+    root = null
+    publicEntdecken.mockRejectedValue(new Error('Zu viele Anfragen in kurzer Zeit – bitte einen Moment warten.'))
     await render()
-    await act(async () => Promise.resolve())
-    const cta = container.querySelector('.partners-cta')
-    expect(cta.textContent).toContain('Ihr seid Hundeschule, Tierheim, Hundesalon oder Betreuung?')
-    expect(cta.querySelector('a').getAttribute('href')).toBe('/partner-werden')
-    expect(cta.querySelector('a').textContent).toContain('Partner werden')
+    expect(container.querySelector('[role="alert"]').textContent).toMatch(/Zu viele Anfragen/)
   })
-})
 
-// Phase P2: weniger als fünf im Umkreis - der Server hängt die nächsten weiteren an (ausserhalb: true).
-describe('PartnersPage – "Weiter weg"', () => {
-  async function searchPlz(result) {
-    publicPartners.mockResolvedValue([])
+  test('Englisch: Text, Umschalter und „Deutschlandweit“ übersetzt', async () => {
+    setLang('en')
+    publicEntdecken.mockResolvedValue(answer())
     await render()
-    await act(async () => Promise.resolve())
-    publicPartners.mockResolvedValue(result)
-    const plzField = await plzInput()
-    await act(async () => setInputValue(plzField, '10115'))
-    await act(async () => container.querySelector('.location-picker').requestSubmit())
-  }
-
-  test('erst die im Umkreis, dann "Weiter weg" mit den übrigen, darüber der Hinweis', async () => {
-    await searchPlz([
-      { ...sonnenhang, distanceKm: 1.2, ausserhalb: false },
-      { ...pfotenglueck, distanceKm: 255.4, ausserhalb: true }
-    ])
-
-    expect(container.querySelector('.discover-fallback-note').textContent).toContain(
-      'In eurer Nähe gibt es nur wenige – hier die nächsten weiteren.'
-    )
-    const far = container.querySelector('.partners-far')
-    expect(far.querySelector('h2').textContent).toBe('Weiter weg')
-    expect(far.textContent).toContain('Hundeschule Pfotenglück')
-    expect(far.textContent).not.toContain('Tierheim Sonnenhang')
-    const cards = [...container.querySelectorAll('.partner-card h3')].map((h) => h.textContent)
-    expect(cards).toEqual(['Tierheim Sonnenhang', 'Hundeschule Pfotenglück'])
-  })
-
-  test('nur Treffer außerhalb: Hinweis und "Weiter weg", keine leere Liste davor', async () => {
-    await searchPlz([{ ...pfotenglueck, distanceKm: 255.4, ausserhalb: true }])
-
-    expect(container.querySelector('.discover-fallback-note')).not.toBeNull()
-    expect(container.querySelectorAll('.partner-list')).toHaveLength(1)
-    expect(container.querySelector('.partners-far .partner-list')).not.toBeNull()
-  })
-
-  test('alle im Umkreis: weder Hinweis noch "Weiter weg"', async () => {
-    await searchPlz([{ ...sonnenhang, distanceKm: 1.2, ausserhalb: false }])
-
-    expect(container.querySelector('.discover-fallback-note')).toBeNull()
-    expect(container.querySelector('.partners-far')).toBeNull()
-    expect(container.textContent).toContain('Tierheim Sonnenhang')
+    expect(container.querySelector('h1').textContent).toBe('Discover')
+    expect(container.textContent).toContain('No third-party ads, no tracking, no data trading.')
+    expect(buttonByText('Animal shelters')).toBeDefined()
+    expect(buttonByText('Grooming salons')).toBeDefined()
+    expect(container.querySelector('.entdecken-weit h2').textContent).toContain('Germany-wide')
+    expect(container.querySelector('input[type="search"]').getAttribute('placeholder')).toMatch(/Name, type or place/)
   })
 })

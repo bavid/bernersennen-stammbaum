@@ -95,6 +95,9 @@ function profileResponse(partner, { einblickCount, banner = [], bannerLayout = '
     ueberallSichtbar: Boolean(partner.ueberall_sichtbar),
     // Phase F: das Team hat die Hervorhebung ausgeschaltet - der Schalter bleibt dann aus und gesperrt.
     ueberallGesperrt: Boolean(partner.ueberall_gesperrt),
+    // Der Schalter ist ein Antrag: '' offen, 'freigegeben' oder 'abgelehnt' (mit Grund des Teams).
+    ueberallFreigabe: partner.ueberall_freigabe || '',
+    ueberallGrund: partner.ueberall_grund || null,
     logoUrl: partner.logo_file ? `/partner-media/${partner.logo_file}` : null,
     banner: banner.map(ownBanner),
     bannerLayout,

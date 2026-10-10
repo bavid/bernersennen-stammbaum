@@ -196,7 +196,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         family={family}
         canWrite={canWrite}
         showTell={current !== CHRONICLE_TAB}
-        visibleIn={ownHomeAnimal ? visibleInNames(dog, family.memberships) : []}
+        visibleIn={ownHomeAnimal ? visibleInNames(dog, family.memberships) : null}
         menuItems={menuItems}
         badge={isVisit(family) ? <VisitChip name={family.name} /> : null}
         onShowVisibility={() => goTo('infos', SHARE_PANEL_TITLE_ID)}

@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth')
 const dogsRoutes = require('./routes/dogs')
 const timelineRoutes = require('./routes/timeline')
 const gesundheitRoutes = require('./routes/gesundheit')
+const sichtbarkeitRoutes = require('./routes/sichtbarkeit')
 const breedingRoutes = require('./routes/breeding')
 const notesRoutes = require('./routes/notes')
 const adminRoutes = require('./routes/admin')
@@ -28,6 +29,8 @@ const adminFinanzierungRoutes = require('./routes/adminFinanzierung')
 const adminPartnerSichtbarRoutes = require('./routes/adminPartnerSichtbar')
 const adminLandeadressenRoutes = require('./routes/adminLandeadressen')
 const finanzierungRoutes = require('./routes/finanzierung')
+const finanzierungWebhookRoutes = require('./routes/finanzierungWebhook')
+const adminSpendenRoutes = require('./routes/adminSpenden')
 const communityRoutes = require('./routes/community')
 const adminCommunityRoutes = require('./routes/adminCommunity')
 const hinweiseRoutes = require('./routes/hinweise')
@@ -40,6 +43,7 @@ const membersRoutes = require('./routes/members')
 const profilRoutes = require('./routes/profil')
 const messagesRoutes = require('./routes/messages')
 const partnersRoutes = require('./routes/partners')
+const publicEntdeckenRoutes = require('./routes/publicEntdecken')
 const anfragenRoutes = require('./routes/anfragen')
 const publicAnimalsRoutes = require('./routes/publicAnimals')
 const placesRoutes = require('./routes/places')
@@ -145,6 +149,8 @@ function createApp() {
 
   app.use(securityHeaders)
   if (config.corsOrigin) app.use(cors({ origin: config.corsOrigin, credentials: true }))
+  // „Spenden live“: der Webhook prüft die Signatur über den rohen Body - darum vor express.json (aus ohne Secret).
+  app.use('/api/finanzierung/webhook', finanzierungWebhookRoutes)
   app.use(express.json({ limit: '1mb' }))
   app.use(cookieParser())
 
@@ -217,6 +223,7 @@ function createApp() {
   app.use('/api/dogs', dogsRoutes)
   app.use('/api/timeline', timelineRoutes)
   app.use('/api/gesundheit', gesundheitRoutes)
+  app.use('/api/sichtbarkeit', sichtbarkeitRoutes)
   app.use('/api/breeding', breedingRoutes)
   app.use('/api/notes', notesRoutes)
   app.use('/api/messages', messagesRoutes)
@@ -236,6 +243,8 @@ function createApp() {
   // Phase F: „So finanzieren wir uns“ - Spenden-Hinweis, Ziel und Quartale (Reiter „Finanzierung“) und der Schalter
   // „Überall sichtbar“ eines Partners (Partnerliste).
   app.use('/api/admin', adminFinanzierungRoutes)
+  // „Spenden live“: eingegangene Spenden erfassen (Reiter „Werbung & Messen“ › „Spenden“).
+  app.use('/api/admin', adminSpendenRoutes)
   app.use('/api/admin', adminPartnerSichtbarRoutes)
   app.use('/api/admin', adminLandeadressenRoutes)
   // Laufband der Startseite: Partner vorstellen und die Demo-Ausnahme (routes/adminCommunity.js).
@@ -249,6 +258,8 @@ function createApp() {
   // Laufband der Startseite: Zahlen aus der Gemeinschaft - öffentlich, ohne Login, cachebar (routes/community.js).
   app.use('/api/community', communityRoutes)
   app.use('/api/public/partners', partnersRoutes)
+  // Öffentliches Entdecken (Startseite -> /partner): Suche, Typ, Umkreis, „Deutschlandweit“ - routes/publicEntdecken.js.
+  app.use('/api/public/entdecken', publicEntdeckenRoutes)
   // Phase N Task 1: Gutschein- und Partner-Anfragen (routes/anfragen.js) - vor dem allgemeinen /api/public.
   app.use('/api/public/anfragen', anfragenRoutes)
   app.use('/api/public', publicAnimalsRoutes)

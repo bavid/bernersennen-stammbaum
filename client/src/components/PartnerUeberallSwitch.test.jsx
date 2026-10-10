@@ -91,4 +91,24 @@ describe('PartnerUeberallSwitch', () => {
     await act(async () => toggle().click())
     expect(setUeberallSichtbar).not.toHaveBeenCalled()
   })
+
+  // Der Schalter ist ein Antrag: sichtbar erst nach der Freigabe des Teams, eine Ablehnung zeigt den Grund.
+  test('Antrag: beantragt, freigegeben, abgelehnt mit Grund - danach neu beantragen', async () => {
+    await render({ ueberallSichtbar: true, ueberallFreigabe: '' })
+    expect(container.querySelector('.ui-chip--wartet').textContent).toBe('Beantragt – unser Team schaut es sich an.')
+    act(() => root.unmount())
+    root = null
+
+    await render({ ueberallSichtbar: true, ueberallFreigabe: 'freigegeben' })
+    expect(container.querySelector('.ui-chip--ok').textContent).toMatch(/Freigegeben – ihr erscheint deutschlandweit/)
+    act(() => root.unmount())
+    root = null
+
+    setUeberallSichtbar.mockResolvedValue({ ...profile, ueberallSichtbar: true, ueberallFreigabe: '', ueberallGrund: null })
+    await render({ ueberallSichtbar: false, ueberallFreigabe: 'abgelehnt', ueberallGrund: 'Bitte erst ein Logo hochladen.' })
+    expect(container.querySelector('[role="note"]').textContent).toContain('Nicht freigegeben: Bitte erst ein Logo hochladen.')
+    expect(toggle().disabled).toBe(false)
+    await act(async () => toggle().click())
+    expect(setUeberallSichtbar).toHaveBeenCalledWith(true)
+  })
 })

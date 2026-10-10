@@ -10,6 +10,13 @@
 // Rechnung je Monat auf zwölf Monatsraten verteilt. Die Rücklage wird nie gespeichert, sondern aus allen Quartalen
 // chronologisch berechnet (Anteile hinzu, Entnahmen des Admins ab - reserve_entnahme_cents je Quartal, nie unter 0).
 // Der Anteil je Quartal richtet sich nach dem Stand der Rücklage VOR diesem Quartal und den heutigen Jahreskosten.
+//
+// Reihenfolge je Quartal (Wunsch des Betreibers 10.10., Vorleistung = „Anschub“, lib/finanzierungVorleistung.js):
+//   1. Die Spenden decken zuerst die Kosten des Quartals (laufende Posten aller Kategorien + einmalige Quartalskosten).
+//   2. Was übrig bleibt, deckt die offene Vorleistung (fällig ab dem Quartal ihres Datums, älteste zuerst).
+//   3. Erst der Rest ist Überschuss: davon der Rücklage-Anteil nach Stufe, alles Weitere wird gespendet.
+// Die Vorleistung zählt in „Kosten bisher“ und damit in den Saldo (ab ihrem Datum), nicht aber in die Jahreskosten - sie ist
+// einmalig und soll die Rücklage-Stufen nicht verschieben.
 
 const RUECKLAGE_STUFEN = Object.freeze([
   { abJahren: 3, prozent: 0 },
@@ -108,30 +115,69 @@ function chronologisch(quartale) {
   return quartale.slice().sort((a, b) => a.jahr - b.jahr || a.quartal - b.quartal)
 }
 
-// Verteilung je Quartal (chronologisch) mit Übertrag der Rücklage; liefert die Zeilen und den Stand danach.
-function berechneVerteilung(quartale, posten, jahresKosten) {
+// Letzter Tag eines Quartals als 'JJJJ-MM-TT'-Vergleichswert (Tag 31 reicht für den Textvergleich).
+function quartalsEnde(quartal) {
+  return `${quartal.jahr}-${String(quartal.quartal * MONATE_JE_QUARTAL).padStart(2, '0')}-31`
+}
+
+// Summe der Vorleistungen, die bis zum Ende des Quartals angefallen sind.
+function faelligeVorleistung(vorleistungen, quartal) {
+  const ende = quartalsEnde(quartal)
+  return summe(vorleistungen.filter((v) => v.datum <= ende).map((v) => v.betragCents))
+}
+
+// Verteilung je Quartal (chronologisch, Reihenfolge im Kopf) mit Übertrag der Rücklage und der gedeckten Vorleistung.
+function berechneVerteilung(quartale, posten, jahresKosten, vorleistungen = []) {
   let ruecklage = 0
+  let getilgt = 0
   const zeilen = chronologisch(quartale).map((quartal) => {
     const kostenCents = quartalKostenCents(posten, quartal)
-    const verteilung = verteileUeberschuss({ spendenCents: quartal.einnahmenSpendenCents, kostenCents, ruecklageCents: ruecklage, kostenProJahrCents: jahresKosten })
+    const spendenCents = quartal.einnahmenSpendenCents || 0
+    const offen = Math.max(0, faelligeVorleistung(vorleistungen, quartal) - getilgt)
+    const vorleistungCents = Math.min(offen, Math.max(0, spendenCents - kostenCents))
+    getilgt += vorleistungCents
+    const verteilung = verteileUeberschuss({ spendenCents, kostenCents: kostenCents + vorleistungCents, ruecklageCents: ruecklage, kostenProJahrCents: jahresKosten })
     const entnahmeCents = quartal.reserveEntnahmeCents || 0
     ruecklage = Math.max(0, ruecklage + verteilung.reserveCents - entnahmeCents)
-    return { jahr: quartal.jahr, quartal: quartal.quartal, kostenCents, ...verteilung, entnahmeCents, ruecklageDanachCents: ruecklage }
+    return { jahr: quartal.jahr, quartal: quartal.quartal, kostenCents, vorleistungCents, ...verteilung, entnahmeCents, ruecklageDanachCents: ruecklage }
   })
-  return { zeilen, ruecklageCents: ruecklage }
+  return { zeilen, ruecklageCents: ruecklage, vorleistungGedecktCents: getilgt }
+}
+
+// Die Vorleistungen mit gedecktem Teil (älteste zuerst gedeckt) - nur Titel, Kategorie, Betrag, Datum.
+function vorleistungStand(vorleistungen, gedecktCents) {
+  let rest = gedecktCents
+  const posten = vorleistungen
+    .slice()
+    .sort((a, b) => (a.datum < b.datum ? -1 : a.datum > b.datum ? 1 : 0))
+    .map((v) => {
+      const gedeckt = Math.min(rest, v.betragCents)
+      rest -= gedeckt
+      return { titel: v.titel, kategorie: v.kategorie, betragCents: v.betragCents, datum: v.datum, gedecktCents: gedeckt }
+    })
+  const gesamtCents = summe(vorleistungen.map((v) => v.betragCents))
+  return { gesamtCents, gedecktCents, offenCents: gesamtCents - gedecktCents, posten }
+}
+
+function isoTag(datum) {
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${datum.getFullYear()}-${pad(datum.getMonth() + 1)}-${pad(datum.getDate())}`
 }
 
 function rundeJahre(jahre) {
   return jahre === null ? null : Math.round(jahre * 10) / 10
 }
 
-// quartale: öffentliche Form (camelCase, beliebige Reihenfolge); posten: laufende Kosten (camelCase); heute: Date.
-function berechneFinanzen({ quartale, posten, heute = new Date() }) {
+// quartale: öffentliche Form (camelCase, beliebige Reihenfolge); posten: laufende Kosten (camelCase); vorleistungen:
+// { titel, kategorie, betragCents, datum }; heute: Date.
+function berechneFinanzen({ quartale, posten, vorleistungen = [], heute = new Date() }) {
   const jahresKosten = kostenProJahrCents(posten, quartale, heute)
   const spendenBisher = summe(quartale.map((q) => q.einnahmenSpendenCents || 0))
-  const kostenBisher = kostenBisherCents(posten, quartale, heute)
+  const heuteIso = isoTag(heute)
+  const vorleistungBisher = summe(vorleistungen.filter((v) => v.datum <= heuteIso).map((v) => v.betragCents))
+  const kostenBisher = kostenBisherCents(posten, quartale, heute) + vorleistungBisher
   const rest = restKostenJahrCents(posten, heute)
-  const { zeilen, ruecklageCents } = berechneVerteilung(quartale, posten, jahresKosten)
+  const { zeilen, ruecklageCents, vorleistungGedecktCents } = berechneVerteilung(quartale, posten, jahresKosten, vorleistungen)
   return {
     kostenProJahrCents: jahresKosten,
     kostenBisherCents: kostenBisher,
@@ -144,7 +190,8 @@ function berechneFinanzen({ quartale, posten, heute = new Date() }) {
       jahreGedeckt: rundeJahre(ruecklageJahre(ruecklageCents, jahresKosten)),
       anteilProzent: ruecklageAnteilProzent(ruecklageCents, jahresKosten)
     },
-    verteilung: zeilen
+    verteilung: zeilen,
+    vorleistung: vorleistungStand(vorleistungen, vorleistungGedecktCents)
   }
 }
 

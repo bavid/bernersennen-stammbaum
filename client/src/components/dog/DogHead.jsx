@@ -15,7 +15,7 @@ function headLineOptions(dog, family, origin) {
 }
 
 // Kompakter Kopf der Tierseite (Phase W, Schritt 2 - Muster Profilseite): Bild (vergrößerbar), Name, eine Zeile
-// "Rasse · Alter · bei euch seit …", für ein geteiltes eigenes Tier der Chip "Sichtbar in: …" (führt zu "Wer sieht …?")
+// "Rasse · Alter · bei euch seit …", für ein eigenes Tier der Chip "Sichtbar in: …" bzw. "In keiner Familie" (führt zu "Wer sieht …?")
 // und die Knöpfe Erzählen · Bearbeiten · ⋯ (nur wer schreiben darf). showTell: im Reiter Chronik steht das Erzählen-Feld
 // direkt darunter - dann kein zweiter Knopf im Kopf. badge: z. B. der Besuchs-Chip.
 // Ein Tier, das nicht euch gehört, sagt darunter, wo es lebt und wie ihr es seht (originLine: "lebt bei Zuhause Möwenweg ·
@@ -51,10 +51,11 @@ export default function DogHead({ dog, family, canWrite, showTell = true, visibl
             <Icon name="home" /> {origin}
           </p>
         )}
-        {visibleIn.length > 0 && (
-          <button type="button" className="chip dog-head-visible" onClick={onShowVisibility}>
-            <Icon name="users" />
-            {t('Sichtbar in: {names}', { names: visibleIn.join(', ') })}
+        {/* Eigenes Tier: immer der Chip - „Sichtbar in: …“ oder „In keiner Familie“; Einstieg des Rundgangs zu „Wer sieht was“. */}
+        {visibleIn && (
+          <button type="button" className="chip dog-head-visible" data-tour="sichtbarkeit" onClick={onShowVisibility}>
+            <Icon name={visibleIn.length > 0 ? 'users' : 'lock'} />
+            {visibleIn.length > 0 ? t('Sichtbar in: {names}', { names: visibleIn.join(', ') }) : t('In keiner Familie')}
           </button>
         )}
       </div>

@@ -18,6 +18,8 @@ const { COLUMN: VORGESTELLT, MAX_VORGESTELLT } = require('./partnerVorgestellt')
 const { readBannerConfig, chosenPartner, partnerFotos } = require('./communityBanner')
 // Legt finanzierung_quartale an, falls dieses Modul zuerst geladen wird.
 require('./finanzierung')
+// „Spenden live“: Quartale mit erfassten Spenden zählen mit deren Summe (lib/spenden.js) - ohne Demo.
+const { mitLiveSpenden } = require('./spenden')
 
 const CACHE_MS = 5 * 60 * 1000
 const KEY_DEMO_PARTNER = 'community_demo_partner_erlaubt'
@@ -31,7 +33,7 @@ const erinnerungenStmt = db.prepare(`
   FROM timeline_entries te JOIN families f ON f.id = te.family_id
   WHERE f.is_demo = 0`)
 const partnerStmt = db.prepare(`SELECT COUNT(*) AS n FROM partners WHERE is_demo = 0 AND ${publicPartnerSql()}`)
-const spendenStmt = db.prepare('SELECT COALESCE(SUM(einnahmen_spenden_cents), 0) AS cents FROM finanzierung_quartale')
+const spendenStmt = db.prepare('SELECT jahr, quartal, einnahmen_spenden_cents AS einnahmenSpendenCents FROM finanzierung_quartale')
 const vorgestelltStmt = db.prepare(`
   SELECT id, slug, name, typ FROM partners
   WHERE ${VORGESTELLT} = 1 AND is_demo = 0 AND ${publicPartnerSql()}
@@ -79,10 +81,14 @@ function featuredPartners(bannerConfig) {
   return { monat, list: (monat ? [monat, ...rest] : rest).slice(0, MAX_VORGESTELLT) }
 }
 
+function spendenSumme() {
+  return mitLiveSpenden(spendenStmt.all()).reduce((acc, quartal) => acc + quartal.einnahmenSpendenCents, 0)
+}
+
 function zahlen() {
   const { familien, zuhause } = familienStmt.get()
   const { erinnerungen, fotos } = erinnerungenStmt.get()
-  return { familien, zuhause, erinnerungen, fotos, partner: partnerStmt.get().n, spendenCents: spendenStmt.get().cents }
+  return { familien, zuhause, erinnerungen, fotos, partner: partnerStmt.get().n, spendenCents: spendenSumme() }
 }
 
 // Öffentlich je Partner nur slug, name, typ und bis zu fünf schon öffentliche Foto-Adressen - nie die Id.

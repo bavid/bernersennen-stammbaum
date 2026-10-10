@@ -11,7 +11,7 @@ const { countOpenIncoming: countOpenWishes } = require('./wwhKontakt')
 const { revokeInvitesOnLeave } = require('./inviteRevocation')
 const { loadDarstellung } = require('./darstellung')
 const { withMembershipCounts, withVisitCounts } = require('./areaCounts')
-const { personOf, withBild } = require('./profil')
+const { personOf, withBild, rundgangOf } = require('./profil')
 const { isStammbaumStart } = require('./stammbaumStart')
 const { instanzModus } = require('../config')
 
@@ -115,6 +115,8 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
     besuche: withVisitCounts(visitTargetsOf(homeId)).map(withBild),
     // „Euer Name“ der angemeldeten Person (lib/profil.js) - Vorgabe für den Autor neuer Erinnerungen.
     person: personOf(homeId, userId),
+    // Rundgang (lib/profil.js): 'neu' | 'fertig' | 'aus' je Identität - der Client fragt bei 'neu' einmal nach.
+    rundgang: rundgangOf(homeId),
     erlebtMitOffen: home?.art === ART.zuhause ? countOpenRequests(homeId) : 0,
     neueGaeste: home?.art === ART.zuhause ? countNewGuests(homeId) : 0,
     // Hinweis-Glocke: neue Grüße anderer zu eigenen Erinnerungen (lib/gruesse.js).

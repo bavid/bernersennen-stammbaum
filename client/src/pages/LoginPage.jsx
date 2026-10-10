@@ -110,14 +110,22 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
 
   return (
     <div className={withSide ? 'login has-side-panel' : 'login'}>
-      {/* Kopfzeile: Marke links, Sprache rechts - ein Klick, und die ganze Seite wechselt. */}
+      {/* Kopfzeile: Marke links, rechts „Entdecken“ und die Sprache - ein Klick, und die ganze Seite wechselt. */}
       <header className="login-top">
         <span className="login-brand">
           <ThemeMark size={36} className="login-mark" />
           <span>{theme.appName}</span>
         </span>
-        <div className="login-lang">
-          <LanguageSwitch withIcon />
+        <div className="login-top-actions">
+          {/* Öffentliches Entdecken (PartnersPage /partner): Tierheime, Hundeschulen & Co. - ohne Anmeldung. */}
+          <Link to="/partner" className="login-entdecken">
+            <Icon name="compass" />
+            {t('Entdecken')}
+            <span className="visually-hidden">: {t('Tierheime, Hundeschulen und mehr entdecken')}</span>
+          </Link>
+          <div className="login-lang">
+            <LanguageSwitch withIcon />
+          </div>
         </div>
       </header>
 

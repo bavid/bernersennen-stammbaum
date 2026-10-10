@@ -52,7 +52,10 @@ test('scripts/demo.js legt die öffentliche Demo (Rudel + Zuhause) im neuen Stan
   // replaceDemoPack() legt (Task 4) auch die Demo-Partner neu an, auch wenn scripts/demo.js selbst
   // nichts darüber ausgibt - siehe lib/demoPack.js, seed/demo-partners.js.
   const partnerSlugs = db.prepare('SELECT slug FROM partners WHERE is_demo = 1 ORDER BY slug').all().map((p) => p.slug)
-  assert.deepEqual(partnerSlugs, ['hundesalon-wuschelglueck', 'hundeschule-pfotenglueck', 'tierheim-sonnenhang', 'tierschutzverein-deichland'])
+  // Dazu die zwölf Partner fürs öffentliche Entdecken (seed/demo-entdecken-partners.js).
+  const { DEMO_PARTNERS } = require('../seed/demo-partners')
+  assert.equal(partnerSlugs.length, 16)
+  assert.deepEqual(partnerSlugs, DEMO_PARTNERS.map((p) => p.slug).sort())
 
   db.close()
 

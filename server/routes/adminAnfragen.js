@@ -14,6 +14,7 @@ const {
   adminAnfrage
 } = require('../lib/anfragen')
 const { assignVoucherToAnfrage } = require('../lib/anfrageGutschein')
+const { validateBestaetigung, confirmTermin } = require('../lib/geschaeftAnfragen')
 
 // Phase N Task 1: Anfragen im Admin (lib/anfragen.js, lib/anfrageGutschein.js). Eingehängt unter /api/admin in
 // app.js, GENAU wie routes/admin.js: derselbe 404-ohne-Passwort-Hash-Gate und requireAdmin auf jeder Route.
@@ -50,6 +51,19 @@ router.put('/anfragen/:id', noStore, requireAdmin, (req, res, next) => {
     const row = updateAnfrage(req.params.id, change)
     if (!row) return res.status(404).json({ error: NOT_FOUND_MESSAGE })
     res.json(adminAnfrage(row))
+  } catch (err) {
+    sendError(res, next, err)
+  }
+})
+
+// PUT /api/admin/anfragen/:id/termin { index: 0..2 | null, notiz? } - einen Terminvorschlag einer Geschäftsanfrage
+// bestätigen (null nimmt es zurück). Zählt als Bearbeitung (aktualisiert_at). 404 ohne Geschäftsangaben.
+router.put('/anfragen/:id/termin', noStore, requireAdmin, (req, res, next) => {
+  try {
+    const change = validateBestaetigung(req.body)
+    const anfrage = findAnfrage(req.params.id)
+    if (!anfrage || !confirmTermin(anfrage.id, change)) return res.status(404).json({ error: NOT_FOUND_MESSAGE })
+    res.json(adminAnfrage(updateAnfrage(anfrage.id, { status: null, setNotiz: 0, notiz: null })))
   } catch (err) {
     sendError(res, next, err)
   }

@@ -138,8 +138,8 @@ test('Verteilung: berechneFinanzen - Saldo, Prognose, Rücklage und Verteilung j
   // Q1: Kosten 300 €, Überschuss 1.000 €, Rücklage 0 -> 20 % = 200 € Rücklage, 800 € gespendet.
   // Q2: Kosten 300 €, Überschuss 300 €, Rücklage 200 € (< 1 Jahr) -> 20 % = 60 €; danach 200 + 60 − 50 Entnahme = 210 €.
   assert.deepEqual(f.verteilung, [
-    { jahr: 2026, quartal: 1, kostenCents: 30000, ueberschussCents: 100000, anteilProzent: 20, reserveCents: 20000, gespendetCents: 80000, entnahmeCents: 0, ruecklageDanachCents: 20000 },
-    { jahr: 2026, quartal: 2, kostenCents: 30000, ueberschussCents: 30000, anteilProzent: 20, reserveCents: 6000, gespendetCents: 24000, entnahmeCents: 5000, ruecklageDanachCents: 21000 }
+    { jahr: 2026, quartal: 1, kostenCents: 30000, vorleistungCents: 0, ueberschussCents: 100000, anteilProzent: 20, reserveCents: 20000, gespendetCents: 80000, entnahmeCents: 0, ruecklageDanachCents: 20000 },
+    { jahr: 2026, quartal: 2, kostenCents: 30000, vorleistungCents: 0, ueberschussCents: 30000, anteilProzent: 20, reserveCents: 6000, gespendetCents: 24000, entnahmeCents: 5000, ruecklageDanachCents: 21000 }
   ])
   assert.deepEqual(f.ruecklage, { centsAktuell: 21000, jahreGedeckt: 0.2, anteilProzent: 20 })
 
@@ -159,7 +159,8 @@ test('Verteilung: berechneFinanzen - Saldo, Prognose, Rücklage und Verteilung j
     restKostenJahrCents: 0,
     prognoseJahresendeCents: 0,
     ruecklage: { centsAktuell: 0, jahreGedeckt: null, anteilProzent: 0 },
-    verteilung: []
+    verteilung: [],
+    vorleistung: { gesamtCents: 0, gedecktCents: 0, offenCents: 0, posten: [] }
   })
 
   // Eine Entnahme größer als die Rücklage leert sie nur - nie unter 0.

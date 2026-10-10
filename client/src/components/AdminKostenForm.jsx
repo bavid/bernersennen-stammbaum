@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { KOSTEN_LIMITS, kostenForm, kostenPayload, kostenServerFieldError } from '../lib/finanzierungRuecklage.js'
+import { KATEGORIEN } from '../lib/spendenLive.js'
 import { Button } from './ui/index.js'
 
 const ID = 'admin-kosten-'
@@ -66,6 +67,15 @@ export default function AdminKostenForm({ posten, onSave, onCancel }) {
           <select {...bind('intervall')} value={form.intervall} onChange={(e) => update('intervall', e.target.value)}>
             <option value="monat">jeden Monat</option>
             <option value="jahr">einmal im Jahr</option>
+          </select>
+        </AdminField>
+        <AdminField id={id('kategorie')} label="Kategorie" error={errors.kategorie}>
+          <select {...bind('kategorie')} value={form.kategorie} onChange={(e) => update('kategorie', e.target.value)}>
+            {KATEGORIEN.map((k) => (
+              <option key={k.key} value={k.key}>
+                {k.label}
+              </option>
+            ))}
           </select>
         </AdminField>
         <AdminField id={id('ab')} label="Seit" error={errors.ab}>

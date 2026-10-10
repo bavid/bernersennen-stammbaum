@@ -216,9 +216,10 @@ test('Anfragen: öffentlich stellen, im Admin bearbeiten und einen Gutschein zuw
     assert.equal(all.data.seiten, 1)
     const wilma = all.data.anfragen.find((item) => item.email === 'wilma@example.org')
     assert.deepEqual(Object.keys(wilma).sort(), [
-      'aktualisiertAt', 'createdAt', 'email', 'erledigtAt', 'firma', 'gutschein', 'id', 'nachricht', 'name', 'notiz', 'ort', 'partnerTyp', 'plz', 'status', 'typ'
+      'aktualisiertAt', 'createdAt', 'email', 'erledigtAt', 'firma', 'geschaeft', 'gutschein', 'id', 'nachricht', 'name', 'notiz', 'ort', 'partnerTyp', 'plz', 'status', 'typ'
     ])
     assert.equal(wilma.gutschein, null)
+    assert.equal(wilma.geschaeft, null, 'ohne Geschäftsangaben')
     assert.equal(wilma.aktualisiertAt, null)
     const greta = all.data.anfragen.find((item) => item.firma === 'Hundeschule Pfotenweg' && item.plz)
     assert.equal(greta.ort, 'Berlin')

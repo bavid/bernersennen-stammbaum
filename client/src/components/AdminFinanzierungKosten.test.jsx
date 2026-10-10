@@ -76,8 +76,17 @@ describe('AdminFinanzierungKosten', () => {
     await setValue(byId('admin-kosten-betrag'), '12')
     await setValue(byId('admin-kosten-intervall'), 'jahr')
     await setValue(byId('admin-kosten-ab'), '2026-03-15')
+    await setValue(byId('admin-kosten-kategorie'), 'druck')
     await submit(container.querySelector('.admin-kosten-form'))
-    expect(mocks.createFinanzierungKosten).toHaveBeenCalledWith({ titel: 'Domain', betragCents: 1200, intervall: 'jahr', ab: '2026-03-15', bis: null, notiz: '' })
+    expect(mocks.createFinanzierungKosten).toHaveBeenCalledWith({
+      titel: 'Domain',
+      betragCents: 1200,
+      intervall: 'jahr',
+      kategorie: 'druck',
+      ab: '2026-03-15',
+      bis: null,
+      notiz: ''
+    })
     expect(onChanged).toHaveBeenCalledTimes(1)
     expect(container.querySelector('.admin-kosten-form')).toBeNull()
   })

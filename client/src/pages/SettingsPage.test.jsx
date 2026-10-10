@@ -10,6 +10,9 @@ const api = vi.hoisted(() => ({
   leaveFamily: vi.fn(),
   view: vi.fn(),
   setDogShares: vi.fn(),
+  // Einstellungen › Wer sieht was
+  sichtbarkeitUebersicht: vi.fn(),
+  listTimeline: vi.fn(),
   visits: vi.fn(),
   endVisit: vi.fn(),
   removeGuest: vi.fn(),
@@ -111,6 +114,8 @@ const flush = () => act(async () => {})
 beforeEach(() => {
   api.rahmenGeraete.mockResolvedValue({ geraete: [], max: 5 })
   api.listDogs.mockResolvedValue(dogs)
+  api.sichtbarkeitUebersicht.mockResolvedValue({ tiere: [] })
+  api.listTimeline.mockResolvedValue([])
   api.visits.mockResolvedValue({ besuche: [{ id: 9, name: 'Zuhause Möwenweg', seit: '2026-09-01 10:00:00' }], gaeste: [] })
   api.setDarstellung.mockImplementation(async (patch) => ({ ...atHome.darstellung, ...patch }))
   api.pushKey.mockResolvedValue({ enabled: false, publicKey: null, geraete: 0 })
@@ -127,9 +132,9 @@ afterEach(() => {
 })
 
 describe('SettingsPage – Bereiche und Adresse (?bereich=)', () => {
-  test('ohne Angabe die Darstellung; vier Reiter für Haushalte', async () => {
+  test('ohne Angabe die Darstellung; fünf Reiter für Haushalte', async () => {
     await render(atHome)
-    expect(tabs()).toEqual(['Darstellung', 'Familien', 'Mein Zuhause', 'App'])
+    expect(tabs()).toEqual(['Darstellung', 'Familien', 'Mein Zuhause', 'Wer sieht was', 'App'])
     expect(selectedTab()).toBe('Darstellung')
     expect(container.querySelector('[role="tabpanel"]').getAttribute('aria-labelledby')).toBe('einstellungen-darstellung')
     expect(container.querySelector('legend').textContent).toBe('Farbwelt')
@@ -286,9 +291,17 @@ describe('SettingsPage – Familien', () => {
   })
 
   // Phase W, Schritt 2 (Betreiber: die Kästchen je Tier verstand niemand): je Familie eine Karte mit einem Schalter je Tier.
-  test('Eure Tiere in Familien: je Familie „In … zeigt ihr:“ mit Schaltern je Tier und dem Satz der Tierseite; als Gast nichts Neues', async () => {
-    api.setDogShares.mockResolvedValue({ shares: [3] })
+  test('Familien zeigt statt eigener Schalter den Weg zu „Wer sieht was“', async () => {
     await render(atHome, '/einstellungen?bereich=familien')
+    await flush()
+    expect(container.querySelector('.share-card')).toBeNull()
+    const link = [...container.querySelectorAll('a')].find((a) => a.textContent === 'Wer sieht was')
+    expect(link.getAttribute('href')).toBe('/einstellungen?bereich=sichtbarkeit&ansicht=verbindungen')
+  })
+
+  test('Wer sieht was › Familien & Gäste: je Familie „In … zeigt ihr:“ mit Schaltern je Tier und dem Satz der Tierseite; als Gast nichts Neues', async () => {
+    api.setDogShares.mockResolvedValue({ shares: [3] })
+    await render(atHome, '/einstellungen?bereich=sichtbarkeit&ansicht=verbindungen')
     await flush()
     const cards = [...container.querySelectorAll('.share-card')]
     expect(cards.map((card) => card.querySelector('h3').textContent)).toEqual(['In Familie Sonnenhang zeigt ihr:', 'In Familie Talgrund zeigt ihr:'])
@@ -306,7 +319,7 @@ describe('SettingsPage – Familien', () => {
     await flush()
     expect(api.setDogShares).toHaveBeenCalledWith(12, [3])
     // Die Zahl an der Familie zieht mit.
-    expect(container.querySelector('.settings-row-sub').textContent).toBe('Familienleitung · 22 Tiere · davon 2 von euch')
+    expect(latest.memberships[0]).toMatchObject({ tiere: 22, eigeneTiere: 2 })
   })
 
   test('Familien: beitreten oder gründen; die befreundeten Zuhause stehen jetzt unter „Mein Zuhause“', async () => {
@@ -317,7 +330,7 @@ describe('SettingsPage – Familien', () => {
   })
 
   test('Demo: Freigaben gesperrt mit Hinweis', async () => {
-    await render({ ...atHome, isDemo: true }, '/einstellungen?bereich=familien')
+    await render({ ...atHome, isDemo: true }, '/einstellungen?bereich=sichtbarkeit&ansicht=verbindungen')
     await flush()
     expect(container.querySelector('.share-card input[role="switch"]').disabled).toBe(true)
     expect(container.textContent).toContain('In der Demo nicht möglich.')

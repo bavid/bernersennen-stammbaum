@@ -91,7 +91,7 @@ export function postenText(posten) {
 
 // Hat der Admin überhaupt etwas eingetragen? Sonst zeigt die Seite keine Zahlen.
 export function hatFinanzDaten(data) {
-  return Boolean(data?.quartale?.length || data?.kosten?.posten?.length)
+  return Boolean(data?.quartale?.length || data?.kosten?.posten?.length || data?.vorleistung?.gesamtCents)
 }
 
 // --- Admin-Formular eines Postens ---------------------------------------------------------------------------------------
@@ -106,8 +106,16 @@ function heuteIso(now = new Date()) {
 }
 
 export function kostenForm(posten, now = new Date()) {
-  if (!posten) return { titel: '', betrag: '', intervall: 'monat', ab: heuteIso(now), bis: '', notiz: '' }
-  return { titel: posten.titel, betrag: centsToEuroInput(posten.betragCents), intervall: posten.intervall, ab: posten.ab, bis: posten.bis || '', notiz: posten.notiz || '' }
+  if (!posten) return { titel: '', betrag: '', intervall: 'monat', kategorie: 'technik', ab: heuteIso(now), bis: '', notiz: '' }
+  return {
+    titel: posten.titel,
+    betrag: centsToEuroInput(posten.betragCents),
+    intervall: posten.intervall,
+    kategorie: posten.kategorie || 'technik',
+    ab: posten.ab,
+    bis: posten.bis || '',
+    notiz: posten.notiz || ''
+  }
 }
 
 // { payload, errors } - payload null, sobald ein Feld nicht stimmt.
@@ -119,6 +127,9 @@ export function kostenPayload(form) {
   const betragCents = parseEuroToCents(form.betrag || '')
   if (!betragCents) errors.betrag = 'Bitte einen Betrag in Euro eingeben, z. B. 23,00.'
   if (!['monat', 'jahr'].includes(form.intervall)) errors.intervall = 'Bitte Monat oder Jahr wählen.'
+  // Wie server/lib/finanzierungKosten.js KATEGORIEN (Texte in lib/spendenLive.js).
+  const kategorie = form.kategorie || 'technik'
+  if (!['technik', 'druck', 'sonstiges'].includes(kategorie)) errors.kategorie = 'Bitte eine Kategorie wählen.'
   if (!ISO_DATE_RE.test(form.ab || '')) errors.ab = 'Bitte ein Datum wählen.'
   const bis = form.bis || null
   if (bis && !ISO_DATE_RE.test(bis)) errors.bis = 'Bitte ein Datum wählen.'
@@ -126,7 +137,7 @@ export function kostenPayload(form) {
   const notiz = (form.notiz || '').trim()
   if (notiz.length > KOSTEN_LIMITS.notiz) errors.notiz = `Höchstens ${KOSTEN_LIMITS.notiz} Zeichen.`
   if (Object.keys(errors).length) return { payload: null, errors }
-  return { payload: { titel, betragCents, intervall: form.intervall, ab: form.ab, bis, notiz }, errors }
+  return { payload: { titel, betragCents, intervall: form.intervall, kategorie, ab: form.ab, bis, notiz }, errors }
 }
 
 // Fehler des Servers ({ error, feld }) auf das Formularfeld.

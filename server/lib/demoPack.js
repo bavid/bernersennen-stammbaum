@@ -9,7 +9,7 @@ const { relativeDemoDate } = require('./demoDates')
 const { applyGesundheit } = require('./gesundheit')
 const { validatePartner, slugify } = require('./partners')
 // Phase F: legt die Spalten ueberall_sichtbar/ueberall_gesperrt an - geschrieben wird unten über die übergebene db.
-const { COLUMN: UEBERALL_COLUMN } = require('./ueberallSichtbar')
+const { COLUMN: UEBERALL_COLUMN, FREIGABE_COLUMN: UEBERALL_FREIGABE_COLUMN } = require('./ueberallSichtbar')
 const { validatePromotion, validateDonationReport, validateUrl, cleanOptionalText, MAX_TEXT_LENGTH } = require('./promotions')
 const { FAMILY_NAME, DOGS, HOUSEMATES, TIMELINE, BREEDING, NOTES } = require('../seed/demo-data')
 const {
@@ -26,6 +26,7 @@ const { createDemoMembers, insertLeitungComment } = require('./demoMembers')
 const { createDemoVisits } = require('./demoVisits')
 const { removeDemoWwh, createDemoWwh } = require('./demoWirWarenHier')
 const { createDemoProfil } = require('./demoProfil')
+const { replaceDemoSpenden } = require('./demoSpenden')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -233,15 +234,20 @@ function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage
 // Züchter-Schutz identisch greifen. Gibt die neuen Ids zurück.
 // Phase F: ueberallSichtbar (seed) setzt den Schalter „Überall sichtbar“ (lib/ueberallSichtbar.js) - validatePartner kennt
 // das Feld bewusst nicht, es gehört dem Partner selbst.
-function insertDemoPartners(db) {
+// logo (seed): Bild aus seed/images, als Logo nach mediaDir kopiert (newImages: für das Aufräumen nach einem Rollback).
+// ueberallSichtbar (seed): Antrag gestellt und vom Team freigegeben - die Demo zeigt den Abschnitt „Deutschlandweit“.
+function insertDemoPartners(db, { mediaDir = defaultMediaDir, newImages = [] } = {}) {
   const ids = []
   for (const input of DEMO_PARTNERS) {
     const clean = validatePartner(input)
-    const columns = [...Object.keys(clean), 'is_demo']
+    const row = { ...clean, logo_file: input.logo ? copyPromotionImage(mediaDir, input.logo, newImages) : null, is_demo: 1 }
+    const columns = Object.keys(row)
     const id = db
       .prepare(`INSERT INTO partners (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
-      .run(...columns.map((col) => (col === 'is_demo' ? 1 : clean[col]))).lastInsertRowid
-    if (input.ueberallSichtbar) db.prepare(`UPDATE partners SET ${UEBERALL_COLUMN} = 1 WHERE id = ?`).run(id)
+      .run(...columns.map((col) => row[col])).lastInsertRowid
+    if (input.ueberallSichtbar) {
+      db.prepare(`UPDATE partners SET ${UEBERALL_COLUMN} = 1, ${UEBERALL_FREIGABE_COLUMN} = 'freigegeben' WHERE id = ?`).run(id)
+    }
     ids.push(id)
   }
   return ids
@@ -551,6 +557,8 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
   const previousPartnerIds = db.prepare('SELECT id FROM partners WHERE is_demo = 1').all().map((row) => row.id)
   const copyImage = createImageCopier(uploadDir)
   const newPromotionImages = []
+  // Logos der alten Demo-Partner - die Dateien gehen erst nach der gelungenen Transaktion.
+  const removedLogos = []
 
   const buildNewDemo = db.transaction(() => {
     const packOptions = { password: crypto.randomBytes(24).toString('base64url'), isDemo: true, copyImage }
@@ -578,9 +586,12 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       db.prepare(
         `DELETE FROM link_clicks WHERE target_type IN ('partner-website', 'partner-spende') AND target_id IN (${placeholders})`
       ).run(...previousPartnerIds)
+      removedLogos.push(
+        ...db.prepare(`SELECT logo_file FROM partners WHERE id IN (${placeholders}) AND logo_file IS NOT NULL`).all(...previousPartnerIds).map((r) => r.logo_file)
+      )
       db.prepare(`DELETE FROM partners WHERE id IN (${placeholders})`).run(...previousPartnerIds)
     }
-    const newPartnerIds = insertDemoPartners(db)
+    const newPartnerIds = insertDemoPartners(db, { mediaDir, newImages: newPromotionImages })
 
     // Das Demo-Tierheim braucht die neue Partner-Id (nicht die alte, gerade gelöschte) - darum erst
     // NACH insertDemoPartners, und das Zuhause ("Zuhause am Deich") erst NACH dem Tierheim, damit Neles
@@ -631,6 +642,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     })
 
     const discoverResult = replaceDemoDiscoverContent(db, mediaDir, newPromotionImages)
+    replaceDemoSpenden(db) // „Spenden live“: nur is_demo = 1 (lib/demoSpenden.js)
 
     // Phase P2 Task 9: Beiträge und Posteingänge der Demo-Partner - NACH replaceDemoDiscoverContent, das alle
     // Demo-Empfehlungen (is_demo = 1) wegräumt und sonst auch die neuen Beiträge träfe.
@@ -665,7 +677,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
   const { created, household, members, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos, removedBannerPhotos, visits, wirWarenHier } =
     built
 
-  for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
+  for (const file of [...discover.removedImages, ...removedLogos]) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
   removeUploads(uploadDir, unusedEinblickPhotos(db, removedEinblickPhotos))
   // Bannerfotos sind immer eigene Kopien (copyImage.copyOwn) - nichts anderes nutzt sie.
   removeUploads(uploadDir, removedBannerPhotos)

@@ -4,6 +4,7 @@ import DarstellungSection from '../components/settings/DarstellungSection.jsx'
 import FamilienSection from '../components/settings/FamilienSection.jsx'
 import ZuhauseSection from '../components/settings/ZuhauseSection.jsx'
 import AppSection from '../components/settings/AppSection.jsx'
+import SichtbarkeitSection from '../components/sichtbarkeit/SichtbarkeitSection.jsx'
 import FamilyManage from '../components/settings/FamilyManage.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { SETTINGS_FAMILY_PARAM, areaContext, parseAreaId } from '../lib/areas.js'
@@ -13,12 +14,15 @@ import { useT } from '../lib/i18n/index.js'
 export const BEREICH_PARAM = 'bereich'
 const DARSTELLUNG = 'darstellung'
 const APP = 'app'
+const SICHTBARKEIT = 'sichtbarkeit'
 
 function sectionsFor(family, words, t) {
   const sections = [{ key: DARSTELLUNG, label: t('settings.tab.darstellung') }]
   // Familien und Zuhause gibt es nur für Haushalte; ein klassisches Rudel-Login verwaltet hier seine eine Familie.
   if (family.home?.art === 'zuhause') {
     sections.push({ key: 'familien', label: t('settings.tab.groups', words) }, { key: 'zuhause', label: t('settings.tab.zuhause') })
+    // „Wer sieht was“: alles zur Sichtbarkeit eigener Tiere und Erinnerungen an einer Stelle (components/sichtbarkeit).
+    sections.push({ key: SICHTBARKEIT, label: t('Wer sieht was') })
   } else {
     sections.push({ key: 'familien', label: t('settings.tab.group', words) })
   }
@@ -87,6 +91,7 @@ export default function SettingsPage({ family, onFamilyChange, onInvite }) {
           <FamiliesPanel family={family} onFamilyChange={onFamilyChange} familyParam={parseAreaId(searchParams.get(SETTINGS_FAMILY_PARAM))} />
         )}
         {current === 'zuhause' && <ZuhauseSection family={family} onFamilyChange={onFamilyChange} onInvite={onInvite} />}
+        {current === SICHTBARKEIT && <SichtbarkeitSection family={family} onFamilyChange={onFamilyChange} />}
         {current === APP && <AppSection />}
       </div>
     </div>

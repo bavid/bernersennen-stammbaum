@@ -4,6 +4,7 @@ import InstallHint from '../InstallHint.jsx'
 import PushSchalter from './app/PushSchalter.jsx'
 import StandortSchalter from './app/StandortSchalter.jsx'
 import EinstellungenZuruecksetzen from './app/EinstellungenZuruecksetzen.jsx'
+import TourRestart from '../tour/TourRestart.jsx'
 import { useT } from '../../lib/i18n/index.js'
 import '../../styles/app-settings.css'
 
@@ -25,6 +26,8 @@ export default function AppSection() {
           {t('login.installGuide')}
         </Link>
       </InstallHint>
+
+      <TourRestart />
 
       <div className="app-section-group" aria-labelledby="app-berechtigungen-title">
         <h3 id="app-berechtigungen-title">{t('settings.app.permissions')}</h3>

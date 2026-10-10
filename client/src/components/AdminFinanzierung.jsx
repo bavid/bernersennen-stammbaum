@@ -4,6 +4,7 @@ import { api } from '../api'
 import AdminFinanzierungHinweis from './AdminFinanzierungHinweis.jsx'
 import AdminFinanzierungQuartale from './AdminFinanzierungQuartale.jsx'
 import AdminFinanzierungKosten from './AdminFinanzierungKosten.jsx'
+import AdminVorleistung from './AdminVorleistung.jsx'
 import { Button } from './ui/index.js'
 
 // Phase F: Reiter „Finanzierung“ im Admin (GET /api/admin/finanzierung, server/routes/adminFinanzierung.js) - was die
@@ -12,7 +13,7 @@ import { Button } from './ui/index.js'
 // Vorschau der Balken) und „Kosten & Reserve“ (AdminFinanzierungKosten: laufende Posten, Saldo, Prognose, Rücklage).
 // Beträge tippt man in Euro, gespeichert werden Cent. Die Rechnung (Jahreskosten, Saldo, Rücklage, Verteilung) macht der
 // Server - nach jeder Änderung an Quartalen oder Posten holt refresh sie neu.
-const RECHNUNG_KEYS = ['kosten', 'prognose', 'ruecklage', 'verteilung']
+const RECHNUNG_KEYS = ['kosten', 'prognose', 'ruecklage', 'verteilung', 'vorleistungen', 'vorleistung']
 export default function AdminFinanzierung() {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
@@ -77,6 +78,7 @@ export default function AdminFinanzierung() {
             }}
           />
           <AdminFinanzierungKosten data={data} onChanged={refresh} />
+          <AdminVorleistung data={data} onChanged={refresh} />
         </>
       )}
     </div>

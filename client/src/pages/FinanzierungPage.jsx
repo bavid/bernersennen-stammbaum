@@ -7,6 +7,7 @@ import FinanzierungQuartale from '../components/finanzierung/FinanzierungQuartal
 import FinanzierungMithelfen from '../components/finanzierung/FinanzierungMithelfen.jsx'
 import FinanzierungRegel from '../components/finanzierung/FinanzierungRegel.jsx'
 import FinanzierungStand from '../components/finanzierung/FinanzierungStand.jsx'
+import SpendenLive from '../components/finanzierung/SpendenLive.jsx'
 import { hatFinanzDaten } from '../lib/finanzierungRuecklage.js'
 import CommunityTicker from '../components/CommunityTicker.jsx'
 import { zielText } from '../lib/finanzierung.js'
@@ -33,7 +34,7 @@ const AUSBLICK =
   'Sollte sich daran etwas ändern, sagen wir es rechtzeitig und offen – an dieser Stelle. Die Grundfunktionen sollen frei bleiben; denkbar sind später freiwillige Zusatzpakete, etwa für sehr viele Fotos oder Familien.'
 
 const WOHIN = [
-  { icon: 'wrench', title: 'Zuerst der Betrieb', text: 'Server, Domain und Sicherungen – damit eure Erinnerungen sicher bleiben.' },
+  { icon: 'wrench', title: 'Zuerst der Betrieb', text: 'Server und Technik, Druck und Material – damit die Plattform läuft und eure Erinnerungen sicher bleiben.' },
   { icon: 'heart', title: 'Dann Tiere und Tierschutz', text: 'Spenden an Tierheime und Tierschutz – offen genannt, sobald es so weit ist.' },
   { icon: 'mapPin', title: 'Und lokale Projekte', text: 'Hundewiese, Kotbeutel-Spender, Trinkstellen – kleine Dinge vor Ort.' }
 ]
@@ -150,6 +151,8 @@ export default function FinanzierungPage({ family = null }) {
       {!family && <CommunityTicker />}
 
       <Grundsatz />
+      {/* „Spenden live“: zeigt sich nur, wenn es Spenden, Kosten oder einen Anschub gibt. */}
+      <SpendenLive finanz={data} />
       <WerZahltWas />
       <WohinDasGeld ziel={data?.ziel} ruecklage={mitZahlen ? data.ruecklage : null} />
 

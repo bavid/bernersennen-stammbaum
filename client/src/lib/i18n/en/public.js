@@ -187,7 +187,8 @@ export default {
   'Sollte sich daran etwas ändern, sagen wir es rechtzeitig und offen – an dieser Stelle. Die Grundfunktionen sollen frei bleiben; denkbar sind später freiwillige Zusatzpakete, etwa für sehr viele Fotos oder Familien.':
     'If any of this changes, we will say so openly and in good time – right here. The basic features are meant to stay free; optional extra packages may come later, for example for very many photos or families.',
   'Zuerst der Betrieb': 'Running costs first',
-  'Server, Domain und Sicherungen – damit eure Erinnerungen sicher bleiben.': 'Server, domain and backups – so your memories stay safe.',
+  'Server und Technik, Druck und Material – damit die Plattform läuft und eure Erinnerungen sicher bleiben.':
+    'Servers and technology, print and materials – so the platform keeps running and your memories stay safe.',
   'Dann Tiere und Tierschutz': 'Then animals and animal welfare',
   'Spenden an Tierheime und Tierschutz – offen genannt, sobald es so weit ist.': 'Donations to animal shelters and animal welfare – named openly as soon as it happens.',
   'Und lokale Projekte': 'And local projects',

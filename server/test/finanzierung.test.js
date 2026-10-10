@@ -124,7 +124,8 @@ test('Finanzierung: öffentliche Antwort, Admin-Pflege, Protokoll', async (t) =>
       kosten: { proJahrCents: 0, posten: [] },
       saldoCents: 0,
       ruecklage: { centsAktuell: 0, jahreGedeckt: null, anteilProzent: 0 },
-      verteilung: []
+      verteilung: [],
+      vorleistung: { gesamtCents: 0, gedecktCents: 0, offenCents: 0, posten: [] }
     })
   })
 
@@ -145,7 +146,9 @@ test('Finanzierung: öffentliche Antwort, Admin-Pflege, Protokoll', async (t) =>
       kosten: { proJahrCents: 0, posten: [] },
       prognose: { kostenBisherCents: 0, spendenBisherCents: 0, saldoCents: 0, restKostenJahrCents: 0, prognoseJahresendeCents: 0 },
       ruecklage: { centsAktuell: 0, jahreGedeckt: null, anteilProzent: 0 },
-      verteilung: []
+      verteilung: [],
+      vorleistungen: [],
+      vorleistung: { gesamtCents: 0, gedecktCents: 0, offenCents: 0, posten: [] }
     })
   })
 

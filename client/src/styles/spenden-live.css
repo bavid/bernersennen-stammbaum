@@ -1,0 +1,153 @@
+/* „Spenden live“ auf /finanzierung (components/finanzierung/SpendenLive.jsx) und „Spenden erfassen“ im Admin
+   (AdminSpenden.jsx). Ruhig: eine große Zahl, ein schmaler Balken, keine Alarmfarben. Nur Tokens. */
+
+.spenden-live-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.spenden-live-punkt {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: var(--space-1);
+  border-radius: var(--radius-round);
+  background: currentColor;
+  animation: spenden-live-puls 2.4s var(--ease-out) infinite;
+}
+
+@keyframes spenden-live-puls {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spenden-live-punkt { animation: none; }
+  .spenden-live-fill { transition: none; }
+}
+
+.spenden-live-karte {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.spenden-live-summe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.spenden-live-summe strong {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  line-height: 1.1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.spenden-live-summe span {
+  color: var(--muted);
+}
+
+.spenden-live-bar {
+  display: block;
+  height: 0.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.spenden-live-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--alpine);
+  transform-origin: left center;
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.spenden-live-deckung {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.spenden-live-zahlen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+
+.spenden-live-zahlen dt {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.spenden-live-zahlen dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.spenden-live-kategorien {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.spenden-live-aufteilung,
+.spenden-live-anschub {
+  margin: 0;
+}
+
+.spenden-live-zuletzt {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-lg);
+}
+
+.spenden-live-liste {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.spenden-live-eintrag {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.spenden-live-eintrag-kopf {
+  font-variant-numeric: tabular-nums;
+}
+
+.spenden-live-nachricht {
+  font-family: var(--font-hand);
+  font-size: var(--text-lg);
+  color: var(--ink-soft);
+}
+
+/* Admin: Spenden erfassen */
+.admin-spenden-liste {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-spenden-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

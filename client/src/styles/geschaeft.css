@@ -1,0 +1,248 @@
+/* Geschäftsanfrage auf /partner-werden (components/geschaeft/): am Handy drei ruhige Schritte, am Desktop dieselben
+   Gruppen untereinander. Terminvorschläge als helle Flächen, keine Warnfarben außer am Fehler. Nur Tokens. */
+
+.geschaeft-form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.geschaeft-group {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.is-desktop .geschaeft-group + .geschaeft-group {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.geschaeft-group-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.geschaeft-group-nr {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: var(--radius-round);
+  background: var(--rust-wash);
+  color: var(--rust);
+  font-family: var(--font-body, inherit);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.geschaeft-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.geschaeft-steps-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.geschaeft-steps-text strong {
+  color: var(--ink);
+}
+
+.geschaeft-steps-dots {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.geschaeft-steps-dots li {
+  width: 1.5rem;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--line-strong);
+}
+
+.geschaeft-steps-dots li.is-done {
+  background: var(--rust);
+}
+
+.geschaeft-plz-ort {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 1fr) 3fr;
+  gap: var(--space-3);
+}
+
+.geschaeft-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.geschaeft-check input {
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 2px;
+  accent-color: var(--rust);
+}
+
+.geschaeft-check a {
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.geschaeft-intro {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.geschaeft-termin {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunk);
+}
+
+.geschaeft-termin legend {
+  padding: 0 var(--space-1);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.geschaeft-termin-zeit {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+.geschaeft-kanal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.geschaeft-kanal-label {
+  margin-right: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.geschaeft-kanal-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.geschaeft-kanal-option input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.geschaeft-kanal-option span {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.geschaeft-kanal-option input:checked + span {
+  border-color: var(--rust);
+  background: var(--rust-wash);
+  color: var(--rust-deep);
+  font-weight: 700;
+}
+
+.geschaeft-kanal-option input:focus-visible + span {
+  box-shadow: var(--focus-ring);
+}
+
+.geschaeft-termin-weg {
+  justify-self: start;
+}
+
+.geschaeft-termin-plus {
+  justify-self: start;
+}
+
+.geschaeft-einwilligung {
+  display: grid;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+}
+
+.geschaeft-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.geschaeft-actions .btn:last-child {
+  margin-left: auto;
+}
+
+.geschaeft-success p {
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .geschaeft-termin-zeit {
+    grid-template-columns: 1.2fr 1fr;
+  }
+}
+
+/* Admin › Anfragen: Angaben und Terminvorschläge einer Geschäftsanfrage. */
+.admin-anfrage-geschaeft {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.admin-anfrage-termine {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-anfrage-termine li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  font-size: var(--text-sm);
+}
+
+.admin-anfrage-termine li.is-bestaetigt {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  font-weight: 700;
+}

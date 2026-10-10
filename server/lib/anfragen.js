@@ -17,6 +17,7 @@ const { lookupPlz } = require('./geo')
 const { assertNoBreeder } = require('./breederGuard')
 const { stripUnsafeChars, validateEmail, TYP_VALUES: PARTNER_TYP_VALUES } = require('./partners')
 const { voucherStatus } = require('./vouchers')
+const { validateGeschaeft, insertGeschaeft, geschaeftView } = require('./geschaeftAnfragen')
 
 const TYP = Object.freeze({ gutschein: 'gutschein', partner: 'partner' })
 const TYP_VALUES = Object.values(TYP)
@@ -97,17 +98,37 @@ function validatePartnerFields(input) {
   return { firma, partner_typ: validatePartnerTyp(input.partnerTyp), plz: validatePlz(input.plz) }
 }
 
+// Geschäftsanfrage (typ 'partner' mit body.geschaeft, lib/geschaeftAnfragen.js): Ansprechperson und PLZ sind Pflicht,
+// die Art kommt aus geschaeft.art.
+function validateGeschaeftsAnfrage(input, base, { now } = {}) {
+  if (!base.name) throw httpError(400, 'Bitte gebt eine Ansprechperson an.')
+  const firma = cleanPlainText(input.firma, { maxLength: MAX_FIRMA_LENGTH, label: 'Der Name' })
+  if (!firma) throw httpError(400, 'Bitte gebt den Namen eurer Hundeschule, eures Tierheims oder Geschäfts an.')
+  const geschaeft = validateGeschaeft(input.geschaeft, { now })
+  const plz = validatePlz(input.plz)
+  if (!plz) throw httpError(400, 'Bitte gebt eure Postleitzahl an.')
+  assertNoBreeder({ name: base.name, firma, nachricht: base.nachricht })
+  return { ...base, firma, partner_typ: geschaeft.partnerTyp, plz, geschaeft }
+}
+
 // Eingabe von POST /api/public/anfragen -> saubere Spalten. Eine Gutschein-Anfrage übernimmt keine Partner-Felder.
-// Partner sind nie Züchter (lib/breederGuard.js) - geprüft auf Name, Firma und Nachricht.
-function validateAnfrage(body) {
+// Partner sind nie Züchter (lib/breederGuard.js) - geprüft auf Name, Firma und Nachricht. geschaeft: nur bei einer
+// Geschäftsanfrage gesetzt, sonst null. now nur für Tests.
+function validateAnfrage(body, { now } = {}) {
   const input = body && typeof body === 'object' && !Array.isArray(body) ? body : {}
   const typ = validateTyp(input.typ)
+  if (typ === TYP.partner && input.geschaeft !== undefined) {
+    const name = cleanPlainText(input.name, { maxLength: MAX_NAME_LENGTH, label: 'Der Name' })
+    const email = validateRequiredEmail(input.email)
+    const nachricht = cleanPlainText(input.nachricht, { maxLength: MAX_NACHRICHT_LENGTH, label: 'Die Nachricht', allowNewline: true })
+    return validateGeschaeftsAnfrage(input, { typ, name, email, nachricht }, { now })
+  }
   const name = cleanPlainText(input.name, { maxLength: MAX_NAME_LENGTH, label: 'Der Name' })
   const email = validateRequiredEmail(input.email)
   const nachricht = cleanPlainText(input.nachricht, { maxLength: MAX_NACHRICHT_LENGTH, label: 'Die Nachricht', allowNewline: true })
   const partnerFields = typ === TYP.partner ? validatePartnerFields(input) : { firma: null, partner_typ: null, plz: null }
   if (typ === TYP.partner) assertNoBreeder({ name, firma: partnerFields.firma, nachricht })
-  return { typ, name, email, nachricht, ...partnerFields }
+  return { typ, name, email, nachricht, ...partnerFields, geschaeft: null }
 }
 
 // PUT /api/admin/anfragen/:id { status?, notiz? } - mindestens eins davon. notiz null/'' löscht die Notiz.
@@ -207,10 +228,14 @@ function scheduleAnfragenPurge(logger = console) {
 
 // Prüfen und Einfügen in EINER Transaktion: 'duplikat' (dieselbe offene Anfrage, E-Mail + Typ, aus den letzten 24
 // Stunden), 'voll' (schon MAX_OPEN_ANFRAGEN offene) oder die neue id.
+// Eine Geschäftsanfrage legt ihre Zusatzangaben in derselben Transaktion an (lib/geschaeftAnfragen.js).
 const insertIfRoom = db.transaction((clean) => {
   if (findDuplicateStmt.get(clean.email, clean.typ)) return { outcome: 'duplikat' }
   if (countOpenStmt.get().n >= MAX_OPEN_ANFRAGEN) return { outcome: 'voll' }
-  return { outcome: 'neu', id: Number(insertStmt.run(clean).lastInsertRowid) }
+  const { geschaeft, ...columns } = clean
+  const id = Number(insertStmt.run(columns).lastInsertRowid)
+  if (geschaeft) insertGeschaeft(id, geschaeft)
+  return { outcome: 'neu', id }
 })
 
 // Verworfene Anfragen (Grenze erreicht): höchstens eine Logzeile je DROP_LOG_INTERVAL_MS, mit der Anzahl seit der
@@ -285,6 +310,7 @@ function adminAnfrage(row) {
     status: row.status,
     notiz: row.notiz,
     gutschein: assignedVoucher(row),
+    geschaeft: geschaeftView(row.id),
     createdAt: row.created_at,
     erledigtAt: row.erledigt_at,
     aktualisiertAt: row.aktualisiert_at

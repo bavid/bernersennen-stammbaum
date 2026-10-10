@@ -45,11 +45,24 @@ const AKTION = Object.freeze({
   // (routes/adminPartnerSichtbar.js), ziel 'partner:<id>'.
   partnerUeberallGesperrt: 'partner-ueberall-gesperrt',
   partnerUeberallErlaubt: 'partner-ueberall-erlaubt',
+  // Antrag „Deutschlandweit sichtbar“ freigegeben bzw. abgelehnt (routes/adminPartnerSichtbar.js), ziel 'partner:<id>' -
+  // nie der Grund selbst.
+  partnerUeberallFreigegeben: 'partner-ueberall-freigegeben',
+  partnerUeberallAbgelehnt: 'partner-ueberall-abgelehnt',
   // „Kosten & Reserve“: ein laufender Kosten-Posten angelegt, geändert oder gelöscht (routes/adminFinanzierung.js), ziel
   // 'kosten:<id>' - nie Beträge oder Titel.
   finanzierungKostenAngelegt: 'finanzierung-kosten-angelegt',
   finanzierungKostenGeaendert: 'finanzierung-kosten-geaendert',
   finanzierungKostenGeloescht: 'finanzierung-kosten-geloescht',
+  // „Anschub“: eine Vorleistung angelegt, geändert oder gelöscht (routes/adminFinanzierung.js), ziel 'vorleistung:<id>'.
+  finanzierungVorleistungAngelegt: 'finanzierung-vorleistung-angelegt',
+  finanzierungVorleistungGeaendert: 'finanzierung-vorleistung-geaendert',
+  finanzierungVorleistungGeloescht: 'finanzierung-vorleistung-geloescht',
+  // „Spenden live“: eine Spende erfasst, geändert oder gelöscht (routes/adminSpenden.js), ziel 'spende:<id>' - nie Betrag
+  // oder Name.
+  spendeErfasst: 'spende-erfasst',
+  spendeGeaendert: 'spende-geaendert',
+  spendeGeloescht: 'spende-geloescht',
   // Startseite: der Admin stellt einen Partner im Laufband vor bzw. nimmt ihn heraus (routes/adminPartnerVorgestellt.js),
   // ziel 'partner:<id>'.
   partnerVorgestellt: 'partner-vorgestellt',
@@ -101,6 +114,14 @@ function kostenZiel(kostenId) {
   return `kosten:${kostenId}`
 }
 
+function vorleistungZiel(id) {
+  return `vorleistung:${id}`
+}
+
+function spendeZiel(id) {
+  return `spende:${id}`
+}
+
 function landeadresseZiel(id) {
   return `landeadresse:${id}`
 }
@@ -133,6 +154,8 @@ module.exports = {
   quartalZiel,
   kostenZiel,
   landeadresseZiel,
+  vorleistungZiel,
+  spendeZiel,
   logAdminAction,
   cleanLimit,
   recentAdminLog

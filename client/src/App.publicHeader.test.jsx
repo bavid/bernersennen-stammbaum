@@ -160,7 +160,7 @@ describe('Öffentliche Seiten – Kopf mit Logo und "Zurück"', () => {
     await act(async () => backButton().click())
     await waitFor(() => container.querySelector('.partners-page'))
 
-    expect(container.querySelector('h1').textContent).toBe('Unsere Partner')
+    expect(container.querySelector('h1').textContent).toBe('Entdecken')
   })
 
   test('ohne Verlauf und ohne Sitzung: "Zurück" auf dem Datenschutz führt zur Login-Seite', async () => {
@@ -232,8 +232,8 @@ describe('Hinweis in der Partner-Demo', () => {
     ['/p/hundeschule-birkenhain', 'einer Zuhause-Demo', homeDemo, '.partner-portal h1', 'Hundeschule Birkenhain'],
     ['/t/pepper-ab12cd', 'einer Partner-Demo', partnerDemo, '.steckbrief-page h1', 'Pepper'],
     ['/t/pepper-ab12cd', 'einer Zuhause-Demo', homeDemo, '.steckbrief-page h1', 'Pepper'],
-    ['/partner', 'einer Partner-Demo', partnerDemo, '.partners-page h1', 'Unsere Partner'],
-    ['/partner', 'einer Zuhause-Demo', homeDemo, '.partners-page h1', 'Unsere Partner']
+    ['/partner', 'einer Partner-Demo', partnerDemo, '.partners-page h1', 'Entdecken'],
+    ['/partner', 'einer Zuhause-Demo', homeDemo, '.partners-page h1', 'Entdecken']
   ])('auf %s in %s: die Seite in der App-Hülle, ohne Demo-Hinweis, Rundgang und Umschalter', async (path, _label, me, heading, title) => {
     api.me.mockResolvedValue(me)
     await render('/profil')

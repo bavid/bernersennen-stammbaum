@@ -70,11 +70,12 @@ describe('Texte', () => {
 describe('Formular eines Postens', () => {
   test('Vorgaben, Nutzlast in Cent und Fehler je Feld', () => {
     const leer = kostenForm(null, new Date(2026, 9, 5))
-    expect(leer).toEqual({ titel: '', betrag: '', intervall: 'monat', ab: '2026-10-05', bis: '', notiz: '' })
+    expect(leer).toEqual({ titel: '', betrag: '', intervall: 'monat', kategorie: 'technik', ab: '2026-10-05', bis: '', notiz: '' })
     expect(kostenPayload({ ...leer, titel: ' Server ', betrag: '23,00' }).payload).toEqual({
       titel: 'Server',
       betragCents: 2300,
       intervall: 'monat',
+      kategorie: 'technik',
       ab: '2026-10-05',
       bis: null,
       notiz: ''
@@ -86,6 +87,7 @@ describe('Formular eines Postens', () => {
       titel: 'Domain',
       betrag: '12,00',
       intervall: 'jahr',
+      kategorie: 'technik',
       ab: '2026-03-15',
       bis: '',
       notiz: ''

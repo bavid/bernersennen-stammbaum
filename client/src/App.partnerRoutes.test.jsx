@@ -156,7 +156,7 @@ describe('Route /partner – öffentliche Partnerliste', () => {
     publicPartners.mockResolvedValue([])
     await render('/partner')
 
-    expect(container.querySelector('h1')?.textContent).toBe('Unsere Partner')
+    expect(container.querySelector('h1')?.textContent).toBe('Entdecken')
   })
 })
 
@@ -175,7 +175,7 @@ describe('Steckbrief (/t/:slug) und Partnerliste (/partner) – ohne und mit Sit
   }
   const pages = [
     ['/t/benno-ab12cd', '.steckbrief-page', 'Benno'],
-    ['/partner', '.partners-page', 'Unsere Partner']
+    ['/partner', '.partners-page', 'Entdecken']
   ]
   const backButtons = () => [...container.querySelectorAll('button')].filter((btn) => btn.textContent.trim() === 'Zurück')
 

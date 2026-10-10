@@ -5,7 +5,8 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const { finanzierung } = vi.hoisted(() => ({ finanzierung: vi.fn() }))
-vi.mock('../api', () => ({ api: { finanzierung } }))
+// „Spenden live“ hat eigene Tests (SpendenLive.test.jsx) - hier ohne Live-Daten (Block bleibt weg).
+vi.mock('../api', () => ({ api: { finanzierung, finanzierungLive: () => Promise.reject(new Error('offline')) } }))
 
 import FinanzierungPage, { GRUNDSATZ } from './FinanzierungPage.jsx'
 import { QUARTALE_LEER } from '../components/finanzierung/FinanzierungQuartale.jsx'

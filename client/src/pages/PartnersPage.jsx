@@ -1,101 +1,130 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../api'
 import PublicHeader from '../components/PublicHeader.jsx'
 import LocationPicker from '../components/LocationPicker.jsx'
-import PartnerCard from '../components/PartnerCard.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
-import { FallbackNote } from '../components/DiscoverChapter.jsx'
-import { splitByDistance } from '../lib/discover.js'
+import EntdeckenCard from '../components/entdecken/EntdeckenCard.jsx'
+import EntdeckenSuche from '../components/entdecken/EntdeckenSuche.jsx'
+import useEntdecken, { DEFAULT_RADIUS, START_SUCHE } from '../components/entdecken/useEntdecken.js'
 import { t } from '../lib/i18n/index.js'
-import { Button } from '../components/ui/index.js'
+import { Button, EmptyState } from '../components/ui/index.js'
 
-const DEFAULT_RADIUS = 25
 const PLZ_LENGTH = 5
 const INCOMPLETE_PLZ_ERROR = 'Bitte eine 5-stellige Postleitzahl eingeben.'
+const LIST_ID = 'entdecken-treffer'
 
-// /partner – öffentliche Partnerliste. Ohne PLZ zeigt sie alle aktiven Partner, mit einer gültigen
-// 5-stelligen PLZ die im Umkreis, nach Entfernung sortiert (der Server übernimmt Sortierung/Filter).
-// Der Standort-Knopf bleibt für Gäste in dieser Phase aus (LocationPicker allowGeolocation=false,
-// Standard) – er gehört erst zur In-App-Suche aus Task 6.
-// Phase P2: liegen im Umkreis weniger als fünf, hängt der Server die nächsten weiteren an (ausserhalb: true) -
-// sie stehen gesammelt unter "Weiter weg", mit dem Hinweis darüber (wie in "Entdecken").
+// /partner – öffentliches Entdecken (von der Startseite „Entdecken“): Tierheime, Hundeschulen, Salons und mehr. Suche nach
+// Name/Art/Ort, Typ-Umschalter, „In der Nähe“ per PLZ + Umkreis (LocationPicker) und oben der Abschnitt „Deutschlandweit“
+// (vom Team freigegebene Partner, unabhängig von der PLZ). Der Server filtert, sortiert und teilt in Seiten
+// (server/routes/publicEntdecken.js); „Mehr laden“ hängt die nächste Seite an. Kein Tracking, keine fremde Werbung.
+// Ohne Sitzung mit dem schlanken öffentlichen Kopf und Fuß, angemeldet (inApp, App.jsx) in der normalen Hülle der App.
 
-function PartnerCards({ items }) {
+function CardList({ items, id }) {
   return (
-    <ul className="partner-list">
+    <ul className="entdecken-list" id={id}>
       {items.map((partner) => (
-        <li key={partner.id}>
-          <PartnerCard partner={partner} />
+        <li key={partner.slug}>
+          <EntdeckenCard partner={partner} />
         </li>
       ))}
     </ul>
   )
 }
 
-// Feedback-Runde: ohne Sitzung mit dem schlanken öffentlichen Kopf und Fuß, angemeldet (inApp, App.jsx) in der normalen
-// Hülle der App - ohne zweiten Kopf, Fuß oder "Zurück".
+function trefferTitle(applied) {
+  return applied.plz ? t('In der Nähe von {ort}', { ort: applied.plz }) : t('Alle Einträge')
+}
+
+function Treffer({ entdecken }) {
+  const { result, applied, loadingMore, loadMore } = entdecken
+  if (!result.treffer.length) {
+    if (result.deutschlandweit.length) return null
+    return (
+      <EmptyState icon="search" title={t('Nichts gefunden')} live>
+        {applied.plz ? t('Versucht es mit einem größeren Umkreis oder einer anderen Art.') : t('Versucht es mit einem anderen Suchwort oder einer anderen Art.')}
+      </EmptyState>
+    )
+  }
+  return (
+    <section className="entdecken-section" aria-labelledby="entdecken-treffer-title">
+      <h2 id="entdecken-treffer-title" className="entdecken-section-title">
+        {trefferTitle(applied)} <span className="entdecken-count">{t('{n} Treffer', { n: result.gesamt })}</span>
+      </h2>
+      <CardList items={result.treffer} id={LIST_ID} />
+      {result.mehr && (
+        <div className="entdecken-more">
+          <Button type="button" variant="ghost" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? t('Lädt …') : t('Mehr laden')}
+          </Button>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function Deutschlandweit({ items }) {
+  if (!items.length) return null
+  return (
+    <section className="entdecken-section entdecken-weit" aria-labelledby="entdecken-weit-title">
+      <h2 id="entdecken-weit-title" className="entdecken-section-title">
+        <Icon name="globe" /> {t('Deutschlandweit')}
+      </h2>
+      <p className="muted entdecken-section-lede">{t('Für alle da, egal wo ihr wohnt – vom Team freigegeben.')}</p>
+      <CardList items={items} />
+    </section>
+  )
+}
+
 export default function PartnersPage({ inApp = false }) {
+  const entdecken = useEntdecken()
+  const { applied, loading, error, load, setError } = entdecken
+  const [q, setQ] = useState('')
   const [plz, setPlz] = useState('')
   const [radius, setRadius] = useState(DEFAULT_RADIUS)
-  const [partners, setPartners] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  // Phase V1: dezente Ortswahl - "Überall · Ort wählen", nach einer Suche "In der Nähe von 20095 · ändern".
-  const [applied, setApplied] = useState(null)
-  const { near, far } = splitByDistance(partners)
-
-  async function search(nextPlz, nextRadius) {
-    setLoading(true)
-    setError(null)
-    try {
-      const complete = nextPlz.length === PLZ_LENGTH
-      const result = await api.publicPartners(complete ? { plz: nextPlz, radius: nextRadius } : {})
-      setPartners(Array.isArray(result) ? result.filter((item) => item && typeof item === 'object') : [])
-      setApplied({ plz: complete ? nextPlz : null, radius: nextRadius })
-    } catch (err) {
-      setError(err.message)
-      setPartners([])
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
-    search('', radius)
-    // Nur beim ersten Laden – die Suche danach löst ausschließlich das Formular aus.
+    load(START_SUCHE)
+    // Nur beim ersten Laden – danach lösen Suche, Umschalter und Ortswahl aus.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function handleSubmit(event) {
+  function handleLocationSubmit(event) {
     event.preventDefault()
-    // Eine angefangene, aber unvollständige PLZ (1-4 Ziffern) soll nicht stillschweigend als "keine PLZ"
-    // gelten und alle Partner zeigen - ein Hinweis statt einer überraschenden Volltreffer-Liste (Finding 10).
+    // Eine angefangene PLZ (1-4 Ziffern) gilt nicht stillschweigend als „überall“ (Finding 10).
     if (plz.length > 0 && plz.length < PLZ_LENGTH) {
       setError(INCOMPLETE_PLZ_ERROR)
-      setPartners([])
       return false
     }
-    search(plz, radius)
+    load({ ...applied, q, plz: plz.length === PLZ_LENGTH ? plz : null, radius })
     return true
   }
 
   return (
-    <div className={`partners-page ${inApp ? 'public-in-app' : 'public-page'}`}>
+    <div className={`partners-page entdecken-page ${inApp ? 'public-in-app' : 'public-page'}`}>
       {!inApp && <PublicHeader />}
       <div className="partners-hero">
-        <span className="eyebrow">{t('Partner')}</span>
-        <h1>{t('Unsere Partner')}</h1>
-        <p className="page-lede">{t('Tierheime, Vermittlungsstellen, Hundeschulen, Salons und Betreuung, die mit uns zusammenarbeiten.')}</p>
+        <span className="eyebrow">{t('Tierheime, Hundeschulen & mehr')}</span>
+        <h1>{t('Entdecken')}</h1>
+        <p className="page-lede">
+          {t('Hier findet ihr Tierheime, Hundeschulen, Salons und mehr – sichtbar, weil sie mitmachen. Keine fremde Werbung, kein Tracking, kein Datenhandel.')}
+        </p>
       </div>
 
+      <EntdeckenSuche
+        q={q}
+        typ={applied.typ}
+        onQChange={setQ}
+        onSubmit={() => load({ ...applied, q: q.trim() })}
+        onTypChange={(typ) => load({ ...applied, q: q.trim(), typ })}
+        controls={LIST_ID}
+      />
       <LocationPicker
         plz={plz}
         radius={radius}
         onPlzChange={setPlz}
         onRadiusChange={setRadius}
-        onSubmit={handleSubmit}
+        onSubmit={handleLocationSubmit}
         collapsible
         applied={applied}
         allowEverywhere
@@ -111,23 +140,10 @@ export default function PartnersPage({ inApp = false }) {
         <p className="muted" aria-busy="true">
           {t('Lädt …')}
         </p>
-      ) : partners.length === 0 ? (
-        <div className="empty-state card">
-          <Icon name="mapPin" />
-          <h3>{t('Keine Partner gefunden')}</h3>
-          <p className="muted">{t('Versucht es mit einer anderen Postleitzahl oder einem größeren Umkreis.')}</p>
-        </div>
       ) : (
         <>
-          {far.length > 0 && <FallbackNote />}
-          {near.length > 0 && <PartnerCards items={near} />}
-          {far.length > 0 && (
-            <div className="discover-far partners-far">
-              {/* h2 statt DiscoverSubheading (h3): hier gibt es keine Kapitel-Überschrift darüber. */}
-              <h2 className="discover-subheading">{t('Weiter weg')}</h2>
-              <PartnerCards items={far} />
-            </div>
-          )}
+          <Deutschlandweit items={entdecken.result.deutschlandweit} />
+          <Treffer entdecken={entdecken} />
         </>
       )}
 
@@ -135,7 +151,7 @@ export default function PartnersPage({ inApp = false }) {
       <aside className="partners-cta card" aria-labelledby="partners-cta-title">
         <div>
           <h2 id="partners-cta-title">{t('Ihr seid Hundeschule, Tierheim, Hundesalon oder Betreuung?')}</h2>
-          <p className="muted">{t('Ein eigenes Profil bei uns ist kostenlos – mit Portal, Einblicken und Einladungscodes.')}</p>
+          <p className="muted">{t('Ein eigenes Profil bei uns ist heute kostenlos – mit Portal, Einblicken und Einladungscodes.')}</p>
         </div>
         <Button to="/partner-werden" as={Link}>
           {t('Partner werden')} <Icon name="arrowRight" />

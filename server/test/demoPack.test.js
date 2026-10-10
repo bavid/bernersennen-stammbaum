@@ -64,12 +64,19 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     )
   })
 
-  await t.test('exactly four demo partners with the expected slugs and badges; the real partner is untouched', () => {
-    assert.equal(partnerIds.length, 4)
+  await t.test('exactly sixteen demo partners with the expected slugs and badges; the real partner is untouched', () => {
+    assert.equal(partnerIds.length, 16)
     const demoPartners = db.prepare('SELECT id, slug, typ, status, ist_partner, farbe FROM partners WHERE is_demo = 1 ORDER BY slug').all()
+    const { DEMO_ENTDECKEN_PARTNERS } = require('../seed/demo-entdecken-partners')
     assert.deepEqual(
       demoPartners.map((p) => p.slug),
-      ['hundesalon-wuschelglueck', 'hundeschule-pfotenglueck', 'tierheim-sonnenhang', 'tierschutzverein-deichland']
+      [
+        'hundesalon-wuschelglueck',
+        'hundeschule-pfotenglueck',
+        'tierheim-sonnenhang',
+        'tierschutzverein-deichland',
+        ...DEMO_ENTDECKEN_PARTNERS.map((p) => p.slug)
+      ].sort()
     )
     for (const partner of demoPartners) assert.equal(partner.status, 'aktiv')
     assert.deepEqual(demoPartners.map((p) => p.id).sort((a, b) => a - b), partnerIds.slice().sort((a, b) => a - b))
@@ -249,13 +256,13 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     assert.equal(second.household.dogs, 4)
     assert.equal(second.shelter.dogs, 5, 'wieder genau fünf Tiere im Demo-Tierheim')
 
-    assert.equal(second.partnerIds.length, 4, 'wieder genau vier Demo-Partner')
+    assert.equal(second.partnerIds.length, 16, 'wieder genau sechzehn Demo-Partner')
     assert.equal(
       db.prepare(`SELECT COUNT(*) AS n FROM partners WHERE id IN (${oldPartnerIds.map(() => '?').join(',')})`).get(...oldPartnerIds).n,
       0,
       'alte Demo-Partner-Ids sind weg'
     )
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM partners WHERE is_demo = 1').get().n, 4, 'weiterhin genau vier Demo-Partner')
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM partners WHERE is_demo = 1').get().n, 16, 'weiterhin genau sechzehn Demo-Partner')
     assert.ok(db.prepare('SELECT 1 FROM partners WHERE id = ? AND is_demo = 0').get(realPartnerId), 'echter Partner bleibt unangetastet')
 
     assert.equal(

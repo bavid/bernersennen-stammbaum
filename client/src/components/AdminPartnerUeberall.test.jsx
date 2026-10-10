@@ -3,8 +3,8 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-const { setPartnerUeberallErlaubt } = vi.hoisted(() => ({ setPartnerUeberallErlaubt: vi.fn() }))
-vi.mock('../api', () => ({ api: { admin: { setPartnerUeberallErlaubt } } }))
+const { setPartnerUeberallErlaubt, decidePartnerUeberall } = vi.hoisted(() => ({ setPartnerUeberallErlaubt: vi.fn(), decidePartnerUeberall: vi.fn() }))
+vi.mock('../api', () => ({ api: { admin: { setPartnerUeberallErlaubt, decidePartnerUeberall } } }))
 
 import AdminPartnerUeberall from './AdminPartnerUeberall.jsx'
 
@@ -22,6 +22,7 @@ afterEach(() => {
   container?.remove()
   container = null
   setPartnerUeberallErlaubt.mockReset()
+  decidePartnerUeberall.mockReset()
 })
 
 async function render(partner, onChanged = () => {}) {
@@ -66,5 +67,29 @@ describe('AdminPartnerUeberall', () => {
     await render({ ...partner, ueberall_sichtbar: 1 })
     await act(async () => container.querySelector('button').click())
     expect(container.querySelector('[role="alert"]').textContent).toMatch(/gibt es nicht/)
+  })
+
+  test('beantragt: „Freigeben“ sofort, „Ablehnen“ erst mit Grund', async () => {
+    const onChanged = vi.fn()
+    decidePartnerUeberall.mockResolvedValue({})
+    await render({ ...partner, ueberall_sichtbar: 1, ueberall_freigabe: '' }, onChanged)
+    expect(container.querySelector('.pill').textContent).toBe('Deutschlandweit beantragt')
+    const byText = (text) => [...container.querySelectorAll('button')].find((b) => b.textContent.startsWith(text))
+
+    await act(async () => byText('Freigeben').click())
+    expect(decidePartnerUeberall).toHaveBeenCalledWith(4, true, undefined)
+    expect(onChanged).toHaveBeenCalledTimes(1)
+
+    await act(async () => byText('Ablehnen').click())
+    const submit = container.querySelector('form button[type="submit"]')
+    expect(submit.disabled).toBe(true)
+    const input = container.querySelector('form input')
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    await act(async () => {
+      setter.call(input, ' Profil noch leer ')
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(decidePartnerUeberall).toHaveBeenLastCalledWith(4, false, 'Profil noch leer')
   })
 })

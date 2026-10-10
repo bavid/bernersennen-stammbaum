@@ -211,6 +211,8 @@ module.exports = {
   uploadRateLimit: Number(process.env.UPLOAD_RATE_LIMIT) || 200,
   // Kontaktformular der Partner-Portale (Phase P2 Task 9): Anfragen pro IP je Stunde - öffentlich ohne Login
   contactRateLimit: Number(process.env.CONTACT_RATE_LIMIT) || 5,
+  // Öffentliches Entdecken (routes/publicEntdecken.js): Suchanfragen pro IP je 5 Minuten - öffentlich ohne Login
+  entdeckenRateLimit: Number(process.env.ENTDECKEN_RATE_LIMIT) || 120,
   // Gutschein-/Partner-Anfragen (Phase N Task 1): Anfragen pro IP je Stunde - öffentlich ohne Login
   anfrageRateLimit: Number(process.env.ANFRAGE_RATE_LIMIT) || 3,
   // Digitaler Bilderrahmen auf einem anderen Gerät (routes/rahmen.js): Fotolisten pro IP je 15 Minuten - öffentlich ohne Login

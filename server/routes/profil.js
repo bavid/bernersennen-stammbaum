@@ -14,7 +14,7 @@ const {
   assertPublishablePhoto,
   removeUploadedFile
 } = require('../lib/photoUpload')
-const { savePersonName, bildUrl, bildFileOf, replaceBild, canHaveBild, canSeeBild } = require('../lib/profil')
+const { savePersonName, saveRundgang, bildUrl, bildFileOf, replaceBild, canHaveBild, canSeeBild } = require('../lib/profil')
 
 // Profil (lib/profil.js): „Euer Name“ der angemeldeten Person und das Bild des aktiven Zuhauses bzw. der aktiven Familie.
 // Schreiben: requireAuth sperrt Demo, Admin-Ansicht (app.js) und Besuche (lib/guestAccess.js); das Bild ändert nur die
@@ -31,6 +31,16 @@ const CONTENT_TYPES = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' 
 router.put('/name', requireAuth, (req, res, next) => {
   try {
     res.json(savePersonName(req.homeId, req.userId, req.body?.anzeigename))
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message })
+    next(err)
+  }
+})
+
+// Rundgang (lib/profil.js): Stand je Zuhause - Demo, Admin-Ansicht und Besuche sperrt requireAuth bzw. app.js.
+router.put('/rundgang', requireAuth, (req, res, next) => {
+  try {
+    res.json(saveRundgang(req.homeId, req.body?.status))
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message })
     next(err)

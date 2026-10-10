@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import { companionLine, herkunftText } from '../../lib/companions.js'
+import { SETTINGS_ROUTE } from '../../lib/areas.js'
 import { withShareChange } from '../../lib/animalCounts.js'
 import { stayOwnerName } from '../../lib/dogProfile.js'
 import { ageText, formatDateLong } from '../../lib/dates.js'
@@ -102,6 +104,13 @@ export default function DogInfos({ dog, setDog, family, allDogs, canWrite, canTa
           onFamilyChange={onFamilyChange}
           onSharesChange={handleSharesChange}
         />
+      )}
+      {/* „Wer sieht was“: alles zur Sichtbarkeit an einer Stelle - auf dieses Tier vorausgewählt. */}
+      {ownHomeAnimal && (
+        <Link className="btn btn-ghost btn-compact dog-infos-sichtbarkeit" to={`${SETTINGS_ROUTE}?bereich=sichtbarkeit&tier=${dog.id}`}>
+          <Icon name="eye" />
+          {t('Wer sieht was – alles im Überblick')}
+        </Link>
       )}
       {ownHomeAnimal && dog.shelterShare && (
         <ShelterSharePanel

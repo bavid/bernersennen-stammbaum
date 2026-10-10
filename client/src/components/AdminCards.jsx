@@ -9,6 +9,7 @@ import AdminPromotions from './AdminPromotions.jsx'
 import AdminCommunityBanner from './AdminCommunityBanner.jsx'
 import AdminPostApproval from './AdminPostApproval.jsx'
 import AdminSupport from './AdminSupport.jsx'
+import AdminSpenden from './AdminSpenden.jsx'
 import AdminLog from './AdminLog.jsx'
 import AdminAnfragen from './AdminAnfragen.jsx'
 import AdminNotify from './AdminNotify.jsx'
@@ -58,7 +59,13 @@ export function adminCards({ overview, partners, todo, bereich, promotions, onOp
     // Plan 2027 Kap. 6: eigene Landeadresse je Kanal (/fb, /anzeige-herbst) - anonym gezählt.
     landeadressen: <AdminLandeadressen />,
     statistik: <AdminStats teil="details" />,
-    spenden: <AdminSupport />,
+    // „Spenden live“: zuerst eingegangene Spenden erfassen, darunter Spenden-Knopf und Transparenzberichte.
+    spenden: (
+      <>
+        <AdminSpenden />
+        <AdminSupport />
+      </>
+    ),
     finanzierung: <AdminFinanzierung />,
     // Phase G Task 6: Speicher, Platte, Last und Verlauf - fragt nur nach, solange der Unterreiter offen ist.
     server: <AdminServer active={bereich === 'server'} />,

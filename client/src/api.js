@@ -62,6 +62,8 @@ export const api = {
   config: () => request('/config'),
   // Phase F: „So finanzieren wir uns“ (/finanzierung, server/routes/finanzierung.js) - ohne Login, cachebar.
   finanzierung: () => request('/finanzierung'),
+  // „Spenden live“ (server/lib/spendenLive.js): Summen, Deckung, zuletzt gespendet - ohne Login, 30 s cachebar.
+  finanzierungLive: () => request('/finanzierung/live'),
   // Laufband der Startseite (server/routes/community.js): Zahlen aus der Gemeinschaft - ohne Login, cachebar.
   community: () => request('/community'),
   // Globale Hinweise fürs Band oben (Phase N Task 5, server/routes/hinweise.js): ohne Login, höchstens fünf laufende,
@@ -73,6 +75,8 @@ export const api = {
   setDarstellung: (patch) => request('/me/darstellung', json('PUT', patch)),
   // Profil (server/routes/profil.js): „Euer Name“ der angemeldeten Person -> { anzeigename }; Bild des aktiven Zuhauses bzw.
   // der aktiven Familie (nur Leitung) -> { bild } (Adresse oder null).
+  // Rundgang (components/tour): Stand je Zuhause - 'neu' | 'fertig' | 'aus' -> { rundgang }.
+  setRundgang: (status) => request('/profil/rundgang', json('PUT', { status })),
   setPersonName: (anzeigename) => request('/profil/name', json('PUT', { anzeigename })),
   uploadAreaBild: (file) => {
     const formData = new FormData()
@@ -100,6 +104,15 @@ export const api = {
     }
     const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
     return request(`/public/partners${qs}`)
+  },
+  // Öffentliches Entdecken (server/routes/publicEntdecken.js): { deutschlandweit, treffer, gesamt, seite, seiten, mehr }.
+  // Ohne PLZ ein GET (kurz zwischenspeicherbar), mit PLZ ein POST - die PLZ steht nie in der URL (wie publicPartners).
+  publicEntdecken: ({ q, typ, plz, radius, seite, demo } = {}) => {
+    const qs = demo ? `?${new URLSearchParams({ demo }).toString()}` : ''
+    if (plz) return request(`/public/entdecken${qs}`, json('POST', { q, typ, plz, radius, seite }))
+    const params = Object.fromEntries(Object.entries({ q, typ, seite, demo }).filter(([, value]) => value))
+    const search = new URLSearchParams(params).toString()
+    return request(`/public/entdecken${search ? `?${search}` : ''}`)
   },
   // Portal-Daten. demo wie bei den Listen darunter: ohne ?demo=1 404t ein Demo-Partner außerhalb von dev/staging.
   publicPartner: (slug, { demo } = {}) => {
@@ -249,6 +262,8 @@ export const api = {
   withdrawHandover: (id) => request(`/dogs/${id}/handover`, { method: 'DELETE' }),
   // Einwilligung "Tierheim darf mitlesen" (Phase T Task 5, Besitzer-Zuhause) - siehe ShelterSharePanel.
   setShelterShare: (id, payload) => request(`/dogs/${id}/shelter-share`, json('PUT', payload)),
+  // „Wer sieht was“ (Einstellungen, server/routes/sichtbarkeit.js): je eigenem Tier { id, privat, geteilt, tierheim }.
+  sichtbarkeitUebersicht: () => request('/sichtbarkeit/uebersicht'),
 
   listTimeline: (dogId) => request(`/timeline${dogId ? `?dogId=${encodeURIComponent(dogId)}` : ''}`),
   createTimelineEntry: (payload) => request('/timeline', json('POST', payload)),
@@ -330,6 +345,8 @@ export const api = {
     updateAnfrage: (id, payload) => request(`/admin/anfragen/${encodeURIComponent(id)}`, json('PUT', payload)),
     assignAnfrageGutschein: (id, batchId) => request(`/admin/anfragen/${encodeURIComponent(id)}/gutschein`, json('POST', { batchId })),
     deleteAnfrage: (id) => request(`/admin/anfragen/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    // Geschäftsanfrage: einen Terminvorschlag bestätigen ({ index: 0..2 | null, notiz? }) -> die ganze Anfrage.
+    confirmAnfrageTermin: (id, payload) => request(`/admin/anfragen/${encodeURIComponent(id)}/termin`, json('PUT', payload)),
 
     // Telegram-Benachrichtigungen (Phase N, server/routes/adminNotify.js). Alle Antworten außer Chat finden und
     // Testnachricht: { eingerichtet, quelle, tokenHinweis, chatId, einstellungen } - der Token selbst kommt nie zurück.
@@ -370,9 +387,20 @@ export const api = {
     createFinanzierungKosten: (posten) => request('/admin/finanzierung/kosten', json('POST', posten)),
     updateFinanzierungKosten: (id, posten) => request(`/admin/finanzierung/kosten/${id}`, json('PUT', posten)),
     deleteFinanzierungKosten: (id) => request(`/admin/finanzierung/kosten/${id}`, { method: 'DELETE' }),
+    // „Anschub“ (Vorleistung, server/routes/adminSpenden.js) - { titel, kategorie, betragCents, datum, notiz }.
+    createVorleistung: (v) => request('/admin/finanzierung/vorleistungen', json('POST', v)),
+    updateVorleistung: (id, v) => request(`/admin/finanzierung/vorleistungen/${id}`, json('PUT', v)),
+    deleteVorleistung: (id) => request(`/admin/finanzierung/vorleistungen/${id}`, { method: 'DELETE' }),
+    // „Spenden live“: eingegangene Spenden erfassen (server/routes/adminSpenden.js).
+    spenden: () => request('/admin/spenden'),
+    createSpende: (spende) => request('/admin/spenden', json('POST', spende)),
+    updateSpende: (id, spende) => request(`/admin/spenden/${id}`, json('PUT', spende)),
+    deleteSpende: (id) => request(`/admin/spenden/${id}`, { method: 'DELETE' }),
     // Phase F: „Überall sichtbar“ eines Partners vom Team ausschalten und sperren (erlaubt: false) oder wieder erlauben
     // (erlaubt: true) - server/routes/adminPartnerSichtbar.js; einschalten tut der Partner selbst.
     setPartnerUeberallErlaubt: (id, erlaubt) => request(`/admin/partners/${id}/ueberall-sichtbar`, json('PUT', { erlaubt })),
+    // Antrag „Überall sichtbar“ freigeben (freigeben: true) oder mit Grund ablehnen.
+    decidePartnerUeberall: (id, freigeben, grund) => request(`/admin/partners/${id}/ueberall-freigabe`, json('PUT', freigeben ? { freigeben } : { freigeben, grund })),
     // Laufband der Startseite (server/routes/adminCommunity.js): Partner vorstellen (höchstens drei) und die Demo-Ausnahme.
     setPartnerVorgestellt: (id, an) => request(`/admin/partners/${id}/vorgestellt`, json('PUT', { an })),
     community: () => request('/admin/community'),

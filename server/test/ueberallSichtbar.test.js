@@ -35,8 +35,8 @@ test('„Überall sichtbar“: Schalter, Entdecken, Demo-Trennung, Protokoll', a
     const plz = overrides.plz || '10115'
     const hit = lookupPlz(plz)
     db.prepare(
-      `INSERT INTO partners (slug, name, typ, status, plz, ort, lat, lon, portal_text, is_demo, ueberall_sichtbar)
-       VALUES (@slug, @name, 'hundeschule', 'aktiv', @plz, @ort, @lat, @lon, @text, @is_demo, @ueberall)`
+      `INSERT INTO partners (slug, name, typ, status, plz, ort, lat, lon, portal_text, is_demo, ueberall_sichtbar, ueberall_freigabe)
+       VALUES (@slug, @name, 'hundeschule', 'aktiv', @plz, @ort, @lat, @lon, @text, @is_demo, @ueberall, @freigabe)`
     ).run({
       slug,
       name: overrides.name || `Hundeschule ${counter}`,
@@ -46,7 +46,9 @@ test('„Überall sichtbar“: Schalter, Entdecken, Demo-Trennung, Protokoll', a
       lon: hit.lon,
       text: LONG_TEXT,
       is_demo: overrides.is_demo || 0,
-      ueberall: overrides.ueberall || 0
+      ueberall: overrides.ueberall || 0,
+      // Seit der Freigabe-Pflicht: ein „überall“-Partner im Test ist freigegeben, außer der Test will es anders.
+      freigabe: overrides.freigabe ?? (overrides.ueberall ? 'freigegeben' : '')
     })
     return db.prepare('SELECT * FROM partners WHERE slug = ?').get(slug)
   }
@@ -59,13 +61,14 @@ test('„Überall sichtbar“: Schalter, Entdecken, Demo-Trennung, Protokoll', a
     }
 
     const center = { lat: 52.53, lon: 13.38 }
+    const FREI = { ueberall_freigabe: 'freigegeben' }
     const rows = [
       { id: 1, name: 'Nah B', lat: 52.54, lon: 13.39, ueberall_sichtbar: 0 },
-      { id: 2, name: 'Nah A', lat: 52.53, lon: 13.4, ueberall_sichtbar: 1 },
-      { id: 3, name: 'Fern Hamburg', lat: 53.55, lon: 9.99, ueberall_sichtbar: 1 },
-      { id: 4, name: 'Fern München', lat: 48.14, lon: 11.58, ueberall_sichtbar: 1 },
+      { id: 2, name: 'Nah A', lat: 52.53, lon: 13.4, ueberall_sichtbar: 1, ...FREI },
+      { id: 3, name: 'Fern Hamburg', lat: 53.55, lon: 9.99, ueberall_sichtbar: 1, ...FREI },
+      { id: 4, name: 'Fern München', lat: 48.14, lon: 11.58, ueberall_sichtbar: 1, ...FREI },
       { id: 5, name: 'Fern Köln', lat: 50.94, lon: 6.96, ueberall_sichtbar: 0 },
-      { id: 6, name: 'Ohne Ort', lat: null, lon: null, ueberall_sichtbar: 1 }
+      { id: 6, name: 'Ohne Ort', lat: null, lon: null, ueberall_sichtbar: 1, ...FREI }
     ]
     // Ohne Mittelpunkt: unverändert (jeder steht ohnehin da).
     const plain = radiusSection(rows, null, null)
@@ -100,8 +103,15 @@ test('„Überall sichtbar“: Schalter, Entdecken, Demo-Trennung, Protokoll', a
     const locked = withUeberallSichtbar(radiusSection(lockedRows, center, 10), lockedRows, center)
     assert.equal(locked.items.some((item) => item.ueberall), false)
 
+    // Freigabe-Pflicht: ein offener oder abgelehnter Antrag zählt nicht.
+    for (const freigabe of ['', 'abgelehnt']) {
+      const pendingRows = [rows[0], { ...rows[2], ueberall_freigabe: freigabe }]
+      const pending = withUeberallSichtbar(radiusSection(pendingRows, center, 10), pendingRows, center)
+      assert.equal(pending.items.some((item) => item.ueberall), false, freigabe || 'offen')
+    }
+
     // Review L5: höchstens die 20 nächsten „überall“-Partner (MAX_FALLBACK), nicht beliebig viele.
-    const many = [rows[0], ...Array.from({ length: 25 }, (_, i) => ({ id: 100 + i, name: `Fern ${i}`, lat: 48 + i * 0.01, lon: 11, ueberall_sichtbar: 1 }))]
+    const many = [rows[0], ...Array.from({ length: 25 }, (_, i) => ({ id: 100 + i, name: `Fern ${i}`, lat: 48 + i * 0.01, lon: 11, ueberall_sichtbar: 1, ...FREI }))]
     const capped = withUeberallSichtbar(radiusSection(many, center, 10), many, center)
     assert.equal(capped.items.filter((item) => item.ueberall).length, 20)
     assert.equal(capped.items[1].row.id, 124, 'die nächsten zuerst (Index 24 liegt am weitesten nördlich, also am nächsten an Berlin)')
@@ -254,12 +264,13 @@ test('„Überall sichtbar“: Schalter, Entdecken, Demo-Trennung, Protokoll', a
     assert.deepEqual(flags(), { ueberall_sichtbar: 1, ueberall_gesperrt: 0 })
   })
 
-  await t.test('Demo-Pack: Hundeschule Pfotenglück hat den Schalter an, die anderen nicht', () => {
+  await t.test('Demo-Pack: Pfotenglück und Tierschutznetz Weitblick sind freigegeben, die anderen nicht', () => {
     const { replaceDemoPack } = require('../lib/demoPack')
     const { uploadDir } = require('../config')
     replaceDemoPack(db, uploadDir)
-    const rows = db.prepare('SELECT slug, ueberall_sichtbar FROM partners WHERE is_demo = 1 ORDER BY slug').all()
-    assert.equal(rows.find((row) => row.slug === 'hundeschule-pfotenglueck').ueberall_sichtbar, 1)
-    assert.equal(rows.filter((row) => row.slug !== 'hundeschule-pfotenglueck').every((row) => row.ueberall_sichtbar === 0), true)
+    const rows = db.prepare('SELECT slug, ueberall_sichtbar, ueberall_freigabe FROM partners WHERE is_demo = 1 ORDER BY slug').all()
+    const an = ['hundeschule-pfotenglueck', 'tierschutznetz-weitblick']
+    for (const slug of an) assert.deepEqual(rows.find((row) => row.slug === slug), { slug, ueberall_sichtbar: 1, ueberall_freigabe: 'freigegeben' })
+    assert.equal(rows.filter((row) => !an.includes(row.slug)).every((row) => row.ueberall_sichtbar === 0), true)
   })
 })

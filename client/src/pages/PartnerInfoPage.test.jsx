@@ -198,8 +198,8 @@ describe('PartnerInfoPage – Partner-Zugang anfragen', () => {
     expect(form.hidden).toBe(false)
     expect(button('Anfrage ausfüllen')).toBeUndefined()
     expect(request.querySelector('.request-why h3').textContent).toBe('Warum anfragen?')
-    expect(request.querySelector('#request-partner-firma')).not.toBeNull()
-    expect(request.querySelector('button[type="submit"]').textContent).toBe('Partner-Zugang anfragen')
+    expect(request.querySelector('#geschaeft-firma')).not.toBeNull()
+    expect(request.querySelector('button[type="submit"]').textContent).toBe('Weiter')
   })
 
   test('/partner-werden#anfragen rückt den Abschnitt nach oben und fokussiert seine Überschrift', async () => {

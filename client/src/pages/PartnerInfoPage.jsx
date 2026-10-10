@@ -4,7 +4,7 @@ import { api } from '../api'
 import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
-import RequestPartnerForm from '../components/RequestPartnerForm.jsx'
+import GeschaeftAnfrageForm from '../components/geschaeft/GeschaeftAnfrageForm.jsx'
 import CommunityTicker from '../components/CommunityTicker.jsx'
 import TabBar from '../components/TabBar.jsx'
 import { useNoIndex } from '../hooks/useNoIndex.js'
@@ -192,7 +192,7 @@ function RequestSection() {
         )}
       </div>
       <div id="partner-info-request-form" hidden={!open}>
-        <RequestPartnerForm />
+        <GeschaeftAnfrageForm />
       </div>
     </section>
   )

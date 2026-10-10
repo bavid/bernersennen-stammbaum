@@ -300,7 +300,7 @@ test('Demo-Partner-Bereiche: Einblicke, Wuschelglück, Demo als Partner, Ersetze
     for (const slug of [PFOTENGLUECK, WUSCHELGLUECK]) assert.equal(demoAreasOf(slug).length, 1, `${slug}: genau ein Bereich`)
     assert.equal(demoAreasOf(SONNENHANG).length, 1)
     assert.equal(db.prepare("SELECT COUNT(*) AS n FROM families WHERE is_demo = 1 AND art = 'partner'").get().n, 2)
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM partners WHERE is_demo = 1').get().n, 4)
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM partners WHERE is_demo = 1').get().n, 16)
     for (const [slug, texts] of Object.entries(EXPECTED_TEXTS)) assert.equal(einblickeOf(slug).length, texts.length, slug)
     assert.equal(db.prepare('SELECT COUNT(*) AS n FROM partner_einblicke WHERE is_demo = 1').get().n, 11)
 

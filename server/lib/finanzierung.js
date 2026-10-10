@@ -13,6 +13,9 @@ const { sanitizeExternalUrl } = require('./partners')
 const { MAX_CENTS, httpError, assertKnownFields, cleanText, cleanCents } = require('./finanzierungFelder')
 const { listKosten, publicPosten } = require('./finanzierungKosten')
 const { berechneFinanzen, verteileUeberschuss } = require('./finanzierungVerteilung')
+const { listVorleistungen } = require('./finanzierungVorleistung')
+// „Spenden live“: Quartale mit erfassten Spenden nehmen deren Summe (Modell im Kopf von lib/spenden.js).
+const { mitLiveSpenden } = require('./spenden')
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS finanzierung_quartale (
@@ -244,18 +247,19 @@ function deleteQuartal(id) {
   return deleteQuartalStmt.run(id).changes > 0
 }
 
-// „Kosten & Reserve“: Jahreskosten, Saldo, Rücklage „Server-Zukunft“ und die Verteilung je Quartal
-// (lib/finanzierungVerteilung.js) - berechnet, nie gespeichert.
-function finanzen(quartale, posten) {
-  return berechneFinanzen({ quartale, posten, heute: new Date() })
+// „Kosten & Reserve“: Jahreskosten, Saldo, Rücklage „Server-Zukunft“, die Verteilung je Quartal und der gedeckte Teil der
+// Vorleistung (lib/finanzierungVerteilung.js) - berechnet, nie gespeichert. Die Rechnung nimmt immer die Quartale mit den
+// erfassten Spenden (mitLiveSpenden); die Admin-Liste der Quartale zeigt weiter die Handwerte.
+function finanzen(quartale, posten, vorleistungen) {
+  return berechneFinanzen({ quartale: mitLiveSpenden(quartale), posten, vorleistungen, heute: new Date() })
 }
 
 // Die ganze öffentliche Antwort (GET /api/finanzierung): nur, was der Admin eingetragen hat - Posten ohne Id, Notiz und Daten.
 function publicFinanzierung() {
   const hinweis = readSpendenHinweis()
-  const quartale = listQuartaleStmt.all().map(publicQuartal)
+  const quartale = mitLiveSpenden(listQuartaleStmt.all().map(publicQuartal))
   const posten = listKosten()
-  const rechnung = finanzen(quartale, posten)
+  const rechnung = finanzen(quartale, posten, listVorleistungen())
   return {
     spendenHinweis: hinweis.text || hinweis.url ? hinweis : null,
     ziel: readZiel(),
@@ -263,7 +267,8 @@ function publicFinanzierung() {
     kosten: { proJahrCents: rechnung.kostenProJahrCents, posten: posten.map(publicPosten) },
     saldoCents: rechnung.saldoCents,
     ruecklage: rechnung.ruecklage,
-    verteilung: rechnung.verteilung
+    verteilung: rechnung.verteilung,
+    vorleistung: rechnung.vorleistung
   }
 }
 
@@ -272,7 +277,8 @@ function publicFinanzierung() {
 function adminFinanzierung() {
   const quartale = listQuartale()
   const posten = listKosten()
-  const rechnung = finanzen(quartale, posten)
+  const vorleistungen = listVorleistungen()
+  const rechnung = finanzen(quartale, posten, vorleistungen)
   return {
     spendenHinweis: readSpendenHinweis(),
     ziel: readZiel() || { ...EMPTY_ZIEL },
@@ -286,7 +292,9 @@ function adminFinanzierung() {
       prognoseJahresendeCents: rechnung.prognoseJahresendeCents
     },
     ruecklage: rechnung.ruecklage,
-    verteilung: rechnung.verteilung
+    verteilung: rechnung.verteilung,
+    vorleistungen,
+    vorleistung: rechnung.vorleistung
   }
 }
 

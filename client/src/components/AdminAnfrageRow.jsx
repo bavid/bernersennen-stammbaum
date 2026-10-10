@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import ExpandableText from './ExpandableText.jsx'
+import AdminAnfrageGeschaeft from './AdminAnfrageGeschaeft.jsx'
 import { relativeTime } from '../lib/dates.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
@@ -20,8 +21,12 @@ function Title({ anfrage }) {
   return title ? <strong>{title}</strong> : <em className="muted">ohne Namen</em>
 }
 
-// Nur bei Partner-Anfragen: Art, PLZ/Ort und Ansprechperson.
+// Nur bei Partner-Anfragen: Art, PLZ/Ort und Ansprechperson. Geschäftsanfragen zeigen Art und Ort in AdminAnfrageGeschaeft.
 function PartnerMeta({ anfrage }) {
+  if (anfrage.geschaeft) {
+    const kontakt = [anfrage.plz, anfrage.name && `Ansprechperson: ${anfrage.name}`].filter(Boolean).join(' · ')
+    return <p className="admin-anfrage-meta">{kontakt}</p>
+  }
   const ort = [anfrage.plz, anfrage.ort].filter(Boolean).join(' ')
   const parts = [TYPE_LABELS[anfrage.partnerTyp] || anfrage.partnerTyp, ort, anfrage.name && `Ansprechperson: ${anfrage.name}`]
   return <p className="admin-anfrage-meta">{parts.filter(Boolean).join(' · ')}</p>
@@ -84,8 +89,9 @@ function StatusActions({ anfrage, onStatus }) {
 
 // Eine Anfrage in der Admin-Liste (AdminAnfragen): Typ, wer, E-Mail (mailto), wann, Nachricht (nach zwei Zeilen
 // eingeklappt), zugewiesener Gutschein (nur Hinweis und Status), Notiz und Aktionen. Die Aktionen melden nach oben:
-// onAssign() öffnet den Zuweisen-Dialog, onStatus(status), onNotiz(text) -> Promise<boolean>, onDelete().
-export default function AdminAnfrageRow({ anfrage, onAssign, onStatus, onNotiz, onDelete }) {
+// onAssign() öffnet den Zuweisen-Dialog, onStatus(status), onNotiz(text) -> Promise<boolean>, onDelete(); bei einer
+// Geschäftsanfrage onConfirm(index, notiz) -> Promise<boolean> (einen Terminvorschlag bestätigen).
+export default function AdminAnfrageRow({ anfrage, onAssign, onStatus, onNotiz, onDelete, onConfirm }) {
   const partner = isPartner(anfrage)
   const closed = anfrage.status !== ANFRAGE_STATUS.offen
   const [editingNotiz, setEditingNotiz] = useState(false)
@@ -112,6 +118,7 @@ export default function AdminAnfrageRow({ anfrage, onAssign, onStatus, onNotiz, 
       </div>
 
       {partner && <PartnerMeta anfrage={anfrage} />}
+      {anfrage.geschaeft && onConfirm && <AdminAnfrageGeschaeft anfrage={anfrage} onConfirm={onConfirm} />}
       {anfrage.nachricht && <ExpandableText text={anfrage.nachricht} className="admin-anfrage-text" lines={MESSAGE_LINES} />}
       {anfrage.gutschein && (
         <p className="admin-anfrage-gutschein">

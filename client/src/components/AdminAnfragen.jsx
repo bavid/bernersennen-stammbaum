@@ -115,6 +115,7 @@ export default function AdminAnfragen({ onCountChange }) {
   const handleStatus = (anfrage, next) => run(() => api.admin.updateAnfrage(anfrage.id, { status: next }))
   const handleNotiz = (anfrage, notiz) => run(() => api.admin.updateAnfrage(anfrage.id, { notiz }))
   const handleDelete = (anfrage) => run(() => api.admin.deleteAnfrage(anfrage.id))
+  const handleConfirm = (anfrage, index, notiz) => run(() => api.admin.confirmAnfrageTermin(anfrage.id, { index, notiz }))
 
   return (
     <section className="admin-anfragen card" aria-labelledby="admin-anfragen-title">
@@ -146,6 +147,7 @@ export default function AdminAnfragen({ onCountChange }) {
               onStatus={(next) => handleStatus(anfrage, next)}
               onNotiz={(notiz) => handleNotiz(anfrage, notiz)}
               onDelete={() => handleDelete(anfrage)}
+              onConfirm={(index, notiz) => handleConfirm(anfrage, index, notiz)}
             />
           ))}
         </ul>
