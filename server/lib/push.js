@@ -27,7 +27,13 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_push_abos_family ON push_abos(family_id);
 `)
 
-const EREIGNIS = Object.freeze({ gruss: 'gruss', mitDabei: 'mit_dabei', gast: 'gast' })
+const EREIGNIS = Object.freeze({
+  gruss: 'gruss',
+  mitDabei: 'mit_dabei',
+  gast: 'gast',
+  kontakt: 'wwh_kontakt',
+  kontaktZusage: 'wwh_kontakt_zusage'
+})
 
 // Feste Texte ohne personenbezogene Daten - die App öffnet dann die Startseite mit der Glocke.
 const TEXTE = Object.freeze({
@@ -37,7 +43,18 @@ const TEXTE = Object.freeze({
     text: 'Ein befreundetes Zuhause hat eines eurer Tiere in einer Erinnerung markiert.',
     url: '/start'
   }),
-  [EREIGNIS.gast]: Object.freeze({ titel: 'Neuer Gast', text: 'Jemand ist jetzt bei euch zu Besuch.', url: '/start' })
+  [EREIGNIS.gast]: Object.freeze({ titel: 'Neuer Gast', text: 'Jemand ist jetzt bei euch zu Besuch.', url: '/start' }),
+  // „Wir waren hier“ (lib/wwhKontakt.js): Kontaktwunsch über einen gemeinsamen Ort und seine Zusage.
+  [EREIGNIS.kontakt]: Object.freeze({
+    titel: 'Neuer Kontaktwunsch',
+    text: 'Eine Familie von einem gemeinsamen Ort möchte euch kennenlernen.',
+    url: '/start'
+  }),
+  [EREIGNIS.kontaktZusage]: Object.freeze({
+    titel: 'Kontaktwunsch angenommen',
+    text: 'Ihr seid jetzt zu Besuch und seht die Erinnerungen der anderen Familie.',
+    url: '/start'
+  })
 })
 
 const MAX_ENDPOINT_LENGTH = 2048

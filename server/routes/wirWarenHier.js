@@ -11,13 +11,14 @@ const { ART } = require('../lib/areaArt')
 const { setZeigeMich, withdrawCheckin, checkinsOfHome, ONLY_HOME_MESSAGE } = require('../lib/wirWarenHier')
 const { checkInAndNotify, pinEntry, unpinEntry } = require('../lib/wwhPins')
 const { ortViewForHome } = require('../lib/wwhOrtView')
+const { sendWishAndNotify, acceptWishAndNotify, rejectWish, withdrawWish, openWishes } = require('../lib/wwhKontakt')
 
 // „Wir waren hier“ für Familien (docs/superpowers/plans/2026-10-10-wir-waren-hier.md, Aufgabe 3), Mount
 // /api/wir-waren-hier. Alles nur aus dem eigenen, gerade aktiven Zuhause (requireOwnHome, Muster routes/besuche.js).
 // requireAuth sperrt Demo-Schreibzugriffe (403); eine Besuchs-Sitzung kommt nie bis hierher (lib/guestAccess.js, 403).
 // Jede Id geht durch cleanId und wird im SQL gegen das Zuhause geprüft - Fremdes ist 404. Antworten tragen no-store
 // (sie nennen Tiere anderer Familien). Schreibende Anfragen zusätzlich mit eigenem IP-Limiter (Muster routes/anfragen.js).
-// Kontaktwünsche (/kontakt...) kommen in Aufgabe 4.
+// Kontaktwünsche (/kontakt..., Aufgabe 4, lib/wwhKontakt.js): Zusage legt einen normalen Besuch an.
 const router = express.Router()
 router.use(noStore)
 
@@ -117,6 +118,44 @@ router.delete(
   ...writes,
   handle((req, res) => {
     unpinEntry(req.homeId, cleanId(req.params.id), cleanId(req.params.pinId))
+    res.status(204).end()
+  })
+)
+
+// Kontaktwünsche: { an: Wünsche an uns, von: unsere offenen } - nur Tiername/Tierart/Foto/Ort, nie Familiennamen.
+router.get('/kontakt/offen', ...reads, (req, res) => {
+  res.json(openWishes(req.homeId))
+})
+
+// Wunsch senden { checkinId (Ziel-Anmeldung am Ort), eigenesDogId } - das Ziel-Zuhause wird benachrichtigt.
+router.post(
+  '/kontakt',
+  ...writes,
+  handle((req, res) => {
+    const input = { checkinId: bodyId(req.body?.checkinId), eigenesDogId: bodyId(req.body?.eigenesDogId) }
+    res.status(201).json(sendWishAndNotify(req.homeId, input))
+  })
+)
+
+// Zusage (legt den Besuch an) / Absage - nur das Ziel-Zuhause, sonst 404.
+router.post(
+  '/kontakt/:id/annehmen',
+  ...writes,
+  handle((req, res) => res.json(acceptWishAndNotify(req.homeId, cleanId(req.params.id))))
+)
+
+router.post(
+  '/kontakt/:id/ablehnen',
+  ...writes,
+  handle((req, res) => res.json(rejectWish(req.homeId, cleanId(req.params.id))))
+)
+
+// Zurückziehen - nur die Absenderin, nur offene Wünsche.
+router.delete(
+  '/kontakt/:id',
+  ...writes,
+  handle((req, res) => {
+    withdrawWish(req.homeId, cleanId(req.params.id))
     res.status(204).end()
   })
 )
