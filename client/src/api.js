@@ -255,6 +255,10 @@ export const api = {
   tiere: () => request('/tiere'),
   // B+ Familienalbum: „Heute vor einem Jahr“ - Erinnerungen vom selben Tag in früheren Jahren (tag: heute, JJJJ-MM-TT).
   onThisDay: (tag) => request(`/timeline/jahrestag?tag=${encodeURIComponent(tag)}`),
+  // „Gesundheit leicht“ (server/routes/gesundheit.js): { letzte } für den Reiter „Infos“ eines eigenen Tiers und die
+  // nächsten Termine (heute bis 14 Tage, heute: Gerätedatum) für „Bald“ auf Start.
+  gesundheit: (dogId) => request(`/gesundheit?dogId=${encodeURIComponent(dogId)}`),
+  gesundheitBald: (heute) => request(`/gesundheit/bald?heute=${encodeURIComponent(heute)}`),
 
   sendMessage: (payload) => request('/messages', json('POST', payload)),
 

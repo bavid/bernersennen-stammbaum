@@ -5,6 +5,8 @@ import { displayName } from '../../lib/timeline.js'
 import AreaChip from '../feed/AreaChip.jsx'
 import PinboardNotes from './PinboardNotes.jsx'
 import { feedNoteLink } from '../../lib/startFeed.js'
+import { baldText } from '../../lib/gesundheit.js'
+import { todayIso } from '../../lib/dates.js'
 import { t } from '../../lib/i18n/index.js'
 
 // Wie weit vorher ein Einzugs-Jahrestag auf Start erscheint.
@@ -26,10 +28,11 @@ export function anniversaryText(anniversary) {
 // je eine Zeile mit Link zu ihrer Pinnwand - und ein naher Einzugs-Jahrestag
 // (lib/companions.js nextAnniversary), darunter „Neu an der Pinnwand“ (PinboardNotes, Schritt 3) und der Weg zu den
 // Notizen, sobald es welche gibt (Entscheidung D2: die Pinnwand des Zuhauses hat keinen eigenen Menüpunkt) - alles von den
-// Pinnwänden an einer Stelle. Ohne all das steht hier nichts; nur neue Zettel: der Kasten heißt „Neu an der Pinnwand“.
-export default function StartSoon({ termine = [], anniversary, notes = [], notesCount = 0 }) {
+// Pinnwänden an einer Stelle. „Gesundheit leicht“: fällige Impfungen, Wurmkuren und Tierarzt-Termine der eigenen Tiere
+// (gesundheit, GET /api/gesundheit/bald - heute bis 14 Tage) je als Zeile mit Link zum Reiter „Infos“ des Tiers. Ohne all das steht hier nichts; nur neue Zettel: der Kasten heißt „Neu an der Pinnwand“.
+export default function StartSoon({ termine = [], anniversary, notes = [], notesCount = 0, gesundheit = [], heute = todayIso() }) {
   const showAnniversary = anniversary && anniversary.daysUntil <= ANNIVERSARY_WINDOW_DAYS
-  const hasSoon = termine.length > 0 || Boolean(showAnniversary)
+  const hasSoon = termine.length > 0 || gesundheit.length > 0 || Boolean(showAnniversary)
   if (!hasSoon && notes.length === 0 && notesCount === 0) return null
   return (
     <section className="card start-card start-soon" aria-labelledby="start-soon-title">
@@ -47,6 +50,14 @@ export default function StartSoon({ termine = [], anniversary, notes = [], notes
                   <AreaChip area={termin.area} />
                 </span>
                 <span className="start-soon-text">{termin.text}</span>
+              </Link>
+            </li>
+          ))}
+          {gesundheit.map((item) => (
+            <li key={`gesundheit-${item.entryId}`}>
+              <Icon name="clock" />
+              <Link to={`/tier/${item.dogId}?reiter=infos`} className="start-soon-termin">
+                <span className="start-soon-text">{baldText(item, heute)}</span>
               </Link>
             </li>
           ))}

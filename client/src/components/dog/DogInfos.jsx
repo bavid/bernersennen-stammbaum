@@ -9,6 +9,7 @@ import ShelterSharePanel from '../ShelterSharePanel.jsx'
 import TakeOverPanel from '../TakeOverPanel.jsx'
 import DogRelatives from './DogRelatives.jsx'
 import WirWarenHierInfos from '../wirWarenHier/WirWarenHierInfos.jsx'
+import GesundheitInfos from './GesundheitInfos.jsx'
 import { t } from '../../lib/i18n/index.js'
 
 export const SHARE_PANEL_TITLE_ID = 'share-panel-title'
@@ -84,6 +85,8 @@ export default function DogInfos({ dog, setDog, family, allDogs, canWrite, canTa
       <h2 className="visually-hidden">{t('Infos zu {name}', { name: displayName(dog) })}</h2>
       <DogFacts dog={dog} family={family} />
       {dog.beschreibung && <p className="dog-info-description">{dog.beschreibung}</p>}
+      {/* „Gesundheit leicht“: letzte Impfung, Wurmkur, Tierarzt und der nächste Termin - nur beim eigenen Tier. */}
+      {ownHomeAnimal && <GesundheitInfos key={`gesundheit-${dog.id}`} dog={dog} />}
       {embedRelatives && <DogRelatives dog={dog} setDog={setDog} family={family} allDogs={allDogs} canWrite={canWrite} reload={reload} embedded />}
       {canTakeOver && (
         <div id={TAKE_OVER_ID} tabIndex={-1} className="dog-infos-anchor">

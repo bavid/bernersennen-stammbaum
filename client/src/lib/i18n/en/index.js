@@ -20,5 +20,7 @@ import share from './share.js'
 import geschenk from './geschenk.js'
 import netzwerk from './netzwerk.js'
 import landing from './landing.js'
+import gesundheit from './gesundheit.js'
+import vermisst from './vermisst.js'
 
-export default { ...landing, ...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

@@ -7,12 +7,14 @@ import AutoTextarea from './entryForm/AutoTextarea.jsx'
 import DatumChip from './entryForm/DatumChip.jsx'
 import EntryExtras, { NameField } from './entryForm/EntryExtras.jsx'
 import FotoFeld from './entryForm/FotoFeld.jsx'
+import GesundheitWahl from './entryForm/GesundheitWahl.jsx'
 import SichtbarkeitWahl from './entryForm/SichtbarkeitWahl.jsx'
 import useEntryDraft from '../hooks/useEntryDraft.js'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { todayIso } from '../lib/dates.js'
 import { readDraft, titleSuggestion } from '../lib/entryForm.js'
 import { taggedDogIds } from '../lib/erlebtMit.js'
+import { gesundheitPayload, initialGesundheit } from '../lib/gesundheit.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import '../styles/entry-form.css'
 import { t } from '../lib/i18n/index.js'
@@ -60,6 +62,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
   const draftId = entry ? null : (draftKey ?? null)
   const [restored] = useState(() => (draftId ? readDraft(draftId) : null))
   const [form, setForm] = useState(() => initialForm(entry, restored))
+  const [gesundheit, setGesundheit] = useState(() => initialGesundheit(entry))
   const [autorName, setAutorName] = useState(() => entry?.autor_name || readSetting('autorName', ''))
   const [nameKnown] = useState(() => Boolean(autorName.trim()))
   const [moreOpen, setMoreOpen] = useState(false)
@@ -77,6 +80,11 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
     setForm((current) => ({ ...current, ...patch }))
     const cleared = ['text', 'titel', 'fotos'].some((key) => key in patch) ? 'content' : 'datum' in patch ? 'datum' : null
     if (cleared) setErrors((current) => (current[cleared] ? { ...current, [cleared]: undefined } : current))
+  }
+  // Gesundheit ist persönlich: eine neue Gesundheits-Erinnerung startet mit „Nur wir (privat)“ (umstellbar).
+  const toggleGesundheit = (aktiv) => {
+    setGesundheit((current) => ({ ...current, aktiv }))
+    if (aktiv && !entry) update({ privat: true })
   }
   const changeName = (value) => {
     setAutorName(value)
@@ -113,6 +121,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
         privat: Boolean(isHousehold && form.privat),
         kategorie: form.kategorie || null,
         isPublic: form.isPublic,
+        ...(isHousehold ? gesundheitPayload(gesundheit, Boolean(entry?.gesundheit)) : {}),
         ...tags
       })
       entwurf.clear()
@@ -194,6 +203,9 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
         <p className="field-error" id={errorIds.datum}>
           {errors.datum}
         </p>
+      )}
+      {isHousehold && (
+        <GesundheitWahl value={gesundheit} onToggle={toggleGesundheit} onChange={(patch) => setGesundheit((current) => ({ ...current, ...patch }))} />
       )}
       {isHousehold && <SichtbarkeitWahl privat={form.privat} onChange={(privat) => update({ privat })} shareNames={shareNames} />}
       {hasMore && (

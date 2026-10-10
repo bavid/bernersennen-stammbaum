@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs')
 const { partnerMediaDir: defaultMediaDir } = require('../config')
 const { deleteFamily, removeUploads } = require('./families')
 const { relativeDemoDate } = require('./demoDates')
+const { applyGesundheit } = require('./gesundheit')
 const { validatePartner, slugify } = require('./partners')
 // Phase F: legt die Spalten ueberall_sichtbar/ueberall_gesperrt an - geschrieben wird unten über die übergebene db.
 const { COLUMN: UEBERALL_COLUMN } = require('./ueberallSichtbar')
@@ -198,6 +199,13 @@ function entryDatum(entry) {
   return entry.relativ ? relativeDemoDate({ days: entry.relativ.tage, years: entry.relativ.jahre }) : entry.datum
 }
 
+// „Gesundheit leicht“: Art und „Nächstes Mal am“ (naechstesInTagen ab heute) einer Demo-Erinnerung. Die Zeile geht per
+// ON DELETE CASCADE mit der Erinnerung, wenn das Demo-Zuhause erneuert wird.
+function insertDemoGesundheit(entryId, { art, naechstesInTagen }) {
+  const naechstesAm = Number.isInteger(naechstesInTagen) ? relativeDemoDate({ days: naechstesInTagen }) : null
+  applyGesundheit(entryId, { value: { art, naechstesAm } })
+}
+
 function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage } = {}) {
   const insertEntry = db.prepare(
     `INSERT INTO timeline_entries (dog_id, family_id, autor_name, datum, titel, text, foto_urls, privat, kategorie, herkunft_family_id, created_at)
@@ -214,6 +222,7 @@ function insertHouseholdTimeline(db, familyId, ids, { shelterFamilyId, copyImage
       entry.privat ? 1 : 0, entry.kategorie || null, herkunftFamilyId, writtenAgo, datum
     ).lastInsertRowid
     if (entry.key) entryIds[entry.key] = entryId
+    if (entry.gesundheit) insertDemoGesundheit(Number(entryId), entry.gesundheit)
   }
   return entryIds
 }

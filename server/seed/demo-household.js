@@ -210,7 +210,29 @@ const TIMELINE = [
     titel: 'Tierarzt-Termin',
     text: 'Jährliche Kontrolle – alles bestens, nur eine Zahnsteinentfernung steht noch an.',
     privat: true,
-    hoursAgo: 16
+    hoursAgo: 16,
+    gesundheit: { art: 'tierarzt' }
+  },
+  // „Gesundheit leicht“ (lib/gesundheit.js): eine Impfung, deren nächster Termin in „Bald“ auf Start erscheint, und eine
+  // Wurmkur mit Termin in sechs Wochen - beide privat, wie es das Formular für Gesundheit vorschlägt.
+  // naechstesInTagen: „Nächstes Mal am“ relativ zum Tag des Auffrischens (lib/demoDates.js).
+  {
+    dog: 'nele',
+    relativ: { tage: -355, jahre: 0 },
+    autor: 'Familie Nissen',
+    titel: 'Impfung',
+    text: 'Die jährliche Impfung – Nele war tapfer und hat danach ein extra Leckerli bekommen.',
+    privat: true,
+    gesundheit: { art: 'impfung', naechstesInTagen: 10 }
+  },
+  {
+    dog: 'nele',
+    relativ: { tage: -45, jahre: 0 },
+    autor: 'Familie Nissen',
+    titel: 'Wurmkur',
+    text: 'Tablette im Käse versteckt – hat geklappt.',
+    privat: true,
+    gesundheit: { art: 'wurmkur_floh', naechstesInTagen: 45 }
   },
   {
     dog: 'flocke',

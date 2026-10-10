@@ -13,6 +13,7 @@ import FirstMemoryCard from '../components/start/FirstMemoryCard.jsx'
 import useAnimalCreate from '../hooks/useAnimalCreate.js'
 import useGroupParam from '../hooks/useGroupParam.js'
 import useStartFeed from '../hooks/useStartFeed.js'
+import useGesundheitBald from '../hooks/useGesundheitBald.js'
 import { HOME_LABEL, areaContext, isHouseholdIdentity } from '../lib/areas.js'
 import { nextAnniversary } from '../lib/companions.js'
 import { firstFramePhoto } from '../lib/bilderrahmen.js'
@@ -95,6 +96,7 @@ export default function StartPage({ family }) {
   const notes = useMemo(() => pinboardNews(firstPage, termine), [firstPage, termine])
   const error = dogsError || feed.error
   const firstMemory = useFirstMemory(family, { canWrite, atHome, dogs, feed })
+  const gesundheit = useGesundheitBald(atHome && !family.zuBesuch)
   // Eine eben festgehaltene Erinnerung steht im eigenen Zuhause (ohne Bereichs-Hinweis) oben im Feed.
   const addEntry = (entry) =>
     feed.addEntry({ ...entry, type: 'eintrag', area: { id: family.id, name: family.name, art: 'eigen' }, activity_at: entry.created_at })
@@ -125,7 +127,7 @@ export default function StartPage({ family }) {
           {firstMemory.show && <FirstMemoryCard family={family} dogs={dogs} onCreated={addFirstMemory} onSkip={firstMemory.skip} />}
           {canWrite && dogs && !firstMemory.show && <StartComposer family={family} dogs={dogs} onCreated={addEntry} />}
           <OnThisDayCard enabled={!family.zuBesuch} />
-          <StartSoon termine={termine} anniversary={anniversary} notes={notes} notesCount={atHome ? feed.notizen : 0} />
+          <StartSoon termine={termine} anniversary={anniversary} notes={notes} notesCount={atHome ? feed.notizen : 0} gesundheit={gesundheit} />
           <StartNews
             pages={shownPages}
             loading={feed.pages === null && !feed.error}

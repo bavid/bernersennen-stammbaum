@@ -9,6 +9,7 @@ const { EREIGNIS: PUSH, notifyHome } = require('../lib/push')
 const { canAttachUpload, canAttachPublicUpload } = require('../lib/uploadAccess')
 const { requireRole, FORBIDDEN_MESSAGE } = require('../lib/roles')
 const { authorContext, withAuthorFlags, mayDeleteInArea } = require('../lib/authorship')
+const { readGesundheitInput, privatVorgabe, applyGesundheit, withGesundheit } = require('../lib/gesundheit')
 
 const router = express.Router()
 
@@ -248,7 +249,7 @@ router.get('/', requireAuth, (req, res) => {
   const comments = commentsByEntry(req, dogId)
   // Phase V2 "Erlebt mit": im eigenen Zuhause tragen eigene Einträge ihre Markierungen, und die Chronik eines Tiers
   // zeigt bestätigte Einträge verbundener Zuhause gespiegelt dazu (lib/erlebtMitView.js).
-  const entries = withTags(req, rows.map((row) => toEntry(row, comments.get(row.id))))
+  const entries = withTags(req, withGesundheit(rows.map((row) => toEntry(row, comments.get(row.id)))))
   res.json([...entries, ...mirroredForDog(req, dogId)])
 })
 
@@ -275,22 +276,28 @@ const updateEntry = db.prepare(
 )
 
 // Eintrag und seine "Erlebt mit"-Markierungen zusammen: ein Absturz dazwischen darf keine halbe Markierung hinterlassen.
-const createEntryWithTags = db.transaction((values, tags) => {
-  const entryId = insertEntry.run(values).lastInsertRowid
+// „Gesundheit leicht“ (lib/gesundheit.js): die Art und „Nächstes Mal am“ in derselben Transaktion.
+const createEntryWithTags = db.transaction((values, tags, gesundheit) => {
+  const entryId = Number(insertEntry.run(values).lastInsertRowid)
   applyTags(entryId, tags, values.privat)
+  applyGesundheit(entryId, gesundheit)
   return entryId
 })
-const updateEntryWithTags = db.transaction((values, tags, contentChanged) => {
+const updateEntryWithTags = db.transaction((values, tags, contentChanged, gesundheit) => {
   updateEntry.run(values)
   applyTags(values.id, tags, values.privat, { contentChanged })
+  applyGesundheit(values.id, gesundheit)
 })
+const withHealth = (req, entry) => withTags(req, withGesundheit([entry]))[0]
 
 router.post('/', requireAuth, canWrite, (req, res) => {
   const body = req.body || {}
   const dogId = cleanId(body.dogId)
   if (!dogId) return res.status(400).json({ error: 'dogId ist erforderlich' })
 
-  const { error, values } = readEntryInput(body, req)
+  const gesundheit = readGesundheitInput(body)
+  if (gesundheit.error) return res.status(400).json({ error: gesundheit.error })
+  const { error, values } = readEntryInput(body, req, privatVorgabe(body, gesundheit, findFamilyArt.get(req.familyId)?.art))
   if (error) return res.status(400).json({ error })
 
   const dog = db.prepare('SELECT id, family_id FROM dogs WHERE id = ?').get(dogId)
@@ -300,9 +307,9 @@ router.post('/', requireAuth, canWrite, (req, res) => {
   const tagInput = readTags(body, req, values.privat, res)
   if (!tagInput) return
 
-  const entryId = createEntryWithTags({ ...values, dog_id: dogId, family_id: req.familyId }, tagInput.tags)
+  const entryId = createEntryWithTags({ ...values, dog_id: dogId, family_id: req.familyId }, tagInput.tags, gesundheit)
   const entry = findEntryById.get(entryId)
-  res.status(201).json(withTags(req, [toEntry(entry)])[0])
+  res.status(201).json(withHealth(req, toEntry(entry)))
 })
 
 router.put('/:id', requireAuth, canWrite, (req, res) => {
@@ -318,12 +325,14 @@ router.put('/:id', requireAuth, canWrite, (req, res) => {
     existing.is_public
   )
   if (error) return res.status(400).json({ error })
+  const gesundheit = readGesundheitInput(req.body || {})
+  if (gesundheit.error) return res.status(400).json({ error: gesundheit.error })
   const tagInput = readTags(req.body || {}, req, values.privat, res)
   if (!tagInput) return
 
-  updateEntryWithTags({ ...values, id: existing.id }, tagInput.tags, entryContentChanged(existing, values))
+  updateEntryWithTags({ ...values, id: existing.id }, tagInput.tags, entryContentChanged(existing, values), gesundheit)
   const entry = findEntryById.get(existing.id)
-  res.json(withTags(req, [toEntry(entry, commentsOf(req, entry.id))])[0])
+  res.json(withHealth(req, toEntry(entry, commentsOf(req, entry.id))))
 })
 
 const deleteEntry = db.transaction((entryId) => {
