@@ -22,6 +22,7 @@ import { animalsRoute } from '../lib/areas.js'
 import { CHRONICLE_TAB, DOG_TAB_PARAM, dogTabs, safeFromPath, visibleInNames } from '../lib/dogProfile.js'
 import { displayName } from '../lib/timeline.js'
 import { withShareChange } from '../lib/animalCounts.js'
+import { canMakePoster, vermisstRoute } from '../lib/vermisst.js'
 import { t } from '../lib/i18n/index.js'
 
 export { ParentLink } from '../components/dog/DogRelatives.jsx'
@@ -161,6 +162,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     ownHomeAnimal && { key: 'wer', label: t('Wer sieht {name}?', { name }), icon: 'users', onSelect: () => goTo('infos', SHARE_PANEL_TITLE_ID) },
     // Digitaler Bilderrahmen, nur mit den Fotos dieses Tiers (pages/BilderrahmenPage.jsx ?tier=).
     ownHomeAnimal && { key: 'bilderrahmen', label: t('Als Bilderrahmen zeigen'), icon: 'frame', onSelect: () => navigate(`/bilderrahmen?tier=${dog.id}`) },
+    // Suchplakat (pages/VermisstPage.jsx): leise im Menü, nur für eigene Tiere im eigenen Zuhause.
+    canMakePoster(family, dog) && { key: 'vermisst', label: t('Vermisst? Suchplakat erstellen'), icon: 'printer', onSelect: () => navigate(vermisstRoute(dog.id)) },
     canTakeOver && { key: 'uebernehmen', label: t('In „Mein Zuhause“ übernehmen'), icon: 'home', onSelect: () => goTo('infos', TAKE_OVER_ID) },
     { key: 'link', label: t('Link kopieren'), icon: 'copy', onSelect: copyLink }
   ].filter(Boolean)

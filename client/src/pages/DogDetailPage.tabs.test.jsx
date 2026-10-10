@@ -234,7 +234,7 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     const trigger = container.querySelector('.dog-more-trigger')
     await act(async () => trigger.click())
     const items = () => [...container.querySelectorAll('[role="menuitem"]')]
-    expect(items().map((item) => item.textContent)).toEqual(['Wer sieht Nele?', 'Als Bilderrahmen zeigen', 'Link kopieren'])
+    expect(items().map((item) => item.textContent)).toEqual(['Wer sieht Nele?', 'Als Bilderrahmen zeigen', 'Vermisst? Suchplakat erstellen', 'Link kopieren'])
     expect(document.activeElement).toBe(items()[0])
     await act(async () => items()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })))
     expect(document.activeElement).toBe(items()[1])
@@ -254,6 +254,14 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     const item = [...container.querySelectorAll('[role="menuitem"]')].find((el) => el.textContent === 'Als Bilderrahmen zeigen')
     await act(async () => item.click())
     expect(`${location.pathname}${location.search}`).toBe('/bilderrahmen?tier=10')
+  })
+
+  test('⋯ „Vermisst? Suchplakat erstellen“ führt zur Druckseite des Plakats', async () => {
+    await render()
+    await act(async () => container.querySelector('.dog-more-trigger').click())
+    const item = [...container.querySelectorAll('[role="menuitem"]')].find((el) => el.textContent === 'Vermisst? Suchplakat erstellen')
+    await act(async () => item.click())
+    expect(location.pathname).toBe('/tier/10/vermisst')
   })
 
   test('die Chronik zeigt zuerst die jüngsten vier - "Frühere Erinnerungen anzeigen" holt den Rest; #entry-N klappt auf', async () => {

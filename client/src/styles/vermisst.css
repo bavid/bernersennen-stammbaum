@@ -1,0 +1,220 @@
+/* Suchplakat (pages/VermisstPage.jsx, components/vermisst/*): ein A4-Bogen auf .voucher-sheet aus print.css. Auf dem
+   Bogen feste Papierfarben wie beim Startpaket (kein Dunkelmodus auf Papier); die Eingaben darüber nutzen die Tokens. */
+
+.vermisst-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.vermisst-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  align-items: start;
+  gap: var(--space-3) var(--space-4);
+}
+
+.vermisst-photo-choice {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.vermisst-photo-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.vermisst-photo-option {
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--surface-sunk);
+  cursor: pointer;
+}
+
+.vermisst-photo-option img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 7px;
+}
+
+.vermisst-photo-option[aria-pressed='true'] {
+  border-color: var(--rust);
+}
+
+.vermisst-photo-option:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Der Bogen */
+
+.vermisst-sheet {
+  --vm-ink: #1c1511;
+  --vm-muted: #5b4f45;
+  --vm-alarm: #b3261e;
+  --vm-line: #cfc3b5;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+  height: 297mm;
+  padding: 12mm 16mm;
+  font-family: var(--font-body);
+  color: var(--vm-ink);
+  text-align: center;
+}
+
+.vermisst-headline {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 64pt;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: var(--vm-alarm);
+}
+
+.vermisst-photo {
+  display: grid;
+  place-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 120mm;
+  overflow: hidden;
+  border: 0.4mm solid var(--vm-line);
+  background: #f4efe9;
+  color: var(--vm-muted);
+}
+
+.vermisst-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vermisst-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 36pt;
+  line-height: 1.05;
+}
+
+.vermisst-facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2mm 7mm;
+  margin: 0;
+  font-size: 13pt;
+}
+
+.vermisst-facts div {
+  display: flex;
+  gap: 1.5mm;
+}
+
+.vermisst-facts dt {
+  color: var(--vm-muted);
+}
+
+.vermisst-facts dt::after {
+  content: ':';
+}
+
+.vermisst-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.vermisst-seen {
+  display: grid;
+  gap: 2.5mm;
+  text-align: left;
+}
+
+.vermisst-line {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
+  margin: 0;
+  font-size: 14pt;
+}
+
+.vermisst-line-label {
+  flex: none;
+  color: var(--vm-muted);
+}
+
+.vermisst-line-value {
+  flex: 1;
+  border-bottom: 0.3mm solid var(--vm-line);
+  font-weight: 600;
+}
+
+.vermisst-contact {
+  padding: 4mm;
+  border: 0.8mm solid var(--vm-alarm);
+}
+
+.vermisst-contact-label {
+  margin: 0;
+  font-size: 13pt;
+  color: var(--vm-muted);
+}
+
+.vermisst-contact-value {
+  margin: 1mm 0 0;
+  font-size: 26pt;
+  font-weight: 800;
+  color: var(--vm-alarm);
+}
+
+.vermisst-contact-value.is-blank {
+  border-bottom: 0.3mm solid var(--vm-line);
+}
+
+.vermisst-registries {
+  margin-top: auto;
+  padding-top: 3mm;
+  border-top: 0.3mm solid var(--vm-line);
+  font-size: 12pt;
+  font-weight: 600;
+  color: var(--vm-ink);
+}
+
+.vermisst-registries p {
+  margin: 0;
+}
+
+@media print {
+  .vermisst-sheet {
+    height: 296mm;
+  }
+
+  /* Ohne das stünde vor dem Bogen eine leere Seite: der Seitenwechsel zur benannten Seite „voucher“ (print.css) bricht
+     sonst schon hinter der App-Hülle um. Nur solange das Plakat offen ist. */
+  body:has(.vermisst-page),
+  body:has(.vermisst-page) > #root,
+  .vermisst-page,
+  .vermisst-page .print-main,
+  .vermisst-page .voucher-sheets {
+    page: voucher;
+  }
+
+  .vermisst-sheet,
+  .vermisst-headline,
+  .vermisst-contact {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
