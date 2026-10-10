@@ -21,6 +21,13 @@
   gap: var(--space-2);
 }
 
+/* Sortieren und „Als Fotobuch drucken“ nebeneinander (am Handy umbrechend). */
+.chronicle-head > .chronicle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .chronicle-empty {
   padding-left: calc(var(--date-col) + var(--node-col));
 }

@@ -19,6 +19,7 @@ import { RECENT_ITEMS, recentItems, visibleInNames } from '../../lib/dogProfile.
 import { t } from '../../lib/i18n/index.js'
 import { Button } from '../ui'
 import { IMPORT_TEXT } from '../../lib/fotoImport/texts.js'
+import { canMakeBook, fotobuchRoute } from '../../lib/fotobuch.js'
 
 // „Fotos mitbringen“ (Plan 2027) als eigener Chunk - fflate und der EXIF-Leser kommen erst beim Öffnen.
 const FotoImportDialog = lazy(() => import('../fotoImport/FotoImportDialog.jsx'))
@@ -182,12 +183,21 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
         <h2 id="chronicle-title" ref={titleRef} tabIndex={-1}>
           {dog.name_unbekannt ? t('Geschichte') : t('{nameGen} Geschichte', { nameGen: genitive(firstName), name: firstName })}
         </h2>
-        {items.length > 1 && (
-          <button type="button" className="btn btn-ghost" onClick={toggleOrder}>
-            <Icon name="sort" />
-            {newestFirst ? t('Neueste zuerst') : t('Älteste zuerst')}
-          </button>
-        )}
+        <div className="chronicle-actions">
+          {items.length > 1 && (
+            <button type="button" className="btn btn-ghost" onClick={toggleOrder}>
+              <Icon name="sort" />
+              {newestFirst ? t('Neueste zuerst') : t('Älteste zuerst')}
+            </button>
+          )}
+          {/* Chronik als Fotobuch (Plan 2027): nur mit sichtbaren Erinnerungen - das Buch zeigt nur, was hier zu sehen ist. */}
+          {canMakeBook(entries) && (
+            <Link to={fotobuchRoute(dog.id)} className="btn btn-ghost">
+              <Icon name="book" />
+              {t('Als Fotobuch drucken')}
+            </Link>
+          )}
+        </div>
       </div>
 
       <SharedNotice dog={dog} family={family} />

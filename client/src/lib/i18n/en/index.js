@@ -24,5 +24,6 @@ import gesundheit from './gesundheit.js'
 import vermisst from './vermisst.js'
 import fotoImport from './import.js'
 import admin from './admin.js'
+import fotobuch from './fotobuch.js'
 
-export default { ...admin, ...fotoImport, ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...fotobuch, ...admin, ...fotoImport, ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

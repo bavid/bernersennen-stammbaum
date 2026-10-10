@@ -5,6 +5,7 @@ import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
 import { STARTPAKET_RE } from './lib/startpaket.js'
 import { VERMISST_RE } from './lib/vermisst.js'
+import { FOTOBUCH_RE } from './lib/fotobuch.js'
 import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { START_ROUTE, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
 import { isOwnHome } from './lib/visits.js'
@@ -57,6 +58,8 @@ const PartnerPrintPage = lazy(() => import('./pages/PartnerPrintPage.jsx'))
 const StartpaketPage = lazy(() => import('./pages/StartpaketPage.jsx'))
 // Suchplakat (/tier/:id/vermisst, lib/vermisst.js): nur im Zuhause, ohne App-Hülle.
 const VermisstPage = lazy(() => import('./pages/VermisstPage.jsx'))
+// Chronik als Fotobuch (/tier/:id/fotobuch, lib/fotobuch.js): Druckseite für alle, die die Chronik sehen.
+const FotobuchPage = lazy(() => import('./pages/FotobuchPage.jsx'))
 // Öffentliche Infoseite "Partner werden" (Phase 5 Task 4): selten aufgerufen, eigener Chunk.
 const PartnerInfoPage = lazy(() => import('./pages/PartnerInfoPage.jsx'))
 // Phase F: „So finanzieren wir uns“ (/finanzierung) - öffentlich wie Impressum und Datenschutz, eigener Chunk.
@@ -700,11 +703,12 @@ export default function App() {
   // Tierheim-Startpaket: wie die Druckseiten ohne App-Hülle; andere Bereiche landen über AreaRoutes auf ihrer Startseite.
   const startpaketDogId = pathname.match(STARTPAKET_RE)?.[1]
   const vermisstDogId = family.art === 'zuhause' ? pathname.match(VERMISST_RE)?.[1] : null
-  if ((startpaketDogId && family.art === 'tierheim') || vermisstDogId) {
+  const fotobuchDogId = pathname.match(FOTOBUCH_RE)?.[1]
+  if ((startpaketDogId && family.art === 'tierheim') || vermisstDogId || fotobuchDogId) {
     return (
       <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
-          {vermisstDogId ? <VermisstPage dogId={vermisstDogId} family={family} /> : <StartpaketPage dogId={startpaketDogId} family={family} />}
+          {fotobuchDogId ? <FotobuchPage dogId={fotobuchDogId} /> : vermisstDogId ? <VermisstPage dogId={vermisstDogId} family={family} /> : <StartpaketPage dogId={startpaketDogId} family={family} />}
         </Suspense>
       </ThemeProvider>
     )
