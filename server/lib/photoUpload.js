@@ -14,6 +14,7 @@ const { detectImageExt } = require('./partners')
 const { inspectImage } = require('./imageInspect')
 const { stripJpegMetadata } = require('./stripJpegMetadata')
 const { stripPngMetadata } = require('./stripPngMetadata')
+const { stripWebpMetadata } = require('./stripWebpMetadata')
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024
 
@@ -62,14 +63,12 @@ function createPhotoUpload(limits = {}, { mimeTypes = ALL_PHOTO_MIME_TYPES, type
 }
 
 // security-review Phase T Finding 12: Handyfotos tragen oft EXIF-/GPS-Metadaten - vor dem Speichern
-// entfernen (siehe lib/stripJpegMetadata.js/lib/stripPngMetadata.js). WebP bleibt bewusst unangetastet:
-// der RIFF-Chunk-Aufbau (inkl. optionaler Padding-Bytes und verschachtelter VP8X/EXIF/XMP-Chunks) ist
-// deutlich fehleranfälliger als JPEG/PNG für einen schnellen, sicheren Walker - lieber ein WebP mit
-// Metadaten behalten als eines beschädigen. GIF trägt praktisch nie GPS-/Kamera-Metadaten (kein EXIF-
-// Container im Format) und bleibt deshalb ebenfalls unangetastet.
+// entfernen (siehe lib/stripJpegMetadata.js, lib/stripPngMetadata.js, lib/stripWebpMetadata.js). GIF trägt
+// praktisch nie GPS-/Kamera-Metadaten (kein EXIF-Container im Format) und bleibt deshalb unangetastet.
 const METADATA_STRIPPER_BY_MIME = {
   'image/jpeg': stripJpegMetadata,
-  'image/png': stripPngMetadata
+  'image/png': stripPngMetadata,
+  'image/webp': stripWebpMetadata
 }
 
 const filePathOf = (file) => path.join(uploadDir, file.filename)

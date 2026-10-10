@@ -18,9 +18,9 @@ const { detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('./partners'
 const { stripLogoMetadata } = require('./partnerLogo')
 const { promotionImageUrl } = require('./promotions')
 
-// Bild-Arten: der Admin darf PNG, JPG und WebP (wie beim Logo). Partner nur JPG und PNG - nur für diese
-// beiden entfernt stripLogoMetadata die Metadaten (EXIF/GPS), WebP bliebe unangetastet (wie bei den
-// Einblicken, routes/partnerArea/einblicke.js). Geprüft wird Content-Type UND Magic Bytes.
+// Bild-Arten: der Admin darf PNG, JPG und WebP (wie beim Logo), Partner nur JPG und PNG (wie bei den
+// Einblicken, routes/partnerArea/einblicke.js). stripLogoMetadata entfernt EXIF/GPS aus allen drei Arten.
+// Geprüft wird Content-Type UND Magic Bytes.
 const ADMIN_IMAGE_TYPES = Object.freeze({
   mimeTypes: LOGO_MIME_TYPES,
   exts: ['png', 'jpg', 'webp'],

@@ -15,15 +15,16 @@ const config = require('../config')
 const { detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('./partners')
 const { stripJpegMetadata } = require('./stripJpegMetadata')
 const { stripPngMetadata } = require('./stripPngMetadata')
+const { stripWebpMetadata } = require('./stripWebpMetadata')
 
 const partnerLogoUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_LOGO_BYTES, files: 1, fields: 0, parts: 2 }
 })
 
-// security-review Phase T Finding 12 gilt auch für Logos: EXIF/GPS aus JPEG, Text-/eXIf-Chunks aus PNG.
-// WebP bleibt wie bei routes/uploads.js unangetastet (siehe Begründung dort).
-const METADATA_STRIPPER_BY_EXT = { jpg: stripJpegMetadata, png: stripPngMetadata }
+// security-review Phase T Finding 12 gilt auch für Logos: EXIF/GPS aus JPEG, Text-/eXIf-Chunks aus PNG,
+// EXIF-/XMP-Chunks aus WebP.
+const METADATA_STRIPPER_BY_EXT = { jpg: stripJpegMetadata, png: stripPngMetadata, webp: stripWebpMetadata }
 
 function stripLogoMetadata(buffer, ext) {
   const strip = METADATA_STRIPPER_BY_EXT[ext]
