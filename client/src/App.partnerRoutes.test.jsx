@@ -145,7 +145,8 @@ describe('Route /p/:slug – Portal ohne und mit Sitzung', () => {
     await render('/p/tierheim-sonnenhang?reiter=kontakt')
 
     const tabs = [...container.querySelectorAll('[role="tab"]')].map((tab) => tab.firstChild.textContent)
-    expect(tabs).toEqual(['Übersicht'])
+    // Im eigenen Zuhause steht seit „Wir waren hier“ dessen Reiter da - „Kontakt“ bleibt ohne Kontaktweg weg.
+    expect(tabs).toEqual(['Übersicht', 'Wir waren hier'])
   })
 })
 

@@ -1,15 +1,24 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { withUnread } from '../lib/navItems.js'
 import { EMPTY_HINT, RETENTION_HINT } from '../lib/partnerInbox.js'
 import Icon from '../components/Icon.jsx'
 import InboxMessage from '../components/InboxMessage.jsx'
+import TabBar from '../components/TabBar.jsx'
+import WirWarenHierPartnerListe from '../components/wirWarenHier/WirWarenHierPartnerListe.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { t } from '../lib/i18n/index.js'
 
 const DEMO_HINT_ID = 'inbox-demo-hint'
 const DEMO_INBOX_HINT = 'In der Demo nur zum Ansehen – als gelesen markieren und löschen geht hier nicht.'
+// Zwei Reiter (Plan „Wir waren hier“, Aufgabe 6): Nachrichten und die Freigaben von „Wir waren hier“.
+const INBOX_TABS = [
+  { key: 'nachrichten', label: 'Nachrichten' },
+  { key: 'wir-waren-hier', label: 'Wir waren hier' }
+]
+const inboxPanelId = (key) => `inbox-panel-${key}`
+const inboxCountText = (count, key) => (key === 'wir-waren-hier' ? t('{n} offen', { n: count }) : t('{n} ungelesen', { n: count }))
 
 // /nachrichten (Phase P2) - das Postfach eines Partner- oder Tierheim-Bereichs: Nachrichten aus
 // "Schreib uns" auf Portal und Steckbrief, neueste zuerst (wie der Server sie liefert). Öffnen markiert
@@ -28,6 +37,9 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
   // Laufende "gelesen"-Anfragen - ein Doppelklick schickt keine zweite.
   const pendingRead = useRef(new Set())
   const name = family.partner?.name || family.name
+  const [tab, setTab] = useState('nachrichten')
+  const [wwhOpen, setWwhOpen] = useState(null)
+  const handleWwhCount = useCallback((count) => setWwhOpen(count > 0 ? count : null), [])
 
   useEffect(() => {
     let cancelled = false
@@ -97,8 +109,20 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
         </div>
       </header>
 
+      <TabBar
+        tabs={INBOX_TABS.map((item) => ({ ...item, label: t(item.label) }))}
+        current={tab}
+        counts={{ nachrichten: unread > 0 ? unread : null, 'wir-waren-hier': wwhOpen }}
+        label={t('Posteingang')}
+        idPrefix="inbox-tab"
+        panelId={inboxPanelId}
+        countText={inboxCountText}
+        className="inbox-tabs"
+        onSelect={setTab}
+      />
+
       {/* Phase U: Zähler, Aufbewahrung und Demo-Hinweis als eine ruhige Kopfzeile direkt über der Liste. */}
-      <div className="inbox">
+      <div className="inbox" id={inboxPanelId('nachrichten')} role="tabpanel" aria-labelledby="inbox-tab-nachrichten" hidden={tab !== 'nachrichten'}>
         <div className="inbox-meta">
           {messages?.length > 0 && (
             <p className="inbox-summary" aria-live="polite">
@@ -144,6 +168,9 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
             ))}
           </ul>
         )}
+      </div>
+      <div id={inboxPanelId('wir-waren-hier')} role="tabpanel" aria-labelledby="inbox-tab-wir-waren-hier" hidden={tab !== 'wir-waren-hier'}>
+        <WirWarenHierPartnerListe onCount={handleWwhCount} />
       </div>
     </div>
   )

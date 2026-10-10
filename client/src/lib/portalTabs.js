@@ -11,6 +11,8 @@ import { PORTAL_MONATE, splitByHorizon } from './termine.js'
 export const PORTAL_TAB_PARAM = 'reiter'
 export const OVERVIEW_TAB = 'uebersicht'
 export const CONTACT_TAB = 'kontakt'
+// „Wir waren hier“ - nur mit einer Sitzung im eigenen Zuhause (PartnerPortalPage, data.wirWarenHier).
+export const WWH_TAB = 'wir-waren-hier'
 
 // Abschnitte im Portal (Ids der PortalSection-Abschnitte, gutschein: die Karte PortalCodeNote) - Sprungziele für
 // Kopf-Knöpfe und alte Links.
@@ -36,6 +38,7 @@ const TAB_DEFS = [
   { key: 'angebote', label: 'Angebote' },
   { key: 'termine', label: 'Termine' },
   { key: 'einblicke', label: 'Einblicke' },
+  { key: WWH_TAB, label: 'Wir waren hier' },
   { key: CONTACT_TAB, label: 'Kontakt' }
 ]
 
@@ -121,6 +124,7 @@ export function portalTabs(data) {
     termine: n.termine > 0,
     einblicke: n.einblicke > 0,
     tiere: n.tiere + n.happyEnds > 0,
+    [WWH_TAB]: data.wirWarenHier === true,
     [CONTACT_TAB]: data.kontakt !== false
   }
   return TAB_DEFS.filter((tab) => hasContent[tab.key] ?? true)

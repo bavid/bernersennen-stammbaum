@@ -108,7 +108,7 @@ const recentRueckzugStmt = db.prepare(
 )
 const deleteCheckinStmt = db.prepare('DELETE FROM wwh_checkins WHERE id = ?')
 const listOfHomeStmt = db.prepare(
-  `SELECT c.id, c.partner_id AS partnerId, p.name AS partnerName, p.typ AS partnerTyp, c.dog_id AS dogId, d.name AS tierName,
+  `SELECT c.id, c.partner_id AS partnerId, p.name AS partnerName, p.slug AS partnerSlug, p.typ AS partnerTyp, c.dog_id AS dogId, d.name AS tierName,
      c.status, c.zeige_mich AS zeigeMich, c.created_at AS createdAt
    FROM wwh_checkins c
    JOIN partners p ON p.id = c.partner_id AND ${publicPartnerSql('p')}

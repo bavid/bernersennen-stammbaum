@@ -8,6 +8,7 @@ import SharePanel from '../SharePanel.jsx'
 import ShelterSharePanel from '../ShelterSharePanel.jsx'
 import TakeOverPanel from '../TakeOverPanel.jsx'
 import DogRelatives from './DogRelatives.jsx'
+import WirWarenHierInfos from '../wirWarenHier/WirWarenHierInfos.jsx'
 import { t } from '../../lib/i18n/index.js'
 
 export const SHARE_PANEL_TITLE_ID = 'share-panel-title'
@@ -105,6 +106,8 @@ export default function DogInfos({ dog, setDog, family, allDogs, canWrite, canTa
           onChange={(shelterShare) => setDog((current) => ({ ...current, shelterShare }))}
         />
       )}
+      {/* „Wir waren hier“: wo das eigene Tier angemeldet ist (Plan 2026-10-10, Aufgabe 6) - dogTabs bleibt unverändert. */}
+      {ownHomeAnimal && <WirWarenHierInfos key={`wwh-${dog.id}`} dog={dog} />}
     </div>
   )
 }

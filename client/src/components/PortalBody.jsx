@@ -9,8 +9,9 @@ import PortalOverview from './PortalOverview.jsx'
 import PortalPosts from './PortalPosts.jsx'
 import PortalTermine from './PortalTermine.jsx'
 import TabBar from './TabBar.jsx'
+import WirWarenHierSection from './wirWarenHier/WirWarenHierSection.jsx'
 import usePortalTab from '../hooks/usePortalTab.js'
-import { CONTACT_TAB, OVERVIEW_TAB, hashTarget, portalCounts, portalTabs, tabCountText } from '../lib/portalTabs.js'
+import { CONTACT_TAB, OVERVIEW_TAB, WWH_TAB, hashTarget, portalCounts, portalTabs, tabCountText } from '../lib/portalTabs.js'
 import { PortalPanelProvider } from '../lib/portalPanel.js'
 import { t } from '../lib/i18n/index.js'
 
@@ -49,7 +50,8 @@ function revealTabBar(bar, key) {
 // stehen im Dokument (nur verborgen): die Seite bleibt vollständig für Suchmaschinen; offene Dialoge eines verborgenen
 // Reiters schließen sich (lib/portalPanel.js). Der Reiter steht in der Adresse (usePortalTab); eine alte Sprungmarke
 // (#kontakt) öffnet den passenden Reiter und springt zum Abschnitt.
-export default function PortalBody({ partner, posts, animals, happyEnds, preview, showCodeNote = true }) {
+// wirWarenHier: Reiter „Wir waren hier“ (nur Sitzung im eigenen Zuhause) - lädt erst, wenn er offen ist.
+export default function PortalBody({ partner, posts, animals, happyEnds, preview, showCodeNote = true, wirWarenHier = false }) {
   const data = {
     posts,
     termine: partner.termine,
@@ -57,7 +59,8 @@ export default function PortalBody({ partner, posts, animals, happyEnds, preview
     animals,
     happyEnds,
     preview,
-    kontakt: showCodeNote || hasPortalContact(partner)
+    kontakt: showCodeNote || hasPortalContact(partner),
+    wirWarenHier
   }
   const tabs = portalTabs(data).map((item) => ({ ...item, label: t(item.label) }))
   const keys = tabs.map((item) => item.key)
@@ -113,6 +116,8 @@ export default function PortalBody({ partner, posts, animals, happyEnds, preview
         return <PortalTermine termine={partner.termine} />
       case 'einblicke':
         return <EinblickeGallery einblicke={partner.einblicke} />
+      case WWH_TAB:
+        return tab === WWH_TAB ? <WirWarenHierSection partner={partner} /> : null
       case CONTACT_TAB:
         return (
           <>

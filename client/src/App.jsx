@@ -690,7 +690,7 @@ export default function App() {
   // Feedback-Runde: Portal, Steckbrief und Partnerliste gehören dem Partner bzw. allen - in der Hülle ohne Demo-Hinweis,
   // Demo-Rundgang und "Bearbeiten | Kundensicht" (die gelten dem eigenen Bereich), sonst stünde all das darüber noch einmal.
   const publicPage = partnerSlug ? (
-    <PartnerPortalPage slug={partnerSlug} inApp />
+    <PartnerPortalPage slug={partnerSlug} inApp family={family} />
   ) : animalSlug ? (
     <SteckbriefPage slug={animalSlug} inApp />
   ) : onPartnerList ? (

@@ -522,8 +522,30 @@ export const api = {
     visitenkarte: () => request('/partner-area/visitenkarte'),
     saveVisitenkarte: (design) => request('/partner-area/visitenkarte', json('PUT', design)),
     visitenkarteGutscheine: ({ anzahl, nurUngedruckt }) =>
-      request('/partner-area/visitenkarte/gutscheine', json('POST', { anzahl, nurUngedruckt }))
+      request('/partner-area/visitenkarte/gutscheine', json('POST', { anzahl, nurUngedruckt })),
+
+    // „Wir waren hier“ (server/routes/partnerArea/wirWarenHier.js): { anmeldungen, erinnerungen } - der Ort gibt frei.
+    wwh: () => request('/partner-area/wir-waren-hier'),
+    wwhDecideCheckin: (id, ok) => request(`/partner-area/wir-waren-hier/checkins/${encodeURIComponent(id)}/${ok ? 'freigeben' : 'ablehnen'}`, { method: 'POST' }),
+    wwhDecidePin: (id, ok) => request(`/partner-area/wir-waren-hier/erinnerungen/${encodeURIComponent(id)}/${ok ? 'freigeben' : 'ablehnen'}`, { method: 'POST' }),
+    wwhRemoveCheckin: (id) => request(`/partner-area/wir-waren-hier/checkins/${encodeURIComponent(id)}`, { method: 'DELETE' })
   },
+
+  // „Wir waren hier“ für Familien (server/routes/wirWarenHier.js): Anmeldungen, Ortsansicht { ort, eigene, andere },
+  // angeheftete Erinnerungen und Kontaktwünsche ({ an, von }; Zusage legt einen normalen Besuch an).
+  wwhCheckins: () => request('/wir-waren-hier/checkins'),
+  wwhOrt: (partnerId) => request(`/wir-waren-hier/partner/${encodeURIComponent(partnerId)}`),
+  wwhCheckIn: (partnerId, dogId) => request('/wir-waren-hier/checkins', json('POST', { partnerId, dogId })),
+  wwhSetZeigeMich: (id, zeigeMich) => request(`/wir-waren-hier/checkins/${encodeURIComponent(id)}`, json('PUT', { zeigeMich })),
+  wwhWithdraw: (id) => request(`/wir-waren-hier/checkins/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  wwhPin: (checkinId, entryId) => request(`/wir-waren-hier/checkins/${encodeURIComponent(checkinId)}/erinnerungen`, json('POST', { entryId })),
+  wwhUnpin: (checkinId, pinId) =>
+    request(`/wir-waren-hier/checkins/${encodeURIComponent(checkinId)}/erinnerungen/${encodeURIComponent(pinId)}`, { method: 'DELETE' }),
+  wwhKontaktOffen: () => request('/wir-waren-hier/kontakt/offen'),
+  wwhKontakt: (checkinId, eigenesDogId) => request('/wir-waren-hier/kontakt', json('POST', { checkinId, eigenesDogId })),
+  wwhKontaktAnnehmen: (id) => request(`/wir-waren-hier/kontakt/${encodeURIComponent(id)}/annehmen`, { method: 'POST' }),
+  wwhKontaktAblehnen: (id) => request(`/wir-waren-hier/kontakt/${encodeURIComponent(id)}/ablehnen`, { method: 'POST' }),
+  wwhKontaktZurueck: (id) => request(`/wir-waren-hier/kontakt/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   listBreedingEvents: () => request('/breeding'),
   createBreedingEvent: (payload) => request('/breeding', json('POST', payload)),

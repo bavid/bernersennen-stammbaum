@@ -8,6 +8,7 @@ import PortalBody from '../components/PortalBody.jsx'
 import PortalBrandStrip from '../components/PortalBrandStrip.jsx'
 import { isValidHexColor, darkenHex, hexToRgba } from '../lib/color.js'
 import { PreviewProvider } from '../lib/preview.js'
+import { areaContext } from '../lib/areas.js'
 import { t } from '../lib/i18n/index.js'
 
 const ON_RUST = '#fffaf2'
@@ -111,7 +112,8 @@ function usePortalList(fetchList, slug, demo, skip) {
 // Hülle der App - ohne zweiten Kopf, Fuß oder Einladungscode, man muss sich nicht abmelden, um es anzuschauen.
 // Kundensicht (Phase P1): load liefert die Portal-Daten statt api.publicPartner(slug) (z. B.
 // api.partnerArea.previewPortal, samt tiere und posts) und preview schaltet Links und "Schreib uns" ab.
-export default function PartnerPortalPage({ slug, inApp = false, load, preview = false }) {
+// family (angemeldet): im eigenen Zuhause gibt es den Reiter „Wir waren hier“ (nicht in Familien, zu Besuch, Vorschau).
+export default function PartnerPortalPage({ slug, inApp = false, load, preview = false, family = null }) {
   const location = useLocation()
   const injected = typeof load === 'function'
   const demo = demoParam(location.search)
@@ -162,6 +164,7 @@ export default function PartnerPortalPage({ slug, inApp = false, load, preview =
   // Eigener Kopf und Fuß nur ohne Sitzung - in der Kundensicht (preview) führte "Zurück" aus der Vorschau, angemeldet
   // (inApp) stehen Kopf und Fuß der App schon da.
   const ownChrome = !preview && !inApp
+  const wirWarenHier = inApp && !preview && !injected && Boolean(family) && areaContext(family) === 'home'
   const classes = ['partner-portal', inApp ? 'partner-portal-in-app' : 'public-page', isValidHexColor(partner.farbe) && 'has-accent']
 
   return (
@@ -173,7 +176,7 @@ export default function PartnerPortalPage({ slug, inApp = false, load, preview =
             {t('Vorschau – nur für Admins sichtbar')}
           </div>
         )}
-        <PortalBody partner={partner} posts={posts} animals={animals} happyEnds={happyEnds} preview={preview} showCodeNote={!inApp} />
+        <PortalBody partner={partner} posts={posts} animals={animals} happyEnds={happyEnds} preview={preview} showCodeNote={!inApp} wirWarenHier={wirWarenHier} />
         {!inApp && <PortalBrandStrip />}
         {ownChrome && <PublicFooter />}
       </div>
