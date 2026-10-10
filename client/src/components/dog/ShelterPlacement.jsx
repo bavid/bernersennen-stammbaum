@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../api'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { displayName } from '../../lib/timeline.js'
@@ -8,6 +9,7 @@ import HandoverDialog from '../HandoverDialog.jsx'
 import SteckbriefPanel from '../SteckbriefPanel.jsx'
 import VermittlungStatusPanel from '../VermittlungStatusPanel.jsx'
 import { useToast } from '../Toast.jsx'
+import { startpaketRoute } from '../../lib/startpaket.js'
 import { t } from '../../lib/i18n/index.js'
 
 // Reiter "Vermittlung" der Tierseite eines Tierheims (eigene Tiere): Status, Steckbrief und die Übergabe. Die Panels liefern
@@ -67,6 +69,11 @@ export default function ShelterPlacement({ dog, setDog }) {
           </button>
         )}
         {isDemo && reserved && <p className="field-hint">{readOnlyHint}</p>}
+        {/* Tierheim-Startpaket: Druckmappe für die neuen Menschen (pages/StartpaketPage.jsx). */}
+        <Link className="btn btn-ghost" to={startpaketRoute(dog.id)}>
+          <Icon name="printer" />
+          {t('Startpaket drucken')}
+        </Link>
       </div>
 
       <Modal open={handoverOpen} title={t('Übergabe vorbereiten – {name}', { name: displayName(dog) })} onClose={() => setHandoverOpen(false)}>

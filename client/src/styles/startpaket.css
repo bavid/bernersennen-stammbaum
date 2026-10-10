@@ -1,0 +1,258 @@
+/* Tierheim-Startpaket (pages/StartpaketPage.jsx, components/startpaket/StartpaketSheets.jsx): drei A4-Seiten auf dem
+   .voucher-sheet aus print.css (Maß, Rand, Seitenumbruch). Feste Papierfarben wie bei den Karten - kein Dunkelmodus
+   auf Papier. Der Übergabe-Code als Text erscheint nur im Druck (.print-only). */
+
+.startpaket-sheet {
+  --sp-ink: #1c1511;
+  --sp-muted: #5b4f45;
+  --sp-accent: #a4431d;
+  --sp-line: #e4dcd2;
+
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 6mm;
+  height: 297mm;
+  padding: 14mm 16mm 12mm;
+  font-family: var(--font-body);
+  color: var(--sp-ink);
+}
+
+.startpaket-shelter {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin: 0;
+  padding-bottom: 4mm;
+  border-bottom: 0.3mm solid var(--sp-line);
+  font-size: 11pt;
+  font-weight: 600;
+  color: var(--sp-muted);
+}
+
+.startpaket-shelter img {
+  width: 10mm;
+  height: 10mm;
+  object-fit: contain;
+}
+
+.startpaket-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4mm;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.startpaket-eyebrow {
+  margin: 0;
+  font-size: 9pt;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sp-accent);
+}
+
+.startpaket-name,
+.startpaket-title {
+  margin: 0;
+  font-family: var(--font-display);
+  line-height: 1.1;
+}
+
+.startpaket-name {
+  font-size: 34pt;
+}
+
+.startpaket-title {
+  font-size: 22pt;
+}
+
+.startpaket-fullname {
+  margin: -2mm 0 0;
+  color: var(--sp-muted);
+}
+
+.startpaket-portrait {
+  width: 100%;
+  max-height: 120mm;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.startpaket-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3mm 12mm;
+  margin: 0;
+}
+
+.startpaket-facts dt {
+  font-size: 9pt;
+  color: var(--sp-muted);
+}
+
+.startpaket-facts dd {
+  margin: 0;
+  font-size: 12pt;
+}
+
+.startpaket-text {
+  margin: 0;
+  font-size: 11.5pt;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.startpaket-memories {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6mm;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.startpaket-memories.count-1 {
+  grid-template-columns: 1fr;
+}
+
+.startpaket-memory {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5mm;
+  font-size: 10.5pt;
+}
+
+.startpaket-memory img {
+  width: 100%;
+  height: 62mm;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.startpaket-memory time {
+  font-size: 9pt;
+  color: var(--sp-accent);
+}
+
+.startpaket-memory p {
+  margin: 0;
+  color: var(--sp-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.startpaket-qr {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 3mm;
+  align-self: center;
+  padding: 6mm;
+  border: 0.3mm solid var(--sp-line);
+  border-radius: var(--radius-md);
+}
+
+.startpaket-qr .vk-qr {
+  width: 60mm;
+  height: 60mm;
+  padding: 3mm;
+  background: #fff;
+}
+
+.startpaket-qr.is-muster .vk-qr {
+  opacity: 0.35;
+}
+
+/* „Muster“ quer über dem QR - der Demo-Code soll nie wie ein echter aussehen. */
+.startpaket-muster {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  padding: 1mm 4mm;
+  border: 0.6mm solid var(--sp-accent);
+  font-size: 22pt;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--sp-accent);
+  background: #fff;
+}
+
+.startpaket-qr-empty {
+  width: 60mm;
+  margin: 0;
+  padding: 20mm 4mm;
+  border: 0.4mm dashed var(--sp-line);
+  text-align: center;
+  font-size: 10pt;
+  color: var(--sp-muted);
+}
+
+.startpaket-code {
+  margin: 0;
+  font-size: 11pt;
+}
+
+.startpaket-code span {
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.startpaket-steps-title {
+  margin: 2mm 0 0;
+  font-size: 14pt;
+}
+
+.startpaket-steps {
+  display: grid;
+  gap: 2mm;
+  margin: 0;
+  padding-left: 6mm;
+  font-size: 11pt;
+  line-height: 1.45;
+}
+
+.startpaket-footer {
+  margin: 0;
+  padding-top: 4mm;
+  border-top: 0.3mm solid var(--sp-line);
+  font-size: 9.5pt;
+  text-align: center;
+  color: var(--sp-muted);
+}
+
+.startpaket-create {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 40rem;
+}
+
+.startpaket-create p {
+  margin: 0;
+}
+
+.startpaket-code.print-only {
+  display: none;
+}
+
+@media print {
+  .startpaket-code.print-only {
+    display: block;
+  }
+
+  .startpaket-sheet {
+    height: 296mm;
+    padding: 14mm 16mm 12mm;
+  }
+
+  .startpaket-sheet img,
+  .startpaket-qr,
+  .startpaket-muster {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

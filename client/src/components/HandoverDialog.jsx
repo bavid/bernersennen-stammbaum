@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api'
 import Icon from './Icon.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { displayName } from '../lib/timeline.js'
+import { startpaketRoute } from '../lib/startpaket.js'
 import { t } from '../lib/i18n/index.js'
 
 const COPIED_MS = 2000
@@ -97,6 +99,11 @@ export default function HandoverDialog({ dog, onCreated }) {
           </button>
         )}
       </div>
+      {/* Startpaket: der Code reist nur im Navigations-State mit, nie in der Adresse (pages/StartpaketPage.jsx). */}
+      <Link className="btn btn-ghost btn-block" to={startpaketRoute(dog.id)} state={{ handover: result }}>
+        <Icon name="printer" />
+        {t('Startpaket drucken')}
+      </Link>
       <p className="field-hint">
         {t('Gebt den Code den neuen Menschen – beim Einlösen zieht {name} mit der ganzen Chronik zu ihnen.', { name })}
       </p>

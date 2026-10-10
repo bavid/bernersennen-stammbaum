@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
+import { STARTPAKET_RE } from './lib/startpaket.js'
 import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { START_ROUTE, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
 import { isOwnHome } from './lib/visits.js'
@@ -52,6 +53,8 @@ const AdminViewStartPage = lazy(() => import('./pages/AdminViewStartPage.jsx'))
 // Druckseite eines Kunden-Gutschein-Stapels für Partner (Phase 5 Task 4): teilt sich Karten und QR-Bibliothek
 // mit der Admin-Druckseite - nur Partner-Bereiche rufen sie auf, eigener Chunk.
 const PartnerPrintPage = lazy(() => import('./pages/PartnerPrintPage.jsx'))
+// Tierheim-Startpaket (/tier/:id/startpaket, lib/startpaket.js): Druckmappe zur Vermittlung, nur Tierheim-Bereiche.
+const StartpaketPage = lazy(() => import('./pages/StartpaketPage.jsx'))
 // Öffentliche Infoseite "Partner werden" (Phase 5 Task 4): selten aufgerufen, eigener Chunk.
 const PartnerInfoPage = lazy(() => import('./pages/PartnerInfoPage.jsx'))
 // Phase F: „So finanzieren wir uns“ (/finanzierung) - öffentlich wie Impressum und Datenschutz, eigener Chunk.
@@ -686,6 +689,18 @@ export default function App() {
       <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
           <PartnerPrintPage batchId={partnerPrintBatchId} readOnly={isReadOnly(family)} demo={Boolean(family.isDemo)} />
+        </Suspense>
+      </ThemeProvider>
+    )
+  }
+
+  // Tierheim-Startpaket: wie die Druckseiten ohne App-Hülle; andere Bereiche landen über AreaRoutes auf ihrer Startseite.
+  const startpaketDogId = pathname.match(STARTPAKET_RE)?.[1]
+  if (startpaketDogId && family.art === 'tierheim') {
+    return (
+      <ThemeProvider>
+        <Suspense fallback={<RouteFallback />}>
+          <StartpaketPage dogId={startpaketDogId} family={family} />
         </Suspense>
       </ThemeProvider>
     )

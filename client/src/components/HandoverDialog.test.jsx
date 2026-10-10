@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const { createHandover } = vi.hoisted(() => ({ createHandover: vi.fn() }))
@@ -22,9 +23,11 @@ async function render({ isDemo = false, ...props } = {}) {
   root = createRoot(container)
   await act(async () =>
     root.render(
-      <DemoProvider value={isDemo}>
-        <HandoverDialog dog={dog} {...props} />
-      </DemoProvider>
+      <MemoryRouter>
+        <DemoProvider value={isDemo}>
+          <HandoverDialog dog={dog} {...props} />
+        </DemoProvider>
+      </MemoryRouter>
     )
   )
   return container
@@ -83,6 +86,16 @@ describe('HandoverDialog – "Übergabe-Gutschein erzeugen"', () => {
     await act(async () => confirmButton().click())
 
     expect(container.querySelector('.handover-link').textContent).toBe(`${window.location.origin}/v#ABCD1234EFGH`)
+  })
+
+  test('„Startpaket drucken“ führt zur Druckseite – der Code steht nicht in der Adresse', async () => {
+    createHandover.mockResolvedValue({ code: 'ABCD-1234-EFGH', link: '/v#ABCD1234EFGH' })
+    await render()
+    await act(async () => confirmButton().click())
+
+    const link = [...container.querySelectorAll('a')].find((a) => a.textContent.includes('Startpaket drucken'))
+    expect(link.getAttribute('href')).toBe('/tier/7/startpaket')
+    expect(link.getAttribute('href')).not.toMatch(/ABCD/)
   })
 
   test('zeigt den Hinweistext, den Code den neuen Menschen zu geben', async () => {
