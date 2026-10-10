@@ -4,6 +4,7 @@ import { useIsDemo } from '../../../lib/demo.js'
 import { PUSH_STATUS, PUSH_SUPPORT, pushStatus, pushSupport } from '../../../lib/push.js'
 import { pushClient } from '../../../lib/pushClient.js'
 import { useT } from '../../../lib/i18n/index.js'
+import PushTestKnopf from './PushTestKnopf.jsx'
 
 const HINT_ID = 'push-hint'
 
@@ -27,7 +28,7 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
   const demo = useIsDemo()
   const [server, setServer] = useState(null)
   const [permission, setPermission] = useState(() => client.currentPermission())
-  const [subscribed, setSubscribed] = useState(false)
+  const [endpoint, setEndpoint] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -36,7 +37,7 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
     if (support === PUSH_SUPPORT.ok) {
       client
         .currentSubscription()
-        .then((subscription) => active && setSubscribed(Boolean(subscription)))
+        .then((subscription) => active && setEndpoint(subscription?.endpoint || null))
         .catch(() => {})
     }
     async function loadKey() {
@@ -53,6 +54,7 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
     }
   }, [support, client])
 
+  const subscribed = Boolean(endpoint)
   const status = pushStatus({ permission, subscribed })
   const reason =
     support !== PUSH_SUPPORT.ok ? support : demo ? 'demo' : server === null ? 'prueft' : !server.enabled ? 'server' : status === PUSH_STATUS.blockiert ? status : null
@@ -63,15 +65,15 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
     setError(null)
     try {
       if (status === PUSH_STATUS.an) {
-        const endpoint = await client.unsubscribePush()
-        if (endpoint) await api.pushUnsubscribe(endpoint)
-        setSubscribed(false)
+        const old = await client.unsubscribePush()
+        if (old) await api.pushUnsubscribe(old)
+        setEndpoint(null)
       } else {
         const result = await client.subscribePush(server.publicKey)
         setPermission(result.permission)
         if (result.subscription) {
           await api.pushSubscribe(result.subscription.toJSON())
-          setSubscribed(true)
+          setEndpoint(result.subscription.endpoint)
         }
       }
     } catch (err) {
@@ -100,6 +102,7 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
       <p className="app-setting-text">
         {t('settings.push.text')}
       </p>
+      {reason === null && status === PUSH_STATUS.an && <PushTestKnopf endpoint={endpoint} />}
       {error && (
         <div className="error-banner" role="alert">
           {error}

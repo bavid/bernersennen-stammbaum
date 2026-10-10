@@ -137,6 +137,8 @@ export const api = {
   pushKey: () => request('/push/key'),
   pushSubscribe: (subscription) => request('/push/abo', json('POST', { subscription })),
   pushUnsubscribe: (endpoint) => request('/push/abo', json('DELETE', { endpoint })),
+  // Test-Benachrichtigung nur an dieses Gerät (endpoint); lang 'de'/'en' wählt den festen Text.
+  pushTest: (endpoint, lang) => request('/push/test', json('POST', { endpoint, lang })),
   // Reiter "Entdecken" (Phase 3): alle vier Abschnitte in einer Antwort. Die PLZ steht wie bei
   // publicPartners im Body, nie in der URL; ohne PLZ liefert der Server alles, nach Name sortiert.
   discover: ({ plz, radius } = {}) => request('/discover', json('POST', plz ? { plz, radius } : {})),

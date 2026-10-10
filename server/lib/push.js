@@ -58,6 +58,13 @@ const TEXTE = Object.freeze({
   })
 })
 
+// „Test-Benachrichtigung senden“ (Einstellungen › App): fest, ohne Namen; Englisch nur auf ausdrücklichen Wunsch (lang).
+const TEST_EREIGNIS = 'test'
+const TEST_TEXTE = Object.freeze({
+  de: Object.freeze({ titel: 'Familie auf Pfoten', text: 'So sehen Benachrichtigungen aus. 🐾', url: '/einstellungen' }),
+  en: Object.freeze({ titel: 'Familie auf Pfoten', text: 'This is how notifications look. 🐾', url: '/einstellungen' })
+})
+
 const MAX_ENDPOINT_LENGTH = 2048
 const MAX_KEY_LENGTH = 512
 // Mehr Geräte je Zuhause braucht niemand - und niemand füllt uns die Tabelle.
@@ -82,6 +89,7 @@ const upsertStmt = db.prepare(
 )
 const deleteStmt = db.prepare('DELETE FROM push_abos WHERE family_id = ? AND endpoint = ?')
 const deleteByIdStmt = db.prepare('DELETE FROM push_abos WHERE id = ?')
+const findOwnStmt = db.prepare('SELECT id, endpoint, keys_json FROM push_abos WHERE family_id = ? AND endpoint = ?')
 const listStmt = db.prepare('SELECT id, endpoint, keys_json FROM push_abos WHERE family_id = ? ORDER BY id')
 const okStmt = db.prepare("UPDATE push_abos SET last_ok_at = datetime('now') WHERE id = ?")
 const homeStmt = db.prepare('SELECT is_demo, art FROM families WHERE id = ?')
@@ -174,12 +182,40 @@ async function deliver(homeId, ereignis) {
       okStmt.run(abo.id)
       sent += 1
     } catch (err) {
-      const status = err?.statusCode
-      if (status === 404 || status === 410) deleteByIdStmt.run(abo.id)
-      else console.warn(`Push-Benachrichtigung fehlgeschlagen (${status || err?.code || 'Fehler'})`)
+      if (isGone(err)) deleteByIdStmt.run(abo.id)
+      else console.warn(`Push-Benachrichtigung fehlgeschlagen (${err?.statusCode || err?.code || 'Fehler'})`)
     }
   }
   return sent
+}
+
+function payloadForTest(lang) {
+  return { ...(TEST_TEXTE[lang] || TEST_TEXTE.de), ereignis: TEST_EREIGNIS }
+}
+
+function isGone(err) {
+  return err?.statusCode === 404 || err?.statusCode === 410
+}
+
+// Testnachricht an GENAU ein Gerät (endpoint) - nur wenn dieses Abo dem Zuhause familyId gehört. Abgewartet; wirft
+// httpError (400 ohne endpoint, 404 fremd/unbekannt, 410 Abo gekündigt und gelöscht, 502 Push-Dienst lehnt ab).
+async function sendTest(familyId, endpoint, lang) {
+  if (typeof endpoint !== 'string' || endpoint.length === 0 || endpoint.length > MAX_ENDPOINT_LENGTH) {
+    throw httpError(400, 'Welches Gerät? (endpoint fehlt)')
+  }
+  const abo = findOwnStmt.get(familyId, endpoint)
+  if (!abo) throw httpError(404, 'Dieses Gerät ist für Benachrichtigungen nicht angemeldet.')
+  try {
+    await sender({ endpoint: abo.endpoint, keys: JSON.parse(abo.keys_json) }, JSON.stringify(payloadForTest(lang)))
+    okStmt.run(abo.id)
+  } catch (err) {
+    if (isGone(err)) {
+      deleteByIdStmt.run(abo.id)
+      throw httpError(410, 'Dieses Gerät ist nicht mehr angemeldet – bitte die Benachrichtigungen aus- und wieder einschalten.')
+    }
+    console.warn(`Push-Testnachricht fehlgeschlagen (${err?.statusCode || err?.code || 'Fehler'})`)
+    throw httpError(502, 'Die Testnachricht ist nicht angekommen – bitte später noch einmal versuchen.')
+  }
 }
 
 // Aus den Routen: nie warten, nur für echte Zuhause, nichts ohne Schlüssel.
@@ -205,6 +241,8 @@ module.exports = {
   deleteAbo,
   countAbos,
   payloadFor,
+  payloadForTest,
+  sendTest,
   deliver,
   notifyHome,
   setSenderForTests

@@ -91,6 +91,9 @@ export const de = {
   'settings.push.blocked': 'Vom Browser blockiert – in den Seiteneinstellungen des Browsers wieder erlauben.',
   'settings.push.on': 'An – bei neuen Grüßen, „Mit dabei“-Anfragen und Gästen.',
   'settings.push.off': 'Aus',
+  'settings.push.test.button': 'Test-Benachrichtigung senden',
+  'settings.push.test.sending': 'Wird gesendet …',
+  'settings.push.test.sent': 'Gesendet – gleich sollte sie auf diesem Gerät erscheinen.',
   'settings.push.text':
     'Nur, was die Glocke auch zeigt – ohne Namen oder Inhalte. Der kurze Hinweis geht verschlüsselt über den Push-Dienst eures Browsers.',
   'settings.failed': 'Das hat gerade nicht geklappt.',
@@ -252,6 +255,9 @@ export const en = {
   'settings.push.blocked': 'Blocked by the browser – allow it again in the browser’s site settings.',
   'settings.push.on': 'On – for new greetings, “Joined in” requests and guests.',
   'settings.push.off': 'Off',
+  'settings.push.test.button': 'Send test notification',
+  'settings.push.test.sending': 'Sending …',
+  'settings.push.test.sent': 'Sent – it should appear on this device shortly.',
   'settings.push.text':
     'Only what the bell shows too – without names or contents. The short notice travels encrypted through your browser’s push service.',
   'settings.failed': 'That did not work just now.',
