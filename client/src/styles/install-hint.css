@@ -63,16 +63,6 @@
 }
 
 /* Login-Seite: die Karte unter den beiden Einstiegen, so breit wie sie (auf breiten Bildschirmen wie beide zusammen) */
-.login-install {
-  width: min(25rem, 100%);
-  margin-top: var(--space-8);
-}
-
-@media (min-width: 1180px) {
-  .login-install {
-    width: min(54rem, 100%);
-  }
-}
 
 /* „Neue Version verfügbar · Neu laden“ (components/PwaUpdate.jsx) - der Toast mit einem Knopf */
 .toast-update .toast-action {

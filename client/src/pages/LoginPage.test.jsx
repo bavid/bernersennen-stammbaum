@@ -336,13 +336,24 @@ describe('LoginPage – Fuß', () => {
 
 // Phase U: zwei klare Einstiege - Tierhalter und Partner (Hundeschulen, Tierheime & Co.).
 describe('LoginPage – zwei Einstiege', () => {
+  test('Aufbau 10.10.: Kopfzeile mit Marke und Sprachwahl, eine Karte, Anfrage darunter, Partner und App in einer Reihe', async () => {
+    await render()
+    const top = container.querySelector('.login-top')
+    expect(top.querySelector('.login-brand').textContent).toContain('Familie auf Pfoten')
+    expect(top.querySelector('.language-switch')).not.toBeNull()
+    expect(container.querySelectorAll('.login-card')).toHaveLength(1)
+    expect(container.querySelector('.login-card .login-request')).toBeNull()
+    expect(container.querySelector('.login-main > .login-request')).not.toBeNull()
+    expect(container.querySelector('.login-more-grid > .login-partner')).not.toBeNull()
+  })
+
   const labels = () => [...container.querySelectorAll('.login-entry-label')].map((el) => el.textContent.trim())
 
   test('zeigt "Für Tierhalter" (Anmelden, Gutschein, Demo) und daneben "Für Hundeschulen, Tierheime & Co."', async () => {
     await render()
 
     expect(labels()).toEqual(['Für Tierhalter', 'Für Hundeschulen, Tierheime & Co.'])
-    const [owners, partners] = container.querySelectorAll('.login-entries > .login-entry')
+    const [owners, partners] = [container.querySelector('.login-card.login-entry'), container.querySelector('.login-partner')]
     expect(owners.querySelector('#login-secret')).not.toBeNull()
     expect(owners.querySelector('.login-demo button').textContent).toContain('Demo ansehen')
     expect(partners.querySelector('h2').textContent).toBe('Euer Partner-Bereich')
@@ -415,7 +426,7 @@ describe('LoginPage – zwei Einstiege', () => {
 
   test('beide Einstiege sind benannte Abschnitte', async () => {
     await render()
-    const [owners, partners] = container.querySelectorAll('.login-entries > section')
+    const [owners, partners] = [container.querySelector('.login-card.login-entry'), container.querySelector('.login-partner')]
     expect(document.getElementById(owners.getAttribute('aria-labelledby')).textContent.trim()).toBe('Für Tierhalter')
     expect(document.getElementById(partners.getAttribute('aria-labelledby')).textContent).toBe('Euer Partner-Bereich')
   })
@@ -435,7 +446,7 @@ describe('LoginPage – zwei Einstiege', () => {
 
 // Phase N: "Noch keinen Einladungscode?" im Einstieg für Tierhalter und "Partner-Zugang anfragen" im Partner-Einstieg.
 describe('LoginPage – Gutschein und Partner-Zugang anfragen', () => {
-  const requestCard = () => container.querySelector('.login-entries > .login-entry .login-request')
+  const requestCard = () => container.querySelector('.login-main .login-request')
 
   test('über /#gutschein-anfragen (Fuß der Partner-Portale) ist das Anfrage-Formular gleich offen', async () => {
     await render(undefined, ['/#gutschein-anfragen'])
