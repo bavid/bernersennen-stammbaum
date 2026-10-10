@@ -7,8 +7,8 @@ const ADMIN_TEST_PASSWORD = 'admin-test-promotions-1'
 const dataDir = useTempDataDir('promotions')
 
 // PNG-Signatur (8 Bytes) + etwas Nutzlast, damit detectImageExt sie erkennt - wie in partners.test.js.
-const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
-const JPG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4])
+const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]) // Signatur + IEND
+const JPG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 1, 2, 0xff, 0xd9]) // SOI, APP0, EOI
 const SVG_BYTES = Buffer.from('<svg onload="alert(1)"></svg>')
 
 function samplePromotion(overrides = {}) {

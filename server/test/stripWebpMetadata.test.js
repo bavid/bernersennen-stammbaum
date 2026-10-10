@@ -71,11 +71,13 @@ test('stripWebpMetadata: ANIM/ANMF/ALPH bleiben erhalten', () => {
   assert.deepEqual(stripped, riff(vp8x(0x02), ANIM, ANMF, ALPH))
 })
 
-test('stripWebpMetadata: kaputte oder fremde Eingaben kommen unverändert zurück', () => {
+test('stripWebpMetadata: fremde Eingaben kommen unverändert zurück', () => {
+  const foreign = ['RIFF', Buffer.from('RIFF\0\0', 'latin1'), Buffer.from('RIFF\x04\0\0\0WAVE', 'latin1')]
+  for (const input of foreign) assert.equal(stripWebpMetadata(input), input)
+})
+
+test('stripWebpMetadata: kaputter Container -> null (fail closed)', () => {
   const cases = {
-    keinBuffer: 'RIFF',
-    zuKurz: Buffer.from('RIFF\0\0', 'latin1'),
-    keinWebp: Buffer.from('RIFF\x04\0\0\0WAVE', 'latin1'),
     riffGroesseZuGross: (() => {
       const b = Buffer.from(EXTENDED)
       b.writeUInt32LE(EXTENDED.length, 4)
@@ -86,8 +88,26 @@ test('stripWebpMetadata: kaputte oder fremde Eingaben kommen unverändert zurüc
     halberChunkKopf: riff(VP8L, Buffer.from('EXI', 'ascii'))
   }
   for (const [name, input] of Object.entries(cases)) {
-    assert.equal(stripWebpMetadata(input), input, name)
+    assert.equal(stripWebpMetadata(input), null, name)
   }
+})
+
+test('stripWebpMetadata: ungepolsterter letzter Chunk wird toleriert und gepolstert', () => {
+  const oddExif = chunk('EXIF', Buffer.from('GPS', 'latin1')) // ungerade Länge -> ein Padding-Byte
+  const unpadded = riff(VP8L, oddExif).subarray(0, -1) // das Padding-Byte fehlt, RIFF-Größe zählt es noch mit
+  const sizeWithoutPad = Buffer.from(unpadded)
+  sizeWithoutPad.writeUInt32LE(unpadded.length - 8, 4) // RIFF-Größe passt zur Datei ohne Padding
+  for (const input of [unpadded, sizeWithoutPad]) assert.deepEqual(stripWebpMetadata(input), riff(VP8L))
+
+  const oddImage = chunk('VP8L', Buffer.from([0x2f, 0, 0, 0, 0, 0x88, 0x88]))
+  const lastUnpadded = Buffer.from(riff(EXIF, oddImage).subarray(0, -1))
+  lastUnpadded.writeUInt32LE(lastUnpadded.length - 8, 4)
+  assert.deepEqual(stripWebpMetadata(lastUnpadded), riff(oddImage))
+})
+
+test('stripWebpMetadata: Bytes nach dem RIFF-Container fallen weg', () => {
+  const trailing = Buffer.concat([EXTENDED, Buffer.from('EXIF-Anhang', 'latin1')])
+  assert.deepEqual(stripWebpMetadata(trailing), riff(vp8x(ICC_FLAG | ALPHA_FLAG), ICCP, VP8L))
 })
 
 test('POST /api/uploads speichert ein WebP ohne EXIF', async (t) => {
@@ -106,4 +126,22 @@ test('POST /api/uploads speichert ein WebP ohne EXIF', async (t) => {
   const stored = fs.readFileSync(path.join(config.uploadDir, url.split('/').pop()))
   assert.equal(stored.includes('GPS-geheim'), false)
   assert.deepEqual(stored, riff(vp8x(ICC_FLAG | ALPHA_FLAG), ICCP, VP8L))
+
+  // Fail closed: ein kaputtes WebP (Chunk zeigt über das Ende) wird abgelehnt und nicht gespeichert.
+  const before = fs.readdirSync(config.uploadDir).length
+  const broken = riff(VP8L, Buffer.from('EXIF\xff\0\0\0GPS-geheim', 'latin1'))
+  const badForm = new FormData()
+  badForm.append('file', new Blob([broken], { type: 'image/webp' }), 'kaputt.webp')
+  const bad = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Cookie: family.cookie }, body: badForm })
+  assert.equal(bad.status, 400)
+  assert.equal((await bad.json()).error, 'Dieses Bild können wir nicht lesen – bitte als JPG oder PNG speichern.')
+  assert.equal(fs.readdirSync(config.uploadDir).length, before)
+
+  // Inhalt zählt, nicht der Content-Type: ein als GIF beschriftetes WebP verliert sein EXIF trotzdem.
+  const gifForm = new FormData()
+  gifForm.append('file', new Blob([EXTENDED], { type: 'image/gif' }), 'photo.gif')
+  const gifRes = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Cookie: family.cookie }, body: gifForm })
+  assert.equal(gifRes.status, 201)
+  const gifStored = fs.readFileSync(path.join(config.uploadDir, (await gifRes.json()).url.split('/').pop()))
+  assert.equal(gifStored.includes('GPS-geheim'), false)
 })

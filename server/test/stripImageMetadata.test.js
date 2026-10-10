@@ -71,10 +71,33 @@ test('stripJpegMetadata: kein JPEG -> unveränderter Originalbuffer', () => {
   assert.equal(stripJpegMetadata(notAJpeg), notAJpeg)
 })
 
-test('stripJpegMetadata: kaputte/verkürzte Segmentlänge -> unveränderter Originalbuffer, keine Ausnahme', () => {
-  const brokenLength = Buffer.concat([SOI, Buffer.from([0xff, 0xe1, 0xff, 0xff]), EOI]) // Länge zeigt weit übers Ende hinaus
-  const result = stripJpegMetadata(brokenLength)
-  assert.deepEqual(result, brokenLength)
+test('stripJpegMetadata: kaputte Struktur -> null (fail closed), keine Ausnahme', () => {
+  const cases = {
+    laengeUeberEnde: Buffer.concat([SOI, Buffer.from([0xff, 0xe1, 0xff, 0xff]), EOI]),
+    laengeKleinerZwei: Buffer.concat([SOI, Buffer.from([0xff, 0xe1, 0x00, 0x01]), APP1_EXIF, EOI]),
+    keinMarker: Buffer.concat([SOI, Buffer.from([0x00, 0x00]), APP1_EXIF, EOI]),
+    nurFuellbytes: Buffer.concat([SOI, Buffer.from([0xff, 0xff])]),
+    sosKopfAbgeschnitten: Buffer.concat([SOI, Buffer.from([0xff, 0xda, 0x00, 0x20, 0x01])])
+  }
+  for (const [name, input] of Object.entries(cases)) assert.equal(stripJpegMetadata(input), null, name)
+})
+
+test('stripJpegMetadata: Bytes nach EOI fallen weg (Handy-Anhang mit zweitem EXIF)', () => {
+  const trailer = Buffer.concat([SOI, APP1_EXIF, EOI, Buffer.from('Anhang', 'latin1')])
+  const stripped = stripJpegMetadata(Buffer.concat([buildJpeg(APP1_EXIF), trailer]))
+  assert.deepEqual(stripped, buildJpeg())
+})
+
+test('stripJpegMetadata: progressiv - mehrere Scans bleiben, COM zwischen den Scans fällt weg', () => {
+  const DHT = jpegSegment(0xc4, Buffer.from([0x10, 0xff, 0xd9])) // 0xFF 0xD9 in Nutzdaten ist kein EOI
+  const scan2 = Buffer.concat([jpegSegment(0xda, Buffer.from([0x00, 0x01, 0x02])), Buffer.from([0xab, 0xff, 0xd3, 0xcd])])
+  const original = Buffer.concat([SOI, APP0_JFIF, SOS_AND_SCAN, COM_SEGMENT, DHT, scan2, EOI])
+  assert.deepEqual(stripJpegMetadata(original), Buffer.concat([SOI, APP0_JFIF, SOS_AND_SCAN, DHT, scan2, EOI]))
+})
+
+test('stripJpegMetadata: abgeschnitten im Scan (ohne EOI) -> Bilddaten bleiben, EXIF ist raus', () => {
+  const truncated = Buffer.concat([SOI, APP1_EXIF, APP0_JFIF, SOS_AND_SCAN])
+  assert.deepEqual(stripJpegMetadata(truncated), Buffer.concat([SOI, APP0_JFIF, SOS_AND_SCAN]))
 })
 
 test('stripJpegMetadata: leerer/zu kurzer Buffer -> unverändert, keine Ausnahme', () => {
@@ -131,7 +154,14 @@ test('stripPngMetadata: kein PNG -> unveränderter Originalbuffer', () => {
   assert.equal(stripPngMetadata(notAPng), notAPng)
 })
 
-test('stripPngMetadata: kaputte Chunk-Länge -> unveränderter Originalbuffer, keine Ausnahme', () => {
+test('stripPngMetadata: kaputte Chunk-Länge oder halber Chunk -> null (fail closed), keine Ausnahme', () => {
   const broken = Buffer.concat([PNG_SIGNATURE, Buffer.from([0x7f, 0xff, 0xff, 0xff]), Buffer.from('tEXt', 'ascii')])
-  assert.deepEqual(stripPngMetadata(broken), broken)
+  assert.equal(stripPngMetadata(broken), null)
+  assert.equal(stripPngMetadata(Buffer.concat([PNG_SIGNATURE, IHDR, TEXT_CHUNK.subarray(0, 20)])), null)
+  assert.equal(stripPngMetadata(Buffer.concat([PNG_SIGNATURE, IHDR, Buffer.from([0, 0])])), null)
+})
+
+test('stripPngMetadata: Bytes nach IEND fallen weg', () => {
+  const original = Buffer.concat([buildPng(TEXT_CHUNK), EXIF_CHUNK, Buffer.from('Anhang', 'latin1')])
+  assert.deepEqual(stripPngMetadata(original), buildPng())
 })

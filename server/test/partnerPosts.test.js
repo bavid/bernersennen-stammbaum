@@ -14,8 +14,8 @@ const ADMIN_TEST_PASSWORD = 'admin-test-partner-posts-1'
 const dataDir = useTempDataDir('partner-posts', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 
 const PORTAL_TEXT = 'Kleine Gruppen, viel Geduld und jede Menge Leckerli – so arbeiten wir mit euren Hunden.'
-const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
-const JPG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4])
+const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]) // Signatur + IEND
+const JPG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 1, 2, 0xff, 0xd9]) // SOI, APP0, EOI
 const WEBP_BYTES = Buffer.concat([Buffer.from('RIFF'), Buffer.from([4, 0, 0, 0]), Buffer.from('WEBPVP8 ')])
 const SVG_BYTES = Buffer.from('<svg onload="alert(1)"></svg>')
 const IMAGE_TYPE_MESSAGE = 'Bitte als JPG oder PNG hochladen.'

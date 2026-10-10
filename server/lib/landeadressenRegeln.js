@@ -21,13 +21,14 @@ const APP_SEITEN = [
 ]
 
 // Server-Pfade (app.js), Dateien/Ordner aus client/dist und Namen, die absehbar Seiten werden - nie als Kurzname.
+// test/landeadressenRouten.test.js prüft, dass jede erste Pfad-Ebene des Clients hier oder in APP_SEITEN steht.
 const SYSTEM_PFADE = [
   'api', 'uploads', 'partner-media', 'public-media', 'rahmen-foto', 'r', 'health', 'robots', 'sitemap', 'assets',
   'icons', 'schriften', 'stickers', 'splash', 'i18n', 'media', 'sw', 'offline', 'manifest', 'favicon', 'index',
   'static', 'login', 'logout', 'anmelden', 'abmelden', 'registrieren', 'hilfe', 'kontakt', 'suche', 'demo',
   'startpaket', 'geschenk', 'geschenke', 'gruss', 'gruesse', 'grusskarte', 'einladung', 'einladungen', 'gutschein',
   'gutscheine', 'tierheim', 'tierheime', 'zuhause', 'rudel', 'besuche', 'timeline', 'erinnerungen', 'www', 'mail',
-  'null', 'undefined'
+  'null', 'undefined', 'fotobuch', 'vermisst', 'bausteine', 'suchplakat', 'drucken'
 ]
 
 const RESERVIERT = new Set([...APP_SEITEN, ...SYSTEM_PFADE])

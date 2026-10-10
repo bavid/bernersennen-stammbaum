@@ -159,7 +159,7 @@ test('Bannerfotos und Ansprechperson im Portal-Kopf', async (t) => {
     const broken = Buffer.concat([Buffer.from([0xff, 0xd8]), jpegSegment(0xe1, Buffer.from('Exif\0\0GPS', 'latin1')), Buffer.from([0x00, 0x00, 0x00])])
     const unreadable = await sendPhoto(BANNER, school.cookie, { foto: broken })
     assert.equal(unreadable.status, 400)
-    assert.match(unreadable.data.error, /lässt sich nicht lesen/)
+    assert.match(unreadable.data.error, /nicht lesen/)
     assert.equal((await sendPhoto(BANNER, school.cookie, { alt: 'x'.repeat(121) })).status, 400)
     assert.equal((await sendPhoto(BANNER, school.cookie, { alt: 'Foto <b>fett</b>' })).status, 400)
     const missing = await sendPhoto(BANNER, school.cookie, { foto: null, alt: 'ohne Foto' })

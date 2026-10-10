@@ -3,8 +3,8 @@
 // Phase V4b (security-review): Prüfung eines schon bereinigten JPG/PNG vor dem Veröffentlichen als Bannerfoto - Maße aus
 // dem Kopf (JPEG: SOF-Segment vor dem ersten SOS, PNG: IHDR) und ob noch Metadaten-Segmente übrig sind (dieselben wie
 // lib/stripJpegMetadata.js/lib/stripPngMetadata.js entfernen: APP1 Exif/XMP, APP13, COM bzw. tEXt/iTXt/zTXt/eXIf).
-// Beide Stripper geben bei unerwarteter Struktur das Original zurück ("fail open") - für öffentliche Fotos wird darum
-// danach geprüft und im Zweifel abgelehnt. Ergebnis: { width, height, metadata } oder null (nicht lesbar).
+// Die Stripper lehnen kaputte Bilder ab (fail closed, lib/imageMetadata.js) - für öffentliche Fotos wird als zweite
+// Sicherung trotzdem danach geprüft und im Zweifel abgelehnt. Ergebnis: { width, height, metadata } oder null (nicht lesbar).
 
 const JPEG_SOI = 0xd8
 const JPEG_SOS = 0xda

@@ -13,9 +13,7 @@ const multer = require('multer')
 const db = require('../db')
 const config = require('../config')
 const { detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('./partners')
-const { stripJpegMetadata } = require('./stripJpegMetadata')
-const { stripPngMetadata } = require('./stripPngMetadata')
-const { stripWebpMetadata } = require('./stripWebpMetadata')
+const { stripImageMetadata } = require('./imageMetadata')
 
 const partnerLogoUpload = multer({
   storage: multer.memoryStorage(),
@@ -23,12 +21,16 @@ const partnerLogoUpload = multer({
 })
 
 // security-review Phase T Finding 12 gilt auch für Logos: EXIF/GPS aus JPEG, Text-/eXIf-Chunks aus PNG,
-// EXIF-/XMP-Chunks aus WebP.
-const METADATA_STRIPPER_BY_EXT = { jpg: stripJpegMetadata, png: stripPngMetadata, webp: stripWebpMetadata }
-
-function stripLogoMetadata(buffer, ext) {
-  const strip = METADATA_STRIPPER_BY_EXT[ext]
-  return strip ? strip(buffer) : buffer
+// EXIF-/XMP-Chunks aus WebP (lib/imageMetadata.js). Kaputte Bilder werden mit 400 abgelehnt (fail closed).
+// Bereinigtes Bild oder null - dann ist die 400-Antwort schon gesendet (für Logo- und Empfehlungsbild-Upload).
+function strippedOrReject(res, buffer) {
+  try {
+    return stripImageMetadata(buffer)
+  } catch (err) {
+    if (!err.status) throw err
+    res.status(err.status).json({ error: err.message })
+    return null
+  }
 }
 
 const findLogoFile = db.prepare('SELECT logo_file FROM partners WHERE id = ?')
@@ -50,9 +52,11 @@ function handlePartnerLogoUpload(req, res, next, partnerId) {
       return res.status(400).json({ error: 'Nur PNG, JPG oder WebP sind als Logo erlaubt' })
     }
 
+    const data = strippedOrReject(res, req.file.buffer)
+    if (!data) return
     fs.mkdirSync(config.partnerMediaDir, { recursive: true })
     const filename = `${crypto.randomUUID()}.${ext}`
-    fs.writeFileSync(path.join(config.partnerMediaDir, filename), stripLogoMetadata(req.file.buffer, ext))
+    fs.writeFileSync(path.join(config.partnerMediaDir, filename), data)
 
     // Das bisherige Logo erst jetzt frisch lesen (nicht vor dem Upload): so bleibt auch bei zwei
     // gleichzeitigen Uploads keine Datei verwaist zurück.
@@ -63,4 +67,4 @@ function handlePartnerLogoUpload(req, res, next, partnerId) {
   })
 }
 
-module.exports = { handlePartnerLogoUpload, stripLogoMetadata }
+module.exports = { handlePartnerLogoUpload, strippedOrReject }

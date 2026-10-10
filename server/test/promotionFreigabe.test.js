@@ -16,7 +16,7 @@ const dataDir = useTempDataDir('promotion-freigabe', {
 })
 
 const PORTAL_TEXT = 'Kleine Gruppen, viel Geduld und jede Menge Leckerli – so arbeiten wir mit euren Hunden.'
-const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
+const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]) // Signatur + IEND
 const EINGEREICHT_TEXT = '🐾 Ein Partner hat einen Beitrag eingereicht – bitte im Admin prüfen und freigeben.'
 const VERTRAUENSWUERDIG_TEXT = '🐾 Ein Partner hat einen freigegebenen Beitrag geändert (vertrauenswürdig) – die Änderung ist schon online.'
 const VORLAGEN = [

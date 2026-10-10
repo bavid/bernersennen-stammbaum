@@ -340,5 +340,25 @@ test('Fotos nur für Bereiche, die sie sehen dürfen', async (t) => {
     // kaputt gegangen)
     const served = await fetch(`${base}${url}`, { headers: { Cookie: A.cookie } })
     assert.equal(served.status, 200)
+
+    // Handy-Anhang nach EOI: kein Ablehnungsgrund - die Bytes nach EOI werden abgeschnitten.
+    const trailerForm = new FormData()
+    const withTrailer = Buffer.concat([jpegWithExif, Buffer.from('Anhang mit Exif', 'latin1')])
+    trailerForm.append('file', new Blob([withTrailer], { type: 'image/jpeg' }), 'handy.jpg')
+    const trailerRes = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Cookie: A.cookie }, body: trailerForm })
+    assert.equal(trailerRes.status, 201)
+    const trimmed = fs.readFileSync(path.join(config.uploadDir, (await trailerRes.json()).url.split('/').pop()))
+    assert.equal(trimmed.subarray(-2).toString('hex'), 'ffd9')
+    assert.equal(trimmed.includes('Exif'), false)
+
+    // Fail closed: kaputtes JPEG (Segmentlänge zeigt übers Ende) -> 400, nichts gespeichert.
+    const brokenForm = new FormData()
+    const broken = Buffer.concat([Buffer.from([0xff, 0xd8]), exifSegment.subarray(0, 12)])
+    brokenForm.append('file', new Blob([broken], { type: 'image/jpeg' }), 'kaputt.jpg')
+    const filesBefore = fs.readdirSync(config.uploadDir).length
+    const brokenRes = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Cookie: A.cookie }, body: brokenForm })
+    assert.equal(brokenRes.status, 400)
+    assert.match((await brokenRes.json()).error, /nicht lesen/)
+    assert.equal(fs.readdirSync(config.uploadDir).length, filesBefore)
   })
 })

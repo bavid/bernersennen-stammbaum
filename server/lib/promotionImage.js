@@ -15,11 +15,11 @@ const multer = require('multer')
 const db = require('../db')
 const config = require('../config')
 const { detectImageExt, LOGO_MIME_TYPES, MAX_LOGO_BYTES } = require('./partners')
-const { stripLogoMetadata } = require('./partnerLogo')
+const { strippedOrReject } = require('./partnerLogo')
 const { promotionImageUrl } = require('./promotions')
 
 // Bild-Arten: der Admin darf PNG, JPG und WebP (wie beim Logo), Partner nur JPG und PNG (wie bei den
-// Einblicken, routes/partnerArea/einblicke.js). stripLogoMetadata entfernt EXIF/GPS aus allen drei Arten.
+// Einblicken, routes/partnerArea/einblicke.js). strippedOrReject entfernt EXIF/GPS aus allen drei Arten.
 // Geprüft wird Content-Type UND Magic Bytes.
 const ADMIN_IMAGE_TYPES = Object.freeze({
   mimeTypes: LOGO_MIME_TYPES,
@@ -88,9 +88,11 @@ function handlePromotionImageUpload(req, res, next, promotionId, { onStored, res
       return res.status(400).json({ error: types.typeError })
     }
 
+    const data = strippedOrReject(res, req.file.buffer)
+    if (!data) return
     fs.mkdirSync(config.partnerMediaDir, { recursive: true })
     const filename = `${crypto.randomUUID()}.${ext}`
-    fs.writeFileSync(path.join(config.partnerMediaDir, filename), stripLogoMetadata(req.file.buffer, ext))
+    fs.writeFileSync(path.join(config.partnerMediaDir, filename), data)
 
     let result
     try {

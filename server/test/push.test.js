@@ -101,6 +101,16 @@ test('Web Push über die API', async (t) => {
     assert.equal((await post('/api/push/abo', { subscription: subscription('handy') }, host.cookie)).status, 201)
     assert.equal(push.countAbos(hostId), 1)
     assert.equal((await call(base, '/api/push/key', { cookie: host.cookie })).data.geraete, 1)
+    // security-review: wer den Endpunkt eines fremden Zuhauses kennt, übernimmt das Abo nicht (409), es bleibt beim Gastgeber.
+    const takeover = { ...subscription('handy'), keys: { p256dh: 'BFremd_123', auth: 'fremd_auth' } }
+    const foreign = await post('/api/push/abo', { subscription: takeover }, guest.cookie)
+    assert.equal(foreign.status, 409)
+    assert.match(foreign.data.error, /anderen Zuhause/)
+    assert.equal(push.countAbos(guest.data.id), 0)
+    assert.equal(push.countAbos(hostId), 1)
+    assert.throws(() => push.saveAbo(guest.data.id, takeover), (err) => err.status === 409)
+    const stored = require('../db').prepare('SELECT family_id, keys_json FROM push_abos WHERE endpoint = ?').get(takeover.endpoint)
+    assert.deepEqual(stored, { family_id: hostId, keys_json: JSON.stringify(subscription('handy').keys) })
     assert.equal((await post('/api/push/abo', { subscription: subscription('x') })).status, 401)
   })
 

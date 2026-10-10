@@ -7,8 +7,8 @@ const ADMIN_TEST_PASSWORD = 'admin-test-partner-1'
 const dataDir = useTempDataDir('partners')
 
 // PNG-Signatur (8 Bytes) + etwas Nutzlast, damit detectImageExt sie erkennt.
-const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
-const JPG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4])
+const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]) // Signatur + IEND
+const JPG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 1, 2, 0xff, 0xd9]) // SOI, APP0, EOI
 const SVG_BYTES = Buffer.from('<svg onload="alert(1)"></svg>')
 
 function samplePartner(overrides = {}) {
@@ -256,6 +256,12 @@ test('Partner: Admin-Pflege, öffentliche Liste/Portal, Logo, Partner-Gutscheine
     // Bytes lügen: Content-Type sagt PNG, tatsächlich sind es SVG-Bytes -> Magic-Byte-Prüfung schlägt an
     const spoofed = await uploadLogo(base, adminCookie, sonnenhangId, SVG_BYTES, 'logo.png', 'image/png')
     assert.equal(spoofed.status, 400)
+
+    // Fail closed: ein kaputtes JPEG (APP1-Länge zeigt übers Ende) wird abgelehnt statt samt EXIF gespeichert.
+    const brokenJpg = Buffer.from([0xff, 0xd8, 0xff, 0xe1, 0x40, 0x00, 0x45, 0x78, 0x69, 0x66])
+    const broken = await uploadLogo(base, adminCookie, sonnenhangId, brokenJpg, 'logo.jpg', 'image/jpeg')
+    assert.equal(broken.status, 400)
+    assert.match(broken.data.error, /nicht lesen/)
 
     const missingPartner = await uploadLogo(base, adminCookie, 999999, PNG_BYTES, 'logo.png', 'image/png')
     assert.equal(missingPartner.status, 404)

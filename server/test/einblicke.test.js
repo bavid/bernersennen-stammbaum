@@ -5,6 +5,7 @@ const assert = require('node:assert/strict')
 const { hashPassword } = require('../lib/adminAuth')
 const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = require('./helpers')
 const { jpegSegment, sof0 } = require('./imageFixtures')
+const { stripJpegMetadata } = require('../lib/stripJpegMetadata')
 
 // Phase P Task 3b: Einblicke - Fotos mit Datum auf dem Portal eines Partners (/api/partner-area/einblicke,
 // öffentliches Portal, teaserFoto, /public-media, Admin-Ausblenden, Demo-Aufräumen). t.test() bleibt auf
@@ -248,18 +249,17 @@ test('Einblicke: Partner zeigen Fotos mit Datum auf ihrem Portal', async (t) => 
     for (const foto of [noSize, broken]) {
       const res = await postEinblick(cookie, { foto })
       assert.equal(res.status, 400)
-      assert.match(res.data.error, /lässt sich nicht lesen/)
+      assert.match(res.data.error, /nicht lesen/)
     }
-    // Ohne Scan (EOI direkt nach SOF) behält der Entferner das Original samt Exif ("fail open") - die Prüfung lehnt ab.
+    // Ohne Scan (EOI direkt nach SOF): früher blieb das Original samt Exif stehen ("fail open") - jetzt entfernt der
+    // Stripper das Exif auch hier (lib/stripJpegMetadata.js, fail closed).
     const exifKept = Buffer.concat([
       Buffer.from([0xff, 0xd8]),
       jpegSegment(0xe1, Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), Buffer.from([0x4d, 0x4d, 0x00, 0x2a])])),
       sof0(800, 600),
       Buffer.from([0xff, 0xd9])
     ])
-    const leftover = await postEinblick(cookie, { foto: exifKept })
-    assert.equal(leftover.status, 400)
-    assert.match(leftover.data.error, /ließen sich nicht entfernen/)
+    assert.equal(stripJpegMetadata(exifKept).includes('Exif'), false)
     assert.deepEqual(uploadFiles(), before, 'jede Ablehnung räumt die Datei weg')
     assert.deepEqual((await get('/api/partner-area/einblicke', cookie)).data, [])
   })

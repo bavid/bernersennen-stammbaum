@@ -85,7 +85,8 @@ const countStmt = db.prepare('SELECT COUNT(*) AS c FROM push_abos WHERE family_i
 const findByEndpointStmt = db.prepare('SELECT id, family_id FROM push_abos WHERE endpoint = ?')
 const upsertStmt = db.prepare(
   `INSERT INTO push_abos (family_id, endpoint, keys_json) VALUES (@familyId, @endpoint, @keysJson)
-   ON CONFLICT(endpoint) DO UPDATE SET family_id = excluded.family_id, keys_json = excluded.keys_json, created_at = datetime('now')`
+   ON CONFLICT(endpoint) DO UPDATE SET keys_json = excluded.keys_json, created_at = datetime('now')
+   WHERE push_abos.family_id = excluded.family_id`
 )
 const deleteStmt = db.prepare('DELETE FROM push_abos WHERE family_id = ? AND endpoint = ?')
 const deleteByIdStmt = db.prepare('DELETE FROM push_abos WHERE id = ?')
@@ -129,15 +130,22 @@ function cleanSubscription(input) {
   return { endpoint, keys: { p256dh, auth } }
 }
 
-// Abo eines Geräts für das Zuhause familyId speichern (derselbe Endpunkt noch einmal: aktualisieren).
+const FOREIGN_ENDPOINT_MESSAGE = 'Dieses Gerät ist schon bei einem anderen Zuhause angemeldet – dort die Benachrichtigungen ausschalten oder hier neu einschalten.'
+
+// Abo eines Geräts für das Zuhause familyId speichern (derselbe Endpunkt noch einmal: aktualisieren). Gehört der Endpunkt
+// schon einem ANDEREN Zuhause, gibt es 409 statt einer Übernahme - wer nur den Endpunkt kennt, beweist damit nicht, dass
+// ihm das Gerät gehört (security-review). Der Browser bekommt beim Neu-Abonnieren ohnehin einen neuen Endpunkt.
 function saveAbo(familyId, input) {
   const subscription = cleanSubscription(input)
   if (!subscription) throw httpError(400, 'Dieses Abo ist unvollständig oder ungültig')
   const existing = findByEndpointStmt.get(subscription.endpoint)
+  if (existing && existing.family_id !== familyId) throw httpError(409, FOREIGN_ENDPOINT_MESSAGE)
   if (!existing && countStmt.get(familyId).c >= MAX_ABOS_PER_HOME) {
     throw httpError(409, `Höchstens ${MAX_ABOS_PER_HOME} Geräte je Zuhause – schaltet die Benachrichtigungen auf einem anderen Gerät aus.`)
   }
-  upsertStmt.run({ familyId, endpoint: subscription.endpoint, keysJson: JSON.stringify(subscription.keys) })
+  const { changes } = upsertStmt.run({ familyId, endpoint: subscription.endpoint, keysJson: JSON.stringify(subscription.keys) })
+  // Gleichzeitig von einem anderen Zuhause angelegt: das WHERE der Aktualisierung greift nicht.
+  if (!changes) throw httpError(409, FOREIGN_ENDPOINT_MESSAGE)
   return { endpoint: subscription.endpoint }
 }
 

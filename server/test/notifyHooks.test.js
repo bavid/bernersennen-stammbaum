@@ -6,7 +6,7 @@ const { useTempDataDir, startApp, cleanup, call, createFamily, createHousehold, 
 // Phase N Task 2: jedes Ereignis löst genau EINE Benachrichtigung aus - Anfrage (Gutschein/Partner), Einlösen (neues
 // Zuhause bzw. Partner-Zugang), Feedback, eingereichter Partner-Beitrag - und Demo, Duplikate und Fehler keine.
 // Eingerichtet über den Rückfall aus der Umgebung (erfundene Werte); Telegram ist ein Fake-Client, nie das Netz.
-const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
+const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]) // Signatur + IEND
 const ADMIN_TEST_PASSWORD = 'admin-test-notify-hooks-1'
 const FAKE_TOKEN = '777777:HOOK-token_nur-fuer-tests-000000000'
 const dataDir = useTempDataDir('notify-hooks', {

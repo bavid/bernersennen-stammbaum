@@ -12,9 +12,7 @@ const rateLimit = require('express-rate-limit')
 const { uploadDir, uploadRateLimit } = require('../config')
 const { detectImageExt } = require('./partners')
 const { inspectImage } = require('./imageInspect')
-const { stripJpegMetadata } = require('./stripJpegMetadata')
-const { stripPngMetadata } = require('./stripPngMetadata')
-const { stripWebpMetadata } = require('./stripWebpMetadata')
+const { stripImageMetadata } = require('./imageMetadata')
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024
 
@@ -62,31 +60,18 @@ function createPhotoUpload(limits = {}, { mimeTypes = ALL_PHOTO_MIME_TYPES, type
   })
 }
 
-// security-review Phase T Finding 12: Handyfotos tragen oft EXIF-/GPS-Metadaten - vor dem Speichern
-// entfernen (siehe lib/stripJpegMetadata.js, lib/stripPngMetadata.js, lib/stripWebpMetadata.js). GIF trägt
-// praktisch nie GPS-/Kamera-Metadaten (kein EXIF-Container im Format) und bleibt deshalb unangetastet.
-const METADATA_STRIPPER_BY_MIME = {
-  'image/jpeg': stripJpegMetadata,
-  'image/png': stripPngMetadata,
-  'image/webp': stripWebpMetadata
-}
-
+// security-review Phase T Finding 12: Handyfotos tragen oft EXIF-/GPS-Metadaten - vor dem Speichern entfernen
+// (lib/imageMetadata.js, nach dem Inhalt der Datei). GIF trägt praktisch nie GPS-/Kamera-Metadaten und bleibt
+// unangetastet.
 const filePathOf = (file) => path.join(uploadDir, file.filename)
 
-// Liest die gerade von multer gespeicherte Datei, entfernt bekannte Metadaten-Segmente und schreibt sie
-// nur zurück, wenn sich tatsächlich etwas geändert hat. Jeder Fehler (Lesen/Schreiben, unerwartete
-// Bytes) lässt die Originaldatei unangetastet - nie eine Anfrage an einem Metadaten-Problem scheitern
-// lassen, und nie Bildinhalte oder Dateipfade dabei loggen.
+// Liest die gerade von multer gespeicherte Datei, entfernt bekannte Metadaten-Segmente und schreibt sie nur zurück,
+// wenn sich etwas geändert hat. Fail closed: ein kaputtes Bild wirft einen 400-Fehler (err.status) - der Aufrufer
+// entfernt die Datei und lehnt ab, statt sie samt EXIF/GPS zu behalten. Nie Bildinhalte oder Pfade loggen.
 function stripMetadataInPlace(file) {
-  const strip = METADATA_STRIPPER_BY_MIME[file.mimetype]
-  if (!strip) return
-  try {
-    const original = fs.readFileSync(filePathOf(file))
-    const stripped = strip(original)
-    if (!stripped.equals(original)) fs.writeFileSync(filePathOf(file), stripped)
-  } catch {
-    // Original bleibt stehen - siehe Kommentar oben.
-  }
+  const original = fs.readFileSync(filePathOf(file))
+  const stripped = stripImageMetadata(original)
+  if (!stripped.equals(original)) fs.writeFileSync(filePathOf(file), stripped)
 }
 
 const GIF_SIGNATURES = ['GIF87a', 'GIF89a']
@@ -111,8 +96,8 @@ function hasMatchingSignature(file, allowedExts = Object.values(EXTENSION_BY_MIM
 
 // security-review V4b (Bannerfotos), seit Audit V7a auch für Einblicke: öffentliche Fotos stehen auf dem Portal - riesige
 // Maße (wenige Bytes, aber Gigabytes im Browser) und nicht entfernbare Metadaten (Aufnahmeort) werden abgelehnt. Aufruf
-// NACH stripMetadataInPlace: die Stripper behalten bei unerwarteter Struktur das Original ("fail open") - was dann noch
-// Metadaten trägt oder sich nicht lesen lässt, wird hier abgelehnt statt veröffentlicht (lib/imageInspect.js).
+// NACH stripMetadataInPlace: zweite Sicherung - was dann noch Metadaten trägt oder sich nicht lesen lässt, wird hier
+// abgelehnt statt veröffentlicht (lib/imageInspect.js).
 const MAX_PUBLIC_SIDE = 8000
 const MAX_PUBLIC_PIXELS = 40_000_000
 const UNREADABLE_MESSAGE = 'Dieses Foto lässt sich nicht lesen – bitte als JPG oder PNG neu speichern.'

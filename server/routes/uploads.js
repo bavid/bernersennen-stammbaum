@@ -2,7 +2,7 @@ const express = require('express')
 const db = require('../db')
 const { requireAuth } = require('../middleware/auth')
 const { requireFreeDisk } = require('../middleware/abuse')
-const { MAX_FILE_BYTES, uploadLimiter, createPhotoUpload, stripMetadataInPlace } = require('../lib/photoUpload')
+const { MAX_FILE_BYTES, uploadLimiter, createPhotoUpload, stripMetadataInPlace, removeUploadedFile } = require('../lib/photoUpload')
 const { requireRole } = require('../lib/roles')
 
 // Foto-Upload für Tiere/Chronik: MIME-Whitelist, Größe, Dateiname und Metadaten-Entfernung stecken in
@@ -16,11 +16,17 @@ const insertUpload = db.prepare('INSERT INTO uploads (filename, family_id) VALUE
 
 // Phase R Task 1: Fotos hängen an Tieren, Einträgen und Würfen - in einer Familie also erst ab 'mitglied'.
 // Die Prüfung läuft vor multer, damit von einem Gast gar keine Datei auf der Platte landet.
-router.post('/', requireAuth, requireRole('mitglied'), uploadLimiter, requireFreeDisk, upload.single('file'), (req, res) => {
+router.post('/', requireAuth, requireRole('mitglied'), uploadLimiter, requireFreeDisk, upload.single('file'), (req, res, next) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Keine Datei hochgeladen' })
   }
-  stripMetadataInPlace(req.file)
+  try {
+    stripMetadataInPlace(req.file)
+  } catch (err) {
+    // Fail closed (lib/imageMetadata.js): ein kaputtes Bild wird nicht gespeichert.
+    removeUploadedFile(req.file)
+    return err.status ? res.status(err.status).json({ error: err.message }) : next(err)
+  }
   // Merkt sich, welcher Bereich die Datei erzeugt hat - so ist sie sofort sichtbar (canSeeUpload),
   // auch bevor sie überhaupt an einem Hund oder Eintrag hängt.
   insertUpload.run(req.file.filename, req.familyId)
