@@ -35,7 +35,7 @@ export default function NeueVersionKarte({ angemeldet = false }) {
         )}
       </div>
       {!angemeldet && (
-        <p className="neue-version-fuss muted">{t('Eine Einladung für ein eigenes Zuhause fragt ihr nach dem Anmelden über „Feedback“ an.')}</p>
+        <p className="neue-version-fuss muted">{t('Einladung für die neue Version: Meldet euch hier wie gewohnt mit eurem Familien-Passwort an und tippt dann auf „Einladung anfragen“.')}</p>
       )}
     </section>
   )

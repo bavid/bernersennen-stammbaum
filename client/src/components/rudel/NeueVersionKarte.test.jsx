@@ -60,7 +60,7 @@ describe('NeueVersionKarte (Rudel-Instanz)', () => {
     await render(<NeueVersionKarte />)
     expect(container.querySelector(`a[href="${EINLADUNG_PFAD}"]`)).toBeNull()
     expect(container.textContent).toMatch(/There's a new version/)
-    expect(container.textContent).toMatch(/Feedback/)
+    expect(container.textContent).toMatch(/log in here as usual with your family password/)
   })
 
   test('kein https-Link: nichts (kein javascript:)', async () => {
