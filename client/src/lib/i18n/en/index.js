@@ -22,5 +22,6 @@ import netzwerk from './netzwerk.js'
 import landing from './landing.js'
 import gesundheit from './gesundheit.js'
 import vermisst from './vermisst.js'
+import fotoImport from './import.js'
 
-export default { ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...fotoImport, ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

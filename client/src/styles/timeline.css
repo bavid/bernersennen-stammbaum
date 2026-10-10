@@ -84,6 +84,12 @@
   color: var(--ink);
 }
 
+/* „Fotos mitbringen“ (DogChronicle): ein leiser Knopf unter dem Erzählen-Feld, links bündig. */
+.chronicle-import {
+  align-self: flex-start;
+  justify-self: start;
+}
+
 /* Timeline */
 
 .timeline,

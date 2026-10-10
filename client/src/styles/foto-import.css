@@ -1,0 +1,107 @@
+/* „Fotos mitbringen“ (components/fotoImport): wird mit dem Dialog-Chunk geladen, nicht über global.css. Nur Tokens. */
+.foto-import-modal .modal-body {
+  max-height: min(78vh, 46rem);
+  overflow-y: auto;
+}
+
+.foto-import-step {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.foto-import-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+@media (pointer: coarse) {
+  .foto-import-pick.is-desktop-only {
+    display: none;
+  }
+}
+
+.foto-import-status {
+  color: var(--muted);
+}
+
+.foto-import-days {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.foto-import-day-title {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+.foto-import-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.foto-import-thumb {
+  display: block;
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  outline: 3px solid transparent;
+  outline-offset: -3px;
+  opacity: 0.4;
+  transition: opacity var(--duration-fast, 150ms) ease;
+}
+
+.foto-import-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.foto-import-thumb.is-selected {
+  opacity: 1;
+  outline-color: var(--rust);
+}
+
+.foto-import-thumb:focus-within {
+  box-shadow: var(--focus-ring);
+}
+
+.foto-import-summary {
+  font-weight: 600;
+  margin: 0;
+}
+
+.foto-import-progress {
+  width: 100%;
+  height: var(--space-3);
+  accent-color: var(--rust);
+}
+
+.foto-import-errors {
+  color: var(--danger);
+}
+
+.foto-import-errors ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+}
+
+.foto-import-name input {
+  width: 100%;
+}
+
+.foto-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api } from '../../api'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
@@ -17,6 +17,10 @@ import { formatDateLong } from '../../lib/dates.js'
 import { readSetting, writeSetting } from '../../lib/storage.js'
 import { RECENT_ITEMS, recentItems, visibleInNames } from '../../lib/dogProfile.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui'
+
+// „Fotos mitbringen“ (Plan 2027) als eigener Chunk - fflate und der EXIF-Leser kommen erst beim Öffnen.
+const FotoImportDialog = lazy(() => import('../fotoImport/FotoImportDialog.jsx'))
 
 const HIGHLIGHT_MS = 2600
 export const COMPOSER_ID = 'composer'
@@ -61,6 +65,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
   const [highlightKey, setHighlightKey] = useState(null)
   const [newestFirst, setNewestFirst] = useState(() => readSetting('newestFirst', false))
   const [showAll, setShowAll] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const firstName = displayName(dog)
   const about = dog.name_unbekannt ? words.thisAnimalDat : firstName
 
@@ -206,6 +211,23 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
             </>
           )}
         </div>
+      )}
+      {canWrite && !composerOpen && (
+        <Button variant="ghost" size="sm" className="chronicle-import" onClick={() => setImportOpen(true)}>
+          <Icon name="image" />
+          {t('Fotos mitbringen')}
+        </Button>
+      )}
+      {importOpen && (
+        <Suspense fallback={null}>
+          <FotoImportDialog
+            dogId={dog.id}
+            isHousehold={formProps.isHousehold}
+            shareNames={formProps.shareNames}
+            onCreated={(created) => setEntries((current) => [...current, ...created])}
+            onClose={() => setImportOpen(false)}
+          />
+        </Suspense>
       )}
 
       {!newestFirst && earlier}
