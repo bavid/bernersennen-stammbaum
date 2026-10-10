@@ -441,3 +441,52 @@ a.community-chip.is-hinweis:focus-visible {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
 }
+
+/* Startseite am Handy: das Band ist unten angeheftet und bleibt beim Scrollen sichtbar (Wunsch des Betreibers) - eine
+   schlanke Zeile: rundes Foto und Name des Partners (ohne Vorspann), daneben laufen die Zahlen. Die Seite bekommt unten
+   so viel Luft, dass nichts verdeckt wird. */
+@media (max-width: 900px) {
+  .login {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .login .community-ticker {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 30;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    box-shadow: var(--elev-2);
+  }
+
+  .login .community-hero {
+    flex: 0 1 auto;
+    max-width: 46%;
+    padding-right: var(--space-2);
+  }
+
+  .login .community-hero-kicker {
+    display: none;
+  }
+
+  .login .community-hero-name {
+    font-size: var(--text-sm);
+  }
+
+  .login .community-ticker-space {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .login .community-hero > svg {
+    display: none;
+  }
+
+  .login .community-hero {
+    max-width: 52%;
+  }
+}
