@@ -140,7 +140,7 @@
 
 .link-button:focus-visible {
   outline: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   box-shadow: var(--focus-ring);
 }
 

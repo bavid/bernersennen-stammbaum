@@ -15,7 +15,7 @@
   height: 44px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--surface);
   color: var(--ink-soft);
   cursor: pointer;

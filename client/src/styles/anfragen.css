@@ -295,7 +295,7 @@
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--paper-deep);
   color: var(--ink);
   font-family: var(--font-display);
