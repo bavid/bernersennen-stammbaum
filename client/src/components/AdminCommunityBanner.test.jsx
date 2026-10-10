@@ -80,6 +80,17 @@ describe('AdminCommunityBanner', () => {
     expect($('.admin-band-preview').textContent).toContain('Neu: Wir waren hier')
     expect($('.admin-band-preview').textContent).not.toContain('Familien')
 
+    // Umschalter: dieselbe Vorschau als Seitenkarte (wie auf großen Bildschirmen) und zurück als Leiste.
+    const [leiste, karte] = container.querySelectorAll('.admin-band-preview-switch button')
+    await act(async () => karte.click())
+    expect(karte.getAttribute('aria-pressed')).toBe('true')
+    expect($('.admin-band-preview .community-ticker')).toBeNull()
+    expect($('.admin-band-preview .community-panel-hero').textContent).toContain('Hundeschule Benno')
+    expect($('.admin-band-preview a.community-panel-line').textContent).toBe('Neu: Wir waren hier')
+    await act(async () => leiste.click())
+    expect($('.admin-band-preview .community-panel')).toBeNull()
+    expect($('.admin-band-preview .community-hero')).not.toBeNull()
+
     await act(async () => $('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
     expect(mocks.saveCommunityBanner).toHaveBeenCalledWith({
       partnerId: 4,

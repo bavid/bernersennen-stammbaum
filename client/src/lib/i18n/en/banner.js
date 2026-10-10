@@ -24,5 +24,8 @@ export default {
   'Nur ein Pfad in der App, der mit „/“ beginnt (z. B. /partner-werden).': 'Only a path within the app starting with “/” (e.g. /partner-werden).',
   'Ein Link braucht einen Text.': 'A link needs a text.',
   'Höchstens 80 Zeichen.': 'At most 80 characters.',
-  'Vorschau – so steht das Band auf der Startseite.': 'Preview – this is how the banner appears on the start page.'
+  'Vorschau – so steht das Band auf der Startseite.': 'Preview – this is how the banner appears on the start page.',
+  'Vorschau als': 'Preview as',
+  Leiste: 'Strip',
+  Seitenkarte: 'Side card'
 }

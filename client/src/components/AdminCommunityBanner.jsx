@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import { CommunityBand } from './CommunityTicker.jsx'
+import CommunityPanel from './CommunityPanel.jsx'
 import { t } from '../lib/i18n/index.js'
 import { BANNER_CHIPS, BANNER_TEXT_MAX, bannerForm, bannerPayload, bannerPreviewData, chosenPartner, filterPartners } from '../lib/communityBannerAdmin.js'
 import '../styles/admin-community-banner.css'
@@ -93,6 +94,25 @@ function useBannerInfo() {
   return { info, setInfo, loadError }
 }
 
+// Vorschau wie auf der Startseite: als Leiste (Handy) oder als Seitenkarte (großer Bildschirm, CommunityPanel).
+function BannerPreview({ data }) {
+  const [asPanel, setAsPanel] = useState(false)
+  return (
+    <figure className="admin-finanz-preview admin-band-preview">
+      <figcaption className="field-hint">{t('Vorschau – so steht das Band auf der Startseite.')}</figcaption>
+      <div className="segmented admin-band-preview-switch" role="group" aria-label={t('Vorschau als')}>
+        <button type="button" aria-pressed={!asPanel} onClick={() => setAsPanel(false)}>
+          {t('Leiste')}
+        </button>
+        <button type="button" aria-pressed={asPanel} onClick={() => setAsPanel(true)}>
+          {t('Seitenkarte')}
+        </button>
+      </div>
+      {asPanel ? <CommunityPanel data={data} fallback className="admin-band-panel" /> : <CommunityBand data={data} fallback />}
+    </figure>
+  )
+}
+
 function BannerForm({ info, onSaved }) {
   const [form, setForm] = useState(() => bannerForm(info.banner))
   const [state, setState] = useState({ saving: false, saved: false, error: null, errors: {} })
@@ -139,10 +159,7 @@ function BannerForm({ info, onSaved }) {
           )}
         </div>
       </form>
-      <figure className="admin-finanz-preview admin-band-preview">
-        <figcaption className="field-hint">{t('Vorschau – so steht das Band auf der Startseite.')}</figcaption>
-        <CommunityBand data={bannerPreviewData(form, info)} fallback />
-      </figure>
+      <BannerPreview data={bannerPreviewData(form, info)} />
     </div>
   )
 }

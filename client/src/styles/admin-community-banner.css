@@ -48,3 +48,14 @@
 .admin-finanz-layout .admin-band-preview {
   order: -1;
 }
+
+/* Umschalter Leiste | Seitenkarte; die Seitenkarte steht so schmal wie auf der Startseite. */
+.admin-band-preview-switch {
+  justify-self: start;
+  margin-block: var(--space-2);
+}
+
+.admin-band-panel {
+  width: min(100%, 17rem);
+  margin: var(--space-2) 0 var(--space-3) var(--space-1);
+}

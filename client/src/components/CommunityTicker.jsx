@@ -18,7 +18,9 @@ import '../styles/community-ticker.css'
 // - Screenreader: das laufende Band ist aria-hidden, stattdessen steht der Satz einmal unsichtbar da (keine Live-Region).
 // Ohne Antwort oder mit Fehler erscheint nichts; sind alle Zahlen 0, zeigt nur die Startseite (fallback) „Gerade starten wir“.
 
-function useCommunity() {
+// GET /api/community einmal laden: undefined = lädt noch, null = Fehler. Auch die Startseite nutzt es (eine Abfrage für Band
+// oder Seitenkarte, je nach Breite).
+export function useCommunity() {
   const [data, setData] = useState(undefined)
   useEffect(() => {
     let cancelled = false
@@ -78,11 +80,12 @@ function usePhotoCycle(count, reduced) {
   return reduced ? { index: 0, seen: 0 } : cycle
 }
 
-function HeroPhotos({ fotos, name, reduced }) {
+// Auch die Seitenkarte (CommunityPanel) blendet so durch die Fotos - dort größer (width/height nur als Seitenverhältnis).
+export function HeroPhotos({ fotos, name, reduced, width = 48, height = 48 }) {
   const { index, seen } = usePhotoCycle(fotos.length, reduced)
   const shown = reduced ? fotos.slice(0, 1) : fotos.slice(0, Math.min(fotos.length, seen + 2))
   return shown.map((url, i) => (
-    <img key={url} src={url} alt={i === 0 ? name : ''} className={i === index ? 'is-active' : undefined} decoding="async" width="48" height="48" />
+    <img key={url} src={url} alt={i === 0 ? name : ''} className={i === index ? 'is-active' : undefined} decoding="async" width={width} height={height} />
   ))
 }
 

@@ -11,7 +11,9 @@ import RedeemForm from '../components/RedeemForm.jsx'
 import RecoverForm from '../components/RecoverForm.jsx'
 import KeyReveal from '../components/KeyReveal.jsx'
 import InstallHint from '../components/InstallHint.jsx'
-import CommunityTicker from '../components/CommunityTicker.jsx'
+import { CommunityBand, useCommunity } from '../components/CommunityTicker.jsx'
+import CommunityPanel from '../components/CommunityPanel.jsx'
+import useMediaQuery from '../hooks/useMediaQuery.js'
 import { isPartnerArea } from '../lib/areas.js'
 import { useLang, useT, tList } from '../lib/i18n/index.js'
 import LanguageSwitch from '../components/LanguageSwitch.jsx'
@@ -27,6 +29,19 @@ function keyRevealProps(me, t) {
 // "Partner-Zugang") - wie im Partner-Einstieg daneben, ohne zweite Zeile darüber (Phase U, ruhiger).
 // Die Texte stehen unter 'login.mode.<Modus>.title' und '.lede' (lib/i18n/login.js); partnerRedeem: Einlöse-Modus mit einem
 // Partner-Zugang (RedeemForm meldet es über onPartnerModeChange, Phase P).
+
+// Wo „Mit dabei“ steht (nur EINE Stelle rendert und es wird einmal geladen): ab 1400 px als Seitenkarte links neben der
+// Begrüßung (dritte Spalte der Bühne), ab 901 px quer unter den drei Stichworten - dort ist in der Bühne Platz, die Höhe
+// bleibt die der Anmelde-Karte. Schmaler (Handy, Tablet hochkant) bleibt das schlanke Band unter der Kopfzeile.
+const SIDE_QUERY = '(min-width: 1400px)'
+const HERO_QUERY = '(min-width: 901px)'
+
+function useCommunityPlacement() {
+  const side = useMediaQuery(SIDE_QUERY)
+  const hero = useMediaQuery(HERO_QUERY)
+  if (side) return 'side'
+  return hero ? 'hero' : 'band'
+}
 
 // Zwei Einstiege nebeneinander (am Handy untereinander, Phase U): "Für Tierhalter" mit Anmelden, Gutschein,
 // Demo und "Noch keinen Gutschein?" (Phase N, LoginVoucherRequest), daneben "Für Hundeschulen, Tierheime & Co." (LoginPartnerEntry) mit Partner-Demo und "Mehr erfahren".
@@ -44,6 +59,10 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
   const [partnerRedeem, setPartnerRedeem] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoError, setDemoError] = useState(null)
+  const community = useCommunity()
+  const placement = useCommunityPlacement()
+  // Seitenkarte: die Spalte bleibt auch während des Ladens stehen (kein Springen der Begrüßung), fällt nur bei Fehler weg.
+  const withSide = placement === 'side' && community !== null
 
   // Derselbe Modus noch einmal (z. B. "Gutschein einlösen" im Einlöse-Modus) setzt nichts zurück - sonst ginge die
   // Erkennung eines Partner-Zugangs (partnerRedeem) verloren, ohne dass RedeemForm sie neu meldet.
@@ -89,7 +108,7 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
   const showExtras = showPartnerEntry && !showingKeyReveal
 
   return (
-    <div className="login">
+    <div className={withSide ? 'login has-side-panel' : 'login'}>
       {/* Kopfzeile: Marke links, Sprache rechts - ein Klick, und die ganze Seite wechselt. */}
       <header className="login-top">
         <span className="login-brand">
@@ -101,12 +120,19 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
         </div>
       </header>
 
-      {/* Band „Mit dabei“ - gleich unter der Kopfzeile, schlank, damit es ohne Scrollen zu sehen ist. */}
-      <CommunityTicker fallback />
+      {/* Band „Mit dabei“ - am Handy gleich unter der Kopfzeile, schlank, damit es ohne Scrollen zu sehen ist. */}
+      {placement === 'band' && <CommunityBand data={community} fallback />}
 
       <section className="login-hero">
         <div className="login-hero-grid">
-          <LoginHeroText theme={theme} lang={lang} t={t} />
+          {withSide && (
+            <div className="login-side">
+              <CommunityPanel data={community} fallback />
+            </div>
+          )}
+          <LoginHeroText theme={theme} lang={lang} t={t}>
+            {placement === 'hero' && <CommunityPanel data={community} fallback layout="row" />}
+          </LoginHeroText>
           <div className="login-main">
             <OwnerCard
               mode={mode}
@@ -170,7 +196,8 @@ function heroDemoHint(theme, lang, t) {
 }
 
 // Linke Spalte: Etikett, Schlagzeile (zweite Zeile in Handschrift), ein Satz und drei kurze Stichworte.
-function LoginHeroText({ theme, lang, t }) {
+// Darunter (children) auf mittleren Breiten die Karte „Mit dabei“ quer.
+function LoginHeroText({ theme, lang, t, children }) {
   const de = lang === 'de'
   const headline = de ? theme.texts.loginHeadline : tList('login.headline')
   const facts = de ? theme.texts.loginFacts : tList('login.facts')
@@ -191,6 +218,7 @@ function LoginHeroText({ theme, lang, t }) {
           </li>
         ))}
       </ul>
+      {children}
     </div>
   )
 }

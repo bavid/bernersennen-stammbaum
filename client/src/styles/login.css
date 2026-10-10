@@ -491,6 +491,25 @@
   }
 }
 
+/* „Mit dabei“ in der Bühne (CommunityPanel): ab 1400 px als dritte Spalte links - Seite und Kopfzeile werden dafür
+   breiter (--login-max), alles mittig; darunter quer unter den drei Stichworten, ohne die Bühne höher zu machen. */
+.login.has-side-panel {
+  --login-max: 88rem;
+}
+
+.has-side-panel .login-hero-grid {
+  grid-template-columns: minmax(15rem, 17rem) minmax(0, 1fr) minmax(0, 27rem);
+  gap: clamp(var(--space-6), 3vw, 4rem);
+}
+
+.login-side {
+  min-width: 0;
+}
+
+.login-hero-inner > .community-panel {
+  margin-top: var(--space-2);
+}
+
 /* Tablet und Handy: eine Spalte - Begrüßung kurz, dann gleich die Karte. */
 @media (max-width: 900px) {
   .login-hero-grid {
