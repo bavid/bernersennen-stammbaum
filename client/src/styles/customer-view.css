@@ -414,7 +414,7 @@
 
 .einblick-tile {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   margin: 0;
 }
 
@@ -425,7 +425,7 @@
   border: 0;
   border-radius: var(--radius-md);
   background: var(--paper-deep);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elev-0);
   cursor: zoom-in;
 }
 
@@ -439,7 +439,7 @@
 }
 
 .einblick-tile-open:hover img {
-  transform: scale(1.04);
+  transform: scale(1.03);
 }
 
 .einblick-tile-open:focus-visible {
@@ -458,6 +458,16 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .einblick-tile-open img {
+    transition: none;
+  }
+
+  .einblick-tile-open:hover img {
+    transform: none;
+  }
 }
 
 .einblick-tile-text {

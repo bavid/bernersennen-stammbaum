@@ -156,7 +156,7 @@
 
 .collage-thumb .cpage {
   pointer-events: none;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elev-0);
 }
 
 .collage-thumb:hover {

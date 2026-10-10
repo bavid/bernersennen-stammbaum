@@ -11,9 +11,9 @@ import { PALETTEN } from '../lib/darstellung.js'
 const stylesDir = dirname(fileURLToPath(import.meta.url))
 const TOKEN_FILES = new Set(['palettes.css', 'tokens.css', 'ui.css'])
 const NEUTRAL = new Set(['0', 'none', 'inherit', 'initial', 'unset', 'revert'])
-// Stand 2026-10-10 (nach Welle 3: Tier-, Futter-, Gutschein- und Tierheim-Karten): Werte in den übrigen Stil-Dateien, die nicht nur aus var(--…) und 0 bestehen
+// Stand 2026-10-10 (nach Welle 4: Bild-Kacheln - Tier-Raster, Einblicke, Präsentation): Werte in den übrigen Stil-Dateien, die nicht nur aus var(--…) und 0 bestehen
 // (auch „0 0 0 3px var(--rust-wash)“ zählt - die 3px sind fest).
-const BASELINE = { radius: 79, shadow: 68 }
+const BASELINE = { radius: 79, shadow: 66 }
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '')
 

@@ -47,6 +47,9 @@
   --elev-0: var(--shadow-sm);
   --elev-1: var(--shadow-card);
   --elev-2: var(--shadow-raised);
+  /* Foto-Ring um runde Tierfotos (Bild-Kacheln): Abstand in Grundfarbe, dann Ring in der Akzentfarbe. */
+  --ring-inner: 3px;
+  --ring-outer: 5px;
   /* Innenabstand der Bausteine Card/EmptyState: klein (Listenzeile), mittel (Karte), groß (Abschnitt). */
   --pad-card-sm: var(--space-3);
   --pad-card-md: var(--space-5);

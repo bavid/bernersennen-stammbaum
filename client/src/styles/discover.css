@@ -411,6 +411,7 @@
   object-fit: cover;
   border-radius: var(--radius-md);
   background: var(--paper-deep);
+  box-shadow: var(--elev-0);
 }
 
 .partner-discover-einblicke figcaption {

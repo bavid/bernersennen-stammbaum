@@ -55,10 +55,10 @@
   align-content: start;
   min-height: 11rem;
   padding: clamp(var(--space-5), 3vw, var(--space-8));
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-1);
   color: var(--ink);
   text-decoration: none;
   transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
@@ -66,7 +66,7 @@
 
 .present-tile:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--elev-2);
 }
 
 .present-tile:active {
@@ -75,7 +75,7 @@
 
 .present-tile:focus-visible {
   outline: none;
-  box-shadow: var(--focus-ring), var(--shadow-raised);
+  box-shadow: var(--focus-ring), var(--elev-2);
 }
 
 .present-tile > svg {

@@ -47,7 +47,7 @@
 .animal-tile-photo.avatar {
   flex: none;
   border-radius: var(--radius-round);
-  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--rust);
+  box-shadow: 0 0 0 var(--ring-inner) var(--surface), 0 0 0 var(--ring-outer) var(--rust);
 }
 
 .animal-tile-body {
@@ -93,7 +93,7 @@
 }
 
 .animal-tile.is-memorial .animal-tile-photo.avatar {
-  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--line-strong);
+  box-shadow: 0 0 0 var(--ring-inner) var(--surface), 0 0 0 var(--ring-outer) var(--line-strong);
   filter: grayscale(0.6);
 }
 
