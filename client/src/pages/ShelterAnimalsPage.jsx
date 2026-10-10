@@ -12,6 +12,7 @@ import useTabParam from '../hooks/useTabParam.js'
 import { displayName, speciesLabel } from '../lib/timeline.js'
 import { formatDayMonth } from '../lib/dates.js'
 import { VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel, vermittlungStatusShortLabel } from '../lib/vermittlung.js'
+import { t } from '../lib/i18n/index.js'
 
 // "Alle" und "Ohne Status" (final-review Phase T Finding 1) dazu, sonst verschwanden Tiere ohne
 // vermittlung_status (z. B. frisch aufgenommen, Status noch nicht gesetzt) aus jeder Ansicht. Je Status ein
@@ -58,23 +59,23 @@ function ShelterAnimalCard({ dog }) {
       </span>
       <span className="shelter-card-body">
         <span className="shelter-card-name">{displayName(dog)}</span>
-        <span className="shelter-card-species">{speciesLabel(dog.tierart)}</span>
+        <span className="shelter-card-species">{t(speciesLabel(dog.tierart))}</span>
         <span className="shelter-card-chips">
           {statusLabel ? (
-            <span className={`chip status-chip status-chip-${status}`}>{statusLabel}</span>
+            <span className={`chip status-chip status-chip-${status}`}>{t(statusLabel)}</span>
           ) : (
-            <span className="chip muted">Ohne Status</span>
+            <span className="chip muted">{t('Ohne Status')}</span>
           )}
         </span>
         {dog.shared_from ? (
           <span className="steckbrief-meta is-shared">
             <Icon name="eye" />
-            Ihr lest mit · {dog.shared_from}
+            {t('Ihr lest mit')} · {dog.shared_from}
           </span>
         ) : (
           <span className={`steckbrief-meta ${dog.public_slug ? 'is-public' : 'is-private'}`}>
             <Icon name={dog.public_slug ? 'globe' : 'lock'} />
-            {dog.public_slug ? 'Steckbrief öffentlich' : 'Steckbrief privat'}
+            {dog.public_slug ? t('Steckbrief öffentlich') : t('Steckbrief privat')}
           </span>
         )}
         {dog.latest_entry_titel && (
@@ -85,7 +86,7 @@ function ShelterAnimalCard({ dog }) {
         {dog.shared_from && (
           <span className="shelter-card-news">
             <Icon name="book" />
-            Neuigkeiten
+            {t('Neuigkeiten')}
           </span>
         )}
       </span>
@@ -137,7 +138,7 @@ export default function ShelterAnimalsPage({ family }) {
 
   function announceCreated(dog) {
     closeForm()
-    toast(`${displayName(dog)} ist jetzt dabei`)
+    toast(t('{name} ist jetzt dabei', { name: displayName(dog) }))
     navigate(`/tier/${dog.id}`)
   }
 
@@ -146,17 +147,16 @@ export default function ShelterAnimalsPage({ family }) {
       <header className="page-hero">
         <div>
           <span className="eyebrow">{family.name}</span>
-          <h1>Unsere Tiere</h1>
+          <h1>{t('Unsere Tiere')}</h1>
           <p className="page-lede">
-            Alle eure Tiere – verfügbar, reserviert, pausiert oder vermittelt. Bei vermittelten Tieren lest ihr weiter mit,
-            wenn das neue Zuhause es erlaubt.
+            {t('Alle eure Tiere – verfügbar, reserviert, pausiert oder vermittelt. Bei vermittelten Tieren lest ihr weiter mit, wenn das neue Zuhause es erlaubt.')}
           </p>
         </div>
         <div className="page-hero-side">
           <div className="hero-actions">
             <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
               <Icon name="plus" />
-              Tier aufnehmen
+              {t('Tier aufnehmen')}
             </button>
           </div>
         </div>
@@ -170,7 +170,7 @@ export default function ShelterAnimalsPage({ family }) {
 
       <WardNews onShowAll={showAdopted} />
 
-      <div className="filter-chips" role="group" aria-label="Nach Status filtern">
+      <div className="filter-chips" role="group" aria-label={t('Nach Status filtern')}>
         {shownFilters.map((item) => (
           <button
             key={item.key}
@@ -180,7 +180,7 @@ export default function ShelterAnimalsPage({ family }) {
             aria-pressed={filter === item.key}
             onClick={() => setFilter(item.key)}
           >
-            {item.label}
+            {t(item.label)}
             {dogs && <span className="filter-chip-count"> · {counts[item.key]}</span>}
           </button>
         ))}
@@ -189,8 +189,8 @@ export default function ShelterAnimalsPage({ family }) {
       {dogs && filtered.length === 0 && (
         <div className="empty-state">
           <ThemeMark size={72} />
-          <h3>Keine Tiere in dieser Ansicht</h3>
-          <p className="muted">Wählt oben einen anderen Status, oder nehmt ein neues Tier auf.</p>
+          <h3>{t('Keine Tiere in dieser Ansicht')}</h3>
+          <p className="muted">{t('Wählt oben einen anderen Status, oder nehmt ein neues Tier auf.')}</p>
         </div>
       )}
 
@@ -202,7 +202,7 @@ export default function ShelterAnimalsPage({ family }) {
         </div>
       )}
 
-      <Modal open={formOpen} title="Tier aufnehmen" onClose={closeForm}>
+      <Modal open={formOpen} title={t('Tier aufnehmen')} onClose={closeForm}>
         <QuickAnimalForm allDogs={dogs || []} shelter onCreated={announceCreated} onCancel={closeForm} />
       </Modal>
     </div>

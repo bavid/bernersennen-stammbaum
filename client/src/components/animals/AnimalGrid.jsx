@@ -4,6 +4,7 @@ import FilterChips from '../FilterChips.jsx'
 import AnimalTile from './AnimalTile.jsx'
 import useGroupParam from '../../hooks/useGroupParam.js'
 import { animalsInGroup, gridGroups, selectedGridGroup } from '../../lib/animalGrid.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Raster „Alle“ der Tiere (Phase W, Schritt 4): auf /tiere alle Tiere aus Zuhause, Familien und befreundeten Zuhause (GET
 // /api/tiere), auf der Gruppenseite die Tiere dieses einen Bereichs (lib/animalGrid.js areaGrid) - dieselbe Ansicht. Darüber,
@@ -17,12 +18,12 @@ export default function AnimalGrid({ grid }) {
   const groups = gridGroups(grid.areas)
   const selected = selectedGridGroup(groups, requested)
   const shown = animalsInGroup(grid.tiere, selected)
-  const options = [{ param: null, label: 'Alle', count: grid.tiere.length }, ...groups]
+  const options = [{ param: null, label: t('Alle'), count: grid.tiere.length }, ...groups]
 
   return (
     <section className="animal-grid" aria-labelledby={`${gridId}-title`}>
       <h2 id={`${gridId}-title`} className="visually-hidden">
-        {selected ? `${words.animals}: ${selected.label}` : `Alle ${words.animals}`}
+        {selected ? `${words.animals}: ${selected.label}` : t('Alle {animals}', { animals: words.animals })}
       </h2>
       {groups.length > 0 && (
         <FilterChips
@@ -30,7 +31,7 @@ export default function AnimalGrid({ grid }) {
           current={selected?.param ?? null}
           onSelect={select}
           controls={gridId}
-          label={`${words.animals} nach Zuhause und Familie filtern`}
+          label={t('{animals} nach Zuhause und Familie filtern', { animals: words.animals })}
         />
       )}
       {/* role="list": ohne Aufzählungszeichen vergisst Safari/VoiceOver sonst, dass es eine Liste ist */}

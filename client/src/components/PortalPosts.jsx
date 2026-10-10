@@ -1,6 +1,7 @@
 import PortalSection from './PortalSection.jsx'
 import { PromotionList } from './PromotionCard.jsx'
 import { SECTION_IDS } from '../lib/portalTabs.js'
+import { t } from '../lib/i18n/index.js'
 
 // Reiter "Angebote" auf dem Portal ("Angebote & Aktuelles", Phase P2, seit Phase U ohne Kennzeichnung): die Beiträge des
 // Partners auf SEINER Seite - dort braucht es kein "Anzeige"-Badge, die Kennzeichnung gilt nur, wenn die
@@ -11,7 +12,7 @@ import { SECTION_IDS } from '../lib/portalTabs.js'
 export default function PortalPosts({ posts }) {
   if (!posts.length) return null
   return (
-    <PortalSection id={SECTION_IDS.posts} title="Angebote & Aktuelles" className="partner-portal-posts">
+    <PortalSection id={SECTION_IDS.posts} title={t('Angebote & Aktuelles')} className="partner-portal-posts">
       <PromotionList items={posts} labelled={false} />
     </PortalSection>
   )

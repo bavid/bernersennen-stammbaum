@@ -1,23 +1,24 @@
 // "Erlebt mit" (Phase V2, server/lib/erlebtMit.js): Texte und kleine Helfer für Markierungen, Anfragen und
 // gespiegelte Einträge.
+import { t } from './i18n/index.js'
 
 const UNKNOWN_NAME = 'Unbekannt'
 
 function animalName(name, nameUnbekannt) {
-  return nameUnbekannt || !name ? UNKNOWN_NAME : name
+  return nameUnbekannt || !name ? t(UNKNOWN_NAME) : name
 }
 
 // Chip am eigenen Eintrag: "erlebt mit Wilma" (noch nicht bestätigt: "erlebt mit Wilma (angefragt)"). Ist das andere
 // Zuhause nicht mehr verbunden (getrennt, security-review V2), nennt der Server den Namen nicht mehr.
 export function tagLabel(tag) {
-  if (tag.getrennt) return 'mit dabei: ein früher verbundenes Tier'
-  const base = `mit dabei: ${animalName(tag.name, tag.nameUnbekannt)}`
-  return tag.status === 'offen' ? `${base} (angefragt)` : base
+  if (tag.getrennt) return t('mit dabei: ein früher verbundenes Tier')
+  const base = t('mit dabei: {name}', { name: animalName(tag.name, tag.nameUnbekannt) })
+  return tag.status === 'offen' ? t('{label} (angefragt)', { label: base }) : base
 }
 
 // Gespiegelter Eintrag in der Chronik des eigenen Tiers: "erlebt mit Balu · Zuhause am Deich"
 export function mirrorLabel(gespiegelt) {
-  return `mit dabei: ${animalName(gespiegelt.tier, gespiegelt.tierNameUnbekannt)} · ${gespiegelt.zuhause}`
+  return `${t('mit dabei: {name}', { name: animalName(gespiegelt.tier, gespiegelt.tierNameUnbekannt) })} · ${gespiegelt.zuhause}`
 }
 
 // Ist das Zuhause, aus dem ein gespiegelter Eintrag stammt, eines, das man besuchen kann (me.besuche)?

@@ -3,6 +3,7 @@ import { api } from '../api'
 import Icon from './Icon.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 export const UEBERALL_LABEL = 'Überall sichtbar'
 export const UEBERALL_HINT = 'Euer Portal erscheint in „Entdecken“ nicht nur in der Nähe, sondern bei allen – hinter den nahen Treffern, klar als „überall sichtbar“ gekennzeichnet.'
@@ -34,7 +35,7 @@ export default function PartnerUeberallSwitch({ profile, onSaved }) {
     try {
       const saved = await api.partnerArea.setUeberallSichtbar(!an)
       onSaved(saved)
-      toast(an ? 'Ausgeschaltet – ihr erscheint wieder nur in der Nähe.' : 'Eingeschaltet – ihr erscheint überall in „Entdecken“.')
+      toast(an ? t('Ausgeschaltet – ihr erscheint wieder nur in der Nähe.') : t('Eingeschaltet – ihr erscheint überall in „Entdecken“.'))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -47,9 +48,9 @@ export default function PartnerUeberallSwitch({ profile, onSaved }) {
       <div className="partner-ueberall-head">
         <Icon name="compass" />
         <div>
-          <h2 id="partner-ueberall-title">Überall sichtbar</h2>
+          <h2 id="partner-ueberall-title">{t(UEBERALL_LABEL)}</h2>
           <p className="muted" id={HINT_ID}>
-            {UEBERALL_HINT}
+            {t(UEBERALL_HINT)}
           </p>
         </div>
       </div>
@@ -62,17 +63,17 @@ export default function PartnerUeberallSwitch({ profile, onSaved }) {
           onChange={toggle}
           aria-describedby={isDemo ? `${HINT_ID} ${DEMO_HINT_ID}` : HINT_ID}
         />
-        {UEBERALL_LABEL}
+        {t(UEBERALL_LABEL)}
       </label>
       {teamAus && (
         <p className="field-hint" role="note">
-          {TEAM_AUS_HINT}
+          {t(TEAM_AUS_HINT)}
         </p>
       )}
       {profile.status !== 'aktiv' && !locked && !teamAus && (
-        <p className="field-hint">Gilt, sobald euer Profil veröffentlicht ist.</p>
+        <p className="field-hint">{t('Gilt, sobald euer Profil veröffentlicht ist.')}</p>
       )}
-      {locked && <p className="field-hint">Gesperrt – bitte meldet euch beim Betreiber.</p>}
+      {locked && <p className="field-hint">{t('Gesperrt – bitte meldet euch beim Betreiber.')}</p>}
       {isDemo && (
         <p className="field-hint" id={DEMO_HINT_ID}>
           {readOnlyHint}

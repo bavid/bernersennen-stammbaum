@@ -1,6 +1,14 @@
 // Englische Texte der übrigen App, je Bereich eine Datei. Schlüssel ist der deutsche Text selbst (t('Neue Erinnerung')),
 // der Wert die englische Fassung. Fehlt ein Eintrag, bleibt der deutsche Text stehen (lib/i18n/index.js translate).
-import shell from './shell.js'
+// Gleiche deutsche Texte in zwei Dateien müssen gleich übersetzt sein - die spätere Datei gewinnt.
 import common from './common.js'
+import shell from './shell.js'
+import animals from './animals.js'
+import family from './family.js'
+import publicPages from './public.js'
+import partner from './partner.js'
+import collage from './collage.js'
+import invite from './invite.js'
+import server from './server.js'
 
-export default { ...common, ...shell }
+export default { ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

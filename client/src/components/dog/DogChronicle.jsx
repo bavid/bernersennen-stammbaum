@@ -15,6 +15,7 @@ import { buildTimeline, displayName, genitive } from '../../lib/timeline.js'
 import { formatDateLong } from '../../lib/dates.js'
 import { readSetting, writeSetting } from '../../lib/storage.js'
 import { RECENT_ITEMS, recentItems, visibleInNames } from '../../lib/dogProfile.js'
+import { t } from '../../lib/i18n/index.js'
 
 const HIGHLIGHT_MS = 2600
 export const COMPOSER_ID = 'composer'
@@ -38,9 +39,9 @@ function SharedNotice({ dog, family }) {
   if (dog.canEdit || isVisit(family) || dog.ownerFamilyId !== family.home?.id) return null
   return (
     <div className="notice notice-with-action">
-      <p>Lebt im Zuhause „{dog.familyName}“ und wird hier geteilt.</p>
+      <p>{t('Lebt im Zuhause „{home}“ und wird hier geteilt.', { home: dog.familyName })}</p>
       <Link to={`/tier/${dog.id}?in=home`} className="btn btn-ghost">
-        In „Mein Zuhause“ bearbeiten
+        {t('In „Mein Zuhause“ bearbeiten')}
       </Link>
     </div>
   )
@@ -111,7 +112,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
   }
   const earlier = recent.hidden > 0 && (
     <button type="button" className="btn btn-ghost dog-chronicle-more" onClick={expand}>
-      {newestFirst ? `Ältere ${words.entries} anzeigen` : `Frühere ${words.entries} anzeigen`} ({recent.hidden})
+      {newestFirst ? t('Ältere {entries} anzeigen', { entries: words.entries }) : t('Frühere {entries} anzeigen', { entries: words.entries })} ({recent.hidden})
     </button>
   )
 
@@ -120,7 +121,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
     setEntries((current) => [...current, entry])
     onComposerChange(false)
     setHighlightKey(`entry-${entry.id}`)
-    toast(`Eingeordnet am ${formatDateLong(entry.datum)}`)
+    toast(t('Eingeordnet am {date}', { date: formatDateLong(entry.datum) }))
   }
 
   async function handleUpdate(payload) {
@@ -128,14 +129,14 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
     setEntries((current) => current.map((e) => (e.id === entry.id ? entry : e)))
     setEditingEntry(null)
     setHighlightKey(`entry-${entry.id}`)
-    toast(`${words.entry} aktualisiert`)
+    toast(t('{entry} aktualisiert', { entry: words.entry }))
   }
 
   async function handleDelete() {
     await api.deleteTimelineEntry(editingEntry.id)
     setEntries((current) => current.filter((e) => e.id !== editingEntry.id))
     setEditingEntry(null)
-    toast(`${words.entry} gelöscht`)
+    toast(t('{entry} gelöscht', { entry: words.entry }))
   }
 
   // Kommentare: Fehler beim Schreiben zeigt das Formular selbst an
@@ -171,12 +172,12 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
     <section className="chronicle dog-chronicle" aria-labelledby="chronicle-title">
       <div className="chronicle-head">
         <h2 id="chronicle-title" ref={titleRef} tabIndex={-1}>
-          {dog.name_unbekannt ? 'Geschichte' : `${genitive(firstName)} Geschichte`}
+          {dog.name_unbekannt ? t('Geschichte') : t('{nameGen} Geschichte', { nameGen: genitive(firstName), name: firstName })}
         </h2>
         {items.length > 1 && (
           <button type="button" className="btn btn-ghost" onClick={toggleOrder}>
             <Icon name="sort" />
-            {newestFirst ? 'Neueste zuerst' : 'Älteste zuerst'}
+            {newestFirst ? t('Neueste zuerst') : t('Älteste zuerst')}
           </button>
         )}
       </div>
@@ -188,16 +189,16 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
           {composerOpen ? (
             <>
               <h3 className="composer-title">
-                {words.newEntry} zu {about}
+                {t('{newEntry} zu {about}', { newEntry: words.newEntry, about })}
               </h3>
               <TimelineEntryForm {...formProps} draftKey={`tier-${dog.id}`} onSubmit={handleCreate} onCancel={() => onComposerChange(false)} />
             </>
           ) : (
             <>
-              {firstOne && <p className="chronicle-first hand">Schön, dass {firstName} dabei ist!</p>}
+              {firstOne && <p className="chronicle-first hand">{t('Schön, dass {name} dabei ist!', { name: firstName })}</p>}
               <button type="button" className="composer-trigger" onClick={() => onComposerChange(true)}>
                 <Avatar dog={dog} size={40} />
-                <span>{firstOne ? `Erzählt die erste ${words.entry}` : `Was gibt’s Neues von ${about}?`}</span>
+                <span>{firstOne ? t('Erzählt die erste {entry}', { entry: words.entry }) : t('Was gibt’s Neues von {about}?', { about })}</span>
                 <Icon name="plus" />
               </button>
             </>
@@ -224,7 +225,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
       )}
       {newestFirst && earlier}
 
-      <Modal open={Boolean(editingEntry)} title={`${words.entry} bearbeiten`} onClose={() => setEditingEntry(null)}>
+      <Modal open={Boolean(editingEntry)} title={t('{entry} bearbeiten', { entry: words.entry })} onClose={() => setEditingEntry(null)}>
         {editingEntry && (
           <TimelineEntryForm
             {...formProps}

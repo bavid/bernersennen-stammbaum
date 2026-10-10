@@ -6,6 +6,7 @@ import { useGlocke } from './HinweiseProvider.jsx'
 import useMediaQuery from '../../hooks/useMediaQuery.js'
 import { badgeText, bellLabel, startLineText } from '../../lib/glocke.js'
 import '../../styles/glocke.css'
+import { t } from '../../lib/i18n/index.js'
 
 // Am Handy (wie layout.css) kommt das Fenster als Blatt von unten, am Desktop klappt es unter der Glocke auf.
 const NARROW_QUERY = '(max-width: 720px)'
@@ -46,8 +47,8 @@ function Popover({ id, onClose, children }) {
   return (
     <div id={id} ref={panelRef} className="hinweis-popover" role="dialog" aria-labelledby={headingId} tabIndex={-1}>
       <div className="hinweis-popover-head">
-        <h2 id={headingId}>Hinweise</h2>
-        <button type="button" className="icon-btn" onClick={onClose} aria-label="Schließen">
+        <h2 id={headingId}>{t('Hinweise')}</h2>
+        <button type="button" className="icon-btn" onClick={onClose} aria-label={t('Schließen')}>
           <Icon name="close" />
         </button>
       </div>
@@ -104,7 +105,7 @@ export default function HinweisGlocke() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open && !narrow ? panelId : undefined}
-        title="Hinweise"
+        title={t('Hinweise')}
         onClick={(event) => (open ? close() : openPanel(event))}
       >
         <Icon name="bell" />
@@ -118,7 +119,7 @@ export default function HinweisGlocke() {
         {announcement}
       </span>
       {narrow ? (
-        <Modal open={open} title="Hinweise" onClose={close} className="modal-sheet modal-hinweise">
+        <Modal open={open} title={t('Hinweise')} onClose={close} className="modal-sheet modal-hinweise">
           {open && panel}
         </Modal>
       ) : (

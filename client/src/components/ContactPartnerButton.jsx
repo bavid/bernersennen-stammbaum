@@ -6,6 +6,7 @@ import ContactPartnerForm from './ContactPartnerForm.jsx'
 import { PREVIEW_DISABLED_HINT, useIsPreview } from '../lib/preview.js'
 import { DEMO_CONTACT_HINT, contactFormState } from '../lib/contactPartner.js'
 import { usePortalPanelActive } from '../lib/portalPanel.js'
+import { t } from '../lib/i18n/index.js'
 
 // ?demo=1 geht mit, wenn die Seite selbst so geladen wurde (wie PartnerPortalPage demoParam).
 function demoParam(search) {
@@ -24,14 +25,15 @@ export default function ContactPartnerButton({ partner, bezugSlug, label = 'Schr
   useEffect(() => {
     if (!panelActive) setOpen(false)
   }, [panelActive])
-  const disabledHint = preview ? PREVIEW_DISABLED_HINT : contactFormState(partner) === 'demo' ? DEMO_CONTACT_HINT : null
+  const hintKey = preview ? PREVIEW_DISABLED_HINT : contactFormState(partner) === 'demo' ? DEMO_CONTACT_HINT : null
+  const disabledHint = hintKey ? t(hintKey) : null
 
   if (disabledHint) {
     return (
       <span className="contact-partner-preview">
         <button type="button" className={className} disabled title={disabledHint} aria-description={disabledHint}>
           <Icon name="message" />
-          {label}
+          {t(label)}
         </button>
         <span className="field-hint">{disabledHint}</span>
       </span>
@@ -42,9 +44,9 @@ export default function ContactPartnerButton({ partner, bezugSlug, label = 'Schr
     <>
       <button type="button" className={className} onClick={() => setOpen(true)}>
         <Icon name="message" />
-        {label}
+        {t(label)}
       </button>
-      <Modal open={open} title={`Nachricht an ${partner.name}`} onClose={() => setOpen(false)}>
+      <Modal open={open} title={t('Nachricht an {name}', { name: partner.name })} onClose={() => setOpen(false)}>
         <ContactPartnerForm partner={partner} bezugSlug={bezugSlug} demo={demoParam(search)} />
       </Modal>
     </>

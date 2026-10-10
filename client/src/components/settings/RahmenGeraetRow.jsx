@@ -4,27 +4,28 @@ import ConfirmButton from '../ConfirmButton.jsx'
 import RahmenGeraetForm from './RahmenGeraetForm.jsx'
 import { relativeTime } from '../../lib/dates.js'
 import { ZEITRAEUME } from '../../lib/bilderrahmen.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Gewählte Tiere mit Namen - solange die noch nicht geladen sind (oder ein Tier nicht mehr da ist) „2 Tiere“, nie
 // fälschlich „Alle Tiere“.
 function animalsLabel(ids, tiere) {
-  if (ids.length === 0) return 'Alle Tiere'
+  if (ids.length === 0) return t('Alle Tiere')
   const names = ids.map((id) => tiere.find((tier) => tier.id === id)?.name)
   if (names.every(Boolean)) return names.join(', ')
-  return ids.length === 1 ? '1 Tier' : `${ids.length} Tiere`
+  return ids.length === 1 ? t('1 Tier') : t('{n} Tiere', { n: ids.length })
 }
 
 // „Alle Tiere · Letztes Jahr · alle 10 s · auch private Erinnerungen“
 function summary(auswahl, tiere) {
   const parts = [animalsLabel(auswahl.tiere, tiere)]
-  if (auswahl.zeitraum !== 'alle') parts.push(ZEITRAEUME.find((z) => z.key === auswahl.zeitraum)?.label || '')
-  parts.push(`alle ${auswahl.intervall} s`)
-  if (auswahl.privat) parts.push('auch private Erinnerungen')
+  if (auswahl.zeitraum !== 'alle') parts.push(ZEITRAEUME.find((z) => z.key === auswahl.zeitraum)?.label ? t(ZEITRAEUME.find((z) => z.key === auswahl.zeitraum).label) : '')
+  parts.push(t('alle {n} s', { n: auswahl.intervall }))
+  if (auswahl.privat) parts.push(t('auch private Erinnerungen'))
   return parts.filter(Boolean).join(' · ')
 }
 
 function seen(geraet) {
-  return geraet.zuletztAktiv ? `zuletzt aktiv ${relativeTime(geraet.zuletztAktiv)}` : 'noch nicht verbunden'
+  return geraet.zuletztAktiv ? t('zuletzt aktiv {when}', { when: relativeTime(geraet.zuletztAktiv) }) : t('noch nicht verbunden')
 }
 
 // Ein Rahmen-Link in der Liste: Name, zuletzt aktiv, Auswahl - ändern (Name, Tiere, Zeitraum, Anzeige; der Link bleibt
@@ -76,15 +77,15 @@ export default function RahmenGeraetRow({ geraet, tiere, readOnly, onUpdate, onR
                   setError(null)
                   setEditing(true)
                 }}
-                aria-label={`„${geraet.name}“ ändern`}
+                aria-label={t('„{name}“ ändern', { name: geraet.name })}
               >
                 <Icon name="edit" />
-                Ändern
+                {t('Ändern')}
               </button>
               <ConfirmButton
-                label="Beenden"
-                confirmLabel="Wirklich beenden?"
-                ariaLabel={`Bilderrahmen „${geraet.name}“ beenden`}
+                label={t('Beenden')}
+                confirmLabel={t('Wirklich beenden?')}
+                ariaLabel={t('Bilderrahmen „{name}“ beenden', { name: geraet.name })}
                 icon="close"
                 onConfirm={revoke}
               />

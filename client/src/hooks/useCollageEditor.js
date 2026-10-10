@@ -6,6 +6,7 @@ import { isLayoutId } from '../lib/collage/layouts.js'
 import { sanitizeDraft } from '../lib/collage/sanitize.js'
 import { MAX_STICKERS, isStickerId } from '../lib/collage/stickers.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
+import { t } from '../lib/i18n/index.js'
 
 const SAVE_DELAY_MS = 300
 
@@ -97,7 +98,7 @@ export function useCollageEditor(familyId) {
     // Neue Seiten übernehmen Vorlage und Hintergrund der aktuellen Seite
     addPage: () => {
       if (pages.length >= LIMITS.pages) return
-      const blank = newPage({ title: 'Neue Seite', layout: page.layout, background: page.background })
+      const blank = newPage({ title: t('Neue Seite'), layout: page.layout, background: page.background })
       setPages((list) => [...list.slice(0, pageIndex + 1), blank, ...list.slice(pageIndex + 1)])
       goToPage(pageIndex + 1)
     },

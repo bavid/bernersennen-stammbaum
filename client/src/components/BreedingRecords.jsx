@@ -9,6 +9,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import { formatDateLong, todayIso } from '../lib/dates.js'
 import { shortName } from '../lib/timeline.js'
 import { isEditable } from '../lib/areas.js'
+import { t } from '../lib/i18n/index.js'
 
 const EMPTY_FORM = { mutterDogId: '', vater: { dogId: '', freitext: '' }, datum: todayIso(), wurfInfo: '', fotos: [] }
 
@@ -64,7 +65,7 @@ function BreedingForm({ ownDogs, allDogs, initialMother = null, focusOnOpen = fa
       {error && <div className="error-banner" role="alert">{error}</div>}
       <div className="field">
         <label className="field-label" htmlFor="mutter">
-          Hündin
+          {t('Hündin')}
         </label>
         <select
           id="mutter"
@@ -73,7 +74,7 @@ function BreedingForm({ ownDogs, allDogs, initialMother = null, focusOnOpen = fa
           onChange={(e) => update({ mutterDogId: e.target.value ? Number(e.target.value) : '' })}
           required
         >
-          <option value="">– Hündin {words.ofGroup} wählen –</option>
+          <option value="">{t('– Hündin {ofGroup} wählen –', { ofGroup: words.ofGroup })}</option>
           {mothers.map((dog) => (
             <option key={dog.id} value={dog.id}>
               {dog.name}
@@ -81,16 +82,16 @@ function BreedingForm({ ownDogs, allDogs, initialMother = null, focusOnOpen = fa
           ))}
         </select>
       </div>
-      <ParentPicker label="Rüde" sex="ruede" dogs={allDogs} value={form.vater} onChange={(vater) => update({ vater })} />
+      <ParentPicker label={t('Rüde')} sex="ruede" dogs={allDogs} value={form.vater} onChange={(vater) => update({ vater })} />
       <div className="field">
         <label className="field-label" htmlFor="breeding-date">
-          Datum {words.matingOf} <span className="muted">(auch geplant)</span>
+          {t('Datum {matingOf}', { matingOf: words.matingOf })} <span className="muted">{t('(auch geplant)')}</span>
         </label>
         <input id="breeding-date" type="date" value={form.datum} onChange={(e) => update({ datum: e.target.value })} required />
       </div>
       <div className="field">
         <label className="field-label" htmlFor="wurf-info">
-          Notizen
+          {t('Notizen')}
         </label>
         <textarea
           id="wurf-info"
@@ -100,15 +101,15 @@ function BreedingForm({ ownDogs, allDogs, initialMother = null, focusOnOpen = fa
         />
       </div>
       <div className="field">
-        <span className="field-label">Fotos</span>
+        <span className="field-label">{t('Fotos')}</span>
         <PhotoPicker value={form.fotos} onChange={(fotos) => update({ fotos })} onBusyChange={setUploading} onError={setError} />
       </div>
       <div className="form-actions">
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button className="btn btn-primary" type="submit" disabled={saving || uploading || !form.mutterDogId}>
-          {saving ? 'Speichere …' : 'Eintragen'}
+          {saving ? t('Speichere …') : t('Eintragen')}
         </button>
       </div>
     </form>
@@ -129,14 +130,14 @@ export function BreedingEvent({ event, onDelete, onOpenPhoto }) {
         {event.vater_dog_id ? (
           <Link to={`/tier/${event.vater_dog_id}`}>{shortName(father)}</Link>
         ) : (
-          <span>{father || 'unbekannter Rüde'}</span>
+          <span>{father || t('unbekannter Rüde')}</span>
         )}
       </div>
       {event.wurf_info && <p className="breeding-info">{event.wurf_info}</p>}
       {event.foto_urls.length > 0 && (
         <div className="entry-photos count-3">
           {event.foto_urls.map((url) => (
-            <button type="button" key={url} className="entry-photo" onClick={() => onOpenPhoto(url)} aria-label="Foto vergrößern">
+            <button type="button" key={url} className="entry-photo" onClick={() => onOpenPhoto(url)} aria-label={t('Foto vergrößern')}>
               <img src={url} alt="" loading="lazy" />
             </button>
           ))}
@@ -144,7 +145,7 @@ export function BreedingEvent({ event, onDelete, onOpenPhoto }) {
       )}
       {onDelete && (
         <div className="breeding-actions">
-          <ConfirmButton onConfirm={() => onDelete(event)} label="Löschen" />
+          <ConfirmButton onConfirm={() => onDelete(event)} label={t('Löschen')} />
         </div>
       )}
     </li>
@@ -194,7 +195,7 @@ export default function BreedingRecords({ events, ownDogs, allDogs, canWrite = t
       {events.length > 0 && (
         <details className="breeding-all">
           <summary>
-            Alle {words.matings} ({events.length})
+            {t('Alle {matings} ({n})', { matings: words.matings, n: events.length })}
           </summary>
           <ol className="breeding-list">
             {events.map((event) => (

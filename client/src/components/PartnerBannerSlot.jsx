@@ -6,6 +6,7 @@ import { BANNER_ACCEPT, BANNER_TYPE_MESSAGE, MAX_BANNER_ALT_LENGTH, bannerFormDa
 import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import ReorderHandle from './ReorderHandle.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const THUMB_WIDTH = 480
 const THUMB_HEIGHT = 160
@@ -70,21 +71,21 @@ export default function PartnerBannerSlot({ item, label, onChange, locked: locke
       <div className="partner-banner-thumb-wrap">
         <img src={item.fotoUrl} alt="" width={THUMB_WIDTH} height={THUMB_HEIGHT} className="partner-banner-thumb" />
         {reorder && (
-          <ReorderHandle reorder={reorder.hook} itemKey={item.fotoUrl} index={reorder.index} count={reorder.count} label={label || `Foto ${item.position}`} className="partner-banner-handle" />
+          <ReorderHandle reorder={reorder.hook} itemKey={item.fotoUrl} index={reorder.index} count={reorder.count} label={label || t('Foto {n}', { n: item.position })} className="partner-banner-handle" />
         )}
       </div>
       <div className="partner-banner-slot-body">
         {label && <span className="partner-banner-slot-label">{label}</span>}
         <div className="field">
           <label className="field-label" htmlFor={altId}>
-            {ALT_LABEL}
+            {t(ALT_LABEL)}
           </label>
           <div className="partner-banner-alt-row">
             <input
               id={altId}
               aria-describedby={`${altId}-note`}
               value={alt}
-              placeholder={ALT_PLACEHOLDER}
+              placeholder={t(ALT_PLACEHOLDER)}
               maxLength={MAX_BANNER_ALT_LENGTH}
               disabled={isDemo}
               onChange={(e) => setAlt(e.target.value)}
@@ -95,38 +96,38 @@ export default function PartnerBannerSlot({ item, label, onChange, locked: locke
               className="btn btn-ghost btn-compact"
               disabled={locked || !altDirty}
               onClick={saveAlt}
-              aria-label={`Beschreibung von Foto ${item.position} speichern`}
+              aria-label={t('Beschreibung von Foto {n} speichern', { n: item.position })}
             >
               <Icon name="check" />
-              Speichern
+              {t('Speichern')}
             </button>
           </div>
           <span className="visually-hidden" id={`${altId}-note`}>
-            {ALT_NOTE}
+            {t(ALT_NOTE)}
           </span>
         </div>
         {error && (
           <p className="field-error" role="alert">
-            {error}
+            {t(error)}
           </p>
         )}
         <div className="partner-banner-slot-actions">
           <label className={`btn btn-ghost btn-compact admin-upload-btn${locked ? ' is-disabled' : ''}`}>
             <Icon name="camera" />
-            {busy ? 'Lädt …' : 'Ersetzen'}
+            {busy ? t('Lädt …') : t('Ersetzen')}
             <input
               type="file"
               accept={BANNER_ACCEPT}
               onChange={handleReplace}
               disabled={locked}
               className="admin-upload-input"
-              aria-label={`Foto ${item.position} ersetzen`}
+              aria-label={t('Foto {n} ersetzen', { n: item.position })}
             />
           </label>
           <ConfirmButton
-            label="Entfernen"
-            confirmLabel="Wirklich entfernen?"
-            ariaLabel={`Foto ${item.position} entfernen`}
+            label={t('Entfernen')}
+            confirmLabel={t('Wirklich entfernen?')}
+            ariaLabel={t('Foto {n} entfernen', { n: item.position })}
             className="btn-compact btn-quiet btn-end"
             disabled={locked}
             onConfirm={() => run(() => api.partnerArea.deleteBanner(item.position))}

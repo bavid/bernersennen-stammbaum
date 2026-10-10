@@ -3,6 +3,7 @@ import { api } from '../api'
 import Icon from './Icon.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { displayName } from '../lib/timeline.js'
+import { t } from '../lib/i18n/index.js'
 
 const COPIED_MS = 2000
 
@@ -59,11 +60,10 @@ export default function HandoverDialog({ dog, onCreated }) {
           </div>
         )}
         <p>
-          Es wird ein Übergabe-Code erzeugt, {name} wird als reserviert markiert; ein früherer Übergabe-Code wird
-          ungültig.
+          {t('Es wird ein Übergabe-Code erzeugt, {name} wird als reserviert markiert; ein früherer Übergabe-Code wird ungültig.', { name })}
         </p>
         <button type="button" className="btn btn-primary btn-block" disabled={creating || isDemo} onClick={handleCreate}>
-          {creating ? 'Erzeuge …' : 'Übergabe-Code erzeugen'}
+          {creating ? t('Erzeuge …') : t('Übergabe-Code erzeugen')}
         </button>
         {isDemo && <p className="field-hint">{readOnlyHint}</p>}
       </div>
@@ -78,27 +78,27 @@ export default function HandoverDialog({ dog, onCreated }) {
       <p className="handover-code">{result.code}</p>
       <button type="button" className={`btn ${copied === 'code' ? 'btn-ink' : 'btn-ghost'} btn-block`} onClick={() => copy(result.code, 'code')}>
         <Icon name={copied === 'code' ? 'check' : 'copy'} />
-        {copied === 'code' ? 'Kopiert' : 'Code kopieren'}
+        {copied === 'code' ? t('Kopiert') : t('Code kopieren')}
       </button>
       <p className="handover-link">{fullLink}</p>
       <div className="handover-actions">
         <button type="button" className={`btn ${copied === 'link' ? 'btn-ink' : 'btn-ghost'}`} onClick={() => copy(fullLink, 'link')}>
           <Icon name={copied === 'link' ? 'check' : 'copy'} />
-          {copied === 'link' ? 'Kopiert' : 'Link kopieren'}
+          {copied === 'link' ? t('Kopiert') : t('Link kopieren')}
         </button>
         {canShare && (
           <button
             type="button"
             className="btn btn-ghost"
-            onClick={() => navigator.share({ title: `Übergabe – ${name}`, text: result.code, url: fullLink })}
+            onClick={() => navigator.share({ title: t('Übergabe – {name}', { name }), text: result.code, url: fullLink })}
           >
             <Icon name="share" />
-            Teilen
+            {t('Teilen')}
           </button>
         )}
       </div>
       <p className="field-hint">
-        Gebt den Code den neuen Menschen – beim Einlösen zieht {name} mit der ganzen Chronik zu ihnen.
+        {t('Gebt den Code den neuen Menschen – beim Einlösen zieht {name} mit der ganzen Chronik zu ihnen.', { name })}
       </p>
     </div>
   )

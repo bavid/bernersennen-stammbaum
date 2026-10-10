@@ -1,6 +1,7 @@
 import AccessSettings from '../components/AccessSettings.jsx'
 import PartnerTelegramSection from '../components/PartnerTelegramSection.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
+import { t } from '../lib/i18n/index.js'
 
 // /zugang (Phase P) - Schlüssel erneuern und eigene Benutzer-Logins für Partner- und Tierheim-Bereiche.
 // Dieselben Einstellungen wie im Einstellungen-Dialog am Stammbaum (FamilySettings), den es dort nicht
@@ -15,19 +16,19 @@ export default function AccessPage({ family, onFamilyChange }) {
       <header className="page-hero">
         <div>
           <span className="eyebrow">{family.name}</span>
-          <h1>Zugang</h1>
-          <p className="page-lede">Schlüssel erneuern, eigene Benutzer-Logins verwalten und Benachrichtigungen einrichten.</p>
+          <h1>{t('Zugang')}</h1>
+          <p className="page-lede">{t('Schlüssel erneuern, eigene Benutzer-Logins verwalten und Benachrichtigungen einrichten.')}</p>
         </div>
       </header>
 
       {isDemo ? (
         // Audit V7a: nicht nur "In der Demo nicht möglich." ohne Bezug - was hier sonst stünde.
         <p className="muted">
-          <strong>Schlüssel und Benutzer:</strong> {readOnlyHint}
+          <strong>{t('Schlüssel und Benutzer:')}</strong> {readOnlyHint}
         </p>
       ) : (
         <div className="card access-page-card">
-          <AccessSettings family={family} onFamilyChange={onFamilyChange} title="Schlüssel und Benutzer" />
+          <AccessSettings family={family} onFamilyChange={onFamilyChange} title={t('Schlüssel und Benutzer')} />
         </div>
       )}
 

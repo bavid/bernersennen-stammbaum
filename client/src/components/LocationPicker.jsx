@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { roundCoord } from '../lib/geo.js'
 import { locationSummary } from '../lib/locationSummary.js'
+import { t } from '../lib/i18n/index.js'
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100]
 const PLZ_LENGTH = 5
@@ -21,11 +22,15 @@ function isInsecureContext(allowGeolocation) {
 
 // Phase V1: die eine ruhige Zeile über den Inhalten - "In der Nähe von 20095 Hamburg · 25 km · ändern". Der Knopf
 // klappt die Eingabe darunter auf und zu (aria-expanded/aria-controls).
-function LocationSummary({ summary, open, formId, toggleRef, onToggle }) {
+function LocationSummary({ summary, applied, open, formId, toggleRef, onToggle }) {
+  // Der Satz kommt deutsch aus lib/locationSummary.js - hier je Sprache neu gebaut.
+  const text = applied?.plz
+    ? t('In der Nähe von {ort}', { ort: [applied.plz, applied.ort].filter(Boolean).join(' ') })
+    : t(summary.text)
   return (
     <p className="location-summary">
       <Icon name="mapPin" />
-      <span className="location-summary-text">{summary.text}</span>
+      <span className="location-summary-text">{text}</span>
       {summary.radius !== null && <span className="location-summary-radius">{summary.radius} km</span>}
       <button
         type="button"
@@ -35,8 +40,8 @@ function LocationSummary({ summary, open, formId, toggleRef, onToggle }) {
         aria-controls={open ? formId : undefined}
         onClick={onToggle}
       >
-        {open ? 'schließen' : summary.action}
-        {(open || summary.action === 'ändern') && <span className="visually-hidden">: Ort und Umkreis</span>}
+        {open ? t('schließen') : t(summary.action)}
+        {(open || summary.action === 'ändern') && <span className="visually-hidden">: {t('Ort und Umkreis')}</span>}
       </button>
     </p>
   )
@@ -125,7 +130,7 @@ export default function LocationPicker({
       },
       () => {
         setLocating(false)
-        setLocateError('Standort konnte nicht ermittelt werden.')
+        setLocateError(t('Standort konnte nicht ermittelt werden.'))
       },
       { enableHighAccuracy: false, timeout: 10000 }
     )
@@ -139,7 +144,7 @@ export default function LocationPicker({
       <div className="location-picker-fields">
         <div className="field location-picker-plz">
           <label className="field-label" htmlFor="location-plz">
-            Postleitzahl
+            {t('Postleitzahl')}
           </label>
           <input
             id="location-plz"
@@ -155,7 +160,7 @@ export default function LocationPicker({
         </div>
         <div className="field location-picker-radius">
           <label className="field-label" htmlFor="location-radius">
-            Umkreis
+            {t('Umkreis')}
           </label>
           <select id="location-radius" value={radius} onChange={(e) => onRadiusChange(Number(e.target.value))}>
             {RADIUS_OPTIONS.map((km) => (
@@ -166,14 +171,14 @@ export default function LocationPicker({
           </select>
         </div>
         <button type="submit" className="btn btn-primary">
-          Suchen
+          {t('Suchen')}
         </button>
       </div>
       {showLocateButton && (
         <>
           <button type="button" className="location-picker-locate" onClick={handleLocate} disabled={locating}>
             <Icon name="locate" />
-            {locating ? 'Ermittle Standort …' : 'Standort verwenden'}
+            {locating ? t('Ermittle Standort …') : t('Standort verwenden')}
           </button>
           {geoHint && <p className="field-hint location-picker-privacy">{geoHint}</p>}
         </>
@@ -191,7 +196,7 @@ export default function LocationPicker({
   if (!collapsible) return form
   return (
     <div className={`location-picker-box${showForm ? ' is-open' : ''}`}>
-      {summary && <LocationSummary summary={summary} open={open} formId={formId} toggleRef={toggleRef} onToggle={toggle} />}
+      {summary && <LocationSummary summary={summary} applied={applied} open={open} formId={formId} toggleRef={toggleRef} onToggle={toggle} />}
       {showForm && form}
     </div>
   )

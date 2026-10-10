@@ -9,6 +9,7 @@ import { useToast } from '../components/Toast.jsx'
 import { HOME_LABEL, groupRoute } from '../lib/areas.js'
 import { animalCountText, areaCounts } from '../lib/animalCounts.js'
 import { roleLabel } from '../lib/roles.js'
+import { t } from '../lib/i18n/index.js'
 
 const VISIT_DIALOG = 'besuch'
 
@@ -48,9 +49,9 @@ function AreaSection({ id, title, empty, children }) {
 function FamilyActions({ onOpen }) {
   const { words } = useTheme()
   const actions = [
-    { key: 'join', label: `${words.group} beitreten` },
-    { key: 'create', label: `${words.newGroup} gründen` },
-    { key: VISIT_DIALOG, label: 'Code von Freunden eingeben' }
+    { key: 'join', label: t('{group} beitreten', { group: words.group }) },
+    { key: 'create', label: t('{newGroup} gründen', { newGroup: words.newGroup }) },
+    { key: VISIT_DIALOG, label: t('Code von Freunden eingeben') }
   ]
   return (
     <p className="families-page-actions">
@@ -82,21 +83,21 @@ export default function FamiliesPage({ family, onFamilyChange }) {
   function handleVisitRedeemed({ gastgeber, me }) {
     onFamilyChange(me)
     close()
-    toast(`Verbunden – „${gastgeber.name}“ steht jetzt bei den befreundeten Zuhause.`)
+    toast(t('Verbunden – „{name}“ steht jetzt bei den befreundeten Zuhause.', { name: gastgeber.name }))
   }
 
   return (
     <div className="page families-page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">{HOME_LABEL}</span>
+          <span className="eyebrow">{t(HOME_LABEL)}</span>
           <h1>{words.groups}</h1>
-          <p className="page-lede">Eure {words.groups} und die Zuhause, bei denen ihr zu Besuch sein dürft.</p>
+          <p className="page-lede">{t('Eure {groups} und die Zuhause, bei denen ihr zu Besuch sein dürft.', { groups: words.groups })}</p>
         </div>
       </header>
 
       <div className="families-page-grid">
-        <AreaSection id="families-mine-title" title={`Meine ${words.groups}`} empty={words.noGroupConnected}>
+        <AreaSection id="families-mine-title" title={t('Meine {groups}', { groups: words.groups })} empty={words.noGroupConnected}>
           {memberships.map((membership) => (
             <AreaRow
               key={membership.id}
@@ -108,15 +109,15 @@ export default function FamiliesPage({ family, onFamilyChange }) {
         </AreaSection>
         <AreaSection
           id="families-friends-title"
-          title="Befreundete Zuhause"
-          empty={`Noch bei niemandem zu Besuch. Mit einem Code von Freunden seht ihr deren Tiere und ${words.entries}.`}
+          title={t('Befreundete Zuhause')}
+          empty={t('Noch bei niemandem zu Besuch. Mit einem Code von Freunden seht ihr deren Tiere und {entries}.', { entries: words.entries })}
         >
           {visits.map((visit) => (
             <AreaRow
               key={visit.id}
               to={groupRoute(visit.id)}
               name={visit.name}
-              sub={subOf('Zu Besuch', animalCountText(areaCounts(family, visit.id), words))}
+              sub={subOf(t('Zu Besuch'), animalCountText(areaCounts(family, visit.id), words))}
             />
           ))}
         </AreaSection>
@@ -124,12 +125,12 @@ export default function FamiliesPage({ family, onFamilyChange }) {
 
       <FamilyActions onOpen={setDialog} />
 
-      <Modal open={dialog === 'join' || dialog === 'create'} title={`${words.group} beitreten oder gründen`} onClose={close}>
+      <Modal open={dialog === 'join' || dialog === 'create'} title={t('{group} beitreten oder gründen', { group: words.group })} onClose={close}>
         {(dialog === 'join' || dialog === 'create') && (
           <JoinFamilyDialog key={dialog} initialTab={dialog} onChange={onFamilyChange} onClose={close} />
         )}
       </Modal>
-      <Modal open={dialog === VISIT_DIALOG} title="Code von Freunden eingeben" onClose={close}>
+      <Modal open={dialog === VISIT_DIALOG} title={t('Code von Freunden eingeben')} onClose={close}>
         {dialog === VISIT_DIALOG && <VisitRedeemForm onRedeemed={handleVisitRedeemed} />}
       </Modal>
     </div>

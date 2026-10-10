@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import Icon from './Icon.jsx'
 import { qrFileName, qrSvgMarkup } from '../lib/partnerShare.js'
+import { t } from '../lib/i18n/index.js'
 
 // Kantenlänge der PNG-Datei - groß genug für Druck (Flyer, Visitenkarte), die Module bleiben scharf.
 const PNG_SIZE = 1024
@@ -65,23 +66,23 @@ export default function PartnerShareQr({ url, slug }) {
     try {
       downloadBlob(await svgToPng(markup), qrFileName(slug, 'png'))
     } catch {
-      setError('Das PNG ließ sich in diesem Browser nicht erzeugen – nehmt bitte die SVG-Datei.')
+      setError(t('Das PNG ließ sich in diesem Browser nicht erzeugen – nehmt bitte die SVG-Datei.'))
     }
   }
 
   return (
     <div className="partner-share-qr">
-      <img src={imageUrl} alt={`QR-Code, öffnet ${url}`} className="partner-share-qr-code" width={160} height={160} />
+      <img src={imageUrl} alt={t('QR-Code, öffnet {url}', { url })} className="partner-share-qr-code" width={160} height={160} />
       <div className="partner-share-qr-actions">
         <button type="button" className="btn btn-ghost" onClick={downloadSvg}>
           <Icon name="download" />
-          QR-Code herunterladen (SVG)
+          {t('QR-Code herunterladen (SVG)')}
         </button>
         <button type="button" className="btn btn-ghost" onClick={downloadPng}>
           <Icon name="download" />
-          Als PNG
+          {t('Als PNG')}
         </button>
-        <p className="field-hint">SVG für Flyer und Druck, PNG für Social Media.</p>
+        <p className="field-hint">{t('SVG für Flyer und Druck, PNG für Social Media.')}</p>
         {error && (
           <p className="field-error" role="alert">
             {error}

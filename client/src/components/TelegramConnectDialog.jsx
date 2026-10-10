@@ -4,6 +4,7 @@ import { qrSvgMarkup } from '../lib/partnerShare.js'
 import { POLL_INTERVAL_MS, isTelegramLink, telegramStatus } from '../lib/partnerTelegram.js'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const WAITING = 'Warte auf die Bestätigung in Telegram …'
 const EXPIRED = 'Der Link ist abgelaufen – bitte schließen und neu verbinden.'
@@ -18,7 +19,7 @@ export default function TelegramConnectDialog({ link, onConnected, onClose }) {
   const url = isTelegramLink(link?.url) ? link.url : null
   const validMinutes = Number.isInteger(link?.gueltigMinuten) && link.gueltigMinuten > 0 ? link.gueltigMinuten : DEFAULT_VALID_MINUTES
   const qrImage = useMemo(() => (url ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvgMarkup(url))}` : null), [url])
-  const [message, setMessage] = useState(WAITING)
+  const [message, setMessage] = useState(null)
   const [checking, setChecking] = useState(false)
   const [expired, setExpired] = useState(false)
   const busy = useRef(false)
@@ -30,7 +31,7 @@ export default function TelegramConnectDialog({ link, onConnected, onClose }) {
     try {
       const status = telegramStatus(await api.partnerArea.checkTelegram())
       if (status.verbunden) onConnected(status)
-      else setMessage(WAITING)
+      else setMessage(null)
     } catch (err) {
       setMessage(err.message)
     } finally {
@@ -54,29 +55,29 @@ export default function TelegramConnectDialog({ link, onConnected, onClose }) {
       {url ? (
         <div className="telegram-connect">
           <ol className="telegram-connect-steps">
-            <li>Auf dem Handy „In Telegram öffnen“ antippen – am Computer den QR-Code mit dem Handy scannen.</li>
-            <li>In Telegram auf „Starten“ und danach auf „Ja, Hinweise aktivieren“ tippen.</li>
-            <li>Fertig – diese Seite merkt es von selbst.</li>
+            <li>{t('Auf dem Handy „In Telegram öffnen“ antippen – am Computer den QR-Code mit dem Handy scannen.')}</li>
+            <li>{t('In Telegram auf „Starten“ und danach auf „Ja, Hinweise aktivieren“ tippen.')}</li>
+            <li>{t('Fertig – diese Seite merkt es von selbst.')}</li>
           </ol>
           <div className="telegram-connect-codes">
             <a className="btn btn-primary" href={url} target="_blank" rel="noopener noreferrer">
               <Icon name="send" />
-              In Telegram öffnen
+              {t('In Telegram öffnen')}
             </a>
-            <img src={qrImage} alt="QR-Code für den Telegram-Link" className="telegram-connect-qr" width={176} height={176} />
+            <img src={qrImage} alt={t('QR-Code für den Telegram-Link')} className="telegram-connect-qr" width={176} height={176} />
           </div>
-          <p className="field-hint">Der Link gilt {validMinutes} Minuten und nur einmal.</p>
+          <p className="field-hint">{t('Der Link gilt {n} Minuten und nur einmal.', { n: validMinutes })}</p>
           <p className="telegram-connect-status" role="status">
-            {expired ? EXPIRED : message}
+            {expired ? t(EXPIRED) : message || t(WAITING)}
           </p>
           <button type="button" className="btn btn-ghost" onClick={check} disabled={checking || expired}>
             <Icon name="check" />
-            {checking ? 'Prüfe …' : 'Verbindung prüfen'}
+            {checking ? t('Prüfe …') : t('Verbindung prüfen')}
           </button>
         </div>
       ) : (
         <p className="error-banner" role="alert">
-          Der Link ließ sich nicht erzeugen – bitte noch einmal versuchen.
+          {t('Der Link ließ sich nicht erzeugen – bitte noch einmal versuchen.')}
         </p>
       )}
     </Modal>

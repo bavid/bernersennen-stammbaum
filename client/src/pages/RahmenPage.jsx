@@ -6,6 +6,7 @@ import { useNoIndex } from '../hooks/useNoIndex.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import { DEVICE_OPTIONEN_KEY, DEVICE_REFRESH_MS, cleanOptionen, diffOptionen } from '../lib/bilderrahmen.js'
 import { fetchRahmenFotos, forgetRahmenToken, takeRahmenToken } from '../lib/rahmenGeraet.js'
+import { t } from '../lib/i18n/index.js'
 
 // Ohne Netz: nach einer Minute noch einmal (sonst alle 10 Minuten, DEVICE_REFRESH_MS).
 const RETRY_MS = 60 * 1000
@@ -29,16 +30,16 @@ function useDeviceOptionen(base) {
 
 function NotConnected() {
   return (
-    <FrameMessage title="Noch kein Bilderrahmen verbunden">
-      <p>Öffnet auf diesem Gerät den Link, den ihr in den Einstellungen unter „Mein Zuhause“ für einen Bilderrahmen erstellt habt.</p>
+    <FrameMessage title={t('Noch kein Bilderrahmen verbunden')}>
+      <p>{t('Öffnet auf diesem Gerät den Link, den ihr in den Einstellungen unter „Mein Zuhause“ für einen Bilderrahmen erstellt habt.')}</p>
     </FrameMessage>
   )
 }
 
 function Ended() {
   return (
-    <FrameMessage title="Dieser Bilderrahmen wurde beendet" tone="ended">
-      <p>Wer ihn eingerichtet hat, kann in den Einstellungen unter „Mein Zuhause“ einen neuen Link erstellen.</p>
+    <FrameMessage title={t('Dieser Bilderrahmen wurde beendet')} tone="ended">
+      <p>{t('Wer ihn eingerichtet hat, kann in den Einstellungen unter „Mein Zuhause“ einen neuen Link erstellen.')}</p>
     </FrameMessage>
   )
 }
@@ -62,13 +63,13 @@ function DeviceFrame({ token }) {
 
   if (ended) return <Ended />
   if (!data) {
-    return <FrameMessage title={error ? 'Keine Verbindung' : 'Fotos werden geholt …'}>{error && <p>{error.message}</p>}</FrameMessage>
+    return <FrameMessage title={error ? t('Keine Verbindung') : t('Fotos werden geholt …')}>{error && <p>{error.message}</p>}</FrameMessage>
   }
   if (resting) {
     return (
-      <FrameMessage title="Der Bilderrahmen ruht">
+      <FrameMessage title={t('Der Bilderrahmen ruht')}>
         <button type="button" className="btn btn-primary" onClick={() => setResting(false)}>
-          Weiter zeigen
+          {t('Weiter zeigen')}
         </button>
       </FrameMessage>
     )
@@ -76,8 +77,8 @@ function DeviceFrame({ token }) {
   const fotos = data.fotos || EMPTY
   if (fotos.length === 0) {
     return (
-      <FrameMessage title="Noch keine Fotos">
-        <p>Sobald neue Fotos dazukommen, zeigt sie dieser Bilderrahmen von selbst.</p>
+      <FrameMessage title={t('Noch keine Fotos')}>
+        <p>{t('Sobald neue Fotos dazukommen, zeigt sie dieser Bilderrahmen von selbst.')}</p>
       </FrameMessage>
     )
   }
@@ -88,7 +89,7 @@ function DeviceFrame({ token }) {
       onOptionenChange={changeOptionen}
       onExit={() => setResting(true)}
       onReload={reload}
-      label={data.name ? `Bilderrahmen „${data.name}“` : 'Bilderrahmen'}
+      label={data.name ? t('Bilderrahmen „{name}“', { name: data.name }) : 'Bilderrahmen'}
     />
   )
 }

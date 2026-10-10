@@ -1,12 +1,11 @@
 // Hilfen für den Reiter "Entdecken" (DiscoverPage, PromotionCard, SupportBlock) - reine Funktionen
 // über die Antwort von POST /api/discover (server/routes/discover.js).
-
-const EURO = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' })
+import { locale, t } from './i18n/index.js'
 
 // Der Server liefert Spendenbeträge als ganze Cent (eingangCents usw.) - hier in Euro umgerechnet.
 export function formatEuroCents(cents) {
   if (typeof cents !== 'number' || !Number.isFinite(cents)) return null
-  return EURO.format(cents / 100)
+  return new Intl.NumberFormat(locale(), { style: 'currency', currency: 'EUR' }).format(cents / 100)
 }
 
 // Jeder externe Link kommt vom Server als clickUrl /r/<typ>/<id> (anonyme Klickzählung, leitet nur auf
@@ -58,8 +57,8 @@ export function isAnzeige(kennzeichnung) {
 
 export function kennzeichnungLabel({ kennzeichnung, empfohlenVon }) {
   const normalized = normalizeKennzeichnung(kennzeichnung)
-  if (normalized === 'Empfehlung' && empfohlenVon) return `Empfehlung von ${empfohlenVon}`
-  return normalized
+  if (normalized === 'Empfehlung' && empfohlenVon) return t('Empfehlung von {name}', { name: empfohlenVon })
+  return t(normalized)
 }
 
 // Bezahltes/Provisioniertes ("Anzeige") bekommt rel="sponsored", Empfehlungen und Partner nicht.

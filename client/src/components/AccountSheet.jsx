@@ -3,6 +3,7 @@ import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
 import { AccountBadge, itemState } from './AccountMenu.jsx'
 import { LEGAL_LINKS, accountMenuItems, accountName } from '../lib/accountMenu.js'
+import { t } from '../lib/i18n/index.js'
 
 // "Menü" als fünfter Platz der unteren Leiste am Handy (Phase W) - der Knopf steht in der Navigation, das Blatt
 // (AccountSheet) daneben im Kopf, damit der Dialog nicht in der Navigation liegt. Am Desktop blendet layout.css den Knopf
@@ -11,7 +12,7 @@ export function MenuSlotButton({ open, onOpen }) {
   return (
     <button type="button" className="app-nav-menu" aria-haspopup="dialog" aria-expanded={open} onClick={onOpen}>
       <Icon name="menu" />
-      <span>Menü</span>
+      <span>{t('Menü')}</span>
     </button>
   )
 }
@@ -30,7 +31,7 @@ export default function AccountSheet({ family, open, onClose, onInvite, onLogout
   }
 
   return (
-    <Modal open={open} title="Menü" onClose={onClose} className="modal-sheet">
+    <Modal open={open} title={t('Menü')} onClose={onClose} className="modal-sheet">
       <p className="account-sheet-who">
         <AccountBadge name={name} />
         <span>{name}</span>
@@ -41,12 +42,12 @@ export default function AccountSheet({ family, open, onClose, onInvite, onLogout
             {item.to ? (
               <Link to={item.to} state={itemState(item, pathname)} className="account-sheet-item" onClick={onClose}>
                 <Icon name={item.icon} />
-                <span>{item.label}</span>
+                <span>{t(item.label)}</span>
               </Link>
             ) : (
               <button type="button" className="account-sheet-item" onClick={() => select(item)}>
                 <Icon name={item.icon} />
-                <span>{item.label}</span>
+                <span>{t(item.label)}</span>
               </button>
             )}
           </li>
@@ -55,7 +56,7 @@ export default function AccountSheet({ family, open, onClose, onInvite, onLogout
       <p className="account-sheet-legal">
         {LEGAL_LINKS.map((link) => (
           <Link key={link.key} to={link.to} onClick={onClose}>
-            {link.label}
+            {t(link.label)}
           </Link>
         ))}
       </p>

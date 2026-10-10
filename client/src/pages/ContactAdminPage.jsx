@@ -4,27 +4,32 @@ import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
 import { useToast } from '../components/Toast.jsx'
+import { getLang, t } from '../lib/i18n/index.js'
 
 function buildTypes(words) {
   return {
     feedback: {
-      label: 'Feedback',
+      label: t('Feedback'),
       icon: 'heart',
-      prompt: 'Was gefällt dir, was fehlt dir, was könnte besser sein?',
-      placeholder: `z. B. Es wäre toll, wenn man ${words.entries} auch als Liste für alle ${words.animals} sehen könnte.`
+      prompt: t('Was gefällt dir, was fehlt dir, was könnte besser sein?'),
+      placeholder: t('z. B. Es wäre toll, wenn man {entries} auch als Liste für alle {animals} sehen könnte.', {
+        entries: words.entries,
+        animals: words.animals
+      })
     },
     problem: {
-      label: 'Problem melden',
+      label: t('Problem melden'),
       icon: 'alert',
-      prompt: 'Was hast du gemacht, was ist passiert – und was hättest du erwartet?',
-      placeholder: 'z. B. Beim Hochladen eines Fotos von Tilda kam eine Fehlermeldung.'
+      prompt: t('Was hast du gemacht, was ist passiert – und was hättest du erwartet?'),
+      placeholder: t('z. B. Beim Hochladen eines Fotos von Tilda kam eine Fehlermeldung.')
     }
   }
 }
 
 function MessageForm({ fromPage, onSent }) {
   const { words } = useTheme()
-  const TYPES = useMemo(() => buildTypes(words), [words])
+  const lang = getLang()
+  const TYPES = useMemo(() => buildTypes(words), [words, lang])
   const [type, setType] = useState('feedback')
   const [text, setText] = useState('')
   // Bewusst nicht vorausgefüllt: ohne Namen kommt die Nachricht anonym an
@@ -50,7 +55,7 @@ function MessageForm({ fromPage, onSent }) {
 
   return (
     <form className="card form-stack contact-form" onSubmit={handleSubmit}>
-      <div className="segmented contact-type" role="group" aria-label="Art der Nachricht">
+      <div className="segmented contact-type" role="group" aria-label={t('Art der Nachricht')}>
         {Object.entries(TYPES).map(([key, option]) => (
           <button type="button" key={key} aria-pressed={type === key} onClick={() => setType(key)}>
             <Icon name={option.icon} /> {option.label}
@@ -75,38 +80,39 @@ function MessageForm({ fromPage, onSent }) {
       <div className="form-grid">
         <div className="field">
           <label className="field-label" htmlFor="contact-name">
-            Dein Name <span className="muted">(freiwillig)</span>
+            {t('Dein Name')} <span className="muted">{t('(freiwillig)')}</span>
           </label>
           <input
             id="contact-name"
             value={autorName}
             onChange={(e) => setAutorName(e.target.value)}
-            placeholder="leer lassen = anonym"
+            placeholder={t('leer lassen = anonym')}
             maxLength={60}
           />
         </div>
         <div className="field">
           <label className="field-label" htmlFor="contact-reach">
-            Wie erreicht dich der Admin? <span className="muted">(freiwillig)</span>
+            {t('Wie erreicht dich der Admin?')} <span className="muted">{t('(freiwillig)')}</span>
           </label>
           <input
             id="contact-reach"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
-            placeholder="E-Mail oder Telefon"
+            placeholder={t('E-Mail oder Telefon')}
             maxLength={120}
           />
         </div>
       </div>
       {type === 'problem' && (
         <p className="field-hint">
-          Damit sich das Problem nachvollziehen lässt, werden die zuletzt besuchte Seite
-          {fromPage ? ` (${fromPage})` : ''} und dein Browser mitgeschickt.
+          {t('Damit sich das Problem nachvollziehen lässt, werden die zuletzt besuchte Seite{page} und dein Browser mitgeschickt.', {
+            page: fromPage ? ` (${fromPage})` : ''
+          })}
         </p>
       )}
       <button type="submit" className="btn btn-primary btn-lg" disabled={saving}>
         <Icon name="send" />
-        {saving ? 'Sende …' : type === 'problem' ? 'Problem melden' : 'Feedback senden'}
+        {saving ? t('Sende …') : type === 'problem' ? t('Problem melden') : t('Feedback senden')}
       </button>
     </form>
   )
@@ -118,10 +124,10 @@ function SentNotice({ onAgain }) {
       <span className="contact-sent-icon">
         <Icon name="check" />
       </span>
-      <h2>Danke, ist angekommen!</h2>
-      <p className="muted">Deine Nachricht liegt jetzt beim Admin – und nur dort.</p>
+      <h2>{t('Danke, ist angekommen!')}</h2>
+      <p className="muted">{t('Deine Nachricht liegt jetzt beim Admin – und nur dort.')}</p>
       <button type="button" className="btn btn-ghost" onClick={onAgain}>
-        <Icon name="plus" /> Noch etwas schreiben
+        <Icon name="plus" /> {t('Noch etwas schreiben')}
       </button>
     </div>
   )
@@ -132,12 +138,12 @@ function PrivacyNote() {
   return (
     <aside className="contact-privacy" aria-labelledby="contact-privacy-title">
       <h2 id="contact-privacy-title">
-        <Icon name="lock" /> Bleibt unter uns
+        <Icon name="lock" /> {t('Bleibt unter uns')}
       </h2>
       <ul>
-        <li>Nur der Admin liest deine Nachricht. Die anderen {words.inGroup} sehen sie nicht – auch nicht hinterher.</li>
-        <li>Dein Name ist freiwillig. Lässt du ihn leer, kommt die Nachricht anonym an.</li>
-        <li>Wenn du eine Antwort möchtest, hinterlass einfach eine E-Mail oder Telefonnummer.</li>
+        <li>{t('Nur der Admin liest deine Nachricht. Die anderen {inGroup} sehen sie nicht – auch nicht hinterher.', { inGroup: words.inGroup })}</li>
+        <li>{t('Dein Name ist freiwillig. Lässt du ihn leer, kommt die Nachricht anonym an.')}</li>
+        <li>{t('Wenn du eine Antwort möchtest, hinterlass einfach eine E-Mail oder Telefonnummer.')}</li>
       </ul>
     </aside>
   )
@@ -151,18 +157,17 @@ export default function ContactAdminPage() {
 
   function handleSent() {
     setSent(true)
-    toast('Danke! Deine Nachricht ist beim Admin angekommen.')
+    toast(t('Danke! Deine Nachricht ist beim Admin angekommen.'))
   }
 
   return (
     <div className="page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">Schreib dem Admin</span>
-          <h1>Schreib dem Admin</h1>
+          <span className="eyebrow">{t('Schreib dem Admin')}</span>
+          <h1>{t('Schreib dem Admin')}</h1>
           <p className="page-lede">
-            Eine Idee, wie die Chronik besser wird – oder hakt irgendwo etwas? Schreib es hier, der Admin liest jede
-            Nachricht.
+            {t('Eine Idee, wie die Chronik besser wird – oder hakt irgendwo etwas? Schreib es hier, der Admin liest jede Nachricht.')}
           </p>
         </div>
       </header>

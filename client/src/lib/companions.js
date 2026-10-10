@@ -1,6 +1,7 @@
 // Wegbegleiter: Zeitspanne je Tier – vom Einzug (sonst Geburt) bis Abschied (sonst heute) –
 // dazu die Achse für die Zeitleiste, Herkunftstexte und der nächste Einzugs-Jahrestag.
 import { formatDateLong, todayIso, yearOf } from './dates.js'
+import { t } from './i18n/index.js'
 
 const DAY_MS = 86400000
 
@@ -86,8 +87,8 @@ export function herkunftText(dog) {
   const text = dog.herkunft_text
   if (!art) return text || ''
   if (art === 'anderes') return text || ''
-  if (art === 'tierheim' && text && TIERHEIM_NAME_RE.test(text)) return `aus dem ${text}`
-  const label = HERKUNFT_LABELS[art] || ''
+  if (art === 'tierheim' && text && TIERHEIM_NAME_RE.test(text)) return t('aus dem {name}', { name: text })
+  const label = HERKUNFT_LABELS[art] ? t(HERKUNFT_LABELS[art]) : ''
   return text ? `${label} – ${text}` : label
 }
 
@@ -104,7 +105,7 @@ const ABSCHIED_GRUND_LABELS = {
 // ownerName: gesetzt für ein geteiltes Tier im fremden Bereich (!dog.canEdit) – ersetzt "Bei euch"
 // durch "Im {ownerName}" (der Name des besitzenden Zuhauses/Rudels), sonst gilt weiter "Bei euch".
 export function companionLine(dog, { ownerName } = {}) {
-  const beiUns = ownerName ? `Im ${ownerName}` : 'Bei euch'
+  const beiUns = ownerName ? t('Im {name}', { name: ownerName }) : t('Bei euch')
 
   if (dog.bei_uns_bis) {
     const from = yearOf(dog.bei_uns_seit || dog.geburtsdatum)
@@ -112,17 +113,17 @@ export function companionLine(dog, { ownerName } = {}) {
     const span = from && to ? `${from}–${to}` : to ? `${to}` : ''
 
     if (dog.abschied_grund === 'verstorben') {
-      return { text: span ? `In Erinnerung · ${span}` : 'In Erinnerung', memorial: true }
+      return { text: span ? `${t('In Erinnerung')} · ${span}` : t('In Erinnerung'), memorial: true }
     }
 
-    const grund = ABSCHIED_GRUND_LABELS[dog.abschied_grund] || ''
+    const grund = ABSCHIED_GRUND_LABELS[dog.abschied_grund] ? t(ABSCHIED_GRUND_LABELS[dog.abschied_grund]) : ''
     const parts = [span ? `${beiUns} ${span}` : beiUns]
     if (grund) parts.push(grund)
     return { text: parts.join(' · '), memorial: false }
   }
 
   const parts = []
-  if (dog.bei_uns_seit) parts.push(`${beiUns} seit ${formatDateLong(dog.bei_uns_seit)}`)
+  if (dog.bei_uns_seit) parts.push(t('{where} seit {date}', { where: beiUns, date: formatDateLong(dog.bei_uns_seit) }))
   const herkunft = herkunftText(dog)
   if (herkunft) parts.push(herkunft)
   if (!parts.length) return null

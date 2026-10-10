@@ -9,6 +9,7 @@ import { formatTermin } from '../lib/dates.js'
 import { sortNotes } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
+import { t } from '../lib/i18n/index.js'
 
 const EMPTY_NOTE = { text: '', terminDatum: '', terminZeit: '' }
 
@@ -38,33 +39,33 @@ function NoteComposer({ onCreated, draft }) {
 
   return (
     <form className="card form-stack note-composer" onSubmit={handleSubmit}>
-      <h2>Neuer Zettel</h2>
+      <h2>{t('Neuer Zettel')}</h2>
       {error && <div className="error-banner" role="alert">{error}</div>}
       <div className="field">
         <label className="field-label" htmlFor="note-text">
-          Was möchtest du allen sagen?
+          {t('Was möchtest du allen sagen?')}
         </label>
         <textarea
           id="note-text"
           value={note.text}
           onChange={(e) => update({ text: e.target.value })}
-          placeholder="z. B. Wer hat Lust auf einen Spaziergang mit allen Geschwistern?"
+          placeholder={t('z. B. Wer hat Lust auf einen Spaziergang mit allen Geschwistern?')}
           maxLength={2000}
           required
         />
       </div>
       <div className="field">
-        <span className="field-label">Termin (optional)</span>
+        <span className="field-label">{t('Termin (optional)')}</span>
         <div className="note-termin-inputs">
           <input
             type="date"
-            aria-label="Datum des Termins"
+            aria-label={t('Datum des Termins')}
             value={note.terminDatum}
             onChange={(e) => update({ terminDatum: e.target.value, terminZeit: e.target.value ? note.terminZeit : '' })}
           />
           <input
             type="time"
-            aria-label="Uhrzeit des Termins"
+            aria-label={t('Uhrzeit des Termins')}
             value={note.terminZeit}
             onChange={(e) => update({ terminZeit: e.target.value })}
             disabled={!note.terminDatum}
@@ -73,7 +74,7 @@ function NoteComposer({ onCreated, draft }) {
       </div>
       <div className="field">
         <label className="field-label" htmlFor="note-author">
-          Dein Name
+          {t('Dein Name')}
         </label>
         <input
           id="note-author"
@@ -86,7 +87,7 @@ function NoteComposer({ onCreated, draft }) {
       </div>
       <button className="btn btn-primary btn-lg" type="submit" disabled={saving}>
         <Icon name="pin" />
-        {saving ? 'Pinne an …' : 'Anpinnen'}
+        {saving ? t('Pinne an …') : t('Anpinnen')}
       </button>
     </form>
   )
@@ -118,7 +119,11 @@ export default function PinboardPage({ family, embedded = false }) {
 
   function handleCreated(note) {
     setNotes((current) => [note, ...current])
-    toast(note.termin_datum ? `Termin angepinnt: ${formatTermin(note.termin_datum, note.termin_zeit)}` : 'Zettel angepinnt')
+    toast(
+      note.termin_datum
+        ? t('Termin angepinnt: {date}', { date: formatTermin(note.termin_datum, note.termin_zeit) })
+        : t('Zettel angepinnt')
+    )
   }
 
   const updateNote = (noteId, change) =>
@@ -136,7 +141,7 @@ export default function PinboardPage({ family, embedded = false }) {
     try {
       await api.deleteNote(note.id)
       setNotes((current) => current.filter((n) => n.id !== note.id))
-      toast('Zettel abgenommen')
+      toast(t('Zettel abgenommen'))
     } catch (err) {
       setError(err.message)
     }
@@ -148,11 +153,13 @@ export default function PinboardPage({ family, embedded = false }) {
         <header className="page-hero">
           <div>
             {/* Phase U: über der Überschrift der Name des Bereichs statt "Pinnwand" ein zweites Mal. */}
-            <span className="eyebrow">{family?.name || 'Pinnwand'}</span>
-            <h1>Pinnwand</h1>
+            <span className="eyebrow">{family?.name || t('Pinnwand')}</span>
+            <h1>{t('Pinnwand')}</h1>
             <p className="page-lede">
-              Treffen ausmachen, Neuigkeiten teilen, Grüße dalassen – alle {words.inGroup} sehen es. Kommende Termine
-              stehen immer ganz oben.
+              {t(
+                'Treffen ausmachen, Neuigkeiten teilen, Grüße dalassen – alle {inGroup} sehen es. Kommende Termine stehen immer ganz oben.',
+                { inGroup: words.inGroup }
+              )}
             </p>
           </div>
         </header>
@@ -166,21 +173,21 @@ export default function PinboardPage({ family, embedded = false }) {
         {canWrite && !composerOpen && (
           <button type="button" className="card note-composer note-composer-open" onClick={() => setComposerOpen(true)}>
             <Icon name="pin" />
-            Neuen Zettel anpinnen
+            {t('Neuen Zettel anpinnen')}
           </button>
         )}
         {!canWrite && (
           <div className="card note-composer">
-            <h2>Mitlesen und antworten</h2>
-            <p className="muted">Als {words.roleGast} kannst du auf Zettel antworten – eigene Zettel pinnen Mitglieder an.</p>
+            <h2>{t('Mitlesen und antworten')}</h2>
+            <p className="muted">{t('Als {guest} kannst du auf Zettel antworten – eigene Zettel pinnen Mitglieder an.', { guest: words.roleGast })}</p>
           </div>
         )}
-        <section aria-label="Angepinnte Zettel">
+        <section aria-label={t('Angepinnte Zettel')}>
           {notes && notes.length === 0 && (
             <div className="empty-state">
               <Icon name="pin" />
-              <h3>Noch nichts angepinnt</h3>
-              <p>{canWrite ? 'Mach den Anfang – zum Beispiel mit einem Treffen im Park.' : 'Sobald jemand etwas anpinnt, steht es hier.'}</p>
+              <h3>{t('Noch nichts angepinnt')}</h3>
+              <p>{canWrite ? t('Mach den Anfang – zum Beispiel mit einem Treffen im Park.') : t('Sobald jemand etwas anpinnt, steht es hier.')}</p>
             </div>
           )}
           {sorted.length > 0 && (

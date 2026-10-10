@@ -8,6 +8,7 @@ import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
 import { FallbackNote } from '../components/DiscoverChapter.jsx'
 import { splitByDistance } from '../lib/discover.js'
+import { t } from '../lib/i18n/index.js'
 
 const DEFAULT_RADIUS = 25
 const PLZ_LENGTH = 5
@@ -83,9 +84,9 @@ export default function PartnersPage({ inApp = false }) {
     <div className={`partners-page ${inApp ? 'public-in-app' : 'public-page'}`}>
       {!inApp && <PublicHeader />}
       <div className="partners-hero">
-        <span className="eyebrow">Partner</span>
-        <h1>Unsere Partner</h1>
-        <p className="page-lede">Tierheime, Vermittlungsstellen, Hundeschulen, Salons und Betreuung, die mit uns zusammenarbeiten.</p>
+        <span className="eyebrow">{t('Partner')}</span>
+        <h1>{t('Unsere Partner')}</h1>
+        <p className="page-lede">{t('Tierheime, Vermittlungsstellen, Hundeschulen, Salons und Betreuung, die mit uns zusammenarbeiten.')}</p>
       </div>
 
       <LocationPicker
@@ -101,19 +102,19 @@ export default function PartnersPage({ inApp = false }) {
 
       {error && (
         <div className="error-banner" role="alert">
-          {error}
+          {t(error)}
         </div>
       )}
 
       {loading ? (
         <p className="muted" aria-busy="true">
-          Lädt …
+          {t('Lädt …')}
         </p>
       ) : partners.length === 0 ? (
         <div className="empty-state card">
           <Icon name="mapPin" />
-          <h3>Keine Partner gefunden</h3>
-          <p className="muted">Versucht es mit einer anderen Postleitzahl oder einem größeren Umkreis.</p>
+          <h3>{t('Keine Partner gefunden')}</h3>
+          <p className="muted">{t('Versucht es mit einer anderen Postleitzahl oder einem größeren Umkreis.')}</p>
         </div>
       ) : (
         <>
@@ -122,7 +123,7 @@ export default function PartnersPage({ inApp = false }) {
           {far.length > 0 && (
             <div className="discover-far partners-far">
               {/* h2 statt DiscoverSubheading (h3): hier gibt es keine Kapitel-Überschrift darüber. */}
-              <h2 className="discover-subheading">Weiter weg</h2>
+              <h2 className="discover-subheading">{t('Weiter weg')}</h2>
               <PartnerCards items={far} />
             </div>
           )}
@@ -132,11 +133,11 @@ export default function PartnersPage({ inApp = false }) {
       {/* Phase 5 Task 4: Weg zur Infoseite für künftige Partner (PartnerInfoPage, /partner-werden). */}
       <aside className="partners-cta card" aria-labelledby="partners-cta-title">
         <div>
-          <h2 id="partners-cta-title">Ihr seid Hundeschule, Tierheim, Hundesalon oder Betreuung?</h2>
-          <p className="muted">Ein eigenes Profil bei uns ist kostenlos – mit Portal, Einblicken und Einladungscodes.</p>
+          <h2 id="partners-cta-title">{t('Ihr seid Hundeschule, Tierheim, Hundesalon oder Betreuung?')}</h2>
+          <p className="muted">{t('Ein eigenes Profil bei uns ist kostenlos – mit Portal, Einblicken und Einladungscodes.')}</p>
         </div>
         <Link to="/partner-werden" className="btn btn-primary">
-          Partner werden <Icon name="arrowRight" />
+          {t('Partner werden')} <Icon name="arrowRight" />
         </Link>
       </aside>
 

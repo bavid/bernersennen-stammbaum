@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const MAX_NAME_LENGTH = 80
 const ARM_TIMEOUT_MS = 5000
@@ -44,10 +45,11 @@ export default function RenameFamilyForm({ family, onRenamed, onCancel }) {
       <div className="warning-banner" role="note">
         <Icon name="alert" />
         <div>
-          <strong>Das betrifft alle {words.inGroup}.</strong>
+          <strong>{t('Das betrifft alle {inGroup}.', { inGroup: words.inGroup })}</strong>
           <p>
-            Der neue Name erscheint sofort bei allen, die euer gemeinsames Passwort nutzen – auf jedem Gerät, im
-            Kopfbereich und auf neuen Collagen. Das Passwort selbst bleibt gleich.
+            {t(
+              'Der neue Name erscheint sofort bei allen, die euer gemeinsames Passwort nutzen – auf jedem Gerät, im Kopfbereich und auf neuen Collagen. Das Passwort selbst bleibt gleich.'
+            )}
           </p>
         </div>
       </div>
@@ -67,12 +69,12 @@ export default function RenameFamilyForm({ family, onRenamed, onCancel }) {
           required
           autoFocus
         />
-        <span className="field-hint">Bisher: „{family.name}“</span>
+        <span className="field-hint">{t('Bisher: „{name}“', { name: family.name })}</span>
       </div>
       <div className="form-actions">
         <span className="form-actions-spacer" />
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button
           type="submit"
@@ -80,7 +82,7 @@ export default function RenameFamilyForm({ family, onRenamed, onCancel }) {
           disabled={saving || !trimmed || unchanged}
         >
           <Icon name={armed ? 'check' : 'edit'} />
-          {saving ? 'Speichere …' : armed ? 'Ja, für alle umbenennen' : 'Umbenennen'}
+          {saving ? t('Speichere …') : armed ? t('Ja, für alle umbenennen') : t('Umbenennen')}
         </button>
       </div>
     </form>

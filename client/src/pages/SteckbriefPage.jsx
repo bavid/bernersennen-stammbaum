@@ -15,6 +15,7 @@ import { kategorieLabel } from '../lib/shelter.js'
 import { PAUSED_HINT, vermittlungStatusLabel } from '../lib/vermittlung.js'
 import { PREVIEW_DISABLED_HINT, PreviewProvider } from '../lib/preview.js'
 import { useNoIndex } from '../hooks/useNoIndex.js'
+import { t } from '../lib/i18n/index.js'
 
 const SHARE_COPIED_MS = 2000
 const PREVIEW_LOAD_ERROR = 'Dieser Steckbrief konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
@@ -26,10 +27,10 @@ function NotFound({ inApp }) {
       {!inApp && <PublicHeader />}
       <div className="card empty-state">
         <ThemeMark size={56} />
-        <h1>Diesen Steckbrief gibt es nicht</h1>
-        <p className="muted">Vielleicht ist er nicht mehr aktuell, oder der Link ist veraltet.</p>
+        <h1>{t('Diesen Steckbrief gibt es nicht')}</h1>
+        <p className="muted">{t('Vielleicht ist er nicht mehr aktuell, oder der Link ist veraltet.')}</p>
         <Link className="btn btn-primary" to="/partner">
-          Zur Partnerliste
+          {t('Zur Partnerliste')}
         </Link>
       </div>
       {!inApp && <PublicFooter />}
@@ -47,7 +48,7 @@ function PublicEntry({ entry }) {
         <div>
           <h3 className="entry-title">
             {entry.titel}
-            {kategorie ? <span className="kategorie-badge">{kategorie}</span> : null}
+            {kategorie ? <span className="kategorie-badge">{t(kategorie)}</span> : null}
           </h3>
         </div>
       </header>
@@ -73,8 +74,8 @@ function PublicChronicle({ entries }) {
   const groups = groupByYear(entries)
   return (
     <section className="chronicle" aria-labelledby="steckbrief-chronicle-title">
-      <span className="eyebrow">Chronik</span>
-      <h2 id="steckbrief-chronicle-title">Was bisher geschah</h2>
+      <span className="eyebrow">{t('Chronik')}</span>
+      <h2 id="steckbrief-chronicle-title">{t('Was bisher geschah')}</h2>
       <ol className="timeline">
         {groups.map((group) => (
           <li key={group.year} className="timeline-year">
@@ -105,8 +106,8 @@ function VermittlungStatus({ status }) {
   if (!label) return null
   return (
     <div className="steckbrief-vermittlung">
-      <span className={`chip status-chip status-chip-${status}`}>{label}</span>
-      {status === 'pausiert' && <p className="steckbrief-paused-hint">{PAUSED_HINT}</p>}
+      <span className={`chip status-chip status-chip-${status}`}>{t(label)}</span>
+      {status === 'pausiert' && <p className="steckbrief-paused-hint">{t(PAUSED_HINT)}</p>}
     </div>
   )
 }
@@ -152,7 +153,7 @@ export default function SteckbriefPage({ slug, load, preview = false, inApp = fa
   if (animal === undefined) {
     return preview || inApp ? (
       <p className={`muted ${preview ? 'preview-loading' : 'page-loading'}`} role="status" aria-busy="true">
-        Lädt …
+        {t('Lädt …')}
       </p>
     ) : (
       <div className="splash" aria-busy="true">
@@ -164,7 +165,7 @@ export default function SteckbriefPage({ slug, load, preview = false, inApp = fa
   if (animal === null) {
     return preview ? (
       <div className="error-banner" role="alert">
-        {PREVIEW_LOAD_ERROR}
+        {t(PREVIEW_LOAD_ERROR)}
       </div>
     ) : (
       <NotFound inApp={inApp} />
@@ -221,29 +222,29 @@ function SteckbriefContent({ animal, slug, age, preview, inApp, shareCopied, onS
           <Avatar dog={{ foto_url: animal.fotoUrl, name: animal.name }} size={320} className="dog-hero-fallback" />
         </div>
         <div className="dog-hero-body">
-          <span className="eyebrow">{speciesSexLabel(animal.tierart, animal.geschlecht)}</span>
+          <span className="eyebrow">{speciesSexLabel(animal.tierart, animal.geschlecht).split(' · ').map((part) => t(part)).join(' · ')}</span>
           <h1>{animal.name}</h1>
           <VermittlungStatus status={animal.vermittlung_status} />
           <dl className="facts">
             <div>
-              <dt>Rasse</dt>
-              <dd>{animal.rasse || <span className="muted">nicht angegeben</span>}</dd>
+              <dt>{t('Rasse')}</dt>
+              <dd>{animal.rasse || <span className="muted">{t('nicht angegeben')}</span>}</dd>
             </div>
             <div>
-              <dt>Alter</dt>
-              <dd>{age || <span className="muted">unbekannt</span>}</dd>
+              <dt>{t('Alter')}</dt>
+              <dd>{age || <span className="muted">{t('unbekannt')}</span>}</dd>
             </div>
           </dl>
           {animal.beschreibung && <ExpandableText text={animal.beschreibung} className="dog-hero-description" lines={4} />}
           {preview ? (
-            <button type="button" className="btn btn-ghost" disabled title={PREVIEW_DISABLED_HINT} aria-description={PREVIEW_DISABLED_HINT}>
+            <button type="button" className="btn btn-ghost" disabled title={t(PREVIEW_DISABLED_HINT)} aria-description={t(PREVIEW_DISABLED_HINT)}>
               <Icon name="share" />
-              Teilen
+              {t('Teilen')}
             </button>
           ) : (
             <button type="button" className={`btn ${shareCopied ? 'btn-ink' : 'btn-ghost'}`} onClick={onShare}>
               <Icon name={shareCopied ? 'check' : 'share'} />
-              {shareCopied ? 'Link kopiert' : 'Teilen'}
+              {shareCopied ? t('Link kopiert') : t('Teilen')}
             </button>
           )}
         </div>

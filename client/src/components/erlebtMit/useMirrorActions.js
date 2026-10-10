@@ -4,6 +4,7 @@ import { useIsDemo } from '../../lib/demo.js'
 import { canVisitOrigin } from '../../lib/erlebtMit.js'
 import { isOwnHome } from '../../lib/visits.js'
 import { useToast } from '../Toast.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Aktionen für gespiegelte "Mit dabei"-Beiträge in der Chronik eines eigenen Tiers (Phase V2) - als `mirror`-Prop für
 // <Timeline>: zum Original wechseln (nur, wenn man das Zuhause besuchen kann) und die Spiegelung wieder entfernen
@@ -22,7 +23,7 @@ export default function useMirrorActions({ family, dog, onRemoved }) {
     try {
       await api.rejectErlebtMit(item.gespiegelt.requestId)
       onRemoved(item)
-      toast('Nicht mehr in dieser Chronik zu sehen')
+      toast(t('Nicht mehr in dieser Chronik zu sehen'))
     } catch (err) {
       toast(err.message)
     }

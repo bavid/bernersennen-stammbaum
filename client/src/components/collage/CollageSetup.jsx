@@ -3,6 +3,7 @@ import { useTheme } from '../../themes/ThemeProvider.jsx'
 import Icon from '../Icon.jsx'
 import Avatar from '../Avatar.jsx'
 import { dogLabel, speciesLabel } from '../../lib/timeline.js'
+import { t } from '../../lib/i18n/index.js'
 
 const PER_PAGE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const DEFAULT_PER_PAGE = 6
@@ -45,27 +46,27 @@ export default function CollageSetup({ dogs, draft, onCreate, busy, loaded = tru
   return (
     <div className="card form-stack collage-setup">
       <div className="collage-setup-head">
-        <h2>1. {words.animals} auswählen</h2>
+        <h2>{t('1. {animals} auswählen', { animals: words.animals })}</h2>
         {dogs.length > 0 && (
           <span className="segmented segmented-sm">
-            <button type="button" onClick={() => setSelectedIds(dogs.map((d) => d.id))}>Alle</button>
-            <button type="button" onClick={() => setSelectedIds([])}>Keine</button>
+            <button type="button" onClick={() => setSelectedIds(dogs.map((d) => d.id))}>{t('Alle')}</button>
+            <button type="button" onClick={() => setSelectedIds([])}>{t('Keine')}</button>
           </span>
         )}
       </div>
       {loaded && dogs.length === 0 ? (
         <p className="muted">
-          Noch keine {words.animals} – legt zuerst eure {words.animals} an, dann wird hier eine Collage daraus.
+          {t('Noch keine {animals} – legt zuerst eure {animals} an, dann wird hier eine Collage daraus.', { animals: words.animals })}
         </p>
       ) : (
         <DogPicker dogs={dogs} selectedIds={selectedIds} onToggle={toggle} />
       )}
 
-      <h2>2. Aufteilung</h2>
+      <h2>{t('2. Aufteilung')}</h2>
       <div className="collage-options">
         <div className="field">
           <label className="field-label" htmlFor="collage-per-page">
-            Fotos pro Seite (höchstens)
+            {t('Fotos pro Seite (höchstens)')}
           </label>
           <select id="collage-per-page" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))}>
             {PER_PAGE_OPTIONS.map((n) => (
@@ -77,13 +78,15 @@ export default function CollageSetup({ dogs, draft, onCreate, busy, loaded = tru
         </div>
         <label className="check">
           <input type="checkbox" checked={overview} onChange={(e) => setOverview(e.target.checked)} />
-          Übersichtsseite mit allen Porträts voranstellen
+          {t('Übersichtsseite mit allen Porträts voranstellen')}
         </label>
       </div>
-      <p className="field-hint">Vorlagen, Hintergründe und Sticker wählst du danach für jede Seite.</p>
+      <p className="field-hint">{t('Vorlagen, Hintergründe und Sticker wählst du danach für jede Seite.')}</p>
 
       {draft?.pages?.length > 0 && (
-        <p className="field-hint">Hinweis: Neu erstellen ersetzt die {draft.pages.length} bisherigen Seiten deines Entwurfs.</p>
+        <p className="field-hint">
+          {t('Hinweis: Neu erstellen ersetzt die {n} bisherigen Seiten deines Entwurfs.', { n: draft.pages.length })}
+        </p>
       )}
       <button
         type="button"
@@ -93,8 +96,10 @@ export default function CollageSetup({ dogs, draft, onCreate, busy, loaded = tru
       >
         <Icon name="collage" />
         {busy
-          ? 'Sammle Fotos …'
-          : `Collage erstellen (${chosenIds.length} ${chosenIds.length === 1 ? words.animal : words.animals})`}
+          ? t('Sammle Fotos …')
+          : chosenIds.length === 1
+            ? t('Collage erstellen ({n} {animal})', { n: 1, animal: words.animal })
+            : t('Collage erstellen ({n} {animals})', { n: chosenIds.length, animals: words.animals })}
       </button>
     </div>
   )

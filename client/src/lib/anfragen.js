@@ -1,3 +1,4 @@
+import { t } from './i18n/index.js'
 // Reine Hilfen für die Anfragen (Phase N): die öffentlichen Formulare "Noch keinen Gutschein?" (RequestVoucherForm)
 // und "Partner-Zugang anfragen" (RequestPartnerForm) sowie die Admin-Liste (AdminAnfragen, AdminAnfrageAssign).
 // Spiegeln server/lib/anfragen.js (validateAnfrage) und server/lib/anfrageGutschein.js (welcher Stapel passt).
@@ -42,24 +43,24 @@ export const EMPTY_PARTNER_REQUEST = Object.freeze({ firma: '', partnerTyp: '', 
 
 function textError(value, maxLength, label) {
   const text = value.trim()
-  if (text.length > maxLength) return `${label} darf höchstens ${maxLength} Zeichen haben.`
-  if (HTML_RE.test(text)) return HTML_MESSAGE
+  if (text.length > maxLength) return t('{label} darf höchstens {max} Zeichen haben.', { label: t(label), max: maxLength })
+  if (HTML_RE.test(text)) return t(HTML_MESSAGE)
   return null
 }
 
 function emailError(value, messages) {
   const email = value.trim()
-  if (!email) return messages.missing
-  if (email.length > MAX_EMAIL_LENGTH || EMAIL_UNSAFE_RE.test(email) || !EMAIL_RE.test(email)) return messages.invalid
+  if (!email) return t(messages.missing)
+  if (email.length > MAX_EMAIL_LENGTH || EMAIL_UNSAFE_RE.test(email) || !EMAIL_RE.test(email)) return t(messages.invalid)
   return null
 }
 
 function partnerErrors(form) {
   const plz = form.plz.trim()
   return [
-    ['firma', form.firma.trim() ? textError(form.firma, MAX_FIRMA_LENGTH, 'Der Name') : FIRMA_MISSING_MESSAGE],
-    ['partnerTyp', form.partnerTyp ? null : PARTNER_TYP_MISSING_MESSAGE],
-    ['plz', !plz || PLZ_RE.test(plz) ? null : PLZ_MESSAGE]
+    ['firma', form.firma.trim() ? textError(form.firma, MAX_FIRMA_LENGTH, 'Der Name') : t(FIRMA_MISSING_MESSAGE)],
+    ['partnerTyp', form.partnerTyp ? null : t(PARTNER_TYP_MISSING_MESSAGE)],
+    ['plz', !plz || PLZ_RE.test(plz) ? null : t(PLZ_MESSAGE)]
   ]
 }
 
@@ -103,8 +104,8 @@ export function requestErrorField(err, fields) {
 
 // Meldung für das Banner oben: 429 mit eigenem Satz (auch ohne JSON vom Proxy), sonst die Server-Meldung.
 export function requestErrorMessage(err) {
-  if (err?.status === 429) return RATE_LIMIT_MESSAGE
-  return err?.message || FALLBACK_MESSAGE
+  if (err?.status === 429) return t(RATE_LIMIT_MESSAGE)
+  return err?.message || t(FALLBACK_MESSAGE)
 }
 
 // --- Admin -----------------------------------------------------------------------------------------

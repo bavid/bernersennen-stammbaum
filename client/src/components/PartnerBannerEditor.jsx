@@ -20,6 +20,7 @@ import BannerLayoutPicker from './BannerLayoutPicker.jsx'
 import Icon from './Icon.jsx'
 import PartnerBannerSlot from './PartnerBannerSlot.jsx'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const TITLE_ID = 'partner-banner-title'
 const HINT_ID = 'partner-banner-hint'
@@ -40,14 +41,14 @@ function AddSlot({ label, busy, locked, onFile }) {
         <span className="partner-banner-slot-label">{label}</span>
         <label className={`btn btn-ghost btn-compact admin-upload-btn${locked ? ' is-disabled' : ''}`}>
           <Icon name={busy ? 'clock' : 'plus'} />
-          {busy ? 'Lädt …' : 'Foto hinzufügen'}
+          {busy ? t('Lädt …') : t('Foto hinzufügen')}
           <input
             type="file"
             accept={BANNER_ACCEPT}
             onChange={onFile}
             disabled={locked}
             className="admin-upload-input"
-            aria-label={`${label} hinzufügen`}
+            aria-label={t('{label} hinzufügen', { label })}
             aria-describedby={HINT_ID}
           />
         </label>
@@ -92,7 +93,7 @@ export default function PartnerBannerEditor({ banner, layout, onChange }) {
   }, [banner])
 
   function positionLabel(position) {
-    return position <= layoutSlots(current) ? slotLabel(current, position) : `Foto ${position}`
+    return position <= layoutSlots(current) ? slotLabel(current, position) : t('Foto {n}', { n: position })
   }
 
   async function run(action) {
@@ -120,7 +121,7 @@ export default function PartnerBannerEditor({ banner, layout, onChange }) {
     event.target.value = ''
     if (!file) return
     if (!isBannerFileType(file)) {
-      setError(BANNER_TYPE_MESSAGE)
+      setError(t(BANNER_TYPE_MESSAGE))
       return
     }
     run(async () => api.partnerArea.addBanner(bannerFormData(await downscaleImage(file))))
@@ -138,7 +139,7 @@ export default function PartnerBannerEditor({ banner, layout, onChange }) {
       onChange(await api.partnerArea.setBannerOrder(positions))
     } catch {
       setPending(null)
-      toast(ORDER_ERROR)
+      toast(t(ORDER_ERROR))
     }
   }
 
@@ -147,10 +148,10 @@ export default function PartnerBannerEditor({ banner, layout, onChange }) {
   return (
     <section className="partner-banner-editor" aria-labelledby={TITLE_ID}>
       <div className="partner-banner-head">
-        <h2 id={TITLE_ID}>Bannerfotos</h2>
+        <h2 id={TITLE_ID}>{t('Bannerfotos')}</h2>
         <p className="field-hint" id={HINT_ID}>
-          Fotos für den Kopf eures Portals – breite Querformate wirken am besten. JPG oder PNG.
-          {baseItems.length > 1 && <> {REORDER_HINT}</>}
+          {t('Fotos für den Kopf eures Portals – breite Querformate wirken am besten. JPG oder PNG.')}
+          {baseItems.length > 1 && <> {t(REORDER_HINT)}</>}
         </p>
       </div>
       <BannerLayoutPicker value={current} onChange={handleLayout} busy={busy} />
@@ -173,7 +174,7 @@ export default function PartnerBannerEditor({ banner, layout, onChange }) {
       </ul>
       {extra.length > 0 && (
         <div className="partner-banner-extra">
-          <p className="field-hint">Nicht im Banner – das Layout „{layoutLabel(current)}“ zeigt weniger Fotos:</p>
+          <p className="field-hint">{t('Nicht im Banner – das Layout „{layout}“ zeigt weniger Fotos:', { layout: t(layoutLabel(current)) })}</p>
           <ul className="partner-banner-list">
             {extra.map((slot) => (
               <PartnerBannerSlot key={slot.item.fotoUrl} item={slot.item} label={slot.label} onChange={onChange} locked={locked} reorder={slotReorder(slot.position - 1)} />

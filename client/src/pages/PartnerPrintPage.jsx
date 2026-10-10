@@ -1,6 +1,7 @@
 import { api } from '../api'
 import VoucherPrintView, { usePrintBodyClass, useVoucherPrint } from '../components/VoucherPrintView.jsx'
 import { profileTabRoute } from '../lib/partnerProfile.js'
+import { t } from '../lib/i18n/index.js'
 
 // Druckseite eines Kunden-Gutschein-Stapels für den Partner (Phase 5 Task 4): /partner-drucken/:id, als eigener
 // Chunk aus App.jsx - nur mit Sitzung in einem Partner- oder Tierheim-Bereich (App.jsx prüft das, ohne geht es
@@ -18,7 +19,7 @@ const DESIGN_LABEL = 'Kunden-Karte mit eurem Auftritt'
 // Audit V7a: zurück in den Reiter "Teilen" mit den Kunden-Gutscheinen, aus dem man kommt.
 const BACK = { to: profileTabRoute('teilen'), label: 'Zurück zum Profil' }
 
-const designLabel = () => DESIGN_LABEL
+const designLabel = () => t(DESIGN_LABEL)
 
 export default function PartnerPrintPage({ batchId, readOnly = false, demo = false }) {
   usePrintBodyClass()
@@ -27,9 +28,9 @@ export default function PartnerPrintPage({ batchId, readOnly = false, demo = fal
   return (
     <VoucherPrintView
       state={state}
-      back={BACK}
+      back={{ ...BACK, label: t(BACK.label) }}
       designLabel={designLabel}
-      hint={demo ? `${PARTNER_PRINT_HINT} ${DEMO_PRINT_HINT}` : PARTNER_PRINT_HINT}
+      hint={demo ? `${t(PARTNER_PRINT_HINT)} ${t(DEMO_PRINT_HINT)}` : t(PARTNER_PRINT_HINT)}
       markPrinted={markPrinted}
       partner
       readOnly={readOnly}

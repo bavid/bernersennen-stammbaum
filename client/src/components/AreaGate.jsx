@@ -4,6 +4,7 @@ import { api } from '../api'
 import { parseAreaId } from '../lib/areas.js'
 import { useToast } from './Toast.jsx'
 import RouteFallback from './RouteFallback.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Wohin es geht, wenn ein Bereich nicht (mehr) zu öffnen ist: die Liste der Familien und befreundeten Zuhause.
 export const AREA_FALLBACK_ROUTE = '/familien'
@@ -49,13 +50,13 @@ export default function AreaGate({ family, need, onFamilyChange, children }) {
     api
       .view(target)
       .then((me) => {
-        if (me?.id !== target) throw new Error(NOT_FOUND)
+        if (me?.id !== target) throw new Error(t(NOT_FOUND))
         onFamilyChange(me)
       })
       .catch((err) => {
         if (!mounted.current) return
         setFailed(true)
-        toast(err?.message || NOT_FOUND)
+        toast(err?.message || t(NOT_FOUND))
         // Scheitert schon der Weg nach Hause, hilft die Familien-Liste nicht (sie spielt selbst dort) - dann nur der Hinweis.
         if (need !== 'home') navigate(AREA_FALLBACK_ROUTE, { replace: true })
       })
@@ -66,7 +67,7 @@ export default function AreaGate({ family, need, onFamilyChange, children }) {
     return (
       <div className="page">
         <div className="error-banner" role="alert">
-          {FAILED}
+          {t(FAILED)}
         </div>
       </div>
     )

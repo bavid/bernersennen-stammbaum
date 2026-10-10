@@ -4,6 +4,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import CommentThread from './CommentThread.jsx'
 import { formatTermin, relativeTime } from '../lib/dates.js'
 import { isPastTermin } from '../lib/notes.js'
+import { t } from '../lib/i18n/index.js'
 
 // Ein Zettel mit Gesprächsverlauf. order hält die sortierte Reihenfolge auch im Einspalten-Layout.
 // canDelete (Phase R): darf der Zettel abgenommen werden (ab Mitglied); canDeleteReply(reply): darf diese
@@ -40,7 +41,7 @@ export default function PinboardNote({
         <p className="note-termin">
           <Icon name="calendar" />
           {formatTermin(note.termin_datum, note.termin_zeit)}
-          {past && <span className="note-past-label">vorbei</span>}
+          {past && <span className="note-past-label">{t('vorbei')}</span>}
         </p>
       )}
       <p className="note-text">{note.text}</p>
@@ -48,12 +49,12 @@ export default function PinboardNote({
         <span>
           {note.autor_name} · {relativeTime(note.created_at)}
         </span>
-        {canDelete && <ConfirmButton onConfirm={() => onDelete(note)} label="Abnehmen" confirmLabel="Wirklich?" />}
+        {canDelete && <ConfirmButton onConfirm={() => onDelete(note)} label={t('Abnehmen')} confirmLabel={t('Wirklich?')} />}
       </footer>
 
       <CommentThread
         items={note.replies}
-        placeholder="Deine Antwort …"
+        placeholder={t('Deine Antwort …')}
         onAdd={handleAddReply}
         onDelete={handleDeleteReply}
         canDelete={canDeleteReply}

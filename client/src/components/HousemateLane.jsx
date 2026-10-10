@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import { useIsDemo } from '../lib/demo.js'
 import { displayName } from '../lib/timeline.js'
 import { isEditable } from '../lib/areas.js'
+import { t } from '../lib/i18n/index.js'
 
 // Aufgeklappte Mitbewohner-Reihe zwischen zwei Generationen ("Generation 4½"): jede Gruppe hängt unter
 // ihrem Haupttier. Die Abstände setzt placeLaneGroups; bis sie gemessen sind, bleibt die Reihe unsichtbar.
@@ -14,10 +15,10 @@ export default function HousemateLane({ index, groups, placement, trackLeft, tra
   const isDemo = useIsDemo()
   let cursor = trackLeft
   return (
-    <section className="pedigree-lane" aria-label={`Mitbewohner in Generation ${index + 1}`}>
+    <section className="pedigree-lane" aria-label={t('Mitbewohner in Generation {n}', { n: index + 1 })}>
       <div className="pedigree-gen pedigree-gen-lane" aria-hidden="true">
         <HouseGlyph size={18} />
-        <span className="pedigree-gen-label">Mitbewohner</span>
+        <span className="pedigree-gen-label">{t('Mitbewohner')}</span>
       </div>
       <div className="pedigree-lane-track" ref={trackRef}>
         {groups.map((group) => {
@@ -34,8 +35,8 @@ export default function HousemateLane({ index, groups, placement, trackLeft, tra
                   type="button"
                   className="lane-add-btn"
                   onClick={() => onAddMitbewohner(group.anchor)}
-                  aria-label={`Mitbewohner zu ${displayName(group.anchor)} hinzufügen`}
-                  title="Mitbewohner hinzufügen"
+                  aria-label={t('Mitbewohner zu {name} hinzufügen', { name: displayName(group.anchor) })}
+                  title={t('Mitbewohner hinzufügen')}
                 >
                   <Icon name="plus" />
                 </button>

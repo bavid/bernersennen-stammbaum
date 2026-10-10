@@ -6,6 +6,7 @@ import { titleFontSize } from '../../lib/collage/render.js'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { EmptySlot, FrameCaption, PhotoFrame, PolaroidCard, TimelineLine, TimelineMark, frameStyle, pct } from './CollageFrames.jsx'
 import StickerLayer from './StickerLayer.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Farben des Hintergrunds als CSS-Variablen (collage.css/collage-design.css), Muster als gekachelte data:-URL -
 // dieselben Werte und dieselbe Kachelgröße wie im Export.
@@ -86,7 +87,7 @@ export default function CollagePageView({
       style={pageStyle(bg)}
       tabIndex={interactive ? -1 : undefined}
       role={interactive ? 'group' : undefined}
-      aria-label={interactive ? label : undefined}
+      aria-label={interactive ? t(label) : undefined}
       onPointerDown={handlePointerDown}
     >
       <Edge position="top" />
@@ -110,7 +111,7 @@ export default function CollagePageView({
       {geometry.line && <TimelineLine line={geometry.line} />}
       <Photos page={page} geometry={geometry} interactive={interactive} selection={selection} onSelect={onSelect} onPhotoChange={onPhotoChange} />
       {showSlots && geometry.slots.map((slot, i) => <EmptySlot key={`slot-${i}`} slot={slot} />)}
-      {page.photos.length === 0 && !showSlots && <div className="cpage-empty">Noch keine Fotos auf dieser Seite</div>}
+      {page.photos.length === 0 && !showSlots && <div className="cpage-empty">{t('Noch keine Fotos auf dieser Seite')}</div>}
 
       <div className="cpage-footer" style={{ left: pct(MARGIN, PAGE.width), right: pct(MARGIN, PAGE.width) }}>
         <span>{page.footer}</span>

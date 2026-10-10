@@ -1,4 +1,5 @@
 import PartnerPostsEditor from '../components/PartnerPostsEditor.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // /beitraege (Phase P2) - eigene Beiträge eines Partner-Bereichs: Anzeigen, die nach Freigabe durch den
 // Betreiber in "Entdecken" und auf dem Portal erscheinen. Tierheime erreichen dieselbe Liste als Reiter
@@ -11,8 +12,8 @@ export default function PartnerPostsPage({ family }) {
       <header className="page-hero">
         <div>
           <span className="eyebrow">{name}</span>
-          <h1>Beiträge</h1>
-          <p className="page-lede">Kurse, Aktionen und Angebote – für „Entdecken“ und euer Portal.</p>
+          <h1>{t('Beiträge')}</h1>
+          <p className="page-lede">{t('Kurse, Aktionen und Angebote – für „Entdecken“ und euer Portal.')}</p>
         </div>
       </header>
 

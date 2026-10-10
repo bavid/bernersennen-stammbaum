@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Langer Text zeigt zuerst nur `lines` Zeilen, darunter "Mehr lesen" – kurzer Text bleibt, wie er ist
 export default function ExpandableText({ text, className = '', lines = 4 }) {
@@ -27,7 +28,7 @@ export default function ExpandableText({ text, className = '', lines = 4 }) {
       </p>
       {(overflowing || expanded) && (
         <button type="button" className="expand-toggle" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
-          {expanded ? 'Weniger' : 'Mehr lesen'}
+          {expanded ? t('Weniger') : t('Mehr lesen')}
           <Icon name="chevronDown" className={expanded ? 'is-flipped' : ''} />
         </button>
       )}

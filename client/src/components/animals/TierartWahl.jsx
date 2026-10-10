@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import Icon from '../Icon.jsx'
 import { TIERART_CHOICES } from '../../lib/newAnimal.js'
+import { t } from '../../lib/i18n/index.js'
 
 // „Was für ein Tier?“ - große Wahl-Chips (echte Radioknöpfe: Pfeiltasten wandern, Leertaste wählt). Keine Vorauswahl,
 // jede Art ist gleich wahrscheinlich. error: Feldfehler (dann ist der erste Chip aria-invalid und bekommt den Fokus).
@@ -9,7 +10,7 @@ export default function TierartWahl({ value, onChange, error }) {
   const errorId = useId()
   return (
     <fieldset className="tierart-wahl">
-      <legend className="field-label">Was für ein Tier?</legend>
+      <legend className="field-label">{t('Was für ein Tier?')}</legend>
       <div className="tierart-chips">
         {TIERART_CHOICES.map((choice, index) => (
           <label key={choice.key} className={`tierart-chip${value === choice.key ? ' is-selected' : ''}`}>
@@ -22,7 +23,7 @@ export default function TierartWahl({ value, onChange, error }) {
               aria-invalid={error && index === 0 ? true : undefined}
               aria-describedby={error ? errorId : undefined}
             />
-            <span>{choice.label}</span>
+            <span>{t(choice.label)}</span>
           </label>
         ))}
       </div>

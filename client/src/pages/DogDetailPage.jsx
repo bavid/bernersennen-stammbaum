@@ -22,6 +22,7 @@ import { animalsRoute } from '../lib/areas.js'
 import { CHRONICLE_TAB, DOG_TAB_PARAM, dogTabs, safeFromPath, visibleInNames } from '../lib/dogProfile.js'
 import { displayName } from '../lib/timeline.js'
 import { withShareChange } from '../lib/animalCounts.js'
+import { t } from '../lib/i18n/index.js'
 
 export { ParentLink } from '../components/dog/DogRelatives.jsx'
 
@@ -36,7 +37,7 @@ function BackLink({ family }) {
   const from = safeFromPath(state?.from)
   return (
     <Link to={from || animalsRoute(family)} className="back-link">
-      <Icon name="arrowLeft" /> {from ? 'Zurück' : words.animals}
+      <Icon name="arrowLeft" /> {from ? t('Zurück') : words.animals}
     </Link>
   )
 }
@@ -150,32 +151,32 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/tier/${dog.id}?in=${family.id}`)
-      toast('Link kopiert')
+      toast(t('Link kopiert'))
     } catch {
-      toast('Kopieren ging nicht – bitte die Adresse oben im Browser kopieren.')
+      toast(t('Kopieren ging nicht – bitte die Adresse oben im Browser kopieren.'))
     }
   }
 
   const menuItems = [
-    ownHomeAnimal && { key: 'wer', label: `Wer sieht ${name}?`, icon: 'users', onSelect: () => goTo('infos', SHARE_PANEL_TITLE_ID) },
+    ownHomeAnimal && { key: 'wer', label: t('Wer sieht {name}?', { name }), icon: 'users', onSelect: () => goTo('infos', SHARE_PANEL_TITLE_ID) },
     // Digitaler Bilderrahmen, nur mit den Fotos dieses Tiers (pages/BilderrahmenPage.jsx ?tier=).
-    ownHomeAnimal && { key: 'bilderrahmen', label: 'Als Bilderrahmen zeigen', icon: 'frame', onSelect: () => navigate(`/bilderrahmen?tier=${dog.id}`) },
-    canTakeOver && { key: 'uebernehmen', label: 'In „Mein Zuhause“ übernehmen', icon: 'home', onSelect: () => goTo('infos', TAKE_OVER_ID) },
-    { key: 'link', label: 'Link kopieren', icon: 'copy', onSelect: copyLink }
+    ownHomeAnimal && { key: 'bilderrahmen', label: t('Als Bilderrahmen zeigen'), icon: 'frame', onSelect: () => navigate(`/bilderrahmen?tier=${dog.id}`) },
+    canTakeOver && { key: 'uebernehmen', label: t('In „Mein Zuhause“ übernehmen'), icon: 'home', onSelect: () => goTo('infos', TAKE_OVER_ID) },
+    { key: 'link', label: t('Link kopieren'), icon: 'copy', onSelect: copyLink }
   ].filter(Boolean)
 
   async function handleUpdateDog(payload) {
     await api.updateDog(dog.id, payload)
     setEditingDog(false)
     await page.load()
-    toast('Angaben gespeichert')
+    toast(t('Angaben gespeichert'))
   }
 
   async function handleDeleteDog() {
     await api.deleteDog(dog.id)
     // Ein geteiltes eigenes Tier fehlt danach auch in den Zahlen der Familien (me.memberships).
     if (ownHomeAnimal) onFamilyChange?.((current) => withShareChange(current, dog, dog.shares, []))
-    toast(`${dog.name} wurde entfernt`)
+    toast(t('{name} wurde entfernt', { name: dog.name }))
     navigate(animalsRoute(family))
   }
 
@@ -201,7 +202,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
       <TabBar
         tabs={tabs}
         current={current}
-        label={`Bereiche von ${name}`}
+        label={t('Bereiche von {name}', { name })}
         idPrefix="tier-tab"
         panelId={PANEL_ID}
         className="dog-tab-bar"
@@ -233,7 +234,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         {current === 'vermittlung' && <ShelterPlacement dog={dog} setDog={setDog} />}
       </div>
 
-      <Modal open={editingDog} title={`${name} bearbeiten`} onClose={() => setEditingDog(false)}>
+      <Modal open={editingDog} title={t('{name} bearbeiten', { name })} onClose={() => setEditingDog(false)}>
         <DogForm
           dog={dog}
           allDogs={page.allDogs}

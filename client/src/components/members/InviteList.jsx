@@ -3,6 +3,7 @@ import RoleSelect from '../RoleSelect.jsx'
 import ConfirmButton from '../ConfirmButton.jsx'
 import Icon from '../Icon.jsx'
 import { formatDateShort } from '../../lib/dates.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Offene Einladungen in die Familie (ab Stellvertretung, server/routes/members.js einladungen): nur der
 // Hinweis auf den Code (die letzten vier Zeichen) - den Code selbst gibt es im Einladen-Dialog. Die Rolle
@@ -12,18 +13,17 @@ export default function InviteList({ einladungen, options, disabled, onRoleChang
   return (
     <section className="card members-section" aria-labelledby="invites-title">
       <div className="members-section-head">
-        <h2 id="invites-title">Offene Einladungen</h2>
+        <h2 id="invites-title">{t('Offene Einladungen')}</h2>
         <button type="button" className="btn btn-primary" onClick={onInvite}>
           <Icon name="send" />
-          Mitglied einladen
+          {t('Mitglied einladen')}
         </button>
       </div>
       <p className="muted">
-        Wer eine Einladung einlöst, bekommt ein eigenes Zuhause und tritt mit der eingestellten Rolle bei. Die Rolle lässt
-        sich später hier ändern.
+        {t('Wer eine Einladung einlöst, bekommt ein eigenes Zuhause und tritt mit der eingestellten Rolle bei. Die Rolle lässt sich später hier ändern.')}
       </p>
       {einladungen.length === 0 ? (
-        <p className="field-hint">Gerade keine offene Einladung.</p>
+        <p className="field-hint">{t('Gerade keine offene Einladung.')}</p>
       ) : (
         <ul className="member-list invite-list">
           {einladungen.map((invite) => (
@@ -32,7 +32,7 @@ export default function InviteList({ einladungen, options, disabled, onRoleChang
                 <span className="voucher-code">…{invite.hinweis}</span>
                 <RoleBadge rolle={invite.rolle} />
                 <span className="member-row-meta">
-                  {invite.ablauf ? `gültig bis ${formatDateShort(invite.ablauf)}` : 'ohne Ablauf'}
+                  {invite.ablauf ? t('gültig bis {date}', { date: formatDateShort(invite.ablauf) }) : t('ohne Ablauf')}
                 </span>
               </div>
               <div className="member-row-actions">
@@ -40,14 +40,14 @@ export default function InviteList({ einladungen, options, disabled, onRoleChang
                   value={invite.rolle}
                   options={options}
                   disabled={disabled}
-                  ariaLabel={`Rolle der Einladung …${invite.hinweis}`}
+                  ariaLabel={t('Rolle der Einladung …{hint}', { hint: invite.hinweis })}
                   onChange={(rolle) => onRoleChange(invite, rolle)}
                 />
                 <ConfirmButton
                   onConfirm={() => onRevoke(invite)}
-                  label="Widerrufen"
-                  confirmLabel="Wirklich widerrufen?"
-                  ariaLabel={`Einladung …${invite.hinweis} widerrufen`}
+                  label={t('Widerrufen')}
+                  confirmLabel={t('Wirklich widerrufen?')}
+                  ariaLabel={t('Einladung …{hint} widerrufen', { hint: invite.hinweis })}
                   disabled={disabled}
                 />
               </div>

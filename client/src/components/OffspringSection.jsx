@@ -7,20 +7,21 @@ import { formatDateLong } from '../lib/dates.js'
 import { isEditable } from '../lib/areas.js'
 import { addMatingPath, buildLitters } from '../lib/litters.js'
 import { displayName, shortName } from '../lib/timeline.js'
+import { t } from '../lib/i18n/index.js'
 
 // So viele Geschwistergruppen zeigt der Abschnitt; alles Weitere steht auf der eigenen Seite (/wuerfe).
 const MAX_LITTERS = 3
 
 function LitterSummary({ litter, words }) {
   const parents = [litter.mother?.name, litter.father?.name].filter(Boolean).join(' × ')
-  const title = litter.birthDate ? `${words.litter} vom ${formatDateLong(litter.birthDate)}` : words.litter
+  const title = litter.birthDate ? t('{litter} vom {date}', { litter: words.litter, date: formatDateLong(litter.birthDate) }) : words.litter
   return (
     <li className="offspring-item">
       <p className="offspring-item-title">
         <strong>{title}</strong>
-        {parents && <span className="muted"> · von {parents}</span>}
+        {parents && <span className="muted"> · {t('von {parents}', { parents })}</span>}
       </p>
-      <ul className="chip-list" aria-label={`Geschwister: ${title}`}>
+      <ul className="chip-list" aria-label={t('Geschwister: {title}', { title })}>
         {litter.puppies.map((dog) => (
           <li key={dog.id}>
             <Link to={`/tier/${dog.id}`} className="chip">
@@ -58,7 +59,7 @@ export default function OffspringSection({ dogs, events, canWrite = false }) {
     if (!mayAddMating) return null
     return (
       <p className="muted offspring-hint">
-        {words.littersLabel} geplant?{' '}
+        {t('{littersLabel} geplant?', { littersLabel: words.littersLabel })}{' '}
         <Link to={addMatingPath()}>
           {words.addMating} <Icon name="arrowRight" />
         </Link>
@@ -78,7 +79,7 @@ export default function OffspringSection({ dogs, events, canWrite = false }) {
             </Link>
           )}
           <Link to="/wuerfe" className="btn btn-ghost">
-            {words.littersLabel} ansehen <Icon name="arrowRight" />
+            {t('{littersLabel} ansehen', { littersLabel: words.littersLabel })} <Icon name="arrowRight" />
           </Link>
         </div>
       </div>
@@ -87,8 +88,8 @@ export default function OffspringSection({ dogs, events, canWrite = false }) {
           {planned.map(({ event, expectedBirth }) => (
             <li key={event.id}>
               <Icon name="sprout" />
-              Erwartet um den {formatDateLong(expectedBirth)}: {shortName(event.mutter_name)} ×{' '}
-              {shortName(event.vater_name || event.vater_freitext || 'unbekannt')}
+              {t('Erwartet um den {date}', { date: formatDateLong(expectedBirth) })}: {shortName(event.mutter_name)} ×{' '}
+              {shortName(event.vater_name || event.vater_freitext || t('unbekannt'))}
             </li>
           ))}
         </ul>
@@ -102,11 +103,11 @@ export default function OffspringSection({ dogs, events, canWrite = false }) {
       ) : (
         planned.length === 0 && (
           <p className="muted">
-            {events.length === 1 ? `1 ${words.mating} eingetragen.` : `${events.length} ${words.matings} eingetragen.`}
+            {events.length === 1 ? t('1 {mating} eingetragen.', { mating: words.mating }) : t('{n} {matings} eingetragen.', { n: events.length, matings: words.matings })}
           </p>
         )
       )}
-      {hidden > 0 && <p className="muted">… und {hidden} weitere.</p>}
+      {hidden > 0 && <p className="muted">{t('… und {n} weitere.', { n: hidden })}</p>}
     </section>
   )
 }

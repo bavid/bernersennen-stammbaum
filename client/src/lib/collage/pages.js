@@ -1,5 +1,6 @@
 import { dogLabel, displayName, shortName } from '../timeline.js'
 import { formatDateLong, formatDateShort } from '../dates.js'
+import { t } from '../i18n/index.js'
 
 // Obergrenzen - gelten im Editor und beim Laden eines gespeicherten Entwurfs (sanitize.js)
 export const LIMITS = Object.freeze({ pages: 200, photosPerPage: 60, library: 2000, title: 160, caption: 120 })
@@ -22,7 +23,7 @@ export function newPage(fields) {
 function parentsLine(dog) {
   const mother = dog.mother ? dogLabel(dog.mother) : dog.mother_freitext
   const father = dog.father ? dogLabel(dog.father) : dog.father_freitext
-  return [mother && `Mutter: ${mother}`, father && `Vater: ${father}`].filter(Boolean).join('   ·   ')
+  return [mother && t('Mutter: {name}', { name: mother }), father && t('Vater: {name}', { name: father })].filter(Boolean).join('   ·   ')
 }
 
 // Alle Fotos eines Hundes: Porträt zuerst, dann Chronik-Fotos mit Titel und Datum als Unterschrift.
@@ -68,7 +69,7 @@ export function buildPages(dogsData, { perPage = 6, overview = false, familyName
       const subtitle = [
         dog.rasse,
         !dog.name_unbekannt && dog.name !== shortName(dog.name) ? dog.name : null,
-        dog.geburtsdatum ? `geboren am ${formatDateLong(dog.geburtsdatum)}` : null
+        dog.geburtsdatum ? t('geboren am {date}', { date: formatDateLong(dog.geburtsdatum) }) : null
       ]
       pages.push(
         newPage({

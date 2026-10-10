@@ -2,11 +2,12 @@ import { useEffect } from 'react'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
 import { formatDateLong } from '../lib/dates.js'
+import { t } from '../lib/i18n/index.js'
 
 // Alternativtext eines Einblicks: sein Text, sonst "Einblick vom <Datum>" (Raster und große Ansicht).
 export function einblickAlt(einblick) {
   const text = typeof einblick.text === 'string' ? einblick.text.trim() : ''
-  return text || `Einblick vom ${formatDateLong(einblick.datum)}`
+  return text || t('Einblick vom {datum}', { datum: formatDateLong(einblick.datum) })
 }
 
 // Große Ansicht eines Einblicks (EinblickeGallery) im gemeinsamen Modal (natives <dialog>: Fokusfalle,
@@ -40,7 +41,7 @@ export default function EinblickViewer({ items, index, onIndexChange, onClose })
   const dateLabel = current ? formatDateLong(current.datum) : ''
 
   return (
-    <Modal open={isOpen} title={current ? `Einblick vom ${dateLabel}` : ''} onClose={onClose}>
+    <Modal open={isOpen} title={current ? t('Einblick vom {datum}', { datum: dateLabel }) : ''} onClose={onClose}>
       {current && (
         <div className="einblick-viewer">
           <img src={current.fotoUrl} alt={einblickAlt(current)} className="einblick-viewer-photo" />
@@ -49,13 +50,13 @@ export default function EinblickViewer({ items, index, onIndexChange, onClose })
             <div className="einblick-viewer-nav">
               <button type="button" className="btn btn-ghost" onClick={() => onIndexChange((index - 1 + count) % count)}>
                 <Icon name="arrowLeft" />
-                Vorheriger
+                {t('Vorheriger')}
               </button>
               <span className="einblick-viewer-count" aria-live="polite">
-                {index + 1} von {count}
+                {t('{n} von {total}', { n: index + 1, total: count })}
               </span>
               <button type="button" className="btn btn-ghost" onClick={() => onIndexChange((index + 1) % count)}>
-                Nächster
+                {t('Nächster')}
                 <Icon name="arrowRight" />
               </button>
             </div>

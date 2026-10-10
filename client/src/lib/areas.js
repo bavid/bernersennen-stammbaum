@@ -1,3 +1,4 @@
+import { t } from './i18n/index.js'
 // Bereiche eines Haushalts: das eigene "Zuhause" (art: 'zuhause') und die Familien/Rudel, denen es beitritt.
 
 // Phase W (Ruhige Hülle): Startseite je Kontext - das eigene Zuhause und klassische Familien-Logins (gemeinsamer
@@ -58,8 +59,8 @@ export function isPartnerArea(family) {
 // Haushalt lädt aus seinem Zuhause ein (Phase W, Schritt 2: Besuch oder Zuhause verschenken - auch aus einer Familie
 // heraus); der klassische Login einer Familie lädt Mitglieder ein.
 export function inviteLabel(family) {
-  if (isPartnerArea(family)) return 'Einladungscode weitergeben'
-  return family && family.art === 'rudel' && !isHouseholdIdentity(family) ? 'Mitglied einladen' : 'Einladen'
+  if (isPartnerArea(family)) return t('Einladungscode weitergeben')
+  return family && family.art === 'rudel' && !isHouseholdIdentity(family) ? t('Mitglied einladen') : t('Einladen')
 }
 
 // Fester Anzeigename für den privaten Bereich eines Haushalts (Konto-Menü, Seitenköpfe, Besuchsband), unabhängig vom

@@ -1,5 +1,6 @@
 import { getTheme } from '../themes/index.js'
 import { isHouseholdIdentity } from './areas.js'
+import { t } from './i18n/index.js'
 
 // Hauptnavigation je Bereichsart (family.art) - AppHeader rendert sie, am Handy als untere Leiste.
 
@@ -80,7 +81,7 @@ function withInboxBadge(item, family) {
   return {
     ...item,
     badge: unread > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : String(unread),
-    ariaLabel: `${item.label}, ${unread} ungelesen`
+    ariaLabel: t('{label}, {n} ungelesen', { label: t(item.label), n: unread })
   }
 }
 
@@ -91,11 +92,14 @@ function withThemeLabel(item, words) {
   return { ...rest, label: words[labelKey] }
 }
 
+const translated = (item) => ({ ...item, label: t(item.label) })
+
 // theme: der angezeigte Auftritt (AppHeader: useTheme().theme, samt Vorschau in den Einstellungen) - ohne Angabe der
 // gespeicherte der Familie.
 export function navItemsFor(family, theme = getTheme(family?.theme)) {
   const items = NAV_ITEMS_BY_ART[family?.art] || (isHouseholdIdentity(family) ? NAV_ITEMS_HOUSEHOLD : NAV_ITEMS_CLASSIC)
-  return items.map((item) => withInboxBadge(withThemeLabel(item, theme.words), family))
+  // Beschriftung in der gewählten Sprache (lib/i18n) - navItemsFor läuft beim Rendern.
+  return items.map((item) => translated(withInboxBadge(withThemeLabel(item, theme.words), family)))
 }
 
 // Neue family mit geänderter Zahl ungelesener Nachrichten (PartnerInboxPage nach Lesen/Löschen) - für

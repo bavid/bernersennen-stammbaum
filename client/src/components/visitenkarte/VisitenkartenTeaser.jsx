@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Icon from '../Icon.jsx'
 import { KARTE, karteRoute } from '../../lib/kartenWahl.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Einstieg in den Karten-Designer (Phase V5) im Profil-Reiter "Teilen" - der Designer hat keinen eigenen
 // Navigationspunkt (die Leiste ist voll). Die kleine Skizze zeigt Vorder- und Rückseite übereinander. Feedback-Runde: ein
@@ -18,14 +19,14 @@ export default function VisitenkartenTeaser() {
         <span className="vk-teaser-front" />
       </span>
       <div className="vk-teaser-text">
-        <h2 id="vk-teaser-title">Visitenkarten &amp; Einladungskarten</h2>
+        <h2 id="vk-teaser-title">{t('Visitenkarten & Einladungskarten')}</h2>
         <p className="muted">
-          Zum Selberdrucken: vorne eure Kontakte, hinten euer Portal, ein Einladungscode für eure Kundschaft – oder beides.
+          {t('Zum Selberdrucken: vorne eure Kontakte, hinten euer Portal, ein Einladungscode für eure Kundschaft – oder beides.')}
         </p>
       </div>
       <div className="vk-teaser-actions">
         <Link to={VISITENKARTEN_ROUTE} className="btn btn-primary">
-          <Icon name="printer" /> Karten gestalten
+          <Icon name="printer" /> {t('Karten gestalten')}
         </Link>
       </div>
     </section>

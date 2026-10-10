@@ -10,6 +10,7 @@ import InviteDialog from '../components/InviteDialog.jsx'
 import VisibilityCard from '../components/members/VisibilityCard.jsx'
 import MemberList from '../components/members/MemberList.jsx'
 import InviteList from '../components/members/InviteList.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Reiter "Mitglieder" der Gruppenseite (embedded) bzw. beim klassischen Familien-Login die Seite /mitglieder (Phase R,
 // Phase W Schritt 2 verdichtet): "Wer dazugehört" (Liste mit Rollen - die Leitung ändert Rollen und entfernt Mitglieder),
@@ -26,11 +27,11 @@ export default function MembersPage({ family, onFamilyChange, embedded = false }
   const sharedTotal = mitglieder.reduce((sum, member) => sum + (member.geteilteTiere || 0), 0)
 
   const handleRoleChange = (member, rolle) =>
-    run(() => api.setMemberRole(member.familyId, rolle), `„${member.name}“ ist jetzt ${roleLabel(words, rolle)}.`)
-  const handleRemove = (member) => run(() => api.removeMember(member.familyId), `„${member.name}“ ist nicht mehr dabei.`)
+    run(() => api.setMemberRole(member.familyId, rolle), t('„{name}“ ist jetzt {role}.', { name: member.name, role: roleLabel(words, rolle) }))
+  const handleRemove = (member) => run(() => api.removeMember(member.familyId), t('„{name}“ ist nicht mehr dabei.', { name: member.name }))
   // PUT /vouchers/:id/rolle antwortet nur mit { id, rolle } - run() lädt danach die Liste neu (null).
   const handleInviteRole = (invite, rolle) => run(() => api.setVoucherRole(invite.id, rolle).then(() => null))
-  const handleRevoke = (invite) => run(() => api.revokeInvite(invite.id), 'Einladung widerrufen.')
+  const handleRevoke = (invite) => run(() => api.revokeInvite(invite.id), t('Einladung widerrufen.'))
 
   function closeInvite() {
     setInviteOpen(false)
@@ -58,9 +59,9 @@ export default function MembersPage({ family, onFamilyChange, embedded = false }
 
       <section className="card members-section" aria-labelledby="members-title">
         {/* Phase W, Schritt 2: eindeutig, dass hier die Mitglieder dieser Familie stehen (nicht eure anderen Familien). */}
-        <h2 id="members-title">Mitglieder {words.ofThisGroup}</h2>
-        {data === undefined && !error && <p className="muted">Lade …</p>}
-        {data && mitglieder.length === 0 && <p className="muted">Noch niemand ist beigetreten.</p>}
+        <h2 id="members-title">{t('Mitglieder {ofThisGroup}', { ofThisGroup: words.ofThisGroup })}</h2>
+        {data === undefined && !error && <p className="muted">{t('Lade …')}</p>}
+        {data && mitglieder.length === 0 && <p className="muted">{t('Noch niemand ist beigetreten.')}</p>}
         {mitglieder.length > 0 && (
           <MemberList
             mitglieder={mitglieder}
@@ -73,8 +74,9 @@ export default function MembersPage({ family, onFamilyChange, embedded = false }
         )}
         {isLeitung && data && (
           <p className="field-hint">
-            Rollen: {ROLES.map((rolle) => roleLabel(words, rolle)).join(' · ')} – jede Rolle darf, was die vorherige darf,
-            und mehr.
+            {t('Rollen: {roles} – jede Rolle darf, was die vorherige darf, und mehr.', {
+              roles: ROLES.map((rolle) => roleLabel(words, rolle)).join(' · ')
+            })}
           </p>
         )}
       </section>
@@ -92,7 +94,7 @@ export default function MembersPage({ family, onFamilyChange, embedded = false }
 
       <VisibilityCard collapsed />
 
-      <Modal open={inviteOpen} title="Mitglied einladen" onClose={closeInvite}>
+      <Modal open={inviteOpen} title={t('Mitglied einladen')} onClose={closeInvite}>
         {inviteOpen && <InviteDialog family={family} />}
       </Modal>
     </div>

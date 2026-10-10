@@ -2,6 +2,7 @@
 // server/lib/partnerPosts.js (erlaubte Bereiche je Typ, höchstens 20, immer "Anzeige") und die Felder
 // von server/lib/promotions.js validatePromotion.
 import { promotionErrorField } from './adminMarketing.js'
+import { t } from './i18n/index.js'
 import { toZeitraeumePayload, zeitraeumeClientError, zeitraeumeFormRows } from './zeitraeume.js'
 
 export const MAX_POSTS = 20
@@ -78,9 +79,9 @@ export const EDIT_MODES = Object.freeze({
 
 // Rückmeldung nach dem Speichern - je nachdem, was der Server aus der Freigabe gemacht hat.
 export function savedMessage(saved, { created }) {
-  if (created) return 'Eingereicht – nach der Freigabe ist der Beitrag sichtbar.'
-  if (saved?.freigabe === 'freigegeben') return 'Gespeichert – die Änderung ist sofort online.'
-  return 'Gespeichert – der Beitrag wird erneut geprüft.'
+  if (created) return t('Eingereicht – nach der Freigabe ist der Beitrag sichtbar.')
+  if (saved?.freigabe === 'freigegeben') return t('Gespeichert – die Änderung ist sofort online.')
+  return t('Gespeichert – der Beitrag wird erneut geprüft.')
 }
 
 export function clickCount(value) {
@@ -122,11 +123,11 @@ const HTML_RE = /[<>]/
 // Was der Server sicher ablehnen würde, gleich am Feld melden - gleicher Wortlaut wie dort.
 export function postClientErrors(form, typ) {
   const errors = {}
-  if (!form.titel.trim()) errors.titel = 'Der Titel ist Pflicht'
-  else if (HTML_RE.test(form.titel)) errors.titel = HTML_MESSAGE
-  if (HTML_RE.test(form.text)) errors.text = HTML_MESSAGE
-  if (!allowedBereiche(typ).includes(form.bereich)) errors.bereich = 'Bitte einen Bereich wählen'
-  if (form.start && form.ende && form.ende < form.start) errors.ende = 'Das Ende darf nicht vor dem Start liegen'
+  if (!form.titel.trim()) errors.titel = t('Der Titel ist Pflicht')
+  else if (HTML_RE.test(form.titel)) errors.titel = t(HTML_MESSAGE)
+  if (HTML_RE.test(form.text)) errors.text = t(HTML_MESSAGE)
+  if (!allowedBereiche(typ).includes(form.bereich)) errors.bereich = t('Bitte einen Bereich wählen')
+  if (form.start && form.ende && form.ende < form.start) errors.ende = t('Das Ende darf nicht vor dem Start liegen')
   const zeitraeumeError = zeitraeumeClientError(form.zeitraeume || [])
   if (zeitraeumeError) errors.zeitraeume = zeitraeumeError
   return errors

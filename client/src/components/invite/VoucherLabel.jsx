@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Icon from '../Icon.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 export const MAX_LABEL_LENGTH = 60
 
@@ -44,8 +45,8 @@ export default function VoucherLabel({ label, onSave, readOnly }) {
     return (
       <button type="button" className={`voucher-label-edit${label ? '' : ' is-empty'}`} onClick={startEditing}>
         <Icon name="edit" />
-        <span>{label || 'Notiz hinzufügen'}</span>
-        {label && <span className="visually-hidden"> – Notiz ändern</span>}
+        <span>{label || t('Notiz hinzufügen')}</span>
+        {label && <span className="visually-hidden"> – {t('Notiz ändern')}</span>}
       </button>
     )
   }
@@ -57,15 +58,15 @@ export default function VoucherLabel({ label, onSave, readOnly }) {
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
         maxLength={MAX_LABEL_LENGTH}
-        placeholder="z. B. Tante Ilse"
-        aria-label="Notiz zum Code (nur für dich sichtbar)"
+        placeholder={t('z. B. Tante Ilse')}
+        aria-label={t('Notiz zum Code (nur für dich sichtbar)')}
         autoFocus
       />
       <button type="button" className="btn btn-primary" disabled={saving} onClick={save}>
-        Speichern
+        {t('Speichern')}
       </button>
       <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>
-        Abbrechen
+        {t('Abbrechen')}
       </button>
     </span>
   )

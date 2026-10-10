@@ -7,6 +7,7 @@ import SupportBlock from './SupportBlock.jsx'
 import DiscoverChapter, { DiscoverEmpty, DiscoverSubheading, FallbackNote } from './DiscoverChapter.jsx'
 import { splitByDistance } from '../lib/discover.js'
 import { countItems, donationsOf, limitGroups, sectionCounts, tabLabel } from '../lib/discoverTabs.js'
+import { t } from '../lib/i18n/index.js'
 
 // Die Bereiche des Reiters "Entdecken" - jeder bekommt die bereits normalisierte Antwort (lib/discover.js
 // normalizeDiscover, fehlende Abschnitte sind leere Listen), dazu limit (unter "Alle" PREVIEW_LIMIT, im
@@ -45,7 +46,7 @@ function CardList({ partners = [], animals = [], promotions = [], compact = fals
 function FarAway({ children }) {
   return (
     <div className="discover-far">
-      <DiscoverSubheading>Weiter weg</DiscoverSubheading>
+      <DiscoverSubheading>{t('Weiter weg')}</DiscoverSubheading>
       {children}
     </div>
   )
@@ -67,7 +68,7 @@ function hidesPartnerExtras(partners) {
 function PartnerListHint({ children }) {
   return (
     <DiscoverEmpty>
-      {children} – schaut in die <InternalLink to="/partner">Partnerliste</InternalLink>.
+      {children} – {t('schaut in die')} <InternalLink to="/partner">{t('Partnerliste')}</InternalLink>.
     </DiscoverEmpty>
   )
 }
@@ -106,8 +107,8 @@ export function HundeschulenSection({ data, limit, onShowAll }) {
     <PartnerChapter
       id="entdecken-hundeschulen"
       title={tabLabel('hundeschulen')}
-      lede="Partner-Hundeschulen mit ihren Kursen und Angeboten."
-      emptyHint="Noch keine Hundeschulen in der Nähe"
+      lede={t('Partner-Hundeschulen mit ihren Kursen und Angeboten.')}
+      emptyHint={t('Noch keine Hundeschulen in der Nähe')}
       partner={data.hundeschulPartner}
       promotions={data.hundeschulPromotions}
       fallback={data.fallback.hundeschulen}
@@ -123,8 +124,8 @@ export function SalonSection({ data, limit, onShowAll }) {
     <PartnerChapter
       id="entdecken-salon"
       title={tabLabel('salon')}
-      lede="Hundesalons, Hundesitter, Tagesstätten und Pensionen."
-      emptyHint="Noch keine Hundesalons oder Betreuung in der Nähe"
+      lede={t('Hundesalons, Hundesitter, Tagesstätten und Pensionen.')}
+      emptyHint={t('Noch keine Hundesalons oder Betreuung in der Nähe')}
       partner={data.salonPartner}
       promotions={data.salonPromotions}
       fallback={data.fallback.salon}
@@ -150,19 +151,19 @@ export function BegleiterSection({ data, limit, onShowAll }) {
     <DiscoverChapter
       id="entdecken-begleiter"
       title={tabLabel('begleiter')}
-      lede="Tierheime, Vermittlungsstellen und Tiere, die ein Zuhause suchen."
+      lede={t('Tierheime, Vermittlungsstellen und Tiere, die ein Zuhause suchen.')}
       compact={compact}
       showAll={showAllFor(onShowAll, total, countItems(groups), hidden)}
     >
       {!compact && (
         <p className="discover-trust-note">
           <Icon name="check" />
-          Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.
+          {t('Hier findet ihr nur Tierheime und Vermittlungsstellen – keine Züchter.')}
         </p>
       )}
       {data.fallback.begleiter && <FallbackNote />}
       {total === 0 ? (
-        <PartnerListHint>Noch keine Tierheime oder Vermittlungsstellen in der Nähe</PartnerListHint>
+        <PartnerListHint>{t('Noch keine Tierheime oder Vermittlungsstellen in der Nähe')}</PartnerListHint>
       ) : (
         <>
           <CardList partners={sheltersNear} animals={animalsNear} promotions={promotionsShown} compact={compact} />
@@ -184,12 +185,12 @@ export function FutterSection({ data, limit, onShowAll }) {
     <DiscoverChapter
       id="entdecken-futter"
       title={tabLabel('futter')}
-      lede="Klar gekennzeichnet: was eine Empfehlung ist und was eine Anzeige."
+      lede={t('Klar gekennzeichnet: was eine Empfehlung ist und was eine Anzeige.')}
       compact={compact}
       showAll={showAllFor(onShowAll, data.futter.length, shown.length)}
     >
       {data.futter.length === 0 ? (
-        <DiscoverEmpty icon="star">Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.</DiscoverEmpty>
+        <DiscoverEmpty icon="star">{t('Noch keine Futter-Empfehlungen – schaut bald wieder vorbei.')}</DiscoverEmpty>
       ) : (
         <PromotionList items={shown} compact={compact} />
       )}
@@ -213,7 +214,7 @@ export function SupportSection({ data, limit, onShowAll }) {
     <DiscoverChapter
       id="entdecken-unterstuetzen"
       title={tabLabel('unterstuetzen')}
-      lede="Tieren in Vermittlung helfen – und sehen, wohin das Geld geht."
+      lede={t('Tieren in Vermittlung helfen – und sehen, wohin das Geld geht.')}
       compact={compact}
       showAll={showAll}
     >

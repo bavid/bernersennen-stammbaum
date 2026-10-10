@@ -1,5 +1,6 @@
 // Verlauf je Beitrag (V-Fehler 3, server/lib/promotionFreigabe.js VERLAUF_AKTION) - beim Partner (PartnerPostRow)
 // und im Admin (AdminApprovalVerlauf) mit denselben Wörtern (FreigabeVerlauf).
+import { t } from './i18n/index.js'
 
 export const VERLAUF_LABELS = Object.freeze({
   eingereicht: 'Eingereicht',
@@ -19,10 +20,10 @@ const STATE_AFTER = Object.freeze({
 const TONE_OF_STATE = Object.freeze({ freigegeben: 'ok', abgelehnt: 'danger', zurueckgezogen: 'muted' })
 
 function labelOf(aktion, index, state) {
-  if (aktion === 'eingereicht' && index > 0) return 'Erneut eingereicht'
+  if (aktion === 'eingereicht' && index > 0) return t('Erneut eingereicht')
   // Eine Änderung nach der Freigabe kann nur ein vertrauenswürdiger Partner machen - sie blieb online.
-  if (aktion === 'geaendert' && state === 'freigegeben') return 'Geändert – blieb online'
-  return VERLAUF_LABELS[aktion] || aktion
+  if (aktion === 'geaendert' && state === 'freigegeben') return t('Geändert – blieb online')
+  return VERLAUF_LABELS[aktion] ? t(VERLAUF_LABELS[aktion]) : aktion
 }
 
 // Einträge (älteste zuerst) mit Beschriftung und Ton (neutral, ok, danger, muted) für die Zeitleiste.

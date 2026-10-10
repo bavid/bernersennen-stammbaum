@@ -13,6 +13,7 @@ import { buildPages, photosOfDog } from '../lib/collage/pages.js'
 import { canvasToBlob, renderPage } from '../lib/collage/render.js'
 // Gestaltung (Vorlagen, Polaroid, Zeitstrahl, Sticker) - kommt mit der Collage als eigener Chunk
 import '../styles/collage-design.css'
+import { t, tOr } from '../lib/i18n/index.js'
 
 function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob)
@@ -37,7 +38,7 @@ const slug = (text) => text.toLowerCase().replace(/[^a-z0-9äöüß]+/gi, '-').r
 
 function PageStrip({ pages, pageIndex, onSelect, onAdd }) {
   return (
-    <nav className="collage-strip" aria-label="Seiten">
+    <nav className="collage-strip" aria-label={tOr('collage.pages', 'Seiten')}>
       {pages.map((p, i) => (
         <button
           type="button"
@@ -45,7 +46,7 @@ function PageStrip({ pages, pageIndex, onSelect, onAdd }) {
           className={`collage-thumb ${i === pageIndex ? 'is-active' : ''}`}
           onClick={() => onSelect(i)}
           aria-current={i === pageIndex ? 'page' : undefined}
-          aria-label={`Seite ${i + 1}: ${p.title}`}
+          aria-label={t('Seite {n}: {title}', { n: i + 1, title: p.title })}
         >
           <PageThumb page={p} />
           <span>{i + 1}</span>
@@ -53,7 +54,7 @@ function PageStrip({ pages, pageIndex, onSelect, onAdd }) {
       ))}
       <button type="button" className="collage-thumb collage-thumb-add" onClick={onAdd}>
         <Icon name="plus" />
-        <span>Seite</span>
+        <span>{t('Seite')}</span>
       </button>
     </nav>
   )
@@ -108,7 +109,11 @@ export default function CollagePage({ family }) {
       const library = uniqueByUrl(dogsData.flatMap(({ dog, entries }) => photosOfDog(dog, entries)))
       editor.startDraft({ ...options, pages: newPages, library })
       setMode('edit')
-      toast(`${newPages.length} ${newPages.length === 1 ? 'Seite' : 'Seiten'} erstellt – jetzt nach Belieben anpassen`)
+      toast(
+        newPages.length === 1
+          ? t('1 Seite erstellt – jetzt nach Belieben anpassen')
+          : t('{n} Seiten erstellt – jetzt nach Belieben anpassen', { n: newPages.length })
+      )
     } catch (err) {
       setError(err.message)
     } finally {
@@ -119,8 +124,8 @@ export default function CollagePage({ family }) {
   async function exportCurrentPage() {
     setBusy(true)
     try {
-      downloadBlob(await canvasToBlob(await renderPage(page, theme)), `${slug(page.title)}-seite-${pageIndex + 1}.png`)
-      toast('Seite als PNG gespeichert')
+      downloadBlob(await canvasToBlob(await renderPage(page, theme)), `${slug(page.title)}-${t('seite')}-${pageIndex + 1}.png`)
+      toast(t('Seite als PNG gespeichert'))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -150,11 +155,13 @@ export default function CollagePage({ family }) {
     <div className="page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">Zum Ausdrucken</span>
-          <h1>Collage</h1>
+          <span className="eyebrow">{t('Zum Ausdrucken')}</span>
+          <h1>{t('Collage')}</h1>
           <p className="page-lede">
-            Mehrere {words.animals}, mehrere Seiten: Vorlage und Hintergrund wählen, Sticker aufkleben, Fotos umsortieren
-            und Unterschriften anpassen – dann als PNG oder PDF speichern.
+            {t(
+              'Mehrere {animals}, mehrere Seiten: Vorlage und Hintergrund wählen, Sticker aufkleben, Fotos umsortieren und Unterschriften anpassen – dann als PNG oder PDF speichern.',
+              { animals: words.animals }
+            )}
           </p>
         </div>
       </header>
@@ -167,17 +174,17 @@ export default function CollagePage({ family }) {
         <>
           <div className="collage-toolbar">
             <button type="button" className="btn btn-ghost" onClick={() => setMode('setup')}>
-              <Icon name="arrowLeft" /> {words.animals} &amp; Aufteilung
+              <Icon name="arrowLeft" /> {t('{animals} & Aufteilung', { animals: words.animals })}
             </button>
             <span className="form-actions-spacer" />
             <span className="collage-draft-hint">
-              <Icon name="check" /> Entwurf wird automatisch gespeichert
+              <Icon name="check" /> {t('Entwurf wird automatisch gespeichert')}
             </span>
             <button type="button" className="btn btn-ghost" onClick={exportCurrentPage} disabled={busy}>
-              <Icon name="download" /> Seite als PNG
+              <Icon name="download" /> {t('Seite als PNG')}
             </button>
             <button type="button" className="btn btn-primary" onClick={printAll} disabled={busy}>
-              <Icon name="image" /> {busy ? 'Bereite vor …' : 'Alle Seiten drucken / PDF'}
+              <Icon name="image" /> {busy ? t('Bereite vor …') : t('Alle Seiten drucken / PDF')}
             </button>
           </div>
 
@@ -188,7 +195,7 @@ export default function CollagePage({ family }) {
               <CollagePageView
                 page={page}
                 interactive
-                label={`Seite ${pageIndex + 1} von ${pages.length}: ${page.title || 'ohne Titel'}`}
+                label={t('Seite {n} von {total}: {title}', { n: pageIndex + 1, total: pages.length, title: page.title || t('ohne Titel') })}
                 selection={selection}
                 onSelect={editor.select}
                 onPhotoChange={actions.updatePhoto}
@@ -196,7 +203,7 @@ export default function CollagePage({ family }) {
                 onStickerRemove={actions.removeSticker}
               />
               <p className="collage-stage-caption">
-                Seite {pageIndex + 1} von {pages.length}
+                {t('Seite {n} von {total}', { n: pageIndex + 1, total: pages.length })}
               </p>
             </div>
             <CollageInspector
@@ -214,8 +221,8 @@ export default function CollagePage({ family }) {
 
           <div className="collage-reset">
             <ConfirmButton
-              label="Entwurf verwerfen"
-              confirmLabel="Alle Seiten wirklich verwerfen?"
+              label={t('Entwurf verwerfen')}
+              confirmLabel={t('Alle Seiten wirklich verwerfen?')}
               onConfirm={() => {
                 editor.discardDraft()
                 setMode('setup')

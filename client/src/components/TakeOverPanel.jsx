@@ -5,6 +5,7 @@ import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { displayName } from '../lib/timeline.js'
 import useArmed from '../hooks/useArmed.js'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const DEMO_HINT_ID = 'take-over-demo-hint'
 
@@ -43,11 +44,14 @@ export default function TakeOverPanel({ dog, onTakenOver }) {
     <section className="take-over-panel notice notice-with-action" aria-labelledby="take-over-title">
       <div>
         <p id="take-over-title">
-          <strong>{name} gehört {words.ofGroup} selbst.</strong>
+          <strong>{t('{name} gehört {ofGroup} selbst.', { name, ofGroup: words.ofGroup })}</strong>
         </p>
         <p className="take-over-text">
-          Übernimmst du {name} in „Mein Zuhause“, zieht {name} mit allen {words.entriesDat} zu dir um – und bleibt hier als
-          geteiltes Tier sichtbar. Nötig, bevor sich {words.theGroup} auflösen lässt.
+          {t('Übernimmst du {name} in „Mein Zuhause“, zieht {name} mit allen {entries} zu dir um – und bleibt hier als geteiltes Tier sichtbar. Nötig, bevor sich {group} auflösen lässt.', {
+            name,
+            entries: words.entriesDat,
+            group: words.theGroup
+          })}
         </p>
         {error && (
           <p className="reply-error" role="alert">
@@ -68,7 +72,7 @@ export default function TakeOverPanel({ dog, onTakenOver }) {
         onClick={handleClick}
       >
         <Icon name={armed ? 'check' : 'home'} />
-        {saving ? 'Übernehme …' : armed ? 'Ja, in „Mein Zuhause“ übernehmen' : 'In „Mein Zuhause“ übernehmen'}
+        {saving ? t('Übernehme …') : armed ? t('Ja, in „Mein Zuhause“ übernehmen') : t('In „Mein Zuhause“ übernehmen')}
       </button>
     </section>
   )

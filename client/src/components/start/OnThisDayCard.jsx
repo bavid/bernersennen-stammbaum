@@ -6,6 +6,7 @@ import { dogLabel } from '../../lib/timeline.js'
 import { formatDateLong, todayIso } from '../../lib/dates.js'
 import { entryLink, feedDog } from '../../lib/feed.js'
 import { yearsAgoLabel } from '../../lib/seasons.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Lädt die Erinnerungen vom heutigen Tag früherer Jahre (GET /api/timeline/jahrestag) - [] ohne welche oder bei einem
 // Fehler: die Karte ist ein schöner Zusatz, kein Grund für eine Fehlermeldung.
@@ -50,7 +51,7 @@ export default function OnThisDayCard({ today = todayIso(), enabled = true }) {
           {dogLabel(feedDog(entry))} · {formatDateLong(entry.datum)}
         </p>
         <Link to={entryLink(entry)} state={{ from: pathname + search }} className="start-card-link">
-          Wieder ansehen
+          {t('Wieder ansehen')}
         </Link>
       </div>
     </section>

@@ -2,7 +2,8 @@
 // (PortalTermine) und "Nächster Termin" auf der Karte in Entdecken (PartnerDiscoverCard). Regeln und Meldungen spiegeln
 // server/lib/partnerTermine.js validateTermin, die Serien server/lib/terminSerien.js. Daten sind Ortszeit als Text
 // ('JJJJ-MM-TT', 'HH:MM') - gerechnet wird nur mit dem Kalenderdatum (UTC-Datum ohne Uhrzeit).
-import { MONTHS } from './dates.js'
+import { monthNames } from './dates.js'
+import { getLang, t } from './i18n/index.js'
 
 export const MAX_TERMINE = 50
 export const MAX_TITEL_LENGTH = 80
@@ -26,6 +27,11 @@ export const SERIE = Object.freeze({
 
 const WEEKDAYS_LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
 const WEEKDAYS_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
+const WEEKDAYS_LONG_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const WEEKDAYS_SHORT_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const ORDINALS_EN = ['1st', '2nd', '3rd', '4th', '5th']
+const isEn = () => getLang() === 'en'
+const weekdayLong = (index) => (isEn() ? WEEKDAYS_LONG_EN : WEEKDAYS_LONG)[index]
 const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 // Wie der Server (server/lib/partnerTermine.js PLAIN_TEXT_RE): HTML und alles, was nach einem Link aussieht.
@@ -69,17 +75,21 @@ export function maxSerieBis(datum) {
 // "Sa, 10.10."
 export function formatTagKurz(iso) {
   const p = parts(iso)
-  return p ? `${WEEKDAYS_SHORT[p.weekday]}, ${p.day}.${p.month}.` : ''
+  if (!p) return ''
+  if (isEn()) return `${WEEKDAYS_SHORT_EN[p.weekday]}, ${p.day} ${monthNames()[p.month - 1].slice(0, 3)}`
+  return `${WEEKDAYS_SHORT[p.weekday]}, ${p.day}.${p.month}.`
 }
 
 // "Samstag, 10. Oktober"
 export function formatTagLang(iso) {
   const p = parts(iso)
-  return p ? `${WEEKDAYS_LONG[p.weekday]}, ${p.day}. ${MONTHS[p.month - 1]}` : ''
+  if (!p) return ''
+  if (isEn()) return `${weekdayLong(p.weekday)}, ${p.day} ${monthNames()[p.month - 1]}`
+  return `${WEEKDAYS_LONG[p.weekday]}, ${p.day}. ${monthNames()[p.month - 1]}`
 }
 
 export function formatUhrzeit(uhrzeit, ende) {
-  return ende ? `${uhrzeit}–${ende} Uhr` : `${uhrzeit} Uhr`
+  return ende ? t('{start}–{end} Uhr', { start: uhrzeit, end: ende }) : t('{time} Uhr', { time: uhrzeit })
 }
 
 // "Sa, 12.10., 10:00 · Welpenspielstunde" - die Zeile auf der Partner-Karte in Entdecken.
@@ -91,21 +101,29 @@ export function naechsterTerminText(termin) {
 // Die Regel einer Serie in Worten - aus dem ersten Termin abgeleitet wie auf dem Server.
 export function serieLabel(serie, datum) {
   const p = parts(datum)
-  const weekday = p ? WEEKDAYS_LONG[p.weekday] : null
+  const weekday = p ? weekdayLong(p.weekday) : null
+  const nth = p ? Math.ceil(p.day / DAYS_PER_WEEK) : 0
   switch (serie) {
     case SERIE.keine:
-      return 'Einmalig'
+      return t('Einmalig')
     case SERIE.woechentlich:
-      return weekday ? `Jeden ${weekday}` : 'Jede Woche'
+      return weekday ? t('Jeden {weekday}', { weekday }) : t('Jede Woche')
     case SERIE.zweiwoechentlich:
-      return weekday ? `Alle zwei Wochen am ${weekday}` : 'Alle zwei Wochen'
+      return weekday ? t('Alle zwei Wochen am {weekday}', { weekday }) : t('Alle zwei Wochen')
     case SERIE.monatlichWochentag:
-      return weekday ? `Jeden ${Math.ceil(p.day / DAYS_PER_WEEK)}. ${weekday} im Monat` : 'Jeden n. Wochentag im Monat'
+      return weekday ? t('Jeden {n}. {weekday} im Monat', { n: nth, nth: ORDINALS_EN[nth - 1], weekday }) : t('Jeden n. Wochentag im Monat')
     case SERIE.monatlichTag:
-      return p ? `Jeden Monat am ${p.day}.` : 'Jeden Monat am selben Tag'
+      return p ? t('Jeden Monat am {n}.', { n: p.day, nth: ordinalEn(p.day) }) : t('Jeden Monat am selben Tag')
     default:
       return ''
   }
+}
+
+// Englische Ordnungszahl: 1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st, 22nd, 23rd, 31st.
+function ordinalEn(n) {
+  const teen = n % 100 >= 11 && n % 100 <= 13
+  const suffix = teen ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'
+  return `${n}${suffix}`
 }
 
 // Monatliche Serien am 29. bis 31. bzw. am 5. Wochentag fallen in Monaten ohne diesen Tag aus - das sagt das Formular.
@@ -128,7 +146,7 @@ export function groupByMonth(items) {
     const key = item.datum.slice(0, 7)
     const last = groups.at(-1)
     if (last?.key === key) last.items.push(item)
-    else groups.push({ key, label: `${MONTHS[Number(key.slice(5, 7)) - 1]} ${key.slice(0, 4)}`, items: [item] })
+    else groups.push({ key, label: `${monthNames()[Number(key.slice(5, 7)) - 1]} ${key.slice(0, 4)}`, items: [item] })
   }
   return groups
 }
@@ -197,23 +215,23 @@ export function toTerminPayload(form) {
 
 function textErrors(form) {
   const errors = {}
-  if (!form.titel.trim()) errors.titel = 'Der Titel ist Pflicht'
+  if (!form.titel.trim()) errors.titel = t('Der Titel ist Pflicht')
   for (const key of ['titel', 'text', 'ort']) {
-    if (!errors[key] && PLAIN_TEXT_RE.test(form[key])) errors[key] = PLAIN_TEXT_MESSAGE
+    if (!errors[key] && PLAIN_TEXT_RE.test(form[key])) errors[key] = t(PLAIN_TEXT_MESSAGE)
   }
   return errors
 }
 
 function dateErrors(form, { today, existingDatum }) {
   const errors = {}
-  if (!isIsoDate(form.datum)) errors.datum = 'Bitte ein gültiges Datum angeben (JJJJ-MM-TT).'
-  else if (form.datum < today && form.datum !== existingDatum) errors.datum = 'Der Termin liegt in der Vergangenheit.'
-  else if (form.datum > maxSerieBis(today)) errors.datum = 'Termine höchstens ein Jahr im Voraus.'
-  if (!TIME_RE.test(form.uhrzeit)) errors.uhrzeit = 'Bitte eine Uhrzeit angeben (HH:MM).'
-  else if (form.ende && form.ende <= form.uhrzeit) errors.ende = 'Das Ende muss nach dem Beginn liegen.'
+  if (!isIsoDate(form.datum)) errors.datum = t('Bitte ein gültiges Datum angeben (JJJJ-MM-TT).')
+  else if (form.datum < today && form.datum !== existingDatum) errors.datum = t('Der Termin liegt in der Vergangenheit.')
+  else if (form.datum > maxSerieBis(today)) errors.datum = t('Termine höchstens ein Jahr im Voraus.')
+  if (!TIME_RE.test(form.uhrzeit)) errors.uhrzeit = t('Bitte eine Uhrzeit angeben (HH:MM).')
+  else if (form.ende && form.ende <= form.uhrzeit) errors.ende = t('Das Ende muss nach dem Beginn liegen.')
   if (form.serie !== SERIE.keine && form.serieBis && !errors.datum) {
-    if (form.serieBis < form.datum) errors.serieBis = 'Die Serie darf nicht vor dem ersten Termin enden.'
-    else if (form.serieBis > maxSerieBis(form.datum)) errors.serieBis = 'Eine Serie läuft höchstens ein Jahr.'
+    if (form.serieBis < form.datum) errors.serieBis = t('Die Serie darf nicht vor dem ersten Termin enden.')
+    else if (form.serieBis > maxSerieBis(form.datum)) errors.serieBis = t('Eine Serie läuft höchstens ein Jahr.')
   }
   return errors
 }

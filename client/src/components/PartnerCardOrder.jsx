@@ -2,16 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const DEMO_HINT_ID = 'partner-card-order-demo-hint'
 const EMPTY_HINT = 'Sobald ein Beitrag freigegeben ist, legt ihr hier fest, wie er auf eurer Karte in „Entdecken“ steht.'
 
 // Wo steht die Anzeige gerade? (server/lib/partnerPostOrder.js entdeckenAnzeigen: aufKarte, inEntdecken, sichtbar)
 function standOf(item, max) {
-  if (item.aufKarte) return { text: 'auf der Karte', onCard: true }
-  if (!item.inEntdecken) return { text: 'nur auf dem Portal', onCard: false }
-  if (!item.sichtbar) return { text: 'zurzeit nicht aktiv', onCard: false }
-  return { text: `nicht auf der Karte – es passen ${max === 3 ? 'drei' : max}`, onCard: false }
+  if (item.aufKarte) return { text: t('auf der Karte'), onCard: true }
+  if (!item.inEntdecken) return { text: t('nur auf dem Portal'), onCard: false }
+  if (!item.sichtbar) return { text: t('zurzeit nicht aktiv'), onCard: false }
+  return { text: t('nicht auf der Karte – es passen {max}', { max: max === 3 ? t('drei') : max }), onCard: false }
 }
 
 function moved(list, index, delta) {
@@ -34,7 +35,7 @@ function OrderItem({ item, index, count, max, busy, readOnly, onMove, onToggle }
         <span className="partner-card-order-title">{item.titel}</span>
         <span className="partner-card-order-meta">
           <span>{stand.text}</span>
-          {item.vomTeam && <span>vom Team</span>}
+          {item.vomTeam && <span>{t('vom Team')}</span>}
         </span>
       </span>
       <label className="check partner-card-order-switch">
@@ -47,14 +48,14 @@ function OrderItem({ item, index, count, max, busy, readOnly, onMove, onToggle }
           aria-describedby={describedBy}
           onChange={(event) => onToggle(item, event.target.checked)}
         />
-        in Entdecken zeigen<span className="visually-hidden">: {quoted}</span>
+        {t('in Entdecken zeigen')}<span className="visually-hidden">: {quoted}</span>
       </label>
       <span className="partner-card-order-moves">
         <button
           type="button"
           id={`card-order-${item.id}-up`}
           className="btn btn-ghost btn-icon"
-          aria-label={`${quoted} nach oben`}
+          aria-label={t('{title} nach oben', { title: quoted })}
           aria-describedby={describedBy}
           disabled={readOnly || index === 0}
           onClick={() => onMove(index, -1)}
@@ -65,7 +66,7 @@ function OrderItem({ item, index, count, max, busy, readOnly, onMove, onToggle }
           type="button"
           id={`card-order-${item.id}-down`}
           className="btn btn-ghost btn-icon"
-          aria-label={`${quoted} nach unten`}
+          aria-label={t('{title} nach unten', { title: quoted })}
           aria-describedby={describedBy}
           disabled={readOnly || index === count - 1}
           onClick={() => onMove(index, 1)}
@@ -139,12 +140,14 @@ export default function PartnerCardOrder({ refreshKey, hideWhenEmpty = false }) 
   function handleMove(index, delta) {
     const next = moved(data.anzeigen, index, delta)
     const item = data.anzeigen[index]
-    const message = `„${item.titel}“ steht jetzt an Stelle ${index + delta + 1}.`
+    const message = t('„{title}“ steht jetzt an Stelle {n}.', { title: item.titel, n: index + delta + 1 })
     save(() => api.partnerArea.setCardOrder(next.map((entry) => entry.id)), message, { id: item.id, direction: delta < 0 ? 'up' : 'down' })
   }
 
   function handleToggle(item, inEntdecken) {
-    const message = inEntdecken ? `„${item.titel}“ steht wieder in Entdecken.` : `„${item.titel}“ steht jetzt nur auf dem Portal.`
+    const message = inEntdecken
+      ? t('„{title}“ steht wieder in Entdecken.', { title: item.titel })
+      : t('„{title}“ steht jetzt nur auf dem Portal.', { title: item.titel })
     save(() => api.partnerArea.setPostInEntdecken(item.id, inEntdecken), message, null)
   }
 
@@ -157,21 +160,22 @@ export default function PartnerCardOrder({ refreshKey, hideWhenEmpty = false }) 
   return (
     <details className="partner-card-order card" aria-labelledby="partner-card-order-title">
       <summary className="partner-card-order-head">
-        <h3 id="partner-card-order-title">Eure Karte in Entdecken</h3>
+        <h3 id="partner-card-order-title">{t('Eure Karte in Entdecken')}</h3>
         <span className="partner-card-order-toggle" aria-hidden="true">
           <Icon name="chevronDown" />
         </span>
       </summary>
       <p className="partner-card-order-hint">
-        Die ersten {data?.max === 3 || !data ? 'drei' : data.max} Anzeigen, die ihr zeigt, stehen auf eurer Karte – in dieser Reihenfolge.
-        Auf eurem Portal stehen alle.
+        {t('Die ersten {max} Anzeigen, die ihr zeigt, stehen auf eurer Karte – in dieser Reihenfolge. Auf eurem Portal stehen alle.', {
+          max: data?.max === 3 || !data ? t('drei') : data.max
+        })}
       </p>
       {error && (
         <div className="error-banner" role="alert">
           {error}
         </div>
       )}
-      {data && anzeigen.length === 0 && <p className="muted partner-card-order-empty">{EMPTY_HINT}</p>}
+      {data && anzeigen.length === 0 && <p className="muted partner-card-order-empty">{t(EMPTY_HINT)}</p>}
       {anzeigen.length > 0 && (
         <ol className="partner-card-order-list">
           {anzeigen.map((item, index) => (

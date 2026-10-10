@@ -11,6 +11,7 @@ import { dogLabel } from '../lib/timeline.js'
 import { groupBySeason } from '../lib/seasons.js'
 import { ageText, formatDayMonth } from '../lib/dates.js'
 import { kategorieLabel } from '../lib/shelter.js'
+import { t } from '../lib/i18n/index.js'
 
 // Kein eigenes Einzugs-/Abschieds-Icon vorhanden – 'pin' (Stecknadel, "hier verankert") und
 // 'logout' (Tür mit Pfeil, "geht") aus Icon.jsx passen inhaltlich am besten.
@@ -51,30 +52,30 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
         <div>
           <h3 className="entry-title">
             {item.titel}
-            {kategorie ? <span className="kategorie-badge">{kategorie}</span> : null}
+            {kategorie ? <span className="kategorie-badge">{t(kategorie)}</span> : null}
             {item.is_public ? (
-              <span className="public-badge" title="Im Steckbrief sichtbar" aria-label="Im Steckbrief sichtbar">
+              <span className="public-badge" title={t('Im Steckbrief sichtbar')} aria-label={t('Im Steckbrief sichtbar')}>
                 <Icon name="globe" />
-                öffentlich
+                {t('öffentlich')}
               </span>
             ) : null}
             {item.privat ? (
-              <span className="privat-badge" title="Nur für euch" aria-label="Privat – nur für euch">
+              <span className="privat-badge" title={t('Nur für euch')} aria-label={t('Privat – nur für euch')}>
                 <Icon name="lock" />
-                privat
+                {t('privat')}
               </span>
             ) : null}
           </h3>
           <p className="entry-meta">
-            von {item.autor_name}
-            {age ? ` · ${age} alt` : ''}
+            {t('von {name}', { name: item.autor_name })}
+            {age ? ` · ${t('{age} alt', { age })}` : ''}
           </p>
           {/* herkunft_name kommt nur bei umgezogenen Einträgen mit (server-seitiger JOIN auf
               herkunft_family_id, siehe Phase T Task 4/Server-Ergänzung) - sonst bleibt die Zeile weg. */}
-          {item.herkunft_name && <p className="entry-herkunft muted">aus {item.herkunft_name}</p>}
+          {item.herkunft_name && <p className="entry-herkunft muted">{t('aus {name}', { name: item.herkunft_name })}</p>}
         </div>
         {canEdit && (
-          <button type="button" className="icon-btn" onClick={() => onEdit(item)} aria-label={`„${item.titel}“ bearbeiten`}>
+          <button type="button" className="icon-btn" onClick={() => onEdit(item)} aria-label={t('„{title}“ bearbeiten', { title: item.titel })}>
             <Icon name="edit" />
           </button>
         )}

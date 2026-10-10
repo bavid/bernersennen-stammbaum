@@ -24,7 +24,7 @@ export function chatLabel(chat) {
 }
 
 export const TELEGRAM_UNREACHABLE_MESSAGE = 'Telegram ist gerade nicht erreichbar.'
-const GENERIC_STATUS_RE = /^Fehler \d+$/
+const GENERIC_STATUS_RE = /^(Fehler|Error) \d+$/
 
 // Meldung eines fehlgeschlagenen Aufrufs: die (deutsche) Meldung des Servers - bei 502 ohne eigene Meldung (z. B.
 // vom Proxy) der feste Satz "Telegram ist gerade nicht erreichbar."

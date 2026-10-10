@@ -5,6 +5,7 @@ import { todayIso } from '../lib/dates.js'
 import { downscaleImage } from '../lib/images.js'
 import { EINBLICK_ACCEPT, LIMIT_MESSAGE, MAX_EINBLICK_TEXT, TYPE_MESSAGE, isEinblickFileType } from '../lib/einblicke.js'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Vorschau des gewählten Fotos als Object-URL - wird beim Wechsel/Entfernen wieder freigegeben. Ohne
 // URL.createObjectURL (ältere Umgebungen) gibt es einfach keine Vorschau.
@@ -51,7 +52,7 @@ export default function EinblickForm({ isFull, onCreated, onCancel }) {
     event.target.value = ''
     if (!picked) return
     if (!isEinblickFileType(picked)) {
-      setError(TYPE_MESSAGE)
+      setError(t(TYPE_MESSAGE))
       return
     }
     setError(null)
@@ -88,7 +89,7 @@ export default function EinblickForm({ isFull, onCreated, onCancel }) {
 
   return (
     <form className="card einblick-form form-stack" onSubmit={handleSubmit} aria-labelledby="einblick-form-title" noValidate>
-      <h3 id="einblick-form-title">Neuer Einblick</h3>
+      <h3 id="einblick-form-title">{t('Neuer Einblick')}</h3>
       {error && (
         <div ref={bannerRef} className="error-banner" role="alert" tabIndex={-1}>
           {error}
@@ -97,11 +98,11 @@ export default function EinblickForm({ isFull, onCreated, onCancel }) {
 
       <div className="einblick-form-grid">
         <div className="field einblick-photo-field">
-          <span className="field-label">Foto</span>
-          {previewUrl && <img src={previewUrl} alt="Vorschau des gewählten Fotos" className="einblick-preview" />}
+          <span className="field-label">{t('Foto')}</span>
+          {previewUrl && <img src={previewUrl} alt={t('Vorschau des gewählten Fotos')} className="einblick-preview" />}
           <label className={`btn btn-ghost btn-compact admin-upload-btn${locked ? ' is-disabled' : ''}`}>
             <Icon name="camera" />
-            {file ? 'Anderes Foto wählen' : 'Foto wählen'}
+            {file ? t('Anderes Foto wählen') : t('Foto wählen')}
             <input
               type="file"
               accept={EINBLICK_ACCEPT}
@@ -112,20 +113,20 @@ export default function EinblickForm({ isFull, onCreated, onCancel }) {
             />
           </label>
           <p className="field-hint" id="einblick-photo-hint">
-            JPG oder PNG. Bitte keine Personen, Nachnamen oder Adressen zeigen.
+            {t('JPG oder PNG. Bitte keine Personen, Nachnamen oder Adressen zeigen.')}
           </p>
         </div>
 
         <div className="einblick-form-fields">
           <div className="field">
             <label className="field-label" htmlFor="einblick-datum">
-              Datum
+              {t('Datum')}
             </label>
             <input id="einblick-datum" type="date" value={datum} max={today} required onChange={(e) => setDatum(e.target.value)} />
           </div>
           <div className="field">
             <label className="field-label" htmlFor="einblick-text">
-              Text (optional)
+              {t('Text (optional)')}
             </label>
             <textarea
               id="einblick-text"
@@ -141,7 +142,7 @@ export default function EinblickForm({ isFull, onCreated, onCancel }) {
           </div>
           <label className="check einblick-consent">
             <input type="checkbox" checked={consent} required onChange={(e) => setConsent(e.target.checked)} />
-            Die Halterinnen und Halter der gezeigten Tiere sind einverstanden.
+            {t('Die Halterinnen und Halter der gezeigten Tiere sind einverstanden.')}
           </label>
         </div>
       </div>
@@ -149,15 +150,15 @@ export default function EinblickForm({ isFull, onCreated, onCancel }) {
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
           <Icon name="plus" />
-          {saving ? 'Lädt hoch …' : 'Einblick hinzufügen'}
+          {saving ? t('Lädt hoch …') : t('Einblick hinzufügen')}
         </button>
         {onCancel && (
           <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
         {isDemo && <span className="field-hint">{readOnlyHint}</span>}
-        {!isDemo && isFull && <span className="field-hint">{LIMIT_MESSAGE}</span>}
+        {!isDemo && isFull && <span className="field-hint">{t(LIMIT_MESSAGE)}</span>}
       </div>
     </form>
   )

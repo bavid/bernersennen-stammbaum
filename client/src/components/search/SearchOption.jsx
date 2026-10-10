@@ -7,13 +7,14 @@ import { TYPE_LABELS } from '../../lib/partnerTypes.js'
 import { roleLabel } from '../../lib/roles.js'
 import { speciesNoun } from '../../lib/timeline.js'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Inhalt einer Zeile im Suchergebnis je Gruppe (components/search/SearchResults.jsx stellt das role="option" drumherum).
 
 // Wo ein Zettel liegt: das eigene Zuhause heißt „Mein Zuhause“ (beim klassischen Familien-Login der Name der Familie).
 // Tiere und Erinnerungen nennen stattdessen, wo das Tier wohnt (OriginChip „aus Zuhause Möwenweg“, das eigene ohne).
 function areaLabel(bereich, family) {
-  if (bereich.art === 'eigen' && isHouseholdIdentity(family)) return HOME_LABEL
+  if (bereich.art === 'eigen' && isHouseholdIdentity(family)) return t(HOME_LABEL)
   return bereich.name
 }
 
@@ -85,7 +86,9 @@ function MemoryRow({ item, query }) {
 }
 
 function NoteRow({ item, query, family }) {
-  const termin = item.terminDatum && `Termin ${formatDateShort(item.terminDatum)}${item.terminZeit ? `, ${item.terminZeit} Uhr` : ''}`
+  const termin =
+    item.terminDatum &&
+    `${t('Termin')} ${formatDateShort(item.terminDatum)}${item.terminZeit ? `, ${t('{zeit} Uhr', { zeit: item.terminZeit })}` : ''}`
   return (
     <>
       <Thumb icon={item.terminDatum ? 'calendar' : 'pin'} />
@@ -104,7 +107,7 @@ function NoteRow({ item, query, family }) {
 
 function FamilyRow({ item, query }) {
   const { words } = useTheme()
-  const sub = item.art === 'besuch' ? 'Befreundetes Zuhause' : roleLabel(words, item.rolle)
+  const sub = item.art === 'besuch' ? t('Befreundetes Zuhause') : roleLabel(words, item.rolle)
   return (
     <>
       <Thumb icon={item.art === 'besuch' ? 'home' : 'users'} />
@@ -117,7 +120,7 @@ function PartnerRow({ item, query }) {
   return (
     <>
       <Thumb src={item.logoUrl} icon="globe" />
-      <Lines title={<SearchHighlight text={item.name} query={query} />} sub={join(TYPE_LABELS[item.typ], item.ort)} />
+      <Lines title={<SearchHighlight text={item.name} query={query} />} sub={join(TYPE_LABELS[item.typ] && t(TYPE_LABELS[item.typ]), item.ort)} />
     </>
   )
 }
@@ -142,7 +145,7 @@ const ROWS = {
 
 export default function SearchOption({ option, query, family }) {
   if (option.kind === 'expand') {
-    return <span className="search-option-expand">Alle {option.count} anzeigen</span>
+    return <span className="search-option-expand">{t('Alle {n} anzeigen', { n: option.count })}</span>
   }
   if (option.kind === 'recent') {
     return (

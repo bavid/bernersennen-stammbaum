@@ -5,6 +5,7 @@ import { HINWEIS_OPTIONS, telegramStatus } from '../lib/partnerTelegram.js'
 import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Verbunden (Phase V4b, PartnerTelegramSection): die Schalter je Ereignis (speichern sofort), "Testnachricht senden" und
 // "Trennen". Jede Antwort des Servers ist der neue Status (onStatus). Demo und Admin-Ansicht: sichtbar, gesperrt.
@@ -35,14 +36,14 @@ export default function TelegramConnected({ status, onStatus }) {
   function sendTest() {
     run('test', async () => {
       await api.partnerArea.sendTelegramTest()
-      toast('Testnachricht verschickt – schaut in Telegram nach.')
+      toast(t('Testnachricht verschickt – schaut in Telegram nach.'))
     })
   }
 
   function disconnect() {
     run('trennen', async () => {
       onStatus(telegramStatus(await api.partnerArea.disconnectTelegram()))
-      toast('Telegram ist getrennt.')
+      toast(t('Telegram ist getrennt.'))
     })
   }
 
@@ -50,10 +51,10 @@ export default function TelegramConnected({ status, onStatus }) {
     <div className="telegram-connected">
       <p className="telegram-state is-connected">
         <Icon name="check" />
-        Mit Telegram verbunden
+        {t('Mit Telegram verbunden')}
       </p>
       <fieldset className="telegram-hinweise">
-        <legend>Hinweise schicken bei …</legend>
+        <legend>{t('Hinweise schicken bei …')}</legend>
         {HINWEIS_OPTIONS.map(({ key, label }) => (
           <label className="check" key={key}>
             <input
@@ -62,7 +63,7 @@ export default function TelegramConnected({ status, onStatus }) {
               disabled={isDemo || busy !== null}
               onChange={(event) => toggle(key, event.target.checked)}
             />
-            {label}
+            {t(label)}
           </label>
         ))}
       </fieldset>
@@ -74,7 +75,7 @@ export default function TelegramConnected({ status, onStatus }) {
       <div className="telegram-actions">
         <button type="button" className="btn btn-ghost" disabled={isDemo || busy !== null} onClick={sendTest}>
           <Icon name="send" />
-          {busy === 'test' ? 'Sende …' : 'Testnachricht senden'}
+          {busy === 'test' ? t('Sende …') : t('Testnachricht senden')}
         </button>
         <ConfirmButton label="Trennen" confirmLabel="Wirklich trennen?" icon="close" disabled={isDemo || busy !== null} onConfirm={disconnect} />
       </div>

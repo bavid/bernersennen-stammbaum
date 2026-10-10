@@ -23,6 +23,7 @@ import {
   shortcutsFor,
   withRecent
 } from '../../lib/search.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Native <dialog> fokussiert beim Öffnen das Element mit dem HTML-Attribut autofocus - React setzt für autoFocus keins.
 const markAutofocus = (element) => element?.setAttribute('autofocus', '')
@@ -31,9 +32,10 @@ const NONE = []
 function statusText({ query, results, shortcutHits }) {
   if (!query) return ''
   if (results.status === 'error') return results.error
-  if (results.status !== 'done' || results.query !== query) return 'Suche läuft …'
+  if (results.status !== 'done' || results.query !== query) return t('Suche läuft …')
   const count = countResults(results.gruppen, shortcutHits)
-  return count ? `${count} Treffer` : `Keine Treffer für „${query}“`
+  if (count === 1) return t('1 Treffer')
+  return count ? t('{n} Treffer', { n: count }) : t('Keine Treffer für „{query}“', { query })
 }
 
 // Inhalt des Such-Dialogs (SearchButton): Eingabefeld als Combobox, Treffer gruppiert (SearchResults), davor der Verlauf
@@ -170,13 +172,13 @@ export default function SearchPanel({ family, onClose, onInvite }) {
             type="text"
             className="search-input"
             role="combobox"
-            aria-label="Suchbegriff"
+            aria-label={t('Suchbegriff')}
             aria-expanded={sections.length > 0}
             aria-controls={listId}
             aria-autocomplete="list"
             aria-activedescendant={activeId}
             aria-describedby={hintId}
-            placeholder="Suchen nach Tieren, Erinnerungen, Familien …"
+            placeholder={t('Suchen nach Tieren, Erinnerungen, Familien …')}
             maxLength={MAX_QUERY_LENGTH}
             autoComplete="off"
             autoCorrect="off"
@@ -190,14 +192,14 @@ export default function SearchPanel({ family, onClose, onInvite }) {
             onKeyDown={handleKeyDown}
           />
           {input && (
-            <button type="button" className="search-clear" aria-label="Eingabe löschen" onClick={resetInput}>
+            <button type="button" className="search-clear" aria-label={t('Eingabe löschen')} onClick={resetInput}>
               <Icon name="close" />
             </button>
           )}
         </div>
       </div>
       <p id={hintId} className="visually-hidden">
-        Mit den Pfeiltasten durch die Treffer, Eingabetaste öffnet, Escape schließt.
+        {t('Mit den Pfeiltasten durch die Treffer, Eingabetaste öffnet, Escape schließt.')}
       </p>
       {/* Ohne Treffer sagt der Hinweis darunter dasselbe sichtbar - die Meldung bleibt dann nur für Screenreader. */}
       <p role="status" className={noHits ? 'visually-hidden' : 'search-status'}>
@@ -205,7 +207,7 @@ export default function SearchPanel({ family, onClose, onInvite }) {
       </p>
       {results.status === 'error' && (
         <button type="button" className="link-button search-retry" onClick={retrySearch}>
-          Noch einmal versuchen
+          {t('Noch einmal versuchen')}
         </button>
       )}
       <SearchResults
@@ -219,7 +221,7 @@ export default function SearchPanel({ family, onClose, onInvite }) {
       />
       {!query && recent.length > 0 && (
         <button type="button" className="link-button search-forget" onClick={forgetRecent}>
-          Verlauf löschen
+          {t('Verlauf löschen')}
         </button>
       )}
       {!input.trim() && <SearchHints kind="start" />}

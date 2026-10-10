@@ -5,19 +5,20 @@ import Icon from '../Icon.jsx'
 import VisitInviteCreator from '../visits/VisitInviteCreator.jsx'
 import CodeList from './CodeList.jsx'
 import useVoucherList from './useVoucherList.js'
+import { t } from '../../lib/i18n/index.js'
 
 const CHOICES = [
   {
     key: 'besuch',
     icon: 'home',
     title: 'Zu Besuch einladen',
-    text: (words) => `Freunde schauen bei euch vorbei, sehen eure Tiere und schreiben ${words.greetings}. Der Code gilt 7 Tage.`
+    text: (words) => t('Freunde schauen bei euch vorbei, sehen eure Tiere und schreiben {greetings}. Der Code gilt 7 Tage.', { greetings: words.greetings })
   },
   {
     key: 'verschenken',
     icon: 'heart',
     title: 'Zuhause verschenken',
-    text: () => 'Jemand bekommt ein eigenes Zuhause für seine Tiere – kostenlos, mit einem Einladungscode von euch.'
+    text: () => t('Jemand bekommt ein eigenes Zuhause für seine Tiere – kostenlos, mit einem Einladungscode von euch.')
   }
 ]
 
@@ -28,7 +29,7 @@ function InviteChoice({ onChoose, focusKey }) {
     if (focusKey) refs.current[focusKey]?.focus()
   }, [focusKey])
   return (
-    <div className="invite-choice" role="group" aria-label="Wie möchtet ihr einladen?">
+    <div className="invite-choice" role="group" aria-label={t('Wie möchtet ihr einladen?')}>
       {CHOICES.map((choice) => (
         <button
           key={choice.key}
@@ -40,7 +41,7 @@ function InviteChoice({ onChoose, focusKey }) {
           onClick={() => onChoose(choice.key)}
         >
           <Icon name={choice.icon} />
-          <span className="invite-choice-title">{choice.title}</span>
+          <span className="invite-choice-title">{t(choice.title)}</span>
           <span className="invite-choice-text">{choice.text(words)}</span>
         </button>
       ))}
@@ -55,10 +56,10 @@ function GiftPanel({ list, disabled, headingRef }) {
   return (
     <section className="invite-vouchers" aria-labelledby="invite-gift-title">
       <h3 id="invite-gift-title" ref={headingRef} tabIndex={-1}>
-        Zuhause verschenken
+        {t('Zuhause verschenken')}
       </h3>
-      <p className="muted">Wer den Einladungscode einlöst, bekommt ein eigenes Zuhause für seine Tiere.</p>
-      <CodeList list={list} vouchers={gifts} archive={archive} canCreate canModerate own disabled={disabled} emptyText="Gerade keine Einladungscodes übrig." />
+      <p className="muted">{t('Wer den Einladungscode einlöst, bekommt ein eigenes Zuhause für seine Tiere.')}</p>
+      <CodeList list={list} vouchers={gifts} archive={archive} canCreate canModerate own disabled={disabled} emptyText={t('Gerade keine Einladungscodes übrig.')} />
     </section>
   )
 }
@@ -71,7 +72,7 @@ function VisitPanel({ list, disabled, headingRef }) {
       <VisitInviteCreator headingRef={headingRef} onCreated={list.reload} />
       {open && open.length > 0 && (
         <section className="invite-vouchers" aria-labelledby="invite-visit-open-title">
-          <h4 id="invite-visit-open-title">Offene Besuchs-Codes</h4>
+          <h4 id="invite-visit-open-title">{t('Offene Besuchs-Codes')}</h4>
           <CodeList list={list} vouchers={open} canModerate own disabled={disabled} />
         </section>
       )}
@@ -85,7 +86,7 @@ function VisitPanel({ list, disabled, headingRef }) {
 // Liste der Besuche und Gäste steht in Einstellungen › Mein Zuhause.
 export default function HomeInvite() {
   const isDemo = useIsDemo()
-  const readOnlyHint = useReadOnlyHint('Beispiel – in der Demo werden keine Einladungscodes vergeben.')
+  const readOnlyHint = useReadOnlyHint(t('Beispiel – in der Demo werden keine Einladungscodes vergeben.'))
   const list = useVoucherList({ withLimit: true })
   const [mode, setMode] = useState(null)
   const [lastMode, setLastMode] = useState(null)
@@ -109,7 +110,7 @@ export default function HomeInvite() {
       ) : (
         <>
           <button type="button" className="back-link invite-back" onClick={back}>
-            <Icon name="arrowLeft" /> Andere Möglichkeit
+            <Icon name="arrowLeft" /> {t('Andere Möglichkeit')}
           </button>
           {mode === 'besuch' ? (
             <VisitPanel list={list} disabled={isDemo} headingRef={headingRef} />

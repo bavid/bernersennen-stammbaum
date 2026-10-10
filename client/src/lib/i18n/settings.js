@@ -214,12 +214,12 @@ export const en = {
   'settings.home.invite.button': 'Invite',
   'settings.home.friends.title': 'Friends’ homes',
   'settings.home.friends.lede': 'Whom you visit and who is a guest at your place. You enter a code from friends under “Families”.',
-  'settings.frames.title': 'Picture frame on another device',
+  'settings.frames.title': 'Photo frame on another device',
   'settings.frames.lede':
     'Shows your animals’ photos on a tablet, an old phone or a TV – for example at Grandma’s, with no sign-in at all. You can end any frame at any time.',
-  'settings.frames.list': 'Your picture frames',
-  'settings.frames.setup': 'Set up a picture frame',
-  'settings.frames.max': 'At most {max} picture frames – end one first to set up a new one.',
+  'settings.frames.list': 'Your photo frames',
+  'settings.frames.setup': 'Set up a photo frame',
+  'settings.frames.max': 'At most {max} photo frames – end one first to set up a new one.',
   'settings.frames.ended': '“{name}” has ended – the device will stop showing photos within a few minutes.',
   'settings.frames.loadError': 'Your animals could not be loaded: {message}',
 

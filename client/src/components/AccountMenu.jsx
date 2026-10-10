@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import useMenu from '../hooks/useMenu.js'
 import { LEGAL_LINKS, accountInitial, accountMenuItems, accountName } from '../lib/accountMenu.js'
+import { t } from '../lib/i18n/index.js'
 
 // "Hilfe & Kontakt" nimmt mit, von welcher Seite man kommt (ContactAdminPage: "Problem auf dieser Seite").
 export function itemState(item, pathname) {
@@ -24,7 +25,7 @@ function MenuEntry({ item, itemRef, pathname, onSelect }) {
   const content = (
     <>
       <Icon name={item.icon} />
-      <span>{item.label}</span>
+      <span>{t(item.label)}</span>
     </>
   )
   if (item.to) {
@@ -78,13 +79,13 @@ export default function AccountMenu({ family, onInvite, onLogout }) {
       >
         <AccountBadge name={name} />
         <span className="account-menu-name">
-          <span className="visually-hidden">Menü: </span>
+          <span className="visually-hidden">{t('Menü')}: </span>
           {name}
         </span>
         <Icon name="chevronDown" />
       </button>
       {open && (
-        <div id={menuId} className="account-menu-panel" role="menu" aria-label={`Menü – ${name}`} onKeyDown={onMenuKeyDown}>
+        <div id={menuId} className="account-menu-panel" role="menu" aria-label={`${t('Menü')} – ${name}`} onKeyDown={onMenuKeyDown}>
           {items.map((item, index) => (
             <MenuEntry
               key={item.key}
@@ -94,10 +95,10 @@ export default function AccountMenu({ family, onInvite, onLogout }) {
               onSelect={() => select(item)}
             />
           ))}
-          <div role="group" aria-label="Rechtliches" className="account-menu-legal">
+          <div role="group" aria-label={t('Rechtliches')} className="account-menu-legal">
             {LEGAL_LINKS.map((link) => (
               <Link key={link.key} role="menuitem" to={link.to} className="account-menu-legal-link" onClick={() => setOpen(false)}>
-                {link.label}
+                {t(link.label)}
               </Link>
             ))}
           </div>

@@ -4,8 +4,9 @@ import { ExternalLink, InternalLink } from './PreviewLink.jsx'
 import { PromotionList } from './PromotionCard.jsx'
 import { formatEuroCents, isClickUrl, isPartnerMedia } from '../lib/discover.js'
 import { isExternalUrl } from '../lib/format.js'
+import { t } from '../lib/i18n/index.js'
 
-const NEW_TAB_HINT = ' (öffnet in neuem Tab)'
+const newTabHint = () => ` ${t('(öffnet in neuem Tab)')}`
 
 // Transparenzblock zum neuesten Spendenbericht - Beträge kommen in Cent vom Server.
 function DonationReport({ report }) {
@@ -18,20 +19,20 @@ function DonationReport({ report }) {
   return (
     <div className="support-report">
       <h3>
-        Transparenz{report.zeitraum && <span className="support-report-period"> ({report.zeitraum})</span>}
+        {t('Transparenz')}{report.zeitraum && <span className="support-report-period"> ({report.zeitraum})</span>}
       </h3>
       <dl className="support-report-figures">
         {figures.map((figure) => (
           <div key={figure.label}>
-            <dt>{figure.label}</dt>
+            <dt>{t(figure.label)}</dt>
             <dd>{formatEuroCents(figure.cents)}</dd>
           </div>
         ))}
       </dl>
-      {report.empfaenger && <p className="support-report-recipient">Weitergegeben an: {report.empfaenger}</p>}
+      {report.empfaenger && <p className="support-report-recipient">{t('Weitergegeben an: {name}', { name: report.empfaenger })}</p>}
       {isExternalUrl(report.nachweisUrl) && (
         <ExternalLink className="support-report-proof" href={report.nachweisUrl}>
-          Nachweis ansehen<span className="visually-hidden">{NEW_TAB_HINT}</span>
+          {t('Nachweis ansehen')}<span className="visually-hidden">{newTabHint()}</span>
           <Icon name="external" />
         </ExternalLink>
       )}
@@ -42,7 +43,7 @@ function DonationReport({ report }) {
 function PartnerDonations({ items }) {
   return (
     <div className="support-donations">
-      <h3>Direkt an ein Tierheim spenden</h3>
+      <h3>{t('Direkt an ein Tierheim spenden')}</h3>
       <ul>
         {items.map((item) => (
           <li key={item.id}>
@@ -56,8 +57,8 @@ function PartnerDonations({ items }) {
                   <Icon name="heart" />
                 </span>
               )}
-              <span className="support-donation-name">An {item.name} spenden</span>
-              <span className="visually-hidden">{NEW_TAB_HINT}</span>
+              <span className="support-donation-name">{t('An {name} spenden', { name: item.name })}</span>
+              <span className="visually-hidden">{newTabHint()}</span>
               <Icon name="external" />
             </ExternalLink>
           </li>
@@ -79,7 +80,8 @@ export default function SupportBlock({ support, compact = false }) {
   if (!hasGofundme && !support.text && !support.bericht && donations.length === 0 && support.promotions.length === 0) {
     return (
       <DiscoverEmpty icon="heart">
-        Noch keine Spendenmöglichkeiten hinterlegt – schaut in die <InternalLink to="/partner">Partnerliste</InternalLink>.
+        {t('Noch keine Spendenmöglichkeiten hinterlegt – schaut in die')}{' '}
+        <InternalLink to="/partner">{t('Partnerliste')}</InternalLink>.
       </DiscoverEmpty>
     )
   }
@@ -92,7 +94,7 @@ export default function SupportBlock({ support, compact = false }) {
           {hasGofundme && (
             <ExternalLink className="btn btn-primary btn-lg" href={support.gofundmeClickUrl}>
               <Icon name="heart" />
-              Über GoFundMe unterstützen<span className="visually-hidden">{NEW_TAB_HINT}</span>
+              {t('Über GoFundMe unterstützen')}<span className="visually-hidden">{newTabHint()}</span>
             </ExternalLink>
           )}
         </div>

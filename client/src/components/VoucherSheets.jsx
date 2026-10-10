@@ -1,4 +1,5 @@
 import VoucherCard, { VoucherCardBack } from './VoucherCard.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // A4-Bögen für die Druckseite (AdminPrintPage): je Bogen bis zu 10 Karten (lib/voucherPrint.js chunkCards),
 // mit duplex hinter jedem Vorder-Bogen ein Rück-Bogen mit ebenso vielen Karten - so passen die Rückseiten
@@ -6,9 +7,9 @@ import VoucherCard, { VoucherCardBack } from './VoucherCard.jsx'
 
 function FrontSheet({ codes, batch, baseUrl, number, total }) {
   return (
-    <section className="voucher-sheet voucher-sheet-front" aria-label={`Bogen ${number} von ${total}, Vorderseite`}>
+    <section className="voucher-sheet voucher-sheet-front" aria-label={t('Bogen {n} von {total}, Vorderseite', { n: number, total })}>
       <span className="voucher-sheet-label" aria-hidden="true">
-        Bogen {number}/{total} · Vorderseite
+        {t('Bogen {n}/{total} · Vorderseite', { n: number, total })}
       </span>
       <div className="voucher-sheet-grid">
         {codes.map((code) => (
@@ -21,9 +22,9 @@ function FrontSheet({ codes, batch, baseUrl, number, total }) {
 
 function BackSheet({ count, batch, baseUrl, number, total }) {
   return (
-    <section className="voucher-sheet voucher-sheet-back" aria-label={`Bogen ${number} von ${total}, Rückseite`}>
+    <section className="voucher-sheet voucher-sheet-back" aria-label={t('Bogen {n} von {total}, Rückseite', { n: number, total })}>
       <span className="voucher-sheet-label" aria-hidden="true">
-        Bogen {number}/{total} · Rückseite
+        {t('Bogen {n}/{total} · Rückseite', { n: number, total })}
       </span>
       <div className="voucher-sheet-grid">
         {Array.from({ length: count }, (_, index) => (

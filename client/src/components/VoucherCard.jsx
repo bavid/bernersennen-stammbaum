@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import PawMark from './PawMark.jsx'
 import { qrSvgPath } from '../lib/qr.js'
 import { DESIGN, cardDesign, hostLabel, voucherUrl } from '../lib/voucherPrint.js'
+import { t } from '../lib/i18n/index.js'
 
 // Druckkarte 85 × 55 mm für einen Gutschein (AdminPrintPage, Phase 5 Task 2). Drei Motive, gewählt über
 // lib/voucherPrint.js cardDesign: Kunden-Karte, Partner-Stapel-Karte (dazu Partner-Logo, Farbstreifen und
@@ -26,7 +27,7 @@ function QrCode({ url, host }) {
       viewBox={`0 0 ${size} ${size}`}
       shapeRendering="crispEdges"
       role="img"
-      aria-label={`QR-Code für den Einladungscode, öffnet ${host}${VOUCHER_PATH}`}
+      aria-label={t('QR-Code für den Einladungscode, öffnet {address}', { address: `${host}${VOUCHER_PATH}` })}
     >
       <path d={path} fill="#000" />
     </svg>
@@ -36,13 +37,13 @@ function QrCode({ url, host }) {
 function AccessText({ partner }) {
   return (
     <>
-      <h3 className="voucher-card-claim">{CLAIM_ACCESS}</h3>
+      <h3 className="voucher-card-claim">{t(CLAIM_ACCESS)}</h3>
       <ul className="voucher-card-bullets">
         {ACCESS_BULLETS.map((bullet) => (
-          <li key={bullet}>{bullet}</li>
+          <li key={bullet}>{t(bullet)}</li>
         ))}
       </ul>
-      {partner && <p className="voucher-card-by">für {partner.name}</p>}
+      {partner && <p className="voucher-card-by">{t('für {name}', { name: partner.name })}</p>}
     </>
   )
 }
@@ -50,8 +51,8 @@ function AccessText({ partner }) {
 function CustomerText({ partner }) {
   return (
     <>
-      <h3 className="voucher-card-claim">{CLAIM_CUSTOMER}</h3>
-      {partner && <p className="voucher-card-by">überreicht von {partner.name}</p>}
+      <h3 className="voucher-card-claim">{t(CLAIM_CUSTOMER)}</h3>
+      {partner && <p className="voucher-card-by">{t('überreicht von {name}', { name: partner.name })}</p>}
     </>
   )
 }
@@ -78,12 +79,11 @@ export default function VoucherCard({ code, batch, baseUrl }) {
         <QrCode url={voucherUrl(baseUrl, code)} host={host} />
       </div>
       <footer className="voucher-card-foot">
-        <span className="voucher-card-code" aria-label="Einladungscode">
+        <span className="voucher-card-code" aria-label={t('Einladungscode')}>
           {code}
         </span>
         <span className="voucher-card-hint">
-          Scannen oder Code eingeben auf {host}
-          {VOUCHER_PATH}
+          {t('Scannen oder Code eingeben auf {address}', { address: `${host}${VOUCHER_PATH}` })}
         </span>
       </footer>
     </article>
@@ -96,24 +96,25 @@ export default function VoucherCard({ code, batch, baseUrl }) {
 export function VoucherCardBack({ batch, baseUrl }) {
   const design = cardDesign(batch)
   const host = hostLabel(baseUrl)
-  const lastStep = design === DESIGN.access ? 'Profil einrichten und veröffentlichen – fertig' : 'Name fürs Zuhause wählen – fertig'
+  const lastStep = design === DESIGN.access ? t('Profil einrichten und veröffentlichen – fertig') : t('Name fürs Zuhause wählen – fertig')
 
   return (
     <article className="voucher-card voucher-card-back" data-design={design}>
       <header className="voucher-card-head">
         <PawMark size={BACK_MARK_SIZE} className="voucher-card-mark" />
-        <h3 className="voucher-card-back-title">So geht’s</h3>
+        <h3 className="voucher-card-back-title">{t('So geht’s')}</h3>
       </header>
       <ol className="voucher-card-steps">
         <li>
-          QR-Code scannen oder <strong>{host}{VOUCHER_PATH}</strong> im Browser öffnen
+          {t('QR-Code scannen oder')} <strong>{host}{VOUCHER_PATH}</strong> {t('im Browser öffnen')}
         </li>
-        <li>Einladungscode eingeben</li>
+        <li>{t('Einladungscode eingeben')}</li>
         <li>{lastStep}</li>
       </ol>
       <p className="voucher-card-privacy">
-        Kostenlos. Keine Tracker, keine fremden Dienste – eure Daten bleiben bei uns. Alles dazu unter {host}
-        {PRIVACY_PATH}
+        {t('Kostenlos. Keine Tracker, keine fremden Dienste – eure Daten bleiben bei uns. Alles dazu unter {address}', {
+          address: `${host}${PRIVACY_PATH}`
+        })}
       </p>
     </article>
   )

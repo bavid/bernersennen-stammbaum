@@ -10,6 +10,7 @@ import { normalizeDiscover } from '../lib/discover.js'
 import { MAP_TAB, discoverTabsFor, sectionCounts } from '../lib/discoverTabs.js'
 import { PreviewProvider } from '../lib/preview.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
+import { t } from '../lib/i18n/index.js'
 
 const DEFAULT_RADIUS = 25
 const RADIUS_VALUES = [5, 10, 25, 50, 100]
@@ -130,7 +131,7 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
   }
 
   const counts = data ? sectionCounts(data) : null
-  const tabs = discoverTabsFor({ preview })
+  const tabs = discoverTabsFor({ preview }).map((entry) => ({ ...entry, label: t(entry.label) }))
   const onMap = tab === MAP_TAB
 
   return (
@@ -138,9 +139,9 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
       <div className="page discover-page">
         <header className="page-hero">
           <div>
-            <span className="eyebrow">Rund ums Tier</span>
-            <h1>Entdecken</h1>
-            <p className="page-lede">Hundeschulen, Salons, neue Begleiter und mehr – mit Postleitzahl zuerst in eurer Nähe.</p>
+            <span className="eyebrow">{t('Rund ums Tier')}</span>
+            <h1>{t('Entdecken')}</h1>
+            <p className="page-lede">{t('Hundeschulen, Salons, neue Begleiter und mehr – mit Postleitzahl zuerst in eurer Nähe.')}</p>
           </div>
         </header>
 
@@ -151,7 +152,7 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
             onPlzChange={setPlz}
             onRadiusChange={setRadius}
             onSubmit={handleSubmit}
-            hint={PLZ_HINT}
+            hint={t(PLZ_HINT)}
             collapsible
             applied={applied}
             allowEverywhere
@@ -160,7 +161,7 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
 
         {error && !onMap && (
           <div className="error-banner" role="alert">
-            {error}
+            {t(error)}
           </div>
         )}
 
@@ -183,7 +184,7 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
           {onMap && <NearbySearch plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} />}
           {loading && !onMap && (
             <p className="muted" role="status" aria-busy="true">
-              Lädt …
+              {t('Lädt …')}
             </p>
           )}
           {data && !onMap && <DiscoverPanel data={data} tab={tab} onShowAll={showAll} />}

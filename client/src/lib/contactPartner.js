@@ -1,5 +1,6 @@
 // Reine Hilfen für "Schreib uns" (ContactPartnerForm) - spiegeln server/lib/partnerMessages.js
 // (validateContactMessage) und die Antworten von POST /api/public/partners/:slug/contact.
+import { t } from './i18n/index.js'
 
 export const MIN_NACHRICHT_LENGTH = 10
 export const MAX_NACHRICHT_LENGTH = 2000
@@ -10,6 +11,7 @@ export const NACHRICHT_LENGTH_MESSAGE = `Die Nachricht muss ${MIN_NACHRICHT_LENG
 export const REACHABLE_MESSAGE = 'Bitte gib eine E-Mail-Adresse oder Telefonnummer an, damit du eine Antwort bekommst.'
 export const UNAVAILABLE_MESSAGE = 'Über dieses Formular lassen sich gerade keine Nachrichten verschicken.'
 const HTML_MESSAGE = 'Bitte nur reinen Text eingeben (kein HTML).'
+const lengthMessage = () => t('Die Nachricht muss {min} bis {max} Zeichen haben.', { min: MIN_NACHRICHT_LENGTH, max: MAX_NACHRICHT_LENGTH })
 
 // Feedback-Runde: Portal und Steckbrief nennen keine "Demo" - der Hinweis am gesperrten "Schreib uns" eines Demo-Partners
 // bleibt neutral.
@@ -38,12 +40,12 @@ const HTML_RE = /[<>]/
 // nur der Server (dieselben Regeln wie bei den Partner-Kontaktdaten).
 export function contactClientErrors(form) {
   const errors = {}
-  if (form.name.trim().length > MAX_NAME_LENGTH) errors.name = `Der Name darf höchstens ${MAX_NAME_LENGTH} Zeichen haben.`
-  else if (HTML_RE.test(form.name)) errors.name = HTML_MESSAGE
-  if (!form.email.trim() && !form.telefon.trim()) errors.email = REACHABLE_MESSAGE
+  if (form.name.trim().length > MAX_NAME_LENGTH) errors.name = t('Der Name darf höchstens {max} Zeichen haben.', { max: MAX_NAME_LENGTH })
+  else if (HTML_RE.test(form.name)) errors.name = t(HTML_MESSAGE)
+  if (!form.email.trim() && !form.telefon.trim()) errors.email = t(REACHABLE_MESSAGE)
   const length = form.nachricht.trim().length
-  if (length < MIN_NACHRICHT_LENGTH || length > MAX_NACHRICHT_LENGTH) errors.nachricht = NACHRICHT_LENGTH_MESSAGE
-  else if (HTML_RE.test(form.nachricht)) errors.nachricht = HTML_MESSAGE
+  if (length < MIN_NACHRICHT_LENGTH || length > MAX_NACHRICHT_LENGTH) errors.nachricht = lengthMessage()
+  else if (HTML_RE.test(form.nachricht)) errors.nachricht = t(HTML_MESSAGE)
   return errors
 }
 
@@ -73,7 +75,7 @@ export function contactErrorField(err) {
 // Meldung für das Banner oben: 429 und 404 (Formular aus oder kein Postfach) mit eigenem Satz; sonst die (freundliche) Server-Meldung, z. B.
 // "In der Demo werden keine Nachrichten verschickt." (403).
 export function contactErrorMessage(err) {
-  if (err?.status === 429) return RATE_LIMIT_MESSAGE
-  if (err?.status === 404) return UNAVAILABLE_MESSAGE
-  return err?.message || 'Die Nachricht konnte gerade nicht verschickt werden.'
+  if (err?.status === 429) return t(RATE_LIMIT_MESSAGE)
+  if (err?.status === 404) return t(UNAVAILABLE_MESSAGE)
+  return err?.message || t('Die Nachricht konnte gerade nicht verschickt werden.')
 }

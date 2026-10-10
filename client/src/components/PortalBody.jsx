@@ -12,6 +12,7 @@ import TabBar from './TabBar.jsx'
 import usePortalTab from '../hooks/usePortalTab.js'
 import { CONTACT_TAB, OVERVIEW_TAB, hashTarget, portalCounts, portalTabs, tabCountText } from '../lib/portalTabs.js'
 import { PortalPanelProvider } from '../lib/portalPanel.js'
+import { t } from '../lib/i18n/index.js'
 
 const TAB_ID_PREFIX = 'portal-tab'
 const panelIdOf = (key) => `portal-panel-${key}`
@@ -58,7 +59,7 @@ export default function PortalBody({ partner, posts, animals, happyEnds, preview
     preview,
     kontakt: showCodeNote || hasPortalContact(partner)
   }
-  const tabs = portalTabs(data)
+  const tabs = portalTabs(data).map((item) => ({ ...item, label: t(item.label) }))
   const keys = tabs.map((item) => item.key)
   const [tab, selectTab] = usePortalTab(keys)
   const { hash } = useLocation()
@@ -133,7 +134,7 @@ export default function PortalBody({ partner, posts, animals, happyEnds, preview
             tabs={tabs}
             current={tab}
             counts={portalCounts(data)}
-            label={`Bereiche von ${partner.name}`}
+            label={t('Bereiche von {name}', { name: partner.name })}
             idPrefix={TAB_ID_PREFIX}
             panelId={panelIdOf}
             countText={tabCountText}

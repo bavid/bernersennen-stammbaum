@@ -1,4 +1,5 @@
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 export const HANDLE_TITLE = 'Verschieben: ziehen – oder mit der Leertaste aufnehmen und mit den Pfeiltasten bewegen'
 
@@ -11,8 +12,8 @@ export default function ReorderHandle({ reorder, itemKey, index, count, label, d
     <button
       type="button"
       className={`reorder-handle${grabbed ? ' is-grabbed' : ''}${className ? ` ${className}` : ''}`}
-      aria-label={`${label} verschieben – Stelle ${index + 1} von ${count}`}
-      title={HANDLE_TITLE}
+      aria-label={t('{label} verschieben – Stelle {n} von {count}', { label, n: index + 1, count })}
+      title={t(HANDLE_TITLE)}
       disabled={disabled}
       {...reorder.handleProps(itemKey)}
     >

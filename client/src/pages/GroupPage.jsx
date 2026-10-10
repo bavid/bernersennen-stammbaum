@@ -18,6 +18,7 @@ import { hasRole } from '../lib/roles.js'
 import { areaGrid } from '../lib/animalGrid.js'
 import { familySettingsRoute } from '../lib/areas.js'
 import { isVisit } from '../lib/visits.js'
+import { t } from '../lib/i18n/index.js'
 
 // Mitglieder & Rollen (Phase R) kommen wie bisher erst bei Bedarf als eigener Chunk.
 const MembersPage = lazy(() => import('./MembersPage.jsx'))
@@ -31,14 +32,14 @@ function tabsFor(visiting, words) {
     return [
       { key: 'beitraege', label: words.entries },
       { key: 'tiere', label: words.animals },
-      { key: 'zeitleiste', label: 'Zeitleiste' }
+      { key: 'zeitleiste', label: t('Zeitleiste') }
     ]
   }
   return [
     { key: 'beitraege', label: words.entries },
     { key: 'tiere', label: words.animals },
-    { key: 'pinnwand', label: 'Pinnwand' },
-    { key: 'mitglieder', label: 'Mitglieder' }
+    { key: 'pinnwand', label: t('Pinnwand') },
+    { key: 'mitglieder', label: t('Mitglieder') }
   ]
 }
 
@@ -67,7 +68,7 @@ export default function GroupPage({ family, onFamilyChange }) {
     <div className="page group-page">
       <header className="page-hero group-hero">
         <div>
-          <span className="eyebrow">{visiting ? 'Befreundetes Zuhause' : words.group}</span>
+          <span className="eyebrow">{visiting ? t('Befreundetes Zuhause') : words.group}</span>
           <h1>{family.name}</h1>
           {meta && <p className="group-meta">{meta}</p>}
           {/* Phase W, Schritt 2: zu Besuch ein Chip im Kopf statt des Bands in der Leiste oben. */}
@@ -84,7 +85,7 @@ export default function GroupPage({ family, onFamilyChange }) {
             </Link>
             <Link to={`/bilderrahmen?in=${family.id}`} className="hero-link">
               <Icon name="frame" />
-              Bilderrahmen
+              {t('Bilderrahmen')}
             </Link>
           </div>
         )}
@@ -99,7 +100,7 @@ export default function GroupPage({ family, onFamilyChange }) {
       <TabBar
         tabs={tabs}
         current={current}
-        label={`Bereiche von ${family.name}`}
+        label={t('Bereiche von {name}', { name: family.name })}
         idPrefix="gruppe-tab"
         panelId="gruppe-panel"
         className="group-tab-bar"

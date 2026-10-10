@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { readSetting, writeSetting } from '../lib/storage.js'
+import { t } from '../lib/i18n/index.js'
 
 // Merkt sich (localStorage, lib/storage.js - fällt ohne Speicher still aus), dass der Hinweis geschlossen wurde.
 export const DEMO_GUIDE_SETTING = 'partnerDemoGuideClosed'
@@ -45,19 +46,19 @@ export default function PartnerDemoGuide({ family }) {
     <aside className="demo-guide" aria-labelledby="demo-guide-title" ref={ref}>
       <div className="demo-guide-text">
         <p className="demo-guide-title" id="demo-guide-title">
-          Das ist die Demo eines Partner-Bereichs
+          {t('Das ist die Demo eines Partner-Bereichs')}
         </p>
-        <p>Schaut euch in Ruhe um – hier geht’s zu den drei wichtigsten Stellen:</p>
+        <p>{t('Schaut euch in Ruhe um – hier geht’s zu den drei wichtigsten Stellen:')}</p>
       </div>
-      <nav className="demo-guide-links" aria-label="Rundgang durch die Demo">
+      <nav className="demo-guide-links" aria-label={t('Rundgang durch die Demo')}>
         {demoGuideLinks(family).map((link) => (
           <Link key={link.to} to={link.to} className="btn btn-ghost" aria-current={pathname === link.to ? 'page' : undefined}>
             <Icon name={link.icon} />
-            {link.label}
+            {t(link.label)}
           </Link>
         ))}
       </nav>
-      <button type="button" className="icon-btn demo-guide-close" onClick={handleClose} aria-label="Hinweis schließen" title="Hinweis schließen">
+      <button type="button" className="icon-btn demo-guide-close" onClick={handleClose} aria-label={t('Hinweis schließen')} title={t('Hinweis schließen')}>
         <Icon name="close" />
       </button>
     </aside>

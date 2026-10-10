@@ -9,6 +9,7 @@ import { hatFinanzDaten } from '../lib/finanzierungRuecklage.js'
 import { PRESENT_TILES, demoStartUrl } from '../lib/present.js'
 import { FOLIEN, FOLIE_PARAM, clampFolie } from '../lib/vorstellung.js'
 import '../styles/vorstellung.css'
+import { t } from '../lib/i18n/index.js'
 
 // /vorstellung - Präsentation zum Durchklicken (lib/vorstellung.js): öffentlich wie /app (App.jsx), mit oder ohne
 // Sitzung. Eine Folie pro Bildschirm; Weiter/Zurück, Pfeiltasten, Punkte und ?folie=N (1-basiert, wird begrenzt).
@@ -26,8 +27,8 @@ function Punkte({ folie }) {
             <Icon name={point.icon} />
           </span>
           <span>
-            <strong>{point.title}</strong>
-            <span className="vorstellung-point-text">{point.text}</span>
+            <strong>{t(point.title)}</strong>
+            <span className="vorstellung-point-text">{t(point.text)}</span>
           </span>
         </li>
       ))}
@@ -54,7 +55,7 @@ function FinanzFolie() {
     <>
       <FinanzierungRegel ruecklage={hatFinanzDaten(data) ? data.ruecklage : null} />
       <Link to="/finanzierung" className="vorstellung-more">
-        Alle Zahlen ansehen <Icon name="arrowRight" />
+        {t('Alle Zahlen ansehen')} <Icon name="arrowRight" />
       </Link>
     </>
   )
@@ -63,7 +64,7 @@ function FinanzFolie() {
 function AppFolie() {
   return (
     <Link to="/app" className="btn btn-primary btn-lg vorstellung-cta">
-      <Icon name="phone" /> So kommt die App aufs Handy
+      <Icon name="phone" /> {t('So kommt die App aufs Handy')}
     </Link>
   )
 }
@@ -75,10 +76,10 @@ function DemoFolie() {
         <li key={tile.key}>
           <a className="present-tile" href={demoStartUrl(tile)} {...NEW_TAB} data-key={tile.key}>
             <Icon name={tile.icon} />
-            <span className="present-tile-title">{tile.label}</span>
-            <span className="present-tile-sub">{tile.description}</span>
+            <span className="present-tile-title">{t(tile.label)}</span>
+            <span className="present-tile-sub">{t(tile.description)}</span>
             <span className="present-tile-hint muted">
-              Öffnet in neuem Tab <Icon name="external" />
+              {t('Öffnet in neuem Tab')} <Icon name="external" />
             </span>
           </a>
         </li>
@@ -93,9 +94,9 @@ function Folie({ folie }) {
   const Zusatz = FOLIEN_ZUSATZ[folie.kind]
   return (
     <article className="vorstellung-folie" aria-labelledby="vorstellung-titel">
-      <span className="eyebrow">{folie.eyebrow}</span>
-      <h1 id="vorstellung-titel">{folie.title}</h1>
-      {folie.lead && <p className="vorstellung-lead">{folie.lead}</p>}
+      <span className="eyebrow">{t(folie.eyebrow)}</span>
+      <h1 id="vorstellung-titel">{t(folie.title)}</h1>
+      {folie.lead && <p className="vorstellung-lead">{t(folie.lead)}</p>}
       {folie.points.length > 0 && <Punkte folie={folie} />}
       {Zusatz && <Zusatz />}
     </article>
@@ -104,12 +105,12 @@ function Folie({ folie }) {
 
 function Dots({ aktuell, onSelect }) {
   return (
-    <ul className="vorstellung-dots" aria-label="Folien">
+    <ul className="vorstellung-dots" aria-label={t('Folien')}>
       {FOLIEN.map((folie, index) => (
         <li key={folie.id}>
           <button
             type="button"
-            aria-label={`Folie ${index + 1}: ${folie.eyebrow}`}
+            aria-label={t('Folie {n}: {titel}', { n: index + 1, titel: t(folie.eyebrow) })}
             aria-current={index + 1 === aktuell ? 'step' : undefined}
             onClick={() => onSelect(index + 1)}
           />
@@ -153,20 +154,20 @@ export default function VorstellungPage({ family = null }) {
         <div key={folie.id} className="vorstellung-live" aria-live="polite">
           <Folie folie={folie} />
         </div>
-        <nav className="vorstellung-nav" aria-label="Folien durchklicken">
+        <nav className="vorstellung-nav" aria-label={t('Folien durchklicken')}>
           <button type="button" className="btn btn-ghost" disabled={istErste} onClick={() => gehZu(aktuell - 1)}>
-            <Icon name="arrowLeft" /> Zurück
+            <Icon name="arrowLeft" /> {t('Zurück')}
           </button>
           <span className="vorstellung-count muted">
-            Folie {aktuell} von {FOLIEN.length}
+            {t('Folie {n} von {total}', { n: aktuell, total: FOLIEN.length })}
           </span>
           {istLetzte ? (
             <Link to="/" className="btn btn-primary">
-              Zur Startseite <Icon name="arrowRight" />
+              {t('Zur Startseite')} <Icon name="arrowRight" />
             </Link>
           ) : (
             <button type="button" className="btn btn-primary" onClick={() => gehZu(aktuell + 1)}>
-              Weiter <Icon name="arrowRight" />
+              {t('Weiter')} <Icon name="arrowRight" />
             </button>
           )}
         </nav>

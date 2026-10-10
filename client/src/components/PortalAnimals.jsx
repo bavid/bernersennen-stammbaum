@@ -6,6 +6,7 @@ import { ExternalLink } from './PreviewLink.jsx'
 import { isExternalUrl } from '../lib/format.js'
 import { SECTION_IDS } from '../lib/portalTabs.js'
 import { adoptionSectionTitle } from '../lib/shelter.js'
+import { t } from '../lib/i18n/index.js'
 
 // Reiter "Tiere" auf dem Portal eines Tierheims: die Tiere in Vermittlung (je eine Karte zum Steckbrief /t/:slug) und
 // darunter die Happy Ends - ein Reiter statt zweier, das hält die Leiste ruhig. Die externe Vermittlungsseite steht
@@ -15,7 +16,7 @@ export default function PortalAnimals({ animals, happyEnds, partner }) {
   return (
     <>
       {animals.length > 0 && (
-        <PortalSection id={SECTION_IDS.animals} title={adoptionSectionTitle(animals)} className="partner-portal-animals">
+        <PortalSection id={SECTION_IDS.animals} title={t(adoptionSectionTitle(animals))} className="partner-portal-animals">
           <div className="shelter-grid">
             {animals.map((animal) => (
               <AnimalAdoptionCard key={animal.slug} animal={animal} />
@@ -23,7 +24,7 @@ export default function PortalAnimals({ animals, happyEnds, partner }) {
           </div>
           {hasVermittlung && (
             <ExternalLink href={partner.vermittlung_url} className="btn btn-ghost portal-animals-more">
-              Alle Tiere auf der Vermittlungsseite
+              {t('Alle Tiere auf der Vermittlungsseite')}
               <Icon name="external" />
             </ExternalLink>
           )}
@@ -31,7 +32,7 @@ export default function PortalAnimals({ animals, happyEnds, partner }) {
       )}
 
       {happyEnds.length > 0 && (
-        <PortalSection id={SECTION_IDS.happyEnds} title="Happy Ends" className="partner-portal-animals partner-portal-happy-ends">
+        <PortalSection id={SECTION_IDS.happyEnds} title={t('Happy Ends')} className="partner-portal-animals partner-portal-happy-ends">
           <div className="shelter-grid">
             {happyEnds.map((happyEnd, index) => (
               <HappyEndCard key={`${happyEnd.name}-${index}`} happyEnd={happyEnd} />

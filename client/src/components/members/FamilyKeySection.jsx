@@ -6,6 +6,7 @@ import { authCopyFor } from '../AccessSettings.jsx'
 import KeyReveal from '../KeyReveal.jsx'
 import Icon from '../Icon.jsx'
 import { formatVoucherCode } from '../../lib/voucherCode.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Gemeinsamen Schlüssel der Familie erneuern (Leitungs-Mitglied mit eigenem Zuhause, server/routes/
 // members.js POST /key): derselbe Nachweis wie in AccessSettings - der EIGENE aktuelle Schlüssel bzw. das
@@ -42,20 +43,24 @@ export default function FamilyKeySection({ family, disabled }) {
 
   return (
     <section className="card members-section" aria-labelledby="family-key-title">
-      <h2 id="family-key-title">Schlüssel {words.ofGroup} erneuern</h2>
+      <h2 id="family-key-title">{t('Schlüssel {ofGroup} erneuern', { ofGroup: words.ofGroup })}</h2>
       {newKey ? (
         <KeyReveal
           value={newKey}
-          continueLabel="Fertig"
+          continueLabel={t('Fertig')}
           showCardHint={false}
-          note={`Wer „${family.name}“ bisher direkt mit dem alten Schlüssel geöffnet hat, braucht ab jetzt diesen. Deine eigene Anmeldung bleibt, wie sie ist.`}
+          note={t('Wer „{name}“ bisher direkt mit dem alten Schlüssel geöffnet hat, braucht ab jetzt diesen. Deine eigene Anmeldung bleibt, wie sie ist.', {
+            name: family.name
+          })}
           onContinue={() => setNewKey(null)}
         />
       ) : (
         <>
           <p className="muted">
-            Mit dem gemeinsamen Schlüssel öffnet man {words.theGroup} direkt, ohne eigenes Zuhause. Nach dem Erneuern gilt
-            nur noch der neue – alle, die so angemeldet waren, müssen sich neu anmelden.
+            {t(
+              'Mit dem gemeinsamen Schlüssel öffnet man {theGroup} direkt, ohne eigenes Zuhause. Nach dem Erneuern gilt nur noch der neue – alle, die so angemeldet waren, müssen sich neu anmelden.',
+              { theGroup: words.theGroup }
+            )}
           </p>
           {error && (
             <div className="error-banner" role="alert">
@@ -84,7 +89,7 @@ export default function FamilyKeySection({ family, disabled }) {
             onClick={handleClick}
           >
             <Icon name={armed ? 'check' : 'lock'} />
-            {saving ? 'Erneuere …' : armed ? 'Ja, Schlüssel erneuern' : 'Schlüssel erneuern'}
+            {saving ? t('Erneuere …') : armed ? t('Ja, Schlüssel erneuern') : t('Schlüssel erneuern')}
           </button>
         </>
       )}

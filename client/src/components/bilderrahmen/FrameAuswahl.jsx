@@ -1,5 +1,6 @@
 import '../../styles/bilderrahmen-optionen.css'
 import { ZEITRAEUME } from '../../lib/bilderrahmen.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Welche Fotos? Tiere als Chips (mehrere wählbar, keins gewählt = alle) und der Zeitraum. Auch für den Rahmen-Link in
 // den Einstellungen (RahmenGeraetForm) - idPrefix trennt die Namen der Radio-Gruppen. showPrivat (Diashow im eigenen
@@ -16,7 +17,7 @@ export default function FrameAuswahl({ tiere, auswahl, onChange, idPrefix = 'fra
     <>
       {tiere.length > 1 && (
         <fieldset className="frame-settings-group">
-          <legend>Welche Tiere?</legend>
+          <legend>{t('Welche Tiere?')}</legend>
           <div className="frame-chips">
             <button
               type="button"
@@ -24,7 +25,7 @@ export default function FrameAuswahl({ tiere, auswahl, onChange, idPrefix = 'fra
               aria-pressed={chosen.size === 0}
               onClick={() => onChange({ ...auswahl, tiere: [] })}
             >
-              Alle
+              {t('Alle')}
             </button>
             {tiere.map((tier) => (
               <button
@@ -36,7 +37,7 @@ export default function FrameAuswahl({ tiere, auswahl, onChange, idPrefix = 'fra
               >
                 <span>
                   {tier.name}
-                  {tier.inErinnerung && <span className="frame-chip-note"> · in Erinnerung</span>}
+                  {tier.inErinnerung && <span className="frame-chip-note"> · {t('in Erinnerung')}</span>}
                 </span>
               </button>
             ))}
@@ -44,7 +45,7 @@ export default function FrameAuswahl({ tiere, auswahl, onChange, idPrefix = 'fra
         </fieldset>
       )}
       <fieldset className="frame-settings-group">
-        <legend>Zeitraum</legend>
+        <legend>{t('Zeitraum')}</legend>
         <div className="frame-choice-row">
           {ZEITRAEUME.map(({ key, label }) => (
             <label key={key} className={`frame-choice${auswahl.zeitraum === key ? ' is-selected' : ''}`}>
@@ -55,23 +56,23 @@ export default function FrameAuswahl({ tiere, auswahl, onChange, idPrefix = 'fra
                 checked={auswahl.zeitraum === key}
                 onChange={() => onChange({ ...auswahl, zeitraum: key })}
               />
-              {label}
+              {t(label)}
             </label>
           ))}
         </div>
       </fieldset>
       {showPrivat && (
         <fieldset className="frame-settings-group">
-          <legend>Private Erinnerungen</legend>
+          <legend>{t('Private Erinnerungen')}</legend>
           <label className="check">
             <input
               type="checkbox"
               checked={Boolean(auswahl.privat)}
               onChange={(event) => onChange({ ...auswahl, privat: event.target.checked })}
             />
-            Auch private Erinnerungen zeigen
+            {t('Auch private Erinnerungen zeigen')}
           </label>
-          <p className="field-hint">Nur im eigenen Zuhause – auf dem Bildschirm sieht sie jeder, der davorsteht.</p>
+          <p className="field-hint">{t('Nur im eigenen Zuhause – auf dem Bildschirm sieht sie jeder, der davorsteht.')}</p>
         </fieldset>
       )}
     </>

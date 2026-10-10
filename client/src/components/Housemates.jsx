@@ -5,6 +5,7 @@ import Icon from './Icon.jsx'
 import QuickAnimalForm from './QuickAnimalForm.jsx'
 import { animalKind, dogLabel } from '../lib/timeline.js'
 import { isEditable } from '../lib/areas.js'
+import { t } from '../lib/i18n/index.js'
 
 // "Lebt zusammen mit": Mitbewohner ohne gemeinsame Abstammung und andere Tiere im selben Zuhause.
 // Neu anlegen läuft über QuickAnimalForm (dieselbe Maske wie im Stammbaum und auf "Tier hinzufügen") –
@@ -21,7 +22,7 @@ export default function Housemates({ dog, allDogs, canEdit, onAdd, onCreated, on
 
   return (
     <div className="facts-wide housemates">
-      <dt>Lebt zusammen mit</dt>
+      <dt>{t('Lebt zusammen mit')}</dt>
       <dd className="chip-list">
         {dog.housemates.map((mate) => {
           const kind = animalKind(mate)
@@ -37,8 +38,8 @@ export default function Housemates({ dog, allDogs, canEdit, onAdd, onCreated, on
                   type="button"
                   className="chip-remove"
                   onClick={() => onRemove(mate)}
-                  aria-label={`Verbindung zu ${dogLabel(mate)} entfernen`}
-                  title="Verbindung entfernen"
+                  aria-label={t('Verbindung zu {name} entfernen', { name: dogLabel(mate) })}
+                  title={t('Verbindung entfernen')}
                 >
                   <Icon name="close" />
                 </button>
@@ -48,12 +49,12 @@ export default function Housemates({ dog, allDogs, canEdit, onAdd, onCreated, on
         })}
         {canEdit && !adding && (
           <button type="button" className="chip chip-add" onClick={() => setAdding(true)}>
-            <Icon name="plus" /> Mitbewohner
+            <Icon name="plus" /> {t('Mitbewohner')}
           </button>
         )}
         {canEdit && adding && (
           <div className="quick-add">
-            <p className="quick-add-title">Neues Tier, das hier mitwohnt</p>
+            <p className="quick-add-title">{t('Neues Tier, das hier mitwohnt')}</p>
             <QuickAnimalForm
               allDogs={allDogs}
               livesWith={dog}
@@ -65,7 +66,7 @@ export default function Housemates({ dog, allDogs, canEdit, onAdd, onCreated, on
             />
             {candidates.length > 0 && (
               <div className="quick-add-existing">
-                <label htmlFor="housemate-existing">… oder schon in der Chronik:</label>
+                <label htmlFor="housemate-existing">{t('… oder schon in der Chronik:')}</label>
                 <select
                   id="housemate-existing"
                   className="chip-select"
@@ -76,7 +77,7 @@ export default function Housemates({ dog, allDogs, canEdit, onAdd, onCreated, on
                     setAdding(false)
                   }}
                 >
-                  <option value="">– Tier auswählen –</option>
+                  <option value="">{t('– Tier auswählen –')}</option>
                   {candidates.map((other) => (
                     <option key={other.id} value={other.id}>
                       {dogLabel(other)}

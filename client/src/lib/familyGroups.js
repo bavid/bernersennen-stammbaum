@@ -2,6 +2,7 @@
 // Eigentümer (der eigene Bereich, die Zuhause der Mitglieder - der Filter über dem Raster) und die Frage, ob es schon
 // einen Stammbaum gibt.
 import { collectNodes, computeUnions } from './pedigree.js'
+import { t } from './i18n/index.js'
 
 // Adresse der Familienbande: ?gruppe=eigen bzw. ?gruppe=<Bereichs-Id> wählt eine Gruppe, ohne Angabe stehen alle da.
 export const GROUP_PARAM = 'gruppe'
@@ -51,7 +52,7 @@ const isOwn = (dog) => !dog.shared_from
 
 function ownGroup(family, dogs) {
   const base = { key: 'eigen', param: OWN_GROUP_PARAM, dogs }
-  if (family.art === 'zuhause') return { ...base, kind: 'zuhause', title: 'Zuhause' }
+  if (family.art === 'zuhause') return { ...base, kind: 'zuhause', title: t('Zuhause') }
   return { ...base, kind: family.art === 'rudel' ? 'familie' : 'bereich', title: family.name }
 }
 

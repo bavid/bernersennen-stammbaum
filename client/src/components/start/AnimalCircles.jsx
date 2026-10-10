@@ -3,6 +3,7 @@ import Avatar from '../Avatar.jsx'
 import Icon from '../Icon.jsx'
 import { circleAnimals, isInMemory } from '../../lib/animalCircles.js'
 import { displayName } from '../../lib/timeline.js'
+import { t } from '../../lib/i18n/index.js'
 
 // „Eure Tiere“ oben auf Start (B+ Familienalbum): je Tier ein Foto-Kreis mit Namen, der zur Tierseite führt; verstorbene
 // Tiere mit sanft grauem Ring und „In Erinnerung“. Am Ende ein gestrichelter Kreis „Neu“ für ein neues Tier (nur, wer
@@ -13,7 +14,7 @@ export default function AnimalCircles({ dogs, canAdd, onAdd }) {
   return (
     <section className="animal-circles" aria-labelledby="animal-circles-title">
       <h2 id="animal-circles-title" className="visually-hidden">
-        Eure Tiere
+        {t('Eure Tiere')}
       </h2>
       <ul className="animal-circles-list" role="list">
         {animals.map((dog) => {
@@ -23,19 +24,19 @@ export default function AnimalCircles({ dogs, canAdd, onAdd }) {
               <Link to={`/tier/${dog.id}`} className={`animal-circle${remembered ? ' is-memorial' : ''}`}>
                 <Avatar dog={dog} size={58} className="animal-circle-photo" />
                 <span className="animal-circle-name">{displayName(dog)}</span>
-                {remembered && <span className="animal-circle-note">In Erinnerung</span>}
+                {remembered && <span className="animal-circle-note">{t('In Erinnerung')}</span>}
               </Link>
             </li>
           )
         })}
         {canAdd && (
           <li>
-            <button type="button" className="animal-circle is-new" onClick={() => onAdd()} aria-label="Neues Tier anlegen">
+            <button type="button" className="animal-circle is-new" onClick={() => onAdd()} aria-label={t('Neues Tier anlegen')}>
               <span className="animal-circle-photo animal-circle-plus" aria-hidden="true">
                 <Icon name="plus" />
               </span>
               <span className="animal-circle-name" aria-hidden="true">
-                Neu
+                {t('Neu')}
               </span>
             </button>
           </li>

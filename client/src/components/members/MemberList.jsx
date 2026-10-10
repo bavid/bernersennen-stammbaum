@@ -5,11 +5,12 @@ import RoleSelect from '../RoleSelect.jsx'
 import Icon from '../Icon.jsx'
 import { ROLES, isLastLeitung } from '../../lib/roles.js'
 import { formatDateShort } from '../../lib/dates.js'
+import { t } from '../../lib/i18n/index.js'
 
 const LAST_LEITUNG_HINT = 'Es muss immer eine Leitung geben.'
 
 function sharedLabel(count) {
-  return count === 1 ? '1 geteiltes Tier' : `${count} geteilte Tiere`
+  return count === 1 ? t('1 geteiltes Tier') : t('{n} geteilte Tiere', { n: count })
 }
 
 // Eine Zeile: Name, Rolle, seit wann, wie viele Tiere hierher geteilt. Die Leitung (canManage) bekommt
@@ -25,45 +26,47 @@ function MemberRow({ member, isSelf, isLast, canManage, disabled, onRoleChange, 
     <li className="member-row">
       <div className="member-row-main">
         <strong>{member.name}</strong>
-        {isSelf && <span className="muted">(ich)</span>}
+        {isSelf && <span className="muted">{t('(ich)')}</span>}
         <RoleBadge rolle={member.rolle} />
         <span className="member-row-meta">
-          seit {formatDateShort(member.seit)} · {sharedLabel(member.geteilteTiere)}
+          {t('seit {date}', { date: formatDateShort(member.seit) })} · {sharedLabel(member.geteilteTiere)}
         </span>
       </div>
       {canManage && (
         <div className="member-row-actions">
           {isLast ? (
             <span className="field-hint" id={hintId}>
-              {LAST_LEITUNG_HINT}
+              {t(LAST_LEITUNG_HINT)}
             </span>
           ) : (
             <RoleSelect
               value={member.rolle}
               options={ROLES}
               disabled={disabled}
-              ariaLabel={`Rolle von „${member.name}“`}
+              ariaLabel={t('Rolle von „{name}“', { name: member.name })}
               onChange={(rolle) => onRoleChange(member, rolle)}
             />
           )}
           {!isSelf && !confirming && (
             <button type="button" className="btn btn-danger" disabled={disabled} onClick={() => setConfirming(true)}>
               <Icon name="trash" />
-              Entfernen
+              {t('Entfernen')}
             </button>
           )}
         </div>
       )}
       {confirming && (
-        <div className="member-remove-confirm" role="group" aria-label={`„${member.name}“ entfernen`}>
+        <div className="member-remove-confirm" role="group" aria-label={t('„{name}“ entfernen', { name: member.name })}>
           <p>
-            „{member.name}“ aus {words.yourGroupDat} entfernen? Die geteilten Tiere verschwinden aus {words.yourGroupDat},
-            bleiben aber in der Chronik dieses Haushalts.
+            {t(
+              '„{name}“ aus {yourGroup} entfernen? Die geteilten Tiere verschwinden aus {yourGroup}, bleiben aber in der Chronik dieses Haushalts.',
+              { name: member.name, yourGroup: words.yourGroupDat }
+            )}
           </p>
           <div className="form-actions">
             <span className="form-actions-spacer" />
             <button type="button" className="btn btn-ghost" onClick={() => setConfirming(false)}>
-              Abbrechen
+              {t('Abbrechen')}
             </button>
             <button
               type="button"
@@ -75,7 +78,7 @@ function MemberRow({ member, isSelf, isLast, canManage, disabled, onRoleChange, 
               }}
             >
               <Icon name="trash" />
-              Ja, entfernen
+              {t('Ja, entfernen')}
             </button>
           </div>
         </div>

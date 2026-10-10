@@ -5,6 +5,7 @@ import { displayName } from '../../lib/timeline.js'
 import AreaChip from '../feed/AreaChip.jsx'
 import PinboardNotes from './PinboardNotes.jsx'
 import { feedNoteLink } from '../../lib/startFeed.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Wie weit vorher ein Einzugs-Jahrestag auf Start erscheint.
 export const ANNIVERSARY_WINDOW_DAYS = 30
@@ -12,10 +13,12 @@ export const ANNIVERSARY_WINDOW_DAYS = 30
 // "In 5 Tagen: Nele ist 5 Jahre bei euch" / "Heute: Nele ist 5 Jahre bei euch!"
 export function anniversaryText(anniversary) {
   const name = displayName(anniversary.dog)
-  const years = `${anniversary.years} ${anniversary.years === 1 ? 'Jahr' : 'Jahre'}`
-  if (anniversary.daysUntil === 0) return `Heute: ${name} ist ${years} bei euch!`
-  const days = `${anniversary.daysUntil} ${anniversary.daysUntil === 1 ? 'Tag' : 'Tagen'}`
-  return `In ${days}: ${name} ist ${years} bei euch`
+  const n = anniversary.years
+  const years = n === 1 ? t('{n} Jahr', { n }) : t('{n} Jahre', { n })
+  if (anniversary.daysUntil === 0) return t('Heute: {name} ist {years} bei euch!', { name, years })
+  const d = anniversary.daysUntil
+  const days = d === 1 ? t('{n} Tag', { n: d }) : t('{n} Tagen', { n: d })
+  return t('In {days}: {name} ist {years} bei euch', { days, name, years })
 }
 
 // "Bald" auf Start (Phase W): die nächsten Termine der Pinnwände - des Zuhauses und der Familien (Phase W, Schritt 3: aus
@@ -31,7 +34,7 @@ export default function StartSoon({ termine = [], anniversary, notes = [], notes
   return (
     <section className="card start-card start-soon" aria-labelledby="start-soon-title">
       <h2 id="start-soon-title" className="start-card-title">
-        {hasSoon || notes.length === 0 ? 'Bald' : 'Neu an der Pinnwand'}
+        {hasSoon || notes.length === 0 ? t('Bald') : t('Neu an der Pinnwand')}
       </h2>
       {hasSoon && (
         <ul className="start-soon-list" role="list">
@@ -58,7 +61,7 @@ export default function StartSoon({ termine = [], anniversary, notes = [], notes
       <PinboardNotes notes={notes} heading={hasSoon} />
       {notesCount > 0 && (
         <Link to="/pinnwand" className="start-card-link">
-          Notizen ({notesCount}) <Icon name="arrowRight" />
+          {t('Notizen')} ({notesCount}) <Icon name="arrowRight" />
         </Link>
       )}
     </section>

@@ -1,10 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import Icon from '../Icon.jsx'
 import { formatDateLong, todayIso } from '../../lib/dates.js'
+import { t } from '../../lib/i18n/index.js'
 
 function chipLabel(value) {
-  if (!value) return 'Datum wählen'
-  if (value === todayIso()) return 'Heute'
+  if (!value) return t('Datum wählen')
+  if (value === todayIso()) return t('Heute')
   return formatDateLong(value)
 }
 
@@ -30,7 +31,7 @@ export default function DatumChip({ value, onChange, invalid, errorId }) {
         className="entry-chip"
         aria-expanded={showInput}
         aria-controls={regionId}
-        aria-label={`Datum: ${chipLabel(value)} – ändern`}
+        aria-label={t('Datum: {date} – ändern', { date: chipLabel(value) })}
         onClick={() => {
           openedByUser.current = !open
           setOpen(!open)
@@ -42,7 +43,7 @@ export default function DatumChip({ value, onChange, invalid, errorId }) {
       </button>
       <div id={regionId} className="datum-chip-field" hidden={!showInput}>
         <label className="field-label" htmlFor={inputId}>
-          Datum
+          {t('Datum')}
         </label>
         <input
           ref={inputRef}
@@ -54,7 +55,7 @@ export default function DatumChip({ value, onChange, invalid, errorId }) {
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? errorId : undefined}
         />
-        <span className="field-hint">Die Chronik sortiert nach diesem Tag.</span>
+        <span className="field-hint">{t('Die Chronik sortiert nach diesem Tag.')}</span>
       </div>
     </div>
   )

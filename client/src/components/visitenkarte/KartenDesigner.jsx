@@ -19,6 +19,7 @@ import { printAddressPending } from '../../lib/voucherPrint.js'
 import { CARDS_PER_SHEET, cardModel, designPayload, isSameDesign, maskPendingAddress, musterCodes, normalizeDesign } from '../../lib/visitenkarte.js'
 import { DEFAULT_KARTEN, buildKartenSheets, rueckseiteModel, sheetCountFor } from '../../lib/einladungskarte.js'
 import { KARTE, backHasCode } from '../../lib/kartenWahl.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Der Karten-Designer (Phase V5, Feedback-Runde: eine Seite ohne "Kartenart"): oben die Wahl der Kombination (KartenWahl
 // - Visitenkarte, Einladungskarte oder Kombi), daneben bzw. darunter die Vorschau (Vorder- und Rückseite in echten
@@ -101,12 +102,12 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
           <Stage
             front={<VisitenkarteFront card={card} />}
             back={<BackOf karte={karte} card={card} back={back} code={muster[0]} muster />}
-            backNote={hasCode ? RUECKSEITE_NOTE : null}
+            backNote={hasCode ? t(RUECKSEITE_NOTE) : null}
           />
         </div>
         <section className="vk-panel vk-area-front" aria-labelledby="vk-gestaltung-title">
           <h2 id="vk-gestaltung-title" className="vk-panel-title">
-            Vorderseite
+            {t('Vorderseite')}
           </h2>
           <VisitenkarteVorlagen value={design.vorlage} farbe={design.farbe} hasFoto={Boolean(card.fotoUrl)} onChange={(vorlage) => update({ vorlage })} />
           <VisitenkarteFarbe value={design.farbe} eigeneFarbe={profile.farbe} onChange={(farbe) => update({ farbe })} />
@@ -133,7 +134,7 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
         </div>
       </div>
 
-      <BogenVorschau note={hasCode && !readOnly ? CODES_LATER : null}>
+      <BogenVorschau note={hasCode && !readOnly ? t(CODES_LATER) : null}>
         <VisitenkartenBoegen
           sheets={buildKartenSheets({ count: Math.min(count, CARDS_PER_SHEET), codes: hasCode ? muster : [] })}
           total={sheetCountFor(count)}

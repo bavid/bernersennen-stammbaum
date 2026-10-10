@@ -2,6 +2,7 @@ import { useId } from 'react'
 import Icon from '../Icon.jsx'
 import usePhotoUpload from '../../hooks/usePhotoUpload.js'
 import { useIsDemo } from '../../lib/demo.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Optionales Porträt beim Anlegen eines Tiers: ein runder Kreis zum Tippen, danach die runde Vorschau (wie im Profil).
 // value: [url] oder []; schreibgeschützt (Demo, Admin-Ansicht) ohne Upload.
@@ -26,24 +27,24 @@ export default function PortraitFeld({ value, onChange, onBusyChange, onError })
       ) : (
         <label className={`portrait-feld-kreis${busy ? ' is-busy' : ''}`} htmlFor={inputId}>
           {photo ? <img src={photo} alt="" width="80" height="80" /> : <Icon name="camera" />}
-          <span className="visually-hidden">{photo ? 'Anderes Foto wählen' : 'Foto wählen'}</span>
+          <span className="visually-hidden">{photo ? t('Anderes Foto wählen') : t('Foto wählen')}</span>
           <input id={inputId} className="visually-hidden" type="file" accept="image/*" onChange={handleFiles} disabled={busy} />
         </label>
       )}
       <span className="visually-hidden" aria-live="polite">
-        {busy ? 'Foto wird hochgeladen' : ''}
+        {busy ? t('Foto wird hochgeladen') : ''}
       </span>
       <div className="portrait-feld-text">
         <span className="portrait-feld-label">
-          Foto <span className="muted">(optional)</span>
+          {t('Foto')} <span className="muted">{t('(optional)')}</span>
         </span>
-        {busy && <span className="field-hint">Lädt …</span>}
+        {busy && <span className="field-hint">{t('Lädt …')}</span>}
         {!busy && photo && !isDemo && (
           <button type="button" className="link-button" onClick={() => onChange([])}>
-            Foto entfernen
+            {t('Foto entfernen')}
           </button>
         )}
-        {!busy && !photo && <span className="field-hint">{isDemo ? 'In der Demo ohne Foto' : 'Ein Bild fürs Profil'}</span>}
+        {!busy && !photo && <span className="field-hint">{isDemo ? t('In der Demo ohne Foto') : t('Ein Bild fürs Profil')}</span>}
       </div>
     </div>
   )

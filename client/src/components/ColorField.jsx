@@ -1,6 +1,7 @@
 import { isValidHexColor } from '../lib/color.js'
 import { contrastRatio, hasEnoughContrast, ON_RUST, MIN_CONTRAST } from '../lib/contrast.js'
 import { fieldProps } from './AdminField.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const DEFAULT_FARBE = '#2f6b3f'
 
@@ -14,8 +15,8 @@ export function ContrastHint({ farbe }) {
   const ok = hasEnoughContrast(farbe)
   return (
     <p className={`field-hint admin-partner-contrast ${ok ? 'is-ok' : 'is-warning'}`} role={ok ? undefined : 'alert'}>
-      Kontrast gegen die Schrift: {ratio.toFixed(2)}:1 –{' '}
-      {ok ? 'gut lesbar.' : `zu niedrig (mind. ${MIN_CONTRAST}:1 nötig) – Schrift wäre schlecht lesbar.`}
+      {t('Kontrast gegen die Schrift: {ratio}:1', { ratio: ratio.toFixed(2) })} –{' '}
+      {ok ? t('gut lesbar.') : t('zu niedrig (mind. {min}:1 nötig) – Schrift wäre schlecht lesbar.', { min: MIN_CONTRAST })}
     </p>
   )
 }
@@ -29,7 +30,7 @@ export default function ColorField({ id, label, value, onChange, error, classNam
       <div className="admin-partner-color">
         <input
           type="color"
-          aria-label={`${label} wählen`}
+          aria-label={t('{label} wählen', { label })}
           value={isValidHexColor(value) ? value : DEFAULT_FARBE}
           onChange={(e) => onChange(e.target.value)}
         />
@@ -40,7 +41,7 @@ export default function ColorField({ id, label, value, onChange, error, classNam
           onChange={(e) => onChange(e.target.value)}
           placeholder="#rrggbb"
           maxLength={7}
-          aria-label={`${label} als Hex-Wert`}
+          aria-label={t('{label} als Hex-Wert', { label })}
         />
       </div>
       <ContrastHint farbe={value} />

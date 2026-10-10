@@ -4,6 +4,7 @@ import Modal from './Modal.jsx'
 import RequestPartnerForm from './RequestPartnerForm.jsx'
 import { TopStripSlot } from './TopStrip.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Hinweis über jeder Seite einer Demo-Sitzung (App.jsx), seit der Calm-down-Runde eine schmale Zeile in der Leiste oben
 // (TopStrip): „Demo · nur ansehen“ und EIN Text-Link. Haushalte und Rudel: "Eigene Familie anlegen" (onLeave meldet ab
@@ -21,11 +22,11 @@ export default function DemoBanner({ onLeave, partnerArea = false }) {
           <Icon name="eye" />
           <span className="top-strip-text">
             <strong className="top-strip-tag">Demo</strong>
-            <span className="top-strip-long"> · nur ansehen, nichts wird gespeichert</span>
+            <span className="top-strip-long"> · {t('nur ansehen, nichts wird gespeichert')}</span>
           </span>
           {partnerArea ? (
             <button type="button" className="top-strip-link" onClick={() => setRequestOpen(true)}>
-              Partner-Zugang anfragen
+              {t('Partner-Zugang anfragen')}
             </button>
           ) : (
             <button type="button" className="top-strip-link" onClick={onLeave}>
@@ -35,7 +36,7 @@ export default function DemoBanner({ onLeave, partnerArea = false }) {
         </div>
       </TopStripSlot>
       {partnerArea && (
-        <Modal open={requestOpen} title="Partner-Zugang anfragen" onClose={() => setRequestOpen(false)}>
+        <Modal open={requestOpen} title={t('Partner-Zugang anfragen')} onClose={() => setRequestOpen(false)}>
           <RequestPartnerForm idPrefix="demo-request-partner" />
         </Modal>
       )}

@@ -7,6 +7,7 @@ import PasswordField from './PasswordField.jsx'
 import KeyReveal from './KeyReveal.jsx'
 import { relativeTime } from '../lib/dates.js'
 import { formatVoucherCode } from '../lib/voucherCode.js'
+import { t } from '../lib/i18n/index.js'
 
 const ARM_TIMEOUT_MS = 5000
 const USER_PASSWORD_MIN = 8
@@ -97,12 +98,12 @@ function RenewKeySection({ family, confirmPayload, hasConfirm, onRenewed, onFami
   }
 
   if (newKey) {
-    return <KeyReveal value={newKey} continueLabel="Fertig" onContinue={() => setNewKey(null)} showCardHint={false} />
+    return <KeyReveal value={newKey} continueLabel={t('Fertig')} onContinue={() => setNewKey(null)} showCardHint={false} />
   }
 
   return (
     <div className="access-key">
-      <h4>Schlüssel erneuern</h4>
+      <h4>{t('Schlüssel erneuern')}</h4>
       {error && (
         <div className="error-banner" role="alert">
           {error}
@@ -112,13 +113,13 @@ function RenewKeySection({ family, confirmPayload, hasConfirm, onRenewed, onFami
         <div className="warning-banner" role="note">
           <Icon name="alert" />
           <div>
-            <strong>{copy.renewWarning}</strong>
-            <p>Nur dieses Gerät bleibt angemeldet. Überall sonst braucht ihr danach den neuen Schlüssel.</p>
+            <strong>{t(copy.renewWarning)}</strong>
+            <p>{t('Nur dieses Gerät bleibt angemeldet. Überall sonst braucht ihr danach den neuen Schlüssel.')}</p>
           </div>
         </div>
       )}
       <p className="field-hint">
-        Benutzer bleiben beim Erneuern bestehen – entfernt sie unten, wenn jemand keinen Zugang mehr haben soll.
+        {t('Benutzer bleiben beim Erneuern bestehen – entfernt sie unten, wenn jemand keinen Zugang mehr haben soll.')}
       </p>
       <button
         type="button"
@@ -127,7 +128,7 @@ function RenewKeySection({ family, confirmPayload, hasConfirm, onRenewed, onFami
         disabled={saving || !hasConfirm}
       >
         <Icon name={armed ? 'check' : 'lock'} />
-        {saving ? 'Erneuere …' : armed ? 'Ja, Schlüssel erneuern' : 'Schlüssel erneuern'}
+        {saving ? t('Erneuere …') : armed ? t('Ja, Schlüssel erneuern') : t('Schlüssel erneuern')}
       </button>
     </div>
   )
@@ -166,7 +167,7 @@ function AddUserForm({ confirmField, confirmValue, onAdded, onCancel }) {
       )}
       <div className="field">
         <label className="field-label" htmlFor="access-new-username">
-          Benutzername
+          {t('Benutzername')}
         </label>
         <input
           id="access-new-username"
@@ -179,7 +180,7 @@ function AddUserForm({ confirmField, confirmValue, onAdded, onCancel }) {
       </div>
       <PasswordField
         id="access-new-password"
-        label="Passwort"
+        label={t('Passwort')}
         value={password}
         onChange={setPassword}
         autoComplete="new-password"
@@ -187,18 +188,18 @@ function AddUserForm({ confirmField, confirmValue, onAdded, onCancel }) {
       />
       <div className="field">
         <label className="field-label" htmlFor="access-new-email">
-          E-Mail <span className="muted">(optional)</span>
+          {t('E-Mail')} <span className="muted">{t('(optional)')}</span>
         </label>
         <input id="access-new-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={EMAIL_MAX_LENGTH} />
-        <span className="field-hint">Nur für Rückfragen, keine Werbung.</span>
+        <span className="field-hint">{t('Nur für Rückfragen, keine Werbung.')}</span>
       </div>
       <div className="form-actions">
         <span className="form-actions-spacer" />
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving || !username || !password}>
-          {saving ? 'Lege an …' : 'Benutzer anlegen'}
+          {saving ? t('Lege an …') : t('Benutzer anlegen')}
         </button>
       </div>
     </form>
@@ -221,14 +222,14 @@ function UsersSection({ confirmField, confirmValue, hasConfirm }) {
   function handleAdded(user) {
     setUsers((list) => [...(list || []), user])
     setShowAdd(false)
-    toast(`Benutzer „${user.username}“ angelegt.`)
+    toast(t('Benutzer „{name}“ angelegt.', { name: user.username }))
   }
 
   async function handleDelete(user) {
     try {
       await api.deleteUser(user.id, { [confirmField]: confirmValue })
       setUsers((list) => list.filter((u) => u.id !== user.id))
-      toast(`Benutzer „${user.username}“ entfernt.`)
+      toast(t('Benutzer „{name}“ entfernt.', { name: user.username }))
     } catch (err) {
       setError(err.message)
     }
@@ -236,14 +237,14 @@ function UsersSection({ confirmField, confirmValue, hasConfirm }) {
 
   return (
     <div className="access-users">
-      <h4>Benutzer</h4>
+      <h4>{t('Benutzer')}</h4>
       {error && (
         <div className="error-banner" role="alert">
           {error}
         </div>
       )}
-      {users === undefined && !error && <p className="muted">Lade …</p>}
-      {users && users.length === 0 && <p className="muted">Noch kein eigener Benutzer angelegt.</p>}
+      {users === undefined && !error && <p className="muted">{t('Lade …')}</p>}
+      {users && users.length === 0 && <p className="muted">{t('Noch kein eigener Benutzer angelegt.')}</p>}
       {users && users.length > 0 && (
         <ul className="access-user-list">
           {users.map((user) => (
@@ -252,14 +253,14 @@ function UsersSection({ confirmField, confirmValue, hasConfirm }) {
                 <strong>{user.username}</strong>
                 <span className="muted">
                   {' '}
-                  · {user.last_login_at ? `zuletzt angemeldet ${relativeTime(user.last_login_at)}` : 'noch nie angemeldet'}
+                  · {user.last_login_at ? t('zuletzt angemeldet {time}', { time: relativeTime(user.last_login_at) }) : t('noch nie angemeldet')}
                 </span>
               </span>
               <ConfirmButton
                 onConfirm={() => handleDelete(user)}
-                label="Entfernen"
-                confirmLabel="Wirklich entfernen?"
-                ariaLabel={`„${user.username}“ entfernen`}
+                label={t('Entfernen')}
+                confirmLabel={t('Wirklich entfernen?')}
+                ariaLabel={t('„{name}“ entfernen', { name: user.username })}
                 disabled={!hasConfirm}
               />
             </li>
@@ -271,7 +272,7 @@ function UsersSection({ confirmField, confirmValue, hasConfirm }) {
       ) : (
         <button type="button" className="btn btn-ghost" onClick={() => setShowAdd(true)} disabled={!hasConfirm}>
           <Icon name="plus" />
-          Benutzer hinzufügen
+          {t('Benutzer hinzufügen')}
         </button>
       )}
     </div>
@@ -297,10 +298,10 @@ export default function AccessSettings({ family, onFamilyChange, title = 'Zugang
 
   return (
     <section className="settings-section access-settings">
-      <h3>{title}</h3>
+      <h3>{t(title)}</h3>
       <div className="field">
         <label className="field-label" htmlFor="access-confirm">
-          {copy.label}
+          {t(copy.label)}
         </label>
         <input
           id="access-confirm"

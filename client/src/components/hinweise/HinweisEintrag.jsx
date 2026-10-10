@@ -4,6 +4,7 @@ import ConfirmButton from '../ConfirmButton.jsx'
 import Icon from '../Icon.jsx'
 import { relativeTime } from '../../lib/dates.js'
 import { greetingText, guestText, requestText } from '../../lib/glocke.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Kleines Bild links: das erste Foto einer Anfrage (hilft beim Erinnern), sonst ein Zeichen für die Art des Hinweises.
 function Mark({ icon, photo }) {
@@ -37,7 +38,7 @@ function Anfrage({ request, busy, disabled, actions }) {
             disabled={disabled || busy}
             onClick={() => actions.confirm(request)}
           >
-            Ja
+            {t('Ja')}
           </button>
           <button
             type="button"
@@ -46,7 +47,7 @@ function Anfrage({ request, busy, disabled, actions }) {
             disabled={disabled || busy}
             onClick={() => actions.reject(request)}
           >
-            Nein
+            {t('Nein')}
           </button>
         </div>
       </div>
@@ -64,16 +65,16 @@ function Gast({ guest, busy, disabled, actions }) {
           {guestText(guest)}
         </p>
         <p className="hinweis-meta">
-          {guest.ueberCode ? `über deinen Code „${guest.ueberCode}“` : 'sieht eure nicht privaten Erinnerungen'}
+          {guest.ueberCode ? t('über deinen Code „{code}“', { code: guest.ueberCode }) : t('sieht eure nicht privaten Erinnerungen')}
         </p>
         <div className="hinweis-actions">
           <button type="button" className="btn btn-primary btn-compact" disabled={disabled || busy} onClick={() => actions.acknowledgeGuest(guest)}>
-            Passt
+            {t('Passt')}
           </button>
           <ConfirmButton
             label="Entfernen"
             confirmLabel="Wirklich entfernen?"
-            ariaLabel={`${guest.name} als Gast entfernen`}
+            ariaLabel={t('{name} als Gast entfernen', { name: guest.name })}
             icon="close"
             className="btn-compact"
             disabled={disabled || busy}

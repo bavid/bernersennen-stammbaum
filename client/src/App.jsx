@@ -4,10 +4,11 @@ import { api, setUnauthorizedHandler } from './api'
 import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
 import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
-import { HOME_LABEL, START_ROUTE, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
+import { START_ROUTE, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
 import { isOwnHome } from './lib/visits.js'
 import { MAX_NAV_ITEMS, hasMenuSlot, navItemsFor } from './lib/navItems.js'
 import { formatVoucherCode } from './lib/voucherCode.js'
+import { t } from './lib/i18n/index.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
 import Icon from './components/Icon.jsx'
@@ -180,11 +181,14 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
           </div>
         )}
         <p>
-          Mit diesem Übergabe-Code zieht {handover.animalName} aus {handover.shelterName} zu euch – mit der ganzen Chronik.
+          {t('Mit diesem Übergabe-Code zieht {animal} aus {shelter} zu euch – mit der ganzen Chronik.', {
+            animal: handover.animalName,
+            shelter: handover.shelterName
+          })}
         </p>
         <HandoverConsent shelterName={handover.shelterName} checked={shelterMayRead} onChange={setShelterMayRead} />
         <button type="button" className="btn btn-primary btn-block" disabled={claiming} onClick={handleClaim}>
-          {claiming ? 'Übernehme …' : 'In „Mein Zuhause“ übernehmen'}
+          {claiming ? t('Übernehme …') : t('In „Mein Zuhause“ übernehmen')}
         </button>
       </div>
     )
@@ -193,13 +197,13 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
   return (
     <div className="card voucher-session-card">
       <p>
-        Du bist angemeldet als <strong>{family.name}</strong>.
+        {t('Du bist angemeldet als')} <strong>{family.name}</strong>.
       </p>
       {viewingGroupAsHousehold && (
-        <p className="field-hint">Wechselt zuerst zu „{HOME_LABEL}“ (über „Start“), um das Tier zu übernehmen.</p>
+        <p className="field-hint">{t('Wechselt zuerst zu „Mein Zuhause“ (über „Start“), um das Tier zu übernehmen.')}</p>
       )}
       <button type="button" className="btn btn-primary btn-block" onClick={onLogout}>
-        Abmelden und Einladungscode einlösen
+        {t('Abmelden und Einladungscode einlösen')}
       </button>
     </div>
   )
@@ -219,12 +223,12 @@ function PartnerHeaderActions({ onLogout }) {
         to="/admin-schreiben"
         state={{ from: pathname }}
         className={`app-contact ${pathname === '/admin-schreiben' ? 'active' : ''}`}
-        title="Schreib dem Admin"
+        title={t('Schreib dem Admin')}
       >
         <Icon name="message" />
-        <span>Schreib dem Admin</span>
+        <span>{t('Schreib dem Admin')}</span>
       </Link>
-      <button type="button" className="icon-btn app-logout" onClick={onLogout} aria-label="Abmelden" title="Abmelden">
+      <button type="button" className="icon-btn app-logout" onClick={onLogout} aria-label={t('Abmelden')} title={t('Abmelden')}>
         <Icon name="logout" />
       </button>
     </>
@@ -267,7 +271,7 @@ export function AppHeader({ family, onLogout, onInvite = () => {}, onFamilyChang
             )}
           </span>
         </div>
-        <nav className={`app-nav${navItems.length >= MAX_NAV_ITEMS ? ' app-nav-dense' : ''}`} aria-label="Hauptnavigation">
+        <nav className={`app-nav${navItems.length >= MAX_NAV_ITEMS ? ' app-nav-dense' : ''}`} aria-label={t('Hauptnavigation')}>
           {/* badge/ariaLabel: ungelesene Nachrichten an "Nachrichten" (Phase P2) - offene Anfragen zeigt die Glocke. */}
           {navItems.map((item) => (
             <NavLink
@@ -316,19 +320,19 @@ export function AppFooter({ family, onInvite }) {
       {/* Audit V7a: auf /umgebung selbst kein Verweis auf dieselbe Seite */}
       {partnerArea && pathname !== '/umgebung' && (
         <Link to="/umgebung" className="footer-link">
-          Tierheime & Hundeschulen in der Nähe →
+          {t('Tierheime & Hundeschulen in der Nähe')} →
         </Link>
       )}
       <span className="app-footer-legal">
         {/* Phase F: „So finanzieren wir uns“ neben Impressum und Datenschutz. */}
         <Link to={FINANZIERUNG_PATH} className="footer-link">
-          So finanzieren wir uns
+          {t('So finanzieren wir uns')}
         </Link>
         <Link to="/impressum" className="footer-link">
-          Impressum
+          {t('Impressum')}
         </Link>
         <Link to="/datenschutz" className="footer-link">
-          Datenschutz
+          {t('Datenschutz')}
         </Link>
       </span>
     </footer>

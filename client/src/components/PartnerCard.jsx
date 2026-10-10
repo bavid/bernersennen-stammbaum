@@ -6,6 +6,7 @@ import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { formatDistanceKm, isExternalUrl } from '../lib/format.js'
 import { isAllowedMedia, isClickUrl } from '../lib/discover.js'
 import { useIsPreview } from '../lib/preview.js'
+import { t } from '../lib/i18n/index.js'
 
 const TEASER_SIZE = 72
 
@@ -25,7 +26,7 @@ export function CardVisual({ partner, teaser }) {
     return (
       <img
         src={teaser}
-        alt={`Einblick bei ${partner.name}`}
+        alt={t('Einblick bei {name}', { name: partner.name })}
         className="partner-card-teaser"
         width={TEASER_SIZE}
         height={TEASER_SIZE}
@@ -46,7 +47,7 @@ export function CardVisual({ partner, teaser }) {
 // true) zusätzlich "Das seid ihr".
 export default function PartnerCard({ partner }) {
   const preview = useIsPreview()
-  const typeLabel = TYPE_LABELS[partner.typ] || partner.typ
+  const typeLabel = TYPE_LABELS[partner.typ] ? t(TYPE_LABELS[partner.typ]) : partner.typ
   const website = websiteHref(partner)
   const teaser = isAllowedMedia(partner.teaserFoto, { preview }) ? partner.teaserFoto : null
   const isOwn = preview && partner.vorschau === true
@@ -56,7 +57,7 @@ export default function PartnerCard({ partner }) {
       {isOwn && (
         <p className="preview-own-badge">
           <Icon name="eye" />
-          Das seid ihr
+          {t('Das seid ihr')}
         </p>
       )}
       <div className="partner-card-head">
@@ -77,11 +78,11 @@ export default function PartnerCard({ partner }) {
       </div>
       <div className="partner-card-links">
         <InternalLink className="btn btn-ghost" to={`/p/${partner.slug}`}>
-          Zum Portal
+          {t('Zum Portal')}
         </InternalLink>
         {website && (
           <ExternalLink className="card-link" href={website}>
-            <Icon name="globe" /> Website
+            <Icon name="globe" /> {t('Website')}
           </ExternalLink>
         )}
         <MapLinks item={partner} />

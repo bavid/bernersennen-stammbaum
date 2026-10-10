@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react'
 import usePhotoUpload from '../hooks/usePhotoUpload.js'
 import { useIsAdminView, useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Lädt Fotos sofort hoch (verkleinert) und verwaltet die Liste der URLs. Schreibgeschützt (Demo oder
 // Admin-Ansicht, lib/demo.js): kein Upload, kein Entfernen.
@@ -9,7 +10,7 @@ export default function PhotoPicker({ value, onChange, multiple = true, label = 
   const inputId = useId()
   const isDemo = useIsDemo()
   const isAdminView = useIsAdminView()
-  const readOnlyHint = useReadOnlyHint('Im Demo-Modus deaktiviert')
+  const readOnlyHint = useReadOnlyHint(t('Im Demo-Modus deaktiviert'))
   // Die Liste, wie sie gerade ist (ein Upload dauert - Entfernen währenddessen bleibt bestehen).
   const latest = useRef(value)
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function PhotoPicker({ value, onChange, multiple = true, label = 
               type="button"
               className="icon-btn"
               onClick={() => onChange(value.filter((u) => u !== url))}
-              aria-label="Foto entfernen"
+              aria-label={t('Foto entfernen')}
             >
               <Icon name="close" />
             </button>
@@ -49,14 +50,14 @@ export default function PhotoPicker({ value, onChange, multiple = true, label = 
       {canAddMore && !isDemo && (
         <label className={`photo-add ${busy ? 'is-busy' : ''}`} htmlFor={inputId}>
           <Icon name="camera" />
-          <span>{busy ? 'Lädt …' : label}</span>
+          <span>{busy ? t('Lädt …') : t(label)}</span>
           <input id={inputId} type="file" accept="image/*" multiple={multiple} onChange={handleFiles} disabled={busy} />
         </label>
       )}
       {canAddMore && isDemo && (
         <span className="photo-add is-disabled muted" title={readOnlyHint}>
           <Icon name="camera" />
-          <span>{isAdminView ? 'Admin-Ansicht: kein Upload' : 'Demo: kein Upload'}</span>
+          <span>{isAdminView ? t('Admin-Ansicht: kein Upload') : t('Demo: kein Upload')}</span>
         </span>
       )}
     </div>

@@ -4,6 +4,7 @@ import KartenDesigner from '../components/visitenkarte/KartenDesigner.jsx'
 import useVisitenkarte from '../hooks/useVisitenkarte.js'
 import { profileTabRoute } from '../lib/partnerProfile.js'
 import { KARTE_PARAM, karteFromParams } from '../lib/kartenWahl.js'
+import { t } from '../lib/i18n/index.js'
 
 // /visitenkarten (Phase V5, Feedback-Runde) - Karten-Designer eines Partner- oder Tierheim-Bereichs, verlinkt aus dem
 // Profil (Reiter "Teilen") und den Einladungscodes; kein eigener Navigationspunkt. Eine Seite ohne "Kartenart": vorne
@@ -33,13 +34,13 @@ export default function PartnerVisitenkartenPage() {
     <div className="page vk-page">
       <header className="page-hero vk-hero">
         <div>
-          <span className="eyebrow">Partner-Profil</span>
-          <h1>Karten gestalten</h1>
-          <p className="muted vk-lead">{KARTEN_LEAD}</p>
+          <span className="eyebrow">{t('Partner-Profil')}</span>
+          <h1>{t('Karten gestalten')}</h1>
+          <p className="muted vk-lead">{t(KARTEN_LEAD)}</p>
         </div>
         {/* Audit V7a: zurück in den Reiter "Teilen", aus dem man meist kommt. */}
         <Link to={profileTabRoute('teilen')} className="btn btn-ghost">
-          <Icon name="arrowLeft" /> Zurück zum Profil
+          <Icon name="arrowLeft" /> {t('Zurück zum Profil')}
         </Link>
       </header>
 
@@ -50,7 +51,7 @@ export default function PartnerVisitenkartenPage() {
       )}
       {!error && !ready && (
         <p className="muted page-loading" role="status">
-          Lade …
+          {t('Lade …')}
         </p>
       )}
       {!error && ready && (

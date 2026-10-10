@@ -12,6 +12,7 @@ import AnimalGrid from './AnimalGrid.jsx'
 import useTabParam from '../../hooks/useTabParam.js'
 import { hasFamilyTree } from '../../lib/familyGroups.js'
 import { hasSiblingLitters } from '../../lib/litters.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Adresse ?ansicht=… (wie früher der Stammbaum-Umschalter, components/families/TreeToggle.jsx) - ohne Angabe "Alle".
 export const ANIMALS_VIEW_PARAM = 'ansicht'
@@ -25,9 +26,9 @@ function treeAvailableFor({ dogs, allDogs, events }) {
 
 function tabsFor({ views, treeAvailable, treeWanted }) {
   return [
-    { key: 'alle', label: 'Alle' },
-    views.includes('zeitleiste') && { key: 'zeitleiste', label: 'Zeitleiste' },
-    views.includes('stammbaum') && (treeAvailable || treeWanted) && { key: 'stammbaum', label: 'Stammbaum' }
+    { key: 'alle', label: t('Alle') },
+    views.includes('zeitleiste') && { key: 'zeitleiste', label: t('Zeitleiste') },
+    views.includes('stammbaum') && (treeAvailable || treeWanted) && { key: 'stammbaum', label: t('Stammbaum') }
   ].filter(Boolean)
 }
 
@@ -36,17 +37,17 @@ function NoAnimals({ canWrite, onAddAnimal }) {
   return (
     <div className="empty-state">
       <ThemeMark size={72} />
-      <h3>Noch keine {words.animals}</h3>
+      <h3>{t('Noch keine {animals}', { animals: words.animals })}</h3>
       {canWrite ? (
         <>
-          <p>Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
+          <p>{t('Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.')}</p>
           <button type="button" className="btn btn-primary" onClick={() => onAddAnimal()}>
             <Icon name="plus" />
-            Erstes Tier anlegen
+            {t('Erstes Tier anlegen')}
           </button>
         </>
       ) : (
-        <p>Sobald hier {words.animals} angelegt oder hierher geteilt werden, stehen sie hier.</p>
+        <p>{t('Sobald hier {animals} angelegt oder hierher geteilt werden, stehen sie hier.', { animals: words.animals })}</p>
       )}
     </div>
   )
@@ -58,11 +59,11 @@ function AllPanel({ grid, canWrite, onAddAnimal }) {
   if (grid.error) {
     return (
       <div className="empty-state" role="alert">
-        <h3>Das hat nicht geklappt</h3>
+        <h3>{t('Das hat nicht geklappt')}</h3>
         <p>{grid.error}</p>
         {grid.retry && (
           <button type="button" className="btn btn-primary" onClick={grid.retry}>
-            Noch einmal versuchen
+            {t('Noch einmal versuchen')}
           </button>
         )}
       </div>
@@ -112,7 +113,7 @@ export default function AnimalsTabs({ animals, grid, views = ALL_VIEWS, canWrite
       <TabBar
         tabs={tabs}
         current={current}
-        label={`Ansichten der ${words.animals}`}
+        label={t('Ansichten der {animals}', { animals: words.animals })}
         idPrefix={`${idPrefix}-tab`}
         panelId={panelId}
         className="animals-tab-bar"

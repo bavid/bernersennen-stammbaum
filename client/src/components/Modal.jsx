@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Natives <dialog>: Fokusfalle, ESC und Backdrop gibt es vom Browser gratis. className (Phase W): zusätzliche Klasse,
 // z. B. "modal-sheet" für das Menü-Blatt von unten am Handy. Ein Feld mit data-autofocus bekommt beim Öffnen den Fokus.
@@ -36,8 +37,8 @@ export default function Modal({ open, title, onClose, children, className = '' }
       {open && (
         <>
           <div className="modal-header">
-            <h2 id="modal-title">{title}</h2>
-            <button type="button" className="icon-btn" onClick={onClose} aria-label="Schließen">
+            <h2 id="modal-title">{typeof title === 'string' ? t(title) : title}</h2>
+            <button type="button" className="icon-btn" onClick={onClose} aria-label={t('Schließen')}>
               <Icon name="close" />
             </button>
           </div>

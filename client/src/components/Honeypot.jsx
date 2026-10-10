@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n/index.js'
 // Unsichtbar für Menschen (auch für Screenreader), Bots füllen es trotzdem aus. Bewusst nach dem
 // Passwortfeld platziert: Passwort-Manager halten sonst ein Textfeld vor dem Passwort für den
 // Benutzernamen und füllen es aus. Die data-Attribute bitten LastPass, 1Password, Bitwarden & Co.,
@@ -6,7 +7,7 @@
 export default function Honeypot({ value, onChange, id = 'hp-feld' }) {
   return (
     <div className="honeypot" aria-hidden="true">
-      <label htmlFor={id}>Bitte leer lassen</label>
+      <label htmlFor={id}>{t('Bitte leer lassen')}</label>
       <input
         id={id}
         name="hp_feld"

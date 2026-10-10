@@ -5,6 +5,7 @@ import Icon from './Icon.jsx'
 import PartnerShareQr from './PartnerShareQr.jsx'
 import { useIsAdminView, useIsDemo } from '../lib/demo.js'
 import { SNIPPET_LABEL, portalUrl, shareSnippet, snippetStyle, socialText } from '../lib/partnerShare.js'
+import { t } from '../lib/i18n/index.js'
 
 // PUBLIC_URL aus /api/config. ready: die Antwort ist da (oder gescheitert - dann gilt der Ursprung dieser
 // Seite). Vorher zeigt der Bereich nichts zum Kopieren, sonst landete kurz die falsche Adresse im Link.
@@ -44,10 +45,9 @@ export default function PartnerShareSection({ profile }) {
     <section className="partner-share" aria-labelledby="partner-share-title">
       <div className="einblicke-head">
         <div>
-          <h2 id="partner-share-title">Euer Portal teilen</h2>
+          <h2 id="partner-share-title">{t('Euer Portal teilen')}</h2>
           <p className="muted">
-            Verlinkt euer Portal auf eurer Website, bei Instagram oder auf der Visitenkarte – so finden euch neue
-            Kundinnen und Kunden.
+            {t('Verlinkt euer Portal auf eurer Website, bei Instagram oder auf der Visitenkarte – so finden euch neue Kundinnen und Kunden.')}
           </p>
         </div>
       </div>
@@ -55,13 +55,13 @@ export default function PartnerShareSection({ profile }) {
       {!isPublic(profile) && (
         <p className="partner-share-note" role="note">
           <Icon name="lock" />
-          Erst nach dem Veröffentlichen für alle sichtbar.
+          {t('Erst nach dem Veröffentlichen für alle sichtbar.')}
         </p>
       )}
 
       {!ready ? (
         <p className="muted" role="status">
-          Lädt …
+          {t('Lädt …')}
         </p>
       ) : (
         <ShareBlocks profile={profile} url={url} />
@@ -74,39 +74,39 @@ function ShareBlocks({ profile, url }) {
   return (
     <div className="card partner-share-card">
       <div className="partner-share-block">
-        <CopyField id="partner-share-url" label="Link zu eurem Portal" value={url} />
+        <CopyField id="partner-share-url" label={t('Link zu eurem Portal')} value={url} />
         {isPublic(profile) && (
           <a className="partner-share-open" href={url} target="_blank" rel="noopener noreferrer">
             <Icon name="external" />
-            Portal öffnen
+            {t('Portal öffnen')}
           </a>
         )}
       </div>
 
       <div className="partner-share-block">
-        <h3>QR-Code</h3>
+        <h3>{t('QR-Code')}</h3>
         <PartnerShareQr url={url} slug={profile.slug} />
       </div>
 
       <div className="partner-share-block">
-        <h3>Knopf für eure Website</h3>
+        <h3>{t('Knopf für eure Website')}</h3>
         <p className="partner-share-preview">
-          <span className="visually-hidden">Vorschau: </span>
-          <span style={snippetStyle(profile.farbe)}>{SNIPPET_LABEL}</span>
+          <span className="visually-hidden">{t('Vorschau: ')}</span>
+          <span style={snippetStyle(profile.farbe)}>{t(SNIPPET_LABEL)}</span>
         </p>
         <CopyField
           id="partner-share-snippet"
-          label="HTML-Code"
+          label={t('HTML-Code')}
           value={shareSnippet(url, { farbe: profile.farbe })}
-          hint="Einfach in eure Website einfügen – nur ein Link, ohne Skript."
+          hint={t('Einfach in eure Website einfügen – nur ein Link, ohne Skript.')}
           multiline
           code
         />
       </div>
 
       <div className="partner-share-block">
-        <h3>Text für Social Media</h3>
-        <CopyField id="partner-share-social" label="Vorschlag" value={socialText({ typ: profile.typ, url })} multiline rows={4} />
+        <h3>{t('Text für Social Media')}</h3>
+        <CopyField id="partner-share-social" label={t('Vorschlag')} value={socialText({ typ: profile.typ, url })} multiline rows={4} />
       </div>
     </div>
   )

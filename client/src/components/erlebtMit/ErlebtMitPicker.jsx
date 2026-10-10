@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // "Erlebt mit" im Eintrags-Formular (Phase V2): Tiere verbundener Zuhause zum Ankreuzen (GET /api/erlebt-mit/tiere).
 // value: ausgewählte Tier-Ids, onChange(neue Liste). disabled (z. B. bei einem privaten Eintrag) sperrt die Auswahl
@@ -28,12 +29,12 @@ export default function ErlebtMitPicker({ value, onChange, disabled }) {
   return (
     <fieldset className="erlebt-mit-picker" disabled={disabled}>
       <legend className="field-label">
-        Mit dabei <span className="muted">(optional)</span>
+        {t('Mit dabei')} <span className="muted">{t('(optional)')}</span>
       </legend>
       {error && <p className="field-error">{error}</p>}
       {animals && animals.length === 0 && (
         <p className="field-hint">
-          Hier stehen die Tiere von Zuhausen, mit denen ihr verbunden seid – über einen Besuch oder eine gemeinsame Familie.
+          {t('Hier stehen die Tiere von Zuhausen, mit denen ihr verbunden seid – über einen Besuch oder eine gemeinsame Familie.')}
         </p>
       )}
       {animals && animals.length > 0 && (
@@ -42,7 +43,7 @@ export default function ErlebtMitPicker({ value, onChange, disabled }) {
             <li key={animal.id}>
               <label className={`erlebt-mit-option${value.includes(animal.id) ? ' is-selected' : ''}`}>
                 <input type="checkbox" checked={value.includes(animal.id)} onChange={() => toggle(animal.id)} />
-                <span className="erlebt-mit-option-name">{animal.nameUnbekannt ? 'Unbekannt' : animal.name}</span>
+                <span className="erlebt-mit-option-name">{animal.nameUnbekannt ? t('Unbekannt') : animal.name}</span>
                 <span className="erlebt-mit-option-home">{animal.zuhause}</span>
               </label>
             </li>
@@ -51,8 +52,8 @@ export default function ErlebtMitPicker({ value, onChange, disabled }) {
       )}
       <p className="field-hint">
         {disabled
-          ? `Private ${words.entries} können keine anderen Tiere markieren.`
-          : `Die Besitzer werden gefragt – erst danach steht das auch in der Chronik ihres Tiers.`}
+          ? t('Private {entries} können keine anderen Tiere markieren.', { entries: words.entries })
+          : t('Die Besitzer werden gefragt – erst danach steht das auch in der Chronik ihres Tiers.')}
       </p>
     </fieldset>
   )

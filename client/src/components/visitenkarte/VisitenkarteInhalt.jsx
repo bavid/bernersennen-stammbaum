@@ -1,4 +1,5 @@
 import { CONTACT_FIELDS, MAX_KURZTEXT_LENGTH, MAX_WIDMUNG_LENGTH, availableContacts } from '../../lib/visitenkarte.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Inhalt der Karte (Phase V5): Kurztext (höchstens 120 Zeichen, Vorschlag aus dem Portal) und welche Angaben aus dem
 // Profil auf der Karte stehen - Ansprechperson und Website/Telefon/E-Mail lassen sich nur schalten, wenn sie im Profil
@@ -9,19 +10,19 @@ function Widmung({ value, onChange }) {
   return (
     <div className="field">
       <label className="vk-label" htmlFor="vk-widmung">
-        Persönliche Zeile <span className="muted">(optional)</span>
+        {t('Persönliche Zeile')} <span className="muted">{t('(optional)')}</span>
       </label>
       <input
         id="vk-widmung"
         type="text"
         value={value}
         maxLength={MAX_WIDMUNG_LENGTH}
-        placeholder="z. B. Für unsere Welpenkurs-Familien"
+        placeholder={t('z. B. Für unsere Welpenkurs-Familien')}
         onChange={(event) => onChange({ widmung: event.target.value })}
         aria-describedby="vk-widmung-hint"
       />
       <p id="vk-widmung-hint" className="field-hint">
-        {value.length}/{MAX_WIDMUNG_LENGTH} Zeichen · steht über eurem Namen
+        {t('{n}/{max} Zeichen · steht über eurem Namen', { n: value.length, max: MAX_WIDMUNG_LENGTH })}
       </p>
     </div>
   )
@@ -43,11 +44,11 @@ export default function VisitenkarteInhalt({ design, profile, vorschlag, onChang
 
   return (
     <fieldset className="vk-fieldset">
-      <legend className="field-label">Inhalt</legend>
+      <legend className="field-label">{t('Inhalt')}</legend>
       <Widmung value={design.widmung} onChange={onChange} />
       <div className="field">
         <label className="vk-label" htmlFor="vk-kurztext">
-          Kurztext
+          {t('Kurztext')}
         </label>
         <input
           id="vk-kurztext"
@@ -59,23 +60,23 @@ export default function VisitenkarteInhalt({ design, profile, vorschlag, onChang
         />
         <p id="vk-kurztext-hint" className="field-hint vk-kurztext-hint">
           <span>
-            {kurztextLength}/{MAX_KURZTEXT_LENGTH} Zeichen
+            {t('{n}/{max} Zeichen', { n: kurztextLength, max: MAX_KURZTEXT_LENGTH })}
           </span>
           {vorschlag && design.kurztext !== vorschlag && (
             <button type="button" className="vk-textlink" onClick={() => onChange({ kurztext: vorschlag })}>
-              Aus dem Portal übernehmen
+              {t('Aus dem Portal übernehmen')}
             </button>
           )}
         </p>
       </div>
 
-      <div className="vk-toggles" role="group" aria-label="Angaben auf der Karte">
+      <div className="vk-toggles" role="group" aria-label={t('Angaben auf der Karte')}>
         {hasPerson ? (
           <Toggle id="vk-person" checked={design.zeigeAnsprechperson} onChange={(value) => onChange({ zeigeAnsprechperson: value })}>
-            Ansprechperson ({profile.ansprechperson.trim()})
+            {t('Ansprechperson ({name})', { name: profile.ansprechperson.trim() })}
           </Toggle>
         ) : (
-          <p className="field-hint">Eine Ansprechperson tragt ihr im Profil unter „Angaben“ ein.</p>
+          <p className="field-hint">{t('Eine Ansprechperson tragt ihr im Profil unter „Angaben“ ein.')}</p>
         )}
         {CONTACT_FIELDS.filter((contact) => contacts.includes(contact.key)).map((contact) => (
           <Toggle
@@ -84,10 +85,10 @@ export default function VisitenkarteInhalt({ design, profile, vorschlag, onChang
             checked={design[contact.toggle]}
             onChange={(value) => onChange({ [contact.toggle]: value })}
           >
-            {contact.label}
+            {t(contact.label)}
           </Toggle>
         ))}
-        {contacts.length === 0 && <p className="field-hint">Website, Telefon oder E-Mail ergänzt ihr im Profil – dann stehen sie hier zur Wahl.</p>}
+        {contacts.length === 0 && <p className="field-hint">{t('Website, Telefon oder E-Mail ergänzt ihr im Profil – dann stehen sie hier zur Wahl.')}</p>}
       </div>
     </fieldset>
   )

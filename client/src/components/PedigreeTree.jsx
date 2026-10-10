@@ -18,6 +18,7 @@ import { crossRowPath, householdPath, laneConnector, placeLaneGroups, unionPaths
 import { readSetting, writeSetting } from '../lib/storage.js'
 import { livesWithLabel } from '../lib/timeline.js'
 import { fitZoom, zoomIn, zoomOut } from '../lib/zoom.js'
+import { t } from '../lib/i18n/index.js'
 
 const PHONE_QUERY = '(max-width: 720px)' // wie der Handy-Umbruch in tree.css
 const LANE_GAP = 16
@@ -444,10 +445,10 @@ export default function PedigreeTree({ dogs, allDogs, links = [], onAddMitbewohn
       {hasHousemates && (
         <p className="pedigree-legend">
           <span className="legend-item">
-            <span className="legend-line legend-family" /> Abstammung
+            <span className="legend-line legend-family" /> {t('Abstammung')}
           </span>
           <span className="legend-item">
-            <span className="legend-line legend-housemate" /> lebt zusammen – Haus am Tier antippen zeigt die Mitbewohner
+            <span className="legend-line legend-housemate" /> {t('lebt zusammen – Haus am Tier antippen zeigt die Mitbewohner')}
           </span>
         </p>
       )}

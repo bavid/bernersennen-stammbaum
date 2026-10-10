@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { displayName } from '../../lib/timeline.js'
 import ShareSwitch from './ShareSwitch.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 export const GUEST_SHARE_HINT = 'Als Gast teilt ihr hier keine Tiere'
 
@@ -12,7 +13,7 @@ export default function FamilyShareCard({ membership, animals, matrix, readOnly,
   return (
     <section className="share-card" aria-labelledby={titleId}>
       <h3 id={titleId} className="share-card-title">
-        In {membership.name} zeigt ihr:
+        {t('In {name} zeigt ihr:', { name: membership.name })}
       </h3>
       <ul className="share-switches" role="list">
         {animals.map((dog) => {
@@ -21,11 +22,11 @@ export default function FamilyShareCard({ membership, animals, matrix, readOnly,
           return (
             <li key={dog.id}>
               <ShareSwitch
-                label={dog.name_unbekannt ? 'Ohne Namen' : displayName(dog)}
+                label={dog.name_unbekannt ? t('Ohne Namen') : displayName(dog)}
                 checked={checked}
                 disabled={readOnly || guestOnly}
                 busy={matrix.isSaving(dog.id)}
-                hint={guestOnly ? GUEST_SHARE_HINT : null}
+                hint={guestOnly ? t(GUEST_SHARE_HINT) : null}
                 describedBy={describedBy}
                 onChange={(next) => matrix.toggle(dog.id, membership.id, next)}
               />

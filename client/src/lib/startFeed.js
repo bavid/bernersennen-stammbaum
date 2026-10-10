@@ -3,6 +3,7 @@
 // art: 'eigen' | 'familie' | 'besuch' }). Reine Hilfen ohne React.
 import { groupRoute } from './areas.js'
 import { isPastTermin } from './notes.js'
+import { t } from './i18n/index.js'
 
 // Ids kommen als Zahlen vom Server - trotzdem kodiert, damit nie ein fremdes Zeichen in die Adresse gerät.
 const seg = (value) => encodeURIComponent(String(value))
@@ -32,7 +33,7 @@ export function feedKey(item) {
 export function areaChipLabel(area) {
   if (!area?.name) return null
   if (area.art === 'familie') return area.name
-  if (area.art === 'besuch') return `Zu Besuch: ${area.name}`
+  if (area.art === 'besuch') return t('Zu Besuch: {name}', { name: area.name })
   return null
 }
 

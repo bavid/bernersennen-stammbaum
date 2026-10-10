@@ -3,6 +3,7 @@ import Icon from '../Icon.jsx'
 import { SEITEN } from './VisitenkartenBogen.jsx'
 import { CARDS_PER_SHEET } from '../../lib/visitenkarte.js'
 import { MAX_KARTEN, MIN_KARTEN, clampKarten, sheetCountFor } from '../../lib/einladungskarte.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Drucken (Phase V5, Feedback-Runde: für jede Kombination gleich): wie viele Karten (1-50 - der letzte Bogen darf
 // angebrochen sein), welche Seiten und der Druck-Knopf (onPrint - mit Code-Rückseite holt er erst die Codes, dann druckt
@@ -34,13 +35,13 @@ function AnzahlField({ count, onCount, busy }) {
   return (
     <div className="field">
       <label className="vk-label" htmlFor="vk-anzahl">
-        Anzahl Karten
+        {t('Anzahl Karten')}
       </label>
       <div className="vk-anzahl">
         <button
           type="button"
           className="btn btn-ghost vk-anzahl-step"
-          aria-label="Eine Karte weniger"
+          aria-label={t('Eine Karte weniger')}
           onClick={() => onCount(clampKarten(count - 1))}
           disabled={busy || count <= MIN_KARTEN}
         >
@@ -61,7 +62,7 @@ function AnzahlField({ count, onCount, busy }) {
         <button
           type="button"
           className="btn btn-ghost vk-anzahl-step"
-          aria-label="Eine Karte mehr"
+          aria-label={t('Eine Karte mehr')}
           onClick={() => onCount(clampKarten(count + 1))}
           disabled={busy || count >= MAX_KARTEN}
         >
@@ -69,8 +70,12 @@ function AnzahlField({ count, onCount, busy }) {
         </button>
       </div>
       <p id="vk-anzahl-hint" className="field-hint">
-        {MIN_KARTEN} bis {MAX_KARTEN} · {sheets} A4-{sheets === 1 ? 'Bogen' : 'Bögen'} mit je bis zu {CARDS_PER_SHEET} Karten (2 × 5) und
-        Schnittmarken
+        {t(sheets === 1 ? '{min} bis {max} · {n} A4-Bogen mit je bis zu {per} Karten (2 × 5) und Schnittmarken' : '{min} bis {max} · {n} A4-Bögen mit je bis zu {per} Karten (2 × 5) und Schnittmarken', {
+          min: MIN_KARTEN,
+          max: MAX_KARTEN,
+          n: sheets,
+          per: CARDS_PER_SHEET
+        })}
       </p>
     </div>
   )
@@ -80,16 +85,16 @@ function SeitenField({ seiten, onSeiten, busy }) {
   return (
     <div className="field">
       <span className="vk-label" id="vk-seiten-label">
-        Seiten
+        {t('Seiten')}
       </span>
       <div className="segmented vk-segmented" role="group" aria-labelledby="vk-seiten-label">
         {SEITEN_OPTIONS.map((option) => (
           <button key={option.value} type="button" aria-pressed={seiten === option.value} onClick={() => onSeiten(option.value)} disabled={busy}>
-            {option.label}
+            {t(option.label)}
           </button>
         ))}
       </div>
-      <p className="field-hint">Ohne Duplex: erst „Nur vorne“, den Stapel seitlich umdrehen, dann „Nur hinten“.</p>
+      <p className="field-hint">{t('Ohne Duplex: erst „Nur vorne“, den Stapel seitlich umdrehen, dann „Nur hinten“.')}</p>
     </div>
   )
 }
@@ -99,32 +104,31 @@ function DruckHints() {
   return (
     <details className="vk-druck-tipps">
       <summary>
-        <strong>{PRINT_HINT}</strong> <span className="vk-druck-tipps-mehr">Mehr Tipps</span>
+        <strong>{t(PRINT_HINT)}</strong> <span className="vk-druck-tipps-mehr">{t('Mehr Tipps')}</span>
       </summary>
       <ul className="vk-druck-hints">
         <li>
-          Bei „Beide Seiten“ folgt jedem Vorderseiten-Bogen sein Rückseiten-Bogen; die Rückseiten laufen gespiegelt, damit jede
-          hinter ihrer Karte liegt.
+          {t('Bei „Beide Seiten“ folgt jedem Vorderseiten-Bogen sein Rückseiten-Bogen; die Rückseiten laufen gespiegelt, damit jede hinter ihrer Karte liegt.')}
         </li>
-        <li>Im Druckdialog „Tatsächliche Größe“ bzw. 100 % wählen – sonst stimmen Kartenmaß und Schnittmarken nicht.</li>
-        <li>Festes Papier (ab 250 g/m²) wirkt wie eine echte Visitenkarte. Geschnitten wird an den Marken.</li>
+        <li>{t('Im Druckdialog „Tatsächliche Größe“ bzw. 100 % wählen – sonst stimmen Kartenmaß und Schnittmarken nicht.')}</li>
+        <li>{t('Festes Papier (ab 250 g/m²) wirkt wie eine echte Visitenkarte. Geschnitten wird an den Marken.')}</li>
       </ul>
     </details>
   )
 }
 
 function printLabel({ busy, printable, withCodes }) {
-  if (busy) return 'Hole Codes …'
-  if (printable === 0) return 'Drucken'
-  const karten = printable === 1 ? 'Karte' : 'Karten'
-  return withCodes ? `Drucken – ${printable} ${karten} mit Code` : `Drucken – ${printable} ${karten}`
+  if (busy) return t('Hole Codes …')
+  if (printable === 0) return t('Drucken')
+  const karten = printable === 1 ? t('{n} Karte', { n: printable }) : t('{n} Karten', { n: printable })
+  return withCodes ? t('Drucken – {cards} mit Code', { cards: karten }) : t('Drucken – {cards}', { cards: karten })
 }
 
 export default function KartenDruckOptionen({ count, onCount, seiten, onSeiten, onPrint, busy, printable, withCodes, addressNote = null }) {
   return (
     <section className="vk-panel" aria-labelledby="vk-druck-title">
       <h2 id="vk-druck-title" className="vk-panel-title">
-        Drucken
+        {t('Drucken')}
       </h2>
       <AnzahlField count={count} onCount={onCount} busy={busy} />
       <SeitenField seiten={seiten} onSeiten={onSeiten} busy={busy} />

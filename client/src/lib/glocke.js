@@ -1,3 +1,4 @@
+import { t } from './i18n/index.js'
 // Hinweis-Glocke im Kopf (components/hinweise): Zahlen, Texte und die Liste aus den drei Quellen - offene „Mit dabei“-
 // Anfragen (server/routes/erlebtMit.js), neue Gäste (server/routes/besuche.js) und Grüße zu eigenen Erinnerungen
 // (server/routes/meineHinweise.js). Die Zahlen gehören zur Identität und stehen in /me (erlebtMitOffen, neueGaeste,
@@ -32,7 +33,7 @@ export function withHinweisZahlen(family, zahlen) {
 
 // Name des Knopfs für Screenreader („Hinweise, 2 neu“) - das Badge selbst ist aria-hidden.
 export function bellLabel(total) {
-  return total > 0 ? `Hinweise, ${total} neu` : 'Hinweise'
+  return total > 0 ? t('Hinweise, {n} neu', { n: total }) : t('Hinweise')
 }
 
 export function badgeText(total) {
@@ -41,20 +42,20 @@ export function badgeText(total) {
 
 // „2 neue Hinweise“ - die schmale Zeile auf Start und die höfliche Ansage, wenn neue dazukommen.
 export function startLineText(total) {
-  return `${total} ${total === 1 ? 'neuer Hinweis' : 'neue Hinweise'}`
+  return total === 1 ? t('{n} neuer Hinweis', { n: total }) : t('{n} neue Hinweise', { n: total })
 }
 
 // „Wilma war beim „Strandtag“ mit dabei?“ - dogName ist das eigene Tier, das im Eintrag des anderen Zuhauses steht.
 export function requestText(request) {
-  return `${request.dogName} war beim „${request.titel}“ mit dabei?`
+  return t('{name} war beim „{titel}“ mit dabei?', { name: request.dogName, titel: request.titel })
 }
 
 export function guestText(guest) {
-  return `Neu bei euch zu Gast: ${guest.name}`
+  return t('Neu bei euch zu Gast: {name}', { name: guest.name })
 }
 
 export function greetingText(greeting) {
-  return `${greeting.von} hat euch zu „${greeting.titel}“ gegrüßt`
+  return t('{von} hat euch zu „{titel}“ gegrüßt', { von: greeting.von, titel: greeting.titel })
 }
 
 // Eine Liste aus allen drei Quellen, neueste zuerst: [{ kind, key, at, neu, data }]. Von den Gästen zählen nur die neuen

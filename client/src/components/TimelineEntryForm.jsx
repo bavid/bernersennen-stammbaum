@@ -15,6 +15,7 @@ import { readDraft, titleSuggestion } from '../lib/entryForm.js'
 import { taggedDogIds } from '../lib/erlebtMit.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import '../styles/entry-form.css'
+import { t } from '../lib/i18n/index.js'
 
 const CONTENT_ERROR = 'Erzähl kurz, was passiert ist – oder füge ein Foto hinzu.'
 const NAME_ERROR = 'Bitte gib deinen Namen an.'
@@ -35,9 +36,9 @@ function initialForm(entry, draft) {
 
 function validate(form, autorName) {
   const errors = {}
-  if (!form.text.trim() && !form.titel.trim() && form.fotos.length === 0) errors.content = CONTENT_ERROR
-  if (!form.datum) errors.datum = DATE_ERROR
-  if (!autorName.trim()) errors.name = NAME_ERROR
+  if (!form.text.trim() && !form.titel.trim() && form.fotos.length === 0) errors.content = t(CONTENT_ERROR)
+  if (!form.datum) errors.datum = t(DATE_ERROR)
+  if (!autorName.trim()) errors.name = t(NAME_ERROR)
   return errors
 }
 
@@ -138,9 +139,9 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
   const hasMore = nameKnown || canTag || isShelter
   const tagged = canTag && !form.privat ? form.erlebtMit.length : 0
   const summary = [
-    nameKnown && autorName.trim() && `von ${autorName.trim()}`,
-    canTag && (tagged ? `Mit dabei (${tagged})` : 'Mit dabei'),
-    isShelter && 'Kategorie, Steckbrief'
+    nameKnown && autorName.trim() && t('von {name}', { name: autorName.trim() }),
+    canTag && (tagged ? t('Mit dabei ({n})', { n: tagged }) : t('Mit dabei')),
+    isShelter && t('Kategorie, Steckbrief')
   ]
     .filter(Boolean)
     .join(' · ')
@@ -155,21 +156,21 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
       {draftNotice && (
         <p className="entry-draft-notice">
           <Icon name="edit" />
-          <span>Euer Entwurf ist noch da.</span>
+          <span>{t('Euer Entwurf ist noch da.')}</span>
           <ConfirmButton label="Verwerfen" confirmLabel="Wirklich verwerfen?" icon="close" className="btn-compact" onConfirm={discardDraft} />
         </p>
       )}
       <FotoFeld value={form.fotos} onChange={(fotos) => update({ fotos })} onBusyChange={setUploading} onError={setError} />
       <div className="field">
         <label className="field-label" htmlFor={textId}>
-          Was ist passiert?
+          {t('Was ist passiert?')}
         </label>
         <AutoTextarea
           id={textId}
           name="text"
           value={form.text}
           onChange={(event) => update({ text: event.target.value })}
-          placeholder="z. B. Heute waren wir zum ersten Mal am See …"
+          placeholder={t('z. B. Heute waren wir zum ersten Mal am See …')}
           maxLength={5000}
           autoFocus={!entry}
           aria-invalid={errors.content ? true : undefined}
@@ -183,9 +184,9 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
       </div>
       <div className="field">
         <label className="field-label" htmlFor={titelId}>
-          Überschrift <span className="muted">(optional)</span>
+          {t('Überschrift')} <span className="muted">{t('(optional)')}</span>
         </label>
-        <input id={titelId} name="titel" value={form.titel} onChange={(event) => update({ titel: event.target.value })} maxLength={120} placeholder={`sonst: „${suggestion}“`} />
+        <input id={titelId} name="titel" value={form.titel} onChange={(event) => update({ titel: event.target.value })} maxLength={120} placeholder={t('sonst: „{title}“', { title: suggestion })} />
       </div>
       {!nameKnown && nameField}
       <DatumChip value={form.datum} onChange={(datum) => update({ datum })} invalid={Boolean(errors.datum)} errorId={errorIds.datum} />
@@ -201,15 +202,15 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
         </MehrAngaben>
       )}
       <div className="form-actions">
-        {onDelete && <ConfirmButton onConfirm={handleDelete} label={`${words.entry} löschen`} disabled={saving} />}
+        {onDelete && <ConfirmButton onConfirm={handleDelete} label={t('{entry} löschen', { entry: words.entry })} disabled={saving} />}
         <span className="form-actions-spacer" />
         {onCancel && (
           <button type="button" className="btn btn-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
         <button className="btn btn-primary" type="submit" disabled={saving || uploading}>
-          {saving ? 'Speichere …' : entry ? 'Speichern' : submitLabel || words.tellActionShort}
+          {saving ? t('Speichere …') : entry ? t('Speichern') : submitLabel || words.tellActionShort}
         </button>
       </div>
     </form>

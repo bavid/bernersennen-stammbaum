@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { visibilityOptions } from '../../lib/entryForm.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Wer sieht die Erinnerung? Zwei klare Möglichkeiten statt einer Checkbox (nur im eigenen Zuhause, lib/entryForm.js):
 // „Nur wir (privat)“ oder „Mit Familie Sonnenhang teilen“ - privat geht als Flag an den Server. Darunter, was die Wahl
@@ -11,7 +12,7 @@ export default function SichtbarkeitWahl({ privat, onChange, shareNames }) {
   const selected = options.find((option) => option.privat === privat) || options[1]
   return (
     <fieldset className="entry-visibility">
-      <legend className="field-label">Wer sieht das?</legend>
+      <legend className="field-label">{t('Wer sieht das?')}</legend>
       <div className="entry-visibility-options">
         {options.map((option) => (
           <label key={String(option.privat)} className={`entry-visibility-option${option.privat === privat ? ' is-selected' : ''}`}>

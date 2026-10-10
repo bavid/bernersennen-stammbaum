@@ -16,6 +16,7 @@ import {
   terminErrorField,
   toTerminPayload
 } from '../lib/termine.js'
+import { t } from '../lib/i18n/index.js'
 
 const IDS = {
   titel: 'termin-titel',
@@ -36,8 +37,8 @@ function withoutKeys(object, keys) {
 }
 
 function serieBisHint(form) {
-  if (!form.datum) return 'Höchstens ein Jahr ab dem ersten Termin.'
-  return `Höchstens ein Jahr – ohne Angabe bis ${formatDateLong(maxSerieBis(form.datum))}.`
+  if (!form.datum) return t('Höchstens ein Jahr ab dem ersten Termin.')
+  return t('Höchstens ein Jahr – ohne Angabe bis {date}.', { date: formatDateLong(maxSerieBis(form.datum)) })
 }
 
 // Anlegen und Bearbeiten eines Termins oder einer ganzen Serie (Phase V4a, PartnerTermineEditor). today: "heute" in
@@ -50,7 +51,7 @@ export default function TerminForm({ termin, today, onSaved, onCancel }) {
   const [saving, setSaving] = useState(false)
   const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
   const isSerie = form.serie !== SERIE.keine
-  const submitLabel = isSerie ? 'Serie speichern' : 'Termin speichern'
+  const submitLabel = isSerie ? t('Serie speichern') : t('Termin speichern')
   const bind = (key, { hint } = {}) => fieldProps(IDS[key], { error: fieldErrors[key], hint })
 
   function update(patch) {
@@ -83,8 +84,8 @@ export default function TerminForm({ termin, today, onSaved, onCancel }) {
 
   return (
     <form ref={formRef} className="termin-form card form-stack" onSubmit={handleSubmit} noValidate>
-      <h3>{termin ? `Bearbeiten – ${termin.titel}` : 'Neuer Termin'}</h3>
-      {termin && termin.serie !== SERIE.keine && <p className="field-hint">{SERIES_EDIT_HINT}</p>}
+      <h3>{termin ? t('Bearbeiten – {title}', { title: termin.titel }) : t('Neuer Termin')}</h3>
+      {termin && termin.serie !== SERIE.keine && <p className="field-hint">{t(SERIES_EDIT_HINT)}</p>}
       {error && (
         <div ref={bannerRef} className="error-banner" role="alert" tabIndex={-1}>
           {error}
@@ -92,27 +93,27 @@ export default function TerminForm({ termin, today, onSaved, onCancel }) {
       )}
 
       <div className="form-grid">
-        <AdminField id={IDS.titel} label="Titel" error={fieldErrors.titel} className="span-2">
+        <AdminField id={IDS.titel} label={t('Titel')} error={fieldErrors.titel} className="span-2">
           <input {...bind('titel')} value={form.titel} onChange={(e) => update({ titel: e.target.value })} maxLength={MAX_TITEL_LENGTH} required />
         </AdminField>
 
-        <AdminField id={IDS.datum} label={isSerie ? 'Erster Termin' : 'Datum'} error={fieldErrors.datum}>
+        <AdminField id={IDS.datum} label={isSerie ? t('Erster Termin') : t('Datum')} error={fieldErrors.datum}>
           <input {...bind('datum')} type="date" value={form.datum} min={termin ? undefined : today} max={today ? maxSerieBis(today) : undefined} onChange={(e) => update({ datum: e.target.value })} required />
         </AdminField>
 
         <div className="termin-form-times">
-          <AdminField id={IDS.uhrzeit} label="Beginn" error={fieldErrors.uhrzeit}>
+          <AdminField id={IDS.uhrzeit} label={t('Beginn')} error={fieldErrors.uhrzeit}>
             <input {...bind('uhrzeit')} type="time" value={form.uhrzeit} onChange={(e) => update({ uhrzeit: e.target.value })} required />
           </AdminField>
-          <AdminField id={IDS.ende} label="Ende (optional)" error={fieldErrors.ende}>
+          <AdminField id={IDS.ende} label={t('Ende (optional)')} error={fieldErrors.ende}>
             <input {...bind('ende')} type="time" value={form.ende} onChange={(e) => update({ ende: e.target.value })} />
           </AdminField>
         </div>
 
         <AdminField
           id={IDS.serie}
-          label="Wiederholen"
-          hint={serieSkipsMonths(form.serie, form.datum) ? SKIP_HINT : undefined}
+          label={t('Wiederholen')}
+          hint={serieSkipsMonths(form.serie, form.datum) ? t(SKIP_HINT) : undefined}
           error={fieldErrors.serie}
         >
           <select {...bind('serie', { hint: serieSkipsMonths(form.serie, form.datum) })} value={form.serie} onChange={(e) => update({ serie: e.target.value })}>
@@ -125,7 +126,7 @@ export default function TerminForm({ termin, today, onSaved, onCancel }) {
         </AdminField>
 
         {isSerie && (
-          <AdminField id={IDS.serieBis} label="Wiederholen bis (optional)" hint={serieBisHint(form)} error={fieldErrors.serieBis}>
+          <AdminField id={IDS.serieBis} label={t('Wiederholen bis (optional)')} hint={serieBisHint(form)} error={fieldErrors.serieBis}>
             <input
               {...bind('serieBis', { hint: true })}
               type="date"
@@ -137,21 +138,21 @@ export default function TerminForm({ termin, today, onSaved, onCancel }) {
           </AdminField>
         )}
 
-        <AdminField id={IDS.ort} label="Ort (optional)" error={fieldErrors.ort} className="span-2">
-          <input {...bind('ort')} value={form.ort} onChange={(e) => update({ ort: e.target.value })} maxLength={MAX_ORT_LENGTH} placeholder="z. B. Trainingsplatz am Deich" />
+        <AdminField id={IDS.ort} label={t('Ort (optional)')} error={fieldErrors.ort} className="span-2">
+          <input {...bind('ort')} value={form.ort} onChange={(e) => update({ ort: e.target.value })} maxLength={MAX_ORT_LENGTH} placeholder={t('z. B. Trainingsplatz am Deich')} />
         </AdminField>
 
-        <AdminField id={IDS.text} label="Text (optional)" hint={`${form.text.length} / ${MAX_TEXT_LENGTH} Zeichen`} error={fieldErrors.text} className="span-2">
+        <AdminField id={IDS.text} label={t('Text (optional)')} hint={t('{n} / {max} Zeichen', { n: form.text.length, max: MAX_TEXT_LENGTH })} error={fieldErrors.text} className="span-2">
           <textarea {...bind('text', { hint: true })} value={form.text} onChange={(e) => update({ text: e.target.value })} maxLength={MAX_TEXT_LENGTH} rows={3} />
         </AdminField>
       </div>
 
       <div className="form-actions">
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? 'Speichere …' : submitLabel}
+          {saving ? t('Speichere …') : submitLabel}
         </button>
       </div>
     </form>

@@ -1,6 +1,7 @@
 import Icon from './Icon.jsx'
 import ThemeMark from './ThemeMark.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Die Beispiel-Kundin der Kundensicht - dieselbe Familie wie die Demo ("Zuhause am Deich").
 export const EXAMPLE_CUSTOMER_NAME = 'Zuhause am Deich'
@@ -31,9 +32,9 @@ export default function PreviewFrame({ label, children, showNav = true }) {
         <div className="preview-frame-header">
           <ThemeMark size={26} />
           <span className="preview-frame-customer">
-            {EXAMPLE_CUSTOMER_NAME} <span className="preview-frame-example">(Beispiel)</span>
+            {EXAMPLE_CUSTOMER_NAME} <span className="preview-frame-example">({t('Beispiel')})</span>
           </span>
-          <span className="preview-frame-label">Vorschau</span>
+          <span className="preview-frame-label">{t('Vorschau')}</span>
         </div>
         <div className="preview-frame-screen" role="region" aria-label={label}>
           {children}
@@ -43,7 +44,7 @@ export default function PreviewFrame({ label, children, showNav = true }) {
             {customerNav(words).map((item) => (
               <span key={item.label} className={item.active ? 'is-active' : undefined}>
                 <Icon name={item.icon} />
-                {item.label}
+                {t(item.label)}
               </span>
             ))}
           </div>

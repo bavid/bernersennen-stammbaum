@@ -5,6 +5,7 @@ import { ExternalLink } from './PreviewLink.jsx'
 import { isExternalUrl, isValidPhone, mailtoHref, telHref } from '../lib/format.js'
 import { showContactForm } from '../lib/contactPartner.js'
 import { SECTION_IDS } from '../lib/portalTabs.js'
+import { t } from '../lib/i18n/index.js'
 
 // Sprungziel für "Kontakt" im Kopf des Portals (PortalHero) - die id des Abschnitts.
 export const PORTAL_CONTACT_ID = SECTION_IDS.contact
@@ -51,7 +52,7 @@ export function ContactPerson({ name }) {
     <p className="partner-portal-contact-person">
       <Icon name="users" />
       <span>
-        Ansprechperson: <strong>{name.trim()}</strong>
+        {t('Ansprechperson:')} <strong>{name.trim()}</strong>
       </span>
     </p>
   )
@@ -78,7 +79,7 @@ export function ContactDetails({ partner, withPlace = false }) {
       {partner.kontakt_email && (
         <li>
           <Icon name="mail" />
-          <span className="visually-hidden">E-Mail: </span>
+          <span className="visually-hidden">{t('E-Mail:')} </span>
           {mailto ? (
             <ExternalLink href={mailto} newTab={false}>
               {partner.kontakt_email}
@@ -91,7 +92,7 @@ export function ContactDetails({ partner, withPlace = false }) {
       {partner.kontakt_telefon && (
         <li>
           <Icon name="phone" />
-          <span className="visually-hidden">Telefon: </span>
+          <span className="visually-hidden">{t('Telefon:')} </span>
           {phone ? (
             <ExternalLink href={telHref(phone)} newTab={false}>
               {phone}
@@ -104,7 +105,7 @@ export function ContactDetails({ partner, withPlace = false }) {
       {place && (
         <li>
           <Icon name="mapPin" />
-          <span className="visually-hidden">Ort: </span>
+          <span className="visually-hidden">{t('Ort:')} </span>
           <span>{place}</span>
         </li>
       )}
@@ -122,7 +123,7 @@ export default function PortalContact({ partner }) {
   if (!hasForm && !hasFormUrl && !hasDetails) return null
 
   return (
-    <PortalSection id={PORTAL_CONTACT_ID} title="Kontakt">
+    <PortalSection id={PORTAL_CONTACT_ID} title={t('Kontakt')}>
       <div className="card partner-portal-contact">
         <ContactPerson name={partner.ansprechperson} />
         {(hasForm || hasFormUrl) && (
@@ -130,7 +131,7 @@ export default function PortalContact({ partner }) {
             {hasForm && <ContactPartnerButton partner={partner} />}
             {hasFormUrl && (
               <ExternalLink href={partner.kontakt_formular_url} className="btn btn-ghost">
-                Zu unserem Kontaktformular
+                {t('Zu unserem Kontaktformular')}
                 <Icon name="external" />
               </ExternalLink>
             )}

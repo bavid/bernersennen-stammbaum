@@ -2,6 +2,7 @@ import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import { excerpt, formatMessageDate, isoDateTime, senderName } from '../lib/partnerInbox.js'
 import { isValidPhone, mailtoHref, telHref } from '../lib/format.js'
+import { t } from '../lib/i18n/index.js'
 
 // Eine Nachricht im Postfach (PartnerInboxPage): zugeklappt Absender (ungelesen fett), Bezug, Datum und
 // der Anfang der Nachricht; aufgeklappt die ganze Nachricht - immer als Text (Zeilenumbrüche per CSS
@@ -23,7 +24,7 @@ export default function InboxMessage({ message, open, onToggle, onMarkRead, onDe
           {unread && <span className="inbox-dot" aria-hidden="true" />}
           <span className="inbox-item-sender">
             {name}
-            {unread && <span className="visually-hidden"> (ungelesen)</span>}
+            {unread && <span className="visually-hidden">{t(' (ungelesen)')}</span>}
           </span>
           <time className="inbox-item-date" dateTime={isoDateTime(message.createdAt)}>
             {formatMessageDate(message.createdAt)}
@@ -39,12 +40,12 @@ export default function InboxMessage({ message, open, onToggle, onMarkRead, onDe
           <p className="inbox-message-text">{message.nachricht}</p>
 
           {(mailto || phone) && (
-            <div className="inbox-reply" aria-label={`Antworten an ${name}`} role="group">
+            <div className="inbox-reply" aria-label={t('Antworten an {name}', { name })} role="group">
               {mailto && (
                 <a className="btn btn-ghost" href={mailto}>
                   <Icon name="mail" />
                   <span>
-                    Per E-Mail antworten<span className="inbox-reply-value">{message.email}</span>
+                    {t('Per E-Mail antworten')}<span className="inbox-reply-value">{message.email}</span>
                   </span>
                 </a>
               )}
@@ -52,26 +53,26 @@ export default function InboxMessage({ message, open, onToggle, onMarkRead, onDe
                 <a className="btn btn-ghost" href={telHref(phone)}>
                   <Icon name="phone" />
                   <span>
-                    Anrufen<span className="inbox-reply-value">{phone}</span>
+                    {t('Anrufen')}<span className="inbox-reply-value">{phone}</span>
                   </span>
                 </a>
               )}
             </div>
           )}
-          {!mailto && !phone && <p className="field-hint">Keine Kontaktdaten angegeben.</p>}
+          {!mailto && !phone && <p className="field-hint">{t('Keine Kontaktdaten angegeben.')}</p>}
 
           <div className="inbox-actions">
             {unread && !isDemo && (
               <button type="button" className="btn btn-ghost" onClick={onMarkRead}>
                 <Icon name="check" />
-                Als gelesen markieren
+                {t('Als gelesen markieren')}
               </button>
             )}
             <ConfirmButton
               onConfirm={onDelete}
-              label="Löschen"
-              confirmLabel="Wirklich löschen?"
-              ariaLabel={`Nachricht von ${name} löschen`}
+              label={t('Löschen')}
+              confirmLabel={t('Wirklich löschen?')}
+              ariaLabel={t('Nachricht von {name} löschen', { name })}
               disabled={isDemo}
               describedBy={demoHintId}
             />

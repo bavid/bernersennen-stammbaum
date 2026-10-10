@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
 import PreviewFrame from './PreviewFrame.jsx'
 import SteckbriefPage from '../pages/SteckbriefPage.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const LOAD_ERROR = 'Eure Tiere konnten gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
 
@@ -14,8 +15,8 @@ export function ownAnimals(dogs) {
 }
 
 function optionLabel(dog) {
-  const name = dog.name || 'Ohne Namen'
-  return dog.public_slug ? name : `${name} (noch nicht veröffentlicht)`
+  const name = dog.name || t('Ohne Namen')
+  return dog.public_slug ? name : t('{name} (noch nicht veröffentlicht)', { name })
 }
 
 // Reiter "Steckbriefe" der Kundensicht (nur Tierheime): Auswahl eines eigenen Tiers, darunter sein
@@ -48,19 +49,19 @@ export default function SteckbriefPreview() {
   if (error) {
     return (
       <div className="error-banner" role="alert">
-        {error}
+        {t(error)}
       </div>
     )
   }
   if (dogs === undefined) {
     return (
       <p className="muted" role="status" aria-busy="true">
-        Lädt …
+        {t('Lädt …')}
       </p>
     )
   }
   if (dogs.length === 0) {
-    return <p className="customer-view-empty">Noch keine Tiere angelegt – legt unter „Tiere“ das erste an, dann seht ihr hier seinen Steckbrief.</p>
+    return <p className="customer-view-empty">{t('Noch keine Tiere angelegt – legt unter „Tiere“ das erste an, dann seht ihr hier seinen Steckbrief.')}</p>
   }
 
   const selected = dogs.find((dog) => String(dog.id) === dogId)
@@ -69,7 +70,7 @@ export default function SteckbriefPreview() {
     <div className="customer-view-steckbrief">
       <div className="field customer-view-animal">
         <label className="field-label" htmlFor="customer-view-animal">
-          Tier
+          {t('Tier')}
         </label>
         <select id="customer-view-animal" value={dogId} onChange={(event) => setDogId(event.target.value)}>
           {dogs.map((dog) => (
@@ -79,11 +80,11 @@ export default function SteckbriefPreview() {
           ))}
         </select>
         {selected && !selected.public_slug && (
-          <p className="field-hint">Dieser Steckbrief ist noch nicht veröffentlicht – Kundinnen und Kunden sehen ihn erst danach.</p>
+          <p className="field-hint">{t('Dieser Steckbrief ist noch nicht veröffentlicht – Kundinnen und Kunden sehen ihn erst danach.')}</p>
         )}
       </div>
       {/* Audit V7a: der Steckbrief ist eine öffentliche Seite wie das Portal - ohne die App-Leiste. */}
-      <PreviewFrame label={`Steckbrief von ${selected?.name || 'eurem Tier'} (Vorschau)`} showNav={false}>
+      <PreviewFrame label={t('Steckbrief von {name} (Vorschau)', { name: selected?.name || t('eurem Tier') })} showNav={false}>
         <SteckbriefPage key={dogId} load={loadAnimal} preview />
       </PreviewFrame>
     </div>

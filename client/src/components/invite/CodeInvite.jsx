@@ -6,6 +6,7 @@ import { useToast } from '../Toast.jsx'
 import Icon from '../Icon.jsx'
 import CodeList from './CodeList.jsx'
 import useVoucherList from './useVoucherList.js'
+import { t } from '../../lib/i18n/index.js'
 
 function CopyField({ label, value }) {
   const toast = useToast()
@@ -13,7 +14,7 @@ function CopyField({ label, value }) {
   async function handleCopy(event) {
     try {
       await navigator.clipboard.writeText(value)
-      toast('Kopiert')
+      toast(t('Kopiert'))
     } catch {
       // Ohne Zwischenablage-Recht: Text markieren, damit man ihn selbst kopieren kann
       event.currentTarget.previousElementSibling?.select()
@@ -25,7 +26,7 @@ function CopyField({ label, value }) {
       <input readOnly value={value} aria-label={label} onFocus={(e) => e.target.select()} />
       <button type="button" className="btn btn-ghost" onClick={handleCopy}>
         <Icon name="copy" />
-        Kopieren
+        {t('Kopieren')}
       </button>
     </div>
   )
@@ -37,8 +38,8 @@ const PARTNER_EXPLANATION =
 // Familie: Mitgliedschaft inklusive; Partner/Tierheime (Phase P): Kunden-Gutscheine für die Kundschaft, nie ein Beitritt
 // (der Server rechnet sie dem Partner zu, siehe server/lib/vouchers.js ensureVoucherQuota).
 function explanationFor(family) {
-  if (isPartnerArea(family)) return PARTNER_EXPLANATION
-  return `Wer den Einladungscode einlöst, bekommt ein eigenes Zuhause und ist gleich Mitglied in „${family.name}“.`
+  if (isPartnerArea(family)) return t(PARTNER_EXPLANATION)
+  return t('Wer den Einladungscode einlöst, bekommt ein eigenes Zuhause und ist gleich Mitglied in „{name}“.', { name: family.name })
 }
 
 // "Mitglied einladen" (Familie, ab Stellvertretung neue Codes und fremde zurückziehen) bzw. "Einladungscode weitergeben"
@@ -48,7 +49,7 @@ export default function CodeInvite({ family }) {
   const { words } = useTheme()
   const isDemo = useIsDemo()
   // In der Demo sind die Codes Beispiele; in der Admin-Ansicht sind es die echten des Bereichs - nur vergeben geht dort nicht.
-  const readOnlyHint = useReadOnlyHint('Beispiel – in der Demo werden keine Einladungscodes vergeben.')
+  const readOnlyHint = useReadOnlyHint(t('Beispiel – in der Demo werden keine Einladungscodes vergeben.'))
   const inGroup = family.art === 'rudel'
   const canCreate = inGroup && hasRole(family, 'stellvertretung')
   const list = useVoucherList({ withLimit: canCreate })
@@ -56,7 +57,7 @@ export default function CodeInvite({ family }) {
   return (
     <div className="invite">
       <section className="invite-vouchers">
-        <h3>Einladungscodes</h3>
+        <h3>{t('Einladungscodes')}</h3>
         <p className="muted">{explanationFor(family)}</p>
         {isDemo && <p className="field-hint">{readOnlyHint}</p>}
         <CodeList
@@ -68,18 +69,20 @@ export default function CodeInvite({ family }) {
           canModerate={inGroup ? hasRole(family, 'stellvertretung') : true}
           own={false}
           disabled={isDemo}
-          emptyText="Gerade keine Einladungscodes übrig."
+          emptyText={t('Gerade keine Einladungscodes übrig.')}
         />
       </section>
 
       {inGroup && (
         <section className="invite-legacy">
-          <h3>Adresse und Passwort weitergeben</h3>
+          <h3>{t('Adresse und Passwort weitergeben')}</h3>
           <p className="muted">
-            Schick der Person die Adresse und euer gemeinsames {words.groupPassword}. Dann sieht sie {words.yourTreeAcc} und
-            kann mitschreiben. Das Passwort schreibst du selbst dazu – es ist aus Sicherheitsgründen nirgends gespeichert.
+            {t('Schick der Person die Adresse und euer gemeinsames {password}. Dann sieht sie {tree} und kann mitschreiben. Das Passwort schreibst du selbst dazu – es ist aus Sicherheitsgründen nirgends gespeichert.', {
+              password: words.groupPassword,
+              tree: words.yourTreeAcc
+            })}
           </p>
-          <CopyField label="Adresse der Chronik" value={window.location.origin} />
+          <CopyField label={t('Adresse der Chronik')} value={window.location.origin} />
         </section>
       )}
     </div>

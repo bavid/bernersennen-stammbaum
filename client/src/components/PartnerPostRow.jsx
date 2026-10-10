@@ -8,6 +8,7 @@ import { isPartnerMedia } from '../lib/discover.js'
 import { latestVerlauf } from '../lib/freigabeVerlauf.js'
 import { relativeTime, todayIso } from '../lib/dates.js'
 import { formatZeitraeume } from '../lib/zeitraeume.js'
+import { t } from '../lib/i18n/index.js'
 
 // Ein eigener Beitrag in der Liste (PartnerPostsEditor): Freigabe als einziges Badge (bei "Abgelehnt" samt Grund),
 // daneben Bereich und aktiv/inaktiv als ruhige Meta-Zeile, Zeitraum und die anonymen Klicks, dazu Bearbeiten und
@@ -26,9 +27,9 @@ export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
         <div className="partner-post-chips">
           <FreigabeChip freigabe={post.freigabe} />
           <span className="partner-post-kind">
-            <span className="partner-post-bereich">{POST_BEREICH_LABELS[post.bereich] || post.bereich}</span>
+            <span className="partner-post-bereich">{POST_BEREICH_LABELS[post.bereich] ? t(POST_BEREICH_LABELS[post.bereich]) : post.bereich}</span>
             {' · '}
-            <span className={`partner-post-aktiv${post.aktiv ? ' is-aktiv' : ''}`}>{post.aktiv ? 'Aktiv' : 'Inaktiv'}</span>
+            <span className={`partner-post-aktiv${post.aktiv ? ' is-aktiv' : ''}`}>{post.aktiv ? t('Aktiv') : t('Inaktiv')}</span>
           </span>
         </div>
         <h3>{post.titel}</h3>
@@ -37,23 +38,23 @@ export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
           <p className="partner-post-reason">
             <Icon name="alert" />
             <span>
-              <strong>Grund:</strong> {post.ablehnungsgrund} Bitte anpassen und erneut einreichen.
+              <strong>{t('Grund:')}</strong> {post.ablehnungsgrund} {t('Bitte anpassen und erneut einreichen.')}
             </span>
           </p>
         )}
         <dl className="partner-post-meta">
           <div>
-            <dt>Zeitraum</dt>
+            <dt>{t('Zeitraum')}</dt>
             <dd>{formatZeitraum(post.start, post.ende)}</dd>
           </div>
           {post.zeitraeume?.length > 0 && (
             <div>
-              <dt>Termine</dt>
-              <dd>{formatZeitraeume(post.zeitraeume, todayIso()) || 'alle vorbei'}</dd>
+              <dt>{t('Termine')}</dt>
+              <dd>{formatZeitraeume(post.zeitraeume, todayIso()) || t('alle vorbei')}</dd>
             </div>
           )}
           <div>
-            <dt>Klicks 7 Tage / gesamt</dt>
+            <dt>{t('Klicks 7 Tage / gesamt')}</dt>
             <dd className="partner-post-clicks">
               {clickCount(post.clicks7)} / {clickCount(post.clicksTotal)}
             </dd>
@@ -62,7 +63,7 @@ export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
         {latest && (
           <details className="partner-post-verlauf">
             <summary>
-              Verlauf
+              {t('Verlauf')}
               <span className="partner-post-verlauf-latest">
                 {' · '}
                 {latest.label}
@@ -79,16 +80,16 @@ export default function PartnerPostRow({ post, onEdit, onDelete, demoHintId }) {
             onClick={() => onEdit(post)}
             disabled={isDemo}
             aria-describedby={demoHintId}
-            aria-label={`${post.titel} ${rejected ? 'erneut einreichen' : 'bearbeiten'}`}
+            aria-label={rejected ? t('{title} erneut einreichen', { title: post.titel }) : t('{title} bearbeiten', { title: post.titel })}
           >
             <Icon name="edit" />
-            {rejected ? 'Erneut einreichen' : 'Bearbeiten'}
+            {rejected ? t('Erneut einreichen') : t('Bearbeiten')}
           </button>
           <ConfirmButton
             onConfirm={() => onDelete(post)}
-            label="Löschen"
-            confirmLabel="Wirklich löschen?"
-            ariaLabel={`${post.titel} löschen`}
+            label={t('Löschen')}
+            confirmLabel={t('Wirklich löschen?')}
+            ariaLabel={t('{title} löschen', { title: post.titel })}
             disabled={isDemo}
             describedBy={demoHintId}
           />

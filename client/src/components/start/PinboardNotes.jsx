@@ -3,11 +3,12 @@ import Icon from '../Icon.jsx'
 import AreaChip from '../feed/AreaChip.jsx'
 import { relativeTime } from '../../lib/dates.js'
 import { feedKey, feedNoteLink } from '../../lib/startFeed.js'
+import { t } from '../../lib/i18n/index.js'
 
 // „1 Antwort“ / „3 Antworten“ - ohne Antworten nichts.
 export function repliesLabel(count) {
   if (!Number.isInteger(count) || count <= 0) return null
-  return count === 1 ? '1 Antwort' : `${count} Antworten`
+  return count === 1 ? t('1 Antwort') : t('{n} Antworten', { n: count })
 }
 
 // „Neu an der Pinnwand“ auf Start (Phase W, Schritt 3) - im Kasten „Bald“ (components/start/StartSoon.jsx: alles von der
@@ -22,7 +23,7 @@ export default function PinboardNotes({ notes, heading = true }) {
   if (!notes?.length) return null
   return (
     <div className="start-pinboard">
-      {heading && <h3 className="start-pinboard-title">Neu an der Pinnwand</h3>}
+      {heading && <h3 className="start-pinboard-title">{t('Neu an der Pinnwand')}</h3>}
       <ul className="start-pinboard-list" role="list">
         {notes.map((note) => {
           const meta = [repliesLabel(note.comment_count), relativeTime(note.activity_at || '')].filter(Boolean).join(' · ')

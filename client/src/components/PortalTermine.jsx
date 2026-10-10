@@ -4,6 +4,7 @@ import TerminDate from './TerminDate.jsx'
 import { SERIE, formatUhrzeit, groupByMonth, serieLabel, vorkommenKey } from '../lib/termine.js'
 import { todayIso } from '../lib/dates.js'
 import { SECTION_IDS, initialTermine, portalTermine } from '../lib/portalTabs.js'
+import { t } from '../lib/i18n/index.js'
 
 // Text und Regel nur beim ersten stattfindenden Tag eines Termins - sonst stünden sie bei jeder Woche einer Serie erneut.
 function firstKeys(items) {
@@ -25,7 +26,7 @@ function PortalTermin({ item, first }) {
       <div className="termin-row-body">
         <p className="termin-row-time">
           {formatUhrzeit(item.uhrzeit, item.ende)}
-          {item.abgesagt && <span className="termin-badge-cancelled">fällt aus</span>}
+          {item.abgesagt && <span className="termin-badge-cancelled">{t('fällt aus')}</span>}
         </p>
         <h4 className="termin-row-title">{item.titel}</h4>
         {meta && <p className="termin-row-meta">{meta}</p>}
@@ -50,7 +51,7 @@ export default function PortalTermine({ termine, today = todayIso() }) {
   const first = firstKeys(shown)
 
   return (
-    <PortalSection id={SECTION_IDS.termine} title="Termine" className="partner-portal-termine">
+    <PortalSection id={SECTION_IDS.termine} title={t('Termine')} className="partner-portal-termine">
       <div className="termin-overview">
         {groupByMonth(shown).map((group) => (
           <div key={group.key} className="termin-month">
@@ -65,7 +66,7 @@ export default function PortalTermine({ termine, today = todayIso() }) {
       </div>
       {hidden > 0 && (
         <button type="button" className="btn btn-ghost portal-termine-more" onClick={() => setShowAll(true)}>
-          Mehr anzeigen ({hidden} weitere)
+          {t('Mehr anzeigen ({n} weitere)', { n: hidden })}
         </button>
       )}
     </PortalSection>

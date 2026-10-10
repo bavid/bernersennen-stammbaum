@@ -1,4 +1,5 @@
 import { formatNumber, stackedSegments } from '../lib/adminStats.js'
+import { t } from '../lib/i18n/index.js'
 
 // Verteilungsbalken eines Stapels (AdminStatsStapel): eingelöst | offen | zurückgezogen als gestapelte Segmente,
 // nur CSS mit Breite in Prozent und einer 2px-Lücke in der Kartenfläche statt Rahmen. Die Zahlen stehen daneben
@@ -13,7 +14,7 @@ export default function StackedBar({ row }) {
           key={segment.key}
           className={`stat-bar-segment is-${segment.key}`}
           style={{ width: `${segment.percent}%` }}
-          title={`${segment.label}: ${formatNumber(segment.value)}`}
+          title={`${t(segment.label)}: ${formatNumber(segment.value)}`}
         />
       ))}
     </span>

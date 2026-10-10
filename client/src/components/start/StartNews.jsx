@@ -5,6 +5,7 @@ import FeedItem from '../feed/FeedItem.jsx'
 import { groupBySeason } from '../../lib/seasons.js'
 import { byMemoryDate } from '../../lib/feed.js'
 import { feedEntries, feedKey } from '../../lib/startFeed.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Zuerst so viele Erinnerungen, der Rest hinter "Weitere Erinnerungen" (die Seite bleibt so bei höchstens etwa drei
 // Bildschirmhöhen).
@@ -59,14 +60,14 @@ export default function StartNews({ pages, loading, hasMore = false, onLoadMore,
   return (
     <section id="start-news" className="start-news" aria-labelledby="start-news-title" aria-busy={loading || more.loading || undefined}>
       <h2 id="start-news-title" className="start-section-title">
-        Neue {words.entries}
+        {t('Neue {entries}', { entries: words.entries })}
       </h2>
       {filter}
       {sorted?.length === 0 && !hasMore && (
         <div className="feed feed-empty">
           <Icon name="sprout" />
           <p>
-            <strong>Noch keine {words.entries}.</strong> {theme.texts.feedEmpty} – hier steht dann alles Neue.
+            <strong>{t('Noch keine {entries}.', { entries: words.entries })}</strong> {theme.texts.feedEmpty} – {t('hier steht dann alles Neue.')}
           </p>
         </div>
       )}
@@ -86,12 +87,12 @@ export default function StartNews({ pages, loading, hasMore = false, onLoadMore,
       ))}
       {!showAll && hidden > 0 && (
         <button type="button" className="btn btn-ghost start-more" onClick={revealAll}>
-          Weitere {words.entries} ({hidden})
+          {t('Weitere {entries} ({n})', { entries: words.entries, n: hidden })}
         </button>
       )}
       {(showAll || hidden === 0) && hasMore && (
         <button type="button" className="btn btn-ghost start-more" onClick={loadOlder} aria-disabled={more.loading || undefined}>
-          {more.loading ? 'Lädt …' : 'Ältere anzeigen'}
+          {more.loading ? t('Lädt …') : t('Ältere anzeigen')}
         </button>
       )}
       {more.error && (

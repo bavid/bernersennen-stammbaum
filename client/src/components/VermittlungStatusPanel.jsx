@@ -3,6 +3,7 @@ import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import { NO_STATUS_LABEL, STECKBRIEF_PUBLISHABLE_STATUS, VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel } from '../lib/vermittlung.js'
+import { t } from '../lib/i18n/index.js'
 
 // "– kein Status –" ist legitim (final-review Phase T Finding 1) - ein frisch aufgenommenes Tier hat
 // oft noch keinen Vermittlungsstatus, und die Option lässt ihn auch wieder entfernen.
@@ -43,7 +44,7 @@ export default function VermittlungStatusPanel({ dog, onChange }) {
       const updated = await api.updateDog(dog.id, { vermittlungStatus: value || null })
       onChange(updated)
       setConfirming(false)
-      toast('Status aktualisiert')
+      toast(t('Status aktualisiert'))
     } catch (err) {
       toast(err.message)
     } finally {
@@ -67,12 +68,12 @@ export default function VermittlungStatusPanel({ dog, onChange }) {
   return (
     <div className="field vermittlung-status-panel">
       <label className="field-label" htmlFor="vermittlung-status">
-        Status
+        {t('Status')}
       </label>
       <select id="vermittlung-status" value={value} disabled={isDemo || saving} onChange={(e) => handleSelectChange(e.target.value)}>
         {STATUS_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {t(option.label)}
           </option>
         ))}
       </select>
@@ -81,12 +82,12 @@ export default function VermittlungStatusPanel({ dog, onChange }) {
         <>
           {confirming && (
             <div className="field-hint vermittlung-status-confirm" role="alert">
-              {revokesHandover && <p>Der offene Übergabe-Code wird ungültig.</p>}
-              {unpublishesSteckbrief && <p>Der Steckbrief wird zurückgezogen.</p>}
+              {revokesHandover && <p>{t('Der offene Übergabe-Code wird ungültig.')}</p>}
+              {unpublishesSteckbrief && <p>{t('Der Steckbrief wird zurückgezogen.')}</p>}
             </div>
           )}
           <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSaveClick}>
-            {saving ? 'Speichere …' : confirming ? 'Bestätigen' : 'Speichern'}
+            {saving ? t('Speichere …') : confirming ? t('Bestätigen') : t('Speichern')}
           </button>
         </>
       )}

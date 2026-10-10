@@ -8,6 +8,7 @@ import DiscoverPage from './DiscoverPage.jsx'
 import PartnerPortalPage from './PartnerPortalPage.jsx'
 import { ownSectionTab } from '../lib/discoverTabs.js'
 import { PORTAL_TAB_PARAM } from '../lib/portalTabs.js'
+import { t } from '../lib/i18n/index.js'
 
 const TAB_DISCOVER = 'entdecken'
 const TAB_PORTAL = 'portal'
@@ -36,8 +37,8 @@ function CustomerViewBanner({ partner }) {
     <p className={`customer-view-banner${hidden ? ' is-not-public' : ''}`}>
       <Icon name="eye" />
       <span>
-        <strong>Vorschau – so sehen Kunden euer Profil</strong>
-        {hidden && <span className="customer-view-banner-note"> Noch nicht öffentlich sichtbar.</span>}
+        <strong>{t('Vorschau – so sehen Kunden euer Profil')}</strong>
+        {hidden && <span className="customer-view-banner-note"> {t('Noch nicht öffentlich sichtbar.')}</span>}
       </span>
     </p>
   )
@@ -45,7 +46,7 @@ function CustomerViewBanner({ partner }) {
 
 function CustomerViewTabs({ tabs, current, onSelect }) {
   return (
-    <div className="segmented customer-view-tabs" role="group" aria-label="Vorschau wählen">
+    <div className="segmented customer-view-tabs" role="group" aria-label={t('Vorschau wählen')}>
       {tabs.map((item) => (
         <button
           type="button"
@@ -54,7 +55,7 @@ function CustomerViewTabs({ tabs, current, onSelect }) {
           aria-controls={`customer-view-panel-${item.key}`}
           onClick={() => onSelect(item.key)}
         >
-          {item.label}
+          {t(item.label)}
         </button>
       ))}
     </div>
@@ -98,19 +99,19 @@ export default function CustomerViewPage({ family }) {
     <div className="page customer-view-page">
       {/* Phase U: Überschrift zuerst, der Vorschau-Hinweis darunter - wie auf den anderen Seiten des Bereichs. */}
       <header className="customer-view-head">
-        <h1>Kundensicht</h1>
+        <h1>{t('Kundensicht')}</h1>
         <CustomerViewTabs tabs={tabs} current={current} onSelect={setTab} />
       </header>
       <CustomerViewBanner partner={family?.partner} />
 
       <div id={`customer-view-panel-${current}`} className="customer-view-panel">
         {current === TAB_DISCOVER && (
-          <PreviewFrame label="Entdecken aus Sicht einer Beispiel-Kundin (Vorschau)">
+          <PreviewFrame label={t('Entdecken aus Sicht einer Beispiel-Kundin (Vorschau)')}>
             <DiscoverPage load={loadDiscover} preview initialTab={ownSectionTab(family?.partner?.typ)} />
           </PreviewFrame>
         )}
         {current === TAB_PORTAL && (
-          <PreviewFrame label="Euer Portal (Vorschau)" showNav={false}>
+          <PreviewFrame label={t('Euer Portal (Vorschau)')} showNav={false}>
             <PartnerPortalPage load={loadPortal} preview />
           </PreviewFrame>
         )}

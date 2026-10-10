@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PREVIEW_DISABLED_HINT, useIsPreview } from '../lib/preview.js'
+import { t } from '../lib/i18n/index.js'
 
 // Links, die in der Kundensicht (lib/preview.js) nirgendwohin führen: Website, Klickzählung (/r/...),
 // mailto/tel und interne Seiten wie /p/... oder /t/... - dort würde ein Klick die Vorschau verlassen
@@ -13,8 +14,8 @@ export function DisabledLink({ className, children }) {
       role="link"
       aria-disabled="true"
       className={className ? `${className} is-preview-disabled` : 'is-preview-disabled'}
-      title={PREVIEW_DISABLED_HINT}
-      aria-description={PREVIEW_DISABLED_HINT}
+      title={t(PREVIEW_DISABLED_HINT)}
+      aria-description={t(PREVIEW_DISABLED_HINT)}
     >
       {children}
     </span>

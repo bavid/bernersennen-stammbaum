@@ -1,5 +1,6 @@
 import Icon from './Icon.jsx'
 import { FREIGABE_LABELS, freigabeKey } from '../lib/partnerPosts.js'
+import { t } from '../lib/i18n/index.js'
 
 // Symbol je Freigabe (V-Fehler 3) - der Zustand ist so auch ohne Farbe zu erkennen.
 const FREIGABE_ICONS = Object.freeze({ eingereicht: 'clock', freigegeben: 'check', abgelehnt: 'alert' })
@@ -12,7 +13,7 @@ export default function FreigabeChip({ freigabe }) {
   return (
     <span className={`pill freigabe-chip freigabe-chip-${key}`}>
       <Icon name={FREIGABE_ICONS[key]} />
-      {FREIGABE_LABELS[key]}
+      {t(FREIGABE_LABELS[key])}
     </span>
   )
 }

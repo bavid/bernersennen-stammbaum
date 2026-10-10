@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import { t } from '../lib/i18n/index.js'
 
 // Kurzes Etikett am rechten Ende der Linie, der ganze Satz für Screenreader und als Tooltip.
 const LABELS = {
@@ -27,11 +28,11 @@ export default function EnvBanner() {
   const label = LABELS[appEnv]
   if (!label) return null
   return (
-    <div className={`env-banner env-${appEnv}`} role="note" title={label.long}>
+    <div className={`env-banner env-${appEnv}`} role="note" title={t(label.long)}>
       <span className="env-banner-label" aria-hidden="true">
-        {label.short}
+        {t(label.short)}
       </span>
-      <span className="visually-hidden">{label.long}</span>
+      <span className="visually-hidden">{t(label.long)}</span>
     </div>
   )
 }

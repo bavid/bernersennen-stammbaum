@@ -2,6 +2,7 @@
 // Meldungen von server/lib/partnerProfile.js (profileResponse, validateProfileUpdate) und
 // server/lib/partners.js (validatePartner).
 import { partnerStatusLabel } from './partnerTypes.js'
+import { t } from './i18n/index.js'
 
 export const MIN_PORTAL_TEXT_LENGTH = 40
 export const MAX_PORTAL_TEXT_LENGTH = 2000
@@ -37,7 +38,9 @@ export function profileStatusKey(profile) {
 
 // Wie partnerStatusLabel, nur sagt "Aktiv" dem Partner selbst dazu, dass das Profil öffentlich ist.
 export function profileStatusLabel(profile) {
-  return profileStatusKey(profile) === 'aktiv' ? 'Aktiv (öffentlich)' : partnerStatusLabel(profile)
+  if (profileStatusKey(profile) === 'aktiv') return t('Aktiv (öffentlich)')
+  const label = partnerStatusLabel(profile)
+  return label && t(label)
 }
 
 // Textfelder, die der Partner selbst pflegt (server PROFILE_COLUMNS ohne den Schalter).

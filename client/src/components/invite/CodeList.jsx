@@ -2,6 +2,7 @@ import { useState } from 'react'
 import VoucherRow from './VoucherRow.jsx'
 import VoucherArchive from './VoucherArchive.jsx'
 import VoucherCreateBar from './VoucherCreateBar.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 export const PRINTED_HINT = '„gedruckt“: Der Code steht schon auf gedruckten Karten – bitte nicht noch einmal weitergeben.'
 
@@ -19,7 +20,7 @@ export default function CodeList({ list, vouchers, archive, canCreate, roleOptio
         </div>
       )}
       {canCreate && <VoucherCreateBar limit={list.limit} busy={list.creating} disabled={disabled} onCreate={list.create} />}
-      {vouchers === undefined && !list.error && <p className="muted">Lade …</p>}
+      {vouchers === undefined && !list.error && <p className="muted">{t('Lade …')}</p>}
       {vouchers && vouchers.length === 0 && emptyText && <p className="muted">{emptyText}</p>}
       {vouchers && vouchers.length > 0 && (
         <ul className="voucher-list">
@@ -38,7 +39,7 @@ export default function CodeList({ list, vouchers, archive, canCreate, roleOptio
         </ul>
       )}
       {/* Phase V5: gedruckte Codes stehen schon auf Karten - die Liste nennt ungedruckte zuerst (Server). */}
-      {vouchers?.some((voucher) => voucher.gedruckt && voucher.status === 'offen') && <p className="field-hint">{PRINTED_HINT}</p>}
+      {vouchers?.some((voucher) => voucher.gedruckt && voucher.status === 'offen') && <p className="field-hint">{t(PRINTED_HINT)}</p>}
       <VoucherArchive
         entries={archive}
         open={archiveOpen}

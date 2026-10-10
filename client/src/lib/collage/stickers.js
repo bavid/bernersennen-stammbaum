@@ -1,6 +1,7 @@
 // Sticker für die Collage: Fluent Emoji von Microsoft (Stil "Flat", MIT-Lizenz), lokal mitgeliefert unter
 // client/public/stickers/<id>.svg (Lizenz und Quellen: client/public/stickers/LICENSE.txt und QUELLEN.md).
 // Nur diese Liste gilt - gespeicherte Entwürfe mit anderen Ids werden beim Laden verworfen (sanitize.js).
+import { t } from '../i18n/index.js'
 
 export const MAX_STICKERS = 30
 
@@ -99,7 +100,7 @@ export function stickerLabels(stickers) {
   stickers.forEach((s) => totals.set(s.sticker, (totals.get(s.sticker) || 0) + 1))
   const seen = new Map()
   return stickers.map((s) => {
-    const label = getSticker(s.sticker)?.label || 'Sticker'
+    const label = t(getSticker(s.sticker)?.label || 'Sticker')
     if (totals.get(s.sticker) < 2) return label
     seen.set(s.sticker, (seen.get(s.sticker) || 0) + 1)
     return `${label} ${seen.get(s.sticker)}`

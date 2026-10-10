@@ -3,6 +3,7 @@ import { api } from '../../api'
 import LocationPicker from '../LocationPicker.jsx'
 import PlaceList from '../PlaceList.jsx'
 import Icon from '../Icon.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 const PLZ_LENGTH = 5
 const GEO_PRIVACY_HINT = 'Dein Standort wird auf etwa 1 km gerundet, nur für diese Suche verwendet und nicht gespeichert.'
@@ -63,21 +64,21 @@ export default function NearbySearch({ plz, radius, onPlzChange, onRadiusChange 
         onSubmit={handleSubmit}
         onLocate={({ lat, lon }) => search({ lat, lon })}
         allowGeolocation
-        geoHint={GEO_PRIVACY_HINT}
-        insecureHint={INSECURE_HINT}
+        geoHint={t(GEO_PRIVACY_HINT)}
+        insecureHint={t(INSECURE_HINT)}
         collapsible
         applied={applied}
       />
 
       {error && (
         <div className="error-banner" role="alert">
-          {error}
+          {t(error)}
         </div>
       )}
 
       {loading && (
         <p className="muted" aria-busy="true">
-          Sucht …
+          {t('Sucht …')}
         </p>
       )}
 
@@ -88,8 +89,8 @@ export default function NearbySearch({ plz, radius, onPlzChange, onRadiusChange 
       {!loading && !data && !error && (
         <div className="empty-state card">
           <Icon name="mapPin" />
-          <h3>Noch keine Suche</h3>
-          <p className="muted">Gebt eine Postleitzahl ein oder nutzt euren Standort, um loszulegen.</p>
+          <h3>{t('Noch keine Suche')}</h3>
+          <p className="muted">{t('Gebt eine Postleitzahl ein oder nutzt euren Standort, um loszulegen.')}</p>
         </div>
       )}
     </div>

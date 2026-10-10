@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 export const CUSTOMER_VIEW_ROUTE = '/kundensicht'
 const DEFAULT_EDIT_ROUTE = '/profil'
@@ -27,14 +28,14 @@ export default function ViewModeSwitch({ areaId }) {
 
   return (
     <div className="view-mode-bar">
-      <nav className="segmented view-mode-switch" aria-label="Ansicht">
+      <nav className="segmented view-mode-switch" aria-label={t('Ansicht')}>
         <Link to={editRoute} aria-current={isCustomerView ? undefined : 'page'}>
           <Icon name="edit" />
-          Bearbeiten
+          {t('Bearbeiten')}
         </Link>
         <Link to={CUSTOMER_VIEW_ROUTE} aria-current={isCustomerView ? 'page' : undefined}>
           <Icon name="eye" />
-          Kundensicht
+          {t('Kundensicht')}
         </Link>
       </nav>
     </div>

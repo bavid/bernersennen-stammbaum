@@ -1,6 +1,7 @@
 // Würfe: entstehen automatisch aus dem Stammbaum – Geschwister mit gleichen Eltern und gleichem Geburtstag.
 import { displayName } from './timeline.js'
 import { todayIso } from './dates.js'
+import { t } from './i18n/index.js'
 
 const DAY_MS = 86400000
 const GESTATION_DAYS = 63 // Tragzeit einer Hündin, ungefähr
@@ -26,7 +27,7 @@ const parentKey = (id, text) => (id ? `id:${id}` : text ? `text:${text.trim().to
 function parentOf(id, text, dogsById) {
   if (id) {
     const dog = dogsById.get(id) || null
-    return { id, name: dog ? displayName(dog) : 'Unbekannt', dog }
+    return { id, name: dog ? displayName(dog) : t('Unbekannt'), dog }
   }
   return text ? { id: null, name: text, dog: null } : null
 }

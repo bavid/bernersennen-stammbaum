@@ -2,6 +2,7 @@
 // Einrichten des Partner-Profils. Vertrag: server/routes/vouchers.js POST /check (zweck, partnerTyp,
 // partnerName) und POST /redeem (name, typ, plz - siehe server/lib/partnerAccess.js).
 import { SETUP_TYPE_OPTIONS } from './partnerTypes.js'
+import { t } from './i18n/index.js'
 
 export const PARTNER_ACCESS_ZWECK = 'partnerzugang'
 
@@ -26,9 +27,9 @@ export function isBoundPartnerAccess(access) {
 export function validatePartnerSetup(values, access) {
   if (isBoundPartnerAccess(access)) return {}
   const errors = {}
-  if (!values.name.trim()) errors.name = 'Bitte gebt euren Namen an.'
-  if (!access?.partnerTyp && !TYP_VALUES.includes(values.typ)) errors.typ = 'Bitte wählt aus, was ihr anbietet.'
-  if (!PLZ_RE.test(values.plz)) errors.plz = 'Bitte gebt eine fünfstellige Postleitzahl an.'
+  if (!values.name.trim()) errors.name = t('Bitte gebt euren Namen an.')
+  if (!access?.partnerTyp && !TYP_VALUES.includes(values.typ)) errors.typ = t('Bitte wählt aus, was ihr anbietet.')
+  if (!PLZ_RE.test(values.plz)) errors.plz = t('Bitte gebt eine fünfstellige Postleitzahl an.')
   return errors
 }
 

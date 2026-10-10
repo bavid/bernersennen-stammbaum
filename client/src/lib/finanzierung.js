@@ -6,6 +6,7 @@
 import { centsToEuroInput, parseEuroToCents } from './euro.js'
 import { formatEuroCents } from './discover.js'
 import { isExternalUrl } from './format.js'
+import { t } from './i18n/index.js'
 
 // Wie server/lib/finanzierung.js LIMITS.
 export const FINANZIERUNG_LIMITS = Object.freeze({ hinweisText: 400, zielTitel: 80, empfaenger: 120, notiz: 200, jahrMin: 2024, jahrMax: 2100 })
@@ -30,7 +31,7 @@ export const AMOUNT_TOO_LARGE = 'Höchstens 10.000.000,00 € pro Betrag.'
 // --- Lesen ----------------------------------------------------------------------------------------------------------
 
 export function quartalLabel(jahr, quartal) {
-  return `${quartal}. Quartal ${jahr}`
+  return t('{quartal}. Quartal {jahr}', { quartal, jahr })
 }
 
 export function quartalKurz(jahr, quartal) {
@@ -57,7 +58,7 @@ export function balkenBreiten(quartale) {
 // „Ziel: 500,00 € für Hundewiese am Deich“ - ohne Betrag „Ziel: Hundewiese am Deich“.
 export function zielText(ziel) {
   const betrag = formatEuroCents(ziel?.betragCents)
-  return betrag ? `Ziel: ${betrag} für ${ziel.titel}` : `Ziel: ${ziel?.titel || ''}`
+  return betrag ? t('Ziel: {betrag} für {titel}', { betrag, titel: ziel.titel }) : t('Ziel: {titel}', { titel: ziel?.titel || '' })
 }
 
 // Nur http(s) landet in einem href - nie ein beliebiger String aus der Datenbank.

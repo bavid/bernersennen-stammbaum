@@ -8,6 +8,7 @@ import { useToast } from '../Toast.jsx'
 import { displayName, dogLabel } from '../../lib/timeline.js'
 import { addMatingPath, canAddMatingFor } from '../../lib/litters.js'
 import { hasRelatives, treeRoute } from '../../lib/dogProfile.js'
+import { t } from '../../lib/i18n/index.js'
 
 // parent.id fehlt (null), wenn der Elternteil hier nicht sichtbar ist (fremder, nicht geteilter Bereich) – der Server
 // liefert dann trotzdem den Namen zur Anzeige, aber ohne Ziel-Id. Ein Link auf `/tier/null` wäre kaputt, darum bleibt es in
@@ -29,7 +30,7 @@ export function ParentLink({ parent, freitext }) {
       </span>
     )
   }
-  return <span className={freitext ? '' : 'muted'}>{freitext || 'unbekannt'}</span>
+  return <span className={freitext ? '' : 'muted'}>{freitext || t('unbekannt')}</span>
 }
 
 // Geschwister bzw. Nachwuchs als Chips zur jeweiligen Tierseite - ohne Tiere keine leere Zeile.
@@ -58,7 +59,7 @@ function useHousemateActions(dog, setDog, reload) {
       try {
         const housemates = await api.addHousemate(dog.id, otherId)
         setDog((current) => ({ ...current, housemates }))
-        toast('Verbindung „lebt zusammen“ hinzugefügt')
+        toast(t('Verbindung „lebt zusammen“ hinzugefügt'))
       } catch (err) {
         toast(err.message)
       }
@@ -66,13 +67,13 @@ function useHousemateActions(dog, setDog, reload) {
     // QuickAnimalForm hat das Tier bereits angelegt und verlinkt (livesWith=dog) – hier nur neu laden
     async onCreated(created) {
       await reload()
-      toast(`${displayName(created)} lebt jetzt mit ${displayName(dog)} zusammen`)
+      toast(t('{name} lebt jetzt mit {other} zusammen', { name: displayName(created), other: displayName(dog) }))
     },
     async onRemove(mate) {
       try {
         await api.removeHousemate(dog.id, mate.id)
         setDog((current) => ({ ...current, housemates: current.housemates.filter((h) => h.id !== mate.id) }))
-        toast(`Verbindung zu ${dogLabel(mate)} entfernt`)
+        toast(t('Verbindung zu {name} entfernt', { name: dogLabel(mate) }))
       } catch (err) {
         toast(err.message)
       }
@@ -90,27 +91,27 @@ export default function DogRelatives({ dog, setDog, family, allDogs, canWrite, r
   const showTree = !embedded && hasRelatives(dog)
 
   return (
-    <section className="dog-relatives" aria-labelledby={embedded ? undefined : 'dog-relatives-title'} aria-label={embedded ? 'Verwandte' : undefined}>
+    <section className="dog-relatives" aria-labelledby={embedded ? undefined : 'dog-relatives-title'} aria-label={embedded ? t('Verwandte') : undefined}>
       {!embedded && (
         <h2 id="dog-relatives-title" className="visually-hidden">
-          Verwandte von {displayName(dog)}
+          {t('Verwandte von {name}', { name: displayName(dog) })}
         </h2>
       )}
       <dl className="facts dog-relatives-facts">
         <div>
-          <dt>Mutter</dt>
+          <dt>{t('Mutter')}</dt>
           <dd>
             <ParentLink parent={dog.mother} freitext={dog.mother_freitext} />
           </dd>
         </div>
         <div>
-          <dt>Vater</dt>
+          <dt>{t('Vater')}</dt>
           <dd>
             <ParentLink parent={dog.father} freitext={dog.father_freitext} />
           </dd>
         </div>
-        <AnimalChips label="Geschwister" animals={dog.siblings} />
-        <AnimalChips label="Nachwuchs" animals={dog.children} />
+        <AnimalChips label={t('Geschwister')} animals={dog.siblings} />
+        <AnimalChips label={t('Nachwuchs')} animals={dog.children} />
         <Housemates
           dog={dog}
           allDogs={allDogs}
@@ -129,7 +130,7 @@ export default function DogRelatives({ dog, setDog, family, allDogs, canWrite, r
           )}
           {showTree && (
             <Link to={treeRoute(family)}>
-              <Icon name="tree" /> Im Stammbaum ansehen
+              <Icon name="tree" /> {t('Im Stammbaum ansehen')}
             </Link>
           )}
         </p>

@@ -1,6 +1,7 @@
 import Icon from '../Icon.jsx'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { MAX_ZOOM, MIN_ZOOM, clampZoom } from '../../lib/collage/layout.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Reiter "Fotos" im Collage-Editor: ausgewähltes Foto (Unterschrift, Zoom, Reihenfolge, Datum am Zeitstrahl)
 // und die Ablage mit weiteren Fotos der gewählten Tiere.
@@ -9,15 +10,15 @@ function PhotoControls({ page, photo, onChange, onMove, onRemove }) {
   const reset = { focusX: 0.5, focusY: 0.5, zoom: 1 }
   return (
     <section className="inspector-section inspector-photo">
-      <h3>Ausgewähltes Foto</h3>
+      <h3>{t('Ausgewähltes Foto')}</h3>
       <div className="field">
         <label className="field-label" htmlFor="cphoto-caption">
-          Bildunterschrift
+          {t('Bildunterschrift')}
         </label>
         <input
           id="cphoto-caption"
           value={photo.caption}
-          placeholder="leer = keine Unterschrift"
+          placeholder={t('leer = keine Unterschrift')}
           maxLength={120}
           onChange={(e) => onChange({ caption: e.target.value })}
         />
@@ -25,14 +26,14 @@ function PhotoControls({ page, photo, onChange, onMove, onRemove }) {
       {page.layout === 'timeline' && (
         <div className="field">
           <label className="field-label" htmlFor="cphoto-date">
-            Datum am Zeitstrahl
+            {t('Datum am Zeitstrahl')}
           </label>
           <input id="cphoto-date" type="date" value={photo.date || ''} onChange={(e) => onChange({ date: e.target.value })} />
         </div>
       )}
       <div className="field">
         <label className="field-label" htmlFor="cphoto-zoom">
-          Zoom · {Math.round(photo.zoom * 100)} %
+          {t('Zoom · {n} %', { n: Math.round(photo.zoom * 100) })}
         </label>
         <input
           id="cphoto-zoom"
@@ -43,24 +44,24 @@ function PhotoControls({ page, photo, onChange, onMove, onRemove }) {
           value={photo.zoom}
           onChange={(e) => onChange({ zoom: clampZoom(e.target.value) })}
         />
-        <span className="field-hint">Im Bild ziehen verschiebt den Ausschnitt.</span>
+        <span className="field-hint">{t('Im Bild ziehen verschiebt den Ausschnitt.')}</span>
       </div>
       <div className="inspector-buttons">
         <button type="button" className="btn btn-ghost" onClick={() => onMove(index - 1)} disabled={index === 0}>
-          <Icon name="arrowLeft" /> Früher
+          <Icon name="arrowLeft" /> {t('Früher')}
         </button>
         <button type="button" className="btn btn-ghost" onClick={() => onMove(index + 1)} disabled={index === page.photos.length - 1}>
-          Später <Icon name="arrowLeft" className="icon-flip" />
+          {t('Später')} <Icon name="arrowLeft" className="icon-flip" />
         </button>
         <button type="button" className="btn btn-ghost" onClick={() => onMove(0)} disabled={index === 0}>
-          <Icon name="star" /> Als Hauptbild
+          <Icon name="star" /> {t('Als Hauptbild')}
         </button>
         <button type="button" className="btn btn-ghost" onClick={() => onChange(reset)}>
-          Ausschnitt zurücksetzen
+          {t('Ausschnitt zurücksetzen')}
         </button>
       </div>
       <button type="button" className="btn btn-danger" onClick={onRemove}>
-        <Icon name="trash" /> Von der Seite entfernen
+        <Icon name="trash" /> {t('Von der Seite entfernen')}
       </button>
     </section>
   )
@@ -70,9 +71,9 @@ function PhotoTray({ photos, onAdd }) {
   const { words } = useTheme()
   return (
     <section className="inspector-section">
-      <h3>Fotos hinzufügen</h3>
+      <h3>{t('Fotos hinzufügen')}</h3>
       {photos.length === 0 ? (
-        <p className="field-hint">Alle Fotos der gewählten {words.animals} sind schon auf dieser Seite.</p>
+        <p className="field-hint">{t('Alle Fotos der gewählten {animals} sind schon auf dieser Seite.', { animals: words.animals })}</p>
       ) : (
         <div className="tray">
           {photos.map((photo) => (
@@ -81,8 +82,8 @@ function PhotoTray({ photos, onAdd }) {
               key={photo.url}
               className="tray-photo"
               onClick={() => onAdd(photo)}
-              title={photo.caption || 'Foto hinzufügen'}
-              aria-label={`Foto ${photo.caption || ''} zu dieser Seite hinzufügen`}
+              title={photo.caption || t('Foto hinzufügen')}
+              aria-label={t('Foto {caption} zu dieser Seite hinzufügen', { caption: photo.caption || '' })}
             >
               <img src={photo.url} alt="" loading="lazy" />
               <span className="tray-plus">
@@ -109,7 +110,7 @@ export default function PhotoPanel({ page, selectedPhoto, trayPhotos, actions })
         />
       ) : (
         <p className="inspector-tip">
-          <Icon name="image" /> Klick ein Foto in der Vorschau an, um Ausschnitt, Zoom und Unterschrift zu bearbeiten.
+          <Icon name="image" /> {t('Klick ein Foto in der Vorschau an, um Ausschnitt, Zoom und Unterschrift zu bearbeiten.')}
         </p>
       )}
       <PhotoTray photos={trayPhotos} onAdd={actions.addPhoto} />

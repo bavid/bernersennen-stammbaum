@@ -4,6 +4,7 @@ import { animalsRoute } from './areas.js'
 import { companionLine } from './companions.js'
 import { ageText, formatDateLong, todayIso } from './dates.js'
 import { isVisit } from './visits.js'
+import { t } from './i18n/index.js'
 
 export const DOG_TAB_PARAM = 'reiter'
 export const CHRONICLE_TAB = 'chronik'
@@ -13,15 +14,15 @@ export const CHRONICLE_TAB = 'chronik'
 export function dogTabs({ shelter = false } = {}) {
   if (shelter) {
     return [
-      { key: CHRONICLE_TAB, label: 'Chronik' },
-      { key: 'vermittlung', label: 'Vermittlung' },
-      { key: 'infos', label: 'Infos' }
+      { key: CHRONICLE_TAB, label: t('Chronik') },
+      { key: 'vermittlung', label: t('Vermittlung') },
+      { key: 'infos', label: t('Infos') }
     ]
   }
   return [
-    { key: CHRONICLE_TAB, label: 'Chronik' },
-    { key: 'infos', label: 'Infos' },
-    { key: 'verwandte', label: 'Verwandte' }
+    { key: CHRONICLE_TAB, label: t('Chronik') },
+    { key: 'infos', label: t('Infos') },
+    { key: 'verwandte', label: t('Verwandte') }
   ]
 }
 
@@ -38,7 +39,7 @@ export function dogHeadLine(dog, { ownerName, stay = true, today = todayIso() } 
     if (line) parts.push(line.text)
     memorial = Boolean(line?.memorial)
   } else if (dog.bei_uns_seit && stay) {
-    parts.push(`${ownerName ? `im ${ownerName}` : 'bei euch'} seit ${formatDateLong(dog.bei_uns_seit)}`)
+    parts.push(t('{where} seit {date}', { where: ownerName ? t('im {name}', { name: ownerName }) : t('bei euch'), date: formatDateLong(dog.bei_uns_seit) }))
   }
   return { text: parts.filter(Boolean).join(' · '), memorial }
 }
@@ -58,8 +59,8 @@ export function stayOwnerName(dog, family) {
 export function originLine(dog, family) {
   if (!dog?.familyName || dog.canEdit || isVisit(family)) return null
   if (dog.ownerFamilyId === family?.id || dog.ownerFamilyId === family?.home?.id) return null
-  const via = family?.art === 'rudel' ? `geteilt mit euch über ${family.name}` : family?.art === 'tierheim' ? 'ihr lest mit' : null
-  return [`lebt bei ${dog.familyName}`, via].filter(Boolean).join(' · ')
+  const via = family?.art === 'rudel' ? t('geteilt mit euch über {name}', { name: family.name }) : family?.art === 'tierheim' ? t('ihr lest mit') : null
+  return [t('lebt bei {name}', { name: dog.familyName }), via].filter(Boolean).join(' · ')
 }
 
 // "Sichtbar in: Familie Sonnenhang" - die Familien, in die ein eigenes Tier geteilt ist (dog.shares, Ids), mit dem Namen

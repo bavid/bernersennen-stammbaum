@@ -1,4 +1,5 @@
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Bausteine für die Bereiche im Reiter "Entdecken" (DiscoverPage, DiscoverSections, SupportBlock).
 
@@ -16,7 +17,7 @@ export default function DiscoverChapter({ id, title, lede, showAll, compact = fa
         </div>
         {showAll && (
           <button type="button" className="discover-show-all" onClick={showAll.onClick}>
-            {showAll.count === null ? 'Mehr' : 'Alle anzeigen'}
+            {showAll.count === null ? t('Mehr') : t('Alle anzeigen')}
             <span className="visually-hidden">: {title}</span>
             {showAll.count !== null && <span className="discover-show-all-count">{showAll.count}</span>}
             <Icon name="arrowRight" />
@@ -44,7 +45,7 @@ export function FallbackNote() {
   return (
     <p className="discover-fallback-note" role="note">
       <Icon name="locate" />
-      In eurer Nähe gibt es nur wenige – hier die nächsten weiteren.
+      {t('In eurer Nähe gibt es nur wenige – hier die nächsten weiteren.')}
     </p>
   )
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../../api'
 import { useToast } from '../Toast.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Zustand der eigenen Codes im Einladen-Dialog (Phase V2b): die noch nicht eingelösten (vouchers), das Archiv der
 // eingelösten (archive) und - wo man neue anlegen darf (withLimit) - die Obergrenze offener Codes (limit).
@@ -46,7 +47,7 @@ export default function useVoucherList({ withLimit }) {
       const created = await api.createVoucher()
       setVouchers((list) => [created, ...(list || [])])
       loadLimit()
-      toast('Neuer Code erstellt')
+      toast(t('Neuer Code erstellt'))
     } catch (err) {
       toast(err.message)
     } finally {
@@ -59,7 +60,7 @@ export default function useVoucherList({ withLimit }) {
       await api.deleteVoucher(voucher.id)
       setVouchers((list) => list.filter((v) => v.id !== voucher.id))
       loadLimit()
-      toast(voucher.status === 'offen' ? 'Code zurückgezogen' : 'Code gelöscht')
+      toast(voucher.status === 'offen' ? t('Code zurückgezogen') : t('Code gelöscht'))
     } catch (err) {
       toast(err.message)
     }

@@ -16,6 +16,7 @@ import { useToast } from '../components/Toast.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { navItemsFor } from '../lib/navItems.js'
 import { PROFILE_TAB_PARAM as TAB_PARAM } from '../lib/partnerProfile.js'
+import { t } from '../lib/i18n/index.js'
 
 const ACCESS_ROUTE = '/zugang'
 
@@ -97,7 +98,7 @@ export default function PartnerProfilePage({ family }) {
     api.partnerArea
       .profile()
       .then(setProfile)
-      .catch((err) => toast(`Status nicht aktualisiert: ${err.message}`))
+      .catch((err) => toast(t('Status nicht aktualisiert: {message}', { message: err.message })))
   }, [toast])
 
   function handleLogoUploaded(logoUrl) {
@@ -120,11 +121,11 @@ export default function PartnerProfilePage({ family }) {
     <div className="page partner-profile-page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">Partner-Profil</span>
+          <span className="eyebrow">{t('Partner-Profil')}</span>
           <h1>{name}</h1>
           {typ && (
             <p className="partner-profile-typ">
-              Typ: <strong>{TYPE_LABELS[typ] || typ}</strong> – ändern kann ihn nur der Betreiber
+              {t('Typ:')} <strong>{TYPE_LABELS[typ] ? t(TYPE_LABELS[typ]) : typ}</strong> {t('– ändern kann ihn nur der Betreiber')}
             </p>
           )}
         </div>
@@ -135,7 +136,7 @@ export default function PartnerProfilePage({ family }) {
           {loadError}
         </div>
       )}
-      {!profile && !loadError && <p className="muted page-loading">Lade …</p>}
+      {!profile && !loadError && <p className="muted page-loading">{t('Lade …')}</p>}
 
       {profile && (
         <>
@@ -144,9 +145,9 @@ export default function PartnerProfilePage({ family }) {
           <div className="partner-profile-panels">
             {/* Phase U: dieselbe Reiter-Leiste wie in Entdecken und im Admin (TabBar, echte Tabliste). */}
             <TabBar
-              tabs={tabs}
+              tabs={tabs.map((item) => ({ ...item, label: t(item.label) }))}
               current={tab}
-              label="Profil-Bereich"
+              label={t('Profil-Bereich')}
               idPrefix="partner-profile-tab"
               panelId={panelId}
               className="partner-profile-tabs"
@@ -194,11 +195,11 @@ export default function PartnerProfilePage({ family }) {
       )}
 
       <aside className="partner-profile-notes">
-        <p>Privat eine eigene Chronik führen? Dafür gibt es Einladungscodes.</p>
+        <p>{t('Privat eine eigene Chronik führen? Dafür gibt es Einladungscodes.')}</p>
         {showAccessLink && (
           <Link to={ACCESS_ROUTE} className="btn btn-ghost">
             <Icon name="lock" />
-            Zugang & Benachrichtigungen
+            {t('Zugang & Benachrichtigungen')}
           </Link>
         )}
       </aside>

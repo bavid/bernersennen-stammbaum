@@ -2,6 +2,7 @@
 // die Fotoliste mit dem Header X-Rahmen-Token holen (server/routes/rahmen.js). Das Token steht nie in Pfad oder Query und
 // verlässt die Adressleiste sofort (history.replaceState) - danach lebt es nur noch im localStorage dieses Geräts.
 import { readSetting, removeSetting, writeSetting } from './storage.js'
+import { t } from './i18n/index.js'
 
 export const RAHMEN_PATH = '/rahmen'
 const TOKEN_KEY = 'rahmen.token'
@@ -52,9 +53,9 @@ export async function fetchRahmenFotos(token) {
       referrerPolicy: 'no-referrer'
     })
   } catch {
-    throw new RahmenError('offline', 'Keine Verbindung – der Bilderrahmen versucht es gleich noch einmal.')
+    throw new RahmenError('offline', t('Keine Verbindung – der Bilderrahmen versucht es gleich noch einmal.'))
   }
-  if (res.status === 401) throw new RahmenError('beendet', 'Dieser Bilderrahmen wurde beendet')
-  if (!res.ok) throw new RahmenError('fehler', 'Die Fotos ließen sich gerade nicht holen.')
+  if (res.status === 401) throw new RahmenError('beendet', t('Dieser Bilderrahmen wurde beendet'))
+  if (!res.ok) throw new RahmenError('fehler', t('Die Fotos ließen sich gerade nicht holen.'))
   return res.json()
 }

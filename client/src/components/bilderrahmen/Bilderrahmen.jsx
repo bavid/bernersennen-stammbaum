@@ -10,6 +10,7 @@ import useWakeLock from '../../hooks/useWakeLock.js'
 import useIdleControls from '../../hooks/useIdleControls.js'
 import { useFullscreen, useNow, useReducedMotion } from '../../hooks/useFrameEnvironment.js'
 import { FADE_MS, dayKey, fotoKey, isNight, orderFotos } from '../../lib/bilderrahmen.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Nach so vielen Ladefehlern in Folge fragt der Rahmen nach einer frischen Liste (abgelaufene Adressen, Netz zurück).
 const FAILURES_BEFORE_RELOAD = 3
@@ -118,8 +119,8 @@ export default function Bilderrahmen({ fotos, optionen, onOptionenChange, onExit
     <section
       ref={rootRef}
       className={`frame-root${controlsVisible ? '' : ' is-idle'}${dimmed ? ' is-night' : ''}${paused ? ' is-paused' : ''}${optionen.uhr ? ' has-clock' : ''}`}
-      aria-label={label}
-      aria-roledescription="Diashow"
+      aria-label={t(label)}
+      aria-roledescription={t('Diashow')}
       onPointerMove={showControls}
       onPointerDown={showControls}
       onFocus={showControls}
@@ -135,13 +136,13 @@ export default function Bilderrahmen({ fotos, optionen, onOptionenChange, onExit
       />
       {allFailed && (
         <p className="frame-status" role="status">
-          Die Fotos lassen sich gerade nicht laden – der Bilderrahmen versucht es gleich noch einmal.
+          {t('Die Fotos lassen sich gerade nicht laden – der Bilderrahmen versucht es gleich noch einmal.')}
         </p>
       )}
       {optionen.uhr && <FrameClock now={now} />}
       {dimmed && <div className="frame-night" aria-hidden="true" />}
       <p className="visually-hidden" aria-live="polite">
-        {paused ? 'Diashow angehalten' : ''}
+        {paused ? t('Diashow angehalten') : ''}
       </p>
       <FrameControls
         visible={controlsVisible}
@@ -155,7 +156,7 @@ export default function Bilderrahmen({ fotos, optionen, onOptionenChange, onExit
         onSettings={() => setSettingsOpen(true)}
         onExit={onExit ? exit : undefined}
       />
-      <Modal open={settingsOpen} title="Einstellungen" onClose={() => setSettingsOpen(false)} className="modal-sheet frame-sheet">
+      <Modal open={settingsOpen} title={t('Einstellungen')} onClose={() => setSettingsOpen(false)} className="modal-sheet frame-sheet">
         <FrameSettings optionen={optionen} onChange={onOptionenChange} wakeLock={wakeLock}>
           {auswahl}
         </FrameSettings>

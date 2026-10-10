@@ -3,6 +3,7 @@ import Icon from '../Icon.jsx'
 import { MARGIN, PAGE } from '../../lib/collage/layout.js'
 import { LAYOUTS, computeLayout, layoutOf } from '../../lib/collage/layouts.js'
 import { BACKGROUNDS, BACKGROUND_GROUPS, backgroundTileUrl } from '../../lib/collage/backgrounds.js'
+import { t, tOr } from '../../lib/i18n/index.js'
 
 // Reiter "Seite", Teil Gestaltung: Vorlage und Hintergrund der Seite, wahlweise für alle Seiten.
 
@@ -34,10 +35,10 @@ function LayoutPicker({ value, onChange, labelId }) {
   return (
     <div className="layout-picker" role="radiogroup" aria-labelledby={labelId}>
       {LAYOUTS.map((layout) => (
-        <label key={layout.id} className={`layout-option ${value === layout.id ? 'is-checked' : ''}`} title={layout.hint}>
+        <label key={layout.id} className={`layout-option ${value === layout.id ? 'is-checked' : ''}`} title={t(layout.hint)}>
           <input type="radio" name="collage-layout" value={layout.id} checked={value === layout.id} onChange={() => onChange(layout.id)} />
           <MiniLayout layoutId={layout.id} />
-          <span>{layout.label}</span>
+          <span>{t(layout.label)}</span>
         </label>
       ))}
     </div>
@@ -55,14 +56,14 @@ function BackgroundPicker({ value, onChange, labelId }) {
       {BACKGROUND_GROUPS.map((group) => (
         <div key={group.id} className="bg-group">
           <span className="bg-group-label" aria-hidden="true">
-            {group.label}
+            {tOr(`collage.bgGroup.${group.id}`, group.label)}
           </span>
           <div className="bg-swatches">
             {BACKGROUNDS.filter((bg) => bg.group === group.id).map((bg) => (
               <label key={bg.id} className={`bg-option ${value === bg.id ? 'is-checked' : ''}`}>
                 <input type="radio" name="collage-background" value={bg.id} checked={value === bg.id} onChange={() => onChange(bg.id)} />
                 <span className="bg-swatch" style={swatchStyle(bg)} aria-hidden="true" />
-                <span>{bg.label}</span>
+                <span>{t(bg.label)}</span>
               </label>
             ))}
           </div>
@@ -79,34 +80,34 @@ export default function DesignPanel({ page, pageCount, actions }) {
   return (
     <>
       <section className="inspector-section">
-        <h3 id={layoutLabel}>Vorlage</h3>
+        <h3 id={layoutLabel}>{t('Vorlage')}</h3>
         <LayoutPicker value={page.layout} onChange={actions.setLayout} labelId={layoutLabel} />
         <p className="field-hint">
-          <strong>{layoutOf(page.layout).label}:</strong> {layoutOf(page.layout).hint}. Beim Wechsel bleiben alle Fotos auf
-          der Seite – sie werden nur neu verteilt.
+          <strong>{t(layoutOf(page.layout).label)}:</strong> {t(layoutOf(page.layout).hint)}.{' '}
+          {t('Beim Wechsel bleiben alle Fotos auf der Seite – sie werden nur neu verteilt.')}
         </p>
         {(several || page.layout === 'timeline') && (
           <div className="inspector-buttons">
             {page.layout === 'timeline' && (
               <button type="button" className="btn btn-ghost" onClick={actions.sortByDate}>
-                <Icon name="sort" /> Nach Datum sortieren
+                <Icon name="sort" /> {t('Nach Datum sortieren')}
               </button>
             )}
             {several && (
               <button type="button" className="btn btn-ghost" onClick={() => actions.applyToAll({ layout: page.layout })}>
-                <Icon name="copy" /> Vorlage für alle Seiten
+                <Icon name="copy" /> {t('Vorlage für alle Seiten')}
               </button>
             )}
           </div>
         )}
       </section>
       <section className="inspector-section">
-        <h3 id={backgroundLabel}>Hintergrund</h3>
+        <h3 id={backgroundLabel}>{t('Hintergrund')}</h3>
         <BackgroundPicker value={page.background} onChange={actions.setBackground} labelId={backgroundLabel} />
         {several && (
           <div className="inspector-buttons">
             <button type="button" className="btn btn-ghost" onClick={() => actions.applyToAll({ background: page.background })}>
-              <Icon name="copy" /> Hintergrund für alle Seiten
+              <Icon name="copy" /> {t('Hintergrund für alle Seiten')}
             </button>
           </div>
         )}

@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import Icon from '../Icon.jsx'
 import useMenu from '../../hooks/useMenu.js'
+import { t } from '../../lib/i18n/index.js'
 
 // "Weitere Aktionen" (⋯) im Kopf der Tierseite (Phase W, Schritt 2): seltene Wege, die sonst Platz im Kopf kosteten.
 // items: [{ key, label, icon, onSelect }]. Tastatur nach dem Muster "Menu Button" (hooks/useMenu.js): Pfeile, Pos1/Ende,
@@ -25,15 +26,15 @@ export default function DogMoreMenu({ name, items }) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        aria-label={`Weitere Aktionen für ${name}`}
-        title="Weitere Aktionen"
+        aria-label={t('Weitere Aktionen für {name}', { name })}
+        title={t('Weitere Aktionen')}
         onClick={toggle}
         onKeyDown={onTriggerKeyDown}
       >
         <Icon name="more" />
       </button>
       {open && (
-        <div id={menuId} className="account-menu-panel dog-more-panel" role="menu" aria-label={`Weitere Aktionen für ${name}`} onKeyDown={onMenuKeyDown}>
+        <div id={menuId} className="account-menu-panel dog-more-panel" role="menu" aria-label={t('Weitere Aktionen für {name}', { name })} onKeyDown={onMenuKeyDown}>
           {items.map((item, index) => (
             <button
               key={item.key}
@@ -44,7 +45,7 @@ export default function DogMoreMenu({ name, items }) {
               onClick={() => select(item)}
             >
               <Icon name={item.icon} />
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
             </button>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import { AREA_MISMATCH_CODE, areaHeaders, reportAreaMismatch } from './lib/activeArea.js'
+import { t } from './lib/i18n/index.js'
 
 export class ApiError extends Error {
   constructor(message, status, details = {}) {
@@ -31,15 +32,17 @@ async function request(path, options = {}) {
       ...options
     })
   } catch {
-    throw new ApiError('Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.', 0)
+    throw new ApiError(t('Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.'), 0)
   }
 
   if (!res.ok) {
-    let message = `Fehler ${res.status}`
+    // Meldungen des Servers sind deutsch - t() übersetzt sie in die gewählte Sprache (lib/i18n/en/server.js), der
+    // deutsche Wortlaut bleibt in details.error.
+    let message = t('Fehler {status}', { status: res.status })
     let details = {}
     try {
       details = await res.json()
-      message = details.error || message
+      if (typeof details.error === 'string' && details.error) message = t(details.error)
     } catch {
       // Antwort ohne JSON-Body
     }

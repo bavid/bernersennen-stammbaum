@@ -1,5 +1,6 @@
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import Icon from '../Icon.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // „Wer sieht was?“ auf der Mitglieder-Seite: die drei Kreise Privat / Familie / Öffentlich, damit klar
 // ist, dass eine Familie nie öffentlich ist und Mitglieder je nach Rolle unterschiedlich viel dürfen. collapsed (Phase W,
@@ -9,21 +10,24 @@ export default function VisibilityCard({ collapsed = false }) {
   const rows = [
     {
       icon: 'lock',
-      title: 'Privat',
-      who: 'nur euer Zuhause',
-      text: `Private ${words.entries} und alles, was ihr nicht teilt, sehen nur die Menschen in eurem Zuhause.`
+      title: t('Privat'),
+      who: t('nur euer Zuhause'),
+      text: t('Private {entries} und alles, was ihr nicht teilt, sehen nur die Menschen in eurem Zuhause.', { entries: words.entries })
     },
     {
       icon: 'users',
       title: words.group,
-      who: 'Mitglieder, je nach Rolle',
-      text: `Geteilte Tiere und ihre ${words.entries} sehen alle Mitglieder ${words.ofGroup}. Was wer ändern darf, hängt an der Rolle.`
+      who: t('Mitglieder, je nach Rolle'),
+      text: t('Geteilte Tiere und ihre {entries} sehen alle Mitglieder {ofGroup}. Was wer ändern darf, hängt an der Rolle.', {
+        entries: words.entries,
+        ofGroup: words.ofGroup
+      })
     },
     {
       icon: 'globe',
-      title: 'Öffentlich',
-      who: 'nur Partner-Portale, Steckbriefe und Happy Ends mit Einwilligung',
-      text: `${words.groupNeverPublic} Öffentlich wird nur, was ihr auf einem Steckbrief oder bei einem Partner ausdrücklich freigebt.`
+      title: t('Öffentlich'),
+      who: t('nur Partner-Portale, Steckbriefe und Happy Ends mit Einwilligung'),
+      text: `${words.groupNeverPublic} ${t('Öffentlich wird nur, was ihr auf einem Steckbrief oder bei einem Partner ausdrücklich freigebt.')}`
     }
   ]
   const list = (
@@ -47,7 +51,7 @@ export default function VisibilityCard({ collapsed = false }) {
     return (
       <details className="card visibility-card is-collapsible">
         <summary>
-          <h2 id="visibility-title">Wer sieht was?</h2>
+          <h2 id="visibility-title">{t('Wer sieht was?')}</h2>
         </summary>
         {list}
       </details>
@@ -55,7 +59,7 @@ export default function VisibilityCard({ collapsed = false }) {
   }
   return (
     <section className="card visibility-card" aria-labelledby="visibility-title">
-      <h2 id="visibility-title">Wer sieht was?</h2>
+      <h2 id="visibility-title">{t('Wer sieht was?')}</h2>
       {list}
     </section>
   )

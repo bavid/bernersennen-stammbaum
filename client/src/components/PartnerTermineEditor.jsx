@@ -8,6 +8,7 @@ import Icon from './Icon.jsx'
 import TerminForm from './TerminForm.jsx'
 import TerminOverview from './TerminOverview.jsx'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const DEMO_HINT_ID = 'partner-termine-demo-hint'
 
@@ -16,7 +17,7 @@ function PastTermine({ termine, demoHintId, onDelete }) {
   if (termine.length === 0) return null
   return (
     <details className="termin-past">
-      <summary>Vergangene Termine ({termine.length})</summary>
+      <summary>{t('Vergangene Termine ({n})', { n: termine.length })}</summary>
       <ul className="termin-past-list">
         {termine.map((termin) => (
           <li key={termin.id}>
@@ -26,7 +27,7 @@ function PastTermine({ termine, demoHintId, onDelete }) {
             <ConfirmButton
               className="termin-action"
               onConfirm={() => onDelete(termin)}
-              ariaLabel={`${termin.titel} löschen`}
+              ariaLabel={t('{title} löschen', { title: termin.titel })}
               disabled={Boolean(demoHintId)}
               describedBy={demoHintId}
             />
@@ -89,19 +90,19 @@ export default function PartnerTermineEditor({ showTitle = true }) {
     setData(saved)
     setEditing(null)
     setError(null)
-    toast(created ? 'Termin angelegt – er steht jetzt auf eurem Portal.' : 'Gespeichert – die Änderung ist sofort online.')
+    toast(created ? t('Termin angelegt – er steht jetzt auf eurem Portal.') : t('Gespeichert – die Änderung ist sofort online.'))
   }
 
   function handleToggleAbsage(item) {
-    const label = `${item.titel} am ${formatTagKurz(item.datum)}`
+    const label = t('{title} am {date}', { title: item.titel, date: formatTagKurz(item.datum) })
     if (item.abgesagt) {
-      return change(() => api.partnerArea.wiederTermin(item.terminId, item.datum), { busy: item.terminId, message: `${label} findet wieder statt.` })
+      return change(() => api.partnerArea.wiederTermin(item.terminId, item.datum), { busy: item.terminId, message: t('{label} findet wieder statt.', { label }) })
     }
-    return change(() => api.partnerArea.absagenTermin(item.terminId, item.datum), { busy: item.terminId, message: `${label} fällt aus.` })
+    return change(() => api.partnerArea.absagenTermin(item.terminId, item.datum), { busy: item.terminId, message: t('{label} fällt aus.', { label }) })
   }
 
   function handleDelete(termin) {
-    return change(() => api.partnerArea.deleteTermin(termin.id), { busy: termin.id, message: 'Termin gelöscht.' })
+    return change(() => api.partnerArea.deleteTermin(termin.id), { busy: termin.id, message: t('Termin gelöscht.') })
   }
 
   return (
@@ -109,13 +110,13 @@ export default function PartnerTermineEditor({ showTitle = true }) {
       <div className="partner-termine-head">
         <div>
           <h2 id="partner-termine-title" className={showTitle ? undefined : 'visually-hidden'}>
-            Eure Termine
+            {t('Eure Termine')}
           </h2>
-          <p className="partner-termine-hint">{TERMINE_HINT}</p>
+          <p className="partner-termine-hint">{t(TERMINE_HINT)}</p>
         </div>
         {data && (
           <span className="pill partner-termine-count" aria-live="polite">
-            {termine.length} von {data.max}
+            {t('{n} von {max}', { n: termine.length, max: data.max })}
           </span>
         )}
       </div>
@@ -137,14 +138,14 @@ export default function PartnerTermineEditor({ showTitle = true }) {
             disabled={isDemo || isFull || !data}
             aria-describedby={demoHintId}
           >
-            <Icon name="plus" /> Termin anlegen
+            <Icon name="plus" /> {t('Termin anlegen')}
           </button>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
               {readOnlyHint}
             </p>
           )}
-          {!isDemo && isFull && <p className="field-hint">{LIMIT_HINT}</p>}
+          {!isDemo && isFull && <p className="field-hint">{t(LIMIT_HINT)}</p>}
         </div>
       )}
 
@@ -158,7 +159,7 @@ export default function PartnerTermineEditor({ showTitle = true }) {
           {loadError}
         </div>
       )}
-      {data === undefined && !loadError && <p className="muted">Lade …</p>}
+      {data === undefined && !loadError && <p className="muted">{t('Lade …')}</p>}
       {data && !editing && (
         <>
           <TerminOverview

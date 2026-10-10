@@ -9,6 +9,7 @@ import {
   rotateHandleBelow,
   stickerKeyAction
 } from '../../lib/collage/stickerTransform.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Sticker liegen über allem (wie im Export). Position: Mittelpunkt relativ zur Seite, Größe relativ zur Breite.
 function stickerStyle(sticker) {
@@ -111,7 +112,7 @@ function InteractiveSticker({ sticker, label, selected, helpId, onSelect, onChan
       style={stickerStyle(sticker)}
       role="button"
       tabIndex={0}
-      aria-label={`Sticker: ${label}`}
+      aria-label={t('Sticker: {name}', { name: label })}
       aria-pressed={selected}
       aria-describedby={helpId}
       onPointerDown={start('move')}
@@ -128,13 +129,13 @@ function InteractiveSticker({ sticker, label, selected, helpId, onSelect, onChan
           <span
             className={`csticker-handle csticker-rotate ${placement.rotateBelow ? 'is-below' : ''}`}
             onPointerDown={start('rotate')}
-            title="Drehen"
+            title={t('Drehen')}
             aria-hidden="true"
           />
           <span
             className={`csticker-handle csticker-resize is-${placement.resizeCorner}`}
             onPointerDown={start('resize')}
-            title="Größe ändern"
+            title={t('Größe ändern')}
             aria-hidden="true"
           />
         </>
@@ -167,8 +168,7 @@ export default function StickerLayer({ stickers = [], interactive = false, selec
         />
       ))}
       <span id={helpId} className="visually-hidden">
-        Ziehen oder Pfeiltasten verschieben, Plus und Minus ändern die Größe, R dreht, Entf löscht, Escape beendet die
-        Auswahl.
+        {t('Ziehen oder Pfeiltasten verschieben, Plus und Minus ändern die Größe, R dreht, Entf löscht, Escape beendet die Auswahl.')}
       </span>
     </>
   )

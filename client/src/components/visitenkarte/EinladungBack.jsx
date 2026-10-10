@@ -1,6 +1,7 @@
 import VisitenkarteQr from './VisitenkarteQr.jsx'
 import { Brand } from './VisitenkarteBack.jsx'
 import { codeGroups, voucherTarget } from '../../lib/visitenkarte.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Rückseite einer Einladungskarte (85 × 55 mm): gestaltet von Familie auf Pfoten, nicht vom Partner - Marke, Titel, kurzer
 // Text und "So geht's" aus der Admin-Einstellung (rueckseite: lib/einladungskarte.js rueckseiteModel), dazu der eigene Code
@@ -28,7 +29,7 @@ export default function EinladungBack({ card, rueckseite, code, muster = false }
     <article
       className="vk-card vk-back vk-back-einladung"
       data-muster={muster ? 'true' : undefined}
-      aria-label={muster ? 'Rückseite der Einladungskarte (Muster)' : 'Rückseite der Einladungskarte'}
+      aria-label={muster ? t('Rückseite der Einladungskarte (Muster)') : t('Rückseite der Einladungskarte')}
     >
       <span className="vk-einladung-band" aria-hidden="true" />
       <div className="vk-einladung-body">
@@ -39,9 +40,9 @@ export default function EinladungBack({ card, rueckseite, code, muster = false }
       </div>
       <div className="vk-einladung-code-col">
         <div className="vk-qr-box">
-          <VisitenkarteQr url={voucherTarget(card.baseUrl, code)} label={`QR-Code mit dem Code der Karte, öffnet ${rueckseite.adresse}`} />
+          <VisitenkarteQr url={voucherTarget(card.baseUrl, code)} label={t('QR-Code mit dem Code der Karte, öffnet {url}', { url: rueckseite.adresse })} />
         </div>
-        <p className="vk-code" aria-label={`Einladungscode ${code}`}>
+        <p className="vk-code" aria-label={t('Einladungscode {code}', { code })}>
           {codeGroups(code).map((group, index) => (
             <span key={`${index}-${group}`}>{group}</span>
           ))}
@@ -50,7 +51,7 @@ export default function EinladungBack({ card, rueckseite, code, muster = false }
       </div>
       {muster && (
         <span className="vk-muster">
-          Muster<span className="visually-hidden"> – Beispiel-Code, lässt sich nicht einlösen</span>
+          {t('Muster')}<span className="visually-hidden">{t(' – Beispiel-Code, lässt sich nicht einlösen')}</span>
         </span>
       )}
     </article>

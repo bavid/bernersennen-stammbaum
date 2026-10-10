@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import { downscaleImage } from '../lib/images.js'
+import { t } from '../lib/i18n/index.js'
 
 const NOT_AN_IMAGE = 'Das ist kein Foto – bitte wähle ein Bild.'
 
@@ -13,7 +14,7 @@ export default function usePhotoUpload({ onUploaded, onError, onBusyChange }) {
   async function upload(fileList) {
     const all = Array.from(fileList || [])
     const files = all.filter((file) => file.type?.startsWith('image/'))
-    if (all.length > 0 && files.length === 0) onError?.(NOT_AN_IMAGE)
+    if (all.length > 0 && files.length === 0) onError?.(t(NOT_AN_IMAGE))
     if (files.length === 0) return
     setBusy(true)
     onBusyChange?.(true)

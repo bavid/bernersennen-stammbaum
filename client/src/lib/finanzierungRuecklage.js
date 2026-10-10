@@ -4,6 +4,7 @@
 
 import { formatEuroCents } from './discover.js'
 import { centsToEuroInput, parseEuroToCents } from './euro.js'
+import { locale, t } from './i18n/index.js'
 
 // Wie server/lib/finanzierungVerteilung.js RUECKLAGE_STUFEN: ab so vielen gedeckten Jahren gilt der Anteil.
 export const RUECKLAGE_STUFEN = Object.freeze([
@@ -39,19 +40,18 @@ export function verteileUeberschuss({ spendenCents, kostenCents, ruecklageCents 
   return { ueberschussCents, anteilProzent, reserveCents, gespendetCents: ueberschussCents - reserveCents }
 }
 
-const JAHRE = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 })
 
 // 0.4 -> „0,4 Jahre“, 1 -> „1 Jahr“; null (keine Jahreskosten) -> null.
 export function formatJahre(jahre) {
   if (typeof jahre !== 'number' || !Number.isFinite(jahre)) return null
-  const zahl = JAHRE.format(jahre)
-  return `${zahl} ${zahl === '1' ? 'Jahr' : 'Jahre'}`
+  const zahl = new Intl.NumberFormat(locale(), { maximumFractionDigits: 1 }).format(jahre)
+  return t(zahl === '1' ? '{n} Jahr' : '{n} Jahre', { n: zahl })
 }
 
 // „Rücklage: deckt 0,4 Jahre“ - ohne Jahreskosten ein ruhiger Satz statt einer Zahl.
 export function ruecklageText(ruecklage) {
   const jahre = formatJahre(ruecklage?.jahreGedeckt)
-  return jahre ? `Rücklage: deckt ${jahre}` : 'Rücklage: noch keine laufenden Kosten'
+  return jahre ? t('Rücklage: deckt {jahre}', { jahre }) : t('Rücklage: noch keine laufenden Kosten')
 }
 
 // Füllstand der Anzeige in Prozent: drei Jahre = voll (ab dann geht alles an Spenden).
@@ -62,9 +62,9 @@ export function ruecklageFuellstand(jahreGedeckt) {
 
 // Öffentlich, ehrlich und ruhig.
 export function saldoText(saldoCents) {
-  if (saldoCents < 0) return `Zurzeit tragen wir ${formatEuroCents(-saldoCents)} selbst.`
-  if (saldoCents > 0) return `Zurzeit liegen wir ${formatEuroCents(saldoCents)} im Plus.`
-  return 'Spenden und Kosten halten sich gerade die Waage.'
+  if (saldoCents < 0) return t('Zurzeit tragen wir {betrag} selbst.', { betrag: formatEuroCents(-saldoCents) })
+  if (saldoCents > 0) return t('Zurzeit liegen wir {betrag} im Plus.', { betrag: formatEuroCents(saldoCents) })
+  return t('Spenden und Kosten halten sich gerade die Waage.')
 }
 
 // Im Admin direkt angesprochen.
@@ -75,15 +75,18 @@ export function adminSaldoText(saldoCents) {
 }
 
 export function prognoseText(prognoseJahresendeCents) {
-  if (prognoseJahresendeCents < 0) return `Bei gleichbleibenden Kosten fehlen bis Jahresende ${formatEuroCents(-prognoseJahresendeCents)}.`
-  return `Bei gleichbleibenden Kosten bleiben bis Jahresende ${formatEuroCents(prognoseJahresendeCents)} übrig.`
+  if (prognoseJahresendeCents < 0) {
+    return t('Bei gleichbleibenden Kosten fehlen bis Jahresende {betrag}.', { betrag: formatEuroCents(-prognoseJahresendeCents) })
+  }
+  return t('Bei gleichbleibenden Kosten bleiben bis Jahresende {betrag} übrig.', { betrag: formatEuroCents(prognoseJahresendeCents) })
 }
 
 export const INTERVALL_LABELS = Object.freeze({ monat: 'im Monat', jahr: 'im Jahr' })
 
 // „Server: 23,00 € im Monat“
 export function postenText(posten) {
-  return `${posten.titel}: ${formatEuroCents(posten.betragCents)} ${INTERVALL_LABELS[posten.intervall] || ''}`.trim()
+  const intervall = INTERVALL_LABELS[posten.intervall]
+  return `${posten.titel}: ${formatEuroCents(posten.betragCents)} ${intervall ? t(intervall) : ''}`.trim()
 }
 
 // Hat der Admin überhaupt etwas eingetragen? Sonst zeigt die Seite keine Zahlen.

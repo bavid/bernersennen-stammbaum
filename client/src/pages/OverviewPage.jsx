@@ -17,6 +17,7 @@ import { nextTermin } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
 import { buildFamilyGroups, familyAnimals, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
 import { hasSiblingLitters } from '../lib/litters.js'
+import { t } from '../lib/i18n/index.js'
 
 // Familienbande eines Tierheims (/stammbaum und /familienbande, AreaRoutes ShelterRoutes): Raster aller Tiere, auf Wunsch
 // Stammbaum mit Nachwuchs. Haushalte und Familien haben seit Phase W „Tiere“ (AnimalsPage) und die Gruppenseite - die
@@ -87,12 +88,12 @@ export default function OverviewPage({ family, onInvite }) {
             {canWrite && dogs?.length !== 0 && (
               <button type="button" className="btn btn-primary btn-lg" onClick={() => openAnimalForm()}>
                 <Icon name="plus" />
-                Tier hinzufügen
+                {t('Tier hinzufügen')}
               </button>
             )}
             <button type="button" className="btn btn-ghost btn-lg" onClick={onInvite}>
               <Icon name="send" />
-              Jemanden einladen
+              {t('Jemanden einladen')}
             </button>
             {showTreeToggle && <TreeToggle mode={mode} treeAvailable={treeAvailable} />}
           </div>
@@ -107,14 +108,14 @@ export default function OverviewPage({ family, onInvite }) {
           <h3>{words.treeEmpty}</h3>
           {canWrite ? (
             <>
-              <p>Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.</p>
+              <p>{t('Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.')}</p>
               <button type="button" className="btn btn-primary" onClick={() => openAnimalForm()}>
                 <Icon name="plus" />
-                Erstes Tier anlegen
+                {t('Erstes Tier anlegen')}
               </button>
             </>
           ) : (
-            <p>Sobald Mitglieder Tiere anlegen oder eigene hierher teilen, stehen sie hier.</p>
+            <p>{t('Sobald Mitglieder Tiere anlegen oder eigene hierher teilen, stehen sie hier.')}</p>
           )}
         </div>
       )}

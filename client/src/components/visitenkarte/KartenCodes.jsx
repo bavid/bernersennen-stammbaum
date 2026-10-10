@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Icon from '../Icon.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Einladungscodes der Karten (Feedback-Runde: für jede Rückseite mit Code - Einladungskarte und Kombi): jede Karte trägt
 // einen eigenen offenen Code aus dem eigenen Kunden-Stapel. Erst "Drucken" holt sie (hooks/useVisitenkartenDruck.js,
@@ -18,18 +19,25 @@ export function plural(count, singular, pluralForm) {
   return `${count} ${count === 1 ? singular : pluralForm}`
 }
 
+function cardsText(count) {
+  return count === 1 ? t('{n} Karte', { n: count }) : t('{n} Karten', { n: count })
+}
+
 export function missingCodesText(missing, printable) {
-  return `Für ${plural(missing, 'Karte', 'Karten')} fehlen Codes – gedruckt ${printable === 1 ? 'wird nur die eine' : `werden nur die ${printable}`} mit Code.`
+  const cards = cardsText(missing)
+  return printable === 1
+    ? t('Für {cards} fehlen Codes – gedruckt wird nur die eine mit Code.', { cards })
+    : t('Für {cards} fehlen Codes – gedruckt werden nur die {n} mit Code.', { cards, n: printable })
 }
 
 function RequestNote({ title }) {
   return (
     <div className="vk-note" role="note">
       <p>
-        <strong>{title}</strong> – {NO_CODE}
+        <strong>{t(title)}</strong> – {t(NO_CODE)}
       </p>
       <Link to={REQUEST_ROUTE} className="btn btn-ghost">
-        <Icon name="message" /> Beim Admin anfragen
+        <Icon name="message" /> {t('Beim Admin anfragen')}
       </Link>
     </div>
   )
@@ -41,7 +49,10 @@ function StapelStand({ druck }) {
   return (
     <>
       <p className="vk-counts">
-        {plural(gutscheine.offen, 'offener Einladungscode', 'offene Einladungscodes')}, davon {gutscheine.ungedruckt} noch nicht gedruckt.
+        {t(gutscheine.offen === 1 ? '{n} offener Einladungscode, davon {m} noch nicht gedruckt.' : '{n} offene Einladungscodes, davon {m} noch nicht gedruckt.', {
+          n: gutscheine.offen,
+          m: gutscheine.ungedruckt
+        })}
       </p>
       <label className="check vk-toggle" htmlFor="vk-nur-ungedruckt">
         <input
@@ -51,11 +62,11 @@ function StapelStand({ druck }) {
           onChange={(event) => setNurUngedruckt(event.target.checked)}
           disabled={druck.busy}
         />
-        <span>Nur noch nicht gedruckte verwenden</span>
+        <span>{t('Nur noch nicht gedruckte verwenden')}</span>
       </label>
       {!nurUngedruckt && (
         <p className="field-hint vk-warn">
-          Schon gedruckte Codes können auf verteilten Karten stehen – nur nehmen, wenn diese Karten nie ausgegeben wurden.
+          {t('Schon gedruckte Codes können auf verteilten Karten stehen – nur nehmen, wenn diese Karten nie ausgegeben wurden.')}
         </p>
       )}
     </>
@@ -66,16 +77,16 @@ function LastPrint({ lastPrint }) {
   if (lastPrint.codes === 0) {
     return (
       <p className="vk-note" role="status">
-        Zuletzt: Es war kein Code mehr frei – es wurde keine Karte gedruckt.
+        {t('Zuletzt: Es war kein Code mehr frei – es wurde keine Karte gedruckt.')}
       </p>
     )
   }
   const fehlten = lastPrint.karten - lastPrint.codes
   return (
     <p className="vk-note is-ok" role="status">
-      <Icon name="check" /> Zuletzt gedruckt: {plural(lastPrint.codes, 'Karte', 'Karten')} mit eigenem Code
-      {fehlten > 0 ? ` – für ${plural(fehlten, 'Karte', 'Karten')} fehlte ein Code, sie kamen nicht aufs Papier` : ''}. Diese Codes zählen jetzt als
-      gedruckt.
+      <Icon name="check" /> {t('Zuletzt gedruckt: {cards} mit eigenem Code', { cards: cardsText(lastPrint.codes) })}
+      {fehlten > 0 ? t(' – für {cards} fehlte ein Code, sie kamen nicht aufs Papier', { cards: cardsText(fehlten) }) : ''}
+      {t('. Diese Codes zählen jetzt als gedruckt.')}
     </p>
   )
 }
@@ -103,15 +114,14 @@ export default function KartenCodes({ readOnly, isAdminView, druck, count }) {
   return (
     <section className="vk-panel" aria-labelledby="vk-codes-title">
       <h2 id="vk-codes-title" className="vk-panel-title">
-        Einladungscodes
+        {t('Einladungscodes')}
       </h2>
       <p className="field-hint">
-        Jede Karte bekommt beim Drucken einen eigenen Einladungscode – wer ihn einlöst, legt eine eigene Chronik an. Danach zählt er
-        als gedruckt.
+        {t('Jede Karte bekommt beim Drucken einen eigenen Einladungscode – wer ihn einlöst, legt eine eigene Chronik an. Danach zählt er als gedruckt.')}
       </p>
       {readOnly ? (
         <p className="vk-note" role="note">
-          {isAdminView ? ADMIN_VIEW_NOTE : DEMO_NOTE}
+          {t(isAdminView ? ADMIN_VIEW_NOTE : DEMO_NOTE)}
         </p>
       ) : (
         <RealCodes druck={druck} count={count} />

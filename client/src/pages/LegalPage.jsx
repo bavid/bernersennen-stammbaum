@@ -5,6 +5,7 @@ import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
 import Datenschutz from '../components/legal/Datenschutz.jsx'
 import { LegalProvider } from '../components/legal/LegalSection.jsx'
+import { getLang, t } from '../lib/i18n/index.js'
 
 const NO_LEGAL_HINT = 'Die Betreiberangaben werden vor dem Start ergänzt.'
 
@@ -20,7 +21,7 @@ function linesOf(text) {
 
 function Impressum({ legal }) {
   if (!hasLegalData(legal)) {
-    return <p>{NO_LEGAL_HINT}</p>
+    return <p>{t(NO_LEGAL_HINT)}</p>
   }
   return (
     <div className="legal-block">
@@ -90,13 +91,14 @@ export default function LegalPage({ variant, family = null }) {
     <div className="public-page legal-page">
       <PublicHeader family={family} />
       <div className="legal-hero">
-        <span className="eyebrow">Rechtliches</span>
-        <h1>{title}</h1>
+        <span className="eyebrow">{t('Rechtliches')}</span>
+        <h1>{t(title)}</h1>
+        {getLang() !== 'de' && <p className="muted">{t('Diese Seite gibt es nur auf Deutsch.')}</p>}
       </div>
 
       {legal === undefined ? (
         <p className="muted" aria-busy="true">
-          Lädt …
+          {t('Lädt …')}
         </p>
       ) : (
         <LegalProvider>

@@ -4,6 +4,7 @@ import { qrSvgPath } from './qr.js'
 import { isValidHexColor } from './color.js'
 import { printBaseUrl } from './voucherPrint.js'
 import { portalPath } from './partnerProfile.js'
+import { t } from './i18n/index.js'
 
 export const APP_NAME = 'Familie auf Pfoten'
 export const SNIPPET_LABEL = `Uns findet ihr auch auf ${APP_NAME}`
@@ -57,15 +58,15 @@ function cssText(style) {
 // Ein Link als Knopf, nur Inline-Styles, kein Skript - zum Einfügen auf der eigenen Website.
 export function shareSnippet(url, { farbe } = {}) {
   const style = escapeHtml(cssText(snippetStyle(farbe)))
-  return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="${style}">${escapeHtml(SNIPPET_LABEL)}</a>`
+  return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="${style}">${escapeHtml(t(SNIPPET_LABEL))}</a>`
 }
 
 // Text-Vorschlag für Instagram, Facebook & Co. - Tierheime nennen ihre Tiere, alle anderen ihre Angebote.
 export function socialText({ typ, url }) {
   const inhalt = SHELTER_TYPES.includes(typ)
-    ? 'unsere Tiere, die ein Zuhause suchen, Happy Ends und Einblicke in unseren Alltag'
-    : 'unsere Angebote, Einblicke in unseren Alltag und den direkten Draht zu uns'
-  return `Neu: Ihr findet uns jetzt auch auf ${APP_NAME}! Dort gibt es ${inhalt}. Schaut vorbei: ${url}`
+    ? t('unsere Tiere, die ein Zuhause suchen, Happy Ends und Einblicke in unseren Alltag')
+    : t('unsere Angebote, Einblicke in unseren Alltag und den direkten Draht zu uns')
+  return t('Neu: Ihr findet uns jetzt auch auf {app}! Dort gibt es {inhalt}. Schaut vorbei: {url}', { app: APP_NAME, inhalt, url })
 }
 
 // Vollständige SVG-Datei des QR-Codes (weißer Grund samt Ruhezone, schwarze Module) - für die Anzeige und

@@ -1,12 +1,13 @@
 import { relativeTime } from '../lib/dates.js'
 import { describeVerlauf, verlaufDateTime } from '../lib/freigabeVerlauf.js'
+import { t } from '../lib/i18n/index.js'
 
 // Verlauf eines Beitrags als kleine Zeitleiste (V-Fehler 3), älteste zuerst: was passiert ist, wann (relativ, der
 // genaue Zeitpunkt steht im datetime) und bei einer Ablehnung der Grund. Beim Partner (PartnerPostRow) und im Admin
 // (AdminApprovalVerlauf) gleich. Farbe je Zustand danach (partner-posts.css .freigabe-verlauf-item.is-*).
 export default function FreigabeVerlauf({ verlauf, id }) {
   const entries = describeVerlauf(verlauf)
-  if (entries.length === 0) return <p className="muted freigabe-verlauf-empty">Noch kein Verlauf.</p>
+  if (entries.length === 0) return <p className="muted freigabe-verlauf-empty">{t('Noch kein Verlauf.')}</p>
 
   return (
     <ol className="freigabe-verlauf" id={id}>

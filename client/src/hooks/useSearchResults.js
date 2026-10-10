@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
 import { SEARCH_DELAY_MS, searchableQuery } from '../lib/search.js'
+import { t } from '../lib/i18n/index.js'
 
 const IDLE = { status: 'idle', query: null, gruppen: null, error: null, unvollstaendig: false }
 const FAILED = 'Die Suche hat gerade nicht geklappt – bitte gleich noch einmal versuchen.'
@@ -30,7 +31,7 @@ export default function useSearchResults(input) {
         },
         (err) => {
           // 429 (zu viele Suchen) bringt eine eigene, freundliche Meldung vom Server mit.
-          if (!cancelled) setState({ ...IDLE, status: 'error', query, error: err?.status === 429 ? err.message : FAILED })
+          if (!cancelled) setState({ ...IDLE, status: 'error', query, error: err?.status === 429 ? err.message : t(FAILED) })
         }
       )
     }, SEARCH_DELAY_MS)

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
+import { t } from '../lib/i18n/index.js'
 
 const FAILED = 'Die Tiere ließen sich gerade nicht laden.'
 
@@ -18,7 +19,7 @@ export default function useAllAnimals() {
         if (!cancelled) setState({ data: { tiere: data?.tiere ?? [], areas: data?.areas ?? [] }, error: null })
       })
       .catch((err) => {
-        if (!cancelled) setState({ data: null, error: err?.message || FAILED })
+        if (!cancelled) setState({ data: null, error: err?.message || t(FAILED) })
       })
     return () => {
       cancelled = true

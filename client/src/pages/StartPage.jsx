@@ -20,6 +20,7 @@ import { areaOptions, filterPages, selectedAreaParam } from '../lib/startFilter.
 import { todayIso } from '../lib/dates.js'
 import { hasRole } from '../lib/roles.js'
 import '../styles/start-feed.css'
+import { t } from '../lib/i18n/index.js'
 
 export { START_FEED_VISIBLE } from '../components/start/StartNews.jsx'
 
@@ -59,7 +60,7 @@ export default function StartPage({ family }) {
   const atHome = areaContext(family) === 'home'
   const canWrite = hasRole(family, 'mitglied')
   const anniversary = useMemo(() => nextAnniversary(dogs || []), [dogs])
-  const ownLabel = isHouseholdIdentity(family) ? HOME_LABEL : family.name
+  const ownLabel = isHouseholdIdentity(family) ? t(HOME_LABEL) : family.name
   const areaChips = useMemo(() => areaOptions((feed.pages || []).flat(), { ownLabel }), [feed.pages, ownLabel])
   const areaParam = selectedAreaParam(requestedArea, areaChips)
   const shownPages = useMemo(() => filterPages(feed.pages, areaParam), [feed.pages, areaParam])
@@ -75,9 +76,9 @@ export default function StartPage({ family }) {
   return (
     <div className="page start-page">
       <header className="start-greeting">
-        <p className="start-greeting-hand hand">Schön, dass ihr da seid</p>
+        <p className="start-greeting-hand hand">{t('Schön, dass ihr da seid')}</p>
         <h1>
-          <span className="visually-hidden">Start – </span>
+          <span className="visually-hidden">{t('Start')} – </span>
           {family.name}
         </h1>
       </header>

@@ -4,6 +4,7 @@ import PhotoPicker from './PhotoPicker.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import { SEX_CHOICES, UNKNOWN_SEX, speciesLabel, speciesNoun } from '../lib/timeline.js'
+import { t } from '../lib/i18n/index.js'
 
 const HERKUNFT_OPTIONS = [
   { value: '', label: '–' },
@@ -140,20 +141,20 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       )}
 
       <div className="field span-2 dog-form-photo">
-        <span className="field-label">Porträt</span>
+        <span className="field-label">{t('Porträt')}</span>
         <PhotoPicker
           value={form.fotos}
           onChange={(fotos) => update({ fotos })}
           multiple={false}
-          label="Foto wählen"
+          label={t('Foto wählen')}
           onBusyChange={setUploading}
           onError={setError}
         />
       </div>
 
       <div className="field span-2">
-        <span className="field-label">Tierart</span>
-        <div className="segmented" role="group" aria-label="Tierart">
+        <span className="field-label">{t('Tierart')}</span>
+        <div className="segmented" role="group" aria-label={t('Tierart')}>
           {SPECIES.map((tierart) => (
             <button
               type="button"
@@ -170,7 +171,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
                 })
               }
             >
-              {speciesLabel(tierart)}
+              {t(speciesLabel(tierart))}
             </button>
           ))}
         </div>
@@ -179,7 +180,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       <div className="field span-2">
         <div className="field-row">
           <label className="field-label" htmlFor="dog-name">
-            {fields.nameLabel}
+            {t(fields.nameLabel)}
           </label>
           <label className="check">
             <input
@@ -187,14 +188,14 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
               checked={form.nameUnbekannt}
               onChange={(e) => update({ nameUnbekannt: e.target.checked })}
             />
-            Name unbekannt
+            {t('Name unbekannt')}
           </label>
         </div>
         <input
           id="dog-name"
           value={form.nameUnbekannt ? '' : form.name}
           onChange={(e) => update({ name: e.target.value })}
-          placeholder={form.nameUnbekannt ? 'Wird als „Unbekannt“ geführt' : fields.namePlaceholder}
+          placeholder={form.nameUnbekannt ? t('Wird als „Unbekannt“ geführt') : t(fields.namePlaceholder)}
           maxLength={80}
           required={!form.nameUnbekannt}
           disabled={form.nameUnbekannt}
@@ -203,14 +204,14 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
 
       <div className="field span-2">
         <label className="field-label" htmlFor="dog-breed">
-          {fields.kindLabel}
+          {t(fields.kindLabel)}
         </label>
         <input
           id="dog-breed"
           list={form.tierart === 'hund' ? 'breed-suggestions' : undefined}
           value={form.rasse}
           onChange={(e) => update({ rasse: e.target.value })}
-          placeholder={fields.kindPlaceholder}
+          placeholder={t(fields.kindPlaceholder)}
           maxLength={120}
         />
         <datalist id="breed-suggestions">
@@ -221,11 +222,11 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       </div>
 
       <div className="field">
-        <span className="field-label">Geschlecht</span>
-        <div className="segmented sex-choice" role="group" aria-label="Geschlecht">
+        <span className="field-label">{t('Geschlecht')}</span>
+        <div className="segmented sex-choice" role="group" aria-label={t('Geschlecht')}>
           {SEX_CHOICES.map((choice) => (
             <button key={choice.value} type="button" aria-pressed={form.geschlecht === choice.value} onClick={() => update({ geschlecht: choice.value })}>
-              {choice.label}
+              {t(choice.label)}
             </button>
           ))}
         </div>
@@ -233,7 +234,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
 
       <div className="field">
         <label className="field-label" htmlFor="dog-birth">
-          Geburtsdatum
+          {t('Geburtsdatum')}
         </label>
         <input
           id="dog-birth"
@@ -245,19 +246,19 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
 
       <div className="field span-2">
         <label className="field-label" htmlFor="dog-color">
-          Farbe &amp; Abzeichen
+          {t('Farbe & Abzeichen')}
         </label>
         <input
           id="dog-color"
           value={form.farbeMarkings}
           onChange={(e) => update({ farbeMarkings: e.target.value })}
-          placeholder="z. B. dreifarbig, symmetrische Blesse"
+          placeholder={t('z. B. dreifarbig, symmetrische Blesse')}
           maxLength={200}
         />
       </div>
 
       <ParentPicker
-        label="Mutter"
+        label={t('Mutter')}
         sex="huendin"
         tierart={form.tierart}
         dogs={allDogs}
@@ -267,7 +268,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
         ownFamilyId={ownFamilyId}
       />
       <ParentPicker
-        label="Vater"
+        label={t('Vater')}
         sex="ruede"
         tierart={form.tierart}
         dogs={allDogs}
@@ -278,12 +279,12 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       />
 
       <fieldset className="field span-2 companion-fieldset">
-        <legend className="field-label">Bei uns</legend>
+        <legend className="field-label">{t('Bei uns')}</legend>
         {companionOpen ? (
           <div className="companion-fields">
             <div className="field">
               <label className="field-label" htmlFor="dog-bei-uns-seit">
-                Einzug
+                {t('Einzug')}
               </label>
               <input
                 id="dog-bei-uns-seit"
@@ -295,7 +296,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
 
             <div className="field">
               <label className="field-label" htmlFor="dog-herkunft-art">
-                Herkunft
+                {t('Herkunft')}
               </label>
               <select
                 id="dog-herkunft-art"
@@ -304,7 +305,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
               >
                 {HERKUNFT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.label)}
                   </option>
                 ))}
               </select>
@@ -312,13 +313,13 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
 
             <div className="field span-2">
               <label className="field-label" htmlFor="dog-herkunft-text">
-                Woher genau <span className="muted">(optional)</span>
+                {t('Woher genau')} <span className="muted">{t('(optional)')}</span>
               </label>
               <input
                 id="dog-herkunft-text"
                 value={form.herkunftText}
                 onChange={(e) => update({ herkunftText: e.target.value })}
-                placeholder="z. B. Tierheim Sonnenhang"
+                placeholder={t('z. B. Tierheim Sonnenhang')}
                 maxLength={120}
               />
             </div>
@@ -336,7 +337,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
                     })
                   }}
                 />
-                Nicht mehr bei uns
+                {t('Nicht mehr bei uns')}
               </label>
             </div>
 
@@ -344,7 +345,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
               <>
                 <div className="field">
                   <label className="field-label" htmlFor="dog-bei-uns-bis">
-                    Abschied
+                    {t('Abschied')}
                   </label>
                   <input
                     id="dog-bei-uns-bis"
@@ -355,7 +356,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
                 </div>
                 <div className="field">
                   <label className="field-label" htmlFor="dog-abschied-grund">
-                    Grund
+                    {t('Grund')}
                   </label>
                   <select
                     id="dog-abschied-grund"
@@ -364,7 +365,7 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
                   >
                     {ABSCHIED_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {t(option.label)}
                       </option>
                     ))}
                   </select>
@@ -375,32 +376,32 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
         ) : (
           <button type="button" className="disclosure-btn" onClick={() => setCompanionOpen(true)} aria-expanded="false">
             <Icon name="chevronDown" />
-            Einzug, Herkunft, Abschied
+            {t('Einzug, Herkunft, Abschied')}
           </button>
         )}
       </fieldset>
 
       <div className="field span-2">
         <label className="field-label" htmlFor="dog-description">
-          Beschreibung
+          {t('Beschreibung')}
         </label>
         <textarea
           id="dog-description"
           value={form.beschreibung}
           onChange={(e) => update({ beschreibung: e.target.value })}
-          placeholder="Wesen, Eigenheiten, Lieblingsplätze …"
+          placeholder={t('Wesen, Eigenheiten, Lieblingsplätze …')}
           maxLength={5000}
         />
       </div>
 
       <div className="form-actions span-2">
-        {onDelete && <ConfirmButton onConfirm={handleDelete} label={`${noun} löschen`} disabled={saving} />}
+        {onDelete && <ConfirmButton onConfirm={handleDelete} label={t('{noun} löschen', { noun: t(noun) })} disabled={saving} />}
         <span className="form-actions-spacer" />
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
-          {saving ? 'Speichere …' : 'Änderungen speichern'}
+          {saving ? t('Speichere …') : t('Änderungen speichern')}
         </button>
       </div>
     </form>

@@ -10,6 +10,7 @@ import EinblickCard from './EinblickCard.jsx'
 import EinblickForm from './EinblickForm.jsx'
 import Icon from './Icon.jsx'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const DEMO_HINT_ID = 'einblicke-demo-hint'
 // Audit W: zuerst sechs Karten, der Rest hinter „Weitere Einblicke (n)“ - der Reiter „Fotos“ bleibt so kurz.
@@ -39,7 +40,7 @@ export default function EinblickeEditor({ onChanged }) {
   const reorder = useDragReorder({
     keys: more.shown.map((einblick) => einblick.id),
     disabled: more.shown.length < 2,
-    labelFor: (id) => `Einblick vom ${formatDateLong(byId.get(id)?.datum)}`,
+    labelFor: (id) => t('Einblick vom {date}', { date: formatDateLong(byId.get(id)?.datum) }),
     onCommit: handleReorder
   })
 
@@ -86,7 +87,7 @@ export default function EinblickeEditor({ onChanged }) {
       setEinblicke(sortEinblicke(await api.partnerArea.setEinblickeOrder(ids)))
     } catch {
       setEinblicke(previous)
-      toast(ORDER_ERROR)
+      toast(t(ORDER_ERROR))
     }
   }
 
@@ -94,18 +95,20 @@ export default function EinblickeEditor({ onChanged }) {
     <section className="einblicke-editor" aria-labelledby="einblicke-title">
       <div className="einblicke-head">
         <div>
-          <h2 id="einblicke-title">Einblicke</h2>
-          <p className="muted">Fotos aus eurem Alltag – sie erscheinen mit Datum auf eurem Portal.</p>
+          <h2 id="einblicke-title">{t('Einblicke')}</h2>
+          <p className="muted">{t('Fotos aus eurem Alltag – sie erscheinen mit Datum auf eurem Portal.')}</p>
           <p className="field-hint einblicke-pin-hint">
-            Angepinnte Einblicke (höchstens {MAX_ANGEPINNT === 3 ? 'drei' : MAX_ANGEPINNT}) stehen auf eurer Karte in „Entdecken“ – sonst
-            die neuesten drei. <span className="einblicke-pin-count">{Math.min(pinned, MAX_ANGEPINNT)} von {MAX_ANGEPINNT} angepinnt.</span>
-            {teamPinned && <> Vom Team angepinnte stehen zuerst.</>}
-            {pinned >= MAX_ANGEPINNT && <> Drei sind angepinnt – löst einen, um einen anderen anzupinnen.</>}
+            {t('Angepinnte Einblicke (höchstens {max}) stehen auf eurer Karte in „Entdecken“ – sonst die neuesten drei.', {
+              max: MAX_ANGEPINNT === 3 ? t('drei') : MAX_ANGEPINNT
+            })}{' '}
+            <span className="einblicke-pin-count">{t('{n} von {max} angepinnt.', { n: Math.min(pinned, MAX_ANGEPINNT), max: MAX_ANGEPINNT })}</span>
+            {teamPinned && <> {t('Vom Team angepinnte stehen zuerst.')}</>}
+            {pinned >= MAX_ANGEPINNT && <> {t('Drei sind angepinnt – löst einen, um einen anderen anzupinnen.')}</>}
           </p>
-          {count > 1 && <p className="field-hint">{REORDER_HINT}</p>}
+          {count > 1 && <p className="field-hint">{t(REORDER_HINT)}</p>}
         </div>
         <span className="pill einblicke-count" aria-live="polite">
-          {count} von {MAX_EINBLICKE}
+          {t('{n} von {max}', { n: count, max: MAX_EINBLICKE })}
         </span>
       </div>
 
@@ -120,14 +123,14 @@ export default function EinblickeEditor({ onChanged }) {
             disabled={isDemo || isFull || einblicke === undefined}
             aria-describedby={isDemo ? DEMO_HINT_ID : undefined}
           >
-            <Icon name="plus" /> Neuer Einblick
+            <Icon name="plus" /> {t('Neuer Einblick')}
           </button>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
               {readOnlyHint}
             </p>
           )}
-          {!isDemo && isFull && <p className="field-hint">{LIMIT_MESSAGE}</p>}
+          {!isDemo && isFull && <p className="field-hint">{t(LIMIT_MESSAGE)}</p>}
         </div>
       )}
 
@@ -136,8 +139,8 @@ export default function EinblickeEditor({ onChanged }) {
           {loadError}
         </div>
       )}
-      {einblicke === undefined && !loadError && <p className="muted">Lade …</p>}
-      {einblicke?.length === 0 && <p className="empty-state">Noch keine Einblicke – zeigt eurer Kundschaft, was bei euch los ist.</p>}
+      {einblicke === undefined && !loadError && <p className="muted">{t('Lade …')}</p>}
+      {einblicke?.length === 0 && <p className="empty-state">{t('Noch keine Einblicke – zeigt eurer Kundschaft, was bei euch los ist.')}</p>}
       <p className="visually-hidden" aria-live="assertive">
         {reorder.announcement}
       </p>
@@ -158,7 +161,7 @@ export default function EinblickeEditor({ onChanged }) {
       )}
       {more.hidden > 0 && (
         <button type="button" className="btn btn-ghost einblicke-more" onClick={more.expand}>
-          Weitere Einblicke ({more.hidden})
+          {t('Weitere Einblicke ({n})', { n: more.hidden })}
         </button>
       )}
     </section>

@@ -10,6 +10,7 @@ import { useNoIndex } from '../hooks/useNoIndex.js'
 import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
 import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
+import { t } from '../lib/i18n/index.js'
 
 // /partner-werden (Phase 5 Task 4): öffentliche Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung -
 // ganz oben zwei große Demo-Knöpfe (Demo-Partner-Bereiche, lib/demoPartners.js - Phase U: erst ansehen, dann
@@ -52,7 +53,7 @@ function DemoButtons({ onDemo }) {
     <div className="partner-info-demo">
       {error && (
         <div className="error-banner" role="alert">
-          {error}
+          {t(error)}
         </div>
       )}
       {DEMO_PARTNERS.map((option, index) => (
@@ -63,10 +64,10 @@ function DemoButtons({ onDemo }) {
           onClick={() => startDemo(option.key, option.target)}
           disabled={pending !== null}
         >
-          {pending === option.key ? 'Lädt …' : option.label}
+          {pending === option.key ? t('Lädt …') : t(option.label)}
         </button>
       ))}
-      <p className="field-hint">Ohne Anmeldung, schreibgeschützt – so sieht der Partner-Bereich von innen aus.</p>
+      <p className="field-hint">{t('Ohne Anmeldung, schreibgeschützt – so sieht der Partner-Bereich von innen aus.')}</p>
     </div>
   )
 }
@@ -77,13 +78,13 @@ function ContactAction({ legal }) {
   if (legal?.email) {
     return (
       <a href={`mailto:${legal.email}`} className="btn btn-ghost btn-lg">
-        <Icon name="mail" /> Kontakt aufnehmen
+        <Icon name="mail" /> {t('Kontakt aufnehmen')}
       </a>
     )
   }
   return (
     <Link to="/impressum" className="btn btn-ghost btn-lg">
-      Kontakt über das Impressum
+      {t('Kontakt über das Impressum')}
     </Link>
   )
 }
@@ -111,9 +112,9 @@ function RequestSection() {
     >
       <div>
         <h2 id="partner-info-request-title" ref={headingRef} tabIndex={-1}>
-          Partner-Zugang anfragen
+          {t('Partner-Zugang anfragen')}
         </h2>
-        <p className="muted">Kostenlos für Hundeschulen, Tierheime, Hundesalons und Betreuung.</p>
+        <p className="muted">{t('Kostenlos für Hundeschulen, Tierheime, Hundesalons und Betreuung.')}</p>
       </div>
       <RequestPartnerForm />
     </section>
@@ -143,16 +144,16 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
       <PublicHeader family={family} />
 
       <div className="partners-hero">
-        <span className="eyebrow">Partner werden</span>
-        <h1>Euer Auftritt bei Familie auf Pfoten</h1>
+        <span className="eyebrow">{t('Partner werden')}</span>
+        <h1>{t('Euer Auftritt bei Familie auf Pfoten')}</h1>
       </div>
       {/* Laufband „Zahlen aus der Gemeinschaft“ - nur für Besucher, nicht in der angemeldeten App. */}
       {!family && <CommunityTicker />}
 
       <section className="partner-info-section partner-info-showcase card" aria-labelledby="partner-info-demo-title">
         <div>
-          <h2 id="partner-info-demo-title">So sieht euer Partner-Bereich aus</h2>
-          <p className="muted">Drei Demo-Partner zeigen Profil, Kundensicht, Beiträge, Postfach und Einladungscodes – einfach reinklicken.</p>
+          <h2 id="partner-info-demo-title">{t('So sieht euer Partner-Bereich aus')}</h2>
+          <p className="muted">{t('Drei Demo-Partner zeigen Profil, Kundensicht, Beiträge, Postfach und Einladungscodes – einfach reinklicken.')}</p>
         </div>
         <DemoButtons onDemo={onDemo} />
       </section>
@@ -160,28 +161,29 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
       <RequestSection />
 
       <section className="partner-info-section" aria-labelledby="partner-info-benefits-title">
-        <h2 id="partner-info-benefits-title">Was ihr bekommt</h2>
+        <h2 id="partner-info-benefits-title">{t('Was ihr bekommt')}</h2>
         <p className="page-lede">
-          Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein Profil, das eure Kundschaft direkt in ihre eigene
-          Chronik holt – und euch als Herkunft zeigt.
+          {t(
+            'Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein Profil, das eure Kundschaft direkt in ihre eigene Chronik holt – und euch als Herkunft zeigt.'
+          )}
         </p>
         {/* Phase F: ein Satz zur Finanzierung - Partner-Portale sind heute kostenlos, die Plattform lebt von Spenden und Partnern. */}
         <p className="muted partner-info-finanzierung">
-          Euer Portal ist heute kostenlos – wie wir uns finanzieren, steht auf <Link to="/finanzierung">„So finanzieren wir uns“</Link>.
+          {t('Euer Portal ist heute kostenlos – wie wir uns finanzieren, steht auf')} <Link to="/finanzierung">{t('„So finanzieren wir uns“')}</Link>.
         </p>
         <ul className="partner-info-benefits">
           {BENEFITS.map((benefit) => (
             <li key={benefit.title} className="card partner-info-benefit">
               <Icon name={benefit.icon} />
-              <h3>{benefit.title}</h3>
-              <p>{benefit.text}</p>
+              <h3>{t(benefit.title)}</h3>
+              <p>{t(benefit.text)}</p>
             </li>
           ))}
         </ul>
       </section>
 
       <section className="partner-info-section" aria-labelledby="partner-info-steps-title">
-        <h2 id="partner-info-steps-title">So funktioniert’s</h2>
+        <h2 id="partner-info-steps-title">{t('So funktioniert’s')}</h2>
         <ol className="partner-info-steps">
           {STEPS.map((step, index) => (
             <li key={step.title}>
@@ -189,8 +191,8 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
                 {index + 1}
               </span>
               <div>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
+                <h3>{t(step.title)}</h3>
+                <p>{t(step.text)}</p>
               </div>
             </li>
           ))}
@@ -199,8 +201,8 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
 
       <section className="partner-info-section partner-info-contact card" aria-labelledby="partner-info-contact-title">
         <div>
-          <h2 id="partner-info-contact-title">Lust, dabei zu sein?</h2>
-          <p>Noch Fragen, bevor ihr anfragt? Schreibt uns einfach direkt.</p>
+          <h2 id="partner-info-contact-title">{t('Lust, dabei zu sein?')}</h2>
+          <p>{t('Noch Fragen, bevor ihr anfragt? Schreibt uns einfach direkt.')}</p>
         </div>
         <ContactAction legal={legal} />
       </section>

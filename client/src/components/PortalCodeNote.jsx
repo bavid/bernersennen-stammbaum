@@ -1,6 +1,7 @@
 import Icon from './Icon.jsx'
 import { InternalLink } from './PreviewLink.jsx'
 import { SECTION_IDS } from '../lib/portalTabs.js'
+import { t } from '../lib/i18n/index.js'
 
 // Wohin "Code einlösen" führt: das Einlösen auf der Startseite (App.jsx /v, LoginPage im Einlöse-Modus) - der Partner
 // steckt bereits im Code, das Portal braucht dafür kein eigenes Formular.
@@ -18,12 +19,12 @@ export default function PortalCodeNote() {
     <aside id={SECTION_IDS.gutschein} className="portal-code-note" aria-labelledby={TITLE_ID}>
       <div className="portal-code-note-text">
         <p id={TITLE_ID} className="portal-code-note-title" tabIndex={-1}>
-          Einladungscode bekommen?
+          {t('Einladungscode bekommen?')}
         </p>
-        <p>Damit legt ihr kostenlos eure eigene Tier-Chronik an.</p>
+        <p>{t('Damit legt ihr kostenlos eure eigene Tier-Chronik an.')}</p>
       </div>
       <InternalLink to={REDEEM_PATH} className="portal-code-note-link">
-        Code einlösen
+        {t('Code einlösen')}
         <Icon name="arrowRight" />
       </InternalLink>
     </aside>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import NearbySearch from '../components/nearby/NearbySearch.jsx'
 import { readSetting, writeSetting } from '../lib/storage.js'
+import { t } from '../lib/i18n/index.js'
 
 const DEFAULT_RADIUS = 25
 
@@ -24,11 +25,12 @@ export default function NearbyPage() {
     <div className="page nearby-page">
       <header className="page-hero">
         <div>
-          <span className="eyebrow">In der Nähe</span>
-          <h1>Tierheime & Hundeschulen</h1>
+          <span className="eyebrow">{t('In der Nähe')}</span>
+          <h1>{t('Tierheime & Hundeschulen')}</h1>
           <p className="page-lede">
-            Findet Tierheime, Vermittlungsstellen und Hundeschulen in eurer Nähe – über OpenStreetMap, per Postleitzahl oder
-            eurem Standort.
+            {t(
+              'Findet Tierheime, Vermittlungsstellen und Hundeschulen in eurer Nähe – über OpenStreetMap, per Postleitzahl oder eurem Standort.'
+            )}
           </p>
         </div>
       </header>

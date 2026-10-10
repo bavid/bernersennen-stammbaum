@@ -7,6 +7,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import EinblickPinButton from './EinblickPinButton.jsx'
 import Icon from './Icon.jsx'
 import ReorderHandle from './ReorderHandle.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Datum und Text eines Einblicks direkt in der Karte ändern - das Foto bleibt (neues Foto = neuer Einblick).
 function EinblickEditForm({ einblick, onSaved, onCancel }) {
@@ -36,7 +37,7 @@ function EinblickEditForm({ einblick, onSaved, onCancel }) {
     <form className="einblick-edit form-stack" onSubmit={handleSubmit} noValidate>
       <div className="field">
         <label className="field-label" htmlFor={`${idBase}-datum`}>
-          Datum
+          {t('Datum')}
         </label>
         <input
           id={`${idBase}-datum`}
@@ -49,7 +50,7 @@ function EinblickEditForm({ einblick, onSaved, onCancel }) {
       </div>
       <div className="field">
         <label className="field-label" htmlFor={`${idBase}-text`}>
-          Text
+          {t('Text')}
         </label>
         <textarea
           id={`${idBase}-text`}
@@ -65,15 +66,15 @@ function EinblickEditForm({ einblick, onSaved, onCancel }) {
       </div>
       {error && (
         <p className="field-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       <div className="form-actions">
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button type="submit" className="btn btn-primary" disabled={busy || !draft.datum}>
-          {busy ? 'Speichere …' : 'Speichern'}
+          {busy ? t('Speichere …') : t('Speichern')}
         </button>
       </div>
     </form>
@@ -117,14 +118,14 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
       style={reorder?.hook.itemStyle(einblick.id)}
     >
       <div className="einblick-photo">
-        {isUploadUrl(einblick.fotoUrl) && <img src={einblick.fotoUrl} alt={`Einblick vom ${dateLabel}`} loading="lazy" />}
+        {isUploadUrl(einblick.fotoUrl) && <img src={einblick.fotoUrl} alt={t('Einblick vom {datum}', { datum: dateLabel })} loading="lazy" />}
         {reorder && (
-          <ReorderHandle reorder={reorder.hook} itemKey={einblick.id} index={reorder.index} count={reorder.count} label={`Einblick vom ${dateLabel}`} className="einblick-handle" />
+          <ReorderHandle reorder={reorder.hook} itemKey={einblick.id} index={reorder.index} count={reorder.count} label={t('Einblick vom {datum}', { datum: dateLabel })} className="einblick-handle" />
         )}
         {einblick.ausgeblendet && (
           <span className="pill einblick-hidden-badge">
             <Icon name="eyeOff" />
-            Vom Team ausgeblendet
+            {t('Vom Team ausgeblendet')}
           </span>
         )}
       </div>
@@ -147,21 +148,21 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
                 onClick={() => setEditing(true)}
               >
                 <Icon name="edit" />
-                Bearbeiten
+                {t('Bearbeiten')}
               </button>
               <EinblickPinButton einblick={einblick} canPin={canPin} readOnly={isDemo} demoHintId={demoHintId} onUpdated={onUpdated} />
               <ConfirmButton
                 disabled={isDemo || deleting}
                 describedBy={isDemo ? demoHintId : undefined}
                 onConfirm={handleDelete}
-                label="Löschen"
-                confirmLabel="Wirklich löschen?"
+                label={t('Löschen')}
+                confirmLabel={t('Wirklich löschen?')}
                 className="btn-compact btn-quiet btn-end"
               />
             </div>
             {error && (
               <p className="field-error" role="alert">
-                {error}
+                {t(error)}
               </p>
             )}
           </>

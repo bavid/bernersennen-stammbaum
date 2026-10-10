@@ -17,6 +17,7 @@ import {
   promotionRel
 } from '../lib/discover.js'
 import { useIsPreview } from '../lib/preview.js'
+import { t } from '../lib/i18n/index.js'
 
 // Wie der Server (server/lib/partnerPostOrder.js CARD_ANZEIGEN, lib/einblickPins.js CARD_EINBLICKE): höchstens drei.
 const MAX_ANZEIGEN = 3
@@ -30,7 +31,7 @@ function websiteHref(partner) {
 
 // Kopf wie bei PartnerCard: Logo, ohne Logo das neueste Einblick-Foto (teaserFoto), sonst ein ruhiges Symbol.
 function CardHead({ partner, preview }) {
-  const typeLabel = TYPE_LABELS[partner.typ] || partner.typ
+  const typeLabel = TYPE_LABELS[partner.typ] ? t(TYPE_LABELS[partner.typ]) : partner.typ
   const teaser = isAllowedMedia(partner.teaserFoto, { preview }) ? partner.teaserFoto : null
   return (
     <div className="partner-card-head">
@@ -47,7 +48,7 @@ function CardHead({ partner, preview }) {
           )}
           {typeof partner.distanceKm === 'number' && <span className="partner-card-distance">{formatDistanceKm(partner.distanceKm)}</span>}
           {/* Phase F: steht hier wegen „Überall sichtbar“, nicht wegen der Nähe - ein leiser Hinweis. */}
-          {partner.ueberall === true && <span className="partner-card-ueberall">überall sichtbar</span>}
+          {partner.ueberall === true && <span className="partner-card-ueberall">{t('überall sichtbar')}</span>}
         </p>
       </div>
     </div>
@@ -70,7 +71,7 @@ function AdRow({ ad }) {
         {pending && (
           <span className="promotion-badge promotion-badge-pending">
             <Icon name="clock" />
-            {PENDING_APPROVAL_LABEL}
+            {t(PENDING_APPROVAL_LABEL)}
           </span>
         )}
       </span>
@@ -79,7 +80,7 @@ function AdRow({ ad }) {
           <ExternalLink className="partner-discover-ad-link" href={ad.clickUrl} rel={promotionRel(ad.kennzeichnung)}>
             <span className="partner-discover-ad-title">{ad.titel}</span>
             <Icon name="external" />
-            <span className="visually-hidden"> (öffnet in neuem Tab)</span>
+            <span className="visually-hidden"> {t('(öffnet in neuem Tab)')}</span>
           </ExternalLink>
         ) : (
           <span className="partner-discover-ad-title">{ad.titel}</span>
@@ -111,7 +112,7 @@ function NextTermin({ termin }) {
     <p className="partner-discover-next">
       <Icon name="calendar" />
       <span>
-        <span className="partner-discover-next-label">Nächster Termin:</span> {text}
+        <span className="partner-discover-next-label">{t('Nächster Termin:')}</span> {text}
       </span>
     </p>
   )
@@ -122,13 +123,13 @@ function NextTermin({ termin }) {
 function EinblickStrip({ partner, einblicke }) {
   if (einblicke.length === 0) return null
   return (
-    <ul className={`partner-discover-einblicke${einblicke.length === 1 ? ' is-single' : ''}`} aria-label={`Einblicke bei ${partner.name}`}>
+    <ul className={`partner-discover-einblicke${einblicke.length === 1 ? ' is-single' : ''}`} aria-label={t('Einblicke bei {name}', { name: partner.name })}>
       {einblicke.map((einblick) => (
         <li key={einblick.id}>
           <figure>
             <img
               src={einblick.fotoUrl}
-              alt={einblick.text || `Einblick vom ${formatDateLong(einblick.datum)}`}
+              alt={einblick.text || t('Einblick vom {datum}', { datum: formatDateLong(einblick.datum) })}
               width={EINBLICK_SIZE}
               height={EINBLICK_SIZE}
               loading="lazy"
@@ -167,7 +168,7 @@ export default function PartnerDiscoverCard({ partner, compact = false }) {
         {isOwn && (
           <p className="preview-own-badge">
             <Icon name="eye" />
-            Das seid ihr
+            {t('Das seid ihr')}
           </p>
         )}
         <CardHead partner={partner} preview={preview} />
@@ -175,17 +176,17 @@ export default function PartnerDiscoverCard({ partner, compact = false }) {
         {!compact && <NextTermin termin={partner.naechsterTermin} />}
         <div className="partner-card-links">
           <InternalLink className="btn btn-ghost" to={`/p/${partner.slug}`}>
-            Zum Portal
+            {t('Zum Portal')}
           </InternalLink>
           {website && (
             <ExternalLink className="card-link" href={website}>
-              <Icon name="globe" /> Website
+              <Icon name="globe" /> {t('Website')}
             </ExternalLink>
           )}
         </div>
       </div>
       {anzeigen.length > 0 && (
-        <ul className="partner-discover-ads" aria-label={`Anzeigen von ${partner.name}`}>
+        <ul className="partner-discover-ads" aria-label={t('Anzeigen von {name}', { name: partner.name })}>
           {anzeigen.map((ad) => (
             <AdRow key={ad.id} ad={ad} />
           ))}

@@ -6,6 +6,7 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { dogLabel } from '../lib/timeline.js'
 import { formatTermin, relativeTime } from '../lib/dates.js'
 import { originLabel } from '../lib/tierZuhause.js'
+import { t } from '../lib/i18n/index.js'
 
 function toDog(entry) {
   return { name: entry.dog_name, name_unbekannt: entry.dog_name_unbekannt, rasse: entry.dog_rasse, foto_url: entry.dog_foto_url }
@@ -38,7 +39,7 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
       <section className="feed feed-empty" aria-label={heading}>
         <Icon name="sprout" />
         <p>
-          <strong>Noch keine Neuigkeiten.</strong> {theme.texts.feedEmpty} – die anderen sehen es dann hier.
+          <strong>{t('Noch keine Neuigkeiten.')}</strong> {theme.texts.feedEmpty} – {t('die anderen sehen es dann hier.')}
         </p>
       </section>
     )
@@ -56,7 +57,7 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
               <Icon name="calendar" />
             </span>
             <span className="feed-body">
-              <span className="feed-kicker">Nächstes Treffen</span>
+              <span className="feed-kicker">{t('Nächstes Treffen')}</span>
               <span className="feed-headline">{formatTermin(termin.termin_datum, termin.termin_zeit, { short: true })}</span>
               <span className="feed-meta">{termin.text}</span>
             </span>
@@ -80,7 +81,7 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
       </div>
       {hidden > 0 && (
         <button type="button" className="btn btn-ghost feed-more" onClick={() => setShowAll(true)}>
-          Weitere {words.entries} ({hidden})
+          {t('Weitere {entries} ({n})', { entries: words.entries, n: hidden })}
         </button>
       )}
     </section>

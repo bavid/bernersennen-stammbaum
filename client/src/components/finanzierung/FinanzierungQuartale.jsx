@@ -1,5 +1,6 @@
 import { formatEuroCents } from '../../lib/discover.js'
 import { balkenBreiten, quartalLabel, quartalSummen } from '../../lib/finanzierung.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Phase F: „Zahlen je Quartal“ auf /finanzierung (und als Vorschau im Admin): je Quartal drei kleine Balken - Einnahmen
 // (Spenden und Partner zusammen), Kosten des Betriebs, weitergegebene Spenden - an EINER Skala über alle Quartale. Keine
@@ -19,13 +20,17 @@ const ROWS = [
 function VerteilungZeile({ zeile }) {
   if (!zeile) return null
   if (!zeile.ueberschussCents) {
-    return <p className="finanz-quartal-verteilung">Kein Überschuss in diesem Quartal – nichts zu verteilen.</p>
+    return <p className="finanz-quartal-verteilung">{t('Kein Überschuss in diesem Quartal – nichts zu verteilen.')}</p>
   }
   return (
     <p className="finanz-quartal-verteilung">
-      Überschuss {formatEuroCents(zeile.ueberschussCents)}: Rücklage {formatEuroCents(zeile.reserveCents)} ({zeile.anteilProzent} %) · zum Spenden{' '}
-      {formatEuroCents(zeile.gespendetCents)}
-      {zeile.entnahmeCents > 0 && <> · aus der Rücklage entnommen {formatEuroCents(zeile.entnahmeCents)}</>}
+      {t('Überschuss {ueberschuss}: Rücklage {reserve} ({prozent} %) · zum Spenden {gespendet}', {
+        ueberschuss: formatEuroCents(zeile.ueberschussCents),
+        reserve: formatEuroCents(zeile.reserveCents),
+        prozent: zeile.anteilProzent,
+        gespendet: formatEuroCents(zeile.gespendetCents)
+      })}
+      {zeile.entnahmeCents > 0 && <> · {t('aus der Rücklage entnommen {betrag}', { betrag: formatEuroCents(zeile.entnahmeCents) })}</>}
     </p>
   )
 }
@@ -38,7 +43,7 @@ function QuartalRow({ quartal, breiten, zeile }) {
       <dl className="finanz-quartal-rows">
         {ROWS.map((row) => (
           <div key={row.key} className={`finanz-row is-${row.key}`}>
-            <dt>{row.label}</dt>
+            <dt>{t(row.label)}</dt>
             <dd>
               <span className="finanz-bar" aria-hidden="true">
                 <span className="finanz-bar-fill" style={{ width: `${breiten[row.key]}%` }} />
@@ -49,7 +54,10 @@ function QuartalRow({ quartal, breiten, zeile }) {
         ))}
       </dl>
       <p className="finanz-quartal-detail">
-        Spenden {formatEuroCents(quartal.einnahmenSpendenCents)} · Partner {formatEuroCents(quartal.einnahmenPartnerCents)}
+        {t('Spenden {spenden} · Partner {partner}', {
+          spenden: formatEuroCents(quartal.einnahmenSpendenCents),
+          partner: formatEuroCents(quartal.einnahmenPartnerCents)
+        })}
         {quartal.notiz && <> · {quartal.notiz}</>}
       </p>
       <VerteilungZeile zeile={zeile} />
@@ -70,14 +78,14 @@ export default function FinanzierungQuartale({ quartale, verteilung = null }) {
   if (!quartale?.length) {
     return (
       <p className="finanz-empty" role="note">
-        {QUARTALE_LEER}
+        {t(QUARTALE_LEER)}
       </p>
     )
   }
   const rows = mitVerteilung(quartale, verteilung)
   const breiten = balkenBreiten(rows.map((row) => row.quartal))
   return (
-    <ul className="finanz-quartale" aria-label="Zahlen je Quartal">
+    <ul className="finanz-quartale" aria-label={t('Zahlen je Quartal')}>
       {rows.map(({ quartal, zeile }, index) => (
         <QuartalRow key={`${quartal.jahr}-${quartal.quartal}`} quartal={quartal} breiten={breiten[index]} zeile={zeile} />
       ))}

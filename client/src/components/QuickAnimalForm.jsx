@@ -8,6 +8,7 @@ import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { choiceTierart, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayload } from '../lib/newAnimal.js'
 import { SEX_CHOICES, livesWithLabel } from '../lib/timeline.js'
 import '../styles/neues-tier.css'
+import { t } from '../lib/i18n/index.js'
 
 const NAME_PLACEHOLDER = { hund: 'z. B. Benno', katze: 'z. B. Minka', anderes: 'z. B. Hoppel' }
 
@@ -74,23 +75,23 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
       {form.art === 'anderes' && (
         <div className="field">
           <label className="field-label" htmlFor={kindId}>
-            Welches Tier? <span className="muted">(optional)</span>
+            {t('Welches Tier?')} <span className="muted">{t('(optional)')}</span>
           </label>
-          <input id={kindId} name="artText" value={form.artText} onChange={(e) => update({ artText: e.target.value })} placeholder="z. B. Schildkröte" maxLength={120} />
+          <input id={kindId} name="artText" value={form.artText} onChange={(e) => update({ artText: e.target.value })} placeholder={t('z. B. Schildkröte')} maxLength={120} />
         </div>
       )}
       <div className="quick-animal-who">
         <PortraitFeld value={form.fotos} onChange={(fotos) => update({ fotos })} onBusyChange={setUploading} onError={setError} />
         <div className="field">
           <label className="field-label" htmlFor={nameId}>
-            Name
+            {t('Name')}
           </label>
           <input
             id={nameId}
             name="name"
             value={form.nameUnbekannt ? '' : form.name}
             onChange={(e) => update({ name: e.target.value })}
-            placeholder={form.nameUnbekannt ? 'Wird als „Unbekannt“ geführt' : NAME_PLACEHOLDER[tierart]}
+            placeholder={form.nameUnbekannt ? t('Wird als „Unbekannt“ geführt') : t(NAME_PLACEHOLDER[tierart])}
             maxLength={80}
             disabled={form.nameUnbekannt}
             autoFocus
@@ -100,7 +101,7 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
           />
           <label className="check quick-animal-unknown">
             <input type="checkbox" name="nameUnbekannt" checked={form.nameUnbekannt} onChange={(e) => update({ nameUnbekannt: e.target.checked })} />
-            Name unbekannt
+            {t('Name unbekannt')}
           </label>
           {errors.name && (
             <p className="field-error" id={nameErrorId}>
@@ -111,27 +112,27 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
       </div>
       <div className="field quick-animal-sex">
         <span className="field-label" id={sexId}>
-          Geschlecht
+          {t('Geschlecht')}
         </span>
         <div className="segmented sex-choice" role="group" aria-labelledby={sexId}>
           {SEX_CHOICES.map((choice) => (
             <button key={choice.value} type="button" aria-pressed={form.geschlecht === choice.value} onClick={() => update({ geschlecht: choice.value })}>
-              {choice.label}
+              {t(choice.label)}
             </button>
           ))}
         </div>
       </div>
       {livesWith && <p className="quick-animal-fixed-housemate">{livesWithLabel([livesWith])}</p>}
-      <MehrAngaben label="Mehr Angaben" summary={moreSummary(form)} open={moreOpen} onToggle={setMoreOpen}>
+      <MehrAngaben label={t('Mehr Angaben')} summary={moreSummary(form)} open={moreOpen} onToggle={setMoreOpen}>
         <TierMehrAngaben form={form} onChange={update} allDogs={allDogs} ownFamilyId={ownFamilyId} livesWith={livesWith} />
       </MehrAngaben>
       <div className="form-actions">
         <span className="form-actions-spacer" />
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
-          {saving ? 'Speichere …' : 'Tier anlegen'}
+          {saving ? t('Speichere …') : t('Tier anlegen')}
         </button>
       </div>
     </form>

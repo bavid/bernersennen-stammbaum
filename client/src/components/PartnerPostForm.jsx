@@ -19,6 +19,7 @@ import {
   postErrorField,
   toPostPayload
 } from '../lib/partnerPosts.js'
+import { t } from '../lib/i18n/index.js'
 
 const IDS = {
   titel: 'post-titel',
@@ -53,7 +54,8 @@ export default function PartnerPostForm({ post, typ, vertrauenswuerdig = false, 
   const { formRef, bannerRef, focusFirstError } = useFocusFirstError()
   const bereiche = allowedBereiche(typ)
   const mode = editMode(post, vertrauenswuerdig)
-  const { hint, submit } = EDIT_MODES[mode]
+  const hint = t(EDIT_MODES[mode].hint)
+  const submit = t(EDIT_MODES[mode].submit)
   const bind = (key, { hint } = {}) => fieldProps(IDS[key], { error: fieldErrors[key], hint })
 
   function update(patch) {
@@ -93,12 +95,12 @@ export default function PartnerPostForm({ post, typ, vertrauenswuerdig = false, 
 
   return (
     <form ref={formRef} className="partner-post-form card form-stack" onSubmit={handleSubmit} noValidate>
-      <h3>{post ? `Bearbeiten – ${post.titel}` : 'Neuer Beitrag'}</h3>
+      <h3>{post ? t('Bearbeiten – {title}', { title: post.titel }) : t('Neuer Beitrag')}</h3>
       {mode === 'abgelehnt' && post.ablehnungsgrund && (
         <div className="partner-post-rejected" role="note">
           <Icon name="alert" />
           <p>
-            <strong>Abgelehnt</strong> – {post.ablehnungsgrund}
+            <strong>{t('Abgelehnt')}</strong> – {post.ablehnungsgrund}
           </p>
         </div>
       )}
@@ -110,34 +112,34 @@ export default function PartnerPostForm({ post, typ, vertrauenswuerdig = false, 
       )}
 
       <div className="form-grid">
-        <AdminField id={IDS.titel} label="Titel" error={fieldErrors.titel} className="span-2">
+        <AdminField id={IDS.titel} label={t('Titel')} error={fieldErrors.titel} className="span-2">
           <input {...bind('titel')} value={form.titel} onChange={(e) => update({ titel: e.target.value })} maxLength={MAX_TITEL_LENGTH} required />
         </AdminField>
 
-        <AdminField id={IDS.text} label="Text (optional)" hint={`${form.text.length} / ${MAX_TEXT_LENGTH} Zeichen`} error={fieldErrors.text} className="span-2">
+        <AdminField id={IDS.text} label={t('Text (optional)')} hint={t('{n} / {max} Zeichen', { n: form.text.length, max: MAX_TEXT_LENGTH })} error={fieldErrors.text} className="span-2">
           <textarea {...bind('text', { hint: true })} value={form.text} onChange={(e) => update({ text: e.target.value })} maxLength={MAX_TEXT_LENGTH} rows={4} />
         </AdminField>
 
-        <AdminField id={IDS.bereich} label="Erscheint in „Entdecken“ unter" error={fieldErrors.bereich}>
+        <AdminField id={IDS.bereich} label={t('Erscheint in „Entdecken“ unter')} error={fieldErrors.bereich}>
           <select {...bind('bereich')} value={form.bereich} onChange={(e) => update({ bereich: e.target.value })}>
-            {bereiche.length !== 1 && <option value="">Bitte wählen</option>}
+            {bereiche.length !== 1 && <option value="">{t('Bitte wählen')}</option>}
             {bereiche.map((value) => (
               <option key={value} value={value}>
-                {POST_BEREICH_LABELS[value] || value}
+                {POST_BEREICH_LABELS[value] ? t(POST_BEREICH_LABELS[value]) : value}
               </option>
             ))}
           </select>
         </AdminField>
 
-        <AdminField id={IDS.url} label="Link (optional)" error={fieldErrors.url}>
+        <AdminField id={IDS.url} label={t('Link (optional)')} error={fieldErrors.url}>
           <input {...bind('url')} type="url" value={form.url} onChange={(e) => update({ url: e.target.value })} maxLength={MAX_URL_LENGTH} placeholder="https://…" />
         </AdminField>
 
-        <AdminField id={IDS.start} label="Sichtbar ab (optional)" error={fieldErrors.start}>
+        <AdminField id={IDS.start} label={t('Sichtbar ab (optional)')} error={fieldErrors.start}>
           <input {...bind('start')} type="date" value={form.start} onChange={(e) => update({ start: e.target.value })} />
         </AdminField>
 
-        <AdminField id={IDS.ende} label="Sichtbar bis (optional)" error={fieldErrors.ende}>
+        <AdminField id={IDS.ende} label={t('Sichtbar bis (optional)')} error={fieldErrors.ende}>
           <input {...bind('ende')} type="date" value={form.ende} onChange={(e) => update({ ende: e.target.value })} />
         </AdminField>
 
@@ -146,32 +148,32 @@ export default function PartnerPostForm({ post, typ, vertrauenswuerdig = false, 
         <div className="field span-2">
           <label className="check">
             <input id="post-aktiv" type="checkbox" checked={form.aktiv} onChange={(e) => update({ aktiv: e.target.checked })} />
-            Aktiv (nach der Freigabe sichtbar)
+            {t('Aktiv (nach der Freigabe sichtbar)')}
           </label>
         </div>
       </div>
 
       {post ? (
         <AdminImageUpload
-          label="Bild"
-          buttonLabel="Bild hochladen"
+          label={t('Bild')}
+          buttonLabel={t('Bild hochladen')}
           imageUrl={bildUrl}
           previewClassName="admin-upload-preview-wide"
           accept={IMAGE_ACCEPT}
-          hint={mode === 'sofort' ? IMAGE_HINT_LIVE : IMAGE_HINT}
+          hint={t(mode === 'sofort' ? IMAGE_HINT_LIVE : IMAGE_HINT)}
           upload={uploadImage}
           onUploaded={setBildUrl}
         />
       ) : (
-        <p className="field-hint">{IMAGE_LATER_HINT}</p>
+        <p className="field-hint">{t(IMAGE_LATER_HINT)}</p>
       )}
 
       <div className="form-actions">
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? 'Speichere …' : submit}
+          {saving ? t('Speichere …') : submit}
         </button>
       </div>
     </form>

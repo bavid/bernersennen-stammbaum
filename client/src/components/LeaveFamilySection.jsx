@@ -5,6 +5,7 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { startRoute } from '../lib/areas.js'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const ARM_TIMEOUT_MS = 5000
 
@@ -42,7 +43,7 @@ export default function LeaveFamilySection({ family, onFamilyChange, onLeft }) {
         onFamilyChange(me)
         navigate(startRoute(me))
       })
-      toast(`Du hast „${family.name}“ verlassen. Deine geteilten Tiere sind dort nicht mehr sichtbar.`)
+      toast(t('Du hast „{name}“ verlassen. Deine geteilten Tiere sind dort nicht mehr sichtbar.', { name: family.name }))
     } catch (err) {
       setError(err.message)
       setSaving(false)
@@ -59,8 +60,9 @@ export default function LeaveFamilySection({ family, onFamilyChange, onLeft }) {
         </div>
       )}
       <p className="muted">
-        Ihr verlasst „{family.name}“. Eure geteilten Tiere sind dort danach nicht mehr sichtbar; euer Zuhause bleibt
-        unverändert.
+        {t('Ihr verlasst „{name}“. Eure geteilten Tiere sind dort danach nicht mehr sichtbar; euer Zuhause bleibt unverändert.', {
+          name: family.name
+        })}
       </p>
       <button
         type="button"
@@ -69,7 +71,7 @@ export default function LeaveFamilySection({ family, onFamilyChange, onLeft }) {
         disabled={saving}
       >
         <Icon name={armed ? 'check' : 'logout'} />
-        {saving ? 'Verlasse …' : armed ? `Ja, „${family.name}“ verlassen` : words.leaveGroup}
+        {saving ? t('Verlasse …') : armed ? t('Ja, „{name}“ verlassen', { name: family.name }) : words.leaveGroup}
       </button>
     </section>
   )

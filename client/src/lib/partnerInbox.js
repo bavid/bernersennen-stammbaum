@@ -1,5 +1,6 @@
 // Reine Hilfen für das Postfach der Partner (/nachrichten, PartnerInboxPage) - über die Antwort von
 // GET /api/partner-area/messages (server/lib/partnerMessages.js ownMessage, camelCase).
+import { locale, t } from './i18n/index.js'
 
 export const RETENTION_HINT = 'Nachrichten werden nach 180 Tagen automatisch gelöscht.'
 export const EMPTY_HINT = 'Noch keine Nachrichten. Sobald jemand über ‚Schreib uns‘ schreibt, landet es hier.'
@@ -9,7 +10,7 @@ const EXCERPT_LENGTH = 90
 
 export function senderName(message) {
   const name = typeof message?.name === 'string' ? message.name.trim() : ''
-  return name || NO_NAME
+  return name || t(NO_NAME)
 }
 
 // Erste Zeile(n) der Nachricht für die zugeklappte Liste - Zeilenumbrüche werden zu Leerzeichen.
@@ -25,18 +26,18 @@ function parseSqliteUtc(timestamp) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-const DATE_FORMAT = new Intl.DateTimeFormat('de-DE', {
+const DATE_OPTIONS = {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
   hour: '2-digit',
   minute: '2-digit'
-})
+}
 
 // "20. September 2026 um 12:15" (Ortszeit) - für <time dateTime> dazu isoDateTime.
 export function formatMessageDate(timestamp) {
   const date = parseSqliteUtc(timestamp)
-  return date ? DATE_FORMAT.format(date) : ''
+  return date ? new Intl.DateTimeFormat(locale(), DATE_OPTIONS).format(date) : ''
 }
 
 export function isoDateTime(timestamp) {

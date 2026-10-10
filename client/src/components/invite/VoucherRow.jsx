@@ -5,12 +5,13 @@ import VoucherLabel from './VoucherLabel.jsx'
 import VoucherShareActions from './VoucherShareActions.jsx'
 import { formatDateShort } from '../../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../../lib/voucherCode.js'
+import { t } from '../../lib/i18n/index.js'
 
 function statusText(voucher) {
   if (voucher.status === 'eingelöst' && voucher.redeemed_at) {
-    return `Eingelöst am ${formatDateShort(voucher.redeemed_at)}`
+    return t('Eingelöst am {date}', { date: formatDateShort(voucher.redeemed_at) })
   }
-  return VOUCHER_STATUS_LABEL[voucher.status] || voucher.status
+  return VOUCHER_STATUS_LABEL[voucher.status] ? t(VOUCHER_STATUS_LABEL[voucher.status]) : voucher.status
 }
 
 // Ein Code im Einladen-Dialog. roleOptions (Phase R, nur in einer Familie): welche Rollen die eigene Rolle vergeben
@@ -29,12 +30,13 @@ export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, on
         {/* Phase V2: Besuchs-Einladung (7 Tage gültig) statt Gutschein für eine eigene Chronik */}
         {voucher.besuch && (
           <span className="pill pill-visit">
-            Besuch{voucher.status === 'offen' && voucher.expires_at ? ` · bis ${formatDateShort(voucher.expires_at)}` : ''}
+            {t('Besuch')}
+            {voucher.status === 'offen' && voucher.expires_at ? ` · ${t('bis {date}', { date: formatDateShort(voucher.expires_at) })}` : ''}
           </span>
         )}
         {voucher.rolle && !canChooseRole && <RoleBadge rolle={voucher.rolle} />}
         {/* Phase V5: steht schon auf gedruckten Karten (Visitenkarten oder Druckseite eines Stapels). */}
-        {voucher.gedruckt && voucher.status === 'offen' && <span className="pill pill-gedruckt">gedruckt</span>}
+        {voucher.gedruckt && voucher.status === 'offen' && <span className="pill pill-gedruckt">{t('gedruckt')}</span>}
       </div>
       {voucher.eigen && onLabelChange && (
         <div className="voucher-row-label">
@@ -43,7 +45,7 @@ export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, on
       )}
       {canChooseRole && (
         <label className="voucher-row-role">
-          <span className="field-hint">Tritt bei als</span>
+          <span className="field-hint">{t('Tritt bei als')}</span>
           <RoleSelect
             value={voucher.rolle || 'mitglied'}
             options={roleOptions}
@@ -54,13 +56,13 @@ export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, on
       )}
       {voucher.code && <VoucherShareActions code={voucher.code} />}
       {/* Ein beschädigter Code (Server: codeFehler) lässt sich nicht weitergeben - nur zurückziehen. */}
-      {voucher.codeFehler && <p className="field-error voucher-row-broken">Code nicht lesbar – bitte zurückziehen.</p>}
+      {voucher.codeFehler && <p className="field-error voucher-row-broken">{t('Code nicht lesbar – bitte zurückziehen.')}</p>}
       {deletable && (
         <ConfirmButton
           className="voucher-row-delete"
           label={voucher.status === 'offen' ? 'Zurückziehen' : 'Löschen'}
           confirmLabel={voucher.status === 'offen' ? 'Wirklich zurückziehen und löschen?' : 'Wirklich löschen?'}
-          ariaLabel={`Code …${voucher.hint} ${voucher.status === 'offen' ? 'zurückziehen und löschen' : 'löschen'}`}
+          ariaLabel={voucher.status === 'offen' ? t('Code …{hint} zurückziehen und löschen', { hint: voucher.hint }) : t('Code …{hint} löschen', { hint: voucher.hint })}
           disabled={disabled}
           onConfirm={() => onDelete(voucher)}
         />

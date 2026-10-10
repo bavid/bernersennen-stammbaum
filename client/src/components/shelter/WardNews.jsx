@@ -8,6 +8,7 @@ import Polaroid from '../Polaroid.jsx'
 import { formatDateLong } from '../../lib/dates.js'
 import { commentsLabel } from '../../lib/feed.js'
 import { displayName } from '../../lib/timeline.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Eine Karte: das erste Foto als Polaroid (ohne Foto das Porträt klein neben dem Namen), Tier, Tag, Titel, Anriss und die
 // Grüße - sie führt zur Erinnerung auf der Tierseite (state.from: „Zurück“ kommt wieder hierher).
@@ -68,11 +69,11 @@ export default function WardNews({ onShowAll }) {
     <section className="ward-news" aria-labelledby="ward-news-title" aria-busy={!items && !error ? true : undefined}>
       <div className="ward-news-head">
         <h2 id="ward-news-title" className="start-section-title">
-          So geht es euren Schützlingen
+          {t('So geht es euren Schützlingen')}
         </h2>
         {items?.length > 0 && (
           <button type="button" className="btn btn-ghost ward-news-all" onClick={onShowAll}>
-            Alle ansehen
+            {t('Alle ansehen')}
           </button>
         )}
       </div>
@@ -83,8 +84,7 @@ export default function WardNews({ onShowAll }) {
       )}
       {items?.length === 0 && (
         <p className="ward-news-empty muted">
-          Noch nichts Neues von euren Schützlingen. Sobald ein neues Zuhause euch mitlesen lässt und etwas festhält, seht ihr
-          es hier.
+          {t('Noch nichts Neues von euren Schützlingen. Sobald ein neues Zuhause euch mitlesen lässt und etwas festhält, seht ihr es hier.')}
         </p>
       )}
       {items?.length > 0 && (

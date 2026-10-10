@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import VisitenkarteBack from './VisitenkarteBack.jsx'
 import VisitenkarteFront from './VisitenkarteFront.jsx'
 import { cropMarks } from '../../lib/visitenkarte.js'
+import { t } from '../../lib/i18n/index.js'
 
 // A4-Bögen für den Karten-Druck (Phase V5): je Bogen bis zu 10 Karten (2 × 5) mittig mit Schnittmarken, die Vorderseiten
 // in Leserichtung, die Rückseiten in gespiegelter Spaltenfolge (lib/einladungskarte.js buildKartenSheets) - so liegt beim
@@ -33,12 +34,13 @@ function EmptySlot() {
 }
 
 function Sheet({ sheet, side, total, card, renderBack }) {
-  const label = `Bogen ${sheet.number} von ${total}, ${SIDE_LABELS[side]}`
+  const sideLabel = t(SIDE_LABELS[side])
+  const label = t('Bogen {n} von {total}, {side}', { n: sheet.number, total, side: sideLabel })
   return (
     <section className={`vk-sheet vk-sheet-${side}`} aria-label={label} data-seite={side}>
       <CropMarks />
       <span className="vk-sheet-label" aria-hidden="true">
-        Bogen {sheet.number}/{total} · {SIDE_LABELS[side]}
+        {t('Bogen {n}/{total} · {side}', { n: sheet.number, total, side: sideLabel })}
       </span>
       <div className="vk-sheet-grid">
         {side === SEITEN.vorne

@@ -1,4 +1,5 @@
 import { UNKNOWN_SEX } from './timeline.js'
+import { t } from './i18n/index.js'
 
 // „Neues Tier“ (components/QuickAnimalForm.jsx): nötig sind nur Tierart und Name, alles andere steht unter „Mehr
 // Angaben“. Der Server kennt die Tierarten hund, katze und anderes (server/routes/dogs.js) - Kaninchen, Vogel und Pferd
@@ -42,8 +43,8 @@ export function emptyAnimal() {
 
 export function newAnimalErrors(form) {
   const errors = {}
-  if (!BY_KEY[form.art]) errors.art = ART_ERROR
-  if (!form.nameUnbekannt && !form.name.trim()) errors.name = NAME_ERROR
+  if (!BY_KEY[form.art]) errors.art = t(ART_ERROR)
+  if (!form.nameUnbekannt && !form.name.trim()) errors.name = t(NAME_ERROR)
   return errors
 }
 
@@ -78,5 +79,5 @@ export function newAnimalPayload(form, { livesWith = null, shelter = false } = {
 
 // Leise Zeile neben „Mehr Angaben“: was darin steht.
 export function moreSummary(form) {
-  return choiceTierart(form.art) === 'anderes' ? 'Geburtstag, Eltern …' : 'Rasse, Geburtstag, Eltern …'
+  return choiceTierart(form.art) === 'anderes' ? t('Geburtstag, Eltern …') : t('Rasse, Geburtstag, Eltern …')
 }

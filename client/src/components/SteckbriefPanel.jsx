@@ -3,14 +3,15 @@ import { api } from '../api'
 import Icon from './Icon.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { STECKBRIEF_PUBLISHABLE_STATUS, vermittlungStatusLabel } from '../lib/vermittlung.js'
+import { t } from '../lib/i18n/index.js'
 
 const COPIED_MS = 2000
 
-// „Verfügbar“, „Reserviert“ oder „Pausiert“ - aus den gemeinsamen Beschriftungen.
-const PUBLISHABLE_STATUS_TEXT = (() => {
-  const quoted = STECKBRIEF_PUBLISHABLE_STATUS.map((status) => `„${vermittlungStatusLabel(status)}“`)
-  return `${quoted.slice(0, -1).join(', ')} oder ${quoted[quoted.length - 1]}`
-})()
+// „Verfügbar“, „Reserviert“ oder „Pausiert“ - aus den gemeinsamen Beschriftungen (beim Anzeigen, damit die Sprache greift).
+function publishableStatusText() {
+  const quoted = STECKBRIEF_PUBLISHABLE_STATUS.map((status) => t('„{label}“', { label: t(vermittlungStatusLabel(status)) }))
+  return t('{list} oder {last}', { list: quoted.slice(0, -1).join(', '), last: quoted[quoted.length - 1] })
+}
 
 // Steckbrief-Verwaltung auf der Tierseite im Tierheim: veröffentlichen erzeugt einen öffentlichen
 // Link /t/:slug (server: PUT /api/dogs/:id/steckbrief { published }), zurückziehen löscht ihn wieder.
@@ -56,7 +57,7 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
 
   return (
     <section className="steckbrief-panel" aria-labelledby="steckbrief-panel-title">
-      <h2 id="steckbrief-panel-title">Steckbrief</h2>
+      <h2 id="steckbrief-panel-title">{t('Steckbrief')}</h2>
       {error && (
         <div className="error-banner" role="alert">
           {error}
@@ -66,33 +67,33 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
       {dog.public_slug ? (
         <>
           <p className="steckbrief-status is-public">
-            <Icon name="globe" /> Öffentlich
+            <Icon name="globe" /> {t('Öffentlich')}
           </p>
           <p className="steckbrief-link">{link}</p>
           <div className="steckbrief-actions">
             <button type="button" className={`btn ${copied ? 'btn-ink' : 'btn-ghost'}`} onClick={copyLink}>
               <Icon name={copied ? 'check' : 'copy'} />
-              {copied ? 'Kopiert' : 'Link kopieren'}
+              {copied ? t('Kopiert') : t('Link kopieren')}
             </button>
             <a className="btn btn-ghost" href={link} target="_blank" rel="noreferrer">
               <Icon name="external" />
-              Öffnen
+              {t('Öffnen')}
             </a>
             <button type="button" className="btn btn-ghost" disabled={saving || isDemo} onClick={() => setPublished(false)}>
-              Zurückziehen
+              {t('Zurückziehen')}
             </button>
           </div>
         </>
       ) : (
         <>
           <p className="steckbrief-status">
-            <Icon name="lock" /> Privat – noch nicht veröffentlicht
+            <Icon name="lock" /> {t('Privat – noch nicht veröffentlicht')}
           </p>
           <button type="button" className="btn btn-primary" disabled={saving || !canPublish || isDemo} onClick={() => setPublished(true)}>
-            Steckbrief veröffentlichen
+            {t('Steckbrief veröffentlichen')}
           </button>
           {!canPublish && (
-            <p className="field-hint">Veröffentlichen geht nur mit Status {PUBLISHABLE_STATUS_TEXT}.</p>
+            <p className="field-hint">{t('Veröffentlichen geht nur mit Status {status}.', { status: publishableStatusText() })}</p>
           )}
         </>
       )}

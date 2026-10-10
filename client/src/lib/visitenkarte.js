@@ -6,6 +6,7 @@ import { contrastRatio } from './contrast.js'
 import { portalUrl } from './partnerShare.js'
 import { hostLabel, printBaseUrl, voucherUrl } from './voucherPrint.js'
 import { DEFAULT_KARTE, KARTEN } from './kartenWahl.js'
+import { t } from './i18n/index.js'
 
 export const CARD_MM = Object.freeze({ width: 85, height: 55 })
 export const SHEET_MM = Object.freeze({ width: 210, height: 297 })
@@ -147,7 +148,8 @@ export function cardModel({ profile, design, publicUrl, origin, demo = false }) 
 
 // Die Vorschau ohne technische Adresse (PENDING_ADDRESS statt Host und Pfad) - die QR-Ziele bleiben, wie sie sind.
 export function maskPendingAddress(card) {
-  return { ...card, host: PENDING_ADDRESS, portalLabel: PENDING_ADDRESS, portalPfad: '', addressPending: true }
+  const pending = t(PENDING_ADDRESS)
+  return { ...card, host: pending, portalLabel: pending, portalPfad: '', addressPending: true }
 }
 
 // QR-Ziel eines Einladungscodes: /v mit dem Code hinter der Raute - nie in Pfad oder Abfrage (lib/voucherPrint.js).

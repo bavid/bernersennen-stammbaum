@@ -4,6 +4,7 @@ import Modal from '../Modal.jsx'
 import SearchPanel from './SearchPanel.jsx'
 import useSearchShortcut from '../../hooks/useSearchShortcut.js'
 import '../../styles/search.css'
+import { t } from '../../lib/i18n/index.js'
 
 // Lupe im Kopf (App.jsx AppHeader; am Desktop neben dem Konto-Menü, am Handy oben rechts) und Strg/⌘+K: öffnet die Suche
 // als ruhigen Dialog (Modal). Beim Schließen geht der Fokus dorthin zurück, wo er vorher war - sonst an die Lupe.
@@ -40,16 +41,16 @@ export default function SearchButton({ family, onInvite }) {
         ref={triggerRef}
         type="button"
         className="search-trigger"
-        aria-label="Suchen"
+        aria-label={t('Suchen')}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-keyshortcuts="Control+K Meta+K"
-        title="Suchen (Strg + K)"
+        title={t('Suchen (Strg + K)')}
         onClick={openSearch}
       >
         <Icon name="search" />
       </button>
-      <Modal open={open} title="Suchen" onClose={close} className="modal-search">
+      <Modal open={open} title={t('Suchen')} onClose={close} className="modal-search">
         <SearchPanel family={family} onClose={close} onInvite={onInvite} />
       </Modal>
     </>

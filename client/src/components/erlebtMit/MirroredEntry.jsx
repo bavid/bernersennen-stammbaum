@@ -3,6 +3,7 @@ import ExpandableText from '../ExpandableText.jsx'
 import EntryPhotos from '../EntryPhotos.jsx'
 import Icon from '../Icon.jsx'
 import { mirrorLabel } from '../../lib/erlebtMit.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Ein gespiegelter Eintrag (Phase V2, "Erlebt mit"): ein bestätigter Eintrag eines verbundenen Zuhauses in der
 // Chronik des eigenen Tiers - ein Verweis aufs Original, darum ohne Bearbeiten und Kommentare. onOpenOrigin (nur wenn
@@ -17,7 +18,7 @@ export default function MirroredEntry({ item, onOpenPhoto, onOpenOrigin, onHide,
             {mirrorLabel(item.gespiegelt)}
           </p>
           <h3 className="entry-title">{item.titel}</h3>
-          <p className="entry-meta">von {item.autor_name}</p>
+          <p className="entry-meta">{t('von {name}', { name: item.autor_name })}</p>
         </div>
       </header>
       {item.text && <ExpandableText text={item.text} className="entry-text" lines={6} />}
@@ -26,13 +27,13 @@ export default function MirroredEntry({ item, onOpenPhoto, onOpenOrigin, onHide,
         <div className="entry-mirror-actions">
           {onOpenOrigin && (
             <button type="button" className="btn btn-ghost" onClick={() => onOpenOrigin(item)}>
-              Bei {item.gespiegelt.zuhause} ansehen
+              {t('Bei {home} ansehen', { home: item.gespiegelt.zuhause })}
             </button>
           )}
           {onHide && (
             <ConfirmButton
-              label="Nicht mehr zeigen"
-              confirmLabel="Wirklich entfernen?"
+              label={t('Nicht mehr zeigen')}
+              confirmLabel={t('Wirklich entfernen?')}
               disabled={hideDisabled}
               onConfirm={() => onHide(item)}
             />

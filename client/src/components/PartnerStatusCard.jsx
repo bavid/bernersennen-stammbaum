@@ -3,6 +3,7 @@ import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { LOCKED_HINT, portalPath, profileStatusKey, profileStatusLabel } from '../lib/partnerProfile.js'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const REASON_ID = 'partner-publish-reason'
 const DEMO_HINT_ID = 'partner-publish-demo-hint'
@@ -14,7 +15,7 @@ function StatusText({ profile, fehlt, isPublic }) {
     return (
       <p className="partner-status-locked">
         <Icon name="lock" />
-        {LOCKED_HINT}
+        {t(LOCKED_HINT)}
       </p>
     )
   }
@@ -22,7 +23,7 @@ function StatusText({ profile, fehlt, isPublic }) {
     return (
       <p className="partner-status-portal">
         <a href={portalPath(profile.slug)} target="_blank" rel="noopener noreferrer">
-          Euer Portal ansehen
+          {t('Euer Portal ansehen')}
         </a>
         <span className="muted">{portalPath(profile.slug)}</span>
       </p>
@@ -31,11 +32,11 @@ function StatusText({ profile, fehlt, isPublic }) {
   if (fehlt.length > 0) {
     return (
       <p id={REASON_ID} className="partner-status-missing">
-        Es fehlt noch: {fehlt.join(', ')}.
+        {t('Es fehlt noch: {list}.', { list: fehlt.map((item) => t(item)).join(', ') })}
       </p>
     )
   }
-  return <p className="partner-status-text">{profile.status === 'pausiert' ? 'Kunden sehen euer Portal gerade nicht.' : 'Alles da – bereit zum Veröffentlichen.'}</p>
+  return <p className="partner-status-text">{profile.status === 'pausiert' ? t('Kunden sehen euer Portal gerade nicht.') : t('Alles da – bereit zum Veröffentlichen.')}</p>
 }
 
 // Veröffentlichen (nur mit vollständigem Profil) bzw. Pausieren; der Grund für die Sperre hängt per
@@ -48,7 +49,7 @@ function PublishButton({ profile, fehlt, busy, onPublish }) {
   if (isActive) {
     return (
       <button type="button" className="btn btn-ghost" disabled={isDemo || busy} aria-describedby={describedBy} onClick={() => onPublish(false)}>
-        {busy ? 'Pausiere …' : 'Pausieren'}
+        {busy ? t('Pausiere …') : t('Pausieren')}
       </button>
     )
   }
@@ -60,7 +61,7 @@ function PublishButton({ profile, fehlt, busy, onPublish }) {
       aria-describedby={describedBy}
       onClick={() => onPublish(true)}
     >
-      {busy ? 'Veröffentliche …' : 'Veröffentlichen'}
+      {busy ? t('Veröffentliche …') : t('Veröffentlichen')}
     </button>
   )
 }
@@ -94,12 +95,12 @@ export default function PartnerStatusCard({ profile, onProfileChange }) {
   return (
     <section className={`partner-status-card is-${statusKey}`} aria-labelledby="partner-status-title">
       <h2 id="partner-status-title" className="visually-hidden">
-        Status
+        {t('Status')}
       </h2>
-      <span className={`pill partner-status-badge partner-status-${statusKey}`}>{profileStatusLabel(profile)}</span>
+      <span className={`pill partner-status-badge partner-status-${statusKey}`}>{t(profileStatusLabel(profile) ?? '')}</span>
       <div className="partner-status-main">
         <StatusText profile={profile} fehlt={fehlt} isPublic={isPublic} />
-        {nextStep && <p className="partner-status-next">Empfohlen: {nextStep}</p>}
+        {nextStep && <p className="partner-status-next">{t('Empfohlen: {step}', { step: t(nextStep) })}</p>}
         {isDemo && !profile.gesperrt && (
           <p id={DEMO_HINT_ID} className="visually-hidden">
             {readOnlyHint}

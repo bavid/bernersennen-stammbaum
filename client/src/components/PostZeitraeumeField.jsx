@@ -1,5 +1,6 @@
 import Icon from './Icon.jsx'
 import { MAX_ZEITRAEUME, zeitraeumeErrorRow } from '../lib/zeitraeume.js'
+import { t } from '../lib/i18n/index.js'
 
 const HINT_ID = 'post-zeitraeume-hint'
 const ERROR_ID = 'post-zeitraeume-error'
@@ -18,29 +19,28 @@ export default function PostZeitraeumeField({ rows, error, onChange }) {
 
   return (
     <fieldset className="field span-2 post-zeitraeume" aria-describedby={describedBy}>
-      <legend className="field-label">Termine (optional)</legend>
+      <legend className="field-label">{t('Termine (optional)')}</legend>
       <p className="field-hint" id={HINT_ID}>
-        Für Aktionen an mehreren Tagen, z. B. am 1.2., 1.3. und 5.–10.5. Auf der Anzeige stehen nur die kommenden.
-        {/* Audit V7a: Termine gibt es auch im Kalender - hier sagen, was wohin gehört. */} Regelmäßige Kurse und offene Stunden
-        tragt ihr besser im Kalender ein.
+        {/* Audit V7a: Termine gibt es auch im Kalender - hier sagen, was wohin gehört. */}
+        {t('Für Aktionen an mehreren Tagen, z. B. am 1.2., 1.3. und 5.–10.5. Auf der Anzeige stehen nur die kommenden. Regelmäßige Kurse und offene Stunden tragt ihr besser im Kalender ein.')}
       </p>
       {rows.length > 0 && (
         <ol className="post-zeitraeume-list">
           {rows.map((row, index) => (
             <li key={index} className="post-zeitraeume-row">
               <label className="post-zeitraeume-input">
-                <span>{`Termin ${index + 1}: am bzw. ab`}</span>
+                <span>{t('Termin {n}: am bzw. ab', { n: index + 1 })}</span>
                 <input type="date" value={row.von} aria-invalid={index === errorRow ? true : undefined} onChange={(e) => updateRow(index, { von: e.target.value })} />
               </label>
               <label className="post-zeitraeume-input">
-                <span>bis (optional)</span>
+                <span>{t('bis (optional)')}</span>
                 <input type="date" value={row.bis} min={row.von || undefined} onChange={(e) => updateRow(index, { bis: e.target.value })} />
               </label>
               <button
                 type="button"
                 className="icon-btn post-zeitraeume-remove"
                 onClick={() => onChange(rows.filter((_, i) => i !== index))}
-                aria-label={`Termin ${index + 1} entfernen`}
+                aria-label={t('Termin {n} entfernen', { n: index + 1 })}
               >
                 <Icon name="close" />
               </button>
@@ -54,7 +54,7 @@ export default function PostZeitraeumeField({ rows, error, onChange }) {
         onClick={() => onChange([...rows, { von: '', bis: '' }])}
         disabled={rows.length >= MAX_ZEITRAEUME}
       >
-        <Icon name="plus" /> Termin hinzufügen
+        <Icon name="plus" /> {t('Termin hinzufügen')}
       </button>
       {error && (
         <p className="field-error" id={ERROR_ID} role="alert">

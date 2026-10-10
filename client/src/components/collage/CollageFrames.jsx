@@ -3,6 +3,7 @@ import { PAGE, dragFocus } from '../../lib/collage/layout.js'
 import { TIMELINE, toLocalDelta } from '../../lib/collage/layouts.js'
 import { CONNECTOR, DATE_FONT_SIZE, DOT_RING, LINE_WIDTH } from '../../lib/collage/renderDesign.js'
 import { formatDateShort } from '../../lib/dates.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Bausteine der Vorschau - dieselben Maße wie der Export (lib/collage/render.js, renderDesign.js).
 export const pct = (value, total) => `${(value / total) * 100}%`
@@ -73,11 +74,17 @@ export function PhotoFrame({ photo, style, rotation = 0, interactive, selected, 
       onLostPointerCapture={endDrag}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
-      aria-label={interactive ? `Foto${photo.caption.trim() ? ` „${photo.caption.trim()}“` : ''} auswählen` : undefined}
+      aria-label={
+        interactive
+          ? photo.caption.trim()
+            ? t('Foto „{caption}“ auswählen', { caption: photo.caption.trim() })
+            : t('Foto auswählen')
+          : undefined
+      }
       onKeyDown={handleKeyDown}
     >
       <img src={photo.url} alt="" draggable={false} style={imageStyle(photo)} />
-      {selected && <span className="cframe-hint">Ziehen zum Verschieben</span>}
+      {selected && <span className="cframe-hint">{t('Ziehen zum Verschieben')}</span>}
     </div>
   )
 }
@@ -181,7 +188,7 @@ export function TimelineMark({ frame, photo, lineX }) {
 export function EmptySlot({ slot }) {
   return (
     <div className="cslot" style={frameStyle(slot)} aria-hidden="true">
-      <span>Platz für ein Foto</span>
+      <span>{t('Platz für ein Foto')}</span>
     </div>
   )
 }

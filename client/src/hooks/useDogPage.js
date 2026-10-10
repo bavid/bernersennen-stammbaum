@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
 import { parseAreaId } from '../lib/areas.js'
+import { t } from '../lib/i18n/index.js'
 
 // Die Id aus der Adresse muss eine ganze Zahl sein (security-review W2) - sonst ginge z. B. "/tier/..%2F.." als Pfad an
 // eine andere API-Adresse.
@@ -20,7 +21,7 @@ export default function useDogPage(rawId) {
 
   const load = useCallback(
     async (isCurrent = () => true) => {
-      if (!id) throw new Error(NOT_FOUND)
+      if (!id) throw new Error(t(NOT_FOUND))
       const [dogData, timelineData, breedingData, allDogsData] = await Promise.all([
         api.getDog(id),
         api.listTimeline(id),

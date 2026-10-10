@@ -1,5 +1,6 @@
 import Icon from '../Icon.jsx'
 import { ADDRESS_PENDING_TEXT } from '../../lib/voucherPrint.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Teile des Karten-Designers (KartenDesigner): der Hinweis, solange die Plattform keine öffentliche Adresse hat, die
 // Zeile "Gestaltung speichern", die Vorschau-Bühne mit Vorder- und Rückseite in echten Proportionen und die aufklappbare
@@ -10,7 +11,7 @@ import { ADDRESS_PENDING_TEXT } from '../../lib/voucherPrint.js'
 export function AddressPendingNote() {
   return (
     <p className="vk-note" role="status">
-      <Icon name="clock" /> {ADDRESS_PENDING_TEXT}
+      <Icon name="clock" /> {t(ADDRESS_PENDING_TEXT)}
     </p>
   )
 }
@@ -21,12 +22,12 @@ export function SaveRow({ entwurf, readOnly, readOnlyHint }) {
   return (
     <div className="vk-save-row">
       <button type="button" className="btn btn-primary" onClick={save} disabled={readOnly || saving || !dirty}>
-        <Icon name="check" /> {saving ? 'Speichere …' : 'Gestaltung speichern'}
+        <Icon name="check" /> {saving ? t('Speichere …') : t('Gestaltung speichern')}
       </button>
       {readOnly ? (
         <span className="field-hint">{readOnlyHint}</span>
       ) : (
-        <span className={`field-hint ${dirty ? 'vk-dirty' : ''}`}>{dirty ? 'Noch nicht gespeichert' : 'Gespeichert'}</span>
+        <span className={`field-hint ${dirty ? 'vk-dirty' : ''}`}>{dirty ? t('Noch nicht gespeichert') : t('Gespeichert')}</span>
       )}
       {error && (
         <p className="field-error" role="alert">
@@ -43,19 +44,19 @@ export function Stage({ front, back, backNote = null }) {
     <section className="vk-stage" aria-labelledby="vk-vorschau-title">
       <div className="vk-stage-head">
         <h2 id="vk-vorschau-title" className="vk-panel-title">
-          Vorschau
+          {t('Vorschau')}
         </h2>
         <span className="muted">85 × 55 mm</span>
       </div>
       <div className="vk-stage-cards">
         <figure className="vk-stage-card">
           {front}
-          <figcaption>Vorderseite</figcaption>
+          <figcaption>{t('Vorderseite')}</figcaption>
         </figure>
         <figure className="vk-stage-card">
           {back}
           <figcaption>
-            Rückseite
+            {t('Rückseite')}
             {backNote && <span className="vk-stage-note">{backNote}</span>}
           </figcaption>
         </figure>
@@ -70,11 +71,11 @@ export function BogenVorschau({ note, children }) {
   return (
     <details className="vk-bogen-vorschau">
       <summary>
-        <span className="vk-bogen-summary">Druckbogen ansehen</span>
+        <span className="vk-bogen-summary">{t('Druckbogen ansehen')}</span>
       </summary>
       <div className="vk-bogen-body">
         <p className="muted">
-          So kommt Bogen 1 aufs Papier – vorne eure Seite, hinten die Rückseite, gespiegelt.
+          {t('So kommt Bogen 1 aufs Papier – vorne eure Seite, hinten die Rückseite, gespiegelt.')}
           {note && ` ${note}`}
         </p>
         {children}

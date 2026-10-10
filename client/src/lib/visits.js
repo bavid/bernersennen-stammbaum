@@ -1,4 +1,5 @@
 // Zuhause besuchen (Phase V2, server/routes/besuche.js): Hilfen für Einladungen, Bereichswechsler und Gast-Ansicht.
+import { t } from './i18n/index.js'
 
 // Öffentlicher Einlöse-Link für einen Code (wie der Gutschein-Link: /v#CODE ohne Bindestriche, nie als Query).
 export function voucherLink(code) {
@@ -7,7 +8,7 @@ export function voucherLink(code) {
 
 // "Zu Besuch bei Zuhause am Deich"
 export function visitLabel(name) {
-  return `Zu Besuch bei ${name}`
+  return t('Zu Besuch bei {name}', { name })
 }
 
 // Ist die Sitzung gerade zu Besuch in einem anderen Zuhause (me.zuBesuch vom Server)? Dann nur ansehen und

@@ -1,4 +1,5 @@
 import { KARTEN } from '../../lib/kartenWahl.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Feedback-Runde: welche Karte (PartnerVisitenkartenPage) - drei Kacheln statt einer "Kartenart": vorne immer eure
 // Kontakte, hinten euer Portal, ein Einladungscode oder beides (Kombi). Jede Kachel zeigt Vorder- und Rückseite als kleine
@@ -28,7 +29,7 @@ function Skizze({ id }) {
 export default function KartenWahl({ karte, onChange, disabled = false }) {
   return (
     <fieldset className="vk-wahl">
-      <legend className="vk-label">Welche Karte?</legend>
+      <legend className="vk-label">{t('Welche Karte?')}</legend>
       <div className="vk-wahl-options">
         {KARTEN.map((option) => (
           <label key={option.id} className={`vk-wahl-option${karte === option.id ? ' is-checked' : ''}${disabled ? ' is-disabled' : ''}`}>
@@ -43,9 +44,9 @@ export default function KartenWahl({ karte, onChange, disabled = false }) {
             />
             <Skizze id={option.id} />
             <span className="vk-wahl-text">
-              <strong>{option.label}</strong>
+              <strong>{t(option.label)}</strong>
               <span className="vk-wahl-hint">
-                vorne {option.vorne} · hinten {option.hinten}
+                {t('vorne {front} · hinten {back}', { front: t(option.vorne), back: t(option.hinten) })}
               </span>
             </span>
           </label>

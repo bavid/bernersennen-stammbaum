@@ -4,6 +4,7 @@ import Icon from '../Icon.jsx'
 import { FAMILIES_ROUTE, groupRoute } from '../../lib/areas.js'
 import { roleLabel } from '../../lib/roles.js'
 import { animalCountText } from '../../lib/animalCounts.js'
+import { t } from '../../lib/i18n/index.js'
 
 // "Meine Familien" am Rand von Start (Phase W): die Familien des Haushalts (me.memberships) mit der eigenen Rolle und
 // derselben Zählung wie überall ("21 Tiere · davon 4 von euch", lib/animalCounts.js), je ein Link zur Gruppenseite. Ohne
@@ -13,11 +14,11 @@ export default function MyFamiliesCard({ memberships = [] }) {
   return (
     <section className="card start-card start-families" aria-labelledby="start-families-title">
       <h2 id="start-families-title" className="start-card-title">
-        Meine {words.groups}
+        {t('Meine {groups}', { groups: words.groups })}
       </h2>
       {memberships.length === 0 ? (
         <p className="muted">
-          {words.noGroupConnected} <Link to={FAMILIES_ROUTE}>{words.group} beitreten oder gründen</Link>
+          {words.noGroupConnected} <Link to={FAMILIES_ROUTE}>{t('{group} beitreten oder gründen', { group: words.group })}</Link>
         </p>
       ) : (
         <ul className="start-families-list" role="list">

@@ -4,6 +4,7 @@ import { api } from '../../api'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import Icon from '../Icon.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 const HAS_ANIMALS_STATUS = 409
 
@@ -47,10 +48,12 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
       <div className="warning-banner" role="note">
         <Icon name="alert" />
         <div>
-          <strong>Das lässt sich nicht rückgängig machen.</strong>
+          <strong>{t('Das lässt sich nicht rückgängig machen.')}</strong>
           <p>
-            {words.treeLabel}, Pinnwand, {words.greetings} und offene Einladungen {words.ofGroup} werden gelöscht. Die Tiere der
-            Mitglieder bleiben in ihrem eigenen Zuhause – sie sind danach nur nicht mehr hier zu sehen.
+            {t(
+              '{tree}, Pinnwand, {greetings} und offene Einladungen {ofGroup} werden gelöscht. Die Tiere der Mitglieder bleiben in ihrem eigenen Zuhause – sie sind danach nur nicht mehr hier zu sehen.',
+              { tree: words.treeLabel, greetings: words.greetings, ofGroup: words.ofGroup }
+            )}
           </p>
         </div>
       </div>
@@ -63,15 +66,15 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
         <div className="dissolve-animals">
           <p className="muted">
             {animals.length > 0
-              ? `Diese Tiere gehören noch ${words.ofGroup} selbst. Übernimm sie zuerst in „Mein Zuhause“ – auf der Tierseite:`
-              : `Die Tiere ließen sich gerade nicht laden – schau ${words.inTree} nach.`}
+              ? t('Diese Tiere gehören noch {ofGroup} selbst. Übernimm sie zuerst in „Mein Zuhause“ – auf der Tierseite:', { ofGroup: words.ofGroup })
+              : t('Die Tiere ließen sich gerade nicht laden – schau {inTree} nach.', { inTree: words.inTree })}
           </p>
           {animals.length > 0 && (
             <ul className="chip-list">
               {animals.map((dog) => (
                 <li key={dog.id}>
                   <Link to={`/tier/${dog.id}`} className="chip" onClick={onClose}>
-                    {dog.name} · In „Mein Zuhause“ übernehmen
+                    {dog.name} · {t('In „Mein Zuhause“ übernehmen')}
                   </Link>
                 </li>
               ))}
@@ -81,7 +84,7 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
       )}
       <div className="field">
         <label className="field-label" htmlFor="dissolve-name">
-          Zur Bestätigung: der genaue Name
+          {t('Zur Bestätigung: der genaue Name')}
         </label>
         <input
           id="dissolve-name"
@@ -92,17 +95,17 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
           disabled={isDemo}
           required
         />
-        <span className="field-hint">Tipp „{family.name}“ ein, um {words.theGroup} aufzulösen.</span>
+        <span className="field-hint">{t('Tipp „{name}“ ein, um {theGroup} aufzulösen.', { name: family.name, theGroup: words.theGroup })}</span>
       </div>
       {isDemo && <p className="field-hint">{readOnlyHint}</p>}
       <div className="form-actions">
         <span className="form-actions-spacer" />
         <button type="button" className="btn btn-ghost" onClick={onClose}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button type="submit" className="btn btn-danger is-armed" disabled={isDemo || saving || !matches}>
           <Icon name="trash" />
-          {saving ? 'Löse auf …' : words.dissolveGroup}
+          {saving ? t('Löse auf …') : words.dissolveGroup}
         </button>
       </div>
     </form>

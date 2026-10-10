@@ -5,6 +5,7 @@ import MapLinks from './MapLinks.jsx'
 import PartnerMark from './PartnerMark.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { formatDistanceKm, isExternalUrl, isOsmAttribution, OSM_COPYRIGHT_URL, GEONAMES_ATTRIBUTION } from '../lib/format.js'
+import { t } from '../lib/i18n/index.js'
 
 const FILTERS = [
   { key: 'alle', label: 'Alle' },
@@ -21,7 +22,7 @@ function matchesFilter(place, filter) {
 }
 
 function PlaceItem({ place }) {
-  const typeLabel = TYPE_LABELS[place.typ] || place.typ
+  const typeLabel = TYPE_LABELS[place.typ] ? t(TYPE_LABELS[place.typ]) : place.typ
   const isPartner = place.quelle === 'partner'
 
   return (
@@ -47,12 +48,12 @@ function PlaceItem({ place }) {
       <div className="partner-card-links">
         {isPartner && place.slug && (
           <Link className="btn btn-ghost" to={`/p/${place.slug}`}>
-            Zum Portal
+            {t('Zum Portal')}
           </Link>
         )}
         {!isPartner && isExternalUrl(place.website) && (
           <a className="card-link" href={place.website} target="_blank" rel="noopener noreferrer">
-            <Icon name="globe" /> Website
+            <Icon name="globe" /> {t('Website')}
           </a>
         )}
         {!isPartner && place.telefon && (
@@ -82,9 +83,9 @@ export default function PlaceList({ results, radius, ort, limited, attribution }
     <div className="place-list-wrap">
       <div className="place-list-head">
         <h2>
-          {results.length} Treffer im Umkreis von {radius} km um {ort || 'euren Standort'}
+          {t('{n} Treffer im Umkreis von {radius} km um {ort}', { n: results.length, radius, ort: ort || t('euren Standort') })}
         </h2>
-        <div className="filter-chips" role="group" aria-label="Nach Art filtern">
+        <div className="filter-chips" role="group" aria-label={t('Nach Art filtern')}>
           {FILTERS.map((item) => (
             <button
               key={item.key}
@@ -93,19 +94,19 @@ export default function PlaceList({ results, radius, ort, limited, attribution }
               aria-pressed={filter === item.key}
               onClick={() => setFilter(item.key)}
             >
-              {item.label}
+              {t(item.label)}
             </button>
           ))}
         </div>
       </div>
 
-      {limited && <p className="place-list-limited-hint">Gerade sind nur gespeicherte Ergebnisse verfügbar – später mehr.</p>}
+      {limited && <p className="place-list-limited-hint">{t('Gerade sind nur gespeicherte Ergebnisse verfügbar – später mehr.')}</p>}
 
       {filtered.length === 0 ? (
         <div className="empty-state card">
           <Icon name="mapPin" />
-          <h3>Keine Treffer</h3>
-          <p className="muted">Versucht es mit einem größeren Umkreis oder einer anderen Auswahl.</p>
+          <h3>{t('Keine Treffer')}</h3>
+          <p className="muted">{t('Versucht es mit einem größeren Umkreis oder einer anderen Auswahl.')}</p>
         </div>
       ) : (
         <ul className="partner-list place-list">
@@ -132,7 +133,7 @@ export default function PlaceList({ results, radius, ort, limited, attribution }
             </span>
           ))}
           {' · '}
-          {GEONAMES_ATTRIBUTION}
+          {t(GEONAMES_ATTRIBUTION)}
         </p>
       )}
     </div>

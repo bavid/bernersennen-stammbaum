@@ -4,6 +4,7 @@ import { api } from '../api'
 import Icon from './Icon.jsx'
 import VoucherSheets from './VoucherSheets.jsx'
 import { ADDRESS_PENDING_TEXT, cardDesign, chunkCards, needsPublicUrl, printAddressPending, printBaseUrl } from '../lib/voucherPrint.js'
+import { t } from '../lib/i18n/index.js'
 
 // Druckansicht eines Gutschein-Stapels - geteilt zwischen der Druckseite des Admins (AdminPrintPage,
 // /admin/gutscheine/:id/druck) und der des Partners (PartnerPrintPage, /partner-drucken/:id, Phase 5 Task 4):
@@ -63,8 +64,9 @@ export function useVoucherPrint({ load, ready = true, key }) {
   return { print, publicUrl, appEnv, configReady, error }
 }
 
+// singular/plural: deutsche Schlüssel mit {n} (lib/i18n), z. B. '{n} Karte' / '{n} Karten'.
 function pluralize(count, singular, plural) {
-  return `${count} ${count === 1 ? singular : plural}`
+  return t(count === 1 ? singular : plural, { n: count })
 }
 
 // Nur für den Admin: PUBLIC_URL fehlt oder zeigt auf localhost/eine IP - die QR-Codes würden auf diese Adresse zeigen.
@@ -105,7 +107,7 @@ function usePrintedReport(print, markPrinted) {
       .then(() => markPrinted(ids))
       .catch((err) => {
         reported.current = false
-        setReportError(err?.message || 'Unbekannter Fehler')
+        setReportError(err?.message || t('Unbekannter Fehler'))
       })
   }, [print, markPrinted])
 
@@ -122,17 +124,17 @@ function usePrintedReport(print, markPrinted) {
 // printDisabled: solange die Plattform keine öffentliche Adresse hat (Partner-Druckseite in Produktion).
 function PrintToolbar({ back, duplex, onDuplex, actions, onPrint, reportError, printDisabled = false }) {
   return (
-    <div className="print-toolbar" role="toolbar" aria-label="Druckoptionen">
+    <div className="print-toolbar" role="toolbar" aria-label={t('Druckoptionen')}>
       <Link to={back.to} className="btn btn-ghost">
         <Icon name="arrowLeft" /> {back.label}
       </Link>
       <span className="print-toolbar-spacer" />
-      <div className="segmented segmented-sm" role="group" aria-label="Seiten">
+      <div className="segmented segmented-sm" role="group" aria-label={t('Seiten')}>
         <button type="button" aria-pressed={!duplex} onClick={() => onDuplex(false)}>
-          Nur Vorderseite
+          {t('Nur Vorderseite')}
         </button>
         <button type="button" aria-pressed={duplex} onClick={() => onDuplex(true)}>
-          Vorder- und Rückseite
+          {t('Vorder- und Rückseite')}
         </button>
       </div>
       {actions}
@@ -145,11 +147,11 @@ function PrintToolbar({ back, duplex, onDuplex, actions, onPrint, reportError, p
           window.print()
         }}
       >
-        <Icon name="printer" /> Drucken
+        <Icon name="printer" /> {t('Drucken')}
       </button>
       {reportError && (
         <p className="field-error print-toolbar-error" role="alert">
-          Der Druck ließ sich nicht vermerken ({reportError}) – Karten mit diesen Codes nicht doppelt ausgeben.
+          {t('Der Druck ließ sich nicht vermerken ({error}) – Karten mit diesen Codes nicht doppelt ausgeben.', { error: reportError })}
         </p>
       )}
     </div>
@@ -159,26 +161,29 @@ function PrintToolbar({ back, duplex, onDuplex, actions, onPrint, reportError, p
 function PrintHead({ batch, codeCount, sheetCount, nichtDruckbar, schonGedruckt = 0, designLabel, hint }) {
   return (
     <header className="print-head">
-      <span className="eyebrow">Karten mit Einladungscode</span>
+      <span className="eyebrow">{t('Karten mit Einladungscode')}</span>
       <h1>{batch.label}</h1>
       <p className="print-head-meta muted">
         <span className="pill">{designLabel(cardDesign(batch))}</span>
         {batch.partner && <span className="pill pill-rust">{batch.partner.name}</span>}
         <span>
-          {pluralize(codeCount, 'Karte', 'Karten')} · {pluralize(sheetCount, 'Bogen', 'Bögen')}
+          {pluralize(codeCount, '{n} Karte', '{n} Karten')} · {pluralize(sheetCount, '{n} Bogen', '{n} Bögen')}
         </span>
       </p>
       {hint && <p className="muted">{hint}</p>}
       {nichtDruckbar > 0 && (
         <p className="field-hint" role="note">
-          {pluralize(nichtDruckbar, 'Code', 'Codes')} ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)
+          {nichtDruckbar === 1
+            ? t('{n} Code ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)', { n: nichtDruckbar })
+            : t('{n} Codes ohne druckbaren Code (eingelöst, widerrufen oder ohne Klartext)', { n: nichtDruckbar })}
         </p>
       )}
       {/* Phase V5: jeder gemeldete Druck wird vermerkt (gedruckt_at) - schon gedruckte Codes nicht doppelt ausgeben. */}
       {schonGedruckt > 0 && (
         <p className="field-hint" role="note">
-          {schonGedruckt === codeCount ? 'Alle Codes' : `${schonGedruckt} der Codes`} wurden schon einmal gedruckt – Karten mit
-          diesen Codes nicht doppelt ausgeben.
+          {schonGedruckt === codeCount
+            ? t('Alle Codes wurden schon einmal gedruckt – Karten mit diesen Codes nicht doppelt ausgeben.')
+            : t('{n} der Codes wurden schon einmal gedruckt – Karten mit diesen Codes nicht doppelt ausgeben.', { n: schonGedruckt })}
         </p>
       )}
     </header>
@@ -205,10 +210,10 @@ function PrintContent({ print, publicUrl, duplex, designLabel, hint, partner, ad
       {!partner && needsPublicUrl(publicUrl) && <PublicUrlWarning baseUrl={baseUrl} />}
       {addressPending ? (
         <p className="vk-note" role="status">
-          <Icon name="clock" /> {ADDRESS_PENDING_TEXT}
+          <Icon name="clock" /> {t(ADDRESS_PENDING_TEXT)}
         </p>
       ) : sheets.length === 0 ? (
-        <p className="muted">Keine offenen Codes in diesem Stapel – nichts zu drucken.</p>
+        <p className="muted">{t('Keine offenen Codes in diesem Stapel – nichts zu drucken.')}</p>
       ) : (
         <VoucherSheets sheets={sheets} batch={print.batch} baseUrl={baseUrl} duplex={duplex} />
       )}
@@ -232,7 +237,7 @@ export default function VoucherPrintView({ state, back, actions = null, designLa
       <div className="print-page">
         <main className="print-main">
           <p className="muted page-loading" role="status">
-            Lade …
+            {t('Lade …')}
           </p>
         </main>
       </div>

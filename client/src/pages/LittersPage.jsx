@@ -21,14 +21,19 @@ import {
 } from '../lib/litters.js'
 import { hasRole } from '../lib/roles.js'
 import { displayName, shortName } from '../lib/timeline.js'
+import { t } from '../lib/i18n/index.js'
 
 function PlannedLitter({ planned }) {
   const { theme, words } = useTheme()
   const { event, expectedBirth, daysUntil } = planned
-  const father = event.vater_name || event.vater_freitext || 'unbekannter Rüde'
+  const father = event.vater_name || event.vater_freitext || t('unbekannter Rüde')
   const status =
     daysUntil > 0
-      ? `${words.young} in etwa ${daysUntil} ${daysUntil === 1 ? 'Tag' : 'Tagen'} (um den ${formatDateLong(expectedBirth)})`
+      ? t(daysUntil === 1 ? '{young} in etwa {n} Tag (um den {date})' : '{young} in etwa {n} Tagen (um den {date})', {
+          young: words.young,
+          n: daysUntil,
+          date: formatDateLong(expectedBirth)
+        })
       : theme.texts.plannedDue
   return (
     <li className="planned-litter">
@@ -114,11 +119,16 @@ export default function LittersPage({ family }) {
 
   // Wurf-Geburtstag: Zettel für die Pinnwand vorbereiten
   function planMeeting(litter, birthday) {
-    const names = litter.puppies.map(displayName).join(', ').replace(/, ([^,]*)$/, ' und $1')
+    const names = litter.puppies.map(displayName).join(', ').replace(/, ([^,]*)$/, ` ${t('und')} $1`)
     navigate('/pinnwand', {
       state: {
         draft: {
-          text: `${words.litterMeeting}! ${names} werden am ${formatDateLong(birthday.date)} ${birthday.age} ${birthday.age === 1 ? 'Jahr' : 'Jahre'} alt – wer ist dabei?`,
+          text: t(birthday.age === 1 ? '{meeting}! {names} werden am {date} {n} Jahr alt – wer ist dabei?' : '{meeting}! {names} werden am {date} {n} Jahre alt – wer ist dabei?', {
+            meeting: words.litterMeeting,
+            names,
+            date: formatDateLong(birthday.date),
+            n: birthday.age
+          }),
           terminDatum: birthday.date
         }
       }
@@ -134,7 +144,7 @@ export default function LittersPage({ family }) {
     try {
       await api.deleteBreedingEvent(event.id)
       setEvents((current) => current.filter((e) => e.id !== event.id))
-      toast(`${words.mating} gelöscht`)
+      toast(t('{mating} gelöscht', { mating: words.mating }))
     } catch (err) {
       setError(err.message)
     }
@@ -148,7 +158,7 @@ export default function LittersPage({ family }) {
       <header className="page-hero">
         <div>
           <span className="eyebrow">{words.littersLabel}</span>
-          <h1>Geschwister auf einen Blick</h1>
+          <h1>{t('Geschwister auf einen Blick')}</h1>
           <p className="page-lede">{theme.texts.littersLede}</p>
         </div>
       </header>
@@ -158,7 +168,7 @@ export default function LittersPage({ family }) {
       {planned.length > 0 && (
         <section className="planned-litters" aria-labelledby="planned-title">
           <h2 id="planned-title" className="section-title">
-            Erwartet
+            {t('Erwartet')}
           </h2>
           <ul className="planned-list">
             {planned.map((item) => (
@@ -186,7 +196,7 @@ export default function LittersPage({ family }) {
         ))}
         {!showAllLitters && split.hidden.length > 0 && (
           <button type="button" className="btn btn-ghost litter-more" onClick={() => setShowAllLitters(true)}>
-            Mehr anzeigen ({split.hidden.length} {split.hidden.length === 1 ? 'weiterer' : 'weitere'})
+            {split.hidden.length === 1 ? t('Mehr anzeigen ({n} weiterer)', { n: 1 }) : t('Mehr anzeigen ({n} weitere)', { n: split.hidden.length })}
             <span className="visually-hidden"> – {words.littersLabel}</span>
           </button>
         )}
@@ -195,7 +205,7 @@ export default function LittersPage({ family }) {
       {singles.length > 0 && (
         <section className="litter-singles" aria-labelledby="singles-title">
           <h2 id="singles-title" className="section-title">
-            Ohne Geschwister {words.inGroup}
+            {t('Ohne Geschwister {inGroup}', { inGroup: words.inGroup })}
           </h2>
           <p className="muted">{theme.texts.littersSingles}</p>
           <ul className="chip-list">
@@ -207,7 +217,7 @@ export default function LittersPage({ family }) {
                   <Link to={`/tier/${dog.id}`} className="chip">
                     <Avatar dog={dog} size={24} />
                     {displayName(dog)}
-                    {parents && <span className="muted"> · von {parents}</span>}
+                    {parents && <span className="muted"> · {t('von {parents}', { parents })}</span>}
                   </Link>
                 </li>
               )

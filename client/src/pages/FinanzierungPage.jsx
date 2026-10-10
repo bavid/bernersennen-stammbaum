@@ -10,6 +10,7 @@ import FinanzierungStand from '../components/finanzierung/FinanzierungStand.jsx'
 import { hatFinanzDaten } from '../lib/finanzierungRuecklage.js'
 import CommunityTicker from '../components/CommunityTicker.jsx'
 import { zielText } from '../lib/finanzierung.js'
+import { t } from '../lib/i18n/index.js'
 
 // Phase F: /finanzierung - „So finanzieren wir uns“ (docs/superpowers/specs/2026-09-27-marketing-gutscheine-partner-design.md,
 // Phase F). Öffentlich wie Impressum und Datenschutz (App.jsx), derselbe schlanke Rahmen (PublicHeader, PublicFooter). In
@@ -40,7 +41,7 @@ const WOHIN = [
 function Section({ id, title, children, className = '' }) {
   return (
     <section className={`finanz-section ${className}`.trim()} aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`}>{title}</h2>
+      <h2 id={`${id}-title`}>{t(title)}</h2>
       {children}
     </section>
   )
@@ -50,9 +51,9 @@ function Grundsatz() {
   return (
     <Section id="finanz-grundsatz" title="Unser Grundsatz">
       <p>
-        Familie auf Pfoten ist heute für alle Tierhalterinnen und Tierhalter kostenlos. Wir zeigen keine fremde Werbung,
-        verfolgen niemanden und handeln nicht mit Daten. Getragen wird die Plattform von Spenden und von lokalen Partnern,
-        die sich mit ihrem Portal zeigen. Was nach dem Betrieb übrig bleibt, geht an Tiere und an Projekte vor Ort.
+        {t(
+          'Familie auf Pfoten ist heute für alle Tierhalterinnen und Tierhalter kostenlos. Wir zeigen keine fremde Werbung, verfolgen niemanden und handeln nicht mit Daten. Getragen wird die Plattform von Spenden und von lokalen Partnern, die sich mit ihrem Portal zeigen. Was nach dem Betrieb übrig bleibt, geht an Tiere und an Projekte vor Ort.'
+        )}
       </p>
     </Section>
   )
@@ -64,15 +65,15 @@ function WerZahltWas() {
       <dl className="finanz-wer">
         {WER_ZAHLT.map((row) => (
           <div key={row.wer} className="finanz-wer-row">
-            <dt>{row.wer}</dt>
+            <dt>{t(row.wer)}</dt>
             <dd>
-              <span className="pill finanz-pill">{row.was}</span>
-              <span className="finanz-wer-text">{row.text}</span>
+              <span className="pill finanz-pill">{t(row.was)}</span>
+              <span className="finanz-wer-text">{t(row.text)}</span>
             </dd>
           </div>
         ))}
       </dl>
-      <p className="muted finanz-ausblick">{AUSBLICK}</p>
+      <p className="muted finanz-ausblick">{t(AUSBLICK)}</p>
     </Section>
   )
 }
@@ -84,7 +85,7 @@ function Ziel({ ziel }) {
       <Icon name="star" />
       <span>
         <strong>{zielText(ziel)}</strong>
-        {ziel.empfaenger && <> – Empfänger: {ziel.empfaenger}</>}
+        {ziel.empfaenger && <> – {t('Empfänger: {name}', { name: ziel.empfaenger })}</>}
       </span>
     </p>
   )
@@ -101,8 +102,8 @@ function WohinDasGeld({ ziel, ruecklage }) {
               {index + 1}
             </span>
             <div>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
+              <h3>{t(step.title)}</h3>
+              <p>{t(step.text)}</p>
             </div>
           </li>
         ))}
@@ -141,9 +142,9 @@ export default function FinanzierungPage({ family = null }) {
     <div className="public-page finanz-page">
       <PublicHeader family={family} />
       <div className="legal-hero finanz-hero">
-        <span className="eyebrow">Transparenz</span>
-        <h1>So finanzieren wir uns</h1>
-        <p className="hand finanz-hero-hand">{GRUNDSATZ}</p>
+        <span className="eyebrow">{t('Transparenz')}</span>
+        <h1>{t('So finanzieren wir uns')}</h1>
+        <p className="hand finanz-hero-hand">{t(GRUNDSATZ)}</p>
       </div>
       {/* Laufband nur für Besucher - nicht in der angemeldeten App. */}
       {!family && <CommunityTicker />}
@@ -153,15 +154,15 @@ export default function FinanzierungPage({ family = null }) {
       <WohinDasGeld ziel={data?.ziel} ruecklage={mitZahlen ? data.ruecklage : null} />
 
       <Section id="finanz-zahlen" title="Zahlen je Quartal">
-        <p className="muted finanz-zahlen-lede">Einnahmen, Kosten und weitergegebene Spenden – je Quartal, in einfachen Worten.</p>
+        <p className="muted finanz-zahlen-lede">{t('Einnahmen, Kosten und weitergegebene Spenden – je Quartal, in einfachen Worten.')}</p>
         {data === undefined && !error && (
           <p className="muted" aria-busy="true">
-            Lädt …
+            {t('Lädt …')}
           </p>
         )}
         {error && (
           <p className="muted" role="status">
-            {error}
+            {t(error)}
           </p>
         )}
         {mitZahlen && <FinanzierungStand data={data} />}

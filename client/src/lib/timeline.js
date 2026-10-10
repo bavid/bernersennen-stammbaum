@@ -1,5 +1,6 @@
 import { yearOf } from './dates.js'
 import { herkunftText } from './companions.js'
+import { t } from './i18n/index.js'
 
 const TYPE_ORDER = { birth: 0, arrival: 1, breeding: 2, litter: 3, entry: 4, farewell: 5 }
 
@@ -66,18 +67,18 @@ export function shortName(name = '') {
 
 // Name für Karten und Überschriften; Hunde mit unbekanntem Namen heißen "Unbekannt"
 export function displayName(dog) {
-  return dog.name_unbekannt ? 'Unbekannt' : shortName(dog.name)
+  return dog.name_unbekannt ? t('Unbekannt') : shortName(dog.name)
 }
 
 // "lebt mit Hermes", "lebt mit Hermes & Minka" – für Tiere ohne eigene Abstammung, die mit jemandem zusammenleben
 export function livesWithLabel(dogs) {
-  return `lebt mit ${dogs.map(displayName).join(' & ')}`
+  return t('lebt mit {names}', { names: dogs.map(displayName).join(' & ') })
 }
 
 // Wie displayName, aber bei unbekanntem Namen mit Rasse – für Listen, Links und Auswahlfelder
 export function dogLabel(dog) {
   if (!dog.name_unbekannt) return shortName(dog.name)
-  return dog.rasse ? `Unbekannt (${dog.rasse})` : 'Unbekannt'
+  return dog.rasse ? t('Unbekannt ({rasse})', { rasse: dog.rasse }) : t('Unbekannt')
 }
 
 // "Aikos", aber "Hermes’"
@@ -101,7 +102,7 @@ function litterItems(children = []) {
     type: 'litter',
     key: `litter-${datum}`,
     datum,
-    titel: `Nachwuchs: ${litter.map(dogLabel).join(', ')}`,
+    titel: t('Nachwuchs: {names}', { names: litter.map(dogLabel).join(', ') }),
     children: litter
   }))
 }
@@ -118,7 +119,7 @@ function breedingItems(dog, breedingEvents = [], matingLabel = 'Verpaarung') {
         key: `breeding-${event.id}`,
         sortId: event.id,
         datum: event.datum,
-        titel: partner ? `${matingLabel} mit ${shortName(partner)}` : matingLabel,
+        titel: partner ? t('{mating} mit {name}', { mating: matingLabel, name: shortName(partner) }) : matingLabel,
         text: event.wurf_info,
         foto_urls: event.foto_urls || []
       }
@@ -128,9 +129,9 @@ function breedingItems(dog, breedingEvents = [], matingLabel = 'Verpaarung') {
 // "Abschied von Aiko" (verstorben), "Aiko zieht aus" (abgegeben/umgezogen), sonst "Aiko geht"
 function farewellTitel(dog) {
   const name = shortName(dog.name)
-  if (dog.abschied_grund === 'verstorben') return `Abschied von ${name}`
-  if (dog.abschied_grund === 'abgegeben' || dog.abschied_grund === 'umgezogen') return `${name} zieht aus`
-  return `${name} geht`
+  if (dog.abschied_grund === 'verstorben') return t('Abschied von {name}', { name })
+  if (dog.abschied_grund === 'abgegeben' || dog.abschied_grund === 'umgezogen') return t('{name} zieht aus', { name })
+  return t('{name} geht', { name })
 }
 
 // Führt eigene Einträge und automatische Meilensteine (Geburt, Einzug, Deckakt, Nachwuchs, Abschied)
@@ -142,14 +143,14 @@ export function buildTimeline({ dog, entries = [], breedingEvents = [], children
     ...litterItems(children)
   ]
   if (dog.geburtsdatum) {
-    items.push({ type: 'birth', key: 'birth', datum: dog.geburtsdatum, titel: `${shortName(dog.name)} kommt zur Welt` })
+    items.push({ type: 'birth', key: 'birth', datum: dog.geburtsdatum, titel: t('{name} kommt zur Welt', { name: shortName(dog.name) }) })
   }
   if (dog.bei_uns_seit) {
     items.push({
       type: 'arrival',
       key: 'arrival',
       datum: dog.bei_uns_seit,
-      titel: `${shortName(dog.name)} zieht ein`,
+      titel: t('{name} zieht ein', { name: shortName(dog.name) }),
       text: herkunftText(dog) || null
     })
   }

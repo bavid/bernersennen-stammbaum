@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const COPIED_MS = 2000
 
@@ -48,7 +49,7 @@ export default function CopyField({ id, label, value, hint, multiline = false, c
         />
         <button type="button" className={`btn ${state === 'copied' ? 'btn-ink' : 'btn-ghost'}`} onClick={handleCopy}>
           <Icon name={state === 'copied' ? 'check' : 'copy'} />
-          {state === 'copied' ? 'Kopiert' : 'Kopieren'}
+          {state === 'copied' ? t('Kopiert') : t('Kopieren')}
           <span className="visually-hidden">: {label}</span>
         </button>
       </div>
@@ -58,8 +59,8 @@ export default function CopyField({ id, label, value, hint, multiline = false, c
         </p>
       )}
       <p className={state === 'manual' ? 'field-hint' : 'visually-hidden'} role="status">
-        {state === 'copied' && `${label} kopiert.`}
-        {state === 'manual' && 'Kopieren ging nicht automatisch – der Text ist markiert, bitte mit Strg+C kopieren.'}
+        {state === 'copied' && t('{label} kopiert.', { label })}
+        {state === 'manual' && t('Kopieren ging nicht automatisch – der Text ist markiert, bitte mit Strg+C kopieren.')}
       </p>
     </div>
   )

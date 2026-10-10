@@ -3,6 +3,7 @@
 // "Alle anzeigen"; der gewählte Reiter steht in der Adresse (?bereich=). Reine Funktionen über die
 // normalisierte Antwort (lib/discover.js normalizeDiscover).
 import { isClickUrl } from './discover.js'
+import { t } from './i18n/index.js'
 
 export const ALL_TAB = 'alle'
 export const TAB_PARAM = 'bereich'
@@ -30,7 +31,8 @@ export function discoverTabsFor({ preview = false } = {}) {
 }
 
 export function tabLabel(key) {
-  return DISCOVER_TABS.find((tab) => tab.key === key)?.label || key
+  const label = DISCOVER_TABS.find((tab) => tab.key === key)?.label
+  return label ? t(label) : key
 }
 
 // Unbekannte oder fehlende Werte in der Adresse landen bei "Alle" - die Karte nur außerhalb der Kundensicht.

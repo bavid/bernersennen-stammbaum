@@ -16,6 +16,7 @@ import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import ColorField from './ColorField.jsx'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const SAVE_DEMO_HINT_ID = 'profile-save-demo-hint'
 
@@ -35,8 +36,8 @@ function ProfileInput({ name, label, hint, form, errors, update, className = '',
 }
 
 function portalTextHint(length) {
-  const minimum = length < MIN_PORTAL_TEXT_LENGTH ? ` · mindestens ${MIN_PORTAL_TEXT_LENGTH} zum Veröffentlichen` : ''
-  return `${length} / ${MAX_PORTAL_TEXT_LENGTH} Zeichen${minimum}`
+  const minimum = length < MIN_PORTAL_TEXT_LENGTH ? t(' · mindestens {min} zum Veröffentlichen', { min: MIN_PORTAL_TEXT_LENGTH }) : ''
+  return `${t('{n} / {max} Zeichen', { n: length, max: MAX_PORTAL_TEXT_LENGTH })}${minimum}`
 }
 
 // Reiter "Angaben" auf /profil: drei ruhige Abschnitte - Auftritt (Name, Texte, Farbe, Links), Kontakt, Standort (Audit W,
@@ -72,7 +73,7 @@ export default function PartnerProfileForm({ profile, onSaved }) {
       const saved = await api.partnerArea.updateProfile(changes)
       setForm(profileForm(saved))
       onSaved(saved)
-      toast('Gespeichert.')
+      toast(t('Gespeichert.'))
     } catch (err) {
       const field = err.details?.fehlt ? null : profileErrorField(err.message)
       if (field) setFieldErrors({ [field]: err.message })
@@ -92,13 +93,13 @@ export default function PartnerProfileForm({ profile, onSaved }) {
       )}
 
       <fieldset className="partner-fieldset">
-        <legend>Auftritt</legend>
+        <legend>{t('Auftritt')}</legend>
         <div className="form-grid">
-          <ProfileInput name="name" label="Name" maxLength={MAX_NAME_LENGTH} autoComplete="organization" {...fieldState} />
-          <ProfileInput name="portalTitel" label="Portal-Titel" maxLength={MAX_TITEL_LENGTH} placeholder={`Willkommen bei ${form.name || '…'}`} {...fieldState} />
+          <ProfileInput name="name" label={t('Name')} maxLength={MAX_NAME_LENGTH} autoComplete="organization" {...fieldState} />
+          <ProfileInput name="portalTitel" label={t('Portal-Titel')} maxLength={MAX_TITEL_LENGTH} placeholder={t('Willkommen bei {name}', { name: form.name || '…' })} {...fieldState} />
           <AdminField
             id="profile-portalText"
-            label="Portal-Text"
+            label={t('Portal-Text')}
             hint={portalTextHint(form.portalText.length)}
             error={fieldErrors.portalText}
             className={`span-2 ${fieldErrors.portalText ? 'has-error' : ''}`.trim()}
@@ -111,38 +112,38 @@ export default function PartnerProfileForm({ profile, onSaved }) {
               rows={5}
             />
           </AdminField>
-          <ColorField id="profile-farbe" label="Farbe" value={form.farbe} error={fieldErrors.farbe} onChange={(farbe) => update({ farbe })} />
-          <ProfileInput name="website" label="Website" type="url" placeholder="https://…" {...fieldState} />
+          <ColorField id="profile-farbe" label={t('Farbe')} value={form.farbe} error={fieldErrors.farbe} onChange={(farbe) => update({ farbe })} />
+          <ProfileInput name="website" label={t('Website')} type="url" placeholder="https://…" {...fieldState} />
           {hasShelterLinks(profile.typ) && (
             <>
-              <ProfileInput name="spendenUrl" label="Spenden-Link" type="url" placeholder="https://…" {...fieldState} />
-              <ProfileInput name="vermittlungUrl" label="Vermittlungs-Link" type="url" placeholder="https://…" {...fieldState} />
+              <ProfileInput name="spendenUrl" label={t('Spenden-Link')} type="url" placeholder="https://…" {...fieldState} />
+              <ProfileInput name="vermittlungUrl" label={t('Vermittlungs-Link')} type="url" placeholder="https://…" {...fieldState} />
             </>
           )}
         </div>
       </fieldset>
 
       <fieldset className="partner-fieldset">
-        <legend>Kontakt</legend>
+        <legend>{t('Kontakt')}</legend>
         <div className="form-grid">
           <ProfileInput
             name="ansprechperson"
-            label="Ansprechperson (freiwillig)"
+            label={t('Ansprechperson (freiwillig)')}
             maxLength={MAX_ANSPRECHPERSON_LENGTH}
             autoComplete="name"
-            placeholder="z. B. Anna Berg"
-            hint="Steht auf eurem Portal neben ‚Schreib uns‘ und im Kontaktformular."
+            placeholder={t('z. B. Anna Berg')}
+            hint={t('Steht auf eurem Portal neben ‚Schreib uns‘ und im Kontaktformular.')}
             className="span-2"
             {...fieldState}
           />
-          <ProfileInput name="kontaktEmail" label="E-Mail" type="email" autoComplete="email" {...fieldState} />
-          <ProfileInput name="kontaktTelefon" label="Telefon" type="tel" autoComplete="tel" {...fieldState} />
+          <ProfileInput name="kontaktEmail" label={t('E-Mail')} type="email" autoComplete="email" {...fieldState} />
+          <ProfileInput name="kontaktTelefon" label={t('Telefon')} type="tel" autoComplete="tel" {...fieldState} />
           <ProfileInput
             name="kontaktFormularUrl"
-            label="Kontaktformular-URL"
+            label={t('Kontaktformular-URL')}
             type="url"
             placeholder="https://…"
-            hint="Link zu eurem eigenen Kontaktformular"
+            hint={t('Link zu eurem eigenen Kontaktformular')}
             className="span-2"
             {...fieldState}
           />
@@ -154,25 +155,25 @@ export default function PartnerProfileForm({ profile, onSaved }) {
                 onChange={(e) => update({ kontaktformularAktiv: e.target.checked })}
                 aria-describedby="profile-kontaktformularAktiv-hint"
               />
-              Formular ‚Schreib uns‘ anbieten
+              {t('Formular ‚Schreib uns‘ anbieten')}
             </label>
             <p className="field-hint" id="profile-kontaktformularAktiv-hint">
-              Nachrichten landen in eurem Postfach unter ‚Nachrichten‘.
+              {t('Nachrichten landen in eurem Postfach unter ‚Nachrichten‘.')}
             </p>
           </div>
         </div>
       </fieldset>
 
       <fieldset className="partner-fieldset">
-        <legend>Standort</legend>
+        <legend>{t('Standort')}</legend>
         <div className="form-grid">
           <ProfileInput
             name="plz"
-            label="Postleitzahl"
+            label={t('Postleitzahl')}
             inputMode="numeric"
             maxLength={5}
             autoComplete="postal-code"
-            hint={profile.ort && form.plz === profile.plz ? `Ort: ${profile.ort}` : undefined}
+            hint={profile.ort && form.plz === profile.plz ? t('Ort: {ort}', { ort: profile.ort }) : undefined}
             {...fieldState}
             update={(patch) => update({ plz: patch.plz.replace(/\D/g, '').slice(0, 5) })}
           />
@@ -186,9 +187,9 @@ export default function PartnerProfileForm({ profile, onSaved }) {
           disabled={isDemo || saving || !isDirty}
           aria-describedby={isDemo ? SAVE_DEMO_HINT_ID : undefined}
         >
-          {saving ? 'Speichere …' : 'Speichern'}
+          {saving ? t('Speichere …') : t('Speichern')}
         </button>
-        {!isDirty && !isDemo && <span className="field-hint">Keine ungespeicherten Änderungen.</span>}
+        {!isDirty && !isDemo && <span className="field-hint">{t('Keine ungespeicherten Änderungen.')}</span>}
         {isDemo && (
           <span id={SAVE_DEMO_HINT_ID} className="field-hint">
             {readOnlyHint}

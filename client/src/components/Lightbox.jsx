@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 export default function Lightbox({ src, onClose }) {
   useEffect(() => {
@@ -11,9 +12,9 @@ export default function Lightbox({ src, onClose }) {
 
   if (!src) return null
   return (
-    <div className="lightbox" role="dialog" aria-modal="true" aria-label="Foto" onClick={onClose}>
+    <div className="lightbox" role="dialog" aria-modal="true" aria-label={t('Foto')} onClick={onClose}>
       <img src={src} alt="" />
-      <button type="button" className="icon-btn" aria-label="Schließen" onClick={onClose}>
+      <button type="button" className="icon-btn" aria-label={t('Schließen')} onClick={onClose}>
         <Icon name="close" />
       </button>
     </div>

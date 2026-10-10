@@ -1,5 +1,6 @@
 import { formatEuroCents } from '../../lib/discover.js'
 import { ruecklageFuellstand, ruecklageText } from '../../lib/finanzierungRuecklage.js'
+import { t } from '../../lib/i18n/index.js'
 
 // „Rücklage: deckt 0,4 Jahre“ - die Rücklage „Server-Zukunft“ als kleine, ruhige Anzeige: Satz, Balken (drei Jahre = voll,
 // ab dann geht alles an Spenden) und darunter Betrag und aktueller Anteil. Nur Darstellung (read-only) - für /finanzierung,
@@ -19,7 +20,10 @@ export default function RuecklageAnzeige({ ruecklage, className = '' }) {
         <span className="ruecklage-anzeige-mark is-2" />
       </span>
       <p className="ruecklage-anzeige-detail">
-        Server-Zukunft: {formatEuroCents(ruecklage.centsAktuell)} · vom Überschuss gehen zurzeit {ruecklage.anteilProzent} % in die Rücklage
+        {t('Server-Zukunft: {betrag} · vom Überschuss gehen zurzeit {prozent} % in die Rücklage', {
+          betrag: formatEuroCents(ruecklage.centsAktuell),
+          prozent: ruecklage.anteilProzent
+        })}
       </p>
     </div>
   )

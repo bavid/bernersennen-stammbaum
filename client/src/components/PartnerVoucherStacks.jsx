@@ -6,6 +6,7 @@ import StackedBar from './StackedBar.jsx'
 import { SEGMENTE, formatNumber } from '../lib/adminStats.js'
 import { formatDateShort } from '../lib/dates.js'
 import { EINLADUNGSKARTEN_ROUTE } from './visitenkarte/VisitenkartenTeaser.jsx'
+import { t, tOr } from '../lib/i18n/index.js'
 
 // Reiter "Kunden-Gutscheine" im Partner-Profil (Phase 5 Task 4): die Stapel, die der Betreiber für den Partner
 // angelegt hat, und die Weitergabe-Gutscheine des Bereichs (GET /api/partner-area/vouchers) - je Stapel
@@ -25,8 +26,11 @@ export function printRoute(batchId) {
   return `/partner-drucken/${encodeURIComponent(batchId)}`
 }
 
+// singular/plural: Wörterbuch-Schlüssel mit {n}; beim Stapel ist der deutsche Text gleich, daher eigener Schlüssel (tOr).
 function pluralize(count, singular, plural) {
-  return `${formatNumber(count)} ${count === 1 ? singular : plural}`
+  const n = formatNumber(count)
+  if (count !== 1) return t(plural, { n })
+  return tOr(singular, t(plural, { n }), { n })
 }
 
 function StackRow({ row }) {
@@ -35,10 +39,10 @@ function StackRow({ row }) {
     <li className="partner-stack card">
       <div className="partner-stack-head">
         <h3>{row.label}</h3>
-        <span className={`pill partner-stack-quelle is-${row.quelle}`}>{QUELLE_LABELS[row.quelle] || row.quelle}</span>
+        <span className={`pill partner-stack-quelle is-${row.quelle}`}>{QUELLE_LABELS[row.quelle] ? t(QUELLE_LABELS[row.quelle]) : row.quelle}</span>
         <span className="muted partner-stack-meta">
-          {pluralize(row.size, 'Karte', 'Karten')}
-          {created ? ` · seit ${created}` : ''}
+          {pluralize(row.size, '{n} Karte', '{n} Karten')}
+          {created ? t(' · seit {date}', { date: created }) : ''}
         </span>
       </div>
       <StackedBar row={row} />
@@ -47,7 +51,7 @@ function StackRow({ row }) {
           <div key={segment.key}>
             <dt>
               <span className={`stat-dot is-${segment.key}`} aria-hidden="true" />
-              {segment.label}
+              {t(segment.label)}
             </dt>
             <dd>{formatNumber(row[segment.key])}</dd>
           </div>
@@ -55,10 +59,10 @@ function StackRow({ row }) {
       </dl>
       {row.offen > 0 ? (
         <Link to={printRoute(row.id)} className="btn btn-ghost partner-stack-print">
-          <Icon name="printer" /> Karten drucken
+          <Icon name="printer" /> {t('Karten drucken')}
         </Link>
       ) : (
-        <p className="field-hint">Keine offenen Karten mehr in diesem Stapel.</p>
+        <p className="field-hint">{t('Keine offenen Karten mehr in diesem Stapel.')}</p>
       )}
     </li>
   )
@@ -87,29 +91,29 @@ export default function PartnerVoucherStacks() {
     <section className="partner-voucher-stacks" aria-labelledby="partner-vouchers-title">
       <div className="einblicke-head">
         <div>
-          <h2 id="partner-vouchers-title">Einladungscodes für Kunden</h2>
-          <p className="muted">{STACKS_HINT}</p>
+          <h2 id="partner-vouchers-title">{t('Einladungscodes für Kunden')}</h2>
+          <p className="muted">{t(STACKS_HINT)}</p>
         </div>
-        {stacks && stacks.length > 0 && <span className="muted einblicke-count">{pluralize(stacks.length, 'Stapel', 'Stapel')}</span>}
+        {stacks && stacks.length > 0 && <span className="muted einblicke-count">{pluralize(stacks.length, 'partner.stacks.one', '{n} Stapel')}</span>}
       </div>
       {error && (
         <div className="error-banner" role="alert">
           {error}
         </div>
       )}
-      {stacks === undefined && !error && <p className="muted">Lade …</p>}
+      {stacks === undefined && !error && <p className="muted">{t('Lade …')}</p>}
       {stacks && stacks.length === 0 && (
         <div className="empty-state">
           <Icon name="printer" />
-          <p>{EMPTY_HINT}</p>
+          <p>{t(EMPTY_HINT)}</p>
         </div>
       )}
       {stacks && stacks.some((row) => row.offen > 0) && (
         <p className="partner-stacks-einladung">
           <Link to={EINLADUNGSKARTEN_ROUTE} className="btn btn-ghost">
-            <Icon name="printer" /> Als Einladungskarten drucken
+            <Icon name="printer" /> {t('Als Einladungskarten drucken')}
           </Link>
-          <span className="field-hint">Je Karte ein eigener Code – vorne ihr, hinten Familie auf Pfoten.</span>
+          <span className="field-hint">{t('Je Karte ein eigener Code – vorne ihr, hinten Familie auf Pfoten.')}</span>
         </p>
       )}
       {stacks && stacks.length > 0 && (

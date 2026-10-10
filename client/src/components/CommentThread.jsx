@@ -4,6 +4,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import useShowMore from '../hooks/useShowMore.js'
 import { relativeTime } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
+import { t, tOr } from '../lib/i18n/index.js'
 
 const MAX_LENGTH = 1000
 // Audit W (N6): ein langes Gespräch zeigt zuerst nur die letzten zwei Beiträge - der Rest hinter „Alle n Antworten“.
@@ -53,23 +54,23 @@ function CommentForm({ placeholder, onSubmit, onCancel }) {
       />
       <div className="reply-form-row">
         <label className="visually-hidden" htmlFor={`${id}-name`}>
-          Dein Name
+          {t('Dein Name')}
         </label>
         <input
           id={`${id}-name`}
           value={autorName}
           onChange={(e) => setAutorName(e.target.value)}
-          placeholder="Dein Name"
+          placeholder={t('Dein Name')}
           maxLength={60}
           autoComplete="name"
           required
         />
         <button type="button" className="btn btn-ghost reply-btn" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
         <button type="submit" className="btn btn-primary reply-btn" disabled={saving}>
           <Icon name="send" />
-          Senden
+          {t('Senden')}
         </button>
       </div>
     </form>
@@ -94,14 +95,19 @@ export default function CommentThread({
   const [writing, setWriting] = useState(false)
   const count = items.length
   const more = useShowMore(items, VISIBLE_REPLIES, { fromEnd: true })
+  // Standard-Wörter sind deutsch; Themenwörter kommen schon übersetzt an und bleiben dann, wie sie sind.
+  const nounText = t(noun)
+  const pluralText = t(plural)
+  // „Antworten“ ist als Knopf ein Verb (Reply), als Mehrzahl ein Nomen (Replies) - darum ein eigener Schlüssel.
+  const verbText = verb === 'Antworten' ? tOr('thread.replyVerb', verb) : t(verb)
 
   return (
     <>
       {count > 0 && (
-        <section className="thread" aria-label={`${count} ${count === 1 ? noun : plural}`}>
+        <section className="thread" aria-label={`${count} ${count === 1 ? nounText : pluralText}`}>
           {more.hidden > 0 && (
             <button type="button" className="thread-more" onClick={more.expand}>
-              Alle {count} {plural}
+              {t('Alle {count} {plural}', { count, plural: pluralText })}
             </button>
           )}
           <ol className="replies" ref={more.focusRef}>
@@ -111,17 +117,17 @@ export default function CommentThread({
                 <p className="reply-meta">
                   <strong>{item.autor_name}</strong>
                   {/* security-review V2 (L-4): ein Gast-Kommentar trägt den echten Namen seines Zuhauses (vom Server) */}
-                  {item.gastZuhause && <span className="reply-guest"> · {item.gastZuhause} (Gast)</span>}
+                  {item.gastZuhause && <span className="reply-guest"> · {item.gastZuhause} ({t('Gast')})</span>}
                   {/* ehemalig (Phase R): der Haushalt der Autorin ist heute nicht mehr Mitglied der Familie */}
-                  {item.ehemalig && <span className="reply-former">ehemaliges Mitglied</span>} · {relativeTime(item.created_at)}
+                  {item.ehemalig && <span className="reply-former">{t('ehemaliges Mitglied')}</span>} · {relativeTime(item.created_at)}
                 </p>
                 <p className="reply-text">{item.text}</p>
                 {canDelete(item) && (
                   <ConfirmButton
                     onConfirm={() => onDelete(item)}
                     label=""
-                    confirmLabel="Löschen?"
-                    ariaLabel={`${noun} von ${item.autor_name} löschen`}
+                    confirmLabel={t('Löschen?')}
+                    ariaLabel={t('{noun} von {name} löschen', { noun: nounText, lower: nounText.toLowerCase(), name: item.autor_name })}
                     className="reply-delete"
                   />
                 )}
@@ -132,11 +138,11 @@ export default function CommentThread({
       )}
 
       {writing ? (
-        <CommentForm placeholder={placeholder || `Deine ${noun} …`} onSubmit={onAdd} onCancel={() => setWriting(false)} />
+        <CommentForm placeholder={placeholder ? t(placeholder) : t('Deine {noun} …', { noun: nounText, lower: nounText.toLowerCase() })} onSubmit={onAdd} onCancel={() => setWriting(false)} />
       ) : (
         <button type="button" className="reply-open" onClick={() => setWriting(true)}>
           <Icon name="message" />
-          {count > 0 ? `${verb} (${count})` : verb}
+          {count > 0 ? `${verbText} (${count})` : verbText}
         </button>
       )}
     </>

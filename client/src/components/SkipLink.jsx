@@ -1,4 +1,5 @@
 import { focusContent } from '../lib/focusContent.js'
+import { t } from '../lib/i18n/index.js'
 
 // "Zum Inhalt springen" (Audit V7a): der erste Tab-Stopp jeder Seite, nur sichtbar, solange er den Fokus hat - vorher
 // lagen vor dem Inhalt bis zu 13 Stopps (Bänder, Kopf, Navigation). Ein Knopf statt eines #-Links: öffentliche Seiten,
@@ -9,7 +10,7 @@ export default function SkipLink() {
   }
   return (
     <button type="button" className="btn btn-primary skip-link" onClick={handleClick}>
-      Zum Inhalt springen
+      {t('Zum Inhalt springen')}
     </button>
   )
 }

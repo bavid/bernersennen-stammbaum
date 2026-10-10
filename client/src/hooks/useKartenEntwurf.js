@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useToast } from '../components/Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Entwurf der Kartengestaltung (components/visitenkarte/KartenDesigner.jsx): die Gestaltung, ob sie gespeichert ist,
 // und Speichern. Übernommen wird nur, was gespeichert wurde: wer während des Speicherns weiter ändert, behält seine
@@ -27,7 +28,7 @@ export default function useKartenEntwurf({ initial, gespeichert, override = null
       setSaved(next)
       setDesign((current) => (isSame(current, payload) ? next : current))
       onSaved?.(result)
-      toast('Gestaltung gespeichert.')
+      toast(t('Gestaltung gespeichert.'))
     } catch (err) {
       setError(err.message)
     } finally {

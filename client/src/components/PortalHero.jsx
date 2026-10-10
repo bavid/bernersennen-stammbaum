@@ -10,6 +10,7 @@ import { PortalPanelProvider } from '../lib/portalPanel.js'
 import { CONTACT_TAB, SECTION_IDS } from '../lib/portalTabs.js'
 import { useIsPreview } from '../lib/preview.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
+import { t } from '../lib/i18n/index.js'
 
 // "Schreib uns" bzw. "Kontakt" im Kopf. Auf dem Reiter "Kontakt" steht derselbe Weg in der Kontakt-Karte direkt darunter -
 // hier ist er dann verdeckt statt doppelt (concealed): unsichtbar, nicht bedienbar und für Screenreader weg, aber mit
@@ -29,7 +30,7 @@ function ContactCta({ partner, hasForm, concealed, onShowTab }) {
         ) : (
           <button type="button" className="btn btn-primary" onClick={() => onShowTab(CONTACT_TAB, SECTION_IDS.contact)}>
             <Icon name="message" />
-            Kontakt
+            {t('Kontakt')}
           </button>
         )}
       </div>
@@ -46,7 +47,7 @@ function ContactCta({ partner, hasForm, concealed, onShowTab }) {
 // Knöpfen. onContactTab: der Reiter "Kontakt" ist offen. onShowTab(key, abschnitt) wechselt den Reiter (PortalBody).
 export default function PortalHero({ partner, hasAnimals = false, onContactTab = false, onShowTab }) {
   const preview = useIsPreview()
-  const typeLabel = TYPE_LABELS[partner.typ] || partner.typ
+  const typeLabel = TYPE_LABELS[partner.typ] ? t(TYPE_LABELS[partner.typ]) : partner.typ
   const meta = [typeLabel, partner.ort].filter(Boolean).join(' · ')
   const hasForm = showContactForm(partner)
   // Ein Kontaktweg genügt: mit Formular "Schreib uns", sonst "Kontakt" zum Reiter.
@@ -58,7 +59,7 @@ export default function PortalHero({ partner, hasAnimals = false, onContactTab =
   return (
     <div className={`partner-portal-hero${hasBanner ? ' has-banner' : ''}`}>
       {hasBanner && <PortalBanner banner={partner.banner} layout={partner.bannerLayout} />}
-      {partner.logoUrl && <img src={partner.logoUrl} alt={`Logo von ${partner.name}`} className="partner-logo" />}
+      {partner.logoUrl && <img src={partner.logoUrl} alt={t('Logo von {name}', { name: partner.name })} className="partner-logo" />}
       <div className="partner-portal-hero-text">
         {meta && <p className="partner-portal-meta">{meta}</p>}
         <h1>{partner.name}</h1>
@@ -69,12 +70,12 @@ export default function PortalHero({ partner, hasAnimals = false, onContactTab =
           {hasCta && <ContactCta partner={partner} hasForm={hasForm} concealed={onContactTab} onShowTab={onShowTab} />}
           {hasSpenden && (
             <ExternalLink href={partner.spenden_url} className="btn btn-ghost">
-              <Icon name="heart" /> Spenden
+              <Icon name="heart" /> {t('Spenden')}
             </ExternalLink>
           )}
           {hasVermittlung && (
             <ExternalLink href={partner.vermittlung_url} className="btn btn-ghost">
-              Tiere in Vermittlung
+              {t('Tiere in Vermittlung')}
             </ExternalLink>
           )}
         </div>

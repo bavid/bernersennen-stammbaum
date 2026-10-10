@@ -8,6 +8,7 @@ import PortalBody from '../components/PortalBody.jsx'
 import PortalBrandStrip from '../components/PortalBrandStrip.jsx'
 import { isValidHexColor, darkenHex, hexToRgba } from '../lib/color.js'
 import { PreviewProvider } from '../lib/preview.js'
+import { t } from '../lib/i18n/index.js'
 
 const ON_RUST = '#fffaf2'
 const ACCENT_WASH_ALPHA = 0.1
@@ -47,10 +48,10 @@ function NotFound({ inApp }) {
       {!inApp && <PublicHeader />}
       <div className="card empty-state">
         <ThemeMark size={56} />
-        <h1>Diesen Partner gibt es nicht</h1>
-        <p className="muted">Vielleicht ist der Link veraltet, oder der Partner ist gerade pausiert.</p>
+        <h1>{t('Diesen Partner gibt es nicht')}</h1>
+        <p className="muted">{t('Vielleicht ist der Link veraltet, oder der Partner ist gerade pausiert.')}</p>
         <Link className="btn btn-primary" to="/partner">
-          Zur Partnerliste
+          {t('Zur Partnerliste')}
         </Link>
       </div>
       {!inApp && <PublicFooter />}
@@ -62,7 +63,7 @@ function Loading({ preview, inApp }) {
   if (preview || inApp) {
     return (
       <p className={`muted ${preview ? 'preview-loading' : 'page-loading'}`} role="status" aria-busy="true">
-        Lädt …
+        {t('Lädt …')}
       </p>
     )
   }
@@ -151,7 +152,7 @@ export default function PartnerPortalPage({ slug, inApp = false, load, preview =
   if (partner === null) {
     return preview ? (
       <div className="error-banner" role="alert">
-        {PREVIEW_LOAD_ERROR}
+        {t(PREVIEW_LOAD_ERROR)}
       </div>
     ) : (
       <NotFound inApp={inApp} />
@@ -169,7 +170,7 @@ export default function PartnerPortalPage({ slug, inApp = false, load, preview =
         {ownChrome && <PublicHeader />}
         {partner.preview && (
           <div className="preview-banner" role="status">
-            Vorschau – nur für Admins sichtbar
+            {t('Vorschau – nur für Admins sichtbar')}
           </div>
         )}
         <PortalBody partner={partner} posts={posts} animals={animals} happyEnds={happyEnds} preview={preview} showCodeNote={!inApp} />

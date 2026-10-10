@@ -4,6 +4,7 @@
 // (PortalBanner). Fehlen Fotos für das Layout, zeigt das Portal die vorhandenen im nächstkleineren Layout.
 import { isAllowedMedia } from './discover.js'
 import { EINBLICK_ACCEPT, TYPE_MESSAGE, isEinblickFileType } from './einblicke.js'
+import { t } from './i18n/index.js'
 
 // Reihenfolge der Auswahl im Profil. slots: wie viele Fotos das Layout zeigt; places: wo jedes steht (Platzname im
 // Editor); fallback: das nächstkleinere Layout, wenn ein Foto fehlt.
@@ -76,9 +77,9 @@ export function ownBannerItems(banner) {
 // "Foto 2 · rechts" - wo ein Foto im Layout steht (ein einzelnes Foto heißt nur "Foto").
 export function slotLabel(id, position) {
   const layout = LAYOUT_BY_ID[id] ?? LAYOUT_BY_ID.eins
-  if (layout.slots === 1) return 'Foto'
+  if (layout.slots === 1) return t('Foto')
   const place = layout.places[position - 1]
-  return place ? `Foto ${position} · ${place}` : `Foto ${position}`
+  return place ? t('Foto {n} · {place}', { n: position, place: t(place) }) : t('Foto {n}', { n: position })
 }
 
 // Plätze im Editor: die Fotos, die das Layout zeigt, dazu der nächste freie Platz (Fotos rücken lückenlos nach - ein
@@ -88,7 +89,7 @@ export function editorSlots(id, items) {
   const slots = layoutSlots(id)
   const shown = items.slice(0, slots).map((item) => ({ position: item.position, label: slotLabel(id, item.position), item }))
   const next = shown.length < slots ? [{ position: shown.length + 1, label: slotLabel(id, shown.length + 1), item: null }] : []
-  const extra = items.slice(slots).map((item) => ({ position: item.position, label: `Foto ${item.position}`, item }))
+  const extra = items.slice(slots).map((item) => ({ position: item.position, label: t('Foto {n}', { n: item.position }), item }))
   return { slots: [...shown, ...next], extra }
 }
 

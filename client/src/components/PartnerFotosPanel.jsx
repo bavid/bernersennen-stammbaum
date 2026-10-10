@@ -3,6 +3,7 @@ import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import AdminImageUpload from './AdminImageUpload.jsx'
 import EinblickeEditor from './EinblickeEditor.jsx'
 import PartnerBannerEditor from './PartnerBannerEditor.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const LOGO_TITLE_ID = 'partner-logo-title'
 
@@ -17,7 +18,7 @@ function PartnerLogoCard({ logoUrl, onUploaded }) {
       <div className="partner-logo-field">
         <AdminImageUpload
           label="Logo"
-          buttonLabel="Logo hochladen"
+          buttonLabel={t('Logo hochladen')}
           imageUrl={logoUrl}
           disabled={isDemo}
           upload={async (file) => (await api.partnerArea.uploadLogo(file)).logoUrl}

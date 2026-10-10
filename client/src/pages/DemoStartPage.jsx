@@ -4,6 +4,7 @@ import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import { parseDemoStart } from '../lib/present.js'
+import { t } from '../lib/i18n/index.js'
 
 // /demo-start?as=…&slug=…&ziel=… (Phase 5 Task 5): der Einstieg hinter jeder Kachel des Präsentationsmodus
 // (AdminPresentPage), in einem neuen Tab geöffnet. Ruft POST /api/demo mit den Argumenten aus der Adresse
@@ -44,17 +45,17 @@ export default function DemoStartPage({ search, onEntered }) {
         <ThemeMark size={56} />
         <div>
           <span className="eyebrow">Demo</span>
-          <h1 className="admin-title">{error ? 'Demo lässt sich nicht öffnen' : 'Demo wird geöffnet …'}</h1>
+          <h1 className="admin-title">{error ? t('Demo lässt sich nicht öffnen') : t('Demo wird geöffnet …')}</h1>
         </div>
         {error ? (
           <>
-            <p className="error-banner">{MESSAGES[error.status] || error.message}</p>
+            <p className="error-banner">{MESSAGES[error.status] ? t(MESSAGES[error.status]) : t(error.message)}</p>
             <Link to="/" className="btn btn-ink btn-lg">
-              <Icon name="arrowLeft" /> Zur Startseite
+              <Icon name="arrowLeft" /> {t('Zur Startseite')}
             </Link>
           </>
         ) : (
-          <p className="muted">Ohne Anmeldung, schreibgeschützt – nichts lässt sich darin ändern.</p>
+          <p className="muted">{t('Ohne Anmeldung, schreibgeschützt – nichts lässt sich darin ändern.')}</p>
         )}
       </div>
     </div>

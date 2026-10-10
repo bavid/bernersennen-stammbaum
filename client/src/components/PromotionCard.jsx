@@ -12,6 +12,7 @@ import {
 import { useIsPreview } from '../lib/preview.js'
 import { todayIso } from '../lib/dates.js'
 import { zeitraeumeText } from '../lib/zeitraeume.js'
+import { t } from '../lib/i18n/index.js'
 
 // Eine Empfehlung/Anzeige im Reiter "Entdecken" (Hundeschule, Salon, Begleiter, Futter, Unterstützen) und
 // auf dem Portal ("Aktuelles"): Kennzeichnung zuerst und als Text (auch für Screenreader), dann Bild, Titel,
@@ -36,7 +37,7 @@ export default function PromotionCard({ promotion, labelled = true, compact = fa
           {pending && (
             <p className="promotion-badge promotion-badge-pending">
               <Icon name="clock" />
-              {PENDING_APPROVAL_LABEL}
+              {t(PENDING_APPROVAL_LABEL)}
             </p>
           )}
         </div>
@@ -58,7 +59,7 @@ export default function PromotionCard({ promotion, labelled = true, compact = fa
       </div>
       {hasLink && (
         <ExternalLink className="btn btn-ghost promotion-card-link" href={promotion.clickUrl} rel={promotionRel(promotion.kennzeichnung)}>
-          Mehr erfahren<span className="visually-hidden">: {promotion.titel} (öffnet in neuem Tab)</span>
+          {t('Mehr erfahren')}<span className="visually-hidden">: {promotion.titel} {t('(öffnet in neuem Tab)')}</span>
           <Icon name="external" />
         </ExternalLink>
       )}

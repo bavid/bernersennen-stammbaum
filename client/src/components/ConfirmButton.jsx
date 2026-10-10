@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const ARM_TIMEOUT_MS = 3500
 
@@ -39,11 +40,11 @@ export default function ConfirmButton({
       className={`btn btn-danger ${className} ${armed ? 'is-armed' : ''}`}
       onClick={handleClick}
       disabled={disabled}
-      aria-label={armed ? confirmLabel : ariaLabel || undefined}
+      aria-label={armed ? t(confirmLabel) : ariaLabel || undefined}
       aria-describedby={describedBy}
     >
       <Icon name={icon} />
-      {armed ? confirmLabel : label}
+      {armed ? t(confirmLabel) : t(label)}
     </button>
   )
 }

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import RoleBadge from '../RoleBadge.jsx'
 import { SETTINGS_ROUTE, animalsRoute } from '../../lib/areas.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Kopf der Seite "Mitglieder" (/mitglieder beim klassischen Familien-Login): Rolle, kurze Erklärung, Kennzahlen. Auf der
 // Gruppenseite (Reiter "Mitglieder", Phase W) steht stattdessen deren eigener Kopf. stats: { mitglieder, geteilt } oder
@@ -13,13 +14,13 @@ export default function MembersHero({ family, myRole, stats, demoHint }) {
       <div>
         <span className="eyebrow">{words.group}</span>
         <div className="page-title-row">
-          <h1>Mitglieder</h1>
+          <h1>{t('Mitglieder')}</h1>
           <RoleBadge rolle={myRole} className="members-my-role" />
         </div>
         {/* Audit V7a: "Eine Familie ist nie öffentlich." steht gleich darunter in "Wer sieht was?" - hier nicht doppelt. */}
-        <p className="page-lede">Wer zu „{family.name}“ gehört – und wer was darf.</p>
+        <p className="page-lede">{t('Wer zu „{name}“ gehört – und wer was darf.', { name: family.name })}</p>
         <p className="hero-hint members-hero-links">
-          <Link to={animalsRoute(family)}>← Zu den {words.animals}</Link>
+          <Link to={animalsRoute(family)}>{t('← Zu den {animals}', { animals: words.animals })}</Link>
           {/* Phase W, Schritt 2: Name, Leitung, Schlüssel und Auflösen stehen in den Einstellungen. */}
           <Link to={`${SETTINGS_ROUTE}?bereich=familien`}>{words.groupSettings}</Link>
         </p>
@@ -30,11 +31,11 @@ export default function MembersHero({ family, myRole, stats, demoHint }) {
         <div className="page-hero-side">
           <dl className="stats">
             <div>
-              <dt>{stats.mitglieder === 1 ? 'Mitglied' : 'Mitglieder'}</dt>
+              <dt>{stats.mitglieder === 1 ? t('Mitglied') : t('Mitglieder')}</dt>
               <dd>{stats.mitglieder}</dd>
             </div>
             <div>
-              <dt>geteilte Tiere</dt>
+              <dt>{t('geteilte Tiere')}</dt>
               <dd>{stats.geteilt}</dd>
             </div>
           </dl>

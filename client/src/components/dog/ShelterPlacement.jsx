@@ -8,6 +8,7 @@ import HandoverDialog from '../HandoverDialog.jsx'
 import SteckbriefPanel from '../SteckbriefPanel.jsx'
 import VermittlungStatusPanel from '../VermittlungStatusPanel.jsx'
 import { useToast } from '../Toast.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Reiter "Vermittlung" der Tierseite eines Tierheims (eigene Tiere): Status, Steckbrief und die Übergabe. Die Panels liefern
 // nur die rohe Hund-Zeile zurück - sie wird in den bestehenden (angereicherten) dog-State gemischt (mergeDog).
@@ -28,7 +29,7 @@ export default function ShelterPlacement({ dog, setDog }) {
     setWithdrawing(true)
     try {
       mergeDog(await api.withdrawHandover(dog.id))
-      toast(`Übergabe zurückgezogen – ${displayName(dog)} ist wieder in Vermittlung.`)
+      toast(t('Übergabe zurückgezogen – {name} ist wieder in Vermittlung.', { name: displayName(dog) }))
     } catch (err) {
       toast(err.message)
     } finally {
@@ -38,7 +39,7 @@ export default function ShelterPlacement({ dog, setDog }) {
 
   return (
     <section className="shelter-panel" aria-labelledby="shelter-panel-title">
-      <h2 id="shelter-panel-title">Vermittlung</h2>
+      <h2 id="shelter-panel-title">{t('Vermittlung')}</h2>
       <VermittlungStatusPanel key={dog.id} dog={dog} onChange={mergeDog} />
 
       <SteckbriefPanel dog={dog} onDogChange={mergeDog} />
@@ -52,23 +53,23 @@ export default function ShelterPlacement({ dog, setDog }) {
           onClick={() => setHandoverOpen(true)}
         >
           <Icon name="logout" />
-          Vermittelt – Übergabe vorbereiten
+          {t('Vermittelt – Übergabe vorbereiten')}
         </button>
         {paused && (
           <p className="field-hint" id="handover-paused-hint">
-            Erst auf ‚Verfügbar‘ oder ‚Reserviert‘ setzen.
+            {t('Erst auf ‚Verfügbar‘ oder ‚Reserviert‘ setzen.')}
           </p>
         )}
         {reserved && (
           <button type="button" className="btn btn-ghost" disabled={withdrawing || isDemo} onClick={handleWithdraw}>
             <Icon name="close" />
-            {withdrawing ? 'Ziehe zurück …' : 'Übergabe zurückziehen'}
+            {withdrawing ? t('Ziehe zurück …') : t('Übergabe zurückziehen')}
           </button>
         )}
         {isDemo && reserved && <p className="field-hint">{readOnlyHint}</p>}
       </div>
 
-      <Modal open={handoverOpen} title={`Übergabe vorbereiten – ${displayName(dog)}`} onClose={() => setHandoverOpen(false)}>
+      <Modal open={handoverOpen} title={t('Übergabe vorbereiten – {name}', { name: displayName(dog) })} onClose={() => setHandoverOpen(false)}>
         {handoverOpen && <HandoverDialog dog={dog} onCreated={() => mergeDog({ vermittlung_status: 'reserviert' })} />}
       </Modal>
     </section>

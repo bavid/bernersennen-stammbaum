@@ -5,6 +5,7 @@
 // führen zum passenden Reiter. Reine Funktionen über die Portal-Daten.
 import { isAllowedMedia } from './discover.js'
 import { todayIso } from './dates.js'
+import { t } from './i18n/index.js'
 import { PORTAL_MONATE, splitByHorizon } from './termine.js'
 
 export const PORTAL_TAB_PARAM = 'reiter'
@@ -39,10 +40,10 @@ const TAB_DEFS = [
 ]
 
 const COUNT_WORDS = {
-  angebote: ['Angebot', 'Angebote'],
-  termine: ['Termin', 'Termine'],
-  einblicke: ['Einblick', 'Einblicke'],
-  tiere: ['Tier', 'Tiere']
+  angebote: ['{n} Angebot', '{n} Angebote'],
+  termine: ['{n} Termin', '{n} Termine'],
+  einblicke: ['{n} Einblick', '{n} Einblicke'],
+  tiere: ['{n} Tier', '{n} Tiere']
 }
 
 // Alte Sprungmarken (Abschnitts-Ids von vor den Reitern und kurze Namen) -> Reiter und Abschnitt darin.
@@ -137,8 +138,8 @@ export function portalCounts(data) {
 
 // Vorgelesen am Zähler: "(2 Angebote)", "(1 Termin)".
 export function tabCountText(count, key) {
-  const [one, many] = COUNT_WORDS[key] || ['Treffer', 'Treffer']
-  return `${count} ${count === 1 ? one : many}`
+  const [one, many] = COUNT_WORDS[key] || ['{n} Treffer', '{n} Treffer']
+  return t(count === 1 ? one : many, { n: count })
 }
 
 // "#kontakt" -> { tab: 'kontakt', target: 'partner-portal-contact' }; Unbekanntes -> null.

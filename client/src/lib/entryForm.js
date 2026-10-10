@@ -1,4 +1,5 @@
 import { formatDateLong } from './dates.js'
+import { t } from './i18n/index.js'
 
 // „Erinnerung festhalten“ (components/TimelineEntryForm.jsx): Überschrift aus den ersten Worten, die beiden Möglichkeiten
 // der Sichtbarkeit und der Entwurf, der ein versehentliches Schließen übersteht.
@@ -14,7 +15,7 @@ const DRAFT_PREFIX = 'chronik.entwurf.'
 // Wortgrenze gekürzt), ohne Text „Erinnerung vom 4. Oktober 2026“.
 export function titleSuggestion(text, datum, entryWord) {
   const flat = String(text || '').replace(/\s+/g, ' ').trim()
-  if (!flat) return datum ? `${entryWord} vom ${formatDateLong(datum)}` : entryWord
+  if (!flat) return datum ? t('{entry} vom {date}', { entry: entryWord, date: formatDateLong(datum) }) : entryWord
   const end = flat.search(SENTENCE_END)
   const sentence = end > 0 ? flat.slice(0, flat[end] === '.' ? end : end + 1) : flat
   if (sentence.length <= TITLE_MAX) return sentence
@@ -25,20 +26,26 @@ export function titleSuggestion(text, datum, entryWord) {
 
 export function joinNames(names) {
   if (names.length <= 1) return names[0] || ''
-  return `${names.slice(0, -1).join(', ')} und ${names[names.length - 1]}`
+  return t('{a} und {b}', { a: names.slice(0, -1).join(', '), b: names[names.length - 1] })
 }
 
 // Zwei Möglichkeiten statt einer Checkbox: privat (nur das eigene Zuhause) oder geteilt - dann sehen es die Familien, in die
 // das Tier geteilt ist (shareNames, lib/dogProfile.js visibleInNames), und Gäste, die euch besuchen.
 export function visibilityOptions(shareNames = []) {
   const shared =
-    shareNames.length > 2 ? `Mit ${shareNames[0]} und ${shareNames.length - 1} weiteren teilen` : shareNames.length ? `Mit ${joinNames(shareNames)} teilen` : 'Mit Familie & Gästen teilen'
+    shareNames.length > 2
+      ? t('Mit {name} und {n} weiteren teilen', { name: shareNames[0], n: shareNames.length - 1 })
+      : shareNames.length
+        ? t('Mit {names} teilen', { names: joinNames(shareNames) })
+        : t('Mit Familie & Gästen teilen')
   return [
-    { privat: true, label: 'Nur wir (privat)', hint: 'Sehen nur die Menschen in eurem Zuhause.' },
+    { privat: true, label: t('Nur wir (privat)'), hint: t('Sehen nur die Menschen in eurem Zuhause.') },
     {
       privat: false,
       label: shared,
-      hint: shareNames.length ? `Sehen auch ${joinNames(shareNames)} und eure Gäste.` : 'Sehen auch eure Gäste und die Familien, in denen das Tier zu sehen ist.'
+      hint: shareNames.length
+        ? t('Sehen auch {names} und eure Gäste.', { names: joinNames(shareNames) })
+        : t('Sehen auch eure Gäste und die Familien, in denen das Tier zu sehen ist.')
     }
   ]
 }

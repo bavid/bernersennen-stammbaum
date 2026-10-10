@@ -1,5 +1,6 @@
 import Icon from './Icon.jsx'
 import useServiceWorkerUpdate from '../hooks/useServiceWorkerUpdate.js'
+import { t } from '../lib/i18n/index.js'
 
 // „Neue Version verfügbar · Neu laden“ - der kleine Hinweis unten, sobald der Service Worker eine neue Version der App
 // fertig installiert hat (hooks/useServiceWorkerUpdate.js). Er bleibt stehen, bis jemand neu lädt; niemand verliert
@@ -10,9 +11,9 @@ export default function PwaUpdate({ register, apply }) {
   return (
     <div className="toast toast-update" role="status">
       <Icon name="sprout" />
-      <span>Neue Version verfügbar</span>
+      <span>{t('Neue Version verfügbar')}</span>
       <button type="button" className="toast-action" onClick={reload}>
-        Neu laden
+        {t('Neu laden')}
       </button>
     </div>
   )

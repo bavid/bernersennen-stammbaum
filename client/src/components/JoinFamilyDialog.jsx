@@ -3,6 +3,7 @@ import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const MIN_PASSWORD_LENGTH = 6
 const MAX_NAME_LENGTH = 80
@@ -36,7 +37,7 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
     try {
       const me = await api.joinFamily(joinPassword)
       onChange(me)
-      toast('Beigetreten.')
+      toast(t('Beigetreten.'))
       onClose()
     } catch (err) {
       setError(err.message)
@@ -51,7 +52,7 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
     try {
       const me = await api.createGroup({ name: groupName, password: groupPassword })
       onChange(me)
-      toast(`„${groupName}“ gegründet.`)
+      toast(t('„{name}“ gegründet.', { name: groupName }))
       onClose()
     } catch (err) {
       setError(err.message)
@@ -61,12 +62,12 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
 
   return (
     <div className="join-family">
-      <div className="segmented join-family-switch" role="group" aria-label="Modus">
+      <div className="segmented join-family-switch" role="group" aria-label={t('Modus')}>
         <button type="button" aria-pressed={tab === 'join'} onClick={() => selectTab('join')}>
-          Beitreten
+          {t('Beitreten')}
         </button>
         <button type="button" aria-pressed={tab === 'create'} onClick={() => selectTab('create')}>
-          Neu gründen
+          {t('Neu gründen')}
         </button>
       </div>
 
@@ -101,7 +102,7 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
           <div className="form-actions">
             <span className="form-actions-spacer" />
             <button type="submit" className="btn btn-primary" disabled={isDemo || loading || !joinPassword}>
-              {loading ? 'Beitrete …' : 'Beitreten'}
+              {loading ? t('Beitrete …') : t('Beitreten')}
             </button>
           </div>
         </form>
@@ -123,7 +124,7 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
           </div>
           <div className="field">
             <label className="field-label" htmlFor="join-family-create-password">
-              Gemeinsames Passwort
+              {t('Gemeinsames Passwort')}
             </label>
             <input
               id="join-family-create-password"
@@ -137,7 +138,7 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
               required
             />
           </div>
-          <p className="field-hint">Teilt das Passwort mit allen, die dazugehören sollen.</p>
+          <p className="field-hint">{t('Teilt das Passwort mit allen, die dazugehören sollen.')}</p>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
               {readOnlyHint}
@@ -150,7 +151,7 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
               className="btn btn-primary"
               disabled={isDemo || loading || !groupName.trim() || !groupPassword}
             >
-              {loading ? 'Lege an …' : words.createGroup}
+              {loading ? t('Lege an …') : words.createGroup}
             </button>
           </div>
         </form>

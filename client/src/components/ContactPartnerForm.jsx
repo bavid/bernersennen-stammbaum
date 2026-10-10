@@ -16,6 +16,7 @@ import {
   contactErrorMessage,
   toContactPayload
 } from '../lib/contactPartner.js'
+import { t } from '../lib/i18n/index.js'
 
 const IDS = {
   name: 'contact-partner-name',
@@ -33,12 +34,12 @@ function withoutKeys(object, keys) {
 
 function contactIntro(partner) {
   const person = typeof partner.ansprechperson === 'string' ? partner.ansprechperson.trim() : ''
-  return person ? `Deine Nachricht geht an ${person} von ${partner.name}.` : null
+  return person ? t('Deine Nachricht geht an {person} von {name}.', { person, name: partner.name }) : null
 }
 
 function nachrichtHint(length) {
-  const minimum = length < MIN_NACHRICHT_LENGTH ? ` · mindestens ${MIN_NACHRICHT_LENGTH}` : ''
-  return `${length} / ${MAX_NACHRICHT_LENGTH} Zeichen${minimum}`
+  const minimum = length < MIN_NACHRICHT_LENGTH ? ` · ${t('mindestens {n}', { n: MIN_NACHRICHT_LENGTH })}` : ''
+  return `${t('{n} / {max} Zeichen', { n: length, max: MAX_NACHRICHT_LENGTH })}${minimum}`
 }
 
 // "Schreib uns" (Phase P2): Nachricht an einen Partner, landet in dessen Postfach (/nachrichten). Name
@@ -49,7 +50,9 @@ function nachrichtHint(length) {
 export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
   const [form, setForm] = useState(() => ({ ...EMPTY_CONTACT_FORM, ...kontaktFor(EMPTY_CONTACT_FORM) }))
   const [website, setWebsite] = useState('')
-  const [fieldErrors, setFieldErrors] = useState({})
+  const [fieldErrorKeys, setFieldErrors] = useState({})
+  // Meldungen bleiben deutsch im State und werden erst beim Anzeigen übersetzt.
+  const fieldErrors = Object.fromEntries(Object.entries(fieldErrorKeys).map(([key, message]) => [key, message && t(message)]))
   const [error, setError] = useState(null)
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
@@ -101,36 +104,36 @@ export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
       {sent && (
         <p className="contact-partner-success" role="status">
           <Icon name="check" />
-          Danke! {partner.name} meldet sich bei dir.
+          {t('Danke! {name} meldet sich bei dir.', { name: partner.name })}
         </p>
       )}
       {error && (
         <div ref={bannerRef} className="error-banner" role="alert" tabIndex={-1}>
-          {error}
+          {t(error)}
         </div>
       )}
 
-      <AdminField id={IDS.name} label="Dein Name (freiwillig)" error={fieldErrors.name}>
+      <AdminField id={IDS.name} label={t('Dein Name (freiwillig)')} error={fieldErrors.name}>
         <input {...bind('name')} value={form.name} onChange={(e) => update({ name: e.target.value })} maxLength={MAX_NAME_LENGTH} autoComplete="name" />
       </AdminField>
 
       <fieldset className="contact-partner-reachable" aria-describedby={REACHABLE_HINT_ID}>
-        <legend>So erreicht {partner.name} dich</legend>
+        <legend>{t('So erreicht {name} dich', { name: partner.name })}</legend>
         <p className="field-hint" id={REACHABLE_HINT_ID}>
-          E-Mail oder Telefon – mindestens eins davon.
+          {t('E-Mail oder Telefon – mindestens eins davon.')}
         </p>
         <div className="form-grid">
-          <AdminField id={IDS.email} label="E-Mail" error={fieldErrors.email}>
+          <AdminField id={IDS.email} label={t('E-Mail')} error={fieldErrors.email}>
             <input {...bind('email')} type="email" value={form.email} onChange={(e) => update({ email: e.target.value })} autoComplete="email" />
           </AdminField>
-          <AdminField id={IDS.telefon} label="Telefon" error={fieldErrors.telefon}>
+          <AdminField id={IDS.telefon} label={t('Telefon')} error={fieldErrors.telefon}>
             <input {...bind('telefon')} type="tel" value={form.telefon} onChange={(e) => update({ telefon: e.target.value })} autoComplete="tel" />
           </AdminField>
         </div>
       </fieldset>
       <KontaktMerkenHinweis />
 
-      <AdminField id={IDS.nachricht} label="Deine Nachricht" hint={nachrichtHint(form.nachricht.trim().length)} error={fieldErrors.nachricht}>
+      <AdminField id={IDS.nachricht} label={t('Deine Nachricht')} hint={nachrichtHint(form.nachricht.trim().length)} error={fieldErrors.nachricht}>
         <textarea
           {...bind('nachricht', { hint: true })}
           value={form.nachricht}
@@ -143,15 +146,17 @@ export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
       <Honeypot id={HONEYPOT_ID} value={website} onChange={setWebsite} />
 
       <p className="contact-partner-privacy">
-        Deine Angaben gehen nur an {partner.name}. Wir verschicken keine E-Mails; Nachrichten werden nach 180 Tagen gelöscht.{' '}
+        {t('Deine Angaben gehen nur an {name}. Wir verschicken keine E-Mails; Nachrichten werden nach 180 Tagen gelöscht.', {
+          name: partner.name
+        })}{' '}
         <a href="/datenschutz" target="_blank" rel="noopener noreferrer">
-          Mehr zum Datenschutz
+          {t('Mehr zum Datenschutz')}
         </a>
       </p>
 
       <button type="submit" className="btn btn-primary btn-block" disabled={sending}>
         <Icon name="send" />
-        {sending ? 'Sende …' : 'Nachricht senden'}
+        {sending ? t('Sende …') : t('Nachricht senden')}
       </button>
     </form>
   )

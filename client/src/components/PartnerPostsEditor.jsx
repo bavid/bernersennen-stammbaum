@@ -8,6 +8,7 @@ import PartnerCardOrder from './PartnerCardOrder.jsx'
 import PartnerPostForm from './PartnerPostForm.jsx'
 import PartnerPostRow from './PartnerPostRow.jsx'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const DEMO_HINT_ID = 'partner-posts-demo-hint'
 const NO_BEREICH_HINT = 'Für euren Partner-Typ gibt es noch keinen Bereich in „Entdecken“ – schreibt uns gern.'
@@ -73,7 +74,7 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
       await api.partnerArea.deletePost(post.id)
       setPosts((list) => list.filter((item) => item.id !== post.id))
       setVersion((current) => current + 1)
-      toast('Beitrag gelöscht.')
+      toast(t('Beitrag gelöscht.'))
     } catch (err) {
       setError(err.message)
     }
@@ -84,18 +85,18 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
       <div className="partner-posts-head">
         <div>
           <h2 id="partner-posts-title" className={showTitle ? undefined : 'visually-hidden'}>
-            Eure Beiträge
+            {t('Eure Beiträge')}
           </h2>
-          <p className="partner-posts-hint">{vertrauenswuerdig ? POSTS_HINT_TRUSTED : POSTS_HINT}</p>
+          <p className="partner-posts-hint">{t(vertrauenswuerdig ? POSTS_HINT_TRUSTED : POSTS_HINT)}</p>
           {vertrauenswuerdig && (
             <p className="partner-posts-trusted">
               <Icon name="check" />
-              {TRUSTED_HINT}
+              {t(TRUSTED_HINT)}
             </p>
           )}
         </div>
         <span className="pill partner-posts-count" aria-live="polite">
-          {count} von {MAX_POSTS}
+          {t('{n} von {max}', { n: count, max: MAX_POSTS })}
         </span>
       </div>
 
@@ -118,15 +119,15 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
             disabled={isDemo || isFull || !hasBereich || posts === undefined}
             aria-describedby={isDemo ? DEMO_HINT_ID : undefined}
           >
-            <Icon name="plus" /> Beitrag anlegen
+            <Icon name="plus" /> {t('Beitrag anlegen')}
           </button>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
               {readOnlyHint}
             </p>
           )}
-          {!isDemo && isFull && <p className="field-hint">{LIMIT_HINT}</p>}
-          {!isDemo && !hasBereich && <p className="field-hint">{NO_BEREICH_HINT}</p>}
+          {!isDemo && isFull && <p className="field-hint">{t(LIMIT_HINT)}</p>}
+          {!isDemo && !hasBereich && <p className="field-hint">{t(NO_BEREICH_HINT)}</p>}
         </div>
       )}
 
@@ -140,15 +141,15 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
           {loadError}
         </div>
       )}
-      {posts === undefined && !loadError && <p className="muted">Lade …</p>}
+      {posts === undefined && !loadError && <p className="muted">{t('Lade …')}</p>}
       {!editing && <PartnerCardOrder refreshKey={version} hideWhenEmpty={posts?.length === 0} />}
       {!editing && posts?.length === 0 && (
-        <p className="empty-state partner-posts-empty">Noch keine Beiträge – kündigt Kurse, Aktionen oder Termine an.</p>
+        <p className="empty-state partner-posts-empty">{t('Noch keine Beiträge – kündigt Kurse, Aktionen oder Termine an.')}</p>
       )}
       {/* Audit V7a: die Liste folgt einer anderen Reihenfolge als die Karte darüber - die Überschrift sagt das. */}
       {!editing && count > 0 && (
         <h3 className="partner-posts-list-title">
-          Alle Beiträge <span>· neueste zuerst</span>
+          {t('Alle Beiträge')} <span>{t('· neueste zuerst')}</span>
         </h3>
       )}
       {!editing && count > 0 && (
@@ -166,7 +167,7 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
       )}
       {!editing && more.hidden > 0 && (
         <button type="button" className="btn btn-ghost partner-posts-more" onClick={more.expand}>
-          Weitere Beiträge ({more.hidden})
+          {t('Weitere Beiträge ({n})', { n: more.hidden })}
         </button>
       )}
     </section>

@@ -1,7 +1,8 @@
 // Digitaler Bilderrahmen (/bilderrahmen angemeldet, /rahmen auf einem anderen Gerät): reine Hilfen ohne DOM - Optionen,
 // Reihenfolge, Bildunterschrift, „Heute vor … Jahren“, Uhr und Nacht. Die Fotos kommen vom Server
 // (server/lib/bilderrahmen.js): { url, tierName, datum (JJJJ-MM-TT oder null), inErinnerung }.
-import { formatDateLong, MONTHS } from './dates.js'
+import { formatDateLong, monthNames } from './dates.js'
+import { getLang, t } from './i18n/index.js'
 import { readSetting, writeSetting } from './storage.js'
 
 export const INTERVALLE = [5, 10, 30, 60]
@@ -51,6 +52,7 @@ export function clearFamilyAuswahl(storage = window.localStorage) {
 export const DEVICE_OPTIONEN_KEY = 'rahmen.optionen'
 
 const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
+const WEEKDAYS_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 function isObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -101,7 +103,7 @@ export function yearsAgo(datum, today = new Date()) {
 }
 
 export function heuteVorText(years) {
-  return years === 1 ? 'Heute vor einem Jahr' : `Heute vor ${years} Jahren`
+  return years === 1 ? t('Heute vor einem Jahr') : t('Heute vor {n} Jahren', { n: years })
 }
 
 // { name, datum, heuteVor, erinnerung } für die Bildunterschrift - Texte gibt es keine, nur Name und Datum.
@@ -111,13 +113,13 @@ export function captionFor(foto, optionen, today = new Date()) {
     name: foto.tierName,
     datum: formatDateLong(foto.datum),
     heuteVor: years ? heuteVorText(years) : null,
-    erinnerung: optionen.erinnerung && foto.inErinnerung ? 'In Erinnerung' : null
+    erinnerung: optionen.erinnerung && foto.inErinnerung ? t('In Erinnerung') : null
   }
 }
 
 export function altText(foto) {
   const datum = formatDateLong(foto.datum)
-  return datum ? `Foto von ${foto.tierName}, ${datum}` : `Foto von ${foto.tierName}`
+  return datum ? t('Foto von {name}, {datum}', { name: foto.tierName, datum }) : t('Foto von {name}', { name: foto.tierName })
 }
 
 // Dieselbe Datei bleibt dasselbe Foto, auch wenn das Gerät eine frisch signierte Adresse bekommt.
@@ -150,7 +152,10 @@ export function formatClock(date = new Date()) {
   const pad = (n) => String(n).padStart(2, '0')
   return {
     time: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
-    date: `${WEEKDAYS[date.getDay()]}, ${date.getDate()}. ${MONTHS[date.getMonth()]}`
+    date:
+      getLang() === 'en'
+        ? `${WEEKDAYS_EN[date.getDay()]}, ${date.getDate()} ${monthNames()[date.getMonth()]}`
+        : `${WEEKDAYS[date.getDay()]}, ${date.getDate()}. ${monthNames()[date.getMonth()]}`
   }
 }
 

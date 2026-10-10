@@ -1,3 +1,4 @@
+import { t } from './i18n/index.js'
 // Kapitel nach Jahreszeiten (B+ Familienalbum): in der Chronik eines Tiers und im Feed auf Start steht zwischen den
 // Erinnerungen in Handschrift „Herbst 2026“. Meteorologisch: Frühling März–Mai, Sommer Juni–August, Herbst
 // September–November, Winter Dezember–Februar (über den Jahreswechsel „Winter 2026/27“).
@@ -22,9 +23,9 @@ export function seasonLabel(iso) {
   const date = parts(iso)
   if (!date) return null
   const season = SEASONS.find((entry) => entry.months.includes(date.month))
-  if (season) return `${season.name} ${date.year}`
+  if (season) return `${t(season.name)} ${date.year}`
   const startYear = date.month === 12 ? date.year : date.year - 1
-  return `Winter ${startYear}/${twoDigits(startYear + 1)}`
+  return `${t('Winter')} ${startYear}/${twoDigits(startYear + 1)}`
 }
 
 // Aufeinanderfolgende Einträge derselben Jahreszeit -> [{ key, label, items }], die Reihenfolge der Liste bleibt. Ein
@@ -47,5 +48,5 @@ export function yearsAgoLabel(datum, today) {
   if (!date || !now || date.month !== now.month || date.day !== now.day) return null
   const years = now.year - date.year
   if (years <= 0) return null
-  return years === 1 ? 'Heute vor einem Jahr' : `Heute vor ${years} Jahren`
+  return years === 1 ? t('Heute vor einem Jahr') : t('Heute vor {n} Jahren', { n: years })
 }

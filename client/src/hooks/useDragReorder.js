@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import useMediaQuery from './useMediaQuery.js'
 import { indexFromPoint, moveItem, stepIndex } from '../lib/reorder.js'
+import { t } from '../lib/i18n/index.js'
 
 // Ab so vielen Pixeln Bewegung beginnt ein Ziehen - ein Tippen oder Klicken auf den Griff bleibt folgenlos.
 export const DRAG_THRESHOLD_PX = 6
@@ -17,7 +18,7 @@ const IDLE = Object.freeze({ mode: 'idle', key: null, from: -1, over: -1, dx: 0,
 // das Ablageziel, pointerup legt ab; Escape bricht ab. Tastatur: Leertaste/Enter nimmt den Eintrag auf (aria-grabbed),
 // Pfeiltasten verschieben ihn in der Vorschau (order), Leertaste/Enter legt ab, Escape bricht ab. announcement: der Text
 // für eine aria-live-Region („Foto 2 – Stelle 3 von 4“).
-export default function useDragReorder({ keys, onCommit, disabled = false, labelFor = (key, index) => `Eintrag ${index + 1}` }) {
+export default function useDragReorder({ keys, onCommit, disabled = false, labelFor = (key, index) => t('Eintrag {n}', { n: index + 1 }) }) {
   const [state, setState] = useState(IDLE)
   const [announcement, setAnnouncement] = useState('')
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY)
@@ -44,7 +45,7 @@ export default function useDragReorder({ keys, onCommit, disabled = false, label
 
   const cancel = useCallback(() => {
     releasePointer()
-    if (stateRef.current.mode !== 'idle') setAnnouncement('Verschieben abgebrochen.')
+    if (stateRef.current.mode !== 'idle') setAnnouncement(t('Verschieben abgebrochen.'))
     setDrag(IDLE)
   }, [releasePointer, setDrag])
 
@@ -54,10 +55,10 @@ export default function useDragReorder({ keys, onCommit, disabled = false, label
       releasePointer()
       setDrag(IDLE)
       if (from === to || to < 0 || to >= current.length) {
-        setAnnouncement('Verschieben beendet – nichts geändert.')
+        setAnnouncement(t('Verschieben beendet – nichts geändert.'))
         return
       }
-      setAnnouncement(`${labelFor(current[from], from)} liegt jetzt an Stelle ${to + 1} von ${current.length}.`)
+      setAnnouncement(t('{label} liegt jetzt an Stelle {n} von {count}.', { label: labelFor(current[from], from), n: to + 1, count: current.length }))
       onCommit(moveItem(current, from, to), { from, to })
     },
     [labelFor, onCommit, releasePointer, setDrag]
@@ -132,7 +133,7 @@ export default function useDragReorder({ keys, onCommit, disabled = false, label
       const index = keysRef.current.indexOf(key)
       if (index < 0) return
       setDrag({ mode: 'keyboard', key, from: index, over: index, dx: 0, dy: 0 })
-      setAnnouncement(`${labelFor(key, index)} aufgenommen. Mit den Pfeiltasten verschieben, Leertaste legt ab, Escape bricht ab.`)
+      setAnnouncement(t('{label} aufgenommen. Mit den Pfeiltasten verschieben, Leertaste legt ab, Escape bricht ab.', { label: labelFor(key, index) }))
       return
     }
     if (!grabbed) return
@@ -140,7 +141,7 @@ export default function useDragReorder({ keys, onCommit, disabled = false, label
     if (next === null) return
     event.preventDefault()
     setDrag({ ...current, over: next })
-    setAnnouncement(`${labelFor(key, current.from)} – Stelle ${next + 1} von ${keysRef.current.length}`)
+    setAnnouncement(t('{label} – Stelle {n} von {count}', { label: labelFor(key, current.from), n: next + 1, count: keysRef.current.length }))
   }
 
   const order = state.mode === 'keyboard' ? moveItem(keys, state.from, state.over) : keys

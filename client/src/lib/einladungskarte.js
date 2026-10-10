@@ -3,6 +3,7 @@
 // eigene Code je Karte. Außerdem der Druck nach Kartenzahl (1-50, der letzte Bogen darf angebrochen sein) für alle
 // Kombinationen. Reine Funktionen ohne DOM.
 import { CARDS_PER_SHEET, PENDING_ADDRESS, mirrorRows } from './visitenkarte.js'
+import { t } from './i18n/index.js'
 
 export const MIN_KARTEN = 1
 export const MAX_KARTEN = 50
@@ -22,11 +23,13 @@ export const SCHRITT_FIELDS = Object.freeze(['schritt1', 'schritt2', 'schritt3']
 // Was die Rückseite zeigt: die Texte der Admin-Einstellung (fehlen sie, die Vorgaben) und die Adresse - ohne Eintrag die,
 // auf die auch der QR-Code zeigt (card.host + /v); ohne öffentliche Adresse (card.addressPending) der Platzhalter.
 export function rueckseiteModel(rueckseite, card) {
+  // Ohne Admin-Einstellung gelten die Vorgaben - die in der gewählten Sprache.
   const source = rueckseite || RUECKSEITE_VORGABEN
+  const tr = rueckseite ? (text) => text : t
   return {
-    titel: source.titel,
-    text: source.text,
-    schritte: (source.schritte || []).filter(Boolean),
+    titel: tr(source.titel),
+    text: tr(source.text),
+    schritte: (source.schritte || []).filter(Boolean).map(tr),
     adresse: source.adresse || (card.addressPending ? PENDING_ADDRESS : `${card.host}${VOUCHER_PATH}`)
   }
 }

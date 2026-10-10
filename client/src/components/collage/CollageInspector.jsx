@@ -3,6 +3,7 @@ import TabBar from '../TabBar.jsx'
 import DesignPanel from './DesignPanel.jsx'
 import PhotoPanel from './PhotoPanel.jsx'
 import StickerPanel from './StickerPanel.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 export const INSPECTOR_TABS = [
   { key: 'seite', label: 'Seite' },
@@ -28,10 +29,10 @@ function PageTexts({ page, onChange }) {
   )
   return (
     <section className="inspector-section">
-      <h3>Texte</h3>
-      {field('title', 'Titel', 'z. B. Hermes')}
-      {field('subtitle', 'Untertitel', 'z. B. Berner-Mix · geboren am 14. Mai 2026')}
-      {field('footer', 'Fußzeile', 'z. B. Mutter: Tilda · Vater: Bodo')}
+      <h3>{t('Texte')}</h3>
+      {field('title', t('Titel'), t('z. B. Hermes'))}
+      {field('subtitle', t('Untertitel'), t('z. B. Berner-Mix · geboren am 14. Mai 2026'))}
+      {field('footer', t('Fußzeile'), t('z. B. Mutter: Tilda · Vater: Bodo'))}
     </section>
   )
 }
@@ -42,9 +43,9 @@ export default function CollageInspector({ tab, onTabChange, page, pageCount, se
   return (
     <aside className="inspector">
       <TabBar
-        tabs={INSPECTOR_TABS}
+        tabs={INSPECTOR_TABS.map((item) => ({ ...item, label: t(item.label) }))}
         current={tab}
-        label="Seite bearbeiten"
+        label={t('Seite bearbeiten')}
         idPrefix="collage-tab"
         panelId={PANEL_ID}
         className="inspector-tabs"
@@ -57,7 +58,7 @@ export default function CollageInspector({ tab, onTabChange, page, pageCount, se
             <DesignPanel page={page} pageCount={pageCount} actions={actions} />
             {canDeletePage && (
               <section className="inspector-section">
-                <ConfirmButton onConfirm={actions.deletePage} label="Diese Seite löschen" confirmLabel="Seite wirklich löschen?" />
+                <ConfirmButton onConfirm={actions.deletePage} label={t('Diese Seite löschen')} confirmLabel={t('Seite wirklich löschen?')} />
               </section>
             )}
           </>

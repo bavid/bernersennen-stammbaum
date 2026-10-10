@@ -3,6 +3,7 @@ import Avatar from './Avatar.jsx'
 import { displayName, speciesSexLabel } from '../lib/timeline.js'
 import { herkunftText, position } from '../lib/companions.js'
 import { formatDateLong } from '../lib/dates.js'
+import { t } from '../lib/i18n/index.js'
 
 const AXIS_STEP_SHORT_MAX_YEARS = 8
 const AXIS_STEP_MEDIUM_MAX_YEARS = 20
@@ -36,8 +37,8 @@ const HERKUNFT_CHIP_LABELS = {
 function rowAriaLabel(row, where) {
   const name = displayName(row.dog)
   const when = row.ongoing
-    ? `${where} seit ${formatDateLong(row.start)}`
-    : `${where} von ${formatDateLong(row.start)} bis ${formatDateLong(row.end)}`
+    ? t('{where} seit {date}', { where: t(where), date: formatDateLong(row.start) })
+    : t('{where} von {from} bis {to}', { where: t(where), from: formatDateLong(row.start), to: formatDateLong(row.end) })
   const herkunft = herkunftText(row.dog)
   return herkunft ? `${name}, ${when}, ${herkunft}` : `${name}, ${when}`
 }
@@ -62,16 +63,16 @@ function CompanionRow({ row, span, where }) {
           <Avatar dog={row.dog} size={36} />
           <span className="companion-identity-text">
             <span className="companion-name">{displayName(row.dog)}</span>
-            <span className="companion-species muted">{speciesSexLabel(row.dog.tierart, row.dog.geschlecht)}</span>
+            <span className="companion-species muted">{speciesSexLabel(row.dog.tierart, row.dog.geschlecht).split(' · ').map((part) => t(part)).join(' · ')}</span>
           </span>
         </span>
         <span className="companion-track">
           <span className={`companion-bar ${barModifierClass(row)}`} style={{ left: `${startPct}%`, width: `${width}%` }}>
-            {chip && <span className="companion-chip">{chip}</span>}
-            {row.ongoing && <span className="companion-bar-label companion-bar-label-today">heute</span>}
+            {chip && <span className="companion-chip">{t(chip)}</span>}
+            {row.ongoing && <span className="companion-bar-label companion-bar-label-today">{t('heute')}</span>}
             {isMemory && (
               <span className="companion-bar-label companion-bar-label-memory">
-                In Erinnerung · {row.start.slice(0, 4)}–{row.end.slice(0, 4)}
+                {t('In Erinnerung')} · {row.start.slice(0, 4)}–{row.end.slice(0, 4)}
               </span>
             )}
           </span>

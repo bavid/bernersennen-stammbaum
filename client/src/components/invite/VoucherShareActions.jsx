@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Icon from '../Icon.jsx'
 import { useToast } from '../Toast.jsx'
 import { voucherLink } from '../../lib/visits.js'
+import { t } from '../../lib/i18n/index.js'
 
 const LINK_COPY_FAILED_MESSAGE = 'Kopieren nicht möglich – Link bitte markieren'
 
@@ -16,7 +17,7 @@ export default function VoucherShareActions({ code }) {
   async function copy(text) {
     try {
       await navigator.clipboard.writeText(text)
-      toast('Kopiert')
+      toast(t('Kopiert'))
     } catch {
       // Ohne Zwischenablage-Recht bleibt nur das Abtippen - nichts weiter zu tun.
     }
@@ -25,10 +26,10 @@ export default function VoucherShareActions({ code }) {
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(voucherLink(code))
-      toast('Kopiert')
+      toast(t('Kopiert'))
     } catch {
       setLinkCopyFailed(true)
-      toast(LINK_COPY_FAILED_MESSAGE)
+      toast(t(LINK_COPY_FAILED_MESSAGE))
     }
   }
 
@@ -45,16 +46,16 @@ export default function VoucherShareActions({ code }) {
       <div className="voucher-row-actions">
         <button type="button" className="btn btn-ghost" onClick={() => copy(code)}>
           <Icon name="copy" />
-          Code kopieren
+          {t('Code kopieren')}
         </button>
         <button type="button" className="btn btn-ghost" onClick={copyLink}>
           <Icon name="copy" />
-          Link kopieren
+          {t('Link kopieren')}
         </button>
         {canShare && (
           <button type="button" className="btn btn-ghost" onClick={share}>
             <Icon name="share" />
-            Teilen
+            {t('Teilen')}
           </button>
         )}
       </div>
@@ -62,7 +63,7 @@ export default function VoucherShareActions({ code }) {
         <input
           readOnly
           className="voucher-link-fallback"
-          aria-label="Einladungslink zum Markieren und Kopieren"
+          aria-label={t('Einladungslink zum Markieren und Kopieren')}
           value={voucherLink(code)}
           onFocus={(e) => e.target.select()}
         />

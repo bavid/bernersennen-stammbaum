@@ -14,6 +14,7 @@ import {
   readOptionen,
   writeOptionen
 } from '../lib/bilderrahmen.js'
+import { t } from '../lib/i18n/index.js'
 
 const EMPTY = []
 
@@ -64,16 +65,16 @@ export default function BilderrahmenPage({ areaKey = null }) {
   const fotos = data?.fotos || EMPTY
   const tiere = data?.tiere || EMPTY
 
-  if (!data && loading) return <FrameMessage title="Fotos werden geholt …" />
+  if (!data && loading) return <FrameMessage title={t('Fotos werden geholt …')} />
   if (!data && error) {
     return (
-      <FrameMessage title="Das hat nicht geklappt" tone="ended">
+      <FrameMessage title={t('Das hat nicht geklappt')} tone="ended">
         <p>{error.message}</p>
         <button type="button" className="btn btn-primary" onClick={reload}>
-          Noch einmal versuchen
+          {t('Noch einmal versuchen')}
         </button>
         <Link to="/start" className="btn btn-ghost">
-          Zurück zu Start
+          {t('Zurück zu Start')}
         </Link>
       </FrameMessage>
     )
@@ -85,19 +86,19 @@ export default function BilderrahmenPage({ areaKey = null }) {
   if (fotos.length === 0) {
     const filtered = auswahl.tiere.length > 0 || auswahl.zeitraum !== 'alle'
     return (
-      <FrameMessage title={filtered ? 'Hier gibt es (noch) keine Fotos' : 'Noch keine Fotos'}>
+      <FrameMessage title={filtered ? t('Hier gibt es (noch) keine Fotos') : t('Noch keine Fotos')}>
         <p>
           {filtered
-            ? 'Für diese Auswahl haben wir keine Fotos gefunden.'
-            : 'Sobald ihr Fotos zu euren Tieren oder Erinnerungen hochladet, zeigt sie der Bilderrahmen hier.'}
+            ? t('Für diese Auswahl haben wir keine Fotos gefunden.')
+            : t('Sobald ihr Fotos zu euren Tieren oder Erinnerungen hochladet, zeigt sie der Bilderrahmen hier.')}
         </p>
         {filtered && (
           <button type="button" className="btn btn-primary" onClick={() => changeAuswahl({ ...auswahl, tiere: [], zeitraum: 'alle' })}>
-            Alle Fotos zeigen
+            {t('Alle Fotos zeigen')}
           </button>
         )}
         <Link to="/start" className="btn btn-ghost">
-          Zurück zu Start
+          {t('Zurück zu Start')}
         </Link>
       </FrameMessage>
     )

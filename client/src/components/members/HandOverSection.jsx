@@ -2,6 +2,7 @@ import { forwardRef, useState } from 'react'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import useArmed from '../../hooks/useArmed.js'
 import Icon from '../Icon.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Leitung übergeben (nur Leitung): ein Mitglied wählen, zweistufig bestätigen - danach ist es Leitung
 // und man selbst Stellvertretung (server/routes/members.js POST /leitung/:homeId). Mit dem gemeinsamen
@@ -32,19 +33,23 @@ const HandOverSection = forwardRef(function HandOverSection({ members, selfId, s
 
   return (
     <section className="card members-section" aria-labelledby="handover-title">
-      <h2 id="handover-title">Leitung übergeben</h2>
+      <h2 id="handover-title">{t('Leitung übergeben')}</h2>
       <p className="muted">
-        Wer die Leitung bekommt, ist danach {words.roleLeitung}
-        {selfDemoted ? ` – du selbst bist dann ${words.roleStellvertretung}.` : '.'} Nur die Leitung ändert Rollen und den
-        Namen und kann {words.theGroup} auflösen.
+        {selfDemoted
+          ? t('Wer die Leitung bekommt, ist danach {lead} – du selbst bist dann {deputy}.', {
+              lead: words.roleLeitung,
+              deputy: words.roleStellvertretung
+            })
+          : t('Wer die Leitung bekommt, ist danach {lead}.', { lead: words.roleLeitung })}{' '}
+        {t('Nur die Leitung ändert Rollen und den Namen und kann {theGroup} auflösen.', { theGroup: words.theGroup })}
       </p>
       {candidates.length === 0 ? (
-        <p className="field-hint">Noch kein anderes Mitglied da, an das du übergeben könntest.</p>
+        <p className="field-hint">{t('Noch kein anderes Mitglied da, an das du übergeben könntest.')}</p>
       ) : (
         <>
           <div className="field">
             <label className="field-label" htmlFor="handover-target">
-              An wen?
+              {t('An wen?')}
             </label>
             <select
               id="handover-target"
@@ -56,7 +61,7 @@ const HandOverSection = forwardRef(function HandOverSection({ members, selfId, s
                 setArmed(false)
               }}
             >
-              <option value="">Bitte wählen …</option>
+              <option value="">{t('Bitte wählen …')}</option>
               {candidates.map((member) => (
                 <option key={member.familyId} value={String(member.familyId)}>
                   {member.name}
@@ -71,7 +76,7 @@ const HandOverSection = forwardRef(function HandOverSection({ members, selfId, s
             onClick={handleClick}
           >
             <Icon name={armed ? 'check' : 'logout'} />
-            {saving ? 'Übergebe …' : armed ? `Ja, an „${target.name}“ übergeben` : 'Leitung übergeben'}
+            {saving ? t('Übergebe …') : armed ? t('Ja, an „{name}“ übergeben', { name: target.name }) : t('Leitung übergeben')}
           </button>
         </>
       )}

@@ -5,6 +5,7 @@ import KontaktMerkenHinweis from './KontaktMerkenHinweis.jsx'
 import useRequestForm from '../hooks/useRequestForm.js'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { ANFRAGE_TYP, EMPTY_VOUCHER_REQUEST, MAX_EMAIL_LENGTH, MAX_NACHRICHT_LENGTH, MAX_NAME_LENGTH } from '../lib/anfragen.js'
+import { t } from '../lib/i18n/index.js'
 
 export const VOUCHER_REQUEST_SUCCESS = 'Danke! Wir melden uns per E-Mail, sobald wieder Platz ist.'
 
@@ -24,7 +25,7 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
     return (
       <p ref={successRef} className="request-success" role="status" tabIndex={-1}>
         <Icon name="check" />
-        {VOUCHER_REQUEST_SUCCESS}
+        {t(VOUCHER_REQUEST_SUCCESS)}
       </p>
     )
   }
@@ -32,11 +33,12 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
   return (
     <form ref={formRef} className="request-form form-stack" onSubmit={handleSubmit} noValidate>
       <div className="request-why">
-        <h3>Warum per Einladungscode?</h3>
+        <h3>{t('Warum per Einladungscode?')}</h3>
         <p>
-          {theme.appName} ist ein kleines, privat betriebenes Projekt: ohne Tracking, ohne Datenhandel und mit einem bewusst
-          kleinen eigenen Server. Damit alles schnell und zuverlässig bleibt, nehmen wir neue Familien nach und nach auf.
-          Schreib uns kurz – wir schicken dir deinen persönlichen Code, sobald wieder Platz ist.
+          {t(
+            '{app} ist ein kleines, privat betriebenes Projekt: ohne Tracking, ohne Datenhandel und mit einem bewusst kleinen eigenen Server. Damit alles schnell und zuverlässig bleibt, nehmen wir neue Familien nach und nach auf. Schreib uns kurz – wir schicken dir deinen persönlichen Code, sobald wieder Platz ist.',
+            { app: theme.appName }
+          )}
         </p>
       </div>
 
@@ -46,7 +48,7 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
         </div>
       )}
 
-      <AdminField id={id('name')} label="Dein Name (freiwillig)" error={fieldErrors.name}>
+      <AdminField id={id('name')} label={t('Dein Name (freiwillig)')} error={fieldErrors.name}>
         <input
           {...bind('name')}
           value={form.name}
@@ -57,7 +59,7 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
         />
       </AdminField>
 
-      <AdminField id={id('email')} label="Deine E-Mail-Adresse" error={fieldErrors.email}>
+      <AdminField id={id('email')} label={t('Deine E-Mail-Adresse')} error={fieldErrors.email}>
         <input
           {...bind('email')}
           type="email"
@@ -71,8 +73,8 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
 
       <AdminField
         id={id('nachricht')}
-        label="Nachricht (freiwillig)"
-        hint={`${form.nachricht.trim().length} / ${MAX_NACHRICHT_LENGTH} Zeichen`}
+        label={t('Nachricht (freiwillig)')}
+        hint={t('{n} / {max} Zeichen', { n: form.nachricht.trim().length, max: MAX_NACHRICHT_LENGTH })}
         error={fieldErrors.nachricht}
       >
         <textarea
@@ -89,15 +91,15 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
       <Honeypot id={id('hp')} value={website} onChange={setWebsite} />
 
       <p className="request-privacy">
-        Deine Angaben nutzen wir nur für diese Anfrage.{' '}
+        {t('Deine Angaben nutzen wir nur für diese Anfrage.')}{' '}
         <a href="/datenschutz" target="_blank" rel="noopener noreferrer">
-          Mehr zum Datenschutz
+          {t('Mehr zum Datenschutz')}
         </a>
       </p>
 
       <button type="submit" className="btn btn-primary btn-block" disabled={sending}>
         <Icon name="send" />
-        {sending ? 'Sende …' : 'Einladungscode anfragen'}
+        {sending ? t('Sende …') : t('Einladungscode anfragen')}
       </button>
     </form>
   )

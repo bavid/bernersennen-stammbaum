@@ -8,6 +8,7 @@ import SharePanel from '../SharePanel.jsx'
 import ShelterSharePanel from '../ShelterSharePanel.jsx'
 import TakeOverPanel from '../TakeOverPanel.jsx'
 import DogRelatives from './DogRelatives.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 export const SHARE_PANEL_TITLE_ID = 'share-panel-title'
 export const TAKE_OVER_ID = 'take-over'
@@ -30,30 +31,30 @@ function DogFacts({ dog, family }) {
   const stay = companionLine(dog, ownerName ? { ownerName } : undefined)
   const sex = sexLabel(dog.geschlecht, dog.tierart)
   // Geschlecht „weiß ich nicht“: „unbekannt“ wie ein fehlender Geburtstag - nie Hündin oder Rüde.
-  const kind = !sex ? <span className="muted">unbekannt</span> : dog.tierart === 'anderes' ? `${speciesLabel(dog.tierart)} · ${sex}` : sex
+  const kind = !sex ? <span className="muted">{t('unbekannt')}</span> : dog.tierart === 'anderes' ? `${t(speciesLabel(dog.tierart))} · ${t(sex)}` : t(sex)
   return (
     <dl className="facts dog-info-facts">
-      <Fact label="Rasse">{dog.rasse || <span className="muted">nicht angegeben</span>}</Fact>
-      <Fact label="Geschlecht">{kind}</Fact>
-      <Fact label="Geboren">
-        {dog.geburtsdatum ? formatDateLong(dog.geburtsdatum) : <span className="muted">unbekannt</span>}
+      <Fact label={t('Rasse')}>{dog.rasse || <span className="muted">{t('nicht angegeben')}</span>}</Fact>
+      <Fact label={t('Geschlecht')}>{kind}</Fact>
+      <Fact label={t('Geboren')}>
+        {dog.geburtsdatum ? formatDateLong(dog.geburtsdatum) : <span className="muted">{t('unbekannt')}</span>}
         {age && <span className="muted"> · {age}</span>}
       </Fact>
-      <Fact label="Zuhause">{dog.familyName}</Fact>
+      <Fact label={t('Zuhause')}>{dog.familyName}</Fact>
       {dog.farbe_markings && (
-        <Fact label="Farbe &amp; Abzeichen" wide>
+        <Fact label={t('Farbe & Abzeichen')} wide>
           {dog.farbe_markings}
         </Fact>
       )}
       {stay && (
-        <Fact label="Gemeinsame Zeit" wide>
+        <Fact label={t('Gemeinsame Zeit')} wide>
           <span className={`dog-hero-companion ${stay.memorial ? 'is-memorial' : ''}`}>
             {stay.memorial && <Icon name="heart" />} {stay.text}
           </span>
         </Fact>
       )}
       {!stay && herkunftText(dog) && (
-        <Fact label="Herkunft" wide>
+        <Fact label={t('Herkunft')} wide>
           {herkunftText(dog)}
         </Fact>
       )}
@@ -79,7 +80,7 @@ export default function DogInfos({ dog, setDog, family, allDogs, canWrite, canTa
   }
   return (
     <div className="dog-infos">
-      <h2 className="visually-hidden">Infos zu {displayName(dog)}</h2>
+      <h2 className="visually-hidden">{t('Infos zu {name}', { name: displayName(dog) })}</h2>
       <DogFacts dog={dog} family={family} />
       {dog.beschreibung && <p className="dog-info-description">{dog.beschreibung}</p>}
       {embedRelatives && <DogRelatives dog={dog} setDog={setDog} family={family} allDogs={allDogs} canWrite={canWrite} reload={reload} embedded />}

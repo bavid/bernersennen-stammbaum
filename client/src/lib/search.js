@@ -4,6 +4,7 @@ import { groupRoute, isHouseholdIdentity } from './areas.js'
 import { canInvite } from './accountMenu.js'
 import { matchesQuery, foldText } from './searchFold.js'
 import { readSetting, removeSetting, writeSetting } from './storage.js'
+import { t } from './i18n/index.js'
 
 export const MIN_QUERY_LENGTH = 2
 export const MAX_QUERY_LENGTH = 80
@@ -21,10 +22,10 @@ export function groupTitles(words) {
   return {
     tiere: words.animals,
     erinnerungen: words.entries,
-    pinnwand: 'Pinnwand & Termine',
-    familien: `${words.groups} & befreundete Zuhause`,
-    partner: 'Partner',
-    [SHORTCUT_GROUP]: 'Abkürzungen'
+    pinnwand: t('Pinnwand & Termine'),
+    familien: t('{groups} & befreundete Zuhause', { groups: words.groups }),
+    partner: t('Partner'),
+    [SHORTCUT_GROUP]: t('Abkürzungen')
   }
 }
 
@@ -53,42 +54,42 @@ export function shortcutsFor(family, words) {
   return [
     {
       key: 'einstellungen',
-      label: 'Einstellungen',
+      label: t('Einstellungen'),
       icon: 'settings',
       to: '/einstellungen',
       keywords: ['einstellungen', 'konto', 'darstellung', 'farbe', 'schrift', 'dunkel', 'hell', 'schlüssel', 'passwort', 'zugang', 'benutzer', 'optionen']
     },
     {
       key: 'bilderrahmen',
-      label: 'Bilderrahmen',
+      label: t('Bilderrahmen'),
       icon: 'frame',
       to: '/bilderrahmen',
       keywords: ['bilderrahmen', 'diashow', 'rahmen', 'fotos zeigen', 'tablet', 'fernseher', 'slideshow']
     },
     canInvite(family) && {
       key: 'einladen',
-      label: 'Einladen',
+      label: t('Einladen'),
       icon: 'send',
       action: 'invite',
       keywords: ['einladen', 'einladung', 'besuch', 'verschenken', 'code', 'freunde', 'gutschein']
     },
     {
       key: 'collage',
-      label: 'Fotocollage',
+      label: t('Fotocollage'),
       icon: 'collage',
       to: '/collage',
       keywords: ['fotocollage', 'collage', 'fotos', 'bilder', 'poster', 'drucken']
     },
     {
       key: 'hilfe',
-      label: 'Hilfe & Kontakt',
+      label: t('Hilfe & Kontakt'),
       icon: 'message',
       to: '/admin-schreiben',
       keywords: ['hilfe', 'kontakt', 'frage', 'problem', 'fehler', 'support', 'nachricht', 'schreiben']
     },
     isHouseholdIdentity(family) && {
       key: 'beitreten',
-      label: `${words.group} beitreten`,
+      label: t('{group} beitreten', { group: words.group }),
       icon: 'users',
       to: '/familien',
       keywords: ['beitreten', 'familie', 'rudel', 'gründen', 'mitglied', words.group]
@@ -148,7 +149,7 @@ export const RECENT_GROUP = 'verlauf'
 export function recentSections(recent, idPrefix) {
   if (!recent?.length) return []
   const options = recent.map((query, index) => ({ id: `${idPrefix}-${RECENT_GROUP}-${index}`, kind: 'recent', group: RECENT_GROUP, item: { query } }))
-  return [{ key: RECENT_GROUP, title: 'Zuletzt gesucht', options, more: false }]
+  return [{ key: RECENT_GROUP, title: t('Zuletzt gesucht'), options, more: false }]
 }
 
 export function flattenOptions(sections) {

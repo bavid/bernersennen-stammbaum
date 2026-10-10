@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from 'react'
 import { dogLabel, shortName } from '../lib/timeline.js'
 import { isEditable } from '../lib/areas.js'
+import { t } from '../lib/i18n/index.js'
 
 // Elternteil wählen: aus der Liste eigener (bearbeitbarer) Tiere oder als Freitext. Nur eigene Tiere,
 // weil der Server einen Elternteil ablehnt, der nicht dem eigenen Bereich gehört (auch ein hierher
@@ -30,12 +31,12 @@ export default function ParentPicker({ label, sex, tierart = 'hund', dogs, value
         <label className="field-label" htmlFor={id}>
           {label}
         </label>
-        <div className="segmented segmented-sm" role="group" aria-label={`${label} angeben`}>
+        <div className="segmented segmented-sm" role="group" aria-label={t('{label} angeben', { label })}>
           <button type="button" aria-pressed={mode === 'liste'} onClick={() => switchMode('liste')}>
-            Aus Liste
+            {t('Aus Liste')}
           </button>
           <button type="button" aria-pressed={mode === 'freitext'} onClick={() => switchMode('freitext')}>
-            Nicht erfasst
+            {t('Nicht erfasst')}
           </button>
         </div>
       </div>
@@ -46,7 +47,7 @@ export default function ParentPicker({ label, sex, tierart = 'hund', dogs, value
           value={value.dogId || ''}
           onChange={(e) => onChange({ dogId: e.target.value ? Number(e.target.value) : '', freitext: '' })}
         >
-          <option value="">– unbekannt –</option>
+          <option value="">{t('– unbekannt –')}</option>
           {options.map((dog) => (
             <option key={dog.id} value={dog.id}>
               {dogLabel(dog)}
@@ -59,7 +60,7 @@ export default function ParentPicker({ label, sex, tierart = 'hund', dogs, value
       ) : (
         <input
           id={id}
-          placeholder="Name, gern mit Zwinger – z. B. Balu vom Schwarzwaldhof"
+          placeholder={t('Name, gern mit Zwinger – z. B. Balu vom Schwarzwaldhof')}
           value={value.freitext || ''}
           maxLength={120}
           onChange={(e) => onChange({ dogId: '', freitext: e.target.value })}

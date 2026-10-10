@@ -4,6 +4,7 @@ import Icon from '../Icon.jsx'
 import DogMoreMenu from './DogMoreMenu.jsx'
 import { displayName, shortName } from '../../lib/timeline.js'
 import { dogHeadLine, originLine, stayOwnerName } from '../../lib/dogProfile.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Optionen für die Zeile unter dem Namen: mit Herkunftszeile (originLine) ohne „seit …“ - das steht dann in den Infos.
 function headLineOptions(dog, family, origin) {
@@ -26,7 +27,7 @@ export default function DogHead({ dog, family, canWrite, visibleIn, menuItems, b
     <header className={`dog-head${line.memorial ? ' is-memorial' : ''}`}>
       <div className="dog-head-photo">
         {dog.foto_url ? (
-          <button type="button" onClick={() => onOpenPhoto(dog.foto_url)} aria-label="Porträt vergrößern">
+          <button type="button" onClick={() => onOpenPhoto(dog.foto_url)} aria-label={t('Porträt vergrößern')}>
             <img src={dog.foto_url} alt={dog.name} width="160" height="160" />
           </button>
         ) : (
@@ -51,7 +52,7 @@ export default function DogHead({ dog, family, canWrite, visibleIn, menuItems, b
         {visibleIn.length > 0 && (
           <button type="button" className="chip dog-head-visible" onClick={onShowVisibility}>
             <Icon name="users" />
-            Sichtbar in: {visibleIn.join(', ')}
+            {t('Sichtbar in: {names}', { names: visibleIn.join(', ') })}
           </button>
         )}
       </div>
@@ -69,7 +70,7 @@ export default function DogHead({ dog, family, canWrite, visibleIn, menuItems, b
           {canWrite && (
             <button type="button" className="btn btn-ghost" onClick={onEdit}>
               <Icon name="edit" />
-              Bearbeiten
+              {t('Bearbeiten')}
             </button>
           )}
           <DogMoreMenu name={name} items={menuItems} />

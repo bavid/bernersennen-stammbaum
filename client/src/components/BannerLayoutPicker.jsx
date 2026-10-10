@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n/index.js'
 import { BANNER_LAYOUTS } from '../lib/partnerBanner.js'
 
 // Wahl des Banner-Layouts im Profil (PartnerBannerEditor, Feedback-Runde): vier kleine Kacheln mit einer Skizze, wie die
@@ -26,7 +27,7 @@ export default function BannerLayoutPicker({ value, onChange, busy = false }) {
                 <span key={index} />
               ))}
             </span>
-            <span className="banner-layout-label">{layout.label}</span>
+            <span className="banner-layout-label">{t(layout.label)}</span>
           </label>
         ))}
       </div>

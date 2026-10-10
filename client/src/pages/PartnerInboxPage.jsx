@@ -6,6 +6,7 @@ import { EMPTY_HINT, RETENTION_HINT } from '../lib/partnerInbox.js'
 import Icon from '../components/Icon.jsx'
 import InboxMessage from '../components/InboxMessage.jsx'
 import { useToast } from '../components/Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const DEMO_HINT_ID = 'inbox-demo-hint'
 const DEMO_INBOX_HINT = 'In der Demo nur zum Ansehen – als gelesen markieren und löschen geht hier nicht.'
@@ -17,7 +18,7 @@ const DEMO_INBOX_HINT = 'In der Demo nur zum Ansehen – als gelesen markieren u
 // me.partner.unread - so stimmt das Badge "Nachrichten" in der Navigation ohne weitere Anfrage.
 export default function PartnerInboxPage({ family, onFamilyChange }) {
   const isDemo = useIsDemo()
-  const readOnlyHint = useReadOnlyHint(DEMO_INBOX_HINT)
+  const readOnlyHint = useReadOnlyHint(t(DEMO_INBOX_HINT))
   const toast = useToast()
   const [messages, setMessages] = useState(undefined)
   const [unread, setUnread] = useState(null)
@@ -80,7 +81,7 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
       setMessages((list) => list.filter((item) => item.id !== message.id))
       if (!message.gelesen) setUnread((count) => Math.max(0, count - 1))
       if (openId === message.id) setOpenId(null)
-      toast('Nachricht gelöscht.')
+      toast(t('Nachricht gelöscht.'))
     } catch (err) {
       setError(err.message)
     }
@@ -91,8 +92,8 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
       <header className="page-hero">
         <div>
           <span className="eyebrow">{name}</span>
-          <h1>Nachrichten</h1>
-          <p className="page-lede">Was Menschen euch über „Schreib uns“ auf eurem Portal oder einem Steckbrief schreiben.</p>
+          <h1>{t('Nachrichten')}</h1>
+          <p className="page-lede">{t('Was Menschen euch über „Schreib uns“ auf eurem Portal oder einem Steckbrief schreiben.')}</p>
         </div>
       </header>
 
@@ -101,13 +102,13 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
         <div className="inbox-meta">
           {messages?.length > 0 && (
             <p className="inbox-summary" aria-live="polite">
-              {messages.length} {messages.length === 1 ? 'Nachricht' : 'Nachrichten'}
-              {unread > 0 ? `, davon ${unread} ungelesen` : ''}
+              {messages.length === 1 ? t('{n} Nachricht', { n: 1 }) : t('{n} Nachrichten', { n: messages.length })}
+              {unread > 0 ? t(', davon {n} ungelesen', { n: unread }) : ''}
             </p>
           )}
           <p className="inbox-retention" role="note">
             <Icon name="clock" />
-            {RETENTION_HINT}
+            {t(RETENTION_HINT)}
           </p>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
@@ -121,11 +122,11 @@ export default function PartnerInboxPage({ family, onFamilyChange }) {
             {error || loadError}
           </div>
         )}
-        {messages === undefined && !loadError && <p className="muted">Lade …</p>}
+        {messages === undefined && !loadError && <p className="muted">{t('Lade …')}</p>}
         {messages?.length === 0 && (
           <div className="empty-state card inbox-empty">
             <Icon name="inbox" />
-            <p>{EMPTY_HINT}</p>
+            <p>{t(EMPTY_HINT)}</p>
           </div>
         )}
         {messages?.length > 0 && (

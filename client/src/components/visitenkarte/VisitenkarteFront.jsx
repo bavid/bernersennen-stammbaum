@@ -1,4 +1,5 @@
 import Icon from '../Icon.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Vorderseite einer Visitenkarte (Phase V5, 85 × 55 mm) in einer der drei Vorlagen - card kommt aus lib/visitenkarte.js
 // cardModel (Foto ohne Bannerfoto ist dort schon Klassisch). Maße und Schrift in styles/visitenkarten.css (alles in
@@ -119,7 +120,7 @@ export default function VisitenkarteFront({ card }) {
       className={`vk-card vk-front vk-${card.vorlage}${card.widmung ? ' has-widmung' : ''}`}
       data-vorlage={card.vorlage}
       style={cardStyle(card)}
-      aria-label={`Vorderseite (${VORLAGE_LABELS[card.vorlage] || card.vorlage})`}
+      aria-label={t('Vorderseite ({template})', { template: VORLAGE_LABELS[card.vorlage] ? t(VORLAGE_LABELS[card.vorlage]) : card.vorlage })}
     >
       <Front card={card} />
     </article>

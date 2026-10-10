@@ -1,6 +1,7 @@
 import AdminField, { fieldProps } from './AdminField.jsx'
 import { SETUP_TYPE_OPTIONS, setupTypeLabel } from '../lib/partnerTypes.js'
 import { isBoundPartnerAccess } from '../lib/partnerSetup.js'
+import { t } from '../lib/i18n/index.js'
 
 const NAME_MAX_LENGTH = 120 // wie server/lib/partners.js MAX_NAME_LENGTH
 const PLZ_LENGTH = 5
@@ -21,20 +22,19 @@ export default function PartnerSetupFields({ access, values, errors, onChange })
   return (
     <section className="partner-setup form-stack" aria-labelledby="partner-setup-title">
       <div className="partner-setup-intro">
-        <h2 id="partner-setup-title">Partner-Profil einrichten</h2>
+        <h2 id="partner-setup-title">{t('Partner-Profil einrichten')}</h2>
         <p>
-          Willkommen! Mit diesem Zugang richtet ihr euer kostenloses Partner-Profil ein – euer öffentlicher Auftritt bei
-          Familie auf Pfoten.
+          {t('Willkommen! Mit diesem Zugang richtet ihr euer kostenloses Partner-Profil ein – euer öffentlicher Auftritt bei Familie auf Pfoten.')}
         </p>
       </div>
 
       {isBound ? (
-        <p className="partner-setup-welcome">Willkommen, {access.partnerName}!</p>
+        <p className="partner-setup-welcome">{t('Willkommen, {name}!', { name: access.partnerName })}</p>
       ) : (
         <>
           <AdminField
             id="partner-name"
-            label="Name eurer Hundeschule, eures Tierheims …"
+            label={t('Name eurer Hundeschule, eures Tierheims …')}
             error={errors.name}
             className={errorClass(errors.name)}
           >
@@ -50,13 +50,13 @@ export default function PartnerSetupFields({ access, values, errors, onChange })
 
           {access.partnerTyp ? (
             <div className="field">
-              <span className="field-label">Typ</span>
-              <p className="partner-setup-typ-fixed">{setupTypeLabel(access.partnerTyp)}</p>
+              <span className="field-label">{t('Typ')}</span>
+              <p className="partner-setup-typ-fixed">{t(setupTypeLabel(access.partnerTyp))}</p>
             </div>
           ) : (
             <AdminField
               id="partner-typ"
-              label="Was bietet ihr an?"
+              label={t('Was bietet ihr an?')}
               error={errors.typ}
               className={errorClass(errors.typ)}
             >
@@ -66,10 +66,10 @@ export default function PartnerSetupFields({ access, values, errors, onChange })
                 onChange={(e) => onChange({ typ: e.target.value })}
                 aria-required="true"
               >
-                <option value="">Bitte wählen …</option>
+                <option value="">{t('Bitte wählen …')}</option>
                 {SETUP_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.label)}
                   </option>
                 ))}
               </select>
@@ -78,9 +78,9 @@ export default function PartnerSetupFields({ access, values, errors, onChange })
 
           <AdminField
             id="partner-plz"
-            label="Postleitzahl"
+            label={t('Postleitzahl')}
             error={errors.plz}
-            hint="Damit man euch in der Umgebung findet."
+            hint={t('Damit man euch in der Umgebung findet.')}
             className={errorClass(errors.plz)}
           >
             <input
@@ -89,7 +89,7 @@ export default function PartnerSetupFields({ access, values, errors, onChange })
               onChange={(e) => onChange({ plz: e.target.value.replace(/\D/g, '').slice(0, PLZ_LENGTH) })}
               inputMode="numeric"
               maxLength={PLZ_LENGTH}
-              placeholder="z. B. 10115"
+              placeholder={t('z. B. 10115')}
               autoComplete="postal-code"
               aria-required="true"
             />

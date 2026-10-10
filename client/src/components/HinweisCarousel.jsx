@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { STUFE } from '../lib/hinweise.js'
+import { t } from '../lib/i18n/index.js'
 
 const ICONS = { [STUFE.info]: 'info', [STUFE.wartung]: 'wrench', [STUFE.wichtig]: 'alert' }
 // Die Stufe steckt in der Farbe - als Wort für alle, die sie nicht sehen (am Desktop auch sichtbar, außer bei "info").
@@ -8,8 +9,8 @@ const STUFE_WORDS = { [STUFE.info]: 'Info', [STUFE.wartung]: 'Wartung', [STUFE.w
 
 function Pager({ index, count, onStep }) {
   return (
-    <div className="hinweis-pager" role="group" aria-label="Hinweise blättern">
-      <button type="button" className="hinweis-btn" aria-label="Vorheriger Hinweis" title="Zurück" onClick={() => onStep(-1)}>
+    <div className="hinweis-pager" role="group" aria-label={t('Hinweise blättern')}>
+      <button type="button" className="hinweis-btn" aria-label={t('Vorheriger Hinweis')} title={t('Zurück')} onClick={() => onStep(-1)}>
         <Icon name="chevronLeft" />
       </button>
       <span className="hinweis-count">
@@ -17,10 +18,10 @@ function Pager({ index, count, onStep }) {
           {index + 1} / {count}
         </span>
         <span className="visually-hidden">
-          Hinweis {index + 1} von {count}
+          {t('Hinweis {n} von {count}', { n: index + 1, count })}
         </span>
       </span>
-      <button type="button" className="hinweis-btn" aria-label="Nächster Hinweis" title="Weiter" onClick={() => onStep(1)}>
+      <button type="button" className="hinweis-btn" aria-label={t('Nächster Hinweis')} title={t('Weiter')} onClick={() => onStep(1)}>
         <Icon name="chevronRight" />
       </button>
     </div>
@@ -32,8 +33,8 @@ function DismissButton({ preview, onClick }) {
     <button
       type="button"
       className="hinweis-btn"
-      aria-label="Hinweis ausblenden"
-      title={preview ? 'Nur Vorschau' : 'Hinweis ausblenden'}
+      aria-label={t('Hinweis ausblenden')}
+      title={preview ? t('Nur Vorschau') : t('Hinweis ausblenden')}
       disabled={preview}
       onClick={onClick}
     >
@@ -113,23 +114,24 @@ export default function HinweisCarousel({ hinweise, onDismiss, preview = false, 
     const next = (currentIndex + delta + count) % count
     setIndex(next)
     if (!keepOpen) setOpen(false)
-    setAnnouncement(`Hinweis ${next + 1} von ${count}: ${hinweise[next].titel}`)
+    setAnnouncement(`${t('Hinweis {n} von {count}', { n: next + 1, count })}: ${hinweise[next].titel}`)
   }
 
   function dismiss() {
     setOpen(false)
-    setAnnouncement('Hinweis ausgeblendet.')
+    setAnnouncement(t('Hinweis ausgeblendet.'))
     onDismiss?.(hinweis.id)
   }
 
   const classes = ['hinweis-band', `hinweis-${stufe}`, hasText && 'has-text', open && 'is-expanded', compact && 'is-compact']
-  const triggerLabel = count > 1 ? `${count} Hinweise, zuerst: ${hinweis.titel}` : `Hinweis: ${hinweis.titel}`
+  const triggerLabel =
+    count > 1 ? t('{count} Hinweise, zuerst: {titel}', { count, titel: hinweis.titel }) : t('Hinweis: {titel}', { titel: hinweis.titel })
   return (
     <div
       ref={rootRef}
       className={classes.filter(Boolean).join(' ')}
       role="region"
-      aria-label={preview ? 'Vorschau des Hinweis-Bands' : 'Hinweise'}
+      aria-label={preview ? t('Vorschau des Hinweis-Bands') : t('Hinweise')}
     >
       <div className="hinweis-band-inner">
         {compact && (
@@ -157,7 +159,7 @@ export default function HinweisCarousel({ hinweise, onDismiss, preview = false, 
           {stufe === STUFE.info ? (
             <span className="visually-hidden">Info: </span>
           ) : (
-            <span className="hinweis-stufe">{STUFE_WORDS[stufe]}</span>
+            <span className="hinweis-stufe">{t(STUFE_WORDS[stufe])}</span>
           )}
           <span ref={titleRef} className="hinweis-titel-text" title={hinweis.titel}>
             {hinweis.titel}
@@ -173,7 +175,7 @@ export default function HinweisCarousel({ hinweise, onDismiss, preview = false, 
               onClick={toggle}
             >
               <Icon name="chevronDown" className={open ? 'is-flipped' : ''} />
-              <span className="hinweis-btn-label">{open ? 'Weniger' : 'Mehr'}</span>
+              <span className="hinweis-btn-label">{open ? t('Weniger') : t('Mehr')}</span>
             </button>
           )}
           {count > 1 && <Pager index={currentIndex} count={count} onStep={(delta) => step(delta)} />}

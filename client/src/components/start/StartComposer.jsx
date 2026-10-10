@@ -9,6 +9,7 @@ import { isEditable } from '../../lib/areas.js'
 import { displayName } from '../../lib/timeline.js'
 import { isOwnHome } from '../../lib/visits.js'
 import { visibleInNames } from '../../lib/dogProfile.js'
+import { locale, t } from '../../lib/i18n/index.js'
 
 // Bis zu so vielen Tieren stehen sie als Knöpfe mit Bild da, darüber (z. B. eine große Familie) als Auswahlliste.
 export const MAX_CHIPS = 6
@@ -18,7 +19,7 @@ export const MAX_CHIPS = 6
 export function composerAnimals(dogs = []) {
   return dogs
     .filter((dog) => isEditable(dog) && !dog.shared_from && !dog.bei_uns_bis && !dog.name_unbekannt)
-    .sort((a, b) => displayName(a).localeCompare(displayName(b), 'de'))
+    .sort((a, b) => displayName(a).localeCompare(displayName(b), locale()))
 }
 
 // "Was erlebt euer Tier?" (Phase W, Start und Gruppenseite): ein Knopf „Erinnerung festhalten“ (B+ Familienalbum - die Tiere
@@ -52,7 +53,7 @@ export default function StartComposer({ family, dogs, onCreated }) {
     const entry = await api.createTimelineEntry({ ...payload, dogId: chosen.id })
     setDogId(null)
     setPicking(false)
-    toast(`${words.entry} zu ${displayName(chosen)} gespeichert`)
+    toast(t('{entry} zu {name} gespeichert', { entry: words.entry, name: displayName(chosen) }))
     onCreated?.({
       comment_count: 0,
       ...entry,
@@ -67,7 +68,9 @@ export default function StartComposer({ family, dogs, onCreated }) {
   return (
     <section className={`composer start-composer${chosen ? ' is-open' : ''}`} aria-labelledby={titleId}>
       <h2 id={titleId} className="start-composer-title">
-        {chosen ? `${words.newEntry} zu ${displayName(chosen)}` : `Was erlebt euer ${words.animal}?`}
+        {chosen
+          ? t('{newEntry} zu {name}', { newEntry: words.newEntry, name: displayName(chosen) })
+          : t('Was erlebt euer {animal}?', { animal: words.animal })}
       </h2>
       {!picking && !chosen && (
         <button type="button" ref={openRef} className="btn btn-primary start-composer-open" onClick={() => setPicking(true)}>
@@ -78,10 +81,10 @@ export default function StartComposer({ family, dogs, onCreated }) {
       {(picking || chosen) && animals.length > MAX_CHIPS && (
         <div className="field start-composer-select" ref={pickerRef}>
           <label className="field-label" htmlFor={selectId}>
-            {words.animal} wählen
+            {t('{animal} wählen', { animal: words.animal })}
           </label>
           <select id={selectId} value={dogId ?? ''} onChange={(event) => setDogId(event.target.value ? Number(event.target.value) : null)}>
-            <option value="">Bitte wählen …</option>
+            <option value="">{t('Bitte wählen …')}</option>
             {animals.map((dog) => (
               <option key={dog.id} value={dog.id}>
                 {displayName(dog)}
@@ -92,11 +95,11 @@ export default function StartComposer({ family, dogs, onCreated }) {
       )}
       {picking && !chosen && (
         <button type="button" className="btn btn-ghost btn-compact start-composer-cancel" onClick={() => setPicking(false)}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       )}
       {(picking || chosen) && animals.length <= MAX_CHIPS && (
-        <div className="start-composer-animals" role="group" aria-label={`${words.animal} wählen`} ref={pickerRef}>
+        <div className="start-composer-animals" role="group" aria-label={t('{animal} wählen', { animal: words.animal })} ref={pickerRef}>
           {animals.map((dog) => (
             <button
               key={dog.id}

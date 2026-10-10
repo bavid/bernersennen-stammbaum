@@ -7,6 +7,7 @@ import TelegramConnectDialog from './TelegramConnectDialog.jsx'
 import TelegramConnected from './TelegramConnected.jsx'
 import TelegramOwnBot from './TelegramOwnBot.jsx'
 import { useToast } from './Toast.jsx'
+import { t } from '../lib/i18n/index.js'
 
 const TITLE_ID = 'partner-telegram-title'
 const PRIVACY_NOTE = 'Die Hinweise enthalten keine Namen, Kontaktdaten oder Nachrichtentexte – nur, dass es etwas Neues gibt.'
@@ -56,7 +57,7 @@ export default function PartnerTelegramSection() {
     (next) => {
       setLink(null)
       setStatus(next)
-      toast('Telegram ist verbunden.')
+      toast(t('Telegram ist verbunden.'))
     },
     [toast]
   )
@@ -64,19 +65,21 @@ export default function PartnerTelegramSection() {
   return (
     <section className="card partner-telegram" aria-labelledby={TITLE_ID}>
       <div className="partner-telegram-head">
-        <h2 id={TITLE_ID}>Benachrichtigungen</h2>
-        <p className="partner-telegram-lede">Hinweise aufs Handy per Telegram, wenn über „Schreib uns“ eine Nachricht kommt oder ein Beitrag geprüft wurde.</p>
+        <h2 id={TITLE_ID}>{t('Benachrichtigungen')}</h2>
+        <p className="partner-telegram-lede">
+          {t('Hinweise aufs Handy per Telegram, wenn über „Schreib uns“ eine Nachricht kommt oder ein Beitrag geprüft wurde.')}
+        </p>
       </div>
       {loadError && (
         <p className="error-banner" role="alert">
           {loadError}
         </p>
       )}
-      {!status && !loadError && <p className="muted">Lade …</p>}
+      {!status && !loadError && <p className="muted">{t('Lade …')}</p>}
       {status && !status.eingerichtet && (
         <p className="telegram-state">
           <Icon name="info" />
-          Telegram ist noch nicht eingerichtet. Richtet euren eigenen Bot ein – die Anleitung steht unten.
+          {t('Telegram ist noch nicht eingerichtet. Richtet euren eigenen Bot ein – die Anleitung steht unten.')}
         </p>
       )}
       {status?.eingerichtet && status.verbunden && <TelegramConnected status={status} onStatus={setStatus} />}
@@ -85,18 +88,18 @@ export default function PartnerTelegramSection() {
           {status.getrennt === GETRENNT.blockiert && (
             <p className="telegram-state is-blocked" role="status">
               <Icon name="alert" />
-              Telegram hat die Verbindung beendet – der Bot wurde blockiert. Ihr könnt jederzeit neu verbinden.
+              {t('Telegram hat die Verbindung beendet – der Bot wurde blockiert. Ihr könnt jederzeit neu verbinden.')}
             </p>
           )}
           {status.getrennt === GETRENNT.botGewechselt && (
             <p className="telegram-state is-blocked" role="status">
               <Icon name="alert" />
-              Der Bot hat gewechselt – bitte einmal neu verbinden, damit die Hinweise über den neuen Bot ankommen.
+              {t('Der Bot hat gewechselt – bitte einmal neu verbinden, damit die Hinweise über den neuen Bot ankommen.')}
             </p>
           )}
           <button type="button" className="btn btn-primary" disabled={isDemo || connecting} onClick={connect}>
             <Icon name="send" />
-            {connecting ? 'Einen Moment …' : 'Mit Telegram verbinden'}
+            {connecting ? t('Einen Moment …') : t('Mit Telegram verbinden')}
           </button>
           {error && (
             <p className="field-error" role="alert">
@@ -105,7 +108,7 @@ export default function PartnerTelegramSection() {
           )}
         </div>
       )}
-      {status?.eingerichtet && <p className="field-hint">{PRIVACY_NOTE}</p>}
+      {status?.eingerichtet && <p className="field-hint">{t(PRIVACY_NOTE)}</p>}
       {isDemo && status?.eingerichtet && <p className="field-hint">{readOnlyHint}</p>}
       {status && <TelegramOwnBot status={status} onStatus={setStatus} openByDefault={!status.eingerichtet} />}
       {link && <TelegramConnectDialog link={link} onConnected={handleConnected} onClose={() => setLink(null)} />}

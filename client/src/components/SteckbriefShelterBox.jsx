@@ -4,6 +4,7 @@ import { ExternalLink, InternalLink } from './PreviewLink.jsx'
 import { isExternalUrl, isValidPhone, mailtoHref, telHref } from '../lib/format.js'
 import { showContactForm } from '../lib/contactPartner.js'
 import { useIsPreview } from '../lib/preview.js'
+import { t } from '../lib/i18n/index.js'
 
 // Tierheim-Kasten am Ende des Steckbriefs (/t/:slug, SteckbriefPage): die Vermittlung läuft direkt über
 // das Tierheim - per "Schreib uns zu {Tiername}" (Phase P2, mit bezugSlug, damit das Tierheim weiß, um
@@ -21,19 +22,19 @@ export default function SteckbriefShelterBox({ shelter, animalName, animalSlug }
   return (
     <section className="card steckbrief-shelter">
       <div className="steckbrief-shelter-head">
-        {shelter.logoUrl && <img src={shelter.logoUrl} alt={`Logo von ${shelter.name}`} className="partner-logo" />}
+        {shelter.logoUrl && <img src={shelter.logoUrl} alt={t('Logo von {name}', { name: shelter.name })} className="partner-logo" />}
         <div>
-          <span className="eyebrow">Tierheim</span>
+          <span className="eyebrow">{t('Tierheim')}</span>
           <h2>{shelter.name}</h2>
         </div>
       </div>
-      <p className="steckbrief-shelter-note">Die Vermittlung läuft direkt über das Tierheim.</p>
+      <p className="steckbrief-shelter-note">{t('Die Vermittlung läuft direkt über das Tierheim.')}</p>
       {hasForm && (
-        <ContactPartnerButton partner={shelter} bezugSlug={animalSlug} label={`Schreib uns zu ${animalName}`} className="btn btn-primary btn-block" />
+        <ContactPartnerButton partner={shelter} bezugSlug={animalSlug} label={t('Schreib uns zu {name}', { name: animalName })} className="btn btn-primary btn-block" />
       )}
       {hasContacts && (
         <div className="partner-portal-contact">
-          <h3>Anfrage direkt beim Tierheim</h3>
+          <h3>{t('Anfrage direkt beim Tierheim')}</h3>
           <ul>
             {hasWebsite && (
               <li>
@@ -45,7 +46,7 @@ export default function SteckbriefShelterBox({ shelter, animalName, animalSlug }
             {shelter.kontakt_email && (
               <li>
                 <Icon name="mail" />
-                <span className="visually-hidden">E-Mail: </span>
+                <span className="visually-hidden">{t('E-Mail:')} </span>
                 {mailto ? (
                   <ExternalLink href={mailto} newTab={false}>
                     {shelter.kontakt_email}
@@ -58,7 +59,7 @@ export default function SteckbriefShelterBox({ shelter, animalName, animalSlug }
             {shelter.kontakt_telefon && (
               <li>
                 <Icon name="phone" />
-                <span className="visually-hidden">Telefon: </span>
+                <span className="visually-hidden">{t('Telefon:')} </span>
                 {isValidPhone(shelter.kontakt_telefon) ? (
                   <ExternalLink href={telHref(shelter.kontakt_telefon)} newTab={false}>
                     {shelter.kontakt_telefon}
@@ -74,11 +75,11 @@ export default function SteckbriefShelterBox({ shelter, animalName, animalSlug }
       <div className="steckbrief-shelter-actions">
         {isExternalUrl(shelter.vermittlung_url) && (
           <ExternalLink href={shelter.vermittlung_url} className="btn btn-ghost">
-            Zur Vermittlungsseite
+            {t('Zur Vermittlungsseite')}
           </ExternalLink>
         )}
         <InternalLink className={`btn ${hasForm ? 'btn-ghost' : 'btn-primary'}`} to={`/p/${shelter.slug}`}>
-          Zum Portal von {shelter.name}
+          {t('Zum Portal von {name}', { name: shelter.name })}
         </InternalLink>
       </div>
     </section>

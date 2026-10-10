@@ -7,6 +7,7 @@ import { useReadOnlyHint } from '../../lib/demo.js'
 import { HOME_LABEL, START_ROUTE } from '../../lib/areas.js'
 import { requestGroups } from '../../lib/erlebtMit.js'
 import { hinweisGroups, hinweisItems, startLineText } from '../../lib/glocke.js'
+import { t } from '../../lib/i18n/index.js'
 
 const FOCUSABLE = 'button:not(:disabled), a[href]'
 
@@ -14,10 +15,10 @@ const FOCUSABLE = 'button:not(:disabled), a[href]'
 function AwayFromHome({ total, onNavigate }) {
   return (
     <div className="hinweis-away">
-      <p>{total > 0 ? `${startLineText(total)} warten in „${HOME_LABEL}“.` : 'Alles erledigt – nichts Neues.'}</p>
+      <p>{total > 0 ? t('{hinweise} warten in „{home}“.', { hinweise: startLineText(total), home: t(HOME_LABEL) }) : t('Alles erledigt – nichts Neues.')}</p>
       {total > 0 && (
         <Link to={START_ROUTE} className="btn btn-ghost btn-compact" onClick={onNavigate}>
-          Zu „{HOME_LABEL}“
+          {t('Zu „{home}“', { home: t(HOME_LABEL) })}
         </Link>
       )}
     </div>
@@ -32,8 +33,8 @@ function Liste({ glocke, groups, onNavigate }) {
       {requestGroups(lists.anfragen).map((group) => (
         <ConfirmButton
           key={group.zuhauseId}
-          label={`Alle ${group.count} von „${group.zuhause}“ ablehnen`}
-          confirmLabel="Wirklich alle ablehnen?"
+          label={t('Alle {n} von „{zuhause}“ ablehnen', { n: group.count, zuhause: group.zuhause })}
+          confirmLabel={t('Wirklich alle ablehnen?')}
           icon="close"
           className="btn-compact hinweis-reject-all"
           disabled={readOnly || isBusy(`zuhause-${group.zuhauseId}`)}
@@ -42,7 +43,7 @@ function Liste({ glocke, groups, onNavigate }) {
       ))}
       {groups.map((group) => (
         <section key={group.key} className="hinweis-group">
-          {group.label && <h3 className="hinweis-group-label">{group.label}</h3>}
+          {group.label && <h3 className="hinweis-group-label">{t(group.label)}</h3>}
           <ul className="hinweis-list" role="list">
             {group.items.map((item) => (
               <HinweisEintrag key={item.key} item={item} busy={isBusy(item.key)} disabled={readOnly} actions={actions} onNavigate={onNavigate} />
@@ -65,7 +66,7 @@ function Inhalt({ glocke, groups, onNavigate }) {
           {error}
         </p>
         <button type="button" className="btn btn-ghost btn-compact" onClick={loadLists}>
-          Nochmal versuchen
+          {t('Nochmal versuchen')}
         </button>
       </div>
     )
@@ -74,7 +75,7 @@ function Inhalt({ glocke, groups, onNavigate }) {
   if (!lists || (loading && groups.length === 0)) {
     return (
       <p className="hinweis-loading muted" aria-busy="true">
-        Lädt …
+        {t('Lädt …')}
       </p>
     )
   }
@@ -82,7 +83,7 @@ function Inhalt({ glocke, groups, onNavigate }) {
     return (
       <p className="hinweis-empty">
         <Icon name="check" />
-        Alles erledigt – nichts Neues.
+        {t('Alles erledigt – nichts Neues.')}
       </p>
     )
   }

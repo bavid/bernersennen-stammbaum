@@ -4,6 +4,7 @@
 // der Gruppenseite aus den Tieren des Bereichs (areaGrid unten, dieselbe Form).
 import { HOME_LABEL } from './areas.js'
 import { OWN_GROUP_PARAM, familyAnimals, withoutDemoSuffix } from './familyGroups.js'
+import { t } from './i18n/index.js'
 
 // Wert für ?gruppe=: das eigene Zuhause heißt „eigen“, jeder andere Bereich trägt seine Id.
 export function areaParam(area) {
@@ -12,7 +13,7 @@ export function areaParam(area) {
 
 // Name am Filter: „Mein Zuhause“, sonst der Name des Bereichs ohne „(Demo)“ - „Familie Sonnenhang“, „Zuhause Möwenweg“.
 export function areaLabel(area) {
-  return area.art === 'eigen' ? HOME_LABEL : withoutDemoSuffix(area.name)
+  return area.art === 'eigen' ? t(HOME_LABEL) : withoutDemoSuffix(area.name)
 }
 
 // Die Filter über dem Raster: je Bereich mit Tieren einer (in der Reihenfolge der Bereiche) - mit nur einem Bereich keiner.

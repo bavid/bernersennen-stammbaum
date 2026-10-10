@@ -1,6 +1,7 @@
 import PawMark from '../PawMark.jsx'
 import VisitenkarteQr from './VisitenkarteQr.jsx'
 import { cardStyle } from './VisitenkarteFront.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Rückseite der Visitenkarte (Phase V5, 85 × 55 mm): der QR-Code zum Portal (/p/:slug) mit der kurzen Adresse, in der
 // Farbe und Vorlage des Partners. Die Rückseiten mit Code (Einladungskarte, Kombi) stehen in EinladungBack.jsx und
@@ -35,16 +36,16 @@ export default function VisitenkarteBack({ card }) {
       className={`vk-card vk-back vk-back-portal vk-${card.vorlage}`}
       data-vorlage={card.vorlage}
       style={cardStyle(card)}
-      aria-label="Rückseite mit QR-Code zum Portal"
+      aria-label={t('Rückseite mit QR-Code zum Portal')}
     >
       <span className="vk-stripe" aria-hidden="true" />
       <div className="vk-qr-box">
-        <VisitenkarteQr url={card.portalUrl} label={`QR-Code, öffnet ${card.portalLabel}`} />
+        <VisitenkarteQr url={card.portalUrl} label={t('QR-Code, öffnet {url}', { url: card.portalLabel })} />
       </div>
       <div className="vk-back-text">
         <Brand />
-        <p className="vk-back-title">Unser Portal</p>
-        <p className="vk-back-lead">Neuigkeiten, Termine und Einblicke von {card.name}</p>
+        <p className="vk-back-title">{t('Unser Portal')}</p>
+        <p className="vk-back-lead">{t('Neuigkeiten, Termine und Einblicke von {name}', { name: card.name })}</p>
         <p className="vk-back-url">
           <PortalLabel card={card} />
         </p>

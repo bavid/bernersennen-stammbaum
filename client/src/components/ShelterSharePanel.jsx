@@ -5,6 +5,7 @@ import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import { displayName } from '../lib/timeline.js'
 import Icon from './Icon.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // Einwilligung "Tierheim darf mitlesen" (Phase T Task 5) - auf der Tierseite im eigenen Zuhause, nur
 // wenn dog.shelterShare überhaupt etwas zum Verwalten kennt (dog_transfers kennt ein abgebendes
@@ -52,17 +53,21 @@ export default function ShelterSharePanel({ dog, onChange }) {
       {/* Die Überschrift ist der Stand: liest das Tierheim gerade mit oder nicht (die Checkbox darunter ändert ihn). */}
       <h2 id="shelter-share-title" className={share.enabled ? 'is-reading' : undefined}>
         {share.enabled && <Icon name="eye" />}
-        {share.shelterName} {share.enabled ? 'liest mit' : 'liest nicht mit'}
+        {share.enabled ? t('{shelter} liest mit', { shelter: share.shelterName }) : t('{shelter} liest nicht mit', { shelter: share.shelterName })}
       </h2>
       <label className="check">
         <input type="checkbox" checked={share.enabled} disabled={disabled} onChange={(e) => toggleEnabled(e.target.checked)} />
-        {share.shelterName} darf mitlesen
+        {t('{shelter} darf mitlesen', { shelter: share.shelterName })}
       </label>
       {/* Informed consent (final-review Phase T Finding 3): die Checkbox-Beschriftung allein sagt nicht,
           WAS "mitlesen" konkret bedeutet - der Hinweis macht es für die Einwilligung ausdrücklich. */}
       <p className="field-hint">
-        {share.shelterName} sieht {name}, den Namen eures Zuhauses und alle nicht privaten {words.entries} (nur lesen und{' '}
-        {words.greetings} schreiben)
+        {t('{shelter} sieht {name}, den Namen eures Zuhauses und alle nicht privaten {entries} (nur lesen und {greetings} schreiben)', {
+          shelter: share.shelterName,
+          name,
+          entries: words.entries,
+          greetings: words.greetings
+        })}
       </p>
       <label className="check">
         <input
@@ -71,8 +76,11 @@ export default function ShelterSharePanel({ dog, onChange }) {
           disabled={disabled || !share.enabled}
           onChange={(e) => toggleStoryConsent(e.target.checked)}
         />
-        {share.shelterName} darf {name} mit Foto und der neuesten nicht privaten {words.entry} öffentlich auf seiner
-        Portalseite zeigen (Happy End)
+        {t('{shelter} darf {name} mit Foto und der neuesten nicht privaten {entry} öffentlich auf seiner Portalseite zeigen (Happy End)', {
+          shelter: share.shelterName,
+          name,
+          entry: words.entry
+        })}
       </label>
       {isDemo && <p className="field-hint">{readOnlyHint}</p>}
     </section>

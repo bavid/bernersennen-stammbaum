@@ -13,6 +13,7 @@ import {
   ellipsize
 } from './renderDesign.js'
 import { getTheme } from '../../themes/index.js'
+import { t } from '../i18n/index.js'
 
 export { hasCaptions }
 
@@ -34,7 +35,7 @@ function loadImage(url) {
         img.onload = () => resolve(img)
         img.onerror = () => {
           imageCache.delete(url)
-          reject(new Error('Ein Foto oder Sticker konnte nicht geladen werden'))
+          reject(new Error(t('Ein Foto oder Sticker konnte nicht geladen werden')))
         }
         img.src = url
       })
@@ -164,6 +165,6 @@ export async function renderPage(page, theme = getTheme('standard'), scale = EXP
 
 export function canvasToBlob(canvas) {
   return new Promise((resolve, reject) =>
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Export fehlgeschlagen'))), 'image/png')
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error(t('Export fehlgeschlagen')))), 'image/png')
   )
 }

@@ -3,6 +3,7 @@ import Icon from '../Icon.jsx'
 import FrameAuswahl from '../bilderrahmen/FrameAuswahl.jsx'
 import FrameSettings from '../bilderrahmen/FrameSettings.jsx'
 import { DEFAULT_OPTIONEN } from '../../lib/bilderrahmen.js'
+import { t } from '../../lib/i18n/index.js'
 
 const MAX_NAME_LENGTH = 40
 
@@ -45,7 +46,7 @@ export default function RahmenGeraetForm({ tiere, geraet = null, onSubmit, onCan
 
   return (
     <form className="rahmen-form" onSubmit={handleSubmit} aria-labelledby={`${id}-title`}>
-      <h3 id={`${id}-title`}>{geraet ? `„${geraet.name}“ ändern` : 'Neuer Bilderrahmen'}</h3>
+      <h3 id={`${id}-title`}>{geraet ? t('„{name}“ ändern', { name: geraet.name }) : t('Neuer Bilderrahmen')}</h3>
       {error && (
         <p className="field-error" role="alert">
           {error}
@@ -53,7 +54,7 @@ export default function RahmenGeraetForm({ tiere, geraet = null, onSubmit, onCan
       )}
       <div className="field">
         <label className="field-label" htmlFor={`${id}-name`}>
-          Name des Geräts
+          {t('Name des Geräts')}
         </label>
         <input
           id={`${id}-name`}
@@ -61,30 +62,30 @@ export default function RahmenGeraetForm({ tiere, geraet = null, onSubmit, onCan
           value={name}
           maxLength={MAX_NAME_LENGTH}
           required
-          placeholder="z. B. Wohnzimmer Oma"
+          placeholder={t('z. B. Wohnzimmer Oma')}
           onChange={(event) => setName(event.target.value)}
         />
       </div>
       <FrameAuswahl tiere={tiere} auswahl={auswahl} onChange={setAuswahl} idPrefix={`${id}-rahmen`} />
       <FrameSettings optionen={optionen} onChange={setOptionen} idPrefix={`${id}-rahmen`}>
         <fieldset className="frame-settings-group">
-          <legend>Private Erinnerungen</legend>
+          <legend>{t('Private Erinnerungen')}</legend>
           <label className="check">
             <input type="checkbox" checked={privat} onChange={(event) => setPrivat(event.target.checked)} />
-            Auch private Erinnerungen zeigen
+            {t('Auch private Erinnerungen zeigen')}
           </label>
           <p className="field-hint">
-            Private Erinnerungen seht sonst nur ihr. Auf dem Bilderrahmen sieht sie jeder, der davorsteht – nur mit Haken.
+            {t('Private Erinnerungen seht sonst nur ihr. Auf dem Bilderrahmen sieht sie jeder, der davorsteht – nur mit Haken.')}
           </p>
         </fieldset>
       </FrameSettings>
       <div className="settings-actions">
         <button type="submit" className="btn btn-primary" disabled={saving || !name.trim()}>
           <Icon name="frame" />
-          {geraet ? (saving ? 'Wird gespeichert …' : 'Speichern') : saving ? 'Wird eingerichtet …' : 'Link erstellen'}
+          {t(geraet ? (saving ? 'Wird gespeichert …' : 'Speichern') : saving ? 'Wird eingerichtet …' : 'Link erstellen')}
         </button>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>

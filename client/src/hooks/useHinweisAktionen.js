@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { api } from '../api'
 import { genitive } from '../lib/timeline.js'
 import { hinweisZahlen } from '../lib/glocke.js'
+import { t } from '../lib/i18n/index.js'
 
 // Aktionen im Fenster der Hinweis-Glocke (hooks/useHinweisGlocke.js): „Mit dabei“ Ja/Nein und „alle von … ablehnen“, neue
 // Gäste Passt/Entfernen. Die Rückmeldung steht IM Fenster (feedback: { kind: 'ok' | 'error', text }) - am Handy liegt das
@@ -36,7 +37,9 @@ export default function useHinweisAktionen({ setLists, patchZahlen, mounted }) {
       const result = confirm ? await api.confirmErlebtMit(request.requestId) : await api.rejectErlebtMit(request.requestId)
       dropRequests((r) => r.requestId !== request.requestId)
       patchZahlen({ anfragen: result.offen })
-      return confirm ? `Steht jetzt auch in ${genitive(request.dogName)} Chronik` : 'Markierung entfernt'
+      return confirm
+        ? t('Steht jetzt auch in {genitiv} Chronik', { genitiv: genitive(request.dogName), name: request.dogName })
+        : t('Markierung entfernt')
     })
 
   // „Alle von {Zuhause} ablehnen“ (security-review V2, L-3) - gegen eine Flut von Anfragen eines Zuhauses.
@@ -45,7 +48,7 @@ export default function useHinweisAktionen({ setLists, patchZahlen, mounted }) {
       const result = await api.rejectAllErlebtMitFrom(group.zuhauseId)
       dropRequests((r) => r.zuhauseId !== group.zuhauseId)
       patchZahlen({ anfragen: result.offen })
-      return `${result.abgelehnt} Anfragen von „${group.zuhause}“ abgelehnt`
+      return t('{n} Anfragen von „{zuhause}“ abgelehnt', { n: result.abgelehnt, zuhause: group.zuhause })
     })
 
   // Neuer Gast (security-review V2, M-3): bleibt, bis „Passt“ oder „Entfernen“.
@@ -54,7 +57,7 @@ export default function useHinweisAktionen({ setLists, patchZahlen, mounted }) {
       const me = await api.acknowledgeGuest(guest.id)
       dropGuest(guest)
       patchZahlen({ gaeste: hinweisZahlen(me).gaeste })
-      return `„${guest.name}“ ist bei euch willkommen`
+      return t('„{name}“ ist bei euch willkommen', { name: guest.name })
     })
 
   const removeGuest = (guest) =>
@@ -62,7 +65,7 @@ export default function useHinweisAktionen({ setLists, patchZahlen, mounted }) {
       await api.removeGuest(guest.id)
       dropGuest(guest)
       patchZahlen((zahlen) => ({ gaeste: Math.max(0, zahlen.gaeste - 1) }))
-      return `„${guest.name}“ ist nicht mehr bei euch zu Gast`
+      return t('„{name}“ ist nicht mehr bei euch zu Gast', { name: guest.name })
     })
 
   return {

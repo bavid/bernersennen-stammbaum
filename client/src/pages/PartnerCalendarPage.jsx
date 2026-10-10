@@ -1,4 +1,5 @@
 import PartnerTermineEditor from '../components/PartnerTermineEditor.jsx'
+import { t } from '../lib/i18n/index.js'
 
 // /kalender (Phase V4a) - der Kalender eines Partner-Bereichs: Termine und Serien, die ohne Freigabe auf dem Portal und
 // als "Nächster Termin" auf der Karte in Entdecken erscheinen. Tierheime erreichen denselben Kalender als Reiter
@@ -11,8 +12,8 @@ export default function PartnerCalendarPage({ family }) {
       <header className="page-hero">
         <div>
           <span className="eyebrow">{name}</span>
-          <h1>Kalender</h1>
-          <p className="page-lede">Kurse, Treffen und offene Stunden – einmalig oder als Serie, mit Absagen für einzelne Tage.</p>
+          <h1>{t('Kalender')}</h1>
+          <p className="page-lede">{t('Kurse, Treffen und offene Stunden – einmalig oder als Serie, mit Absagen für einzelne Tage.')}</p>
         </div>
       </header>
 

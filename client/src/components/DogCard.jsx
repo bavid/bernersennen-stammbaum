@@ -5,6 +5,7 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
 import { displayName, isKnownSex, sexLabel, shortName, speciesLabel } from '../lib/timeline.js'
 import { yearOf } from '../lib/dates.js'
+import { t } from '../lib/i18n/index.js'
 
 const SPECIES_BADGE = { katze: '🐈', anderes: '🐾' }
 
@@ -15,10 +16,10 @@ function CardTag({ dog, variant, livesWithLabel, showOrigin }) {
   const { words } = useTheme()
   if (dog.shared_from && showOrigin) {
     // Im Raster bleibt die Zeile einzeilig (gekürzt) - der volle Name steht dann im Tooltip.
-    const title = variant === 'grid' ? `aus ${dog.shared_from}` : undefined
+    const title = variant === 'grid' ? t('aus {name}', { name: dog.shared_from }) : undefined
     return (
       <span className="dog-card-tag dog-card-shared" title={title}>
-        aus {dog.shared_from}
+        {t('aus {name}', { name: dog.shared_from })}
       </span>
     )
   }
@@ -64,9 +65,9 @@ const DogCard = forwardRef(function DogCard(
               Screenreader steckt als visuell verstecktes Kind im Symbol (ein aria-label an einem
               nicht-interaktiven <span> wird nicht von jedem Screenreader vorgelesen). */}
           {dog.shared_from && (
-            <span className="dog-mini-badge" title={`aus ${dog.shared_from}`}>
+            <span className="dog-mini-badge" title={t('aus {name}', { name: dog.shared_from })}>
               <Icon name="home" />
-              <span className="visually-hidden">aus {dog.shared_from}</span>
+              <span className="visually-hidden">{t('aus {name}', { name: dog.shared_from })}</span>
             </span>
           )}
         </span>

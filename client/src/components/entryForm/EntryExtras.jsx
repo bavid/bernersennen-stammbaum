@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import ErlebtMitPicker from '../erlebtMit/ErlebtMitPicker.jsx'
 import { KATEGORIE_VALUES, kategorieLabel } from '../../lib/shelter.js'
+import { t } from '../../lib/i18n/index.js'
 
 // „Dein Name“ - steht im Formular oben, solange ihn das Gerät nicht kennt, sonst unter „Mehr“.
 export function NameField({ value, onChange, error, errorId }) {
@@ -8,7 +9,7 @@ export function NameField({ value, onChange, error, errorId }) {
   return (
     <div className="field">
       <label className="field-label" htmlFor={id}>
-        Dein Name
+        {t('Dein Name')}
       </label>
       <input
         id={id}
@@ -36,13 +37,13 @@ function ShelterFields({ kategorie, isPublic, onChange }) {
     <>
       <div className="field">
         <label className="field-label" htmlFor={id}>
-          Kategorie
+          {t('Kategorie')}
         </label>
         <select id={id} name="kategorie" value={kategorie} onChange={(event) => onChange({ kategorie: event.target.value })}>
-          <option value="">– keine –</option>
+          <option value="">{t('– keine –')}</option>
           {KATEGORIE_VALUES.map((value) => (
             <option key={value} value={value}>
-              {kategorieLabel(value)}
+              {t(kategorieLabel(value))}
             </option>
           ))}
         </select>
@@ -50,9 +51,9 @@ function ShelterFields({ kategorie, isPublic, onChange }) {
       <div className="field">
         <label className="check">
           <input type="checkbox" name="isPublic" checked={isPublic} onChange={(event) => onChange({ isPublic: event.target.checked })} />
-          Im Steckbrief zeigen (öffentlich)
+          {t('Im Steckbrief zeigen (öffentlich)')}
         </label>
-        <span className="field-hint">Erscheint auf dem öffentlichen Steckbrief, sobald er veröffentlicht ist.</span>
+        <span className="field-hint">{t('Erscheint auf dem öffentlichen Steckbrief, sobald er veröffentlicht ist.')}</span>
       </div>
     </>
   )

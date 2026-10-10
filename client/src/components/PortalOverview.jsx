@@ -9,6 +9,7 @@ import { useIsPreview } from '../lib/preview.js'
 import { adoptionSectionTitle } from '../lib/shelter.js'
 import { formatTagKurz, formatTagLang, formatUhrzeit, vorkommenKey } from '../lib/termine.js'
 import { zeitraeumeText } from '../lib/zeitraeume.js'
+import { t } from '../lib/i18n/index.js'
 
 // So viele Tiere zeigt die Übersicht als kleine Vorschau - alle stehen im Reiter "Tiere".
 const OVERVIEW_ANIMALS = 4
@@ -72,7 +73,7 @@ function PostTeaser({ post }) {
         {preview && isPendingApproval(post) && (
           <p className="promotion-badge promotion-badge-pending">
             <Icon name="clock" />
-            {PENDING_APPROVAL_LABEL}
+            {t(PENDING_APPROVAL_LABEL)}
           </p>
         )}
       </div>
@@ -112,7 +113,7 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
   const hasSide = termine.length > 0 || hasContact
 
   if (!hasMain && !hasSide) {
-    return <p className="muted portal-overview-empty">Mehr über {partner.name} steht in den Reitern oben.</p>
+    return <p className="muted portal-overview-empty">{t('Mehr über {name} steht in den Reitern oben.', { name: partner.name })}</p>
   }
 
   return (
@@ -121,7 +122,7 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
         <div className="portal-overview-main">
           {paragraphs.length > 0 && (
             <section className="portal-overview-about" aria-labelledby="portal-overview-about-title">
-              <h2 id="portal-overview-about-title">Über uns</h2>
+              <h2 id="portal-overview-about-title">{t('Über uns')}</h2>
               {paragraphs.map((paragraph, index) => (
                 <p key={index} className="partner-portal-text">
                   {paragraph}
@@ -132,9 +133,12 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
           {animals.length > 0 && (
             <OverviewBlock
               id="portal-overview-animals"
-              title={adoptionSectionTitle(animals)}
+              title={t(adoptionSectionTitle(animals))}
               className="portal-overview-animals-block"
-              more={{ label: animals.length === 1 ? 'Zum Reiter Tiere' : `Alle ${animals.length} Tiere ansehen`, onClick: () => onShowTab('tiere') }}
+              more={{
+                label: animals.length === 1 ? t('Zum Reiter Tiere') : t('Alle {n} Tiere ansehen', { n: animals.length }),
+                onClick: () => onShowTab('tiere')
+              }}
             >
               <AnimalStrip animals={animals} />
             </OverviewBlock>
@@ -142,9 +146,12 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
           {firstPosts.length > 0 && (
             <OverviewBlock
               id="portal-overview-posts"
-              title="Angebote & Aktuelles"
+              title={t('Angebote & Aktuelles')}
               className="portal-overview-posts-block"
-              more={{ label: posts.length > firstPosts.length ? `Alle ${posts.length} Angebote` : 'Zu den Angeboten', onClick: () => onShowTab('angebote') }}
+              more={{
+                label: posts.length > firstPosts.length ? t('Alle {n} Angebote', { n: posts.length }) : t('Zu den Angeboten'),
+                onClick: () => onShowTab('angebote')
+              }}
             >
               <ul className="portal-overview-posts">
                 {firstPosts.map((post) => (
@@ -160,9 +167,12 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
           {termine.length > 0 && (
             <OverviewBlock
               id="portal-overview-termine"
-              title="Nächste Termine"
+              title={t('Nächste Termine')}
               className="card portal-overview-termine-block"
-              more={{ label: terminCount > 1 ? `${terminCount} Termine ansehen` : 'Zu den Terminen', onClick: () => onShowTab('termine') }}
+              more={{
+                label: terminCount > 1 ? t('{n} Termine ansehen', { n: terminCount }) : t('Zu den Terminen'),
+                onClick: () => onShowTab('termine')
+              }}
             >
               <ul className="portal-overview-termine">
                 {termine.map((item) => (
@@ -174,9 +184,9 @@ export default function PortalOverview({ partner, posts, animals, onShowTab }) {
           {hasContact && (
             <OverviewBlock
               id="portal-overview-contact"
-              title="Kontakt"
+              title={t('Kontakt')}
               className="card portal-overview-contact"
-              more={{ label: 'Alle Kontaktwege', onClick: () => onShowTab(CONTACT_TAB) }}
+              more={{ label: t('Alle Kontaktwege'), onClick: () => onShowTab(CONTACT_TAB) }}
             >
               <ContactPerson name={partner.ansprechperson} />
               <ContactDetails partner={partner} />

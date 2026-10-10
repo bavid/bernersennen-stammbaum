@@ -1,5 +1,6 @@
 import ConfirmButton from '../ConfirmButton.jsx'
 import { formatDateShort } from '../../lib/dates.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Eine Liste verbundener Zuhause (Phase V2) mit "beenden" je Zeile: "Zu Besuch bei" (wo ich Gast bin) oder
 // "Meine Gäste" (wer bei mir zu Gast ist). items: [{ id, name, seit }]. onEnd(item) beendet die Verbindung.
@@ -14,12 +15,12 @@ export default function VisitList({ id, title, emptyText, items, onEnd, confirmL
           {items.map((item) => (
             <li key={item.id} className="visit-row">
               <span className="visit-row-name">{item.name}</span>
-              {item.neu && <span className="pill pill-visit">neu</span>}
-              {item.seit && <span className="visit-row-since muted">seit {formatDateShort(item.seit)}</span>}
+              {item.neu && <span className="pill pill-visit">{t('neu')}</span>}
+              {item.seit && <span className="visit-row-since muted">{t('seit {date}', { date: formatDateShort(item.seit) })}</span>}
               <ConfirmButton
                 label="Beenden"
                 confirmLabel={confirmLabel}
-                ariaLabel={`Verbindung mit ${item.name} beenden`}
+                ariaLabel={t('Verbindung mit {name} beenden', { name: item.name })}
                 disabled={disabled}
                 onConfirm={() => onEnd(item)}
               />
