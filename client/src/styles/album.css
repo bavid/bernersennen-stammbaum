@@ -75,7 +75,7 @@
 .entry-photo:hover,
 .entry-photo:focus-visible {
   --tilt: 0deg;
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--elev-2);
 }
 
 .entry-photo:focus-visible {
@@ -140,7 +140,7 @@
 .animal-circle-plus {
   width: 58px;
   height: 58px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--rust);
   transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }

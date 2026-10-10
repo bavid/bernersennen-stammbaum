@@ -51,11 +51,11 @@
   align-content: start;
   gap: var(--space-3);
   width: 100%;
-  padding: var(--space-3);
-  border: 1px solid var(--line);
+  padding: var(--pad-card-sm);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-1);
   color: var(--text);
   text-decoration: none;
   transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out),
@@ -66,7 +66,7 @@
 .ward-news-card:focus-visible {
   color: var(--text);
   transform: translateY(-3px);
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--elev-2);
   border-color: var(--tan);
 }
 

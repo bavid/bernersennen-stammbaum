@@ -118,7 +118,7 @@
   left: 0;
   width: 0.45rem;
   height: 0.45rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--tan);
 }
 
@@ -135,7 +135,7 @@
   place-items: center;
   width: 3.25rem;
   height: 3.25rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--alpine-wash);
   color: var(--success);
 }
@@ -179,7 +179,7 @@
 }
 
 .admin-inbox-empty {
-  padding: var(--space-5);
+  padding: var(--pad-card-md);
   border: 1.5px dashed var(--line-strong);
   border-radius: var(--radius-md);
 }
@@ -196,10 +196,10 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-card);
   border-left: 4px solid var(--alpine);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--surface-raised);
 }
 
 .admin-message.is-problem {
@@ -306,9 +306,9 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--surface-raised);
 }
 
 .voucher-row-main {

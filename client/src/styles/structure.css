@@ -65,7 +65,7 @@
   flex-shrink: 0;
   width: 2rem;
   height: 2rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--rust-wash);
   color: var(--rust);
   font-family: var(--font-display);
@@ -89,10 +89,10 @@
   gap: 2px;
   min-width: 15rem;
   padding: var(--space-2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-raised);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-2);
   animation: modal-in var(--duration-fast) var(--ease-out);
 }
 
@@ -502,15 +502,15 @@
   padding: var(--space-4) var(--space-5);
   border: 1px solid transparent;
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-1);
   color: var(--text);
   text-decoration: none;
   transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .feed-card-link:hover {
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--elev-2);
 }
 
 .feed-card-link:focus-visible {

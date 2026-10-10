@@ -21,10 +21,10 @@
   align-items: flex-start;
   gap: var(--space-4);
   padding: var(--card-pad-compact);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-1);
   color: var(--text);
   text-decoration: none;
   transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out),
@@ -34,7 +34,7 @@
 .shelter-card:hover {
   color: var(--text);
   transform: translateY(-3px);
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--elev-2);
   border-color: var(--tan);
 }
 
@@ -181,7 +181,7 @@
 
 .happy-end-card:hover {
   transform: none;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--elev-1);
   border-color: var(--line);
 }
 
@@ -203,10 +203,10 @@
   display: grid;
   gap: var(--space-5);
   padding: var(--card-pad);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-1);
 }
 
 .shelter-panel #vermittlung-status {
@@ -220,10 +220,10 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--card-pad-compact) var(--card-pad);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-1);
 }
 
 /* Audit V7a: dieselbe Überschrift wie das Kästchen "In Familien zeigen" direkt darüber (dog.css .share-panel h2) -
