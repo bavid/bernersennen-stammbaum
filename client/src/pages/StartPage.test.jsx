@@ -20,6 +20,7 @@ import StartPage from './StartPage.jsx'
 import HinweiseProvider from '../components/hinweise/HinweiseProvider.jsx'
 import { ThemeProvider } from '../themes/ThemeProvider.jsx'
 import { getTheme } from '../themes/index.js'
+import { rememberFirstMemorySkip } from '../lib/firstMemory.js'
 
 const words = getTheme('standard').words
 
@@ -98,6 +99,7 @@ const zettel = (id, extra = {}) => ({
 const feed = (items = [], extra = {}) => ({ items, termine: [], notizen: 0, next: null, ...extra })
 
 beforeEach(() => {
+  window.localStorage.clear()
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-09-28T12:00:00Z'))
   api.listDogs.mockResolvedValue([])
@@ -334,6 +336,8 @@ describe('StartPage (Phase W)', () => {
     ])
     api.createTimelineEntry.mockResolvedValue({ id: 99, dog_id: 10, titel: 'Erster Schnee', text: '', foto_urls: [], datum: '2026-09-28', created_at: '2026-09-28 11:00:00' })
     api.start.mockResolvedValue(feed([item(5, { area: familyArea })]))
+    // Ohne eigene Erinnerung stünde sonst „Eure erste Erinnerung“ statt des Composers da (StartPage.firstMemory.test.jsx).
+    rememberFirstMemorySkip(1)
     await render()
 
     const composer = container.querySelector('.start-composer')

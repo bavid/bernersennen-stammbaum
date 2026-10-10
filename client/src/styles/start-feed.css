@@ -170,3 +170,117 @@
 .start-news .family-filter {
   margin: 0 0 var(--space-3);
 }
+
+/* „Eure erste Erinnerung“ (FirstMemoryCard, Plan 2027): drei kleine Schritte auf einem Bildschirm, Ziele ≥ 44px. */
+.first-memory {
+  padding: var(--space-4) var(--space-5);
+}
+
+.first-memory-title {
+  margin: 0 0 var(--space-3);
+}
+
+.first-memory-intro,
+.first-memory-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.first-memory-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.first-memory-steps {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: first-memory-step;
+}
+
+/* Die Nummer der Schritte als kleiner Kreis vor der Beschriftung (die Liste selbst trägt keine Marker). */
+.first-memory-step-label::before {
+  counter-increment: first-memory-step;
+  content: counter(first-memory-step);
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--rust-wash);
+  color: var(--rust);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.first-memory-step {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.first-memory-step-label {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.first-memory-step input[type='text'] {
+  min-height: 44px;
+  width: 100%;
+}
+
+.first-memory-photo-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.first-memory-photo img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.first-memory-pick {
+  position: relative;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.first-memory-pick:focus-within {
+  box-shadow: var(--focus-ring);
+}
+
+.first-memory-pick.is-disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.first-memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.first-memory-actions .btn {
+  min-height: 44px;
+}
+
+.first-memory-actions .btn-primary {
+  flex: 1 1 12rem;
+}
+
+.first-memory-done {
+  margin: 0;
+  font-size: var(--text-lg);
+  color: var(--rust);
+}
+
+.first-memory-done:focus {
+  outline: none;
+}
