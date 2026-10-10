@@ -27,3 +27,24 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
 }
+
+/* Die Reihe des Bands ist breiter als die Spalte: ohne min-width 0 dehnt sie die Grid-Spalte und damit die ganze Seite. */
+.admin-band-preview {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.admin-band-preview .community-ticker {
+  min-width: 0;
+}
+
+/* Das Band ist auf der Startseite seitenbreit - die Vorschau steht deshalb über dem Formular über die volle Breite,
+   statt in die schmale rechte Spalte gedrückt zu werden (dort überlappten Partner-Karte und Titel). */
+.admin-finanz-layout:has(.admin-band-preview) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-finanz-layout .admin-band-preview {
+  order: -1;
+}
