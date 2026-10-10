@@ -6,6 +6,7 @@ const { cleanId } = require('../lib/validate')
 const { printBatch, printableCodes, voucherCsv } = require('../lib/voucherPrint')
 const { validatePrintedIds, markPrintedAmong } = require('../lib/voucherGedruckt')
 const { collectStats } = require('../lib/adminStats')
+const { collectKpi } = require('../lib/adminKpi')
 const { noStore, endWithoutEtag, sendJsonWithoutEtag: sendJson, CSV_TYPE } = require('../lib/noStoreResponse')
 
 // Phase 5 Task 1: Druckdaten und CSV-Export je Gutschein-Stapel sowie die Statistik für den Admin
@@ -93,6 +94,17 @@ router.get('/voucher-batches/:id/export.csv', requireAdmin, (req, res) => {
 // Statistik ohne Demo-Daten und ohne Personenbezug (lib/adminStats.js).
 router.get('/stats', requireAdmin, (req, res) => {
   sendJson(res, 200, collectStats())
+})
+
+// Plan 2027 Kap. 8 „Erfolg messen“ (lib/adminKpi.js): Einlösungen je Serie/Kanal, Aktivierung, Wiederkommen.
+// ?zeitraum=30|90|alle (ohne Angabe 30), sonst 400.
+router.get('/stats/kpi', requireAdmin, (req, res, next) => {
+  try {
+    sendJson(res, 200, collectKpi(req.query.zeitraum))
+  } catch (err) {
+    if (err.status) return sendJson(res, err.status, { error: err.message })
+    next(err)
+  }
 })
 
 module.exports = router

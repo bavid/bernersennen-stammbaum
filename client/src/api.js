@@ -290,6 +290,9 @@ export const api = {
     // Statistik der Karte „Übersicht“ (Phase 5, server/routes/adminStats.js): Einlösungen je Stapel/Partner/
     // Zweck, Mundpropaganda-Ketten, Klicks der letzten 30 Tage und Partner-Status - alles ohne Demo-Daten.
     stats: () => request('/admin/stats'),
+    // Karte „Erfolg messen“ (Plan 2027 Kap. 8, server/lib/adminKpi.js): Einlösungen je Serie/Kanal, Aktivierung und
+    // Wiederkommen für zeitraum '30' | '90' | 'alle' - ohne Demo-Daten, ohne Tracking.
+    kpi: (zeitraum) => request(`/admin/stats/kpi?zeitraum=${encodeURIComponent(zeitraum)}`),
     // Reiter „Server“ (Phase G Task 6, server/routes/adminServer.js): Speicher, Platte, Last, Größen, Stand, Verlauf.
     server: () => request('/admin/server'),
     // Admin-Ansicht (Phase 5 Task 5b, server/routes/admin.js POST /view/:familyId): öffnet einen Bereich als

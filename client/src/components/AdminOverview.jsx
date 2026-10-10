@@ -1,5 +1,6 @@
 import Icon from './Icon.jsx'
 import AdminStats from './AdminStats.jsx'
+import AdminKpi from './AdminKpi.jsx'
 
 const BYTES_PER_MB = 1024 * 1024
 
@@ -85,6 +86,7 @@ export default function AdminOverview({ stats, todo, onOpenTab }) {
       {/* Audit V7a: ohne "Bereiche"-Kachel - die Kennzahlen zählen ohne Demo-Daten, overview.stats.families zählt alles
           und steht schon im Bestand darunter. */}
       <AdminStats />
+      <AdminKpi />
       <StatsGrid stats={stats} />
     </div>
   )

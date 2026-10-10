@@ -303,3 +303,46 @@
 .admin-herkunft-hint {
   font-weight: 600;
 }
+
+/* Karte „Erfolg messen“ (AdminKpi, Plan 2027 Kap. 8): drei ruhige Zeilen - Zahl groß, Ziel-Chip daneben, darunter
+   eine Zeile Erklärung; danach die Tabelle je Serie/Kanal (stat-table wie oben). */
+.admin-kpi {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.admin-kpi-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.admin-kpi-row {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-kpi-row dt {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.admin-kpi-row dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.admin-kpi-value {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-kpi-row small {
+  flex-basis: 100%;
+}

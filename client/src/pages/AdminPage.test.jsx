@@ -29,6 +29,7 @@ vi.mock('../components/AdminPostApproval.jsx', () => ({
   }
 }))
 vi.mock('../components/AdminStats.jsx', () => ({ default: () => <p data-testid="kennzahlen">Kennzahlen</p> }))
+vi.mock('../components/AdminKpi.jsx', () => ({ default: () => <p data-testid="erfolg">Erfolg messen</p> }))
 vi.mock('../components/AdminVouchers.jsx', () => ({ default: () => <p data-testid="gutscheine">Gutschein-Karte</p> }))
 vi.mock('../components/AdminPartners.jsx', () => ({ default: () => <p data-testid="partner">Partner-Karte</p> }))
 vi.mock('../components/AdminPromotions.jsx', () => ({ default: () => <p data-testid="empfehlungen">Empfehlungen-Karte</p> }))

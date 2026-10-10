@@ -196,4 +196,4 @@ function collectStats() {
   }
 }
 
-module.exports = { collectStats }
+module.exports = { collectStats, NON_DEMO_VOUCHER_SQL }
