@@ -158,8 +158,8 @@ export default function DogDetailPage({ family, onFamilyChange }) {
     }
   }
 
+  // „Wer sieht …?“ hat seinen Ort (Chip unter dem Namen, Reiter Infos) - hier nur, was es sonst nirgends gibt.
   const menuItems = [
-    ownHomeAnimal && { key: 'wer', label: t('Wer sieht {name}?', { name }), icon: 'users', onSelect: () => goTo('infos', SHARE_PANEL_TITLE_ID) },
     // Digitaler Bilderrahmen, nur mit den Fotos dieses Tiers (pages/BilderrahmenPage.jsx ?tier=).
     ownHomeAnimal && { key: 'bilderrahmen', label: t('Als Bilderrahmen zeigen'), icon: 'frame', onSelect: () => navigate(`/bilderrahmen?tier=${dog.id}`) },
     // Suchplakat (pages/VermisstPage.jsx): leise im Menü, nur für eigene Tiere im eigenen Zuhause.
@@ -193,6 +193,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         dog={dog}
         family={family}
         canWrite={canWrite}
+        showTell={current !== CHRONICLE_TAB}
         visibleIn={ownHomeAnimal ? visibleInNames(dog, family.memberships) : []}
         menuItems={menuItems}
         badge={isVisit(family) ? <VisitChip name={family.name} /> : null}

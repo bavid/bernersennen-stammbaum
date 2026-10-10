@@ -2,7 +2,7 @@ import { companionLine, herkunftText } from '../../lib/companions.js'
 import { withShareChange } from '../../lib/animalCounts.js'
 import { stayOwnerName } from '../../lib/dogProfile.js'
 import { ageText, formatDateLong } from '../../lib/dates.js'
-import { displayName, sexLabel, speciesLabel } from '../../lib/timeline.js'
+import { displayName, sexFactLabel, speciesLabel } from '../../lib/timeline.js'
 import Icon from '../Icon.jsx'
 import SharePanel from '../SharePanel.jsx'
 import ShelterSharePanel from '../ShelterSharePanel.jsx'
@@ -31,9 +31,10 @@ function DogFacts({ dog, family }) {
   const age = dog.geburtsdatum && !dog.bei_uns_bis ? ageText(dog.geburtsdatum) : null
   const ownerName = stayOwnerName(dog, family)
   const stay = companionLine(dog, ownerName ? { ownerName } : undefined)
-  const sex = sexLabel(dog.geschlecht, dog.tierart)
-  // Geschlecht „weiß ich nicht“: „unbekannt“ wie ein fehlender Geburtstag - nie Hündin oder Rüde.
-  const kind = !sex ? <span className="muted">{t('unbekannt')}</span> : dog.tierart === 'anderes' ? `${t(speciesLabel(dog.tierart))} · ${t(sex)}` : t(sex)
+  // sexFactLabel: eine Kätzin heißt hier „weiblich“, nicht „Katze“ (UX-Audit: „Geschlecht: Katze“). Beide Helfer
+  // übersetzen schon selbst. Geschlecht „weiß ich nicht“: „unbekannt“ wie ein fehlender Geburtstag - nie Hündin oder Rüde.
+  const sex = sexFactLabel(dog.geschlecht, dog.tierart)
+  const kind = !sex ? <span className="muted">{t('unbekannt')}</span> : dog.tierart === 'anderes' ? `${speciesLabel(dog.tierart)} · ${sex}` : sex
   return (
     <dl className="facts dog-info-facts">
       <Fact label={t('Rasse')}>{dog.rasse || <span className="muted">{t('nicht angegeben')}</span>}</Fact>

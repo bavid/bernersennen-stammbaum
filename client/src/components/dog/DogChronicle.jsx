@@ -18,6 +18,7 @@ import { readSetting, writeSetting } from '../../lib/storage.js'
 import { RECENT_ITEMS, recentItems, visibleInNames } from '../../lib/dogProfile.js'
 import { t } from '../../lib/i18n/index.js'
 import { Button } from '../ui'
+import { IMPORT_TEXT } from '../../lib/fotoImport/texts.js'
 
 // „Fotos mitbringen“ (Plan 2027) als eigener Chunk - fflate und der EXIF-Leser kommen erst beim Öffnen.
 const FotoImportDialog = lazy(() => import('../fotoImport/FotoImportDialog.jsx'))
@@ -208,15 +209,16 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
                 <span>{firstOne ? t('Erzählt die erste {entry}', { entry: words.entry }) : t('Was gibt’s Neues von {about}?', { about })}</span>
                 <Icon name="plus" />
               </button>
+              {/* „Fotos mitbringen“ als leiser Zweitweg im selben Feld - kein eigener Einstieg neben dem Erzählen. */}
+              <div className="composer-extra">
+                <Button variant="ghost" size="sm" className="chronicle-import" onClick={() => setImportOpen(true)}>
+                  <Icon name="image" />
+                  {t(IMPORT_TEXT.entry)}
+                </Button>
+              </div>
             </>
           )}
         </div>
-      )}
-      {canWrite && !composerOpen && (
-        <Button variant="ghost" size="sm" className="chronicle-import" onClick={() => setImportOpen(true)}>
-          <Icon name="image" />
-          {t('Fotos mitbringen')}
-        </Button>
       )}
       {importOpen && (
         <Suspense fallback={null}>

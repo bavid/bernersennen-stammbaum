@@ -415,6 +415,8 @@ export default {
   'Drei Demo-Partner zeigen Profil, Kundensicht, Beiträge, Postfach und Einladungscodes – einfach reinklicken.':
     'Three demo partners show the profile, customer view, posts, inbox and invitation codes – just click in.',
   'Was ihr bekommt': 'What you get',
+  'Anfrage ausfüllen': 'Fill in the request',
+  'Über das Partner-Profil': 'About the partner profile',
   'Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein Profil, das eure Kundschaft direkt in ihre eigene Chronik holt – und euch als Herkunft zeigt.':
     'For dog schools, animal shelters, grooming salons and pet care: a profile that brings your customers straight into their own chronicle – and shows you as where they came from.',
   'Euer Portal ist heute kostenlos – wie wir uns finanzieren, steht auf': 'Your portal is free today – how we are funded is explained on',

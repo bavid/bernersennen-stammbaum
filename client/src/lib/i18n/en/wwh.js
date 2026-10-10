@@ -63,8 +63,8 @@ export default {
   'Gerade zu viele Versuche – bitte später noch einmal.': 'Too many attempts right now – please try again later.',
   'Das geht hier gerade nicht.': 'That is not possible here right now.',
   'Orte, an denen wir waren': 'Places we have been',
-  'Noch an keinem Ort angemeldet. Auf der Seite einer Hundeschule oder eines Salons findet ihr „Wir waren hier“.':
-    'Not signed up anywhere yet. You will find “We were here” on the page of a dog school or grooming salon.',
+  'Noch an keinem Ort angemeldet. Auf der Seite eines Partners findet ihr „Wir waren hier“.':
+    'Not signed up anywhere yet. You will find “We were here” on a partner’s page.',
   'Partner ansehen': 'See partners',
   'hier gezeigt': 'shown here',
   '{n} Kontaktwunsch wartet': '{n} request waiting',

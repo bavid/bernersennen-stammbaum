@@ -37,6 +37,14 @@ export function speciesLabel(tierart = 'hund') {
   return t(SPECIES_LABELS[tierart] || SPECIES_LABELS.hund)
 }
 
+// Das Feld „Geschlecht“ (Reiter Infos): ein Wort, das nie wie die Tierart klingt. Bei Katzen ist „Katze“ beides - dort
+// „weiblich“ wie im Formular (SEX_CHOICES), sonst sexLabel ("Rüde", "Hündin", "Kater", "männlich"). Unbekannt: ''.
+export function sexFactLabel(geschlecht, tierart = 'hund') {
+  const sex = sexLabel(geschlecht, tierart)
+  if (!sex || sex !== speciesLabel(tierart)) return sex
+  return t(SEX_CHOICES.find((choice) => choice.value === geschlecht).label)
+}
+
 // Kombinierte Art+Geschlecht-Zeile ohne Dopplung: bei Katzen ist der Geschlechtsbegriff für Weibchen
 // identisch mit dem Artnamen ("Katze"/"Katze") – dann reicht ein Wort. Rüde/Hündin bzw. Kater bleiben
 // eigenständige Begriffe und werden weiter mit Mittelpunkt kombiniert ("Hund · Hündin", "Katze · Kater"). Bei unbekanntem

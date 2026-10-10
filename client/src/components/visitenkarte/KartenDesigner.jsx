@@ -26,7 +26,7 @@ import { t } from '../../lib/i18n/index.js'
 // Der Karten-Designer (Phase V5, Feedback-Runde: eine Seite ohne "Kartenart"): oben die Wahl der Kombination (KartenWahl
 // - Visitenkarte, Einladungskarte oder Kombi), daneben bzw. darunter die Vorschau (Vorder- und Rückseite in echten
 // Proportionen), die EINE Vorderseite (Vorlage, Farbe, Inhalt mit persönlicher Zeile - für jede Kombination dieselbe),
-// die Einladungscodes (nur bei einer Rückseite mit Code) und Drucken; der Druckbogen zum Aufklappen. Gestaltung und
+// die Einladungscodes (nur bei einer Rückseite mit Code) und Drucken mit dem Druckbogen zum Aufklappen. Gestaltung und
 // Kombination speichert "Gestaltung speichern" gemeinsam (hooks/useKartenEntwurf.js, PUT /visitenkarte). Echte Codes holt
 // erst "Drucken" (hooks/useVisitenkartenDruck.js) und nur für diesen einen Druck - in genau der Zahl der Karten, die Codes
 // bekommen (ohne Code keine Karte mit Code-Rückseite). Bis dahin zeigen Vorschau und Druckbogen Muster-Codes, und die
@@ -144,19 +144,19 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
             printable={printable}
             withCodes={withCodes}
             addressNote={addressPending ? <AddressPendingNote /> : null}
-          />
+          >
+            <BogenVorschau note={hasCode && !readOnly ? t(CODES_LATER) : null}>
+              <VisitenkartenBoegen
+                sheets={buildKartenSheets({ count: Math.min(count, CARDS_PER_SHEET), codes: hasCode ? muster : [] })}
+                total={sheetCountFor(count)}
+                card={card}
+                renderBack={renderBack(true)}
+                renderFront={renderFront}
+              />
+            </BogenVorschau>
+          </KartenDruckOptionen>
         </div>
       </div>
-
-      <BogenVorschau note={hasCode && !readOnly ? t(CODES_LATER) : null}>
-        <VisitenkartenBoegen
-          sheets={buildKartenSheets({ count: Math.min(count, CARDS_PER_SHEET), codes: hasCode ? muster : [] })}
-          total={sheetCountFor(count)}
-          card={card}
-          renderBack={renderBack(true)}
-          renderFront={renderFront}
-        />
-      </BogenVorschau>
 
       {!addressPending && (
         <VisitenkartenDruck>

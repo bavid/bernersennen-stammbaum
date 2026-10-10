@@ -317,5 +317,6 @@ export default {
   'groß links': 'large left',
   'klein rechts': 'small right',
   'rechts oben': 'top right',
-  'rechts unten': 'bottom right'
+  'rechts unten': 'bottom right',
+  'Mehr': 'More'
 }

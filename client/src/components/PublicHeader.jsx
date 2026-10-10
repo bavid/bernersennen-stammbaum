@@ -24,7 +24,9 @@ export function backFallback(family) {
 // Steckbrief): Logo und Name führen zur Startseite, "Zurück" geht einen Schritt im Verlauf zurück - oder, wenn
 // man direkt hier eingestiegen ist, zur Startseite (angemeldet die des Bereichs). family: die laufende
 // Sitzung (me) oder null.
-export default function PublicHeader({ family = null }) {
+// homeLink: Seiten mit eigener „Zurück“-Navigation (Folien in /netzwerk, /vorstellung) - der Kopf führt dann „Zur
+// Startseite“ statt eines zweiten „Zurück“ (Audit: „Zurück“ ×2).
+export default function PublicHeader({ family = null, homeLink = false }) {
   const { theme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
@@ -40,10 +42,17 @@ export default function PublicHeader({ family = null }) {
         <ThemeMark size={32} />
         <span>{theme.appName}</span>
       </Link>
-      <button type="button" className="btn btn-ghost public-header-back" onClick={handleBack}>
-        <Icon name="arrowLeft" />
-        {t('Zurück')}
-      </button>
+      {homeLink ? (
+        <Link to={backFallback(family)} className="btn btn-ghost public-header-back">
+          <Icon name="home" />
+          {t('Zur Startseite')}
+        </Link>
+      ) : (
+        <button type="button" className="btn btn-ghost public-header-back" onClick={handleBack}>
+          <Icon name="arrowLeft" />
+          {t('Zurück')}
+        </button>
+      )}
     </header>
   )
 }

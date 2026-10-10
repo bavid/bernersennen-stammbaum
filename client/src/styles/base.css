@@ -150,6 +150,12 @@ button {
   color: var(--on-rust);
 }
 
+/* Das hidden-Attribut gilt immer - auch wenn eine Klasse display: grid/flex setzt (Audit: Reiter-Panels, die trotz
+   hidden sichtbar blieben). Wer etwas Verborgenes zeigen will, nimmt das Attribut weg. */
+[hidden] {
+  display: none !important;
+}
+
 .visually-hidden {
   position: absolute !important;
   width: 1px;

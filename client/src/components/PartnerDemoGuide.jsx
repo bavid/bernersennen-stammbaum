@@ -1,34 +1,55 @@
-import { useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import { t } from '../lib/i18n/index.js'
 
 // Merkt sich (localStorage, lib/storage.js - fällt ohne Speicher still aus), dass der Hinweis geschlossen wurde.
 export const DEMO_GUIDE_SETTING = 'partnerDemoGuideClosed'
+// Merkt sich für die laufende Sitzung (sessionStorage), dass der Hinweis schon einmal zu sehen war.
+export const DEMO_GUIDE_SEEN_KEY = 'chronik.partnerDemoGuideSeen'
+// Die Startseite der Partner- und Tierheim-Bereiche - nur dort steht der Hinweis.
+export const DEMO_GUIDE_ROUTE = '/profil'
 
-// Die drei Wege durch einen Partner-Bereich: Profil, Kundensicht und - je nach Art - Beiträge (Partner) oder
-// die eigenen Tiere (Tierheim).
-const GUIDE_PROFILE = { to: '/profil', label: 'Profil bearbeiten', icon: 'edit' }
-const GUIDE_CUSTOMER_VIEW = { to: '/kundensicht', label: 'Kundensicht', icon: 'eye' }
-const GUIDE_POSTS = { to: '/beitraege', label: 'Beiträge', icon: 'megaphone' }
-const GUIDE_ANIMALS = { to: '/tiere', label: 'Tiere', icon: 'paw' }
-
-export function demoGuideLinks(family) {
-  return [GUIDE_PROFILE, GUIDE_CUSTOMER_VIEW, family?.art === 'tierheim' ? GUIDE_ANIMALS : GUIDE_POSTS]
+function readSeen() {
+  try {
+    return window.sessionStorage.getItem(DEMO_GUIDE_SEEN_KEY) === '1'
+  } catch {
+    return false
+  }
 }
 
-// Kleiner Rundgang oben im Inhalt einer Partner- oder Tierheim-Demo (App.jsx, nur Demo-Sitzungen): was man hier
-// sieht und wohin es geht. Einmal geschlossen, bleibt er zu - auch in späteren Demo-Sitzungen.
+function writeSeen() {
+  try {
+    window.sessionStorage.setItem(DEMO_GUIDE_SEEN_KEY, '1')
+  } catch {
+    // ohne Speicher erscheint er eben wieder
+  }
+}
+
+// Kleiner Hinweis oben im Inhalt einer Partner- oder Tierheim-Demo (App.jsx, nur Demo-Sitzungen). Audit: er stand auf
+// jeder Seite und wiederholte den Umschalter „Bearbeiten | Kundensicht“ und das Menü (~330 px). Jetzt nur auf der
+// Startseite /profil und nur einmal je Sitzung: wer die Seite verlässt, sieht ihn nicht wieder; geschlossen bleibt er
+// auch in späteren Demo-Sitzungen zu. Keine eigenen Links - der Umschalter darüber und das Menü sind die Wege.
 // Kein <h2>: der Hinweis steht vor der <h1> der Seite und soll deren Gliederung nicht vorwegnehmen.
-// Audit V7a: der Weg zur Seite, auf der man gerade ist, trägt aria-current und steht leiser da - "Kundensicht" auf der
-// Kundensicht (der Umschalter "Bearbeiten | Kundensicht" darüber zeigt sie schon) ist dann kein Ziel mehr.
-export default function PartnerDemoGuide({ family }) {
+export default function PartnerDemoGuide() {
   const { pathname } = useLocation()
   const [closed, setClosed] = useState(() => readSetting(DEMO_GUIDE_SETTING, false) === true)
+  const [seen, setSeen] = useState(readSeen)
+  const shown = useRef(false)
   const ref = useRef(null)
+  const onStart = pathname === DEMO_GUIDE_ROUTE
+  const visible = onStart && !closed && !seen
 
-  if (closed) return null
+  useEffect(() => {
+    if (visible) shown.current = true
+    else if (shown.current && !onStart && !seen) {
+      writeSeen()
+      setSeen(true)
+    }
+  }, [visible, onStart, seen])
+
+  if (!visible) return null
 
   // Der Knopf verschwindet mit dem Hinweis - damit der Fokus nicht an den Anfang des Dokuments springt, geht er
   // zur Überschrift der Seite darunter (im selben <main>).
@@ -48,16 +69,8 @@ export default function PartnerDemoGuide({ family }) {
         <p className="demo-guide-title" id="demo-guide-title">
           {t('Das ist die Demo eines Partner-Bereichs')}
         </p>
-        <p>{t('Schaut euch in Ruhe um – hier geht’s zu den drei wichtigsten Stellen:')}</p>
+        <p>{t('Schaut euch in Ruhe um: Der Umschalter oben zeigt euer Profil so, wie eure Kundschaft es sieht. Alles Weitere steht im Menü.')}</p>
       </div>
-      <nav className="demo-guide-links" aria-label={t('Rundgang durch die Demo')}>
-        {demoGuideLinks(family).map((link) => (
-          <Link key={link.to} to={link.to} className="btn btn-ghost" aria-current={pathname === link.to ? 'page' : undefined}>
-            <Icon name={link.icon} />
-            {t(link.label)}
-          </Link>
-        ))}
-      </nav>
       <button type="button" className="icon-btn demo-guide-close" onClick={handleClose} aria-label={t('Hinweis schließen')} title={t('Hinweis schließen')}>
         <Icon name="close" />
       </button>

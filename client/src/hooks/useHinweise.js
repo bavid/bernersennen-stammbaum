@@ -4,12 +4,14 @@ import { api } from '../api'
 import {
   REFRESH_MS,
   addDismissed,
+  localizeHinweis,
   readCachedHinweise,
   readDismissed,
   visibleHinweise,
   writeCachedHinweise,
   writeDismissed
 } from '../lib/hinweise.js'
+import { useLang } from '../lib/i18n/index.js'
 
 // Die laufenden globalen Hinweise fürs Band (HinweisBand, GET /api/hinweise): einmal beim Laden der Seite, danach bei
 // einem Seitenwechsel höchstens alle REFRESH_MS. null, solange nichts geladen ist - das Band erscheint erst danach.
@@ -21,6 +23,7 @@ import {
 // Hinweis (neue Id) erscheint trotzdem. -> { hinweise: sichtbare | null, dismiss(id) }
 export default function useHinweise() {
   const { pathname } = useLocation()
+  const lang = useLang()
   const [hinweise, setHinweise] = useState(readCachedHinweise)
   const [dismissed, setDismissed] = useState(readDismissed)
   const lastFetch = useRef(null)
@@ -59,5 +62,6 @@ export default function useHinweise() {
     if (dismissed !== initialDismissed.current) writeDismissed(dismissed)
   }, [dismissed])
 
-  return { hinweise: hinweise === null ? null : visibleHinweise(hinweise, dismissed), dismiss }
+  const shown = hinweise === null ? null : visibleHinweise(hinweise, dismissed).map((hinweis) => localizeHinweis(hinweis, lang))
+  return { hinweise: shown, dismiss }
 }

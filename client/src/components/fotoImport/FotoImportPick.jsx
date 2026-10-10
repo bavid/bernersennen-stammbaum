@@ -20,7 +20,8 @@ function PickOption({ icon, label, inputProps, onFiles, primary, desktopOnly }) 
   )
 }
 
-// Schritt 1: Fotos, ein Ordner (nur am Computer sinnvoll - webkitdirectory) oder ein Takeout-ZIP.
+// Schritt 1: Fotos, ein Ordner (nur am Computer sinnvoll - webkitdirectory) oder eine ZIP-Datei aus Google Fotos
+// (Download oder Takeout - beides liest lib/fotoImport/takeout.js).
 export default function FotoImportPick({ reading, error, onFiles }) {
   return (
     <div className="foto-import-step">
@@ -37,6 +38,7 @@ export default function FotoImportPick({ reading, error, onFiles }) {
           <PickOption icon="download" label={t(IMPORT_TEXT.pickZip)} onFiles={onFiles} inputProps={{ accept: '.zip,application/zip' }} />
         </div>
       )}
+      {!reading && <p className="field-hint foto-import-howto">{t(IMPORT_TEXT.howTo)}</p>}
       {error && (
         <p className="field-error" role="alert">
           {error}

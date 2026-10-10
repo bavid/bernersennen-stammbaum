@@ -54,11 +54,11 @@ function InviteChoice({ onChoose, focusKey }) {
 // "Zuhause verschenken": die Einladungscodes des Zuhauses (ohne Besuchs-Codes) samt "Neuen Code erstellen" und Archiv.
 // Plan 2027: neben jedem offenen Code „Als Geschenkkarte drucken“ - der Code bleibt im State (gift), nie in der Adresse.
 // Die Demo vergibt keine Codes: dort zeigt „Geschenkkarte ansehen (Muster)“ die Karte mit einem Beispiel-Code.
-function GiftPanel({ list, disabled, isDemo, headingRef }) {
-  const [gift, setGift] = useState(null)
+// gift/onGift liegen in HomeInvite: dort steht der einzige Zurück-Link (Audit: zwei Zurück-Links übereinander).
+function GiftPanel({ list, disabled, isDemo, headingRef, gift, onGift }) {
   const gifts = list.vouchers?.filter((voucher) => !voucher.besuch)
   const archive = list.archive?.filter((voucher) => !voucher.besuch)
-  if (gift) return <GeschenkkartePanel code={gift.code} muster={gift.muster} onBack={() => setGift(null)} />
+  if (gift) return <GeschenkkartePanel code={gift.code} muster={gift.muster} />
   return (
     <section className="invite-vouchers" aria-labelledby="invite-gift-title">
       <h3 id="invite-gift-title" ref={headingRef} tabIndex={-1}>
@@ -74,10 +74,10 @@ function GiftPanel({ list, disabled, isDemo, headingRef }) {
         own
         disabled={disabled}
         emptyText={t('Gerade keine Einladungscodes übrig.')}
-        onGift={(code) => setGift({ code, muster: false })}
+        onGift={(code) => onGift({ code, muster: false })}
       />
       {isDemo && (
-        <button type="button" className="btn btn-ghost btn-compact" onClick={() => setGift({ code: GESCHENK_MUSTER_CODE, muster: true })}>
+        <button type="button" className="btn btn-ghost btn-compact" onClick={() => onGift({ code: GESCHENK_MUSTER_CODE, muster: true })}>
           {t('Geschenkkarte ansehen (Muster)')}
         </button>
       )}
@@ -111,13 +111,18 @@ export default function HomeInvite() {
   const list = useVoucherList({ withLimit: true })
   const [mode, setMode] = useState(null)
   const [lastMode, setLastMode] = useState(null)
+  const [gift, setGift] = useState(null)
   const headingRef = useRef(null)
 
   useEffect(() => {
-    if (mode) headingRef.current?.focus()
-  }, [mode])
+    if (mode && !gift) headingRef.current?.focus()
+  }, [mode, gift])
 
   function back() {
+    if (gift) {
+      setGift(null)
+      return
+    }
     setLastMode(mode)
     setMode(null)
   }
@@ -125,18 +130,18 @@ export default function HomeInvite() {
   return (
     <div className="invite invite-home">
       {/* "Zu Besuch einladen" nennt die Demo selbst (VisitInviteCreator) - hier nicht doppelt. */}
-      {isDemo && mode !== 'besuch' && <p className="field-hint">{readOnlyHint}</p>}
+      {isDemo && mode !== 'besuch' && !gift && <p className="field-hint">{readOnlyHint}</p>}
       {mode === null ? (
         <InviteChoice onChoose={setMode} focusKey={lastMode} />
       ) : (
         <>
           <button type="button" className="back-link invite-back" onClick={back}>
-            <Icon name="arrowLeft" /> {t('Andere Möglichkeit')}
+            <Icon name="arrowLeft" /> {gift ? t('Zurück zu den Codes') : t('Andere Möglichkeit')}
           </button>
           {mode === 'besuch' ? (
             <VisitPanel list={list} disabled={isDemo} headingRef={headingRef} />
           ) : (
-            <GiftPanel list={list} disabled={isDemo} isDemo={isDemo} headingRef={headingRef} />
+            <GiftPanel list={list} disabled={isDemo} isDemo={isDemo} headingRef={headingRef} gift={gift} onGift={setGift} />
           )}
         </>
       )}

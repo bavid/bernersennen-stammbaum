@@ -71,10 +71,19 @@
   width: min(100%, 14rem);
 }
 
-/* Reiter „Infos“ */
+/* Reiter „Infos“: ein ruhiger Kasten wie „Wer sieht …?“ und „Orte, an denen wir waren“ - auch ohne Einträge. */
 .gesundheit-infos {
   display: grid;
   gap: var(--space-2);
+  padding: var(--card-pad-compact) var(--card-pad);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.gesundheit-infos > p {
+  margin: 0;
 }
 
 .gesundheit-infos-title {

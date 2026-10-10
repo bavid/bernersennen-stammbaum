@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import TabBar from './TabBar.jsx'
+import TabBar, { overflowEdges } from './TabBar.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -112,5 +112,37 @@ describe('TabBar', () => {
 
     expect(onSelect.mock.calls.map(([key]) => key)).toEqual(['zwei', 'drei'])
     expect(document.activeElement).toBe(tab('drei'))
+  })
+
+  // Audit (Portal am Handy): Reiter außerhalb der Leiste - die Kanten zeigen, dass es weitergeht.
+  test('overflowEdges: Merker je Seite, wo noch Reiter außerhalb liegen', () => {
+    expect(overflowEdges({ scrollLeft: 0, scrollWidth: 300, clientWidth: 300 })).toEqual({ start: false, end: false })
+    expect(overflowEdges({ scrollLeft: 0, scrollWidth: 609, clientWidth: 381 })).toEqual({ start: false, end: true })
+    expect(overflowEdges({ scrollLeft: 100, scrollWidth: 609, clientWidth: 381 })).toEqual({ start: true, end: true })
+    expect(overflowEdges({ scrollLeft: 228, scrollWidth: 609, clientWidth: 381 })).toEqual({ start: true, end: false })
+  })
+
+  test('setzt data-more-end, solange rechts Reiter verborgen sind, und folgt dem Scrollen', async () => {
+    const widths = { scrollWidth: 609, clientWidth: 381 }
+    const spies = Object.entries(widths).map(([key, value]) => vi.spyOn(HTMLElement.prototype, key, 'get').mockReturnValue(value))
+    try {
+      await render()
+      const list = container.querySelector('[role="tablist"]')
+      expect(list.hasAttribute('data-more-end')).toBe(true)
+      expect(list.hasAttribute('data-more-start')).toBe(false)
+
+      list.scrollLeft = 228
+      await act(async () => list.dispatchEvent(new Event('scroll')))
+      expect(list.hasAttribute('data-more-start')).toBe(true)
+      expect(list.hasAttribute('data-more-end')).toBe(false)
+    } finally {
+      spies.forEach((spy) => spy.mockRestore())
+    }
+  })
+
+  test('ohne Überlauf keine Kanten-Merker', async () => {
+    await render()
+    const list = container.querySelector('[role="tablist"]')
+    expect(list.hasAttribute('data-more-start') || list.hasAttribute('data-more-end')).toBe(false)
   })
 })

@@ -747,8 +747,8 @@ export default function App() {
             <main className="app-main" key={family.id}>
               {/* Suspense für die erst bei Bedarf geladenen Seiten (AreaRoutes.jsx): nur <main> zeigt beim
                   Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
-              {/* Phase U: Rundgang durch eine Partner- oder Tierheim-Demo (schließbar, bleibt dann zu). */}
-              {family.isDemo && !family.adminView && isPartnerArea(family) && !onPublicPage && <PartnerDemoGuide family={family} />}
+              {/* Phase U: Hinweis in einer Partner- oder Tierheim-Demo - nur auf /profil, einmal je Sitzung, schließbar. */}
+              {family.isDemo && !family.adminView && isPartnerArea(family) && !onPublicPage && <PartnerDemoGuide />}
               {onPublicPage ? (
                 publicPage
               ) : (

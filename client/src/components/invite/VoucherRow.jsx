@@ -15,6 +15,20 @@ function statusText(voucher) {
   return VOUCHER_STATUS_LABEL[voucher.status] ? t(VOUCHER_STATUS_LABEL[voucher.status]) : voucher.status
 }
 
+function DeleteButton({ voucher, disabled, onDelete }) {
+  const open = voucher.status === 'offen'
+  return (
+    <ConfirmButton
+      className="voucher-row-delete"
+      label={open ? 'Zurückziehen' : 'Löschen'}
+      confirmLabel={open ? 'Wirklich zurückziehen und löschen?' : 'Wirklich löschen?'}
+      ariaLabel={open ? t('Code …{hint} zurückziehen und löschen', { hint: voucher.hint }) : t('Code …{hint} löschen', { hint: voucher.hint })}
+      disabled={disabled}
+      onConfirm={() => onDelete(voucher)}
+    />
+  )
+}
+
 // Ein Code im Einladen-Dialog. roleOptions (Phase R, nur in einer Familie): welche Rollen die eigene Rolle vergeben
 // darf - die Rolle stellt man ein, BEVOR man Code oder Link weitergibt (onRoleChange); eingelöste Einladungen zeigen
 // sie nur noch an. Phase V2b: die eigene Notiz (nur bei eigenen Codes, onLabelChange) und - solange nicht
@@ -23,6 +37,12 @@ function statusText(voucher) {
 export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, onLabelChange, onDelete, canDelete, disabled, onGift }) {
   const canChooseRole = voucher.status === 'offen' && voucher.joins && roleOptions.length > 0
   const deletable = canDelete && voucher.status !== 'eingelöst' && onDelete
+  const gift = onGift && canPrintGift(voucher) && (
+    <button key="gift" type="button" className="btn btn-ghost voucher-row-gift" onClick={() => onGift(voucher.code)}>
+      {t('Als Geschenkkarte drucken')}
+    </button>
+  )
+  const deleteButton = deletable && <DeleteButton key="delete" voucher={voucher} disabled={disabled} onDelete={onDelete} />
 
   return (
     <li className={`voucher-row voucher-row-${voucher.status === 'offen' ? 'open' : 'closed'}`}>
@@ -56,24 +76,10 @@ export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, on
           />
         </label>
       )}
-      {voucher.code && <VoucherShareActions code={voucher.code} />}
-      {onGift && canPrintGift(voucher) && (
-        <button type="button" className="btn btn-ghost btn-compact voucher-row-gift" onClick={() => onGift(voucher.code)}>
-          {t('Als Geschenkkarte drucken')}
-        </button>
-      )}
+      {voucher.code && <VoucherShareActions code={voucher.code} gift={gift} extra={deleteButton} />}
       {/* Ein beschädigter Code (Server: codeFehler) lässt sich nicht weitergeben - nur zurückziehen. */}
       {voucher.codeFehler && <p className="field-error voucher-row-broken">{t('Code nicht lesbar – bitte zurückziehen.')}</p>}
-      {deletable && (
-        <ConfirmButton
-          className="voucher-row-delete"
-          label={voucher.status === 'offen' ? 'Zurückziehen' : 'Löschen'}
-          confirmLabel={voucher.status === 'offen' ? 'Wirklich zurückziehen und löschen?' : 'Wirklich löschen?'}
-          ariaLabel={voucher.status === 'offen' ? t('Code …{hint} zurückziehen und löschen', { hint: voucher.hint }) : t('Code …{hint} löschen', { hint: voucher.hint })}
-          disabled={disabled}
-          onConfirm={() => onDelete(voucher)}
-        />
-      )}
+      {!voucher.code && deleteButton}
     </li>
   )
 }

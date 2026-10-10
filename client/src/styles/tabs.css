@@ -9,6 +9,24 @@
   scrollbar-width: none;
 }
 
+/* Audit (Portal am Handy): stehen links oder rechts noch Reiter außerhalb, blendet die Kante weich aus - der angeschnittene
+   Reiter zeigt, dass es weitergeht (TabBar setzt data-more-start/-end beim Scrollen). Die Maske liegt auf der Leiste,
+   nicht auf dem Inhalt: sie bleibt am Rand stehen, während die Reiter darunter laufen. */
+.tab-bar[data-more-start],
+.tab-bar[data-more-end] {
+  --tab-fade: 2rem;
+  -webkit-mask-image: linear-gradient(to right, var(--tab-fade-start, #000), #000 var(--tab-fade), #000 calc(100% - var(--tab-fade)), var(--tab-fade-end, #000));
+  mask-image: linear-gradient(to right, var(--tab-fade-start, #000), #000 var(--tab-fade), #000 calc(100% - var(--tab-fade)), var(--tab-fade-end, #000));
+}
+
+.tab-bar[data-more-start] {
+  --tab-fade-start: rgb(0 0 0 / 0.12);
+}
+
+.tab-bar[data-more-end] {
+  --tab-fade-end: rgb(0 0 0 / 0.12);
+}
+
 .tab-bar::-webkit-scrollbar {
   display: none;
 }

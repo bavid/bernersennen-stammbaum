@@ -114,6 +114,25 @@ describe('Geschenkkarte – Familie druckt aus „Zuhause verschenken“', () =>
     expect(document.body.classList.contains(VK_PRINT_BODY_CLASS)).toBe(false)
   })
 
+  test('je Code höchstens zwei sichtbare Knöpfe, der Rest unter „Mehr“; mit Karte nur EIN Zurück-Link', async () => {
+    await openGiftTab()
+    const row = container.querySelector('.voucher-row')
+    const actions = row.querySelector('.voucher-row-actions')
+    const visible = [...actions.children].filter((el) => el.tagName === 'BUTTON')
+    expect(visible.map((el) => el.textContent)).toEqual(['Link kopieren', 'Als Geschenkkarte drucken'])
+    const more = actions.querySelector('details.voucher-row-more')
+    expect(more.querySelector('summary').textContent).toBe('Mehr')
+    expect(more.textContent).toContain('Code kopieren')
+    expect(more.textContent).toContain('Zurückziehen')
+
+    await act(async () => buttonWithText('Als Geschenkkarte drucken').click())
+    expect(container.querySelectorAll('.invite-back')).toHaveLength(1)
+    expect(buttonWithText('Andere Möglichkeit')).toBeUndefined()
+    await act(async () => buttonWithText('Zurück zu den Codes').click())
+    expect(container.querySelector('.voucher-row')).toBeTruthy()
+    expect(buttonWithText('Andere Möglichkeit')).toBeTruthy()
+  })
+
   test('Besuchs-Codes bekommen keinen Druck-Knopf', async () => {
     await openGiftTab({ vouchers: [{ ...openVoucher, besuch: true }] })
     expect(buttonWithText('Als Geschenkkarte drucken')).toBeUndefined()

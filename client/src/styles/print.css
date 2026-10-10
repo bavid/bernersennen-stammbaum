@@ -64,6 +64,24 @@
   padding-bottom: var(--space-4);
 }
 
+/* Schmaler als ein Bogen (Handy): die Vorschau schrumpft auf die Breite (--sheet-scale aus hooks/useSheetFit.js) statt
+   in einem Scrollbereich abgeschnitten zu werden. Nur am Bildschirm - der Druck bleibt genau A4. zoom verkleinert auch
+   den Platz im Layout; ohne zoom-Unterstützung skaliert transform und zieht den frei gewordenen Rand wieder ein. */
+@media screen {
+  .voucher-sheets > .voucher-sheet {
+    zoom: var(--sheet-scale, 1);
+  }
+
+  @supports not (zoom: 1) {
+    .voucher-sheets > .voucher-sheet {
+      transform: scale(var(--sheet-scale, 1));
+      transform-origin: top center;
+      margin-inline: calc(105mm * (var(--sheet-scale, 1) - 1));
+      margin-bottom: calc(297mm * (var(--sheet-scale, 1) - 1));
+    }
+  }
+}
+
 /* Bogen als Blatt: 210 × 297 mm, der 10-mm-Rand als Innenabstand - so sieht die Vorschau aus wie der Druck. */
 .voucher-sheet {
   position: relative;

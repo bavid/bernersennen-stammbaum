@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useNavigate } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import PartnerDemoGuide, { DEMO_GUIDE_SETTING, demoGuideLinks } from './PartnerDemoGuide.jsx'
+import PartnerDemoGuide, { DEMO_GUIDE_SEEN_KEY, DEMO_GUIDE_SETTING } from './PartnerDemoGuide.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 let container
 let root
+let navigate
 
 afterEach(() => {
   if (root) {
@@ -19,17 +20,24 @@ afterEach(() => {
   container = null
   vi.restoreAllMocks()
   window.localStorage.clear()
+  window.sessionStorage.clear()
 })
 
-async function render(family = { art: 'partner' }, path = '/') {
+function Navigator() {
+  navigate = useNavigate()
+  return null
+}
+
+async function render(path = '/profil') {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
       <MemoryRouter initialEntries={[path]}>
+        <Navigator />
         <main>
-          <PartnerDemoGuide family={family} />
+          <PartnerDemoGuide />
           <div className="page">
             <h1>Hundeschule Pfotenglück</h1>
           </div>
@@ -40,28 +48,45 @@ async function render(family = { art: 'partner' }, path = '/') {
   return container
 }
 
+const guide = () => container.querySelector('.demo-guide')
+
 describe('PartnerDemoGuide', () => {
-  test('Wege je Bereichsart: Partner -> Beiträge, Tierheim -> Tiere', () => {
-    expect(demoGuideLinks({ art: 'partner' }).map((link) => link.to)).toEqual(['/profil', '/kundensicht', '/beitraege'])
-    expect(demoGuideLinks({ art: 'tierheim' }).map((link) => link.to)).toEqual(['/profil', '/kundensicht', '/tiere'])
+  // Audit: der Hinweis stand auf jeder Seite und wiederholte Umschalter und Menü (~330 px).
+  test('steht nur auf der Startseite /profil', async () => {
+    await render('/beitraege')
+    expect(guide()).toBeNull()
+
+    await act(async () => navigate('/profil'))
+    expect(guide()).not.toBeNull()
   })
 
-  // Audit V7a: der Weg zur aktuellen Seite ist markiert (aria-current) - kein Ziel, das man schon sieht.
-  test('die aktuelle Seite trägt aria-current, die anderen nicht', async () => {
-    await render({ art: 'partner' }, '/kundensicht')
-    const current = [...container.querySelectorAll('.demo-guide-links a')].map((a) => [a.getAttribute('href'), a.getAttribute('aria-current')])
-    expect(current).toEqual([
-      ['/profil', null],
-      ['/kundensicht', 'page'],
-      ['/beitraege', null]
-    ])
+  test('keine eigenen Wege mehr - kein Link, der Umschalter oder Menü wiederholt', async () => {
+    await render()
+    expect(guide().querySelectorAll('a')).toHaveLength(0)
+    expect(guide().textContent).not.toMatch(/Beiträge|Tiere/)
+  })
+
+  test('nur einmal je Sitzung: nach dem Verlassen von /profil kommt er nicht wieder', async () => {
+    await render()
+    expect(guide()).not.toBeNull()
+
+    await act(async () => navigate('/kalender'))
+    await act(async () => navigate('/profil'))
+    expect(guide()).toBeNull()
+    expect(window.sessionStorage.getItem(DEMO_GUIDE_SEEN_KEY)).toBe('1')
+  })
+
+  test('schon gesehen in dieser Sitzung: bleibt zu', async () => {
+    window.sessionStorage.setItem(DEMO_GUIDE_SEEN_KEY, '1')
+    await render()
+    expect(guide()).toBeNull()
   })
 
   test('schließen speichert den Merker in localStorage', async () => {
     await render()
     await act(async () => container.querySelector('button[aria-label="Hinweis schließen"]').click())
 
-    expect(container.querySelector('.demo-guide')).toBeNull()
+    expect(guide()).toBeNull()
     expect(window.localStorage.getItem(`chronik.${DEMO_GUIDE_SETTING}`)).toBe('true')
   })
 
@@ -81,7 +106,7 @@ describe('PartnerDemoGuide', () => {
   test('mit gespeichertem Merker bleibt er zu', async () => {
     window.localStorage.setItem(`chronik.${DEMO_GUIDE_SETTING}`, 'true')
     await render()
-    expect(container.querySelector('.demo-guide')).toBeNull()
+    expect(guide()).toBeNull()
   })
 
   test('ohne nutzbaren Speicher (privates Fenster): erscheint trotzdem und lässt sich schließen', async () => {
@@ -91,10 +116,10 @@ describe('PartnerDemoGuide', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('SecurityError')
     })
-    await render({ art: 'tierheim' })
+    await render()
     expect(container.querySelector('.demo-guide-title').textContent.trim()).toBe('Das ist die Demo eines Partner-Bereichs')
 
     await act(async () => container.querySelector('.demo-guide-close').click())
-    expect(container.querySelector('.demo-guide')).toBeNull()
+    expect(guide()).toBeNull()
   })
 })

@@ -155,8 +155,8 @@ describe('DogDetailPage – Rechte je Rolle auf einem Tier der Familie', () => {
     mockLoad()
     await render(familyAs('mitglied'))
 
-    expect(container.querySelector('#composer')).not.toBeNull()
-    expect(buttonWith(words.tellAction)).not.toBeUndefined()
+    // Schreiben: im Reiter Chronik über das Erzählen-Feld (der Kopf-Knopf erscheint in den anderen Reitern).
+    expect(container.querySelector('#composer .composer-trigger')).not.toBeNull()
     expect(container.querySelectorAll('.reply-delete')).toHaveLength(1)
 
     await act(async () => buttonWith('Bearbeiten').click())

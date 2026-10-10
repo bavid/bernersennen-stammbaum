@@ -15,7 +15,8 @@ export const GESCHENK_MUSTER_HINWEIS = 'Muster – in der Demo steht hier ein Be
 // „Als Geschenkkarte drucken“ im Einladen-Dialog (invite/HomeInvite.jsx, Zuhause verschenken): Vorschau von Vorder- und
 // Rückseite, ein Satz zum Falten und „Drucken“ (window.print). Die Druckfassung hängt VisitenkartenDruck direkt in <body>
 // (beim Drucken nur sie, die App ist aus). code kommt aus dem State des Dialogs - nie aus oder in eine Adresse; der
-// QR-Code trägt ihn nur hinter der Raute (/v#CODE). muster: Demo mit Beispiel-Code, sichtbar als „Muster“ gekennzeichnet.
+// QR-Code trägt ihn nur hinter der Raute (/v#CODE). muster: Demo mit Beispiel-Code, sichtbar als „Muster“ gekennzeichnet. onBack
+// optional: im Einladen-Dialog trägt HomeInvite den einzigen Zurück-Link.
 export default function GeschenkkartePanel({ code, muster = false, onBack }) {
   const headingRef = useRef(null)
   const qrUrl = voucherLink(code)
@@ -28,9 +29,11 @@ export default function GeschenkkartePanel({ code, muster = false, onBack }) {
 
   return (
     <section className="gk-panel" aria-labelledby="gk-panel-title">
-      <button type="button" className="back-link invite-back" onClick={onBack}>
-        <Icon name="arrowLeft" /> {t('Zurück zu den Codes')}
-      </button>
+      {onBack && (
+        <button type="button" className="back-link invite-back" onClick={onBack}>
+          <Icon name="arrowLeft" /> {t('Zurück zu den Codes')}
+        </button>
+      )}
       <h3 id="gk-panel-title" ref={headingRef} tabIndex={-1}>
         {t('Geschenkkarte')}
       </h3>

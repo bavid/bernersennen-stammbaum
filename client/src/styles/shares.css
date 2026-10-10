@@ -27,8 +27,11 @@
 /* Das echte Kontrollkästchen bleibt bedienbar (Tastatur, Screenreader), sichtbar ist nur der Schalter. */
 .share-switch input {
   position: absolute;
-  width: 2.75rem;
-  height: 1.6rem;
+  top: 50%;
+  left: 0;
+  width: max(2.75rem, 44px);
+  height: 44px;
+  transform: translateY(-50%);
   margin: 0;
   opacity: 0;
   cursor: inherit;

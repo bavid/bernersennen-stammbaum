@@ -109,6 +109,15 @@ describe('FotoImportDialog', () => {
     expect(deps.api.createTimelineEntry).not.toHaveBeenCalled()
   })
 
+  test('Auswahl ohne Fachwörter: Google Fotos statt „Takeout“, Ort statt „GPS“, mit „So geht’s“', async () => {
+    await render()
+    const text = document.body.textContent
+    expect(text).toContain('Fotos aus Google Fotos (als ZIP heruntergeladen)')
+    expect(text).toContain('an welchem Ort es gemacht wurde')
+    expect(text).toContain('So geht’s:')
+    expect(text).not.toMatch(/Takeout|GPS/)
+  })
+
   test('ohne Fotos ein klarer Hinweis', async () => {
     await render()
     await pickFiles([new File(['x'], 'liste.txt', { type: 'text/plain' })])

@@ -6,16 +6,18 @@ import PublicFooter from '../components/PublicFooter.jsx'
 import Icon from '../components/Icon.jsx'
 import RequestPartnerForm from '../components/RequestPartnerForm.jsx'
 import CommunityTicker from '../components/CommunityTicker.jsx'
+import TabBar from '../components/TabBar.jsx'
 import { useNoIndex } from '../hooks/useNoIndex.js'
 import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
 import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
 import { t } from '../lib/i18n/index.js'
 
-// /partner-werden (Phase 5 Task 4): öffentliche Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung -
-// ganz oben zwei große Demo-Knöpfe (Demo-Partner-Bereiche, lib/demoPartners.js - Phase U: erst ansehen, dann
-// lesen), darunter "Partner-Zugang anfragen" (Phase N, #anfragen), was ein Partner-Profil bietet, wie es losgeht,
-// und der Kontakt zum Betreiber (E-Mail aus /api/config, sonst das Impressum). Verlinkt von der Login-Seite ("Mehr
+// /partner-werden (Phase 5 Task 4): öffentliche Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung.
+// Audit (4,8 Bildschirme am Handy, das Formular vor der Erklärung): erst erklären (Reiter „Was ihr bekommt“ /
+// „So funktioniert’s“), dann die Demo-Knöpfe (Demo-Partner-Bereiche, lib/demoPartners.js), dann "Partner-Zugang
+// anfragen" (Phase N, #anfragen - das Formular zum Aufklappen) und zuletzt der Kontakt zum Betreiber (E-Mail aus
+// /api/config, sonst das Impressum). Verlinkt von der Login-Seite ("Mehr
 // erfahren", "Partner-Zugang anfragen", "Für Partner") und aus der Partnerliste. noindex, bis die Domain steht
 // (Phase G) - dann den Hook hier entfernen.
 
@@ -45,6 +47,67 @@ const STEPS = [
   { title: 'Profil einrichten', text: 'Löst den Zugang ein, wählt euren Namen, Logo und Farbe und schreibt ein paar Sätze über euch.' },
   { title: 'Veröffentlichen', text: 'Sobald die Pflichtangaben stehen, schaltet ihr euer Profil frei – und könnt es jederzeit pausieren.' }
 ]
+
+const EXPLAIN_TABS = [
+  { key: 'vorteile', label: 'Was ihr bekommt' },
+  { key: 'schritte', label: 'So funktioniert’s' }
+]
+const explainPanelId = (key) => `partner-info-panel-${key}`
+
+function BenefitList() {
+  return (
+    <ul className="partner-info-benefits">
+      {BENEFITS.map((benefit) => (
+        <li key={benefit.title} className="partner-info-benefit">
+          <Icon name={benefit.icon} />
+          <h3>{t(benefit.title)}</h3>
+          <p>{t(benefit.text)}</p>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function StepList() {
+  return (
+    <ol className="partner-info-steps">
+      {STEPS.map((step, index) => (
+        <li key={step.title}>
+          <span className="partner-info-step-number" aria-hidden="true">
+            {index + 1}
+          </span>
+          <div>
+            <h3>{t(step.title)}</h3>
+            <p>{t(step.text)}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+// Was ein Partner-Profil bietet und wie es losgeht - zwei Reiter statt zweier langer Abschnitte.
+function ExplainSection() {
+  const [tab, setTab] = useState(EXPLAIN_TABS[0].key)
+  return (
+    <section className="partner-info-section partner-info-explain card" aria-label={t('Über das Partner-Profil')}>
+      <TabBar
+        tabs={EXPLAIN_TABS.map((item) => ({ ...item, label: t(item.label) }))}
+        current={tab}
+        label={t('Über das Partner-Profil')}
+        idPrefix="partner-info-tab"
+        panelId={explainPanelId}
+        onSelect={setTab}
+      />
+      <div id={explainPanelId('vorteile')} role="tabpanel" aria-labelledby="partner-info-tab-vorteile" hidden={tab !== 'vorteile'}>
+        <BenefitList />
+      </div>
+      <div id={explainPanelId('schritte')} role="tabpanel" aria-labelledby="partner-info-tab-schritte" hidden={tab !== 'schritte'}>
+        <StepList />
+      </div>
+    </section>
+  )
+}
 
 function DemoButtons({ onDemo }) {
   const { pending, error, startDemo } = usePartnerDemo(onDemo)
@@ -89,19 +152,23 @@ function ContactAction({ legal }) {
   )
 }
 
-// "Partner-Zugang anfragen" (Phase N) direkt unter den Demo-Knöpfen. /partner-werden#anfragen (LoginPartnerEntry)
-// springt hierher - ein Router-Link scrollt nicht selbst: der Abschnitt rückt nach oben, der Fokus auf seine
-// Überschrift (für Tastatur und Screenreader).
+// "Partner-Zugang anfragen" (Phase N) nach Erklärung und Demo; das Formular klappt erst auf Wunsch auf (Audit: die Seite
+// war am Handy 4,8 Bildschirme lang). /partner-werden#anfragen (LoginPartnerEntry) öffnet es gleich - ein Router-Link
+// scrollt nicht selbst: der Abschnitt rückt nach oben, der Fokus auf seine Überschrift (für Tastatur und Screenreader).
+// Das Formular bleibt im Dokument (nur verborgen).
 function RequestSection() {
   const { hash } = useLocation()
+  const jumped = hash === `#${PARTNER_REQUEST_ANCHOR}`
+  const [open, setOpen] = useState(jumped)
   const sectionRef = useRef(null)
   const headingRef = useRef(null)
 
   useEffect(() => {
-    if (hash !== `#${PARTNER_REQUEST_ANCHOR}`) return
+    if (!jumped) return
+    setOpen(true)
     sectionRef.current?.scrollIntoView?.({ block: 'start' })
     headingRef.current?.focus({ preventScroll: true })
-  }, [hash])
+  }, [jumped])
 
   return (
     <section
@@ -110,13 +177,22 @@ function RequestSection() {
       className="partner-info-section partner-info-request card"
       aria-labelledby="partner-info-request-title"
     >
-      <div>
-        <h2 id="partner-info-request-title" ref={headingRef} tabIndex={-1}>
-          {t('Partner-Zugang anfragen')}
-        </h2>
-        <p className="muted">{t('Kostenlos für Hundeschulen, Tierheime, Hundesalons und Betreuung.')}</p>
+      <div className="partner-info-request-head">
+        <div>
+          <h2 id="partner-info-request-title" ref={headingRef} tabIndex={-1}>
+            {t('Partner-Zugang anfragen')}
+          </h2>
+          <p className="muted">{t('Kostenlos für Hundeschulen, Tierheime, Hundesalons und Betreuung.')}</p>
+        </div>
+        {!open && (
+          <button type="button" className="btn btn-primary" aria-expanded="false" aria-controls="partner-info-request-form" onClick={() => setOpen(true)}>
+            {t('Anfrage ausfüllen')}
+          </button>
+        )}
       </div>
-      <RequestPartnerForm />
+      <div id="partner-info-request-form" hidden={!open}>
+        <RequestPartnerForm />
+      </div>
     </section>
   )
 }
@@ -146,9 +222,16 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
       <div className="partners-hero">
         <span className="eyebrow">{t('Partner werden')}</span>
         <h1>{t('Euer Auftritt bei Familie auf Pfoten')}</h1>
+        <p className="page-lede">
+          {t(
+            'Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein Profil, das eure Kundschaft direkt in ihre eigene Chronik holt – und euch als Herkunft zeigt.'
+          )}
+        </p>
       </div>
       {/* Laufband „Zahlen aus der Gemeinschaft“ - nur für Besucher, nicht in der angemeldeten App. */}
       {!family && <CommunityTicker />}
+
+      <ExplainSection />
 
       <section className="partner-info-section partner-info-showcase card" aria-labelledby="partner-info-demo-title">
         <div>
@@ -160,52 +243,17 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
 
       <RequestSection />
 
-      <section className="partner-info-section" aria-labelledby="partner-info-benefits-title">
-        <h2 id="partner-info-benefits-title">{t('Was ihr bekommt')}</h2>
-        <p className="page-lede">
-          {t(
-            'Für Hundeschulen, Tierheime, Hundesalons und Betreuung: ein Profil, das eure Kundschaft direkt in ihre eigene Chronik holt – und euch als Herkunft zeigt.'
-          )}
-        </p>
-        {/* Phase F: ein Satz zur Finanzierung - Partner-Portale sind heute kostenlos, die Plattform lebt von Spenden und Partnern. */}
-        <p className="muted partner-info-finanzierung">
-          {t('Euer Portal ist heute kostenlos – wie wir uns finanzieren, steht auf')} <Link to="/finanzierung">{t('„So finanzieren wir uns“')}</Link>.
-        </p>
-        <p className="muted partner-info-netzwerk">
-          <Link to="/netzwerk">{t('Ausblick: So könnten Partner sich künftig vernetzen')}</Link>
-        </p>
-        <ul className="partner-info-benefits">
-          {BENEFITS.map((benefit) => (
-            <li key={benefit.title} className="card partner-info-benefit">
-              <Icon name={benefit.icon} />
-              <h3>{t(benefit.title)}</h3>
-              <p>{t(benefit.text)}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="partner-info-section" aria-labelledby="partner-info-steps-title">
-        <h2 id="partner-info-steps-title">{t('So funktioniert’s')}</h2>
-        <ol className="partner-info-steps">
-          {STEPS.map((step, index) => (
-            <li key={step.title}>
-              <span className="partner-info-step-number" aria-hidden="true">
-                {index + 1}
-              </span>
-              <div>
-                <h3>{t(step.title)}</h3>
-                <p>{t(step.text)}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
       <section className="partner-info-section partner-info-contact card" aria-labelledby="partner-info-contact-title">
         <div>
           <h2 id="partner-info-contact-title">{t('Lust, dabei zu sein?')}</h2>
           <p>{t('Noch Fragen, bevor ihr anfragt? Schreibt uns einfach direkt.')}</p>
+          {/* Phase F: ein Satz zur Finanzierung - Partner-Portale sind heute kostenlos. */}
+          <p className="muted partner-info-finanzierung">
+            {t('Euer Portal ist heute kostenlos – wie wir uns finanzieren, steht auf')} <Link to="/finanzierung">{t('„So finanzieren wir uns“')}</Link>.
+          </p>
+          <p className="muted partner-info-netzwerk">
+            <Link to="/netzwerk">{t('Ausblick: So könnten Partner sich künftig vernetzen')}</Link>
+          </p>
         </div>
         <ContactAction legal={legal} />
       </section>

@@ -119,4 +119,16 @@ describe('NetzwerkPage', () => {
     expect(container.textContent).toContain('Shelter asks dog school')
     expect(container.textContent).toContain('Slide 2 of 6')
   })
+
+  // Audit: nur ein „Zurück“ (das der Folien) - der Kopf führt zur Startseite; keine PLZ-Quellenangabe ohne PLZ-Suche.
+  test('Kopf: „Zur Startseite“ statt eines zweiten „Zurück“; Fuß ohne GeoNames', async () => {
+    await render()
+    const backs = [...container.querySelectorAll('button, a')].filter((el) => el.textContent.trim() === 'Zurück')
+    expect(backs).toHaveLength(1)
+    expect(backs[0].closest('.vorstellung-nav')).not.toBeNull()
+    const home = container.querySelector('.public-header a.public-header-back')
+    expect(home.textContent).toBe('Zur Startseite')
+    expect(home.getAttribute('href')).toBe('/')
+    expect(container.querySelector('.public-footer').textContent).not.toContain('GeoNames')
+  })
 })

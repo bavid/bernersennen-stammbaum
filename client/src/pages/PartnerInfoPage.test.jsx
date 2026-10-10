@@ -81,21 +81,39 @@ describe('PartnerInfoPage – Inhalt', () => {
 })
 
 describe('PartnerInfoPage – Demo-Knöpfe', () => {
-  test('stehen ganz oben (Phase U): direkt unter dem Seitenkopf, vor den Vorteilen', async () => {
+  // Audit: erst erklären (Reiter), dann die Demo-Knöpfe, dann das Anfrage-Formular.
+  test('Reihenfolge: Erklärung als Reiter, dann Demo-Knöpfe, dann Anfrage, dann Kontakt', async () => {
     await render()
 
-    const showcase = container.querySelector('.partner-info-showcase')
-    expect(showcase.querySelector('h2').textContent).toBe('So sieht euer Partner-Bereich aus')
-    const benefits = container.querySelector('.partner-info-benefits')
-    expect(showcase.compareDocumentPosition(benefits) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     const sections = [...container.querySelectorAll('.partner-info-page > section')]
-    expect(sections[0]).toBe(showcase)
+    expect(sections.map((section) => section.className.match(/partner-info-(explain|showcase|request|contact)/)[1])).toEqual([
+      'explain',
+      'showcase',
+      'request',
+      'contact'
+    ])
+    const showcase = sections[1]
+    expect(showcase.querySelector('h2').textContent).toBe('So sieht euer Partner-Bereich aus')
     expect([...showcase.querySelectorAll('button')].map((btn) => btn.textContent)).toEqual([
       'Demo als Hundeschule ansehen',
       'Demo als Tierheim ansehen',
       'Demo als Hundesalon ansehen'
     ])
     expect(container.querySelector('.partner-info-page > .public-header')).not.toBeNull()
+  })
+
+  test('Erklärung: zwei Reiter, „So funktioniert’s“ zeigt die Schritte statt der Vorteile', async () => {
+    await render()
+
+    const tabs = [...container.querySelectorAll('.partner-info-explain [role="tab"]')]
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Was ihr bekommt', 'So funktioniert’s'])
+    const panel = (key) => container.querySelector(`#partner-info-panel-${key}`)
+    expect(panel('vorteile').hidden).toBe(false)
+    expect(panel('schritte').hidden).toBe(true)
+
+    await act(async () => tabs[1].click())
+    expect(panel('vorteile').hidden).toBe(true)
+    expect(panel('schritte').hidden).toBe(false)
   })
 
   test('"Demo als Hundeschule ansehen" ruft api.demo mit as partner und dem Slug der Demo-Hundeschule, dann onDemo', async () => {
@@ -165,15 +183,20 @@ describe('PartnerInfoPage – Kontakt', () => {
   })
 })
 
-// Phase N: "Partner-Zugang anfragen" direkt unter den Demo-Knöpfen, Sprungziel #anfragen.
+// Phase N: "Partner-Zugang anfragen" nach den Demo-Knöpfen, Sprungziel #anfragen.
 describe('PartnerInfoPage – Partner-Zugang anfragen', () => {
-  test('steht als zweiter Abschnitt direkt unter den Demo-Knöpfen, mit Formular und Erklärung', async () => {
+  test('steht nach den Demo-Knöpfen; das Formular klappt erst mit „Anfrage ausfüllen“ auf', async () => {
     await render()
 
-    const sections = [...container.querySelectorAll('.partner-info-page > section')]
-    const request = sections[1]
-    expect(request.id).toBe('anfragen')
+    const request = container.querySelector('#anfragen')
+    expect(request.previousElementSibling.classList.contains('partner-info-showcase')).toBe(true)
     expect(request.querySelector('h2').textContent).toBe('Partner-Zugang anfragen')
+    const form = request.querySelector('#partner-info-request-form')
+    expect(form.hidden).toBe(true)
+
+    await act(async () => button('Anfrage ausfüllen').click())
+    expect(form.hidden).toBe(false)
+    expect(button('Anfrage ausfüllen')).toBeUndefined()
     expect(request.querySelector('.request-why h3').textContent).toBe('Warum anfragen?')
     expect(request.querySelector('#request-partner-firma')).not.toBeNull()
     expect(request.querySelector('button[type="submit"]').textContent).toBe('Partner-Zugang anfragen')
@@ -188,6 +211,7 @@ describe('PartnerInfoPage – Partner-Zugang anfragen', () => {
       expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' })
       expect(scrollIntoView.mock.contexts[0]).toBe(container.querySelector('#anfragen'))
       expect(document.activeElement).toBe(container.querySelector('#partner-info-request-title'))
+      expect(container.querySelector('#partner-info-request-form').hidden).toBe(false)
     } finally {
       delete Element.prototype.scrollIntoView
     }

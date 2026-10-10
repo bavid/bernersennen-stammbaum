@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx'
 import { Button, EmptyState } from '../components/ui'
 import VermisstForm from '../components/vermisst/VermisstForm.jsx'
 import VermisstSheet from '../components/vermisst/VermisstSheet.jsx'
+import useSheetFit from '../hooks/useSheetFit.js'
 import { usePrintBodyClass } from '../components/VoucherPrintView.jsx'
 import { parseAreaId } from '../lib/areas.js'
 import { downloadBlob, shareFile, shareableFile } from '../lib/grusskarteShare.js'
@@ -74,6 +75,16 @@ function Message({ children }) {
   )
 }
 
+// Der Bogen passt sich am Bildschirm der Breite an (useSheetFit), gedruckt wird er in voller A4-Größe.
+function PosterSheets({ poster }) {
+  const fitRef = useSheetFit()
+  return (
+    <div ref={fitRef} className="voucher-sheets">
+      <VermisstSheet poster={poster} />
+    </div>
+  )
+}
+
 export default function VermisstPage({ dogId, family }) {
   usePrintBodyClass()
   const id = parseAreaId(dogId)
@@ -120,9 +131,7 @@ export default function VermisstPage({ dogId, family }) {
           <p className="print-head-meta">{t('Ein Blatt A4 zum Aushängen. Nichts wird hochgeladen oder veröffentlicht.')}</p>
           <VermisstForm photos={photos} selected={photo} name={poster.name} inputs={inputs} onSelectPhoto={setChosen} onChange={setInputs} />
         </header>
-        <div className="voucher-sheets">
-          <VermisstSheet poster={poster} />
-        </div>
+        <PosterSheets poster={poster} />
       </main>
     </div>
   )

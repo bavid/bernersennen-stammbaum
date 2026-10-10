@@ -125,6 +125,8 @@ describe('AdminHinweise – anlegen mit Vorschau', () => {
     expect(createHinweis).toHaveBeenCalledWith({
       titel: 'Wartung am Montag',
       text: 'Zeile 1\nZeile 2',
+      titelEn: null,
+      textEn: null,
       stufe: 'wartung',
       start: '2026-10-05T20:00:00.000Z',
       ende: '2026-10-05T23:30:00.000Z',
@@ -187,6 +189,8 @@ describe('AdminHinweise – bearbeiten, umschalten, löschen', () => {
     expect(updateHinweis).toHaveBeenCalledWith(4, {
       titel: 'Wartung heute Abend',
       text: 'Ab 22 Uhr kurz weg.',
+      titelEn: null,
+      textEn: null,
       stufe: 'wartung',
       start: '2026-10-05T20:00:00.000Z',
       ende: '2026-10-06T00:00:00.000Z',

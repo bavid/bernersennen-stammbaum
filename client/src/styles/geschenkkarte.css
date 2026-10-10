@@ -245,11 +245,14 @@
   container-type: inline-size;
 }
 
+/* Vorder- und Rückseite nebeneinander, so klein, dass der Schritt ohne eigenen Scrollbalken in den Dialog passt (Audit:
+   übereinander war die Vorschau 870 px hoch). Gedruckt wird ohnehin der A4-Bogen in voller Größe. */
 .gk-vorschau-karten {
-  --vk-mm: min(0.75mm, calc(100cqi / 152));
+  --vk-mm: min(0.6mm, calc((100cqi - var(--space-2)) / 296));
 
   display: grid;
-  gap: var(--space-3);
+  grid-template-columns: repeat(2, max-content);
+  gap: var(--space-2);
   justify-content: center;
 }
 

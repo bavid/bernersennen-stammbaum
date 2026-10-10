@@ -1,17 +1,20 @@
 // Englisch für „Fotos mitbringen“ (lib/fotoImport/texts.js, components/fotoImport). Schlüssel = deutscher Text.
 export default {
   'Fotos mitbringen': 'Bring in photos',
-  'Wählt Fotos oder ein Google-Takeout-Paket. Je Tag entsteht eine Erinnerung – das Datum lesen wir aus dem Foto.':
-    'Choose photos or a Google Takeout package. Each day becomes one memory – we read the date from the photo.',
-  'Alles bleibt erst auf diesem Gerät. Wir verkleinern jedes Foto vor dem Hochladen, Ortsangaben (GPS) werden dabei entfernt.':
-    'Everything stays on this device at first. We shrink every photo before uploading and remove location data (GPS).',
+  'Mehrere Fotos auf einmal': 'Several photos at once',
+  'Wählt Fotos von diesem Gerät oder Fotos aus Google Fotos (als ZIP heruntergeladen). Je Tag entsteht eine Erinnerung – das Datum lesen wir aus dem Foto.':
+    'Choose photos from this device or photos from Google Photos (downloaded as a ZIP). Each day becomes one memory – we read the date from the photo.',
+  'Alles bleibt erst auf diesem Gerät. Wir verkleinern jedes Foto vor dem Hochladen und lassen dabei weg, an welchem Ort es gemacht wurde.':
+    'Everything stays on this device at first. We shrink every photo before uploading and leave out where it was taken.',
   'Fotos auswählen': 'Choose photos',
   'Ganzen Ordner': 'Whole folder',
-  'Takeout-ZIP': 'Takeout ZIP',
+  'Aus Google Fotos (ZIP)': 'From Google Photos (ZIP)',
+  'So geht’s: In Google Fotos die Fotos auswählen, „Herunterladen“ tippen und die ZIP-Datei hier wählen.':
+    'How it works: select the photos in Google Photos, tap “Download” and choose the ZIP file here.',
   'Fotos werden gelesen …': 'Reading photos …',
   'Darin haben wir keine Fotos gefunden.': 'We found no photos in there.',
-  'Das ZIP ist zu groß. Bitte ein kleineres Takeout-Paket (bis {mb} MB) wählen.': 'The ZIP is too large. Please choose a smaller Takeout package (up to {mb} MB).',
-  'Das ZIP lässt sich nicht öffnen.': 'The ZIP cannot be opened.',
+  'Die ZIP-Datei ist zu groß. Bitte weniger Fotos auf einmal herunterladen (bis {mb} MB).': 'The ZIP file is too large. Please download fewer photos at once (up to {mb} MB).',
+  'Die ZIP-Datei lässt sich nicht öffnen.': 'The ZIP file cannot be opened.',
   'Wir haben die ersten {n} Fotos gelesen.': 'We read the first {n} photos.',
   'Alle Tage sind ausgewählt. Tippt ein Foto an, um es wegzulassen.': 'All days are selected. Tap a photo to leave it out.',
   'Auf einmal gehen höchstens {photos} Fotos und {days} Erinnerungen ({perDay} Fotos je Tag). {n} Fotos bleiben für den nächsten Durchgang.':

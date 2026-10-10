@@ -134,7 +134,8 @@ describe('Erinnerung festhalten – Text, Überschrift, Datum', () => {
     const onSubmit = vi.fn().mockResolvedValue()
     await render({ onSubmit })
     act(() => setValue(field('text'), 'Erster Tag am See. Nele ist sofort hinein.'))
-    expect(field('titel').placeholder).toBe('sonst: „Erster Tag am See“')
+    // Nur der Vorschlag - „sonst: …“ wurde am Handy abgeschnitten (UX-Audit, 390 px).
+    expect(field('titel').placeholder).toBe('Erster Tag am See')
     await submit()
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({ titel: 'Erster Tag am See', text: 'Erster Tag am See. Nele ist sofort hinein.', autorName: 'Dana', datum: todayIso() })

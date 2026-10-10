@@ -8,6 +8,7 @@ import {
   formatZeitraum,
   hinweisClientErrors,
   initialHinweisForm,
+  localizeHinweis,
   readDismissed,
   toHinweisPayload,
   utcIsoToBerlin,
@@ -68,6 +69,8 @@ describe('Formular', () => {
     expect(initialHinweisForm(null, NOW)).toEqual({
       titel: '',
       text: '',
+      titelEn: '',
+      textEn: '',
       stufe: 'info',
       startDate: '2026-10-03',
       startTime: '10:07',
@@ -82,6 +85,8 @@ describe('Formular', () => {
     expect(initialHinweisForm(hinweis, NOW)).toEqual({
       titel: 'Wartung',
       text: '',
+      titelEn: '',
+      textEn: '',
       stufe: 'wartung',
       startDate: '2026-10-05',
       startTime: '22:00',
@@ -96,6 +101,8 @@ describe('Formular', () => {
     expect(toHinweisPayload(form)).toEqual({
       titel: 'Wartung',
       text: null,
+      titelEn: null,
+      textEn: null,
       stufe: 'info',
       start: '2026-10-05T20:00:00.000Z',
       ende: null,
@@ -111,6 +118,26 @@ describe('Formular', () => {
     expect(hinweisClientErrors({ ...ok, startTime: '' })).toEqual({ start: 'Bitte Datum und Uhrzeit des Beginns angeben.' })
     expect(hinweisClientErrors({ ...ok, endeDate: '2026-10-06' })).toEqual({ ende: 'Bitte zum Ende auch eine Uhrzeit angeben – oder beides leer lassen.' })
     expect(hinweisClientErrors({ ...ok, endeDate: '2026-10-03', endeTime: '10:07' })).toEqual({ ende: 'Das Ende muss nach dem Beginn liegen.' })
+  })
+})
+
+describe('Englische Fassung (optional)', () => {
+  const hinweis = { id: 1, titel: 'Willkommen', text: 'Hallo', titelEn: 'Welcome', textEn: 'Hello', stufe: 'info' }
+
+  test('auf Englisch mit englischer Fassung: Titel und Text englisch', () => {
+    expect(localizeHinweis(hinweis, 'en')).toMatchObject({ titel: 'Welcome', text: 'Hello' })
+  })
+
+  test('auf Deutsch oder ohne englische Fassung bleibt es deutsch', () => {
+    expect(localizeHinweis(hinweis, 'de')).toBe(hinweis)
+    const nurDeutsch = { ...hinweis, titelEn: null, textEn: null }
+    expect(localizeHinweis(nurDeutsch, 'en')).toBe(nurDeutsch)
+  })
+
+  test('Formular: englischer Text braucht einen englischen Titel', () => {
+    const form = { ...initialHinweisForm(null), titel: 'T', textEn: 'Hello' }
+    expect(hinweisClientErrors(form)).toEqual({ titelEn: 'Zum englischen Text gehört auch ein englischer Titel.' })
+    expect(toHinweisPayload({ ...form, titelEn: ' Hi ' })).toMatchObject({ titelEn: 'Hi', textEn: 'Hello' })
   })
 })
 

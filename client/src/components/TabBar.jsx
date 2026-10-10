@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Abstand, mit dem ein angeschnittener Reiter ins Bild rückt - der Nachbar bleibt als Hinweis sichtbar.
 const SCROLL_PEEK = 24
@@ -22,6 +22,43 @@ function revealTab(list, button) {
   else if (rect.right > listRect.right) list.scrollLeft += rect.right - listRect.right + SCROLL_PEEK
 }
 
+// Audit (Portal am Handy): 609 px Reiter in 381 px Leiste - „Wir waren hier“ lag unsichtbar rechts außen. Ob links
+// oder rechts noch Reiter verborgen sind; die Kanten blenden dann weich aus (tabs.css), das zeigt: hier geht's weiter.
+const EDGE_SLACK = 2
+
+export function overflowEdges(list) {
+  if (!list) return { start: false, end: false }
+  const { scrollLeft, scrollWidth, clientWidth } = list
+  return { start: scrollLeft > EDGE_SLACK, end: scrollWidth - clientWidth - scrollLeft > EDGE_SLACK }
+}
+
+// Hält die Kanten-Merker aktuell: beim Scrollen und wenn sich die Breite der Leiste ändert.
+function useOverflowEdges(list) {
+  const [edges, setEdges] = useState({ start: false, end: false })
+
+  useEffect(() => {
+    const el = list.current
+    if (!el) return undefined
+    const update = () =>
+      setEdges((prev) => {
+        const next = overflowEdges(el)
+        return prev.start === next.start && prev.end === next.end ? prev : next
+      })
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null
+    observer?.observe(el)
+    window.addEventListener('resize', update)
+    return () => {
+      el.removeEventListener('scroll', update)
+      observer?.disconnect()
+      window.removeEventListener('resize', update)
+    }
+  }, [list])
+
+  return edges
+}
+
 function hasCount(value) {
   return value !== undefined && value !== null
 }
@@ -36,6 +73,7 @@ function hasCount(value) {
 export default function TabBar({ tabs, current, counts, label, idPrefix, panelId, countText, className = '', onSelect }) {
   const list = useRef(null)
   const buttons = useRef({})
+  const edges = useOverflowEdges(list)
   // Mit den Zählern werden die Reiter breiter - dann noch einmal nachrücken (nicht bei jedem Rendern, sonst
   // spränge die Leiste zurück, während jemand sie von Hand verschiebt). Audit V7a: am Inhalt der Zähler gemessen -
   // der Admin reicht von Anfang an ein (leeres) Objekt, die Zahlen kommen erst danach.
@@ -75,7 +113,15 @@ export default function TabBar({ tabs, current, counts, label, idPrefix, panelId
   }
 
   return (
-    <div ref={list} className={`tab-bar ${className}`.trim()} role="tablist" aria-label={label} onKeyDown={handleKeyDown}>
+    <div
+      ref={list}
+      className={`tab-bar ${className}`.trim()}
+      role="tablist"
+      aria-label={label}
+      data-more-start={edges.start || undefined}
+      data-more-end={edges.end || undefined}
+      onKeyDown={handleKeyDown}
+    >
       {tabs.map((tab) => {
         const selected = tab.key === current
         const count = counts?.[tab.key]

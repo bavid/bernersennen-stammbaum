@@ -254,13 +254,15 @@
   display: flex;
   flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: var(--space-1);
+  gap: var(--space-2);
   margin: var(--space-1) 0 0;
 }
 
+/* Audit: Ja/Nein waren 34 px hoch - am Handy braucht ein Knopf 44 px Tippfläche. */
 .hinweis-item .hinweis-actions .btn,
 .hinweis-reject-all {
-  min-height: 2.25rem;
+  min-width: max(2.75rem, 44px);
+  min-height: max(2.75rem, 44px);
 }
 
 .hinweis-reject-all {

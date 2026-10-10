@@ -99,6 +99,8 @@ export function initialHinweisForm(hinweis, now = new Date()) {
   return {
     titel: hinweis?.titel || '',
     text: hinweis?.text || '',
+    titelEn: hinweis?.titelEn || '',
+    textEn: hinweis?.textEn || '',
     stufe: hinweis?.stufe || STUFE.info,
     startDate: start?.date || '',
     startTime: start?.time || '',
@@ -117,6 +119,7 @@ function endeIso(form) {
 export function hinweisClientErrors(form) {
   const errors = {}
   if (!form.titel.trim()) errors.titel = 'Bitte gib einen Titel an.'
+  if (form.textEn.trim() && !form.titelEn.trim()) errors.titelEn = 'Zum englischen Text gehört auch ein englischer Titel.'
   const start = berlinToUtcIso(form.startDate, form.startTime)
   if (!start) errors.start = 'Bitte Datum und Uhrzeit des Beginns angeben.'
   const hasEnde = Boolean(form.endeDate || form.endeTime)
@@ -130,11 +133,19 @@ export function toHinweisPayload(form) {
   return {
     titel: form.titel.trim(),
     text: form.text.trim() || null,
+    titelEn: form.titelEn.trim() || null,
+    textEn: form.textEn.trim() || null,
     stufe: form.stufe,
     start: berlinToUtcIso(form.startDate, form.startTime),
     ende: endeIso(form),
     aktiv: form.aktiv
   }
+}
+
+// Englisch, wenn die Seite auf Englisch steht und der Admin eine englische Fassung eingetragen hat - sonst Deutsch.
+export function localizeHinweis(hinweis, lang) {
+  if (lang !== 'en' || !hinweis?.titelEn) return hinweis
+  return { ...hinweis, titel: hinweis.titelEn, text: hinweis.textEn || null }
 }
 
 // --- Weggeklickt (nur diese Browser-Sitzung) -------------------------------------------------------
@@ -172,6 +183,8 @@ export function visibleHinweise(list, dismissed) {
 const STUFE_VALUES = Object.values(STUFE)
 
 // Nur, was das Band wirklich zeigt - und nur in der erwarteten Form (der Speicher ist für die Seite fremde Eingabe).
+const optionalText = (value, max) => value === null || value === undefined || (typeof value === 'string' && value.length <= max)
+
 function isCachedHinweis(item) {
   return (
     Boolean(item) &&
@@ -179,16 +192,27 @@ function isCachedHinweis(item) {
     typeof item.titel === 'string' &&
     item.titel.length <= MAX_TITEL_LENGTH &&
     (item.text === null || item.text === undefined || (typeof item.text === 'string' && item.text.length <= MAX_TEXT_LENGTH)) &&
-    STUFE_VALUES.includes(item.stufe)
+    STUFE_VALUES.includes(item.stufe) &&
+    optionalText(item.titelEn, MAX_TITEL_LENGTH) &&
+    optionalText(item.textEn, MAX_TEXT_LENGTH)
   )
 }
+
+// Die englische Fassung nur, wenn es sie gibt.
+const cachedShape = ({ id, titel, text, titelEn, textEn, stufe }) => ({
+  id,
+  titel,
+  text: text ?? null,
+  stufe,
+  ...(titelEn ? { titelEn, textEn: textEn ?? null } : {})
+})
 
 // null: nichts gemerkt (oder unbrauchbar) - dann wartet das Band wie bisher auf die Antwort.
 export function readCachedHinweise() {
   try {
     const parsed = JSON.parse(globalThis.sessionStorage.getItem(CACHE_KEY) || 'null')
     if (!Array.isArray(parsed)) return null
-    return parsed.filter(isCachedHinweis).map(({ id, titel, text, stufe }) => ({ id, titel, text: text ?? null, stufe }))
+    return parsed.filter(isCachedHinweis).map(cachedShape)
   } catch {
     return null
   }
@@ -196,7 +220,7 @@ export function readCachedHinweise() {
 
 export function writeCachedHinweise(list) {
   try {
-    const clean = (list || []).filter(isCachedHinweis).map(({ id, titel, text, stufe }) => ({ id, titel, text: text ?? null, stufe }))
+    const clean = (list || []).filter(isCachedHinweis).map(cachedShape)
     globalThis.sessionStorage.setItem(CACHE_KEY, JSON.stringify(clean))
   } catch {
     // Merken ist optional (siehe readDismissed).

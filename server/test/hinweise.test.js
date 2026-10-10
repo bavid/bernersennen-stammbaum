@@ -35,6 +35,8 @@ test('lib/hinweise: Prüfung, Status, öffentliche Auswahl und Beispiel-Hinweis'
     assert.deepEqual(clean, {
       titel: 'Neu: Kalender',
       text: 'Zeile 1\nZeile 2',
+      titel_en: null,
+      text_en: null,
       stufe: 'info',
       start: NOW.toISOString(),
       ende: null,
@@ -100,7 +102,7 @@ test('lib/hinweise: Prüfung, Status, öffentliche Auswahl und Beispiel-Hinweis'
   })
 
   await t.test('Ändern: fehlende Felder bleiben, das Ende wird gegen den bestehenden Beginn geprüft', () => {
-    const existing = { titel: 'Alt', text: 'Text', stufe: 'wartung', start: '2026-10-05T20:00:00.000Z', ende: null, aktiv: 1 }
+    const existing = { titel: 'Alt', text: 'Text', titel_en: 'Old', text_en: null, stufe: 'wartung', start: '2026-10-05T20:00:00.000Z', ende: null, aktiv: 1 }
     assert.deepEqual(lib.validateHinweis({ aktiv: false }, { now: NOW, existing }), { ...existing, aktiv: 0 })
     expectStatus(() => lib.validateHinweis({ ende: '2026-10-05T19:00Z' }, { now: NOW, existing }), 400, /Ende/)
     expectStatus(() => lib.validateHinweis({ titel: '' }, { now: NOW, existing }), 400, /Titel/)
@@ -138,7 +140,21 @@ test('lib/hinweise: Prüfung, Status, öffentliche Auswahl und Beispiel-Hinweis'
       list.map((h) => h.titel),
       ['laeuft 6', 'laeuft 5', 'laeuft 4', 'laeuft 3', 'laeuft 2']
     )
-    assert.deepEqual(Object.keys(list[0]).sort(), ['id', 'stufe', 'text', 'titel'])
+    assert.deepEqual(Object.keys(list[0]).sort(), ['id', 'stufe', 'text', 'textEn', 'titel', 'titelEn'])
+  })
+
+  await t.test('Englisch optional: Titel und Text geprüft wie Deutsch, englischer Text nur mit englischem Titel', () => {
+    const clean = lib.validateHinweis({ titel: 'Neu', titelEn: '  New  ', textEn: 'Line' }, { now: NOW })
+    assert.equal(clean.titel_en, 'New')
+    assert.equal(clean.text_en, 'Line')
+    expectStatus(() => lib.validateHinweis({ titel: 'Neu', textEn: 'Line' }, { now: NOW }), 400, /englischer Titel/)
+    expectStatus(() => lib.validateHinweis({ titel: 'Neu', titelEn: '<b>x</b>' }, { now: NOW }), 400, /HTML/)
+    expectStatus(() => lib.validateHinweis({ titel: 'Neu', titelEn: 'x'.repeat(81) }, { now: NOW }), 400, /80/)
+    db.exec('DELETE FROM hinweise')
+    lib.replaceDemoHinweise({ appEnv: 'dev', now: NOW })
+    const [demo] = lib.listPublicHinweise({ now: NOW, includeDemo: true })
+    assert.equal(demo.titelEn, 'Welcome to the preview')
+    assert.match(demo.textEn, /notices from the team/)
   })
 
   await t.test('öffentlich ohne Demo: Beispiel-Hinweise erscheinen in Produktion nie', () => {
@@ -237,7 +253,7 @@ test('API: Hinweise anlegen, ändern, löschen (Admin) und öffentlich lesen', a
     assert.equal(res.status, 200)
     assert.equal(res.headers.get('cache-control'), 'public, no-cache')
     assert.deepEqual(res.data, {
-      hinweise: [{ id: created.id, titel: 'Wartung heute Abend', text: 'Ab 22 Uhr\nkurz nicht erreichbar.', stufe: 'wartung' }]
+      hinweise: [{ id: created.id, titel: 'Wartung heute Abend', text: 'Ab 22 Uhr\nkurz nicht erreichbar.', titelEn: null, textEn: null, stufe: 'wartung' }]
     })
   })
 

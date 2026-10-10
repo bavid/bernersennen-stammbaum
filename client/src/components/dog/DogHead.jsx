@@ -15,10 +15,11 @@ function headLineOptions(dog, family, origin) {
 
 // Kompakter Kopf der Tierseite (Phase W, Schritt 2 - Muster Profilseite): Bild (vergrößerbar), Name, eine Zeile
 // "Rasse · Alter · bei euch seit …", für ein geteiltes eigenes Tier der Chip "Sichtbar in: …" (führt zu "Wer sieht …?")
-// und die Knöpfe Erzählen · Bearbeiten · ⋯ (nur wer schreiben darf). badge: z. B. der Besuchs-Chip.
+// und die Knöpfe Erzählen · Bearbeiten · ⋯ (nur wer schreiben darf). showTell: im Reiter Chronik steht das Erzählen-Feld
+// direkt darunter - dann kein zweiter Knopf im Kopf. badge: z. B. der Besuchs-Chip.
 // Ein Tier, das nicht euch gehört, sagt darunter, wo es lebt und wie ihr es seht (originLine: "lebt bei Zuhause Möwenweg ·
 // geteilt mit euch über Familie Sonnenhang"). family: der aktive Bereich.
-export default function DogHead({ dog, family, canWrite, visibleIn, menuItems, badge, onShowVisibility, onTell, onEdit, onOpenPhoto }) {
+export default function DogHead({ dog, family, canWrite, showTell = true, visibleIn, menuItems, badge, onShowVisibility, onTell, onEdit, onOpenPhoto }) {
   const { words } = useTheme()
   const origin = originLine(dog, family)
   const line = dogHeadLine(dog, headLineOptions(dog, family, origin))
@@ -60,7 +61,7 @@ export default function DogHead({ dog, family, canWrite, visibleIn, menuItems, b
       {/* Am Handy unter Bild und Name über die ganze Breite, mit der kurzen Beschriftung (words.tellActionShort). */}
       {(canWrite || menuItems.length > 0) && (
         <div className="dog-head-actions">
-          {canWrite && (
+          {canWrite && showTell && (
             <button type="button" className="btn btn-primary dog-head-tell" onClick={onTell}>
               <Icon name="plus" />
               <span className="is-long">{words.tellAction}</span>

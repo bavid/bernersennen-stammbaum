@@ -55,9 +55,8 @@ export default {
   Beispiel: 'example',
   'In der Vorschau deaktiviert': 'Disabled in the preview',
   'Das ist die Demo eines Partner-Bereichs': 'This is the demo of a partner area',
-  'Schaut euch in Ruhe um – hier geht’s zu den drei wichtigsten Stellen:':
-    'Take your time to look around – here are the three most important places:',
-  'Rundgang durch die Demo': 'Tour of the demo',
+  'Schaut euch in Ruhe um: Der Umschalter oben zeigt euer Profil so, wie eure Kundschaft es sieht. Alles Weitere steht im Menü.':
+    'Take your time to look around: the switch at the top shows your profile the way your customers see it. Everything else is in the menu.',
   'Hinweis schließen': 'Close notice',
   'Profil bearbeiten': 'Edit profile',
   Kundensicht: 'Customer view',

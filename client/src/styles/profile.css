@@ -160,9 +160,19 @@
   height: 1.25rem;
 }
 
+/* Am Knopf verankert, nie breiter als der Bildschirm abzüglich Rand - lange Beschriftungen brechen um statt abgeschnitten
+   zu werden. Am Handy (unten) hängt das Panel rechtsbündig an der ganzen Knopfzeile. */
 .dog-more-panel {
   right: auto;
   left: 0;
+  width: max-content;
+  min-width: min(15rem, calc(100vw - var(--sbw, 0px) - 2 * var(--page-gutter)));
+  max-width: min(20rem, calc(100vw - var(--sbw, 0px) - 2 * var(--page-gutter)));
+}
+
+.dog-more-panel .account-menu-item span {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .dog-tab-bar {
@@ -255,7 +265,17 @@
   }
 
   .dog-head-actions {
+    position: relative;
     grid-column: 1 / -1;
+  }
+
+  .dog-head-actions .dog-more {
+    position: static;
+  }
+
+  .dog-head-actions .dog-more-panel {
+    right: 0;
+    left: auto;
   }
 
   .dog-head-tell .is-long {

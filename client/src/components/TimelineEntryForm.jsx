@@ -195,7 +195,7 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
         <label className="field-label" htmlFor={titelId}>
           {t('Überschrift')} <span className="muted">{t('(optional)')}</span>
         </label>
-        <input id={titelId} name="titel" value={form.titel} onChange={(event) => update({ titel: event.target.value })} maxLength={120} placeholder={t('sonst: „{title}“', { title: suggestion })} />
+        <input id={titelId} name="titel" value={form.titel} onChange={(event) => update({ titel: event.target.value })} maxLength={120} placeholder={suggestion} />
       </div>
       {!nameKnown && nameField}
       <DatumChip value={form.datum} onChange={(datum) => update({ datum })} invalid={Boolean(errors.datum)} errorId={errorIds.datum} />

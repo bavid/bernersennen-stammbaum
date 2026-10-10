@@ -14,7 +14,9 @@ const api = vi.hoisted(() => ({
   publicPartnerAnimals: vi.fn(),
   publicHappyEnds: vi.fn(),
   publicPartnerPosts: vi.fn(),
-  publicAnimal: vi.fn()
+  publicAnimal: vi.fn(),
+  // Startseite /profil der Partner-Demo (Hinweis): das Profil lädt nicht - die Seite zeigt nur ihren Fehler.
+  partnerArea: { profile: () => Promise.reject(new Error('offline')) }
 }))
 vi.mock('./api', () => ({ api, setUnauthorizedHandler: () => {} }))
 
@@ -72,12 +74,13 @@ afterEach(() => {
   }
   container?.remove()
   container = null
-  for (const mock of Object.values(api)) mock.mockReset()
+  for (const mock of Object.values(api)) mock.mockReset?.()
   ;[...document.head.querySelectorAll('meta[name="robots"]')].forEach((el) => el.remove())
   delete document.documentElement.dataset.theme
   document.title = ''
   window.history.replaceState(null, '', '/')
   window.localStorage.clear()
+  window.sessionStorage.clear()
 })
 
 function isSettled() {
@@ -190,25 +193,24 @@ describe('Hinweis in der Partner-Demo', () => {
     home: { id: 91, name: 'Tierheim Birkenweg', theme: 'standard', art: 'tierheim' },
     partner: { id: 10, slug: 'tierheim-birkenweg', name: 'Tierheim Birkenweg', typ: 'tierheim', status: 'aktiv' }
   }
-  const guideLinks = () => [...container.querySelectorAll('.demo-guide-links a')].map((a) => [a.textContent, a.getAttribute('href')])
-
-  test('Partner-Demo: Hinweis oben im Inhalt mit Profil, Kundensicht und Beiträge', async () => {
+  // Audit: der Hinweis steht nur auf der Startseite /profil und ohne eigene Links (kein doppelter Umschalter).
+  test('Partner-Demo: Hinweis oben im Inhalt der Startseite /profil, ohne eigene Links', async () => {
     api.me.mockResolvedValue(partnerDemo)
-    await render('/admin-schreiben')
+    await render('/profil')
 
     const guide = container.querySelector('main .demo-guide')
     expect(guide.textContent).toContain('Das ist die Demo eines Partner-Bereichs')
-    expect(guideLinks()).toEqual([
-      ['Profil bearbeiten', '/profil'],
-      ['Kundensicht', '/kundensicht'],
-      ['Beiträge', '/beitraege']
-    ])
+    expect(guide.querySelectorAll('a')).toHaveLength(0)
   })
 
-  test('Tierheim-Demo: statt Beiträge die Tiere', async () => {
-    api.me.mockResolvedValue(shelterDemo)
+  test.each([
+    ['Partner', partnerDemo],
+    ['Tierheim', shelterDemo]
+  ])('%s-Demo: auf anderen Seiten kein Hinweis', async (_label, me) => {
+    api.me.mockResolvedValue(me)
     await render('/admin-schreiben')
-    expect(guideLinks()[2]).toEqual(['Tiere', '/tiere'])
+    expect(container.querySelector('.app-main')).not.toBeNull()
+    expect(container.querySelector('.demo-guide')).toBeNull()
   })
 
   test.each([
@@ -217,7 +219,7 @@ describe('Hinweis in der Partner-Demo', () => {
     ['eine Zuhause-Demo', { id: 1, name: 'Zuhause am Deich', theme: 'standard', art: 'zuhause', isDemo: true, home: null, memberships: [] }]
   ])('kein Hinweis für %s', async (_label, me) => {
     api.me.mockResolvedValue(me)
-    await render('/admin-schreiben')
+    await render('/profil')
     expect(container.querySelector('.app-main')).not.toBeNull()
     expect(container.querySelector('.demo-guide')).toBeNull()
   })
@@ -234,7 +236,7 @@ describe('Hinweis in der Partner-Demo', () => {
     ['/partner', 'einer Zuhause-Demo', homeDemo, '.partners-page h1', 'Unsere Partner']
   ])('auf %s in %s: die Seite in der App-Hülle, ohne Demo-Hinweis, Rundgang und Umschalter', async (path, _label, me, heading, title) => {
     api.me.mockResolvedValue(me)
-    await render('/admin-schreiben')
+    await render('/profil')
     // Gegenprobe: auf den Seiten des eigenen Bereichs steht der Demo-Hinweis (in der Partner-Demo auch Rundgang und Umschalter).
     expect(container.querySelector('.demo-banner')).not.toBeNull()
     if (me.art === 'partner') {
@@ -261,7 +263,7 @@ describe('Hinweis in der Partner-Demo', () => {
 
   test('schließen blendet ihn aus und merkt es sich für die nächste Demo', async () => {
     api.me.mockResolvedValue(partnerDemo)
-    await render('/admin-schreiben')
+    await render('/profil')
 
     await act(async () => container.querySelector('.demo-guide-close').click())
     expect(container.querySelector('.demo-guide')).toBeNull()
@@ -269,7 +271,7 @@ describe('Hinweis in der Partner-Demo', () => {
     act(() => root.unmount())
     root = null
     container.remove()
-    await render('/admin-schreiben')
+    await render('/profil')
     expect(container.querySelector('.app-main')).not.toBeNull()
     expect(container.querySelector('.demo-guide')).toBeNull()
   })

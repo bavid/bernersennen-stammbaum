@@ -1,3 +1,4 @@
+import useSheetFit from '../../hooks/useSheetFit.js'
 import VisitenkarteQr from '../visitenkarte/VisitenkarteQr.jsx'
 import { t } from '../../lib/i18n/index.js'
 
@@ -109,8 +110,9 @@ function HandoverSheet({ handover, shelter, name }) {
 
 export default function StartpaketSheets({ model }) {
   const { profile, shelter, memories, handover } = model
+  const fitRef = useSheetFit()
   return (
-    <div className="voucher-sheets startpaket-sheets">
+    <div ref={fitRef} className="voucher-sheets startpaket-sheets">
       <ProfileSheet profile={profile} shelter={shelter} />
       <MemoriesSheet memories={memories} shelter={shelter} name={profile.name} />
       <HandoverSheet handover={handover} shelter={shelter} name={profile.name} />

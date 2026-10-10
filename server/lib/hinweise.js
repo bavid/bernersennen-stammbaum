@@ -23,7 +23,7 @@ const MAX_OEFFENTLICH = 5
 const MAX_HINWEISE = 100
 const MIN_YEAR = 2000
 const MAX_YEAR = 2100
-const FIELDS = Object.freeze(['titel', 'text', 'stufe', 'start', 'ende', 'aktiv'])
+const FIELDS = Object.freeze(['titel', 'text', 'titelEn', 'textEn', 'stufe', 'start', 'ende', 'aktiv'])
 const HTML_RE = /[<>]/
 // Ein Zeitpunkt mit Zeitzone ('Z' oder ±HH:MM) - eine Ortszeit ohne Zone wäre mehrdeutig.
 const ISO_INSTANT_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/
@@ -36,8 +36,18 @@ const DEMO_HINWEIS = Object.freeze({
   text:
     'So sehen Hinweise des Teams aus – etwa vor Wartungsarbeiten oder wenn es etwas Neues gibt.\n' +
     'Mit × blendest du diesen Hinweis für diese Sitzung aus.',
+  titelEn: 'Welcome to the preview',
+  textEn:
+    'This is what notices from the team look like – for example before maintenance or when there is something new.\n' +
+    'Use × to hide this notice for this session.',
   stufe: STUFE.info
 })
+
+// Optional zweisprachig: titel_en/text_en (leer = der Client zeigt auch auf Englisch die deutsche Fassung). Die Spalten
+// kommen hier dazu statt in db.js (dort ist kein Platz mehr) - bestehende Datenbanken bekommen sie beim Start.
+const COLUMNS = db.prepare('PRAGMA table_info(hinweise)').all().map((column) => column.name)
+if (!COLUMNS.includes('titel_en')) db.exec('ALTER TABLE hinweise ADD COLUMN titel_en TEXT')
+if (!COLUMNS.includes('text_en')) db.exec('ALTER TABLE hinweise ADD COLUMN text_en TEXT')
 
 // feld: welches Formularfeld der Fehler betrifft - der Admin zeigt ihn direkt dort (routes/adminHinweise.js).
 function httpError(status, message, feld) {
@@ -66,6 +76,14 @@ function validateTitel(value) {
 
 function validateText(value) {
   return cleanPlain(value, { feld: 'text', label: 'Der Text', maxLength: MAX_TEXT_LENGTH, allowNewline: true })
+}
+
+// Englischer Titel ist optional - ohne ihn gibt es auch keinen englischen Text.
+function validateEnglish(titelEn, textEn) {
+  const titel = cleanPlain(titelEn, { feld: 'titelEn', label: 'Der englische Titel', maxLength: MAX_TITEL_LENGTH, allowNewline: false })
+  const text = cleanPlain(textEn, { feld: 'textEn', label: 'Der englische Text', maxLength: MAX_TEXT_LENGTH, allowNewline: true })
+  if (text && !titel) throw httpError(400, 'Zum englischen Text gehört auch ein englischer Titel.', 'titelEn')
+  return { titelEn: titel, textEn: text }
 }
 
 function validateStufe(value) {
@@ -128,10 +146,13 @@ function validateHinweis(body, { now = new Date(), existing = null } = {}) {
   assertKnownFields(body)
   const has = (key) => body[key] !== undefined
   if (existing && !FIELDS.some(has)) throw httpError(400, 'Nichts zu ändern')
-  const base = existing || { titel: null, text: null, stufe: STUFE.info, start: now.toISOString(), ende: null, aktiv: 1 }
+  const base = existing || { titel: null, text: null, titel_en: null, text_en: null, stufe: STUFE.info, start: now.toISOString(), ende: null, aktiv: 1 }
+  const english = validateEnglish(has('titelEn') ? body.titelEn : base.titel_en, has('textEn') ? body.textEn : base.text_en)
   const clean = {
     titel: has('titel') || !existing ? validateTitel(body.titel) : base.titel,
     text: has('text') ? validateText(body.text) : base.text,
+    titel_en: english.titelEn,
+    text_en: english.textEn,
     stufe: has('stufe') ? validateStufe(body.stufe) : base.stufe,
     start: has('start') ? validateStart(body.start) : base.start,
     ende: has('ende') ? validateEnde(body.ende) : base.ende,
@@ -156,21 +177,21 @@ function hinweisStatus(row, now = new Date()) {
 // --- Abfragen ------------------------------------------------------------------------------------
 
 const insertStmt = db.prepare(
-  `INSERT INTO hinweise (titel, text, stufe, start, ende, aktiv, is_demo)
-   VALUES (@titel, @text, @stufe, @start, @ende, @aktiv, @is_demo)`
+  `INSERT INTO hinweise (titel, text, titel_en, text_en, stufe, start, ende, aktiv, is_demo)
+   VALUES (@titel, @text, @titel_en, @text_en, @stufe, @start, @ende, @aktiv, @is_demo)`
 )
 const findStmt = db.prepare('SELECT * FROM hinweise WHERE id = ?')
 const listStmt = db.prepare('SELECT * FROM hinweise ORDER BY start DESC, id DESC')
 const countStmt = db.prepare('SELECT COUNT(*) AS n FROM hinweise')
 const updateStmt = db.prepare(
-  `UPDATE hinweise SET titel = @titel, text = @text, stufe = @stufe, start = @start, ende = @ende, aktiv = @aktiv,
+  `UPDATE hinweise SET titel = @titel, text = @text, titel_en = @titel_en, text_en = @text_en, stufe = @stufe, start = @start, ende = @ende, aktiv = @aktiv,
      updated_at = datetime('now')
    WHERE id = @id`
 )
 const deleteStmt = db.prepare('DELETE FROM hinweise WHERE id = ?')
 const deleteDemoStmt = db.prepare('DELETE FROM hinweise WHERE is_demo = 1')
 const publicStmt = db.prepare(
-  `SELECT id, titel, text, stufe FROM hinweise
+  `SELECT id, titel, text, titel_en AS titelEn, text_en AS textEn, stufe FROM hinweise
    WHERE aktiv = 1 AND start <= @jetzt AND (ende IS NULL OR ende >= @jetzt) AND (@includeDemo = 1 OR is_demo = 0)
    ORDER BY start DESC, id DESC LIMIT ${MAX_OEFFENTLICH}`
 )
@@ -187,14 +208,16 @@ function countHinweise() {
   return countStmt.get().n
 }
 
+const NO_ENGLISH = Object.freeze({ titel_en: null, text_en: null })
+
 // clean: Ausgabe von validateHinweis. Gibt die neue Zeile zurück.
 function createHinweis(clean, { isDemo = false } = {}) {
-  const id = insertStmt.run({ ...clean, is_demo: isDemo ? 1 : 0 }).lastInsertRowid
+  const id = insertStmt.run({ ...NO_ENGLISH, ...clean, is_demo: isDemo ? 1 : 0 }).lastInsertRowid
   return findHinweis(id)
 }
 
 function updateHinweis(id, clean) {
-  updateStmt.run({ ...clean, id })
+  updateStmt.run({ ...NO_ENGLISH, ...clean, id })
   return findHinweis(id)
 }
 
@@ -202,7 +225,7 @@ function deleteHinweis(id) {
   return deleteStmt.run(id).changes > 0
 }
 
-// Öffentliche Auswahl: nur Titel, Text und Stufe - Zeitraum und Verwaltungsdaten bleiben beim Admin.
+// Öffentliche Auswahl: nur Titel, Text (auch englisch) und Stufe - Zeitraum und Verwaltungsdaten bleiben beim Admin.
 function listPublicHinweise({ now = new Date(), includeDemo = false } = {}) {
   return publicStmt.all({ jetzt: now.toISOString(), includeDemo: includeDemo ? 1 : 0 })
 }
@@ -212,6 +235,8 @@ function adminHinweis(row, now = new Date()) {
     id: row.id,
     titel: row.titel,
     text: row.text,
+    titelEn: row.titel_en || null,
+    textEn: row.text_en || null,
     stufe: row.stufe,
     start: row.start,
     ende: row.ende,
@@ -229,7 +254,8 @@ function adminHinweis(row, now = new Date()) {
 // Läuft nur aus scripts/testenv-seed.js - und verweigert Produktion zusätzlich selbst.
 const replaceDemoTx = db.transaction((now) => {
   deleteDemoStmt.run()
-  return createHinweis({ ...DEMO_HINWEIS, start: now.toISOString(), ende: null, aktiv: 1 }, { isDemo: true })
+  const { titelEn, textEn, ...deutsch } = DEMO_HINWEIS
+  return createHinweis({ ...deutsch, titel_en: titelEn, text_en: textEn, start: now.toISOString(), ende: null, aktiv: 1 }, { isDemo: true })
 })
 
 function replaceDemoHinweise({ appEnv, now = new Date() }) {

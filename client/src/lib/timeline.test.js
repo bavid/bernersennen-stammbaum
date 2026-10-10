@@ -9,6 +9,7 @@ import {
   groupByYear,
   isKnownSex,
   livesWithLabel,
+  sexFactLabel,
   sexLabel,
   shortName,
   speciesNoun,
@@ -142,6 +143,15 @@ describe('dates', () => {
     expect(sexLabel('ruede')).toBe('Rüde')
     expect(sexLabel('huendin', 'katze')).toBe('Katze')
     expect(sexLabel('ruede', 'anderes')).toBe('männlich')
+  })
+
+  // UX-Audit: „Geschlecht: Katze“ - im Feld Geschlecht nie das Wort der Tierart.
+  test('sexFactLabel: a female cat is "weiblich", never the species word', () => {
+    expect(sexFactLabel('huendin', 'katze')).toBe('weiblich')
+    expect(sexFactLabel('ruede', 'katze')).toBe('Kater')
+    expect(sexFactLabel('huendin', 'hund')).toBe('Hündin')
+    expect(sexFactLabel('huendin', 'anderes')).toBe('weiblich')
+    expect(sexFactLabel('unbekannt', 'katze')).toBe('')
   })
 
   // Geschlecht „weiß ich nicht“: nie Hündin/Rüde, in der kombinierten Zeile nur die Art.

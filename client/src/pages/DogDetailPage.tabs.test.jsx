@@ -131,13 +131,15 @@ afterEach(() => {
 })
 
 describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
-  test('kompakter Kopf: Name, eine Zeile, "Sichtbar in", Erzählen · Bearbeiten · ⋯; Reiter Chronik · Infos · Verwandte', async () => {
+  test('kompakter Kopf: Name, eine Zeile, "Sichtbar in", Bearbeiten · ⋯ (Erzählen steht in der Chronik); Reiter Chronik · Infos · Verwandte', async () => {
     await render()
     expect(container.querySelector('.dog-head h1').textContent).toBe('Nele')
     expect(container.querySelector('.dog-head-line').textContent).toContain('Mischling · ')
     expect(container.querySelector('.dog-head-line').textContent).toContain('bei euch seit 12. Juni 2021')
     expect(container.querySelector('.dog-head-visible').textContent).toBe('Sichtbar in: Familie Sonnenhang')
-    expect(button(words.tellAction)).toBeDefined()
+    // Im Reiter Chronik ist das Erzählen-Feld der eine Einstieg - kein zweiter Knopf im Kopf (UX-Audit).
+    expect(button(words.tellAction)).toBeUndefined()
+    expect(container.querySelector('.composer-trigger')).not.toBeNull()
     expect(button('Bearbeiten')).toBeDefined()
     expect(container.querySelector('.dog-more-trigger').getAttribute('aria-label')).toBe('Weitere Aktionen für Nele')
     expect(tabs().map((t) => t.textContent)).toEqual(['Chronik', 'Infos', 'Verwandte'])
@@ -185,6 +187,13 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(container.querySelector('.dog-info-facts').textContent).not.toMatch(/Hündin|Rüde/)
   })
 
+  // UX-Audit: „Geschlecht: Katze“ - das Feld zeigte bei einer Kätzin das Wort der Tierart.
+  test('Infos: Geschlecht einer Kätzin ist "weiblich", nie die Tierart', async () => {
+    const fact = () => [...container.querySelectorAll('.dog-info-facts > div')].find((row) => row.querySelector('dt').textContent === 'Geschlecht')
+    await render('/tier/10?reiter=infos', { dog: nele({ tierart: 'katze', geschlecht: 'huendin' }) })
+    expect(fact().querySelector('dd').textContent).toBe('weiblich')
+  })
+
   test('#entry-N erzwingt die Chronik, auch mit ?reiter=infos', async () => {
     await render('/tier/10?reiter=infos#entry-5')
     expect(selectedTab()).toBe('Chronik')
@@ -213,6 +222,15 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(selectedTab()).toBe('Infos')
   })
 
+  // UX-Audit: ein Einstieg für neue Erinnerungen - „Mehrere Fotos auf einmal“ steckt im Erzählen-Feld, kein eigener Knopf.
+  test('Chronik: „Mehrere Fotos auf einmal“ im Erzählen-Feld, kein eigener „Fotos mitbringen“-Knopf daneben', async () => {
+    await render()
+    const extra = container.querySelector('#composer .composer-extra .chronicle-import')
+    expect(extra.textContent).toBe('Mehrere Fotos auf einmal')
+    expect(container.querySelectorAll('.chronicle-import')).toHaveLength(1)
+    expect(button('Fotos mitbringen')).toBeUndefined()
+  })
+
   test('"Erinnerung festhalten" im Kopf springt aus den Infos in die Chronik und öffnet das Erzählen', async () => {
     await render('/tier/10?reiter=infos')
     await act(async () => button(words.tellAction).click())
@@ -229,12 +247,13 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(document.activeElement).toBe(container.querySelector('#share-panel-title'))
   })
 
-  test('⋯ Weitere Aktionen: Menü mit Pfeiltasten, "Wer sieht Nele?" führt in die Infos; Escape gibt den Fokus zurück', async () => {
+  test('⋯ Weitere Aktionen: Menü mit Pfeiltasten; Escape gibt den Fokus zurück', async () => {
     await render()
     const trigger = container.querySelector('.dog-more-trigger')
     await act(async () => trigger.click())
     const items = () => [...container.querySelectorAll('[role="menuitem"]')]
-    expect(items().map((item) => item.textContent)).toEqual(['Wer sieht Nele?', 'Als Bilderrahmen zeigen', 'Vermisst? Suchplakat erstellen', 'Link kopieren'])
+    // „Wer sieht …?“ hat seinen Ort (Chip, Infos) - nicht doppelt im ⋯.
+    expect(items().map((item) => item.textContent)).toEqual(['Als Bilderrahmen zeigen', 'Vermisst? Suchplakat erstellen', 'Link kopieren'])
     expect(document.activeElement).toBe(items()[0])
     await act(async () => items()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })))
     expect(document.activeElement).toBe(items()[1])
@@ -242,10 +261,6 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(items()).toHaveLength(0)
     expect(document.activeElement).toBe(trigger)
 
-    await act(async () => trigger.click())
-    await act(async () => items()[0].click())
-    await flushFrame()
-    expect(selectedTab()).toBe('Infos')
   })
 
   test('⋯ „Als Bilderrahmen zeigen“: die Diashow nur mit den Fotos dieses Tiers', async () => {
@@ -314,13 +329,14 @@ describe('Tierprofil – Kopf und Reiter (Phase W, Schritt 2)', () => {
     expect(container.querySelector('[role="alert"]').textContent).toBe('Dieses Tier gibt es hier nicht.')
   })
 
-  test('zu Besuch: nichts schreiben, kein "Sichtbar in", ⋯ nur "Link kopieren"', async () => {
+  test('zu Besuch: nichts schreiben, kein "Sichtbar in", statt ⋯ gleich der Knopf "Link kopieren"', async () => {
     const visit = { ...home, id: 9, name: 'Zuhause Möwenweg', zuBesuch: true, role: 'gast', memberships: [] }
     await render('/tier/10', { family: visit, dog: nele({ isOwn: false, canEdit: false, ownerFamilyId: 9, familyName: 'Zuhause Möwenweg' }) })
     expect(button(words.tellAction)).toBeUndefined()
     expect(container.querySelector('.dog-head-visible')).toBeNull()
     expect(container.querySelector('.visit-chip').textContent).toBe('Zu Besuch · Zurück zu Mein Zuhause')
-    await act(async () => container.querySelector('.dog-more-trigger').click())
-    expect([...container.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent)).toEqual(['Link kopieren'])
+    // Ein einziger Eintrag braucht kein Menü (UX-Audit).
+    expect(container.querySelector('.dog-more-trigger')).toBeNull()
+    expect(container.querySelector('.dog-more-single').textContent).toBe('Link kopieren')
   })
 })

@@ -7,10 +7,20 @@ import { t } from '../../lib/i18n/index.js'
 // items: [{ key, label, icon, onSelect }]. Tastatur nach dem Muster "Menu Button" (hooks/useMenu.js): Pfeile, Pos1/Ende,
 // Escape schließt und gibt den Fokus an den Knopf zurück. Ein Eintrag schließt das Menü - der Fokus geht an den Knopf,
 // es sei denn, onSelect setzt ihn selbst woandershin (z. B. auf den Reiter "Infos").
+// Nur ein Eintrag (Tierheim, zu Besuch: „Link kopieren“): kein Menü, gleich der Knopf selbst.
 export default function DogMoreMenu({ name, items }) {
   const { open, toggle, close, rootRef, triggerRef, firstItemRef, onMenuKeyDown, onTriggerKeyDown } = useMenu()
   const menuId = useId()
   if (items.length === 0) return null
+  if (items.length === 1) {
+    const [item] = items
+    return (
+      <button type="button" className="btn btn-ghost dog-more-single" onClick={item.onSelect}>
+        <Icon name={item.icon} />
+        {t(item.label)}
+      </button>
+    )
+  }
 
   function select(item) {
     close()

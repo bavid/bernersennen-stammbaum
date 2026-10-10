@@ -74,6 +74,14 @@ test('Demo: „Wir waren hier“ bei Pfotenglück', async (t) => {
     assert.ok(!JSON.stringify(wishes.data).includes('Lindenhof'))
   })
 
+  await t.test('Deich: die Glocke zählt den Kontaktwunsch (/me und /api/hinweise/gruesse)', async () => {
+    const me = await get('/api/me', demoCookie)
+    assert.equal(me.data.wwhKontakteOffen, 1)
+    const glocke = await get('/api/hinweise/gruesse', demoCookie)
+    assert.equal(glocke.status, 200)
+    assert.equal(glocke.data.zahlen.kontakte, 1)
+  })
+
   await t.test('Partner-Demo Pfotenglück sieht die offene Anmeldung, darf aber nicht entscheiden', async () => {
     const login = await post('/api/demo', { as: 'partner' })
     const cookie = getCookie(login.res)

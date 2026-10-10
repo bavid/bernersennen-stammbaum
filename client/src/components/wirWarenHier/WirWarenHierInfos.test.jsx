@@ -39,6 +39,8 @@ describe('WirWarenHierInfos', () => {
     mocks.wwhKontaktOffen.mockResolvedValue({ an: [], von: [] })
     const container = await renderUi(<WirWarenHierInfos dog={{ id: 11, name: 'Benno' }} />)
     expect(container.textContent).toContain('Noch an keinem Ort angemeldet.')
+    // Auch auf der Seite einer Katze: tierneutral, kein „Hundeschule“/„Salon“ (UX-Audit).
+    expect(container.textContent).not.toMatch(/Hundeschule|Salon/)
     expect(container.querySelector('a').getAttribute('href')).toBe('/partner')
   })
 })

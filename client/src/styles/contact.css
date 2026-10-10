@@ -325,9 +325,47 @@
 }
 
 .voucher-row-actions .btn {
-  min-height: 2.1rem;
+  min-height: max(2.75rem, 44px);
   padding: 0 var(--space-3);
   font-size: var(--text-xs);
+}
+
+/* „Mehr“ je Code: höchstens zwei Knöpfe sichtbar, der Rest (Code kopieren, Zurückziehen …) klappt darunter auf. */
+.voucher-row-more {
+  position: relative;
+}
+
+.voucher-row-more > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.voucher-row-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.voucher-row-more[open] > summary {
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+.voucher-row-more-list {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  display: grid;
+  gap: var(--space-2);
+  min-width: max-content;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-raised);
+}
+
+.voucher-row-more-list .btn {
+  justify-content: flex-start;
 }
 
 /* Fallback, wenn "Link kopieren" ohne Zwischenablage-Recht fehlschlägt: Link zum Markieren/Abtippen. */

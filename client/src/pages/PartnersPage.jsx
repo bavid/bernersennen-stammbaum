@@ -141,7 +141,7 @@ export default function PartnersPage({ inApp = false }) {
         </Link>
       </aside>
 
-      {!inApp && <PublicFooter />}
+      {!inApp && <PublicFooter geoNames />}
     </div>
   )
 }

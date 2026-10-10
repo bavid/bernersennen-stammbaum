@@ -1,8 +1,9 @@
 /* Postfach der Partner (Phase P2, /nachrichten - PartnerInboxPage, InboxMessage): eine Liste zum
    Aufklappen, ungelesene fett mit Punkt. Die Nachricht selbst bleibt reiner Text (pre-wrap). */
 
-/* Liste mit Kopfzeile (Zähler, Aufbewahrung, Demo-Hinweis) - zusammen statt verstreut im großen Seitenabstand */
-.inbox {
+/* Liste mit Kopfzeile (Zähler, Aufbewahrung, Demo-Hinweis) - zusammen statt verstreut im großen Seitenabstand.
+   :not([hidden]) - ein display: grid hob sonst das hidden-Attribut des Reiter-Panels auf (Audit: Liste unter „Wir waren hier“). */
+.inbox:not([hidden]) {
   display: grid;
   gap: var(--space-4);
 }

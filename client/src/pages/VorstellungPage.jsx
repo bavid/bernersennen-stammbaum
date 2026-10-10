@@ -109,7 +109,7 @@ export default function VorstellungPage({ family = null }) {
 
   return (
     <div className="public-page vorstellung-page">
-      <PublicHeader family={family} />
+      <PublicHeader family={family} homeLink />
       <main className="vorstellung-main">
         <div key={folie.id} className="vorstellung-live" aria-live="polite">
           <Folie folie={folie} />

@@ -124,7 +124,9 @@ function printLabel({ busy, printable, withCodes }) {
   return withCodes ? t('Drucken – {cards} mit Code', { cards: karten }) : t('Drucken – {cards}', { cards: karten })
 }
 
-export default function KartenDruckOptionen({ count, onCount, seiten, onSeiten, onPrint, busy, printable, withCodes, addressNote = null }) {
+// children: der Druckbogen zum Aufklappen (BogenVorschau) - Audit: er stand als zweiter Druck-Eintrag allein unter der
+// Karte, jetzt gehört er zum Drucken.
+export default function KartenDruckOptionen({ count, onCount, seiten, onSeiten, onPrint, busy, printable, withCodes, addressNote = null, children = null }) {
   return (
     <section className="vk-panel" aria-labelledby="vk-druck-title">
       <h2 id="vk-druck-title" className="vk-panel-title">
@@ -142,6 +144,7 @@ export default function KartenDruckOptionen({ count, onCount, seiten, onSeiten, 
         <Icon name="printer" /> {printLabel({ busy, printable, withCodes })}
       </button>
       <DruckHints />
+      {children}
     </section>
   )
 }

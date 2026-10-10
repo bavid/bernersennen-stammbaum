@@ -1,3 +1,4 @@
+import useSheetFit from '../hooks/useSheetFit.js'
 import VoucherCard, { VoucherCardBack } from './VoucherCard.jsx'
 import { t } from '../lib/i18n/index.js'
 
@@ -37,8 +38,9 @@ function BackSheet({ count, batch, baseUrl, number, total }) {
 
 export default function VoucherSheets({ sheets, batch, baseUrl, duplex }) {
   const total = sheets.length
+  const fitRef = useSheetFit()
   return (
-    <div className="voucher-sheets">
+    <div ref={fitRef} className="voucher-sheets">
       {sheets.map((codes, index) => {
         const number = index + 1
         return (

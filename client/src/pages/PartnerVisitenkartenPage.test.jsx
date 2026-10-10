@@ -285,6 +285,9 @@ describe('PartnerVisitenkartenPage – Vorderseite gestalten', () => {
     expect(details.open).toBe(false)
     expect(details.querySelector('summary').textContent).toBe('Druckbogen ansehen')
     expect(details.querySelectorAll('.vk-sheet')).toHaveLength(2)
+    // Audit: kein zweiter Druck-Eintrag allein unter der Karte - der Bogen gehört zum Abschnitt „Drucken“.
+    expect(details.closest('section[aria-labelledby="vk-druck-title"]')).not.toBeNull()
+    expect(container.querySelectorAll('details.vk-bogen-vorschau')).toHaveLength(1)
   })
 
   test('Ladefehler: Meldung statt Designer', async () => {

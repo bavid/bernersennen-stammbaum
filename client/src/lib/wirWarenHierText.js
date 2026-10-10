@@ -70,7 +70,7 @@ export const WWH = Object.freeze({
   nichtErlaubt: 'Das geht hier gerade nicht.',
   // Block im Reiter „Infos“ des Tiers.
   orte: 'Orte, an denen wir waren',
-  orteLeer: 'Noch an keinem Ort angemeldet. Auf der Seite einer Hundeschule oder eines Salons findet ihr „Wir waren hier“.',
+  orteLeer: 'Noch an keinem Ort angemeldet. Auf der Seite eines Partners findet ihr „Wir waren hier“.',
   partnerAnsehen: 'Partner ansehen',
   hierGezeigt: 'hier gezeigt',
   einWunsch: '{n} Kontaktwunsch wartet',

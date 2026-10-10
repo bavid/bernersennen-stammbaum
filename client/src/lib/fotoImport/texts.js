@@ -1,16 +1,20 @@
 // Deutsche Texte von „Fotos mitbringen“ an einer Stelle (englisch: lib/i18n/en/import.js) - Komponenten übersetzen mit t().
 export const IMPORT_TEXT = Object.freeze({
   action: 'Fotos mitbringen',
+  // Leiser Zweitweg im Erzählen-Feld der Chronik (components/dog/DogChronicle.jsx).
+  entry: 'Mehrere Fotos auf einmal',
   title: 'Fotos mitbringen',
-  intro: 'Wählt Fotos oder ein Google-Takeout-Paket. Je Tag entsteht eine Erinnerung – das Datum lesen wir aus dem Foto.',
-  privacy: 'Alles bleibt erst auf diesem Gerät. Wir verkleinern jedes Foto vor dem Hochladen, Ortsangaben (GPS) werden dabei entfernt.',
+  intro: 'Wählt Fotos von diesem Gerät oder Fotos aus Google Fotos (als ZIP heruntergeladen). Je Tag entsteht eine Erinnerung – das Datum lesen wir aus dem Foto.',
+  privacy: 'Alles bleibt erst auf diesem Gerät. Wir verkleinern jedes Foto vor dem Hochladen und lassen dabei weg, an welchem Ort es gemacht wurde.',
   pickPhotos: 'Fotos auswählen',
   pickFolder: 'Ganzen Ordner',
-  pickZip: 'Takeout-ZIP',
+  pickZip: 'Aus Google Fotos (ZIP)',
+  // Ein-Zeilen-Anleitung unter den Knöpfen (Audit: „Takeout“ sagt Susi nichts).
+  howTo: 'So geht’s: In Google Fotos die Fotos auswählen, „Herunterladen“ tippen und die ZIP-Datei hier wählen.',
   reading: 'Fotos werden gelesen …',
   nothingFound: 'Darin haben wir keine Fotos gefunden.',
-  zipTooBig: 'Das ZIP ist zu groß. Bitte ein kleineres Takeout-Paket (bis {mb} MB) wählen.',
-  zipBroken: 'Das ZIP lässt sich nicht öffnen.',
+  zipTooBig: 'Die ZIP-Datei ist zu groß. Bitte weniger Fotos auf einmal herunterladen (bis {mb} MB).',
+  zipBroken: 'Die ZIP-Datei lässt sich nicht öffnen.',
   moreThanRead: 'Wir haben die ersten {n} Fotos gelesen.',
   reviewHint: 'Alle Tage sind ausgewählt. Tippt ein Foto an, um es wegzulassen.',
   capHint: 'Auf einmal gehen höchstens {photos} Fotos und {days} Erinnerungen ({perDay} Fotos je Tag). {n} Fotos bleiben für den nächsten Durchgang.',

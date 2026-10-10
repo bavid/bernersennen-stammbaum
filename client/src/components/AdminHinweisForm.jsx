@@ -13,11 +13,17 @@ import {
   toHinweisPayload
 } from '../lib/hinweise.js'
 
-const IDS = { titel: 'admin-hinweis-titel', text: 'admin-hinweis-text', stufe: 'admin-hinweis-stufe' }
+const IDS = {
+  titel: 'admin-hinweis-titel',
+  text: 'admin-hinweis-text',
+  titelEn: 'admin-hinweis-titel-en',
+  textEn: 'admin-hinweis-text-en',
+  stufe: 'admin-hinweis-stufe'
+}
 const PREVIEW_ID = 'vorschau'
 const PREVIEW_TITLE = 'Titel des Hinweises'
 // Feld aus der Server-Antwort ({ error, feld }, server/routes/adminHinweise.js) -> Schlüssel der Feldfehler hier.
-const SERVER_FIELDS = ['titel', 'text', 'stufe', 'start', 'ende']
+const SERVER_FIELDS = ['titel', 'text', 'titelEn', 'textEn', 'stufe', 'start', 'ende']
 
 function withoutKeys(object, keys) {
   return Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key)))
@@ -37,6 +43,38 @@ function Preview({ form }) {
       </p>
       <HinweisCarousel hinweise={[hinweis]} preview />
     </div>
+  )
+}
+
+// Optional: englische Fassung - wer die Seite auf Englisch nutzt, sieht sie statt der deutschen (lib/hinweise.js
+// localizeHinweis). Leer = alle sehen Deutsch.
+function EnglishFields({ form, fieldErrors, update }) {
+  return (
+    <>
+      <AdminField
+        id={IDS.titelEn}
+        label="Titel auf Englisch (optional)"
+        error={fieldErrors.titelEn}
+        hint="Für alle, die die Seite auf Englisch nutzen. Leer lassen = sie sehen den deutschen Hinweis."
+        className="span-2"
+      >
+        <input
+          {...fieldProps(IDS.titelEn, { error: fieldErrors.titelEn, hint: true })}
+          value={form.titelEn}
+          maxLength={MAX_TITEL_LENGTH}
+          onChange={(e) => update({ titelEn: e.target.value })}
+        />
+      </AdminField>
+      <AdminField id={IDS.textEn} label="Text auf Englisch (optional)" error={fieldErrors.textEn} className="span-2">
+        <textarea
+          {...fieldProps(IDS.textEn, { error: fieldErrors.textEn })}
+          value={form.textEn}
+          maxLength={MAX_TEXT_LENGTH}
+          rows={3}
+          onChange={(e) => update({ textEn: e.target.value })}
+        />
+      </AdminField>
+    </>
   )
 }
 
@@ -112,6 +150,7 @@ export default function AdminHinweisForm({ hinweis = null, onSaved, onCancel }) 
             onChange={(e) => update({ text: e.target.value })}
           />
         </AdminField>
+        <EnglishFields form={form} fieldErrors={fieldErrors} update={update} />
         <AdminField id={IDS.stufe} label="Stufe" error={fieldErrors.stufe}>
           <select {...bind('stufe')} value={form.stufe} onChange={(e) => update({ stufe: e.target.value })}>
             {STUFE_OPTIONS.map((option) => (
