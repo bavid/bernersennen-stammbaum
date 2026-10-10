@@ -5,7 +5,7 @@ const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = 
 // „Wir waren hier“ Aufgabe 4 (docs/superpowers/plans/2026-10-10-wir-waren-hier.md): Kontaktwunsch über den Ort
 // (lib/wwhKontakt.js, Routen /api/wir-waren-hier/kontakt...). Zusage = normaler Besuch (lib/visits.js), Widerruf =
 // bestehender Besuchs-Abbruch. Obergrenzen, Wartezeit nach Ablehnung, IDOR, Demo, keine Familiennamen in Antworten.
-const dataDir = useTempDataDir('wwh-kontakt', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300', WWH_RATE_LIMIT: '300' })
+const dataDir = useTempDataDir('wwh-kontakt', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300', WWH_RATE_LIMIT: '300', WWH_HOME_RATE_LIMIT: '300' })
 
 const API = '/api/wir-waren-hier'
 const KONTAKT_KEYS = ['createdAt', 'eigenesTierName', 'fotoUrl', 'id', 'ortName', 'tierName', 'tierart']
@@ -242,5 +242,28 @@ test('Wir waren hier: Kontaktwunsch und Besuch bei Zusage', async (t) => {
     assert.equal((await post(`${API}/kontakt/${wish.data.id}/annehmen`, {}, flocke.cookie)).status, 200)
     assert.equal(visitCount(pepper, flocke), 1)
     assert.equal(wishRow(wish.data.id).status, 'angenommen')
+  })
+
+  await t.test('Zusage prüft den Ort erneut: gesperrter Ort oder zurückgenommene Freigabe -> 409, kein Besuch', async () => {
+    const neuerOrt = addPartner()
+    const checkinPepper = checkIn(pepper, dogPepper, neuerOrt)
+    const checkinWilma = checkIn(wilma, dogWilma, neuerOrt)
+    const wish = await send(wilma, checkinPepper, dogWilma)
+    assert.equal(wish.status, 201)
+
+    db.prepare('UPDATE partners SET gesperrt = 1 WHERE id = ?').run(neuerOrt)
+    const blocked = await post(`${API}/kontakt/${wish.data.id}/annehmen`, {}, pepper.cookie)
+    assert.equal(blocked.status, 409)
+    assert.equal(visitCount(wilma, pepper), 0)
+    assert.equal(wishRow(wish.data.id).status, 'offen')
+
+    db.prepare('UPDATE partners SET gesperrt = 0 WHERE id = ?').run(neuerOrt)
+    db.prepare("UPDATE wwh_checkins SET status = 'offen' WHERE id = ?").run(checkinWilma)
+    assert.equal((await post(`${API}/kontakt/${wish.data.id}/annehmen`, {}, pepper.cookie)).status, 409, 'Anfragende nicht mehr freigegeben')
+    assert.equal(visitCount(wilma, pepper), 0)
+
+    pins.decideCheckin(neuerOrt, checkinWilma, 'bestaetigt')
+    assert.equal((await post(`${API}/kontakt/${wish.data.id}/annehmen`, {}, pepper.cookie)).status, 200)
+    assert.equal(visitCount(wilma, pepper), 1)
   })
 })

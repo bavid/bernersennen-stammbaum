@@ -34,7 +34,7 @@ const rejectsWith = (fn, status) => assert.throws(fn, (err) => err.status === st
 
 test('Tabellen entstehen idempotent beim require', () => {
   const names = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'wwh_%' ORDER BY name").all().map((r) => r.name)
-  assert.deepEqual(names, ['wwh_checkins', 'wwh_kontakt', 'wwh_pins'])
+  assert.deepEqual(names, ['wwh_checkins', 'wwh_kontakt', 'wwh_pins', 'wwh_rueckzug_log'])
   delete require.cache[require.resolve('../lib/wirWarenHier')]
   assert.doesNotThrow(() => require('../lib/wirWarenHier'))
 })

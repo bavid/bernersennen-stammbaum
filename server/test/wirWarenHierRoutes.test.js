@@ -4,8 +4,14 @@ const { useTempDataDir, startApp, cleanup, call, createFamily, createHousehold, 
 
 // „Wir waren hier“ Aufgabe 3 (docs/superpowers/plans/2026-10-10-wir-waren-hier.md): Familien-Routen unter
 // /api/wir-waren-hier, Ortsansicht (lib/wwhOrtView.js), IDOR, Gast/Demo nur lesend, Ratenbegrenzung.
-// WWH_RATE_LIMIT ist knapp, damit der letzte Teil den Limiter erreicht - die Teile davor bleiben darunter.
-const dataDir = useTempDataDir('wwh-routes', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300', WWH_RATE_LIMIT: '30' })
+// Die WWH-Limits sind knapp, damit der letzte Teil die Limiter erreicht - die Teile davor bleiben darunter.
+const dataDir = useTempDataDir('wwh-routes', {
+  LOGIN_RATE_LIMIT: '300',
+  CODE_RATE_LIMIT: '300',
+  WWH_RATE_LIMIT: '60',
+  WWH_HOME_RATE_LIMIT: '25',
+  WWH_READ_RATE_LIMIT: '40'
+})
 
 const ENTRY = { autorName: 'Wir', datum: '2026-09-12', titel: 'Erste Stunde in der Welpengruppe', text: 'Viel geschnuppert.' }
 const ORT_TIER_KEYS = ['checkinId', 'erinnerungen', 'fotoUrl', 'tierName', 'tierart']
@@ -134,6 +140,9 @@ test('Wir waren hier: Familien-Routen, Ortsansicht, Ratenbegrenzung', async (t) 
     assert.equal((await post(`${API}/checkins/${checkinFlocke}/erinnerungen`, { entryId: openEntryFlocke }, flocke.cookie)).status, 201)
 
     view = await get(`${API}/partner/${ort}`, benno.cookie)
+    assert.deepEqual(view.data.andere, [], 'ohne eigene freigegebene Anmeldung keine fremden Tiere')
+    pins.decideCheckin(ort, checkinBenno, 'bestaetigt')
+    view = await get(`${API}/partner/${ort}`, benno.cookie)
     assert.equal(view.data.andere.length, 1)
     const [tier] = view.data.andere
     assert.deepEqual(Object.keys(tier).sort(), ORT_TIER_KEYS)
@@ -201,15 +210,46 @@ test('Wir waren hier: Familien-Routen, Ortsansicht, Ratenbegrenzung', async (t) 
     assert.equal((await del(`${API}/checkins/${checkinBenno}`, benno.cookie)).status, 404)
   })
 
-  await t.test('Ratenbegrenzung: schreibende Anfragen bekommen irgendwann 429, Lesen bleibt frei', async () => {
-    let limited = null
-    for (let i = 0; i < 40 && !limited; i += 1) {
-      const res = await put(`${API}/checkins/${checkinFlocke}`, { zeigeMich: true }, flocke.cookie)
-      if (res.status === 429) limited = res
+  await t.test('Neu anmelden kurz nach Rückzug: erlaubt, aber kein zweiter Hinweis an den Ort', async () => {
+    const before = notified.length
+    const again = await post(`${API}/checkins`, { partnerId: ort, dogId: dogBenno }, benno.cookie)
+    assert.equal(again.status, 201)
+    assert.equal(notified.length, before, 'kein Hinweis innerhalb von 10 Minuten')
+    assert.equal((await del(`${API}/checkins/${again.data.id}`, benno.cookie)).status, 204)
+    db.prepare("UPDATE wwh_rueckzug_log SET created_at = datetime('now', '-11 minutes') WHERE family_id = ?").run(benno.id)
+    assert.equal((await post(`${API}/checkins`, { partnerId: ort, dogId: dogBenno }, benno.cookie)).status, 201)
+    assert.equal(notified.length, before + 1, 'nach 10 Minuten wieder ein Hinweis')
+  })
+
+  await t.test('Ratenbegrenzung: je Zuhause, dann je IP; Ortsansicht mit Lese-Limit', async () => {
+    const writeUntil429 = async (home, checkinId) => {
+      for (let i = 0; i < 70; i += 1) {
+        const res = await put(`${API}/checkins/${checkinId}`, { zeigeMich: true }, home.cookie)
+        if (res.status === 429) return res
+        assert.equal(res.status, 200)
+      }
+      return null
+    }
+    const homeLimited = await writeUntil429(flocke, checkinFlocke)
+    assert.ok(homeLimited, 'Zuhause-Limiter greift')
+    assert.match(homeLimited.data.error, /eurem Zuhause/)
+    assert.equal(homeLimited.headers.get('cache-control'), 'no-store')
+    const lotteCheckin = db.prepare('SELECT id FROM wwh_checkins WHERE family_id = ?').get(lotte.id).id
+    const ipLimited = await writeUntil429(lotte, lotteCheckin)
+    assert.ok(ipLimited, 'IP-Limiter greift für ein anderes Zuhause erst später')
+    assert.doesNotMatch(ipLimited.data.error, /eurem Zuhause/)
+    assert.match(ipLimited.data.error, /Zu viele/)
+    assert.equal((await get(`${API}/checkins`, flocke.cookie)).status, 200)
+
+    let readLimited = null
+    for (let i = 0; i < 50 && !readLimited; i += 1) {
+      const res = await get(`${API}/partner/${ort}`, benno.cookie)
+      if (res.status === 429) readLimited = res
       else assert.equal(res.status, 200)
     }
-    assert.ok(limited, 'Limiter greift')
-    assert.match(limited.data.error, /Zu viele/)
-    assert.equal((await get(`${API}/checkins`, flocke.cookie)).status, 200)
+    assert.ok(readLimited, 'Lese-Limiter greift')
+    assert.equal(readLimited.headers.get('cache-control'), 'no-store')
+    assert.equal((await get(`${API}/partner/${ort}`, flocke.cookie)).status, 200, 'je Zuhause')
+    assert.equal((await get(`${API}/checkins`, benno.cookie)).status, 200)
   })
 })

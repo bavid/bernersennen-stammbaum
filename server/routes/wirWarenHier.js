@@ -17,22 +17,38 @@ const { sendWishAndNotify, acceptWishAndNotify, rejectWish, withdrawWish, openWi
 // /api/wir-waren-hier. Alles nur aus dem eigenen, gerade aktiven Zuhause (requireOwnHome, Muster routes/besuche.js).
 // requireAuth sperrt Demo-Schreibzugriffe (403); eine Besuchs-Sitzung kommt nie bis hierher (lib/guestAccess.js, 403).
 // Jede Id geht durch cleanId und wird im SQL gegen das Zuhause geprüft - Fremdes ist 404. Antworten tragen no-store
-// (sie nennen Tiere anderer Familien). Schreibende Anfragen zusätzlich mit eigenem IP-Limiter (Muster routes/anfragen.js).
+// (sie nennen Tiere anderer Familien). Schreibende Anfragen mit eigenem IP-Limiter (Muster routes/anfragen.js) und
+// zusätzlich je Zuhause (eine Sitzung umgeht das IP-Limit nicht über wechselnde Adressen); die Ortsansicht hat ein
+// großzügiges Lese-Limit je Zuhause. Grenzen per Umgebung überschreibbar (WWH_RATE_LIMIT, WWH_HOME_RATE_LIMIT,
+// WWH_READ_RATE_LIMIT). noStore steht vor allem, damit auch 401/429 no-store tragen.
 // Kontaktwünsche (/kontakt..., Aufgabe 4, lib/wwhKontakt.js): Zusage legt einen normalen Besuch an.
 const router = express.Router()
 router.use(noStore)
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000
 const DEFAULT_WRITE_LIMIT = 60
+const DEFAULT_HOME_WRITE_LIMIT = 40
+const DEFAULT_READ_LIMIT = 120
 
-const wwhWriteLimiter = rateLimit({
-  windowMs: FIFTEEN_MINUTES,
-  limit: Number(process.env.WWH_RATE_LIMIT) || DEFAULT_WRITE_LIMIT,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
-  message: { error: 'Zu viele Änderungen in kurzer Zeit – bitte später noch einmal versuchen.' }
-})
+function limiter(limit, keyGenerator, error) {
+  return rateLimit({ windowMs: FIFTEEN_MINUTES, limit, standardHeaders: 'draft-7', legacyHeaders: false, keyGenerator, message: { error } })
+}
+
+const wwhWriteLimiter = limiter(
+  Number(process.env.WWH_RATE_LIMIT) || DEFAULT_WRITE_LIMIT,
+  ipKeyGenerator,
+  'Zu viele Änderungen in kurzer Zeit – bitte später noch einmal versuchen.'
+)
+const wwhHomeWriteLimiter = limiter(
+  Number(process.env.WWH_HOME_RATE_LIMIT) || DEFAULT_HOME_WRITE_LIMIT,
+  (req) => `wwh-home-${req.homeId}`,
+  'Zu viele Änderungen aus eurem Zuhause in kurzer Zeit – bitte später noch einmal versuchen.'
+)
+const wwhReadLimiter = limiter(
+  Number(process.env.WWH_READ_RATE_LIMIT) || DEFAULT_READ_LIMIT,
+  (req) => `wwh-read-${req.homeId}`,
+  'Zu viele Abrufe in kurzer Zeit – bitte später noch einmal versuchen.'
+)
 
 const findArt = db.prepare('SELECT art FROM families WHERE id = ?')
 
@@ -43,7 +59,7 @@ function requireOwnHome(req, res, next) {
 }
 
 const reads = [requireAuth, requireOwnHome]
-const writes = [requireAuth, requireOwnHome, wwhWriteLimiter]
+const writes = [requireAuth, requireOwnHome, wwhWriteLimiter, wwhHomeWriteLimiter]
 
 // Ids im Body: nur ganze Zahlen oder Ziffernfolgen (kein true -> 1, kein "1e3"); alles andere wird NaN -> 404.
 function bodyId(value) {
@@ -76,6 +92,7 @@ router.get('/checkins', ...reads, (req, res) => {
 router.get(
   '/partner/:partnerId',
   ...reads,
+  wwhReadLimiter,
   handle((req, res) => res.json(ortViewForHome(req.homeId, cleanId(req.params.partnerId))))
 )
 

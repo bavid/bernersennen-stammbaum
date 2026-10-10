@@ -53,10 +53,20 @@ db.exec(`
     UNIQUE (von_dog_id, an_dog_id)
   );
   CREATE INDEX IF NOT EXISTS idx_wwh_kontakt_an ON wwh_kontakt(an_family_id, status);
+
+  -- Rückzugs-Protokoll: wer kurz nach einem Rückzug am selben Ort neu anmeldet, löst keinen weiteren Hinweis aus.
+  CREATE TABLE IF NOT EXISTS wwh_rueckzug_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    partner_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_wwh_rueckzug_log ON wwh_rueckzug_log(family_id, partner_id, created_at);
 `)
 
 const STATUS = Object.freeze({ offen: 'offen', bestaetigt: 'bestaetigt', abgelehnt: 'abgelehnt' })
 const MAX_CHECKINS_PER_HOME = 20
+const RENOTIFY_QUIET_MINUTES = 10
 
 const ONLY_HOME_MESSAGE = '„Wir waren hier“ gibt es nur in „Mein Zuhause“.'
 const NO_SUCH_DOG_MESSAGE = 'Dieses Tier gibt es nicht'
@@ -87,6 +97,14 @@ const declineOpenWishesToDogStmt = db.prepare(
 )
 const deleteOpenWishesOfDogStmt = db.prepare(
   "DELETE FROM wwh_kontakt WHERE partner_id = @partnerId AND (von_dog_id = @dogId OR an_dog_id = @dogId) AND status = 'offen'"
+)
+const pruneRueckzugStmt = db.prepare(
+  `DELETE FROM wwh_rueckzug_log WHERE family_id = ? AND created_at <= datetime('now', '-${RENOTIFY_QUIET_MINUTES} minutes')`
+)
+const logRueckzugStmt = db.prepare('INSERT INTO wwh_rueckzug_log (family_id, partner_id) VALUES (?, ?)')
+const recentRueckzugStmt = db.prepare(
+  `SELECT 1 FROM wwh_rueckzug_log
+   WHERE family_id = ? AND partner_id = ? AND created_at > datetime('now', '-${RENOTIFY_QUIET_MINUTES} minutes') LIMIT 1`
 )
 const deleteCheckinStmt = db.prepare('DELETE FROM wwh_checkins WHERE id = ?')
 const listOfHomeStmt = db.prepare(
@@ -130,7 +148,14 @@ const withdrawCheckin = db.transaction((homeId, checkinId) => {
   if (!row) throw httpError(404, NO_SUCH_CHECKIN_MESSAGE)
   deleteOpenWishesOfDogStmt.run({ partnerId: row.partner_id, dogId: row.dog_id })
   deleteCheckinStmt.run(row.id)
+  pruneRueckzugStmt.run(homeId)
+  logRueckzugStmt.run(homeId, row.partner_id)
 })
+
+// Hat das Zuhause am Ort in den letzten RENOTIFY_QUIET_MINUTES eine Anmeldung zurückgezogen? (kein Hinweis-Pingpong)
+function withdrewRecently(homeId, partnerId) {
+  return Boolean(recentRueckzugStmt.get(homeId, partnerId))
+}
 
 // Die Anmeldungen des Zuhauses; Orte, die der Admin sperrt oder pausiert, fehlen (der Ort ist ausgeblendet).
 function checkinsOfHome(homeId) {
@@ -149,12 +174,14 @@ function removeDemoWirWarenHier(previousPartnerIds = []) {
 module.exports = {
   STATUS,
   MAX_CHECKINS_PER_HOME,
+  RENOTIFY_QUIET_MINUTES,
   ONLY_HOME_MESSAGE,
   NO_SUCH_CHECKIN_MESSAGE,
   httpError,
   createCheckin,
   setZeigeMich,
   withdrawCheckin,
+  withdrewRecently,
   checkinsOfHome,
   removeDemoWirWarenHier
 }

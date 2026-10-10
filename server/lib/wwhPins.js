@@ -9,7 +9,7 @@
 // Fremde Ids liefern immer 404 (JOIN auf Zuhause bzw. partner_id im SQL, kein „erst laden, dann vergleichen“).
 
 const db = require('../db')
-const { STATUS, httpError, NO_SUCH_CHECKIN_MESSAGE, createCheckin } = require('./wirWarenHier')
+const { STATUS, httpError, NO_SUCH_CHECKIN_MESSAGE, createCheckin, withdrewRecently } = require('./wirWarenHier')
 // Als Modul-Objekt (nicht destrukturiert), damit Tests notifyPartner ersetzen können.
 const partnerNotify = require('./partnerNotify')
 
@@ -74,9 +74,10 @@ function pinsOfCheckin(homeId, checkinId) {
 
 // Neue Anmeldung (lib/wirWarenHier.js createCheckin) und danach - außerhalb der Transaktion - der Hinweis an den Ort.
 // notifyPartner wirft nie, schickt Demo-Partnern nichts und begrenzt die Menge (admitToCap); der Text nennt keine Namen.
+// Kurz nach einem Rückzug am selben Ort (withdrewRecently) bleibt der Hinweis aus - die Anmeldung selbst klappt.
 function checkInAndNotify(homeId, input) {
   const created = createCheckin(homeId, input)
-  partnerNotify.notifyPartner(created.partnerId, partnerNotify.PARTNER_EREIGNIS.anmeldung)
+  if (!withdrewRecently(homeId, created.partnerId)) partnerNotify.notifyPartner(created.partnerId, partnerNotify.PARTNER_EREIGNIS.anmeldung)
   return created
 }
 

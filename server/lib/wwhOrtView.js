@@ -6,6 +6,7 @@
 // nur ORT_TIER_KEYS hinaus - nie Familien-/Personennamen, Zuhause-Ids, E-Mails, Adressen. Erinnerungen fremder Tiere
 // nur freigegeben und nur, solange sie sichtbar sind (PIN_VISIBLE_SQL: Eintrag nicht privat, gehört dem Tier).
 // Demo und Echt werden nie gemischt (Ort und fremde Anmeldungen auf derselben is_demo-Seite wie das Zuhause).
+// Fremde Tiere sieht nur, wer selbst mit einem freigegebenen Tier an diesem Ort angemeldet ist (sonst andere: []).
 
 const db = require('../db')
 const { publicPartnerSql } = require('./partners')
@@ -27,6 +28,9 @@ const othersStmt = db.prepare(
    WHERE c.partner_id = @partnerId AND c.status = 'bestaetigt' AND c.zeige_mich = 1
      AND c.family_id != @homeId AND c.is_demo = @isDemo
    ORDER BY d.name COLLATE NOCASE, c.id LIMIT ${OTHERS_LIMIT}`
+)
+const ownConfirmedStmt = db.prepare(
+  "SELECT 1 FROM wwh_checkins WHERE family_id = ? AND partner_id = ? AND is_demo = ? AND status = 'bestaetigt' LIMIT 1"
 )
 const visiblePinsStmt = db.prepare(
   `SELECT t.titel, t.datum
@@ -56,6 +60,12 @@ function ownCheckinsAt(homeId, partnerId) {
     }))
 }
 
+// Fremde Tiere nur für Zuhause mit eigener freigegebener Anmeldung an diesem Ort (gleiche is_demo-Seite).
+function othersAt(homeId, partnerId, isDemo) {
+  if (!ownConfirmedStmt.get(homeId, partnerId, isDemo)) return []
+  return othersStmt.all({ partnerId, homeId, isDemo }).map(otherDog)
+}
+
 // { ort: { id, name, typ }, eigene: [...], andere: [{ checkinId, tierName, tierart, fotoUrl, erinnerungen: [{ titel, datum }] }] }
 // 400 außerhalb eines Zuhauses, 404 für unbekannte, gesperrte, pausierte oder Demo-fremde Orte.
 function ortViewForHome(homeId, partnerId) {
@@ -67,7 +77,7 @@ function ortViewForHome(homeId, partnerId) {
   return {
     ort: { id: place.id, name: place.name, typ: place.typ },
     eigene: ownCheckinsAt(homeId, place.id),
-    andere: othersStmt.all({ partnerId: place.id, homeId, isDemo }).map(otherDog)
+    andere: othersAt(homeId, place.id, isDemo)
   }
 }
 

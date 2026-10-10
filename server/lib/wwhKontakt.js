@@ -41,6 +41,7 @@ const VISITING_MESSAGE = 'Ihr seid dort schon zu Besuch.'
 const COOLDOWN_MESSAGE = `Diesen Wunsch könnt ihr erst ${COOLDOWN_DAYS} Tage nach der Antwort erneut stellen.`
 const TOO_MANY_OPEN_MESSAGE = `Ihr habt schon ${MAX_OPEN_PER_HOME} offene Kontaktwünsche – wartet, bis sie beantwortet sind.`
 const TOO_MANY_TODAY_MESSAGE = `Höchstens ${MAX_NEW_PER_DAY} neue Kontaktwünsche am Tag – bitte morgen noch einmal.`
+const STALE_MESSAGE = 'Dieser Kontaktwunsch gilt nicht mehr – der Ort oder eine Anmeldung hat sich geändert.'
 const TARGET_FULL_MESSAGE = 'Dieses Zuhause hat gerade viele offene Wünsche – bitte später noch einmal.'
 
 // Ziel: freigegeben, „hier gezeigt“, Tier gehört der Anmeldung, Ort sichtbar, alles auf der is_demo-Seite des Zuhauses.
@@ -74,6 +75,16 @@ const reopenStmt = db.prepare(
   `UPDATE wwh_kontakt SET partner_id = @partnerId, von_family_id = @vonFamilyId, an_family_id = @anFamilyId,
      status = 'offen', is_demo = @isDemo, created_at = datetime('now'), entschieden_at = NULL
    WHERE id = @id`
+)
+// Zusage nur, wenn der Wunsch noch trägt: Ort sichtbar (gleiche is_demo-Seite), beide Anmeldungen freigegeben, das Ziel
+// wird weiterhin „hier gezeigt“.
+const stillValidStmt = db.prepare(
+  `SELECT 1 FROM partners p
+   JOIN wwh_checkins v ON v.partner_id = p.id AND v.family_id = @vonFamilyId AND v.dog_id = @vonDogId
+     AND v.status = 'bestaetigt' AND v.is_demo = p.is_demo
+   JOIN wwh_checkins a ON a.partner_id = p.id AND a.family_id = @anFamilyId AND a.dog_id = @anDogId
+     AND a.status = 'bestaetigt' AND a.zeige_mich = 1 AND a.is_demo = p.is_demo
+   WHERE p.id = @partnerId AND p.is_demo = @isDemo AND ${publicPartnerSql('p')}`
 )
 const incomingStmt = db.prepare('SELECT * FROM wwh_kontakt WHERE id = ? AND an_family_id = ?')
 const decideStmt = db.prepare("UPDATE wwh_kontakt SET status = ?, entschieden_at = datetime('now') WHERE id = ?")
@@ -144,6 +155,18 @@ const sendWish = db.transaction((homeId, { checkinId, eigenesDogId }) => {
   return { id, status: KONTAKT_STATUS.offen, anFamilyId: target.familyId }
 })
 
+function assertStillValid(row) {
+  const params = {
+    partnerId: row.partner_id,
+    vonFamilyId: row.von_family_id,
+    vonDogId: row.von_dog_id,
+    anFamilyId: row.an_family_id,
+    anDogId: row.an_dog_id,
+    isDemo: row.is_demo ? 1 : 0
+  }
+  if (!stillValidStmt.get(params)) throw httpError(409, STALE_MESSAGE)
+}
+
 // Zusage: legt den Besuch an (Anfragende = Gast beim Ziel-Zuhause) und bestätigt ihn gleich. Idempotent: eine schon
 // angenommene Anfrage bleibt angenommen, ein bestehender Besuch wird nicht verdoppelt. Demo und Echt nie verbunden.
 const acceptWish = db.transaction((homeId, id) => {
@@ -154,6 +177,7 @@ const acceptWish = db.transaction((homeId, id) => {
   if (!guest || !host || Boolean(guest.is_demo) !== Boolean(host.is_demo)) throw httpError(404, NO_SUCH_WISH_MESSAGE)
   const isNew = row.status === KONTAKT_STATUS.offen
   if (isNew) {
+    assertStillValid(row)
     if (!isVisiting(guest.id, host.id)) addVisit(guest.id, host.id)
     acknowledgeGuest(guest.id, host.id)
     decideStmt.run(KONTAKT_STATUS.angenommen, row.id)
