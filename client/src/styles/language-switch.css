@@ -32,15 +32,30 @@
   border-top: 1px solid var(--line);
 }
 
-/* Mit Weltkugel davor (oben auf der Startseite). */
-.language-switch.has-icon {
+/* Flagge vor dem Namen der Sprache (components/LanguageFlag.jsx). */
+.language-switch button {
+  display: inline-flex;
   align-items: center;
-  padding-left: var(--space-3);
+  gap: var(--space-2);
 }
 
-.language-switch.has-icon > svg {
-  width: 1rem;
-  height: 1rem;
-  margin-right: var(--space-1);
-  color: var(--muted);
+/* Oben auf der Startseite: etwas mehr Luft. */
+.language-switch.has-icon {
+  align-items: center;
+}
+
+/* Schmale Handys oben auf der Startseite: nur die Flaggen - der Name bleibt für Screenreader. */
+@media (max-width: 520px) {
+  .language-switch.has-icon .language-switch-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .language-switch.has-icon button {
+    padding-inline: var(--space-3);
+  }
 }

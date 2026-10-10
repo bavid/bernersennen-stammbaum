@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from './Icon.jsx'
+import LanguageFlag from './LanguageFlag.jsx'
 import LanguageSwitch from './LanguageSwitch.jsx'
 import { useIsDemo } from '../lib/demo.js'
 import { MODI, SCHRIFTEN, normalizeDarstellung } from '../lib/darstellung.js'
@@ -42,7 +43,7 @@ function DarstellungRows({ family, onFamilyChange }) {
   )
 }
 
-// Schnell-Einstellungen im Kopf der App (neben Suche und Glocke): Sprache, Hintergrund und Schriftgröße direkt auf jeder
+// Schnell-Einstellungen im Kopf der App (neben Suche und Glocke), der Knopf zeigt nur die Flagge der Sprache: Sprache, Hintergrund und Schriftgröße direkt auf jeder
 // Seite - ohne Umweg über Einstellungen. Jede Wahl wirkt beim Klick (Sprache: lib/i18n, Darstellung: useDarstellungSave).
 // Ein schlichtes Ausklapp-Feld (kein Menü): Escape und ein Klick daneben schließen, der Fokus geht an den Knopf zurück.
 export default function QuickSettings({ family, onFamilyChange }) {
@@ -83,10 +84,7 @@ export default function QuickSettings({ family, onFamilyChange }) {
         title={title}
         onClick={() => setOpen((value) => !value)}
       >
-        <Icon name="globe" />
-        <span className="quick-settings-code" aria-hidden="true">
-          {lang.toUpperCase()}
-        </span>
+        <LanguageFlag lang={lang} />
       </button>
       {open && (
         <div id={panelId} className="quick-settings-panel" role="group" aria-label={title}>

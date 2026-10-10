@@ -1,4 +1,4 @@
-/* Schnell-Einstellungen im Kopf (components/QuickSettings.jsx): runder Knopf wie die Lupe, mit Kürzel der Sprache; darunter
+/* Schnell-Einstellungen im Kopf (components/QuickSettings.jsx): runder Knopf wie die Lupe, mit der Flagge der Sprache; darunter
    ein ruhiges Feld mit Sprache, Hintergrund und Schriftgröße. Nur Tokens aus tokens.css/palettes.css. */
 
 .quick-settings {
@@ -10,9 +10,10 @@
 .quick-settings-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  justify-content: center;
+  width: 44px;
   height: 44px;
-  padding: 0 0.85rem 0 0.75rem;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--surface);
@@ -21,17 +22,6 @@
   cursor: pointer;
   transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out),
     color var(--duration-fast) var(--ease-out);
-}
-
-.quick-settings-trigger svg {
-  width: 1.05rem;
-  height: 1.05rem;
-}
-
-.quick-settings-code {
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.06em;
 }
 
 .quick-settings-trigger:hover,
@@ -98,12 +88,8 @@
   height: 0.9rem;
 }
 
-/* Handy: nur Weltkugel und Kürzel, schmal neben Lupe und Glocke. Das Feld klebt am rechten Rand des Bildschirms. */
+/* Handy: das Feld klebt am rechten Rand des Bildschirms. */
 @media (max-width: 720px) {
-  .quick-settings-trigger {
-    padding: 0 0.6rem;
-  }
-
   .quick-settings {
     position: static;
   }

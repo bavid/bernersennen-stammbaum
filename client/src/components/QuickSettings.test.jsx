@@ -38,15 +38,18 @@ async function render(props) {
 const trigger = () => container.querySelector('.quick-settings-trigger')
 
 describe('QuickSettings', () => {
-  test('Knopf zeigt die Sprache, öffnet das Feld, ein Klick auf English wechselt sofort', async () => {
+  test('Knopf zeigt die Flagge der Sprache, öffnet das Feld, ein Klick auf English wechselt sofort', async () => {
     await render({})
-    expect(trigger().textContent).toContain('DE')
+    const flag = () => trigger().querySelector('.language-flag')
+    expect(flag().dataset.lang).toBe('de')
+    expect(trigger().textContent).toBe('')
     expect(trigger().getAttribute('aria-expanded')).toBe('false')
     await act(async () => trigger().click())
     expect(trigger().getAttribute('aria-expanded')).toBe('true')
     await act(async () => container.querySelector('button[lang="en"]').click())
     expect(getLang()).toBe('en')
-    expect(trigger().textContent).toContain('EN')
+    expect(flag().dataset.lang).toBe('en')
+    expect(container.querySelectorAll('.quick-settings-panel .language-flag')).toHaveLength(2)
     expect(trigger().getAttribute('aria-label')).toBe('Language & view')
   })
 

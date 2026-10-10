@@ -1,0 +1,16 @@
+/* Runde Flagge (components/LanguageFlag.jsx) mit feinem Rand, damit Weiß und Schwarz auf jedem Hintergrund stehen. */
+.language-flag {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: var(--flag-size, 22px);
+  height: var(--flag-size, 22px);
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+.language-flag svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

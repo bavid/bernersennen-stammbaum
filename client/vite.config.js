@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import swPlugin from './build/swPlugin.js'
+import i18nPlugin from './build/i18nPlugin.js'
 
 // Schriften (src/styles/fonts.css): nur die Schrift des Fließtexts (Figtree, latin) wird vorgeladen - sie steht auf jeder
 // Seite. Ihr Dateiname trägt nach dem Bauen einen Hash, darum sucht dieses kleine Plugin ihn im fertigen Bündel.
@@ -20,7 +21,8 @@ function preloadBodyFont() {
 
 export default defineConfig({
   // swPlugin: Service Worker (dist/sw.js) und seine Dateiliste (dist/sw-assets.json) - siehe build/swPlugin.js.
-  plugins: [react(), preloadBodyFont(), swPlugin()],
+  // i18nPlugin: Wörterbücher für /api/i18n (dist/i18n/*.json) - siehe scripts/build-i18n.mjs.
+  plugins: [react(), preloadBodyFont(), swPlugin(), i18nPlugin()],
   server: {
     port: 5173,
     proxy: {

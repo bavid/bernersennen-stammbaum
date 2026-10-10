@@ -12,7 +12,7 @@ import { captureInstallPrompt } from './lib/install.js'
 import PwaUpdate from './components/PwaUpdate.jsx'
 import { applyDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { removeSetting } from './lib/storage.js'
-import { useLang } from './lib/i18n/index.js'
+import { useLang, whenReady } from './lib/i18n/index.js'
 import './styles/global.css'
 
 trackScrollbarWidth()
@@ -50,4 +50,6 @@ function Root() {
   )
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<Root />)
+// Erster Besuch in einer anderen Sprache als Deutsch: kurz auf ihr Wörterbuch warten (lib/i18n, höchstens 1,5 s), damit
+// nicht erst Deutsch aufblitzt. Liegt es schon im Browser-Speicher, geht es sofort los.
+whenReady().then(() => ReactDOM.createRoot(document.getElementById('root')).render(<Root />))

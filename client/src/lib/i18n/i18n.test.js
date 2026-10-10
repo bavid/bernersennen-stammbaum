@@ -1,10 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Das Modul liest die gespeicherte Sprache beim Laden - darum je Test frisch importieren.
-async function load() {
+// Das Modul liest die gespeicherte Sprache beim Laden - darum je Test frisch importieren. Ein frisches Modul hat nur
+// Deutsch; englische Texte lädt loadLanguage (im Test aus dem Quelltext).
+async function load({ withEnglish = true } = {}) {
   vi.resetModules()
-  return import('./index.js')
+  const module = await import('./index.js')
+  if (withEnglish) await module.loadLanguage('en')
+  return module
+}
+
+function browserSays(...languages) {
+  vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue(languages)
+  vi.spyOn(window.navigator, 'language', 'get').mockReturnValue(languages[0])
 }
 
 describe('i18n', () => {
@@ -14,11 +22,35 @@ describe('i18n', () => {
   })
   afterEach(() => vi.restoreAllMocks())
 
-  it('startet auf Deutsch, auch wenn der Browser Englisch meldet', async () => {
-    vi.spyOn(window.navigator, 'language', 'get').mockReturnValue('en-US')
+  it('wählt beim ersten Besuch die Sprache des Browsers (en-US -> en)', async () => {
+    browserSays('en-US', 'en')
     const { getLang, t } = await load()
+    expect(getLang()).toBe('en')
+    expect(document.documentElement.lang).toBe('en')
+    expect(t('login.signIn')).toBe('Sign in')
+  })
+
+  it('nimmt die erste unterstützte Browser-Sprache und fällt sonst auf Deutsch', async () => {
+    browserSays('de-AT', 'en')
+    expect((await load()).getLang()).toBe('de')
+    browserSays('fr-FR', 'en-GB')
+    expect((await load()).getLang()).toBe('en')
+    browserSays('fr-FR', 'it')
+    expect((await load()).getLang()).toBe('de')
+  })
+
+  it('die gespeicherte Wahl gewinnt gegen den Browser', async () => {
+    browserSays('en-US')
+    window.localStorage.setItem('fap-lang', 'de')
+    expect((await load()).getLang()).toBe('de')
+  })
+
+  it('wechselt erst nach dem Laden, wenn die Sprache noch fehlt', async () => {
+    const { setLang, getLang, t } = await load({ withEnglish: false })
+    const pending = setLang('en')
     expect(getLang()).toBe('de')
-    expect(t('login.signIn')).toBe('Anmelden')
+    await expect(pending).resolves.toBe('en')
+    expect(t('login.signIn')).toBe('Sign in')
   })
 
   it('übersetzt nach setLang und merkt sich die Wahl auf dem Gerät', async () => {
@@ -53,6 +85,7 @@ describe('i18n', () => {
     expect(getLang()).toBe('de')
     expect(() => setLang('en')).not.toThrow()
     expect(t('login.signIn')).toBe('Sign in')
+    expect(getLang()).toBe('en')
   })
 
   it('fällt auf Deutsch und dann auf den Schlüssel zurück', async () => {
