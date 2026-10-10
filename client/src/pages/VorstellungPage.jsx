@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api'
 import PublicHeader from '../components/PublicHeader.jsx'
 import PublicFooter from '../components/PublicFooter.jsx'
@@ -7,7 +7,8 @@ import Icon from '../components/Icon.jsx'
 import FinanzierungRegel from '../components/finanzierung/FinanzierungRegel.jsx'
 import { hatFinanzDaten } from '../lib/finanzierungRuecklage.js'
 import { PRESENT_TILES, demoStartUrl } from '../lib/present.js'
-import { FOLIEN, FOLIE_PARAM, clampFolie } from '../lib/vorstellung.js'
+import { FOLIEN } from '../lib/vorstellung.js'
+import { FolienDots, FolienNav, useFolie } from '../components/folien/FolienSteuerung.jsx'
 import '../styles/vorstellung.css'
 import { t } from '../lib/i18n/index.js'
 
@@ -16,7 +17,6 @@ import { t } from '../lib/i18n/index.js'
 // Die Folie steht in einer aria-live-Region; Bewegung nur ohne „weniger Bewegung“ (styles/vorstellung.css).
 
 const NEW_TAB = { target: '_blank', rel: 'noopener noreferrer' }
-const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 
 function Punkte({ folie }) {
   return (
@@ -103,49 +103,9 @@ function Folie({ folie }) {
   )
 }
 
-function Dots({ aktuell, onSelect }) {
-  return (
-    <ul className="vorstellung-dots" aria-label={t('Folien')}>
-      {FOLIEN.map((folie, index) => (
-        <li key={folie.id}>
-          <button
-            type="button"
-            aria-label={t('Folie {n}: {titel}', { n: index + 1, titel: t(folie.eyebrow) })}
-            aria-current={index + 1 === aktuell ? 'step' : undefined}
-            onClick={() => onSelect(index + 1)}
-          />
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function useFolie() {
-  const [params, setParams] = useSearchParams()
-  const aktuell = clampFolie(params.get(FOLIE_PARAM))
-  const gehZu = useCallback(
-    (nummer) => setParams({ [FOLIE_PARAM]: String(clampFolie(nummer)) }, { replace: true }),
-    [setParams]
-  )
-
-  useEffect(() => {
-    function onKey(event) {
-      if (event.altKey || event.ctrlKey || event.metaKey || TYPING_TAGS.has(event.target?.tagName)) return
-      if (event.key === 'ArrowRight') gehZu(aktuell + 1)
-      if (event.key === 'ArrowLeft') gehZu(aktuell - 1)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [aktuell, gehZu])
-
-  return { aktuell, gehZu }
-}
-
 export default function VorstellungPage({ family = null }) {
-  const { aktuell, gehZu } = useFolie()
+  const { aktuell, gehZu } = useFolie(FOLIEN.length)
   const folie = FOLIEN[aktuell - 1]
-  const istErste = aktuell === 1
-  const istLetzte = aktuell === FOLIEN.length
 
   return (
     <div className="public-page vorstellung-page">
@@ -154,24 +114,8 @@ export default function VorstellungPage({ family = null }) {
         <div key={folie.id} className="vorstellung-live" aria-live="polite">
           <Folie folie={folie} />
         </div>
-        <nav className="vorstellung-nav" aria-label={t('Folien durchklicken')}>
-          <button type="button" className="btn btn-ghost" disabled={istErste} onClick={() => gehZu(aktuell - 1)}>
-            <Icon name="arrowLeft" /> {t('Zurück')}
-          </button>
-          <span className="vorstellung-count muted">
-            {t('Folie {n} von {total}', { n: aktuell, total: FOLIEN.length })}
-          </span>
-          {istLetzte ? (
-            <Link to="/" className="btn btn-primary">
-              {t('Zur Startseite')} <Icon name="arrowRight" />
-            </Link>
-          ) : (
-            <button type="button" className="btn btn-primary" onClick={() => gehZu(aktuell + 1)}>
-              {t('Weiter')} <Icon name="arrowRight" />
-            </button>
-          )}
-        </nav>
-        <Dots aktuell={aktuell} onSelect={gehZu} />
+        <FolienNav aktuell={aktuell} anzahl={FOLIEN.length} gehZu={gehZu} />
+        <FolienDots folien={FOLIEN} aktuell={aktuell} onSelect={gehZu} />
       </main>
       <PublicFooter />
     </div>

@@ -171,6 +171,9 @@ export default function PartnerInfoPage({ onDemo, family = null }) {
         <p className="muted partner-info-finanzierung">
           {t('Euer Portal ist heute kostenlos – wie wir uns finanzieren, steht auf')} <Link to="/finanzierung">{t('„So finanzieren wir uns“')}</Link>.
         </p>
+        <p className="muted partner-info-netzwerk">
+          <Link to="/netzwerk">{t('Ausblick: So könnten Partner sich künftig vernetzen')}</Link>
+        </p>
         <ul className="partner-info-benefits">
           {BENEFITS.map((benefit) => (
             <li key={benefit.title} className="card partner-info-benefit">

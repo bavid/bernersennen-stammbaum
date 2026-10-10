@@ -63,6 +63,8 @@ const FinanzierungPage = lazy(() => import('./pages/FinanzierungPage.jsx'))
 const AppPage = lazy(() => import('./pages/AppPage.jsx'))
 // Präsentation zum Durchklicken (/vorstellung): öffentlich wie /app, eigener Chunk.
 const VorstellungPage = lazy(() => import('./pages/VorstellungPage.jsx'))
+// Netzwerk-Präsentation (/netzwerk, lib/netzwerk.js NETZWERK_PATH): Entwurf, wie Partner sich vernetzen - eigener Chunk.
+const NetzwerkPage = lazy(() => import('./pages/NetzwerkPage.jsx'))
 // Präsentationsmodus (Phase 5 Task 5): Vorführseite des Admins mit Kacheln, die je eine Demo in einem neuen
 // Tab starten - dort landet man auf /demo-start (DemoStartPage), das POST /api/demo ruft. Beides eigene Chunks.
 const AdminPresentPage = lazy(() => import('./pages/AdminPresentPage.jsx'))
@@ -102,6 +104,7 @@ const FINANZIERUNG_PATH = '/finanzierung'
 const APP_PATH = '/app'
 // Präsentation zum Durchklicken (pages/VorstellungPage.jsx, lib/vorstellung.js VORSTELLUNG_PATH).
 const VORSTELLUNG_PATH = '/vorstellung'
+const NETZWERK_PATH = '/netzwerk'
 
 // Öffentliche Partnerliste (PartnersPage).
 const PARTNER_LIST_PATH = '/partner'
@@ -652,12 +655,12 @@ export default function App() {
     )
   }
 
-  // Präsentation zum Durchklicken: öffentlich wie /app, mit oder ohne Sitzung.
-  if (pathname === VORSTELLUNG_PATH) {
+  // Präsentationen zum Durchklicken (/vorstellung, /netzwerk): öffentlich wie /app, mit oder ohne Sitzung.
+  if (pathname === VORSTELLUNG_PATH || pathname === NETZWERK_PATH) {
     return (
       <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
-          <VorstellungPage family={family} />
+          {pathname === NETZWERK_PATH ? <NetzwerkPage family={family} /> : <VorstellungPage family={family} />}
         </Suspense>
       </ThemeProvider>
     )

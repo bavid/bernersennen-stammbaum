@@ -62,6 +62,13 @@ describe('PartnerInfoPage – Inhalt', () => {
     expect(container.querySelector('.public-footer')).not.toBeNull()
   })
 
+  test('ein ruhiger Link zur Netzwerk-Präsentation (/netzwerk)', async () => {
+    await render()
+
+    const link = container.querySelector('.partner-info-netzwerk a[href="/netzwerk"]')
+    expect(link.textContent).toBe('Ausblick: So könnten Partner sich künftig vernetzen')
+  })
+
   test('setzt <meta name="robots" content="noindex">, solange die Seite offen ist', async () => {
     await render()
     const meta = document.head.querySelector('meta[name="robots"]')

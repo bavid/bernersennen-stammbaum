@@ -87,6 +87,12 @@ describe('AdminPresentPage – Zugang', () => {
     expect(link).not.toBeNull()
     expect(link.textContent).toContain('Präsentation zum Durchklicken')
   })
+
+  test('verlinkt daneben die Netzwerk-Präsentation (/netzwerk)', async () => {
+    await render()
+
+    expect(container.querySelector('a[href="/netzwerk"]').textContent).toContain('Netzwerk der Partner')
+  })
 })
 
 describe('AdminPresentPage – Kacheln', () => {

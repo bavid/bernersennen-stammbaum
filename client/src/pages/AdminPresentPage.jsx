@@ -137,6 +137,9 @@ export default function AdminPresentPage() {
         <Link to="/vorstellung" className="btn btn-primary present-tour">
           <Icon name="play" /> Präsentation zum Durchklicken
         </Link>
+        <Link to="/netzwerk" className="btn btn-ghost present-tour">
+          <Icon name="users" /> Netzwerk der Partner (Entwurf)
+        </Link>
         <Link to="/admin" className="btn btn-ghost present-back">
           <Icon name="arrowLeft" /> Zurück zum Admin
         </Link>
