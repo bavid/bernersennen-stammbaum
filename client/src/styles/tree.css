@@ -183,7 +183,7 @@
   width: 15rem;
   padding: var(--space-2) var(--space-5) var(--space-2) var(--space-2);
   border: 1px solid var(--line);
-  border-radius: 3rem;
+  border-radius: var(--radius-capsule);
   background: var(--surface);
   box-shadow: var(--elev-1);
   color: var(--text);
@@ -201,7 +201,7 @@
 
 .dog-card.is-highlighted {
   border-color: var(--rust);
-  box-shadow: 0 0 0 3px var(--rust-wash), var(--elev-2);
+  box-shadow: 0 0 0 var(--halo) var(--rust-wash), var(--elev-2);
 }
 
 .dog-card.is-dimmed {
@@ -287,7 +287,7 @@
 
 .sex-ruede {
   background: var(--ink);
-  box-shadow: 0 0 0 1.5px var(--tan);
+  box-shadow: 0 0 0 var(--hairline-bold) var(--tan);
 }
 
 @media (max-width: 720px) {
@@ -602,7 +602,7 @@
 }
 
 .dog-mini.is-highlighted .avatar {
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--rust);
+  box-shadow: 0 0 0 var(--ring-inner-sm) var(--surface), 0 0 0 var(--ring-outer-sm) var(--rust);
 }
 
 .dog-mini.is-dimmed {

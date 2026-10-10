@@ -9,6 +9,7 @@ import { PLATFORMS, STORES_LINE, guideFor } from '../lib/appGuide.js'
 import { isHouseholdIdentity } from '../lib/areas.js'
 import '../styles/app-guide.css'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 export const APP_PATH = '/app'
 const SETTINGS_APP_PATH = '/einstellungen?bereich=app'
@@ -75,9 +76,9 @@ export default function AppPage({ family = null, platform = detectPlatform(), st
       ) : (
         promptReady && (
           <div className="app-guide-install">
-            <button type="button" className="btn btn-primary" onClick={handleInstall}>
+            <Button type="button" onClick={handleInstall}>
               {t('App installieren')}
-            </button>
+            </Button>
             <span className="muted">{t('Ein Tippen genügt – der Browser fragt kurz nach.')}</span>
           </div>
         )

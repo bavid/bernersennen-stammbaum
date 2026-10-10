@@ -47,9 +47,9 @@ function SharedNotice({ dog, family }) {
   return (
     <div className="notice notice-with-action">
       <p>{t('Lebt im Zuhause „{home}“ und wird hier geteilt.', { home: dog.familyName })}</p>
-      <Link to={`/tier/${dog.id}?in=home`} className="btn btn-ghost">
+      <Button to={`/tier/${dog.id}?in=home`} as={Link} variant="ghost">
         {t('In „Mein Zuhause“ bearbeiten')}
-      </Link>
+      </Button>
     </div>
   )
 }
@@ -120,9 +120,9 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
     setShowAll(true)
   }
   const earlier = recent.hidden > 0 && (
-    <button type="button" className="btn btn-ghost dog-chronicle-more" onClick={expand}>
+    <Button type="button" variant="ghost" className="dog-chronicle-more" onClick={expand}>
       {newestFirst ? t('Ältere {entries} anzeigen', { entries: words.entries }) : t('Frühere {entries} anzeigen', { entries: words.entries })} ({recent.hidden})
-    </button>
+    </Button>
   )
 
   async function handleCreate(payload) {
@@ -185,17 +185,17 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
         </h2>
         <div className="chronicle-actions">
           {items.length > 1 && (
-            <button type="button" className="btn btn-ghost" onClick={toggleOrder}>
+            <Button type="button" variant="ghost" onClick={toggleOrder}>
               <Icon name="sort" />
               {newestFirst ? t('Neueste zuerst') : t('Älteste zuerst')}
-            </button>
+            </Button>
           )}
           {/* Chronik als Fotobuch (Plan 2027): nur mit sichtbaren Erinnerungen - das Buch zeigt nur, was hier zu sehen ist. */}
           {canMakeBook(entries) && (
-            <Link to={fotobuchRoute(dog.id)} className="btn btn-ghost">
+            <Button to={fotobuchRoute(dog.id)} as={Link} variant="ghost">
               <Icon name="book" />
               {t('Als Fotobuch drucken')}
-            </Link>
+            </Button>
           )}
         </div>
       </div>

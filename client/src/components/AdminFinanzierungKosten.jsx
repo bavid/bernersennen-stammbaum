@@ -5,6 +5,7 @@ import AdminKostenForm from './AdminKostenForm.jsx'
 import FinanzierungRegel from './finanzierung/FinanzierungRegel.jsx'
 import { formatEuroCents } from '../lib/discover.js'
 import { adminSaldoText, postenText, prognoseText } from '../lib/finanzierungRuecklage.js'
+import { Button } from './ui/index.js'
 
 // „Kosten & Reserve“ im Reiter „Finanzierung“: die laufenden Kosten als Posten (POST/PUT/DELETE
 // /api/admin/finanzierung/kosten), darüber die Rechnung des Servers (GET /api/admin/finanzierung: kosten.proJahrCents,
@@ -56,10 +57,10 @@ function PostenRow({ posten, formOpen, onEdit, onDelete }) {
         </span>
       </span>
       <span className="admin-quartal-actions">
-        <button type="button" className="btn btn-ghost" disabled={formOpen} onClick={() => onEdit(posten)}>
+        <Button type="button" variant="ghost" disabled={formOpen} onClick={() => onEdit(posten)}>
           Bearbeiten
           <span className="visually-hidden">: {posten.titel}</span>
-        </button>
+        </Button>
         <ConfirmButton onConfirm={() => onDelete(posten)} disabled={formOpen} ariaLabel={`${posten.titel} löschen`} />
       </span>
     </li>
@@ -93,9 +94,9 @@ export default function AdminFinanzierungKosten({ data, onChanged }) {
       <div className="admin-section-head">
         <h2 id="admin-finanz-kosten-title">Kosten &amp; Reserve</h2>
         {editing === null && (
-          <button type="button" className="btn btn-primary" onClick={() => setEditing('neu')}>
+          <Button type="button" onClick={() => setEditing('neu')}>
             Posten eintragen
-          </button>
+          </Button>
         )}
       </div>
       <p className="admin-section-intro muted">

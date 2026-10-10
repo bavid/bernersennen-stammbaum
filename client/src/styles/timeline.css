@@ -168,7 +168,7 @@
   width: 16px;
   height: 16px;
   border: 3px solid var(--rust);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--paper);
   transform: translateY(-50%);
 }
@@ -200,9 +200,9 @@
   width: 11px;
   height: 11px;
   margin-top: 1.4rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--tan);
-  box-shadow: 0 0 0 4px var(--paper);
+  box-shadow: 0 0 0 var(--ring-inner-lg) var(--paper);
 }
 
 .timeline-item-birth .timeline-node,
@@ -347,14 +347,14 @@
   0% {
     transform: scale(0.97);
     border-color: var(--rust);
-    box-shadow: 0 0 0 6px var(--rust-wash), var(--shadow-raised);
+    box-shadow: 0 0 0 var(--halo-lg) var(--rust-wash), var(--shadow-raised);
   }
   15% {
     transform: scale(1);
   }
   70% {
     border-color: var(--rust);
-    box-shadow: 0 0 0 6px var(--rust-wash), var(--shadow-raised);
+    box-shadow: 0 0 0 var(--halo-lg) var(--rust-wash), var(--shadow-raised);
   }
 }
 
@@ -375,7 +375,7 @@
   flex-shrink: 0;
   width: 2.1rem;
   height: 2.1rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--rust-wash);
   color: var(--rust);
 }

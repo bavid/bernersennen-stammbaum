@@ -9,6 +9,7 @@ import Icon from '../components/Icon.jsx'
 import { FallbackNote } from '../components/DiscoverChapter.jsx'
 import { splitByDistance } from '../lib/discover.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 const DEFAULT_RADIUS = 25
 const PLZ_LENGTH = 5
@@ -136,9 +137,9 @@ export default function PartnersPage({ inApp = false }) {
           <h2 id="partners-cta-title">{t('Ihr seid Hundeschule, Tierheim, Hundesalon oder Betreuung?')}</h2>
           <p className="muted">{t('Ein eigenes Profil bei uns ist kostenlos – mit Portal, Einblicken und Einladungscodes.')}</p>
         </div>
-        <Link to="/partner-werden" className="btn btn-primary">
+        <Button to="/partner-werden" as={Link}>
           {t('Partner werden')} <Icon name="arrowRight" />
-        </Link>
+        </Button>
       </aside>
 
       {!inApp && <PublicFooter geoNames />}

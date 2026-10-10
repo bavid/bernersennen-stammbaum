@@ -6,6 +6,7 @@ import AdminPromotionForm from './AdminPromotionForm.jsx'
 import FreigabeChip from './FreigabeChip.jsx'
 import { BEREICH_LABELS, formatZeitraum } from '../lib/adminMarketing.js'
 import { isAnzeige, kennzeichnungLabel } from '../lib/discover.js'
+import { Button } from './ui/index.js'
 
 function clickCount(value) {
   return Number.isInteger(value) ? value : 0
@@ -63,9 +64,9 @@ function PromotionRow({ promotion, onEdit, onDelete }) {
         </dl>
       </div>
       <span className="admin-row-actions">
-        <button type="button" className="btn btn-ghost" onClick={() => onEdit(promotion)}>
+        <Button type="button" variant="ghost" onClick={() => onEdit(promotion)}>
           Bearbeiten
-        </button>
+        </Button>
         <ConfirmButton onConfirm={() => onDelete(promotion)} label="Löschen" confirmLabel="Wirklich löschen?" ariaLabel={`${promotion.titel} löschen`} />
       </span>
     </li>
@@ -126,9 +127,9 @@ export default function AdminPromotions({ partners = [], version = 0, onChanged 
       <div className="admin-section-head">
         <h2 id="admin-promotions-title">Empfehlungen &amp; Anzeigen</h2>
         {!editing && (
-          <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
+          <Button type="button" onClick={() => setEditing('new')}>
             <Icon name="plus" /> Empfehlung anlegen
-          </button>
+          </Button>
         )}
       </div>
       <p className="admin-section-intro muted">

@@ -66,7 +66,7 @@ function key(target, name) {
 describe('AccountMenu (Phase W)', () => {
   test('Knopf: Anfangsbuchstabe und Name des Zuhauses, geschlossen; öffnet auf Klick mit dem Fokus auf dem ersten Eintrag', async () => {
     await render(<AccountMenu family={{ ...atHome, id: 5, art: 'rudel' }} onInvite={() => {}} onLogout={() => {}} />)
-    expect(trigger().textContent).toBe('LMenü: Zuhause Lindenhof')
+    expect(trigger().textContent).toBe('Menü: Zuhause Lindenhof')
     expect(trigger().getAttribute('aria-haspopup')).toBe('menu')
     expect(trigger().getAttribute('aria-expanded')).toBe('false')
     expect(container.querySelector('[role="menu"]')).toBeNull()
@@ -75,6 +75,15 @@ describe('AccountMenu (Phase W)', () => {
     expect(trigger().getAttribute('aria-expanded')).toBe('true')
     expect(container.querySelector('[role="menu"]').id).toBe(trigger().getAttribute('aria-controls'))
     expect(document.activeElement).toBe(items()[0])
+  })
+
+  test('Profil: Bild des Zuhauses statt Anfangsbuchstabe, dahinter der Name der Person', async () => {
+    const withProfil = { ...atHome, home: { ...home, bild: '/api/profil/1/bild?v=abc' }, person: { anzeigename: 'Anke' } }
+    await render(<AccountMenu family={withProfil} onInvite={() => {}} onLogout={() => {}} />)
+    const img = trigger().querySelector('.area-avatar img')
+    expect(img.getAttribute('src')).toBe('/api/profil/1/bild?v=abc')
+    expect(img.getAttribute('alt')).toBe('')
+    expect(trigger().textContent).toBe('Menü: Zuhause Lindenhof · Anke')
   })
 
   test('Einträge im eigenen Zuhause, dazu klein Impressum und Datenschutz', async () => {
@@ -183,6 +192,8 @@ describe('Menü am Handy (MenuSlotButton + AccountSheet)', () => {
       'Hilfe & Kontakt',
       'Abmelden'
     ])
+    expect(dialog.querySelector('.account-sheet-who').textContent).toBe('Zuhause Lindenhof')
+    expect(dialog.querySelector('.account-sheet-who .area-avatar').getAttribute('data-initial')).toBe('L')
     expect([...dialog.querySelectorAll('.account-sheet-legal a')].map((a) => a.getAttribute('href'))).toEqual(['/impressum', '/datenschutz'])
     act(() => [...dialog.querySelectorAll('.account-sheet-item')].at(-1).click())
     expect(onLogout).toHaveBeenCalledTimes(1)

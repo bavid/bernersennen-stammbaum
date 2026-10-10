@@ -4,6 +4,7 @@ import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import VoucherPrintView, { usePrintBodyClass, useVoucherPrint } from '../components/VoucherPrintView.jsx'
 import { DESIGN } from '../lib/voucherPrint.js'
+import { Button } from '../components/ui/index.js'
 
 // Druckseite eines Gutschein-Stapels (Phase 5 Task 2): /admin/gutscheine/:id/druck, als eigener Chunk aus
 // App.jsx. Nur mit Admin-Sitzung - ohne geht es zurück zu /admin (dort steht der Login). Die Klartext-Codes
@@ -40,9 +41,9 @@ export default function AdminPrintPage({ batchId }) {
   if (!admin) return <Navigate to="/admin" replace />
 
   const csvLink = (
-    <a href={api.admin.voucherCsvUrl(batchId)} download className="btn btn-ghost">
+    <Button href={api.admin.voucherCsvUrl(batchId)} download variant="ghost">
       <Icon name="download" /> CSV herunterladen
-    </a>
+    </Button>
   )
 
   // Audit V7a: "Drucken" meldet den Druck - erst dann gelten die Codes als gedruckt.

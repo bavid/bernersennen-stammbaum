@@ -10,6 +10,7 @@ import { adminCards } from '../components/AdminCards.jsx'
 import useAdminTab from '../hooks/useAdminTab.js'
 import { t } from '../lib/i18n/index.js'
 import { ADMIN_SECTIONS, adminPanelId, adminSubCounts, adminTabCounts, openCountText } from '../lib/adminTabs.js'
+import { Button } from '../components/ui/index.js'
 
 // Diese Unterreiter sind von Anfang an eingehängt (nur verborgen): sie melden die Zähler an den Reitern. Alle
 // anderen kommen beim ersten Öffnen dazu und bleiben dann eingehängt, damit Eingaben einen Wechsel überstehen.
@@ -30,16 +31,16 @@ function AdminHeader({ tab, counts, onSelect, onLogout }) {
           </h1>
           <span className="admin-header-actions">
             {/* Phase 5 Task 5: Vorführseite mit Demo-Kacheln und Portal-Vorschau (AdminPresentPage). */}
-            <Link to="/admin/praesentation" className="btn btn-ghost">
+            <Button to="/admin/praesentation" as={Link} variant="ghost">
               <Icon name="eye" /> Präsentation
-            </Link>
+            </Button>
             {/* Box-System: Katalog aller Bausteine (AdminBausteinePage). */}
-            <Link to="/admin/bausteine" className="btn btn-ghost">
+            <Button to="/admin/bausteine" as={Link} variant="ghost">
               <Icon name="layers" /> Bausteine
-            </Link>
-            <button type="button" className="btn btn-ghost" onClick={onLogout}>
+            </Button>
+            <Button type="button" variant="ghost" onClick={onLogout}>
               <Icon name="logout" /> Abmelden
-            </button>
+            </Button>
           </span>
         </div>
         <TabBar

@@ -148,6 +148,16 @@ function readVapid(env, httpsUrl) {
   return Object.freeze({ publicKey: complete ? publicKey : '', privateKey: complete ? privateKey : '', subject })
 }
 
+// Instanz-Modus (INSTANZ_MODUS): leer = das normale Produkt; 'rudel' = eine Instanz nur für ein bestehendes Rudel mit
+// gemeinsamem Familien-Passwort (lib/instanzModus.js): Login nur per Passwort, keine Gutscheine, keine Demo, keine
+// Partner-Anfragen. Unbekannte Werte zählen als leer - ein Tippfehler schaltet nie halb etwas ab.
+const INSTANZ_MODI = ['rudel']
+
+function readInstanzModus(value) {
+  const modus = (value || '').trim().toLowerCase()
+  return INSTANZ_MODI.includes(modus) ? modus : ''
+}
+
 const dataDir = process.env.DATA_DIR || __dirname
 
 const appEnv = readAppEnv(process.env.APP_ENV)
@@ -170,6 +180,7 @@ module.exports = {
   readAppCommit,
   readAutoBackup,
   readVapid,
+  readInstanzModus,
   isHttpsUrl,
   cookiePrefix,
   sessionCookie: `${cookiePrefix}session`,
@@ -188,6 +199,7 @@ module.exports = {
   dataDir,
   backupDir: path.join(dataDir, 'backups'),
   appCommit: readAppCommit(process.env.APP_COMMIT),
+  instanzModus: readInstanzModus(process.env.INSTANZ_MODUS),
   autoBackup: readAutoBackup(process.env.AUTO_BACKUP, appEnv),
   clientDist: process.env.CLIENT_DIST || path.join(__dirname, '..', 'client', 'dist'),
   cookieSecure: process.env.COOKIE_SECURE === 'true' || httpsPublicUrl,

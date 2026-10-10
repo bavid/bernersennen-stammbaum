@@ -132,7 +132,7 @@
 .account-menu-item:focus-visible,
 .account-menu-legal-link:focus-visible,
 .account-sheet-item:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--rust);
+  box-shadow: inset 0 0 0 var(--outline-selected) var(--rust);
 }
 
 /* Abmelden steht abgesetzt am Ende der Einträge */

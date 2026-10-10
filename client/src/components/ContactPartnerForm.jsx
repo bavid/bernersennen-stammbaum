@@ -17,6 +17,7 @@ import {
   toContactPayload
 } from '../lib/contactPartner.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const IDS = {
   name: 'contact-partner-name',
@@ -154,10 +155,10 @@ export default function ContactPartnerForm({ partner, bezugSlug, demo }) {
         </a>
       </p>
 
-      <button type="submit" className="btn btn-primary btn-block" disabled={sending}>
+      <Button type="submit" block disabled={sending}>
         <Icon name="send" />
         {sending ? t('Sende …') : t('Nachricht senden')}
-      </button>
+      </Button>
     </form>
   )
 }

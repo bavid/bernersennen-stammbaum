@@ -7,6 +7,7 @@ import { formatDateShort } from '../../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../../lib/voucherCode.js'
 import { canPrintGift } from '../../lib/geschenkkarte.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 function statusText(voucher) {
   if (voucher.status === 'eingelöst' && voucher.redeemed_at) {
@@ -38,9 +39,9 @@ export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, on
   const canChooseRole = voucher.status === 'offen' && voucher.joins && roleOptions.length > 0
   const deletable = canDelete && voucher.status !== 'eingelöst' && onDelete
   const gift = onGift && canPrintGift(voucher) && (
-    <button key="gift" type="button" className="btn btn-ghost voucher-row-gift" onClick={() => onGift(voucher.code)}>
+    <Button key="gift" type="button" variant="ghost" className="voucher-row-gift" onClick={() => onGift(voucher.code)}>
       {t('Als Geschenkkarte drucken')}
-    </button>
+    </Button>
   )
   const deleteButton = deletable && <DeleteButton key="delete" voucher={voucher} disabled={disabled} onDelete={onDelete} />
 

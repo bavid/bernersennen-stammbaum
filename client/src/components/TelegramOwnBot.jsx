@@ -6,6 +6,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import { useToast } from './Toast.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const TOKEN_FORMAT_ERROR = 'Das sieht nicht wie ein Token von BotFather aus – er besteht aus einer Zahl, einem Doppelpunkt und vielen Zeichen.'
 const EMPTY_ERROR = 'Bitte zuerst den Token einfügen.'
@@ -77,14 +78,14 @@ function TokenForm({ onSaved, onCancel, locked }) {
         )}
       </div>
       <div className="telegram-bot-form-actions">
-        <button type="submit" className="btn btn-primary" disabled={locked || busy}>
+        <Button type="submit" disabled={locked || busy}>
           <Icon name="check" />
           {busy ? t('Prüfe …') : t('Speichern')}
-        </button>
+        </Button>
         {onCancel && (
-          <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={busy}>
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
             {t('Abbrechen')}
-          </button>
+          </Button>
         )}
       </div>
     </form>
@@ -148,10 +149,10 @@ export default function TelegramOwnBot({ status, onStatus, openByDefault = false
       )}
       {!editing && (
         <div className="telegram-actions">
-          <button type="button" className="btn btn-ghost" disabled={isDemo || removing} onClick={() => setEditing(true)}>
+          <Button type="button" variant="ghost" disabled={isDemo || removing} onClick={() => setEditing(true)}>
             <Icon name={own ? 'rotate' : 'plus'} />
             {own ? t('Bot wechseln') : t('Eigenen Bot einrichten')}
-          </button>
+          </Button>
           {own && <ConfirmButton label="Bot entfernen" confirmLabel="Wirklich entfernen?" icon="close" disabled={isDemo || removing} onConfirm={handleRemove} />}
         </div>
       )}

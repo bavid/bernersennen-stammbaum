@@ -238,6 +238,20 @@
   overflow-wrap: anywhere;
 }
 
+/* Optionaler Link eines Hinweises (nur https, neuer Tab) - z. B. zur neuen Familie auf Pfoten. */
+.hinweis-link {
+  margin: 0;
+}
+
+.hinweis-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  color: var(--ink);
+  font-weight: 600;
+  text-underline-offset: 0.2em;
+}
+
 .hinweis-pop-actions {
   display: none;
   align-items: center;

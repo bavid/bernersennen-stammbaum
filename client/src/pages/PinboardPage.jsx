@@ -10,6 +10,7 @@ import { sortNotes } from '../lib/notes.js'
 import { hasRole } from '../lib/roles.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 const EMPTY_NOTE = { text: '', terminDatum: '', terminZeit: '' }
 
@@ -85,10 +86,10 @@ function NoteComposer({ onCreated, draft }) {
           required
         />
       </div>
-      <button className="btn btn-primary btn-lg" type="submit" disabled={saving}>
+      <Button size="lg" type="submit" disabled={saving}>
         <Icon name="pin" />
         {saving ? t('Pinne an …') : t('Anpinnen')}
-      </button>
+      </Button>
     </form>
   )
 }

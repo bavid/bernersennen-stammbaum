@@ -4,6 +4,7 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
 import Modal from '../components/Modal.jsx'
 import JoinFamilyDialog from '../components/JoinFamilyDialog.jsx'
+import AreaAvatar from '../components/AreaAvatar.jsx'
 import VisitRedeemForm from '../components/visits/VisitRedeemForm.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { HOME_LABEL, groupRoute } from '../lib/areas.js'
@@ -13,10 +14,11 @@ import { t } from '../lib/i18n/index.js'
 
 const VISIT_DIALOG = 'besuch'
 
-function AreaRow({ to, name, sub }) {
+function AreaRow({ to, name, sub, bild }) {
   return (
     <li>
       <Link to={to} className="families-page-row">
+        <AreaAvatar name={name} bild={bild} size="sm" />
         <span className="families-page-row-text">
           <span className="families-page-row-name">{name}</span>
           {sub && <span className="families-page-row-sub">{sub}</span>}
@@ -103,6 +105,7 @@ export default function FamiliesPage({ family, onFamilyChange }) {
               key={membership.id}
               to={groupRoute(membership.id)}
               name={membership.name}
+              bild={membership.bild}
               sub={subOf(roleLabel(words, membership.rolle), animalCountText(areaCounts(family, membership.id), words))}
             />
           ))}
@@ -117,6 +120,7 @@ export default function FamiliesPage({ family, onFamilyChange }) {
               key={visit.id}
               to={groupRoute(visit.id)}
               name={visit.name}
+              bild={visit.bild}
               sub={subOf(t('Zu Besuch'), animalCountText(areaCounts(family, visit.id), words))}
             />
           ))}

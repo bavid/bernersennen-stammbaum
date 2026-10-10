@@ -319,6 +319,7 @@ describe('FamilyManage – was welche Rolle hier sieht (Phase W, Schritt 2)', ()
     expect([...container.querySelectorAll('h2')].map((h) => h.textContent)).toEqual([
       'Familie Sonnenhang Familienleitung',
       'Name',
+      'Bild',
       'Leitung übergeben',
       'Schlüssel der Familie erneuern',
       'Deine Mitgliedschaft',

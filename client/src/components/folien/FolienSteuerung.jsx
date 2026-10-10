@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import Icon from '../Icon.jsx'
 import { FOLIE_PARAM, clampFolie } from '../../lib/vorstellung.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Gemeinsame Folien-Mechanik für /vorstellung und /netzwerk: ?folie=N (1-basiert, begrenzt), Pfeiltasten,
 // Weiter/Zurück und Punkte. Stil: styles/vorstellung.css (Klassen vorstellung-nav, vorstellung-dots).
@@ -33,18 +34,18 @@ export function useFolie(anzahl) {
 export function FolienNav({ aktuell, anzahl, gehZu, ende = { to: '/', label: 'Zur Startseite' } }) {
   return (
     <nav className="vorstellung-nav" aria-label={t('Folien durchklicken')}>
-      <button type="button" className="btn btn-ghost" disabled={aktuell === 1} onClick={() => gehZu(aktuell - 1)}>
+      <Button type="button" variant="ghost" disabled={aktuell === 1} onClick={() => gehZu(aktuell - 1)}>
         <Icon name="arrowLeft" /> {t('Zurück')}
-      </button>
+      </Button>
       <span className="vorstellung-count muted">{t('Folie {n} von {total}', { n: aktuell, total: anzahl })}</span>
       {aktuell === anzahl ? (
-        <Link to={ende.to} className="btn btn-primary">
+        <Button to={ende.to} as={Link}>
           {t(ende.label)} <Icon name="arrowRight" />
-        </Link>
+        </Button>
       ) : (
-        <button type="button" className="btn btn-primary" onClick={() => gehZu(aktuell + 1)}>
+        <Button type="button" onClick={() => gehZu(aktuell + 1)}>
           {t('Weiter')} <Icon name="arrowRight" />
-        </button>
+        </Button>
       )}
     </nav>
   )

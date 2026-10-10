@@ -8,6 +8,7 @@ import KeyReveal from './KeyReveal.jsx'
 import { relativeTime } from '../lib/dates.js'
 import { formatVoucherCode } from '../lib/voucherCode.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const ARM_TIMEOUT_MS = 5000
 const USER_PASSWORD_MIN = 8
@@ -195,12 +196,12 @@ function AddUserForm({ confirmField, confirmValue, onAdded, onCancel }) {
       </div>
       <div className="form-actions">
         <span className="form-actions-spacer" />
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving || !username || !password}>
+        </Button>
+        <Button type="submit" disabled={saving || !username || !password}>
           {saving ? t('Lege an …') : t('Benutzer anlegen')}
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -270,10 +271,10 @@ function UsersSection({ confirmField, confirmValue, hasConfirm }) {
       {showAdd ? (
         <AddUserForm confirmField={confirmField} confirmValue={confirmValue} onAdded={handleAdded} onCancel={() => setShowAdd(false)} />
       ) : (
-        <button type="button" className="btn btn-ghost" onClick={() => setShowAdd(true)} disabled={!hasConfirm}>
+        <Button type="button" variant="ghost" onClick={() => setShowAdd(true)} disabled={!hasConfirm}>
           <Icon name="plus" />
           {t('Benutzer hinzufügen')}
-        </button>
+        </Button>
       )}
     </div>
   )

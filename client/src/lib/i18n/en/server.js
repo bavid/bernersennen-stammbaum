@@ -255,4 +255,10 @@ export default {
   'Zu viele Änderungen aus eurem Zuhause in kurzer Zeit – bitte später noch einmal versuchen.': 'Too many changes from your home in a short time – please try again later.',
   'Zu viele Änderungen in kurzer Zeit – bitte später noch einmal versuchen.': 'Too many changes in a short time – please try again later.',
   '„Wir waren hier“ gibt es nur in „Mein Zuhause“.': '“We were here” is only available in “My home”.',
+  // Profil (server/lib/profil.js, routes/profil.js)
+  'Bitte einen Namen angeben': 'Please enter a name',
+  'Der Name darf keine Zeilenumbrüche enthalten': 'The name must not contain line breaks',
+  'Der Name darf höchstens 40 Zeichen lang sein': 'The name can be at most 40 characters long',
+  'Nur Fotos (JPG, PNG, WebP) sind als Bild erlaubt': 'Only photos (JPG, PNG, WebP) are allowed as a picture',
+  'Ein Bild gibt es nur für ein Zuhause oder eine Familie': 'Only a home or a family can have a picture',
 }

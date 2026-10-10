@@ -17,6 +17,7 @@ import useMediaQuery from '../hooks/useMediaQuery.js'
 import { isPartnerArea } from '../lib/areas.js'
 import { useLang, useT, tList } from '../lib/i18n/index.js'
 import LanguageSwitch from '../components/LanguageSwitch.jsx'
+import { Button } from '../components/ui/index.js'
 
 // Nach einem Partner-Zugang (Phase P) öffnet der Schlüssel den Partner-Bereich, nicht "Meine Chronik" -
 // und erneuert wird er dort unter "Zugang", nicht in den Familien-Einstellungen am Stammbaum.
@@ -257,9 +258,9 @@ function OwnerCard({ mode, partnerRedeem, showingKeyReveal, t, onSwitch, demo, c
               {demo.error}
             </div>
           )}
-          <button type="button" className="btn btn-ghost btn-block" onClick={demo.onStart} disabled={demo.loading}>
+          <Button type="button" variant="ghost" block onClick={demo.onStart} disabled={demo.loading}>
             {demo.loading ? t('login.loading') : t('login.demo')}
-          </button>
+          </Button>
           <p className="field-hint">{demo.hint}</p>
         </div>
       )}

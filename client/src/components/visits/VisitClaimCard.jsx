@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../../api'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // /v#CODE mit laufender Sitzung im eigenen Zuhause (Phase V2): der Code ist eine Besuchs-Einladung - statt
 // "Abmelden und einlösen" gleich verbinden (POST /api/besuche/einloesen). visit: { name } aus api.checkVoucher.
@@ -33,9 +34,9 @@ export default function VisitClaimCard({ code, visit, onConnected }) {
           name: visit.name
         })}
       </p>
-      <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={handleConnect}>
+      <Button type="button" block disabled={busy} onClick={handleConnect}>
         {busy ? t('Verbinde …') : t('Bei „{name}“ vorbeischauen', { name: visit.name })}
-      </button>
+      </Button>
     </div>
   )
 }

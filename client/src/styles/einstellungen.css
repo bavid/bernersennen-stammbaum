@@ -114,7 +114,7 @@
 
 .settings-option.is-checked {
   border-color: var(--rust);
-  box-shadow: inset 0 0 0 1px var(--rust);
+  box-shadow: inset 0 0 0 var(--hairline) var(--rust);
   background: color-mix(in srgb, var(--rust) 6%, var(--surface));
 }
 
@@ -164,9 +164,9 @@
 .palette-swatch-dot {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  box-shadow: inset 0 0 0 var(--hairline) var(--line-strong);
 }
 
 .palette-swatch-dot.is-accent {

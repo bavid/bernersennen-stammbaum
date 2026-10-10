@@ -18,6 +18,7 @@ import { hasRole } from '../lib/roles.js'
 import { buildFamilyGroups, familyAnimals, hasFamilyTree, overviewMode } from '../lib/familyGroups.js'
 import { hasSiblingLitters } from '../lib/litters.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 // Familienbande eines Tierheims (/stammbaum und /familienbande, AreaRoutes ShelterRoutes): Raster aller Tiere, auf Wunsch
 // Stammbaum mit Nachwuchs. Haushalte und Familien haben seit Phase W „Tiere“ (AnimalsPage) und die Gruppenseite - die
@@ -86,15 +87,15 @@ export default function OverviewPage({ family, onInvite }) {
           <div className="hero-actions">
             {/* Audit V7a: ohne Tiere steht "Erstes Tier anlegen" im Leerzustand - nicht zusätzlich hier oben. */}
             {canWrite && dogs?.length !== 0 && (
-              <button type="button" className="btn btn-primary btn-lg" onClick={() => openAnimalForm()}>
+              <Button type="button" size="lg" onClick={() => openAnimalForm()}>
                 <Icon name="plus" />
                 {t('Tier hinzufügen')}
-              </button>
+              </Button>
             )}
-            <button type="button" className="btn btn-ghost btn-lg" onClick={onInvite}>
+            <Button type="button" variant="ghost" size="lg" onClick={onInvite}>
               <Icon name="send" />
               {t('Jemanden einladen')}
-            </button>
+            </Button>
             {showTreeToggle && <TreeToggle mode={mode} treeAvailable={treeAvailable} />}
           </div>
         </div>
@@ -109,10 +110,10 @@ export default function OverviewPage({ family, onInvite }) {
           {canWrite ? (
             <>
               <p>{t('Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.')}</p>
-              <button type="button" className="btn btn-primary" onClick={() => openAnimalForm()}>
+              <Button type="button" onClick={() => openAnimalForm()}>
                 <Icon name="plus" />
                 {t('Erstes Tier anlegen')}
-              </button>
+              </Button>
             </>
           ) : (
             <p>{t('Sobald Mitglieder Tiere anlegen oder eigene hierher teilen, stehen sie hier.')}</p>

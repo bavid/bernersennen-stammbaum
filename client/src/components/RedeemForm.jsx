@@ -9,6 +9,7 @@ import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { formatVoucherCode, isCompleteVoucherCode } from '../lib/voucherCode.js'
 import { partnerAccessFrom, partnerSetupPayload, validatePartnerSetup } from '../lib/partnerSetup.js'
 import { useT } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const NAME_MAX_LENGTH = 80
 const EMPTY_PARTNER_VALUES = { name: '', typ: '', plz: '' }
@@ -214,9 +215,9 @@ export default function RedeemForm({ initialCode = '', hint = null, onRedeemed, 
       )}
       <RedeemAccountFields value={account} onChange={setAccount} />
       <Honeypot value={website} onChange={setWebsite} />
-      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading || knownInvalid}>
+      <Button size="lg" block type="submit" disabled={loading || knownInvalid}>
         {loading ? t('login.redeemForm.creating') : submitLabel}
-      </button>
+      </Button>
       {partnerAccess && (
         <p className="field-hint partner-setup-hint">{t('login.redeemForm.partnerHint')}</p>
       )}

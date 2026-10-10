@@ -218,7 +218,7 @@
   justify-content: center;
   width: 2.75rem;
   border: 1.5px dashed var(--tan);
-  border-radius: 3rem;
+  border-radius: var(--radius-capsule);
   background: transparent;
   color: var(--muted);
   cursor: pointer;

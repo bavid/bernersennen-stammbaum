@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../api'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import { chatLabel, notifyErrorMessage } from '../lib/adminNotify.js'
+import { Button } from './ui/index.js'
 
 const TOKEN_ID = 'admin-notify-token'
 const CHAT_ID = 'admin-notify-chat-id'
@@ -43,9 +44,9 @@ function TokenForm({ settings, onChange }) {
           onChange={(e) => setToken(e.target.value)}
         />
       </AdminField>
-      <button type="submit" className="btn btn-ink" disabled={saving}>
+      <Button type="submit" variant="ink" disabled={saving}>
         {saving ? 'Prüfe …' : 'Speichern'}
-      </button>
+      </Button>
     </form>
   )
 }
@@ -92,9 +93,9 @@ function ChatForm({ settings, onChange }) {
 
   return (
     <div className="admin-notify-chat">
-      <button type="button" className="btn btn-ghost" onClick={handleFind} disabled={finding}>
+      <Button type="button" variant="ghost" onClick={handleFind} disabled={finding}>
         {finding ? 'Suche …' : 'Chat finden'}
-      </button>
+      </Button>
       {findError && (
         <p className="field-error" role="alert">
           {findError}
@@ -118,9 +119,9 @@ function ChatForm({ settings, onChange }) {
         <AdminField id={CHAT_ID} label="Chat-ID" hint={hint} error={error}>
           <input {...fieldProps(CHAT_ID, { error, hint: true })} value={chatId} onChange={(e) => setChatId(e.target.value)} spellCheck={false} />
         </AdminField>
-        <button type="submit" className="btn btn-ink" disabled={saving}>
+        <Button type="submit" variant="ink" disabled={saving}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
+        </Button>
       </form>
     </div>
   )
@@ -142,9 +143,9 @@ function TestMessage({ eingerichtet }) {
 
   return (
     <div className="admin-notify-test">
-      <button type="button" className="btn btn-ghost" onClick={handleSend} disabled={!eingerichtet || state.phase === 'sending'}>
+      <Button type="button" variant="ghost" onClick={handleSend} disabled={!eingerichtet || state.phase === 'sending'}>
         {state.phase === 'sending' ? 'Sende …' : 'Testnachricht senden'}
-      </button>
+      </Button>
       {!eingerichtet && <p className="field-hint">Geht, sobald Bot-Token und Chat gespeichert sind.</p>}
       {state.phase === 'sent' && (
         <p className="field-hint-success" role="status">

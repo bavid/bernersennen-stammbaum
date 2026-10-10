@@ -3,6 +3,7 @@ import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
 import { formatDateLong } from '../lib/dates.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Alternativtext eines Einblicks: sein Text, sonst "Einblick vom <Datum>" (Raster und große Ansicht).
 export function einblickAlt(einblick) {
@@ -48,17 +49,17 @@ export default function EinblickViewer({ items, index, onIndexChange, onClose })
           {current.text && <p className="einblick-viewer-text">{current.text}</p>}
           {count > 1 && (
             <div className="einblick-viewer-nav">
-              <button type="button" className="btn btn-ghost" onClick={() => onIndexChange((index - 1 + count) % count)}>
+              <Button type="button" variant="ghost" onClick={() => onIndexChange((index - 1 + count) % count)}>
                 <Icon name="arrowLeft" />
                 {t('Vorheriger')}
-              </button>
+              </Button>
               <span className="einblick-viewer-count" aria-live="polite">
                 {t('{n} von {total}', { n: index + 1, total: count })}
               </span>
-              <button type="button" className="btn btn-ghost" onClick={() => onIndexChange((index + 1) % count)}>
+              <Button type="button" variant="ghost" onClick={() => onIndexChange((index + 1) % count)}>
                 {t('Nächster')}
                 <Icon name="arrowRight" />
-              </button>
+              </Button>
             </div>
           )}
         </div>

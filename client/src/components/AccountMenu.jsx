@@ -2,7 +2,9 @@ import { useId } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import useMenu from '../hooks/useMenu.js'
-import { LEGAL_LINKS, accountInitial, accountMenuItems, accountName } from '../lib/accountMenu.js'
+import AreaAvatar from './AreaAvatar.jsx'
+import { LEGAL_LINKS, accountBild, accountMenuItems, accountName } from '../lib/accountMenu.js'
+import { personName } from '../lib/profil.js'
 import { t } from '../lib/i18n/index.js'
 
 // "Hilfe & Kontakt" nimmt mit, von welcher Seite man kommt (ContactAdminPage: "Problem auf dieser Seite").
@@ -10,12 +12,19 @@ export function itemState(item, pathname) {
   return item.key === 'hilfe' ? { from: pathname } : undefined
 }
 
-// Runder Platzhalter mit dem Anfangsbuchstaben des Zuhauses und daneben der Name - Knopf des Menüs am Desktop.
-export function AccountBadge({ name }) {
+// Rundes Bild des Zuhauses (Profil) bzw. sein Anfangsbuchstabe - Knopf des Menüs am Desktop und Kopf des Blatts am Handy.
+export function AccountBadge({ name, bild = null }) {
+  return <AreaAvatar name={name} bild={bild} className="account-avatar" />
+}
+
+// „Zuhause am Deich · Anke“: der Name der angemeldeten Person (Profil) leise hinter dem Zuhause.
+export function AccountWho({ family }) {
+  const person = personName(family)
   return (
-    <span className="account-avatar" aria-hidden="true">
-      {accountInitial(name)}
-    </span>
+    <>
+      {accountName(family)}
+      {person && <span className="account-person"> · {person}</span>}
+    </>
   )
 }
 
@@ -77,10 +86,10 @@ export default function AccountMenu({ family, onInvite, onLogout }) {
         onClick={toggle}
         onKeyDown={onTriggerKeyDown}
       >
-        <AccountBadge name={name} />
+        <AccountBadge name={name} bild={accountBild(family)} />
         <span className="account-menu-name">
           <span className="visually-hidden">{t('Menü')}: </span>
-          {name}
+          <AccountWho family={family} />
         </span>
         <Icon name="chevronDown" />
       </button>

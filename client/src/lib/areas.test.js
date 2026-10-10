@@ -42,6 +42,11 @@ describe('areaContext (Phase W)', () => {
 })
 
 describe('startRoute', () => {
+  test('Bestandsrudel mit Stammbaum-Start (klassischer Login) starten auf /stammbaum, Haushalte nicht', () => {
+    expect(startRoute({ ...classic, stammbaumStart: true })).toBe('/stammbaum')
+    expect(startRoute({ ...atHome, stammbaumStart: true })).toBe('/start')
+  })
+
   test('das eigene Zuhause und klassische Logins starten auf /start', () => {
     expect(startRoute(atHome)).toBe('/start')
     expect(startRoute({ art: 'zuhause' })).toBe('/start')

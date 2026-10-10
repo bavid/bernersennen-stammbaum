@@ -1,6 +1,7 @@
 import Icon from '../Icon.jsx'
 import { ADDRESS_PENDING_TEXT } from '../../lib/voucherPrint.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Teile des Karten-Designers (KartenDesigner): der Hinweis, solange die Plattform keine öffentliche Adresse hat, die
 // Zeile "Gestaltung speichern", die Vorschau-Bühne mit Vorder- und Rückseite in echten Proportionen und die aufklappbare
@@ -21,9 +22,9 @@ export function SaveRow({ entwurf, readOnly, readOnlyHint }) {
   const { dirty, saving, error, save } = entwurf
   return (
     <div className="vk-save-row">
-      <button type="button" className="btn btn-primary" onClick={save} disabled={readOnly || saving || !dirty}>
+      <Button type="button" onClick={save} disabled={readOnly || saving || !dirty}>
         <Icon name="check" /> {saving ? t('Speichere …') : t('Gestaltung speichern')}
-      </button>
+      </Button>
       {readOnly ? (
         <span className="field-hint">{readOnlyHint}</span>
       ) : (

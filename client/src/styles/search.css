@@ -205,7 +205,7 @@
 
 .search-option[aria-selected='true'] {
   background: var(--rust-wash);
-  box-shadow: inset 3px 0 0 var(--rust);
+  box-shadow: inset var(--accent-edge) 0 0 var(--rust);
 }
 
 .search-thumb {
@@ -215,7 +215,7 @@
   width: 2.5rem;
   height: 2.5rem;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--paper-deep);
   color: var(--muted);
   font-family: var(--font-display);
@@ -296,7 +296,7 @@
 
 .search-mark {
   padding: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-hair);
   background: color-mix(in srgb, var(--tan) 40%, transparent);
   color: inherit;
 }

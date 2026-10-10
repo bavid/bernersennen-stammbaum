@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
 import { STATUS_LABELS } from '../lib/adminPartnerForm.js'
 import { PRESENT_PORTAL_TILES, PRESENT_TILES, demoStartUrl, portalPreviewUrl, portalTileUrl } from '../lib/present.js'
+import { Button } from '../components/ui/index.js'
 
 // Präsentationsmodus (Phase 5 Task 5): /admin/praesentation, als eigener Chunk aus App.jsx - eine ruhige Seite
 // in großer Schrift ohne die Admin-Karten, für Vorführungen am Laptop oder Tablet. Nur mit Admin-Sitzung, sonst
@@ -134,15 +135,15 @@ export default function AdminPresentPage() {
           Jede Kachel öffnet eine schreibgeschützte Demo in einem neuen Tab – dieser Tab bleibt stehen, ihr kommt jederzeit
           zurück.
         </p>
-        <Link to="/vorstellung" className="btn btn-primary present-tour">
+        <Button to="/vorstellung" as={Link} className="present-tour">
           <Icon name="play" /> Präsentation zum Durchklicken
-        </Link>
-        <Link to="/netzwerk" className="btn btn-ghost present-tour">
+        </Button>
+        <Button to="/netzwerk" as={Link} variant="ghost" className="present-tour">
           <Icon name="users" /> Netzwerk der Partner (Entwurf)
-        </Link>
-        <Link to="/admin" className="btn btn-ghost present-back">
+        </Button>
+        <Button to="/admin" as={Link} variant="ghost" className="present-back">
           <Icon name="arrowLeft" /> Zurück zum Admin
-        </Link>
+        </Button>
       </header>
 
       <TileSection id="present-tiles-title" title="Demo ansehen" tiles={PRESENT_TILES} hrefOf={demoStartUrl} />

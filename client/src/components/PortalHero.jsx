@@ -11,6 +11,7 @@ import { CONTACT_TAB, SECTION_IDS } from '../lib/portalTabs.js'
 import { useIsPreview } from '../lib/preview.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // "Schreib uns" bzw. "Kontakt" im Kopf. Auf dem Reiter "Kontakt" steht derselbe Weg in der Kontakt-Karte direkt darunter -
 // hier ist er dann verdeckt statt doppelt (concealed): unsichtbar, nicht bedienbar und für Screenreader weg, aber mit
@@ -28,10 +29,10 @@ function ContactCta({ partner, hasForm, concealed, onShowTab }) {
         {hasForm ? (
           <ContactPartnerButton partner={partner} />
         ) : (
-          <button type="button" className="btn btn-primary" onClick={() => onShowTab(CONTACT_TAB, SECTION_IDS.contact)}>
+          <Button type="button" onClick={() => onShowTab(CONTACT_TAB, SECTION_IDS.contact)}>
             <Icon name="message" />
             {t('Kontakt')}
-          </button>
+          </Button>
         )}
       </div>
     </PortalPanelProvider>

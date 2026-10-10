@@ -17,6 +17,7 @@ import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { navItemsFor } from '../lib/navItems.js'
 import { PROFILE_TAB_PARAM as TAB_PARAM } from '../lib/partnerProfile.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 const ACCESS_ROUTE = '/zugang'
 
@@ -197,10 +198,10 @@ export default function PartnerProfilePage({ family }) {
       <aside className="partner-profile-notes">
         <p>{t('Privat eine eigene Chronik führen? Dafür gibt es Einladungscodes.')}</p>
         {showAccessLink && (
-          <Link to={ACCESS_ROUTE} className="btn btn-ghost">
+          <Button to={ACCESS_ROUTE} as={Link} variant="ghost">
             <Icon name="lock" />
             {t('Zugang & Benachrichtigungen')}
-          </Link>
+          </Button>
         )}
       </aside>
     </div>

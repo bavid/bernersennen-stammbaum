@@ -191,3 +191,21 @@ describe('HinweisCarousel – Vorschau im Admin', () => {
     expect(button('Hinweis ausblenden').disabled).toBe(true)
   })
 })
+
+// Optionaler Link (z. B. der Umzugs-Hinweis der Rudel-Instanz): nur https, neuer Tab ohne Opener; „Mehr“ auch ohne Text.
+describe('HinweisCarousel – Link', () => {
+  test('https-Link im Fenster, neuer Tab, noopener', () => {
+    render({ hinweise: [{ ...NEU, linkUrl: 'https://neu.example.org/', linkLabel: 'Zur neuen Familie auf Pfoten' }], onDismiss: () => {} })
+    click(button('Mehr'))
+    const link = container.querySelector('.hinweis-link a')
+    expect(link.getAttribute('href')).toBe('https://neu.example.org/')
+    expect(link.textContent).toContain('Zur neuen Familie auf Pfoten')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+  })
+
+  test('kein Link bei anderer Adresse als https', () => {
+    render({ hinweise: [{ ...WARTUNG, linkUrl: 'javascript:alert(1)', linkLabel: 'x' }], onDismiss: () => {} })
+    expect(container.querySelector('.hinweis-link')).toBeNull()
+  })
+})

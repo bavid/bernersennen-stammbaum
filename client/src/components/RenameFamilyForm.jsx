@@ -3,6 +3,7 @@ import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from './Icon.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const MAX_NAME_LENGTH = 80
 const ARM_TIMEOUT_MS = 5000
@@ -73,9 +74,9 @@ export default function RenameFamilyForm({ family, onRenamed, onCancel }) {
       </div>
       <div className="form-actions">
         <span className="form-actions-spacer" />
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
+        </Button>
         <button
           type="submit"
           className={`btn ${armed ? 'btn-warning' : 'btn-primary'}`}

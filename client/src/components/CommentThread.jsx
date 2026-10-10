@@ -5,6 +5,7 @@ import useShowMore from '../hooks/useShowMore.js'
 import { relativeTime } from '../lib/dates.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import { t, tOr } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const MAX_LENGTH = 1000
 // Audit W (N6): ein langes Gespräch zeigt zuerst nur die letzten zwei Beiträge - der Rest hinter „Alle n Antworten“.
@@ -65,13 +66,13 @@ function CommentForm({ placeholder, onSubmit, onCancel }) {
           autoComplete="name"
           required
         />
-        <button type="button" className="btn btn-ghost reply-btn" onClick={onCancel}>
+        <Button type="button" variant="ghost" className="reply-btn" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
-        <button type="submit" className="btn btn-primary reply-btn" disabled={saving}>
+        </Button>
+        <Button type="submit" className="reply-btn" disabled={saving}>
           <Icon name="send" />
           {t('Senden')}
-        </button>
+        </Button>
       </div>
     </form>
   )

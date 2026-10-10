@@ -5,6 +5,7 @@ import { formatDateLong } from '../../lib/dates.js'
 import { speciesLabel } from '../../lib/timeline.js'
 import { WWH } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const PHOTO_SIZE = 64
 
@@ -38,12 +39,12 @@ function KontaktDialog({ open, tier, eigeneTiere, onClose, onSend }) {
           </div>
         )}
         <div className="form-actions">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={onClose}>
             {t(WWH.abbrechen)}
-          </button>
-          <button type="submit" className="btn btn-primary">
+          </Button>
+          <Button type="submit">
             {t(WWH.anfrageSenden)}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

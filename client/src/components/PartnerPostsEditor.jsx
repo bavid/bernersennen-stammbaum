@@ -9,6 +9,7 @@ import PartnerPostForm from './PartnerPostForm.jsx'
 import PartnerPostRow from './PartnerPostRow.jsx'
 import { useToast } from './Toast.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const DEMO_HINT_ID = 'partner-posts-demo-hint'
 const NO_BEREICH_HINT = 'Für euren Partner-Typ gibt es noch keinen Bereich in „Entdecken“ – schreibt uns gern.'
@@ -112,15 +113,14 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
         />
       ) : (
         <div className="partner-posts-actions">
-          <button
+          <Button
             type="button"
-            className="btn btn-primary"
             onClick={() => setEditing('new')}
             disabled={isDemo || isFull || !hasBereich || posts === undefined}
             aria-describedby={isDemo ? DEMO_HINT_ID : undefined}
           >
             <Icon name="plus" /> {t('Beitrag anlegen')}
-          </button>
+          </Button>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
               {readOnlyHint}
@@ -166,9 +166,9 @@ export default function PartnerPostsEditor({ typ, vertrauenswuerdig = false, sho
         </ul>
       )}
       {!editing && more.hidden > 0 && (
-        <button type="button" className="btn btn-ghost partner-posts-more" onClick={more.expand}>
+        <Button type="button" variant="ghost" className="partner-posts-more" onClick={more.expand}>
           {t('Weitere Beiträge ({n})', { n: more.hidden })}
-        </button>
+        </Button>
       )}
     </section>
   )

@@ -11,6 +11,7 @@
 
 const db = require('../db')
 const { stripUnsafeChars } = require('./partners')
+const { NO_LINK, validateHinweisLink, linkFields } = require('./hinweisLink')
 
 const STUFE = Object.freeze({ info: 'info', wartung: 'wartung', wichtig: 'wichtig' })
 const STUFE_VALUES = Object.freeze(Object.values(STUFE))
@@ -23,7 +24,7 @@ const MAX_OEFFENTLICH = 5
 const MAX_HINWEISE = 100
 const MIN_YEAR = 2000
 const MAX_YEAR = 2100
-const FIELDS = Object.freeze(['titel', 'text', 'titelEn', 'textEn', 'stufe', 'start', 'ende', 'aktiv'])
+const FIELDS = Object.freeze(['titel', 'text', 'titelEn', 'textEn', 'stufe', 'start', 'ende', 'aktiv', 'linkUrl', 'linkLabel', 'linkLabelEn'])
 const HTML_RE = /[<>]/
 // Ein Zeitpunkt mit Zeitzone ('Z' oder ±HH:MM) - eine Ortszeit ohne Zone wäre mehrdeutig.
 const ISO_INSTANT_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/
@@ -148,6 +149,14 @@ function validateHinweis(body, { now = new Date(), existing = null } = {}) {
   if (existing && !FIELDS.some(has)) throw httpError(400, 'Nichts zu ändern')
   const base = existing || { titel: null, text: null, titel_en: null, text_en: null, stufe: STUFE.info, start: now.toISOString(), ende: null, aktiv: 1 }
   const english = validateEnglish(has('titelEn') ? body.titelEn : base.titel_en, has('textEn') ? body.textEn : base.text_en)
+  // Optionaler Link (lib/hinweisLink.js): fehlende Felder bleiben wie gespeichert; eine geleerte Adresse nimmt den Link
+  // samt Beschriftungen weg.
+  const linkWeg = has('linkUrl') && !body.linkUrl
+  const link = validateHinweisLink({
+    url: has('linkUrl') ? body.linkUrl : base.link_url,
+    label: has('linkLabel') ? body.linkLabel : linkWeg ? null : base.link_label,
+    labelEn: has('linkLabelEn') ? body.linkLabelEn : linkWeg ? null : base.link_label_en
+  })
   const clean = {
     titel: has('titel') || !existing ? validateTitel(body.titel) : base.titel,
     text: has('text') ? validateText(body.text) : base.text,
@@ -156,7 +165,8 @@ function validateHinweis(body, { now = new Date(), existing = null } = {}) {
     stufe: has('stufe') ? validateStufe(body.stufe) : base.stufe,
     start: has('start') ? validateStart(body.start) : base.start,
     ende: has('ende') ? validateEnde(body.ende) : base.ende,
-    aktiv: has('aktiv') ? validateAktiv(body.aktiv) : base.aktiv
+    aktiv: has('aktiv') ? validateAktiv(body.aktiv) : base.aktiv,
+    ...link
   }
   if (clean.ende && clean.ende <= clean.start) throw httpError(400, 'Das Ende muss nach dem Beginn liegen.', 'ende')
   return clean
@@ -177,21 +187,21 @@ function hinweisStatus(row, now = new Date()) {
 // --- Abfragen ------------------------------------------------------------------------------------
 
 const insertStmt = db.prepare(
-  `INSERT INTO hinweise (titel, text, titel_en, text_en, stufe, start, ende, aktiv, is_demo)
-   VALUES (@titel, @text, @titel_en, @text_en, @stufe, @start, @ende, @aktiv, @is_demo)`
+  `INSERT INTO hinweise (titel, text, titel_en, text_en, stufe, start, ende, aktiv, is_demo, link_url, link_label, link_label_en)
+   VALUES (@titel, @text, @titel_en, @text_en, @stufe, @start, @ende, @aktiv, @is_demo, @link_url, @link_label, @link_label_en)`
 )
 const findStmt = db.prepare('SELECT * FROM hinweise WHERE id = ?')
 const listStmt = db.prepare('SELECT * FROM hinweise ORDER BY start DESC, id DESC')
 const countStmt = db.prepare('SELECT COUNT(*) AS n FROM hinweise')
 const updateStmt = db.prepare(
   `UPDATE hinweise SET titel = @titel, text = @text, titel_en = @titel_en, text_en = @text_en, stufe = @stufe, start = @start, ende = @ende, aktiv = @aktiv,
-     updated_at = datetime('now')
+     link_url = @link_url, link_label = @link_label, link_label_en = @link_label_en, updated_at = datetime('now')
    WHERE id = @id`
 )
 const deleteStmt = db.prepare('DELETE FROM hinweise WHERE id = ?')
 const deleteDemoStmt = db.prepare('DELETE FROM hinweise WHERE is_demo = 1')
 const publicStmt = db.prepare(
-  `SELECT id, titel, text, titel_en AS titelEn, text_en AS textEn, stufe FROM hinweise
+  `SELECT id, titel, text, titel_en AS titelEn, text_en AS textEn, stufe, link_url, link_label, link_label_en FROM hinweise
    WHERE aktiv = 1 AND start <= @jetzt AND (ende IS NULL OR ende >= @jetzt) AND (@includeDemo = 1 OR is_demo = 0)
    ORDER BY start DESC, id DESC LIMIT ${MAX_OEFFENTLICH}`
 )
@@ -208,7 +218,7 @@ function countHinweise() {
   return countStmt.get().n
 }
 
-const NO_ENGLISH = Object.freeze({ titel_en: null, text_en: null })
+const NO_ENGLISH = Object.freeze({ titel_en: null, text_en: null, ...NO_LINK })
 
 // clean: Ausgabe von validateHinweis. Gibt die neue Zeile zurück.
 function createHinweis(clean, { isDemo = false } = {}) {
@@ -227,7 +237,9 @@ function deleteHinweis(id) {
 
 // Öffentliche Auswahl: nur Titel, Text (auch englisch) und Stufe - Zeitraum und Verwaltungsdaten bleiben beim Admin.
 function listPublicHinweise({ now = new Date(), includeDemo = false } = {}) {
-  return publicStmt.all({ jetzt: now.toISOString(), includeDemo: includeDemo ? 1 : 0 })
+  return publicStmt
+    .all({ jetzt: now.toISOString(), includeDemo: includeDemo ? 1 : 0 })
+    .map(({ link_url, link_label, link_label_en, ...rest }) => ({ ...rest, ...linkFields({ link_url, link_label, link_label_en }) }))
 }
 
 function adminHinweis(row, now = new Date()) {
@@ -244,7 +256,8 @@ function adminHinweis(row, now = new Date()) {
     isDemo: Boolean(row.is_demo),
     status: hinweisStatus(row, now),
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
+    ...linkFields(row)
   }
 }
 

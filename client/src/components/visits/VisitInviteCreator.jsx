@@ -7,6 +7,7 @@ import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { formatDateShort } from '../../lib/dates.js'
 import { voucherLink } from '../../lib/visits.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // "Zu Besuch einladen" (Phase V2; Phase W Schritt 2 ein eigener Weg im Einladen-Dialog): ein neuer Besuchs-Code, 7 Tage
 // gültig und einmal einlösbar (server/routes/besuche.js POST /einladungen). Code und Link stehen nur hier und - solange
@@ -62,10 +63,10 @@ export default function VisitInviteCreator({ onCreated, headingRef }) {
         </div>
       ) : (
         <div className="visit-actions">
-          <button type="button" className="btn btn-primary" onClick={handleCreate} disabled={busy || isDemo}>
+          <Button type="button" onClick={handleCreate} disabled={busy || isDemo}>
             <Icon name="plus" />
             {busy ? t('Erstelle …') : t('Besuchs-Einladung erstellen')}
-          </button>
+          </Button>
         </div>
       )}
       {isDemo && <p className="field-hint">{readOnlyHint}</p>}

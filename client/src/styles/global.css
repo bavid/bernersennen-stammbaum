@@ -66,5 +66,7 @@
 @import './wir-waren-hier.css';
 /* Box-System (components/ui): Bausteine nur aus Tokens. */
 @import './ui.css';
+/* Profil: Bild von Zuhause und Familie (components/AreaAvatar.jsx). */
+@import './avatar.css';
 /* Look B+ Familienalbum: Handschrift, Polaroid, Kapitel, Tier-Kreise - zuletzt, damit es über den Seiten-Stilen liegt. */
 @import './album.css';

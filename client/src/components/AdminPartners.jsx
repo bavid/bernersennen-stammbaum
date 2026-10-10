@@ -7,6 +7,7 @@ import AdminPartnerForm from './AdminPartnerForm.jsx'
 import AdminPartnerRow from './AdminPartnerRow.jsx'
 import { TRUST_HINT } from './AdminPartnerTrust.jsx'
 import { rowPayload } from '../lib/adminPartnerForm.js'
+import { Button } from './ui/index.js'
 
 // Admin-Partnerpflege (Task 7): Liste mit Status-Chips + Aktionen, Formular zum Anlegen/Bearbeiten.
 // onChange (optional): AdminPage hält daneben eine eigene, schlanke Partnerliste für die
@@ -70,9 +71,9 @@ export default function AdminPartners({ onChange }) {
       <div className="admin-partners-head">
         <h2 id="admin-partners-title">Partner</h2>
         {!editing && (
-          <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
+          <Button type="button" onClick={() => setEditing('new')}>
             <Icon name="plus" /> Partner anlegen
-          </button>
+          </Button>
         )}
       </div>
 

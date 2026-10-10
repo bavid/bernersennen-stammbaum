@@ -3,6 +3,7 @@ import Icon from './Icon.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { assignmentMail, mailtoHref } from '../lib/anfragen.js'
 import { printBaseUrl, voucherUrl } from '../lib/voucherPrint.js'
+import { Button } from './ui/index.js'
 
 const COPIED_MS = 2000
 const MAIL_BODY_ID = 'admin-anfrage-mail-body'
@@ -73,15 +74,15 @@ export default function AdminAnfrageCode({ anfrage, code, onClose }) {
             <Icon name={copied === 'text' ? 'check' : 'copy'} />
             {copied === 'text' ? 'Kopiert' : 'Text kopieren'}
           </button>
-          <a href={mailtoHref(anfrage.email, mail)} className="btn btn-ghost">
+          <Button href={mailtoHref(anfrage.email, mail)} variant="ghost">
             <Icon name="mail" /> Im E-Mail-Programm öffnen
-          </a>
+          </Button>
         </div>
       </div>
 
-      <button type="button" className="btn btn-primary btn-block" onClick={onClose}>
+      <Button type="button" block onClick={onClose}>
         Fertig
-      </button>
+      </Button>
     </div>
   )
 }

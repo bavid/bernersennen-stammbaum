@@ -59,7 +59,7 @@
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 0 0 2px var(--paper);
+  box-shadow: 0 0 0 var(--ring-inner-sm) var(--paper);
 }
 
 /* Fenster unter der Glocke (Desktop) */
@@ -177,7 +177,7 @@
 
 /* Neue Hinweise: ein schmaler Strich in der Akzentfarbe - kein lauter Kasten */
 .hinweis-item.is-new {
-  box-shadow: var(--shadow-card), inset 3px 0 0 var(--rust);
+  box-shadow: var(--shadow-card), inset var(--accent-edge) 0 0 var(--rust);
 }
 
 .hinweis-mark {
@@ -186,7 +186,7 @@
   flex-shrink: 0;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--rust-wash);
   color: var(--rust);
 }
@@ -236,7 +236,7 @@
 
 .hinweis-link:focus-visible {
   outline: none;
-  border-radius: 2px;
+  border-radius: var(--radius-hair);
   box-shadow: var(--focus-ring);
 }
 

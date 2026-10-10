@@ -6,6 +6,7 @@ import { downscaleImage } from '../lib/images.js'
 import { EINBLICK_ACCEPT, LIMIT_MESSAGE, MAX_EINBLICK_TEXT, TYPE_MESSAGE, isEinblickFileType } from '../lib/einblicke.js'
 import Icon from './Icon.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Vorschau des gewählten Fotos als Object-URL - wird beim Wechsel/Entfernen wieder freigegeben. Ohne
 // URL.createObjectURL (ältere Umgebungen) gibt es einfach keine Vorschau.
@@ -148,14 +149,14 @@ export default function EinblickForm({ isFull, onCreated, onCancel }) {
       </div>
 
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
+        <Button type="submit" disabled={!canSubmit}>
           <Icon name="plus" />
           {saving ? t('Lädt hoch …') : t('Einblick hinzufügen')}
-        </button>
+        </Button>
         {onCancel && (
-          <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
             {t('Abbrechen')}
-          </button>
+          </Button>
         )}
         {isDemo && <span className="field-hint">{readOnlyHint}</span>}
         {!isDemo && isFull && <span className="field-hint">{t(LIMIT_MESSAGE)}</span>}

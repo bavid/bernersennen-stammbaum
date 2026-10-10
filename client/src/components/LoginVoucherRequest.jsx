@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import RequestVoucherForm from './RequestVoucherForm.jsx'
 import { useT } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Sprungziel für "Gutschein anfragen" (/#gutschein-anfragen) - für Links von außerhalb der App (z. B. gedruckt); in der
 // App selbst verlinkt es seit der Feedback-Runde zum Partner-Portal niemand mehr.
@@ -32,10 +33,10 @@ export default function LoginVoucherRequest() {
       {open ? (
         <RequestVoucherForm idPrefix="login-request" autoFocus />
       ) : (
-        <button type="button" className="btn btn-ghost btn-block" onClick={() => setOpen(true)}>
+        <Button type="button" variant="ghost" block onClick={() => setOpen(true)}>
           <Icon name="mail" />
           {t('login.request.button')}
-        </button>
+        </Button>
       )}
     </section>
   )

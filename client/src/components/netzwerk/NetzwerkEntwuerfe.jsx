@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import Icon from '../Icon.jsx'
-import { Card, Chip } from '../ui/index.js'
+import { Button, Card, Chip } from '../ui/index.js'
 import { NETZ_ANFRAGE, NETZ_BOERSE, NETZ_GUTSCHEIN, NETZWERK_DEMO_KEYS } from '../../lib/netzwerk.js'
 import { PRESENT_TILES, demoStartUrl } from '../../lib/present.js'
 import { t } from '../../lib/i18n/index.js'
@@ -96,9 +96,9 @@ function MitmachenFolie() {
   const tiles = PRESENT_TILES.filter((tile) => NETZWERK_DEMO_KEYS.includes(tile.key))
   return (
     <>
-      <Link to="/partner-werden" className="btn btn-primary btn-lg vorstellung-cta">
+      <Button to="/partner-werden" as={Link} size="lg" className="vorstellung-cta">
         <Icon name="users" /> {t('Partner werden')}
-      </Link>
+      </Button>
       <ul className="vorstellung-tiles">
         {tiles.map((tile) => (
           <li key={tile.key}>

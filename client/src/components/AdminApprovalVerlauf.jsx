@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
 import FreigabeVerlauf from './FreigabeVerlauf.jsx'
+import { Button } from './ui/index.js'
 
 // "Verlauf" je Beitrag in "Zur Freigabe" (V-Fehler 3): aufklappen lädt ihn einmal (GET
 // /api/admin/promotions/:id/verlauf, bis zu 50 Einträge) - danach nur noch auf- und zuklappen. Ändert sich der
@@ -27,10 +28,10 @@ export default function AdminApprovalVerlauf({ promotionId }) {
 
   return (
     <div className="admin-approval-verlauf">
-      <button type="button" className="btn btn-ghost admin-approval-verlauf-toggle" aria-expanded={open} aria-controls={panelId} onClick={toggle}>
+      <Button type="button" variant="ghost" className="admin-approval-verlauf-toggle" aria-expanded={open} aria-controls={panelId} onClick={toggle}>
         <Icon name="clock" />
         Verlauf
-      </button>
+      </Button>
       {/* Der Bereich steht immer im DOM (aria-controls zeigt so nie ins Leere), sein Inhalt nur aufgeklappt. */}
       <div id={panelId} className="admin-approval-verlauf-panel" hidden={!open}>
         {open && error && (

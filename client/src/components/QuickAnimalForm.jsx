@@ -9,6 +9,7 @@ import { choiceTierart, emptyAnimal, moreSummary, newAnimalErrors, newAnimalPayl
 import { SEX_CHOICES, livesWithLabel } from '../lib/timeline.js'
 import '../styles/neues-tier.css'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const NAME_PLACEHOLDER = { hund: 'z. B. Benno', katze: 'z. B. Minka', anderes: 'z. B. Hoppel' }
 
@@ -128,12 +129,12 @@ export default function QuickAnimalForm({ allDogs, ownFamilyId, livesWith = null
       </MehrAngaben>
       <div className="form-actions">
         <span className="form-actions-spacer" />
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
+        </Button>
+        <Button type="submit" disabled={saving || uploading}>
           {saving ? t('Speichere …') : t('Tier anlegen')}
-        </button>
+        </Button>
       </div>
     </form>
   )

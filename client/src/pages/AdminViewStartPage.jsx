@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../api'
 import Icon from '../components/Icon.jsx'
 import ThemeMark from '../components/ThemeMark.jsx'
+import { Button } from '../components/ui/index.js'
 
 // /admin-ansicht/:id (Phase 5 Task 5b), aus der Admin-Liste in einem neuen Tab geöffnet: ruft POST
 // /api/admin/view/:id (setzt das normale Sitzungs-Cookie als Nur-Lesen-Sitzung) und übergibt die Antwort -
@@ -45,9 +46,9 @@ export default function AdminViewStartPage({ familyId, onEntered }) {
         {error ? (
           <>
             <p className="error-banner">{MESSAGES[error.status] || error.message}</p>
-            <Link to="/admin" className="btn btn-ink btn-lg">
+            <Button to="/admin" as={Link} variant="ink" size="lg">
               <Icon name="arrowLeft" /> {error.status === 401 ? 'Zum Admin-Login' : 'Zurück zum Admin'}
-            </Link>
+            </Button>
           </>
         ) : (
           <p className="muted">Die Sitzung wird nur lesend geöffnet – nichts lässt sich darin ändern.</p>

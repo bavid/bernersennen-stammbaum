@@ -14,6 +14,7 @@ import {
   MAX_NAME_LENGTH
 } from '../lib/anfragen.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 export const PARTNER_REQUEST_SUCCESS = 'Danke! Wir melden uns mit eurem Partner-Zugang.'
 const PLZ_LENGTH = 5
@@ -113,10 +114,10 @@ export default function RequestPartnerForm({ idPrefix = 'request-partner' }) {
         </a>
       </p>
 
-      <button type="submit" className="btn btn-primary btn-block" disabled={sending}>
+      <Button type="submit" block disabled={sending}>
         <Icon name="send" />
         {sending ? t('Sende …') : t('Partner-Zugang anfragen')}
-      </button>
+      </Button>
     </form>
   )
 }

@@ -6,6 +6,7 @@ import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { displayName } from '../lib/timeline.js'
 import { startpaketRoute } from '../lib/startpaket.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const COPIED_MS = 2000
 
@@ -64,9 +65,9 @@ export default function HandoverDialog({ dog, onCreated }) {
         <p>
           {t('Es wird ein Übergabe-Code erzeugt, {name} wird als reserviert markiert; ein früherer Übergabe-Code wird ungültig.', { name })}
         </p>
-        <button type="button" className="btn btn-primary btn-block" disabled={creating || isDemo} onClick={handleCreate}>
+        <Button type="button" block disabled={creating || isDemo} onClick={handleCreate}>
           {creating ? t('Erzeuge …') : t('Übergabe-Code erzeugen')}
-        </button>
+        </Button>
         {isDemo && <p className="field-hint">{readOnlyHint}</p>}
       </div>
     )
@@ -89,21 +90,21 @@ export default function HandoverDialog({ dog, onCreated }) {
           {copied === 'link' ? t('Kopiert') : t('Link kopieren')}
         </button>
         {canShare && (
-          <button
+          <Button
             type="button"
-            className="btn btn-ghost"
+            variant="ghost"
             onClick={() => navigator.share({ title: t('Übergabe – {name}', { name }), text: result.code, url: fullLink })}
           >
             <Icon name="share" />
             {t('Teilen')}
-          </button>
+          </Button>
         )}
       </div>
       {/* Startpaket: der Code reist nur im Navigations-State mit, nie in der Adresse (pages/StartpaketPage.jsx). */}
-      <Link className="btn btn-ghost btn-block" to={startpaketRoute(dog.id)} state={{ handover: result }}>
+      <Button as={Link} variant="ghost" block to={startpaketRoute(dog.id)} state={{ handover: result }}>
         <Icon name="printer" />
         {t('Startpaket drucken')}
-      </Link>
+      </Button>
       <p className="field-hint">
         {t('Gebt den Code den neuen Menschen – beim Einlösen zieht {name} mit der ganzen Chronik zu ihnen.', { name })}
       </p>

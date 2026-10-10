@@ -9,6 +9,7 @@ import ShareNote from './shares/ShareNote.jsx'
 import ShareSwitch from './shares/ShareSwitch.jsx'
 import { GUEST_SHARE_HINT } from './shares/FamilyShareCard.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const DEMO_HINT_ID = 'share-panel-demo-hint'
 const NOTE_ID = 'share-panel-note'
@@ -63,9 +64,9 @@ export default function SharePanel({ dog, family, onFamilyChange, onSharesChange
       ) : (
         <div className="share-panel-empty">
           <p className="muted">{words.noGroupConnected}</p>
-          <button type="button" className="btn btn-ghost" onClick={() => setJoinOpen(true)}>
+          <Button type="button" variant="ghost" onClick={() => setJoinOpen(true)}>
             {t('{group} beitreten oder gründen', { group: words.group })}
-          </button>
+          </Button>
         </div>
       )}
 

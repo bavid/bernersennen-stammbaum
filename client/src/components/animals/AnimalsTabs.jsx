@@ -13,6 +13,7 @@ import useTabParam from '../../hooks/useTabParam.js'
 import { hasFamilyTree } from '../../lib/familyGroups.js'
 import { hasSiblingLitters } from '../../lib/litters.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Adresse ?ansicht=… (wie früher der Stammbaum-Umschalter, components/families/TreeToggle.jsx) - ohne Angabe "Alle".
 export const ANIMALS_VIEW_PARAM = 'ansicht'
@@ -41,10 +42,10 @@ function NoAnimals({ canWrite, onAddAnimal }) {
       {canWrite ? (
         <>
           <p>{t('Fangt mit dem ältesten Tier an, das ihr kennt – Eltern könnt ihr jederzeit ergänzen.')}</p>
-          <button type="button" className="btn btn-primary" onClick={() => onAddAnimal()}>
+          <Button type="button" onClick={() => onAddAnimal()}>
             <Icon name="plus" />
             {t('Erstes Tier anlegen')}
-          </button>
+          </Button>
         </>
       ) : (
         <p>{t('Sobald hier {animals} angelegt oder hierher geteilt werden, stehen sie hier.', { animals: words.animals })}</p>
@@ -62,9 +63,9 @@ function AllPanel({ grid, canWrite, onAddAnimal }) {
         <h3>{t('Das hat nicht geklappt')}</h3>
         <p>{grid.error}</p>
         {grid.retry && (
-          <button type="button" className="btn btn-primary" onClick={grid.retry}>
+          <Button type="button" onClick={grid.retry}>
             {t('Noch einmal versuchen')}
-          </button>
+          </Button>
         )}
       </div>
     )

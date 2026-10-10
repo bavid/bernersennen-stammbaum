@@ -349,7 +349,7 @@ textarea {
   width: 1.5rem;
   height: 2px;
   background: currentColor;
-  border-radius: 2px;
+  border-radius: var(--radius-hair);
 }
 
 .pill {
@@ -409,10 +409,10 @@ textarea {
 .avatar {
   position: relative;
   flex-shrink: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   overflow: hidden;
   background: var(--paper-deep);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--tan);
+  box-shadow: 0 0 0 var(--ring-inner-sm) var(--surface), 0 0 0 var(--ring-outer-sm) var(--tan);
 }
 
 .avatar img {
@@ -661,7 +661,7 @@ textarea {
 .btn-warning {
   background: var(--ink);
   color: var(--paper);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tan) 55%, transparent);
+  box-shadow: 0 0 0 var(--halo) color-mix(in srgb, var(--tan) 55%, transparent);
 }
 
 .btn-warning:hover:not(:disabled) {
@@ -689,7 +689,7 @@ textarea {
 .field.has-error input,
 .field.has-error select {
   border-color: var(--danger);
-  box-shadow: 0 0 0 3px var(--danger-wash);
+  box-shadow: 0 0 0 var(--halo) var(--danger-wash);
 }
 
 .field-error {

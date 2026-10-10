@@ -7,6 +7,7 @@ import EigeneAnmeldung from './EigeneAnmeldung.jsx'
 import OrtTierKarte from './OrtTierKarte.jsx'
 import WwhKontaktListe from './WwhKontaktListe.jsx'
 import useWirWarenHier from './useWirWarenHier.js'
+import { Button } from '../ui/index.js'
 
 // Anmelden: welches eigene Tier war hier? Nur Tiere, die hier noch nicht angemeldet sind.
 function AnmeldenForm({ dogs, hasAny, disabled, onSubmit }) {
@@ -34,9 +35,9 @@ function AnmeldenForm({ dogs, hasAny, disabled, onSubmit }) {
             </option>
           ))}
         </select>
-        <button type="submit" className="btn btn-primary" disabled={disabled}>
+        <Button type="submit" disabled={disabled}>
           {t(WWH.anmelden)}
-        </button>
+        </Button>
       </div>
     </form>
   )

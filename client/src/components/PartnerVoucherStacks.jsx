@@ -7,6 +7,7 @@ import { SEGMENTE, formatNumber } from '../lib/adminStats.js'
 import { formatDateShort } from '../lib/dates.js'
 import { EINLADUNGSKARTEN_ROUTE } from './visitenkarte/VisitenkartenTeaser.jsx'
 import { t, tOr } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Reiter "Kunden-Gutscheine" im Partner-Profil (Phase 5 Task 4): die Stapel, die der Betreiber für den Partner
 // angelegt hat, und die Weitergabe-Gutscheine des Bereichs (GET /api/partner-area/vouchers) - je Stapel
@@ -58,9 +59,9 @@ function StackRow({ row }) {
         ))}
       </dl>
       {row.offen > 0 ? (
-        <Link to={printRoute(row.id)} className="btn btn-ghost partner-stack-print">
+        <Button to={printRoute(row.id)} as={Link} variant="ghost" className="partner-stack-print">
           <Icon name="printer" /> {t('Karten drucken')}
-        </Link>
+        </Button>
       ) : (
         <p className="field-hint">{t('Keine offenen Karten mehr in diesem Stapel.')}</p>
       )}
@@ -110,9 +111,9 @@ export default function PartnerVoucherStacks() {
       )}
       {stacks && stacks.some((row) => row.offen > 0) && (
         <p className="partner-stacks-einladung">
-          <Link to={EINLADUNGSKARTEN_ROUTE} className="btn btn-ghost">
+          <Button to={EINLADUNGSKARTEN_ROUTE} as={Link} variant="ghost">
             <Icon name="printer" /> {t('Als Einladungskarten drucken')}
-          </Link>
+          </Button>
           <span className="field-hint">{t('Je Karte ein eigener Code – vorne ihr, hinten Familie auf Pfoten.')}</span>
         </p>
       )}

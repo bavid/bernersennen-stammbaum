@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { KOSTEN_LIMITS, kostenForm, kostenPayload, kostenServerFieldError } from '../lib/finanzierungRuecklage.js'
+import { Button } from './ui/index.js'
 
 const ID = 'admin-kosten-'
 const id = (key) => `${ID}${key}`
@@ -78,12 +79,12 @@ export default function AdminKostenForm({ posten, onSave, onCancel }) {
         </AdminField>
       </div>
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        <Button type="submit" disabled={saving}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Abbrechen
-        </button>
+        </Button>
       </div>
     </form>
   )

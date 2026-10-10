@@ -9,6 +9,7 @@ import { formatDateLong } from '../../lib/dates.js'
 import { commentsLabel } from '../../lib/feed.js'
 import { displayName } from '../../lib/timeline.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Eine Karte: das erste Foto als Polaroid (ohne Foto das Porträt klein neben dem Namen), Tier, Tag, Titel, Anriss und die
 // Grüße - sie führt zur Erinnerung auf der Tierseite (state.from: „Zurück“ kommt wieder hierher).
@@ -72,9 +73,9 @@ export default function WardNews({ onShowAll }) {
           {t('So geht es euren Schützlingen')}
         </h2>
         {items?.length > 0 && (
-          <button type="button" className="btn btn-ghost ward-news-all" onClick={onShowAll}>
+          <Button type="button" variant="ghost" className="ward-news-all" onClick={onShowAll}>
             {t('Alle ansehen')}
-          </button>
+          </Button>
         )}
       </div>
       {error && (

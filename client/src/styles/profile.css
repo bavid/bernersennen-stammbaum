@@ -29,18 +29,18 @@
   border-radius: var(--radius-round);
   overflow: hidden;
   background: var(--paper-deep);
-  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--rust);
+  box-shadow: 0 0 0 var(--ring-inner-lg) var(--paper), 0 0 0 var(--ring-outer-lg) var(--rust);
   cursor: zoom-in;
 }
 
 .dog-head.is-memorial .dog-head-photo button,
 .dog-head.is-memorial .avatar.dog-head-fallback {
-  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--line-strong);
+  box-shadow: 0 0 0 var(--ring-inner-lg) var(--paper), 0 0 0 var(--ring-outer-lg) var(--line-strong);
 }
 
 .dog-head-photo button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--rust), 0 0 0 8px var(--paper), 0 0 0 10px var(--focus-color);
+  box-shadow: 0 0 0 var(--ring-inner-lg) var(--paper), 0 0 0 var(--ring-outer-lg) var(--rust), 0 0 0 var(--ring-focus-inner-lg) var(--paper), 0 0 0 var(--ring-focus-outer-lg) var(--focus-color);
 }
 
 .dog-head-photo img {
@@ -52,8 +52,8 @@
 .avatar.dog-head-fallback {
   width: 100% !important;
   height: 100% !important;
-  border-radius: 50%;
-  box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--rust);
+  border-radius: var(--radius-round);
+  box-shadow: 0 0 0 var(--ring-inner-lg) var(--paper), 0 0 0 var(--ring-outer-lg) var(--rust);
   font-size: 4rem !important;
 }
 

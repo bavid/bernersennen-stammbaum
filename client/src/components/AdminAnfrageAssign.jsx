@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import AdminAnfrageCode from './AdminAnfrageCode.jsx'
 import { ANFRAGE_TYP, assignableBatches, freeCodes } from '../lib/anfragen.js'
+import { Button } from './ui/index.js'
 
 const SELECT_ID = 'admin-anfrage-batch'
 
@@ -88,9 +89,9 @@ export default function AdminAnfrageAssign({ anfrage, onAssigned, onClose }) {
               ))}
             </select>
           </div>
-          <button type="submit" className="btn btn-primary btn-block" disabled={assigning || !batchId}>
+          <Button type="submit" block disabled={assigning || !batchId}>
             {assigning ? 'Weise zu …' : 'Code zuweisen'}
-          </button>
+          </Button>
         </>
       )}
     </form>

@@ -113,7 +113,7 @@
   height: 5rem;
   overflow: hidden;
   border: 2px dashed color-mix(in srgb, var(--rust) 45%, var(--line));
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: color-mix(in srgb, var(--rust-wash) 55%, var(--surface));
   color: var(--rust);
   cursor: pointer;

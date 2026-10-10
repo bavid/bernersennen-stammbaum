@@ -11,9 +11,9 @@ import { PALETTEN } from '../lib/darstellung.js'
 const stylesDir = dirname(fileURLToPath(import.meta.url))
 const TOKEN_FILES = new Set(['palettes.css', 'tokens.css', 'ui.css'])
 const NEUTRAL = new Set(['0', 'none', 'inherit', 'initial', 'unset', 'revert'])
-// Stand 2026-10-10 (nach Welle 6: eigene Welten - Pinnwand, Visitenkarten, Bilderrahmen, Collage, Druck; Welle 5: Admin und Sonderknöpfe): Werte in den übrigen Stil-Dateien, die nicht nur aus var(--…) und 0 bestehen
+// Stand 2026-10-10 (Kapitel-2-Abschluss: Ring-, Linien- und Hof-Breiten sowie radius-round/-hair/-capsule als Tokens; davor Welle 6: eigene Welten - Pinnwand, Visitenkarten, Bilderrahmen, Collage, Druck; Welle 5: Admin und Sonderknöpfe): Werte in den übrigen Stil-Dateien, die nicht nur aus var(--…) und 0 bestehen
 // (auch „0 0 0 3px var(--rust-wash)“ zählt - die 3px sind fest).
-const BASELINE = { radius: 59, shadow: 58 }
+const BASELINE = { radius: 25, shadow: 12 }
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '')
 
@@ -21,7 +21,7 @@ const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '')
 const tokenOnly = (value) =>
   value
     .replace(/var\(--[\w-]+\)/g, ' ')
-    .replace(/inset/g, ' ')
+    .replace(/\binset\b/g, ' ')
     .split(/[\s,]+/)
     .every((part) => part === '' || part === '0')
 

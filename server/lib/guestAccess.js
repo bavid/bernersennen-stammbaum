@@ -23,7 +23,9 @@ const GUEST_READS = [
   /^\/api\/notes$/,
   /^\/api\/besuche$/,
   // Fotos: lib/uploadAccess.js canSeeUpload prüft für Gäste nur nicht-private Einträge und Tierfotos.
-  /^\/uploads\/[^/]+$/
+  /^\/uploads\/[^/]+$/,
+  // Bild eines Zuhauses/einer Familie: routes/profil.js prüft selbst (lib/profil.js canSeeBild).
+  /^\/api\/profil\/\d+\/bild$/
 ]
 
 // Schreiben nur: kommentieren, den eigenen Kommentar löschen, zurück nach Hause wechseln, abmelden, den Besuch beenden.

@@ -7,6 +7,7 @@ import Icon from '../Icon.jsx'
 import CodeList from './CodeList.jsx'
 import useVoucherList from './useVoucherList.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 function CopyField({ label, value }) {
   const toast = useToast()
@@ -24,10 +25,10 @@ function CopyField({ label, value }) {
   return (
     <div className="copy-field">
       <input readOnly value={value} aria-label={label} onFocus={(e) => e.target.select()} />
-      <button type="button" className="btn btn-ghost" onClick={handleCopy}>
+      <Button type="button" variant="ghost" onClick={handleCopy}>
         <Icon name="copy" />
         {t('Kopieren')}
-      </button>
+      </Button>
     </div>
   )
 }

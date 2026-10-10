@@ -1,6 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
-import { STUFE } from '../lib/hinweise.js'
+import { STUFE, safeHinweisLink } from '../lib/hinweise.js'
 import { t } from '../lib/i18n/index.js'
 
 const ICONS = { [STUFE.info]: 'info', [STUFE.wartung]: 'wrench', [STUFE.wichtig]: 'alert' }
@@ -102,7 +102,9 @@ export default function HinweisCarousel({ hinweise, onDismiss, preview = false, 
   if (count === 0) return null
   const stufe = STUFE_WORDS[hinweis.stufe] ? hinweis.stufe : STUFE.info
   const hasText = Boolean(hinweis.text)
-  const canExpand = hasText || truncated
+  // Optionaler Link (lib/hinweise.js safeHinweisLink): nur https, öffnet in einem neuen Tab.
+  const linkHref = hinweis.linkLabel ? safeHinweisLink(hinweis.linkUrl) : null
+  const canExpand = hasText || truncated || Boolean(linkHref)
 
   function toggle(event) {
     openerRef.current = event.currentTarget
@@ -185,6 +187,14 @@ export default function HinweisCarousel({ hinweise, onDismiss, preview = false, 
       <div className="hinweis-pop" id={popoverId} hidden={!open}>
         <p className="hinweis-pop-titel">{hinweis.titel}</p>
         {hasText && <p className="hinweis-text">{hinweis.text}</p>}
+        {linkHref && (
+          <p className="hinweis-link">
+            <a href={linkHref} target="_blank" rel="noopener noreferrer">
+              {hinweis.linkLabel}
+              <Icon name="external" />
+            </a>
+          </p>
+        )}
         {compact && (
           <div className="hinweis-pop-actions">
             {count > 1 && <Pager index={currentIndex} count={count} onStep={(delta) => step(delta, true)} />}

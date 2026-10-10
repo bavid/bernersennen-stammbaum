@@ -13,6 +13,7 @@ import { displayName, speciesLabel } from '../lib/timeline.js'
 import { formatDayMonth } from '../lib/dates.js'
 import { VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel, vermittlungStatusShortLabel } from '../lib/vermittlung.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 // "Alle" und "Ohne Status" (final-review Phase T Finding 1) dazu, sonst verschwanden Tiere ohne
 // vermittlung_status (z. B. frisch aufgenommen, Status noch nicht gesetzt) aus jeder Ansicht. Je Status ein
@@ -154,10 +155,10 @@ export default function ShelterAnimalsPage({ family }) {
         </div>
         <div className="page-hero-side">
           <div className="hero-actions">
-            <button type="button" className="btn btn-primary btn-lg" onClick={() => setFormOpen(true)}>
+            <Button type="button" size="lg" onClick={() => setFormOpen(true)}>
               <Icon name="plus" />
               {t('Tier aufnehmen')}
-            </button>
+            </Button>
           </div>
         </div>
       </header>

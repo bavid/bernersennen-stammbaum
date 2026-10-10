@@ -7,6 +7,13 @@ import { t } from './i18n/index.js'
 // erster Reiter für alle, die Tiere eines Tierheims stehen gleich daneben in der Leiste (lib/navItems.js).
 export const START_ROUTE = '/start'
 export const FAMILIES_ROUTE = '/familien'
+// Bestandsrudel aus der alten App (me.stammbaumStart, server/lib/stammbaumStart.js): beim klassischen Login ist der
+// Stammbaum die Startansicht statt /start.
+export const STAMMBAUM_ROUTE = '/stammbaum'
+
+export function hasStammbaumStart(family) {
+  return Boolean(family?.stammbaumStart) && areaContext(family) === 'classic'
+}
 
 const PARTNER_START_ROUTES = {
   tierheim: '/profil',
@@ -37,7 +44,7 @@ export function startRoute(family) {
   const context = areaContext(family)
   if (PARTNER_START_ROUTES[context]) return PARTNER_START_ROUTES[context]
   if (context === 'group' || context === 'visit') return groupRoute(family.id)
-  return START_ROUTE
+  return hasStammbaumStart(family) ? STAMMBAUM_ROUTE : START_ROUTE
 }
 
 // Wohin "zurück zu den Tieren" führt (z. B. von einer Tierseite): Tierheime und das eigene Zuhause zu /tiere, eine

@@ -410,7 +410,7 @@
 
 .inspector-photo {
   border-color: var(--rust);
-  box-shadow: 0 0 0 3px var(--rust-wash);
+  box-shadow: 0 0 0 var(--halo) var(--rust-wash);
 }
 
 .inspector-photo input[type='range'] {

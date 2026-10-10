@@ -6,6 +6,7 @@ import useRequestForm from '../hooks/useRequestForm.js'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { ANFRAGE_TYP, EMPTY_VOUCHER_REQUEST, MAX_EMAIL_LENGTH, MAX_NACHRICHT_LENGTH, MAX_NAME_LENGTH } from '../lib/anfragen.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 export const VOUCHER_REQUEST_SUCCESS = 'Danke! Wir melden uns per E-Mail, sobald wieder Platz ist.'
 
@@ -97,10 +98,10 @@ export default function RequestVoucherForm({ idPrefix = 'request-voucher', autoF
         </a>
       </p>
 
-      <button type="submit" className="btn btn-primary btn-block" disabled={sending}>
+      <Button type="submit" block disabled={sending}>
         <Icon name="send" />
         {sending ? t('Sende …') : t('Einladungscode anfragen')}
-      </button>
+      </Button>
     </form>
   )
 }

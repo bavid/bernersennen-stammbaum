@@ -11,6 +11,7 @@ import EinblickForm from './EinblickForm.jsx'
 import Icon from './Icon.jsx'
 import { useToast } from './Toast.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const DEMO_HINT_ID = 'einblicke-demo-hint'
 // Audit W: zuerst sechs Karten, der Rest hinter „Weitere Einblicke (n)“ - der Reiter „Fotos“ bleibt so kurz.
@@ -116,15 +117,14 @@ export default function EinblickeEditor({ onChanged }) {
         <EinblickForm isFull={isFull} onCreated={handleCreated} onCancel={() => setComposing(false)} />
       ) : (
         <div className="einblicke-actions">
-          <button
+          <Button
             type="button"
-            className="btn btn-primary"
             onClick={() => setComposing(true)}
             disabled={isDemo || isFull || einblicke === undefined}
             aria-describedby={isDemo ? DEMO_HINT_ID : undefined}
           >
             <Icon name="plus" /> {t('Neuer Einblick')}
-          </button>
+          </Button>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
               {readOnlyHint}
@@ -160,9 +160,9 @@ export default function EinblickeEditor({ onChanged }) {
         </ul>
       )}
       {more.hidden > 0 && (
-        <button type="button" className="btn btn-ghost einblicke-more" onClick={more.expand}>
+        <Button type="button" variant="ghost" className="einblicke-more" onClick={more.expand}>
           {t('Weitere Einblicke ({n})', { n: more.hidden })}
-        </button>
+        </Button>
       )}
     </section>
   )

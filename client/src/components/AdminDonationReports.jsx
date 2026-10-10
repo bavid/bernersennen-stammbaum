@@ -6,6 +6,7 @@ import AdminDonationReportForm from './AdminDonationReportForm.jsx'
 import { AMOUNT_FIELDS } from '../lib/adminMarketing.js'
 import { formatEuroCents } from '../lib/discover.js'
 import { isExternalUrl } from '../lib/format.js'
+import { Button } from './ui/index.js'
 
 // Ein Bericht in der Liste - Beträge kommen als Cent und werden als Euro (de-DE) gezeigt.
 function ReportRow({ report, onEdit, onDelete }) {
@@ -42,9 +43,9 @@ function ReportRow({ report, onEdit, onDelete }) {
         </dl>
       </div>
       <span className="admin-row-actions">
-        <button type="button" className="btn btn-ghost" onClick={() => onEdit(report)}>
+        <Button type="button" variant="ghost" onClick={() => onEdit(report)}>
           Bearbeiten
-        </button>
+        </Button>
         <ConfirmButton onConfirm={() => onDelete(report)} label="Löschen" confirmLabel="Wirklich löschen?" ariaLabel={`Bericht ${report.zeitraum} löschen`} />
       </span>
     </li>
@@ -88,9 +89,9 @@ export default function AdminDonationReports() {
       <div className="admin-section-head">
         <h3>Spendenberichte</h3>
         {!editing && (
-          <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
+          <Button type="button" onClick={() => setEditing('new')}>
             <Icon name="plus" /> Bericht anlegen
-          </button>
+          </Button>
         )}
       </div>
 

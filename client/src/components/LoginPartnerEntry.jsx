@@ -4,6 +4,7 @@ import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
 import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
 import { useT } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Die beiden Demos direkt auf der Login-Seite: Hundeschule (Partner-Bereich) und Tierheim (Tiere, Steckbriefe,
 // Übergabe). Weitere (Hundesalon) stehen auf /partner-werden.
@@ -36,20 +37,20 @@ export default function LoginPartnerEntry({ onLogin, onRedeem }) {
       <div className="login-partner-actions">
         <div className="login-partner-demos">
           {LOGIN_DEMOS.map((demo) => (
-            <button
+            <Button
               key={demo.key}
               type="button"
-              className="btn btn-ink"
+              variant="ink"
               onClick={() => startDemo(demo.key, demo.target)}
               disabled={pending !== null}
             >
               {pending === demo.key ? t('login.loading') : t(demo.labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
-        <Link to="/partner-werden" className="btn btn-ghost btn-block">
+        <Button to="/partner-werden" as={Link} variant="ghost" block>
           {t('login.partner.more')} <Icon name="arrowRight" />
-        </Link>
+        </Button>
       </div>
       <p className="field-hint">
         {t('login.partner.gotAccess')}{' '}

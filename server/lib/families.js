@@ -25,10 +25,18 @@ function uploadUrlsOf(db, familyId) {
     .map((row) => `/uploads/${row.filename}`)
 }
 
+// Bild des Zuhauses bzw. der Familie (lib/profil.js, eigene Datei ohne uploads-Zeile) - die Zeile selbst geht per ON DELETE
+// CASCADE mit der families-Zeile. Skripte ohne die App kennen die Tabelle womöglich noch nicht.
+function profilBildOf(db, familyId) {
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'bereich_profil'").get()) return []
+  const file = db.prepare('SELECT bild_file FROM bereich_profil WHERE family_id = ?').get(familyId)?.bild_file
+  return file ? [`/uploads/${file}`] : []
+}
+
 // Löscht ein Rudel komplett. Verweise aus anderen Rudeln auf seine Hunde werden zu Freitext,
 // damit deren Stammbaum lesbar bleibt. Liefert die Foto-URLs, die danach niemand mehr nutzt.
 function deleteFamily(db, familyId) {
-  const photos = [...new Set([...photoUrlsOf(db, familyId), ...uploadUrlsOf(db, familyId)])]
+  const photos = [...new Set([...photoUrlsOf(db, familyId), ...uploadUrlsOf(db, familyId), ...profilBildOf(db, familyId)])]
 
   db.transaction(() => {
     // Upload-Zuordnungen der Familie zuerst weg - sonst verletzt das Löschen der families-Zeile

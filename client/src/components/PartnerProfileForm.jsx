@@ -17,6 +17,7 @@ import AdminField, { fieldProps } from './AdminField.jsx'
 import ColorField from './ColorField.jsx'
 import { useToast } from './Toast.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const SAVE_DEMO_HINT_ID = 'profile-save-demo-hint'
 
@@ -181,14 +182,13 @@ export default function PartnerProfileForm({ profile, onSaved }) {
       </fieldset>
 
       <div className="form-actions">
-        <button
+        <Button
           type="submit"
-          className="btn btn-primary"
           disabled={isDemo || saving || !isDirty}
           aria-describedby={isDemo ? SAVE_DEMO_HINT_ID : undefined}
         >
           {saving ? t('Speichere …') : t('Speichern')}
-        </button>
+        </Button>
         {!isDirty && !isDemo && <span className="field-hint">{t('Keine ungespeicherten Änderungen.')}</span>}
         {isDemo && (
           <span id={SAVE_DEMO_HINT_ID} className="field-hint">

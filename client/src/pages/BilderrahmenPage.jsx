@@ -15,6 +15,7 @@ import {
   writeOptionen
 } from '../lib/bilderrahmen.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 const EMPTY = []
 
@@ -70,12 +71,12 @@ export default function BilderrahmenPage({ areaKey = null }) {
     return (
       <FrameMessage title={t('Das hat nicht geklappt')} tone="ended">
         <p>{error.message}</p>
-        <button type="button" className="btn btn-primary" onClick={reload}>
+        <Button type="button" onClick={reload}>
           {t('Noch einmal versuchen')}
-        </button>
-        <Link to="/start" className="btn btn-ghost">
+        </Button>
+        <Button to="/start" as={Link} variant="ghost">
           {t('Zurück zu Start')}
-        </Link>
+        </Button>
       </FrameMessage>
     )
   }
@@ -93,13 +94,13 @@ export default function BilderrahmenPage({ areaKey = null }) {
             : t('Sobald ihr Fotos zu euren Tieren oder Erinnerungen hochladet, zeigt sie der Bilderrahmen hier.')}
         </p>
         {filtered && (
-          <button type="button" className="btn btn-primary" onClick={() => changeAuswahl({ ...auswahl, tiere: [], zeitraum: 'alle' })}>
+          <Button type="button" onClick={() => changeAuswahl({ ...auswahl, tiere: [], zeitraum: 'alle' })}>
             {t('Alle Fotos zeigen')}
-          </button>
+          </Button>
         )}
-        <Link to="/start" className="btn btn-ghost">
+        <Button to="/start" as={Link} variant="ghost">
           {t('Zurück zu Start')}
-        </Link>
+        </Button>
       </FrameMessage>
     )
   }

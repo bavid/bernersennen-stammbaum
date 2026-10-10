@@ -11,6 +11,7 @@ import { FOLIEN } from '../lib/vorstellung.js'
 import { FolienDots, FolienNav, useFolie } from '../components/folien/FolienSteuerung.jsx'
 import '../styles/vorstellung.css'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 // /vorstellung - Präsentation zum Durchklicken (lib/vorstellung.js): öffentlich wie /app (App.jsx), mit oder ohne
 // Sitzung. Eine Folie pro Bildschirm; Weiter/Zurück, Pfeiltasten, Punkte und ?folie=N (1-basiert, wird begrenzt).
@@ -63,9 +64,9 @@ function FinanzFolie() {
 
 function AppFolie() {
   return (
-    <Link to="/app" className="btn btn-primary btn-lg vorstellung-cta">
+    <Button to="/app" as={Link} size="lg" className="vorstellung-cta">
       <Icon name="phone" /> {t('So kommt die App aufs Handy')}
-    </Link>
+    </Button>
   )
 }
 

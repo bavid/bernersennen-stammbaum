@@ -8,6 +8,7 @@ import { HOME_LABEL, START_ROUTE } from '../../lib/areas.js'
 import { requestGroups } from '../../lib/erlebtMit.js'
 import { hinweisGroups, hinweisItems, startLineText } from '../../lib/glocke.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const FOCUSABLE = 'button:not(:disabled), a[href]'
 
@@ -17,9 +18,9 @@ function AwayFromHome({ total, onNavigate }) {
     <div className="hinweis-away">
       <p>{total > 0 ? t('{hinweise} warten in „{home}“.', { hinweise: startLineText(total), home: t(HOME_LABEL) }) : t('Alles erledigt – nichts Neues.')}</p>
       {total > 0 && (
-        <Link to={START_ROUTE} className="btn btn-ghost btn-compact" onClick={onNavigate}>
+        <Button to={START_ROUTE} as={Link} variant="ghost" size="sm" onClick={onNavigate}>
           {t('Zu „{home}“', { home: t(HOME_LABEL) })}
-        </Link>
+        </Button>
       )}
     </div>
   )
@@ -65,9 +66,9 @@ function Inhalt({ glocke, groups, onNavigate }) {
         <p className="error-banner" role="alert">
           {error}
         </p>
-        <button type="button" className="btn btn-ghost btn-compact" onClick={loadLists}>
+        <Button type="button" variant="ghost" size="sm" onClick={loadLists}>
           {t('Nochmal versuchen')}
-        </button>
+        </Button>
       </div>
     )
   }

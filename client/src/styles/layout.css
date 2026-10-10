@@ -149,7 +149,7 @@
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 0 0 2px var(--surface);
+  box-shadow: 0 0 0 var(--ring-inner-sm) var(--surface);
 }
 
 @media (max-width: 720px) {

@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import PasswordField from './PasswordField.jsx'
 import { formatVoucherCode } from '../lib/voucherCode.js'
 import { useT } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const NEW_PASSWORD_MIN = 8
 
@@ -37,9 +38,9 @@ export default function RecoverForm({ onBack }) {
         <p className="field-hint field-hint-success" role="status">
           {t('login.recover.done')}
         </p>
-        <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onBack}>
+        <Button type="button" size="lg" block onClick={onBack}>
           {t('login.recover.toSignIn')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -83,9 +84,9 @@ export default function RecoverForm({ onBack }) {
         autoComplete="new-password"
         minLength={NEW_PASSWORD_MIN}
       />
-      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading || !code || !username || !newPassword}>
+      <Button size="lg" block type="submit" disabled={loading || !code || !username || !newPassword}>
         {loading ? t('login.recover.changing') : t('login.recover.change')}
-      </button>
+      </Button>
       <p className="field-hint">{t('login.recover.noUser')}</p>
     </form>
   )

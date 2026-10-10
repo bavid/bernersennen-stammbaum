@@ -8,6 +8,7 @@ import EinblickPinButton from './EinblickPinButton.jsx'
 import Icon from './Icon.jsx'
 import ReorderHandle from './ReorderHandle.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Datum und Text eines Einblicks direkt in der Karte ändern - das Foto bleibt (neues Foto = neuer Einblick).
 function EinblickEditForm({ einblick, onSaved, onCancel }) {
@@ -70,12 +71,12 @@ function EinblickEditForm({ einblick, onSaved, onCancel }) {
         </p>
       )}
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={busy || !draft.datum}>
+        </Button>
+        <Button type="submit" disabled={busy || !draft.datum}>
           {busy ? t('Speichere …') : t('Speichern')}
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -140,16 +141,16 @@ export default function EinblickCard({ einblick, onUpdated, onDeleted, demoHintI
             </time>
             {einblick.text && <p className="einblick-text">{einblick.text}</p>}
             <div className="einblick-actions">
-              <button
+              <Button
                 type="button"
-                className="btn btn-ghost btn-compact"
+                variant="ghost" size="sm"
                 disabled={isDemo || deleting}
                 aria-describedby={isDemo ? demoHintId : undefined}
                 onClick={() => setEditing(true)}
               >
                 <Icon name="edit" />
                 {t('Bearbeiten')}
-              </button>
+              </Button>
               <EinblickPinButton einblick={einblick} canPin={canPin} readOnly={isDemo} demoHintId={demoHintId} onUpdated={onUpdated} />
               <ConfirmButton
                 disabled={isDemo || deleting}

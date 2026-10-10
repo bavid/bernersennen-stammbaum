@@ -7,6 +7,7 @@ import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { speciesLabel } from '../../lib/timeline.js'
 import { WWH, wwhErrorText } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const EMPTY = Object.freeze({ anmeldungen: [], erinnerungen: [] })
 
@@ -21,12 +22,12 @@ function openCount(data) {
 function DecideButtons({ label, disabled, onDecide }) {
   return (
     <>
-      <button type="button" className="btn btn-primary btn-compact" disabled={disabled} aria-label={t(WWH.freigebenLabel, { name: label })} onClick={() => onDecide(true)}>
+      <Button type="button" size="sm" disabled={disabled} aria-label={t(WWH.freigebenLabel, { name: label })} onClick={() => onDecide(true)}>
         {t(WWH.freigeben)}
-      </button>
-      <button type="button" className="btn btn-ghost btn-compact" disabled={disabled} aria-label={t(WWH.ablehnenLabel, { name: label })} onClick={() => onDecide(false)}>
+      </Button>
+      <Button type="button" variant="ghost" size="sm" disabled={disabled} aria-label={t(WWH.ablehnenLabel, { name: label })} onClick={() => onDecide(false)}>
         {t(WWH.ablehnen)}
-      </button>
+      </Button>
     </>
   )
 }
@@ -90,9 +91,9 @@ function Erinnerung({ item, disabled, actions }) {
         {offen ? (
           <DecideButtons label={label} disabled={disabled} onDecide={(ok) => actions.pin(item, ok)} />
         ) : (
-          <button type="button" className="btn btn-ghost btn-compact" disabled={disabled} aria-label={t(WWH.ausblendenLabel, { titel: item.titel })} onClick={() => actions.pin(item, false)}>
+          <Button type="button" variant="ghost" size="sm" disabled={disabled} aria-label={t(WWH.ausblendenLabel, { titel: item.titel })} onClick={() => actions.pin(item, false)}>
             {t(WWH.ausblenden)}
-          </button>
+          </Button>
         )}
       </div>
     </li>

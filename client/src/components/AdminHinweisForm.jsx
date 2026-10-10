@@ -12,6 +12,7 @@ import {
   initialHinweisForm,
   toHinweisPayload
 } from '../lib/hinweise.js'
+import { Button } from './ui/index.js'
 
 const IDS = {
   titel: 'admin-hinweis-titel',
@@ -169,12 +170,12 @@ export default function AdminHinweisForm({ hinweis = null, onSaved, onCancel }) 
         <AdminHinweisZeitraum form={form} fieldErrors={fieldErrors} update={update} />
       </div>
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Abbrechen
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        </Button>
+        <Button type="submit" disabled={saving}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
+        </Button>
       </div>
     </form>
   )

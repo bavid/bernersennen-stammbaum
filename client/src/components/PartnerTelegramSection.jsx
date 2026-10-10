@@ -8,6 +8,7 @@ import TelegramConnected from './TelegramConnected.jsx'
 import TelegramOwnBot from './TelegramOwnBot.jsx'
 import { useToast } from './Toast.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const TITLE_ID = 'partner-telegram-title'
 const PRIVACY_NOTE = 'Die Hinweise enthalten keine Namen, Kontaktdaten oder Nachrichtentexte – nur, dass es etwas Neues gibt.'
@@ -97,10 +98,10 @@ export default function PartnerTelegramSection() {
               {t('Der Bot hat gewechselt – bitte einmal neu verbinden, damit die Hinweise über den neuen Bot ankommen.')}
             </p>
           )}
-          <button type="button" className="btn btn-primary" disabled={isDemo || connecting} onClick={connect}>
+          <Button type="button" disabled={isDemo || connecting} onClick={connect}>
             <Icon name="send" />
             {connecting ? t('Einen Moment …') : t('Mit Telegram verbinden')}
-          </button>
+          </Button>
           {error && (
             <p className="field-error" role="alert">
               {error}

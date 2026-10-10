@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import Icon from '../Icon.jsx'
+import AreaAvatar from '../AreaAvatar.jsx'
 import { FAMILIES_ROUTE, groupRoute } from '../../lib/areas.js'
 import { roleLabel } from '../../lib/roles.js'
 import { animalCountText } from '../../lib/animalCounts.js'
@@ -25,7 +26,10 @@ export default function MyFamiliesCard({ memberships = [] }) {
           {memberships.map((membership) => (
             <li key={membership.id}>
               <Link to={groupRoute(membership.id)} className="start-family-link">
-                <span className="start-family-name">{membership.name}</span>
+                <span className="start-family-name area-with-avatar">
+                  <AreaAvatar name={membership.name} bild={membership.bild} size="sm" />
+                  {membership.name}
+                </span>
                 {roleLabel(words, membership.rolle) && <span className="start-family-role">{roleLabel(words, membership.rolle)}</span>}
                 {animalCountText(membership, words) && <span className="start-family-count">{animalCountText(membership, words)}</span>}
                 <Icon name="chevronRight" />

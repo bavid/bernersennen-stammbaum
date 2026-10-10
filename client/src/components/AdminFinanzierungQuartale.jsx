@@ -5,6 +5,7 @@ import AdminQuartalForm from './AdminQuartalForm.jsx'
 import FinanzierungQuartale from './finanzierung/FinanzierungQuartale.jsx'
 import { formatEuroCents } from '../lib/discover.js'
 import { quartalLabel } from '../lib/finanzierung.js'
+import { Button } from './ui/index.js'
 
 // Phase F: die Quartale im Reiter „Finanzierung“ - Liste mit Bearbeiten/Löschen, ein Formular zum Eintragen oder Ändern
 // (AdminQuartalForm) und darunter die Vorschau der Balken, genau wie auf der Seite (FinanzierungQuartale). Löschen ist
@@ -26,10 +27,10 @@ function QuartalRow({ quartal, formOpen, onEdit, onDelete }) {
         </span>
       </span>
       <span className="admin-quartal-actions">
-        <button type="button" className="btn btn-ghost" disabled={formOpen} onClick={() => onEdit(quartal)}>
+        <Button type="button" variant="ghost" disabled={formOpen} onClick={() => onEdit(quartal)}>
           Bearbeiten
           <span className="visually-hidden">: {quartalLabel(quartal.jahr, quartal.quartal)}</span>
-        </button>
+        </Button>
         <ConfirmButton onConfirm={() => onDelete(quartal)} disabled={formOpen} ariaLabel={`${quartalLabel(quartal.jahr, quartal.quartal)} löschen`} />
       </span>
     </li>
@@ -62,9 +63,9 @@ export default function AdminFinanzierungQuartale({ quartale, verteilung = null,
       <div className="admin-section-head">
         <h2 id="admin-finanz-quartale-title">Zahlen je Quartal</h2>
         {editing === null && (
-          <button type="button" className="btn btn-primary" onClick={() => setEditing('neu')}>
+          <Button type="button" onClick={() => setEditing('neu')}>
             Quartal eintragen
-          </button>
+          </Button>
         )}
       </div>
       <p className="admin-section-intro muted">

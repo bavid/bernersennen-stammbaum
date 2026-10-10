@@ -22,15 +22,18 @@ export function canInvite(family) {
 
 // { key, label, icon, to } für Links, { key, label, icon, action: 'invite' | 'logout' } für Knöpfe. Beim klassischen
 // Familien-Login (kein Zuhause dahinter) stehen hier auch "Mitglieder" - dort gibt es keine Gruppenseite.
+// Instanz-Modus „rudel“ (me.instanzModus, server/lib/instanzModus.js): kein Einladen (Gutscheine gibt es dort nicht) und
+// „Feedback“ statt „Hilfe & Kontakt“ - so heißt der Weg im Hinweis zum Umzug.
 export function accountMenuItems(family) {
+  const rudelInstanz = family?.instanzModus === 'rudel'
   return [
     { key: 'einstellungen', label: 'Einstellungen', icon: 'settings', to: '/einstellungen' },
-    canInvite(family) && { key: 'einladen', label: 'Einladen', icon: 'send', action: 'invite' },
+    !rudelInstanz && canInvite(family) && { key: 'einladen', label: 'Einladen', icon: 'send', action: 'invite' },
     { key: 'collage', label: 'Fotocollage', icon: 'collage', to: '/collage' },
     // Digitaler Bilderrahmen: die Fotos eurer Tiere als Diashow (spielt wie die Fotocollage im eigenen Zuhause).
     { key: 'bilderrahmen', label: 'Bilderrahmen', icon: 'frame', to: '/bilderrahmen' },
     areaContext(family) === 'classic' && { key: 'mitglieder', label: 'Mitglieder', icon: 'users', to: '/mitglieder' },
-    { key: 'hilfe', label: 'Hilfe & Kontakt', icon: 'message', to: '/admin-schreiben' },
+    { key: 'hilfe', label: rudelInstanz ? 'Feedback' : 'Hilfe & Kontakt', icon: 'message', to: '/admin-schreiben' },
     { key: 'abmelden', label: 'Abmelden', icon: 'logout', action: 'logout' }
   ].filter(Boolean)
 }
@@ -38,6 +41,11 @@ export function accountMenuItems(family) {
 // Name am Menü: das eigene Zuhause (auch aus einer Familie oder zu Besuch heraus), beim klassischen Login die Familie.
 export function accountName(family) {
   return family?.home?.name || family?.name || ''
+}
+
+// Bild am Menü (server/lib/profil.js): das des eigenen Zuhauses, beim klassischen Login (home = die Familie) das der Familie.
+export function accountBild(family) {
+  return family?.home?.bild || family?.bild || null
 }
 
 // Anfangsbuchstabe für den runden Platzhalter: "Zuhause Lindenhof (Demo)" -> "L".

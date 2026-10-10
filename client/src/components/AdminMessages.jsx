@@ -3,6 +3,7 @@ import { api } from '../api'
 import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import { relativeTime } from '../lib/dates.js'
+import { Button } from './ui/index.js'
 
 const TYPE_FILTERS = [
   ['', 'Alle'],
@@ -64,10 +65,10 @@ function Message({ message, onStatus, onDelete }) {
         )}
       </dl>
       <div className="admin-message-actions">
-        <button type="button" className="btn btn-ghost" onClick={() => onStatus(message, done ? 'offen' : 'erledigt')}>
+        <Button type="button" variant="ghost" onClick={() => onStatus(message, done ? 'offen' : 'erledigt')}>
           <Icon name={done ? 'arrowLeft' : 'check'} />
           {done ? 'Wieder öffnen' : 'Als erledigt markieren'}
-        </button>
+        </Button>
         <ConfirmButton onConfirm={() => onDelete(message)} label="Löschen" confirmLabel="Wirklich löschen?" />
       </div>
     </li>

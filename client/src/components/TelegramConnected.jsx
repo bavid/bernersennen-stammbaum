@@ -6,6 +6,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import { useToast } from './Toast.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Verbunden (Phase V4b, PartnerTelegramSection): die Schalter je Ereignis (speichern sofort), "Testnachricht senden" und
 // "Trennen". Jede Antwort des Servers ist der neue Status (onStatus). Demo und Admin-Ansicht: sichtbar, gesperrt.
@@ -73,10 +74,10 @@ export default function TelegramConnected({ status, onStatus }) {
         </p>
       )}
       <div className="telegram-actions">
-        <button type="button" className="btn btn-ghost" disabled={isDemo || busy !== null} onClick={sendTest}>
+        <Button type="button" variant="ghost" disabled={isDemo || busy !== null} onClick={sendTest}>
           <Icon name="send" />
           {busy === 'test' ? t('Sende …') : t('Testnachricht senden')}
-        </button>
+        </Button>
         <ConfirmButton label="Trennen" confirmLabel="Wirklich trennen?" icon="close" disabled={isDemo || busy !== null} onConfirm={disconnect} />
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api'
+import { Button } from './ui/index.js'
 
 // Beschriftung je Bereichsart (families.art, server/lib/partnerAreas.js areaArtForTyp).
 const AREA_LABELS = { tierheim: 'Tierheim-Bereich', partner: 'Partner-Bereich' }
@@ -45,23 +46,23 @@ export default function AdminPartnerArea({ partner, onKeyIssued, onChanged }) {
               <span className="field-hint" role="alert">
                 Alle Geräte des Partners müssen sich neu anmelden.
               </span>
-              <button type="button" className="btn btn-ghost" onClick={() => setConfirming(false)}>
+              <Button type="button" variant="ghost" onClick={() => setConfirming(false)}>
                 Abbrechen
-              </button>
-              <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => issueKey(api.admin.renewPartnerAreaKey)}>
+              </Button>
+              <Button type="button" variant="ghost" disabled={busy} onClick={() => issueKey(api.admin.renewPartnerAreaKey)}>
                 {busy ? 'Erneuere …' : 'Wirklich neu ausgeben?'}
-              </button>
+              </Button>
             </span>
           ) : (
-            <button type="button" className="btn btn-ghost" onClick={startRenew}>
+            <Button type="button" variant="ghost" onClick={startRenew}>
               Schlüssel neu ausgeben
-            </button>
+            </Button>
           )}
         </>
       ) : (
-        <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => issueKey(api.admin.createPartnerArea)}>
+        <Button type="button" variant="ghost" disabled={busy} onClick={() => issueKey(api.admin.createPartnerArea)}>
           {busy ? 'Lege an …' : 'Partner-Bereich anlegen'}
-        </button>
+        </Button>
       )}
       {error && (
         <p className="field-error" role="alert">

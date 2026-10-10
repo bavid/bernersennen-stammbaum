@@ -2,6 +2,7 @@ import { useTheme } from '../../themes/ThemeProvider.jsx'
 import LeaveFamilySection from '../LeaveFamilySection.jsx'
 import Icon from '../Icon.jsx'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Die eigene Mitgliedschaft (nur für Haushalte, die der Familie beigetreten sind): normalerweise
 // "Familie verlassen" (LeaveFamilySection). Die einzige Leitung kann nicht gehen (der Server antwortet
@@ -23,14 +24,14 @@ export default function OwnMembershipSection({ family, lastLeitung, disabled, on
             </div>
           </div>
           <div className="hero-actions">
-            <button type="button" className="btn btn-ghost" onClick={onHandOver}>
+            <Button type="button" variant="ghost" onClick={onHandOver}>
               <Icon name="logout" />
               {t('Leitung übergeben')}
-            </button>
-            <button type="button" className="btn btn-danger" disabled={disabled} onClick={onDissolve}>
+            </Button>
+            <Button type="button" variant="danger" disabled={disabled} onClick={onDissolve}>
               <Icon name="trash" />
               {words.dissolveGroup}
-            </button>
+            </Button>
           </div>
         </>
       ) : (

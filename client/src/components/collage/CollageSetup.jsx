@@ -4,6 +4,7 @@ import Icon from '../Icon.jsx'
 import Avatar from '../Avatar.jsx'
 import { dogLabel, speciesLabel } from '../../lib/timeline.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const PER_PAGE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const DEFAULT_PER_PAGE = 6
@@ -88,9 +89,9 @@ export default function CollageSetup({ dogs, draft, onCreate, busy, loaded = tru
           {t('Hinweis: Neu erstellen ersetzt die {n} bisherigen Seiten deines Entwurfs.', { n: draft.pages.length })}
         </p>
       )}
-      <button
+      <Button
         type="button"
-        className="btn btn-primary btn-lg"
+        size="lg"
         disabled={!chosenIds.length || busy}
         onClick={() => onCreate({ selectedIds: chosenIds, perPage, overview })}
       >
@@ -100,7 +101,7 @@ export default function CollageSetup({ dogs, draft, onCreate, busy, loaded = tru
           : chosenIds.length === 1
             ? t('Collage erstellen ({n} {animal})', { n: 1, animal: words.animal })
             : t('Collage erstellen ({n} {animals})', { n: chosenIds.length, animals: words.animals })}
-      </button>
+      </Button>
     </div>
   )
 }

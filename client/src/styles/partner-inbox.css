@@ -54,7 +54,7 @@
 
 .inbox-item.is-unread {
   border-color: color-mix(in srgb, var(--rust) 40%, var(--border-card));
-  box-shadow: inset 3px 0 0 var(--rust), var(--elev-0);
+  box-shadow: inset var(--accent-edge) 0 0 var(--rust), var(--elev-0);
 }
 
 .inbox-item.is-open {

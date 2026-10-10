@@ -20,7 +20,7 @@
   display: block;
   margin: 0;
   padding: 5px 5px 16px;
-  border-radius: 2px;
+  border-radius: var(--radius-hair);
   background: var(--polaroid-paper);
   box-shadow: var(--polaroid-shadow);
   transform: rotate(var(--tilt, 0deg));
@@ -52,7 +52,7 @@
 .entry-photo {
   --tilt: -2deg;
   padding: 5px 5px 14px;
-  border-radius: 2px;
+  border-radius: var(--radius-hair);
   background: var(--polaroid-paper);
   box-shadow: var(--polaroid-shadow);
   overflow: visible;
@@ -141,7 +141,7 @@
   width: 58px;
   height: 58px;
   border-radius: var(--radius-round);
-  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--rust);
+  box-shadow: 0 0 0 var(--ring-inner) var(--paper), 0 0 0 var(--ring-outer) var(--rust);
   transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
 
@@ -167,7 +167,7 @@
 }
 
 .animal-circle.is-memorial .animal-circle-photo {
-  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--line-strong);
+  box-shadow: 0 0 0 var(--ring-inner) var(--paper), 0 0 0 var(--ring-outer) var(--line-strong);
   filter: grayscale(0.6);
 }
 
@@ -198,15 +198,15 @@
 
 /* Fokus als weitere Lage um den Ring (der Ring selbst bleibt - bei verstorbenen der graue). */
 .animal-circle:focus-visible .animal-circle-photo {
-  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--rust), 0 0 0 7px var(--paper), 0 0 0 9px var(--focus-color);
+  box-shadow: 0 0 0 var(--ring-inner) var(--paper), 0 0 0 var(--ring-outer) var(--rust), 0 0 0 var(--ring-focus-inner) var(--paper), 0 0 0 var(--ring-focus-outer) var(--focus-color);
 }
 
 .animal-circle.is-memorial:focus-visible .animal-circle-photo {
-  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--line-strong), 0 0 0 7px var(--paper), 0 0 0 9px var(--focus-color);
+  box-shadow: 0 0 0 var(--ring-inner) var(--paper), 0 0 0 var(--ring-outer) var(--line-strong), 0 0 0 var(--ring-focus-inner) var(--paper), 0 0 0 var(--ring-focus-outer) var(--focus-color);
 }
 
 .animal-circle:focus-visible .animal-circle-plus {
-  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--focus-color);
+  box-shadow: 0 0 0 var(--ring-inner) var(--paper), 0 0 0 var(--ring-outer) var(--focus-color);
 }
 
 /* Handy: fünf Kreise passen nebeneinander, mehr wischt man waagerecht. */

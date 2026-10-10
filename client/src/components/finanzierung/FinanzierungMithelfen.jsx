@@ -1,6 +1,7 @@
 import Icon from '../Icon.jsx'
 import { isSafeHttpUrl } from '../../lib/finanzierung.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Phase F: die ruhige Karte „Mithelfen“ auf /finanzierung (und als Vorschau im Admin) - der Spenden-Hinweis, den der
 // Admin eingetragen hat: ein Text (z. B. Spendenkonto und Verwendungszweck, Zeilenumbrüche bleiben) und/oder ein
@@ -26,11 +27,11 @@ export default function FinanzierungMithelfen({ hinweis }) {
         </p>
       )}
       {url && (
-        <a className="btn btn-primary finanz-mithelfen-link" href={url} target="_blank" rel="noopener noreferrer">
+        <Button className="finanz-mithelfen-link" href={url} target="_blank" rel="noopener noreferrer">
           <Icon name="external" />
           {t('Zur Spendenseite')}
           <span className="visually-hidden"> {t('(öffnet in neuem Tab)')}</span>
-        </a>
+        </Button>
       )}
     </section>
   )

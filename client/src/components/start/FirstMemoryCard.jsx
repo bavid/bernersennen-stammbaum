@@ -10,6 +10,7 @@ import { readSetting } from '../../lib/storage.js'
 import { displayName } from '../../lib/timeline.js'
 import { todayIso } from '../../lib/dates.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const NO_ANIMAL = 'Bitte wählt ein Tier.'
 const NO_NAME = 'Bitte tragt den Namen eures Tiers ein.'
@@ -125,12 +126,12 @@ function Actions({ readOnly, saving, uploading, onSkip }) {
   return (
     <>
       <div className="first-memory-actions">
-        <button type="submit" className="btn btn-primary" disabled={readOnly || saving || uploading}>
+        <Button type="submit" disabled={readOnly || saving || uploading}>
           {saving ? t('Wird festgehalten …') : t('Festhalten')}
-        </button>
-        <button type="button" className="btn btn-ghost first-memory-skip" onClick={onSkip} disabled={saving}>
+        </Button>
+        <Button type="button" variant="ghost" className="first-memory-skip" onClick={onSkip} disabled={saving}>
           {t('Später')}
-        </button>
+        </Button>
       </div>
       {readOnly && <p className="first-memory-hint">{readOnlyHint}</p>}
     </>

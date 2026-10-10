@@ -6,6 +6,7 @@ import PartnerMark from './PartnerMark.jsx'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { formatDistanceKm, isExternalUrl, isOsmAttribution, OSM_COPYRIGHT_URL, GEONAMES_ATTRIBUTION } from '../lib/format.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const FILTERS = [
   { key: 'alle', label: 'Alle' },
@@ -47,9 +48,9 @@ function PlaceItem({ place }) {
       </div>
       <div className="partner-card-links">
         {isPartner && place.slug && (
-          <Link className="btn btn-ghost" to={`/p/${place.slug}`}>
+          <Button as={Link} variant="ghost" to={`/p/${place.slug}`}>
             {t('Zum Portal')}
-          </Link>
+          </Button>
         )}
         {!isPartner && isExternalUrl(place.website) && (
           <a className="card-link" href={place.website} target="_blank" rel="noopener noreferrer">

@@ -9,10 +9,13 @@ import {
   hinweisClientErrors,
   initialHinweisForm,
   localizeHinweis,
+  readCachedHinweise,
   readDismissed,
+  safeHinweisLink,
   toHinweisPayload,
   utcIsoToBerlin,
   visibleHinweise,
+  writeCachedHinweise,
   writeDismissed
 } from './hinweise.js'
 
@@ -118,6 +121,34 @@ describe('Formular', () => {
     expect(hinweisClientErrors({ ...ok, startTime: '' })).toEqual({ start: 'Bitte Datum und Uhrzeit des Beginns angeben.' })
     expect(hinweisClientErrors({ ...ok, endeDate: '2026-10-06' })).toEqual({ ende: 'Bitte zum Ende auch eine Uhrzeit angeben – oder beides leer lassen.' })
     expect(hinweisClientErrors({ ...ok, endeDate: '2026-10-03', endeTime: '10:07' })).toEqual({ ende: 'Das Ende muss nach dem Beginn liegen.' })
+  })
+})
+
+// Optionaler Link (server/lib/hinweisLink.js), z. B. der Umzugs-Hinweis der Rudel-Instanz.
+describe('Link eines Hinweises', () => {
+  const mitLink = { id: 7, titel: 'Neu', text: null, stufe: 'info', linkUrl: 'https://neu.example.org/', linkLabel: 'Hin', linkLabelEn: 'Go' }
+
+  test('nur https wird zum Link', () => {
+    expect(safeHinweisLink('https://neu.example.org/x')).toBe('https://neu.example.org/x')
+    expect(safeHinweisLink('http://neu.example.org')).toBeNull()
+    expect(safeHinweisLink('javascript:alert(1)')).toBeNull()
+    expect(safeHinweisLink(undefined)).toBeNull()
+  })
+
+  test('Englisch: die englische Beschriftung, auch ohne englischen Titel', () => {
+    expect(localizeHinweis(mitLink, 'en').linkLabel).toBe('Go')
+    expect(localizeHinweis(mitLink, 'de').linkLabel).toBe('Hin')
+    expect(localizeHinweis({ ...mitLink, titelEn: 'New', textEn: 'x' }, 'en')).toMatchObject({ titel: 'New', linkLabel: 'Go' })
+  })
+
+  test('der Sitzungsspeicher behält den Link, aber nur mit https', () => {
+    const store = new Map()
+    vi.stubGlobal('sessionStorage', { getItem: (key) => store.get(key) ?? null, setItem: (key, value) => store.set(key, value) })
+    writeCachedHinweise([mitLink, { ...mitLink, id: 8, linkUrl: 'javascript:alert(1)' }])
+    const cached = readCachedHinweise()
+    expect(cached[0]).toMatchObject({ linkUrl: 'https://neu.example.org/', linkLabel: 'Hin', linkLabelEn: 'Go' })
+    expect(cached[1].linkUrl).toBeUndefined()
+    vi.unstubAllGlobals()
   })
 })
 

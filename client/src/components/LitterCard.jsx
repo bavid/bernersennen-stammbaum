@@ -6,6 +6,7 @@ import { ageText, formatDateLong, relativeTime } from '../lib/dates.js'
 import { LITTER_BIRTHDAY_SOON_DAYS, YOUNG_STAGE_KEY, nextLitterBirthday } from '../lib/litters.js'
 import { displayName } from '../lib/timeline.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 function Parent({ parent, role }) {
   if (!parent) return <span className="litter-parent is-unknown">{t('{role} unbekannt', { role })}</span>
@@ -28,9 +29,9 @@ function BirthdayBadge({ birthday, onPlanMeeting }) {
       <span>
         {words.litterBirthday} {when}: <strong>{birthday.age === 1 ? t('{n} Jahr', { n: birthday.age }) : t('{n} Jahre', { n: birthday.age })}</strong>
       </span>
-      <button type="button" className="btn btn-ghost litter-meet" onClick={onPlanMeeting}>
+      <Button type="button" variant="ghost" className="litter-meet" onClick={onPlanMeeting}>
         <Icon name="pin" /> {t('Treffen planen')}
-      </button>
+      </Button>
     </div>
   )
 }

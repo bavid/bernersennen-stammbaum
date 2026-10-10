@@ -40,7 +40,10 @@ test('lib/hinweise: Prüfung, Status, öffentliche Auswahl und Beispiel-Hinweis'
       stufe: 'info',
       start: NOW.toISOString(),
       ende: null,
-      aktiv: 1
+      aktiv: 1,
+      link_url: null,
+      link_label: null,
+      link_label_en: null
     })
   })
 
@@ -103,7 +106,13 @@ test('lib/hinweise: Prüfung, Status, öffentliche Auswahl und Beispiel-Hinweis'
 
   await t.test('Ändern: fehlende Felder bleiben, das Ende wird gegen den bestehenden Beginn geprüft', () => {
     const existing = { titel: 'Alt', text: 'Text', titel_en: 'Old', text_en: null, stufe: 'wartung', start: '2026-10-05T20:00:00.000Z', ende: null, aktiv: 1 }
-    assert.deepEqual(lib.validateHinweis({ aktiv: false }, { now: NOW, existing }), { ...existing, aktiv: 0 })
+    assert.deepEqual(lib.validateHinweis({ aktiv: false }, { now: NOW, existing }), {
+      ...existing,
+      aktiv: 0,
+      link_url: null,
+      link_label: null,
+      link_label_en: null
+    })
     expectStatus(() => lib.validateHinweis({ ende: '2026-10-05T19:00Z' }, { now: NOW, existing }), 400, /Ende/)
     expectStatus(() => lib.validateHinweis({ titel: '' }, { now: NOW, existing }), 400, /Titel/)
     assert.equal(lib.validateHinweis({ text: null }, { now: NOW, existing }).text, null)
@@ -141,6 +150,23 @@ test('lib/hinweise: Prüfung, Status, öffentliche Auswahl und Beispiel-Hinweis'
       ['laeuft 6', 'laeuft 5', 'laeuft 4', 'laeuft 3', 'laeuft 2']
     )
     assert.deepEqual(Object.keys(list[0]).sort(), ['id', 'stufe', 'text', 'textEn', 'titel', 'titelEn'])
+  })
+
+  await t.test('Link optional: nur https, Beschriftung Pflicht, öffentlich nur mit Adresse', () => {
+    const clean = lib.validateHinweis({ titel: 'T', linkUrl: ' https://example.org/neu ', linkLabel: ' Hin ', linkLabelEn: 'Go' }, { now: NOW })
+    assert.equal(clean.link_url, 'https://example.org/neu')
+    assert.equal(clean.link_label, 'Hin')
+    assert.equal(clean.link_label_en, 'Go')
+    expectStatus(() => lib.validateHinweis({ titel: 'T', linkUrl: 'http://example.org', linkLabel: 'x' }, { now: NOW }), 400, /https/)
+    expectStatus(() => lib.validateHinweis({ titel: 'T', linkUrl: 'javascript:alert(1)', linkLabel: 'x' }, { now: NOW }), 400, /https/)
+    expectStatus(() => lib.validateHinweis({ titel: 'T', linkUrl: 'https://example.org' }, { now: NOW }), 400, /Beschriftung/)
+    expectStatus(() => lib.validateHinweis({ titel: 'T', linkLabel: 'x' }, { now: NOW }), 400, /Adresse/)
+    const row = lib.createHinweis({ ...clean, start: '2026-10-03T09:59:00.000Z' })
+    const pub = lib.listPublicHinweise({ now: NOW, includeDemo: true }).find((h) => h.id === row.id)
+    assert.deepEqual([pub.linkUrl, pub.linkLabel, pub.linkLabelEn], ['https://example.org/neu', 'Hin', 'Go'])
+    const ohneLink = lib.validateHinweis({ linkUrl: null }, { now: NOW, existing: row })
+    assert.equal(ohneLink.link_url, null)
+    lib.deleteHinweis(row.id)
   })
 
   await t.test('Englisch optional: Titel und Text geprüft wie Deutsch, englischer Text nur mit englischem Titel', () => {

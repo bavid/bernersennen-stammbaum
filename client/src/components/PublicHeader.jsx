@@ -4,6 +4,7 @@ import ThemeMark from './ThemeMark.jsx'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import { startRoute } from '../lib/areas.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Gibt es in diesem Tab einen Schritt zurück innerhalb der App? BrowserRouter legt die Position im Verlauf als
 // history.state.idx ab (0 = der erste Aufruf in diesem Tab, z. B. ein Link von außen oder ein Lesezeichen). Ohne
@@ -43,15 +44,15 @@ export default function PublicHeader({ family = null, homeLink = false }) {
         <span>{theme.appName}</span>
       </Link>
       {homeLink ? (
-        <Link to={backFallback(family)} className="btn btn-ghost public-header-back">
+        <Button to={backFallback(family)} as={Link} variant="ghost" className="public-header-back">
           <Icon name="home" />
           {t('Zur Startseite')}
-        </Link>
+        </Button>
       ) : (
-        <button type="button" className="btn btn-ghost public-header-back" onClick={handleBack}>
+        <Button type="button" variant="ghost" className="public-header-back" onClick={handleBack}>
           <Icon name="arrowLeft" />
           {t('Zurück')}
-        </button>
+        </Button>
       )}
     </header>
   )

@@ -37,6 +37,7 @@ const besucheRoutes = require('./routes/besuche')
 const erlebtMitRoutes = require('./routes/erlebtMit')
 const wirWarenHierRoutes = require('./routes/wirWarenHier')
 const membersRoutes = require('./routes/members')
+const profilRoutes = require('./routes/profil')
 const messagesRoutes = require('./routes/messages')
 const partnersRoutes = require('./routes/partners')
 const anfragenRoutes = require('./routes/anfragen')
@@ -57,6 +58,7 @@ const { rahmenApiRouter, rahmenFotoRouter, rahmenPageHeaders } = require('./rout
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
 const { denyAdminViewWrites } = require('./middleware/auth')
+const { createInstanzSperre } = require('./lib/instanzModus')
 const { apiLimiter, photoLimiter, limitWrites } = require('./middleware/abuse')
 const { LOGO_FILENAME_RE } = require('./lib/partners')
 const { canServePublicMedia } = require('./lib/publicMedia')
@@ -199,10 +201,13 @@ function createApp() {
   // Phase 5 Task 5b: die Admin-Ansicht (middleware/auth.js denyAdminViewWrites) ist nur lesend - VOR allen
   // Routern, damit auch Uploads abgelehnt werden, bevor multer eine Datei schreibt.
   app.use('/api', denyAdminViewWrites)
+  // Instanz-Modus „rudel“ (lib/instanzModus.js): keine Gutscheine, Demo oder Anfragen - 404 wie unbekannte Pfade.
+  app.use('/api', createInstanzSperre())
   app.use(['/api/dogs', '/api/timeline', '/api/notes', '/api/breeding', '/api/besuche', '/api/erlebt-mit', '/api/hinweise'], limitWrites)
   // Phase R Task 2: /api/family/members VOR authRoutes (dort liegen /family und /family/key) - Express
   // matcht Router-Pfade zwar exakt, so bleibt die Reihenfolge aber unabhängig von künftigen Routen dort.
   app.use('/api/family/members', membersRoutes)
+  app.use('/api/profil', profilRoutes)
   app.use('/api', authRoutes)
   app.use('/api/vouchers', vouchersRoutes)
   // Phase V2: Zuhause besuchen (Einladungen, Einlösen, Besuche und Gäste beenden).

@@ -10,6 +10,7 @@ import { displayName } from '../../lib/timeline.js'
 import { isOwnHome } from '../../lib/visits.js'
 import { visibleInNames } from '../../lib/dogProfile.js'
 import { locale, t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Bis zu so vielen Tieren stehen sie als Knöpfe mit Bild da, darüber (z. B. eine große Familie) als Auswahlliste.
 export const MAX_CHIPS = 6
@@ -94,9 +95,9 @@ export default function StartComposer({ family, dogs, onCreated }) {
         </div>
       )}
       {picking && !chosen && (
-        <button type="button" className="btn btn-ghost btn-compact start-composer-cancel" onClick={() => setPicking(false)}>
+        <Button type="button" variant="ghost" size="sm" className="start-composer-cancel" onClick={() => setPicking(false)}>
           {t('Abbrechen')}
-        </button>
+        </Button>
       )}
       {(picking || chosen) && animals.length <= MAX_CHIPS && (
         <div className="start-composer-animals" role="group" aria-label={t('{animal} wählen', { animal: words.animal })} ref={pickerRef}>

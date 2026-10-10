@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { useT } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const COPIED_MS = 2000
 
@@ -60,9 +61,9 @@ export default function KeyReveal({ value, onContinue, continueLabel, showCardHi
         <p className="field-hint">{t('login.keyReveal.cardHint')}</p>
       )}
       {note && <p className="field-hint">{note}</p>}
-      <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onContinue}>
+      <Button type="button" size="lg" block onClick={onContinue}>
         {continueLabel || t('login.keyReveal.continue')}
-      </button>
+      </Button>
     </div>
   )
 }

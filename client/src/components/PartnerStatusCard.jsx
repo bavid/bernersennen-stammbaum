@@ -4,6 +4,7 @@ import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { LOCKED_HINT, portalPath, profileStatusKey, profileStatusLabel } from '../lib/partnerProfile.js'
 import Icon from './Icon.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const REASON_ID = 'partner-publish-reason'
 const DEMO_HINT_ID = 'partner-publish-demo-hint'
@@ -48,21 +49,20 @@ function PublishButton({ profile, fehlt, busy, onPublish }) {
 
   if (isActive) {
     return (
-      <button type="button" className="btn btn-ghost" disabled={isDemo || busy} aria-describedby={describedBy} onClick={() => onPublish(false)}>
+      <Button type="button" variant="ghost" disabled={isDemo || busy} aria-describedby={describedBy} onClick={() => onPublish(false)}>
         {busy ? t('Pausiere …') : t('Pausieren')}
-      </button>
+      </Button>
     )
   }
   return (
-    <button
+    <Button
       type="button"
-      className="btn btn-primary"
       disabled={isDemo || busy || fehlt.length > 0}
       aria-describedby={describedBy}
       onClick={() => onPublish(true)}
     >
       {busy ? t('Veröffentliche …') : t('Veröffentlichen')}
-    </button>
+    </Button>
   )
 }
 

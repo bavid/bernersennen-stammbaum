@@ -63,7 +63,7 @@
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: color-mix(in srgb, var(--rust) 12%, transparent);
   color: var(--rust);
 }
@@ -133,7 +133,7 @@
   left: 50%;
   width: 0.7rem;
   height: 0.7rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--line);
   transform: translate(-50%, -50%);
   transition: transform var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);

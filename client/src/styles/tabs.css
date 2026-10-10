@@ -44,7 +44,7 @@
   padding: 0 var(--space-3);
   border: 0;
   background: none;
-  box-shadow: inset 0 -2px 0 transparent;
+  box-shadow: inset 0 var(--tab-underline) 0 transparent;
   color: var(--muted);
   font-size: var(--text-sm);
   font-weight: 700;
@@ -65,7 +65,7 @@
 
 .tab-bar-tab[aria-selected='true'] {
   color: var(--ink);
-  box-shadow: inset 0 -2px 0 var(--rust);
+  box-shadow: inset 0 var(--tab-underline) 0 var(--rust);
 }
 
 .tab-bar-count {

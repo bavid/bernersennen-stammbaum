@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { STECKBRIEF_PUBLISHABLE_STATUS, vermittlungStatusLabel } from '../lib/vermittlung.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const COPIED_MS = 2000
 
@@ -75,13 +76,13 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
               <Icon name={copied ? 'check' : 'copy'} />
               {copied ? t('Kopiert') : t('Link kopieren')}
             </button>
-            <a className="btn btn-ghost" href={link} target="_blank" rel="noreferrer">
+            <Button variant="ghost" href={link} target="_blank" rel="noreferrer">
               <Icon name="external" />
               {t('Öffnen')}
-            </a>
-            <button type="button" className="btn btn-ghost" disabled={saving || isDemo} onClick={() => setPublished(false)}>
+            </Button>
+            <Button type="button" variant="ghost" disabled={saving || isDemo} onClick={() => setPublished(false)}>
               {t('Zurückziehen')}
-            </button>
+            </Button>
           </div>
         </>
       ) : (
@@ -89,9 +90,9 @@ export default function SteckbriefPanel({ dog, onDogChange }) {
           <p className="steckbrief-status">
             <Icon name="lock" /> {t('Privat – noch nicht veröffentlicht')}
           </p>
-          <button type="button" className="btn btn-primary" disabled={saving || !canPublish || isDemo} onClick={() => setPublished(true)}>
+          <Button type="button" disabled={saving || !canPublish || isDemo} onClick={() => setPublished(true)}>
             {t('Steckbrief veröffentlichen')}
-          </button>
+          </Button>
           {!canPublish && (
             <p className="field-hint">{t('Veröffentlichen geht nur mit Status {status}.', { status: publishableStatusText() })}</p>
           )}

@@ -5,6 +5,7 @@ import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import Icon from '../Icon.jsx'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const HAS_ANIMALS_STATUS = 409
 
@@ -100,13 +101,13 @@ export default function DissolveFamilyDialog({ family, onDissolved, onClose }) {
       {isDemo && <p className="field-hint">{readOnlyHint}</p>}
       <div className="form-actions">
         <span className="form-actions-spacer" />
-        <button type="button" className="btn btn-ghost" onClick={onClose}>
+        <Button type="button" variant="ghost" onClick={onClose}>
           {t('Abbrechen')}
-        </button>
-        <button type="submit" className="btn btn-danger is-armed" disabled={isDemo || saving || !matches}>
+        </Button>
+        <Button type="submit" variant="danger" className="is-armed" disabled={isDemo || saving || !matches}>
           <Icon name="trash" />
           {saving ? t('Löse auf …') : words.dissolveGroup}
-        </button>
+        </Button>
       </div>
     </form>
   )

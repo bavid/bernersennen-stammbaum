@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ABLEHNUNG_VORLAGEN, SONSTIGES, composeGrund, maxZusatzLength, rejectionError } from '../lib/adminApproval.js'
+import { Button } from './ui/index.js'
 
 // Ablehnen eines Beitrags (V-Fehler 3): ein Grund aus den Vorlagen (lib/adminApproval.js ABLEHNUNG_VORLAGEN) und ein
 // optionaler Zusatz - bei "Sonstiges" ist der Text der Grund und damit Pflicht. Darunter, was der Partner liest.
@@ -94,12 +95,12 @@ export default function AdminRejectForm({ promotionId, busy, onSubmit, onCancel 
       {preview && <p className="admin-approval-grund-preview">Der Partner liest: „{preview}“</p>}
 
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Abbrechen
-        </button>
-        <button type="submit" className="btn btn-danger" disabled={busy}>
+        </Button>
+        <Button type="submit" variant="danger" disabled={busy}>
           Ablehnen
-        </button>
+        </Button>
       </div>
     </form>
   )

@@ -14,6 +14,7 @@ import { canvasToBlob, renderPage } from '../lib/collage/render.js'
 // Gestaltung (Vorlagen, Polaroid, Zeitstrahl, Sticker) - kommt mit der Collage als eigener Chunk
 import '../styles/collage-design.css'
 import { t, tOr } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob)
@@ -173,19 +174,19 @@ export default function CollagePage({ family }) {
       {mode === 'edit' && page && (
         <>
           <div className="collage-toolbar">
-            <button type="button" className="btn btn-ghost" onClick={() => setMode('setup')}>
+            <Button type="button" variant="ghost" onClick={() => setMode('setup')}>
               <Icon name="arrowLeft" /> {t('{animals} & Aufteilung', { animals: words.animals })}
-            </button>
+            </Button>
             <span className="form-actions-spacer" />
             <span className="collage-draft-hint">
               <Icon name="check" /> {t('Entwurf wird automatisch gespeichert')}
             </span>
-            <button type="button" className="btn btn-ghost" onClick={exportCurrentPage} disabled={busy}>
+            <Button type="button" variant="ghost" onClick={exportCurrentPage} disabled={busy}>
               <Icon name="download" /> {t('Seite als PNG')}
-            </button>
-            <button type="button" className="btn btn-primary" onClick={printAll} disabled={busy}>
+            </Button>
+            <Button type="button" onClick={printAll} disabled={busy}>
               <Icon name="image" /> {busy ? t('Bereite vor …') : t('Alle Seiten drucken / PDF')}
-            </button>
+            </Button>
           </div>
 
           <PageStrip pages={pages} pageIndex={pageIndex} onSelect={editor.goToPage} onAdd={actions.addPage} />

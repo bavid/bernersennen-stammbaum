@@ -20,6 +20,7 @@ import {
   toPostPayload
 } from '../lib/partnerPosts.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const IDS = {
   titel: 'post-titel',
@@ -169,12 +170,12 @@ export default function PartnerPostForm({ post, typ, vertrauenswuerdig = false, 
       )}
 
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        </Button>
+        <Button type="submit" disabled={saving}>
           {saving ? t('Speichere …') : submit}
-        </button>
+        </Button>
       </div>
     </form>
   )

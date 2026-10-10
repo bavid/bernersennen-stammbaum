@@ -4,6 +4,7 @@ import AdminField, { fieldProps } from './AdminField.jsx'
 import FinanzierungMithelfen from './finanzierung/FinanzierungMithelfen.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { FINANZIERUNG_LIMITS, hinweisForm, hinweisPayload, serverFieldError, zielForm, zielPayload, zielText } from '../lib/finanzierung.js'
+import { Button } from './ui/index.js'
 
 const ID = 'admin-finanz-'
 const id = (key) => `${ID}${key}`
@@ -38,9 +39,9 @@ function useSave(save, onSaved) {
 function SaveRow({ saving, saved }) {
   return (
     <div className="form-actions">
-      <button type="submit" className="btn btn-primary" disabled={saving}>
+      <Button type="submit" disabled={saving}>
         {saving ? 'Speichere …' : 'Speichern'}
-      </button>
+      </Button>
       {saved && (
         <span className="field-hint" role="status">
           Gespeichert.

@@ -8,6 +8,7 @@ import GeschenkkartePanel from '../geschenk/GeschenkkartePanel.jsx'
 import { GESCHENK_MUSTER_CODE } from '../../lib/geschenkkarte.js'
 import useVoucherList from './useVoucherList.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const CHOICES = [
   {
@@ -77,9 +78,9 @@ function GiftPanel({ list, disabled, isDemo, headingRef, gift, onGift }) {
         onGift={(code) => onGift({ code, muster: false })}
       />
       {isDemo && (
-        <button type="button" className="btn btn-ghost btn-compact" onClick={() => onGift({ code: GESCHENK_MUSTER_CODE, muster: true })}>
+        <Button type="button" variant="ghost" size="sm" onClick={() => onGift({ code: GESCHENK_MUSTER_CODE, muster: true })}>
           {t('Geschenkkarte ansehen (Muster)')}
-        </button>
+        </Button>
       )}
     </section>
   )

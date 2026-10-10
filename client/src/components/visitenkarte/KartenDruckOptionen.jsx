@@ -4,6 +4,7 @@ import { SEITEN } from './VisitenkartenBogen.jsx'
 import { CARDS_PER_SHEET } from '../../lib/visitenkarte.js'
 import { MAX_KARTEN, MIN_KARTEN, clampKarten, sheetCountFor } from '../../lib/einladungskarte.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Drucken (Phase V5, Feedback-Runde: für jede Kombination gleich): wie viele Karten (1-50 - der letzte Bogen darf
 // angebrochen sein), welche Seiten und der Druck-Knopf (onPrint - mit Code-Rückseite holt er erst die Codes, dann druckt
@@ -38,15 +39,15 @@ function AnzahlField({ count, onCount, busy }) {
         {t('Anzahl Karten')}
       </label>
       <div className="vk-anzahl">
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost vk-anzahl-step"
+          variant="ghost" className="vk-anzahl-step"
           aria-label={t('Eine Karte weniger')}
           onClick={() => onCount(clampKarten(count - 1))}
           disabled={busy || count <= MIN_KARTEN}
         >
           −
-        </button>
+        </Button>
         <input
           id="vk-anzahl"
           type="number"
@@ -59,15 +60,15 @@ function AnzahlField({ count, onCount, busy }) {
           disabled={busy}
           aria-describedby="vk-anzahl-hint"
         />
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost vk-anzahl-step"
+          variant="ghost" className="vk-anzahl-step"
           aria-label={t('Eine Karte mehr')}
           onClick={() => onCount(clampKarten(count + 1))}
           disabled={busy || count >= MAX_KARTEN}
         >
           +
-        </button>
+        </Button>
       </div>
       <p id="vk-anzahl-hint" className="field-hint">
         {t(sheets === 1 ? '{min} bis {max} · {n} A4-Bogen mit je bis zu {per} Karten (2 × 5) und Schnittmarken' : '{min} bis {max} · {n} A4-Bögen mit je bis zu {per} Karten (2 × 5) und Schnittmarken', {
@@ -135,14 +136,14 @@ export default function KartenDruckOptionen({ count, onCount, seiten, onSeiten, 
       <AnzahlField count={count} onCount={onCount} busy={busy} />
       <SeitenField seiten={seiten} onSeiten={onSeiten} busy={busy} />
       {addressNote}
-      <button
+      <Button
         type="button"
-        className="btn btn-primary btn-lg vk-print-button"
+        size="lg" className="vk-print-button"
         onClick={onPrint}
         disabled={busy || printable === 0 || Boolean(addressNote)}
       >
         <Icon name="printer" /> {printLabel({ busy, printable, withCodes })}
-      </button>
+      </Button>
       <DruckHints />
       {children}
     </section>

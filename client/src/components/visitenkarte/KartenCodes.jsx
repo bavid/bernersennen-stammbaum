@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Icon from '../Icon.jsx'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Einladungscodes der Karten (Feedback-Runde: für jede Rückseite mit Code - Einladungskarte und Kombi): jede Karte trägt
 // einen eigenen offenen Code aus dem eigenen Kunden-Stapel. Erst "Drucken" holt sie (hooks/useVisitenkartenDruck.js,
@@ -36,9 +37,9 @@ function RequestNote({ title }) {
       <p>
         <strong>{t(title)}</strong> – {t(NO_CODE)}
       </p>
-      <Link to={REQUEST_ROUTE} className="btn btn-ghost">
+      <Button to={REQUEST_ROUTE} as={Link} variant="ghost">
         <Icon name="message" /> {t('Beim Admin anfragen')}
-      </Link>
+      </Button>
     </div>
   )
 }

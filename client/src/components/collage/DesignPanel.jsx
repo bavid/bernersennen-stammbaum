@@ -4,6 +4,7 @@ import { MARGIN, PAGE } from '../../lib/collage/layout.js'
 import { LAYOUTS, computeLayout, layoutOf } from '../../lib/collage/layouts.js'
 import { BACKGROUNDS, BACKGROUND_GROUPS, backgroundTileUrl } from '../../lib/collage/backgrounds.js'
 import { t, tOr } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Reiter "Seite", Teil Gestaltung: Vorlage und Hintergrund der Seite, wahlweise für alle Seiten.
 
@@ -89,14 +90,14 @@ export default function DesignPanel({ page, pageCount, actions }) {
         {(several || page.layout === 'timeline') && (
           <div className="inspector-buttons">
             {page.layout === 'timeline' && (
-              <button type="button" className="btn btn-ghost" onClick={actions.sortByDate}>
+              <Button type="button" variant="ghost" onClick={actions.sortByDate}>
                 <Icon name="sort" /> {t('Nach Datum sortieren')}
-              </button>
+              </Button>
             )}
             {several && (
-              <button type="button" className="btn btn-ghost" onClick={() => actions.applyToAll({ layout: page.layout })}>
+              <Button type="button" variant="ghost" onClick={() => actions.applyToAll({ layout: page.layout })}>
                 <Icon name="copy" /> {t('Vorlage für alle Seiten')}
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -106,9 +107,9 @@ export default function DesignPanel({ page, pageCount, actions }) {
         <BackgroundPicker value={page.background} onChange={actions.setBackground} labelId={backgroundLabel} />
         {several && (
           <div className="inspector-buttons">
-            <button type="button" className="btn btn-ghost" onClick={() => actions.applyToAll({ background: page.background })}>
+            <Button type="button" variant="ghost" onClick={() => actions.applyToAll({ background: page.background })}>
               <Icon name="copy" /> {t('Hintergrund für alle Seiten')}
-            </button>
+            </Button>
           </div>
         )}
       </section>

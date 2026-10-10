@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Icon from '../Icon.jsx'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 export const MAX_LABEL_LENGTH = 60
 
@@ -62,12 +63,12 @@ export default function VoucherLabel({ label, onSave, readOnly }) {
         aria-label={t('Notiz zum Code (nur für dich sichtbar)')}
         autoFocus
       />
-      <button type="button" className="btn btn-primary" disabled={saving} onClick={save}>
+      <Button type="button" disabled={saving} onClick={save}>
         {t('Speichern')}
-      </button>
-      <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>
+      </Button>
+      <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
         {t('Abbrechen')}
-      </button>
+      </Button>
     </span>
   )
 }

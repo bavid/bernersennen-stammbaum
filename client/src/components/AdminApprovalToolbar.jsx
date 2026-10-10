@@ -1,5 +1,6 @@
 import Icon from './Icon.jsx'
 import { MAX_SAMMEL_FREIGABE } from '../lib/adminApproval.js'
+import { Button } from './ui/index.js'
 
 export const APPROVAL_FILTERS = Object.freeze([
   Object.freeze({ key: 'eingereicht', label: 'Eingereicht' }),
@@ -38,10 +39,10 @@ export default function AdminApprovalToolbar({
             <input type="checkbox" checked={allSelected} disabled={total === 0 || bulkBusy} onChange={(e) => onSelectAll(e.target.checked)} />
             Alle auswählen
           </label>
-          <button type="button" className="btn btn-primary" disabled={selectedCount === 0 || bulkBusy} onClick={onApproveSelected}>
+          <Button type="button" disabled={selectedCount === 0 || bulkBusy} onClick={onApproveSelected}>
             <Icon name="check" />
             {bulkBusy ? 'Gebe frei …' : `Ausgewählte freigeben${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
-          </button>
+          </Button>
           {overLimit && <span className="field-hint admin-approval-limit">Höchstens {MAX_SAMMEL_FREIGABE} auf einmal.</span>}
         </div>
       )}

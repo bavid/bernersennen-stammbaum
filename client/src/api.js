@@ -71,6 +71,15 @@ export const api = {
   // Einstellungen „Darstellung“ (Calm-down-Runde): { palette, modus, schrift } der eigenen Identität - PUT mit einem Teil
   // davon, Antwort die ganze Darstellung (server/lib/darstellung.js). /me bringt sie ohnehin mit.
   setDarstellung: (patch) => request('/me/darstellung', json('PUT', patch)),
+  // Profil (server/routes/profil.js): „Euer Name“ der angemeldeten Person -> { anzeigename }; Bild des aktiven Zuhauses bzw.
+  // der aktiven Familie (nur Leitung) -> { bild } (Adresse oder null).
+  setPersonName: (anzeigename) => request('/profil/name', json('PUT', { anzeigename })),
+  uploadAreaBild: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return request('/profil/bild', { method: 'POST', body: formData })
+  },
+  deleteAreaBild: () => request('/profil/bild', { method: 'DELETE' }),
   login: (secret) => request('/login', json('POST', { secret })),
   loginUser: (username, password) => request('/login', json('POST', { username, password })),
   // as: 'tierheim' (Phase T Task 6) loggt ins Demo-Tierheim statt ins Demo-Zuhause ein, as: 'partner' mit

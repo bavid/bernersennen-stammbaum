@@ -11,6 +11,9 @@ const { countOpenIncoming: countOpenWishes } = require('./wwhKontakt')
 const { revokeInvitesOnLeave } = require('./inviteRevocation')
 const { loadDarstellung } = require('./darstellung')
 const { withMembershipCounts, withVisitCounts } = require('./areaCounts')
+const { personOf, withBild } = require('./profil')
+const { isStammbaumStart } = require('./stammbaumStart')
+const { instanzModus } = require('../config')
 
 // Familien (art rudel), in denen ein Zuhause Mitglied ist - mit der eigenen Rolle dort (Phase R Task 2,
 // für den ContextSwitcher des Clients).
@@ -95,8 +98,9 @@ function currentAuthInfo(homeId, userId) {
 // neueGaeste (security-review V2, M-3): Gäste, die das eigene Zuhause noch nicht mit „Passt“ bestätigt hat.
 function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } = {}) {
   const family = (id) => db.prepare('SELECT id, name, theme, art FROM families WHERE id = ?').get(id)
-  const active = family(activeId)
-  const home = family(homeId)
+  // bild (lib/profil.js): Bild des Bereichs oder null - der Client zeigt sonst den Anfangsbuchstaben.
+  const active = withBild(family(activeId))
+  const home = withBild(family(homeId))
   const zuBesuch = activeId !== homeId && !isMember(homeId, activeId) && isVisiting(homeId, activeId)
   const me = {
     ...active,
@@ -107,8 +111,10 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
     home,
     // Phase W, Schritt 2: je Familie bzw. besuchtem Zuhause die Zahl der Tiere (lib/areaCounts.js) - eine Zählung für alle
     // Stellen des Clients.
-    memberships: withMembershipCounts(homeId, membershipsOf(homeId)),
-    besuche: withVisitCounts(visitTargetsOf(homeId)),
+    memberships: withMembershipCounts(homeId, membershipsOf(homeId)).map(withBild),
+    besuche: withVisitCounts(visitTargetsOf(homeId)).map(withBild),
+    // „Euer Name“ der angemeldeten Person (lib/profil.js) - Vorgabe für den Autor neuer Erinnerungen.
+    person: personOf(homeId, userId),
     erlebtMitOffen: home?.art === ART.zuhause ? countOpenRequests(homeId) : 0,
     neueGaeste: home?.art === ART.zuhause ? countNewGuests(homeId) : 0,
     // Hinweis-Glocke: neue Grüße anderer zu eigenen Erinnerungen (lib/gruesse.js).
@@ -117,7 +123,11 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
     wwhKontakteOffen: home?.art === ART.zuhause ? countOpenWishes(homeId) : 0,
     auth: currentAuthInfo(homeId, userId),
     // Calm-down-Runde: Farbpalette, Hell/Dunkel, Schrift der Identität (lib/darstellung.js) - auch in Familien und zu Besuch.
-    darstellung: loadDarstellung(homeId)
+    darstellung: loadDarstellung(homeId),
+    // Stammbaum als Startansicht des aktiven Bereichs (lib/stammbaumStart.js, Bestandsrudel der alten App).
+    stammbaumStart: isStammbaumStart(activeId),
+    // Instanz-Modus (lib/instanzModus.js) - nur, wenn gesetzt; der Client nennt z. B. „Hilfe & Kontakt“ dann „Feedback“.
+    ...(instanzModus ? { instanzModus } : {})
   }
   if (PARTNER_AREA_ARTS.includes(active?.art)) {
     const partner = db

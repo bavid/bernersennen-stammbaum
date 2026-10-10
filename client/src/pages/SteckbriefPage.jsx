@@ -16,6 +16,7 @@ import { PAUSED_HINT, vermittlungStatusLabel } from '../lib/vermittlung.js'
 import { PREVIEW_DISABLED_HINT, PreviewProvider } from '../lib/preview.js'
 import { useNoIndex } from '../hooks/useNoIndex.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 const SHARE_COPIED_MS = 2000
 const PREVIEW_LOAD_ERROR = 'Dieser Steckbrief konnte gerade nicht geladen werden. Bitte versucht es gleich noch einmal.'
@@ -29,9 +30,9 @@ function NotFound({ inApp }) {
         <ThemeMark size={56} />
         <h1>{t('Diesen Steckbrief gibt es nicht')}</h1>
         <p className="muted">{t('Vielleicht ist er nicht mehr aktuell, oder der Link ist veraltet.')}</p>
-        <Link className="btn btn-primary" to="/partner">
+        <Button as={Link} to="/partner">
           {t('Zur Partnerliste')}
-        </Link>
+        </Button>
       </div>
       {!inApp && <PublicFooter />}
     </div>
@@ -237,10 +238,10 @@ function SteckbriefContent({ animal, slug, age, preview, inApp, shareCopied, onS
           </dl>
           {animal.beschreibung && <ExpandableText text={animal.beschreibung} className="dog-hero-description" lines={4} />}
           {preview ? (
-            <button type="button" className="btn btn-ghost" disabled title={t(PREVIEW_DISABLED_HINT)} aria-description={t(PREVIEW_DISABLED_HINT)}>
+            <Button type="button" variant="ghost" disabled title={t(PREVIEW_DISABLED_HINT)} aria-description={t(PREVIEW_DISABLED_HINT)}>
               <Icon name="share" />
               {t('Teilen')}
-            </button>
+            </Button>
           ) : (
             <button type="button" className={`btn ${shareCopied ? 'btn-ink' : 'btn-ghost'}`} onClick={onShare}>
               <Icon name={shareCopied ? 'check' : 'share'} />

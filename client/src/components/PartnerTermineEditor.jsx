@@ -9,6 +9,7 @@ import TerminForm from './TerminForm.jsx'
 import TerminOverview from './TerminOverview.jsx'
 import { useToast } from './Toast.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const DEMO_HINT_ID = 'partner-termine-demo-hint'
 
@@ -131,15 +132,14 @@ export default function PartnerTermineEditor({ showTitle = true }) {
         />
       ) : (
         <div className="partner-termine-actions">
-          <button
+          <Button
             type="button"
-            className="btn btn-primary"
             onClick={() => setEditing('new')}
             disabled={isDemo || isFull || !data}
             aria-describedby={demoHintId}
           >
             <Icon name="plus" /> {t('Termin anlegen')}
-          </button>
+          </Button>
           {isDemo && (
             <p id={DEMO_HINT_ID} className="field-hint">
               {readOnlyHint}

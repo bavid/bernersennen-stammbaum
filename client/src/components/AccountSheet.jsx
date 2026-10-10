@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
-import { AccountBadge, itemState } from './AccountMenu.jsx'
-import { LEGAL_LINKS, accountMenuItems, accountName } from '../lib/accountMenu.js'
+import { AccountBadge, AccountWho, itemState } from './AccountMenu.jsx'
+import { LEGAL_LINKS, accountBild, accountMenuItems, accountName } from '../lib/accountMenu.js'
 import { t } from '../lib/i18n/index.js'
 
 // "Menü" als fünfter Platz der unteren Leiste am Handy (Phase W) - der Knopf steht in der Navigation, das Blatt
@@ -33,8 +33,10 @@ export default function AccountSheet({ family, open, onClose, onInvite, onLogout
   return (
     <Modal open={open} title={t('Menü')} onClose={onClose} className="modal-sheet">
       <p className="account-sheet-who">
-        <AccountBadge name={name} />
-        <span>{name}</span>
+        <AccountBadge name={name} bild={accountBild(family)} />
+        <span>
+          <AccountWho family={family} />
+        </span>
       </p>
       <ul className="account-sheet-list" role="list">
         {items.map((item) => (

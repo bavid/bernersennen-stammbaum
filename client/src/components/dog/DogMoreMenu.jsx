@@ -2,6 +2,7 @@ import { useId } from 'react'
 import Icon from '../Icon.jsx'
 import useMenu from '../../hooks/useMenu.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // "Weitere Aktionen" (⋯) im Kopf der Tierseite (Phase W, Schritt 2): seltene Wege, die sonst Platz im Kopf kosteten.
 // items: [{ key, label, icon, onSelect }]. Tastatur nach dem Muster "Menu Button" (hooks/useMenu.js): Pfeile, Pos1/Ende,
@@ -15,10 +16,10 @@ export default function DogMoreMenu({ name, items }) {
   if (items.length === 1) {
     const [item] = items
     return (
-      <button type="button" className="btn btn-ghost dog-more-single" onClick={item.onSelect}>
+      <Button type="button" variant="ghost" className="dog-more-single" onClick={item.onSelect}>
         <Icon name={item.icon} />
         {t(item.label)}
-      </button>
+      </Button>
     )
   }
 

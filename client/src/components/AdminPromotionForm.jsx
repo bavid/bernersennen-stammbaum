@@ -4,6 +4,7 @@ import AdminImageUpload from './AdminImageUpload.jsx'
 import AdminPromotionFields from './AdminPromotionFields.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { initialPromotionForm, promotionClientErrors, promotionErrorField, toPromotionPayload } from '../lib/adminMarketing.js'
+import { Button } from './ui/index.js'
 
 function withoutKeys(object, keys) {
   return Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key)))
@@ -91,12 +92,12 @@ export default function AdminPromotionForm({ promotion, partners = [], onSaved, 
       )}
 
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Abbrechen
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        </Button>
+        <Button type="submit" disabled={saving}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
+        </Button>
       </div>
     </form>
   )

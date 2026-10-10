@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import Icon from './Icon.jsx'
 import { qrFileName, qrSvgMarkup } from '../lib/partnerShare.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Kantenlänge der PNG-Datei - groß genug für Druck (Flyer, Visitenkarte), die Module bleiben scharf.
 const PNG_SIZE = 1024
@@ -74,14 +75,14 @@ export default function PartnerShareQr({ url, slug }) {
     <div className="partner-share-qr">
       <img src={imageUrl} alt={t('QR-Code, öffnet {url}', { url })} className="partner-share-qr-code" width={160} height={160} />
       <div className="partner-share-qr-actions">
-        <button type="button" className="btn btn-ghost" onClick={downloadSvg}>
+        <Button type="button" variant="ghost" onClick={downloadSvg}>
           <Icon name="download" />
           {t('QR-Code herunterladen (SVG)')}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={downloadPng}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={downloadPng}>
           <Icon name="download" />
           {t('Als PNG')}
-        </button>
+        </Button>
         <p className="field-hint">{t('SVG für Flyer und Druck, PNG für Social Media.')}</p>
         {error && (
           <p className="field-error" role="alert">

@@ -7,6 +7,7 @@ import { dogLabel } from '../lib/timeline.js'
 import { formatTermin, relativeTime } from '../lib/dates.js'
 import { originLabel } from '../lib/tierZuhause.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 function toDog(entry) {
   return { name: entry.dog_name, name_unbekannt: entry.dog_name_unbekannt, rasse: entry.dog_rasse, foto_url: entry.dog_foto_url }
@@ -80,9 +81,9 @@ export default function ActivityFeed({ entries: allEntries, termin, limit = MAX_
         ))}
       </div>
       {hidden > 0 && (
-        <button type="button" className="btn btn-ghost feed-more" onClick={() => setShowAll(true)}>
+        <Button type="button" variant="ghost" className="feed-more" onClick={() => setShowAll(true)}>
           {t('Weitere {entries} ({n})', { entries: words.entries, n: hidden })}
-        </button>
+        </Button>
       )}
     </section>
   )

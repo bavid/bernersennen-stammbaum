@@ -3,6 +3,7 @@ import { api } from '../api'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import Icon from './Icon.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const DEMO_HINT_ID = 'partner-card-order-demo-hint'
 const EMPTY_HINT = 'Sobald ein Beitrag freigegeben ist, legt ihr hier fest, wie er auf eurer Karte in „Entdecken“ steht.'
@@ -51,28 +52,28 @@ function OrderItem({ item, index, count, max, busy, readOnly, onMove, onToggle }
         {t('in Entdecken zeigen')}<span className="visually-hidden">: {quoted}</span>
       </label>
       <span className="partner-card-order-moves">
-        <button
+        <Button
           type="button"
           id={`card-order-${item.id}-up`}
-          className="btn btn-ghost btn-icon"
+          variant="ghost" className="btn-icon"
           aria-label={t('{title} nach oben', { title: quoted })}
           aria-describedby={describedBy}
           disabled={readOnly || index === 0}
           onClick={() => onMove(index, -1)}
         >
           <Icon name="chevronDown" />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           id={`card-order-${item.id}-down`}
-          className="btn btn-ghost btn-icon"
+          variant="ghost" className="btn-icon"
           aria-label={t('{title} nach unten', { title: quoted })}
           aria-describedby={describedBy}
           disabled={readOnly || index === count - 1}
           onClick={() => onMove(index, 1)}
         >
           <Icon name="chevronDown" />
-        </button>
+        </Button>
       </span>
     </li>
   )

@@ -4,6 +4,7 @@ import AdminImageUpload from './AdminImageUpload.jsx'
 import ColorField from './ColorField.jsx'
 import { STATUS_LABELS, initialState, toPayload } from '../lib/adminPartnerForm.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
+import { Button } from './ui/index.js'
 
 // Logo nur für einen bereits gespeicherten Partner (Server braucht die id) - lib/partners.js prüft
 // PNG/JPG/WebP; Upload-Knopf und Tastaturbedienung teilt es mit dem Bild einer Empfehlung.
@@ -216,12 +217,12 @@ export default function AdminPartnerForm({ partner, onSaved, onCancel }) {
       {partner && <LogoUpload partnerId={partner.id} logoUrl={logoUrl} onUploaded={setLogoUrl} />}
 
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Abbrechen
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving || !form.name.trim()}>
+        </Button>
+        <Button type="submit" disabled={saving || !form.name.trim()}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
+        </Button>
       </div>
     </form>
   )

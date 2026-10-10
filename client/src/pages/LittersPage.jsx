@@ -22,6 +22,7 @@ import {
 import { hasRole } from '../lib/roles.js'
 import { displayName, shortName } from '../lib/timeline.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 function PlannedLitter({ planned }) {
   const { theme, words } = useTheme()
@@ -195,10 +196,10 @@ export default function LittersPage({ family }) {
           />
         ))}
         {!showAllLitters && split.hidden.length > 0 && (
-          <button type="button" className="btn btn-ghost litter-more" onClick={() => setShowAllLitters(true)}>
+          <Button type="button" variant="ghost" className="litter-more" onClick={() => setShowAllLitters(true)}>
             {split.hidden.length === 1 ? t('Mehr anzeigen ({n} weiterer)', { n: 1 }) : t('Mehr anzeigen ({n} weitere)', { n: split.hidden.length })}
             <span className="visually-hidden"> – {words.littersLabel}</span>
-          </button>
+          </Button>
         )}
       </div>
 

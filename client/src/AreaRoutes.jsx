@@ -1,6 +1,6 @@
 import { lazy } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from 'react-router-dom'
-import { FAMILIES_ROUTE, areaContext, parseAreaId, settingsArea, startRoute } from './lib/areas.js'
+import { FAMILIES_ROUTE, areaContext, hasStammbaumStart, parseAreaId, settingsArea, startRoute } from './lib/areas.js'
 import AreaGate from './components/AreaGate.jsx'
 import LegacyRedirect from './components/LegacyRedirect.jsx'
 import StartPage from './pages/StartPage.jsx'
@@ -56,6 +56,20 @@ function NearbyRedirect() {
   const params = new URLSearchParams(search)
   params.set('bereich', 'karte')
   return <Navigate to={`/entdecken?${params}${hash}`} replace />
+}
+
+// Bestandsrudel mit Stammbaum als Start (lib/areas.js hasStammbaumStart): /stammbaum ist hier eine eigene Seite - die
+// Tiere-Seite des neuen Systems, geöffnet auf dem Reiter "Stammbaum" (?ansicht=stammbaum); alle anderen leitet
+// LegacyRedirect weiter.
+function StammbaumRoute({ family }) {
+  const { search, hash } = useLocation()
+  if (!hasStammbaumStart(family)) return <LegacyRedirect family={family} kind="tree" />
+  const params = new URLSearchParams(search)
+  if (!params.has('ansicht')) {
+    params.set('ansicht', 'stammbaum')
+    return <Navigate to={`/stammbaum?${params}${hash}`} replace />
+  }
+  return <AnimalsPage family={family} />
 }
 
 function ToStart({ family }) {
@@ -222,7 +236,7 @@ function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/tier/:id" element={<TierRoute family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/hund/:id" element={<RedirectTierUrl />} />
       <Route path="/wegbegleiter" element={<LegacyRedirect family={family} kind="wegbegleiter" />} />
-      <Route path="/stammbaum" element={<LegacyRedirect family={family} kind="tree" />} />
+      <Route path="/stammbaum" element={<StammbaumRoute family={family} />} />
       <Route path="/familienbande" element={<LegacyRedirect family={family} kind="tree" />} />
       {/* Entscheidung D2: die Pinnwand des Zuhauses hat keinen Menüpunkt (Start verlinkt sie), die einer Familie ist ein
           Reiter der Gruppenseite; beim klassischen Login bleibt sie in der Navigation. */}

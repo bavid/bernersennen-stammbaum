@@ -10,6 +10,7 @@ import { promotionPreviewCard } from '../lib/adminApproval.js'
 import { relativeTime, todayIso } from '../lib/dates.js'
 import { formatZeitraeume } from '../lib/zeitraeume.js'
 import { verlaufDateTime } from '../lib/freigabeVerlauf.js'
+import { Button } from './ui/index.js'
 
 // Ein Beitrag in "Zur Freigabe" (AdminPostApproval): von welchem Partner, eine Vorschau genau so, wie Kundinnen und
 // Kunden ihn sähen (PromotionCard, Link deaktiviert), der Verlauf zum Aufklappen und die Entscheidung direkt hier.
@@ -112,9 +113,9 @@ export default function AdminPostApprovalItem({
       ) : (
         <div className="admin-row-actions">
           {canApprove && (
-            <button type="button" className="btn btn-primary" onClick={() => onApprove(promotion)} disabled={busy}>
+            <Button type="button" onClick={() => onApprove(promotion)} disabled={busy}>
               <Icon name="check" /> {decided ? 'Doch freigeben' : 'Freigeben'}
-            </button>
+            </Button>
           )}
           {canReject && (
             <button ref={rejectButtonRef} type="button" className="btn btn-ghost" onClick={() => setRejecting(true)} disabled={busy}>

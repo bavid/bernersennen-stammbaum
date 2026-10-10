@@ -11,6 +11,7 @@ import VermittlungStatusPanel from '../VermittlungStatusPanel.jsx'
 import { useToast } from '../Toast.jsx'
 import { startpaketRoute } from '../../lib/startpaket.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Reiter "Vermittlung" der Tierseite eines Tierheims (eigene Tiere): Status, Steckbrief und die Übergabe. Die Panels liefern
 // nur die rohe Hund-Zeile zurück - sie wird in den bestehenden (angereicherten) dog-State gemischt (mergeDog).
@@ -47,33 +48,33 @@ export default function ShelterPlacement({ dog, setDog }) {
       <SteckbriefPanel dog={dog} onDogChange={mergeDog} />
 
       <div className="steckbrief-actions">
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost"
+          variant="ghost"
           disabled={paused}
           aria-describedby={paused ? 'handover-paused-hint' : undefined}
           onClick={() => setHandoverOpen(true)}
         >
           <Icon name="logout" />
           {t('Vermittelt – Übergabe vorbereiten')}
-        </button>
+        </Button>
         {paused && (
           <p className="field-hint" id="handover-paused-hint">
             {t('Erst auf ‚Verfügbar‘ oder ‚Reserviert‘ setzen.')}
           </p>
         )}
         {reserved && (
-          <button type="button" className="btn btn-ghost" disabled={withdrawing || isDemo} onClick={handleWithdraw}>
+          <Button type="button" variant="ghost" disabled={withdrawing || isDemo} onClick={handleWithdraw}>
             <Icon name="close" />
             {withdrawing ? t('Ziehe zurück …') : t('Übergabe zurückziehen')}
-          </button>
+          </Button>
         )}
         {isDemo && reserved && <p className="field-hint">{readOnlyHint}</p>}
         {/* Tierheim-Startpaket: Druckmappe für die neuen Menschen (pages/StartpaketPage.jsx). */}
-        <Link className="btn btn-ghost" to={startpaketRoute(dog.id)}>
+        <Button as={Link} variant="ghost" to={startpaketRoute(dog.id)}>
           <Icon name="printer" />
           {t('Startpaket drucken')}
-        </Link>
+        </Button>
       </div>
 
       <Modal open={handoverOpen} title={t('Übergabe vorbereiten – {name}', { name: displayName(dog) })} onClose={() => setHandoverOpen(false)}>

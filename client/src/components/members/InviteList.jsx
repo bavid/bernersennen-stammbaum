@@ -4,6 +4,7 @@ import ConfirmButton from '../ConfirmButton.jsx'
 import Icon from '../Icon.jsx'
 import { formatDateShort } from '../../lib/dates.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Offene Einladungen in die Familie (ab Stellvertretung, server/routes/members.js einladungen): nur der
 // Hinweis auf den Code (die letzten vier Zeichen) - den Code selbst gibt es im Einladen-Dialog. Die Rolle
@@ -14,10 +15,10 @@ export default function InviteList({ einladungen, options, disabled, onRoleChang
     <section className="card members-section" aria-labelledby="invites-title">
       <div className="members-section-head">
         <h2 id="invites-title">{t('Offene Einladungen')}</h2>
-        <button type="button" className="btn btn-primary" onClick={onInvite}>
+        <Button type="button" onClick={onInvite}>
           <Icon name="send" />
           {t('Mitglied einladen')}
-        </button>
+        </Button>
       </div>
       <p className="muted">
         {t('Wer eine Einladung einlöst, bekommt ein eigenes Zuhause und tritt mit der eingestellten Rolle bei. Die Rolle lässt sich später hier ändern.')}

@@ -22,6 +22,14 @@ describe('navItemsFor', () => {
     expect(navItemsFor({ art: 'rudel' }).find((item) => item.label === 'Pinnwand').to).toBe('/pinnwand')
   })
 
+  // Bestandsrudel aus der alten App (me.stammbaumStart): "Stammbaum" statt "Start" - nur beim klassischen Login.
+  test('klassischer Login mit Stammbaum-Start: Stammbaum, Tiere, Pinnwand, Entdecken', () => {
+    const rudel = { id: 2, art: 'rudel', home: { id: 2, art: 'rudel' }, stammbaumStart: true }
+    expect(labels(rudel)).toEqual(['Stammbaum', 'Tiere', 'Pinnwand', 'Entdecken'])
+    expect(navItemsFor(rudel)[0]).toMatchObject({ to: '/stammbaum', icon: 'tree' })
+    expect(labels({ ...household, id: 5, art: 'rudel', stammbaumStart: true })).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken'])
+  })
+
   test('ein alter Berner-Wert in family.theme ändert die Wörter nicht mehr (B+ Familienalbum)', () => {
     expect(labels({ ...household, theme: 'berner' })).toEqual(['Start', 'Tiere', 'Familien', 'Entdecken'])
     expect(labels({ art: 'rudel', theme: 'berner' })).toEqual(['Start', 'Tiere', 'Pinnwand', 'Entdecken'])

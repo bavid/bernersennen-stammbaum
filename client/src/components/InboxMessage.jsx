@@ -3,6 +3,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import { excerpt, formatMessageDate, isoDateTime, senderName } from '../lib/partnerInbox.js'
 import { isValidPhone, mailtoHref, telHref } from '../lib/format.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Eine Nachricht im Postfach (PartnerInboxPage): zugeklappt Absender (ungelesen fett), Bezug, Datum und
 // der Anfang der Nachricht; aufgeklappt die ganze Nachricht - immer als Text (Zeilenumbrüche per CSS
@@ -42,20 +43,20 @@ export default function InboxMessage({ message, open, onToggle, onMarkRead, onDe
           {(mailto || phone) && (
             <div className="inbox-reply" aria-label={t('Antworten an {name}', { name })} role="group">
               {mailto && (
-                <a className="btn btn-ghost" href={mailto}>
+                <Button variant="ghost" href={mailto}>
                   <Icon name="mail" />
                   <span>
                     {t('Per E-Mail antworten')}<span className="inbox-reply-value">{message.email}</span>
                   </span>
-                </a>
+                </Button>
               )}
               {phone && (
-                <a className="btn btn-ghost" href={telHref(phone)}>
+                <Button variant="ghost" href={telHref(phone)}>
                   <Icon name="phone" />
                   <span>
                     {t('Anrufen')}<span className="inbox-reply-value">{phone}</span>
                   </span>
-                </a>
+                </Button>
               )}
             </div>
           )}
@@ -63,10 +64,10 @@ export default function InboxMessage({ message, open, onToggle, onMarkRead, onDe
 
           <div className="inbox-actions">
             {unread && !isDemo && (
-              <button type="button" className="btn btn-ghost" onClick={onMarkRead}>
+              <Button type="button" variant="ghost" onClick={onMarkRead}>
                 <Icon name="check" />
                 {t('Als gelesen markieren')}
-              </button>
+              </Button>
             )}
             <ConfirmButton
               onConfirm={onDelete}

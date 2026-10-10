@@ -363,7 +363,7 @@
 
 .partner-card.is-own-preview {
   border-color: var(--rust);
-  box-shadow: 0 0 0 3px var(--rust-wash), var(--shadow-card);
+  box-shadow: 0 0 0 var(--halo) var(--rust-wash), var(--shadow-card);
 }
 
 .preview-own-badge {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AdminField, { fieldProps } from './AdminField.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { FINANZIERUNG_LIMITS, QUARTAL_AMOUNTS, QUARTAL_VALUES, quartalForm, quartalPayload, serverFieldError } from '../lib/finanzierung.js'
+import { Button } from './ui/index.js'
 
 const ID = 'admin-quartal-'
 const id = (key) => `${ID}${key}`
@@ -76,12 +77,12 @@ export default function AdminQuartalForm({ quartal, onSave, onCancel }) {
         </AdminField>
       </div>
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        <Button type="submit" disabled={saving}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Abbrechen
-        </button>
+        </Button>
       </div>
     </form>
   )

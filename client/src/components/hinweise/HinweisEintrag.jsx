@@ -7,6 +7,7 @@ import { relativeTime } from '../../lib/dates.js'
 import { greetingText, guestText, kontaktText, requestText } from '../../lib/glocke.js'
 import { WWH } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Kleines Bild links: das erste Foto einer Anfrage (hilft beim Erinnern), sonst ein Zeichen für die Art des Hinweises.
 function Mark({ icon, photo }) {
@@ -33,24 +34,24 @@ function Anfrage({ request, busy, disabled, actions }) {
           {request.angefragtAm && ` · ${relativeTime(request.angefragtAm)}`}
         </p>
         <div className="hinweis-actions">
-          <button
+          <Button
             type="button"
-            className="btn btn-primary btn-compact"
+            size="sm"
             aria-describedby={questionId}
             disabled={disabled || busy}
             onClick={() => actions.confirm(request)}
           >
             {t('Ja')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="btn btn-ghost btn-compact"
+            variant="ghost" size="sm"
             aria-describedby={questionId}
             disabled={disabled || busy}
             onClick={() => actions.reject(request)}
           >
             {t('Nein')}
-          </button>
+          </Button>
         </div>
       </div>
     </>
@@ -70,9 +71,9 @@ function Gast({ guest, busy, disabled, actions }) {
           {guest.ueberCode ? t('über deinen Code „{code}“', { code: guest.ueberCode }) : t('sieht eure nicht privaten Erinnerungen')}
         </p>
         <div className="hinweis-actions">
-          <button type="button" className="btn btn-primary btn-compact" disabled={disabled || busy} onClick={() => actions.acknowledgeGuest(guest)}>
+          <Button type="button" size="sm" disabled={disabled || busy} onClick={() => actions.acknowledgeGuest(guest)}>
             {t('Passt')}
-          </button>
+          </Button>
           <ConfirmButton
             label="Entfernen"
             confirmLabel="Wirklich entfernen?"
@@ -129,24 +130,24 @@ function Kontakt({ wish, busy, disabled, actions, onNavigate }) {
           {wish.createdAt && ` · ${relativeTime(wish.createdAt)}`}
         </p>
         <div className="hinweis-actions">
-          <button
+          <Button
             type="button"
-            className="btn btn-primary btn-compact"
+            size="sm"
             aria-describedby={textId}
             disabled={disabled || busy}
             onClick={() => setOpen(true)}
           >
             {t(WWH.annehmen)}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="btn btn-ghost btn-compact"
+            variant="ghost" size="sm"
             aria-describedby={textId}
             disabled={disabled || busy}
             onClick={() => actions.rejectWish(wish)}
           >
             {t(WWH.ablehnen)}
-          </button>
+          </Button>
         </div>
       </div>
       <WwhAnnehmenDialog open={open} disabled={disabled || busy} onCancel={() => setOpen(false)} onConfirm={accept} />

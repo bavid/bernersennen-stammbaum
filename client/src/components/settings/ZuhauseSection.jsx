@@ -4,6 +4,7 @@ import { useToast } from '../Toast.jsx'
 import Icon from '../Icon.jsx'
 import RahmenGeraete from './RahmenGeraete.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
+import { AreaBildGroup, PersonNameGroup } from './ProfilGroups.jsx'
 import VisitSection from '../visits/VisitSection.jsx'
 import { useT } from '../../lib/i18n/index.js'
 
@@ -27,6 +28,9 @@ export default function ZuhauseSection({ family, onFamilyChange, onInvite }) {
   return (
     <div className="settings-block">
       <NameGroup family={family} readOnly={readOnly} onRenamed={handleRenamed} />
+      {/* Profil: Name der Person (Vorgabe für neue Erinnerungen) und das Bild des Zuhauses (server/lib/profil.js). */}
+      <PersonNameGroup family={family} readOnly={readOnly} onFamilyChange={onFamilyChange} />
+      <AreaBildGroup family={family} kind="home" readOnly={readOnly} onFamilyChange={onFamilyChange} />
       <AccessGroup family={family} readOnly={readOnly} onFamilyChange={onFamilyChange} />
       <section className="settings-group" aria-labelledby="settings-einladen-title">
         <h2 id="settings-einladen-title">{t('settings.home.invite.title')}</h2>

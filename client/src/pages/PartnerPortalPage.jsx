@@ -10,6 +10,7 @@ import { isValidHexColor, darkenHex, hexToRgba } from '../lib/color.js'
 import { PreviewProvider } from '../lib/preview.js'
 import { areaContext } from '../lib/areas.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 const ON_RUST = '#fffaf2'
 const ACCENT_WASH_ALPHA = 0.1
@@ -51,9 +52,9 @@ function NotFound({ inApp }) {
         <ThemeMark size={56} />
         <h1>{t('Diesen Partner gibt es nicht')}</h1>
         <p className="muted">{t('Vielleicht ist der Link veraltet, oder der Partner ist gerade pausiert.')}</p>
-        <Link className="btn btn-primary" to="/partner">
+        <Button as={Link} to="/partner">
           {t('Zur Partnerliste')}
-        </Link>
+        </Button>
       </div>
       {!inApp && <PublicFooter />}
     </div>

@@ -48,5 +48,5 @@ test('GET /api/me: Tiere je Familie und je besuchtem Zuhause', async (t) => {
     me.data.memberships.map(({ name, tiere, eigeneTiere }) => ({ name, tiere, eigeneTiere })),
     [{ name: 'Familie Sonnenhang', tiere: 4, eigeneTiere: 2 }]
   )
-  assert.deepEqual(me.data.besuche, [{ id: host.data.id, name: 'Zuhause Möwenweg', tiere: 2 }])
+  assert.deepEqual(me.data.besuche, [{ id: host.data.id, name: 'Zuhause Möwenweg', tiere: 2, bild: null }])
 })

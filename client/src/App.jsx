@@ -31,7 +31,8 @@ import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
 import AdminViewBanner from './components/AdminViewBanner.jsx'
 import NavBadge from './components/NavBadge.jsx'
 import ViewModeSwitch from './components/ViewModeSwitch.jsx'
-import LoginPage from './pages/LoginPage.jsx'
+// LoginEntry: volle Startseite oder - im Instanz-Modus „rudel“ - nur der Passwort-Login (lib/instanzModus.js).
+import LoginEntry from './components/login/LoginEntry.jsx'
 import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
 import PartnersPage from './pages/PartnersPage.jsx'
 import SteckbriefPage from './pages/SteckbriefPage.jsx'
@@ -41,6 +42,8 @@ import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 import RouteFallback from './components/RouteFallback.jsx'
 import VisitClaimCard from './components/visits/VisitClaimCard.jsx'
+import { Button } from './components/ui/index.js'
+import { rememberPersonName } from './lib/profil.js'
 
 // Der Admin-Bereich (samt aller Admin*-Komponenten) kommt erst bei Bedarf als eigener Chunk - nur der
 // Admin ruft /admin je auf, alle anderen laden ihn so nicht mit.
@@ -201,9 +204,9 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
           })}
         </p>
         <HandoverConsent shelterName={handover.shelterName} checked={shelterMayRead} onChange={setShelterMayRead} />
-        <button type="button" className="btn btn-primary btn-block" disabled={claiming} onClick={handleClaim}>
+        <Button type="button" block disabled={claiming} onClick={handleClaim}>
           {claiming ? t('Übernehme …') : t('In „Mein Zuhause“ übernehmen')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -216,9 +219,9 @@ function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnecte
       {viewingGroupAsHousehold && (
         <p className="field-hint">{t('Wechselt zuerst zu „Mein Zuhause“ (über „Start“), um das Tier zu übernehmen.')}</p>
       )}
-      <button type="button" className="btn btn-primary btn-block" onClick={onLogout}>
+      <Button type="button" block onClick={onLogout}>
         {t('Abmelden und Einladungscode einlösen')}
-      </button>
+      </Button>
     </div>
   )
 }
@@ -408,6 +411,10 @@ export default function App() {
   // Darstellung (Einstellungen, lib/darstellung.js): die Wahl der Identität aus /me an <html> - und für das nächste Laden
   // gemerkt (public/darstellung-init.js), außer in Demo und Admin-Ansicht (dort gilt sie nur für diesen Besuch). Ohne
   // Sitzung (abgemeldet, Demo oder Admin-Ansicht beendet) wieder die gemerkte Wahl dieses Geräts.
+  // Profil: „Euer Name“ aus /me ist die Vorgabe für den Autor neuer Erinnerungen (lib/profil.js).
+  const anzeigename = family?.person?.anzeigename
+  useEffect(() => rememberPersonName({ person: { anzeigename } }), [anzeigename])
+
   const signedOut = family === null
   const darstellung = family?.darstellung
   const rememberIt = Boolean(family) && !isReadOnly(family)
@@ -603,7 +610,7 @@ export default function App() {
             </section>
           </div>
         ) : (
-          <LoginPage onLogin={handleVoucherLogin} initialMode="redeem" initialCode={voucherCode} />
+          <LoginEntry onLogin={handleVoucherLogin} initialMode="redeem" initialCode={voucherCode} />
         )}
       </ThemeProvider>
     )
@@ -682,7 +689,7 @@ export default function App() {
   if (!family) {
     return (
       <ThemeProvider>
-        <LoginPage onLogin={handleLogin} />
+        <LoginEntry onLogin={handleLogin} />
       </ThemeProvider>
     )
   }

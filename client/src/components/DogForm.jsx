@@ -5,6 +5,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import { SEX_CHOICES, UNKNOWN_SEX, speciesLabel, speciesNoun } from '../lib/timeline.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const HERKUNFT_OPTIONS = [
   { value: '', label: '–' },
@@ -397,12 +398,12 @@ export default function DogForm({ dog, allDogs, ownFamilyId, onSubmit, onDelete,
       <div className="form-actions span-2">
         {onDelete && <ConfirmButton onConfirm={handleDelete} label={t('{noun} löschen', { noun: t(noun) })} disabled={saving} />}
         <span className="form-actions-spacer" />
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
+        </Button>
+        <Button type="submit" disabled={saving || uploading}>
           {saving ? t('Speichere …') : t('Änderungen speichern')}
-        </button>
+        </Button>
       </div>
     </form>
   )

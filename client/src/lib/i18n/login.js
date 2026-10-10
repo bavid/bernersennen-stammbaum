@@ -1,6 +1,10 @@
 // Startseite (LoginPage) und ihre Formulare. de steht wörtlich wie zuvor in den Komponenten, en daneben.
 export const de = {
   'login.kicker': 'Eine Familie · viele Zuhause',
+  // Rudel-Instanz (pages/RudelLoginPage.jsx): nur das gemeinsame Familien-Passwort.
+  'login.rudel.label': 'Für eure Familie',
+  'login.rudel.lede': 'Mit eurem gemeinsamen Familien-Passwort geht’s weiter.',
+  'login.rudel.password': 'Familien-Passwort',
   'login.headline': ['Wie geht’s den anderen', 'Fellnasen?'],
   'login.lede':
     'Tiere, die zusammengehören, leben oft in verschiedenen Zuhause. Hier bleibt ihr verbunden: Klickt ein Tier an und schaut nach, was es so treibt.',
@@ -107,6 +111,9 @@ export const de = {
 
 export const en = {
   'login.kicker': 'One family · many homes',
+  'login.rudel.label': 'For your family',
+  'login.rudel.lede': 'Continue with your shared family password.',
+  'login.rudel.password': 'Family password',
   'login.headline': ['How are the', 'other furry friends?'],
   'login.lede':
     'Animals who belong together often live in different homes. Here you stay connected: tap an animal and see what it is up to.',

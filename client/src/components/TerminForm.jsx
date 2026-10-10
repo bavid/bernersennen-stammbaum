@@ -17,6 +17,7 @@ import {
   toTerminPayload
 } from '../lib/termine.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const IDS = {
   titel: 'termin-titel',
@@ -148,12 +149,12 @@ export default function TerminForm({ termin, today, onSaved, onCancel }) {
       </div>
 
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        </Button>
+        <Button type="submit" disabled={saving}>
           {saving ? t('Speichere …') : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   )

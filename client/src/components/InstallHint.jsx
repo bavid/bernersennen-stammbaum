@@ -10,6 +10,7 @@ import {
 } from '../lib/install.js'
 import { tList, useT } from '../lib/i18n/index.js'
 import '../styles/install-hint.css'
+import { Button } from './ui/index.js'
 
 export const INSTALL_TITLE = 'Als App aufs Handy – ohne App Store'
 
@@ -21,9 +22,9 @@ function Steps({ platform, promptReady, onInstall, installing }) {
   if (promptReady) {
     return (
       <div className="install-hint-actions">
-        <button type="button" className="btn btn-primary" onClick={onInstall} disabled={installing}>
+        <Button type="button" onClick={onInstall} disabled={installing}>
           {t('install.install')}
-        </button>
+        </Button>
         <span className="muted">{t('install.tap')}</span>
       </div>
     )
@@ -113,9 +114,9 @@ export default function InstallHint({
       )}
       {children}
       {variant === 'card' && !installed && (
-        <button type="button" className="btn btn-ghost install-hint-later" onClick={handleDismiss}>
+        <Button type="button" variant="ghost" className="install-hint-later" onClick={handleDismiss}>
           {t('install.later')}
-        </button>
+        </Button>
       )}
     </section>
   )

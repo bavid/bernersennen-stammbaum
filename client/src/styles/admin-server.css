@@ -71,7 +71,7 @@
   height: 0.55rem;
   border-radius: var(--radius-round);
   background: var(--server-status);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--server-status) 22%, transparent);
+  box-shadow: 0 0 0 var(--halo) color-mix(in srgb, var(--server-status) 22%, transparent);
 }
 
 /* Zusammenfassung: ein Satz über alle Ampeln */
@@ -110,7 +110,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
-  box-shadow: inset 0 3px 0 var(--server-status);
+  box-shadow: inset 0 var(--accent-edge) 0 var(--server-status);
 }
 
 .admin-server-grid.is-secondary .server-card {

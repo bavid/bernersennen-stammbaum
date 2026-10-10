@@ -9,6 +9,7 @@ import CompanionsView from '../components/animals/CompanionsView.jsx'
 import AnimalCreateModal from '../components/AnimalCreateModal.jsx'
 import GroupPosts from '../components/group/GroupPosts.jsx'
 import VisitChip from '../components/visits/VisitChip.jsx'
+import AreaAvatar from '../components/AreaAvatar.jsx'
 import PinboardPage from './PinboardPage.jsx'
 import useAreaAnimals from '../hooks/useAreaAnimals.js'
 import useAnimalCreate from '../hooks/useAnimalCreate.js'
@@ -19,6 +20,7 @@ import { areaGrid } from '../lib/animalGrid.js'
 import { familySettingsRoute } from '../lib/areas.js'
 import { isVisit } from '../lib/visits.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 // Mitglieder & Rollen (Phase R) kommen wie bisher erst bei Bedarf als eigener Chunk.
 const MembersPage = lazy(() => import('./MembersPage.jsx'))
@@ -69,7 +71,10 @@ export default function GroupPage({ family, onFamilyChange }) {
       <header className="page-hero group-hero">
         <div>
           <span className="eyebrow">{visiting ? t('Befreundetes Zuhause') : words.group}</span>
-          <h1>{family.name}</h1>
+          <h1 className="area-with-avatar">
+            <AreaAvatar name={family.name} bild={family.bild} size="lg" />
+            <span>{family.name}</span>
+          </h1>
           {meta && <p className="group-meta">{meta}</p>}
           {/* Phase W, Schritt 2: zu Besuch ein Chip im Kopf statt des Bands in der Leiste oben. */}
           {visiting && <VisitChip name={family.name} />}
@@ -79,10 +84,10 @@ export default function GroupPage({ family, onFamilyChange }) {
             {/* Phase W, Schritt 2: "Familie verwalten" ist Einstellungen › Familien › [Familie] - kein Dialog mehr. */}
             {/* B+ Familienalbum: die Fotos der Familie als Diashow (pages/BilderrahmenPage.jsx, Gate über ?in=). Audit W:
                 ein leiser Link nach dem Knopf (.hero-link) - am Handy stehen so nicht zwei breite Knöpfe übereinander. */}
-            <Link to={familySettingsRoute(family.id)} className="btn btn-ghost">
+            <Button to={familySettingsRoute(family.id)} as={Link} variant="ghost">
               <Icon name="settings" />
               {words.groupSettings}
-            </Link>
+            </Button>
             <Link to={`/bilderrahmen?in=${family.id}`} className="hero-link">
               <Icon name="frame" />
               {t('Bilderrahmen')}

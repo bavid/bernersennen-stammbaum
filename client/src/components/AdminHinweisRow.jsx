@@ -2,6 +2,7 @@ import Icon from './Icon.jsx'
 import ConfirmButton from './ConfirmButton.jsx'
 import ExpandableText from './ExpandableText.jsx'
 import { STATUS_LABELS, formatZeitraum } from '../lib/hinweise.js'
+import { Button } from './ui/index.js'
 
 const STUFE_LABELS = { info: 'Info', wartung: 'Wartung', wichtig: 'Wichtig' }
 const TEXT_LINES = 2
@@ -24,14 +25,14 @@ export default function AdminHinweisRow({ hinweis, editButtonId, editDisabled, o
       </p>
       {hinweis.text && <ExpandableText text={hinweis.text} className="admin-hinweis-text" lines={TEXT_LINES} />}
       <div className="admin-row-actions">
-        <button type="button" id={editButtonId} className="btn btn-ghost" disabled={editDisabled} onClick={onEdit}>
+        <Button type="button" id={editButtonId} variant="ghost" disabled={editDisabled} onClick={onEdit}>
           <Icon name="edit" />
           Bearbeiten
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={onToggle}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={onToggle}>
           <Icon name={hinweis.aktiv ? 'eyeOff' : 'eye'} />
           {hinweis.aktiv ? 'Ausschalten' : 'Einschalten'}
-        </button>
+        </Button>
         <ConfirmButton onConfirm={onDelete} label="Löschen" confirmLabel="Wirklich löschen?" />
       </div>
     </li>

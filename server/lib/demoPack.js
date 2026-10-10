@@ -25,6 +25,7 @@ const { createDemoPartnerAreas, createDemoPartnerContent } = require('./demoPart
 const { createDemoMembers, insertLeitungComment } = require('./demoMembers')
 const { createDemoVisits } = require('./demoVisits')
 const { removeDemoWwh, createDemoWwh } = require('./demoWirWarenHier')
+const { createDemoProfil } = require('./demoProfil')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -607,6 +608,14 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     // "Zuhause am Deich" kommentiert in der Familie auf Wilmas Eintrag (lib/demoMembers.js) - so zeigt die Demo
     // einen Kommentar mit vonMir: true, den die Besucherin "selbst" geschrieben hat.
     insertLeitungComment(db, { entryIds: membersResult.entryIds, groupFamilyId: rudelResult.familyId, householdId: householdResult.familyId })
+
+    // Profil: Bilder für Zuhause und Familie, Namen der Personen (lib/demoProfil.js).
+    createDemoProfil(db, {
+      copyImage,
+      familyId: rudelResult.familyId,
+      homeId: householdResult.familyId,
+      households: membersResult.households
+    })
 
     // Phase V2: Besuch Deich <-> Möwenweg und „Erlebt mit“ (lib/demoVisits.js) - braucht beide Zuhause.
     const visitsResult = createDemoVisits(db, {

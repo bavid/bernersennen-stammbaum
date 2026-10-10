@@ -12,6 +12,7 @@ import { usePartnerDemo } from '../hooks/usePartnerDemo.js'
 import { DEMO_PARTNER_SLUGS } from '../lib/demoPartners.js'
 import { PARTNER_REQUEST_ANCHOR } from '../lib/anfragen.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 // /partner-werden (Phase 5 Task 4): öffentliche Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung.
 // Audit (4,8 Bildschirme am Handy, das Formular vor der Erklärung): erst erklären (Reiter „Was ihr bekommt“ /
@@ -140,15 +141,15 @@ function DemoButtons({ onDemo }) {
 function ContactAction({ legal }) {
   if (legal?.email) {
     return (
-      <a href={`mailto:${legal.email}`} className="btn btn-ghost btn-lg">
+      <Button href={`mailto:${legal.email}`} variant="ghost" size="lg">
         <Icon name="mail" /> {t('Kontakt aufnehmen')}
-      </a>
+      </Button>
     )
   }
   return (
-    <Link to="/impressum" className="btn btn-ghost btn-lg">
+    <Button to="/impressum" as={Link} variant="ghost" size="lg">
       {t('Kontakt über das Impressum')}
-    </Link>
+    </Button>
   )
 }
 
@@ -185,9 +186,9 @@ function RequestSection() {
           <p className="muted">{t('Kostenlos für Hundeschulen, Tierheime, Hundesalons und Betreuung.')}</p>
         </div>
         {!open && (
-          <button type="button" className="btn btn-primary" aria-expanded="false" aria-controls="partner-info-request-form" onClick={() => setOpen(true)}>
+          <Button type="button" aria-expanded="false" aria-controls="partner-info-request-form" onClick={() => setOpen(true)}>
             {t('Anfrage ausfüllen')}
-          </button>
+          </Button>
         )}
       </div>
       <div id="partner-info-request-form" hidden={!open}>

@@ -152,7 +152,7 @@
 .banner-layout-option.is-checked {
   border-color: var(--rust);
   background: var(--rust-wash);
-  box-shadow: inset 0 0 0 1px var(--rust);
+  box-shadow: inset 0 0 0 var(--hairline) var(--rust);
 }
 
 .banner-layout-option:has(.banner-layout-input:focus-visible) {

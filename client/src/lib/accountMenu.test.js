@@ -1,11 +1,18 @@
 import { describe, expect, test } from 'vitest'
-import { accountInitial, accountMenuItems, accountName, canInvite } from './accountMenu.js'
+import { accountBild, accountInitial, accountMenuItems, accountName, canInvite } from './accountMenu.js'
 
 const home = { id: 1, name: 'Zuhause Lindenhof', art: 'zuhause' }
 const atHome = { ...home, home, role: 'leitung' }
 const keys = (family) => accountMenuItems(family).map((item) => item.key)
 
 describe('accountMenuItems (Phase W)', () => {
+  test('Rudel-Instanz: „Feedback“ statt „Hilfe & Kontakt“, kein Einladen', () => {
+    const rudel = { id: 2, art: 'rudel', home: { id: 2, art: 'rudel' }, role: 'leitung', instanzModus: 'rudel' }
+    expect(keys(rudel)).toEqual(['einstellungen', 'collage', 'bilderrahmen', 'mitglieder', 'hilfe', 'abmelden'])
+    expect(accountMenuItems(rudel).find((item) => item.key === 'hilfe')).toMatchObject({ label: 'Feedback', to: '/admin-schreiben' })
+    expect(accountMenuItems(atHome).find((item) => item.key === 'hilfe').label).toBe('Hilfe & Kontakt')
+  })
+
   test('eigenes Zuhause: alles', () => {
     expect(keys(atHome)).toEqual(['einstellungen', 'einladen', 'collage', 'bilderrahmen', 'hilfe', 'abmelden'])
   })
@@ -36,5 +43,13 @@ describe('accountMenuItems (Phase W)', () => {
     expect(accountInitial('Zuhause am Deich')).toBe('Z')
     expect(accountInitial('')).toBe('?')
     expect(canInvite(null)).toBe(false)
+  })
+})
+
+describe('accountBild (Profil)', () => {
+  test('das Bild des eigenen Zuhauses - beim klassischen Login das der Familie, sonst null', () => {
+    expect(accountBild({ id: 5, bild: '/f', home: { id: 1, bild: '/h' } })).toBe('/h')
+    expect(accountBild({ id: 2, bild: '/f', home: { id: 2 } })).toBe('/f')
+    expect(accountBild({ id: 2 })).toBeNull()
   })
 })

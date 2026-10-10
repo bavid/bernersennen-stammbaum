@@ -4,6 +4,7 @@ import AdminField, { fieldProps } from './AdminField.jsx'
 import AdminDonationReports from './AdminDonationReports.jsx'
 import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { settingsError } from '../lib/adminMarketing.js'
+import { Button } from './ui/index.js'
 
 const GOFUNDME_ID = 'admin-support-gofundme'
 const TEXT_ID = 'admin-support-text'
@@ -113,9 +114,9 @@ function SupportSettings() {
           {saved ? 'Gespeichert.' : ''}
         </p>
         <span className="form-actions-spacer" />
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        <Button type="submit" disabled={saving}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
+        </Button>
       </div>
     </form>
   )

@@ -7,6 +7,7 @@ import ConfirmButton from './ConfirmButton.jsx'
 import Icon from './Icon.jsx'
 import ReorderHandle from './ReorderHandle.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const THUMB_WIDTH = 480
 const THUMB_HEIGHT = 160
@@ -91,16 +92,16 @@ export default function PartnerBannerSlot({ item, label, onChange, locked: locke
               onChange={(e) => setAlt(e.target.value)}
               onKeyDown={handleAltKey}
             />
-            <button
+            <Button
               type="button"
-              className="btn btn-ghost btn-compact"
+              variant="ghost" size="sm"
               disabled={locked || !altDirty}
               onClick={saveAlt}
               aria-label={t('Beschreibung von Foto {n} speichern', { n: item.position })}
             >
               <Icon name="check" />
               {t('Speichern')}
-            </button>
+            </Button>
           </div>
           <span className="visually-hidden" id={`${altId}-note`}>
             {t(ALT_NOTE)}

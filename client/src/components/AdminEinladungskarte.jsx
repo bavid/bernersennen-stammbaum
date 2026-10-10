@@ -14,6 +14,7 @@ import {
   rueckseiteModel,
   rueckseitePayload
 } from '../lib/einladungskarte.js'
+import { Button } from './ui/index.js'
 
 // Admin-Einstellung "Einladungskarte – Rückseite" (Reiter "Einstellungen", server/routes/adminEinladungskarte.js): die
 // Rückseite, die Familie auf Pfoten auf jede Einladungskarte der Partner druckt - Titel, Text, bis zu drei Schritte und
@@ -168,12 +169,12 @@ export default function AdminEinladungskarte() {
                 {saved ? 'Gespeichert.' : ''}
               </p>
               <span className="form-actions-spacer" />
-              <button type="button" className="btn btn-ghost" onClick={() => update(rueckseiteForm(RUECKSEITE_VORGABEN))}>
+              <Button type="button" variant="ghost" onClick={() => update(rueckseiteForm(RUECKSEITE_VORGABEN))}>
                 Vorgaben einsetzen
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
+              </Button>
+              <Button type="submit" disabled={saving}>
                 {saving ? 'Speichere …' : 'Speichern'}
-              </button>
+              </Button>
             </div>
           </form>
           <Preview form={form} card={card} />

@@ -8,6 +8,7 @@ import useAnimalCreate from '../hooks/useAnimalCreate.js'
 import { HOME_LABEL, areaContext } from '../lib/areas.js'
 import { hasRole } from '../lib/roles.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 // /tiere (Phase W) für das eigene Zuhause und klassische Familien-Logins - die eine Stelle für Tiere: Reiter Alle (seit
 // Schritt 4 alle Tiere aus Zuhause, Familien und befreundeten Zuhause, GET /api/tiere), Zeitleiste und Stammbaum (beide das
@@ -32,10 +33,10 @@ export default function AnimalsPage({ family }) {
         {/* Audit V7a: ohne Tiere steht "Erstes Tier anlegen" im Leerzustand - nicht zusätzlich hier oben. */}
         {canWrite && hasAnimals && (
           <div className="hero-actions">
-            <button type="button" className="btn btn-primary" onClick={() => creator.open()}>
+            <Button type="button" onClick={() => creator.open()}>
               <Icon name="plus" />
               {t('Tier hinzufügen')}
-            </button>
+            </Button>
           </div>
         )}
       </header>

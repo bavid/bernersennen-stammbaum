@@ -4,6 +4,7 @@ import EntryPhotos from '../EntryPhotos.jsx'
 import Icon from '../Icon.jsx'
 import { mirrorLabel } from '../../lib/erlebtMit.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Ein gespiegelter Eintrag (Phase V2, "Erlebt mit"): ein bestätigter Eintrag eines verbundenen Zuhauses in der
 // Chronik des eigenen Tiers - ein Verweis aufs Original, darum ohne Bearbeiten und Kommentare. onOpenOrigin (nur wenn
@@ -26,9 +27,9 @@ export default function MirroredEntry({ item, onOpenPhoto, onOpenOrigin, onHide,
       {(onOpenOrigin || onHide) && (
         <div className="entry-mirror-actions">
           {onOpenOrigin && (
-            <button type="button" className="btn btn-ghost" onClick={() => onOpenOrigin(item)}>
+            <Button type="button" variant="ghost" onClick={() => onOpenOrigin(item)}>
               {t('Bei {home} ansehen', { home: item.gespiegelt.zuhause })}
-            </button>
+            </Button>
           )}
           {onHide && (
             <ConfirmButton

@@ -7,6 +7,7 @@ import { readSetting, writeSetting } from '../lib/storage.js'
 import { DEVICE_OPTIONEN_KEY, DEVICE_REFRESH_MS, cleanOptionen, diffOptionen } from '../lib/bilderrahmen.js'
 import { fetchRahmenFotos, forgetRahmenToken, takeRahmenToken } from '../lib/rahmenGeraet.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 // Ohne Netz: nach einer Minute noch einmal (sonst alle 10 Minuten, DEVICE_REFRESH_MS).
 const RETRY_MS = 60 * 1000
@@ -68,9 +69,9 @@ function DeviceFrame({ token }) {
   if (resting) {
     return (
       <FrameMessage title={t('Der Bilderrahmen ruht')}>
-        <button type="button" className="btn btn-primary" onClick={() => setResting(false)}>
+        <Button type="button" onClick={() => setResting(false)}>
           {t('Weiter zeigen')}
-        </button>
+        </Button>
       </FrameMessage>
     )
   }

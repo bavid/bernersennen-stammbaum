@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import AdminServerCards from './AdminServerCards.jsx'
 import AdminServerVerlauf from './AdminServerVerlauf.jsx'
 import { ampelSummary, formatTime } from '../lib/adminServer.js'
+import { Button } from './ui/index.js'
 
 // Hinweis unter den Karten: gehen Warnungen per Telegram raus?
 function warnNote(warnungen) {
@@ -74,10 +75,10 @@ export default function AdminServer({ active = true }) {
         </div>
         <div className="admin-server-actions">
           {status && <span className="admin-server-time muted">Zuletzt gemessen: {formatTime(status.gemessenAt)}</span>}
-          <button type="button" className="btn btn-ghost admin-server-refresh" onClick={load} aria-disabled={loading}>
+          <Button type="button" variant="ghost" className="admin-server-refresh" onClick={load} aria-disabled={loading}>
             <Icon name="rotate" />
             {loading ? 'Aktualisiere …' : 'Aktualisieren'}
-          </button>
+          </Button>
         </div>
       </div>
 

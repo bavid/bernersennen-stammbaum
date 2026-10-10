@@ -3,6 +3,7 @@ import Icon from './Icon.jsx'
 import { roundCoord } from '../lib/geo.js'
 import { locationSummary } from '../lib/locationSummary.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100]
 const PLZ_LENGTH = 5
@@ -170,9 +171,9 @@ export default function LocationPicker({
             ))}
           </select>
         </div>
-        <button type="submit" className="btn btn-primary">
+        <Button type="submit">
           {t('Suchen')}
-        </button>
+        </Button>
       </div>
       {showLocateButton && (
         <>

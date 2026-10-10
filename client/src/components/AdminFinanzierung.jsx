@@ -4,6 +4,7 @@ import { api } from '../api'
 import AdminFinanzierungHinweis from './AdminFinanzierungHinweis.jsx'
 import AdminFinanzierungQuartale from './AdminFinanzierungQuartale.jsx'
 import AdminFinanzierungKosten from './AdminFinanzierungKosten.jsx'
+import { Button } from './ui/index.js'
 
 // Phase F: Reiter „Finanzierung“ im Admin (GET /api/admin/finanzierung, server/routes/adminFinanzierung.js) - was die
 // öffentliche Seite „So finanzieren wir uns“ (/finanzierung) zeigt: oben der Spenden-Hinweis und das aktuelle Ziel
@@ -45,9 +46,9 @@ export default function AdminFinanzierung() {
     <div className="admin-panel-stack admin-finanzierung">
       <div className="admin-section-head">
         <h2>So finanzieren wir uns</h2>
-        <Link to="/finanzierung" className="btn btn-ghost" target="_blank" rel="noopener noreferrer">
+        <Button to="/finanzierung" as={Link} variant="ghost" target="_blank" rel="noopener noreferrer">
           Seite ansehen
-        </Link>
+        </Button>
       </div>
       <p className="admin-section-intro muted">
         Die Seite zeigt immer den Grundsatz – Zahlen, Ziel und Spenden-Hinweis nur, wenn du sie hier einträgst. Fremde Werbung,

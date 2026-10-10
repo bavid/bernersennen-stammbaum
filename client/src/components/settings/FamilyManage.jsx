@@ -14,6 +14,7 @@ import FamilyKeySection from '../members/FamilyKeySection.jsx'
 import OwnMembershipSection from '../members/OwnMembershipSection.jsx'
 import DissolveFamilyDialog from '../members/DissolveFamilyDialog.jsx'
 import { AccessGroup, NameGroup } from './SettingsGroups.jsx'
+import { AreaBildGroup, PersonNameGroup } from './ProfilGroups.jsx'
 import { useT } from '../../lib/i18n/index.js'
 
 function DissolveGroup({ disabled, onOpen }) {
@@ -109,6 +110,10 @@ export default function FamilyManage({ family, onFamilyChange, classic = false }
         </section>
       )}
 
+      {/* Profil: Bild der Familie (ändert die Leitung); beim klassischen Login ist die Familie selbst die Identität - dort
+          steht auch „Euer Name“ (server/lib/profil.js). */}
+      <AreaBildGroup family={family} kind="family" canEdit={isLeitung} readOnly={isDemo} onFamilyChange={onFamilyChange} />
+      {classic && <PersonNameGroup family={family} readOnly={isDemo} onFamilyChange={onFamilyChange} />}
       {classic && <AccessGroup family={family} readOnly={isDemo} onFamilyChange={onFamilyChange} />}
 
       {isLeitung && data && (

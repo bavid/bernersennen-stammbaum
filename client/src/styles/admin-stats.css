@@ -84,7 +84,7 @@
   width: 0.6rem;
   height: 0.6rem;
   margin-right: var(--space-1);
-  border-radius: 2px;
+  border-radius: var(--radius-hair);
   vertical-align: -1px;
 }
 

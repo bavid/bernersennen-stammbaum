@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../api'
 import PasswordField from './PasswordField.jsx'
 import { useT } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Anmelden per Schlüssel (Standardfall) oder – aufklappbar – per Benutzername/Passwort. Ein offener
 // Gutschein im Schlüsselfeld beantwortet der Server mit 409 { redeem: true }: onRedeemRequired wechselt
@@ -77,13 +78,13 @@ export default function LoginForm({ onLogin, onRedeemRequired, onForgot }) {
           autoComplete="current-password"
         />
       )}
-      <button
-        className="btn btn-primary btn-lg btn-block"
+      <Button
+        size="lg" block
         type="submit"
         disabled={loading || (useUsername ? !username || !password : !secret)}
       >
         {loading ? t('login.form.opening') : t('login.form.open')}
-      </button>
+      </Button>
       <div className="login-links">
         <button type="button" className="login-link-btn" onClick={toggleUsername}>
           {useUsername ? t('login.form.withKey') : t('login.form.withUser')}

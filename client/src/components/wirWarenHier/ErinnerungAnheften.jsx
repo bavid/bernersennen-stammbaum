@@ -5,6 +5,7 @@ import Modal from '../Modal.jsx'
 import { formatDateLong } from '../../lib/dates.js'
 import { WWH, wwhErrorText } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Was sich anheften lässt: eigene (nicht gespiegelte), nicht private Erinnerungen dieses Tiers, die noch nicht hängen.
 function pinnable(entries, checkin) {
@@ -67,12 +68,12 @@ function AuswahlDialog({ open, checkin, onClose, onPin }) {
           </fieldset>
         )}
         <div className="form-actions">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={onClose}>
             {t(WWH.abbrechen)}
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={choice === null}>
+          </Button>
+          <Button type="submit" disabled={choice === null}>
             {t(WWH.anheften)}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -104,9 +105,9 @@ export default function ErinnerungAnheften({ checkin, ortName, disabled, onPin, 
                 {formatDateLong(pin.datum)}
                 {pin.status === 'offen' && <span className="pill pill-rust">{t(WWH.erinnerungWartet)}</span>}
               </span>
-              <button type="button" className="btn btn-ghost btn-compact" disabled={disabled} aria-label={t(WWH.loesenLabel, { titel: pin.titel })} onClick={() => onUnpin(checkin.id, pin)}>
+              <Button type="button" variant="ghost" size="sm" disabled={disabled} aria-label={t(WWH.loesenLabel, { titel: pin.titel })} onClick={() => onUnpin(checkin.id, pin)}>
                 {t(WWH.loesen)}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

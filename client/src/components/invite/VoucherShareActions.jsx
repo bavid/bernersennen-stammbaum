@@ -3,6 +3,7 @@ import Icon from '../Icon.jsx'
 import { useToast } from '../Toast.jsx'
 import { voucherLink } from '../../lib/visits.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const LINK_COPY_FAILED_MESSAGE = 'Kopieren nicht möglich – Link bitte markieren'
 
@@ -43,22 +44,22 @@ export default function VoucherShareActions({ code, gift = null, extra = null })
   }
 
   const shareButton = canShare && (
-    <button key="share" type="button" className="btn btn-ghost" onClick={share}>
+    <Button key="share" type="button" variant="ghost" onClick={share}>
       <Icon name="share" />
       {t('Teilen')}
-    </button>
+    </Button>
   )
   const linkButton = (
-    <button key="link" type="button" className="btn btn-ghost" onClick={copyLink}>
+    <Button key="link" type="button" variant="ghost" onClick={copyLink}>
       <Icon name="copy" />
       {t('Link kopieren')}
-    </button>
+    </Button>
   )
   const codeButton = (
-    <button key="code" type="button" className="btn btn-ghost" onClick={() => copy(code)}>
+    <Button key="code" type="button" variant="ghost" onClick={() => copy(code)}>
       <Icon name="copy" />
       {t('Code kopieren')}
-    </button>
+    </Button>
   )
   // Höchstens zwei Knöpfe sichtbar (Audit: fünf Aktionen je Code waren zu viel), der Rest steht unter „Mehr“.
   const primary = shareButton || linkButton

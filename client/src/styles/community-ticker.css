@@ -89,10 +89,10 @@
   width: 2.5rem;
   height: 2.5rem;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--rust);
   color: var(--surface);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, var(--rust) 45%, transparent);
+  box-shadow: 0 0 0 var(--ring-inner-sm) var(--surface), 0 0 0 var(--ring-outer-thin) color-mix(in srgb, var(--rust) 45%, transparent);
 }
 
 .community-hero-photo svg {
@@ -186,7 +186,7 @@ a.community-chip.is-hinweis:focus-visible {
   place-items: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--rust-wash);
   color: var(--rust);
 }

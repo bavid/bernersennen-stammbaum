@@ -6,6 +6,7 @@ import CommunityPanel from './CommunityPanel.jsx'
 import { t } from '../lib/i18n/index.js'
 import { BANNER_CHIPS, BANNER_TEXT_MAX, bannerForm, bannerPayload, bannerPreviewData, chosenPartner, filterPartners } from '../lib/communityBannerAdmin.js'
 import '../styles/admin-community-banner.css'
+import { Button } from './ui/index.js'
 
 // Admin, Reiter „Empfehlungen“: Karte „Band ‚Mit dabei‘“ - was das Band oben auf der Startseite zeigt (GET/PUT
 // /api/admin/community/banner, server/lib/communityBanner.js): Partner des Monats (Suche + Auswahl, optional „bis“),
@@ -149,9 +150,9 @@ function BannerForm({ info, onSaved }) {
         <ChipSwitches chips={form.chips} onToggle={toggleChip} />
         <HinweisFields form={form} errors={state.errors} update={update} />
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={state.saving}>
+          <Button type="submit" disabled={state.saving}>
             {state.saving ? t('Speichere …') : t('Speichern')}
-          </button>
+          </Button>
           {state.saved && (
             <span className="field-hint" role="status">
               {t('Gespeichert.')}

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import RoleBadge from '../RoleBadge.jsx'
+import AreaAvatar from '../AreaAvatar.jsx'
 import RoleSelect from '../RoleSelect.jsx'
 import Icon from '../Icon.jsx'
 import { ROLES, isLastLeitung } from '../../lib/roles.js'
 import { formatDateShort } from '../../lib/dates.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 const LAST_LEITUNG_HINT = 'Es muss immer eine Leitung geben.'
 
@@ -25,7 +27,9 @@ function MemberRow({ member, isSelf, isLast, canManage, disabled, onRoleChange, 
   return (
     <li className="member-row">
       <div className="member-row-main">
+        <AreaAvatar name={member.name} bild={member.bild} size="sm" />
         <strong>{member.name}</strong>
+        {member.anzeigename && <span className="muted">· {member.anzeigename}</span>}
         {isSelf && <span className="muted">{t('(ich)')}</span>}
         <RoleBadge rolle={member.rolle} />
         <span className="member-row-meta">
@@ -48,10 +52,10 @@ function MemberRow({ member, isSelf, isLast, canManage, disabled, onRoleChange, 
             />
           )}
           {!isSelf && !confirming && (
-            <button type="button" className="btn btn-danger" disabled={disabled} onClick={() => setConfirming(true)}>
+            <Button type="button" variant="danger" disabled={disabled} onClick={() => setConfirming(true)}>
               <Icon name="trash" />
               {t('Entfernen')}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -65,12 +69,12 @@ function MemberRow({ member, isSelf, isLast, canManage, disabled, onRoleChange, 
           </p>
           <div className="form-actions">
             <span className="form-actions-spacer" />
-            <button type="button" className="btn btn-ghost" onClick={() => setConfirming(false)}>
+            <Button type="button" variant="ghost" onClick={() => setConfirming(false)}>
               {t('Abbrechen')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="btn btn-danger is-armed"
+              variant="danger" className="is-armed"
               disabled={disabled}
               onClick={() => {
                 setConfirming(false)
@@ -79,7 +83,7 @@ function MemberRow({ member, isSelf, isLast, canManage, disabled, onRoleChange, 
             >
               <Icon name="trash" />
               {t('Ja, entfernen')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import Icon from '../Icon.jsx'
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import { MAX_ZOOM, MIN_ZOOM, clampZoom } from '../../lib/collage/layout.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Reiter "Fotos" im Collage-Editor: ausgewähltes Foto (Unterschrift, Zoom, Reihenfolge, Datum am Zeitstrahl)
 // und die Ablage mit weiteren Fotos der gewählten Tiere.
@@ -47,22 +48,22 @@ function PhotoControls({ page, photo, onChange, onMove, onRemove }) {
         <span className="field-hint">{t('Im Bild ziehen verschiebt den Ausschnitt.')}</span>
       </div>
       <div className="inspector-buttons">
-        <button type="button" className="btn btn-ghost" onClick={() => onMove(index - 1)} disabled={index === 0}>
+        <Button type="button" variant="ghost" onClick={() => onMove(index - 1)} disabled={index === 0}>
           <Icon name="arrowLeft" /> {t('Früher')}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={() => onMove(index + 1)} disabled={index === page.photos.length - 1}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => onMove(index + 1)} disabled={index === page.photos.length - 1}>
           {t('Später')} <Icon name="arrowLeft" className="icon-flip" />
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={() => onMove(0)} disabled={index === 0}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => onMove(0)} disabled={index === 0}>
           <Icon name="star" /> {t('Als Hauptbild')}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={() => onChange(reset)}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => onChange(reset)}>
           {t('Ausschnitt zurücksetzen')}
-        </button>
+        </Button>
       </div>
-      <button type="button" className="btn btn-danger" onClick={onRemove}>
+      <Button type="button" variant="danger" onClick={onRemove}>
         <Icon name="trash" /> {t('Von der Seite entfernen')}
-      </button>
+      </Button>
     </section>
   )
 }

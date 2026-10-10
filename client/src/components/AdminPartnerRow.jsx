@@ -11,6 +11,7 @@ import AdminPartnerTermine from './AdminPartnerTermine.jsx'
 import { AdminViewLink } from './AdminFamilyList.jsx'
 import { STATUS_LABELS } from '../lib/adminPartnerForm.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
+import { Button } from './ui/index.js'
 
 // Ein Partner in der Admin-Liste: Status-Chip (und "Gesperrt"), Typ, Aktionen (Bearbeiten, Portal
 // ansehen, Pausieren/Aktivieren, Löschen nur im Entwurf, Sperren/Entsperren, "Fotos" aufklappen - Bannerfotos (Audit V7a)
@@ -44,34 +45,34 @@ export default function AdminPartnerRow({ partner, onEdit, onToggleStatus, onDel
         <span className="muted admin-partner-telegram">Eigener Bot: {partner.telegram_eigener_bot ? 'ja' : 'nein'}</span>
       </span>
       <span className="admin-partner-row-actions">
-        <button type="button" className="btn btn-ghost" onClick={() => onEdit(partner)}>
+        <Button type="button" variant="ghost" onClick={() => onEdit(partner)}>
           Bearbeiten
-        </button>
-        <a className="btn btn-ghost" href={`/p/${partner.slug}`} target="_blank" rel="noopener noreferrer">
+        </Button>
+        <Button variant="ghost" href={`/p/${partner.slug}`} target="_blank" rel="noopener noreferrer">
           Portal ansehen
-        </a>
+        </Button>
         {partner.area_family_id && <AdminViewLink familyId={partner.area_family_id} />}
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost"
+          variant="ghost"
           disabled={locked && partner.status !== 'aktiv'}
           title={locked && partner.status !== 'aktiv' ? 'Erst entsperren' : undefined}
           onClick={() => onToggleStatus(partner)}
         >
           {partner.status === 'aktiv' ? 'Pausieren' : 'Aktivieren'}
-        </button>
+        </Button>
         {partner.status === 'entwurf' && (
           <ConfirmButton className="admin-partner-delete" onConfirm={() => onDelete(partner)} label="Löschen" confirmLabel="Wirklich löschen?" />
         )}
         <AdminPartnerLock partner={partner} onChanged={onChanged} />
-        <button type="button" className="btn btn-ghost" aria-expanded={showEinblicke} aria-controls={einblickeId} onClick={() => setShowEinblicke((open) => !open)}>
+        <Button type="button" variant="ghost" aria-expanded={showEinblicke} aria-controls={einblickeId} onClick={() => setShowEinblicke((open) => !open)}>
           <Icon name="image" />
           Fotos
-        </button>
-        <button type="button" className="btn btn-ghost" aria-expanded={showTermine} aria-controls={termineId} onClick={() => setShowTermine((open) => !open)}>
+        </Button>
+        <Button type="button" variant="ghost" aria-expanded={showTermine} aria-controls={termineId} onClick={() => setShowTermine((open) => !open)}>
           <Icon name="calendar" />
           Termine
-        </button>
+        </Button>
       </span>
       <AdminPartnerTrust partner={partner} onChanged={onChanged} />
       {/* Phase F: „Überall sichtbar“ - nur sichtbar, wenn der Partner es eingeschaltet hat; der Admin kann es ausschalten. */}

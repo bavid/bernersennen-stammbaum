@@ -5,6 +5,7 @@ import useFocusFirstError from '../hooks/useFocusFirstError.js'
 import { AMOUNT_FIELDS, donationErrorField, initialDonationForm, parseDonationForm } from '../lib/adminMarketing.js'
 import { formatEuroCents } from '../lib/discover.js'
 import { parseEuroToCents } from '../lib/euro.js'
+import { Button } from './ui/index.js'
 
 const IDS = {
   zeitraum: 'admin-report-zeitraum',
@@ -104,12 +105,12 @@ export default function AdminDonationReportForm({ report, onSaved, onCancel }) {
       </div>
 
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Abbrechen
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        </Button>
+        <Button type="submit" disabled={saving}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
+        </Button>
       </div>
     </form>
   )

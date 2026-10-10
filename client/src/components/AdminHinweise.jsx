@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import AdminHinweisForm from './AdminHinweisForm.jsx'
 import AdminHinweisRow from './AdminHinweisRow.jsx'
 import { useToast } from './Toast.jsx'
+import { Button } from './ui/index.js'
 
 const NEW = 'neu'
 const NEW_BUTTON_ID = 'admin-hinweis-neu'
@@ -80,17 +81,16 @@ export default function AdminHinweise() {
             Seite.
           </p>
         </div>
-        <button
+        <Button
           type="button"
           id={NEW_BUTTON_ID}
-          className="btn btn-primary"
           disabled={!data || full || editing !== null}
           aria-describedby={full ? 'admin-hinweise-full' : undefined}
           onClick={() => setEditing(NEW)}
         >
           <Icon name="plus" />
           Neuer Hinweis
-        </button>
+        </Button>
       </div>
       {full && (
         <p className="field-hint" id="admin-hinweise-full">

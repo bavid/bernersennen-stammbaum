@@ -4,6 +4,7 @@ import Modal from './Modal.jsx'
 import AdminAnfrageRow from './AdminAnfrageRow.jsx'
 import AdminAnfrageAssign from './AdminAnfrageAssign.jsx'
 import { ANFRAGE_STATUS, ANFRAGE_TYP } from '../lib/anfragen.js'
+import { Button } from './ui/index.js'
 
 const FILTERS = [
   [ANFRAGE_STATUS.offen, 'Offen'],
@@ -20,15 +21,15 @@ function Pager({ page, onPage }) {
   if (!page || page.seiten <= 1) return null
   return (
     <nav className="admin-anfragen-pager" aria-label="Seiten der Anfragen">
-      <button type="button" className="btn btn-ghost" disabled={page.seite <= 1} onClick={() => onPage(page.seite - 1)}>
+      <Button type="button" variant="ghost" disabled={page.seite <= 1} onClick={() => onPage(page.seite - 1)}>
         Zurück
-      </button>
+      </Button>
       <span className="muted">
         Seite {page.seite} von {page.seiten}
       </span>
-      <button type="button" className="btn btn-ghost" disabled={page.seite >= page.seiten} onClick={() => onPage(page.seite + 1)}>
+      <Button type="button" variant="ghost" disabled={page.seite >= page.seiten} onClick={() => onPage(page.seite + 1)}>
         Weiter
-      </button>
+      </Button>
     </nav>
   )
 }

@@ -79,6 +79,8 @@ test('Demo-Partner-Bereiche: Einblicke, Wuschelglück, Demo als Partner, Ersetze
       ...db.prepare('SELECT foto_url AS url FROM partner_einblicke').all().map((row) => row.url),
       // Phase V4b: Bannerfotos der Partner (partner_banner) - ebenfalls eigene Dateien im Upload-Ordner.
       ...db.prepare('SELECT foto_url AS url FROM partner_banner').all().map((row) => row.url),
+      // Profil: Bilder von Zuhause und Familie (lib/profil.js, eigene Dateien ohne uploads-Zeile).
+      ...db.prepare('SELECT bild_file AS url FROM bereich_profil WHERE bild_file IS NOT NULL').all().map((row) => row.url),
       ...db
         .prepare('SELECT foto_urls FROM timeline_entries UNION ALL SELECT foto_urls FROM breeding_events')
         .all()

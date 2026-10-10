@@ -9,6 +9,7 @@ import ZweckBadge from './ZweckBadge.jsx'
 import { formatDateShort, relativeTime } from '../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
 import { freeCodes } from '../lib/anfragen.js'
+import { Button } from './ui/index.js'
 
 function CreatedCodes({ codes, onDismiss }) {
   const toast = useToast()
@@ -27,10 +28,10 @@ function CreatedCodes({ codes, onDismiss }) {
       <div className="admin-voucher-created-head">
         <span className="field-label">{codes.length} neue Codes</span>
         <span className="admin-voucher-created-actions">
-          <button type="button" className="btn btn-ghost" onClick={copyAll}>
+          <Button type="button" variant="ghost" onClick={copyAll}>
             <Icon name="copy" />
             Alle kopieren
-          </button>
+          </Button>
           <button type="button" className="icon-btn" onClick={onDismiss} aria-label="Schließen">
             <Icon name="close" />
           </button>
@@ -52,12 +53,12 @@ function BatchActions({ batch }) {
   if (!(batch.open > 0)) return null
   return (
     <div className="admin-voucher-batch-actions">
-      <Link to={`/admin/gutscheine/${batch.id}/druck`} className="btn btn-ghost">
+      <Button to={`/admin/gutscheine/${batch.id}/druck`} as={Link} variant="ghost">
         <Icon name="printer" /> Karten drucken
-      </Link>
-      <a href={api.admin.voucherCsvUrl(batch.id)} download className="btn btn-ghost">
+      </Button>
+      <Button href={api.admin.voucherCsvUrl(batch.id)} download variant="ghost">
         <Icon name="download" /> CSV
-      </a>
+      </Button>
     </div>
   )
 }
@@ -108,9 +109,9 @@ function BatchDetail({ batchId, onRevoked }) {
             voucher.redeemed_by_name && <span className="muted">{voucher.redeemed_by_name}</span>
           )}
           {voucher.status === 'offen' && (
-            <button type="button" className="btn btn-ghost" onClick={() => handleRevoke(voucher.id)}>
+            <Button type="button" variant="ghost" onClick={() => handleRevoke(voucher.id)}>
               Zurückziehen
-            </button>
+            </Button>
           )}
         </li>
       ))}

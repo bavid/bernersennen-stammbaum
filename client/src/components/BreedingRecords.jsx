@@ -10,6 +10,7 @@ import { formatDateLong, todayIso } from '../lib/dates.js'
 import { shortName } from '../lib/timeline.js'
 import { isEditable } from '../lib/areas.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const EMPTY_FORM = { mutterDogId: '', vater: { dogId: '', freitext: '' }, datum: todayIso(), wurfInfo: '', fotos: [] }
 
@@ -105,12 +106,12 @@ function BreedingForm({ ownDogs, allDogs, initialMother = null, focusOnOpen = fa
         <PhotoPicker value={form.fotos} onChange={(fotos) => update({ fotos })} onBusyChange={setUploading} onError={setError} />
       </div>
       <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           {t('Abbrechen')}
-        </button>
-        <button className="btn btn-primary" type="submit" disabled={saving || uploading || !form.mutterDogId}>
+        </Button>
+        <Button type="submit" disabled={saving || uploading || !form.mutterDogId}>
           {saving ? t('Speichere …') : t('Eintragen')}
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -172,9 +173,9 @@ export default function BreedingRecords({ events, ownDogs, allDogs, canWrite = t
           {words.breedingBook}
         </h2>
         {canWrite && !writing && (
-          <button type="button" className="btn btn-ghost" onClick={() => setWriting(true)}>
+          <Button type="button" variant="ghost" onClick={() => setWriting(true)}>
             <Icon name="plus" /> {words.addMating}
-          </button>
+          </Button>
         )}
       </div>
       <p className="muted">{theme.texts.breedingIntro}</p>

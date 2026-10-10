@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
 import { rowPayload } from '../lib/adminPartnerForm.js'
+import { Button } from './ui/index.js'
 
 export const LOCK_WARNING = 'Das Profil verschwindet sofort aus allen öffentlichen Listen.'
 
@@ -37,10 +38,10 @@ export default function AdminPartnerLock({ partner, onChanged }) {
   if (partner.gesperrt) {
     return (
       <>
-        <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => save(false)}>
+        <Button type="button" variant="ghost" disabled={busy} onClick={() => save(false)}>
           <Icon name="lock" />
           {busy ? 'Entsperre …' : 'Entsperren'}
-        </button>
+        </Button>
         {errorMessage}
       </>
     )
@@ -48,10 +49,10 @@ export default function AdminPartnerLock({ partner, onChanged }) {
 
   if (!confirming) {
     return (
-      <button type="button" className="btn btn-ghost admin-partner-lock" onClick={() => setConfirming(true)}>
+      <Button type="button" variant="ghost" className="admin-partner-lock" onClick={() => setConfirming(true)}>
         <Icon name="lock" />
         Sperren
-      </button>
+      </Button>
     )
   }
 
@@ -60,12 +61,12 @@ export default function AdminPartnerLock({ partner, onChanged }) {
       <span className="field-hint" role="alert">
         {LOCK_WARNING}
       </span>
-      <button type="button" className="btn btn-ghost" onClick={() => setConfirming(false)}>
+      <Button type="button" variant="ghost" onClick={() => setConfirming(false)}>
         Abbrechen
-      </button>
-      <button type="button" className="btn btn-danger" disabled={busy} onClick={() => save(true)}>
+      </Button>
+      <Button type="button" variant="danger" disabled={busy} onClick={() => save(true)}>
         {busy ? 'Sperre …' : 'Wirklich sperren?'}
-      </button>
+      </Button>
       {errorMessage}
     </span>
   )

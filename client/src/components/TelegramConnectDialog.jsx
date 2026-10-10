@@ -5,6 +5,7 @@ import { POLL_INTERVAL_MS, isTelegramLink, telegramStatus } from '../lib/partner
 import Icon from './Icon.jsx'
 import Modal from './Modal.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const WAITING = 'Warte auf die Bestätigung in Telegram …'
 const EXPIRED = 'Der Link ist abgelaufen – bitte schließen und neu verbinden.'
@@ -60,20 +61,20 @@ export default function TelegramConnectDialog({ link, onConnected, onClose }) {
             <li>{t('Fertig – diese Seite merkt es von selbst.')}</li>
           </ol>
           <div className="telegram-connect-codes">
-            <a className="btn btn-primary" href={url} target="_blank" rel="noopener noreferrer">
+            <Button href={url} target="_blank" rel="noopener noreferrer">
               <Icon name="send" />
               {t('In Telegram öffnen')}
-            </a>
+            </Button>
             <img src={qrImage} alt={t('QR-Code für den Telegram-Link')} className="telegram-connect-qr" width={176} height={176} />
           </div>
           <p className="field-hint">{t('Der Link gilt {n} Minuten und nur einmal.', { n: validMinutes })}</p>
           <p className="telegram-connect-status" role="status">
             {expired ? t(EXPIRED) : message || t(WAITING)}
           </p>
-          <button type="button" className="btn btn-ghost" onClick={check} disabled={checking || expired}>
+          <Button type="button" variant="ghost" onClick={check} disabled={checking || expired}>
             <Icon name="check" />
             {checking ? t('Prüfe …') : t('Verbindung prüfen')}
-          </button>
+          </Button>
         </div>
       ) : (
         <p className="error-banner" role="alert">

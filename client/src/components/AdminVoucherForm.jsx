@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
+import { Button } from './ui/index.js'
 
 const MIN_SIZE = 1
 const MAX_SIZE = 200
@@ -216,9 +217,9 @@ export default function AdminVoucherForm({ joinableFamilies = [], partners = [],
       </div>
       <div className="form-actions">
         <span className="form-actions-spacer" />
-        <button type="submit" className="btn btn-primary" disabled={creating || !label.trim()}>
+        <Button type="submit" disabled={creating || !label.trim()}>
           {creating ? 'Lege an …' : 'Stapel anlegen'}
-        </button>
+        </Button>
       </div>
     </form>
   )

@@ -50,6 +50,36 @@
   /* Foto-Ring um runde Tierfotos (Bild-Kacheln): Abstand in Grundfarbe, dann Ring in der Akzentfarbe. */
   --ring-inner: 3px;
   --ring-outer: 5px;
+  /* Fokus außen um den Foto-Ring: noch ein Abstand, dann der Fokus-Ring (album.css, designer.css). */
+  --ring-focus-inner: 7px;
+  --ring-focus-outer: 9px;
+  /* Kleiner Ring (Avatare, Farbmuster, Stammbaum-Knoten): 2 px Abstand, 2 px Ring; „thin“ = nur 1 px Linie. */
+  --ring-inner-sm: 2px;
+  --ring-outer-sm: 4px;
+  --ring-outer-thin: 3px;
+  --ring-focus-inner-sm: 6px;
+  --ring-focus-outer-sm: 8px;
+  /* Großer Ring (großes Profilbild, Zeitleisten-Punkt): 4 px Abstand, 2 px Ring. */
+  --ring-inner-lg: 4px;
+  --ring-outer-lg: 6px;
+  --ring-focus-inner-lg: 8px;
+  --ring-focus-outer-lg: 10px;
+  /* Linien als Schatten (verschieben nichts im Layout): Haarlinie, kräftige Linie, „gewählt“-Rahmen innen,
+     Akzentkante links/oben (Glocke, Postfach, Suche, Server), Reiter-Unterstrich und Trennlinie unten (negativ =
+     an der Unterkante). */
+  --hairline: 1px;
+  --hairline-bold: 1.5px;
+  --outline-selected: 2px;
+  --accent-edge: 3px;
+  --tab-underline: -2px;
+  --hairline-under: -1px;
+  /* Weicher Hof in einer Wash-Farbe um Felder und Karten (Fokus, Hervorhebung): normal und groß (Zeitleiste). */
+  --halo: 3px;
+  --halo-lg: 6px;
+  /* Feine Ecken für Striche und Balken (Fortschritt, Marker) und die Kapsel-Form der Stammbaum-/Tier-Zeilen -
+     bewusst fest, auch bei „Eckig“ unverändert. */
+  --radius-hair: 2px;
+  --radius-capsule: 3rem;
   /* Innenabstand der Bausteine Card/EmptyState: klein (Listenzeile), mittel (Karte), groß (Abschnitt). */
   --pad-card-sm: var(--space-3);
   --pad-card-md: var(--space-5);

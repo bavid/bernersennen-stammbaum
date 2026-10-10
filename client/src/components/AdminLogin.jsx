@@ -4,6 +4,7 @@ import { api } from '../api'
 import { useTheme } from '../themes/ThemeProvider.jsx'
 import ThemeMark from './ThemeMark.jsx'
 import Icon from './Icon.jsx'
+import { Button } from './ui/index.js'
 
 // Anmeldung am Admin (eigener Login, unabhängig vom Login eines Bereichs).
 export default function AdminLogin({ onLogin }) {
@@ -53,9 +54,9 @@ export default function AdminLogin({ onLogin }) {
             required
           />
         </div>
-        <button className="btn btn-ink btn-lg" type="submit" disabled={loading}>
+        <Button variant="ink" size="lg" type="submit" disabled={loading}>
           {loading ? 'Prüfe …' : 'Anmelden'}
-        </button>
+        </Button>
         <Link to="/" className="back-link">
           <Icon name="arrowLeft" /> Zur {theme.appName}
         </Link>

@@ -4,6 +4,7 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const MIN_PASSWORD_LENGTH = 6
 const MAX_NAME_LENGTH = 80
@@ -101,9 +102,9 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
           )}
           <div className="form-actions">
             <span className="form-actions-spacer" />
-            <button type="submit" className="btn btn-primary" disabled={isDemo || loading || !joinPassword}>
+            <Button type="submit" disabled={isDemo || loading || !joinPassword}>
               {loading ? t('Beitrete …') : t('Beitreten')}
-            </button>
+            </Button>
           </div>
         </form>
       ) : (
@@ -146,13 +147,12 @@ export default function JoinFamilyDialog({ onChange, onClose, initialTab = 'join
           )}
           <div className="form-actions">
             <span className="form-actions-spacer" />
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary"
               disabled={isDemo || loading || !groupName.trim() || !groupPassword}
             >
               {loading ? t('Lege an …') : words.createGroup}
-            </button>
+            </Button>
           </div>
         </form>
       )}

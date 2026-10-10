@@ -6,6 +6,7 @@ import { relativeTime } from '../lib/dates.js'
 import { TYPE_LABELS } from '../lib/partnerTypes.js'
 import { VOUCHER_STATUS_LABEL } from '../lib/voucherCode.js'
 import { ANFRAGE_STATUS, ANFRAGE_TYP, MAX_NOTIZ_LENGTH, canAssign, mailtoHref } from '../lib/anfragen.js'
+import { Button } from './ui/index.js'
 
 const MESSAGE_LINES = 2
 
@@ -47,12 +48,12 @@ function NotizEditor({ anfrage, onSave, onDone }) {
       </label>
       <textarea id={id} value={text} onChange={(e) => setText(e.target.value)} maxLength={MAX_NOTIZ_LENGTH} rows={2} autoFocus />
       <span className="admin-row-actions">
-        <button type="submit" className="btn btn-ink" disabled={saving}>
+        <Button type="submit" variant="ink" disabled={saving}>
           {saving ? 'Speichere …' : 'Speichern'}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={onDone}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={onDone}>
           Abbrechen
-        </button>
+        </Button>
       </span>
     </form>
   )
@@ -61,22 +62,22 @@ function NotizEditor({ anfrage, onSave, onDone }) {
 function StatusActions({ anfrage, onStatus }) {
   if (anfrage.status !== ANFRAGE_STATUS.offen) {
     return (
-      <button type="button" className="btn btn-ghost" onClick={() => onStatus(ANFRAGE_STATUS.offen)}>
+      <Button type="button" variant="ghost" onClick={() => onStatus(ANFRAGE_STATUS.offen)}>
         <Icon name="arrowLeft" />
         Wieder öffnen
-      </button>
+      </Button>
     )
   }
   return (
     <>
-      <button type="button" className="btn btn-ghost" onClick={() => onStatus(ANFRAGE_STATUS.erledigt)}>
+      <Button type="button" variant="ghost" onClick={() => onStatus(ANFRAGE_STATUS.erledigt)}>
         <Icon name="check" />
         Erledigt
-      </button>
-      <button type="button" className="btn btn-ghost" onClick={() => onStatus(ANFRAGE_STATUS.abgelehnt)}>
+      </Button>
+      <Button type="button" variant="ghost" onClick={() => onStatus(ANFRAGE_STATUS.abgelehnt)}>
         <Icon name="close" />
         Ablehnen
-      </button>
+      </Button>
     </>
   )
 }
@@ -128,10 +129,10 @@ export default function AdminAnfrageRow({ anfrage, onAssign, onStatus, onNotiz, 
 
       <div className="admin-row-actions admin-anfrage-actions">
         {canAssign(anfrage) && (
-          <button type="button" className="btn btn-ink" onClick={onAssign}>
+          <Button type="button" variant="ink" onClick={onAssign}>
             <Icon name="mail" />
             {partner ? 'Partner-Zugang zuweisen' : 'Einladungscode zuweisen'}
-          </button>
+          </Button>
         )}
         <StatusActions anfrage={anfrage} onStatus={onStatus} />
         {!editingNotiz && (

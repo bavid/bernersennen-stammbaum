@@ -5,6 +5,7 @@ import WwhAnnehmenDialog from './WwhAnnehmenDialog.jsx'
 import { WWH } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
 import { focusWwhTitle } from './useWirWarenHier.js'
+import { Button } from '../ui/index.js'
 
 function Mark({ fotoUrl }) {
   if (fotoUrl) return <img className="wwh-wish-photo" src={fotoUrl} alt="" width="40" height="40" loading="lazy" />
@@ -47,9 +48,9 @@ function Eingehend({ wish, disabled, actions }) {
         <button ref={trigger} type="button" className="btn btn-primary btn-compact" disabled={disabled} onClick={() => setOpen(true)}>
           {t(WWH.annehmen)}
         </button>
-        <button type="button" className="btn btn-ghost btn-compact" disabled={disabled} onClick={reject}>
+        <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={reject}>
           {t(WWH.ablehnen)}
-        </button>
+        </Button>
       </div>
       <WwhAnnehmenDialog open={open} disabled={disabled} onCancel={() => setOpen(false)} onConfirm={accept} />
     </li>

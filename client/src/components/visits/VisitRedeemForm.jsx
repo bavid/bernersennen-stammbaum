@@ -3,6 +3,7 @@ import { api } from '../../api'
 import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { formatVoucherCode, isCompleteVoucherCode } from '../../lib/voucherCode.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // "Ein anderes Zuhause besuchen" (Phase V2): den Code eines anderen Zuhauses einlösen (POST /api/besuche/einloesen).
 // onRedeemed bekommt die Antwort { gastgeber, me } - der Aufrufer übernimmt "me" (neuer Eintrag im
@@ -53,9 +54,9 @@ export default function VisitRedeemForm({ onRedeemed }) {
             autoComplete="off"
             inputMode="text"
           />
-          <button type="submit" className="btn btn-primary" disabled={busy || isDemo || !isCompleteVoucherCode(code)}>
+          <Button type="submit" disabled={busy || isDemo || !isCompleteVoucherCode(code)}>
             {busy ? t('Prüfe …') : t('Besuchen')}
-          </button>
+          </Button>
         </div>
         {isDemo && <p className="field-hint">{readOnlyHint}</p>}
       </form>

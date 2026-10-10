@@ -289,7 +289,7 @@
   aspect-ratio: 1240 / 1754;
   border-radius: 3px;
   background: var(--paper);
-  box-shadow: 0 0 0 1px var(--line);
+  box-shadow: 0 0 0 var(--hairline) var(--line);
 }
 
 .layout-mini .mini-title {
@@ -373,7 +373,7 @@
 }
 
 .bg-option.is-checked .bg-swatch {
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--rust);
+  box-shadow: 0 0 0 var(--ring-inner-sm) var(--surface), 0 0 0 var(--ring-outer-sm) var(--rust);
 }
 
 /* Sticker-Auswahl */

@@ -18,6 +18,7 @@ import { gesundheitPayload, initialGesundheit } from '../lib/gesundheit.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import '../styles/entry-form.css'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const CONTENT_ERROR = 'Erzähl kurz, was passiert ist – oder füge ein Foto hinzu.'
 const NAME_ERROR = 'Bitte gib deinen Namen an.'
@@ -217,13 +218,13 @@ export default function TimelineEntryForm({ entry, isHousehold, isShelter, canTa
         {onDelete && <ConfirmButton onConfirm={handleDelete} label={t('{entry} löschen', { entry: words.entry })} disabled={saving} />}
         <span className="form-actions-spacer" />
         {onCancel && (
-          <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          <Button type="button" variant="ghost" onClick={onCancel}>
             {t('Abbrechen')}
-          </button>
+          </Button>
         )}
-        <button className="btn btn-primary" type="submit" disabled={saving || uploading}>
+        <Button type="submit" disabled={saving || uploading}>
           {saving ? t('Speichere …') : entry ? t('Speichern') : submitLabel || words.tellActionShort}
-        </button>
+        </Button>
       </div>
     </form>
   )

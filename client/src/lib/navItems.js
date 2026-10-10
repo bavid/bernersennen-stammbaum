@@ -1,5 +1,5 @@
 import { getTheme } from '../themes/index.js'
-import { isHouseholdIdentity } from './areas.js'
+import { STAMMBAUM_ROUTE, hasStammbaumStart, isHouseholdIdentity } from './areas.js'
 import { t } from './i18n/index.js'
 
 // Hauptnavigation je Bereichsart (family.art) - AppHeader rendert sie, am Handy als untere Leiste.
@@ -37,6 +37,18 @@ const NAV_ITEMS_HOUSEHOLD = [NAV_ITEM_START, NAV_ITEM_ANIMALS, NAV_ITEM_FAMILIES
 // Klassischer Login mit dem gemeinsamen Schlüssel einer Familie (kein Zuhause dahinter): statt "Familien" die Pinnwand
 // der Familie. Mitglieder & Rollen stehen im Menü.
 const NAV_ITEMS_CLASSIC = [NAV_ITEM_START, NAV_ITEM_ANIMALS, NAV_ITEM_PINBOARD, NAV_ITEM_DISCOVER]
+// Bestandsrudel mit Stammbaum als Start (lib/areas.js hasStammbaumStart): "Stammbaum" statt "Start".
+const NAV_ITEMS_CLASSIC_STAMMBAUM = [
+  { to: STAMMBAUM_ROUTE, icon: 'tree', label: 'Stammbaum' },
+  NAV_ITEM_ANIMALS,
+  NAV_ITEM_PINBOARD,
+  NAV_ITEM_DISCOVER
+]
+
+function householdItems(family) {
+  if (isHouseholdIdentity(family)) return NAV_ITEMS_HOUSEHOLD
+  return hasStammbaumStart(family) ? NAV_ITEMS_CLASSIC_STAMMBAUM : NAV_ITEMS_CLASSIC
+}
 
 // Tierheime (Phase T): kein Stammbaum/Würfe - wie bei allen Partner-Bereichen zuerst das eigene Profil (Startseite,
 // lib/areas.js), dann "Unsere Tiere", Pinnwand und Collage, zuletzt (P2) die Nachrichten - dieselbe Reihenfolge wie bei
@@ -97,7 +109,7 @@ const translated = (item) => ({ ...item, label: t(item.label) })
 // theme: der angezeigte Auftritt (AppHeader: useTheme().theme, samt Vorschau in den Einstellungen) - ohne Angabe der
 // gespeicherte der Familie.
 export function navItemsFor(family, theme = getTheme(family?.theme)) {
-  const items = NAV_ITEMS_BY_ART[family?.art] || (isHouseholdIdentity(family) ? NAV_ITEMS_HOUSEHOLD : NAV_ITEMS_CLASSIC)
+  const items = NAV_ITEMS_BY_ART[family?.art] || householdItems(family)
   // Beschriftung in der gewählten Sprache (lib/i18n) - navItemsFor läuft beim Rendern.
   return items.map((item) => translated(withInboxBadge(withThemeLabel(item, theme.words), family)))
 }

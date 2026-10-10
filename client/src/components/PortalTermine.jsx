@@ -5,6 +5,7 @@ import { SERIE, formatUhrzeit, groupByMonth, serieLabel, vorkommenKey } from '..
 import { todayIso } from '../lib/dates.js'
 import { SECTION_IDS, initialTermine, portalTermine } from '../lib/portalTabs.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Text und Regel nur beim ersten stattfindenden Tag eines Termins - sonst stünden sie bei jeder Woche einer Serie erneut.
 function firstKeys(items) {
@@ -65,9 +66,9 @@ export default function PortalTermine({ termine, today = todayIso() }) {
         ))}
       </div>
       {hidden > 0 && (
-        <button type="button" className="btn btn-ghost portal-termine-more" onClick={() => setShowAll(true)}>
+        <Button type="button" variant="ghost" className="portal-termine-more" onClick={() => setShowAll(true)}>
           {t('Mehr anzeigen ({n} weitere)', { n: hidden })}
-        </button>
+        </Button>
       )}
     </PortalSection>
   )

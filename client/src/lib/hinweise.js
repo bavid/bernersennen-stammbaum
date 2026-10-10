@@ -144,8 +144,25 @@ export function toHinweisPayload(form) {
 
 // Englisch, wenn die Seite auf Englisch steht und der Admin eine englische Fassung eingetragen hat - sonst Deutsch.
 export function localizeHinweis(hinweis, lang) {
-  if (lang !== 'en' || !hinweis?.titelEn) return hinweis
-  return { ...hinweis, titel: hinweis.titelEn, text: hinweis.textEn || null }
+  if (lang !== 'en') return hinweis
+  const linkLabel = hinweis?.linkLabelEn ? { linkLabel: hinweis.linkLabelEn } : {}
+  if (!hinweis?.titelEn) return hinweis?.linkLabelEn ? { ...hinweis, ...linkLabel } : hinweis
+  return { ...hinweis, titel: hinweis.titelEn, text: hinweis.textEn || null, ...linkLabel }
+}
+
+// Optionaler Link eines Hinweises (server/lib/hinweisLink.js): nur eine https-Adresse wird zum Link - alles andere
+// (auch aus dem Sitzungsspeicher) fällt weg. Gibt die Adresse oder null zurück.
+export const MAX_LINK_URL_LENGTH = 500
+export const MAX_LINK_LABEL_LENGTH = 60
+
+export function safeHinweisLink(url) {
+  if (typeof url !== 'string' || url.length > MAX_LINK_URL_LENGTH) return null
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' && parsed.hostname ? parsed.href : null
+  } catch {
+    return null
+  }
 }
 
 // --- Weggeklickt (nur diese Browser-Sitzung) -------------------------------------------------------
@@ -194,17 +211,20 @@ function isCachedHinweis(item) {
     (item.text === null || item.text === undefined || (typeof item.text === 'string' && item.text.length <= MAX_TEXT_LENGTH)) &&
     STUFE_VALUES.includes(item.stufe) &&
     optionalText(item.titelEn, MAX_TITEL_LENGTH) &&
-    optionalText(item.textEn, MAX_TEXT_LENGTH)
+    optionalText(item.textEn, MAX_TEXT_LENGTH) &&
+    optionalText(item.linkLabel, MAX_LINK_LABEL_LENGTH) &&
+    optionalText(item.linkLabelEn, MAX_LINK_LABEL_LENGTH)
   )
 }
 
 // Die englische Fassung nur, wenn es sie gibt.
-const cachedShape = ({ id, titel, text, titelEn, textEn, stufe }) => ({
+const cachedShape = ({ id, titel, text, titelEn, textEn, stufe, linkUrl, linkLabel, linkLabelEn }) => ({
   id,
   titel,
   text: text ?? null,
   stufe,
-  ...(titelEn ? { titelEn, textEn: textEn ?? null } : {})
+  ...(titelEn ? { titelEn, textEn: textEn ?? null } : {}),
+  ...(safeHinweisLink(linkUrl) && linkLabel ? { linkUrl: safeHinweisLink(linkUrl), linkLabel, linkLabelEn: linkLabelEn ?? null } : {})
 })
 
 // null: nichts gemerkt (oder unbrauchbar) - dann wartet das Band wie bisher auf die Antwort.

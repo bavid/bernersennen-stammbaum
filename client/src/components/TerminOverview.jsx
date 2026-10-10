@@ -3,6 +3,7 @@ import Icon from './Icon.jsx'
 import TerminDate from './TerminDate.jsx'
 import { formatTagKurz, formatUhrzeit, groupByMonth, serieLabel, splitSerien, vorkommenKey } from '../lib/termine.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 function HiddenBadge() {
   return (
@@ -22,16 +23,16 @@ function absageLabel(count) {
 function AbsageButton({ item, disabled, demoHintId, onToggleAbsage }) {
   const when = t('{title} am {date}', { title: item.titel, date: formatTagKurz(item.datum) })
   return (
-    <button
+    <Button
       type="button"
-      className="btn btn-ghost termin-action"
+      variant="ghost" className="termin-action"
       onClick={() => onToggleAbsage(item)}
       disabled={disabled}
       aria-describedby={demoHintId}
       aria-label={item.abgesagt ? t('Wieder stattfinden lassen: {when}', { when }) : t('Diesen Termin absagen: {when}', { when })}
     >
       {item.abgesagt ? t('Wieder stattfinden lassen') : t('Absagen')}
-    </button>
+    </Button>
   )
 }
 
@@ -82,9 +83,9 @@ function SerieRow({ serie, termin, busy, demoHintId, onEdit, onDelete, onToggleA
         </p>
       </div>
       <div className="termin-row-actions">
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost termin-action"
+          variant="ghost" className="termin-action"
           onClick={() => termin && onEdit(termin)}
           disabled={disabled || !termin}
           aria-describedby={demoHintId}
@@ -92,7 +93,7 @@ function SerieRow({ serie, termin, busy, demoHintId, onEdit, onDelete, onToggleA
         >
           <Icon name="edit" />
           {t('Serie bearbeiten')}
-        </button>
+        </Button>
         <ConfirmButton
           className="termin-action"
           onConfirm={() => termin && onDelete(termin)}
@@ -128,9 +129,9 @@ function TerminRow({ item, termin, busy, demoHintId, onEdit, onDelete, onToggleA
       </div>
       <div className="termin-row-actions">
         <AbsageButton item={item} disabled={disabled} demoHintId={demoHintId} onToggleAbsage={onToggleAbsage} />
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost termin-action"
+          variant="ghost" className="termin-action"
           onClick={() => termin && onEdit(termin)}
           disabled={disabled || !termin}
           aria-describedby={demoHintId}
@@ -138,7 +139,7 @@ function TerminRow({ item, termin, busy, demoHintId, onEdit, onDelete, onToggleA
         >
           <Icon name="edit" />
           {t('Bearbeiten')}
-        </button>
+        </Button>
         <ConfirmButton
           className="termin-action"
           onConfirm={() => termin && onDelete(termin)}

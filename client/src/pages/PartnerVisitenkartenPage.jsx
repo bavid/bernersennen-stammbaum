@@ -5,6 +5,7 @@ import useVisitenkarte from '../hooks/useVisitenkarte.js'
 import { profileTabRoute } from '../lib/partnerProfile.js'
 import { KARTE_PARAM, karteFromParams } from '../lib/kartenWahl.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 // /visitenkarten (Phase V5, Feedback-Runde) - Karten-Designer eines Partner- oder Tierheim-Bereichs, verlinkt aus dem
 // Profil (Reiter "Teilen") und den Einladungscodes; kein eigener Navigationspunkt. Eine Seite ohne "Kartenart": vorne
@@ -39,9 +40,9 @@ export default function PartnerVisitenkartenPage() {
           <p className="muted vk-lead">{t(KARTEN_LEAD)}</p>
         </div>
         {/* Audit V7a: zurück in den Reiter "Teilen", aus dem man meist kommt. */}
-        <Link to={profileTabRoute('teilen')} className="btn btn-ghost">
+        <Button to={profileTabRoute('teilen')} as={Link} variant="ghost">
           <Icon name="arrowLeft" /> {t('Zurück zum Profil')}
-        </Link>
+        </Button>
       </header>
 
       {error && (

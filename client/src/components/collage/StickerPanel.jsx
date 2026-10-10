@@ -11,6 +11,7 @@ import {
 } from '../../lib/collage/stickers.js'
 import { moveSticker, rotateSticker, scaleSticker } from '../../lib/collage/stickerTransform.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Reiter "Sticker" im Collage-Editor: ausgewählter Sticker (verschieben, Größe, Drehung, entfernen), die Sticker
 // dieser Seite zum Auswählen und die Auswahl nach Gruppen. Alles geht ohne Ziehen (Knöpfe, Tastatur).
@@ -37,31 +38,31 @@ function StickerControls({ sticker, actions }) {
       </div>
       <div className="inspector-buttons sticker-moves" role="group" aria-label={t('Verschieben')}>
         {MOVES.map(([label, icon, className, dx, dy]) => (
-          <button key={label} type="button" className="btn btn-ghost" aria-label={t(label)} title={t(label)} onClick={() => update(moveSticker(sticker, dx, dy))}>
+          <Button key={label} type="button" variant="ghost" aria-label={t(label)} title={t(label)} onClick={() => update(moveSticker(sticker, dx, dy))}>
             <Icon name={icon} className={className} />
-          </button>
+          </Button>
         ))}
       </div>
       <div className="inspector-buttons">
-        <button type="button" className="btn btn-ghost" onClick={() => update(scaleSticker(sticker, 1 / SIZE_STEP))}>
+        <Button type="button" variant="ghost" onClick={() => update(scaleSticker(sticker, 1 / SIZE_STEP))}>
           <Icon name="minus" /> {t('Kleiner')}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={() => update(scaleSticker(sticker, SIZE_STEP))}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => update(scaleSticker(sticker, SIZE_STEP))}>
           <Icon name="plus" /> {t('Größer')}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={() => update(rotateSticker(sticker, -ROTATE_STEP))}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => update(rotateSticker(sticker, -ROTATE_STEP))}>
           <Icon name="rotate" className="icon-flip" /> {t('Links drehen')}
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={() => update(rotateSticker(sticker, ROTATE_STEP))}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => update(rotateSticker(sticker, ROTATE_STEP))}>
           <Icon name="rotate" /> {t('Rechts drehen')}
-        </button>
+        </Button>
       </div>
       <p className="field-hint">
         {t('In der Vorschau ziehen verschiebt, die Griffe ändern Größe und Drehung. Tastatur: Pfeiltasten, + und −, R, Entf.')}
       </p>
-      <button type="button" className="btn btn-danger" onClick={() => actions.removeSticker(sticker.id)}>
+      <Button type="button" variant="danger" onClick={() => actions.removeSticker(sticker.id)}>
         <Icon name="trash" /> {t('Sticker entfernen')}
-      </button>
+      </Button>
     </section>
   )
 }

@@ -6,6 +6,7 @@ import { groupBySeason } from '../../lib/seasons.js'
 import { byMemoryDate } from '../../lib/feed.js'
 import { feedEntries, feedKey } from '../../lib/startFeed.js'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Zuerst so viele Erinnerungen, der Rest hinter "Weitere Erinnerungen" (die Seite bleibt so bei höchstens etwa drei
 // Bildschirmhöhen).
@@ -86,14 +87,14 @@ export default function StartNews({ pages, loading, hasMore = false, onLoadMore,
         </div>
       ))}
       {!showAll && hidden > 0 && (
-        <button type="button" className="btn btn-ghost start-more" onClick={revealAll}>
+        <Button type="button" variant="ghost" className="start-more" onClick={revealAll}>
           {t('Weitere {entries} ({n})', { entries: words.entries, n: hidden })}
-        </button>
+        </Button>
       )}
       {(showAll || hidden === 0) && hasMore && (
-        <button type="button" className="btn btn-ghost start-more" onClick={loadOlder} aria-disabled={more.loading || undefined}>
+        <Button type="button" variant="ghost" className="start-more" onClick={loadOlder} aria-disabled={more.loading || undefined}>
           {more.loading ? t('Lädt …') : t('Ältere anzeigen')}
-        </button>
+        </Button>
       )}
       {more.error && (
         <p className="start-more-error" role="alert">

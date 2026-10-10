@@ -1,6 +1,7 @@
 import Icon from './Icon.jsx'
 import { MAX_ZEITRAEUME, zeitraeumeErrorRow } from '../lib/zeitraeume.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 const HINT_ID = 'post-zeitraeume-hint'
 const ERROR_ID = 'post-zeitraeume-error'
@@ -48,14 +49,14 @@ export default function PostZeitraeumeField({ rows, error, onChange }) {
           ))}
         </ol>
       )}
-      <button
+      <Button
         type="button"
-        className="btn btn-ghost post-zeitraeume-add"
+        variant="ghost" className="post-zeitraeume-add"
         onClick={() => onChange([...rows, { von: '', bis: '' }])}
         disabled={rows.length >= MAX_ZEITRAEUME}
       >
         <Icon name="plus" /> {t('Termin hinzufügen')}
-      </button>
+      </Button>
       {error && (
         <p className="field-error" id={ERROR_ID} role="alert">
           {error}

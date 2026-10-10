@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import Icon from './Icon.jsx'
+import { Button } from './ui/index.js'
 
 // Phase F: „Überall sichtbar“ in der Partnerliste des Admins (partners.ueberall_sichtbar / ueberall_gesperrt). Der Partner
 // schaltet es selbst ein (PartnerUeberallSwitch). Hier steht es nur in zwei Fällen: an -> Chip „Überall sichtbar“ mit
@@ -33,10 +34,10 @@ export default function AdminPartnerUeberall({ partner, onChanged }) {
         <Icon name={gesperrt ? 'lock' : 'compass'} />
         {gesperrt ? 'Überall sichtbar: vom Team ausgeschaltet' : 'Überall sichtbar'}
       </span>
-      <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => setErlaubt(gesperrt)}>
+      <Button type="button" variant="ghost" disabled={busy} onClick={() => setErlaubt(gesperrt)}>
         {gesperrt ? 'Wieder erlauben' : 'Ausschalten'}
         <span className="visually-hidden">: Überall sichtbar für {partner.name}</span>
-      </button>
+      </Button>
       {error && (
         <p className="field-error" role="alert">
           {error}

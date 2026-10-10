@@ -1,6 +1,7 @@
 import { useTheme } from '../../themes/ThemeProvider.jsx'
 import VoucherRow from './VoucherRow.jsx'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Eingelöste Codes (Phase V2b, GET /api/vouchers/mine?archiv=1): ausgeblendet, bis man „Eingelöste anzeigen“ wählt.
 // Darüber die Zahl der Menschen, die über eigene Codes eine Chronik angelegt haben (neueChronik). own: im eigenen
@@ -20,9 +21,9 @@ export default function VoucherArchive({ entries, open, onToggle, own, onLabelCh
   return (
     <div className="voucher-archive">
       {brought > 0 && <p className="voucher-archive-count">{broughtText(brought, theme.appName, own)}</p>}
-      <button type="button" className="btn btn-ghost voucher-archive-toggle" aria-expanded={open} onClick={onToggle}>
+      <Button type="button" variant="ghost" className="voucher-archive-toggle" aria-expanded={open} onClick={onToggle}>
         {open ? t('Eingelöste ausblenden') : t('Eingelöste anzeigen ({n})', { n: entries.length })}
-      </button>
+      </Button>
       {open && (
         <ul className="voucher-list voucher-list-archive">
           {entries.map((voucher) => (

@@ -5,6 +5,7 @@ import { useTheme } from '../themes/ThemeProvider.jsx'
 import Icon from '../components/Icon.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { getLang, t } from '../lib/i18n/index.js'
+import { Button } from '../components/ui/index.js'
 
 function buildTypes(words) {
   return {
@@ -110,10 +111,10 @@ function MessageForm({ fromPage, onSent }) {
           })}
         </p>
       )}
-      <button type="submit" className="btn btn-primary btn-lg" disabled={saving}>
+      <Button type="submit" size="lg" disabled={saving}>
         <Icon name="send" />
         {saving ? t('Sende …') : type === 'problem' ? t('Problem melden') : t('Feedback senden')}
-      </button>
+      </Button>
     </form>
   )
 }
@@ -126,9 +127,9 @@ function SentNotice({ onAgain }) {
       </span>
       <h2>{t('Danke, ist angekommen!')}</h2>
       <p className="muted">{t('Deine Nachricht liegt jetzt beim Admin – und nur dort.')}</p>
-      <button type="button" className="btn btn-ghost" onClick={onAgain}>
+      <Button type="button" variant="ghost" onClick={onAgain}>
         <Icon name="plus" /> {t('Noch etwas schreiben')}
-      </button>
+      </Button>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import Icon from '../Icon.jsx'
 import { t } from '../../lib/i18n/index.js'
+import { Button } from '../ui/index.js'
 
 // Phase V2b: „Neuen Code erstellen“ mit der Obergrenze offener Codes (limit aus GET /api/vouchers/grenze:
 // { offen, max, frei }; ohne Grenze max null). Bei vollem Kontingent gesperrt, mit Erklärung.
@@ -7,10 +8,10 @@ export default function VoucherCreateBar({ limit, onCreate, busy, disabled }) {
   const full = Boolean(limit && limit.max !== null && limit.frei === 0)
   return (
     <div className="voucher-create">
-      <button type="button" className="btn btn-primary" disabled={disabled || busy || full || !limit} onClick={onCreate}>
+      <Button type="button" disabled={disabled || busy || full || !limit} onClick={onCreate}>
         <Icon name="plus" />
         {busy ? t('Erstelle …') : t('Neuen Code erstellen')}
-      </button>
+      </Button>
       {limit && limit.max !== null && (
         <p className="field-hint" role="status">
           {full

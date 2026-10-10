@@ -8,6 +8,7 @@ import { isEditable } from '../lib/areas.js'
 import { addMatingPath, buildLitters } from '../lib/litters.js'
 import { displayName, shortName } from '../lib/timeline.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // So viele Geschwistergruppen zeigt der Abschnitt; alles Weitere steht auf der eigenen Seite (/wuerfe).
 const MAX_LITTERS = 3
@@ -78,9 +79,9 @@ export default function OffspringSection({ dogs, events, canWrite = false }) {
               <Icon name="plus" /> {words.addMating}
             </Link>
           )}
-          <Link to="/wuerfe" className="btn btn-ghost">
+          <Button to="/wuerfe" as={Link} variant="ghost">
             {t('{littersLabel} ansehen', { littersLabel: words.littersLabel })} <Icon name="arrowRight" />
-          </Link>
+          </Button>
         </div>
       </div>
       {planned.length > 0 && (

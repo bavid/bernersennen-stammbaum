@@ -5,6 +5,7 @@ import Icon from './Icon.jsx'
 import VoucherSheets from './VoucherSheets.jsx'
 import { ADDRESS_PENDING_TEXT, cardDesign, chunkCards, needsPublicUrl, printAddressPending, printBaseUrl } from '../lib/voucherPrint.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // Druckansicht eines Gutschein-Stapels - geteilt zwischen der Druckseite des Admins (AdminPrintPage,
 // /admin/gutscheine/:id/druck) und der des Partners (PartnerPrintPage, /partner-drucken/:id, Phase 5 Task 4):
@@ -125,9 +126,9 @@ function usePrintedReport(print, markPrinted) {
 function PrintToolbar({ back, duplex, onDuplex, actions, onPrint, reportError, printDisabled = false }) {
   return (
     <div className="print-toolbar" role="toolbar" aria-label={t('Druckoptionen')}>
-      <Link to={back.to} className="btn btn-ghost">
+      <Button to={back.to} as={Link} variant="ghost">
         <Icon name="arrowLeft" /> {back.label}
-      </Link>
+      </Button>
       <span className="print-toolbar-spacer" />
       <div className="segmented segmented-sm" role="group" aria-label={t('Seiten')}>
         <button type="button" aria-pressed={!duplex} onClick={() => onDuplex(false)}>
@@ -138,9 +139,8 @@ function PrintToolbar({ back, duplex, onDuplex, actions, onPrint, reportError, p
         </button>
       </div>
       {actions}
-      <button
+      <Button
         type="button"
-        className="btn btn-primary"
         disabled={printDisabled}
         onClick={() => {
           onPrint()
@@ -148,7 +148,7 @@ function PrintToolbar({ back, duplex, onDuplex, actions, onPrint, reportError, p
         }}
       >
         <Icon name="printer" /> {t('Drucken')}
-      </button>
+      </Button>
       {reportError && (
         <p className="field-error print-toolbar-error" role="alert">
           {t('Der Druck ließ sich nicht vermerken ({error}) – Karten mit diesen Codes nicht doppelt ausgeben.', { error: reportError })}

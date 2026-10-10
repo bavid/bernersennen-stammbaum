@@ -4,6 +4,7 @@ import { useIsDemo, useReadOnlyHint } from '../lib/demo.js'
 import { useToast } from './Toast.jsx'
 import { NO_STATUS_LABEL, STECKBRIEF_PUBLISHABLE_STATUS, VERMITTLUNG_STATUS_VALUES, vermittlungStatusLabel } from '../lib/vermittlung.js'
 import { t } from '../lib/i18n/index.js'
+import { Button } from './ui/index.js'
 
 // "– kein Status –" ist legitim (final-review Phase T Finding 1) - ein frisch aufgenommenes Tier hat
 // oft noch keinen Vermittlungsstatus, und die Option lässt ihn auch wieder entfernen.
@@ -86,9 +87,9 @@ export default function VermittlungStatusPanel({ dog, onChange }) {
               {unpublishesSteckbrief && <p>{t('Der Steckbrief wird zurückgezogen.')}</p>}
             </div>
           )}
-          <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSaveClick}>
+          <Button type="button" disabled={saving} onClick={handleSaveClick}>
             {saving ? t('Speichere …') : confirming ? t('Bestätigen') : t('Speichern')}
-          </button>
+          </Button>
         </>
       )}
 

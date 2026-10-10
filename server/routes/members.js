@@ -11,6 +11,7 @@ const { verifyCurrentCredential, REAUTH_ERROR } = require('../lib/currentCredent
 const { deleteFamily, removeUploads } = require('../lib/families')
 const { revokeOpenInvites, inviteRoleOf } = require('../lib/vouchers')
 const { revokeInvitesOnLeave } = require('../lib/inviteRevocation')
+const { memberProfile } = require('../lib/profil')
 
 // Phase R Task 2: Mitglieder einer Familie verwalten (/api/family/members). Alles nur, wenn der aktive
 // Bereich eine Familie (art 'rudel') ist - im eigenen Zuhause, Tierheim oder Partner-Bereich gibt es keine
@@ -79,7 +80,7 @@ function membersPayload(req) {
     familyId: req.family.id,
     name: req.family.name,
     ichBin,
-    mitglieder: listMembers.all(req.familyId).map((row) => ({ ...row, rolle: cleanRole(row.rolle) }))
+    mitglieder: listMembers.all(req.familyId).map((row) => ({ ...row, ...memberProfile(row.familyId), rolle: cleanRole(row.rolle) }))
   }
   if (rank(ichBin) >= rank(STELLVERTRETUNG)) {
     payload.einladungen = listOpenInvites.all(req.familyId).map(({ join_rolle, ...rest }) => ({ ...rest, rolle: inviteRoleOf({ join_rolle }) }))
