@@ -354,6 +354,9 @@ export const api = {
     setPartnerVorgestellt: (id, an) => request(`/admin/partners/${id}/vorgestellt`, json('PUT', { an })),
     community: () => request('/admin/community'),
     setCommunityDemoPartner: (erlaubt) => request('/admin/community/demo-partner', json('PUT', { erlaubt })),
+    // Band „Mit dabei“ einstellen: Partner des Monats, Zahlen, eigener Eintrag (server/lib/communityBanner.js).
+    communityBanner: () => request('/admin/community/banner'),
+    saveCommunityBanner: (banner) => request('/admin/community/banner', json('PUT', banner)),
 
     // Partner pflegen (Task 7, AdminPartners) - volle Zeilen (snake_case), anders als publicPartner(s) oben.
     partners: () => request('/admin/partners'),

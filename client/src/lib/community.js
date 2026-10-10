@@ -2,7 +2,8 @@ import { getLang, locale } from './i18n/index.js'
 
 // Band „Mit dabei“ (CommunityTicker) - reine Funktionen über GET /api/community (server/lib/community.js): aus den Summen
 // werden kurze Einträge mit Zahl und Wort („10 Familien“, „200 Erinnerungen“, „500 € Spenden“) und vorgestellte Partner
-// („Partner des Monats: Hundeschule Pfotenglück“). Nullen fallen weg; 1 steht im Singular. Sprache aus lib/i18n.
+// („Partner des Monats: Hundeschule Pfotenglück“, der erste vorn mit Fotos - tickerHero). Nullen fallen weg; 1 steht im
+// Singular. Was das Band zeigt, stellt der Admin ein (data.banner: chips, hinweis, partnerDesMonats). Sprache aus lib/i18n.
 
 const TEXTE = {
   de: {
@@ -62,26 +63,68 @@ function zahlEintrag(key, icon, n, [eins, viele]) {
   return { key, icon, value, label, text: `${value} ${label}` }
 }
 
-// [{ key, icon, value?, label, text, href?, featured? }] in fester Reihenfolge - ohne Daten oder mit lauter Nullen leer.
-export function tickerItems(data) {
-  if (!data || typeof data !== 'object') return []
+// Die vorgestellten Partner mit Name und Slug; der erste ist der „Held“ des Bands (tickerHero).
+function vorgestellte(data) {
+  return Array.isArray(data?.partnerVorgestellt) ? data.partnerVorgestellt.filter((p) => p?.slug && p?.name) : []
+}
+
+function partnerKicker(data, list) {
   const w = texte()
+  return data?.banner?.partnerDesMonats || list.length === 1 ? w.partnerDesMonats : w.vorgestellt
+}
+
+// Welche Zahlen das Band zeigt (Admin: banner.chips); ohne Angabe alle.
+function chipShown(data, key) {
+  const chips = data?.banner?.chips
+  return !Array.isArray(chips) || chips.includes(key)
+}
+
+function zahlenItems(data) {
+  const w = texte()
+  const shown = (key, n) => chipShown(data, key) && positiv(n)
   const items = []
-  if (positiv(data.familien)) {
+  if (shown('familien', data.familien)) {
     const item = zahlEintrag('familien', 'users', data.familien, w.familie)
     items.push({ ...item, text: `${data.familien === 1 ? w.dabeiEins : w.dabeiViele} ${item.text}` })
   }
-  if (positiv(data.zuhause)) items.push(zahlEintrag('zuhause', 'home', data.zuhause, w.zuhause))
-  if (positiv(data.erinnerungen)) items.push(zahlEintrag('erinnerungen', 'book', data.erinnerungen, w.erinnerung))
-  if (positiv(data.fotos)) items.push(zahlEintrag('fotos', 'camera', data.fotos, w.foto))
-  if (positiv(data.spendenCents)) {
+  if (shown('zuhause', data.zuhause)) items.push(zahlEintrag('zuhause', 'home', data.zuhause, w.zuhause))
+  if (shown('erinnerungen', data.erinnerungen)) items.push(zahlEintrag('erinnerungen', 'book', data.erinnerungen, w.erinnerung))
+  if (shown('fotos', data.fotos)) items.push(zahlEintrag('fotos', 'camera', data.fotos, w.foto))
+  if (shown('spenden', data.spendenCents)) {
     const value = euroGanz(data.spendenCents)
     items.push({ key: 'spenden', icon: 'heart', value, label: w.spenden, text: `${value} ${w.spenden}` })
   }
-  if (positiv(data.partner)) items.push(zahlEintrag('partner', 'globe', data.partner, w.partner))
-  const vorgestellt = Array.isArray(data.partnerVorgestellt) ? data.partnerVorgestellt.filter((p) => p?.slug && p?.name) : []
-  const kicker = vorgestellt.length === 1 ? w.partnerDesMonats : w.vorgestellt
-  for (const partner of vorgestellt) {
+  if (shown('partner', data.partner)) items.push(zahlEintrag('partner', 'globe', data.partner, w.partner))
+  return items
+}
+
+// Eigener kurzer Eintrag des Admins („Neu: Wir waren hier“), Link nur als interner Pfad.
+function hinweisItem(data) {
+  const hinweis = data?.banner?.hinweis
+  if (!hinweis || typeof hinweis.text !== 'string' || !hinweis.text.trim()) return null
+  const href = typeof hinweis.link === 'string' && /^\/(?![/\\])/.test(hinweis.link) ? hinweis.link : undefined
+  return { key: 'hinweis', icon: 'megaphone', label: hinweis.text, text: hinweis.text, href, hinweis: true }
+}
+
+// Der vorgestellte Partner vorn im Band (Partner des Monats): { slug, name, href, kicker, fotos } oder null.
+export function tickerHero(data) {
+  const list = vorgestellte(data)
+  if (!list.length) return null
+  const [partner] = list
+  const fotos = Array.isArray(partner.fotos) ? partner.fotos.filter((url) => typeof url === 'string' && url.startsWith('/')) : []
+  return { slug: partner.slug, name: partner.name, href: `/p/${encodeURIComponent(partner.slug)}`, kicker: partnerKicker(data, list), fotos }
+}
+
+// [{ key, icon, value?, label, text, href?, featured?, hinweis? }] in fester Reihenfolge: Zahlen (Nullen fallen weg), der
+// eigene Eintrag und weitere vorgestellte Partner (der erste steht als tickerHero vorn) - ohne Daten leer.
+export function tickerItems(data) {
+  if (!data || typeof data !== 'object') return []
+  const items = zahlenItems(data)
+  const hinweis = hinweisItem(data)
+  if (hinweis) items.push(hinweis)
+  const list = vorgestellte(data)
+  const kicker = partnerKicker(data, list)
+  for (const partner of list.slice(1)) {
     items.push({
       key: `partner-${partner.slug}`,
       icon: 'star',

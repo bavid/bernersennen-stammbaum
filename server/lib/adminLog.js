@@ -56,7 +56,10 @@ const AKTION = Object.freeze({
   partnerNichtVorgestellt: 'partner-nicht-vorgestellt',
   // Startseite: die Demo-Ausnahme des Laufbands ein- oder ausgeschaltet (routes/adminCommunity.js), ziel
   // 'einstellung:community-demo-partner'.
-  communityDemoPartnerGeaendert: 'community-demo-partner-geaendert'
+  communityDemoPartnerGeaendert: 'community-demo-partner-geaendert',
+  // Startseite: Band „Mit dabei“ eingestellt - Partner des Monats, Zahlen, eigener Eintrag (routes/adminCommunity.js),
+  // ziel 'einstellung:community-banner'.
+  communityBannerGeaendert: 'community-banner-geaendert'
 })
 
 const DEFAULT_LIMIT = 50

@@ -1,6 +1,6 @@
 /* Startseite (LoginPage), Neuaufbau 10.10.: eine ruhige Spalte statt drei ungleicher Spalten.
-   Kopfzeile (Marke | Sprache) · Bühne in Rosé mit Begrüßung links und EINER Anmelde-Karte rechts · darunter zwei gleich
-   große Karten (Partner, App) · Band „Mit dabei“ · Fuß. Alle Abschnitte teilen dieselbe Breite (--login-max) und
+   Kopfzeile (Marke | Sprache) · schlankes Band „Mit dabei“ · Bühne in Rosé mit Begrüßung links und EINER Anmelde-Karte
+   rechts · darunter zwei gleich große Karten (Partner, App) · Fuß. Alle Abschnitte teilen dieselbe Breite (--login-max) und
    dieselben Abstände (--login-gap), damit Kanten und Abstände überall gleich sind. */
 .login {
   --login-max: 72rem;
@@ -520,9 +520,11 @@
   }
 }
 
-/* Band „Mit dabei“: Inhalt bündig mit der Seitenbreite statt am Bildschirmrand. */
+/* Band „Mit dabei“ unter der Kopfzeile: Inhalt bündig mit der Seitenbreite statt am Bildschirmrand; die Bühne darunter
+   hat ihre eigene Kante, darum hier nur oben eine Linie. */
 .login .community-ticker {
   padding-inline: max(var(--login-gutter), calc((100% - var(--login-max)) / 2));
+  border-bottom: 0;
 }
 
 /* Schmale Handys: Marke und Sprachwahl passen nebeneinander in eine Zeile. */

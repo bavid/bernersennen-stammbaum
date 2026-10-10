@@ -72,7 +72,9 @@ test('Community: Zahlen ohne Demo, Cache, vorgestellte Partner, Demo-Ausnahme', 
     const res = await fresh()
     assert.equal(res.status, 200)
     assert.equal(res.headers.get('cache-control'), 'public, max-age=600')
-    assert.deepEqual(res.data, { familien: 0, zuhause: 0, erinnerungen: 0, fotos: 0, partner: 0, spendenCents: 0, partnerVorgestellt: [] })
+    const { banner, ...zahlen } = res.data
+    assert.deepEqual(zahlen, { familien: 0, zuhause: 0, erinnerungen: 0, fotos: 0, partner: 0, spendenCents: 0, partnerVorgestellt: [] })
+    assert.equal(banner.partnerDesMonats, false)
   })
 
   await t.test('zählt echte Daten, nie Demo-Bereiche, Demo-Partner oder Partner-Bereiche', async () => {
@@ -94,7 +96,9 @@ test('Community: Zahlen ohne Demo, Cache, vorgestellte Partner, Demo-Ausnahme', 
     db.prepare('INSERT INTO finanzierung_quartale (jahr, quartal, einnahmen_spenden_cents) VALUES (2026, 1, 30000), (2026, 2, 20000)').run()
 
     const res = await fresh()
-    assert.deepEqual(res.data, { familien: 2, zuhause: 1, erinnerungen: 2, fotos: 2, partner: 1, spendenCents: 50000, partnerVorgestellt: [] })
+    const { banner, ...zahlen } = res.data
+    assert.ok(banner)
+    assert.deepEqual(zahlen, { familien: 2, zuhause: 1, erinnerungen: 2, fotos: 2, partner: 1, spendenCents: 50000, partnerVorgestellt: [] })
   })
 
   await t.test('Cache: fünf Minuten im Prozess - neue Zeilen erscheinen erst nach dem Leeren', async () => {
@@ -107,7 +111,7 @@ test('Community: Zahlen ohne Demo, Cache, vorgestellte Partner, Demo-Ausnahme', 
     insertPartner(db, { slug: 'hundeschule-pfotenglueck', name: 'Hundeschule Pfotenglück', isDemo: 1 })
     insertPartner(db, { slug: 'tierheim-sonnenhang', name: 'Tierheim Sonnenhang', typ: 'tierheim', isDemo: 1 })
     const res = await fresh()
-    assert.deepEqual(res.data.partnerVorgestellt, [{ slug: 'hundeschule-pfotenglueck', name: 'Hundeschule Pfotenglück', typ: 'hundeschule' }])
+    assert.deepEqual(res.data.partnerVorgestellt, [{ slug: 'hundeschule-pfotenglueck', name: 'Hundeschule Pfotenglück', typ: 'hundeschule', fotos: [] }])
     // Die Demo-Partner zählen trotzdem nie mit.
     assert.equal(res.data.partner, 1)
   })
@@ -131,9 +135,9 @@ test('Community: Zahlen ohne Demo, Cache, vorgestellte Partner, Demo-Ausnahme', 
 
     // Ein echter vorgestellter Partner verdrängt die Demo-Ausnahme; der Admin-Schalter leert den Cache selbst.
     const res = await get('/api/community')
-    assert.deepEqual(res.data.partnerVorgestellt, [{ slug: 'echt-aktiv', name: 'Echt aktiv', typ: 'hundeschule' }])
-    // Öffentlich nur slug, name, typ - keine Ids.
-    assert.deepEqual(Object.keys(res.data.partnerVorgestellt[0]).sort(), ['name', 'slug', 'typ'])
+    assert.deepEqual(res.data.partnerVorgestellt, [{ slug: 'echt-aktiv', name: 'Echt aktiv', typ: 'hundeschule', fotos: [] }])
+    // Öffentlich nur slug, name, typ und öffentliche Fotos - keine Ids.
+    assert.deepEqual(Object.keys(res.data.partnerVorgestellt[0]).sort(), ['fotos', 'name', 'slug', 'typ'])
     const list = await get('/api/admin/partners', adminCookie)
     assert.equal(list.data.find((p) => p.slug === 'echt-aktiv').vorgestellt, 1)
   })

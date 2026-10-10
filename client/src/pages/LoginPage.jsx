@@ -101,6 +101,9 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
         </div>
       </header>
 
+      {/* Band „Mit dabei“ - gleich unter der Kopfzeile, schlank, damit es ohne Scrollen zu sehen ist. */}
+      <CommunityTicker fallback />
+
       <section className="login-hero">
         <div className="login-hero-grid">
           <LoginHeroText theme={theme} lang={lang} t={t} />
@@ -148,9 +151,6 @@ export default function LoginPage({ onLogin, initialMode = 'login', initialCode 
           </div>
         </section>
       )}
-
-      {/* Band „Mit dabei“ - unten über dem Fuß. */}
-      <CommunityTicker fallback />
 
       <footer className="login-footer">
         {/* Phase 5 Task 4: Infoseite für Hundeschulen, Tierheime, Hundesalons und Betreuung (PartnerInfoPage). */}

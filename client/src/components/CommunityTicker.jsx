@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { api } from '../api'
 import Icon from './Icon.jsx'
 import useMediaQuery from '../hooks/useMediaQuery.js'
-import { STATIC_COUNT, tickerDuration, tickerItems, tickerLeer, tickerSentence } from '../lib/community.js'
+import { STATIC_COUNT, tickerDuration, tickerHero, tickerItems, tickerLeer, tickerSentence } from '../lib/community.js'
 import { t } from '../lib/i18n/index.js'
 import '../styles/community-ticker.css'
 
-// Band „Mit dabei“ auf der Startseite (unten über dem Fuß) und den öffentlichen Seiten /finanzierung und /partner-werden:
-// kleine Karten mit Zahl und Wort („48 Erinnerungen“) und dem vorgestellten Partner, aus GET /api/community
-// (lib/community.js). Es läuft nur, wenn die Karten nicht in eine Zeile passen - sonst stehen sie ruhig nebeneinander
+// Band „Mit dabei“ auf der Startseite (direkt unter der Kopfzeile) und den öffentlichen Seiten /finanzierung und
+// /partner-werden: vorn fest der Partner des Monats (HeroCard - kleines Foto, das sanft durch seine öffentlichen Fotos
+// blendet, alle PHOTO_MS; bei weniger Bewegung nur das erste), daneben kleine Karten mit Zahl und Wort („48 Erinnerungen“)
+// und dem eigenen Eintrag des Admins, aus GET /api/community (lib/community.js). Es läuft nur, wenn die Karten nicht in eine Zeile passen - sonst stehen sie ruhig nebeneinander
 // (vorher lief auch eine kurze Reihe und zeigte sich doppelt). Barrierearm:
 // - Bewegung: doppelter Inhalt für eine nahtlose Schleife (CSS translateX), hält bei Hover und Fokus an; der Knopf
 //   „Laufband anhalten“ stoppt sie ganz und zeigt alles ruhig (dann sind auch die Partner-Links per Tastatur erreichbar).
@@ -58,7 +59,66 @@ function useOverflow(spaceRef, measureRef, deps) {
   return overflowing
 }
 
+// Wie lange ein Foto des Partners steht, bevor das nächste einblendet.
+export const PHOTO_MS = 4000
+
+// Index des gerade sichtbaren Fotos und wie weit schon geblättert wurde (geladen wird nur bis zum nächsten Foto).
+function usePhotoCycle(count, reduced) {
+  const [cycle, setCycle] = useState({ index: 0, seen: 0 })
+  useEffect(() => {
+    if (reduced || count < 2) return undefined
+    const timer = setInterval(() => {
+      setCycle((current) => {
+        const index = (current.index + 1) % count
+        return { index, seen: Math.max(current.seen, index) }
+      })
+    }, PHOTO_MS)
+    return () => clearInterval(timer)
+  }, [count, reduced])
+  return reduced ? { index: 0, seen: 0 } : cycle
+}
+
+function HeroPhotos({ fotos, name, reduced }) {
+  const { index, seen } = usePhotoCycle(fotos.length, reduced)
+  const shown = reduced ? fotos.slice(0, 1) : fotos.slice(0, Math.min(fotos.length, seen + 2))
+  return shown.map((url, i) => (
+    <img key={url} src={url} alt={i === 0 ? name : ''} className={i === index ? 'is-active' : undefined} decoding="async" width="48" height="48" />
+  ))
+}
+
+function HeroCard({ hero, reduced }) {
+  return (
+    <Link to={hero.href} className="community-hero">
+      <span className="community-hero-photo">
+        {hero.fotos.length > 0 ? <HeroPhotos fotos={hero.fotos} name={hero.name} reduced={reduced} /> : <Icon name="star" />}
+      </span>
+      <span className="community-hero-text">
+        <span className="community-hero-kicker">{hero.kicker}</span>
+        <strong className="community-hero-name">{hero.name}</strong>
+      </span>
+      <Icon name="arrowRight" />
+    </Link>
+  )
+}
+
 function Chip({ item, focusable }) {
+  if (item.hinweis) {
+    const inner = (
+      <>
+        <span className="community-chip-icon" aria-hidden="true">
+          <Icon name={item.icon} />
+        </span>
+        <span className="community-chip-label">{item.label}</span>
+      </>
+    )
+    return item.href ? (
+      <Link to={item.href} className="community-chip is-hinweis" tabIndex={focusable ? undefined : -1}>
+        {inner}
+      </Link>
+    ) : (
+      <span className="community-chip is-hinweis">{inner}</span>
+    )
+  }
   if (item.featured) {
     return (
       <Link to={item.href} className="community-chip is-featured" tabIndex={focusable ? undefined : -1}>
@@ -82,9 +142,9 @@ function Chip({ item, focusable }) {
   )
 }
 
-function ChipList({ items, className, focusable, id, hidden }) {
+function ChipList({ items, className, focusable, id, hidden, listRef }) {
   return (
-    <ul className={className} id={id} aria-hidden={hidden || undefined}>
+    <ul ref={listRef} className={className} id={id} aria-hidden={hidden || undefined}>
       {items.map((item) => (
         <li key={item.key}>
           <Chip item={item} focusable={focusable} />
@@ -125,28 +185,30 @@ function Marquee({ items }) {
   )
 }
 
-export default function CommunityTicker({ fallback = false, className = '' }) {
-  const data = useCommunity()
+// Das Band zu fertigen Daten (Form wie GET /api/community) - auch die Vorschau im Admin (AdminCommunityBanner) nutzt es.
+export function CommunityBand({ data, fallback = false, className = '' }) {
   const reduced = useMediaQuery('(prefers-reduced-motion: reduce)')
   const [paused, setPaused] = useState(false)
   const spaceRef = useRef(null)
   const measureRef = useRef(null)
   const items = data ? tickerItems(data) : []
+  const hero = data ? tickerHero(data) : null
   const overflowing = useOverflow(spaceRef, measureRef, [data, items.length])
   if (!data) return null
-  if (!items.length && !fallback) return null
+  if (!items.length && !hero && !fallback) return null
   const canMove = items.length > 0 && !reduced && overflowing
   const moving = canMove && !paused
 
   return (
     <div role="region" aria-label={t('Zahlen aus der Gemeinschaft')} className={`community-ticker ${moving ? 'is-moving' : 'is-static'} ${className}`.trim()}>
+      {hero && <HeroCard hero={hero} reduced={reduced} />}
       <p className="community-ticker-title" aria-hidden="true">
         <Icon name="paw" />
         <span>{t('Mit dabei')}</span>
       </p>
       <div className="community-ticker-space" ref={spaceRef}>
-        {items.length > 0 && <ChipList items={items} className="community-ticker-measure" focusable={false} hidden />}
-        {items.length === 0 && <p className="community-ticker-empty">{tickerLeer()}</p>}
+        {items.length > 0 && <ChipList items={items} className="community-ticker-measure" focusable={false} hidden listRef={measureRef} />}
+        {items.length === 0 && !hero && <p className="community-ticker-empty">{tickerLeer()}</p>}
         {moving && <Marquee items={items} />}
         {items.length > 0 && !moving && <StaticList items={items} reduced={reduced} />}
       </div>
@@ -163,4 +225,10 @@ export default function CommunityTicker({ fallback = false, className = '' }) {
       )}
     </div>
   )
+}
+
+export default function CommunityTicker({ fallback = false, className = '' }) {
+  const data = useCommunity()
+  if (!data) return null
+  return <CommunityBand data={data} fallback={fallback} className={className} />
 }

@@ -7,7 +7,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 const { community } = vi.hoisted(() => ({ community: vi.fn() }))
 vi.mock('../api', () => ({ api: { community } }))
 
-import CommunityTicker from './CommunityTicker.jsx'
+import CommunityTicker, { PHOTO_MS } from './CommunityTicker.jsx'
 import { TICKER_LEER } from '../lib/community.js'
 
 // Laufband „Zahlen aus der Gemeinschaft“: Bewegung, Anhalten, weniger Bewegung, Nullen und Fehler.
@@ -20,7 +20,9 @@ const DATA = {
   fotos: 80,
   partner: 3,
   spendenCents: 50000,
-  partnerVorgestellt: [{ slug: 'hundeschule-pfotenglueck', name: 'Hundeschule Pfotenglück', typ: 'hundeschule' }]
+  partnerVorgestellt: [
+    { slug: 'hundeschule-pfotenglueck', name: 'Hundeschule Pfotenglück', typ: 'hundeschule', fotos: ['/public-media/1.jpg', '/public-media/2.jpg', '/public-media/3.jpg'] }
+  ]
 }
 const ZERO = { familien: 0, zuhause: 0, erinnerungen: 0, fotos: 0, partner: 0, spendenCents: 0, partnerVorgestellt: [] }
 
@@ -40,6 +42,7 @@ afterEach(() => {
   unmount()
   community.mockReset()
   delete window.matchMedia
+  vi.useRealTimers()
 })
 
 function mockReducedMotion() {
@@ -62,7 +65,7 @@ async function render(props = {}) {
 const region = () => container.querySelector('[role="region"]')
 
 describe('CommunityTicker', () => {
-  test('läuft: Region mit Namen, Band aria-hidden mit doppeltem Inhalt, Satz einmal für Screenreader, Links nicht fokussierbar', async () => {
+  test('läuft: Region mit Namen, Band aria-hidden mit doppeltem Inhalt, Satz einmal für Screenreader, Partner vorn als Link', async () => {
     community.mockResolvedValue(DATA)
     await render()
     expect(region().getAttribute('aria-label')).toBe('Zahlen aus der Gemeinschaft')
@@ -72,10 +75,57 @@ describe('CommunityTicker', () => {
     expect(container.querySelectorAll('.community-ticker-list')).toHaveLength(2)
     expect(container.querySelector('.community-ticker-track').style.getPropertyValue('--ticker-duration')).toMatch(/^\d+s$/)
     expect(container.querySelector('.visually-hidden').textContent).toMatch(
-      /^Dabei sind 10 Familien, 4 Zuhause, 200 Erinnerungen, 80 Fotos, 500\s€ Spenden, 3 Partner, Partner des Monats: Hundeschule Pfotenglück\.$/
+      /^Dabei sind 10 Familien, 4 Zuhause, 200 Erinnerungen, 80 Fotos, 500\s€ Spenden, 3 Partner\.$/
     )
-    for (const link of viewport.querySelectorAll('a')) expect(link.getAttribute('tabindex')).toBe('-1')
-    expect(viewport.querySelector('a').getAttribute('href')).toBe('/p/hundeschule-pfotenglueck')
+    expect(viewport.querySelector('a')).toBeNull()
+    // Der Partner des Monats steht fest vorn, außerhalb des laufenden Bands - immer per Tastatur erreichbar.
+    const hero = container.querySelector('.community-hero')
+    expect(hero.getAttribute('href')).toBe('/p/hundeschule-pfotenglueck')
+    expect(hero.textContent).toContain('Partner des Monats')
+    expect(hero.textContent).toContain('Hundeschule Pfotenglück')
+    expect(hero.compareDocumentPosition(viewport) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  test('Fotos des Partners: erstes mit Namen als Alt-Text, blendet alle vier Sekunden zum nächsten (lädt nur bis zum nächsten)', async () => {
+    vi.useFakeTimers()
+    community.mockResolvedValue(DATA)
+    await render()
+    const photos = () => [...container.querySelectorAll('.community-hero-photo img')]
+    expect(photos().map((img) => img.getAttribute('src'))).toEqual(['/public-media/1.jpg', '/public-media/2.jpg'])
+    expect(photos()[0].getAttribute('alt')).toBe('Hundeschule Pfotenglück')
+    expect(photos()[0].className).toBe('is-active')
+    await act(async () => vi.advanceTimersByTime(PHOTO_MS))
+    expect(photos()).toHaveLength(3)
+    expect(photos()[1].className).toBe('is-active')
+    expect(photos()[0].className).toBe('')
+    await act(async () => vi.advanceTimersByTime(PHOTO_MS * 2))
+    expect(photos()[0].className).toBe('is-active')
+  })
+
+  test('weniger Bewegung: nur das erste Foto, kein Wechsel; ohne Fotos ein Stern', async () => {
+    vi.useFakeTimers()
+    mockReducedMotion()
+    community.mockResolvedValue(DATA)
+    await render()
+    await act(async () => vi.advanceTimersByTime(PHOTO_MS * 3))
+    const photos = [...container.querySelectorAll('.community-hero-photo img')]
+    expect(photos).toHaveLength(1)
+    expect(photos[0].getAttribute('src')).toBe('/public-media/1.jpg')
+    unmount()
+
+    community.mockResolvedValue({ ...DATA, partnerVorgestellt: [{ slug: 'salon-wilma', name: 'Salon Wilma', fotos: [] }] })
+    await render()
+    expect(container.querySelector('.community-hero-photo img')).toBeNull()
+    expect(container.querySelector('.community-hero-photo svg')).not.toBeNull()
+  })
+
+  test('Admin-Einstellung: nur gewählte Zahlen und der eigene Eintrag als interner Link', async () => {
+    mockReducedMotion()
+    community.mockResolvedValue({ ...DATA, banner: { partnerDesMonats: true, chips: ['familien'], hinweis: { text: 'Neu: Wir waren hier', link: '/partner-werden' } } })
+    await render()
+    const items = [...container.querySelectorAll('.community-ticker-static li')]
+    expect(items.map((li) => li.textContent)).toEqual(['10Familien', 'Neu: Wir waren hier'])
+    expect(items[1].querySelector('a').getAttribute('href')).toBe('/partner-werden')
   })
 
   test('Anhalten: Knopf mit aria-label, danach ruhige Zeile mit allen Einträgen und erreichbarem Partner-Link; wieder abspielen', async () => {
@@ -85,9 +135,7 @@ describe('CommunityTicker', () => {
     expect(toggle.getAttribute('aria-label')).toBe('Laufband anhalten')
     await act(async () => toggle.click())
     expect(container.querySelector('.community-ticker-viewport')).toBeNull()
-    const items = [...container.querySelectorAll('.community-ticker-static li')]
-    expect(items).toHaveLength(7)
-    expect(items.at(-1).querySelector('a').getAttribute('tabindex')).toBeNull()
+    expect(container.querySelectorAll('.community-ticker-static li')).toHaveLength(6)
     expect(container.querySelector('.community-ticker-toggle').getAttribute('aria-label')).toBe('Laufband abspielen')
     await act(async () => container.querySelector('.community-ticker-toggle').click())
     expect(container.querySelector('.community-ticker-viewport')).not.toBeNull()
@@ -103,7 +151,7 @@ describe('CommunityTicker', () => {
     const more = container.querySelector('.community-ticker-more')
     expect(more.getAttribute('aria-expanded')).toBe('false')
     await act(async () => more.click())
-    expect(container.querySelectorAll('.community-ticker-static li')).toHaveLength(7)
+    expect(container.querySelectorAll('.community-ticker-static li')).toHaveLength(6)
     expect(more.getAttribute('aria-expanded')).toBe('true')
   })
 

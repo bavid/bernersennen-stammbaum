@@ -56,6 +56,15 @@ test('Demo-Partner: Ansprechperson und Bannerfotos, Ersetzen ohne Waisen', async
     assert.equal(deichland.data.ansprechperson, null)
   })
 
+  await t.test('Band „Mit dabei“: die Demo-Hundeschule als Partner des Monats mit ihren öffentlichen Fotos', async () => {
+    require('../lib/community').clearCommunityCache()
+    const { partnerVorgestellt } = (await call(base, '/api/community')).data
+    assert.equal(partnerVorgestellt[0].slug, 'hundeschule-pfotenglueck')
+    const { fotos } = partnerVorgestellt[0]
+    assert.equal(fotos.length, 5)
+    for (const url of fotos.slice(0, 2)) assert.equal((await fetch(`${base}${url}`)).status, 200)
+  })
+
   await t.test('erneut ersetzen: dieselbe Anzahl, die alten Dateien sind weg', () => {
     const oldFiles = bannerRows().map((row) => path.join(uploadDir, path.basename(row.foto_url)))
     replaceDemoPack(db, uploadDir)

@@ -8,7 +8,8 @@ const { noStore } = require('../lib/noStoreResponse')
 const { cleanId } = require('../lib/validate')
 const { AKTION, logAdminAction, partnerZiel } = require('../lib/adminLog')
 const { MAX_VORGESTELLT, parseAn, countVorgestellt, setVorgestellt } = require('../lib/partnerVorgestellt')
-const { clearCommunityCache, readDemoPartnerErlaubt, setDemoPartnerErlaubt } = require('../lib/community')
+const { clearCommunityCache, readDemoPartnerErlaubt, setDemoPartnerErlaubt, bannerVorschau } = require('../lib/community')
+const { CHIP_KEYS, MAX_TEXT, readBannerConfig, validateBannerConfig, saveBannerConfig, listPublicPartners, partnerFotos } = require('../lib/communityBanner')
 
 // Laufband der Startseite: der Admin stellt Partner vor (lib/partnerVorgestellt.js, höchstens drei) und schaltet die
 // Demo-Ausnahme (lib/community.js community_demo_partner_erlaubt). Eingehängt unter /api/admin in app.js wie
@@ -17,10 +18,14 @@ const { clearCommunityCache, readDemoPartnerErlaubt, setDemoPartnerErlaubt } = r
 // - PUT /partners/:id/vorgestellt   { an }       -> { id, vorgestellt }   (409 beim vierten)
 // - GET /community                               -> { demoPartnerErlaubt, vorgestellt, max }
 // - PUT /community/demo-partner     { erlaubt }  -> { demoPartnerErlaubt }
+// - GET /community/banner  -> { banner, partners (öffentliche, mit Fotos), vorschau { zahlen, vorgestellt }, chipKeys,
+//                              maxText, demoPartnerErlaubt }
+// - PUT /community/banner  { partnerId, bis, chips, text, link } -> { banner }   (lib/communityBanner.js, 400 bei Unsinn)
 const router = express.Router()
 
 const findPartner = db.prepare('SELECT id FROM partners WHERE id = ?')
 const ZIEL_DEMO_PARTNER = 'einstellung:community-demo-partner'
+const ZIEL_BANNER = 'einstellung:community-banner'
 
 router.use((req, res, next) => {
   if (!config.adminPasswordHash) return res.status(404).json({ error: 'Nicht gefunden' })
@@ -59,6 +64,30 @@ router.put('/community/demo-partner', guarded, (req, res) => {
   const { demoPartnerErlaubt, changed } = setDemoPartnerErlaubt(erlaubt)
   if (changed) logAdminAction(AKTION.communityDemoPartnerGeaendert, ZIEL_DEMO_PARTNER)
   res.json({ demoPartnerErlaubt })
+})
+
+router.get('/community/banner', guarded, (req, res) => {
+  res.json({
+    banner: readBannerConfig(),
+    partners: listPublicPartners().map((partner) => ({ ...partner, fotos: partnerFotos(partner.id) })),
+    vorschau: bannerVorschau(),
+    chipKeys: CHIP_KEYS,
+    maxText: MAX_TEXT,
+    demoPartnerErlaubt: readDemoPartnerErlaubt()
+  })
+})
+
+router.put('/community/banner', guarded, (req, res, next) => {
+  try {
+    const { config: banner, changed } = saveBannerConfig(validateBannerConfig(req.body))
+    if (changed) {
+      logAdminAction(AKTION.communityBannerGeaendert, ZIEL_BANNER)
+      clearCommunityCache()
+    }
+    res.json({ banner })
+  } catch (err) {
+    sendError(res, next, err)
+  }
 })
 
 module.exports = router

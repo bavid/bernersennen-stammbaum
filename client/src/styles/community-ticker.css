@@ -6,9 +6,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  min-height: 4.25rem;
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  gap: var(--space-3);
+  min-height: 3.5rem;
+  padding: 0.375rem var(--space-3) 0.375rem var(--space-4);
   border-block: 1px solid var(--line);
   background:
     radial-gradient(120% 140% at 0% 0%, var(--rust-wash), transparent 55%),
@@ -27,7 +27,7 @@
   border-right: 1px dashed var(--line-strong);
   color: var(--rust-deep);
   font-family: var(--font-hand);
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   line-height: 1;
   white-space: nowrap;
 }
@@ -50,6 +50,110 @@
 .community-ticker-empty {
   margin: 0;
   font-weight: 600;
+}
+
+/* --- Partner des Monats: fest vorn, kleines Foto mit sanfter Überblendung ------------------------------------------ */
+
+.community-hero {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: min(22rem, 46%);
+  min-height: 2.75rem;
+  padding: 3px var(--space-3) 3px 3px;
+  border: 1px solid color-mix(in srgb, var(--rust) 40%, var(--line));
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+
+.community-hero:hover {
+  border-color: var(--rust);
+  transform: translateY(-1px);
+}
+
+.community-hero:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 2px;
+}
+
+.community-hero-photo {
+  position: relative;
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--rust);
+  color: var(--surface);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, var(--rust) 45%, transparent);
+}
+
+.community-hero-photo svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.community-hero-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-out);
+}
+
+.community-hero-photo img.is-active {
+  opacity: 1;
+}
+
+.community-hero-text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.community-hero-kicker {
+  color: var(--rust-deep);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.community-hero-name {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-hero > svg {
+  flex-shrink: 0;
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--rust);
+}
+
+/* Eigener Eintrag des Admins („Neu: Wir waren hier“) - ruhig wie die Zahlen, als Link unterstrichen. */
+a.community-chip.is-hinweis {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+
+a.community-chip.is-hinweis:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 2px;
 }
 
 /* --- Karten -------------------------------------------------------------------------------------------------------- */
@@ -258,33 +362,51 @@
   .community-ticker-track {
     animation: none;
   }
+
+  .community-hero-photo img {
+    transition: none;
+  }
 }
 
-/* Handy: Titel über der Reihe, damit für die Karten die volle Breite bleibt. */
+/* Handy: eine schlanke Zeile - Partner vorn, daneben die Reihe; der Titel „Mit dabei“ bleibt nur für Screenreader
+   (die Region trägt den Namen). Ohne Partner steht der Titel kleiner davor. */
 @media (max-width: 720px) {
   .community-ticker {
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-3);
-    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    gap: var(--space-2);
+    padding: 0.375rem var(--space-2) 0.375rem var(--space-3);
+  }
+
+  .community-hero {
+    max-width: 56%;
+    gap: var(--space-2);
+    padding-right: var(--space-2);
+  }
+
+  .community-hero > svg {
+    display: none;
+  }
+
+  .community-hero-name {
+    font-size: var(--text-sm);
+  }
+
+  .community-hero ~ .community-ticker-title {
+    display: none;
   }
 
   .community-ticker-title {
-    padding-right: 0;
-    border-right: 0;
-    font-size: var(--text-xl);
-  }
-
-  .community-ticker-space {
-    flex-basis: 100%;
-    order: 3;
+    padding-right: var(--space-2);
+    font-size: var(--text-lg);
   }
 
   .community-ticker-toggle {
-    margin-left: auto;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    padding: 0;
   }
 }
 
-/* Einbau: Startseite (unter den Einstiegen, über dem Fuß - über beide Spalten), öffentliche Seiten (unter dem Kopf). */
+/* Einbau: Startseite (direkt unter der Kopfzeile, über der Bühne), öffentliche Seiten (unter dem Kopf). */
 .login .community-ticker {
   grid-column: 1 / -1;
   min-width: 0;
