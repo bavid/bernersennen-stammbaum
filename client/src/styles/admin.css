@@ -73,7 +73,36 @@
 }
 
 .admin-main {
-  padding-block: var(--space-8) var(--space-16);
+  padding-block: var(--space-6) var(--space-16);
+}
+
+/* Unterreiter (Plan 2026-10-10-admin-5-reiter): eine leisere zweite Leiste oben im Hauptreiter - Pillen statt
+   Unterstrich, damit sie sich klar von den Hauptreitern im Kopf abhebt. Gleiche TabBar (Tastatur, ARIA, Wischen am Handy). */
+.admin-subtabs {
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  padding-block: 2px;
+}
+
+.admin-subtabs .tab-bar-tab {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.admin-subtabs .tab-bar-tab[aria-selected='true'] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: none;
+}
+
+.admin-subtabs .tab-bar-tab[aria-selected='true'] .tab-bar-count {
+  background: color-mix(in srgb, var(--paper) 22%, transparent);
+  color: var(--paper);
 }
 
 /* Reiter-Panels: kein eigenes display, sonst überstimmte es das hidden-Attribut. Mehrere Karten in einem

@@ -28,7 +28,7 @@ vi.mock('../components/AdminPostApproval.jsx', () => ({
     return <p data-testid="freigaben">Freigabe-Karte</p>
   }
 }))
-vi.mock('../components/AdminStats.jsx', () => ({ default: () => <p data-testid="kennzahlen">Kennzahlen</p> }))
+vi.mock('../components/AdminStats.jsx', () => ({ default: ({ teil }) => <p data-testid={`stats-${teil}`}>Kennzahlen</p> }))
 vi.mock('../components/AdminKpi.jsx', () => ({ default: () => <p data-testid="erfolg">Erfolg messen</p> }))
 vi.mock('../components/AdminVouchers.jsx', () => ({ default: () => <p data-testid="gutscheine">Gutschein-Karte</p> }))
 vi.mock('../components/AdminPartners.jsx', () => ({ default: () => <p data-testid="partner">Partner-Karte</p> }))
@@ -43,6 +43,7 @@ vi.mock('../components/AdminEinladungskarte.jsx', () => ({ default: () => <p dat
 vi.mock('../components/AdminHinweise.jsx', () => ({ default: () => <p data-testid="hinweise">Hinweise-Karte</p> }))
 vi.mock('../components/AdminServer.jsx', () => ({ default: () => <p data-testid="server">Server-Karte</p> }))
 vi.mock('../components/AdminLog.jsx', () => ({ default: () => <p data-testid="protokoll">Protokoll-Karte</p> }))
+vi.mock('../components/AdminFinanzierung.jsx', () => ({ default: () => <p data-testid="finanzierung">Finanzierung-Karte</p> }))
 
 import AdminPage from './AdminPage.jsx'
 
@@ -102,20 +103,34 @@ async function render(path = '/admin') {
   )
 }
 
-function tabs() {
-  return [...container.querySelectorAll('[role="tab"]')]
+function mainTabs() {
+  return [...container.querySelectorAll('.admin-tabs [role="tab"]')]
 }
 
-function tab(label) {
-  return tabs().find((el) => el.firstChild.textContent === label)
+// Die Unterreiter des sichtbaren Hauptreiters.
+function subTabs() {
+  return [...container.querySelectorAll('.admin-section:not([hidden]) .admin-subtabs [role="tab"]')]
 }
 
-function selectedTab() {
-  return tabs().find((el) => el.getAttribute('aria-selected') === 'true')
+function label(el) {
+  return el.firstChild.textContent
 }
 
+function tab(text) {
+  return mainTabs().find((el) => label(el) === text)
+}
+
+function subTab(text) {
+  return subTabs().find((el) => label(el) === text)
+}
+
+function selected(list) {
+  return list.find((el) => el.getAttribute('aria-selected') === 'true')
+}
+
+// Das sichtbare Unter-Panel im sichtbaren Hauptreiter.
 function visiblePanel() {
-  return [...container.querySelectorAll('[role="tabpanel"]')].find((panel) => !panel.hidden)
+  return [...container.querySelectorAll('.admin-section:not([hidden]) .admin-subpanel')].find((panel) => !panel.hidden)
 }
 
 async function click(element) {
@@ -126,78 +141,130 @@ async function press(key) {
   await act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })))
 }
 
-describe('AdminPage – Reiter (Phase U)', () => {
-  test('Kopf mit Titel "Admin", Präsentation, Bausteine und Abmelden; zwölf Reiter in einer echten Tabliste', async () => {
+async function rerender(path) {
+  act(() => root.unmount())
+  container.remove()
+  await render(path)
+}
+
+describe('AdminPage – 5 Reiter mit Unterreitern', () => {
+  test('Kopf mit Titel "Admin", Präsentation, Bausteine und Abmelden; fünf Hauptreiter in einer echten Tabliste', async () => {
     await render()
 
     expect(container.querySelector('.admin-header h1').textContent).toBe('Admin')
     const links = [...container.querySelectorAll('.admin-header-actions a, .admin-header-actions button')].map((el) => el.textContent.trim())
     expect(links).toEqual(['Präsentation', 'Bausteine', 'Abmelden'])
-    expect(container.querySelector('[role="tablist"]').getAttribute('aria-label')).toBe('Admin-Bereiche')
-    expect(tabs().map((el) => el.firstChild.textContent)).toEqual([
-      'Übersicht',
-      'Anfragen',
-      'Freigaben',
-      'Einladungscodes',
-      'Partner',
-      'Empfehlungen & Spenden',
-      'Familien',
-      'Nachrichten',
-      'Hinweise',
-      'Finanzierung',
-      'Einstellungen',
-      'Server',
-      'Protokoll'
-    ])
-    expect(selectedTab().textContent.startsWith('Übersicht')).toBe(true)
-    expect(selectedTab().getAttribute('tabindex')).toBe('0')
-    expect(tab('Anfragen').getAttribute('tabindex')).toBe('-1')
+    expect(container.querySelector('.admin-tabs').getAttribute('aria-label')).toBe('Admin-Bereiche')
+    expect(mainTabs().map(label)).toEqual(['Übersicht', 'Familien & Partner', 'Inhalte & Freigaben', 'Werbung & Messen', 'System'])
+    expect(label(selected(mainTabs()))).toBe('Übersicht')
+    expect(selected(mainTabs()).getAttribute('tabindex')).toBe('0')
+    expect(tab('System').getAttribute('tabindex')).toBe('-1')
+    expect(subTabs().map(label)).toEqual(['Auf einen Blick', 'Erfolg messen'])
   })
 
-  test('Zähler an Anfragen, Freigaben und Nachrichten - vorgelesen als "n offen", ohne Zahl bei nichts Offenem', async () => {
+  test('jeder Hauptreiter hat seine Unterreiter - kein Unterreiter doppelt', async () => {
     await render()
-
-    const count = (label) => tab(label).querySelector('.tab-bar-count')?.textContent
-    expect(count('Anfragen')).toBe('2')
-    expect(count('Freigaben')).toBe('1')
-    expect(count('Nachrichten')).toBe('3')
-    expect(count('Einladungscodes')).toBeUndefined()
-    expect(tab('Anfragen').querySelector('.tab-bar-count').getAttribute('aria-hidden')).toBe('true')
-    expect(tab('Anfragen').textContent).toBe('Anfragen2 (2 offen)')
+    const tree = {}
+    for (const main of mainTabs()) {
+      await click(main)
+      tree[label(main)] = subTabs().map(label)
+    }
+    expect(tree).toEqual({
+      Übersicht: ['Auf einen Blick', 'Erfolg messen'],
+      'Familien & Partner': ['Familien', 'Partner', 'Anfragen', 'Einladungscodes', 'Einladungskarte'],
+      'Inhalte & Freigaben': ['Freigaben', 'Nachrichten', 'Hinweise'],
+      'Werbung & Messen': ['Empfehlungen', 'Band „Mit dabei“', 'Landeadressen', 'Statistik', 'Spenden', 'Finanzierung'],
+      System: ['Server', 'Benachrichtigungen', 'Protokoll']
+    })
   })
 
-  test('jeder Reiter steuert sein Panel; nur das gewählte ist sichtbar', async () => {
+  test('Zähler: Hauptreiter mit der Summe, Unterreiter einzeln - vorgelesen als "n offen"', async () => {
     await render()
 
-    for (const el of tabs()) {
+    const count = (el) => el.querySelector('.tab-bar-count')?.textContent
+    expect(count(tab('Familien & Partner'))).toBe('2')
+    expect(count(tab('Inhalte & Freigaben'))).toBe('4')
+    expect(count(tab('System'))).toBeUndefined()
+    expect(tab('Familien & Partner').textContent).toBe('Familien & Partner2 (2 offen)')
+
+    await click(tab('Inhalte & Freigaben'))
+    expect(count(subTab('Freigaben'))).toBe('1')
+    expect(count(subTab('Nachrichten'))).toBe('3')
+    expect(count(subTab('Hinweise'))).toBeUndefined()
+  })
+
+  test('Haupt- und Unterreiter steuern ihre Panels; nur eines ist sichtbar', async () => {
+    await render()
+
+    for (const el of [...mainTabs(), ...container.querySelectorAll('.admin-subtabs [role="tab"]')]) {
       const panel = document.getElementById(el.getAttribute('aria-controls'))
       expect(panel.getAttribute('role')).toBe('tabpanel')
       expect(panel.getAttribute('aria-labelledby')).toBe(el.id)
     }
-    expect(visiblePanel().id).toBe('admin-panel-uebersicht')
-    expect(visiblePanel().querySelector('[data-testid="kennzahlen"]')).not.toBeNull()
+    expect(visiblePanel().id).toBe('admin-bereich-ueberblick')
+    expect(visiblePanel().querySelector('[data-testid="stats-kennzahlen"]')).not.toBeNull()
+    expect(visiblePanel().querySelector('[data-testid="erfolg"]')).toBeNull()
   })
 
-  test('?tab=gutscheine wählt den Reiter aus der Adresse, ein unbekannter Wert landet bei Übersicht', async () => {
-    await render('/admin?tab=gutscheine')
-    expect(selectedTab().firstChild.textContent).toBe('Einladungscodes')
-    expect(visiblePanel().querySelector('[data-testid="gutscheine"]')).not.toBeNull()
-
-    act(() => root.unmount())
-    container.remove()
-    await render('/admin?tab=gibtesnicht')
-    expect(selectedTab().firstChild.textContent).toBe('Übersicht')
-  })
-
-  test('ein Klick wechselt den Reiter und schreibt ihn in die Adresse; Übersicht ohne Parameter', async () => {
+  test('Klicks schreiben Haupt- und Unterreiter in die Adresse; Übersicht › Auf einen Blick ohne Parameter', async () => {
     await render()
 
-    await click(tab('Partner'))
-    expect(currentSearch).toBe('?tab=partner')
-    expect(visiblePanel().querySelector('[data-testid="partner"]')).not.toBeNull()
+    await click(tab('Werbung & Messen'))
+    expect(currentSearch).toBe('?tab=werbung&bereich=empfehlungen')
+    expect(visiblePanel().querySelector('[data-testid="empfehlungen"]')).not.toBeNull()
+    expect(visiblePanel().querySelector('[data-testid="band"]')).toBeNull()
+
+    await click(subTab('Band „Mit dabei“'))
+    expect(currentSearch).toBe('?tab=werbung&bereich=band')
+    expect(visiblePanel().querySelector('[data-testid="band"]')).not.toBeNull()
+
+    await click(subTab('Statistik'))
+    expect(visiblePanel().querySelector('[data-testid="stats-details"]')).not.toBeNull()
 
     await click(tab('Übersicht'))
     expect(currentSearch).toBe('')
+    await click(subTab('Erfolg messen'))
+    expect(currentSearch).toBe('?tab=uebersicht&bereich=erfolg')
+    expect(visiblePanel().querySelector('[data-testid="erfolg"]')).not.toBeNull()
+  })
+
+  test('zurück im Hauptreiter steht wieder der zuletzt gewählte Unterreiter', async () => {
+    await render()
+
+    await click(tab('System'))
+    await click(subTab('Protokoll'))
+    await click(tab('Übersicht'))
+    await click(tab('System'))
+    expect(currentSearch).toBe('?tab=system&bereich=protokoll')
+    expect(label(selected(subTabs()))).toBe('Protokoll')
+  })
+
+  test('?tab=&bereich= aus der Adresse; fremder Bereich → erster Unterreiter, Unbekanntes → Übersicht', async () => {
+    await render('/admin?tab=system&bereich=benachrichtigungen')
+    expect(label(selected(mainTabs()))).toBe('System')
+    expect(label(selected(subTabs()))).toBe('Benachrichtigungen')
+    expect(visiblePanel().querySelector('[data-testid="telegram"]')).not.toBeNull()
+
+    await rerender('/admin?tab=system&bereich=band')
+    expect(label(selected(subTabs()))).toBe('Server')
+
+    await rerender('/admin?tab=gibtesnicht')
+    expect(label(selected(mainTabs()))).toBe('Übersicht')
+    expect(label(selected(subTabs()))).toBe('Auf einen Blick')
+  })
+
+  test.each([
+    ['gutscheine', 'Familien & Partner', 'Einladungscodes', 'gutscheine'],
+    ['empfehlungen', 'Werbung & Messen', 'Empfehlungen', 'empfehlungen'],
+    ['einstellungen', 'System', 'Benachrichtigungen', 'telegram'],
+    ['finanzierung', 'Werbung & Messen', 'Finanzierung', 'finanzierung'],
+    ['hinweise', 'Inhalte & Freigaben', 'Hinweise', 'hinweise'],
+    ['protokoll', 'System', 'Protokoll', 'protokoll']
+  ])('alter Link ?tab=%s öffnet %s › %s', async (old, main, sub, testId) => {
+    await render(`/admin?tab=${old}`)
+    expect(label(selected(mainTabs()))).toBe(main)
+    expect(label(selected(subTabs()))).toBe(sub)
+    expect(visiblePanel().querySelector(`[data-testid="${testId}"]`)).not.toBeNull()
   })
 
   test('Karten laden erst beim ersten Öffnen und bleiben danach eingehängt; Anfragen und Freigaben sofort', async () => {
@@ -207,58 +274,47 @@ describe('AdminPage – Reiter (Phase U)', () => {
     expect(container.querySelector('[data-testid="freigaben"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="gutscheine"]')).toBeNull()
 
-    await click(tab('Einladungscodes'))
-    await click(tab('Familien'))
+    await click(tab('Familien & Partner'))
+    await click(subTab('Einladungscodes'))
+    await click(subTab('Partner'))
     expect(container.querySelector('[data-testid="gutscheine"]')).not.toBeNull()
-    expect(document.getElementById('admin-panel-gutscheine').hidden).toBe(true)
+    expect(document.getElementById('admin-bereich-gutscheine').hidden).toBe(true)
   })
 
-  test('Empfehlungen & Spenden zeigt beide Karten, Einstellungen die Telegram-Benachrichtigungen', async () => {
-    await render('/admin?tab=empfehlungen')
-    expect(visiblePanel().querySelector('[data-testid="empfehlungen"]')).not.toBeNull()
-    expect(visiblePanel().querySelector('[data-testid="spenden"]')).not.toBeNull()
-    // Plan 2027 Kap. 6: Landeadressen je Kanal stehen ebenfalls unter „Empfehlungen“.
-    expect(visiblePanel().querySelector('[data-testid="landeadressen"]')).not.toBeNull()
-
-    await click(tab('Einstellungen'))
-    expect(visiblePanel().querySelector('[data-testid="telegram"]')).not.toBeNull()
-    // Einladungskarten: die Rückseite, die Familie auf Pfoten gestaltet, steht ebenfalls unter "Einstellungen".
+  test('Einladungskarte steht unter Familien & Partner, Telegram allein unter System › Benachrichtigungen', async () => {
+    await render('/admin?tab=familien-partner&bereich=einladungskarte')
     expect(visiblePanel().querySelector('[data-testid="einladungskarte"]')).not.toBeNull()
+
+    await click(tab('System'))
+    await click(subTab('Benachrichtigungen'))
+    expect(visiblePanel().querySelector('[data-testid="telegram"]')).not.toBeNull()
+    expect(visiblePanel().querySelector('[data-testid="einladungskarte"]')).toBeNull()
   })
 
-  test('Hinweise (Phase N Task 5): eigener Reiter vor den Einstellungen, per ?tab=hinweise erreichbar', async () => {
-    await render('/admin?tab=hinweise')
-    expect(selectedTab().firstChild.textContent).toBe('Hinweise')
-    expect(visiblePanel().querySelector('[data-testid="hinweise"]')).not.toBeNull()
-  })
-
-  test('Server (Phase G Task 6): eigener Reiter nach den Einstellungen, per ?tab=server erreichbar', async () => {
-    await render('/admin?tab=server')
-    expect(selectedTab().firstChild.textContent).toBe('Server')
-    expect(visiblePanel().querySelector('[data-testid="server"]')).not.toBeNull()
-  })
-
-  test('Pfeiltasten, Pos1 und Ende wechseln den Reiter und den Fokus', async () => {
+  test('Pfeiltasten, Pos1 und Ende wechseln Haupt- und Unterreiter samt Fokus', async () => {
     await render()
     act(() => tab('Übersicht').focus())
 
     await press('ArrowRight')
-    expect(selectedTab().firstChild.textContent).toBe('Anfragen')
-    expect(document.activeElement).toBe(tab('Anfragen'))
-    expect(currentSearch).toBe('?tab=anfragen')
+    expect(label(selected(mainTabs()))).toBe('Familien & Partner')
+    expect(document.activeElement).toBe(tab('Familien & Partner'))
+    expect(currentSearch).toBe('?tab=familien-partner&bereich=familien')
 
     await press('End')
-    expect(selectedTab().firstChild.textContent).toBe('Protokoll')
+    expect(label(selected(mainTabs()))).toBe('System')
     await press('ArrowRight')
-    expect(selectedTab().firstChild.textContent).toBe('Übersicht')
+    expect(label(selected(mainTabs()))).toBe('Übersicht')
+
+    await click(tab('Werbung & Messen'))
+    act(() => subTab('Empfehlungen').focus())
+    await press('End')
+    expect(label(selected(subTabs()))).toBe('Finanzierung')
+    expect(document.activeElement).toBe(subTab('Finanzierung'))
     await press('ArrowLeft')
-    expect(selectedTab().firstChild.textContent).toBe('Protokoll')
-    await press('Home')
-    expect(selectedTab().firstChild.textContent).toBe('Übersicht')
-    expect(document.activeElement).toBe(tab('Übersicht'))
+    expect(currentSearch).toBe('?tab=werbung&bereich=spenden')
   })
 
-  test('"Zu tun" in der Übersicht listet das Offene und springt in den Reiter (Fokus auf den Reiter)', async () => {
+  test('"Zu tun" in der Übersicht listet das Offene und springt in den Unterreiter (Fokus darauf)', async () => {
     await render()
 
     const items = [...container.querySelectorAll('.admin-todo-item')]
@@ -269,14 +325,14 @@ describe('AdminPage – Reiter (Phase U)', () => {
     ])
 
     await click(items[1])
-    expect(selectedTab().firstChild.textContent).toBe('Freigaben')
-    expect(currentSearch).toBe('?tab=freigaben')
-    expect(document.activeElement).toBe(tab('Freigaben'))
+    expect(label(selected(mainTabs()))).toBe('Inhalte & Freigaben')
+    expect(currentSearch).toBe('?tab=inhalte&bereich=freigaben')
+    expect(document.activeElement).toBe(subTab('Freigaben'))
 
     await click(tab('Übersicht'))
-    await click([...container.querySelectorAll('.admin-todo-item')][2])
-    expect(selectedTab().firstChild.textContent).toBe('Nachrichten')
-    expect(visiblePanel().querySelector('[data-testid="nachrichten"]')).not.toBeNull()
+    await click([...container.querySelectorAll('.admin-todo-item')][0])
+    expect(currentSearch).toBe('?tab=familien-partner&bereich=anfragen')
+    expect(visiblePanel().querySelector('[data-testid="anfragen"]')).not.toBeNull()
   })
 
   test('ist nichts offen, sagt "Zu tun" das - und die Reiter bleiben ohne Zahl', async () => {

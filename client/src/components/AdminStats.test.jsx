@@ -102,6 +102,21 @@ describe('AdminStats – Kennzahlen', () => {
     ])
   })
 
+  test('teil="kennzahlen" zeigt nur die Kacheln (Übersicht), teil="details" nur die Blöcke unter „Statistik“', async () => {
+    stats.mockResolvedValue(fixture())
+    await render(<AdminStats teil="kennzahlen" />)
+    expect(tiles()).toHaveLength(3)
+    expect(container.querySelector('.admin-overview-grid')).toBeNull()
+
+    act(() => root.unmount())
+    container.remove()
+    await render(<AdminStats teil="details" />)
+    expect(container.querySelector('h2').textContent).toBe('Statistik')
+    expect(container.querySelector('h2').id).toBe('admin-statistik-title')
+    expect(container.querySelector('.admin-stats-kennzahlen')).toBeNull()
+    expect(texts('.admin-overview-block h3')).toEqual(['Code-Stapel', 'Partner-Ranking', 'Mundpropaganda', 'Klicks', 'Partner-Status'])
+  })
+
   test('ohne Bereiche-Wert entfällt die erste Kachel', async () => {
     stats.mockResolvedValue(fixture())
     await render(<AdminStats />)

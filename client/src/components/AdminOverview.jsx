@@ -1,10 +1,9 @@
 import Icon from './Icon.jsx'
 import AdminStats from './AdminStats.jsx'
-import AdminKpi from './AdminKpi.jsx'
 
 const BYTES_PER_MB = 1024 * 1024
 
-// Was im Admin auf eine Entscheidung wartet - jede Zeile öffnet ihren Reiter.
+// Was im Admin auf eine Entscheidung wartet - jede Zeile öffnet ihren Unterreiter (alte Reiter-Schlüssel, lib/adminTabs.js).
 const TODO_ITEMS = [
   { tab: 'anfragen', key: 'openRequests', icon: 'mail', one: 'offene Anfrage', many: 'offene Anfragen' },
   { tab: 'freigaben', key: 'pendingPosts', icon: 'megaphone', one: 'Beitrag wartet auf Freigabe', many: 'Beiträge warten auf Freigabe' },
@@ -77,16 +76,16 @@ function StatsGrid({ stats }) {
   )
 }
 
-// Reiter "Übersicht" im Admin (Phase U): oben "Zu tun" mit Sprung in den passenden Reiter, darunter die
-// Kennzahlen (AdminStats) und der Bestand der ganzen Instanz (overview.stats).
+// Übersicht › „Auf einen Blick“ im Admin: oben "Zu tun" mit Sprung in den passenden Unterreiter, darunter die
+// Kennzahl-Kacheln (AdminStats teil="kennzahlen") und der Bestand der ganzen Instanz (overview.stats). „Erfolg messen“
+// (AdminKpi) und die Statistik-Blöcke stehen in eigenen Unterreitern.
 export default function AdminOverview({ stats, todo, onOpenTab }) {
   return (
     <div className="admin-panel-stack">
       <AdminTodo todo={todo} onOpenTab={onOpenTab} />
       {/* Audit V7a: ohne "Bereiche"-Kachel - die Kennzahlen zählen ohne Demo-Daten, overview.stats.families zählt alles
           und steht schon im Bestand darunter. */}
-      <AdminStats />
-      <AdminKpi />
+      <AdminStats teil="kennzahlen" />
       <StatsGrid stats={stats} />
     </div>
   )
