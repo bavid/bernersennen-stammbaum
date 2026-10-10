@@ -334,6 +334,11 @@ export const api = {
     createHinweis: (payload) => request('/admin/hinweise', json('POST', payload)),
     updateHinweis: (id, payload) => request(`/admin/hinweise/${encodeURIComponent(id)}`, json('PUT', payload)),
     deleteHinweis: (id) => request(`/admin/hinweise/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    // Landeadressen je Kanal (Plan 2027 Kap. 6, server/routes/adminLandeadressen.js): { landeadressen }; anlegen mit
+    // { slug, ziel, serie }, ändern mit { ziel?, serie?, aktiv? }. Fehler tragen womöglich details.feld.
+    landeadressen: () => request('/admin/landeadressen'),
+    createLandeadresse: (payload) => request('/admin/landeadressen', json('POST', payload)),
+    updateLandeadresse: (id, payload) => request(`/admin/landeadressen/${encodeURIComponent(id)}`, json('PUT', payload)),
 
     // Einladungskarte – Rückseite (server/routes/adminEinladungskarte.js): { rueckseite, vorgaben } mit je { titel, text,
     // schritte, adresse }; Speichern ersetzt die ganze Rückseite, Fehler tragen womöglich details.feld.

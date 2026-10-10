@@ -11,6 +11,7 @@ const db = require('./db')
 const authRoutes = require('./routes/auth')
 const dogsRoutes = require('./routes/dogs')
 const timelineRoutes = require('./routes/timeline')
+const gesundheitRoutes = require('./routes/gesundheit')
 const breedingRoutes = require('./routes/breeding')
 const notesRoutes = require('./routes/notes')
 const adminRoutes = require('./routes/admin')
@@ -25,6 +26,7 @@ const adminServerRoutes = require('./routes/adminServer')
 const adminEinladungskarteRoutes = require('./routes/adminEinladungskarte')
 const adminFinanzierungRoutes = require('./routes/adminFinanzierung')
 const adminPartnerSichtbarRoutes = require('./routes/adminPartnerSichtbar')
+const adminLandeadressenRoutes = require('./routes/adminLandeadressen')
 const finanzierungRoutes = require('./routes/finanzierung')
 const communityRoutes = require('./routes/community')
 const adminCommunityRoutes = require('./routes/adminCommunity')
@@ -58,6 +60,7 @@ const { denyAdminViewWrites } = require('./middleware/auth')
 const { apiLimiter, photoLimiter, limitWrites } = require('./middleware/abuse')
 const { LOGO_FILENAME_RE } = require('./lib/partners')
 const { canServePublicMedia } = require('./lib/publicMedia')
+const { landeadresseWeiterleitung } = require('./lib/landeadresseWeiterleitung')
 
 const PHOTO_CACHE = 'private, max-age=2592000, immutable'
 const PARTNER_LOGO_CACHE = 'public, max-age=2592000, immutable'
@@ -208,6 +211,7 @@ function createApp() {
   app.use('/api/wir-waren-hier', wirWarenHierRoutes)
   app.use('/api/dogs', dogsRoutes)
   app.use('/api/timeline', timelineRoutes)
+  app.use('/api/gesundheit', gesundheitRoutes)
   app.use('/api/breeding', breedingRoutes)
   app.use('/api/notes', notesRoutes)
   app.use('/api/messages', messagesRoutes)
@@ -228,6 +232,7 @@ function createApp() {
   // „Überall sichtbar“ eines Partners (Partnerliste).
   app.use('/api/admin', adminFinanzierungRoutes)
   app.use('/api/admin', adminPartnerSichtbarRoutes)
+  app.use('/api/admin', adminLandeadressenRoutes)
   // Laufband der Startseite: Partner vorstellen und die Demo-Ausnahme (routes/adminCommunity.js).
   app.use('/api/admin', adminCommunityRoutes)
   // Phase N Task 5: die laufenden globalen Hinweise fürs Band oben auf jeder Seite - öffentlich, ohne Login.
@@ -277,6 +282,10 @@ function createApp() {
 
   // /robots.txt und /sitemap.xml (Phase G Task 2, routes/seo.js): ebenfalls vor serveClient(), aus demselben Grund.
   app.use(seoRoutes)
+
+  // Landeadressen je Kanal (Plan 2027 Kap. 6, lib/landeadresseWeiterleitung.js): nur aktive Kurznamen zählen und leiten
+  // weiter, alles andere fällt durch zu serveClient().
+  app.use(landeadresseWeiterleitung)
 
   serveClient(app)
   app.use(errorHandler)

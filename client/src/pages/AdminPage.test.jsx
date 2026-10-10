@@ -35,6 +35,7 @@ vi.mock('../components/AdminPartners.jsx', () => ({ default: () => <p data-testi
 vi.mock('../components/AdminPromotions.jsx', () => ({ default: () => <p data-testid="empfehlungen">Empfehlungen-Karte</p> }))
 vi.mock('../components/AdminCommunityBanner.jsx', () => ({ default: () => <p data-testid="band">Band-Karte</p> }))
 vi.mock('../components/AdminSupport.jsx', () => ({ default: () => <p data-testid="spenden">Spenden-Karte</p> }))
+vi.mock('../components/AdminLandeadressen.jsx', () => ({ default: () => <p data-testid="landeadressen">Landeadressen-Karte</p> }))
 vi.mock('../components/AdminFamilyList.jsx', () => ({ default: () => <p data-testid="familien">Familien-Karte</p> }))
 vi.mock('../components/AdminMessages.jsx', () => ({ default: () => <p data-testid="nachrichten">Nachrichten-Karte</p> }))
 vi.mock('../components/AdminNotify.jsx', () => ({ default: () => <p data-testid="telegram">Telegram-Karte</p> }))
@@ -216,6 +217,8 @@ describe('AdminPage – Reiter (Phase U)', () => {
     await render('/admin?tab=empfehlungen')
     expect(visiblePanel().querySelector('[data-testid="empfehlungen"]')).not.toBeNull()
     expect(visiblePanel().querySelector('[data-testid="spenden"]')).not.toBeNull()
+    // Plan 2027 Kap. 6: Landeadressen je Kanal stehen ebenfalls unter „Empfehlungen“.
+    expect(visiblePanel().querySelector('[data-testid="landeadressen"]')).not.toBeNull()
 
     await click(tab('Einstellungen'))
     expect(visiblePanel().querySelector('[data-testid="telegram"]')).not.toBeNull()

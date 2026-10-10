@@ -19,5 +19,6 @@ import startpaket from './startpaket.js'
 import share from './share.js'
 import geschenk from './geschenk.js'
 import netzwerk from './netzwerk.js'
+import landing from './landing.js'
 
-export default { ...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...landing, ...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

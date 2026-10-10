@@ -29,7 +29,12 @@ const AKTION_LABELS = {
   'finanzierung-quartal-geaendert': 'Quartal geändert',
   'finanzierung-quartal-geloescht': 'Quartal gelöscht',
   'partner-ueberall-gesperrt': '„Überall sichtbar“ ausgeschaltet und gesperrt',
-  'partner-ueberall-erlaubt': '„Überall sichtbar“ wieder erlaubt'
+  'partner-ueberall-erlaubt': '„Überall sichtbar“ wieder erlaubt',
+  // Plan 2027 Kap. 6: Landeadressen je Kanal (server/routes/adminLandeadressen.js, ziel 'landeadresse:<id>').
+  'landeadresse-angelegt': 'Landeadresse angelegt',
+  'landeadresse-geaendert': 'Landeadresse geändert',
+  'landeadresse-eingeschaltet': 'Landeadresse eingeschaltet',
+  'landeadresse-ausgeschaltet': 'Landeadresse ausgeschaltet'
 }
 
 const EINSTELLUNG_LABELS = {
@@ -50,6 +55,8 @@ export function describeZiel(ziel, families = []) {
   // Phase F: Quartale der Finanzierung (server/routes/adminFinanzierung.js, ziel 'quartal:<id>').
   const quartal = /^quartal:(\d+)$/.exec(ziel || '')
   if (quartal) return `Quartal #${quartal[1]}`
+  const landeadresse = /^landeadresse:(\d+)$/.exec(ziel || '')
+  if (landeadresse) return `Landeadresse #${landeadresse[1]}`
   const einstellung = /^einstellung:([a-z-]+)$/.exec(ziel || '')
   if (einstellung) return EINSTELLUNG_LABELS[einstellung[1]] || `Einstellung ${einstellung[1]}`
   const match = /^family:(\d+)$/.exec(ziel || '')

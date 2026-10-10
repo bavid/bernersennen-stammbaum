@@ -21,6 +21,7 @@ import AdminEinladungskarte from '../components/AdminEinladungskarte.jsx'
 import AdminHinweise from '../components/AdminHinweise.jsx'
 import AdminServer from '../components/AdminServer.jsx'
 import AdminFinanzierung from '../components/AdminFinanzierung.jsx'
+import AdminLandeadressen from '../components/AdminLandeadressen.jsx'
 import useAdminTab from '../hooks/useAdminTab.js'
 import { ADMIN_TABS, adminPanelId, adminTabCounts, openCountText } from '../lib/adminTabs.js'
 
@@ -186,6 +187,8 @@ function Dashboard({ onLogout }) {
                 {/* Band „Mit dabei“ oben auf der Startseite: Partner des Monats, Zahlen, eigener Eintrag - mit Vorschau. */}
                 <AdminCommunityBanner />
                 <AdminSupport />
+                {/* Plan 2027 Kap. 6: eigene Landeadresse je Kanal (/fb, /anzeige-herbst) - anonym gezählt. */}
+                <AdminLandeadressen />
               </div>
             )}
             {panel('familien', <AdminFamilyList families={overview.families} />)}

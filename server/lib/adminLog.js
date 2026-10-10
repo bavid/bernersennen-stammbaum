@@ -59,7 +59,12 @@ const AKTION = Object.freeze({
   communityDemoPartnerGeaendert: 'community-demo-partner-geaendert',
   // Startseite: Band „Mit dabei“ eingestellt - Partner des Monats, Zahlen, eigener Eintrag (routes/adminCommunity.js),
   // ziel 'einstellung:community-banner'.
-  communityBannerGeaendert: 'community-banner-geaendert'
+  communityBannerGeaendert: 'community-banner-geaendert',
+  // Plan 2027 Kap. 6: Landeadressen je Kanal (routes/adminLandeadressen.js), ziel 'landeadresse:<id>'.
+  landeadresseAngelegt: 'landeadresse-angelegt',
+  landeadresseGeaendert: 'landeadresse-geaendert',
+  landeadresseEingeschaltet: 'landeadresse-eingeschaltet',
+  landeadresseAusgeschaltet: 'landeadresse-ausgeschaltet'
 })
 
 const DEFAULT_LIMIT = 50
@@ -96,6 +101,10 @@ function kostenZiel(kostenId) {
   return `kosten:${kostenId}`
 }
 
+function landeadresseZiel(id) {
+  return `landeadresse:${id}`
+}
+
 function logAdminAction(aktion, ziel) {
   insertStmt.run(aktion, ziel)
 }
@@ -123,6 +132,7 @@ module.exports = {
   hinweisZiel,
   quartalZiel,
   kostenZiel,
+  landeadresseZiel,
   logAdminAction,
   cleanLimit,
   recentAdminLog
