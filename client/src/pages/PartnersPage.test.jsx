@@ -153,4 +153,18 @@ describe('PartnersPage – öffentliches Entdecken', () => {
     expect(container.querySelector('.entdecken-weit h2').textContent).toContain('Germany-wide')
     expect(container.querySelector('input[type="search"]').getAttribute('placeholder')).toMatch(/Name, type or place/)
   })
+
+  // E2E 2026-10-10: „1 results“ - bei genau einem Treffer die Einzahl.
+  test('Anzahl: ein Treffer in der Einzahl, mehrere in der Mehrzahl', async () => {
+    setLang('en')
+    publicEntdecken.mockResolvedValue(answer())
+    await render()
+    expect(container.querySelector('.entdecken-count').textContent).toBe('1 result')
+    act(() => root.unmount())
+    root = null
+    container.remove()
+    publicEntdecken.mockResolvedValue(answer({ treffer: [elbe, card('b')], gesamt: 2 }))
+    await render()
+    expect(container.querySelector('.entdecken-count').textContent).toBe('2 results')
+  })
 })

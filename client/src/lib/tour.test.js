@@ -8,6 +8,7 @@ import {
   buildTour,
   chaptersFor,
   markPrompted,
+  nextChapter,
   overlayPath,
   placePopover,
   saveTourStatus,
@@ -18,6 +19,7 @@ import { CHAPTERS_BY_ART, CHAPTER_TITLES } from './tourSteps.js'
 
 const HOME = { id: 7, art: 'zuhause', home: { id: 7, art: 'zuhause' }, role: 'leitung', rundgang: 'neu' }
 const PARTNER = { id: 9, art: 'partner', isDemo: true, rundgang: 'neu' }
+const HOME_DEMO = { id: 2, art: 'zuhause', home: { id: 2, art: 'zuhause' }, isDemo: true, rundgang: 'neu' }
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -50,6 +52,27 @@ describe('Rundgang: wer wird gefragt', () => {
     expect(spy).not.toHaveBeenCalled()
   })
 
+  test('je Art: Zuhause-Demo geschlossen oder „aus“ - Partner-Demo fragt trotzdem, und umgekehrt', async () => {
+    markPrompted(HOME_DEMO)
+    await saveTourStatus(HOME_DEMO, 'aus')
+    expect(shouldPrompt(HOME_DEMO)).toBe(false)
+    expect(shouldPrompt(PARTNER)).toBe(true)
+    markPrompted(PARTNER)
+    await saveTourStatus(PARTNER, 'fertig')
+    window.sessionStorage.clear()
+    expect(shouldPrompt(PARTNER)).toBe(true)
+    expect(shouldPrompt(HOME_DEMO)).toBe(false)
+  })
+
+  test('echte Bereiche: „Schließen“ im Zuhause hält einen anderen Bereich nicht ab', async () => {
+    vi.spyOn(api, 'setRundgang').mockResolvedValue({})
+    await saveTourStatus(HOME, 'fertig')
+    const shelter = { id: 11, art: 'tierheim', isDemo: false, rundgang: 'neu' }
+    expect(shouldPrompt({ ...HOME, rundgang: 'neu' })).toBe(false)
+    expect(shouldPrompt({ ...HOME, id: 8, home: { id: 8, art: 'zuhause' } })).toBe(true)
+    expect(shouldPrompt({ ...shelter, isDemo: true })).toBe(true)
+  })
+
   test('echter Haushalt speichert am Server, Fehler bleiben still', async () => {
     const spy = vi.spyOn(api, 'setRundgang').mockRejectedValue(new Error('offline'))
     const next = await saveTourStatus(HOME, 'fertig')
@@ -61,26 +84,44 @@ describe('Rundgang: wer wird gefragt', () => {
 })
 
 describe('Rundgang: Kapitel', () => {
-  test('Haushalt: drei Kapitel in fester Reihenfolge, „Kurz“ nur das Wichtigste, „Alles“ alle', () => {
-    expect(chaptersFor(HOME).map((chapter) => chapter.key)).toEqual(['wichtig', 'karten', 'mehr'])
-    const kurz = buildTour(HOME, { scope: TOUR_SCOPE.kurz })
-    expect(kurz.map((step) => step.key)).toEqual(['start', 'composer', 'animals', 'chronik', 'families', 'discover', 'bell'])
-    const alles = buildTour(HOME, { scope: TOUR_SCOPE.alles })
-    expect(alles.at(-1).key).toBe('einladen')
-    expect(alles.some((step) => step.target?.includes('[data-tour="sichtbarkeit"]'))).toBe(true)
+  test('Haushalt: Wichtigstes (≤ 4) → Entdecken → Werkzeuge → Verwaltung, ein Kapitel je Durchgang', () => {
+    expect(chaptersFor(HOME).map((chapter) => chapter.key)).toEqual(['wichtig', 'entdecken', 'werkzeuge', 'verwaltung'])
+    const first = buildTour(HOME)
+    expect(first.map((step) => step.key)).toEqual(['start', 'composer', 'animals', 'families'])
+    expect(buildTour(HOME, { scope: TOUR_SCOPE.alles })).toEqual(first)
+    const lengths = chaptersFor(HOME).map((chapter) => chapter.steps.length)
+    expect(lengths[0]).toBeLessThanOrEqual(4)
+    expect(lengths[1]).toBeGreaterThanOrEqual(2)
+    expect(lengths[1]).toBeLessThanOrEqual(3)
+    expect(lengths.slice(2).every((n) => n >= 3 && n <= 4)).toBe(true)
+    const admin = buildTour(HOME, { chapterKey: 'verwaltung' })
+    expect(admin.some((step) => step.target?.includes('[data-tour="sichtbarkeit"]'))).toBe(true)
+    expect(admin.at(-1).key).toBe('einladen')
+    expect(buildTour(HOME, { chapterKey: 'entdecken' }).find((step) => step.key === 'revier').optional).toBe(true)
+  })
+
+  test('nächstes Kapitel in fester Reihenfolge, gezeigte werden nicht mehr vorgeschlagen', () => {
+    const chapters = chaptersFor(HOME)
+    expect(nextChapter(chapters, ['wichtig']).key).toBe('entdecken')
+    expect(nextChapter(chapters, ['wichtig', 'werkzeuge']).key).toBe('entdecken')
+    expect(nextChapter(chapters, ['wichtig', 'entdecken', 'werkzeuge']).key).toBe('verwaltung')
+    expect(nextChapter(chapters, chapters.map((chapter) => chapter.key))).toBeNull()
   })
 
   test('Sprung zu einem Kapitel; klassischer Familien-Login ohne „Familien“', () => {
-    expect(buildTour(HOME, { chapterKey: 'karten' }).map((step) => step.chapter)).toEqual(['karten', 'karten', 'karten', 'karten'])
+    expect(buildTour(HOME, { chapterKey: 'werkzeuge' }).map((step) => step.chapter)).toEqual(['werkzeuge', 'werkzeuge', 'werkzeuge', 'werkzeuge'])
     const classic = { id: 3, art: 'rudel', role: 'leitung' }
     expect(buildTour(classic).some((step) => step.key === 'families')).toBe(false)
   })
 
-  test('Partner und Tierheim bekommen ihre eigenen Kapitel', () => {
-    expect(buildTour(PARTNER, { scope: 'alles' }).map((step) => step.key)).toEqual([
-      'profil', 'kundensicht', 'beitraege', 'kalender', 'nachrichten', 'visitenkarten', 'einladungscodes', 'zugang'
-    ])
-    expect(buildTour({ id: 4, art: 'tierheim' }, { scope: 'alles' }).map((step) => step.key)).toContain('startpaket')
+  test('Partner und Tierheim: Basics → Kundensicht & Entdecken → Werkzeuge → Verwaltung', () => {
+    expect(chaptersFor(PARTNER).map((chapter) => chapter.key)).toEqual(['wichtig', 'kundensicht', 'werkzeuge', 'verwaltung'])
+    expect(buildTour(PARTNER).map((step) => step.key)).toEqual(['profil', 'nachrichten', 'leiste'])
+    expect(buildTour(PARTNER, { chapterKey: 'werkzeuge' }).map((step) => step.key)).toEqual(['visitenkarten', 'beitraege', 'kalender'])
+    expect(buildTour(PARTNER, { chapterKey: 'verwaltung' }).map((step) => step.key)).toEqual(['zugang', 'einladungscodes'])
+    const shelter = { id: 4, art: 'tierheim' }
+    expect(chaptersFor(shelter).every((chapter) => chapter.steps.length <= 4)).toBe(true)
+    expect(buildTour(shelter, { chapterKey: 'werkzeuge' }).map((step) => step.key)).toContain('startpaket')
   })
 
   test('jeder Text hat eine englische Fassung', () => {
@@ -88,7 +129,9 @@ describe('Rundgang: Kapitel', () => {
       .flat()
       .flatMap((chapter) => chapter.steps)
       .flatMap((step) => [step.title, step.text, step.ask?.title, step.ask?.text, step.ask?.action].filter(Boolean))
-    for (const text of [...texts, ...Object.values(CHAPTER_TITLES)]) {
+    const hints = Object.values(CHAPTERS_BY_ART).flat().map((chapter) => chapter.hint).filter(Boolean)
+    const card = ['Wie geht’s weiter?', 'Was möchtet ihr als Nächstes sehen?', 'Ihr habt alles gesehen – schön, dass ihr dabei seid.', 'Fertig']
+    for (const text of [...texts, ...hints, ...card, ...Object.values(CHAPTER_TITLES)]) {
       setLang('en')
       expect(t(text), text).not.toBe(text)
     }

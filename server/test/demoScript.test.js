@@ -34,9 +34,15 @@ test('scripts/demo.js legt die öffentliche Demo (Rudel + Zuhause) im neuen Stan
       { name: 'Hundeschule Pfotenglück', theme: 'standard', isDemo: 1, art: 'partner' },
       { name: 'Familie Sonnenhang', theme: 'standard', isDemo: 1, art: 'rudel' },
       { name: 'Tierheim Sonnenhang', theme: 'standard', isDemo: 1, art: 'tierheim' },
+      // Phase M: die fünf Profil-Zuhause für „Mein Revier“ (lib/demoRevier.js).
+      { name: 'Zuhause Barmbek (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
+      { name: 'Zuhause Bergedorf (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
+      { name: 'Zuhause Billwerder (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
       { name: 'Zuhause Heidekamp (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
       { name: 'Zuhause Lindenhof (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
       { name: 'Zuhause Möwenweg (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
+      { name: 'Zuhause Reinbek (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
+      { name: 'Zuhause Spadenland (Demo)', theme: 'standard', isDemo: 1, art: 'zuhause' },
       { name: 'Zuhause am Deich', theme: 'standard', isDemo: 1, art: 'zuhause' }
     ]
   )

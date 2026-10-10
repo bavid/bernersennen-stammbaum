@@ -18,6 +18,7 @@ import AdminHinweise from './AdminHinweise.jsx'
 import AdminServer from './AdminServer.jsx'
 import AdminFinanzierung from './AdminFinanzierung.jsx'
 import AdminLandeadressen from './AdminLandeadressen.jsx'
+import AdminRevier from './AdminRevier.jsx'
 
 // Gültiges Ziel für einen Partner-Gutscheinstapel (siehe routes/admin.js POST /voucher-batches)
 function partnerVoucherEligible(partner) {
@@ -54,6 +55,8 @@ export function adminCards({ overview, partners, todo, bereich, promotions, onOp
     freigaben: <AdminPostApproval version={version} onChanged={bump} onCountChange={report.posts} />,
     nachrichten: <AdminMessages onCountChange={report.messages} />,
     hinweise: <AdminHinweise />,
+    // Phase M „Mein Revier“: öffentliche Profile ausschalten (Not-Aus).
+    revier: <AdminRevier />,
     empfehlungen: <AdminPromotions partners={partners} version={version} onChanged={bump} />,
     band: <AdminCommunityBanner />,
     // Plan 2027 Kap. 6: eigene Landeadresse je Kanal (/fb, /anzeige-herbst) - anonym gezählt.

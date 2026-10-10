@@ -229,15 +229,19 @@ test('Happy Ends (Phase T Task 6): Einwilligung, Kürzung, keine Halterdaten, /p
     assert.equal(real.status, 200)
     assert.equal(real.data.shelterDemo, undefined)
 
-    // APP_ENV=production (siehe useTempDataDir oben) -> ein Demo-Partner braucht ?demo=1 (demoAllowed).
-    const beforeShelter = await call(base, '/api/public/partners/demo-partner-happy?demo=1')
+    // APP_ENV=production (siehe useTempDataDir oben) -> ein Demo-Partner nur für eine Demo-Sitzung (demoAllowed;
+    // ?demo=1 zählt in Produktion nicht).
+    assert.equal((await call(base, '/api/public/partners/demo-partner-happy?demo=1')).status, 404)
+    const demoFamily = await createFamily(base, 'Demo-Familie Happy', 'demo-familie-happy-ends-1')
+    db.prepare('UPDATE families SET is_demo = 1 WHERE id = ?').run(demoFamily.data.id)
+    const beforeShelter = await call(base, '/api/public/partners/demo-partner-happy', { cookie: demoFamily.cookie })
     assert.equal(beforeShelter.status, 200)
     assert.equal('shelterDemo' in beforeShelter.data, false)
 
     const shelter = await post(`/api/admin/partners/${demoId}/shelter`, undefined, adminCookie)
     assert.equal(shelter.status, 201)
 
-    const demo = await call(base, '/api/public/partners/demo-partner-happy?demo=1')
+    const demo = await call(base, '/api/public/partners/demo-partner-happy', { cookie: demoFamily.cookie })
     assert.equal(demo.status, 200)
     assert.equal('shelterDemo' in demo.data, false)
   })

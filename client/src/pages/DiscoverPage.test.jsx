@@ -260,7 +260,7 @@ describe('DiscoverPage – Kopf und Laden', () => {
   test('eine Antwort ohne Abschnitte bringt die Seite nicht zum Absturz', async () => {
     discover.mockResolvedValue({})
     await render()
-    expect(container.querySelectorAll('[role="tab"]')).toHaveLength(7)
+    expect(container.querySelectorAll('[role="tab"]')).toHaveLength(8)
     expect(container.querySelector('[role="tabpanel"]').textContent).toContain('Hier ist gerade noch nichts')
   })
 })

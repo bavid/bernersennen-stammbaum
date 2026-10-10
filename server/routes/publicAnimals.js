@@ -15,8 +15,8 @@ const router = express.Router()
 // nur mit ?demo=1 oder einer angemeldeten Demo-Sitzung sichtbar.
 router.use(optionalSession)
 
+// ?demo=1 öffnet Demo-Inhalte nicht mehr (wie routes/partners.js): in Produktion nur mit Demo-Sitzung.
 function demoAllowed(req) {
-  if (req.query.demo === '1') return true
   if (config.appEnv === 'dev' || config.appEnv === 'staging') return true
   return Boolean(req.isDemo)
 }

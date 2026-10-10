@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { Button, EmptyState } from '../components/ui'
+import PrintMessage from '../components/PrintMessage.jsx'
 import StartpaketSheets from '../components/startpaket/StartpaketSheets.jsx'
 import { usePrintBodyClass } from '../components/VoucherPrintView.jsx'
 import { isReadOnly } from '../lib/demo.js'
@@ -98,25 +99,21 @@ export default function StartpaketPage({ dogId, family }) {
 
   if (error) {
     return (
-      <div className="print-page">
-        <main className="print-main">
-          <div className="error-banner" role="alert">
-            {error}
-          </div>
-        </main>
-      </div>
+      <PrintMessage>
+        <div className="error-banner" role="alert">
+          {error}
+        </div>
+      </PrintMessage>
     )
   }
   if (!data) return <div className="print-page" aria-busy="true" />
   if (!canOpenStartpaket(family, data.dog)) {
     return (
-      <div className="print-page">
-        <main className="print-main">
-          <EmptyState icon="lock" title={t('Kein Zugriff')}>
-            {t(DENIED_TEXT)}
-          </EmptyState>
-        </main>
-      </div>
+      <PrintMessage dogId={id}>
+        <EmptyState icon="lock" title={t('Kein Zugriff')}>
+          {t(DENIED_TEXT)}
+        </EmptyState>
+      </PrintMessage>
     )
   }
 

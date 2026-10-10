@@ -131,9 +131,15 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
     ['Hundesalon Wuschelglück', 1, 'standard'],
     ['Hundeschule Pfotenglück', 1, 'standard'],
     ['Tierheim Sonnenhang', 1, 'standard'],
+    // Phase M: die fünf Profil-Zuhause für „Mein Revier“ (lib/demoRevier.js).
+    ['Zuhause Barmbek (Demo)', 1, 'standard'],
+    ['Zuhause Bergedorf (Demo)', 1, 'standard'],
+    ['Zuhause Billwerder (Demo)', 1, 'standard'],
     ['Zuhause Heidekamp (Demo)', 1, 'standard'],
     ['Zuhause Lindenhof (Demo)', 1, 'standard'],
     ['Zuhause Möwenweg (Demo)', 1, 'standard'],
+    ['Zuhause Reinbek (Demo)', 1, 'standard'],
+    ['Zuhause Spadenland (Demo)', 1, 'standard'],
     ['Zuhause am Deich', 1, 'standard']
   ]
   const TEST_FAMILIES = [
@@ -175,7 +181,7 @@ test('testenv-seed creates the public demo, a writable test pack and a writable 
   setMembershipRole(dir, 'Zuhause am Deich (Test)', 'Rudel vom Sonnenhang (Test)', 'gast')
   const second = run(env)
   assert.equal(second.status, 0, second.stderr)
-  assert.equal(familiesIn(dir).length, 10, 'second run replaces the demo families (Rudel/Zuhause/Tierheim/Partner-Bereiche/Rollen-Haushalte) and keeps both test packs')
+  assert.equal(familiesIn(dir).length, 15, 'second run replaces the demo families (Rudel/Zuhause/Tierheim/Partner-Bereiche/Rollen-/Revier-Haushalte) and keeps both test packs')
   assert.equal(membershipRole(dir, 'Zuhause am Deich (Test)', 'Rudel vom Sonnenhang (Test)'), 'leitung', 'der Seed stellt die Leitung wieder her')
   assert.match(second.stdout, /Partner-Zugang-Stapel "Partner-Zugang \(Test\)" besteht schon/)
   assert.deepEqual(accessBatchInfo(dir), firstAccess, 'idempotent: kein zweiter Stapel, keine neuen Codes')

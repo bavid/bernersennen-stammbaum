@@ -5,6 +5,7 @@ import { Button, Chip, EmptyState } from '../ui/index.js'
 import { formatDateShort } from '../../lib/dates.js'
 import { displayName } from '../../lib/timeline.js'
 import { ERINNERUNG_FILTER, ERINNERUNGEN_SEITE, filterMemories, memoryLabel } from '../../lib/sichtbarkeit.js'
+import { istOeffentlich, kannOeffentlich, revierStand } from '../../lib/revier.js'
 import { useT } from '../../lib/i18n/index.js'
 
 const FILTER_LABELS = { alle: 'Alle', privat: 'Privat', geteilt: 'Geteilt' }
@@ -35,8 +36,22 @@ function Filter({ filter, dogId, animals, onFilter, onDog }) {
   )
 }
 
-function MemoryRow({ entry, dog, label, busy, readOnly, onToggle }) {
+// Phase M: dritte Sichtbarkeit „öffentlich“ (Mein Revier) - nur mit eigenem Profil, nie privat, nie Gesundheit.
+function OeffentlichKnopf({ entry, stand, busy, readOnly, onToggle }) {
   const t = useT()
+  if (!stand.vorhanden || !kannOeffentlich(entry)) return null
+  const markiert = stand.markiert.has(entry.id)
+  return (
+    <Button variant="ghost" size="sm" disabled={readOnly} aria-busy={busy || undefined} onClick={() => !busy && onToggle(entry, !markiert)}>
+      <Icon name={markiert ? 'eyeOff' : 'globe'} />
+      {markiert ? t('Nicht mehr öffentlich') : t('Öffentlich zeigen')}
+    </Button>
+  )
+}
+
+function MemoryRow({ entry, dog, label, busy, readOnly, onToggle, revier }) {
+  const t = useT()
+  const oeffentlich = istOeffentlich(entry, revier.stand.markiert, revier.stand.tiere) && revier.stand.aktiv
   return (
     <li className="settings-row sicht-erinnerung">
       <div className="settings-row-main">
@@ -49,12 +64,18 @@ function MemoryRow({ entry, dog, label, busy, readOnly, onToggle }) {
         <Chip tone={entry.privat ? 'neutral' : 'ok'} icon={entry.privat ? 'lock' : 'users'}>
           {label}
         </Chip>
+        {oeffentlich && (
+          <Chip tone="neu" icon="globe">
+            {t('Öffentlich – Mein Revier')}
+          </Chip>
+        )}
       </div>
       <div className="settings-row-actions">
         <Button variant="ghost" size="sm" disabled={readOnly} aria-busy={busy || undefined} onClick={() => !busy && onToggle(entry, !entry.privat)}>
           <Icon name={entry.privat ? 'users' : 'lock'} />
           {entry.privat ? t('Teilen') : t('Privat machen')}
         </Button>
+        <OeffentlichKnopf entry={entry} stand={revier.stand} busy={revier.busy} readOnly={readOnly} onToggle={revier.onToggle} />
       </div>
     </li>
   )
@@ -72,6 +93,7 @@ export default function ErinnerungenAnsicht({ family, data, matrix, readOnly, si
   const shown = list.slice(0, limit)
   const dogsById = new Map(data.animals.map((dog) => [dog.id, dog]))
   const privateCount = filterMemories(data.memories, { filter: 'privat', dogId }).length
+  const stand = revierStand(data.revier)
 
   function showAllPrivate() {
     setFilter('privat')
@@ -103,6 +125,7 @@ export default function ErinnerungenAnsicht({ family, data, matrix, readOnly, si
               busy={sicht.isBusy(`entry-${entry.id}`)}
               readOnly={readOnly}
               onToggle={sicht.setMemoryPrivat}
+              revier={{ stand, busy: sicht.isBusy(`revier-${entry.id}`), onToggle: sicht.setMemoryOeffentlich }}
             />
           ))}
         </ul>

@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
-import { act } from 'react'
+import { act, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter, useNavigate } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import PartnerDemoGuide, { DEMO_GUIDE_SEEN_KEY, DEMO_GUIDE_SETTING } from './PartnerDemoGuide.jsx'
+import TourProvider from './tour/TourProvider.jsx'
+import { TourBusyContext } from './tour/tourContext.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -28,7 +30,18 @@ function Navigator() {
   return null
 }
 
-async function render(path = '/profil') {
+function Page() {
+  return (
+    <main>
+      <PartnerDemoGuide />
+      <div className="page">
+        <h1>Hundeschule Pfotenglück</h1>
+      </div>
+    </main>
+  )
+}
+
+async function mount(path, content) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -36,17 +49,16 @@ async function render(path = '/profil') {
     root.render(
       <MemoryRouter initialEntries={[path]}>
         <Navigator />
-        <main>
-          <PartnerDemoGuide />
-          <div className="page">
-            <h1>Hundeschule Pfotenglück</h1>
-          </div>
-        </main>
+        {content}
       </MemoryRouter>
     )
   )
   return container
 }
+
+const render = (path = '/profil') => mount(path, <Page />)
+const DEMO_PARTNER = { id: 20, name: 'Hundeschule Ufer', art: 'partner', isDemo: true, role: 'leitung', home: { id: 20, art: 'partner' }, memberships: [] }
+const tourPrompt = () => document.body.querySelector('.tour-prompt')
 
 const guide = () => container.querySelector('.demo-guide')
 
@@ -121,5 +133,45 @@ describe('PartnerDemoGuide', () => {
 
     await act(async () => container.querySelector('.demo-guide-close').click())
     expect(guide()).toBeNull()
+  })
+
+  // Rundgang: nur eines von beiden - Frage oder Rundgang verdrängen den Hinweis, danach steht er (einmal) da.
+  test('offene Rundgang-Frage verdrängt den Hinweis; nach dem Schließen der Frage steht er da', async () => {
+    await mount(
+      '/profil',
+      <TourProvider family={DEMO_PARTNER} autoPrompt>
+        <Page />
+      </TourProvider>
+    )
+    expect(tourPrompt()).not.toBeNull()
+    expect(guide()).toBeNull()
+
+    await act(async () => tourPrompt().querySelector('.tour-prompt-close').click())
+    expect(tourPrompt()).toBeNull()
+    expect(guide()).not.toBeNull()
+  })
+
+  test('während des Rundgangs verdrängt - auch Seitenwechsel zählen nicht als gesehen', async () => {
+    let setBusy
+    function Busy({ children }) {
+      const [busy, set] = useState(true)
+      setBusy = set
+      return <TourBusyContext.Provider value={busy}>{children}</TourBusyContext.Provider>
+    }
+    await mount(
+      '/profil',
+      <Busy>
+        <Page />
+      </Busy>
+    )
+    expect(guide()).toBeNull()
+
+    await act(async () => navigate('/kalender'))
+    await act(async () => navigate('/profil'))
+    expect(guide()).toBeNull()
+
+    await act(async () => setBusy(false))
+    expect(guide()).not.toBeNull()
+    expect(window.sessionStorage.getItem(DEMO_GUIDE_SEEN_KEY)).toBeNull()
   })
 })

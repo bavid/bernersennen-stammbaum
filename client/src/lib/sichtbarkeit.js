@@ -6,7 +6,8 @@ import { isEditable } from './areas.js'
 import { joinNames } from './entryForm.js'
 import { t } from './i18n/index.js'
 
-export const ANSICHTEN = Object.freeze(['tiere', 'verbindungen', 'erinnerungen', 'vorschau'])
+// Phase M: „Öffentlich“ - das eigene Profil für „Mein Revier“ (components/sichtbarkeit/OeffentlichAnsicht.jsx).
+export const ANSICHTEN = Object.freeze(['tiere', 'verbindungen', 'erinnerungen', 'vorschau', 'oeffentlich'])
 export const ERINNERUNG_FILTER = Object.freeze(['alle', 'privat', 'geteilt'])
 // So viele Erinnerungen zeigt die Liste zuerst - „Mehr zeigen“ holt jeweils so viele dazu.
 export const ERINNERUNGEN_SEITE = 10

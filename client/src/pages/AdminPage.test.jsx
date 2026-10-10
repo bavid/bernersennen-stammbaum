@@ -172,7 +172,7 @@ describe('AdminPage – 5 Reiter mit Unterreitern', () => {
     expect(tree).toEqual({
       Übersicht: ['Auf einen Blick', 'Erfolg messen'],
       'Familien & Partner': ['Familien', 'Partner', 'Anfragen', 'Einladungscodes', 'Einladungskarte'],
-      'Inhalte & Freigaben': ['Freigaben', 'Nachrichten', 'Hinweise'],
+      'Inhalte & Freigaben': ['Freigaben', 'Nachrichten', 'Hinweise', 'Öffentliche Profile'],
       'Werbung & Messen': ['Empfehlungen', 'Band „Mit dabei“', 'Landeadressen', 'Statistik', 'Spenden', 'Finanzierung'],
       System: ['Server', 'Benachrichtigungen', 'Protokoll']
     })

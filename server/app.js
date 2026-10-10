@@ -28,6 +28,8 @@ const adminEinladungskarteRoutes = require('./routes/adminEinladungskarte')
 const adminFinanzierungRoutes = require('./routes/adminFinanzierung')
 const adminPartnerSichtbarRoutes = require('./routes/adminPartnerSichtbar')
 const adminLandeadressenRoutes = require('./routes/adminLandeadressen')
+const revierRoutes = require('./routes/revier')
+const adminRevierRoutes = require('./routes/adminRevier')
 const finanzierungRoutes = require('./routes/finanzierung')
 const finanzierungWebhookRoutes = require('./routes/finanzierungWebhook')
 const adminSpendenRoutes = require('./routes/adminSpenden')
@@ -224,6 +226,8 @@ function createApp() {
   app.use('/api/timeline', timelineRoutes)
   app.use('/api/gesundheit', gesundheitRoutes)
   app.use('/api/sichtbarkeit', sichtbarkeitRoutes)
+  // Phase M „Mein Revier“: öffentliche Profile, Radar, Folgen - nur angemeldet, no-store, noindex (routes/revier.js).
+  app.use('/api/revier', revierRoutes)
   app.use('/api/breeding', breedingRoutes)
   app.use('/api/notes', notesRoutes)
   app.use('/api/messages', messagesRoutes)
@@ -247,6 +251,7 @@ function createApp() {
   app.use('/api/admin', adminSpendenRoutes)
   app.use('/api/admin', adminPartnerSichtbarRoutes)
   app.use('/api/admin', adminLandeadressenRoutes)
+  app.use('/api/admin', adminRevierRoutes)
   // Laufband der Startseite: Partner vorstellen und die Demo-Ausnahme (routes/adminCommunity.js).
   app.use('/api/admin', adminCommunityRoutes)
   // Phase N Task 5: die laufenden globalen Hinweise fürs Band oben auf jeder Seite - öffentlich, ohne Login.

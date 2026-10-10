@@ -41,6 +41,8 @@ const MembersPage = lazy(() => import('./pages/MembersPage.jsx'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx'))
 // Digitaler Bilderrahmen (Diashow im eigenen Zuhause) - eigener Chunk, wie die Fotocollage.
 const BilderrahmenPage = lazy(() => import('./pages/BilderrahmenPage.jsx'))
+// Phase M: ein öffentliches Profil aus „Mein Revier“ (nur angemeldet) - eigener Chunk, selten geöffnet.
+const RevierProfilPage = lazy(() => import('./pages/RevierProfilPage.jsx'))
 
 // Alte /hund/:id-Links (vor der Umbenennung zu /tier/:id geteilt) funktionieren weiter
 function RedirectTierUrl() {
@@ -259,6 +261,7 @@ function HouseholdRoutes({ family, onFamilyChange, onInvite }) {
       <Route path="/bilderrahmen" element={<BilderrahmenRoute family={family} onFamilyChange={onFamilyChange} />} />
       <Route path="/umgebung" element={<NearbyRedirect />} />
       <Route path="/entdecken" element={atHome(<DiscoverPage />)} />
+      <Route path="/revier/:slug" element={atHome(<RevierProfilPage />)} />
       <Route path="*" element={<ToStart family={family} />} />
     </Routes>
   )

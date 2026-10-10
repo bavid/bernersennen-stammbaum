@@ -52,7 +52,8 @@ test('Demo-Profil: Bilder und Namen, idempotent', async (t) => {
     const oldFiles = profile().map((row) => row.bild_file).filter(Boolean)
     replaceDemoPack(db, uploadDir)
     for (const file of oldFiles) assert.equal(fs.existsSync(path.join(uploadDir, file)), false, file)
-    assert.equal(profile().filter((row) => row.bild_file).length, 2)
+    // Zuhause, Familie und zwei Revier-Profile (lib/demoRevier.js).
+    assert.equal(profile().filter((row) => row.bild_file).length, 4)
     assert.equal(db.prepare('SELECT anzeigename FROM bereich_profil WHERE family_id = ?').get(realId).anzeigename, 'Lotte')
   })
 })

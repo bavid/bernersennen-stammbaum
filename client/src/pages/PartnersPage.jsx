@@ -49,7 +49,7 @@ function Treffer({ entdecken }) {
   return (
     <section className="entdecken-section" aria-labelledby="entdecken-treffer-title">
       <h2 id="entdecken-treffer-title" className="entdecken-section-title">
-        {trefferTitle(applied)} <span className="entdecken-count">{t('{n} Treffer', { n: result.gesamt })}</span>
+        {trefferTitle(applied)} <span className="entdecken-count">{t(result.gesamt === 1 ? '1 Treffer' : '{n} Treffer', { n: result.gesamt })}</span>
       </h2>
       <CardList items={result.treffer} id={LIST_ID} />
       {result.mehr && (

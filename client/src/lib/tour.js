@@ -2,7 +2,8 @@
 // eines Schritts steht, wo die Sprechblase hinkommt und die Form der abgedunkelten Fläche mit Ausschnitt.
 // Stand je Zuhause: me.rundgang ('neu' | 'fertig' | 'aus', server/lib/profil.js). Ohne Angabe vom Server (ältere
 // Version) zählt der Stand dieses Geräts (localStorage, lib/storage.js). Demo: nie speichern, höchstens einmal je Sitzung
-// fragen (sessionStorage) - die Demo teilen sich viele.
+// fragen (sessionStorage) - die Demo teilen sich viele. Alles gilt je Bereichsart (Zuhause, Familie, Partner, Tierheim)
+// bzw. je Bereich: wer die Zuhause-Demo schließt, bekommt die Partner-Demo trotzdem angeboten.
 import { api } from '../api.js'
 import { areaContext } from './areas.js'
 import { hasMenuSlot } from './navItems.js'
@@ -11,10 +12,19 @@ import { CHAPTERS_BY_ART } from './tourSteps.js'
 
 export const TOUR_STATUS = Object.freeze({ neu: 'neu', fertig: 'fertig', aus: 'aus' })
 const LOCAL_KEY = 'rundgang'
-const LATER_KEY = 'chronik.rundgangSpaeter'
-const DEMO_ASKED_KEY = 'chronik.rundgangDemoGefragt'
-// „Nicht mehr zeigen“ in einer Demo gilt für dieses Gerät (die Demo selbst speichert nichts).
-const DEMO_OFF_KEY = 'rundgangDemoAus'
+const KEY_PREFIX = 'fap-tour'
+const homeIdOf = (family) => family?.home?.id ?? family?.id
+
+// Art des Bereichs: 'zuhause' | 'rudel' | 'partner' | 'tierheim' (families.art).
+export function tourKind(family) {
+  return family?.art || 'zuhause'
+}
+
+// Schlüssel je Art - in der Demo nur die Art (alle teilen eine Demo je Art), sonst Art und Bereich.
+export function tourKey(family, what) {
+  const area = family?.isDemo ? 'demo' : homeIdOf(family)
+  return `${KEY_PREFIX}:${what}:${area}:${tourKind(family)}`
+}
 
 // Bis hierhin (px Breite) wird die Sprechblase zum Blatt am oberen oder unteren Rand.
 export const SHEET_MAX_WIDTH = 720
@@ -26,6 +36,7 @@ const SPOT_RADIUS = 14
 
 // Kapitel und Schritte: lib/tourSteps.js.
 export { ROUTE_FIRST_ANIMAL, CHAPTER_TITLES } from './tourSteps.js'
+// „Kurz“: nur das Wichtigste, danach Ende. „Alles“ bzw. ein Kapitel: danach die Karte „Wie geht’s weiter?“.
 export const TOUR_SCOPE = Object.freeze({ kurz: 'kurz', alles: 'alles' })
 
 // Für wen gibt es den Rundgang? Alle Bereiche im eigenen Zugang - nicht in der Admin-Ansicht und nicht zu Besuch.
@@ -47,15 +58,17 @@ export function chaptersFor(family) {
     .filter((chapter) => chapter.steps.length > 0)
 }
 
-// Die Schritte eines Durchgangs: „Kurz“ nur das erste Kapitel, „Alles“ alle - ab chapterKey (Sprung zu einem Kapitel).
-// Jeder Schritt kennt sein Kapitel (chapter, chapterNumber) für die Zeile über dem Titel.
-export function buildTour(family, { scope = TOUR_SCOPE.kurz, chapterKey } = {}) {
+// Die Schritte eines Kapitels (ohne chapterKey das erste). Jeder Schritt kennt sein Kapitel für die Zeile über dem Titel.
+export function buildTour(family, { chapterKey } = {}) {
   const chapters = chaptersFor(family)
-  const from = Math.max(0, chapters.findIndex((chapter) => chapter.key === chapterKey))
-  const picked = scope === TOUR_SCOPE.alles ? chapters.slice(from) : chapters.slice(from, from + 1)
-  return picked.flatMap((chapter) =>
-    chapter.steps.map((step) => ({ ...step, chapter: chapter.key, chapterNumber: chapters.indexOf(chapter) + 1, chapterCount: chapters.length }))
-  )
+  const chapter = chapters.find((item) => item.key === chapterKey) || chapters[0]
+  if (!chapter) return []
+  return chapter.steps.map((step) => ({ ...step, chapter: chapter.key }))
+}
+
+// Das nächste Kapitel in fester Reihenfolge (Entdecken → Werkzeuge → Verwaltung), das noch nicht gezeigt wurde.
+export function nextChapter(chapters, done = []) {
+  return chapters.find((chapter) => !done.includes(chapter.key)) || null
 }
 
 function sessionFlag(key) {
@@ -74,8 +87,8 @@ function setSessionFlag(key) {
   }
 }
 
-const homeIdOf = (family) => family?.home?.id ?? family?.id
 
+// Server-Stand je Bereich (bereich_profil.rundgang_status, auch für Partner und Tierheime), sonst dieses Gerät.
 export function tourStatus(family) {
   const fromServer = family?.rundgang
   if (Object.values(TOUR_STATUS).includes(fromServer)) return fromServer
@@ -84,23 +97,23 @@ export function tourStatus(family) {
 
 // Soll die Frage „Möchtet ihr einen kurzen Rundgang?“ jetzt kommen?
 export function shouldPrompt(family) {
-  if (!asksByItself(family) || sessionFlag(LATER_KEY)) return false
-  if (family.isDemo) return !sessionFlag(DEMO_ASKED_KEY) && readSetting(DEMO_OFF_KEY, false) !== true
+  if (!asksByItself(family) || sessionFlag(tourKey(family, 'spaeter'))) return false
+  if (family.isDemo) return !sessionFlag(tourKey(family, 'gefragt')) && readSetting(tourKey(family, 'aus'), false) !== true
   return tourStatus(family) === TOUR_STATUS.neu
 }
 
-// Die Frage wurde gezeigt - in der Demo nur einmal je Sitzung.
+// Die Frage wurde gezeigt - in der Demo nur einmal je Sitzung und Art.
 export function markPrompted(family) {
-  if (family?.isDemo) setSessionFlag(DEMO_ASKED_KEY)
+  if (family?.isDemo) setSessionFlag(tourKey(family, 'gefragt'))
 }
 
 // Speichert den Stand (Gerät + Server); Fehler (offline, Admin-Ansicht) bleiben still - der Rundgang ist Komfort.
 // Demo: nichts am Server, „aus“ nur auf diesem Gerät. Gibt die neue family zurück.
 export async function saveTourStatus(family, status) {
   if (!family) return family
-  setSessionFlag(LATER_KEY)
+  setSessionFlag(tourKey(family, 'spaeter'))
   if (family.isDemo) {
-    if (status === TOUR_STATUS.aus) writeSetting(DEMO_OFF_KEY, true)
+    if (status === TOUR_STATUS.aus) writeSetting(tourKey(family, 'aus'), true)
     return family
   }
   writeSetting(`${LOCAL_KEY}.${homeIdOf(family)}`, status)

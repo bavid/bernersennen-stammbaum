@@ -99,6 +99,8 @@ const prompt = () => document.body.querySelector('.tour-prompt')
 const pop = () => document.body.querySelector('.tour-pop')
 const popTitle = () => pop()?.querySelector('h2')?.textContent
 const click = async (el) => act(async () => el.click())
+const choice = () => document.body.querySelector('.tour-choice')
+const choiceTitles = () => [...choice().querySelectorAll('.tour-choice-title')].map((el) => el.textContent.replace('✓ ', ''))
 
 describe('Rundgang', () => {
   test('fragt einmal auf Start; „Schließen“ merkt sich „fertig“ und fragt nicht wieder', async () => {
@@ -144,7 +146,7 @@ describe('Rundgang', () => {
     await render()
     await click(button('Kurz das Wichtigste'))
     await waitFor(() => popTitle() === 'Start: eure Neuigkeiten')
-    expect(pop().textContent).toContain('Schritt 1 von 7')
+    expect(pop().textContent).toContain('Schritt 1 von 4')
     expect(document.activeElement).toBe(pop())
     expect(document.body.querySelector('[aria-live="polite"]').textContent).toContain('Start: eure Neuigkeiten')
 
@@ -159,7 +161,6 @@ describe('Rundgang', () => {
     act(() => pop().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })))
     await waitFor(() => popTitle() === 'Habt ihr schon ein Tier angelegt?')
 
-    // Ohne Tier gibt es keine Chronik -> Familien.
     await click(button('Weiter'))
     await waitFor(() => popTitle() === 'Familien & „Mit dabei“')
     expect(pathname).toBe('/familien')
@@ -169,26 +170,91 @@ describe('Rundgang', () => {
     expect(spy).toHaveBeenCalledWith('fertig')
   })
 
-  test('mit Tier: die Chronik-Seite des ersten Tiers wird angesteuert', async () => {
-    vi.spyOn(api, 'setRundgang').mockResolvedValue({})
-    await render({ ...HOME, rundgang: 'fertig' }, { path: '/tiere', withAnimal: true })
-    await click(button('Rundgang erneut starten'))
+  test('„Kurz das Wichtigste“ endet nach Kapitel 1 ohne Auswahlkarte', async () => {
+    const spy = vi.spyOn(api, 'setRundgang').mockResolvedValue({ rundgang: 'fertig' })
+    await render(HOME, { withAnimal: true })
+    await click(button('Kurz das Wichtigste'))
     await waitFor(() => popTitle() === 'Start: eure Neuigkeiten')
     await click(button('Weiter'))
     await waitFor(() => popTitle() === 'Eure Tiere')
     await click(button('Weiter'))
-    // Die Tierseite gibt es im Test nicht (kein .dog-tab-bar): erst hin, dann weiter.
+    await waitFor(() => popTitle() === 'Familien & „Mit dabei“')
+    await click(button('Fertig'))
+    expect(pop()).toBeNull()
+    expect(choice()).toBeNull()
+    expect(spy).toHaveBeenCalledWith('fertig')
+  })
+
+  test('„Alles zeigen“: nach Kapitel 1 die Karte – nächstes Kapitel vorgewählt, Gezeigtes abgehakt, „Fertig“ speichert', async () => {
+    const spy = vi.spyOn(api, 'setRundgang').mockResolvedValue({ rundgang: 'fertig' })
+    await render(HOME, { withAnimal: true })
+    await click(button('Alles zeigen'))
+    await waitFor(() => popTitle() === 'Start: eure Neuigkeiten')
+    await click(button('Weiter'))
+    await waitFor(() => popTitle() === 'Eure Tiere')
+    await click(button('Weiter'))
     await waitFor(() => popTitle() === 'Familien & „Mit dabei“')
     expect(pop().textContent).toContain('Das Wichtigste')
+    expect(button('Fertig')).toBeUndefined()
+    await click(button('Weiter'))
+    await waitFor(() => choice() !== null)
+    expect(choice().querySelector('h2').textContent).toBe('Wie geht’s weiter?')
+    expect(document.body.querySelector('[aria-live="polite"]').textContent).toBe('Wie geht’s weiter?')
+    expect(choiceTitles()).toEqual(['Entdecken', 'Werkzeuge', 'Verwaltung'])
+    expect(document.activeElement.textContent).toContain('Entdecken')
+    expect(document.activeElement.classList.contains('is-next')).toBe(true)
+
+    await click(document.activeElement)
+    await waitFor(() => popTitle() === 'Entdecken')
+    expect(pop().textContent).toContain('Schritt 1 von 3')
+    // „Mein Revier“ gibt es hier nicht: kurz gesucht, dann übersprungen.
+    await click(button('Weiter'))
+    await waitFor(() => popTitle() === 'Die Glocke: eure Hinweise')
+    await click(button('Weiter'))
+    await waitFor(() => choice() !== null)
+    const seen = [...choice().querySelectorAll('.tour-choice-btn.is-done')]
+    expect(seen.map((el) => el.getAttribute('aria-label'))).toEqual(['Entdecken (schon gesehen)'])
+    expect(choice().querySelector('.is-next').textContent).toContain('Werkzeuge')
+    expect(spy).not.toHaveBeenCalled()
+    await click(button('Fertig'))
+    expect(choice()).toBeNull()
+    expect(spy).toHaveBeenCalledWith('fertig')
+  })
+
+  test('Demo je Art: Zuhause geschlossen – Partner fragt trotzdem; Partner „aus“ – Zuhause bleibt still', async () => {
+    const spy = vi.spyOn(api, 'setRundgang')
+    const homeDemo = { ...HOME, id: 2, home: { id: 2, art: 'zuhause' }, isDemo: true }
+    const partnerDemo = { id: 9, art: 'partner', isDemo: true, rundgang: 'neu' }
+    await render(homeDemo)
+    await click(button('Schließen'))
+    act(() => root.unmount())
+    root = null
+    await render(partnerDemo, { path: '/profil' })
+    expect(prompt()).not.toBeNull()
+    await click(button('Nicht mehr zeigen'))
+    act(() => root.unmount())
+    root = null
+    await render(homeDemo)
+    expect(prompt()).toBeNull()
+    window.sessionStorage.clear()
+    act(() => root.unmount())
+    root = null
+    await render(homeDemo)
+    expect(prompt()).not.toBeNull()
+    act(() => root.unmount())
+    root = null
+    await render(partnerDemo, { path: '/profil' })
+    expect(prompt()).toBeNull()
+    expect(spy).not.toHaveBeenCalled()
   })
 
   test('Neustart aus den Einstellungen und Sprung in ein Kapitel', async () => {
     vi.spyOn(api, 'setRundgang').mockResolvedValue({})
     await render({ ...HOME, rundgang: 'aus' }, { path: '/einstellungen' })
     expect(prompt()).toBeNull()
-    await click(button('Für Fortgeschrittene'))
+    await click(button('Verwaltung'))
     await waitFor(() => popTitle() === 'Wer sieht was – und wann?')
-    expect(pop().textContent).toContain('Für Fortgeschrittene')
+    expect(pop().textContent).toContain('Verwaltung')
     await click(button('Beenden'))
     expect(pop()).toBeNull()
   })
@@ -205,5 +271,14 @@ describe('Rundgang', () => {
     await render()
     expect(prompt().textContent).toContain('Would you like a short tour?')
     expect(button('Just the essentials')).toBeTruthy()
+    await click(button('Discover'))
+    await waitFor(() => popTitle() === 'Discover')
+    await click(button('Next'))
+    await waitFor(() => popTitle() === 'The bell: your notifications')
+    await click(button('Next'))
+    await waitFor(() => choice() !== null)
+    expect(choice().querySelector('h2').textContent).toBe('What’s next?')
+    expect(choice().querySelector('.is-next').textContent).toContain('Tools')
+    expect(button('Done')).toBeTruthy()
   })
 })

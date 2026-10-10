@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const { me, view, familyMembers } = vi.hoisted(() => ({ me: vi.fn(), view: vi.fn(), familyMembers: vi.fn() }))
 vi.mock('./api', () => ({
@@ -56,9 +56,13 @@ async function render(path) {
   )
 }
 
-// Die Einstellungen sind ein eigener Chunk (React.lazy in AreaRoutes.jsx) - kurz warten, bis <main> sie zeigt.
+// Die Einstellungen sind ein eigener Chunk (React.lazy in AreaRoutes.jsx) - warten, bis <main> sie zeigt. Unter Last
+// (volle Suite) brauchte das erste Transformieren des Chunks länger als 40 × 10 ms: deshalb ist er in beforeAll schon
+// geladen und das Warten an der Zeit (5 s) statt an der Zahl der Runden bemessen.
+const WAIT_MS = 5000
 async function waitForMainHeading(text) {
-  for (let i = 0; i < 40 && container.querySelector('main h1')?.textContent !== text; i += 1) {
+  const until = Date.now() + WAIT_MS
+  while (Date.now() < until && container.querySelector('main h1')?.textContent !== text) {
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 10))
     })
@@ -72,6 +76,10 @@ function openMenu() {
   return [...container.querySelectorAll('.account-menu-panel [role="menuitem"]')]
 }
 const menuItem = (label) => openMenu().find((item) => item.textContent === label)
+
+beforeAll(async () => {
+  await import('./pages/SettingsPage.jsx')
+})
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -163,7 +171,8 @@ describe('App – Familie verwalten in den Einstellungen', () => {
     familyMembers.mockResolvedValue({ familyId: 3, name: 'Familie Sonnenhang', ichBin: 'leitung', mitglieder: [] })
     await render('/einstellungen?bereich=familien&familie=3')
     await waitForMainHeading('Einstellungen')
-    for (let i = 0; i < 40 && !container.querySelector('.family-manage-title'); i += 1) {
+    const until = Date.now() + WAIT_MS
+    while (Date.now() < until && !container.querySelector('.family-manage-title')) {
       await act(async () => new Promise((resolve) => setTimeout(resolve, 10)))
     }
 

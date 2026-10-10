@@ -9,7 +9,7 @@ const { parseEntdecken, buildPublicEntdecken } = require('../lib/publicEntdecken
 const { demoAllowed } = require('./partners')
 
 // Öffentliches „Entdecken“ (lib/publicEntdecken.js), eingehängt unter /api/public/entdecken (app.js):
-// - GET  /?q=&typ=&seite=&demo=      ohne Ort - darf kurz im Browser zwischengespeichert werden (privat, 60 s).
+// - GET  /?q=&typ=&seite=            ohne Ort - darf kurz im Browser zwischengespeichert werden (privat, 60 s).
 // - POST / { q, typ, plz, radius, seite }  mit Ort - die PLZ steht im Body, nie in der URL (wie POST
 //   /api/public/partners/near, Finding 9: URLs landen leicht in Zugriffslogs); Antwort no-store.
 // Eigenes Limit je IP (config.entdeckenRateLimit je 5 Minuten) zusätzlich zum globalen apiLimiter. Kein Tracking: es wird
@@ -28,7 +28,7 @@ function createPublicEntdeckenRouter({ limit = config.entdeckenRateLimit } = {})
     message: { error: 'Zu viele Anfragen in kurzer Zeit – bitte einen Moment warten.' }
   })
 
-  // Demo-Regel wie die Partnerliste: req.isDemo einer angemeldeten Demo-Sitzung, sonst ?demo=1 bzw. dev/staging.
+  // Demo-Regel wie die Partnerliste: dev/staging oder req.isDemo einer angemeldeten Demo-Sitzung (?demo=1 zählt nicht).
   router.use(limiter, optionalSession)
 
   function answer(req, res, next, input, cache) {

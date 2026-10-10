@@ -8,6 +8,7 @@ import { Button, Card, Chip, EmptyState } from '../ui/index.js'
 import { displayName } from '../../lib/timeline.js'
 import { framesFor } from '../../lib/sichtbarkeit.js'
 import { SETTINGS_ROUTE } from '../../lib/areas.js'
+import { revierStand } from '../../lib/revier.js'
 import { useT } from '../../lib/i18n/index.js'
 
 function FamilySwitches({ dog, memberships, matrix, readOnly }) {
@@ -41,6 +42,8 @@ function OtherViewers({ dog, data, sicht, readOnly }) {
   const shelter = data.shelters[dog.id]
   const frames = framesFor(dog.id, data.frames)
   const guests = data.guests.length
+  const stand = revierStand(data.revier)
+  const imRevier = stand.aktiv && stand.tiere.has(dog.id)
   return (
     <ul className="sicht-lines" role="list">
       <li>
@@ -64,9 +67,9 @@ function OtherViewers({ dog, data, sicht, readOnly }) {
           {t('Bilderrahmen: {names}', { names: frames.map((frame) => frame.name).join(', ') })}
         </li>
       )}
-      <li className="muted">
+      <li className={imRevier ? undefined : 'muted'}>
         <Icon name="globe" />
-        {t('Kein öffentlicher Steckbrief')}
+        {imRevier ? t('Im öffentlichen Profil (Mein Revier)') : t('Kein öffentlicher Steckbrief')}
       </li>
     </ul>
   )

@@ -1,6 +1,10 @@
-// Inhalt des Rundgangs (lib/tour.js, components/tour): Kapitel mit Schritten, je Bereichsart. Ein Schritt:
+// Inhalt des Rundgangs (lib/tour.js, components/tour): Kapitel mit Schritten, je Bereichsart. Reihenfolge überall:
+// das Wichtigste (3–4 Schritte) → Entdecken bzw. Kundensicht → Werkzeuge → Verwaltung. Nach jedem Kapitel fragt die
+// Karte „Wie geht’s weiter?“ (TourChoice). Ein Kapitel: key, hint (Zeile unter seinem Knopf auf der Karte), steps.
+// Ein Schritt:
 // - target: CSS-Selektoren, der erste sichtbare Treffer bekommt den Lichtkegel; fehlt er, wird der Schritt übersprungen.
 //   Ohne target ist der Schritt ein Hinweis ohne Lichtkegel (Mitte bzw. Blatt).
+// - optional: das Ziel nur kurz suchen (z. B. ein Reiter, den es noch nicht überall gibt).
 // - route: dorthin wechselt der Rundgang vorher (ROUTE_FIRST_ANIMAL: die Seite des ersten Tiers aus dem Raster).
 // - when(family): nur für passende Bereiche. ask: Rückfrage, wenn askWhen nicht zu finden ist (z. B. noch kein Tier).
 // Die Texte beantworten: wann ist was sichtbar, wie sehe ich es selbst, welche Tiere teile ich mit wem.
@@ -42,25 +46,29 @@ const HOUSEHOLD_ESSENTIALS = [
     }
   },
   {
-    key: 'chronik',
-    route: ROUTE_FIRST_ANIMAL,
-    target: ['.dog-tab-bar'],
-    title: 'Die Chronik eines Tiers',
-    text: 'Jedes Tier hat seine Seite: die Chronik mit allen Erinnerungen, dazu Infos und Verwandte. Was hier steht, sehen ihr und die Familien, mit denen ihr dieses Tier teilt.'
-  },
-  {
     key: 'families',
     route: '/familien',
     when: isHouseholdIdentity,
     target: ['.families-page-grid'],
     title: 'Familien & „Mit dabei“',
     text: 'Hier stehen eure Familien und befreundeten Zuhause. Teilt ihr ein Tier mit einer Familie, sieht sie seine Erinnerungen. Mit „Mit dabei“ nennt ihr die Tiere von Freunden bei einer Erinnerung – sagen sie „Passt“, steht sie auch bei ihnen.'
-  },
+  }
+]
+
+const HOUSEHOLD_DISCOVER = [
   {
     key: 'discover',
     target: ['.app-nav a[href="/entdecken"]'],
     title: 'Entdecken',
     text: 'Hundeschulen, Salons und Tierheime in eurer Nähe – und was es Neues bei ihnen gibt.'
+  },
+  {
+    key: 'revier',
+    route: '/entdecken',
+    target: ['[data-tour="revier"]'],
+    optional: true,
+    title: 'Mein Revier',
+    text: 'Euer Revier: was rund um euch los ist – Orte, Neuigkeiten und Tiere aus der Nachbarschaft.'
   },
   {
     key: 'bell',
@@ -70,17 +78,7 @@ const HOUSEHOLD_ESSENTIALS = [
   }
 ]
 
-const HOUSEHOLD_CARDS = [
-  {
-    key: 'grusskarte',
-    title: 'Grüße-Karte',
-    text: 'Aus einer Erinnerung wird eine Karte zum Verschicken – als Bild fürs Handy oder zum Drucken. Ihr findet sie bei der Erinnerung in der Chronik.'
-  },
-  {
-    key: 'geschenkkarte',
-    title: 'Geschenkkarte',
-    text: 'Beim Einladen druckt ihr den Code als Geschenkkarte – schön zum Verschenken an Familie und Freunde.'
-  },
+const HOUSEHOLD_TOOLS = [
   {
     key: 'bilderrahmen',
     route: '/bilderrahmen',
@@ -94,10 +92,20 @@ const HOUSEHOLD_CARDS = [
     target: PAGE_TITLE,
     title: 'Fotocollage',
     text: 'Mehrere Fotos auf einem Bild – zum Teilen, Drucken oder als Erinnerung an ein besonderes Jahr.'
+  },
+  {
+    key: 'grusskarte',
+    title: 'Grüße-Karte',
+    text: 'Aus einer Erinnerung wird eine Karte zum Verschicken – als Bild fürs Handy oder zum Drucken. Ihr findet sie bei der Erinnerung in der Chronik.'
+  },
+  {
+    key: 'geschenkkarte',
+    title: 'Geschenkkarte',
+    text: 'Beim Einladen druckt ihr den Code als Geschenkkarte – schön zum Verschenken an Familie und Freunde.'
   }
 ]
 
-const HOUSEHOLD_ADVANCED = [
+const HOUSEHOLD_ADMIN = [
   {
     key: 'sichtbarkeit',
     title: 'Wer sieht was – und wann?',
@@ -113,15 +121,7 @@ const HOUSEHOLD_ADVANCED = [
   {
     key: 'rollen',
     title: 'Rollen in einer Familie',
-    text: 'Familienleitung: alles, auch Rollen und Name. Stellvertretung: dazu einladen und aufräumen. Mitglied: Tiere teilen und Erinnerungen schreiben. Gast: ansehen und Grüße schicken.'
-  },
-  {
-    key: 'familieVerwalten',
-    route: '/familien',
-    when: isHouseholdIdentity,
-    target: ['.families-page-grid'],
-    title: 'Eure Familie verwalten',
-    text: 'Als Familienleitung ändert ihr in den Einstellungen › Familien Name, Bild und Rollen, nehmt Mitglieder heraus oder übergebt die Leitung.'
+    text: 'Familienleitung: alles, auch Name, Bild und Rollen (Einstellungen › Familien). Stellvertretung: dazu einladen und aufräumen. Mitglied: Tiere teilen und Erinnerungen schreiben. Gast: ansehen und Grüße schicken.'
   },
   {
     key: 'einladen',
@@ -131,22 +131,13 @@ const HOUSEHOLD_ADVANCED = [
   }
 ]
 
-const PARTNER_PROFILE = [
-  {
-    key: 'profil',
-    route: '/profil',
-    target: PAGE_TITLE,
-    title: 'Euer Profil',
-    text: 'So stellt ihr euch vor: Angebot, Fotos, Kontakt. Was hier steht, sehen Kunden in eurem öffentlichen Auftritt.'
-  },
-  {
-    key: 'kundensicht',
-    route: '/kundensicht',
-    target: PAGE_TITLE,
-    title: 'Kundensicht',
-    text: 'Genau so sehen Kunden euch. Prüft hier, was öffentlich ist, bevor ihr den Link weitergebt.'
-  }
-]
+const PARTNER_PROFILE = {
+  key: 'profil',
+  route: '/profil',
+  target: PAGE_TITLE,
+  title: 'Euer Profil',
+  text: 'So stellt ihr euch vor: Angebot, Fotos, Kontakt. Was hier steht, sehen Kunden in eurem öffentlichen Auftritt.'
+}
 
 const PARTNER_INBOX = {
   key: 'nachrichten',
@@ -156,6 +147,28 @@ const PARTNER_INBOX = {
   text: 'Anfragen von Kunden landen hier. Mit „Wir waren hier“ melden Kunden ihren Besuch – bestätigt ihr ihn, erscheint er bei ihnen.'
 }
 
+const PARTNER_NAV = {
+  key: 'leiste',
+  target: ['.app-nav'],
+  title: 'Alles in der Leiste',
+  text: 'Profil, Beiträge, Kalender, Nachrichten und Zugang – jeder Bereich hat seinen Platz in der Leiste.'
+}
+
+const PARTNER_CUSTOMER_VIEW = [
+  {
+    key: 'kundensicht',
+    route: '/kundensicht',
+    target: PAGE_TITLE,
+    title: 'Kundensicht',
+    text: 'Genau so sehen Kunden euch. Prüft hier, was öffentlich ist, bevor ihr den Link weitergebt.'
+  },
+  {
+    key: 'entdeckenKunden',
+    title: 'So finden Kunden euch',
+    text: 'Bei „Entdecken“ sehen Familien in der Nähe euer Profil und eure freigegebenen Beiträge und Termine.'
+  }
+]
+
 const PARTNER_CARDS = {
   key: 'visitenkarten',
   route: '/visitenkarten',
@@ -164,19 +177,31 @@ const PARTNER_CARDS = {
   text: 'Gestaltet Visitenkarten und Karten mit eurem Logo – zum Drucken oder als Bild.'
 }
 
-const PARTNER_ACCESS = {
-  key: 'zugang',
-  route: '/zugang',
-  target: PAGE_TITLE,
-  title: 'Zugang',
-  text: 'Schlüssel erneuern, eigene Logins fürs Team und Benachrichtigungen. Den Rundgang startet ihr hier jederzeit neu.'
-}
+const PARTNER_ADMIN = [
+  {
+    key: 'zugang',
+    route: '/zugang',
+    target: PAGE_TITLE,
+    title: 'Zugang',
+    text: 'Schlüssel erneuern, eigene Logins fürs Team und Benachrichtigungen. Den Rundgang startet ihr hier jederzeit neu.'
+  },
+  {
+    key: 'einladungscodes',
+    title: 'Einladungscodes für Kunden',
+    text: 'Mit einem Einladungscode legen Kunden ihr eigenes Zuhause an. Ihr gebt ihn weiter oder druckt ihn als Karte – zu finden im Profil.'
+  }
+]
+
+const ADMIN_HINT = 'Zugang, Team, Einladungscodes'
 
 const PARTNER_CHAPTERS = [
+  { key: 'wichtig', steps: [PARTNER_PROFILE, PARTNER_INBOX, PARTNER_NAV] },
+  { key: 'kundensicht', hint: 'So sehen und finden Kunden euch', steps: PARTNER_CUSTOMER_VIEW },
   {
-    key: 'wichtig',
+    key: 'werkzeuge',
+    hint: 'Visitenkarten, Beiträge, Kalender',
     steps: [
-      ...PARTNER_PROFILE,
+      PARTNER_CARDS,
       {
         key: 'beitraege',
         route: '/beitraege',
@@ -190,29 +215,17 @@ const PARTNER_CHAPTERS = [
         target: PAGE_TITLE,
         title: 'Kalender',
         text: 'Termine und Kurse – einzeln oder als Serie. Kunden sehen sie in eurem Profil.'
-      },
-      PARTNER_INBOX
-    ]
-  },
-  {
-    key: 'karten',
-    steps: [
-      PARTNER_CARDS,
-      {
-        key: 'einladungscodes',
-        title: 'Einladungscodes für Kunden',
-        text: 'Mit einem Einladungscode legen Kunden ihr eigenes Zuhause an. Ihr gebt ihn weiter oder druckt ihn als Karte – zu finden im Profil.'
       }
     ]
   },
-  { key: 'mehr', steps: [PARTNER_ACCESS] }
+  { key: 'verwaltung', hint: ADMIN_HINT, steps: PARTNER_ADMIN }
 ]
 
 const SHELTER_CHAPTERS = [
   {
     key: 'wichtig',
     steps: [
-      ...PARTNER_PROFILE,
+      PARTNER_PROFILE,
       {
         key: 'schuetzlinge',
         route: '/tiere',
@@ -220,17 +233,19 @@ const SHELTER_CHAPTERS = [
         title: 'Eure Tiere & Vermittlung',
         text: 'Hier pflegt ihr eure Schützlinge. Den Stand der Vermittlung setzt ihr je Tier; öffentlich zeigt ihn erst der Steckbrief, den ihr freigebt.'
       },
+      PARTNER_INBOX
+    ]
+  },
+  { key: 'kundensicht', hint: 'So sehen und finden Interessierte euch', steps: PARTNER_CUSTOMER_VIEW },
+  {
+    key: 'werkzeuge',
+    hint: 'Beiträge, Collage, Karten, Startpaket',
+    steps: [
       {
         key: 'beitraegeTierheim',
         title: 'Beiträge & Kalender',
         text: 'Im Profil schreibt ihr Beiträge und tragt Termine ein. Nach der Freigabe sehen Interessierte sie bei „Entdecken“.'
       },
-      PARTNER_INBOX
-    ]
-  },
-  {
-    key: 'karten',
-    steps: [
       {
         key: 'collageTierheim',
         route: '/collage',
@@ -246,19 +261,22 @@ const SHELTER_CHAPTERS = [
       }
     ]
   },
-  { key: 'mehr', steps: [PARTNER_ACCESS] }
+  { key: 'verwaltung', hint: ADMIN_HINT, steps: PARTNER_ADMIN }
 ]
 
 const HOUSEHOLD_CHAPTERS = [
   { key: 'wichtig', steps: HOUSEHOLD_ESSENTIALS },
-  { key: 'karten', steps: HOUSEHOLD_CARDS },
-  { key: 'mehr', steps: HOUSEHOLD_ADVANCED }
+  { key: 'entdecken', hint: 'Schulen, Salons und Tierheime in der Nähe', steps: HOUSEHOLD_DISCOVER },
+  { key: 'werkzeuge', hint: 'Bilderrahmen, Collage, Karten', steps: HOUSEHOLD_TOOLS },
+  { key: 'verwaltung', hint: 'Rollen, Wer sieht was, Zugang teilen', steps: HOUSEHOLD_ADMIN }
 ]
 
 export const CHAPTER_TITLES = Object.freeze({
   wichtig: 'Das Wichtigste',
-  karten: 'Karten & Collagen',
-  mehr: 'Für Fortgeschrittene'
+  entdecken: 'Entdecken',
+  kundensicht: 'Kundensicht & Entdecken',
+  werkzeuge: 'Werkzeuge',
+  verwaltung: 'Verwaltung'
 })
 
 export const CHAPTERS_BY_ART = Object.freeze({

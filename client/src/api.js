@@ -264,6 +264,29 @@ export const api = {
   setShelterShare: (id, payload) => request(`/dogs/${id}/shelter-share`, json('PUT', payload)),
   // „Wer sieht was“ (Einstellungen, server/routes/sichtbarkeit.js): je eigenem Tier { id, privat, geteilt, tierheim }.
   sichtbarkeitUebersicht: () => request('/sichtbarkeit/uebersicht'),
+  // Phase M „Mein Revier“ (server/routes/revier.js): öffentliches Profil (nur Leitung), Radar (PLZ nur im Body), Profile über
+  // ihren slug, Folgen, Ausblenden, Feed „Aus deinem Revier“ - und der Not-Aus im Admin (server/routes/adminRevier.js).
+  revier: {
+    einstellungen: () => request('/revier/einstellungen'),
+    saveEinstellungen: (patch) => request('/revier/einstellungen', json('PUT', patch)),
+    saveTiere: (ids) => request('/revier/tiere', json('PUT', { ids })),
+    eintraege: () => request('/revier/eintraege'),
+    setEintrag: (id, oeffentlich) => request(`/revier/eintraege/${encodeURIComponent(id)}`, json('PUT', { oeffentlich })),
+    vorschau: () => request('/revier/vorschau'),
+    follower: () => request('/revier/follower'),
+    removeFollower: (id) => request(`/revier/follower/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    radar: ({ plz, umkreis, tierart } = {}) => request('/revier/radar', json('POST', { ...(plz ? { plz } : {}), umkreis, ...(tierart ? { tierart } : {}) })),
+    feed: (vor) => request(`/revier/feed${vor ? `?vor=${encodeURIComponent(vor)}` : ''}`),
+    folge: () => request('/revier/folge'),
+    ausgeblendet: () => request('/revier/ausgeblendet'),
+    profil: (slug, vor) => request(`/revier/p/${encodeURIComponent(slug)}${vor ? `?vor=${encodeURIComponent(vor)}` : ''}`),
+    folgen: (slug) => request(`/revier/p/${encodeURIComponent(slug)}/folgen`, { method: 'POST' }),
+    entfolgen: (slug) => request(`/revier/p/${encodeURIComponent(slug)}/folgen`, { method: 'DELETE' }),
+    ausblenden: (slug) => request(`/revier/p/${encodeURIComponent(slug)}/ausblenden`, { method: 'POST' }),
+    einblenden: (slug) => request(`/revier/p/${encodeURIComponent(slug)}/ausblenden`, { method: 'DELETE' }),
+    adminListe: () => request('/admin/revier'),
+    adminSperre: (slug, gesperrt) => request(`/admin/revier/${encodeURIComponent(slug)}`, json('PUT', { gesperrt }))
+  },
 
   listTimeline: (dogId) => request(`/timeline${dogId ? `?dogId=${encodeURIComponent(dogId)}` : ''}`),
   createTimelineEntry: (payload) => request('/timeline', json('POST', payload)),

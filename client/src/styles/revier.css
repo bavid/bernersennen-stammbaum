@@ -1,0 +1,289 @@
+/* Phase M „Mein Revier“ (components/revier/*, Einstellungen › Wer sieht was › Öffentlich) - ruhig, eine Spalte am Handy,
+   zwei Karten nebeneinander am Rechner. Nur Tokens aus palettes.css. */
+
+.revier {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.revier-lede {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.revier-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.revier-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.revier-tierart select {
+  min-height: 2.5rem;
+}
+
+.revier-um {
+  margin: 0 0 var(--space-2);
+}
+
+.revier-liste,
+.revier-eintraege {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 900px) {
+  .revier-liste {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ui-card.revier-karte {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.revier-karte-kopf,
+.revier-profil-kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.revier-karte-kopf h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.revier-karte-kopf h3 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.revier-karte-kopf h3 a:hover,
+.revier-karte-kopf h3 a:focus-visible {
+  text-decoration: underline;
+}
+
+.revier-ort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.revier-tiere {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.revier-tiere li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.revier-tiere--gross li {
+  min-width: 10rem;
+}
+
+.revier-tiere--gross span {
+  display: grid;
+}
+
+.revier-neueste {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.revier-karte-fuss {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.ui-card.revier-eintrag {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.ui-card.revier-eintrag:not(:has(.revier-eintrag-foto)) {
+  grid-template-columns: 1fr;
+}
+
+.revier-eintrag-foto {
+  width: 6rem;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.revier-eintrag-text h3 {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-base);
+}
+
+.revier-eintrag-profil {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.revier-eintrag-body {
+  margin: var(--space-1) 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.revier-eigenes {
+  margin: var(--space-2) 0 0;
+}
+
+.revier-eigenes a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.revier-plz {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.revier-folge-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.revier-ausgeblendet summary,
+.revier-follower summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+/* Profilseite /revier/:slug und die Vorschau in den Einstellungen */
+.ui-card.revier-profil {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.revier-profil-kopf {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.revier-profil-titel {
+  flex: 1 1 14rem;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.revier-profil-titel h1 {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.revier-profil-text {
+  margin: 0;
+}
+
+.revier-profil-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.revier-abschnitt {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+}
+
+/* Einstellungen › Wer sieht was › Öffentlich */
+.revier-einstellungen,
+.revier-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.revier-form-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.revier-zustimmung {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.revier-follower-wahl {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.revier-follower-wahl label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.revier-tier-schalter li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Gewählter Chip (Ansicht, Umkreis) - wie „Wer sieht was“: Ton plus Rand, der Text sagt es mit (aria-pressed). */
+.revier-chips .chip[aria-pressed='true'] {
+  background: var(--tone-ok-bg);
+  color: var(--tone-ok-ink);
+  border-color: currentColor;
+}
+
+/* Kleine Zeichen neben Text (Ort, „Zuletzt“, eigener Profil-Link) - so groß wie die Schrift. */
+.revier-ort svg,
+.revier-neueste svg,
+.revier-eigenes svg {
+  flex: none;
+  width: 1em;
+  height: 1em;
+}
+
+.ui-card.revier-profil > section {
+  display: grid;
+  gap: var(--space-2);
+}

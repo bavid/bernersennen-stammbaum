@@ -187,11 +187,12 @@ test('Demo-Familie mit allen Rollen', async (t) => {
     assert.equal(first.removed.length, 0, 'erster Lauf: nichts zu entfernen')
 
     const second = replaceDemoPack(db, uploadDir)
-    assert.equal(second.removed.length, 8, 'Rudel, vier Zuhause, Tierheim, zwei Partner-Bereiche')
+    // Phase M: dazu fünf Profil-Zuhause für „Mein Revier“ (lib/demoRevier.js).
+    assert.equal(second.removed.length, 13, 'Rudel, vier Zuhause, Tierheim, zwei Partner-Bereiche, fünf Revier-Zuhause')
     assert.equal(second.members.households.length, 3)
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 8)
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM families WHERE is_demo = 1').get().n, 13)
     assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM families WHERE id IN (${oldIds.map(() => '?').join(',')})`).get(...oldIds).n, 0)
-    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM families WHERE name LIKE '% (Demo)'").get().n, 3, 'keine doppelten Demo-Haushalte')
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM families WHERE name LIKE '% (Demo)'").get().n, 8, 'keine doppelten Demo-Haushalte')
     assert.equal(db.prepare("SELECT COUNT(*) AS n FROM family_members WHERE group_family_id = ?").get(second.created.familyId).n, 4)
 
     const orphans = {

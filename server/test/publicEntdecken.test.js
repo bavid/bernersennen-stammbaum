@@ -4,8 +4,8 @@ const { hashPassword } = require('../lib/adminAuth')
 const { useTempDataDir, startApp, cleanup, call, getCookie } = require('./helpers')
 
 // Öffentliches Entdecken (routes/publicEntdecken.js, lib/publicEntdecken.js) und der Antrag „Überall sichtbar“ mit Freigabe
-// durch das Team (lib/ueberallSichtbar.js, routes/adminPartnerSichtbar.js). APP_ENV=production: Demo-Partner nur mit
-// ?demo=1. Das Limit je IP prüft test/publicEntdeckenLimit.test.js. t.test() bleibt auf einer Ebene.
+// durch das Team (lib/ueberallSichtbar.js, routes/adminPartnerSichtbar.js). APP_ENV=production: Demo-Partner nie,
+// auch nicht mit ?demo=1. Das Limit je IP prüft test/publicEntdeckenLimit.test.js. t.test() bleibt auf einer Ebene.
 const ADMIN_TEST_PASSWORD = 'admin-test-entdecken-1'
 const dataDir = useTempDataDir('public-entdecken', { APP_ENV: 'production', LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300' })
 
@@ -112,9 +112,9 @@ test('Öffentliches Entdecken: Suche, Filter, Umkreis, Deutschlandweit, Demo, An
     assert.deepEqual((await entdecken('?seite=2')).data.deutschlandweit, [])
   })
 
-  await t.test('Demo-Partner nur mit ?demo=1 (Produktion)', async () => {
+  await t.test('Demo-Partner nie in Produktion - auch nicht mit ?demo=1', async () => {
     assert.equal((await entdecken('?q=demo')).data.treffer.length, 0)
-    assert.deepEqual((await entdecken('?q=demo&demo=1')).data.treffer.map((card) => card.slug), [demo])
+    assert.equal((await entdecken('?q=demo&demo=1')).data.treffer.length, 0)
   })
 
   await t.test('Antrag: Partner beantragt, sichtbar erst nach Freigabe; Ablehnen mit Grund; neu beantragen; Protokoll', async () => {
@@ -126,6 +126,9 @@ test('Öffentliches Entdecken: Suche, Filter, Umkreis, Deutschlandweit, Demo, An
     const cookie = getCookie(login.res)
     const shownDeutschlandweit = async () => (await entdecken('?typ=hundeschule')).data.deutschlandweit.some((card) => card.slug === 'hundeschule-antrag')
     const logOf = () => db.prepare('SELECT aktion, ziel FROM admin_log WHERE ziel = ? ORDER BY id').all(`partner:${id}`).map((row) => row.aktion)
+
+    // Keine Freigabe auf Vorrat: ohne Antrag (Schalter aus) 409.
+    assert.equal((await put(`/api/admin/partners/${id}/ueberall-freigabe`, { freigeben: true }, adminCookie)).status, 409)
 
     const on = await put('/api/partner-area/profile/ueberall-sichtbar', { an: true }, cookie)
     assert.equal(on.status, 200)
@@ -142,7 +145,16 @@ test('Öffentliches Entdecken: Suche, Filter, Umkreis, Deutschlandweit, Demo, An
     assert.deepEqual(ok.data, { id, ueberallSichtbar: true, ueberallFreigabe: 'freigegeben', ueberallGrund: null })
     assert.equal(await shownDeutschlandweit(), true)
 
-    const no = await put(`/api/admin/partners/${id}/ueberall-freigabe`, { freigeben: false, grund: 'Bitte erst das Profil vervollständigen.' }, adminCookie)
+    // Aus- und wieder einschalten: die Freigabe ist weg, es braucht eine neue.
+    const aus = await put('/api/partner-area/profile/ueberall-sichtbar', { an: false }, cookie)
+    assert.deepEqual([aus.data.ueberallSichtbar, aus.data.ueberallFreigabe], [false, ''])
+    const wieder = await put('/api/partner-area/profile/ueberall-sichtbar', { an: true }, cookie)
+    assert.deepEqual([wieder.data.ueberallSichtbar, wieder.data.ueberallFreigabe], [true, ''])
+    assert.equal(await shownDeutschlandweit(), false, 'nach Aus/An wieder offen')
+    assert.equal((await put(`/api/admin/partners/${id}/ueberall-freigabe`, { freigeben: true }, adminCookie)).status, 200)
+    assert.equal(await shownDeutschlandweit(), true)
+
+    const no =await put(`/api/admin/partners/${id}/ueberall-freigabe`, { freigeben: false, grund: 'Bitte erst das Profil vervollständigen.' }, adminCookie)
     assert.deepEqual(no.data, { id, ueberallSichtbar: false, ueberallFreigabe: 'abgelehnt', ueberallGrund: 'Bitte erst das Profil vervollständigen.' })
     assert.equal(await shownDeutschlandweit(), false)
     const profile = await get('/api/partner-area/profile', cookie)
@@ -150,7 +162,7 @@ test('Öffentliches Entdecken: Suche, Filter, Umkreis, Deutschlandweit, Demo, An
 
     const again = await put('/api/partner-area/profile/ueberall-sichtbar', { an: true }, cookie)
     assert.deepEqual([again.data.ueberallSichtbar, again.data.ueberallFreigabe, again.data.ueberallGrund], [true, '', null])
-    assert.deepEqual(logOf(), ['partner-ueberall-freigegeben', 'partner-ueberall-abgelehnt'])
+    assert.deepEqual(logOf(), ['partner-ueberall-freigegeben', 'partner-ueberall-freigegeben', 'partner-ueberall-abgelehnt'])
     // Das Protokoll hält nie den Grund fest.
     assert.equal(db.prepare("SELECT COUNT(*) AS n FROM admin_log WHERE ziel LIKE '%Profil%'").get().n, 0)
   })

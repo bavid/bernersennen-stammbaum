@@ -163,7 +163,9 @@ const ADMIN_VIEW_READ_ONLY_POSTS = new Set([
   '/places/plz',
   '/public/partners/near',
   '/vouchers/check',
-  '/suche'
+  '/suche',
+  // Phase M: Radar „Mein Revier“ (routes/revier.js) - PLZ im Body, nur lesend.
+  '/revier/radar'
 ])
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 

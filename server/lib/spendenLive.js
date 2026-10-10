@@ -13,10 +13,14 @@ const { listKosten } = require('./finanzierungKosten')
 const { monatsrateCents } = require('./finanzierungVerteilung')
 const { readDemoPartnerErlaubt, clearCommunityCache } = require('./community')
 const { publicFinanzierung } = require('./finanzierung')
+const { ipKeyGenerator } = require('./rateLimitKey')
 require('./spenden') // legt spenden_eingaenge an
 
 const LETZTE_MAX = 10
 const MAX_STREAMS = 100
+const MAX_STREAMS_PRO_IP = 4
+// Liest ein Client nicht mehr mit (Puffer wächst), wird sein Strom geschlossen - er fragt dann regelmäßig nach.
+const MAX_PUFFER_BYTES = 64 * 1024
 const HEARTBEAT_MS = 25 * 1000
 const RETRY_MS = 60 * 1000
 
@@ -87,10 +91,26 @@ function liveStand(now = new Date()) {
 // --- Live-Strom (SSE) --------------------------------------------------------------------------------------------------
 
 const streams = new Set()
+const streamsProIp = new Map()
 let heartbeat = null
 
+// Schreibt in einen Strom; staut sich dort zu viel (Client liest nicht mit), wird er beendet - close räumt auf.
+function schreibe(res, text) {
+  if (res.writableLength > MAX_PUFFER_BYTES) {
+    res.destroy()
+    return
+  }
+  res.write(text)
+}
+
 function sendStand(res, payload) {
-  res.write(`event: stand\ndata: ${JSON.stringify(payload)}\n\n`)
+  schreibe(res, `event: stand\ndata: ${JSON.stringify(payload)}\n\n`)
+}
+
+function zaehleIp(key, delta) {
+  const n = (streamsProIp.get(key) || 0) + delta
+  if (n > 0) streamsProIp.set(key, n)
+  else streamsProIp.delete(key)
 }
 
 function stopHeartbeatIfIdle() {
@@ -99,9 +119,11 @@ function stopHeartbeatIfIdle() {
   heartbeat = null
 }
 
-// false, wenn schon MAX_STREAMS Verbindungen offen sind (der Client fragt dann alle 60 s nach).
+// false, wenn schon MAX_STREAMS Verbindungen (oder MAX_STREAMS_PRO_IP von dieser IP) offen sind - der Client fragt
+// dann alle 60 s nach.
 function openStream(req, res) {
-  if (streams.size >= MAX_STREAMS) return false
+  const ipKey = ipKeyGenerator(req)
+  if (streams.size >= MAX_STREAMS || (streamsProIp.get(ipKey) || 0) >= MAX_STREAMS_PRO_IP) return false
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-store',
@@ -111,14 +133,21 @@ function openStream(req, res) {
   res.write(`retry: ${RETRY_MS}\n\n`)
   sendStand(res, liveStand())
   streams.add(res)
+  zaehleIp(ipKey, 1)
   if (!heartbeat) {
-    heartbeat = setInterval(() => streams.forEach((stream) => stream.write(': ping\n\n')), HEARTBEAT_MS)
+    heartbeat = setInterval(() => streams.forEach((stream) => schreibe(stream, ': ping\n\n')), HEARTBEAT_MS)
     heartbeat.unref()
   }
-  req.on('close', () => {
+  let offen = true
+  const schliessen = () => {
+    if (!offen) return
+    offen = false
     streams.delete(res)
+    zaehleIp(ipKey, -1)
     stopHeartbeatIfIdle()
-  })
+  }
+  req.on('close', schliessen)
+  res.on('close', schliessen)
   return true
 }
 
@@ -134,4 +163,4 @@ function offeneStreams() {
   return streams.size
 }
 
-module.exports = { LETZTE_MAX, MAX_STREAMS, liveStand, openStream, meldeSpendenAenderung, offeneStreams }
+module.exports = { LETZTE_MAX, MAX_STREAMS, MAX_STREAMS_PRO_IP, MAX_PUFFER_BYTES, liveStand, openStream, meldeSpendenAenderung, offeneStreams }

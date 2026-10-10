@@ -5,7 +5,8 @@ import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const { discover, searchPlaces } = vi.hoisted(() => ({ discover: vi.fn(), searchPlaces: vi.fn() }))
-vi.mock('../api', () => ({ api: { discover, searchPlaces } }))
+// Phase M: „Mein Revier“ ist der letzte Reiter - das Radar bleibt hier unbeantwortet.
+vi.mock('../api', () => ({ api: { discover, searchPlaces, revier: { radar: vi.fn(() => new Promise(() => {})) } } }))
 
 import DiscoverPage from './DiscoverPage.jsx'
 
@@ -117,7 +118,7 @@ async function press(key) {
 }
 
 describe('DiscoverPage – Reiter (Phase U)', () => {
-  test('eine echte Tabliste mit sieben Reitern und Zählern (die Karte ohne); "Alle" ist gewählt und steuert das Panel', async () => {
+  test('eine echte Tabliste mit acht Reitern und Zählern (Karte und Mein Revier ohne); "Alle" ist gewählt und steuert das Panel', async () => {
     discover.mockResolvedValue(response)
     await render()
 
@@ -129,7 +130,8 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
       ['Neue Begleiter', '0'],
       ['Futter', '2'],
       ['Unterstützen', '0'],
-      ['Karte', null]
+      ['Karte', null],
+      ['Mein Revier', null]
     ])
     expect(tab('Alle').getAttribute('aria-selected')).toBe('true')
     expect(tab('Alle').tabIndex).toBe(0)
@@ -196,11 +198,11 @@ describe('DiscoverPage – Reiter (Phase U)', () => {
     expect(currentSearch).toBe('?bereich=hundeschulen')
 
     await press('End')
-    expect(document.activeElement).toBe(tab('Karte'))
+    expect(document.activeElement).toBe(tab('Mein Revier'))
     await press('ArrowRight')
     expect(document.activeElement).toBe(tab('Alle'))
     await press('ArrowLeft')
-    expect(document.activeElement).toBe(tab('Karte'))
+    expect(document.activeElement).toBe(tab('Mein Revier'))
     await press('Home')
     expect(tab('Alle').getAttribute('aria-selected')).toBe('true')
   })

@@ -12,6 +12,9 @@ export const PREVIEW_LIMIT = 2
 // Phase W, Schritt 2: "Karte" - Tierheime und Hundeschulen in der Nähe über OpenStreetMap (früher die Seite /umgebung,
 // components/nearby/NearbySearch.jsx). Kein Bereich der Antwort von POST /api/discover, darum ohne Zähler.
 export const MAP_TAB = 'karte'
+// Phase M: „Mein Revier“ - öffentliche Profile in der Nähe, Folgen und „Aus deinem Revier“ (components/revier). Eigene
+// Abfragen (server/routes/revier.js), darum ohne Zähler; nicht in der Kundensicht und nicht in einer Rudel-Instanz.
+export const REVIER_TAB = 'revier'
 
 export const DISCOVER_TABS = [
   { key: ALL_TAB, label: 'Alle' },
@@ -20,14 +23,18 @@ export const DISCOVER_TABS = [
   { key: 'begleiter', label: 'Neue Begleiter' },
   { key: 'futter', label: 'Futter' },
   { key: 'unterstuetzen', label: 'Unterstützen' },
-  { key: MAP_TAB, label: 'Karte' }
+  { key: MAP_TAB, label: 'Karte' },
+  { key: REVIER_TAB, label: 'Mein Revier' }
 ]
 
-export const SECTION_KEYS = DISCOVER_TABS.filter((tab) => tab.key !== ALL_TAB && tab.key !== MAP_TAB).map((tab) => tab.key)
+const OWN_TABS = [ALL_TAB, MAP_TAB, REVIER_TAB]
+export const SECTION_KEYS = DISCOVER_TABS.filter((tab) => !OWN_TABS.includes(tab.key)).map((tab) => tab.key)
 
-// Die Kundensicht (preview) zeigt, wie Entdecken für die Kundschaft aussieht - ohne die Karte.
-export function discoverTabsFor({ preview = false } = {}) {
-  return preview ? DISCOVER_TABS.filter((tab) => tab.key !== MAP_TAB) : DISCOVER_TABS
+// Die Kundensicht (preview) zeigt, wie Entdecken für die Kundschaft aussieht - ohne Karte und ohne „Mein Revier“; eine
+// Rudel-Instanz (revier: false) hat kein Revier.
+export function discoverTabsFor({ preview = false, revier = true } = {}) {
+  if (preview) return DISCOVER_TABS.filter((tab) => tab.key !== MAP_TAB && tab.key !== REVIER_TAB)
+  return revier ? DISCOVER_TABS : DISCOVER_TABS.filter((tab) => tab.key !== REVIER_TAB)
 }
 
 export function tabLabel(key) {
@@ -37,7 +44,7 @@ export function tabLabel(key) {
 
 // Unbekannte oder fehlende Werte in der Adresse landen bei "Alle" - die Karte nur außerhalb der Kundensicht.
 export function tabFromParam(value, { preview = false } = {}) {
-  if (value === MAP_TAB) return preview ? ALL_TAB : MAP_TAB
+  if (value === MAP_TAB || value === REVIER_TAB) return preview ? ALL_TAB : value
   return SECTION_KEYS.includes(value) ? value : ALL_TAB
 }
 

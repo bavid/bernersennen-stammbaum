@@ -32,7 +32,9 @@ export const ADMIN_SECTIONS = [
     subs: [
       { key: 'freigaben', label: 'Freigaben' },
       { key: 'nachrichten', label: 'Nachrichten' },
-      { key: 'hinweise', label: 'Hinweise' }
+      { key: 'hinweise', label: 'Hinweise' },
+      // Phase M: Not-Aus für öffentliche Profile („Mein Revier“).
+      { key: 'revier', label: 'Öffentliche Profile' }
     ]
   },
   {

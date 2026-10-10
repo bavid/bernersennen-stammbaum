@@ -28,12 +28,12 @@ router.use(optionalSession)
 
 const RADIUS_VALUES = [5, 10, 25, 50, 100]
 
-// Demo-Partner (is_demo=1) sind ausserhalb dev/staging nur mit ausdruecklichem ?demo=1 sichtbar, oder
+// Demo-Partner (is_demo=1) sind ausserhalb dev/staging nur sichtbar,
 // wenn die anfragende Sitzung selbst eine gültige Demo-Familie ist (Finding 2: "Zum Portal" aus
 // /umgebung heraus soll für eine angemeldete Demo-Familie nicht 404en, auch nicht in Produktion) - in
-// Produktion tauchen sie sonst in der echten Liste nicht auf.
+// Produktion tauchen sie sonst in der echten Liste nicht auf. Ein ?demo=1 wird in Produktion bewusst NICHT mehr beachtet
+// (den könnte jeder anhängen) - dort sieht Demo-Partner nur eine angemeldete Demo-Sitzung; dev/staging zeigen sie ohnehin.
 function demoAllowed(req) {
-  if (req.query.demo === '1') return true
   if (config.appEnv === 'dev' || config.appEnv === 'staging') return true
   return Boolean(req.isDemo)
 }

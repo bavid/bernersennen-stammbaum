@@ -17,8 +17,24 @@ export default {
   'Rundgang erneut starten': 'Start the tour again',
   // Kapitel
   'Das Wichtigste': 'The essentials',
-  'Karten & Collagen': 'Cards & collages',
-  'Für Fortgeschrittene': 'For advanced users',
+  Entdecken: 'Discover',
+  'Kundensicht & Entdecken': 'Customer view & Discover',
+  Werkzeuge: 'Tools',
+  Verwaltung: 'Admin',
+  // Karte „Wie geht’s weiter?“
+  'Wie geht’s weiter?': 'What’s next?',
+  'Was möchtet ihr als Nächstes sehen?': 'What would you like to see next?',
+  'Ihr habt alles gesehen – schön, dass ihr dabei seid.': 'You’ve seen everything – lovely to have you here.',
+  '{title} (schon gesehen)': '{title} (already seen)',
+  Fertig: 'Done',
+  'Schulen, Salons und Tierheime in der Nähe': 'Schools, groomers and shelters nearby',
+  'Bilderrahmen, Collage, Karten': 'Photo frame, collage, cards',
+  'Rollen, Wer sieht was, Zugang teilen': 'Roles, who sees what, sharing access',
+  'So sehen und finden Kunden euch': 'How customers see and find you',
+  'So sehen und finden Interessierte euch': 'How interested people see and find you',
+  'Visitenkarten, Beiträge, Kalender': 'Business cards, posts, calendar',
+  'Beiträge, Collage, Karten, Startpaket': 'Posts, collage, cards, starter pack',
+  'Zugang, Team, Einladungscodes': 'Access, team, invitation codes',
   // Haushalt: das Wichtigste
   'Start: eure Neuigkeiten': 'Start: your news',
   'Hier seht ihr, was zuletzt bei euren Tieren und in euren Familien passiert ist – das Neueste zuerst.':
@@ -33,18 +49,19 @@ export default {
   'Noch steht hier keines. Legt euer erstes Tier an – den Rundgang startet ihr später in den Einstellungen neu.':
     'There’s none here yet. Add your first pet – you can restart the tour later in Settings.',
   'Jetzt anlegen': 'Add one now',
-  'Die Chronik eines Tiers': 'A pet’s chronicle',
-  'Jedes Tier hat seine Seite: die Chronik mit allen Erinnerungen, dazu Infos und Verwandte. Was hier steht, sehen ihr und die Familien, mit denen ihr dieses Tier teilt.':
-    'Every pet has its own page: the chronicle with all memories, plus info and relatives. What’s here is seen by you and the families you share this pet with.',
   'Familien & „Mit dabei“': 'Families & “On board”',
   'Hier stehen eure Familien und befreundeten Zuhause. Teilt ihr ein Tier mit einer Familie, sieht sie seine Erinnerungen. Mit „Mit dabei“ nennt ihr die Tiere von Freunden bei einer Erinnerung – sagen sie „Passt“, steht sie auch bei ihnen.':
     'Here are your families and befriended homes. Share a pet with a family and it sees the pet’s memories. With “On board” you name friends’ pets in a memory – once they confirm, it shows up with them as well.',
+  // Haushalt: Entdecken
+  'Mein Revier': 'My neighbourhood',
+  'Euer Revier: was rund um euch los ist – Orte, Neuigkeiten und Tiere aus der Nachbarschaft.':
+    'Your neighbourhood: what’s going on around you – places, news and pets nearby.',
   'Hundeschulen, Salons und Tierheime in eurer Nähe – und was es Neues bei ihnen gibt.':
     'Dog schools, groomers and shelters near you – and what’s new with them.',
   'Die Glocke: eure Hinweise': 'The bell: your notifications',
   'Neue Grüße, Anfragen und Gäste meldet die Glocke. Eine Zahl daran heißt: Es gibt etwas Neues.':
     'The bell tells you about new greetings, requests and guests. A number on it means there’s something new.',
-  // Haushalt: Karten & Collagen
+  // Haushalt: Werkzeuge
   'Grüße-Karte': 'Greeting card',
   'Aus einer Erinnerung wird eine Karte zum Verschicken – als Bild fürs Handy oder zum Drucken. Ihr findet sie bei der Erinnerung in der Chronik.':
     'Turn a memory into a card to send – as a picture for the phone or to print. You’ll find it with the memory in the chronicle.',
@@ -55,7 +72,7 @@ export default {
     'An old tablet or a screen shows your memories as a slideshow. The frame only sees what you pick for it.',
   'Mehrere Fotos auf einem Bild – zum Teilen, Drucken oder als Erinnerung an ein besonderes Jahr.':
     'Several photos in one picture – to share, print or remember a special year.',
-  // Haushalt: für Fortgeschrittene
+  // Haushalt: Verwaltung
   'Wer sieht was – und wann?': 'Who sees what – and when?',
   'Eure Tiere und Erinnerungen seht zuerst nur ihr. Teilt ihr ein Tier mit einer Familie, sieht sie ab dann seine Erinnerungen; nehmt ihr es heraus, nicht mehr. Nach außen geht nur, was ihr ausdrücklich freigebt.':
     'At first only you see your pets and memories. Share a pet with a family and from then on it sees its memories; take it out and it no longer does. Nothing goes public unless you explicitly release it.',
@@ -63,11 +80,8 @@ export default {
   'Hier seht ihr, wer dieses Tier sieht und mit welchen Familien ihr es teilt – so, wie es eure Familie sieht. Ändern geht mit einem Tipp.':
     'Here you see who sees this pet and which families you share it with – just as your family sees it. One tap to change it.',
   'Rollen in einer Familie': 'Roles in a family',
-  'Familienleitung: alles, auch Rollen und Name. Stellvertretung: dazu einladen und aufräumen. Mitglied: Tiere teilen und Erinnerungen schreiben. Gast: ansehen und Grüße schicken.':
-    'Family lead: everything, including roles and name. Deputy: also invite and tidy up. Member: share pets and write memories. Guest: look and send greetings.',
-  'Eure Familie verwalten': 'Managing your family',
-  'Als Familienleitung ändert ihr in den Einstellungen › Familien Name, Bild und Rollen, nehmt Mitglieder heraus oder übergebt die Leitung.':
-    'As family lead you change name, picture and roles in Settings › Families, remove members or hand over the lead.',
+  'Familienleitung: alles, auch Name, Bild und Rollen (Einstellungen › Familien). Stellvertretung: dazu einladen und aufräumen. Mitglied: Tiere teilen und Erinnerungen schreiben. Gast: ansehen und Grüße schicken.':
+    'Family lead: everything, including name, picture and roles (Settings › Families). Deputy: also invite and tidy up. Member: share pets and write memories. Guest: look and send greetings.',
   'Zugang teilen & Einladen': 'Sharing access & inviting',
   'Im Menü ladet ihr Familie und Freunde ein und findet die Einstellungen. Dort startet ihr den Rundgang jederzeit neu.':
     'In the menu you invite family and friends and find Settings. There you can restart the tour anytime.',
@@ -75,6 +89,12 @@ export default {
   'Euer Profil': 'Your profile',
   'So stellt ihr euch vor: Angebot, Fotos, Kontakt. Was hier steht, sehen Kunden in eurem öffentlichen Auftritt.':
     'This is how you introduce yourselves: offer, photos, contact. Customers see what’s here on your public page.',
+  'Alles in der Leiste': 'Everything in the bar',
+  'Profil, Beiträge, Kalender, Nachrichten und Zugang – jeder Bereich hat seinen Platz in der Leiste.':
+    'Profile, posts, calendar, messages and access – every section has its place in the bar.',
+  'So finden Kunden euch': 'How customers find you',
+  'Bei „Entdecken“ sehen Familien in der Nähe euer Profil und eure freigegebenen Beiträge und Termine.':
+    'Under “Discover” families nearby see your profile and your approved posts and appointments.',
   'Genau so sehen Kunden euch. Prüft hier, was öffentlich ist, bevor ihr den Link weitergebt.':
     'This is exactly how customers see you. Check what’s public here before you share the link.',
   'Beiträge & Freigabe': 'Posts & approval',

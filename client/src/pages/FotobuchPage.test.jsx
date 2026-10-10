@@ -83,12 +83,16 @@ describe('FotobuchPage', () => {
     await render()
     expect(container.textContent).toContain('Für ein Fotobuch braucht es mindestens eine Erinnerung.')
     expect(sheets()).toHaveLength(0)
+    // E2E 2026-10-10: Druckseiten ohne App-Hülle - auch Hinweis-Zustände brauchen einen Weg zurück.
+    expect(container.querySelector('a[href="/tier/9"]')?.textContent).toBe('Zurück zum Tier')
   })
 
   test('Fehler vom Server (kein Zugriff) erscheint als Hinweis', async () => {
     api.getDog.mockRejectedValue(new Error('Kein Zugriff'))
     await render()
     expect(container.querySelector('[role="alert"]').textContent).toBe('Kein Zugriff')
+    // E2E 2026-10-10: Druckseiten ohne App-Hülle - auch Hinweis-Zustände brauchen einen Weg zurück.
+    expect(container.querySelector('a[href="/"]')?.textContent).toBe('Zur Startseite')
   })
 
   test('englisch', async () => {

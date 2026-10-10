@@ -20,7 +20,6 @@ export const IMPORT_TEXT = Object.freeze({
   capHint: 'Auf einmal gehen höchstens {photos} Fotos und {days} Erinnerungen ({perDay} Fotos je Tag). {n} Fotos bleiben für den nächsten Durchgang.',
   dayTitle: 'Fotos vom {date}',
   dateGuessed: 'Datum geschätzt',
-  summary: '{photos} Fotos · {days} Erinnerungen',
   namePrompt: 'Euer Name (steht an der Erinnerung)',
   nameMissing: 'Bitte einen Namen eintragen.',
   start: 'Erinnerungen anlegen',
@@ -28,12 +27,22 @@ export const IMPORT_TEXT = Object.freeze({
   cancel: 'Abbrechen',
   close: 'Schließen',
   uploading: 'Foto {done} von {total} …',
-  doneText: '{n} Erinnerungen angelegt.',
-  cancelledText: 'Abgebrochen. {n} Erinnerungen sind schon angelegt und bleiben.',
   errorsTitle: 'Diese Tage hat es nicht geschafft:',
   retry: 'Fehlende Tage nochmal',
   unreadable: 'Ein Foto kann dieser Browser nicht lesen.',
   demo: 'In der Demo könnt ihr den Ablauf ansehen – hochgeladen wird nichts.',
-  selectPhoto: 'Foto vom {date} mitnehmen',
-  dayGroup: '{date} · {n} Fotos'
+  selectPhoto: 'Foto vom {date} mitnehmen'
 })
+
+// Anzahlen je [Einzahl, Mehrzahl]: countText wählt bei genau 1 die Einzahl, t() setzt danach { n } ein.
+export const IMPORT_COUNT = Object.freeze({
+  photos: ['1 Foto', '{n} Fotos'],
+  memories: ['1 Erinnerung', '{n} Erinnerungen'],
+  dayGroup: ['{date} · 1 Foto', '{date} · {n} Fotos'],
+  done: ['1 Erinnerung angelegt.', '{n} Erinnerungen angelegt.'],
+  cancelled: ['Abgebrochen. 1 Erinnerung ist schon angelegt und bleibt.', 'Abgebrochen. {n} Erinnerungen sind schon angelegt und bleiben.']
+})
+
+export function countText([one, many], n) {
+  return n === 1 ? one : many
+}

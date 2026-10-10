@@ -30,5 +30,6 @@ import entdecken from './entdecken.js'
 import tour from './tour.js'
 import sichtbarkeit from './sichtbarkeit.js'
 import geschaeft from './geschaeft.js'
+import revier from './revier.js'
 
-export default { ...geschaeft, ...spenden, ...sichtbarkeit, ...entdecken, ...tour, ...fotobuch, ...admin, ...fotoImport, ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...revier, ...geschaeft, ...spenden, ...sichtbarkeit, ...entdecken, ...tour, ...fotobuch, ...admin, ...fotoImport, ...vermisst, ...gesundheit, ...landing,...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

@@ -4,6 +4,7 @@ const { VISIBLE_DOGS_SQL, OWN_DOGS_SQL, VISIBLE_ENTRY_SQL, PARTNER_AREA_ARTS } =
 const { GUEST_ENTRY_SQL } = require('./visits')
 const { isMirroredPhoto } = require('./erlebtMit')
 const { homeAreasOf, visibleEntrySql, AREA_ART } = require('./searchAreas')
+const { isRevierPhoto } = require('./revierLesen')
 
 // uploads.js erzeugt Dateinamen ausschließlich aus crypto.randomUUID() (36 Zeichen: Hex-Ziffern und
 // Bindestriche) plus einer Endung aus EXTENSION_BY_MIME - das sind nur jpg, png, webp und gif ("jpeg"
@@ -127,7 +128,8 @@ function canSeeUpload({ familyId, homeId, isGuest = false }, filename) {
   if (isGuest) return Boolean(guestDogPhotoStmt.get(params) || guestEntryPhotoStmt.get(params))
   if (isAttachableUpload(params) || einblickPhotoStmt.get(params) || bannerPhotoStmt.get(params)) return true
   if (Number.isInteger(homeId) && isMirroredPhoto(homeId, params.pattern)) return true
-  return isOtherAreaPhoto(homeId, params)
+  // Phase M „Mein Revier“: Fotos öffentlicher Tiere/Erinnerungen sichtbarer Profile (lib/revierLesen.js) - nur ansehen.
+  return isOtherAreaPhoto(homeId, params) || isRevierPhoto(homeId, params)
 }
 
 // Für Schreibzugriffe: darf { familyId, homeId } die Foto-URL "url" an einen Hund/Eintrag/Wurf

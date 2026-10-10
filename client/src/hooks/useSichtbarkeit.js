@@ -3,16 +3,25 @@ import { api } from '../api'
 import { useToast } from '../components/Toast.jsx'
 import { ownAnimals, ownMemories, privatPayload, withCountChange } from '../lib/sichtbarkeit.js'
 
+// Phase M „Mein Revier“: das eigene öffentliche Profil und die öffentlich markierten Erinnerungen - ohne Profil (z. B. in
+// einer Rudel-Instanz) einfach null bzw. leer, „Wer sieht was“ bleibt dann wie bisher.
+const revierOrNull = () =>
+  Promise.resolve()
+    .then(() => Promise.all([api.revier.einstellungen(), api.revier.eintraege()]))
+    .then(([settings, eintraege]) => ({ settings, markiert: eintraege.ids }))
+    .catch(() => null)
+
 // Alles für „Wer sieht was“ in einem Rutsch (parallel): eigene Tiere samt Familien-Freigaben (GET /api/dogs), die Zahlen
 // und das mitlesende Tierheim je Tier (GET /api/sichtbarkeit/uebersicht), die eigenen Erinnerungen (GET /api/timeline),
 // die Gäste (GET /api/besuche) und die Rahmen-Links. Geändert wird nur über die bestehenden Endpunkte.
 async function loadAll(homeId) {
-  const [dogs, uebersicht, entries, visits, rahmen] = await Promise.all([
+  const [dogs, uebersicht, entries, visits, rahmen, revier] = await Promise.all([
     api.listDogs(),
     api.sichtbarkeitUebersicht(),
     api.listTimeline(),
     api.visits(),
-    api.rahmenGeraete().catch(() => ({ geraete: [] }))
+    api.rahmenGeraete().catch(() => ({ geraete: [] })),
+    revierOrNull()
   ])
   const animals = ownAnimals(dogs, homeId)
   return {
@@ -21,7 +30,8 @@ async function loadAll(homeId) {
     shelters: Object.fromEntries(uebersicht.tiere.map((tier) => [tier.id, tier.tierheim])),
     memories: ownMemories(entries, homeId, animals.map((dog) => dog.id)),
     guests: visits.gaeste || [],
-    frames: rahmen.geraete || []
+    frames: rahmen.geraete || [],
+    revier
   }
 }
 
@@ -77,8 +87,20 @@ export default function useSichtbarkeit(homeId) {
       patch((current) => ({ shelters: { ...current.shelters, [dogId]: { ...current.shelters[dogId], liestMit: result.enabled } } }))
     })
 
+  // Phase M: dritte Sichtbarkeit einer Erinnerung (PUT /api/revier/eintraege/:id) und der neue Profil-Stand.
+  const setMemoryOeffentlich = (entry, oeffentlich) =>
+    run(`revier-${entry.id}`, async () => {
+      await api.revier.setEintrag(entry.id, oeffentlich)
+      patch((current) => {
+        const markiert = (current.revier?.markiert || []).filter((id) => id !== entry.id)
+        return { revier: { ...current.revier, markiert: oeffentlich ? [...markiert, entry.id] : markiert } }
+      })
+    })
+
+  const setRevier = (settings) => patch((current) => ({ revier: { markiert: [], ...current.revier, settings } }))
+
   const updateShares = (dogId, shares) =>
     patch((current) => ({ animals: current.animals.map((dog) => (dog.id === dogId ? { ...dog, shares } : dog)) }))
 
-  return { data, error, isBusy: (key) => Boolean(busy[key]), setMemoryPrivat, removeGuest, setShelterReading, updateShares }
+  return { data, error, isBusy: (key) => Boolean(busy[key]), setMemoryPrivat, setMemoryOeffentlich, setRevier, removeGuest, setShelterReading, updateShares }
 }

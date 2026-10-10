@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest'
 import { normalizeDiscover } from './discover.js'
-import { ALL_TAB, DISCOVER_TABS, MAP_TAB, SECTION_KEYS, discoverTabsFor, countItems, isSectionEmpty, limitGroups, ownSectionTab, sectionCounts, tabFromParam, tabLabel } from './discoverTabs.js'
+import { ALL_TAB, DISCOVER_TABS, MAP_TAB, REVIER_TAB, SECTION_KEYS, discoverTabsFor, countItems, isSectionEmpty, limitGroups, ownSectionTab, sectionCounts, tabFromParam, tabLabel } from './discoverTabs.js'
 
 const item = (id, extra = {}) => ({ id, kind: 'partner', ...extra })
 
 describe('DISCOVER_TABS', () => {
   test('Alle | Hundeschulen | Salon & Betreuung | Neue Begleiter | Futter | Unterstützen | Karte (Phase W, Schritt 2)', () => {
-    expect(DISCOVER_TABS.map((tab) => tab.label)).toEqual(['Alle', 'Hundeschulen', 'Salon & Betreuung', 'Neue Begleiter', 'Futter', 'Unterstützen', 'Karte'])
+    expect(DISCOVER_TABS.map((tab) => tab.label)).toEqual(['Alle', 'Hundeschulen', 'Salon & Betreuung', 'Neue Begleiter', 'Futter', 'Unterstützen', 'Karte', 'Mein Revier'])
     expect(tabLabel('begleiter')).toBe('Neue Begleiter')
     // Die Karte ist kein Bereich der Antwort von POST /api/discover - sie zählt nicht mit.
     expect(SECTION_KEYS).not.toContain(MAP_TAB)
@@ -16,6 +16,15 @@ describe('DISCOVER_TABS', () => {
     expect(discoverTabsFor({ preview: true }).map((tab) => tab.key)).not.toContain(MAP_TAB)
     expect(discoverTabsFor({ preview: false }).map((tab) => tab.key)).toContain(MAP_TAB)
     expect(tabFromParam(MAP_TAB, { preview: true })).toBe(ALL_TAB)
+  })
+
+  test('Phase M: „Mein Revier“ ohne Zähler, nicht in der Kundensicht und nicht in einer Rudel-Instanz', () => {
+    expect(SECTION_KEYS).not.toContain(REVIER_TAB)
+    expect(discoverTabsFor().map((tab) => tab.key)).toContain(REVIER_TAB)
+    expect(discoverTabsFor({ preview: true }).map((tab) => tab.key)).not.toContain(REVIER_TAB)
+    expect(discoverTabsFor({ revier: false }).map((tab) => tab.key)).not.toContain(REVIER_TAB)
+    expect(tabFromParam('revier')).toBe(REVIER_TAB)
+    expect(tabFromParam('revier', { preview: true })).toBe(ALL_TAB)
   })
 })
 

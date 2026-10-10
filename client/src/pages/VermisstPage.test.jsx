@@ -107,6 +107,8 @@ describe('VermisstPage', () => {
     await render()
     expect(container.querySelector('.vermisst-sheet')).toBeNull()
     expect(container.textContent).toContain('Ein Suchplakat gibt es nur für eigene Tiere, die bei euch leben.')
+    // E2E 2026-10-10: Druckseiten ohne App-Hülle - auch Hinweis-Zustände brauchen einen Weg zurück.
+    expect(container.querySelector('a[href="/tier/9"]')?.textContent).toBe('Zurück zum Tier')
     act(() => root.unmount())
     container.remove()
     api.getDog.mockResolvedValue(WILMA)

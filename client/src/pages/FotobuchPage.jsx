@@ -9,6 +9,7 @@ import { usePrintBodyClass } from '../components/VoucherPrintView.jsx'
 import { parseAreaId } from '../lib/areas.js'
 import { todayIso } from '../lib/dates.js'
 import { DEFAULT_OPTIONS, MAX_MEMORIES, bookImages, buildBook, canMakeBook, hasPrivate } from '../lib/fotobuch.js'
+import PrintMessage from '../components/PrintMessage.jsx'
 import { t } from '../lib/i18n/index.js'
 import '../styles/fotobuch.css'
 
@@ -68,14 +69,6 @@ function useImagesLoaded(urls) {
   }, [key])
   const done = state.key === key ? state.done : 0
   return { done: Math.min(done, urls.length), total: urls.length }
-}
-
-function Message({ children }) {
-  return (
-    <div className="print-page">
-      <main className="print-main">{children}</main>
-    </div>
-  )
 }
 
 function BookSheets({ book, perPage }) {
@@ -152,21 +145,21 @@ export default function FotobuchPage({ dogId }) {
 
   if (error) {
     return (
-      <Message>
+      <PrintMessage>
         <div className="error-banner" role="alert">
           {error}
         </div>
-      </Message>
+      </PrintMessage>
     )
   }
   if (!data) return <div className="print-page" aria-busy="true" />
   if (!canMakeBook(data.entries)) {
     return (
-      <Message>
+      <PrintMessage dogId={id}>
         <EmptyState icon="image" title={t('Noch kein Fotobuch')}>
           {t(EMPTY_TEXT)}
         </EmptyState>
-      </Message>
+      </PrintMessage>
     )
   }
   return <Book dog={data.dog} entries={data.entries} id={id} />

@@ -1,5 +1,5 @@
 import { Button } from '../ui'
-import { IMPORT_TEXT } from '../../lib/fotoImport/texts.js'
+import { IMPORT_COUNT, IMPORT_TEXT, countText } from '../../lib/fotoImport/texts.js'
 import { formatDateLong } from '../../lib/dates.js'
 import { t } from '../../lib/i18n/index.js'
 
@@ -23,7 +23,7 @@ export function FotoImportDone({ result, onRetry, onClose }) {
   const n = result.created.length
   return (
     <div className="foto-import-step">
-      <p role="status">{result.cancelled ? t(IMPORT_TEXT.cancelledText, { n }) : t(IMPORT_TEXT.doneText, { n })}</p>
+      <p role="status">{t(countText(result.cancelled ? IMPORT_COUNT.cancelled : IMPORT_COUNT.done, n), { n })}</p>
       {result.errors.length > 0 && (
         <div className="foto-import-errors" role="alert">
           <p>{t(IMPORT_TEXT.errorsTitle)}</p>

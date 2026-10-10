@@ -4,6 +4,8 @@ import { ROUTE_FIRST_ANIMAL, findTarget, firstAnimalRoute } from '../../lib/tour
 
 // So lange sucht ein Schritt sein Ziel (Seite wechseln, nachladen), danach wird er übersprungen.
 export const TARGET_WAIT_MS = 4000
+// Optionale Ziele (step.optional, z. B. ein Reiter, den es noch nicht überall gibt) halten nur kurz auf.
+const OPTIONAL_WAIT_MS = 1500
 const POLL_MS = 100
 const ANIMALS_ROUTE = '/tiere'
 
@@ -25,6 +27,7 @@ export default function useTourStep(step, stepId, { waitMs = TARGET_WAIT_MS, onM
   useEffect(() => {
     if (!step) return undefined
     const started = Date.now()
+    const limit = step.optional ? Math.min(waitMs, OPTIONAL_WAIT_MS) : waitMs
     let route = step.route === ROUTE_FIRST_ANIMAL ? animalRef.current : step.route
     if (step.route === ROUTE_FIRST_ANIMAL && !route && pathRef.current !== ANIMALS_ROUTE) navigate(ANIMALS_ROUTE)
     else if (route && pathRef.current !== pathOf(route)) navigate(route)
@@ -44,7 +47,7 @@ export default function useTourStep(step, stepId, { waitMs = TARGET_WAIT_MS, onM
         setFound({ id: stepId, target, asking })
         return true
       }
-      if (Date.now() - started < waitMs) return false
+      if (Date.now() - started < limit) return false
       missingRef.current()
       return true
     }

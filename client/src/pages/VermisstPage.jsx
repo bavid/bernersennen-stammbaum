@@ -10,6 +10,7 @@ import { usePrintBodyClass } from '../components/VoucherPrintView.jsx'
 import { parseAreaId } from '../lib/areas.js'
 import { downloadBlob, shareFile, shareableFile } from '../lib/grusskarteShare.js'
 import { EMPTY_INPUTS, buildPoster, canMakePoster, pickPhotos } from '../lib/vermisst.js'
+import PrintMessage from '../components/PrintMessage.jsx'
 import { t } from '../lib/i18n/index.js'
 
 // Druckseite „Vermisst“ (/tier/:id/vermisst, App.jsx: nur im Zuhause, ohne App-Hülle wie das Startpaket). Ein Suchplakat
@@ -67,14 +68,6 @@ function ShareButton({ poster }) {
   )
 }
 
-function Message({ children }) {
-  return (
-    <div className="print-page">
-      <main className="print-main">{children}</main>
-    </div>
-  )
-}
-
 // Der Bogen passt sich am Bildschirm der Breite an (useSheetFit), gedruckt wird er in voller A4-Größe.
 function PosterSheets({ poster }) {
   const fitRef = useSheetFit()
@@ -94,21 +87,21 @@ export default function VermisstPage({ dogId, family }) {
 
   if (error) {
     return (
-      <Message>
+      <PrintMessage>
         <div className="error-banner" role="alert">
           {error}
         </div>
-      </Message>
+      </PrintMessage>
     )
   }
   if (!data) return <div className="print-page" aria-busy="true" />
   if (!canMakePoster(family, data.dog)) {
     return (
-      <Message>
+      <PrintMessage dogId={id}>
         <EmptyState icon="lock" title={t('Kein Zugriff')}>
           {t(DENIED_TEXT)}
         </EmptyState>
-      </Message>
+      </PrintMessage>
     )
   }
 

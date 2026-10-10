@@ -7,7 +7,7 @@ const WOERTER = [
   { icon: 'lock', key: 'Privat', text: 'nur ihr – die Menschen in eurem Zuhause.' },
   { icon: 'users', key: 'Familie', text: 'alle in dieser Familie sehen das Tier und seine nicht privaten Erinnerungen.' },
   { icon: 'eye', key: 'Gast', text: 'sieht eure Tiere und nicht private Erinnerungen – nur lesen und Grüße schreiben.' },
-  { icon: 'globe', key: 'Öffentlich', text: 'nur ein Steckbrief-Link – den haben Tierheime für ihre Tiere, oder ihr teilt ihn selbst.' }
+  { icon: 'globe', key: 'Öffentlich', text: 'nur, was ihr selbst öffentlich schaltet – euer Profil in „Mein Revier“ (nur für angemeldete Tierhalter) oder ein Steckbrief-Link.' }
 ]
 
 export default function SichtbarkeitLegende() {

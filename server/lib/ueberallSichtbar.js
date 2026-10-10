@@ -45,8 +45,10 @@ const readStmt = db.prepare(
   `SELECT ${COLUMN} AS an, ${LOCK_COLUMN} AS gesperrt, ${FREIGABE_COLUMN} AS freigabe, ${GRUND_COLUMN} AS grund FROM partners WHERE id = ?`
 )
 const setAnStmt = db.prepare(`UPDATE partners SET ${COLUMN} = ? WHERE id = ?`)
-// Ein neuer Antrag nach einer Ablehnung: wieder offen, der alte Grund fällt weg.
-const reopenStmt = db.prepare(`UPDATE partners SET ${FREIGABE_COLUMN} = '', ${GRUND_COLUMN} = NULL WHERE id = ? AND ${FREIGABE_COLUMN} = 'abgelehnt'`)
+// Jedes Einschalten ist ein neuer Antrag: wieder offen, ein alter Grund fällt weg (eine frühere Freigabe gilt nicht weiter).
+const reopenStmt = db.prepare(`UPDATE partners SET ${FREIGABE_COLUMN} = '', ${GRUND_COLUMN} = NULL WHERE id = ?`)
+// Ausschalten nimmt eine Freigabe zurück (eine Ablehnung samt Grund bleibt stehen, damit der Partner sie weiter sieht).
+const revokeStmt = db.prepare(`UPDATE partners SET ${FREIGABE_COLUMN} = '' WHERE id = ? AND ${FREIGABE_COLUMN} = 'freigegeben'`)
 const approveStmt = db.prepare(`UPDATE partners SET ${FREIGABE_COLUMN} = 'freigegeben', ${GRUND_COLUMN} = NULL WHERE id = ?`)
 const rejectStmt = db.prepare(`UPDATE partners SET ${COLUMN} = 0, ${FREIGABE_COLUMN} = 'abgelehnt', ${GRUND_COLUMN} = ? WHERE id = ?`)
 const lockStmt = db.prepare(`UPDATE partners SET ${COLUMN} = 0, ${LOCK_COLUMN} = 1 WHERE id = ?`)
@@ -85,8 +87,11 @@ function setUeberallSichtbar(partnerId, an) {
   const before = readUeberall(partnerId)
   if (before.gesperrt) throw httpError(403, GESPERRT_MESSAGE)
   if (before.an === an) return { an, changed: false }
-  setAnStmt.run(an ? 1 : 0, partnerId)
-  if (an) reopenStmt.run(partnerId)
+  db.transaction(() => {
+    setAnStmt.run(an ? 1 : 0, partnerId)
+    if (an) reopenStmt.run(partnerId)
+    else revokeStmt.run(partnerId)
+  })()
   return { an, changed: true }
 }
 
@@ -101,8 +106,10 @@ function parseEntscheidung(body) {
 }
 
 // Der Admin entscheidet über einen Antrag: freigeben macht den Partner deutschlandweit sichtbar (solange sein Schalter an
-// ist), ablehnen schaltet den Schalter aus und hält den Grund fest - der Partner kann danach neu beantragen.
+// ist), ablehnen schaltet den Schalter aus und hält den Grund fest - der Partner kann danach neu beantragen. Freigeben
+// geht nur, wenn der Partner den Schalter an hat (beantragt) - sonst 409 (keine Freigabe auf Vorrat).
 function decideUeberall(partnerId, { freigeben, grund }) {
+  if (freigeben && !readUeberall(partnerId).an) throw httpError(409, 'Dieser Partner hat „Überall sichtbar“ nicht beantragt')
   if (freigeben) approveStmt.run(partnerId)
   else rejectStmt.run(grund, partnerId)
   return readUeberall(partnerId)

@@ -7,7 +7,7 @@ const { useTempDataDir, startApp, cleanup, call, createFamily } = require('./hel
 // (wie schon appenv.test.js/cookieIsolation.test.js es für 'staging' machen).
 const dataDir = useTempDataDir('partners-demo-prod', { APP_ENV: 'production' })
 
-test('Partner: Demo-Partner erscheinen in Produktion nicht in der echten Liste, nur mit ?demo=1', async (t) => {
+test('Partner: Demo-Partner erscheinen in Produktion nicht in der echten Liste, auch nicht mit ?demo=1', async (t) => {
   const config = require('../config')
   assert.equal(config.appEnv, 'production')
 
@@ -34,12 +34,12 @@ test('Partner: Demo-Partner erscheinen in Produktion nicht in der echten Liste, 
     assert.equal(portal.status, 404)
   })
 
-  await t.test('mit ?demo=1: Demo-Partner erscheint wieder', async () => {
+  await t.test('?demo=1 wird in Produktion nicht beachtet: Demo-Partner bleibt verborgen', async () => {
     const list = await call(base, '/api/public/partners?demo=1')
-    assert.ok(list.data.some((p) => p.slug === 'demo-tierheim-prod'))
+    assert.ok(!list.data.some((p) => p.slug === 'demo-tierheim-prod'))
 
     const portal = await call(base, '/api/public/partners/demo-tierheim-prod?demo=1')
-    assert.equal(portal.status, 200)
+    assert.equal(portal.status, 404)
   })
 
   await t.test('Umkreissuche berücksichtigt die gleiche Demo-Regel', async () => {
@@ -47,7 +47,7 @@ test('Partner: Demo-Partner erscheinen in Produktion nicht in der echten Liste, 
     assert.ok(!nearWithoutDemo.data.some((p) => p.slug === 'demo-tierheim-prod'))
 
     const nearWithDemo = await call(base, '/api/public/partners?plz=10115&radius=10&demo=1')
-    assert.ok(nearWithDemo.data.some((p) => p.slug === 'demo-tierheim-prod'))
+    assert.ok(!nearWithDemo.data.some((p) => p.slug === 'demo-tierheim-prod'))
   })
 
   // Finding 2 (Abschluss-Review Phase 2): "Zum Portal" für einen Demo-Partner (z. B. aus /umgebung

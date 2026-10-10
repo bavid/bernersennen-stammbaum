@@ -77,6 +77,20 @@ test('lib/spenden: Prüfung einer Spende', () => {
   expectError(() => validateSpende({ betragCents: 100, quelle: 'bar', isDemo: true }, now))
 })
 
+test('lib/spendenWebhook: Zeitkopf nur ganze Sekunden, höchstens 5 Minuten daneben; Signatur über Zeit und Body', () => {
+  const { zeitGueltig, signatur, signaturGueltig } = require('../lib/spendenWebhook')
+  const nowMs = 1_800_000_000_000
+  const sek = nowMs / 1000
+  assert.equal(zeitGueltig(String(sek), nowMs), true)
+  assert.equal(zeitGueltig(String(sek - 300), nowMs), true)
+  assert.equal(zeitGueltig(String(sek + 301), nowMs), false)
+  for (const falsch of [undefined, '', 'abc', '1.5', '-1']) assert.equal(zeitGueltig(falsch, nowMs), false)
+  const raw = Buffer.from('{"id":"x"}')
+  const sig = signatur(FAKE_SECRET, String(sek), raw)
+  assert.equal(signaturGueltig(FAKE_SECRET, raw, sig, String(sek), nowMs), true)
+  assert.equal(signaturGueltig(FAKE_SECRET, raw, sig, String(sek + 1), nowMs), false)
+})
+
 test('lib/finanzierungVerteilung: Reihenfolge Kosten -> Vorleistung -> Überschuss', () => {
   const { berechneFinanzen } = require('../lib/finanzierungVerteilung')
   const heute = new Date('2026-10-10T12:00:00')
@@ -216,35 +230,86 @@ test('Spenden live: Admin, Summen, öffentlicher Stand, Demo, Live-Strom, Webhoo
     assert.equal((await call(base, '/api/admin/spenden/999', { method: 'PUT', body: { betragCents: 1, quelle: 'bar' }, cookie: adminCookie })).status, 404)
   })
 
-  await t.test('Webhook: ohne Secret 404, mit Secret nur mit gültiger HMAC-Signatur, doppelt nur einmal', async () => {
+  await t.test('Webhook: ohne Secret 404, nur gofundme/paypal, Zeit + HMAC-Signatur, doppelt nur einmal, privat als Vorgabe', async () => {
     const { signatur } = require('../lib/spendenWebhook')
-    const body = JSON.stringify({ id: 'gfm-1', betragCents: 1500, anzeigename: 'Pepper' })
-    const post = (quelle, raw, sig) =>
+    const jetzt = () => String(Math.floor(Date.now() / 1000))
+    const post = (quelle, raw, { sig, zeit } = {}) =>
       fetch(`${base}/api/finanzierung/webhook/${quelle}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(sig ? { 'X-Spenden-Signatur': sig } : {}) },
+        headers: { 'Content-Type': 'application/json', ...(sig ? { 'X-Spenden-Signatur': sig } : {}), ...(zeit ? { 'X-Spenden-Zeit': zeit } : {}) },
         body: raw
       })
-    assert.equal((await post('gofundme', body, 'sha256=00')).status, 404)
+    const signiert = (quelle, raw, secret = FAKE_SECRET, zeit = jetzt()) => post(quelle, raw, { sig: signatur(secret, zeit, raw), zeit })
+    const body = JSON.stringify({ id: 'gfm-1', betragCents: 1500, anzeigename: 'Pepper', oeffentlich: true })
+    assert.equal((await post('gofundme', body, { sig: 'sha256=00', zeit: jetzt() })).status, 404)
+    // Aus: auch ein Body über dem Limit bekommt 404 (wird gar nicht gelesen).
+    assert.equal((await post('gofundme', 'x'.repeat(20 * 1024))).status, 404)
     process.env.SPENDEN_WEBHOOK_SECRET = FAKE_SECRET
     try {
       assert.equal((await post('gofundme', body)).status, 401)
-      assert.equal((await post('gofundme', body, signatur('falsches-secret-123456', body))).status, 401)
-      assert.equal((await post('bitcoin', body, signatur(FAKE_SECRET, body))).status, 404)
-      const ok = await post('gofundme', body, signatur(FAKE_SECRET, body))
+      assert.equal((await signiert('gofundme', body, 'falsches-secret-123456')).status, 401)
+      // Zeit fehlt, ist zu alt oder passt nicht zur Signatur -> 401.
+      assert.equal((await post('gofundme', body, { sig: signatur(FAKE_SECRET, jetzt(), body) })).status, 401)
+      const alt = String(Math.floor(Date.now() / 1000) - 6 * 60)
+      assert.equal((await signiert('gofundme', body, FAKE_SECRET, alt)).status, 401)
+      assert.equal((await post('gofundme', body, { sig: signatur(FAKE_SECRET, alt, body), zeit: jetzt() })).status, 401)
+      // Nur Anbieter-Quellen: andere (auch gültige Admin-Quellen) 404.
+      for (const quelle of ['bitcoin', 'ueberweisung', 'bar', 'sonstiges']) assert.equal((await signiert(quelle, body)).status, 404, quelle)
+      const ok = await signiert('gofundme', body)
       assert.equal(ok.status, 201)
       assert.equal((await ok.json()).doppelt, false)
-      const nochmal = await post('gofundme', body, signatur(FAKE_SECRET, body))
+      const nochmal = await signiert('gofundme', body)
       assert.equal(nochmal.status, 200)
       assert.equal((await nochmal.json()).doppelt, true)
       const kaputt = JSON.stringify({ id: 'gfm-2', betragCents: -5 })
-      assert.equal((await post('gofundme', kaputt, signatur(FAKE_SECRET, kaputt))).status, 400)
+      assert.equal((await signiert('gofundme', kaputt)).status, 400)
+      // Ohne ausdrückliches oeffentlich: true bleibt die Spende privat (zählt, aber ohne Name/Nachricht).
+      const privat = JSON.stringify({ id: 'pp-1', betragCents: 500, anzeigename: 'Geheim', nachricht: 'Nur für euch' })
+      assert.equal((await signiert('paypal', privat)).status, 201)
+      assert.equal(db.prepare("SELECT oeffentlich FROM spenden_eingaenge WHERE extern_ref = 'paypal:pp-1'").get().oeffentlich, 0)
       const live = await call(base, '/api/finanzierung/live')
-      assert.equal(live.data.summeMonat, 5000)
+      assert.equal(live.data.summeMonat, 5500)
       assert.equal(live.data.letzte[0].name, 'Pepper')
+      assert.ok(!live.data.letzte.some((eintrag) => eintrag.name === 'Geheim' || eintrag.nachricht === 'Nur für euch'))
     } finally {
       delete process.env.SPENDEN_WEBHOOK_SECRET
     }
+  })
+
+  await t.test('Webhook: eigenes Limit je IP (60 je Minute) -> 429', async () => {
+    let status = 0
+    for (let i = 0; i < 70 && status !== 429; i += 1) {
+      status = (await fetch(`${base}/api/finanzierung/webhook/gofundme`, { method: 'POST', body: '{}' })).status
+    }
+    assert.equal(status, 429)
+  })
+
+  await t.test('Live-Strom: höchstens 4 je IP (dann 503), Platz wird beim Schließen frei', async () => {
+    const offen = []
+    for (let i = 0; i < 4; i += 1) offen.push(await openStream(base))
+    const fuenfter = await fetch(`${base}/api/finanzierung/live/stream`)
+    assert.equal(fuenfter.status, 503)
+    offen.forEach((stream) => stream.close())
+    const { offeneStreams } = require('../lib/spendenLive')
+    for (let i = 0; i < 50 && offeneStreams() > 0; i += 1) await new Promise((done) => setTimeout(done, 20))
+    assert.equal(offeneStreams(), 0)
+    const wieder = await openStream(base)
+    wieder.close()
+  })
+
+  await t.test('Live-Strom: ein Client, der nicht mitliest (Puffer > 64 kB), wird getrennt', () => {
+    const live = require('../lib/spendenLive')
+    const handler = {}
+    let zerstoert = false
+    const res = { writableLength: 0, writeHead() {}, write() {}, destroy() { zerstoert = true; handler.close() }, on() {} }
+    const req = { ip: '198.51.100.7', on: (name, fn) => { handler[name] = fn } }
+    const vorher = live.offeneStreams()
+    assert.equal(live.openStream(req, res), true)
+    assert.equal(live.offeneStreams(), vorher + 1)
+    res.writableLength = live.MAX_PUFFER_BYTES + 1
+    live.meldeSpendenAenderung()
+    assert.equal(zerstoert, true)
+    assert.equal(live.offeneStreams(), vorher)
   })
 
   await t.test('Vorleistung: Admin legt sie an, öffentlich mit gedecktem Teil, löschen', async () => {

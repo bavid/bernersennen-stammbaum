@@ -16,7 +16,7 @@ const APP_SEITEN = [
   'admin', 'admin-ansicht', 'admin-schreiben', 'alt', 'app', 'beitraege', 'bilderrahmen', 'collage', 'datenschutz',
   'demo-start', 'einstellungen', 'entdecken', 'familien', 'familienbande', 'finanzierung', 'hund', 'impressum',
   'kalender', 'kundensicht', 'mitglieder', 'nachrichten', 'netzwerk', 'p', 'partner', 'partner-drucken',
-  'partner-werden', 'pinnwand', 'profil', 'rahmen', 'stammbaum', 'start', 't', 'tier', 'tiere', 'umgebung', 'v',
+  'partner-werden', 'pinnwand', 'profil', 'rahmen', 'revier', 'stammbaum', 'start', 't', 'tier', 'tiere', 'umgebung', 'v',
   'visitenkarten', 'vorstellung', 'wegbegleiter', 'wuerfe', 'zuchtbuch', 'zugang'
 ]
 

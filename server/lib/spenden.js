@@ -48,14 +48,16 @@ function cleanQuelle(value) {
   return value
 }
 
-function cleanOeffentlich(value) {
-  if (value === undefined || value === null) return 1
+// vorgabe: was gilt, wenn das Feld fehlt - Admin-Formular 1 (schickt es ohnehin immer mit), Webhook 0 (nur ein
+// ausdrückliches true des Anbieters macht Name und Nachricht öffentlich).
+function cleanOeffentlich(value, vorgabe = 1) {
+  if (value === undefined || value === null) return vorgabe
   if (typeof value !== 'boolean') throw httpError(400, '„Öffentlich“ muss ja oder nein sein.', 'oeffentlich')
   return value ? 1 : 0
 }
 
 // Eine Spende als Spalten (snake_case). Datum Vorgabe heute, nie in der Zukunft (ein Tag Spielraum für Zeitzonen).
-function validateSpende(body, now = new Date()) {
+function validateSpende(body, now = new Date(), { oeffentlichVorgabe = 1 } = {}) {
   assertKnownFields(body, SPENDE_FIELDS)
   const datum = cleanIsoDate(body.datum, { feld: 'datum', label: 'Das Datum' }) || heuteIso(now)
   const morgen = heuteIso(new Date(now.getTime() + 24 * 60 * 60 * 1000))
@@ -66,7 +68,7 @@ function validateSpende(body, now = new Date()) {
     quelle: cleanQuelle(body.quelle),
     anzeigename: cleanText(body.anzeigename, { feld: 'anzeigename', label: 'Der Name', max: SPENDE_LIMITS.anzeigename }) || null,
     nachricht: cleanText(body.nachricht, { feld: 'nachricht', label: 'Die Nachricht', max: SPENDE_LIMITS.nachricht }) || null,
-    oeffentlich: cleanOeffentlich(body.oeffentlich)
+    oeffentlich: cleanOeffentlich(body.oeffentlich, oeffentlichVorgabe)
   }
 }
 
@@ -106,9 +108,9 @@ function listSpenden() {
   return listStmt.all(ADMIN_LIST_LIMIT).map(adminSpende)
 }
 
-// isDemo/externRef nur intern (Demo-Paket, Webhook) - nie aus einem Formular.
-function createSpende(body, { isDemo = false, externRef = null, now } = {}) {
-  const row = validateSpende(body, now)
+// isDemo/externRef/oeffentlichVorgabe nur intern (Demo-Paket, Webhook) - nie aus einem Formular.
+function createSpende(body, { isDemo = false, externRef = null, now, oeffentlichVorgabe = 1 } = {}) {
+  const row = validateSpende(body, now, { oeffentlichVorgabe })
   const id = insertStmt.run({ ...row, is_demo: isDemo ? 1 : 0, extern_ref: externRef }).lastInsertRowid
   return adminSpende(findStmt.get(id))
 }

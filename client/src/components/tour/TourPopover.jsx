@@ -38,9 +38,10 @@ function popoverStyle(place) {
   return place.mode === 'float' ? { top: `${place.top}px`, left: `${place.left}px` } : undefined
 }
 
-function Actions({ step, index, total, asking, onBack, onNext, onAsk }) {
+// continues: nach dem letzten Schritt kommt noch die Karte „Wie geht’s weiter?“ - dann heißt der Knopf „Weiter“.
+function Actions({ step, index, total, asking, continues, onBack, onNext, onAsk }) {
   const t = useT()
-  const last = index === total - 1
+  const last = index === total - 1 && !continues
   return (
     <div className="tour-actions">
       <Button variant="ghost" size="sm" onClick={onBack} disabled={index === 0}>
@@ -61,7 +62,7 @@ function Actions({ step, index, total, asking, onBack, onNext, onAsk }) {
 // Lichtkegel und Sprechblase eines Schritts: abgedunkelte Fläche mit abgerundetem Ausschnitt um das Ziel (sperrt die
 // App nicht - pointer-events: none), daneben bzw. am Handy als Blatt die Sprechblase. Der Fokus geht bei jedem Schritt
 // in die Sprechblase; Pfeiltasten blättern, Escape beendet (TourProvider).
-export default function TourPopover({ step, index, total, target, asking, isDemo, canAct, onBack, onNext, onEnd, onAsk }) {
+export default function TourPopover({ step, index, total, target, asking, isDemo, continues, canAct, onBack, onNext, onEnd, onAsk }) {
   const t = useT()
   const titleId = useId()
   const textId = useId()
@@ -79,7 +80,7 @@ export default function TourPopover({ step, index, total, target, asking, isDemo
 
   useEffect(() => {
     ref.current?.focus({ preventScroll: true })
-  }, [index])
+  }, [index, step])
 
   function handleKeyDown(event) {
     if (event.key === 'ArrowRight') onNext()
@@ -114,7 +115,7 @@ export default function TourPopover({ step, index, total, target, asking, isDemo
           {t(text)}
         </p>
         {isDemo && index === 0 && <p className="tour-note">{t('In der Demo dürft ihr alles ansehen und ausprobieren – gespeichert wird nichts.')}</p>}
-        <Actions step={step} index={index} total={total} asking={asking && canAct} onBack={onBack} onNext={onNext} onAsk={onAsk} />
+        <Actions step={step} index={index} total={total} asking={asking && canAct} continues={continues} onBack={onBack} onNext={onNext} onAsk={onAsk} />
         <button type="button" className="link-button tour-end" onClick={onEnd}>
           {t('Beenden')}
         </button>

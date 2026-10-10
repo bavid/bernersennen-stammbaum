@@ -26,6 +26,7 @@ const { createDemoMembers, insertLeitungComment } = require('./demoMembers')
 const { createDemoVisits } = require('./demoVisits')
 const { removeDemoWwh, createDemoWwh } = require('./demoWirWarenHier')
 const { createDemoProfil } = require('./demoProfil')
+const { createDemoRevierProfile, linkDemoRevier } = require('./demoRevier')
 const { replaceDemoSpenden } = require('./demoSpenden')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
@@ -609,6 +610,9 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     // Pepper (Lindenhof) kam aus dem Demo-Tierheim - darum mit dessen Id (das Tierheim steht schon, siehe oben).
     const membersResult = createDemoMembers(db, { copyImage, groupFamilyId: rudelResult.familyId, shelterFamilyId: shelterResult.familyId })
 
+    // Phase M „Mein Revier“: die öffentlichen Demo-Profile VOR „Zuhause am Deich“ (lib/demoRevier.js - Demo-Login).
+    const revierIds = createDemoRevierProfile(db, { copyImage })
+
     const householdResult = createDemoHousehold(db, {
       password: crypto.randomBytes(24).toString('base64url'),
       isDemo: true,
@@ -627,6 +631,9 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       homeId: householdResult.familyId,
       households: membersResult.households
     })
+
+    // Phase M: Profil von „Zuhause am Deich“ und die Folgen (lib/demoRevier.js).
+    linkDemoRevier(db, { homeId: householdResult.familyId, ids: revierIds })
 
     // Phase V2: Besuch Deich <-> Möwenweg und „Erlebt mit“ (lib/demoVisits.js) - braucht beide Zuhause.
     const visitsResult = createDemoVisits(db, {

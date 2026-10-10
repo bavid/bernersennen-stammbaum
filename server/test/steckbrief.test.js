@@ -334,16 +334,15 @@ test('Tiere in Vermittlung: Status, Kategorien, öffentlicher Steckbrief', async
     const withoutDemo = await call(base, `/api/public/animals/${demoSlug}`)
     assert.equal(withoutDemo.status, 404)
 
+    // ?demo=1 öffnet in Produktion nichts mehr (Sicherheitsdurchsicht 11.10., wie Demo-Partner)
     const withDemoParam = await call(base, `/api/public/animals/${demoSlug}?demo=1`)
-    assert.equal(withDemoParam.status, 200)
-    assert.equal(withDemoParam.data.name, 'Momo')
+    assert.equal(withDemoParam.status, 404)
 
     const listWithoutDemo = await call(base, `/api/public/partners/${demoShelter.partnerSlug}/animals`)
     assert.equal(listWithoutDemo.status, 404)
 
     const listWithDemo = await call(base, `/api/public/partners/${demoShelter.partnerSlug}/animals?demo=1`)
-    assert.equal(listWithDemo.status, 200)
-    assert.ok(listWithDemo.data.some((a) => a.name === 'Momo'))
+    assert.equal(listWithDemo.status, 404)
 
     // Eine gültige Demo-Familien-Sitzung sieht es auch ohne ?demo=1 (wie partnersDemoProd.test.js)
     const demoHome = await createFamily(base, 'Demo-Zuhause Steckbrief', 'demo-zuhause-steckbrief-1')

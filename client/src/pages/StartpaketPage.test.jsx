@@ -95,6 +95,8 @@ describe('StartpaketPage', () => {
     await render()
     expect(container.querySelector('.startpaket-sheet')).toBeNull()
     expect(container.textContent).toContain('Kein Zugriff')
+    // E2E 2026-10-10: Druckseiten ohne App-Hülle - auch Hinweis-Zustände brauchen einen Weg zurück.
+    expect(container.querySelector('a[href="/tier/9"]')?.textContent).toBe('Zurück zum Tier')
   })
 
   test('Demo-Tierheim: Muster-QR, kein Erzeugen', async () => {

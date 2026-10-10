@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
+import { useTourBusy } from './tour/tourContext.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import { t } from '../lib/i18n/index.js'
 
@@ -38,16 +39,20 @@ export default function PartnerDemoGuide() {
   const [seen, setSeen] = useState(readSeen)
   const shown = useRef(false)
   const ref = useRef(null)
+  // Rundgang-Frage offen oder Rundgang läuft: nur eines von beiden - der Hinweis wartet, bis der Rundgang zu ist.
+  const tourBusy = useTourBusy()
   const onStart = pathname === DEMO_GUIDE_ROUTE
-  const visible = onStart && !closed && !seen
+  const visible = onStart && !closed && !seen && !tourBusy
 
   useEffect(() => {
     if (visible) shown.current = true
+    // vom Rundgang verdrängt zählt nicht als gesehen - nach dem Rundgang kommt er (einmal) wieder
+    else if (tourBusy) shown.current = false
     else if (shown.current && !onStart && !seen) {
       writeSeen()
       setSeen(true)
     }
-  }, [visible, onStart, seen])
+  }, [visible, onStart, seen, tourBusy])
 
   if (!visible) return null
 

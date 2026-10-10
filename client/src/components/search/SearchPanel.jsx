@@ -35,7 +35,7 @@ function statusText({ query, results, shortcutHits }) {
   if (results.status !== 'done' || results.query !== query) return t('Suche läuft …')
   const count = countResults(results.gruppen, shortcutHits)
   if (count === 1) return t('1 Treffer')
-  return count ? t('{n} Treffer', { n: count }) : t('Keine Treffer für „{query}“', { query })
+  return count ? t(count === 1 ? '1 Treffer' : '{n} Treffer', { n: count }) : t('Keine Treffer für „{query}“', { query })
 }
 
 // Inhalt des Such-Dialogs (SearchButton): Eingabefeld als Combobox, Treffer gruppiert (SearchResults), davor der Verlauf

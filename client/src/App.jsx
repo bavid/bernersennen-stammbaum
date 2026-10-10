@@ -1,16 +1,13 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { api, setUnauthorizedHandler } from './api'
 import { setActiveArea, setAreaMismatchHandler } from './lib/activeArea.js'
 import { DemoProvider, isReadOnly } from './lib/demo.js'
-import { STARTPAKET_RE } from './lib/startpaket.js'
-import { VERMISST_RE } from './lib/vermisst.js'
-import { FOTOBUCH_RE } from './lib/fotobuch.js'
+import { FINANZIERUNG_PATH, Splash, inAppPublicPage, printRoute, publicRoute, sessionlessRoute } from './TopRoutes.jsx'
 import { applyDarstellung, rememberDarstellung, storedDarstellung } from './lib/darstellung.js'
 import { START_ROUTE, inviteLabel, isHouseholdIdentity, isPartnerArea, startRoute } from './lib/areas.js'
 import { isOwnHome } from './lib/visits.js'
 import { MAX_NAV_ITEMS, hasMenuSlot, navItemsFor } from './lib/navItems.js'
-import { formatVoucherCode } from './lib/voucherCode.js'
 import { t } from './lib/i18n/index.js'
 import { ThemeProvider, useTheme } from './themes/ThemeProvider.jsx'
 import ThemeMark from './components/ThemeMark.jsx'
@@ -26,206 +23,16 @@ import { clearFamilyAuswahl } from './lib/bilderrahmen.js'
 import useClearDraftsOnSignOut from './hooks/useClearDraftsOnSignOut.js'
 import RoleBadge from './components/RoleBadge.jsx'
 import DemoBanner from './components/DemoBanner.jsx'
-import HandoverConsent from './components/HandoverConsent.jsx'
 import PartnerDemoGuide from './components/PartnerDemoGuide.jsx'
 import AdminViewBanner from './components/AdminViewBanner.jsx'
 import NavBadge from './components/NavBadge.jsx'
 import ViewModeSwitch from './components/ViewModeSwitch.jsx'
-// LoginEntry: volle Startseite oder - im Instanz-Modus „rudel“ - nur der Passwort-Login (lib/instanzModus.js).
-import LoginEntry from './components/login/LoginEntry.jsx'
-import PartnerPortalPage from './pages/PartnerPortalPage.jsx'
-import PartnersPage from './pages/PartnersPage.jsx'
-import SteckbriefPage from './pages/SteckbriefPage.jsx'
-import LegalPage from './pages/LegalPage.jsx'
 import AreaRoutes from './AreaRoutes.jsx'
 import TourProvider from './components/tour/TourProvider.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 import RouteFallback from './components/RouteFallback.jsx'
-import VisitClaimCard from './components/visits/VisitClaimCard.jsx'
-import { Button } from './components/ui/index.js'
 import { rememberPersonName } from './lib/profil.js'
-
-// Der Admin-Bereich (samt aller Admin*-Komponenten) kommt erst bei Bedarf als eigener Chunk - nur der
-// Admin ruft /admin je auf, alle anderen laden ihn so nicht mit.
-const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
-// Druckseite für Gutschein-Karten (Phase 5 Task 2): ebenfalls nur für den Admin, eigener Chunk - die QR-
-// Bibliothek und die Karten lädt sonst niemand mit. Prüft die Admin-Sitzung selbst und schickt ohne zu /admin.
-const AdminPrintPage = lazy(() => import('./pages/AdminPrintPage.jsx'))
-// Einstieg in die Admin-Ansicht eines Bereichs (Phase 5 Task 5b): ruft POST /api/admin/view/:id und wechselt
-// dann in den Bereich - ebenfalls nur für den Admin, eigener Chunk.
-const AdminViewStartPage = lazy(() => import('./pages/AdminViewStartPage.jsx'))
-// Druckseite eines Kunden-Gutschein-Stapels für Partner (Phase 5 Task 4): teilt sich Karten und QR-Bibliothek
-// mit der Admin-Druckseite - nur Partner-Bereiche rufen sie auf, eigener Chunk.
-const PartnerPrintPage = lazy(() => import('./pages/PartnerPrintPage.jsx'))
-// Tierheim-Startpaket (/tier/:id/startpaket, lib/startpaket.js): Druckmappe zur Vermittlung, nur Tierheim-Bereiche.
-const StartpaketPage = lazy(() => import('./pages/StartpaketPage.jsx'))
-// Suchplakat (/tier/:id/vermisst, lib/vermisst.js): nur im Zuhause, ohne App-Hülle.
-const VermisstPage = lazy(() => import('./pages/VermisstPage.jsx'))
-// Chronik als Fotobuch (/tier/:id/fotobuch, lib/fotobuch.js): Druckseite für alle, die die Chronik sehen.
-const FotobuchPage = lazy(() => import('./pages/FotobuchPage.jsx'))
-// Öffentliche Infoseite "Partner werden" (Phase 5 Task 4): selten aufgerufen, eigener Chunk.
-const PartnerInfoPage = lazy(() => import('./pages/PartnerInfoPage.jsx'))
-// Phase F: „So finanzieren wir uns“ (/finanzierung) - öffentlich wie Impressum und Datenschutz, eigener Chunk.
-const FinanzierungPage = lazy(() => import('./pages/FinanzierungPage.jsx'))
-// „Als App aufs Handy“ (/app): die Anleitung je Gerät - öffentlich wie /finanzierung, eigener Chunk.
-const AppPage = lazy(() => import('./pages/AppPage.jsx'))
-// Präsentation zum Durchklicken (/vorstellung): öffentlich wie /app, eigener Chunk.
-const VorstellungPage = lazy(() => import('./pages/VorstellungPage.jsx'))
-// Netzwerk-Präsentation (/netzwerk, lib/netzwerk.js NETZWERK_PATH): Entwurf, wie Partner sich vernetzen - eigener Chunk.
-const NetzwerkPage = lazy(() => import('./pages/NetzwerkPage.jsx'))
-// Präsentationsmodus (Phase 5 Task 5): Vorführseite des Admins mit Kacheln, die je eine Demo in einem neuen
-// Tab starten - dort landet man auf /demo-start (DemoStartPage), das POST /api/demo ruft. Beides eigene Chunks.
-const AdminPresentPage = lazy(() => import('./pages/AdminPresentPage.jsx'))
-// Box-System: Katalog der Bausteine (/admin/bausteine), eigener Chunk.
-const AdminBausteinePage = lazy(() => import('./pages/AdminBausteinePage.jsx'))
-const DemoStartPage = lazy(() => import('./pages/DemoStartPage.jsx'))
-// Digitaler Bilderrahmen auf einem anderen Gerät (/rahmen#TOKEN): öffentlich, ohne Anmeldung - eigener Chunk.
-const RahmenPage = lazy(() => import('./pages/RahmenPage.jsx'))
-
-// /admin/gutscheine/<stapel-id>/druck - die Id ist eine Zahl (server/lib/validate.js cleanId), alles andere
-// bleibt beim Admin-Dashboard.
-const ADMIN_PRINT_RE = /^\/admin\/gutscheine\/(\d+)\/druck\/?$/
-
-// /admin-ansicht/<bereichs-id> - aus der Familien- und Partnerliste des Admins in einem neuen Tab geöffnet.
-const ADMIN_VIEW_RE = /^\/admin-ansicht\/(\d+)\/?$/
-
-// /admin/praesentation - Präsentationsmodus (AdminPresentPage), aus dem Admin-Kopf.
-const ADMIN_PRESENT_RE = /^\/admin\/praesentation\/?$/
-const ADMIN_BAUSTEINE_RE = /^\/admin\/bausteine\/?$/
-
-// /demo-start?as=…&slug=…&ziel=… - Einstieg hinter jeder Kachel des Präsentationsmodus (lib/present.js).
-const DEMO_START_PATH = '/demo-start'
-
-// /rahmen#TOKEN - Bilderrahmen auf einem anderen Gerät (RahmenPage; dieselbe Adresse wie lib/rahmenGeraet.js RAHMEN_PATH).
-const RAHMEN_PATH = '/rahmen'
-
-// /partner-drucken/<stapel-id> - Druckseite eines Kunden-Gutschein-Stapels aus dem Partner-Profil (Reiter
-// "Kunden-Gutscheine"); nur mit Sitzung in einem Partner- oder Tierheim-Bereich, sonst Login bzw. Startseite.
-const PARTNER_PRINT_RE = /^\/partner-drucken\/(\d+)\/?$/
-
-// Öffentliche Infoseite für künftige Partner (PartnerInfoPage), verlinkt von Login-Seite und Partnerliste.
-const PARTNER_INFO_PATH = '/partner-werden'
-
-// Phase F: „So finanzieren wir uns“ (FinanzierungPage), verlinkt von Login-Seite, App-Fuß, Datenschutz und /partner-werden.
-const FINANZIERUNG_PATH = '/finanzierung'
-// „Als App aufs Handy“ - Anleitung zum Installieren (pages/AppPage.jsx APP_PATH).
-const APP_PATH = '/app'
-// Präsentation zum Durchklicken (pages/VorstellungPage.jsx, lib/vorstellung.js VORSTELLUNG_PATH).
-const VORSTELLUNG_PATH = '/vorstellung'
-const NETZWERK_PATH = '/netzwerk'
-
-// Öffentliche Partnerliste (PartnersPage).
-const PARTNER_LIST_PATH = '/partner'
-
-// /p/<slug> – öffentliches Partner-Portal, unabhängig von Groß-/Kleinschreibung des Pfads egal (der
-// Slug selbst bleibt roh, die Route validiert nur die Form).
-const PARTNER_SLUG_RE = /^\/p\/([^/]+)\/?$/
-
-// /t/<slug> – öffentlicher Steckbrief eines Tiers (Phase T Task 5), derselbe Aufbau wie PARTNER_SLUG_RE.
-const ANIMAL_SLUG_RE = /^\/t\/([^/]+)\/?$/
-
-// Karte auf /v#CODE mit laufender Sitzung (Phase T Task 5): normalerweise nur "Abmelden und Gutschein
-// einlösen" - trägt der Code aber einen offenen Übergabe-Gutschein UND die Sitzung ist das eigene
-// Zuhause selbst (nicht ein beigetretenes Rudel, nicht ein klassischer Rudel-Login), bietet sie
-// stattdessen "In „Mein Zuhause“ übernehmen" (api.claimVoucher, ohne Ab-/Anmelden). code kommt aus dem
-// #Hash der Adresse (App.jsx voucherCode) - ohne Code (z. B. direkter Aufruf von /v) bleibt es bei der
-// einfachen Karte, ganz ohne Prüf-Anfrage.
-// Phase V2: trägt der Code eine offene Besuchs-Einladung (checkVoucher meldet besuch), bietet die Karte im eigenen
-// Zuhause stattdessen das Verbinden an (VisitClaimCard, onVisitConnected bekommt das neue "me").
-function VoucherSessionCard({ family, code, onLogout, onClaimed, onVisitConnected }) {
-  const [handover, setHandover] = useState(null)
-  const [visit, setVisit] = useState(null)
-  const [shelterMayRead, setShelterMayRead] = useState(false)
-  const [claiming, setClaiming] = useState(false)
-  const [error, setError] = useState(null)
-
-  // voucherCode (App.jsx) kommt roh aus dem #Hash - wie RedeemForm/LoginForm geht auch hier nur der
-  // formatierte Code (XXXX-XXXX-XXXX) an die API, nie der rohe Hash-Text.
-  const formattedCode = formatVoucherCode(code)
-  // final-review Phase T Finding 10: eine Demo-Sitzung darf nichts übernehmen (schreibgeschützt wie
-  // jede andere Demo-Aktion, api.claimVoucher würde ohnehin mit 403 ablehnen) - canClaim schließt sie
-  // deshalb schon hier aus, statt erst den Fehler vom Server abzuwarten.
-  const hasHouseholdHome = family.home?.art === 'zuhause'
-  const canClaim = !isReadOnly(family) && family.art === 'zuhause' && Boolean(family.home) && family.id === family.home.id
-  // Ein Haushalt, der gerade ein Rudel ansieht (Gruppenseite), kann von hier aus nicht übernehmen -
-  // canClaim ist dann false, ohne dass wir wüssten, ob der Code überhaupt einen offenen Übergabe-
-  // Gutschein trägt. "Abmelden und neu einlösen" wäre hier die falsche Empfehlung (verschenkt die
-  // Übernahme in die bestehende Chronik) - stattdessen der Hinweis, zuerst zurückzuwechseln.
-  const viewingGroupAsHousehold = hasHouseholdHome && family.id !== family.home.id
-
-  useEffect(() => {
-    let cancelled = false
-    if (!formattedCode || !canClaim) {
-      setHandover(null)
-      setVisit(null)
-      return undefined
-    }
-    api
-      .checkVoucher(formattedCode)
-      .then((result) => {
-        if (cancelled) return
-        setHandover(result.handover || null)
-        setVisit(result.besuch || null)
-      })
-      .catch(() => {
-        if (!cancelled) setHandover(null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [formattedCode, canClaim])
-
-  async function handleClaim() {
-    setError(null)
-    setClaiming(true)
-    try {
-      const { dogId } = await api.claimVoucher({ code: formattedCode, shelterMayRead })
-      onClaimed(dogId)
-    } catch (err) {
-      setError(err.message)
-      setClaiming(false)
-    }
-  }
-
-  if (visit) return <VisitClaimCard code={formattedCode} visit={visit} onConnected={onVisitConnected} />
-
-  if (handover) {
-    return (
-      <div className="card voucher-session-card">
-        {error && (
-          <div className="error-banner" role="alert">
-            {error}
-          </div>
-        )}
-        <p>
-          {t('Mit diesem Übergabe-Code zieht {animal} aus {shelter} zu euch – mit der ganzen Chronik.', {
-            animal: handover.animalName,
-            shelter: handover.shelterName
-          })}
-        </p>
-        <HandoverConsent shelterName={handover.shelterName} checked={shelterMayRead} onChange={setShelterMayRead} />
-        <Button type="button" block disabled={claiming} onClick={handleClaim}>
-          {claiming ? t('Übernehme …') : t('In „Mein Zuhause“ übernehmen')}
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="card voucher-session-card">
-      <p>
-        {t('Du bist angemeldet als')} <strong>{family.name}</strong>.
-      </p>
-      {viewingGroupAsHousehold && (
-        <p className="field-hint">{t('Wechselt zuerst zu „Mein Zuhause“ (über „Start“), um das Tier zu übernehmen.')}</p>
-      )}
-      <Button type="button" block onClick={onLogout}>
-        {t('Abmelden und Einladungscode einlösen')}
-      </Button>
-    </div>
-  )
-}
 
 // Phase W: "Tiere" bleibt markiert auf den Tierseiten und beim Nachwuchs (/wuerfe).
 function isAnimalsPath(pathname) {
@@ -531,206 +338,22 @@ export default function App() {
       navigate('/admin', { replace: true })
     }
   }
-
-  // Admin-Bereich hat einen eigenen Login, unabhängig vom Rudel-Login, immer im Standard-Auftritt
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    const printBatchId = pathname.match(ADMIN_PRINT_RE)?.[1]
-    const isPresent = ADMIN_PRESENT_RE.test(pathname)
-    const adminPage = ADMIN_BAUSTEINE_RE.test(pathname) ? <AdminBausteinePage /> : <AdminPage />
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          {printBatchId ? <AdminPrintPage batchId={printBatchId} /> : isPresent ? <AdminPresentPage /> : adminPage}
-        </Suspense>
-      </ThemeProvider>
-    )
+  // Seitenwahl oberhalb der App-Hülle (TopRoutes.jsx): erst die Seiten ohne Sitzung, dann - nach /me - Gutschein-Link,
+  // öffentliche Seiten und Login, zuletzt die Druckseiten.
+  const early = sessionlessRoute({ pathname, search, onDemoStart: handleDemoStart, onEnterAdminView: handleEnterAdminView })
+  if (early) return early
+  if (family === undefined) return <Splash />
+  const handlers = {
+    onLogin: handleLogin,
+    onVoucherLogin: handleVoucherLogin,
+    onLogout: handleLogout,
+    onClaimed: handleClaimed,
+    onVisitConnected: handleVisitConnected
   }
+  const topPage = publicRoute({ pathname, family, voucherCode, handlers }) ?? printRoute(pathname, family)
+  if (topPage) return topPage
 
-  // Demo-Einstieg des Präsentationsmodus (Phase 5 Task 5): unabhängig von einer laufenden Sitzung - die Seite
-  // ersetzt sie durch die Demo-Sitzung (handleDemoStart), wie /admin-ansicht/:id.
-  if (pathname === DEMO_START_PATH) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          <DemoStartPage search={search} onEntered={handleDemoStart} />
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  // Admin-Ansicht eines Bereichs (Phase 5 Task 5b): unabhängig von einer laufenden Sitzung - die Seite
-  // ersetzt sie durch die Nur-Lesen-Sitzung des Bereichs (handleEnterAdminView).
-  const adminViewId = pathname.match(ADMIN_VIEW_RE)?.[1]
-  if (adminViewId) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          <AdminViewStartPage familyId={adminViewId} onEntered={handleEnterAdminView} />
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  // Bilderrahmen auf einem anderen Gerät (z. B. Omas Tablet): unabhängig von jeder Sitzung, sofort ohne auf /me zu warten -
-  // die Seite holt ihre Fotos allein mit dem Token des Rahmen-Links (pages/RahmenPage.jsx).
-  if (pathname.replace(/\/+$/, '').toLowerCase() === RAHMEN_PATH) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          <RahmenPage />
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  if (family === undefined) {
-    return (
-      <ThemeProvider>
-        <div className="splash" aria-busy="true">
-          <ThemeMark size={72} />
-        </div>
-      </ThemeProvider>
-    )
-  }
-
-  // Öffentlicher Gutschein-Link (Karte, QR): /v#CODE. Mit bestehender Sitzung erst abmelden lassen –
-  // der Code bleibt dabei in voucherCode "im Speicher" und geht in die Login-Seite, sobald family null ist.
-  if (pathname === '/v') {
-    return (
-      <ThemeProvider>
-        {family ? (
-          <div className="login voucher-session">
-            <section className="login-panel">
-              <VoucherSessionCard
-                family={family}
-                code={voucherCode}
-                onLogout={handleLogout}
-                onClaimed={handleClaimed}
-                onVisitConnected={handleVisitConnected}
-              />
-            </section>
-          </div>
-        ) : (
-          <LoginEntry onLogin={handleVoucherLogin} initialMode="redeem" initialCode={voucherCode} />
-        )}
-      </ThemeProvider>
-    )
-  }
-
-  // Partner-Portal (/p/:slug), Steckbrief (/t/:slug, Phase T Task 5) und Partnerliste (/partner): öffentlich - ohne
-  // Sitzung wie /v je ein eigener früher Zweig mit dem schlanken öffentlichen Kopf. Feedback-Runde: angemeldet stehen sie
-  // unten in der normalen Hülle der App (ein Kopf, ein Fuß - nicht doppelt), ohne Demo-Hinweis (inApp).
-  const partnerSlug = pathname.match(PARTNER_SLUG_RE)?.[1]
-  const animalSlug = pathname.match(ANIMAL_SLUG_RE)?.[1]
-  const onPartnerList = pathname === PARTNER_LIST_PATH
-
-  if (!family && (partnerSlug || animalSlug || onPartnerList)) {
-    return (
-      <ThemeProvider>
-        {partnerSlug ? <PartnerPortalPage slug={partnerSlug} /> : animalSlug ? <SteckbriefPage slug={animalSlug} /> : <PartnersPage />}
-      </ThemeProvider>
-    )
-  }
-
-  // "Partner werden" (Phase 5 Task 4): öffentlich wie /partner. Die Demo-Knöpfe melden wie das Portal über
-  // handleVoucherLogin an (Familie setzen, zur Startroute des Demo-Partner-Bereichs - /profil).
-  if (pathname === PARTNER_INFO_PATH) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          <PartnerInfoPage onDemo={handleVoucherLogin} family={family} />
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  // Phase F: „So finanzieren wir uns“ - öffentlich wie Impressum/Datenschutz, mit oder ohne Sitzung.
-  if (pathname === FINANZIERUNG_PATH) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          <FinanzierungPage family={family} />
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  // „Als App aufs Handy“: öffentlich wie /finanzierung, mit oder ohne Sitzung.
-  if (pathname === APP_PATH) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          <AppPage family={family} />
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  // Präsentationen zum Durchklicken (/vorstellung, /netzwerk): öffentlich wie /app, mit oder ohne Sitzung.
-  if (pathname === VORSTELLUNG_PATH || pathname === NETZWERK_PATH) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          {pathname === NETZWERK_PATH ? <NetzwerkPage family={family} /> : <VorstellungPage family={family} />}
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  // Impressum/Datenschutz (Task 7): öffentlich, unabhängig vom Login-Status - wie /partner ein eigener
-  // früher Zweig statt einer Route im angemeldeten Bereich, damit sie auch ohne Sitzung erreichbar sind.
-  if (pathname === '/impressum' || pathname === '/datenschutz') {
-    return (
-      <ThemeProvider>
-        <LegalPage variant={pathname === '/impressum' ? 'impressum' : 'datenschutz'} family={family} />
-      </ThemeProvider>
-    )
-  }
-
-  if (!family) {
-    return (
-      <ThemeProvider>
-        <LoginEntry onLogin={handleLogin} />
-      </ThemeProvider>
-    )
-  }
-
-  // Druckseite der Partner (Phase 5 Task 4): ohne App-Hülle, damit die Bögen wie auf der Admin-Druckseite
-  // stehen. Nur Partner-Bereiche - jeder andere Bereich läuft unten in AreaRoutes und landet auf seiner Startseite.
-  const partnerPrintBatchId = pathname.match(PARTNER_PRINT_RE)?.[1]
-  if (partnerPrintBatchId && isPartnerArea(family)) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          <PartnerPrintPage batchId={partnerPrintBatchId} readOnly={isReadOnly(family)} demo={Boolean(family.isDemo)} />
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  // Tierheim-Startpaket: wie die Druckseiten ohne App-Hülle; andere Bereiche landen über AreaRoutes auf ihrer Startseite.
-  const startpaketDogId = pathname.match(STARTPAKET_RE)?.[1]
-  const vermisstDogId = family.art === 'zuhause' ? pathname.match(VERMISST_RE)?.[1] : null
-  const fotobuchDogId = pathname.match(FOTOBUCH_RE)?.[1]
-  if ((startpaketDogId && family.art === 'tierheim') || vermisstDogId || fotobuchDogId) {
-    return (
-      <ThemeProvider>
-        <Suspense fallback={<RouteFallback />}>
-          {fotobuchDogId ? <FotobuchPage dogId={fotobuchDogId} /> : vermisstDogId ? <VermisstPage dogId={vermisstDogId} family={family} /> : <StartpaketPage dogId={startpaketDogId} family={family} />}
-        </Suspense>
-      </ThemeProvider>
-    )
-  }
-
-  // Feedback-Runde: Portal, Steckbrief und Partnerliste gehören dem Partner bzw. allen - in der Hülle ohne Demo-Hinweis,
-  // Demo-Rundgang und "Bearbeiten | Kundensicht" (die gelten dem eigenen Bereich), sonst stünde all das darüber noch einmal.
-  const publicPage = partnerSlug ? (
-    <PartnerPortalPage slug={partnerSlug} inApp family={family} />
-  ) : animalSlug ? (
-    <SteckbriefPage slug={animalSlug} inApp />
-  ) : onPartnerList ? (
-    <PartnersPage inApp />
-  ) : null
+  const publicPage = inAppPublicPage(pathname, family)
   const onPublicPage = publicPage !== null
 
   return (

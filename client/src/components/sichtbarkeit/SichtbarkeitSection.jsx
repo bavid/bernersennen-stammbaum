@@ -11,6 +11,7 @@ import TiereAnsicht from './TiereAnsicht.jsx'
 import VerbindungenAnsicht from './VerbindungenAnsicht.jsx'
 import ErinnerungenAnsicht from './ErinnerungenAnsicht.jsx'
 import VorschauAnsicht from './VorschauAnsicht.jsx'
+import OeffentlichAnsicht from './OeffentlichAnsicht.jsx'
 import { useT } from '../../lib/i18n/index.js'
 import '../../styles/sichtbarkeit.css'
 
@@ -21,7 +22,8 @@ const LABELS = {
   tiere: 'Tiere',
   verbindungen: 'Familien & Gäste',
   erinnerungen: 'Erinnerungen',
-  vorschau: 'So sieht es …'
+  vorschau: 'So sieht es …',
+  oeffentlich: 'Öffentlich'
 }
 
 // Die Ansichten teilen sich EINEN Freigabe-Zustand (useShareMatrix) - ein Schalter unter „Tiere“ steht sofort auch unter
@@ -41,6 +43,7 @@ function Ansichten({ family, sicht, current, focusDogId, onFamilyChange, onSelec
       {current === 'verbindungen' && <VerbindungenAnsicht {...shared} />}
       {current === 'erinnerungen' && <ErinnerungenAnsicht {...shared} dogId={focusDogId} onSelectDog={(id) => onSelect('erinnerungen', id)} />}
       {current === 'vorschau' && <VorschauAnsicht {...shared} />}
+      {current === 'oeffentlich' && <OeffentlichAnsicht {...shared} />}
     </div>
   )
 }

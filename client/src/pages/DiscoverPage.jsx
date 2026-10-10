@@ -5,9 +5,12 @@ import LocationPicker from '../components/LocationPicker.jsx'
 import DiscoverPanel from '../components/DiscoverPanel.jsx'
 import DiscoverTabs from '../components/DiscoverTabs.jsx'
 import NearbySearch from '../components/nearby/NearbySearch.jsx'
+import RevierTab from '../components/revier/RevierTab.jsx'
+import useInstanzModus from '../hooks/useInstanzModus.js'
+import { isRudelInstanz } from '../lib/instanzModus.js'
 import useDiscoverTab from '../hooks/useDiscoverTab.js'
 import { normalizeDiscover } from '../lib/discover.js'
-import { MAP_TAB, discoverTabsFor, sectionCounts } from '../lib/discoverTabs.js'
+import { MAP_TAB, REVIER_TAB, discoverTabsFor, sectionCounts } from '../lib/discoverTabs.js'
 import { PreviewProvider } from '../lib/preview.js'
 import { readSetting, writeSetting } from '../lib/storage.js'
 import { t } from '../lib/i18n/index.js'
@@ -131,8 +134,11 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
   }
 
   const counts = data ? sectionCounts(data) : null
-  const tabs = discoverTabsFor({ preview }).map((entry) => ({ ...entry, label: t(entry.label) }))
-  const onMap = tab === MAP_TAB
+  // Phase M: „Mein Revier“ nicht in einer Rudel-Instanz (lib/instanzModus.js) - eigene Ansicht wie die Karte, ohne Ortswahl.
+  const rudel = isRudelInstanz(useInstanzModus())
+  const tabs = discoverTabsFor({ preview, revier: !rudel }).map((entry) => ({ ...entry, label: t(entry.label) }))
+  const onRevier = tab === REVIER_TAB && !rudel && !preview
+  const onMap = tab === MAP_TAB || onRevier
 
   return (
     <PreviewProvider value={preview}>
@@ -181,7 +187,8 @@ export default function DiscoverPage({ load, preview = false, initialTab }) {
           className="discover-chapters"
           aria-busy={(loading && !onMap) || undefined}
         >
-          {onMap && <NearbySearch plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} />}
+          {onMap && !onRevier && <NearbySearch plz={plz} radius={radius} onPlzChange={setPlz} onRadiusChange={setRadius} />}
+          {onRevier && <RevierTab plz={plz} onPlzChange={setPlz} />}
           {loading && !onMap && (
             <p className="muted" role="status" aria-busy="true">
               {t('Lädt …')}
