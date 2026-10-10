@@ -59,3 +59,12 @@
     padding-inline: var(--space-3);
   }
 }
+
+/* Einstellungen › Darstellung: die Sprache steht jetzt ganz oben - Linie darunter statt darüber. */
+.designer-language.is-first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}

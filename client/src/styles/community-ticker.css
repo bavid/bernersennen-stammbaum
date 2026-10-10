@@ -368,26 +368,33 @@ a.community-chip.is-hinweis:focus-visible {
   }
 }
 
-/* Handy: eine schlanke Zeile - Partner vorn, daneben die Reihe; der Titel „Mit dabei“ bleibt nur für Screenreader
-   (die Region trägt den Namen). Ohne Partner steht der Titel kleiner davor. */
+/* Handy: zwei ruhige Zeilen - oben der Partner des Monats über die volle Breite (Name ganz lesbar), darunter die
+   Zahlen als eigene Reihe mit dem Anhalten-Knopf. Der Titel „Mit dabei“ bleibt nur für Screenreader (die Region trägt
+   den Namen); ohne Partner steht er klein vor der Reihe. Die Zahlen-Karten werden schmaler (ohne Symbol-Kreis). */
 @media (max-width: 720px) {
   .community-ticker {
+    flex-wrap: wrap;
     gap: var(--space-2);
-    padding: 0.375rem var(--space-2) 0.375rem var(--space-3);
+    padding: var(--space-2) var(--space-3);
   }
 
   .community-hero {
-    max-width: 56%;
-    gap: var(--space-2);
-    padding-right: var(--space-2);
+    flex: 1 1 100%;
+    max-width: none;
+    min-width: 0;
+    gap: var(--space-3);
+    padding-right: var(--space-3);
   }
 
-  .community-hero > svg {
-    display: none;
+  .community-hero-text {
+    min-width: 0;
   }
 
   .community-hero-name {
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .community-hero ~ .community-ticker-title {
@@ -396,13 +403,31 @@ a.community-chip.is-hinweis:focus-visible {
 
   .community-ticker-title {
     padding-right: var(--space-2);
+    border-right: 0;
     font-size: var(--text-lg);
   }
 
-  .community-ticker-toggle {
-    min-width: 2.25rem;
+  .community-ticker-space {
+    flex: 1 1 0;
+    min-width: 0;
+    order: 0;
+  }
+
+  .community-chip {
     min-height: 2.25rem;
-    padding: 0;
+    padding: 0.2rem var(--space-3);
+  }
+
+  .community-chip-icon {
+    display: none;
+  }
+
+  .community-chip-value {
+    font-size: var(--text-base);
+  }
+
+  .community-ticker-toggle {
+    margin-left: 0;
   }
 }
 

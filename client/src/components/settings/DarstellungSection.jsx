@@ -55,6 +55,14 @@ export default function DarstellungSection({ family, onFamilyChange }) {
       </h2>
       <DesignPreview />
       <div className="designer-controls">
+        {/* Sprache zuerst: nach der Anmeldung steht sie nur hier (Kopf ohne Sprachwahl), deshalb gut sichtbar oben. */}
+        <div className="designer-language is-first">
+          <span className="field-label" id="language-label">
+            Sprache / Language
+          </span>
+          <LanguageSwitch labelledBy="language-label" />
+          <p className="field-hint">{t('settings.language.hint')}</p>
+        </div>
         <DesignChoice
           name="palette"
           legend={t('settings.design.palette')}
@@ -106,13 +114,6 @@ export default function DarstellungSection({ family, onFamilyChange }) {
         <p className="visually-hidden" aria-live="polite">
           {saved}
         </p>
-        <div className="designer-language">
-          <span className="field-label" id="language-label">
-            Sprache / Language
-          </span>
-          <LanguageSwitch labelledBy="language-label" />
-          <p className="field-hint">{t('settings.language.hint')}</p>
-        </div>
       </div>
     </section>
   )
