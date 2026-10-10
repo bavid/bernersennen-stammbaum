@@ -327,6 +327,16 @@
     padding: 0;
   }
 
+  /* Ohne das stünde vor dem ersten Bogen eine leere Seite: der Wechsel zur benannten Seite „voucher“ bricht sonst schon
+     hinter der App-Hülle um. Gilt für alle Druckseiten mit .print-page (Gutscheine, Startpaket, Suchplakat). */
+  body:has(.print-page),
+  body:has(.print-page) > #root,
+  .print-page,
+  .print-page .print-main,
+  .print-page .voucher-sheets {
+    page: voucher;
+  }
+
   /* Ein Bogen je Blatt: 210 mm breit, 10 mm Innenabstand, knapp unter 297 mm hoch - ein Hauch Luft, damit
      Rundungen keine leere Seite hinter jedem Bogen erzeugen. */
   .voucher-sheet {
