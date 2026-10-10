@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { act } from 'react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ wwh: vi.fn(), wwhDecideCheckin: vi.fn(), wwhDecidePin: vi.fn(), wwhRemoveCheckin: vi.fn() }))
@@ -57,5 +58,17 @@ describe('WirWarenHierPartnerListe', () => {
     mocks.wwh.mockResolvedValue({ anmeldungen: [], erinnerungen: [] })
     const container = await renderUi(<WirWarenHierPartnerListe />)
     expect(container.textContent).toContain('Noch keine Anmeldungen.')
+  })
+
+  test('Antwort nach dem Verlassen wird verworfen (kein Zähler, kein Fehler)', async () => {
+    let resolve
+    mocks.wwh.mockReturnValue(new Promise((done) => {
+      resolve = done
+    }))
+    const onCount = vi.fn()
+    await renderUi(<WirWarenHierPartnerListe onCount={onCount} />)
+    cleanupUi()
+    await act(async () => resolve(overview))
+    expect(onCount).not.toHaveBeenCalled()
   })
 })

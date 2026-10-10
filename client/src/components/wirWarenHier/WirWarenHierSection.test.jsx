@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { act, useState } from 'react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -132,5 +133,80 @@ describe('WirWarenHierSection – Demo und Englisch', () => {
     expect(container.querySelector('h2').textContent).toBe('We were here')
     expect(container.textContent).toContain('Waiting for Hundeschule Pfotenglück to approve')
     expect(container.textContent).toContain('Once the place has approved you, you will see here who else was there.')
+  })
+})
+
+function deferred() {
+  let resolve
+  const promise = new Promise((done) => {
+    resolve = done
+  })
+  return { promise, resolve }
+}
+
+describe('WirWarenHierSection – Laden, Zuordnung, Fokus', () => {
+  test('Neuladen nach erfolgreicher Aktion scheitert: Ansicht bleibt, nur der Fehler kommt dazu', async () => {
+    setup({ eigene: [frei] })
+    const container = await renderUi(<WirWarenHierSection partner={partner} />)
+    mocks.wwhSetZeigeMich.mockResolvedValue({ id: 1, zeigeMich: true })
+    mocks.wwhOrt.mockRejectedValue(Object.assign(new Error('Fehler 500'), { status: 500 }))
+    await click(container.querySelector('input[role="switch"]'))
+    expect(container.querySelector('[role="alert"]')).toBeTruthy()
+    expect(container.querySelector('input[role="switch"]')).toBeTruthy()
+    expect(container.textContent).toContain('Benno')
+  })
+
+  test('überholte Antwort eines früheren Ortes wird verworfen', async () => {
+    const slow = deferred()
+    mocks.listDogs.mockResolvedValue(dogs)
+    mocks.wwhKontaktOffen.mockResolvedValue({ an: [], von: [] })
+    mocks.wwhOrt.mockImplementation((id) =>
+      id === 7 ? slow.promise : Promise.resolve({ ort: { id: 8, name: 'Salon Flocke' }, eigene: [], andere: [] })
+    )
+    function Harness() {
+      const [current, setCurrent] = useState(partner)
+      return (
+        <>
+          <button type="button" onClick={() => setCurrent({ id: 8, name: 'Salon Flocke' })}>
+            wechseln
+          </button>
+          <WirWarenHierSection partner={current} />
+        </>
+      )
+    }
+    const container = await renderUi(<Harness />)
+    await click(button(container, 'wechseln'))
+    await act(async () => slow.resolve({ ort: ORT, eigene: [frei], andere: [] }))
+    expect(container.textContent).toContain('Salon Flocke')
+    expect(container.textContent).not.toContain('Hundeschule Pfotenglück')
+  })
+
+  test('Wünsche werden über Ids zugeordnet, nicht über Namen', async () => {
+    const namensvetter = { ...pepper, checkinId: 41 }
+    setup({
+      eigene: [frei],
+      andere: [pepper, namensvetter],
+      wishes: {
+        an: [{ id: 5, tierName: 'Lotte', eigenesTierName: 'Benno', ortName: 'Hundeschule Pfotenglück', partnerId: 8, checkinId: 1 }],
+        von: [{ id: 4, tierName: 'Pepper', eigenesTierName: 'Benno', ortName: 'Hundeschule Pfotenglück', partnerId: 7, checkinId: 40 }]
+      }
+    })
+    const container = await renderUi(<WirWarenHierSection partner={partner} />)
+    const cards = [...container.querySelectorAll('.wwh-tier')]
+    expect(cards[0].textContent).toContain('Angefragt')
+    expect(button(cards[1], 'Kontakt zu Pepper anfragen')).toBeTruthy()
+    expect(container.textContent).not.toContain('Lotte')
+  })
+
+  test('nach „Abmelden“ geht der Fokus auf die Überschrift', async () => {
+    setup({ eigene: [frei] })
+    const container = await renderUi(<WirWarenHierSection partner={partner} />)
+    mocks.wwhWithdraw.mockResolvedValue({})
+    mocks.wwhOrt.mockResolvedValue({ ort: ORT, eigene: [], andere: [] })
+    const abmelden = button(container, 'Benno hier abmelden')
+    await click(abmelden)
+    await click(abmelden)
+    expect(mocks.wwhWithdraw).toHaveBeenCalledWith(1)
+    expect(document.activeElement).toBe(container.querySelector('#wwh-title'))
   })
 })

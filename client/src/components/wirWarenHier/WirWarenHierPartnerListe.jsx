@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../../api'
 import ConfirmButton from '../ConfirmButton.jsx'
 import Icon from '../Icon.jsx'
@@ -106,20 +106,32 @@ function usePartnerWwh(onCount) {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState(null)
 
+  const alive = useRef(true)
+  const seq = useRef(0) // je Ladevorgang eine Nummer: eine überholte Antwort wird verworfen
+
   const load = useCallback(async () => {
+    const id = ++seq.current
+    const current = () => alive.current && id === seq.current
     try {
       const result = await api.partnerArea.wwh()
+      if (!current()) return
       const next = { anmeldungen: listOf(result?.anmeldungen), erinnerungen: listOf(result?.erinnerungen) }
       setData(next)
       onCount?.(openCount(next))
     } catch (err) {
-      setData((current) => current ?? EMPTY)
+      if (!current()) return
+      setData((cur) => cur ?? EMPTY)
       setError(wwhErrorText(err))
     }
   }, [onCount])
 
   useEffect(() => {
+    alive.current = true
     load()
+    return () => {
+      alive.current = false
+      seq.current += 1
+    }
   }, [load])
 
   async function run(action, success) {
@@ -128,12 +140,13 @@ function usePartnerWwh(onCount) {
     setNotice('')
     try {
       await action()
+      if (!alive.current) return
       setNotice(success)
       await load()
     } catch (err) {
-      setError(wwhErrorText(err))
+      if (alive.current) setError(wwhErrorText(err))
     } finally {
-      setBusy(false)
+      if (alive.current) setBusy(false)
     }
   }
 

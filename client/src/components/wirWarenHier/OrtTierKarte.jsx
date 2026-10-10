@@ -51,16 +51,33 @@ function KontaktDialog({ open, tier, eigeneTiere, onClose, onSend }) {
 }
 
 // Ein Tier einer anderen Familie am selben Ort: nur Name, Tierart, Foto und die freigegebenen angehefteten Erinnerungen
-// (mehr liefert der Server nicht). „Kontakt anfragen“ öffnet den Dialog; danach kehrt der Fokus zum Knopf zurück.
+// (mehr liefert der Server nicht). „Kontakt anfragen“ öffnet den Dialog; danach kehrt der Fokus zum Knopf zurück -
+// war die Anfrage erfolgreich, verschwindet der Knopf und der Fokus geht auf „Angefragt“.
 export default function OrtTierKarte({ tier, eigeneTiere, angefragt = false, disabled = false, onRequest }) {
   const [open, setOpen] = useState(false)
   const trigger = useRef(null)
+  const asked = useRef(null)
   const wasOpen = useRef(false)
+  const sent = useRef(false)
 
   useEffect(() => {
-    if (wasOpen.current && !open) trigger.current?.focus()
-    wasOpen.current = open
-  }, [open])
+    if (open) {
+      wasOpen.current = true
+      sent.current = false
+      return
+    }
+    if (!wasOpen.current) return
+    if (angefragt) asked.current?.focus()
+    else trigger.current?.focus()
+    // Nach erfolgreicher Anfrage warten, bis „Angefragt“ erscheint (das Neuladen kann nach dem Schließen ankommen).
+    if (angefragt || !sent.current) wasOpen.current = false
+  }, [open, angefragt])
+
+  async function send(...args) {
+    const ok = await onRequest(...args)
+    sent.current = Boolean(ok)
+    return ok
+  }
 
   return (
     <li className="wwh-tier card">
@@ -87,7 +104,7 @@ export default function OrtTierKarte({ tier, eigeneTiere, angefragt = false, dis
         </ul>
       )}
       {angefragt ? (
-        <p className="wwh-tier-asked">
+        <p ref={asked} className="wwh-tier-asked" tabIndex={-1}>
           <Icon name="check" />
           {t(WWH.angefragt)}
         </p>
@@ -104,7 +121,7 @@ export default function OrtTierKarte({ tier, eigeneTiere, angefragt = false, dis
           {t(WWH.kontaktAnfragen)}
         </button>
       )}
-      <KontaktDialog open={open} tier={tier} eigeneTiere={eigeneTiere} onClose={() => setOpen(false)} onSend={onRequest} />
+      <KontaktDialog open={open} tier={tier} eigeneTiere={eigeneTiere} onClose={() => setOpen(false)} onSend={send} />
     </li>
   )
 }

@@ -75,7 +75,7 @@ export default function WirWarenHierInfos({ dog }) {
             <Ort
               key={ort.id}
               ort={ort}
-              waiting={wishes.filter((wish) => wish.ortName === ort.partnerName && wish.eigenesTierName === dog.name).length}
+              waiting={wishes.filter((wish) => wish.checkinId === ort.id).length}
             />
           ))}
         </ul>

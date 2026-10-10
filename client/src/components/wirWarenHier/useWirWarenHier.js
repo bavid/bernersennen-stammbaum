@@ -4,14 +4,20 @@ import { WWH, wwhErrorText } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
 
 const NO_WISHES = Object.freeze({ an: [], von: [] })
+const TITLE_ID = 'wwh-title'
+
+// Fokus auf die Abschnittsüberschrift (tabIndex -1), wenn der Knopf einer Aktion danach verschwindet.
+export function focusWwhTitle() {
+  document.getElementById(TITLE_ID)?.focus()
+}
 
 function listOf(value) {
   return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object') : []
 }
 
-// Kontaktwünsche nur dieses Ortes (die Antwort nennt den Ort beim Namen, nie die Id).
-function wishesAt(data, ortName) {
-  const at = (list) => listOf(list).filter((wish) => wish.ortName === ortName)
+// Kontaktwünsche nur dieses Ortes - zugeordnet über die Ort-Id (Namen können sich doppeln).
+function wishesAt(data, partnerId) {
+  const at = (list) => listOf(list).filter((wish) => wish.partnerId === partnerId)
   return { an: at(data?.an), von: at(data?.von) }
 }
 
@@ -26,21 +32,25 @@ export default function useWirWarenHier(partnerId) {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState(null)
   const alive = useRef(true)
+  const seq = useRef(0) // je Ladevorgang eine Nummer: eine überholte Antwort wird verworfen
 
   const load = useCallback(async () => {
+    const id = ++seq.current
+    const current = () => alive.current && id === seq.current
     try {
       const [ort, ownDogs, open] = await Promise.all([
         api.wwhOrt(partnerId),
         api.listDogs().catch(() => []),
         api.wwhKontaktOffen().catch(() => NO_WISHES)
       ])
-      if (!alive.current) return
+      if (!current()) return
       setView({ ort: ort.ort, eigene: listOf(ort.eigene), andere: listOf(ort.andere) })
       setDogs(listOf(ownDogs).filter((dog) => dog.can_edit))
-      setWishes(wishesAt(open, ort.ort?.name))
+      setWishes(wishesAt(open, Number(partnerId)))
     } catch (err) {
-      if (!alive.current) return
-      setView(null)
+      if (!current()) return
+      // Scheitert nur das Neuladen nach einer Aktion, bleibt die geladene Ansicht stehen - nur der Fehler kommt dazu.
+      setView((cur) => (cur === undefined ? null : cur))
       setError(err?.status === 404 ? t(WWH.ortFehlt) : wwhErrorText(err))
     }
   }, [partnerId])
@@ -50,6 +60,7 @@ export default function useWirWarenHier(partnerId) {
     load()
     return () => {
       alive.current = false
+      seq.current += 1
     }
   }, [load])
 

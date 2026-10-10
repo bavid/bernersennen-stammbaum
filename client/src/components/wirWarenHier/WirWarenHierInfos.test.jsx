@@ -21,7 +21,7 @@ afterEach(() => {
 describe('WirWarenHierInfos', () => {
   test('Orte des Tiers mit Link, Stand, „hier gezeigt“ und wartenden Kontaktwünschen', async () => {
     mocks.wwhCheckins.mockResolvedValue(checkins)
-    mocks.wwhKontaktOffen.mockResolvedValue({ an: [{ id: 3, tierName: 'Pepper', eigenesTierName: 'Benno', ortName: 'Hundeschule Pfotenglück' }], von: [] })
+    mocks.wwhKontaktOffen.mockResolvedValue({ an: [{ id: 3, tierName: 'Pepper', eigenesTierName: 'Benno', ortName: 'Hundeschule Pfotenglück', partnerId: 7, checkinId: 1 }, { id: 4, tierName: 'Lotte', eigenesTierName: 'Benno', ortName: 'Hundeschule Pfotenglück', partnerId: 7, checkinId: 3 }], von: [] })
     const container = await renderUi(<WirWarenHierInfos dog={{ id: 11, name: 'Benno' }} />)
 
     expect(container.querySelector('h2').textContent).toBe('Orte, an denen wir waren')

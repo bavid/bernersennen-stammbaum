@@ -5,11 +5,12 @@ import ShareSwitch from '../shares/ShareSwitch.jsx'
 import { WWH, checkinStatusText } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
 import ErinnerungAnheften from './ErinnerungAnheften.jsx'
+import { focusWwhTitle } from './useWirWarenHier.js'
 
 const STATUS_ICON = { bestaetigt: 'check', abgelehnt: 'close', offen: 'clock' }
 
 // Eine eigene Anmeldung am Ort: Stand (wartet / freigegeben / nicht freigegeben), der Schalter „Hier zeigen“ samt Satz,
-// was andere dann sehen, die angehefteten Erinnerungen und „Abmelden“ (zweistufig). readOnly: Demo/Admin-Ansicht;
+// was andere dann sehen, die angehefteten Erinnerungen und „Abmelden“ (zweistufig; danach Fokus auf die Überschrift). readOnly: Demo/Admin-Ansicht;
 // busy: eine Änderung läuft (der Schalter bleibt fokussierbar, ShareSwitch).
 export default function EigeneAnmeldung({ checkin, ortName, readOnly, busy, actions }) {
   const nameId = useId()
@@ -46,7 +47,7 @@ export default function EigeneAnmeldung({ checkin, ortName, readOnly, busy, acti
           icon="close"
           className="btn-compact"
           disabled={readOnly || busy}
-          onConfirm={() => actions.withdraw(checkin)}
+          onConfirm={async () => (await actions.withdraw(checkin)) && focusWwhTitle()}
         />
       </div>
     </li>

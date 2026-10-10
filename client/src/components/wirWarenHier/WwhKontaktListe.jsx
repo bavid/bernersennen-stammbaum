@@ -4,6 +4,7 @@ import Icon from '../Icon.jsx'
 import Modal from '../Modal.jsx'
 import { WWH } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
+import { focusWwhTitle } from './useWirWarenHier.js'
 
 function Mark({ fotoUrl }) {
   if (fotoUrl) return <img className="wwh-wish-photo" src={fotoUrl} alt="" width="40" height="40" loading="lazy" />
@@ -19,14 +20,23 @@ function Eingehend({ wish, disabled, actions }) {
   const [open, setOpen] = useState(false)
   const trigger = useRef(null)
   const wasOpen = useRef(false)
+  const decided = useRef(false)
 
   useEffect(() => {
-    if (wasOpen.current && !open) trigger.current?.focus()
+    if (wasOpen.current && !open && !decided.current) trigger.current?.focus()
     wasOpen.current = open
   }, [open])
 
+  // Nach Annehmen/Ablehnen verschwindet der Wunsch samt Knöpfen: Fokus auf die Abschnittsüberschrift.
   async function accept() {
-    if (await actions.accept(wish)) setOpen(false)
+    if (!(await actions.accept(wish))) return
+    decided.current = true
+    setOpen(false)
+    focusWwhTitle()
+  }
+
+  async function reject() {
+    if (await actions.reject(wish)) focusWwhTitle()
   }
 
   return (
@@ -37,7 +47,7 @@ function Eingehend({ wish, disabled, actions }) {
         <button ref={trigger} type="button" className="btn btn-primary btn-compact" disabled={disabled} onClick={() => setOpen(true)}>
           {t(WWH.annehmen)}
         </button>
-        <button type="button" className="btn btn-ghost btn-compact" disabled={disabled} onClick={() => actions.reject(wish)}>
+        <button type="button" className="btn btn-ghost btn-compact" disabled={disabled} onClick={reject}>
           {t(WWH.ablehnen)}
         </button>
       </div>
@@ -70,7 +80,7 @@ function Ausgehend({ wish, disabled, actions }) {
           icon="close"
           className="btn-compact"
           disabled={disabled}
-          onConfirm={() => actions.withdraw(wish)}
+          onConfirm={async () => (await actions.withdraw(wish)) && focusWwhTitle()}
         />
       </div>
     </li>

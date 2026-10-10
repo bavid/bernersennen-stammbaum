@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from 'react'
+import { act, useState } from 'react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import OrtTierKarte from './OrtTierKarte.jsx'
 import { button, choose, cleanupUi, click, renderUi } from './testUtils.jsx'
@@ -53,5 +53,22 @@ describe('OrtTierKarte', () => {
     const container = await renderUi(<OrtTierKarte tier={pepper} eigeneTiere={eigene} angefragt onRequest={vi.fn()} />)
     expect(button(container, 'Kontakt zu Pepper anfragen')).toBeUndefined()
     expect(container.textContent).toContain('Angefragt')
+  })
+
+  test('nach erfolgreicher Anfrage: Fokus auf „Angefragt“', async () => {
+    function Harness() {
+      const [asked, setAsked] = useState(false)
+      const onRequest = async () => {
+        setAsked(true)
+        return true
+      }
+      return <OrtTierKarte tier={pepper} eigeneTiere={eigene} angefragt={asked} onRequest={onRequest} />
+    }
+    const container = await renderUi(<Harness />)
+    await click(button(container, 'Kontakt zu Pepper anfragen'))
+    await click(button(container.querySelector('dialog'), 'Anfrage senden'))
+    const asked = container.querySelector('.wwh-tier-asked')
+    expect(asked.getAttribute('tabindex')).toBe('-1')
+    expect(document.activeElement).toBe(asked)
   })
 })

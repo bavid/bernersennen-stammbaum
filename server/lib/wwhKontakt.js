@@ -90,10 +90,14 @@ const incomingStmt = db.prepare('SELECT * FROM wwh_kontakt WHERE id = ? AND an_f
 const decideStmt = db.prepare("UPDATE wwh_kontakt SET status = ?, entschieden_at = datetime('now') WHERE id = ?")
 const withdrawStmt = db.prepare("DELETE FROM wwh_kontakt WHERE id = ? AND von_family_id = ? AND status = 'offen'")
 
-// Liste: nur Tiername/Tierart/Foto, der eigene Tiername und der Ort - nie Familien-Namen oder -Ids.
+// Liste: nur Tiername/Tierart/Foto, der eigene Tiername und der Ort - nie Familien-Namen oder -Ids. partnerId und
+// checkinId (die Ziel-Anmeldung) sind reine Ids, damit der Client Wünsche Ort und Tierkarte sicher zuordnet.
 const listSql = (mine, other) => `
   SELECT k.id, od.name AS tierName, od.tierart, od.foto_url AS fotoUrl, md.name AS eigenesTierName,
-    p.name AS ortName, k.created_at AS createdAt
+    p.name AS ortName, k.partner_id AS partnerId,
+    (SELECT c.id FROM wwh_checkins c
+     WHERE c.partner_id = k.partner_id AND c.family_id = k.an_family_id AND c.dog_id = k.an_dog_id LIMIT 1) AS checkinId,
+    k.created_at AS createdAt
   FROM wwh_kontakt k
   JOIN dogs od ON od.id = k.${other}_dog_id
   JOIN dogs md ON md.id = k.${mine}_dog_id

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { api } from '../../api'
 import Icon from '../Icon.jsx'
 import Modal from '../Modal.jsx'
@@ -19,6 +19,7 @@ function AuswahlDialog({ open, checkin, onClose, onPin }) {
   const [entries, setEntries] = useState(null)
   const [error, setError] = useState(null)
   const [choice, setChoice] = useState(null)
+  const groupName = useId()
 
   useEffect(() => {
     if (!open) return undefined
@@ -58,7 +59,7 @@ function AuswahlDialog({ open, checkin, onClose, onPin }) {
             <legend>{t(WWH.erinnerungWaehlen)}</legend>
             {options.map((entry) => (
               <label key={entry.id} className="wwh-choice">
-                <input type="radio" name="wwh-erinnerung" checked={choice === entry.id} onChange={() => setChoice(entry.id)} />
+                <input type="radio" name={groupName} checked={choice === entry.id} onChange={() => setChoice(entry.id)} />
                 <span className="wwh-choice-title">{entry.titel}</span>
                 <span className="wwh-choice-date">{formatDateLong(entry.datum)}</span>
               </label>

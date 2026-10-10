@@ -8,7 +8,7 @@ const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = 
 const dataDir = useTempDataDir('wwh-kontakt', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300', WWH_RATE_LIMIT: '300', WWH_HOME_RATE_LIMIT: '300' })
 
 const API = '/api/wir-waren-hier'
-const KONTAKT_KEYS = ['createdAt', 'eigenesTierName', 'fotoUrl', 'id', 'ortName', 'tierName', 'tierart']
+const KONTAKT_KEYS = ['checkinId', 'createdAt', 'eigenesTierName', 'fotoUrl', 'id', 'ortName', 'partnerId', 'tierName', 'tierart']
 const ENTRY = { autorName: 'Wir', datum: '2026-09-12', titel: 'Am Bach', text: 'Viel geplanscht.' }
 
 test('Wir waren hier: Kontaktwunsch und Besuch bei Zusage', async (t) => {
@@ -140,6 +140,10 @@ test('Wir waren hier: Kontaktwunsch und Besuch bei Zusage', async (t) => {
     const outgoing = (await get(`${API}/kontakt/offen`, benno.cookie)).data
     assert.deepEqual(outgoing.an, [])
     assert.equal(outgoing.von[0].tierName, 'Flocke')
+    assert.deepEqual(Object.keys(outgoing.von[0]).sort(), KONTAKT_KEYS)
+    assert.equal(outgoing.von[0].partnerId, ort)
+    assert.equal(outgoing.von[0].checkinId, checkinFlocke)
+    assert.equal(incoming.data.an[0].checkinId, checkinFlocke)
     const raw = JSON.stringify([incoming.data, outgoing])
     for (const secret of [benno.name, flocke.name, 'family', 'email']) assert.ok(!raw.includes(secret), secret)
   })

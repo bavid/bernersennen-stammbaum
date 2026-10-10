@@ -56,7 +56,7 @@ function Andere({ view, wishes, disabled, onRequest }) {
             key={tier.checkinId}
             tier={tier}
             eigeneTiere={eigeneTiere}
-            angefragt={wishes.von.some((wish) => wish.tierName === tier.tierName)}
+            angefragt={wishes.von.some((wish) => wish.checkinId === tier.checkinId)}
             disabled={disabled}
             onRequest={onRequest}
           />

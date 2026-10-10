@@ -46,4 +46,24 @@ describe('WwhKontaktListe', () => {
     const container = await renderUi(<WwhKontaktListe wishes={{ an: [], von: [] }} actions={{}} />)
     expect(container.textContent).toBe('')
   })
+
+  test('nach Annehmen bzw. Ablehnen: Fokus auf die Abschnittsüberschrift', async () => {
+    const actions = { accept: vi.fn().mockResolvedValue(true), reject: vi.fn().mockResolvedValue(true), withdraw: vi.fn() }
+    const container = await renderUi(
+      <>
+        <h2 id="wwh-title" tabIndex={-1}>
+          Wir waren hier
+        </h2>
+        <WwhKontaktListe wishes={wishes} actions={actions} />
+      </>
+    )
+    const title = container.querySelector('#wwh-title')
+    await click(button(container, 'Annehmen'))
+    await click(button(container.querySelector('dialog'), 'Ja, annehmen'))
+    expect(document.activeElement).toBe(title)
+
+    button(container, 'Ablehnen').focus()
+    await click(button(container, 'Ablehnen'))
+    expect(document.activeElement).toBe(title)
+  })
 })
