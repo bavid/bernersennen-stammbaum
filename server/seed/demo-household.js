@@ -100,7 +100,7 @@ const TIMELINE = [
     autor: 'Familie Nissen',
     titel: 'Balu wird grau',
     text: 'Die Schnauze wird weiß, der Blick bleibt derselbe. Zehn Jahre alt und immer noch der Erste an der Tür.',
-    fotos: ['senior.jpg']
+    fotos: ['senior.jpg', 'balu.jpg']
   },
   {
     dog: 'balu',
@@ -133,8 +133,8 @@ const TIMELINE = [
     titel: 'Neuer Lieblingsplatz',
     text: 'Mira hat das Fensterbrett im Wohnzimmer für sich entdeckt – Sonnenplatz reserviert.',
     hoursAgo: 40,
-    // B+ Familienalbum: Fotos im Feed auf Start (Polaroid)
-    fotos: ['minka.jpg']
+    // B+ Familienalbum: Fotos im Feed auf Start (Polaroid); mehrere Fotos zum Durchwischen in der Großansicht
+    fotos: ['minka.jpg', 'tierheim-sunny.jpg', 'katzenhaus.jpg']
   },
   // Zwei frühe Einträge aus Neles Zeit im Tierheim Sonnenhang (Phase T Task 6): lib/demoPack.js
   // verknüpft sie beim Anlegen mit herkunft_family_id = dem Demo-Tierheim (dieselbe Spalte, die auch
@@ -169,7 +169,7 @@ const TIMELINE = [
     autor: 'Familie Nissen',
     titel: 'Besuch von Nachbars Hoppel',
     text: 'Hoppel von nebenan war zum ersten Mal da – nach zehn Minuten lagen die beiden nebeneinander im Gras.',
-    fotos: ['hoppel.jpg']
+    fotos: ['hoppel.jpg', 'flocke.jpg']
   },
   {
     dog: 'nele',
@@ -201,7 +201,8 @@ const TIMELINE = [
     datum: '2021-06-12',
     autor: 'Familie Nissen',
     titel: 'Nele zieht ein – die ersten Tage',
-    text: 'Aus dem Tierheim Sonnenhang zu uns geholt. Die ersten Tage war sie schüchtern, jetzt traut sie sich schon aufs Sofa.'
+    text: 'Aus dem Tierheim Sonnenhang zu uns geholt. Die ersten Tage war sie schüchtern, jetzt traut sie sich schon aufs Sofa.',
+    fotos: ['nele.jpg', 'wanderung.jpg', 'see.jpg']
   },
   {
     dog: 'nele',

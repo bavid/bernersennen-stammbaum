@@ -310,4 +310,30 @@ test('public demo pack: Rudel + Zuhause, replaced safely together', async (t) =>
     const realDogs = await call(base, '/api/dogs', { cookie: real.cookie })
     assert.deepEqual(realDogs.data.map((d) => d.name), ['Bleibt'], 'echtes Rudel bleibt unangetastet')
   })
+
+  await t.test('mehrere Fotos je Erinnerung (Durchwischen in der Großansicht) - auch nach zweimal Auffrischen genau einmal', () => {
+    const path = require('node:path')
+    const expected = [
+      ['Nele', 'Nele zieht ein – die ersten Tage', 3],
+      ['Mira', 'Neuer Lieblingsplatz', 3],
+      ['Flocke', 'Besuch von Nachbars Hoppel', 2],
+      ['Balu', 'Balu wird grau', 2],
+      ['Juna', 'Junas Wurf ist da', 4],
+      ['Kira', 'Geburtstagsrunde an der Aare', 3],
+      ['Finn', 'Finn im Tiefschnee', 2],
+      ['Frieda', 'Gassi am Fluss', 2]
+    ]
+    const stmt = db.prepare(
+      `SELECT te.foto_urls FROM timeline_entries te JOIN dogs d ON d.id = te.dog_id JOIN families f ON f.id = te.family_id
+       WHERE f.is_demo = 1 AND (d.name = ? OR d.name LIKE ? || ' %') AND te.titel = ?`
+    )
+    for (const [name, titel, count] of expected) {
+      const rows = stmt.all(name, name, titel)
+      assert.equal(rows.length, 1, `${name}: „${titel}“ genau einmal`)
+      const urls = JSON.parse(rows[0].foto_urls)
+      assert.equal(urls.length, count, `${name}: „${titel}“ hat ${count} Fotos`)
+      assert.equal(new Set(urls).size, count, `${name}: „${titel}“ ohne doppelte Datei`)
+      for (const url of urls) assert.ok(fs.existsSync(path.join(uploadDir, path.basename(url))), `${url} liegt im Upload-Ordner`)
+    }
+  })
 })

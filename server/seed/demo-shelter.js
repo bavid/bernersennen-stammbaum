@@ -115,7 +115,7 @@ const TIMELINE = [
     text: 'Erster großer Spaziergang außerhalb des Geländes – Frieda war ruhig an der Leine und hat sich über jede Ente gefreut.',
     kategorie: 'gassi',
     isPublic: true,
-    fotos: ['tierheim-pepper-gassi.jpg'],
+    fotos: ['tierheim-pepper-gassi.jpg', 'tierheim-pepper.jpg'],
     hoursAgo: 60
   },
   {

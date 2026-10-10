@@ -261,7 +261,7 @@ const TIMELINE = [
     comments: [{ autor: 'Anna', hoursAgo: 10, text: 'Cora hätte das Brett schon längst versenkt 😂' }] },
   { dog: 'gustav', datum: '2022-07-30', autor: 'Familie Brunner', titel: 'Alpwanderung Gantrisch', fotos: ['wanderung.jpg'] },
   { dog: 'juna', datum: '2023-09-16', autor: 'Familie Brunner', titel: 'Agility-Schnupperkurs', text: 'Juna: 12 Hürden in Bestzeit. Gustav: hat sich unter die Wippe gelegt.' },
-  { dog: 'juna', datum: '2025-03-21', autor: 'Familie Brunner', titel: 'Junas Wurf ist da', text: 'Fünf Welpen, alle gesund. Paula und Moritz bleiben bei uns.', fotos: ['welpen.jpg'] },
+  { dog: 'juna', datum: '2025-03-21', autor: 'Familie Brunner', titel: 'Junas Wurf ist da', text: 'Fünf Welpen, alle gesund. Paula und Moritz bleiben bei uns.', fotos: ['welpen.jpg', 'welpen-mama.jpg', 'welpen-zwei.jpg', 'juna.jpg'] },
   { dog: 'hermes', datum: '2024-03-03', autor: 'Anna', titel: 'Welpenschule bestanden', hoursAgo: 26, text: 'Sitz und Platz klappen. Bleib… arbeiten wir noch dran.',
     comments: [
       { autor: 'Familie Keller', hoursAgo: 8, text: 'Bravo Hermes! Finn hat „Bleib“ bis heute nicht verstanden.' },
@@ -284,8 +284,8 @@ TIMELINE.push(
   { dog: 'ida', datum: '2023-04-22', autor: 'Anna', titel: 'Erste Nacht im Garten', text: 'Ida hat die Sterne angebellt. Einzeln.', fotos: ['garten-ida.jpg'] },
   { dog: 'kira', datum: '2023-04-20', autor: 'Lea', titel: 'Einzug in Bern', text: 'Die Autofahrt verschlafen, die Wohnung sofort erobert.', fotos: ['kira-einzug.jpg'] },
   { dog: 'hermes', datum: '2024-02-14', autor: 'Anna', titel: 'Ein Jahr alt!', text: 'Geburtstagskuchen aus Leberwurst und Haferflocken.', fotos: ['hermes.jpg'] },
-  { dog: 'kira', datum: '2024-02-18', autor: 'Lea', titel: 'Geburtstagsrunde an der Aare', fotos: ['kira.jpg'] },
-  { dog: 'finn', datum: '2021-02-14', autor: 'Familie Keller', titel: 'Finn im Tiefschnee', fotos: ['finn.jpg'] },
+  { dog: 'kira', datum: '2024-02-18', autor: 'Lea', titel: 'Geburtstagsrunde an der Aare', fotos: ['kira.jpg', 'luna-aare.jpg', 'see.jpg'] },
+  { dog: 'finn', datum: '2021-02-14', autor: 'Familie Keller', titel: 'Finn im Tiefschnee', fotos: ['finn.jpg', 'schnee.jpg'] },
   { dog: 'juna', datum: '2022-08-14', autor: 'Familie Brunner', titel: 'Am Wohlensee', text: 'Juna schwimmt, Gustav bewacht die Handtücher.', fotos: ['juna.jpg'] },
   { dog: 'moritz', datum: '2025-06-01', autor: 'Familie Brunner', titel: 'Moritz entdeckt den Garten', fotos: ['moritz-garten.jpg'] },
   { dog: 'paula', datum: '2026-03-21', autor: 'Jonas', titel: 'Paulas erster Geburtstag', text: 'Hoppel war eingeladen und hat die Deko gefressen.', fotos: ['paula.jpg'] }
