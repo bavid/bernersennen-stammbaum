@@ -218,7 +218,7 @@ p.vk-note {
 
 .vk-stage-card .vk-card {
   border-radius: calc(0.8 * var(--u));
-  box-shadow: 0 1px 1px rgba(28, 21, 17, 0.08), 0 16px 32px -16px rgba(28, 21, 17, 0.5);
+  box-shadow: var(--elev-print);
 }
 
 .vk-stage-card figcaption {

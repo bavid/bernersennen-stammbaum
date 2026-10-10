@@ -81,7 +81,7 @@
   width: 1.5rem;
   height: 1.5rem;
   border: 1.5px solid var(--line-strong);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   color: transparent;
 }
 
@@ -289,7 +289,7 @@
 .cframe {
   position: absolute;
   overflow: hidden;
-  border-radius: 1.13cqw;
+  border-radius: var(--radius-collage-frame);
   background: var(--cpage-frame, #ecdfcc);
 }
 

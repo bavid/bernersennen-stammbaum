@@ -65,7 +65,7 @@
 .ctl-dot {
   box-sizing: border-box;
   border: 0.3226cqw solid var(--cpage-paper, #f6efe4);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--cpage-accent, #a4431d);
 }
 
@@ -85,7 +85,7 @@
   display: grid;
   place-items: center;
   border: 0.25cqw dashed color-mix(in srgb, var(--cpage-muted, #74665a) 55%, transparent);
-  border-radius: 1.13cqw;
+  border-radius: var(--radius-collage-frame);
   color: var(--cpage-muted, #74665a);
   font-size: 1.7cqw;
   font-weight: 700;
@@ -144,7 +144,7 @@
   width: 1.6rem;
   height: 1.6rem;
   border: 2px solid var(--rust);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: #fffdf8;
   box-shadow: 0 1px 4px rgba(28, 21, 17, 0.3);
   touch-action: none;
@@ -171,7 +171,7 @@
   inset: 22%;
   border: 2px solid var(--rust);
   border-top-color: transparent;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
 }
 
 .csticker-resize {

@@ -155,9 +155,7 @@ body:has(.frame-root) .skip-link {
   .frame-photo {
     padding: clamp(10px, 1.1vw, 18px) clamp(10px, 1.1vw, 18px) 0;
     background: var(--frame-paper);
-    box-shadow:
-      0 4px 14px rgba(0, 0, 0, 0.35),
-      0 34px 90px -20px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--elev-frame-photo);
     transform: rotate(-0.6deg);
   }
 
@@ -248,7 +246,7 @@ body:has(.frame-root) .skip-link {
   padding: 8px;
   border-radius: 999px;
   background: rgba(23, 17, 13, 0.66);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--elev-frame-controls);
   backdrop-filter: blur(12px);
   opacity: 0;
   transform: translate(-50%, 8px);
@@ -283,7 +281,7 @@ body:has(.frame-root) .skip-link {
   height: 48px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: transparent;
   color: var(--frame-light);
   cursor: pointer;
@@ -374,7 +372,7 @@ body:has(.frame-root) .skip-link {
   background: var(--frame-paper);
   color: var(--frame-ink);
   text-align: center;
-  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--elev-frame-card);
   transform: rotate(-0.8deg);
   user-select: text;
 }

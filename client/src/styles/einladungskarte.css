@@ -397,7 +397,7 @@
   place-items: center;
   width: calc(2.5 * var(--u));
   height: calc(2.5 * var(--u));
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--vk-pf-rost);
   color: #fff;
   font-size: calc(1.45 * var(--u));
@@ -577,9 +577,7 @@
   --vk-mm: min(1.5mm, calc(100cqi / 85));
 
   border-radius: calc(0.8 * var(--u));
-  box-shadow:
-    0 1px 1px rgba(28, 21, 17, 0.08),
-    0 16px 32px -16px rgba(28, 21, 17, 0.5);
+  box-shadow: var(--elev-print);
 }
 
 .admin-einladung-preview figcaption {

@@ -171,7 +171,7 @@
   place-items: center;
   width: calc(17 * var(--u));
   height: calc(17 * var(--u));
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--vk-farbe);
   color: var(--vk-on);
   font-family: var(--font-display);
