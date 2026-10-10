@@ -69,10 +69,20 @@ export default function PushSchalter({ support = pushSupport(), client = pushCli
         if (old) await api.pushUnsubscribe(old)
         setEndpoint(null)
       } else {
-        const result = await client.subscribePush(server.publicKey)
+        let result = await client.subscribePush(server.publicKey)
         setPermission(result.permission)
         if (result.subscription) {
-          await api.pushSubscribe(result.subscription.toJSON())
+          try {
+            await api.pushSubscribe(result.subscription.toJSON())
+          } catch (err) {
+            // 409: dieser Endpunkt gehört noch zu einem anderen Zuhause (Gerät wechselte das Zuhause) - einmal im
+            // Browser kündigen und neu abonnieren, dann bekommt das Gerät einen frischen Endpunkt.
+            if (err.status !== 409) throw err
+            await client.unsubscribePush()
+            result = await client.subscribePush(server.publicKey)
+            if (!result.subscription) return
+            await api.pushSubscribe(result.subscription.toJSON())
+          }
           setEndpoint(result.subscription.endpoint)
         }
       }

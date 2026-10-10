@@ -86,6 +86,20 @@ describe('PushSchalter: „Benachrichtigungen aufs Handy“', () => {
     expect(hint()).toMatch(/^An/)
   })
 
+  test('409 (Endpunkt gehört noch einem anderen Zuhause): einmal im Browser kündigen, neu abonnieren, erneut melden', async () => {
+    api.pushKey.mockResolvedValue({ enabled: true, publicKey: 'BKEY', geraete: 0 })
+    api.pushSubscribe.mockRejectedValueOnce(Object.assign(new Error('belegt'), { status: 409 })).mockResolvedValueOnce({ ok: true })
+    const client = fakeClient()
+    await render({ client })
+    await flush()
+    await act(async () => toggle().click())
+    await flush()
+    expect(client.unsubscribePush).toHaveBeenCalledTimes(1)
+    expect(client.subscribePush).toHaveBeenCalledTimes(2)
+    expect(api.pushSubscribe).toHaveBeenCalledTimes(2)
+    expect(toggle().checked).toBe(true)
+  })
+
   test('an -> ausschalten kündigt im Browser und auf dem Server', async () => {
     api.pushKey.mockResolvedValue({ enabled: true, publicKey: 'BKEY', geraete: 1 })
     api.pushUnsubscribe.mockResolvedValue(null)
