@@ -1,0 +1,86 @@
+/* Grüße-Karte zum Teilen (components/grusskarte/GrussKarteDialog.jsx) */
+.grusskarte {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+}
+
+.grusskarte-preview {
+  width: min(100%, 22rem);
+  aspect-ratio: 1080 / 1350;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  background: var(--paper-deep);
+}
+
+.grusskarte-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.grusskarte-actions .btn svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.grusskarte-hint,
+.grusskarte-status {
+  margin: 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.grusskarte-privat {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.grusskarte-privat svg {
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
+  margin-top: 0.15em;
+}
+
+.grusskarte-error {
+  margin: 0;
+  color: var(--danger);
+  text-align: center;
+}
+
+/* Die leise Aktion unter einer Erinnerung (components/Timeline.jsx) */
+.entry-share-card {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  margin-top: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.entry-share-card:hover,
+.entry-share-card:focus-visible {
+  background: var(--paper-deep);
+  color: var(--ink);
+}
+
+.entry-share-card svg {
+  width: 1em;
+  height: 1em;
+}

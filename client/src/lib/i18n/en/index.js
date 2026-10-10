@@ -14,5 +14,8 @@ import extra from './extra.js'
 import wwh from './wwh.js'
 import banner from './banner.js'
 import ui from './ui.js'
+import onboarding from './onboarding.js'
+import startpaket from './startpaket.js'
+import share from './share.js'
 
-export default { ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

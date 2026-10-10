@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import Timeline from './Timeline.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -20,14 +20,14 @@ const entry = (overrides = {}) => ({
   ...overrides
 })
 
-async function render(items) {
+async function render(items, props = {}) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () =>
     root.render(
       <MemoryRouter>
-        <Timeline items={items} canEdit={false} onEdit={() => {}} onOpenPhoto={() => {}} onDeleteComment={() => {}} />
+        <Timeline items={items} canEdit={false} onEdit={() => {}} onOpenPhoto={() => {}} onDeleteComment={() => {}} {...props} />
       </MemoryRouter>
     )
   )
@@ -94,5 +94,21 @@ describe('Timeline – Tierheim (Kategorie, öffentlich, Herkunft)', () => {
   test('ohne herkunft_name bleibt die Zeile weg', async () => {
     await render([entry()])
     expect(container.querySelector('.entry-herkunft')).toBeNull()
+  })
+})
+
+describe('Timeline – Als Karte teilen', () => {
+  test('mit onShareCard zeigt jede Erinnerung die leise Aktion und reicht den Eintrag weiter', async () => {
+    const onShareCard = vi.fn()
+    await render([entry()], { onShareCard })
+    const button = container.querySelector('.entry-share-card')
+    expect(button.textContent).toBe('Als Karte teilen')
+    await act(async () => button.click())
+    expect(onShareCard).toHaveBeenCalledWith(expect.objectContaining({ key: 'entry-1' }))
+  })
+
+  test('ohne onShareCard bleibt die Aktion weg', async () => {
+    await render([entry()])
+    expect(container.querySelector('.entry-share-card')).toBeNull()
   })
 })

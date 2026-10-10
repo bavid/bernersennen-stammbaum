@@ -42,7 +42,7 @@ function Milestone({ item, onOpenPhoto }) {
   )
 }
 
-function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment, canDeleteComment }) {
+function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, onDeleteComment, canDeleteComment, onShareCard }) {
   const { words } = useTheme()
   const age = birthDate ? ageText(birthDate, item.datum) : null
   const kategorie = kategorieLabel(item.kategorie)
@@ -83,6 +83,12 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
       {item.text && <ExpandableText text={item.text} className="entry-text" lines={6} />}
       <EntryPhotos urls={item.foto_urls} onOpenPhoto={onOpenPhoto} />
       <ErlebtMitChips tags={item.erlebt_mit} />
+      {onShareCard && (
+        <button type="button" className="entry-share-card" onClick={() => onShareCard(item)}>
+          <Icon name="share" />
+          {t('Als Karte teilen')}
+        </button>
+      )}
       {onAddComment && (
         <div className="entry-comments">
           <CommentThread
@@ -103,7 +109,8 @@ function Entry({ item, birthDate, canEdit, onEdit, onOpenPhoto, onAddComment, on
 
 // Kapitel nach Jahreszeiten (B+ Familienalbum): „Herbst 2026“ in Handschrift über den Erinnerungen eines Kapitels.
 // mirror (Phase V2, optional): { onOpenOrigin(item)?, onHide(item)?, hideDisabled } für gespiegelte Einträge
-// ("Erlebt mit", item.gespiegelt) - die erscheinen ohne Bearbeiten und Kommentare.
+// ("Erlebt mit", item.gespiegelt) - die erscheinen ohne Bearbeiten und Kommentare. onShareCard(item) (optional): leise Aktion
+// „Als Karte teilen“ (Grüße-Karte, components/grusskarte/GrussKarteDialog.jsx).
 export default function Timeline({
   items,
   birthDate,
@@ -114,6 +121,7 @@ export default function Timeline({
   onAddComment,
   onDeleteComment,
   canDeleteComment,
+  onShareCard,
   mirror = {}
 }) {
   const groups = groupBySeason(items)
@@ -151,6 +159,7 @@ export default function Timeline({
                     onAddComment={onAddComment}
                     onDeleteComment={onDeleteComment}
                     canDeleteComment={canDeleteComment}
+                    onShareCard={onShareCard}
                   />
                 ) : (
                   <Milestone item={item} onOpenPhoto={onOpenPhoto} />

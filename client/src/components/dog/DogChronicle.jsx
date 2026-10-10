@@ -7,6 +7,7 @@ import Avatar from '../Avatar.jsx'
 import Modal from '../Modal.jsx'
 import Timeline from '../Timeline.jsx'
 import TimelineEntryForm from '../TimelineEntryForm.jsx'
+import GrussKarteDialog from '../grusskarte/GrussKarteDialog.jsx'
 import { useToast } from '../Toast.jsx'
 import useMirrorActions from '../erlebtMit/useMirrorActions.js'
 import { hasRole } from '../../lib/roles.js'
@@ -56,6 +57,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
   const toast = useToast()
   const { hash, state } = useLocation()
   const [editingEntry, setEditingEntry] = useState(null)
+  const [sharingEntry, setSharingEntry] = useState(null)
   const [highlightKey, setHighlightKey] = useState(null)
   const [newestFirst, setNewestFirst] = useState(() => readSetting('newestFirst', false))
   const [showAll, setShowAll] = useState(false)
@@ -218,6 +220,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
           onAddComment={handleAddComment}
           onDeleteComment={handleDeleteComment}
           canDeleteComment={commentDeleteRule(family, dog)}
+          onShareCard={setSharingEntry}
           mirror={mirror}
         />
       ) : (
@@ -236,6 +239,7 @@ export default function DogChronicle({ dog, family, entries, setEntries, breedin
           />
         )}
       </Modal>
+      <GrussKarteDialog entry={sharingEntry} dogName={firstName} onClose={() => setSharingEntry(null)} />
     </section>
   )
 }
