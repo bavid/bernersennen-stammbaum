@@ -1,4 +1,5 @@
 import SearchOption from './SearchOption.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Ergebnisliste der Suche nach dem Muster "Combobox mit Listbox" (WAI-ARIA APG): der Fokus bleibt im Eingabefeld, die
 // aktive Option nennt aria-activedescendant dort (SearchPanel). Je Gruppe eine kleine Überschrift (role="group" mit
@@ -30,7 +31,7 @@ export default function SearchResults({ id, sections, activeId, onActivate, quer
             </ul>
             {section.more && (
               <p role="presentation" className="search-group-more">
-                Es gibt noch mehr Treffer – sucht etwas genauer.
+                {t('Es gibt noch mehr Treffer – sucht etwas genauer.')}
               </p>
             )}
           </div>

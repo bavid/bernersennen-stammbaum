@@ -10,5 +10,6 @@ import partner from './partner.js'
 import collage from './collage.js'
 import invite from './invite.js'
 import server from './server.js'
+import extra from './extra.js'
 
-export default { ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

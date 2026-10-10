@@ -8,6 +8,7 @@ import { dogLabel } from '../../lib/timeline.js'
 import { formatDateLong } from '../../lib/dates.js'
 import { commentsLabel, excerpt, feedDog, thumbnails } from '../../lib/feed.js'
 import { feedEntryLink } from '../../lib/startFeed.js'
+import { t } from '../../lib/i18n/index.js'
 
 // Eine Erinnerung im Feed von Start (Phase W, Look B+ Familienalbum): Tier mit Bild, wer erzählt hat und von wann die
 // Erinnerung ist (der Tag passt zum Kapitel darüber), Titel, ein Anriss des Texts, das erste Foto als Polaroid daneben
@@ -28,7 +29,7 @@ export default function FeedItem({ entry, itemRef }) {
   const photo = photos.shown[0]
   const morePhotos = Math.max(photos.more, (entry.foto_anzahl ?? 0) - photos.shown.length)
   const comments = commentsLabel(entry.comment_count, words)
-  const meta = [entry.autor_name && `erzählt von ${entry.autor_name}`, formatDateLong(entry.datum)].filter(Boolean).join(' · ')
+  const meta = [entry.autor_name && t('erzählt von {name}', { name: entry.autor_name }), formatDateLong(entry.datum)].filter(Boolean).join(' · ')
   return (
     <li className="feed-card" ref={itemRef}>
       <Link to={feedEntryLink(entry)} state={{ from: pathname + search }} className={`feed-card-link${photo ? ' has-photo' : ''}`}>
@@ -56,7 +57,7 @@ export default function FeedItem({ entry, itemRef }) {
           <div className="feed-card-photo">
             <Polaroid src={photo} index={entry.id} width={120} height={90} />
             {morePhotos > 0 && (
-              <span className="feed-card-more" aria-label={`und ${morePhotos} weitere Fotos`}>
+              <span className="feed-card-more" aria-label={morePhotos === 1 ? t('und 1 weiteres Foto') : t('und {n} weitere Fotos', { n: morePhotos })}>
                 +{morePhotos}
               </span>
             )}

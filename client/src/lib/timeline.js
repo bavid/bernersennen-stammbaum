@@ -29,11 +29,12 @@ export function isKnownSex(geschlecht) {
 
 // "Rüde"/"Hündin", bei Katzen "Kater"/"Katze", sonst "männlich"/"weiblich" - bei unbekanntem Geschlecht ''.
 export function sexLabel(geschlecht, tierart = 'hund') {
-  return (SEX_LABELS[tierart] || SEX_LABELS.hund)[geschlecht] || ''
+  const label = (SEX_LABELS[tierart] || SEX_LABELS.hund)[geschlecht]
+  return label ? t(label) : ''
 }
 
 export function speciesLabel(tierart = 'hund') {
-  return SPECIES_LABELS[tierart] || SPECIES_LABELS.hund
+  return t(SPECIES_LABELS[tierart] || SPECIES_LABELS.hund)
 }
 
 // Kombinierte Art+Geschlecht-Zeile ohne Dopplung: bei Katzen ist der Geschlechtsbegriff für Weibchen
@@ -50,7 +51,7 @@ const SPECIES_NOUNS = { hund: 'Hund', katze: 'Katze', anderes: 'Tier' }
 
 // Für Beschriftungen wie "Katze anlegen" oder "Tier löschen"
 export function speciesNoun(tierart = 'hund') {
-  return SPECIES_NOUNS[tierart] || SPECIES_NOUNS.hund
+  return t(SPECIES_NOUNS[tierart] || SPECIES_NOUNS.hund)
 }
 
 // Was für ein Tier? Hunde brauchen keinen Zusatz, bei "anderes" steht die Art im Freitext (z. B. "Kaninchen")

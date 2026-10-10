@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { displayName } from '../lib/timeline.js'
+import { t } from '../lib/i18n/index.js'
 import { useToast } from '../components/Toast.jsx'
 
 // Zustand des Dialogs "Neues Tier anlegen" (components/AnimalCreateModal.jsx) - an einer Stelle statt je Seite:
@@ -18,7 +19,7 @@ export default function useAnimalCreate() {
   const announceCreated = useCallback(
     (dog) => {
       setForm(null)
-      toast(`${displayName(dog)} ist jetzt dabei`)
+      toast(t('{name} ist jetzt dabei', { name: displayName(dog) }))
       navigate(`/tier/${dog.id}`, { state: { neuesTier: true } })
     },
     [navigate, toast]

@@ -1,6 +1,7 @@
 import { DiscoverEmpty } from './DiscoverChapter.jsx'
 import { BegleiterSection, FutterSection, HundeschulenSection, SalonSection, SupportSection } from './DiscoverSections.jsx'
 import { InternalLink } from './PreviewLink.jsx'
+import { t } from '../lib/i18n/index.js'
 import { ALL_TAB, PREVIEW_LIMIT, SECTION_KEYS, isSectionEmpty, sectionCounts } from '../lib/discoverTabs.js'
 
 const SECTIONS = {
@@ -25,8 +26,8 @@ export default function DiscoverPanel({ data, tab, onShowAll }) {
   if (keys.length === 0) {
     return (
       <DiscoverEmpty>
-        Hier ist gerade noch nichts – versucht einen größeren Umkreis oder schaut in die{' '}
-        <InternalLink to="/partner">Partnerliste</InternalLink>.
+        {t('Hier ist gerade noch nichts – versucht einen größeren Umkreis oder schaut in die')}{' '}
+        <InternalLink to="/partner">{t('Partnerliste')}</InternalLink>.
       </DiscoverEmpty>
     )
   }

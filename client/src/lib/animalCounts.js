@@ -3,11 +3,14 @@
 // davon die eigenen, die der Haushalt dorthin teilt. Die Zahlen kommen aus GET /api/me (server/lib/areaCounts.js:
 // memberships[].tiere/eigeneTiere, besuche[].tiere); fehlen sie, zählt countsFromDogs die geladenen Tiere gleich.
 import { familyAnimals } from './familyGroups.js'
+import { getLang, t } from './i18n/index.js'
 
 export function animalCountText(counts, words) {
   if (!counts || !Number.isInteger(counts.tiere)) return null
-  const base = `${counts.tiere} ${counts.tiere === 1 ? words.animal : words.animals}`
-  return counts.eigeneTiere > 0 ? `${base} · davon ${counts.eigeneTiere} von euch` : base
+  const noun = counts.tiere === 1 ? words.animal : words.animals
+  // Englisch klein mitten in der Zeile („21 animals“), Deutsch bleibt das Substantiv groß.
+  const base = `${counts.tiere} ${getLang() === 'en' ? noun.toLowerCase() : noun}`
+  return counts.eigeneTiere > 0 ? t('{base} · davon {n} von euch', { base, n: counts.eigeneTiere }) : base
 }
 
 // { tiere, eigeneTiere } eines Bereichs aus me (Mitgliedschaft oder Besuch), null ohne Zahl.

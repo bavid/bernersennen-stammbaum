@@ -68,6 +68,8 @@ export const wordsEn = {
   breedingBook: 'Matings'
 }
 
+export const footerEn = 'Familie auf Pfoten · A pawsome family'
+
 export const textsEn = {
   overviewLede:
     'So we know what the others are up to: tap an animal and see how it is doing – or tell us what it is experiencing right now.',

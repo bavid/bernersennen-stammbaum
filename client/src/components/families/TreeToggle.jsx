@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import Icon from '../Icon.jsx'
+import { t } from '../../lib/i18n/index.js'
 
 // Phase V3: im Auftritt mit Familien-Ansicht (Standard) öffnet ?ansicht=stammbaum den Stammbaum - sobald es ihn gibt.
 // "Stammbaum" steht hier bewusst wörtlich (nicht in den Theme-Wörtern, die im Standard ohne Zucht-Wortschatz
@@ -17,7 +18,7 @@ export default function TreeToggle({ mode, treeAvailable }) {
     return (
       <Link to={{ pathname }} className="hero-link">
         <Icon name="arrowLeft" />
-        Zurück zu den Familien
+        {t('Zurück zu den Familien')}
       </Link>
     )
   }
@@ -25,7 +26,7 @@ export default function TreeToggle({ mode, treeAvailable }) {
   return (
     <Link to={{ pathname, search: `?${TREE_PARAM}=${TREE_VALUE}` }} className="hero-link">
       <Icon name="tree" />
-      Stammbaum &amp; Nachwuchs
+      {t('Stammbaum & Nachwuchs')}
     </Link>
   )
 }
