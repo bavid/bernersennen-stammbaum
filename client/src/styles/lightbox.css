@@ -1,0 +1,97 @@
+/* Lightbox: ein Foto groß. Bei mehreren Fotos einer Erinnerung wischen oder mit den Knöpfen links/rechts blättern
+   (Lightbox.jsx, hooks/useSwipe.js). Die Animation fade-in steht in components.css. */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: rgba(12, 9, 7, 0.9);
+  animation: fade-in var(--duration-normal) var(--ease-out);
+  cursor: zoom-out;
+  /* Wischen gehört der Lightbox (useSwipe), Zoomen mit zwei Fingern bleibt beim Browser. Kein pan-y: sonst scrollt
+     auf iOS beim senkrechten Ziehen die Seite hinter der Lightbox mit. */
+  touch-action: pinch-zoom;
+  overscroll-behavior: contain;
+  user-select: none;
+}
+
+/* Beim Ziehen folgt das Foto dem Finger (transform inline), danach gleitet es zurück an seinen Platz. */
+.lightbox img {
+  max-width: min(100%, 72rem);
+  max-height: 88dvh;
+  border-radius: var(--radius-md);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.lightbox .icon-btn {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Blättern: runde Knöpfe am Rand, mittig in der Höhe - Trefferfläche 44 px wie .icon-btn. */
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.lightbox-nav:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.lightbox-nav svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.lightbox-prev {
+  left: var(--space-4);
+}
+
+.lightbox-next {
+  right: var(--space-4);
+}
+
+/* Stelle im Album, z. B. "2 / 4" */
+.lightbox-count {
+  position: absolute;
+  bottom: var(--space-4);
+  left: 50%;
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox img {
+    transition: none;
+  }
+}

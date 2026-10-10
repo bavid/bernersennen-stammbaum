@@ -2,6 +2,7 @@
 @import './palettes.css';
 @import './base.css';
 @import './components.css';
+@import './lightbox.css';
 @import './layout.css';
 @import './tabs.css';
 @import './login.css';

@@ -110,7 +110,9 @@ export default function DogDetailPage({ family, onFamilyChange }) {
   const { dog, setDog } = page
   const [composerOpen, setComposerOpen] = useState(false)
   const [editingDog, setEditingDog] = useState(false)
+  // Großes Foto: src plus die Fotos derselben Erinnerung zum Blättern (photos fehlt beim Porträt).
   const [photo, setPhoto] = useState(null)
+  const openPhoto = useCallback((src, photos) => setPhoto({ src, photos }), [])
   const tabs = dogTabs({ shelter: family.art === 'tierheim' && Boolean(dog?.canEdit) })
   const [selected, select] = useTabParam(DOG_TAB_PARAM, tabs)
   const current = hash.startsWith('#entry-') ? CHRONICLE_TAB : selected
@@ -200,7 +202,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         onShowVisibility={() => goTo('infos', SHARE_PANEL_TITLE_ID)}
         onTell={openComposer}
         onEdit={() => setEditingDog(true)}
-        onOpenPhoto={setPhoto}
+        onOpenPhoto={openPhoto}
       />
 
       <TabBar
@@ -223,7 +225,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
             canWrite={canWrite}
             composerOpen={composerOpen}
             onComposerChange={setComposerOpen}
-            onOpenPhoto={setPhoto}
+            onOpenPhoto={openPhoto}
           />
         )}
         {current === 'infos' && (
@@ -249,7 +251,7 @@ export default function DogDetailPage({ family, onFamilyChange }) {
         />
       </Modal>
 
-      <Lightbox src={photo} onClose={() => setPhoto(null)} />
+      <Lightbox src={photo?.src} photos={photo?.photos} onClose={() => setPhoto(null)} />
     </div>
   )
 }

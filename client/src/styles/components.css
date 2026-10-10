@@ -585,35 +585,6 @@ textarea {
   text-align: center;
 }
 
-/* Lightbox */
-
-.lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: var(--space-6);
-  background: rgba(12, 9, 7, 0.9);
-  animation: fade-in var(--duration-normal) var(--ease-out);
-  cursor: zoom-out;
-}
-
-.lightbox img {
-  max-width: min(100%, 72rem);
-  max-height: 88dvh;
-  border-radius: var(--radius-md);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
-}
-
-.lightbox .icon-btn {
-  position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;
