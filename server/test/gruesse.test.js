@@ -49,14 +49,14 @@ test('Hinweis-Glocke: neue Grüße zu eigenen Erinnerungen, gelesen, Zahlen in /
       { entryId: entry.id, dogId: dog.id, titel: 'Erster Schnee', von: 'Zuhause Möwenweg', neu: true }
     )
     assert.equal(gruss.text, undefined, 'der Text des Grußes bleibt beim Eintrag')
-    assert.deepEqual(res.data.zahlen, { anfragen: 0, gaeste: 1, gruesse: 1 })
+    assert.deepEqual(res.data.zahlen, { anfragen: 0, gaeste: 1, gruesse: 1, kontakte: 0 })
     assert.equal((await get('/api/me', host.cookie)).data.neueGruesse, 1)
   })
 
   await t.test('POST /gelesen: danach nicht mehr neu, aber noch unter „früher“; ein neuer Gruß ist wieder neu', async () => {
     const res = await post('/api/hinweise/gelesen', {}, host.cookie)
     assert.equal(res.status, 200)
-    assert.deepEqual(res.data.zahlen, { anfragen: 0, gaeste: 1, gruesse: 0 })
+    assert.deepEqual(res.data.zahlen, { anfragen: 0, gaeste: 1, gruesse: 0, kontakte: 0 })
     const after = await get('/api/hinweise/gruesse', host.cookie)
     assert.deepEqual(after.data.gruesse.map((g) => g.neu), [false])
     assert.equal((await get('/api/me', host.cookie)).data.neueGruesse, 0)

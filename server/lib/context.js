@@ -7,6 +7,7 @@ const { roleOf } = require('./roles')
 const { isVisiting, visitTargetsOf, countNewGuests } = require('./visits')
 const { countOpenRequests } = require('./erlebtMit')
 const { countNewGreetings } = require('./gruesse')
+const { countOpenIncoming: countOpenWishes } = require('./wwhKontakt')
 const { revokeInvitesOnLeave } = require('./inviteRevocation')
 const { loadDarstellung } = require('./darstellung')
 const { withMembershipCounts, withVisitCounts } = require('./areaCounts')
@@ -112,6 +113,8 @@ function buildMe(homeId, activeId, isDemo, userId = null, { adminView = false } 
     neueGaeste: home?.art === ART.zuhause ? countNewGuests(homeId) : 0,
     // Hinweis-Glocke: neue Grüße anderer zu eigenen Erinnerungen (lib/gruesse.js).
     neueGruesse: home?.art === ART.zuhause ? countNewGreetings(homeId) : 0,
+    // „Wir waren hier“: offene Kontaktwünsche an das eigene Zuhause (lib/wwhKontakt.js) - ebenfalls in der Glocke.
+    wwhKontakteOffen: home?.art === ART.zuhause ? countOpenWishes(homeId) : 0,
     auth: currentAuthInfo(homeId, userId),
     // Calm-down-Runde: Farbpalette, Hell/Dunkel, Schrift der Identität (lib/darstellung.js) - auch in Familien und zu Besuch.
     darstellung: loadDarstellung(homeId)

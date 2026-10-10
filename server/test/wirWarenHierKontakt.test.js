@@ -8,7 +8,7 @@ const { useTempDataDir, startApp, cleanup, call, createHousehold, getCookie } = 
 const dataDir = useTempDataDir('wwh-kontakt', { LOGIN_RATE_LIMIT: '300', CODE_RATE_LIMIT: '300', WWH_RATE_LIMIT: '300', WWH_HOME_RATE_LIMIT: '300' })
 
 const API = '/api/wir-waren-hier'
-const KONTAKT_KEYS = ['checkinId', 'createdAt', 'eigenesTierName', 'fotoUrl', 'id', 'ortName', 'partnerId', 'tierName', 'tierart']
+const KONTAKT_KEYS = ['checkinId', 'createdAt', 'eigenesTierName', 'fotoUrl', 'id', 'ortName', 'ortSlug', 'partnerId', 'tierName', 'tierart']
 const ENTRY = { autorName: 'Wir', datum: '2026-09-12', titel: 'Am Bach', text: 'Viel geplanscht.' }
 
 test('Wir waren hier: Kontaktwunsch und Besuch bei Zusage', async (t) => {
@@ -137,6 +137,7 @@ test('Wir waren hier: Kontaktwunsch und Besuch bei Zusage', async (t) => {
     assert.equal(incoming.data.an[0].tierName, 'Benno')
     assert.equal(incoming.data.an[0].eigenesTierName, 'Flocke')
     assert.equal(incoming.data.an[0].ortName, 'Hundeschule Bachweg 1')
+    assert.equal(incoming.data.an[0].ortSlug, 'wwh-kontakt-ort-1')
     const outgoing = (await get(`${API}/kontakt/offen`, benno.cookie)).data
     assert.deepEqual(outgoing.an, [])
     assert.equal(outgoing.von[0].tierName, 'Flocke')
@@ -146,6 +147,13 @@ test('Wir waren hier: Kontaktwunsch und Besuch bei Zusage', async (t) => {
     assert.equal(incoming.data.an[0].checkinId, checkinFlocke)
     const raw = JSON.stringify([incoming.data, outgoing])
     for (const secret of [benno.name, flocke.name, 'family', 'email']) assert.ok(!raw.includes(secret), secret)
+  })
+
+  await t.test('Hinweis-Glocke zählt offene Wünsche an uns (/me und /api/hinweise/gruesse)', async () => {
+    assert.equal((await get('/api/me', flocke.cookie)).data.wwhKontakteOffen, 1)
+    assert.equal((await get('/api/me', benno.cookie)).data.wwhKontakteOffen, 0, 'eigene Wünsche zählen nicht')
+    assert.equal((await get('/api/hinweise/gruesse', flocke.cookie)).data.zahlen.kontakte, 1)
+    assert.equal(kontakt.countOpenIncoming(lotte.id), 0)
   })
 
   await t.test('IDOR: nur das Ziel entscheidet, nur die Absenderin zieht zurück - sonst 404', async () => {
@@ -169,6 +177,7 @@ test('Wir waren hier: Kontaktwunsch und Besuch bei Zusage', async (t) => {
     assert.ok(visit.bestaetigt_at, 'gilt als bestätigt')
     assert.equal((await post(`${API}/kontakt/${wishBenno}/annehmen`, {}, flocke.cookie)).status, 200)
     assert.equal(visitCount(benno, flocke), 1)
+    assert.equal((await get('/api/hinweise/gruesse', flocke.cookie)).data.zahlen.kontakte, 0, 'angenommen zählt nicht mehr')
     assert.equal((await post(`${API}/kontakt/${wishBenno}/ablehnen`, {}, flocke.cookie)).status, 404)
     assert.equal((await del(`${API}/kontakt/${wishBenno}`, benno.cookie)).status, 404, 'nichts mehr offen')
 

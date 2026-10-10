@@ -12,6 +12,16 @@ import { REFRESH_MS, hinweisZahlen, withHinweisZahlen } from '../lib/glocke.js'
 // Endpunkte gibt es nur dort; in einer Familie oder zu Besuch zeigt die Glocke nur die Zahl aus /me).
 // Demo und Admin-Ansicht lesen nur: „gesehen“ gilt dort nur für diese Sitzung (seenLocally), Aktionen sind gesperrt.
 // Die Aktionen (Ja/Nein, Passt/Entfernen) und ihre Rückmeldung im Fenster: hooks/useHinweisAktionen.js.
+// „Wir waren hier“-Kontaktwünsche an uns: ein Fehler dort lässt die übrige Glocke stehen (dann eben ohne Wünsche).
+async function loadWishes() {
+  try {
+    const result = await api.wwhKontaktOffen()
+    return { an: Array.isArray(result?.an) ? result.an : [] }
+  } catch {
+    return { an: [] }
+  }
+}
+
 export default function useHinweisGlocke({ family, onFamilyChange }) {
   const atHome = isOwnHome(family)
   const readOnly = isReadOnly(family)
@@ -87,7 +97,7 @@ export default function useHinweisGlocke({ family, onFamilyChange }) {
     }
   }, [atHome, refresh])
 
-  // Beim Öffnen: alle drei Listen, danach gelten die Grüße als gesehen (sie stehen in dieser Liste trotzdem noch als neu).
+  // Beim Öffnen: alle Listen, danach gelten die Grüße als gesehen (sie stehen in dieser Liste trotzdem noch als neu).
   const { resetFeedback } = aktionen
   const loadLists = useCallback(async () => {
     if (!atHome) return
@@ -96,9 +106,15 @@ export default function useHinweisGlocke({ family, onFamilyChange }) {
     resetFeedback()
     lastRefresh.current = Date.now()
     try {
-      const [anfragen, besuche, gruss] = await Promise.all([api.erlebtMitOffen(), api.visits(), api.hinweisGruesse()])
+      const [anfragen, besuche, gruss, wuensche] = await Promise.all([
+        api.erlebtMitOffen(),
+        api.visits(),
+        api.hinweisGruesse(),
+        loadWishes()
+      ])
       if (!mounted.current) return
-      setLists({ anfragen, gaeste: (besuche?.gaeste || []).filter((guest) => guest.neu), gruesse: gruss.gruesse })
+      const gaeste = (besuche?.gaeste || []).filter((guest) => guest.neu)
+      setLists({ anfragen, gaeste, gruesse: gruss.gruesse, kontakte: wuensche.an })
       patchZahlen(gruss.zahlen)
       if (gruss.gruesse.some((greeting) => greeting.neu)) markSeen()
     } catch (err) {

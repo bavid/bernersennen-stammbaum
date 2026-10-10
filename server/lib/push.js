@@ -48,7 +48,8 @@ const TEXTE = Object.freeze({
   [EREIGNIS.kontakt]: Object.freeze({
     titel: 'Neuer Kontaktwunsch',
     text: 'Eine Familie von einem gemeinsamen Ort möchte euch kennenlernen.',
-    url: '/start'
+    // öffnet auf Start gleich die Glocke (client HinweiseProvider, ?hinweise=offen) - dort steht der Wunsch mit Ort
+    url: '/start?hinweise=offen'
   }),
   [EREIGNIS.kontaktZusage]: Object.freeze({
     titel: 'Kontaktwunsch angenommen',

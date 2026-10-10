@@ -57,7 +57,8 @@ test('cleanSubscription: nur https-Endpunkte bekannter Push-Dienste mit beiden S
 test('payloadFor: feste Texte ohne Namen, unbekanntes Ereignis wirft', () => {
   for (const ereignis of Object.values(push.EREIGNIS)) {
     const payload = push.payloadFor(ereignis)
-    assert.ok(payload.titel && payload.text && payload.url === '/start')
+    const url = ereignis === push.EREIGNIS.kontakt ? '/start?hinweise=offen' : '/start'
+    assert.ok(payload.titel && payload.text && payload.url === url)
     assert.equal(payload.ereignis, ereignis)
   }
   assert.throws(() => push.payloadFor('quatsch'), /Unbekanntes Push-Ereignis/)

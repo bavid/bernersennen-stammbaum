@@ -13,7 +13,10 @@ const api = vi.hoisted(() => ({
   rejectErlebtMit: vi.fn(),
   rejectAllErlebtMitFrom: vi.fn(),
   acknowledgeGuest: vi.fn(),
-  removeGuest: vi.fn()
+  removeGuest: vi.fn(),
+  wwhKontaktOffen: vi.fn(),
+  wwhKontaktAnnehmen: vi.fn(),
+  wwhKontaktAblehnen: vi.fn()
 }))
 vi.mock('../../api', () => ({ api }))
 
@@ -49,14 +52,23 @@ const anfrage = {
   foto_urls: []
 }
 const gast = { id: 9, name: 'Zuhause Heidekamp', seit: '2026-10-04 08:00:00', neu: true, ueberCode: 'Tante Matilde' }
+const kontakt = {
+  id: 7,
+  tierName: 'Benno',
+  eigenesTierName: 'Flocke',
+  ortName: 'Hundeschule Bachweg',
+  ortSlug: 'hundeschule-bachweg',
+  fotoUrl: null,
+  createdAt: '2026-10-05 12:00:00'
+}
 const gruss = { id: 3, entryId: 12, dogId: 4, titel: 'Erster Schnee', von: 'Familie Sonnenhang', createdAt: '2026-10-02 09:00:00', neu: true }
 
-function Harness({ initial }) {
+function Harness({ initial, entries }) {
   const [family, setFamily] = useState(initial)
   latest = family
   setFamilyFromTest = setFamily
   return (
-    <MemoryRouter>
+    <MemoryRouter initialEntries={entries}>
       <DemoProvider value={family}>
         <HinweiseProvider family={family} onFamilyChange={setFamily}>
           <HinweisGlocke />
@@ -66,14 +78,15 @@ function Harness({ initial }) {
   )
 }
 
-async function render(family = home) {
+async function render(family = home, entries = ['/start']) {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
-  await act(async () => root.render(<Harness initial={family} />))
+  await act(async () => root.render(<Harness initial={family} entries={entries} />))
 }
 
-function mockLists({ anfragen = [anfrage], gaeste = [gast], gruesse = [gruss] } = {}) {
+function mockLists({ anfragen = [anfrage], gaeste = [gast], gruesse = [gruss], kontakte = [] } = {}) {
+  api.wwhKontaktOffen.mockResolvedValue({ an: kontakte, von: [] })
   api.erlebtMitOffen.mockResolvedValue(anfragen)
   api.visits.mockResolvedValue({ besuche: [], gaeste })
   api.hinweisGruesse.mockResolvedValue({ gruesse, zahlen: { anfragen: anfragen.length, gaeste: gaeste.filter((g) => g.neu).length, gruesse: gruesse.filter((g) => g.neu).length } })
@@ -308,5 +321,49 @@ describe('Hinweis-Glocke', () => {
     expect(api.hinweisGruesse).toHaveBeenCalledTimes(1)
     expect(latest.erlebtMitOffen).toBe(2)
     expect(api.erlebtMitOffen).not.toHaveBeenCalled()
+  })
+
+  test('„Wir waren hier“-Kontaktwunsch: zählt, steht mit Ort in der Liste, Annehmen fragt erst nach', async () => {
+    mockLists({ anfragen: [], gaeste: [], gruesse: [], kontakte: [kontakt] })
+    api.wwhKontaktAnnehmen.mockResolvedValue({ id: 7, status: 'angenommen' })
+    await render({ ...home, erlebtMitOffen: 0, neueGaeste: 0, neueGruesse: 0, wwhKontakteOffen: 1 })
+    expect(bell().getAttribute('aria-label')).toBe('Hinweise, 1 neu')
+    await openBell()
+    expect(container.querySelector('.hinweis-text').textContent).toBe('Benno möchte Flocke kennenlernen – bei Hundeschule Bachweg')
+    expect(container.querySelector('.hinweis-meta a').getAttribute('href')).toBe('/p/hundeschule-bachweg?reiter=wir-waren-hier')
+    expect(container.textContent).not.toContain('Zuhause')
+    await act(async () => button('Annehmen').click())
+    expect(api.wwhKontaktAnnehmen).not.toHaveBeenCalled()
+    expect(container.querySelector('dialog').textContent).toContain('nicht privaten Erinnerungen eurer Tiere')
+    await act(async () => button('Ja, annehmen').click())
+    expect(api.wwhKontaktAnnehmen).toHaveBeenCalledWith(7)
+    expect(latest.wwhKontakteOffen).toBe(0)
+    expect(container.querySelector('.hinweis-feedback').textContent).toBe('Angenommen – die Familie ist jetzt bei euch zu Besuch.')
+  })
+
+  test('Kontaktwunsch ablehnen: sofort, Zahl sinkt', async () => {
+    mockLists({ anfragen: [], gaeste: [], gruesse: [], kontakte: [kontakt] })
+    api.wwhKontaktAblehnen.mockResolvedValue({ id: 7, status: 'abgelehnt' })
+    await render({ ...home, erlebtMitOffen: 0, neueGaeste: 0, neueGruesse: 0, wwhKontakteOffen: 1 })
+    await openBell()
+    await act(async () => button('Ablehnen').click())
+    expect(api.wwhKontaktAblehnen).toHaveBeenCalledWith(7)
+    expect(latest.wwhKontakteOffen).toBe(0)
+    expect(container.textContent).toContain('Alles erledigt – nichts Neues.')
+  })
+
+  test('Kontaktwünsche nicht ladbar: die übrige Glocke bleibt', async () => {
+    mockLists({ gaeste: [], gruesse: [] })
+    api.wwhKontaktOffen.mockRejectedValue(new Error('weg'))
+    await render()
+    await openBell()
+    expect(container.querySelector('.hinweis-text').textContent).toBe('Wilma war beim „Strandtag“ mit dabei?')
+  })
+
+  test('/start?hinweise=offen (Push zum Kontaktwunsch) öffnet die Glocke', async () => {
+    mockLists({ anfragen: [], gaeste: [], gruesse: [], kontakte: [kontakt] })
+    await render({ ...home, wwhKontakteOffen: 1 }, ['/start?hinweise=offen'])
+    expect(bell().getAttribute('aria-expanded')).toBe('true')
+    expect(api.wwhKontaktOffen).toHaveBeenCalledTimes(1)
   })
 })

@@ -46,6 +46,7 @@ export default {
   'Anfrage an {name} gesendet.': 'Request sent to {name}.',
   Kontaktwünsche: 'Requests to connect',
   '{tier} möchte {eigenes} kennenlernen.': '{tier} would like to meet {eigenes}.',
+  '{tier} möchte {eigenes} kennenlernen – bei {ort}': '{tier} would like to meet {eigenes} – at {ort}',
   'Ihr habt {tier} gefragt – die Antwort steht noch aus.': 'You asked {tier} – no answer yet.',
   Annehmen: 'Accept',
   Ablehnen: 'Decline',

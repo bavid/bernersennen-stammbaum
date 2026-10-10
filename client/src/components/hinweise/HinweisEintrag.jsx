@@ -1,9 +1,11 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ConfirmButton from '../ConfirmButton.jsx'
+import WwhAnnehmenDialog from '../wirWarenHier/WwhAnnehmenDialog.jsx'
 import Icon from '../Icon.jsx'
 import { relativeTime } from '../../lib/dates.js'
-import { greetingText, guestText, requestText } from '../../lib/glocke.js'
+import { greetingText, guestText, kontaktText, requestText } from '../../lib/glocke.js'
+import { WWH } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
 
 // Kleines Bild links: das erste Foto einer Anfrage (hilft beim Erinnern), sonst ein Zeichen für die Art des Hinweises.
@@ -101,6 +103,57 @@ function Gruss({ greeting, onNavigate }) {
   )
 }
 
+// „Benno möchte Flocke kennenlernen – bei Hundeschule Bachweg“ („Wir waren hier“): Annehmen fragt erst nach (derselbe
+// Dialog wie im Reiter des Ortes), Ablehnen sofort. Der Ort führt zum Reiter „Wir waren hier“ der Partnerseite.
+function Kontakt({ wish, busy, disabled, actions, onNavigate }) {
+  const textId = useId()
+  const [open, setOpen] = useState(false)
+  async function accept() {
+    if (await actions.acceptWish(wish)) setOpen(false)
+  }
+  return (
+    <>
+      <Mark icon="paw" photo={wish.fotoUrl} />
+      <div className="hinweis-body">
+        <p className="hinweis-text" id={textId} title={kontaktText(wish)}>
+          {kontaktText(wish)}
+        </p>
+        <p className="hinweis-meta">
+          {wish.ortSlug ? (
+            <Link to={`/p/${encodeURIComponent(wish.ortSlug)}?reiter=wir-waren-hier`} onClick={onNavigate}>
+              {t(WWH.titel)}
+            </Link>
+          ) : (
+            t(WWH.titel)
+          )}
+          {wish.createdAt && ` · ${relativeTime(wish.createdAt)}`}
+        </p>
+        <div className="hinweis-actions">
+          <button
+            type="button"
+            className="btn btn-primary btn-compact"
+            aria-describedby={textId}
+            disabled={disabled || busy}
+            onClick={() => setOpen(true)}
+          >
+            {t(WWH.annehmen)}
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-compact"
+            aria-describedby={textId}
+            disabled={disabled || busy}
+            onClick={() => actions.rejectWish(wish)}
+          >
+            {t(WWH.ablehnen)}
+          </button>
+        </div>
+      </div>
+      <WwhAnnehmenDialog open={open} disabled={disabled || busy} onCancel={() => setOpen(false)} onConfirm={accept} />
+    </>
+  )
+}
+
 // Ein Hinweis der Liste (lib/glocke.js hinweisItems). busy: gerade läuft eine Aktion dafür; disabled: Demo/Admin-Ansicht.
 export default function HinweisEintrag({ item, busy, disabled, actions, onNavigate }) {
   return (
@@ -108,6 +161,7 @@ export default function HinweisEintrag({ item, busy, disabled, actions, onNaviga
       {item.kind === 'anfrage' && <Anfrage request={item.data} busy={busy} disabled={disabled} actions={actions} />}
       {item.kind === 'gast' && <Gast guest={item.data} busy={busy} disabled={disabled} actions={actions} />}
       {item.kind === 'gruss' && <Gruss greeting={item.data} onNavigate={onNavigate} />}
+      {item.kind === 'kontakt' && <Kontakt wish={item.data} busy={busy} disabled={disabled} actions={actions} onNavigate={onNavigate} />}
     </li>
   )
 }

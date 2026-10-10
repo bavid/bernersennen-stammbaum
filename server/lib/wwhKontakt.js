@@ -94,7 +94,7 @@ const withdrawStmt = db.prepare("DELETE FROM wwh_kontakt WHERE id = ? AND von_fa
 // checkinId (die Ziel-Anmeldung) sind reine Ids, damit der Client Wünsche Ort und Tierkarte sicher zuordnet.
 const listSql = (mine, other) => `
   SELECT k.id, od.name AS tierName, od.tierart, od.foto_url AS fotoUrl, md.name AS eigenesTierName,
-    p.name AS ortName, k.partner_id AS partnerId,
+    p.name AS ortName, p.slug AS ortSlug, k.partner_id AS partnerId,
     (SELECT c.id FROM wwh_checkins c
      WHERE c.partner_id = k.partner_id AND c.family_id = k.an_family_id AND c.dog_id = k.an_dog_id LIMIT 1) AS checkinId,
     k.created_at AS createdAt
@@ -105,6 +105,16 @@ const listSql = (mine, other) => `
   WHERE k.${mine}_family_id = ? AND k.status = 'offen'
   ORDER BY k.created_at DESC, k.id DESC LIMIT ${LIST_LIMIT}`
 const incomingListStmt = db.prepare(listSql('an', 'von'))
+// Zahl für die Hinweis-Glocke (lib/context.js buildMe, routes/meineHinweise.js) - dieselben Bedingungen wie die Liste.
+const countIncomingStmt = db
+  .prepare(
+    `SELECT COUNT(*) FROM wwh_kontakt k
+     JOIN dogs od ON od.id = k.von_dog_id
+     JOIN dogs md ON md.id = k.an_dog_id
+     JOIN partners p ON p.id = k.partner_id AND p.is_demo = k.is_demo AND ${publicPartnerSql('p')}
+     WHERE k.an_family_id = ? AND k.status = 'offen'`
+  )
+  .pluck()
 const outgoingListStmt = db.prepare(listSql('von', 'an'))
 
 function findTarget(home, checkinId) {
@@ -207,6 +217,10 @@ function openWishes(homeId) {
   return { an: incomingListStmt.all(homeId), von: outgoingListStmt.all(homeId) }
 }
 
+function countOpenIncoming(homeId) {
+  return countIncomingStmt.get(homeId)
+}
+
 // Mit Benachrichtigung (lib/push.js, feste Texte ohne Namen; verschickt erst nach der Transaktion per setImmediate).
 function sendWishAndNotify(homeId, input) {
   const { anFamilyId, ...result } = sendWish(homeId, input)
@@ -233,6 +247,7 @@ module.exports = {
   rejectWish,
   withdrawWish,
   openWishes,
+  countOpenIncoming,
   sendWishAndNotify,
   acceptWishAndNotify
 }

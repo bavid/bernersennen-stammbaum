@@ -1,9 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import useHinweisGlocke from '../../hooks/useHinweisGlocke.js'
 import { isHouseholdIdentity } from '../../lib/areas.js'
 import { hinweisTotal, hinweisZahlen } from '../../lib/glocke.js'
 
 const GlockeContext = createContext(null)
+// /start?hinweise=offen (Ziel der Push-Nachricht zu einem Kontaktwunsch, server/lib/push.js) öffnet gleich die Glocke.
+const OPEN_PARAM = 'hinweise'
+const OPEN_VALUE = 'offen'
 
 function openerFrom(event) {
   const target = event?.currentTarget
@@ -34,6 +38,21 @@ export default function HinweiseProvider({ family, onFamilyChange, children }) {
     restoreFocus.current = restore
     setOpen(false)
   }, [])
+
+  const [searchParams, setSearchParams] = useSearchParams()
+  const openFromUrl = enabled && searchParams.get(OPEN_PARAM) === OPEN_VALUE
+  useEffect(() => {
+    if (!openFromUrl) return
+    setOpen(true)
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        next.delete(OPEN_PARAM)
+        return next
+      },
+      { replace: true }
+    )
+  }, [openFromUrl, setSearchParams])
 
   const { loadLists } = glocke
   useEffect(() => {

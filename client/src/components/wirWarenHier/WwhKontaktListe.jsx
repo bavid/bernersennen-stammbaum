@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ConfirmButton from '../ConfirmButton.jsx'
 import Icon from '../Icon.jsx'
-import Modal from '../Modal.jsx'
+import WwhAnnehmenDialog from './WwhAnnehmenDialog.jsx'
 import { WWH } from '../../lib/wirWarenHierText.js'
 import { t } from '../../lib/i18n/index.js'
 import { focusWwhTitle } from './useWirWarenHier.js'
@@ -51,19 +51,7 @@ function Eingehend({ wish, disabled, actions }) {
           {t(WWH.ablehnen)}
         </button>
       </div>
-      <Modal open={open} title={t(WWH.annehmenTitel)} onClose={() => setOpen(false)}>
-        <div className="wwh-dialog">
-          <p>{t(WWH.annehmenErklaerung)}</p>
-          <div className="form-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
-              {t(WWH.abbrechen)}
-            </button>
-            <button type="button" className="btn btn-primary" disabled={disabled} onClick={accept} data-autofocus>
-              {t(WWH.jaAnnehmen)}
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <WwhAnnehmenDialog open={open} disabled={disabled} onCancel={() => setOpen(false)} onConfirm={accept} />
     </li>
   )
 }
@@ -88,7 +76,7 @@ function Ausgehend({ wish, disabled, actions }) {
 }
 
 // Offene Kontaktwünsche dieses Ortes (an uns und von uns). Steht im Reiter „Wir waren hier“ der Partnerseite - die
-// Hinweis-Glocke kennt sie (noch) nicht. Ohne Wünsche erscheint nichts.
+// Hinweis-Glocke zeigt die Wünsche an uns ebenfalls (mit Ort). Ohne Wünsche erscheint nichts.
 export default function WwhKontaktListe({ wishes, disabled = false, actions }) {
   if (wishes.an.length + wishes.von.length === 0) return null
   return (

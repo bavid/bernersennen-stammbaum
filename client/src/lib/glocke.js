@@ -1,8 +1,10 @@
 import { t } from './i18n/index.js'
+import { WWH } from './wirWarenHierText.js'
 // Hinweis-Glocke im Kopf (components/hinweise): Zahlen, Texte und die Liste aus den drei Quellen - offene „Mit dabei“-
 // Anfragen (server/routes/erlebtMit.js), neue Gäste (server/routes/besuche.js) und Grüße zu eigenen Erinnerungen
-// (server/routes/meineHinweise.js). Die Zahlen gehören zur Identität und stehen in /me (erlebtMitOffen, neueGaeste,
-// neueGruesse) - an EINER Stelle, die Glocke und die Zeile auf Start lesen beide von dort.
+// (server/routes/meineHinweise.js), dazu offene „Wir waren hier“-Kontaktwünsche an uns (server/lib/wwhKontakt.js). Die
+// Zahlen gehören zur Identität und stehen in /me (erlebtMitOffen, neueGaeste, neueGruesse, wwhKontakteOffen) - an EINER
+// Stelle, die Glocke und die Zeile auf Start lesen beide von dort.
 
 // Höchstens so oft fragt die Glocke von selbst nach (nur bei sichtbarem Tab, nur im eigenen Zuhause).
 export const REFRESH_MS = 2 * 60 * 1000
@@ -10,23 +12,26 @@ const MAX_BADGE = 99
 
 const countOf = (value) => (Number.isInteger(value) && value > 0 ? value : 0)
 
-// { anfragen, gaeste, gruesse } aus /me.
+// Feld in /me je Zahl der Glocke.
+const ME_FIELDS = Object.freeze({ anfragen: 'erlebtMitOffen', gaeste: 'neueGaeste', gruesse: 'neueGruesse', kontakte: 'wwhKontakteOffen' })
+
+// { anfragen, gaeste, gruesse, kontakte } aus /me.
 export function hinweisZahlen(family) {
-  return {
-    anfragen: countOf(family?.erlebtMitOffen),
-    gaeste: countOf(family?.neueGaeste),
-    gruesse: countOf(family?.neueGruesse)
-  }
+  return Object.fromEntries(Object.entries(ME_FIELDS).map(([zahl, field]) => [zahl, countOf(family?.[field])]))
 }
 
 export function hinweisTotal(zahlen) {
-  return zahlen.anfragen + zahlen.gaeste + zahlen.gruesse
+  return Object.keys(ME_FIELDS).reduce((sum, zahl) => sum + countOf(zahlen[zahl]), 0)
 }
 
 // Neue family mit den Zahlen der Glocke - bei gleichen Zahlen dasselbe Objekt (setFamily rendert dann nicht neu).
 export function withHinweisZahlen(family, zahlen) {
   if (!family) return family
-  const next = { erlebtMitOffen: zahlen.anfragen, neueGaeste: zahlen.gaeste, neueGruesse: zahlen.gruesse }
+  const next = Object.fromEntries(
+    Object.entries(ME_FIELDS)
+      .filter(([zahl]) => zahlen[zahl] !== undefined)
+      .map(([zahl, field]) => [field, countOf(zahlen[zahl])])
+  )
   if (Object.keys(next).every((key) => family[key] === next[key])) return family
   return { ...family, ...next }
 }
@@ -58,10 +63,16 @@ export function greetingText(greeting) {
   return t('{von} hat euch zu „{titel}“ gegrüßt', { von: greeting.von, titel: greeting.titel })
 }
 
-// Eine Liste aus allen drei Quellen, neueste zuerst: [{ kind, key, at, neu, data }]. Von den Gästen zählen nur die neuen
+// „Benno möchte Flocke kennenlernen – bei Hundeschule Bachweg“ - nur Tiernamen und Ort, nie Familiennamen.
+export function kontaktText(wish) {
+  return t(WWH.wunschAnOrt, { tier: wish.tierName, eigenes: wish.eigenesTierName, ort: wish.ortName })
+}
+
+// Eine Liste aus allen Quellen, neueste zuerst: [{ kind, key, at, neu, data }]. Von den Gästen zählen nur die neuen
 // (bestätigte stehen in „Meine Gäste“ im Einladen-Dialog); Anfragen sind immer neu, Grüße bringen neu vom Server mit.
-export function hinweisItems({ anfragen = [], gaeste = [], gruesse = [] }) {
+export function hinweisItems({ anfragen = [], gaeste = [], gruesse = [], kontakte = [] }) {
   const items = [
+    ...kontakte.map((data) => ({ kind: 'kontakt', key: `kontakt-${data.id}`, at: data.createdAt || '', neu: true, data })),
     ...anfragen.map((data) => ({ kind: 'anfrage', key: `anfrage-${data.requestId}`, at: data.angefragtAm || '', neu: true, data })),
     ...gaeste.filter((guest) => guest.neu).map((data) => ({ kind: 'gast', key: `gast-${data.id}`, at: data.seit || '', neu: true, data })),
     ...gruesse.map((data) => ({ kind: 'gruss', key: `gruss-${data.id}`, at: data.createdAt || '', neu: Boolean(data.neu), data }))

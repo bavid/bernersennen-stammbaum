@@ -3,9 +3,10 @@ import { api } from '../api'
 import { genitive } from '../lib/timeline.js'
 import { hinweisZahlen } from '../lib/glocke.js'
 import { t } from '../lib/i18n/index.js'
+import { WWH } from '../lib/wirWarenHierText.js'
 
 // Aktionen im Fenster der Hinweis-Glocke (hooks/useHinweisGlocke.js): „Mit dabei“ Ja/Nein und „alle von … ablehnen“, neue
-// Gäste Passt/Entfernen. Die Rückmeldung steht IM Fenster (feedback: { kind: 'ok' | 'error', text }) - am Handy liegt das
+// Gäste Passt/Entfernen, „Wir waren hier“-Kontaktwünsche Annehmen/Ablehnen. Die Rückmeldung steht IM Fenster (feedback: { kind: 'ok' | 'error', text }) - am Handy liegt das
 // Blatt als modaler Dialog über allem, ein Toast darunter bliebe unsichtbar. busy: die Schlüssel der Hinweise, für die
 // gerade eine Aktion läuft (mehrere gleichzeitig möglich). setLists/patchZahlen/mounted: vom Glocken-Hook.
 export default function useHinweisAktionen({ setLists, patchZahlen, mounted }) {
@@ -15,15 +16,18 @@ export default function useHinweisAktionen({ setLists, patchZahlen, mounted }) {
   const resetFeedback = useCallback(() => setFeedback(null), [])
   const isBusy = (key) => busy.includes(key)
 
+  // true, wenn die Aktion geklappt hat (der Annehmen-Dialog schließt nur dann).
   async function run(key, action) {
-    if (busy.includes(key)) return
+    if (busy.includes(key)) return false
     setBusy((current) => [...current, key])
     setFeedback(null)
     try {
       const text = await action()
       if (mounted.current && text) setFeedback({ kind: 'ok', text })
+      return true
     } catch (err) {
       if (mounted.current) setFeedback({ kind: 'error', text: err.message })
+      return false
     } finally {
       if (mounted.current) setBusy((current) => current.filter((k) => k !== key))
     }
@@ -68,11 +72,31 @@ export default function useHinweisAktionen({ setLists, patchZahlen, mounted }) {
       return t('„{name}“ ist nicht mehr bei euch zu Gast', { name: guest.name })
     })
 
+  // Kontaktwunsch (lib/wwhKontakt.js): Annehmen legt einen bestätigten Besuch an - die Gäste-Zahl bleibt also gleich.
+  const dropWish = (wish) =>
+    setLists((current) => (current ? { ...current, kontakte: (current.kontakte || []).filter((w) => w.id !== wish.id) } : current))
+  const decideWish = (wish, accept) =>
+    run(`kontakt-${wish.id}`, async () => {
+      if (accept) await api.wwhKontaktAnnehmen(wish.id)
+      else await api.wwhKontaktAblehnen(wish.id)
+      dropWish(wish)
+      patchZahlen((zahlen) => ({ kontakte: Math.max(0, zahlen.kontakte - 1) }))
+      return t(accept ? WWH.angenommen : WWH.wunschAbgelehnt)
+    })
+
   return {
     busy,
     isBusy,
     feedback,
     resetFeedback,
-    actions: { confirm: (r) => decide(r, true), reject: (r) => decide(r, false), rejectAllFrom, acknowledgeGuest, removeGuest }
+    actions: {
+      confirm: (r) => decide(r, true),
+      reject: (r) => decide(r, false),
+      rejectAllFrom,
+      acknowledgeGuest,
+      removeGuest,
+      acceptWish: (wish) => decideWish(wish, true),
+      rejectWish: (wish) => decideWish(wish, false)
+    }
   }
 }

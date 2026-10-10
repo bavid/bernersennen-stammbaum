@@ -32,7 +32,8 @@ function Popover({ id, onClose, children }) {
       onCloseRef.current()
     }
     function handleKeyDown(event) {
-      if (event.key !== 'Escape') return
+      // Escape in einem Dialog darin (z. B. „Kontaktwunsch annehmen“) schließt nur diesen Dialog.
+      if (event.key !== 'Escape' || event.target.closest?.('dialog[open]')) return
       event.preventDefault()
       onCloseRef.current()
     }

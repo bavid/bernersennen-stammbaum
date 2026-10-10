@@ -8,6 +8,7 @@ import {
   hinweisItems,
   hinweisTotal,
   hinweisZahlen,
+  kontaktText,
   requestText,
   startLineText,
   withHinweisZahlen
@@ -15,10 +16,16 @@ import {
 
 describe('Hinweis-Glocke: Zahlen', () => {
   test('hinweisZahlen liest die Zahlen aus /me - Unsinn zählt als 0', () => {
-    expect(hinweisZahlen({ erlebtMitOffen: 2, neueGaeste: 1, neueGruesse: 3 })).toEqual({ anfragen: 2, gaeste: 1, gruesse: 3 })
-    expect(hinweisZahlen({ erlebtMitOffen: -1, neueGaeste: '2' })).toEqual({ anfragen: 0, gaeste: 0, gruesse: 0 })
-    expect(hinweisZahlen(null)).toEqual({ anfragen: 0, gaeste: 0, gruesse: 0 })
+    expect(hinweisZahlen({ erlebtMitOffen: 2, neueGaeste: 1, neueGruesse: 3, wwhKontakteOffen: 4 })).toEqual({
+      anfragen: 2,
+      gaeste: 1,
+      gruesse: 3,
+      kontakte: 4
+    })
+    expect(hinweisZahlen({ erlebtMitOffen: -1, neueGaeste: '2' })).toEqual({ anfragen: 0, gaeste: 0, gruesse: 0, kontakte: 0 })
+    expect(hinweisZahlen(null)).toEqual({ anfragen: 0, gaeste: 0, gruesse: 0, kontakte: 0 })
     expect(hinweisTotal({ anfragen: 2, gaeste: 1, gruesse: 3 })).toBe(6)
+    expect(hinweisTotal({ anfragen: 2, gaeste: 1, gruesse: 3, kontakte: 2 })).toBe(8)
   })
 
   test('withHinweisZahlen: neue family nur bei einer Änderung', () => {
@@ -26,6 +33,7 @@ describe('Hinweis-Glocke: Zahlen', () => {
     expect(withHinweisZahlen(family, { anfragen: 1, gaeste: 0, gruesse: 2 })).toBe(family)
     expect(withHinweisZahlen(family, { anfragen: 0, gaeste: 0, gruesse: 2 })).toEqual({ ...family, erlebtMitOffen: 0 })
     expect(withHinweisZahlen(null, { anfragen: 1, gaeste: 0, gruesse: 0 })).toBeNull()
+    expect(withHinweisZahlen(family, { anfragen: 1, gaeste: 0, gruesse: 2, kontakte: 1 })).toEqual({ ...family, wwhKontakteOffen: 1 })
   })
 
   test('Beschriftungen: Knopf, Badge, Zeile auf Start', () => {
@@ -67,5 +75,20 @@ describe('Hinweis-Glocke: Liste', () => {
     const onlyNew = hinweisGroups(hinweisItems({ anfragen: [anfrage], gaeste: [], gruesse: [] }))
     expect(onlyNew.map((group) => [group.label, group.items.length])).toEqual([[null, 1]])
     expect(hinweisGroups([])).toEqual([])
+  })
+})
+
+describe('Hinweis-Glocke: „Wir waren hier“-Kontaktwünsche', () => {
+  const wish = { id: 7, tierName: 'Benno', eigenesTierName: 'Flocke', ortName: 'Hundeschule Bachweg', createdAt: '2026-10-05 12:00:00' }
+
+  test('kontaktText nennt Tiere und Ort - keine Familie', () => {
+    expect(kontaktText(wish)).toBe('Benno möchte Flocke kennenlernen – bei Hundeschule Bachweg')
+  })
+
+  test('hinweisItems: Wünsche sind immer neu und stehen nach Datum zwischen den anderen', () => {
+    const gruss = { id: 3, createdAt: '2026-10-06 09:00:00', neu: false }
+    const items = hinweisItems({ gruesse: [gruss], kontakte: [wish] })
+    expect(items.map((item) => item.key)).toEqual(['gruss-3', 'kontakt-7'])
+    expect(items[1]).toMatchObject({ kind: 'kontakt', neu: true, data: wish })
   })
 })

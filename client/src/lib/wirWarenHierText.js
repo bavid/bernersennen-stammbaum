@@ -50,6 +50,8 @@ export const WWH = Object.freeze({
   anfrageGesendet: 'Anfrage an {name} gesendet.',
   wuensche: 'Kontaktwünsche',
   wunschAn: '{tier} möchte {eigenes} kennenlernen.',
+  // In der Hinweis-Glocke (lib/glocke.js) - dort mit Ort, weil die Wünsche aller Orte zusammenstehen.
+  wunschAnOrt: '{tier} möchte {eigenes} kennenlernen – bei {ort}',
   wunschVon: 'Ihr habt {tier} gefragt – die Antwort steht noch aus.',
   annehmen: 'Annehmen',
   ablehnen: 'Ablehnen',
