@@ -23,6 +23,7 @@ const { DEMO_PROMOTIONS, DEMO_SETTINGS, DEMO_DONATION_REPORT } = require('../see
 const { createDemoPartnerAreas, createDemoPartnerContent } = require('./demoPartnerAreas')
 const { createDemoMembers, insertLeitungComment } = require('./demoMembers')
 const { createDemoVisits } = require('./demoVisits')
+const { removeDemoWwh, createDemoWwh } = require('./demoWirWarenHier')
 
 const IMAGE_DIR = path.join(__dirname, '..', 'seed', 'images')
 const UNKNOWN_NAME = 'Unbekannt'
@@ -548,6 +549,8 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     const rudelResult = createDemoPack(db, packOptions)
     const removedEinblickPhotos = removeDemoEinblicke(db, previousPartnerIds)
     const removedBannerPhotos = removeDemoBanner(db, previousPartnerIds)
+    // „Wir waren hier“: Demo-Anmeldungen/-Wünsche weg, solange die alten Demo-Partner-Ids noch bekannt sind.
+    removeDemoWwh(db, previousPartnerIds)
 
     // families.partner_id / vouchers.partner_id / voucher_batches.partner_id sind reine INTEGER-Spalten
     // ohne REFERENCES (siehe db.js) - das Löschen unten scheitert also nie an einem Fremdschlüssel.
@@ -603,6 +606,11 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       householdDogIds: householdResult.dogIds,
       memberHouseholds: membersResult.households
     })
+    const wirWarenHierResult = createDemoWwh(db, {
+      householdId: householdResult.familyId,
+      householdDogIds: householdResult.dogIds,
+      memberHouseholds: membersResult.households
+    })
 
     const discoverResult = replaceDemoDiscoverContent(db, mediaDir, newPromotionImages)
 
@@ -621,7 +629,8 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
       partnerContent,
       removedEinblickPhotos,
       removedBannerPhotos,
-      visits: visitsResult
+      visits: visitsResult,
+      wirWarenHier: wirWarenHierResult
     }
   })
 
@@ -635,7 +644,7 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     for (const file of newPromotionImages) fs.rmSync(path.join(mediaDir, file), { force: true })
     throw err
   }
-  const { created, household, members, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos, removedBannerPhotos, visits } =
+  const { created, household, members, shelter, partnerIds, partnerAreas, discover, partnerContent, removedEinblickPhotos, removedBannerPhotos, visits, wirWarenHier } =
     built
 
   for (const file of discover.removedImages) fs.rmSync(path.join(mediaDir, path.basename(file)), { force: true })
@@ -671,7 +680,8 @@ function replaceDemoPack(db, uploadDir, { theme, name, mediaDir = defaultMediaDi
     messages: partnerContent.messages,
     termine: partnerContent.termine,
     visitenkarten: partnerContent.visitenkarten,
-    visits
+    visits,
+    wirWarenHier
   }
 }
 
