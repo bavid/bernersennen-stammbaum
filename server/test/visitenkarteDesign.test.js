@@ -81,7 +81,7 @@ test('validateDesign: eine vollständige Gestaltung wird gesäubert übernommen'
 })
 
 test('validateDesign: Kombination nur aus der festen Liste, Kombi ist die Vorgabe', () => {
-  assert.deepEqual(KARTEN, ['visitenkarte', 'einladung', 'kombi'])
+  assert.deepEqual(KARTEN, ['visitenkarte', 'einladung', 'kombi', 'geschenk'])
   assert.equal(DEFAULT_KARTE, 'kombi')
   for (const karte of KARTEN) assert.equal(validateDesign({ ...VALID, karte }).karte, karte)
   for (const karte of ['gutschein', '', null, 1, 'KOMBI']) rejects({ ...VALID, karte }, /Kombination/)

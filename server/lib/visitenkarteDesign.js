@@ -13,7 +13,8 @@ const { stripUnsafeChars } = require('./partners')
 const { assertNoBreeder } = require('./breederGuard')
 
 const VORLAGEN = Object.freeze(['klassisch', 'foto', 'schlicht'])
-const KARTEN = Object.freeze(['visitenkarte', 'einladung', 'kombi'])
+// geschenk (Plan 2027): vorne das Geschenk-Motiv der Plattform, hinten ein Einladungscode.
+const KARTEN = Object.freeze(['visitenkarte', 'einladung', 'kombi', 'geschenk'])
 const DEFAULT_KARTE = 'kombi'
 const MAX_KURZTEXT_LENGTH = 120
 const MAX_WIDMUNG_LENGTH = 80

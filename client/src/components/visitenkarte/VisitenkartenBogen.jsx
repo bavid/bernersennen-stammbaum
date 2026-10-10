@@ -33,7 +33,7 @@ function EmptySlot() {
   return <span className="vk-slot-leer" aria-hidden="true" />
 }
 
-function Sheet({ sheet, side, total, card, renderBack }) {
+function Sheet({ sheet, side, total, card, renderBack, renderFront }) {
   const sideLabel = t(SIDE_LABELS[side])
   const label = t('Bogen {n} von {total}, {side}', { n: sheet.number, total, side: sideLabel })
   return (
@@ -45,7 +45,7 @@ function Sheet({ sheet, side, total, card, renderBack }) {
       <div className="vk-sheet-grid">
         {side === SEITEN.vorne
           ? sheet.fronts.map((index, slot) =>
-              index === null ? <EmptySlot key={`leer-${slot}`} /> : <VisitenkarteFront key={index} card={card} />
+              index === null ? <EmptySlot key={`leer-${slot}`} /> : <Front key={index} card={card} renderFront={renderFront} />
             )
           : sheet.backs.map((back, slot) =>
               back === null ? (
@@ -59,6 +59,11 @@ function Sheet({ sheet, side, total, card, renderBack }) {
   )
 }
 
+function Front({ card, renderFront }) {
+  if (renderFront) return renderFront()
+  return <VisitenkarteFront card={card} />
+}
+
 function Back({ back, card, renderBack }) {
   if (renderBack) return renderBack(back)
   return <VisitenkarteBack card={card} />
@@ -67,12 +72,13 @@ function Back({ back, card, renderBack }) {
 // seiten: beide (je Bogen Vorder- und gleich danach Rückseite - für Drucker mit Duplex), nur vorne oder nur hinten (zum
 // Wenden von Hand: erst alle Vorderseiten, Stapel umdrehen, dann alle Rückseiten).
 // total: Zahl aller Bögen (die Druckvorschau zeigt nur den ersten). renderBack(back): eigene Rückseite ({ index, code }).
-export default function VisitenkartenBoegen({ sheets, card, seiten = SEITEN.beide, total = sheets.length, renderBack = null }) {
+// renderFront(): eigene Vorderseite (Geschenkkarte), sonst die Visitenkarte.
+export default function VisitenkartenBoegen({ sheets, card, seiten = SEITEN.beide, total = sheets.length, renderBack = null, renderFront = null }) {
   const sides = seiten === SEITEN.beide ? [SEITEN.vorne, SEITEN.hinten] : [seiten]
   return (
     <div className="vk-sheets">
       {sheets.flatMap((sheet) =>
-        sides.map((side) => <Sheet key={`${sheet.number}-${side}`} sheet={sheet} side={side} total={total} card={card} renderBack={renderBack} />)
+        sides.map((side) => <Sheet key={`${sheet.number}-${side}`} sheet={sheet} side={side} total={total} card={card} renderBack={renderBack} renderFront={renderFront} />)
       )}
     </div>
   )

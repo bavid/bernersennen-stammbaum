@@ -9,8 +9,8 @@ export const PRINTED_HINT = '„gedruckt“: Der Code steht schon auf gedruckten
 // Die eigenen Codes eines Bereichs (Phase V2b, useVoucherList) - im Einladen-Dialog je nach Zweck gefiltert (Phase W,
 // Schritt 2: Besuchs-Codes und Einladungscodes getrennt). list: useVoucherList(); vouchers/archive: die gezeigten
 // Ausschnitte; canCreate: "Neuen Code erstellen"; roleOptions (Familie): Rolle je Einladung; canModerate: fremde Codes
-// zurückziehen; own: Zahl im Archiv als "Du hast …"; emptyText: ohne offene Codes.
-export default function CodeList({ list, vouchers, archive, canCreate, roleOptions = [], canModerate, own, disabled, emptyText }) {
+// zurückziehen; own: Zahl im Archiv als "Du hast …"; emptyText: ohne offene Codes; onGift(code): Geschenkkarte drucken.
+export default function CodeList({ list, vouchers, archive, canCreate, roleOptions = [], canModerate, own, disabled, emptyText, onGift }) {
   const [archiveOpen, setArchiveOpen] = useState(false)
   return (
     <>
@@ -34,6 +34,7 @@ export default function CodeList({ list, vouchers, archive, canCreate, roleOptio
               onDelete={list.remove}
               canDelete={voucher.eigen || canModerate}
               disabled={disabled}
+              onGift={onGift}
             />
           ))}
         </ul>

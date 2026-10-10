@@ -21,7 +21,7 @@
 
 .vk-wahl-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 15rem));
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 15rem));
   gap: var(--space-3);
 }
 

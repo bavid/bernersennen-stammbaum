@@ -4,6 +4,8 @@ import { useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import Icon from '../Icon.jsx'
 import VisitInviteCreator from '../visits/VisitInviteCreator.jsx'
 import CodeList from './CodeList.jsx'
+import GeschenkkartePanel from '../geschenk/GeschenkkartePanel.jsx'
+import { GESCHENK_MUSTER_CODE } from '../../lib/geschenkkarte.js'
 import useVoucherList from './useVoucherList.js'
 import { t } from '../../lib/i18n/index.js'
 
@@ -50,16 +52,35 @@ function InviteChoice({ onChoose, focusKey }) {
 }
 
 // "Zuhause verschenken": die Einladungscodes des Zuhauses (ohne Besuchs-Codes) samt "Neuen Code erstellen" und Archiv.
-function GiftPanel({ list, disabled, headingRef }) {
+// Plan 2027: neben jedem offenen Code „Als Geschenkkarte drucken“ - der Code bleibt im State (gift), nie in der Adresse.
+// Die Demo vergibt keine Codes: dort zeigt „Geschenkkarte ansehen (Muster)“ die Karte mit einem Beispiel-Code.
+function GiftPanel({ list, disabled, isDemo, headingRef }) {
+  const [gift, setGift] = useState(null)
   const gifts = list.vouchers?.filter((voucher) => !voucher.besuch)
   const archive = list.archive?.filter((voucher) => !voucher.besuch)
+  if (gift) return <GeschenkkartePanel code={gift.code} muster={gift.muster} onBack={() => setGift(null)} />
   return (
     <section className="invite-vouchers" aria-labelledby="invite-gift-title">
       <h3 id="invite-gift-title" ref={headingRef} tabIndex={-1}>
         {t('Zuhause verschenken')}
       </h3>
       <p className="muted">{t('Wer den Einladungscode einlöst, bekommt ein eigenes Zuhause für seine Tiere.')}</p>
-      <CodeList list={list} vouchers={gifts} archive={archive} canCreate canModerate own disabled={disabled} emptyText={t('Gerade keine Einladungscodes übrig.')} />
+      <CodeList
+        list={list}
+        vouchers={gifts}
+        archive={archive}
+        canCreate
+        canModerate
+        own
+        disabled={disabled}
+        emptyText={t('Gerade keine Einladungscodes übrig.')}
+        onGift={(code) => setGift({ code, muster: false })}
+      />
+      {isDemo && (
+        <button type="button" className="btn btn-ghost btn-compact" onClick={() => setGift({ code: GESCHENK_MUSTER_CODE, muster: true })}>
+          {t('Geschenkkarte ansehen (Muster)')}
+        </button>
+      )}
     </section>
   )
 }
@@ -115,7 +136,7 @@ export default function HomeInvite() {
           {mode === 'besuch' ? (
             <VisitPanel list={list} disabled={isDemo} headingRef={headingRef} />
           ) : (
-            <GiftPanel list={list} disabled={isDemo} headingRef={headingRef} />
+            <GiftPanel list={list} disabled={isDemo} isDemo={isDemo} headingRef={headingRef} />
           )}
         </>
       )}

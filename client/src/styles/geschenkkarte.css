@@ -1,0 +1,274 @@
+/* Geschenkkarte (Plan 2027, components/geschenk/*, lib/geschenkkarte.js): ein Einladungscode als Karte zum Verschenken.
+   Rechnet wie die Visitenkarte in --u (visitenkarte-karte.css .vk-card) - im Partner-Designer 85 × 55, für Familien A6 quer
+   (.gk-a6: --u × 1,6 → 148 × 105 mm). Papier kennt keinen Dunkelmodus: die Karte trägt die Werte der hellen Farbwelt
+   „Familienalbum“ (palettes.css - Papier, Tinte, Rost, Tan, Salbei), keine neuen Farben. Bedienelemente rund um die
+   Karte nutzen die Theme-Tokens. Gedruckt wird über .vk-print/.vk-sheet aus visitenkarten.css (benannte A4-Seite). */
+
+.gk-card {
+  --gk-papier: #fbf5ec;
+  --gk-papier-tief: #f3e8d9;
+  --gk-tinte: #2e241d;
+  --gk-tinte-weich: #4a3c31;
+  --gk-leise: #6b5d52;
+  --gk-linie: #d9c6b0;
+  --gk-rost: #a64b2a;
+  --gk-rost-tief: #83391e;
+  --gk-tan: #d49a5b;
+  --gk-salbei: #7c8f6a;
+
+  background: var(--gk-papier);
+  color: var(--gk-tinte);
+}
+
+.gk-a6 {
+  --u: calc(var(--vk-mm, 1mm) * 1.6);
+
+  width: calc(92.5 * var(--u));
+  height: calc(65.625 * var(--u));
+}
+
+/* --- Vorderseite ------------------------------------------------------------------------------------- */
+
+.gk-front {
+  display: grid;
+  grid-template-columns: calc(24 * var(--u)) minmax(0, 1fr);
+  gap: calc(4 * var(--u));
+  align-items: center;
+  padding: calc(5 * var(--u)) calc(6 * var(--u)) calc(5 * var(--u)) calc(5 * var(--u));
+}
+
+/* Feiner Rahmen wie im Album, innen. */
+.gk-front::after {
+  content: '';
+  position: absolute;
+  inset: calc(2.2 * var(--u));
+  border: calc(0.3 * var(--u)) solid var(--gk-linie);
+  pointer-events: none;
+}
+
+/* Das Band läuft senkrecht hinter dem Herz durch die ganze Karte - die Schleife sitzt darauf. */
+.gk-ecke {
+  position: absolute;
+  inset: 0 auto 0 calc(17 * var(--u) - 1.1 * var(--u));
+  width: calc(2.2 * var(--u));
+  background: var(--gk-tan);
+  opacity: 0.55;
+}
+
+.gk-motiv {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.gk-herz {
+  fill: var(--gk-papier-tief);
+  stroke: var(--gk-rost);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+}
+
+.gk-pfote {
+  fill: var(--gk-rost);
+}
+
+.gk-band {
+  fill: var(--gk-tan);
+  stroke: var(--gk-rost-tief);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gk-knoten {
+  fill: var(--gk-rost);
+}
+
+.gk-front-text {
+  position: relative;
+  display: grid;
+  gap: calc(1.2 * var(--u));
+  min-width: 0;
+}
+
+.gk-marke {
+  font-size: calc(1.9 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gk-salbei);
+}
+
+.gk-titel {
+  font-family: var(--font-display);
+  font-size: calc(4.6 * var(--u));
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--gk-rost-tief);
+}
+
+.gk-unterzeile {
+  font-size: calc(2.3 * var(--u));
+  color: var(--gk-tinte-weich);
+}
+
+.gk-zeilen {
+  display: grid;
+  gap: calc(2.4 * var(--u));
+  margin-top: calc(1.6 * var(--u));
+}
+
+.gk-zeile {
+  display: flex;
+  gap: calc(1.4 * var(--u));
+  align-items: baseline;
+  font-family: var(--font-hand);
+  font-size: calc(3.2 * var(--u));
+  color: var(--gk-leise);
+}
+
+.gk-linie {
+  flex: 1;
+  border-bottom: calc(0.3 * var(--u)) dotted var(--gk-leise);
+}
+
+/* --- Rückseite --------------------------------------------------------------------------------------- */
+
+.gk-back {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(25 * var(--u));
+  gap: calc(4 * var(--u));
+  align-items: center;
+  padding: calc(5.5 * var(--u)) calc(5 * var(--u)) calc(4.4 * var(--u));
+  border-top: calc(1.8 * var(--u)) solid var(--gk-rost);
+}
+
+.gk-back-body {
+  display: grid;
+  gap: calc(1.4 * var(--u));
+  min-width: 0;
+}
+
+.gk-back-titel {
+  font-family: var(--font-display);
+  font-size: calc(3.2 * var(--u));
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--gk-rost-tief);
+}
+
+.gk-schritte {
+  display: grid;
+  gap: calc(0.7 * var(--u));
+  margin: 0;
+  padding-left: calc(3.6 * var(--u));
+  font-size: calc(2.3 * var(--u));
+  line-height: 1.25;
+}
+
+.gk-schritte li::marker {
+  font-weight: 800;
+  color: var(--gk-rost);
+}
+
+.gk-fuss {
+  padding-top: calc(1.1 * var(--u));
+  border-top: calc(0.25 * var(--u)) solid var(--gk-linie);
+  font-size: calc(1.85 * var(--u));
+  line-height: 1.3;
+  color: var(--gk-leise);
+}
+
+.gk-code-col {
+  display: grid;
+  justify-items: center;
+  gap: calc(1 * var(--u));
+  min-width: 0;
+}
+
+.gk-code-col .vk-qr-box {
+  width: 100%;
+  box-sizing: border-box;
+  border: calc(0.3 * var(--u)) solid var(--gk-linie);
+}
+
+.gk-back .gk-code {
+  gap: calc(0.8 * var(--u));
+  margin-top: 0;
+  padding: calc(0.5 * var(--u)) calc(0.9 * var(--u));
+  border-color: var(--gk-rost);
+  background: #fff;
+  font-size: calc(2.3 * var(--u));
+  letter-spacing: 0.03em;
+}
+
+.gk-adresse {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: calc(1.8 * var(--u));
+  color: var(--gk-leise);
+  text-align: center;
+}
+
+/* --- A4-Bogen der Familienkarte: Vorder- und Rückseite übereinander, mittig, dazwischen der Falz --------- */
+
+.gk-sheet-karte {
+  position: absolute;
+  top: calc(43.5 * var(--u));
+  left: calc(31 * var(--u));
+  display: grid;
+}
+
+.gk-falz {
+  stroke-dasharray: 2 1.5;
+}
+
+.gk-sheet-label {
+  left: calc(31 * var(--u));
+  top: calc(30 * var(--u));
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* --- Bedienung im Einladen-Dialog ------------------------------------------------------------------------ */
+
+.gk-panel {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.gk-vorschau {
+  width: 100%;
+  container-type: inline-size;
+}
+
+.gk-vorschau-karten {
+  --vk-mm: min(0.75mm, calc(100cqi / 152));
+
+  display: grid;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.gk-vorschau-karten .gk-card {
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.voucher-row-gift {
+  justify-self: start;
+}
+
+/* Skizze in der Kartenwahl: vorne ein kleines Herz-Band statt Kontaktzeilen. */
+.vk-wahl-seite.is-vorne.is-geschenk {
+  align-items: center;
+  background: linear-gradient(90deg, transparent 30%, var(--tan) 30% 42%, transparent 42%), var(--paper);
+}
+
+.vk-wahl-seite.is-vorne.is-geschenk i:first-child {
+  width: 40%;
+  margin-left: 45%;
+}

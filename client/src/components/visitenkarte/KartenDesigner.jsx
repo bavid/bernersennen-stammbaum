@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api'
 import EinladungBack from './EinladungBack.jsx'
+import GeschenkBack from '../geschenk/GeschenkBack.jsx'
+import GeschenkFront from '../geschenk/GeschenkFront.jsx'
 import KartenCodes from './KartenCodes.jsx'
 import KartenDruckOptionen from './KartenDruckOptionen.jsx'
 import KartenWahl from './KartenWahl.jsx'
@@ -16,7 +18,7 @@ import useKartenEntwurf from '../../hooks/useKartenEntwurf.js'
 import useVisitenkartenDruck from '../../hooks/useVisitenkartenDruck.js'
 import { useIsAdminView, useIsDemo, useReadOnlyHint } from '../../lib/demo.js'
 import { printAddressPending } from '../../lib/voucherPrint.js'
-import { CARDS_PER_SHEET, cardModel, designPayload, isSameDesign, maskPendingAddress, musterCodes, normalizeDesign } from '../../lib/visitenkarte.js'
+import { CARDS_PER_SHEET, cardModel, designPayload, isSameDesign, maskPendingAddress, musterCodes, normalizeDesign, voucherTarget } from '../../lib/visitenkarte.js'
 import { DEFAULT_KARTEN, buildKartenSheets, rueckseiteModel, sheetCountFor } from '../../lib/einladungskarte.js'
 import { KARTE, backHasCode } from '../../lib/kartenWahl.js'
 import { t } from '../../lib/i18n/index.js'
@@ -34,10 +36,14 @@ import { t } from '../../lib/i18n/index.js'
 
 export const RUECKSEITE_NOTE = 'Die Rückseite gestaltet Familie auf Pfoten.'
 const CODES_LATER = 'Die echten Codes kommen erst beim Drucken der Rückseiten dazu.'
+export const GESCHENK_NOTE = 'Die Geschenkkarte gestaltet Familie auf Pfoten – „Für …“ und „Von …“ füllt ihr oder eure Kundschaft von Hand aus.'
 
 function BackOf({ karte, card, back, code, muster }) {
   if (karte === KARTE.einladung) return <EinladungBack card={card} rueckseite={back} code={code} muster={muster} />
   if (karte === KARTE.kombi) return <KombiBack card={card} rueckseite={back} code={code} muster={muster} />
+  if (karte === KARTE.geschenk) {
+    return <GeschenkBack code={code} qrUrl={voucherTarget(card.baseUrl, code)} adresse={back.adresse} muster={muster} />
+  }
   return <VisitenkarteBack card={card} />
 }
 
@@ -88,6 +94,8 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
   const withCodes = hasCode && !readOnly && seiten !== SEITEN.vorne
   const druckfassung = printSheetsFor({ readOnly, hasCode, count, printable, printCodes: druck.printCodes, muster, seiten })
   const renderBack = (isMuster) => (entry) => <BackOf karte={karte} card={card} back={back} code={entry.code} muster={isMuster} />
+  const isGeschenk = karte === KARTE.geschenk
+  const renderFront = isGeschenk ? () => <GeschenkFront /> : null
 
   function chooseKarte(next) {
     update({ karte: next })
@@ -100,7 +108,7 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
       <div className={`vk-designer${hasCode ? ' has-codes' : ''}`}>
         <div className="vk-stage-col">
           <Stage
-            front={<VisitenkarteFront card={card} />}
+            front={isGeschenk ? <GeschenkFront /> : <VisitenkarteFront card={card} />}
             back={<BackOf karte={karte} card={card} back={back} code={muster[0]} muster />}
             backNote={hasCode ? t(RUECKSEITE_NOTE) : null}
           />
@@ -109,9 +117,15 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
           <h2 id="vk-gestaltung-title" className="vk-panel-title">
             {t('Vorderseite')}
           </h2>
-          <VisitenkarteVorlagen value={design.vorlage} farbe={design.farbe} hasFoto={Boolean(card.fotoUrl)} onChange={(vorlage) => update({ vorlage })} />
-          <VisitenkarteFarbe value={design.farbe} eigeneFarbe={profile.farbe} onChange={(farbe) => update({ farbe })} />
-          <VisitenkarteInhalt design={design} profile={profile} vorschlag={initial.vorschlag} onChange={update} />
+          {isGeschenk ? (
+            <p className="field-hint">{t(GESCHENK_NOTE)}</p>
+          ) : (
+            <>
+              <VisitenkarteVorlagen value={design.vorlage} farbe={design.farbe} hasFoto={Boolean(card.fotoUrl)} onChange={(vorlage) => update({ vorlage })} />
+              <VisitenkarteFarbe value={design.farbe} eigeneFarbe={profile.farbe} onChange={(farbe) => update({ farbe })} />
+              <VisitenkarteInhalt design={design} profile={profile} vorschlag={initial.vorschlag} onChange={update} />
+            </>
+          )}
           <SaveRow entwurf={entwurf} readOnly={readOnly} readOnlyHint={readOnlyHint} />
         </section>
         {hasCode && (
@@ -140,12 +154,13 @@ export default function KartenDesigner({ karte: karteParam, onKarte, profile, in
           total={sheetCountFor(count)}
           card={card}
           renderBack={renderBack(true)}
+          renderFront={renderFront}
         />
       </BogenVorschau>
 
       {!addressPending && (
         <VisitenkartenDruck>
-          <VisitenkartenBoegen sheets={druckfassung.sheets} card={card} seiten={druckfassung.seiten} renderBack={renderBack(readOnly)} />
+          <VisitenkartenBoegen sheets={druckfassung.sheets} card={card} seiten={druckfassung.seiten} renderBack={renderBack(readOnly)} renderFront={renderFront} />
         </VisitenkartenDruck>
       )}
     </>

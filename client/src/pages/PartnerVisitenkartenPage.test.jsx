@@ -129,21 +129,22 @@ async function changeInput(input, value) {
 }
 
 describe('PartnerVisitenkartenPage – Kombination wählen', () => {
-  test('eine Seite: drei Kacheln als Radio-Gruppe, Kombi gespeichert und gewählt, Vorschau mit Portal und Code', async () => {
+  test('eine Seite: vier Kacheln als Radio-Gruppe, Kombi gespeichert und gewählt, Vorschau mit Portal und Code', async () => {
     await render()
     expect(container.querySelector('h1').textContent).toBe('Karten gestalten')
     expect(container.textContent).not.toContain('Kartenart')
     const fieldset = container.querySelector('fieldset.vk-wahl')
     expect(fieldset.querySelector('legend').textContent).toBe('Welche Karte?')
     const radios = [...fieldset.querySelectorAll('input[type="radio"]')]
-    expect(radios.map((radio) => radio.closest('label').querySelector('strong').textContent)).toEqual(['Visitenkarte', 'Einladungskarte', 'Kombi'])
+    expect(radios.map((radio) => radio.closest('label').querySelector('strong').textContent)).toEqual(['Visitenkarte', 'Einladungskarte', 'Kombi', 'Geschenkkarte'])
     expect(radios.map((radio) => radio.closest('label').querySelector('.vk-wahl-hint').textContent)).toEqual([
       'vorne Kontakte · hinten euer Portal',
       'vorne Kontakte · hinten Einladungscode',
-      'vorne Kontakte · hinten Portal + Einladungscode'
+      'vorne Kontakte · hinten Portal + Einladungscode',
+      'vorne Geschenk-Motiv · hinten Einladungscode'
     ])
-    expect(radios.map((radio) => radio.checked)).toEqual([false, false, true])
-    expect(fieldset.querySelectorAll('.vk-wahl-skizze')).toHaveLength(3)
+    expect(radios.map((radio) => radio.checked)).toEqual([false, false, true, false])
+    expect(fieldset.querySelectorAll('.vk-wahl-skizze')).toHaveLength(4)
 
     const back = stage().querySelector('.vk-back-kombi')
     expect(back.dataset.muster).toBe('true')
@@ -309,6 +310,19 @@ describe('PartnerVisitenkartenPage – Demo und Admin-Ansicht', () => {
     await click(tile('visitenkarte'))
     expect(qrSvgPath).toHaveBeenCalledWith(`${PUBLIC_URL}/p/hundeschule-pfotenglueck?demo=1`)
     expect(printView().querySelectorAll('.vk-back-portal')).toHaveLength(10)
+  })
+
+  test('Plan 2027: Geschenkkarte - vorne das Geschenk-Motiv, hinten Muster-Code; Druckbogen trägt beides (Demo)', async () => {
+    await render({ readOnly: { isDemo: true } })
+    await click(tile('geschenk'))
+    expect(location.search).toContain('karte=geschenk')
+    expect(stage().querySelector('.gk-front').textContent).toContain('Ein Geschenk für euch und euer Tier')
+    expect(stage().querySelector('.gk-back').dataset.muster).toBe('true')
+    expect(container.querySelector('.vk-vorlagen, .vk-farbe')).toBeNull()
+    expect(printView().querySelectorAll('.gk-front')).toHaveLength(10)
+    const backs = [...printView().querySelectorAll('.gk-back')]
+    expect(backs).toHaveLength(10)
+    expect(backs.every((back) => back.dataset.muster === 'true')).toBe(true)
   })
 
   test('Admin-Ansicht: eigener Hinweis, nie echte Codes, Portal-Link ohne ?demo=1', async () => {

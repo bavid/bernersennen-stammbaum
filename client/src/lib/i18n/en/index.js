@@ -17,5 +17,7 @@ import ui from './ui.js'
 import onboarding from './onboarding.js'
 import startpaket from './startpaket.js'
 import share from './share.js'
+import geschenk from './geschenk.js'
+import netzwerk from './netzwerk.js'
 
-export default { ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...netzwerk, ...geschenk, ...startpaket, ...share, ...onboarding, ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

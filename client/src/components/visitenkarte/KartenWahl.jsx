@@ -11,7 +11,7 @@ function Skizze({ id }) {
   const qrCount = id === 'kombi' ? 2 : 1
   return (
     <span className="vk-wahl-skizze" aria-hidden="true">
-      <span className="vk-wahl-seite is-vorne">
+      <span className={`vk-wahl-seite is-vorne is-${id}`}>
         <i />
         <i />
         <i />

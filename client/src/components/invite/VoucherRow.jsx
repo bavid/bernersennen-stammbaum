@@ -5,6 +5,7 @@ import VoucherLabel from './VoucherLabel.jsx'
 import VoucherShareActions from './VoucherShareActions.jsx'
 import { formatDateShort } from '../../lib/dates.js'
 import { VOUCHER_STATUS_LABEL } from '../../lib/voucherCode.js'
+import { canPrintGift } from '../../lib/geschenkkarte.js'
 import { t } from '../../lib/i18n/index.js'
 
 function statusText(voucher) {
@@ -18,7 +19,8 @@ function statusText(voucher) {
 // darf - die Rolle stellt man ein, BEVOR man Code oder Link weitergibt (onRoleChange); eingelöste Einladungen zeigen
 // sie nur noch an. Phase V2b: die eigene Notiz (nur bei eigenen Codes, onLabelChange) und - solange nicht
 // eingelöst - „Zurückziehen“ (onDelete, nur wenn canDelete). disabled sperrt alles Schreibende (Demo, Admin-Ansicht).
-export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, onLabelChange, onDelete, canDelete, disabled }) {
+// onGift (Zuhause verschenken): „Als Geschenkkarte drucken“ neben einem offenen Einladungscode - der Code geht als State weiter.
+export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, onLabelChange, onDelete, canDelete, disabled, onGift }) {
   const canChooseRole = voucher.status === 'offen' && voucher.joins && roleOptions.length > 0
   const deletable = canDelete && voucher.status !== 'eingelöst' && onDelete
 
@@ -55,6 +57,11 @@ export default function VoucherRow({ voucher, roleOptions = [], onRoleChange, on
         </label>
       )}
       {voucher.code && <VoucherShareActions code={voucher.code} />}
+      {onGift && canPrintGift(voucher) && (
+        <button type="button" className="btn btn-ghost btn-compact voucher-row-gift" onClick={() => onGift(voucher.code)}>
+          {t('Als Geschenkkarte drucken')}
+        </button>
+      )}
       {/* Ein beschädigter Code (Server: codeFehler) lässt sich nicht weitergeben - nur zurückziehen. */}
       {voucher.codeFehler && <p className="field-error voucher-row-broken">{t('Code nicht lesbar – bitte zurückziehen.')}</p>}
       {deletable && (

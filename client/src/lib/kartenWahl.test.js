@@ -2,13 +2,15 @@ import { describe, expect, test } from 'vitest'
 import { DEFAULT_KARTE, KARTE, KARTE_PARAM, KARTEN, backHasCode, karteFromParams, karteRoute } from './kartenWahl.js'
 
 describe('Karten als Kombination', () => {
-  test('drei Kombinationen in fester Reihenfolge, Kombi ist die Vorgabe', () => {
+  test('vier Kombinationen in fester Reihenfolge, Kombi ist die Vorgabe', () => {
     expect(KARTEN.map((karte) => [karte.id, karte.label, karte.hinten])).toEqual([
       ['visitenkarte', 'Visitenkarte', 'euer Portal'],
       ['einladung', 'Einladungskarte', 'Einladungscode'],
-      ['kombi', 'Kombi', 'Portal + Einladungscode']
+      ['kombi', 'Kombi', 'Portal + Einladungscode'],
+      ['geschenk', 'Geschenkkarte', 'Einladungscode']
     ])
-    expect(KARTEN.every((karte) => karte.vorne === 'Kontakte')).toBe(true)
+    // Vorne die Kontakte - nur die Geschenkkarte (Plan 2027) trägt vorne das Geschenk-Motiv der Plattform.
+    expect(KARTEN.filter((karte) => karte.vorne === 'Kontakte')).toHaveLength(3)
     expect(DEFAULT_KARTE).toBe(KARTE.kombi)
     expect(KARTE_PARAM).toBe('karte')
   })

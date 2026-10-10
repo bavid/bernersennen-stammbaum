@@ -3,7 +3,8 @@
 // Pfoten oder beides (Kombi). Die Wahl gehört zur Gestaltung (design.karte, server/lib/visitenkarteDesign.js KARTEN) und
 // steht in der Adresse (?karte=…); das frühere ?art=einladung öffnet die Einladungskarte. Reine Funktionen.
 
-export const KARTE = Object.freeze({ visitenkarte: 'visitenkarte', einladung: 'einladung', kombi: 'kombi' })
+// Plan 2027: geschenk - vorne das Geschenk-Motiv von Familie auf Pfoten (components/geschenk), hinten ein Einladungscode.
+export const KARTE = Object.freeze({ visitenkarte: 'visitenkarte', einladung: 'einladung', kombi: 'kombi', geschenk: 'geschenk' })
 export const DEFAULT_KARTE = KARTE.kombi
 export const KARTE_PARAM = 'karte'
 const LEGACY_PARAM = 'art'
@@ -12,13 +13,14 @@ const ROUTE = '/visitenkarten'
 export const KARTEN = Object.freeze([
   { id: KARTE.visitenkarte, label: 'Visitenkarte', vorne: 'Kontakte', hinten: 'euer Portal' },
   { id: KARTE.einladung, label: 'Einladungskarte', vorne: 'Kontakte', hinten: 'Einladungscode' },
-  { id: KARTE.kombi, label: 'Kombi', vorne: 'Kontakte', hinten: 'Portal + Einladungscode' }
+  { id: KARTE.kombi, label: 'Kombi', vorne: 'Kontakte', hinten: 'Portal + Einladungscode' },
+  { id: KARTE.geschenk, label: 'Geschenkkarte', vorne: 'Geschenk-Motiv', hinten: 'Einladungscode' }
 ])
 const IDS = KARTEN.map((karte) => karte.id)
 
 // Trägt die Rückseite einen eigenen Code je Karte? Dann holt "Drucken" die Codes, und ohne Code gibt es keine Karte.
 export function backHasCode(karte) {
-  return karte === KARTE.einladung || karte === KARTE.kombi
+  return karte === KARTE.einladung || karte === KARTE.kombi || karte === KARTE.geschenk
 }
 
 // Die Kombination aus der Adresse - oder null (dann gilt die gespeicherte).
