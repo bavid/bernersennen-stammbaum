@@ -175,7 +175,7 @@
   gap: 2px;
   aspect-ratio: 3 / 1;
   overflow: hidden;
-  border-radius: calc(var(--radius-sm) / 2);
+  border-radius: var(--radius-xs);
 }
 
 .banner-layout-sketch > span {

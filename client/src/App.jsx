@@ -63,6 +63,8 @@ const VorstellungPage = lazy(() => import('./pages/VorstellungPage.jsx'))
 // Präsentationsmodus (Phase 5 Task 5): Vorführseite des Admins mit Kacheln, die je eine Demo in einem neuen
 // Tab starten - dort landet man auf /demo-start (DemoStartPage), das POST /api/demo ruft. Beides eigene Chunks.
 const AdminPresentPage = lazy(() => import('./pages/AdminPresentPage.jsx'))
+// Box-System: Katalog der Bausteine (/admin/bausteine), eigener Chunk.
+const AdminBausteinePage = lazy(() => import('./pages/AdminBausteinePage.jsx'))
 const DemoStartPage = lazy(() => import('./pages/DemoStartPage.jsx'))
 // Digitaler Bilderrahmen auf einem anderen Gerät (/rahmen#TOKEN): öffentlich, ohne Anmeldung - eigener Chunk.
 const RahmenPage = lazy(() => import('./pages/RahmenPage.jsx'))
@@ -76,6 +78,7 @@ const ADMIN_VIEW_RE = /^\/admin-ansicht\/(\d+)\/?$/
 
 // /admin/praesentation - Präsentationsmodus (AdminPresentPage), aus dem Admin-Kopf.
 const ADMIN_PRESENT_RE = /^\/admin\/praesentation\/?$/
+const ADMIN_BAUSTEINE_RE = /^\/admin\/bausteine\/?$/
 
 // /demo-start?as=…&slug=…&ziel=… - Einstieg hinter jeder Kachel des Präsentationsmodus (lib/present.js).
 const DEMO_START_PATH = '/demo-start'
@@ -516,10 +519,11 @@ export default function App() {
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     const printBatchId = pathname.match(ADMIN_PRINT_RE)?.[1]
     const isPresent = ADMIN_PRESENT_RE.test(pathname)
+    const adminPage = ADMIN_BAUSTEINE_RE.test(pathname) ? <AdminBausteinePage /> : <AdminPage />
     return (
       <ThemeProvider>
         <Suspense fallback={<RouteFallback />}>
-          {printBatchId ? <AdminPrintPage batchId={printBatchId} /> : isPresent ? <AdminPresentPage /> : <AdminPage />}
+          {printBatchId ? <AdminPrintPage batchId={printBatchId} /> : isPresent ? <AdminPresentPage /> : adminPage}
         </Suspense>
       </ThemeProvider>
     )

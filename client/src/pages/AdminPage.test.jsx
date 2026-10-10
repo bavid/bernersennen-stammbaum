@@ -32,6 +32,7 @@ vi.mock('../components/AdminStats.jsx', () => ({ default: () => <p data-testid="
 vi.mock('../components/AdminVouchers.jsx', () => ({ default: () => <p data-testid="gutscheine">Gutschein-Karte</p> }))
 vi.mock('../components/AdminPartners.jsx', () => ({ default: () => <p data-testid="partner">Partner-Karte</p> }))
 vi.mock('../components/AdminPromotions.jsx', () => ({ default: () => <p data-testid="empfehlungen">Empfehlungen-Karte</p> }))
+vi.mock('../components/AdminCommunityBanner.jsx', () => ({ default: () => <p data-testid="band">Band-Karte</p> }))
 vi.mock('../components/AdminSupport.jsx', () => ({ default: () => <p data-testid="spenden">Spenden-Karte</p> }))
 vi.mock('../components/AdminFamilyList.jsx', () => ({ default: () => <p data-testid="familien">Familien-Karte</p> }))
 vi.mock('../components/AdminMessages.jsx', () => ({ default: () => <p data-testid="nachrichten">Nachrichten-Karte</p> }))
@@ -124,12 +125,12 @@ async function press(key) {
 }
 
 describe('AdminPage – Reiter (Phase U)', () => {
-  test('Kopf mit Titel "Admin", Präsentation und Abmelden; zwölf Reiter in einer echten Tabliste', async () => {
+  test('Kopf mit Titel "Admin", Präsentation, Bausteine und Abmelden; zwölf Reiter in einer echten Tabliste', async () => {
     await render()
 
     expect(container.querySelector('.admin-header h1').textContent).toBe('Admin')
     const links = [...container.querySelectorAll('.admin-header-actions a, .admin-header-actions button')].map((el) => el.textContent.trim())
-    expect(links).toEqual(['Präsentation', 'Abmelden'])
+    expect(links).toEqual(['Präsentation', 'Bausteine', 'Abmelden'])
     expect(container.querySelector('[role="tablist"]').getAttribute('aria-label')).toBe('Admin-Bereiche')
     expect(tabs().map((el) => el.firstChild.textContent)).toEqual([
       'Übersicht',

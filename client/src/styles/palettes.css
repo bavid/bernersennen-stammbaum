@@ -115,6 +115,28 @@
   --polaroid-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
+/* Box-System (components/ui, styles/ui.css): Flächen, Kartenrand und Töne der Chips - aus den Farben oben abgeleitet,
+   damit jede Farbwelt hell und dunkel (und die eigene Akzentfarbe) von selbst passt. Auch an jedem Element mit
+   data-palette neu gerechnet (Farbmuster). Ton-Schrift: halb Tonfarbe, halb Schrift - im Hellen dunkler, im Dunklen
+   heller; ui.test.js prüft WCAG AA gegen die Ton-Fläche. */
+:root,
+[data-palette] {
+  --surface-raised: var(--surface);
+  --surface-tint: color-mix(in srgb, var(--rust) 6%, var(--surface));
+  --border-card: var(--line);
+
+  --tone-ok-bg: color-mix(in srgb, var(--success) 14%, var(--surface));
+  --tone-ok-ink: color-mix(in srgb, var(--success) 50%, var(--ink));
+  --tone-wartet-bg: color-mix(in srgb, var(--tan) 18%, var(--surface));
+  --tone-wartet-ink: color-mix(in srgb, var(--tan) 40%, var(--ink));
+  --tone-gesperrt-bg: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  --tone-gesperrt-ink: color-mix(in srgb, var(--danger) 55%, var(--ink));
+  --tone-neu-bg: var(--blush);
+  --tone-neu-ink: var(--blush-ink);
+  --tone-anzeige-bg: color-mix(in srgb, var(--alpine) 14%, var(--surface));
+  --tone-anzeige-ink: color-mix(in srgb, var(--alpine) 50%, var(--ink));
+}
+
 /* --- Waldspaziergang (wald): Tannengrün, Rinde, helles Moos ------------------------------------------------------- */
 
 [data-palette='wald'] {

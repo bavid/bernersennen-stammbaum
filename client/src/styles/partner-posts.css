@@ -78,7 +78,7 @@
 }
 
 .partner-post.is-rejected {
-  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border-card));
 }
 
 .partner-post-image {
@@ -93,7 +93,7 @@
   flex: 1;
   align-content: start;
   gap: var(--space-3);
-  padding: var(--space-5);
+  padding: var(--pad-card-md);
 }
 
 .partner-post-chips {
@@ -326,7 +326,7 @@
   top: 0.4em;
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   border: 2px solid var(--surface);
   background: var(--tan);
 }
@@ -446,7 +446,7 @@
   place-items: center;
   width: 1.9rem;
   height: 1.9rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   border: 1.5px solid var(--line-strong);
   color: var(--muted);
   font-size: var(--text-sm);

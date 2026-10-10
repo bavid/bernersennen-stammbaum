@@ -34,10 +34,23 @@
   --space-16: 4rem;
 
   /* B+ Familienalbum: Karten mit 18 px weichen Ecken (Einstellungen → Darstellung „Eckig“: data-ecken unten). */
+  --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 18px;
   --radius-pill: 999px;
+  /* Kreis (Avatare, Tier-Kreise, Punkte) - bleibt auch bei „Eckig“ rund. */
+  --radius-round: 50%;
+
+  /* Box-System (components/ui, styles/ui.css): drei Höhen statt freier Schatten - die Schatten selbst stehen je
+     Hell/Dunkel in palettes.css. */
+  --elev-0: var(--shadow-sm);
+  --elev-1: var(--shadow-card);
+  --elev-2: var(--shadow-raised);
+  /* Innenabstand der Bausteine Card/EmptyState: klein (Listenzeile), mittel (Karte), groß (Abschnitt). */
+  --pad-card-sm: var(--space-3);
+  --pad-card-md: var(--space-5);
+  --pad-card-lg: var(--space-8);
 
   --duration-fast: 140ms;
   --duration-normal: 260ms;
@@ -83,6 +96,7 @@
 }
 
 :root[data-ecken='eckig'] {
+  --radius-xs: 2px;
   --radius-sm: 3px;
   --radius-md: 5px;
   --radius-lg: 6px;
@@ -103,6 +117,8 @@
     --card-gap: 12px;
     --card-pad: 16px;
     --card-pad-compact: 16px;
+    --pad-card-md: var(--space-4);
+    --pad-card-lg: var(--space-5);
   }
 
   :root[data-schrift='gross'] {

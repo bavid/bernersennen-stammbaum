@@ -11,6 +11,7 @@ import AdminMessages from '../components/AdminMessages.jsx'
 import AdminVouchers from '../components/AdminVouchers.jsx'
 import AdminPartners from '../components/AdminPartners.jsx'
 import AdminPromotions from '../components/AdminPromotions.jsx'
+import AdminCommunityBanner from '../components/AdminCommunityBanner.jsx'
 import AdminPostApproval from '../components/AdminPostApproval.jsx'
 import AdminSupport from '../components/AdminSupport.jsx'
 import AdminLog from '../components/AdminLog.jsx'
@@ -53,6 +54,10 @@ function AdminHeader({ tab, counts, onSelect, onLogout }) {
             {/* Phase 5 Task 5: Vorführseite mit Demo-Kacheln und Portal-Vorschau (AdminPresentPage). */}
             <Link to="/admin/praesentation" className="btn btn-ghost">
               <Icon name="eye" /> Präsentation
+            </Link>
+            {/* Box-System: Katalog aller Bausteine (AdminBausteinePage). */}
+            <Link to="/admin/bausteine" className="btn btn-ghost">
+              <Icon name="layers" /> Bausteine
             </Link>
             <button type="button" className="btn btn-ghost" onClick={onLogout}>
               <Icon name="logout" /> Abmelden
@@ -178,6 +183,8 @@ function Dashboard({ onLogout }) {
               <div className="admin-panel-stack">
                 {/* Reiter "Entdecken" (Phase 3 Task 5): dieselbe Partnerliste füllt die Partner-Auswahl. */}
                 <AdminPromotions partners={partners} version={promotionsVersion} onChanged={bumpPromotions} />
+                {/* Band „Mit dabei“ oben auf der Startseite: Partner des Monats, Zahlen, eigener Eintrag - mit Vorschau. */}
+                <AdminCommunityBanner />
                 <AdminSupport />
               </div>
             )}

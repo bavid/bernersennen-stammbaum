@@ -50,6 +50,7 @@ const startRoutes = require('./routes/start')
 const tiereRoutes = require('./routes/tiere')
 const schuetzlingeRoutes = require('./routes/schuetzlinge')
 const pushRoutes = require('./routes/push')
+const { createI18nRouter } = require('./routes/i18n')
 const { rahmenApiRouter, rahmenFotoRouter, rahmenPageHeaders } = require('./routes/rahmen')
 const { router: uploadsRoutes, MAX_FILE_BYTES } = require('./routes/uploads')
 const { requireUploadAccess } = require('./middleware/admin')
@@ -259,6 +260,8 @@ function createApp() {
   app.use('/api/schuetzlinge', schuetzlingeRoutes)
   // Benachrichtigungen aufs Handy (Web Push): Abos je Zuhause, öffentlicher VAPID-Schlüssel (routes/push.js, lib/push.js).
   app.use('/api/push', pushRoutes)
+  // Wörterbücher des Clients (dist/i18n, gebaut von client/scripts/build-i18n.mjs) - öffentlich, cachebar (routes/i18n.js).
+  app.use('/api/i18n', createI18nRouter())
   app.use('/api', (req, res) => res.status(404).json({ error: 'Nicht gefunden' }))
 
   // Fotos eines Rahmen-Geräts über signierte, kurzlebige Adressen (routes/rahmen.js) und die Seite /rahmen selbst: beide

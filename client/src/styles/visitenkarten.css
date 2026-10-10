@@ -73,10 +73,10 @@
   gap: var(--space-5);
   min-width: 0;
   padding: var(--card-pad);
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-1);
 }
 
 .vk-panel-title {
@@ -166,7 +166,7 @@ p.vk-note {
 
 .vk-textlink:focus-visible {
   outline: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   box-shadow: var(--focus-ring);
 }
 
@@ -310,7 +310,7 @@ p.vk-note {
   top: 26%;
   width: 22%;
   height: 34%;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--vk-farbe);
 }
 
@@ -403,7 +403,7 @@ p.vk-note {
   width: 2.2rem;
   height: 2.2rem;
   border: 1px solid var(--line-strong);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
 

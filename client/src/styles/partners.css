@@ -579,8 +579,11 @@
   font-size: var(--text-xs);
 }
 
-/* Leise Text-Links auf Karten (Website, Telefon, E-Mail, Karte) - lange Adressen dürfen bei 375 px umbrechen. */
+/* Leise Text-Links auf Karten (Website, Telefon, E-Mail, Karte) - lange Adressen dürfen bei 375 px umbrechen.
+   Einzige Stelle für .card-link (Box-System Welle 1: vorher zusätzlich in layout.css). Audit W: 44 px Tippfläche über
+   einen unsichtbaren Streifen (::after), wie .back-link & Co. in layout.css. */
 .card-link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -591,6 +594,16 @@
   font-weight: 700;
   text-decoration: none;
   overflow-wrap: anywhere;
+}
+
+.card-link::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: max(100%, 44px);
+  transform: translateY(-50%);
 }
 
 .card-link:hover {

@@ -1,0 +1,167 @@
+/* Partner-Bereich: "Benachrichtigungen" auf /zugang (PartnerTelegramSection, TelegramOwnBot) und der
+   Verbinden-Dialog. Aus partner-area.css ausgelagert (Box-System Welle 2). */
+
+.partner-telegram {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  max-width: 44rem;
+}
+
+.partner-telegram-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.partner-telegram-head h2 {
+  font-size: var(--text-xl);
+}
+
+.partner-telegram-lede {
+  margin: 0;
+  max-width: 36rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.telegram-state {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.telegram-state svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.telegram-state.is-connected {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.telegram-state.is-blocked {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.telegram-connected,
+.telegram-disconnected {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+
+.telegram-hinweise {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.telegram-hinweise legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.telegram-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.telegram-connect {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+
+.telegram-connect-steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+  line-height: 1.5;
+}
+
+.telegram-connect-codes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.telegram-connect-qr {
+  width: 11rem;
+  height: 11rem;
+  padding: var(--space-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+
+.telegram-connect-status {
+  margin: 0;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* Am Handy hilft der QR-Code nicht (man scannt nicht den eigenen Bildschirm) - der Knopf reicht. */
+@media (max-width: 560px) {
+  .telegram-connect-qr {
+    display: none;
+  }
+}
+
+/* Eigener Telegram-Bot (TelegramOwnBot) - ein eigener Abschnitt unten in der Karte "Benachrichtigungen": kurze
+   Anleitung, ein Token-Feld, danach „Eingerichtet · @name“ mit Wechseln und Entfernen. */
+.telegram-own-bot {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.telegram-own-bot h3 {
+  margin: 0;
+  font-size: var(--text-md, 1.05rem);
+}
+
+.telegram-bot-steps {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.5;
+}
+
+.telegram-bot-form {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.telegram-bot-form .field {
+  margin: 0;
+}
+
+.telegram-bot-form input {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.telegram-bot-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

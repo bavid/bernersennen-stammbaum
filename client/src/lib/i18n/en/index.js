@@ -12,5 +12,7 @@ import invite from './invite.js'
 import server from './server.js'
 import extra from './extra.js'
 import wwh from './wwh.js'
+import banner from './banner.js'
+import ui from './ui.js'
 
-export default { ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }
+export default { ...banner, ...ui, ...wwh, ...extra, ...server, ...invite, ...collage, ...partner, ...publicPages, ...family, ...animals, ...shell, ...common }

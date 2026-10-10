@@ -1,5 +1,5 @@
-/* Partner-Bereich (Phase P1): Umschalter "Bearbeiten | Kundensicht", Profil (/profil) mit Statuskarte,
-   Angaben und Einblicken. Nur Tokens aus tokens.css - hell und dunkel passen damit von selbst. */
+/* Partner-Bereich (Phase P1): Umschalter "Bearbeiten | Kundensicht", Profil (/profil) mit Statuskarte, Angaben und
+   Kunden-Gutscheinen. Einblicke: partner-area-einblicke.css, Telegram: partner-area-telegram.css. Nur Tokens. */
 
 /* Umschalter unter dem Kopf (ViewModeSwitch) - .segmented, aber mit Links statt Knöpfen */
 
@@ -39,9 +39,9 @@
 }
 
 .view-mode-switch a[aria-current='page'] {
-  background: var(--surface);
+  background: var(--surface-raised);
   color: var(--rust);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elev-0);
 }
 
 .view-mode-switch a:focus-visible {
@@ -74,7 +74,7 @@
   display: grid;
   gap: var(--space-4);
   margin-bottom: clamp(var(--space-6), 3vw, var(--space-8));
-  padding: var(--space-5) var(--space-12) var(--space-5) var(--space-6);
+  padding: var(--pad-card-md) var(--space-12) var(--pad-card-md) var(--space-6);
   border: 1.5px solid color-mix(in srgb, var(--tan) 55%, transparent);
   border-radius: var(--radius-md);
   background: var(--surface-sunk);
@@ -171,7 +171,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3) var(--space-6);
-  padding: var(--space-5) var(--space-6);
+  padding: var(--pad-card-md) var(--space-6);
   border: 1.5px dashed var(--line-strong);
   border-radius: var(--radius-lg);
   color: var(--muted);
@@ -186,9 +186,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-4);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--pad-card-sm) var(--space-4);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--surface-raised);
   color: var(--text);
   border-left: 4px solid var(--status-accent);
   font-size: var(--text-sm);
@@ -288,9 +288,10 @@
 }
 
 .partner-status-pausiert {
-  background: color-mix(in srgb, var(--tan) 18%, transparent);
-  color: var(--ink-soft);
-  box-shadow: inset 0 0 0 1px var(--tan);
+  background: var(--tone-wartet-bg);
+  color: var(--tone-wartet-ink);
+  outline: 1px solid var(--tan);
+  outline-offset: -1px;
 }
 
 .partner-status-gesperrt {
@@ -340,11 +341,11 @@
 .partner-logo-card {
   display: grid;
   gap: var(--space-3);
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  box-shadow: var(--elev-1);
+  padding: var(--card-pad);
 }
 
 .partner-logo-card h2 {
@@ -354,11 +355,11 @@
 /* Reiter "Angaben": Fieldsets mit Überschrift statt Rahmen */
 
 .partner-profile-form {
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: clamp(var(--space-5), 3vw, var(--space-8));
+  box-shadow: var(--elev-1);
+  padding: var(--card-pad);
 }
 
 .partner-fieldset {
@@ -399,250 +400,6 @@
 .admin-upload-btn.is-disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-/* Einblicke (seit Audit W im Reiter "Fotos") */
-
-.einblicke-editor {
-  display: grid;
-  gap: var(--space-6);
-}
-
-.einblicke-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.einblicke-head h2 {
-  font-size: var(--text-xl);
-  color: var(--ink);
-}
-
-.einblicke-count {
-  font-size: var(--text-sm);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Audit W: "Neuer Einblick" öffnet das Formular erst auf Wunsch; "Weitere Einblicke (n)" wie auf Start */
-.einblicke-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.einblicke-actions .field-hint {
-  margin: 0;
-}
-
-.einblicke-more {
-  justify-self: start;
-}
-
-.einblick-form {
-  color: var(--text);
-}
-
-.einblick-form h3 {
-  font-size: var(--text-lg);
-  color: var(--ink);
-}
-
-.einblick-form-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
-  gap: var(--space-6);
-  align-items: start;
-}
-
-@media (max-width: 640px) {
-  .einblick-form-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.einblick-photo-field {
-  justify-items: start;
-}
-
-.einblick-preview {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: var(--radius-md);
-  background: var(--paper-deep);
-}
-
-.einblick-form-fields {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.einblick-consent {
-  align-items: flex-start;
-  color: var(--ink-soft);
-}
-
-.einblick-consent input {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.einblicke-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr));
-  gap: var(--card-gap);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.einblick-card {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-}
-
-.einblick-photo {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  background: var(--paper-deep);
-}
-
-.einblick-photo img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.einblick-card.is-hidden-by-admin .einblick-photo img {
-  opacity: 0.55;
-  filter: grayscale(0.6);
-}
-
-.einblick-hidden-badge {
-  position: absolute;
-  top: var(--space-3);
-  left: var(--space-3);
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.einblick-hidden-badge svg {
-  width: 0.9rem;
-  height: 0.9rem;
-}
-
-.einblick-body {
-  display: grid;
-  flex: 1;
-  align-content: start;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-5) var(--space-5);
-}
-
-.einblick-date {
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.einblick-text {
-  color: var(--text);
-  line-height: 1.5;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-
-.einblick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-/* Am Handy eine Zeile je Einblick (Foto links, Text und Knöpfe rechts) statt einer großen Karte - mit bis zu 60
-   Einblicken wurde der Reiter sonst endlos (je Foto gut 450 px). Beim Bearbeiten wieder untereinander, damit Datum
-   und Text die volle Breite haben. Die Knöpfe sind die gemeinsamen kompakten (btn-compact, components.css). */
-@media (max-width: 640px) {
-  .einblick-card:not(.is-editing) {
-    flex-direction: row;
-    align-items: stretch;
-  }
-
-  .einblick-card:not(.is-editing) .einblick-photo {
-    flex: 0 0 6.5rem;
-    aspect-ratio: auto;
-    min-height: 6.5rem;
-  }
-
-  .einblick-hidden-badge {
-    top: auto;
-    right: var(--space-1);
-    bottom: var(--space-1);
-    left: var(--space-1);
-    justify-content: center;
-    padding: 0.15rem var(--space-1);
-    text-align: center;
-    white-space: normal;
-  }
-
-  .einblick-body {
-    min-width: 0;
-    padding: var(--space-3) var(--space-4);
-  }
-
-  .einblick-text {
-    font-size: var(--text-sm);
-  }
-
-  .einblick-actions {
-    gap: var(--space-1) var(--space-2);
-    margin-top: var(--space-1);
-  }
-}
-
-/* Phase V1: Anpinnen für die Karte in "Entdecken" (EinblickPinButton) - angepinnt kräftig, sonst leise. */
-.einblick-pin svg,
-.einblick-pin-team svg {
-  width: 0.95rem;
-  height: 0.95rem;
-}
-
-.einblick-pin.is-pinned {
-  border-color: var(--rust);
-  background: var(--rust-wash);
-  color: var(--rust-deep);
-}
-
-.einblick-pin-team {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin: 0;
-  color: var(--rust-deep);
-  font-size: var(--text-sm);
-  font-weight: 800;
-}
-
-.einblicke-pin-hint {
-  max-width: 44rem;
-  margin: var(--space-1) 0 0;
-}
-
-.einblicke-pin-count {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Reiter "Kunden-Gutscheine" (Phase 5 Task 4, PartnerVoucherStacks): je Stapel eine Karte mit Bezeichnung,
@@ -741,259 +498,4 @@
 
 .partner-stack-print {
   justify-self: start;
-}
-
-/* Phase V4b: "Benachrichtigungen" auf /zugang (PartnerTelegramSection) und der Verbinden-Dialog */
-
-.partner-telegram {
-  display: grid;
-  gap: var(--space-4);
-  justify-items: start;
-  max-width: 44rem;
-}
-
-.partner-telegram-head {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.partner-telegram-head h2 {
-  font-size: var(--text-xl);
-}
-
-.partner-telegram-lede {
-  margin: 0;
-  max-width: 36rem;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-.telegram-state {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  margin: 0;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-.telegram-state svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  flex-shrink: 0;
-  margin-top: 3px;
-}
-
-.telegram-state.is-connected {
-  color: var(--success);
-  font-weight: 700;
-}
-
-.telegram-state.is-blocked {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-sm);
-  background: var(--danger-wash);
-  color: var(--danger);
-}
-
-.telegram-connected,
-.telegram-disconnected {
-  display: grid;
-  gap: var(--space-4);
-  justify-items: start;
-}
-
-.telegram-hinweise {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.telegram-hinweise legend {
-  margin-bottom: var(--space-2);
-  padding: 0;
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.telegram-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.telegram-connect {
-  display: grid;
-  gap: var(--space-4);
-  justify-items: start;
-}
-
-.telegram-connect-steps {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding-left: var(--space-5);
-  line-height: 1.5;
-}
-
-.telegram-connect-codes {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-5);
-}
-
-.telegram-connect-qr {
-  width: 11rem;
-  height: 11rem;
-  padding: var(--space-2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: #fff;
-}
-
-.telegram-connect-status {
-  margin: 0;
-  color: var(--ink-soft);
-  font-weight: 600;
-}
-
-/* Am Handy hilft der QR-Code nicht (man scannt nicht den eigenen Bildschirm) - der Knopf reicht. */
-@media (max-width: 560px) {
-  .telegram-connect-qr {
-    display: none;
-  }
-}
-
-/* Eigener Telegram-Bot (TelegramOwnBot) - ein eigener Abschnitt unten in der Karte "Benachrichtigungen": kurze
-   Anleitung, ein Token-Feld, danach „Eingerichtet · @name“ mit Wechseln und Entfernen. */
-.telegram-own-bot {
-  display: grid;
-  gap: var(--space-3);
-  margin-top: var(--space-3);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line);
-}
-
-.telegram-own-bot h3 {
-  margin: 0;
-  font-size: var(--text-md, 1.05rem);
-}
-
-.telegram-bot-steps {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  padding-left: 1.25rem;
-  line-height: 1.5;
-}
-
-.telegram-bot-form {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.telegram-bot-form .field {
-  margin: 0;
-}
-
-.telegram-bot-form input {
-  width: 100%;
-  max-width: 28rem;
-}
-
-.telegram-bot-form-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-/* Anordnen per Ziehen (hooks/useDragReorder.js, ReorderHandle) im Reiter „Fotos“: der Griff sitzt auf dem Foto, die
-   gezogene Karte schwebt als Geist mit, das Ablageziel bekommt einen gestrichelten Rahmen, ein per Tastatur aufgenommenes
-   Foto einen kräftigen. Mindestens 44 px Zielfläche. */
-.reorder-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md, 12px);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  color: var(--text);
-  box-shadow: var(--shadow-card);
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.reorder-handle svg {
-  width: 1.2rem;
-  height: 1.2rem;
-}
-
-.reorder-handle:hover,
-.reorder-handle:focus-visible {
-  background: var(--surface);
-}
-
-.reorder-handle.is-grabbed,
-.is-dragging .reorder-handle {
-  cursor: grabbing;
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.reorder-handle:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
-
-.einblick-card .einblick-handle {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-}
-
-.einblick-card.is-dragging,
-.partner-banner-slot.is-dragging {
-  position: relative;
-  z-index: 5;
-  opacity: 0.85;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
-  pointer-events: none;
-}
-
-.einblick-card.is-drop-target,
-.partner-banner-slot.is-drop-target {
-  outline: 2px dashed var(--rust);
-  outline-offset: 3px;
-}
-
-.einblick-card.is-grabbed,
-.partner-banner-slot.is-grabbed {
-  outline: 3px solid var(--rust);
-  outline-offset: 3px;
-}
-
-.partner-banner-thumb-wrap {
-  position: relative;
-  flex: 0 0 auto;
-}
-
-.partner-banner-thumb-wrap .partner-banner-handle {
-  position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .einblick-card,
-  .partner-banner-slot {
-    transition: outline-color 150ms ease, box-shadow 150ms ease;
-  }
 }

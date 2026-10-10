@@ -90,7 +90,7 @@
   flex-shrink: 0;
   width: 2.4rem;
   height: 2.4rem;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--rust);
   color: var(--on-rust);
   font-family: var(--font-display);

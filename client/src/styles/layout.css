@@ -502,7 +502,6 @@
 a.chip,
 button.chip,
 .discover-show-all,
-.card-link,
 .reply-open,
 .footer-link,
 .brand-name {
@@ -513,7 +512,6 @@ button.chip,
 a.chip::after,
 button.chip::after,
 .discover-show-all::after,
-.card-link::after,
 .reply-open::after,
 .footer-link::after,
 .brand-name::after {

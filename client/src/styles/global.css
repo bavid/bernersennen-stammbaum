@@ -38,6 +38,8 @@
 @import './promotion.css';
 @import './support.css';
 @import './partner-area.css';
+@import './partner-area-einblicke.css';
+@import './partner-area-telegram.css';
 @import './partner-banner.css';
 @import './partner-share.css';
 @import './customer-view.css';
@@ -57,5 +59,7 @@
 @import './finanzierung.css';
 @import './structure.css';
 @import './wir-waren-hier.css';
+/* Box-System (components/ui): Bausteine nur aus Tokens. */
+@import './ui.css';
 /* Look B+ Familienalbum: Handschrift, Polaroid, Kapitel, Tier-Kreise - zuletzt, damit es über den Seiten-Stilen liegt. */
 @import './album.css';
