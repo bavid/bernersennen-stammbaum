@@ -32,6 +32,7 @@ import TourProvider from './components/tour/TourProvider.jsx'
 import Modal from './components/Modal.jsx'
 import InviteDialog from './components/InviteDialog.jsx'
 import RouteFallback from './components/RouteFallback.jsx'
+import NeueVersionKarte from './components/rudel/NeueVersionKarte.jsx'
 import { rememberPersonName } from './lib/profil.js'
 
 // Phase W: "Tiere" bleibt markiert auf den Tierseiten und beim Nachwuchs (/wuerfe).
@@ -385,6 +386,8 @@ export default function App() {
                     Nachladen RouteFallback, Kopf, Navigation und Fuß bleiben stehen. */}
                 {/* Phase U: Hinweis in einer Partner- oder Tierheim-Demo - nur auf /profil, einmal je Sitzung, schließbar. */}
                 {family.isDemo && !family.adminView && isPartnerArea(family) && !onPublicPage && <PartnerDemoGuide />}
+                {/* Rudel-Instanz: „Es gibt eine neue Version“ oben auf dem Start (components/rudel/NeueVersionKarte.jsx). */}
+                {family.instanzModus === 'rudel' && [startRoute(family), START_ROUTE].includes(pathname) && <NeueVersionKarte angemeldet />}
                 {onPublicPage ? (
                   publicPage
                 ) : (

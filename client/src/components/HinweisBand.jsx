@@ -1,4 +1,5 @@
 import useHinweise from '../hooks/useHinweise.js'
+import useNeueVersionUrl from '../hooks/useNeueVersionUrl.js'
 import HinweisCarousel from './HinweisCarousel.jsx'
 import { focusContent } from '../lib/focusContent.js'
 
@@ -6,7 +7,10 @@ import { focusContent } from '../lib/focusContent.js'
 // main.jsx) und damit über allem, was App rendert (öffentliche Seiten, Login, Bereiche, Admin, Portal, Steckbrief).
 // Nichts, solange nichts geladen ist, alles weggeklickt ist oder die Anfrage scheitert. compact: siehe HinweisCarousel.
 export default function HinweisBand({ compact = false }) {
-  const { hinweise, dismiss } = useHinweise()
+  const { hinweise: alle, dismiss } = useHinweise()
+  // Rudel-Instanz: den Hinweis „neue Version“ zeigt schon die Karte (components/rudel/NeueVersionKarte.jsx) - nicht doppelt.
+  const neueVersionUrl = useNeueVersionUrl()
+  const hinweise = neueVersionUrl ? alle?.filter((hinweis) => hinweis.linkUrl !== neueVersionUrl) : alle
   if (!hinweise?.length) return null
 
   function handleDismiss(id) {

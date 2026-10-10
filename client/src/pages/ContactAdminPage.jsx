@@ -27,12 +27,16 @@ function buildTypes(words) {
   }
 }
 
-function MessageForm({ fromPage, onSent }) {
+function einladungsText() {
+  return t('Wir möchten ein eigenes Zuhause in der neuen Familie auf Pfoten. Bitte schick uns einen Einladungscode. (E-Mail oder Telefon steht unten.)')
+}
+
+function MessageForm({ fromPage, onSent, initialText = '' }) {
   const { words } = useTheme()
   const lang = getLang()
   const TYPES = useMemo(() => buildTypes(words), [words, lang])
   const [type, setType] = useState('feedback')
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialText)
   // Bewusst nicht vorausgefüllt: ohne Namen kommt die Nachricht anonym an
   const [autorName, setAutorName] = useState('')
   const [contact, setContact] = useState('')
@@ -153,6 +157,8 @@ function PrivacyNote() {
 export default function ContactAdminPage() {
   const location = useLocation()
   const fromPage = location.state?.from || null
+  // „Einladung anfragen“ (components/rudel/NeueVersionKarte.jsx): Feedback mit vorausgefülltem Text.
+  const einladung = new URLSearchParams(location.search).get('thema') === 'einladung'
   const [sent, setSent] = useState(false)
   const toast = useToast()
 
@@ -174,7 +180,7 @@ export default function ContactAdminPage() {
       </header>
 
       <div className="contact-layout">
-        {sent ? <SentNotice onAgain={() => setSent(false)} /> : <MessageForm fromPage={fromPage} onSent={handleSent} />}
+        {sent ? <SentNotice onAgain={() => setSent(false)} /> : <MessageForm fromPage={fromPage} onSent={handleSent} initialText={einladung ? einladungsText() : ''} />}
         <PrivacyNote />
       </div>
     </div>

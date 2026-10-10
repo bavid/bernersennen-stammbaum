@@ -10,19 +10,22 @@ const db = require('../db')
 const { setStammbaumStart, isStammbaumStart } = require('./stammbaumStart')
 const { validateHinweis, createHinweis, updateHinweis } = require('./hinweise')
 const { parseHttpsUrl } = require('./hinweisLink')
+const { NEUE_VERSION_TITEL } = require('./rudelNeueVersion')
 const { zaehleBestand: zaehle } = require('./bestandZaehlen')
 
 const zaehleBestand = () => zaehle(db)
 
 const HINWEIS = Object.freeze({
-  titel: 'Neue Familie auf Pfoten',
+  titel: NEUE_VERSION_TITEL,
   text:
-    'Wir bauen gerade die neue Familie auf Pfoten – noch in Entwicklung. In etwa einem Monat ziehen wir euch dorthin um. ' +
-    'Ihr möchtet schon vorher ein eigenes Zuhause? Schreibt mir über „Feedback“, dann schicke ich euch einen Einladungscode.',
+    'Es gibt eine neue Version von Familie auf Pfoten – noch in Entwicklung. In etwa einem Monat ziehen wir euch mit allem ' +
+    'um, euer Stammbaum bleibt. Ihr möchtet schon vorher ein eigenes Zuhause? Menü › „Feedback“ › „Einladung anfragen“, ' +
+    'dann schicke ich euch einen Einladungscode.',
   titelEn: 'New Familie auf Pfoten',
   textEn:
-    "We're building the new Familie auf Pfoten – still in development. In about a month we'll move you over. " +
-    'Want your own home sooner? Write to me via „Feedback“ and I\'ll send you an invitation code.',
+    "There's a new version of Familie auf Pfoten – still in development. In about a month we'll move you over with " +
+    'everything, your family tree stays. Want your own home sooner? Menu › „Feedback“ › „Request an invitation“ and ' +
+    "I'll send you an invitation code.",
   linkLabel: 'Zur neuen Familie auf Pfoten',
   linkLabelEn: 'To the new Familie auf Pfoten',
   stufe: 'info'

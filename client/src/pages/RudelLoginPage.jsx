@@ -8,6 +8,7 @@ import PasswordField from '../components/PasswordField.jsx'
 import LanguageSwitch from '../components/LanguageSwitch.jsx'
 import { tList, useLang, useT } from '../lib/i18n/index.js'
 import { Button } from '../components/ui/index.js'
+import NeueVersionKarte from '../components/rudel/NeueVersionKarte.jsx'
 
 // Anmeldeseite der Rudel-Instanz (lib/instanzModus.js): Kopf, Begrüßung, EINE Karte mit dem Familien-Passwort,
 // Sprachwahl und Impressum/Datenschutz - kein Gutschein, keine Demo, kein Partner-Einstieg, keine App-Karte.
@@ -40,6 +41,7 @@ export default function RudelLoginPage({ onLogin }) {
               <em>{headline[1]}</em>
             </p>
             <p className="login-lede">{de ? theme.texts.loginLede : t('login.lede')}</p>
+            <NeueVersionKarte />
           </div>
           <div className="login-main">
             <section className="login-card login-entry" aria-labelledby="rudel-login-title">

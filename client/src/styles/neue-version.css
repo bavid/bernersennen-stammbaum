@@ -1,0 +1,56 @@
+/* Rudel-Instanz: „Es gibt eine neue Version“ (components/rudel/NeueVersionKarte.jsx) - auf Anmeldung und Start. */
+.neue-version {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--pad-card-md);
+  border: 1px solid var(--border-card);
+  border-left: var(--accent-edge) solid var(--rust);
+  border-radius: var(--radius-md);
+  background: var(--surface-tint);
+  box-shadow: var(--elev-1);
+  max-width: 40rem;
+  min-width: 0;
+}
+
+.app-main > .neue-version {
+  margin-block-end: var(--space-5);
+}
+
+.login-hero-inner .neue-version {
+  margin-block-start: var(--space-5);
+}
+
+.neue-version h2 {
+  margin: 0;
+  font-size: var(--text-xl, 1.35rem);
+  text-wrap: balance;
+}
+
+.neue-version p {
+  margin: 0;
+}
+
+.neue-version-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: start;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--tone-neu-bg);
+  color: var(--tone-neu-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.neue-version-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.neue-version-fuss {
+  font-size: 0.9rem;
+}

@@ -58,6 +58,14 @@ describe('RudelLoginPage', () => {
     expect(links()).toEqual(['/impressum', '/datenschutz'])
   })
 
+  test('mit angekündigter neuer Version: Karte mit Link über dem Login', async () => {
+    config.mockResolvedValue({ instanzModus: 'rudel', neueVersionUrl: 'https://neu.example/' })
+    await render(<RudelLoginPage onLogin={() => {}} />)
+    await act(async () => {})
+    expect(container.querySelector('.neue-version h2').textContent).toBe('Es gibt eine neue Version')
+    expect(container.querySelector('a[href="https://neu.example/"]')).not.toBeNull()
+  })
+
   test('meldet mit dem Passwort an und zeigt Fehler', async () => {
     const onLogin = vi.fn()
     login.mockRejectedValueOnce(new Error('Dieses Passwort kennen wir nicht')).mockResolvedValueOnce({ id: 2 })

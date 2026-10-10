@@ -67,6 +67,7 @@
 @import './structure.css';
 @import './wir-waren-hier.css';
 @import './entdecken-public.css';
+@import './neue-version.css';
 /* Box-System (components/ui): Bausteine nur aus Tokens. */
 @import './ui.css';
 /* Profil: Bild von Zuhause und Familie (components/AreaAvatar.jsx). */

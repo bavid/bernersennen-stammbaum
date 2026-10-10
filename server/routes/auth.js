@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs')
 const crypto = require('node:crypto')
 const db = require('../db')
 const config = require('../config')
+const { neueVersionUrl } = require('../lib/rudelNeueVersion')
 const { requireAuth, requireSession, setSessionCookie, clearSessionCookie, refreshSession } = require('../middleware/auth')
 const { codeLimiter, authLimiter } = require('../middleware/abuse')
 const { cleanId } = require('../lib/validate')
@@ -76,7 +77,13 @@ function requireHomeIdentity(req, res) {
 }
 
 router.get('/config', (req, res) => {
-  res.json({ appEnv: config.appEnv, legal: config.legal, publicUrl: config.publicUrl, instanzModus: config.instanzModus })
+  res.json({
+    appEnv: config.appEnv,
+    legal: config.legal,
+    publicUrl: config.publicUrl,
+    instanzModus: config.instanzModus,
+    neueVersionUrl: neueVersionUrl()
+  })
 })
 
 // Kein Honeypot beim Login: Passwort-Manager füllen das versteckte Feld mit dem gespeicherten

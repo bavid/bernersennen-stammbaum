@@ -7,17 +7,26 @@ export const INSTANZ_RUDEL = 'rudel'
 
 let pending = null
 
-export function loadInstanzModus() {
+// GET /api/config einmal je Seitenaufruf; ohne Antwort (Netz weg) ein leeres Objekt = das normale Produkt.
+function loadConfig() {
   if (!pending) {
     pending = Promise.resolve()
       .then(() => api.config())
-      .then((config) => (typeof config?.instanzModus === 'string' ? config.instanzModus : ''))
       .catch(() => {
         pending = null
-        return ''
+        return {}
       })
   }
   return pending
+}
+
+export function loadInstanzModus() {
+  return loadConfig().then((config) => (typeof config?.instanzModus === 'string' ? config.instanzModus : ''))
+}
+
+// Link „Es gibt eine neue Version“ (server/lib/rudelNeueVersion.js) - nur in der Rudel-Instanz, sonst null.
+export function loadNeueVersionUrl() {
+  return loadConfig().then((config) => (typeof config?.neueVersionUrl === 'string' && config.neueVersionUrl ? config.neueVersionUrl : null))
 }
 
 export function isRudelInstanz(modus) {

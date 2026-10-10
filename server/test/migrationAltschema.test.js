@@ -149,6 +149,16 @@ test('Altschema 1f7b91c -> neuer Code: nichts verloren, Passwort-Login, Stammbau
     assert.equal(hinweise[0].linkUrl, HINWEIS_URL)
     assert.equal(hinweise[0].linkLabel, 'Zur neuen Familie auf Pfoten')
     assert.match(hinweise[0].textEn, /invitation code/)
+    assert.match(hinweise[0].text, /Es gibt eine neue Version/)
+  })
+
+  await t.test('neueVersionUrl: Link aus dem Hinweis nur im Rudel-Modus, ohne aktiven Hinweis null', () => {
+    const { neueVersionUrl } = require('../lib/rudelNeueVersion')
+    assert.equal(neueVersionUrl('rudel'), HINWEIS_URL)
+    assert.equal(neueVersionUrl(''), null)
+    db.prepare("UPDATE hinweise SET aktiv = 0 WHERE titel = 'Neue Familie auf Pfoten'").run()
+    assert.equal(neueVersionUrl('rudel'), null)
+    db.prepare("UPDATE hinweise SET aktiv = 1 WHERE titel = 'Neue Familie auf Pfoten'").run()
   })
 
   await t.test('zweiter Lauf: nichts doppelt, nichts geändert', async () => {
